@@ -6040,7 +6040,7 @@ committed, and no configuration defines the model.
 
 - **9. Mature-checkpoint learning evidence.** The mechanism, checkpoint exposure
    counter and quality-evaluation machinery are reviewed and implemented
-   ([receipt](doc/benchmarks/2026-09-26-item9-followup/README.md)). Learning
+   ([receipt](benchmarks/2026-09-26-item9-followup/README.md)). Learning
    acceptance remains deferred until a checkpoint has at least **one million
    completed FineWeb training sentences**; missing exposure skips, never passes,
    the quality evaluation. Correctness checks stay unconditional. No qualifying
@@ -6053,19 +6053,19 @@ committed, and no configuration defines the model.
    reduce work at matched error. Same-checkpoint ablations do not establish this
    causal result, and fused AMP conservatively undercounts exposure. Preserve the
    tiny-run nulls, incomplete reverse programs and 5/56 wording failures as
-   development diagnostics ([original receipt](doc/benchmarks/2026-09-26-item9/README.md));
+   development diagnostics ([original receipt](benchmarks/2026-09-26-item9/README.md));
    old context-free and assertion-thought scores are invalid controls.
    **6.5's learning gates** — held-out anaphora against `206a0146`, verb
    reuse, prediction control, shuffled order, renamed vocabulary and
    determiner control — remain pending the million-sentence checkpoint,
    across **seeds 0/1/2**, and are **not claimed** by its mechanism acceptance
-   ([receipt](doc/benchmarks/2026-10-07-item6-5/README.md#learning-limits)).
+   ([receipt](benchmarks/2026-10-07-item6-5/README.md#learning-limits)).
    **6.2's learning measurement** (MM_math_chain: held-out binding 9 of 10,
    the chain bar, the expectation-only and zero-budget controls) also waits
-   here, at item 0's checkpoint under [thinking spec §14.10–§14.13](doc/specs/2026-10-07-thinking.md):
+   here, at item 0's checkpoint under [thinking spec §14.10–§14.13](specs/2026-10-07-thinking.md):
    one-step problems first, worked steps as intermediate answers, binding a
    found candidate, and budget in steps with each query's record charge bounded
-   separately ([protocol corrections](doc/benchmarks/2026-10-08-math-chain-repair-2/protocol-corrections-14-13.json)).
+   separately ([protocol corrections](benchmarks/2026-10-08-math-chain-repair-2/protocol-corrections-14-13.json)).
 
 ### Item 8, as it stood in todo.md
 
@@ -6083,18 +6083,18 @@ committed, and no configuration defines the model.
    failing (.21757 after 900 epochs, bar <.20), and the two `XOR_grammar.xml`
    CLI gates stopped before training at unsupported W=6. Keep these failures
    visible; no passing-seed selection or expected-failure waiver
-   ([audit](doc/benchmarks/2026-09-21-item10/README.md#validation-and-limits)).
+   ([audit](benchmarks/2026-09-21-item10/README.md#validation-and-limits)).
    *Compatibility:* `XOR_grammar.xml` composes `not` / `conjunction` /
    `disjunction` over symbols on the serial path and never used the deleted
    tower folds, so its gate stands as written. Reconstruction comparisons use
-   the [reviewed 9b baseline](doc/benchmarks/2026-09-26-item9b-occurrence-fix/README.md):
+   the [reviewed 9b baseline](benchmarks/2026-09-26-item9b-occurrence-fix/README.md):
    serial before/during/after .1005906649 / .0948241442 / .0928765051;
    packed/single byte reconstruction .6839025617 with exact parity. Learning
    quality gates follow the million-sentence prerequisite in item 9; mechanism
    and regression checks remain unconditional.
-   The [item-8 implementation](doc/benchmarks/2026-09-26-item8-review/README.md) implements
+   The [item-8 implementation](benchmarks/2026-09-26-item8-review/README.md) implements
    exact-score tie preference and committed-program routing measurements;
-   its [protocol](doc/benchmarks/2026-09-26-item8/PROTOCOL.md) predeclares the
+   its [protocol](benchmarks/2026-09-26-item8/PROTOCOL.md) predeclares the
    qualified causal study. Learned utility and declining opaque routing remain
    unproven. W=6 scheduling now reaches the next unchanged
    CLI blocker: the six-row symbol inventory exhausts during the first epoch's
@@ -6102,7 +6102,7 @@ committed, and no configuration defines the model.
    historical MM failing-seed result visible. All three declared diagnostic
    seeds were attempted; seed 1 hit the 8 GiB guard and remains incomplete.
    The initial 4,968-case full sweep exits 1 on an unchanged strict-XPASS
-   reconstruction marker. Claude's [review corrections](doc/benchmarks/2026-09-26-item8-review/README.md)
+   reconstruction marker. Claude's [review corrections](benchmarks/2026-09-26-item8-review/README.md)
    use the marginal uniformly and require complete reconstructed positions;
    the marker and threshold remain intact. The corrected source passes its
    single 4,980-case full sweep: 4,653 passed, 326 skipped and one expected
@@ -6114,10 +6114,10 @@ committed, and no configuration defines the model.
    not a regression of the round — is what handles that margin.
 Item 7.5's non-blocking compose follow-ups (the training temperature and
 parsimony term for a later spec) are in
-[FutureWork](doc/FutureWork.md#compose-follow-ups-deferred-from-item-75-2026-09-27);
+[FutureWork](FutureWork.md#compose-follow-ups-deferred-from-item-75-2026-09-27);
 its 2026-09-29 costing finding is closed by 6.9's step 5, and the depth-three
 campaign stays a recorded red in the
-[accepted landing](doc/benchmarks/2026-09-27-item7-5-landing/README.md), not work.
+[accepted landing](benchmarks/2026-09-27-item7-5-landing/README.md), not work.
 Remaining operators work stays with its assigned items: surface, tense,
 morphology, aspect, null and situation codes with 5.5; forgetting's truth-kind
 bias with 5; trained-checkpoint evaluation with 4; the concept-face negative
@@ -6125,17 +6125,17 @@ image's learning measurement with 9 (its mechanism landed in round 2,
 `3de37eef5`, and the complement it reads is populated since final-b); the
 open-read/teacher-loss host island with 1; expectation across the
 architecture with **4.5**; the bank's collision and merge rules in
-[FutureWork](doc/FutureWork.md#one-bank-the-collision-rule-for-property-rows-and-a-merge-rule-decided-2026-10-06-unscheduled). The
-[FutureWork list](doc/FutureWork.md#carried-from-the-68-1315-rounds-2026-10-04)
+[FutureWork](FutureWork.md#one-bank-the-collision-rule-for-property-rows-and-a-merge-rule-decided-2026-10-06-unscheduled). The
+[FutureWork list](FutureWork.md#carried-from-the-68-1315-rounds-2026-10-04)
 retains the dynamic stop, the remaining operator names and other deferred work. The
-[6.8 plan](doc/plans/2026-09-27-item-6-8-one-attention.md) retains the reading
+[6.8 plan](plans/2026-09-27-item-6-8-one-attention.md) retains the reading
 residue around forced `interpret` and digit boundaries. Historical operators
 measurements and decisions are in the accepted receipt and its predecessors.
 Deferred from 6.5 (non-blocking): the detached role view's retirement is in
 item 2; learned-column pruning is in item 5.
 
 Alongside item 5.5, retain item 6's open learning findings, with the historical and current
-outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1/README.md):
+outcomes separated in the [part-1 receipt](benchmarks/2026-10-10-item6/part1/README.md):
 
 - Stored-idea recovery beyond two words remains a learning gate after
   the constituent lesson; no noun-side sparse-coding mechanism remains. Initial-source list free recovery is 0/4 throughout; enabled
@@ -6143,9 +6143,9 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   stays at .3465735912 / .7945134640 through 64 presentations, with zero
   scorer gradient. These inverse and credit findings remain active work.
   The valid part-2 two-word checkpoint reads its stored derivations at 4/4,
-  but free readback is 0/4. A [read-only probe](doc/benchmarks/2026-10-10-item6/identity-first/validation/attention-readout-audit/result.json)
+  but free readback is 0/4. A [read-only probe](benchmarks/2026-10-10-item6/identity-first/validation/attention-readout-audit/result.json)
   finds every attention tanh unit saturated at ±1 and candidate logits tied;
-  that study left saturation unchanged. The [R/S/T candidate](doc/benchmarks/2026-10-10-item6/identity-rst/README.md)
+  that study left saturation unchanged. The [R/S/T candidate](benchmarks/2026-10-10-item6/identity-rst/README.md)
   bounds the shared context and removes saturation in the retained 64-step
   continuation. Fresh two-/four-word CE improves to .0320/.0166 but remains
   above .01; free recovery remains 0/4. New adverse result: the later relation
@@ -6164,14 +6164,14 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   Question-sensitive answering also remains unproven in the current staged
   warm-up: noun–verb answers are 0/4 and relations 1/4; the earlier 4/4
   identity and noun-phrase scores match a last-word baseline
-  ([receipt](doc/benchmarks/2026-10-10-item6/identity-first/README.md)).
-- The [October 14 sweep](doc/benchmarks/2026-10-14-item6-gate-off/README.md)
+  ([receipt](benchmarks/2026-10-10-item6/identity-first/README.md)).
+- The [October 14 sweep](benchmarks/2026-10-14-item6-gate-off/README.md)
   has three failures new relative to accepted R2's passing sweep. The
   supplied-answer failure and eight-sentence fork failure (now only round
   24) recur from 6.1. `test_forced_ordinary_bound_declaratives_open_no_episode`
   is new relative to 6.1 too: no open slots or episodes appear, but every
   recorded compose departure is 6, failing the diversity assertion.
-  The [October 15 source-boundary replay](doc/benchmarks/2026-10-15-item6-corrected-warmup/README.md)
+  The [October 15 source-boundary replay](benchmarks/2026-10-15-item6-corrected-warmup/README.md)
   finds no exemption effect: the shared fixture has an empty meaning slice,
   so both implementations charge zero and produce identical departures and
   keep decisions under matched initialization. The two diversity assertions
@@ -6181,7 +6181,7 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   immediate failure is different: its filled reference points to an order-one
   child associated with `the`, with no lexical path to `five`. All assertions
   remain unchanged; no repair or learning claim is made.
-- The [R2 sweep](doc/benchmarks/2026-10-10-item6/identity-r2/full/summary.json)
+- The [R2 sweep](benchmarks/2026-10-10-item6/identity-r2/full/summary.json)
   adds `test_review17_measurement_wiring_on_one_ordinary_batch` as a new
   failure relative to both 6.1 and R/S/T: its observer has no epoch-1 chooser
   logit entry (`KeyError: '1'`). The accepted inverse-domain repair resolves
@@ -6189,13 +6189,13 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   departures. It now counts those separately from gradient calls; the native
   regression and unchanged ordinary-batch certificate pass.
 - Per-position cleared-cache overlap remains 0.000 against .800. The
-  [follow-up bisection](doc/benchmarks/2026-10-10-item6/followup/README.md)
+  [follow-up bisection](benchmarks/2026-10-10-item6/followup/README.md)
   separates the initial self-pair obstruction (repaired in part 1) from the
   current reversed pair. The first part-2 candidate removes the exact-fit
   override: learned weights give 1.000 overlap, against 0.000 with the old
   override on those same weights; the cold probe remains 0.000. Keep the order lesson, content
   coverage, walk order stamps and family-metadata use under part 2 (review J–L).
-- The [identity corpus preparation](doc/benchmarks/2026-10-10-item6/identity-corpus/README.md)
+- The [identity corpus preparation](benchmarks/2026-10-10-item6/identity-corpus/README.md)
   exposes a native exploratory trace/admission mismatch: an admitted leaf is
   filtered from reconstruction, which then underflows a binary operation.
   The first part-2 candidate repairs the trial/commit masks and verifies the
@@ -6206,7 +6206,7 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   taxonomy order reader (four-word presentation 8; all experiment branches
   unreached). The candidate restricts that reader to positive concept handles;
   the original failed attempt and corrected-source run stay in the
-  [same receipt](doc/benchmarks/2026-10-10-item6/identity-first/README.md).
+  [same receipt](benchmarks/2026-10-10-item6/identity-first/README.md).
   The corrected run passes that point and retains a negative address tagged
   `sym`; its old-reader replay raises and the corrected boundary unfolds the
   payload. The producer's typed-reference provenance remains open.
@@ -6215,7 +6215,7 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   without claiming a production retention repair.
 - Supplied-answer warm-up adds 16 lazy comparison-reader weights that native
   strict checkpoint preflight rejects before the child's load hook can restore
-  them. The [first part-2 receipt](doc/benchmarks/2026-10-10-item6/identity-first/README.md)
+  them. The [first part-2 receipt](benchmarks/2026-10-10-item6/identity-first/README.md)
   preserves all eight failed branch starts. Its measurement adapter restores
   the child first and verifies all 874 saved tensors; production loading remains
   unchanged. This newly observed retention finding has not been bisected against
@@ -6223,7 +6223,7 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
 - The initial native identity experiment used a word-chunk fixture with no
   meaning complement. Its four completed zero-identification results are
   invalid admission measurements; the unfinished identity branches were stopped.
-  The [receipt](doc/benchmarks/2026-10-10-item6/identity-first/README.md) retains
+  The [receipt](benchmarks/2026-10-10-item6/identity-first/README.md) retains
   the zero-projection audit. A fresh run with 64 meaning pairs and a verified
   nonzero warm-up signal completes recovery at 0/240 on all four branches:
   no new columns or merges, and every row selects mint, so the on/off gate
@@ -6232,11 +6232,11 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   word meanings are nonzero, but selected `non` clears them and `lower`
   repeatedly keeps the newer operand. Resolve why compose keeps these lossy
   readings before claiming an ICA recovery or admission-gate lesson.
-  The [R/S/T replay](doc/benchmarks/2026-10-10-item6/identity-rst/validation/recovery-summary.json)
+  The [R/S/T replay](benchmarks/2026-10-10-item6/identity-rst/validation/recovery-summary.json)
   still has zero closed meaning and `lower`–`non`–`non` in all 48 held-out
   rows despite a content charge of about 1.0. Four sampled paired walks
   charge both erased readings equally; this retention outcome remains unmet.
-- The [R/S/T matched rerun](doc/benchmarks/2026-10-10-item6/identity-rst/README.md)
+- The [R/S/T matched rerun](benchmarks/2026-10-10-item6/identity-rst/README.md)
   completes all eight branches with the same seed, budgets and revision-3
   corpus. Recovery remains 0/240; all identity branches remain 0/146 bindings
   and 0/20 row pairs. Each now resolves 150/690 mentions to written individuals,
@@ -6245,12 +6245,12 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   Balanced unadmitted leaves rise from two in the old retained audit to 43.
   The balanced gate contrast is no longer vacuous: off mints 58 columns versus
   on's 57, without accuracy gain. Recovery and biased training remain vacuous;
-  the admission lesson fails. The [retained observer audit](doc/benchmarks/2026-10-10-item6/identity-rst/validation/observer-summary.json)
+  the admission lesson fails. The [retained observer audit](benchmarks/2026-10-10-item6/identity-rst/validation/observer-summary.json)
   accounts for the old 690 unresolved mentions separately. Solve the missing
   individuals/requests before interpreting binding and recency controls as
   learned choices. Reviewed and accepted for landing by Alec (plan §8.4),
   with no learning claim; no rule is retired and part 2 remains open.
-  [R2](doc/benchmarks/2026-10-10-item6/identity-r2/README.md) adds the forward
+  [R2](benchmarks/2026-10-10-item6/identity-r2/README.md) adds the forward
   discarded-meaning charge after the forced-reading diagnostic, with the
   scoped four-clause and two-branch recovery measurement (factorial/confounded,
   gate on), reusing the accepted R/S/T warm-up. Identity branches wait for
@@ -6262,7 +6262,7 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   on 136/192 observed commits versus factorial's 192/192; the off contrast is
   unmeasured. All 96 kept readings still use `non`. No learning gain or rule
   retirement is claimed. This candidate was rejected in plan §9. The
-  [inverse-domain repair](doc/benchmarks/2026-10-10-item6/identity-r2-inverse-domain/README.md)
+  [inverse-domain repair](benchmarks/2026-10-10-item6/identity-r2-inverse-domain/README.md)
   restores the accepted zero-cost certificates and scopes the forward charge
   to the local field inverse's undefined coordinates. The observer's missing
   epoch is repaired by counting detached training calls separately from
@@ -6276,7 +6276,7 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   sweep completes all 5,790 cases: 5,502 pass, 287 skip, one XFAIL, no failures.
   No new ordinary failures versus accepted 6.1 or rejected R2; cleared-cache
   overlap remains adverse to 6.1's XPASS. No rule is retired.
-  The [scoped gate-off measurement](doc/benchmarks/2026-10-14-item6-gate-off/README.md)
+  The [scoped gate-off measurement](benchmarks/2026-10-14-item6-gate-off/README.md)
   reuses the same R/S/T warm-up, seed and revision-3 corpus. Factorial off
   mints two columns (60 total); confounded off mints four (62 total), versus
   zero new columns on. Both still identify 0/240 atoms and 0/24 for each
@@ -6294,7 +6294,7 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   Accepted zero-cost certificates, the observer and the 4/4 retained-clause
   keep regression pass. The parts-of-speech pass in plan §6 waits for a
   reading with NP structure; no rule is retired.
-  The [fresh corrected-objective warm-up](doc/benchmarks/2026-10-15-item6-corrected-warmup/README.md)
+  The [fresh corrected-objective warm-up](benchmarks/2026-10-15-item6-corrected-warmup/README.md)
   completes the same stages 1–4 budgets with seed 20261010: **8/24** singleton
   rows carry their atoms, below the required 20; 16 remain zero despite word
   meaning norms of .2. It mints **zero A columns**, confirmed in the saved
@@ -6306,7 +6306,7 @@ outcomes separated in the [part-1 receipt](doc/benchmarks/2026-10-10-item6/part1
   identity-per-order amendment, balanced order-1 identity is not run because
   the singleton gate fails; kind recovery is deferred to order 2. No
   production change, new sweep, learning claim or rule retirement in this pass.
-  The [positional-operands and paired-warm-up candidate](doc/benchmarks/2026-10-15-item6-orders-paired/README.md)
+  The [positional-operands and paired-warm-up candidate](benchmarks/2026-10-15-item6-orders-paired/README.md)
   (`6a14ba151` measured source) removes the name-to-order table and carries
   actual operand stamps through `argin1`, `argin2`, `argout1`; the order-3
   regression passes and operation-owned mint/bind/kind behavior stays.
@@ -6331,7 +6331,7 @@ charges dropped support in the keep cost, and isolates captured walk inputs.
 Their original failing evidence remains in the receipts.
 
 **Item 6's carried learning, alongside 5.5:** follow
-[plan §15](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#15-identity-without-a-mixing-matrix-alec-2026-10-16):
+[plan §15](plans/2026-10-10-item-6-stored-idea-generativity.md#15-identity-without-a-mixing-matrix-alec-2026-10-16):
 **stage 4e first**, then identity matching, VP vectors taught by the individual's
 before/after temporal difference, and word classes from direct operand participation
 (never phrase heads). Order-2 kinds are deferred; neither a second dictionary nor
@@ -6343,14 +6343,14 @@ review replaces the 2→1 condition: the description's stamp is reported, not
 required; mint/bind construct order 1 and kind constructs order 2. The lesson's
 CE supplies waits and folds; annotations never replace the student's kept
 program. No native identity run is authorized before that gate passes.
-The [stage 4e candidate](doc/benchmarks/2026-10-17-stage4e/) completes its
+The [stage 4e candidate](benchmarks/2026-10-17-stage4e/) completes its
 144-presentation budget but fails the gate: **8/32** exact free brackets,
 **0/48** NP occurrences and **0/48** 2→1 reductions; zero duplicate writes,
 and **8/8** unlowered controls without an occurrence. The controls are vacuous
 with no occurrence writes anywhere. Native `compound` cases are unavailable
 in 160/288 teacher traces; all held-out referent stamps remain 0. The corpus,
 wait/fold CE path and measurement are landed preparation, not a passing learning stage.
-The [constructed-order pass](doc/benchmarks/2026-10-17-stage4e-orders/)
+The [constructed-order pass](benchmarks/2026-10-17-stage4e-orders/)
 repairs mint/bind/kind output stamps. Its checkpoint diagnostic finds live,
 unsaturated chooser CE gradients, but no native sigma cases for compounds.
 The one rerun stopped in its first commit because trial detachment dropped
@@ -6362,7 +6362,7 @@ full experiment was not restarted. This preparation is landed at `89621bc61`
 no case lesson. The next pass trains the fold-pressure gain and uses the order
 lesson's optimizer for compose lessons, with a 16-presentation CE pilot before
 a conditional rerun at the unchanged budget.
-The [intersection/pressure pass](doc/benchmarks/2026-10-17-stage4e-intersection/)
+The [intersection/pressure pass](benchmarks/2026-10-17-stage4e-intersection/)
 completes that rerun after a passing 16-presentation pilot. Every teacher
 trace is available and wait/fold CE moves, but the free gate fails:
 **0/32 brackets, 10/48 NP occurrences, 0/48 lowering certificates**;
@@ -6371,7 +6371,7 @@ Its default sweep is green (5,466 passed, 333 skipped, one XFAIL), including
 c this time; the broader carried findings remain open. **Stage 4e is not
 learned; identity and the further 5.5 mechanism round remain gated.**
 That preparation is landed at `b09c6c3d4` (WikiOracle `c8c2cda`).
-The [student-state pass](doc/benchmarks/2026-10-17-stage4e-student-states/README.md)
+The [student-state pass](benchmarks/2026-10-17-stage4e-student-states/README.md)
 adds stage 3 before 4e, targets the student's actual compose states, and
 suppresses extra batch-end optimizer steps in the experiment. Final free
 source order is **8/8** on the order-lesson fields, but both CE gates remain
@@ -6401,14 +6401,14 @@ not by a passing identity lesson.
 ### Item 5.5, as it stood in todo.md
 
 - **5.5. Where and when a sentence occurred; tense, aspect, the preposition
-   and surface form** ([spec](doc/specs/2026-09-30-occurrence-tense-aspect.md)),
+   and surface form** ([spec](specs/2026-09-30-occurrence-tense-aspect.md)),
    after item 6; VP phase learning needs the deferred temporal-difference teacher;
    one check-in (Alec,
    2026-09-30). **Relative `.when` and address upsert moved to operators
    landing (accepted October 7; plan §45)**:
    source-relative `[i, i+1]`, stable document/content address keys,
    re-witnessing and fail-loud capacity. See its
-   [receipt](doc/benchmarks/2026-10-07-operators-final-b/).
+   [receipt](benchmarks/2026-10-07-operators-final-b/).
    The 10-03 amendment keeps `.when` in percepts and concepts; the absolute
    model clock is written to the `timestamp` column by 4a-0, which spec §7
    and test 6 retire — this item decides its fate with the recency use
@@ -6430,7 +6430,7 @@ not by a passing identity lesson.
    lookup by the row's occurrence address (two truths §21). Spec §10 is
    answered; the later Orders theory governs order operations.
    **Sequence (Alec, 2026-10-17):** stage 4e alone first, with its fixed budget
-   and [one receipt](doc/benchmarks/2026-10-17-stage4e/). Stop at a failed gate.
+   and [one receipt](benchmarks/2026-10-17-stage4e/). Stop at a failed gate.
    The separate mechanism round retires the legacy clock timestamp and
    `Clause.eternal`, replaces recency with the row's source-addressed chain,
    and replaces the analyzer with learned surface transformations (two faces remain in the grammar: absorb and transpose — occurrence §13.1)
@@ -6452,7 +6452,7 @@ not by a passing identity lesson.
    per bracket level once 6.8 lands: the both-rate and the
    categorical-discrimination index. One logger per interval: reconstruction
    loss; expectation discrepancy; LTM occupancy and forgetting passes;
-   [categorical discrimination](bin/CategoricalDiscrimination.py) from the
+   [categorical discrimination](../bin/CategoricalDiscrimination.py) from the
    fixed four XOR and 68 FineWeb probes, reporting CP and within/between
    distances without pass thresholds. Reuse captured readings and budget their
    collection cost; the three-seed experiment is archived in FutureWork.
@@ -6464,7 +6464,7 @@ not by a passing identity lesson.
    patience, refinement requests, lexical references left unknown per order.
    (The per-shared-operator gradient cosine and "persistent opposition"
    logging is withdrawn: each parameter has one objective owner since 6.9,
-   so there is no shared operator to measure — [GradientFlow](doc/GradientFlow.md);
+   so there is no shared operator to measure — [GradientFlow](GradientFlow.md);
    the dissonance diagnostic of the operators plan §10.3 guards E against O
    on the maps instead.)
    And a resume test proving
@@ -6490,19 +6490,19 @@ not by a passing identity lesson.
    item 0 or FutureWork with the reason written here; when the list is
    empty the 6 and 5.5 entries collapse to Done lines.
 
-   Step 1b is published at `cf61b5678` ([receipt](doc/benchmarks/2026-10-21-item3-5-review11-landing/README.md)).
-   Remaining root-participant semantics are [review follow-ups](doc/FutureWork.md#root-participant-positions-review-follow-up-2026-10-21);
+   Step 1b is published at `cf61b5678` ([receipt](benchmarks/2026-10-21-item3-5-review11-landing/README.md)).
+   Remaining root-participant semantics are [review follow-ups](FutureWork.md#root-participant-positions-review-follow-up-2026-10-21);
    line 1's grammar contract and reconstruction term are Done at reviewed
-   source `3a9db635e`, receipts `63c600712` ([receipt](doc/benchmarks/2026-10-21-item3-5-reference-reconstruction/README.md)).
+   source `3a9db635e`, receipts `63c600712` ([receipt](benchmarks/2026-10-21-item3-5-reference-reconstruction/README.md)).
    R10 is Done at landing `e243d7bdf` (WikiOracle `2ffda78`), reviewed
    source `23a41540f`: the named preview token
    retains content, and its approved fixture correction passes every scoped
-   gate ([receipt](doc/benchmarks/2026-10-21-item3-5-r10-final/README.md)).
+   gate ([receipt](benchmarks/2026-10-21-item3-5-r10-final/README.md)).
    Step 2a is complete: separate rename `804d8adcb`, sole cull `0b030e3eb`
    (WikiOracle `baa2e7f`). Frozen cull source `d4f316411` has 223 passes,
    seven existing skips and Claude's approval. Storage-only 2b is Done at
    `39272e7a6` (WikiOracle `ade0399`), reviewed source `6a36b7cee`:
-   1,144 scoped passes, nine existing skips, Claude verdict LAND ([receipt](doc/benchmarks/2026-10-22-item3-5-step2b/final/decoder-domain/README.md)).
+   1,144 scoped passes, nine existing skips, Claude verdict LAND ([receipt](benchmarks/2026-10-22-item3-5-step2b/final/decoder-domain/README.md)).
    §§39–67 retain every fix, port and review; §68 reviews the next identity
    line against the landed code. Tags, mention readings and the
    occurrence-only occupation ports await the derivation-removal round;
@@ -6514,13 +6514,13 @@ not by a passing identity lesson.
    iterations** (Alec, 2026-10-23): lines 3, 4 and 5, with the swap to
    operations on meaning and centroids on form brought forward from item 3
    ("The whole swap now"), in the order swap, verb, line 3's lessons rerun,
-   modal ([spec](doc/plans/2026-10-23-verb-and-modal.md)); then lines 6 and 7
+   modal ([spec](plans/2026-10-23-verb-and-modal.md)); then lines 6 and 7
    (the 5.5 remainder with context wholes; direct-operand word classes).
    The swap/verb freezes before the lesson rerun and the modal freezes
    after it; one combined review through Alec, gates sized to the change,
    one full sweep at the end of 3.5.
    *Iteration 1 published 2026-10-24:* BasicModel `f306fc28aa`, WikiOracle
-   `319a793`, Claude LAND ([iteration spec §19](doc/plans/2026-10-23-verb-and-modal.md)):
+   `319a793`, Claude LAND ([iteration spec §19](plans/2026-10-23-verb-and-modal.md)):
    swap, verb and modal landed on the paired configurations; line 3's
    rerun stopped at description (1/4) and the modal corpus failed 0/4 in
    both forms, both carried to item 0 without rescue; six carried notes.
@@ -6535,7 +6535,7 @@ not by a passing identity lesson.
    *Iteration 2 landed 2026-10-24:* reviewed BasicModel `75345f891e`; published
    main `4f136f76faabafc24397765f4ffe90d01d3dc4bc`, WikiOracle
    `69f82f5f77a3980020841fe859a09afb7733e7be`, Claude LAND
-   ([iteration spec §62](doc/plans/2026-10-23-verb-and-modal.md#62-claudes-land-review-of-75345f891e--2026-10-24)):
+   ([iteration spec §62](plans/2026-10-23-verb-and-modal.md#62-claudes-land-review-of-75345f891e--2026-10-24)):
    covers and `.when` segments, centroids on form, VP phases as case
    selection, direct-operand occupations, the presentation boundary with
    persistent cover concepts (Alec, §45), capacities 18/20/20 by derivation.
@@ -6543,27 +6543,27 @@ not by a passing identity lesson.
    History note (2026-10-25): history after `f306fc28aa` was rewritten before the push (`537523ae04`); `75345f891e`, `a34325c85d` and `f095569a1f` are respectively `2067dbc25a`, `3561f39aa0` and `31c3e4a59e` on origin.
    **3.5 closes as a mechanism landing; its learning remainder is item 0's.**
 
-   *From item 6* ([plan §16.3](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#163-disposition-close-item-6-as-a-mechanism-landing),
-   [§15](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#15-identity-without-a-mixing-matrix-alec-2026-10-16)),
+   *From item 6* ([plan §16.3](plans/2026-10-10-item-6-stored-idea-generativity.md#163-disposition-close-item-6-as-a-mechanism-landing),
+   [§15](plans/2026-10-10-item-6-stored-idea-generativity.md#15-identity-without-a-mixing-matrix-alec-2026-10-16)),
    described below by origin; the first-pass order above supersedes the older sequencing:
    - **Stage 4e, constituents — learning remainder moved to item 0
      (2026-10-24):** on swap/verb source `65451694e`, original budgets
      pass source order 8/8 (both CE bars fail), lower and definite 1/1;
      description stops at answers 1/4 with brackets 4/4. No rescue.
      Adjective, definite-adjective, final evaluation and copular identity
-     remain unrun. [Receipt](doc/benchmarks/2026-10-23-item3-5-verb-modal/README.md).
+     remain unrun. [Receipt](benchmarks/2026-10-23-item3-5-verb-modal/README.md).
      The retained learning contract is a passing gate under
-     [parts-of-speech §5a](doc/specs/2026-10-18-parts-of-speech.md#5a-gates-are-behaviors-decided-alec-2026-10-18)
+     [parts-of-speech §5a](specs/2026-10-18-parts-of-speech.md#5a-gates-are-behaviors-decided-alec-2026-10-18)
      (behaviors, no operator named): the next pass from the stage-3
      artifact with stage scoping of the menu and, **decided (Alec,
      2026-10-22), one action per operator**: the per-referent copies of a
      determiner leave the compose menu, the grammar chooses the
      operation, and the close's `bind` chooses the member
-     ([5.5 plan, "Next pass"](doc/plans/2026-10-17-item5-5-start.md)); the
-     [2026-10-17 gate failure](doc/benchmarks/2026-10-17-stage4e/) and the
-     [§5a regrade of the archived description rows](doc/benchmarks/2026-10-19-np-continuation/)
+     ([5.5 plan, "Next pass"](plans/2026-10-17-item5-5-start.md)); the
+     [2026-10-17 gate failure](benchmarks/2026-10-17-stage4e/) and the
+     [§5a regrade of the archived description rows](benchmarks/2026-10-19-np-continuation/)
      are the record. Grounding is textual
-     ([§8](doc/specs/2026-10-18-parts-of-speech.md#8-open)); no perceptual
+     ([§8](specs/2026-10-18-parts-of-speech.md#8-open)); no perceptual
      grounding stage. Then the NP continuation: adjective and
      definite-adjective lessons, final evaluation, default sweep.
    - **Identity lessons** (a singular NP is a short-term concept, minted by recurrence in LTM1 — bind plan §6; matching at the close,
@@ -6589,17 +6589,17 @@ not by a passing identity lesson.
      participant prediction, prime, form-region containment, recency and
      the two roles; the cue matrix and identity dictionary are retired.
      **Concrete design:**
-     [bind thought operation plan](doc/plans/2026-10-19-bind-thought-operation.md)
+     [bind thought operation plan](plans/2026-10-19-bind-thought-operation.md)
      (declaration, executor over a `ReferenceClose.score` refactor, the
      three sites in code terms, with the native participant cache and
      `expected_roles` for elision, order of work, gates G1–G3); the vestigial binary `bind` layer in
      `Language.py` (left operand returned, reverse raises; the retired
-     nearest-left rule of [catalogue §3.3](doc/specs/2026-09-29-operator-catalogue.md#33-bind))
+     nearest-left rule of [catalogue §3.3](specs/2026-09-29-operator-catalogue.md#33-bind))
      is deleted. This supersedes the 5.5 plan's pending choice (a)/(b) on
      the chooser's reference variants: the variants collapse to the
      determiner mode on `lower`, and the individual is `bind`'s. One rule
-     called per referent ([minimality](doc/specs/2026-09-30-occurrence-tense-aspect.md#131-the-operators-minimal-alec-2026-10-19-the-operators-should-be-minimal--just-one-rule-called-twice)).
-     **With it, the row amendment** ([two truths §1](doc/specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided),
+     called per referent ([minimality](specs/2026-09-30-occurrence-tense-aspect.md#131-the-operators-minimal-alec-2026-10-19-the-operators-should-be-minimal--just-one-rule-called-twice)).
+     **With it, the row amendment** ([two truths §1](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided),
      Alec 2026-10-19): three positions stay (argument, kind, argument;
      kinds `DEF`, *said*, *if-then*; arguments ideas or REFs); parthood
      and kinds are folds in the main tree, not rows; two forms of LTM named by
@@ -6619,13 +6619,13 @@ not by a passing identity lesson.
      resolves references among minted individuals;
      the definitions index becomes a rebuildable cache over the DEF rows
      (verify item 5's forgetting clears it). **Row shape decided
-     2026-10-20** ([two truths §1, "The row, field by field"](doc/specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided)):
+     2026-10-20** ([two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided)):
      slots (1 or 3), `.when` as model time sinusoidally encoded and never
      read by composition, `truth_plus`/`truth_minus`, access count,
      `surprise`; the document and the stream become context wholes in
      WholeSpace; every other column and sidecar key is derivable, moved,
      cached or deleted per the table; LTM1 carries no identity.
-     *Step 2 also carries (Alec, 2026-10-21; [two truths §1](doc/specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided)):*
+     *Step 2 also carries (Alec, 2026-10-21; [two truths §1](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided)):*
      one LTM store in strata: LTM0 rows (one concept, occurrences), LTM1
      relation rows `R` with two references to LTM0 objects (occurrence
      addresses or minted symbols; "S1 R S2"), LTM2 relations over LTM1
@@ -6634,26 +6634,26 @@ not by a passing identity lesson.
      minting by recurrence only), and a referenced LTM0 row is protected
      from forgetting while referenced. Alec, 2026-10-21: the classes are
      renamed to match, `TernaryTruthStore` → `LTM0` and `PartStore` → `LTM1`,
-     as round 2a's first commit ([step 2 spec](doc/plans/2026-10-21-step2-one-ltm.md)).
-     *Sequence decided 2026-10-22 (Alec; [step-2 spec §36](doc/plans/2026-10-21-step2-one-ltm.md#36-decided-alec-2026-10-22-identity-first-the-3-5-sequence)):*
+     as round 2a's first commit ([step 2 spec](plans/2026-10-21-step2-one-ltm.md)).
+     *Sequence decided 2026-10-22 (Alec; [step-2 spec §36](plans/2026-10-21-step2-one-ltm.md#36-decided-alec-2026-10-22-identity-first-the-3-5-sequence)):*
      no sentence derivation in LTM (§30), MTM stores working content
      (§35), identity first. Storage-only **2b** is Done at `39272e7a6`;
      **identity threading** is Done at landing `148953f9b` (reviewed source `65ab7fbe9`)
-     ([receipt](doc/benchmarks/2026-10-23-identity-threading/README.md));
+     ([receipt](benchmarks/2026-10-23-identity-threading/README.md));
      **2c and step 2's one full sweep** are Done: reviewed `fcaff2d19`,
      test-only sweep repair `9f5500870`
-     ([receipt](doc/benchmarks/2026-10-23-item3-5-step2c/sweep/README.md)).
+     ([receipt](benchmarks/2026-10-23-item3-5-step2c/sweep/README.md)).
      *Layout
-     decided 2026-10-23 ([step-2 §§71–72](doc/plans/2026-10-21-step2-one-ltm.md#71-decided-alec-2026-10-23-ideas-in-ltm0-binary-chains-in-ltm1-no-sentence-row)):*
+     decided 2026-10-23 ([step-2 §§71–72](plans/2026-10-21-step2-one-ltm.md#71-decided-alec-2026-10-23-ideas-in-ltm0-binary-chains-in-ltm1-no-sentence-row)):*
      LTM0 one slot (ideas), LTM1 two tagged references that chain, no
      sentence row; **moved to item 3** (Alec, 2026-10-23) with STM's eight
-     shared chunks: [spec](doc/plans/2026-10-23-layout-and-removal.md).
+     shared chunks: [spec](plans/2026-10-23-layout-and-removal.md).
      Step 2 here ends with the identity line, 2c and the sweep.
    - **VP vectors by temporal difference — Done at `f306fc28aa`**
      (WikiOracle `319a793`, iteration spec §§3,19). The per-identity
      teacher and verb-group action are landed; learning stays item 0.
      The following earlier formulation is retained as the decision record.
-     *Formulation (Alec, 2026-10-19; [occurrence spec §14](doc/specs/2026-09-30-occurrence-tense-aspect.md#14-two-differences-the-verb-across-time-the-modal-across-possibility-alec-2026-10-19-written-by-claude)):*
+     *Formulation (Alec, 2026-10-19; [occurrence spec §14](specs/2026-09-30-occurrence-tense-aspect.md#14-two-differences-the-verb-across-time-the-modal-across-possibility-alec-2026-10-19-written-by-claude)):*
      the **first difference** — the verb is a group element acting on
      the identity's frame (object before -> object after; a diagonal in a
      **shared basis per verb group**, groups learned by joint
@@ -6675,7 +6675,7 @@ not by a passing identity lesson.
      Modality": a verb's event, determined by its tense, aspect or modal
      operation, would be an MTM object bindable like a noun phrase. Spec
      with step 5.
-   - *Direction (Alec, 2026-10-22, [Orders §10](doc/Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3)):*
+   - *Direction (Alec, 2026-10-22, [Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3)):*
      modals are of the same order as verbs and nouns; "MPs are differences
      of VPs just as VPs are differences of NPs (not really differences, but
      diagonals within quadratics)"; "running and walking are both
@@ -6686,7 +6686,7 @@ not by a passing identity lesson.
      an alternative VP, neither a minted world nor a lane.
    - **Modal mechanism — Done at `f306fc28aa`** (WikiOracle `319a793`;
      failed corpus learning moved to item 0). *Superseded 2026-10-23
-     (Alec; [iteration spec §4](doc/plans/2026-10-23-verb-and-modal.md)):*
+     (Alec; [iteration spec §4](plans/2026-10-23-verb-and-modal.md)):*
      a counterfactual is an alternative **timeline** of the one identity
      (MTM holds identities, connected NPs, and timelines, connected VPs on
      one identity); a modal clause is the ordinary composition with the
@@ -6695,7 +6695,7 @@ not by a passing identity lesson.
      are withdrawn; continuation default and lifetime through promotion
      in the spec. The bullet below is the record.
    - **The second difference: the modal as the verb phrase's preposition
-     over worlds** (Alec, 2026-10-19; [occurrence spec §14.3](doc/specs/2026-09-30-occurrence-tense-aspect.md#143-the-minimal-mechanism-the-modal-is-the-verb-phrases-preposition-over-worlds-alec-and-claude-2026-10-19-decided)),
+     over worlds** (Alec, 2026-10-19; [occurrence spec §14.3](specs/2026-09-30-occurrence-tense-aspect.md#143-the-minimal-mechanism-the-modal-is-the-verb-phrases-preposition-over-worlds-alec-and-claude-2026-10-19-decided)),
      after the tense pass: `position` called with a world as object,
      test part-of; worlds minted as individuals like §12's document; the
      *de re* reading is `S REL S` written as membership evidence in the
@@ -6708,10 +6708,10 @@ not by a passing identity lesson.
      a free leaf and as a verb affix; both bracketings reachable; "did"
      vs "could" questions answered from the right store.
    - **Direct-operand word classes** — the distributional categorizer
-     ([parts-of-speech §3](doc/specs/2026-10-18-parts-of-speech.md#3-how-the-categorizer-is-learned-decided-membership-is-not-taught));
+     ([parts-of-speech §3](specs/2026-10-18-parts-of-speech.md#3-how-the-categorizer-is-learned-decided-membership-is-not-taught));
      output typing deferred (§4).
 
-   *From item 5.5* (its entry above; [mechanism-round review and follow-ups](doc/plans/2026-10-17-item5-5-start.md#review-of-the-55-mechanism-round-claude-2026-10-17-evening--approve-to-sweep-and-land-with-four-disclosures-and-one-decision)):
+   *From item 5.5* (its entry above; [mechanism-round review and follow-ups](plans/2026-10-17-item5-5-start.md#review-of-the-55-mechanism-round-claude-2026-10-17-evening--approve-to-sweep-and-land-with-four-disclosures-and-one-decision)):
    - *Checked 2026-10-22:* the legacy `timestamp` column is dropped at load
      and `Clause.eternal` is gone; nothing to retire. **Recency is store
      order, as landed** (Alec, 2026-10-22): `get_stm_chain` reads a stream's
@@ -6728,7 +6728,7 @@ not by a passing identity lesson.
      among the verb phrase's phases; the preposition as one operation with
      two attachments), after the identity lessons above; the inert markers
      if tense is built on the preposition face. **Across languages**
-     ([spec §13](doc/specs/2026-09-30-occurrence-tense-aspect.md#13-across-languages-the-operators-are-the-universality-decided-alec-2026-10-19-written-by-claude),
+     ([spec §13](specs/2026-09-30-occurrence-tense-aspect.md#13-across-languages-the-operators-are-the-universality-decided-alec-2026-10-19-written-by-claude),
      Alec, 2026-10-19: "operators replace the table; if we don't have the
      operators to do that, our grammar is not universal"; "the operators
      should be minimal … just one rule called twice"): §13.1 is three
@@ -6748,7 +6748,7 @@ not by a passing identity lesson.
      broader statistic with one named marker lesson, default off. Keep
      that decision and verify native paired use and reindexing cost
      (iteration spec §20.3).
-   - *Specified 2026-10-24, third version:* [context wholes](doc/plans/2026-10-24-context-wholes.md)
+   - *Specified 2026-10-24, third version:* [context wholes](plans/2026-10-24-context-wholes.md)
      §2b: batch indexing on LTM and STM plus `.when` segment the store; a
      document starts with a cover row holding an automatically minted
      per-document concept in its batch's LTM stream; no run rows, no
@@ -6759,10 +6759,10 @@ not by a passing identity lesson.
      information, already carried into a word's meaning by the sentences it
      occurs in; a whole built from left/right neighbours "is not really
      characterizing the whole" (withdrawn the same day;
-     [step-2 spec §23](doc/plans/2026-10-21-step2-one-ltm.md#23-decided-alec-2026-10-22-postings-adjacency-and-forgetting)).
+     [step-2 spec §23](plans/2026-10-21-step2-one-ltm.md#23-decided-alec-2026-10-22-postings-adjacency-and-forgetting)).
    - The spec's certificates, measured: clock-independence,
      offset-independence, addressed-chain, interleaving, preposition and
-     surface-inverse ([spec §8](doc/specs/2026-09-30-occurrence-tense-aspect.md#8-tests)).
+     surface-inverse ([spec §8](specs/2026-09-30-occurrence-tense-aspect.md#8-tests)).
 
    - **Priming diffusion** (Alec, 2026-10-20): the step-1b part (default
      `primingSpread` 0.05, diffusion along the one store's `Part(x, y)` edges
@@ -6777,7 +6777,7 @@ not by a passing identity lesson.
 ### Item 2.9, as it stood in todo.md
 
 - **2.9. Priming as location-based diffusion in the one conceptual space.**
-   *Decided (Alec, 2026-10-26; [spec §§1–8](doc/plans/2026-10-26-priming-location-diffusion.md)).*
+   *Decided (Alec, 2026-10-26; [spec §§1–8](plans/2026-10-26-priming-location-diffusion.md)).*
    Successor to Orders §9's stratified surface, which §10 withdrew. The
    placed meaning codes are the network: `Priming.propagate` applies the
    dot-product kernel to the stream's active rows once per sentence in the
@@ -6796,7 +6796,7 @@ not by a passing identity lesson.
 
 - **2.8. Order-0 concepts strictly sorted over the perceptual mereology:
    two subspaces, one call.** *Decided (Alec, 2026-10-26;
-   [FutureWork](doc/FutureWork.md), the "Decided (Alec, 2026-10-26): two
+   [FutureWork](FutureWork.md), the "Decided (Alec, 2026-10-26): two
    subspaces, sorted per subspace, one call" block under the sorting item).*
    The percept width splits at construction into an identity subspace
    (`WordIdentity`'s pair and length coordinates) and a property subspace;
@@ -6812,9 +6812,9 @@ not by a passing identity lesson.
    the context-wholes form ports. Independent of 2.9. Exit: the certificate
    green on one hash.
    **Built (2026-10-27), unlanded:** item certificate and native lesson pass
-   on `be4514dedea8d`; [spec §9](doc/plans/2026-10-27-item2-8-two-subspaces.md#9-alecs-partial-order-clarification-2026-10-27)
+   on `be4514dedea8d`; [spec §9](plans/2026-10-27-item2-8-two-subspaces.md#9-alecs-partial-order-clarification-2026-10-27)
    records Alec's governing partial-order clarification: no required
-   part/type inequality; equal-code ties allowed. [Receipt](doc/benchmarks/2026-10-27-item2-8-subspaces/README.md).
+   part/type inequality; equal-code ties allowed. [Receipt](benchmarks/2026-10-27-item2-8-subspaces/README.md).
    **Gate blocked:** the core native worked-document test fails in thought
    persistence; all other scoped groups complete without failures. Slow
    cases and old-width snapshot regeneration remain deferred to November.
@@ -6822,11 +6822,11 @@ not by a passing identity lesson.
    **Latest freeze, gate-complete (2026-10-27), unlanded:** `555e63e2f521`;
    both demonstrated boundary defects repaired; all requested scoped
    groups pass, both former core failures pass, slow cases deferred.
-   [Final receipt](doc/benchmarks/2026-10-27-item2-8-subspaces-r3/README.md)
+   [Final receipt](benchmarks/2026-10-27-item2-8-subspaces-r3/README.md)
    preserves both failed freezes and the repair evidence. Return through
    Alec for Claude's review; no item 2.8 commit, push or WikiOracle bump.
    **Landing approved (2026-10-27):** reviewed and approved in
-   [spec §11](doc/plans/2026-10-27-item2-8-two-subspaces.md) on
+   [spec §11](plans/2026-10-27-item2-8-two-subspaces.md) on
    `555e63e2f521`. Deferred slow cases and D5's snapshot regeneration
    remain scheduled for the November sweep.
 
@@ -6837,7 +6837,7 @@ not by a passing identity lesson.
    number takes a smaller one; the record below keeps its "item 3"
    wording). **Closed code-complete (2026-10-29):** review freeze
    `472f5000850e`, reviewed in
-   [spec §47](doc/plans/2026-10-27-item2-7-corpus.md#47-claudes-review-of-the-producer-repair-round-472f5000850e-and-the-closing-of-item-27--2026-10-29).
+   [spec §47](plans/2026-10-27-item2-7-corpus.md#47-claudes-review-of-the-producer-repair-round-472f5000850e-and-the-closing-of-item-27--2026-10-29).
    Lesson-13 completed 160/160: ideas pass (two distinct order-1 objects),
    relations fail (no shared order-2 kind), answers **0/80 with text**.
    Final curriculum completed **131/304**: proper phase passes, mass
@@ -6845,7 +6845,7 @@ not by a passing identity lesson.
    measured results; code completion does not claim acquisition or the
    November landing. The thirteen scoped groups at the review freeze
    passed (2,545 passes, 57 skips); no tests or `RUN_SLOW` rerun for this
-   close. [Receipt](doc/benchmarks/2026-10-29-item2-7-producer-repair-review/README.md).
+   close. [Receipt](benchmarks/2026-10-29-item2-7-producer-repair-review/README.md).
    **Carried work and owners (spec §47):**
 
    - **Item 2.7's November landing round:** capacity search and the run
@@ -6865,8 +6865,8 @@ not by a passing identity lesson.
      (item 2.8 spec §11 O1).
 
    **Earlier implementation record (superseded by the closing status above):**
-   [implementation record](doc/plans/2026-10-27-item2-7-corpus.md),
-   [local development receipt](doc/benchmarks/2026-10-27-item2-7-corpus/README.md).
+   [implementation record](plans/2026-10-27-item2-7-corpus.md),
+   [local development receipt](benchmarks/2026-10-27-item2-7-corpus/README.md).
    Corpus assembly, stage-preserving packing and native checkpoint continuation
    are built; 157 scoped checks pass after the capacity, centroid and serial
    discovery repairs. The 12-sentence native diagnostic now runs the serial
@@ -6884,7 +6884,7 @@ not by a passing identity lesson.
    acquisition failed: neither proper name acquired an object, and `cat`
    did not acquire the shared order-2 kind. The existing presentation boundary
    clears MTM between repetitions; the receipt records each presentation's
-   candidate counts. [Review receipt](doc/benchmarks/2026-10-28-item2-7-familiar-tier/README.md).
+   candidate counts. [Review receipt](benchmarks/2026-10-28-item2-7-familiar-tier/README.md).
    Return through Alec for Claude's review; no commit or publication.
    **Reading and epoch round (2026-10-28; spec §§29–32):** repairs and
    supplied-answer lesson-13 are built. Freeze `b84b983d2ddc` preserved the first
@@ -6896,7 +6896,7 @@ not by a passing identity lesson.
    after. The separate c/e sample is 19/20
    against baseline 20/20. It and the earlier introduction failure remain
    review issues.
-   [Reading receipt](doc/benchmarks/2026-10-28-item2-7-reading/README.md).
+   [Reading receipt](benchmarks/2026-10-28-item2-7-reading/README.md).
    **Generation repair (spec §34):** frozen at `aa1b32288f71`; the unary-chain
    bound, completion-first comparisons, winning-departure credit and creation-time
    identity order are built. All twelve groups pass: 2,421 passes, 55 skips,
@@ -6907,7 +6907,7 @@ not by a passing identity lesson.
    did not reproduce the reference error; the candidate-table-loss probe is a
    lead, not a confirmed native cause. Returned through Alec for Claude's review
    in spec §35; no commit or publication.
-   [Repair receipt](doc/benchmarks/2026-10-28-item2-7-reading-repair/README.md).
+   [Repair receipt](benchmarks/2026-10-28-item2-7-reading-repair/README.md).
    **Reading census (2026-10-29; spec §§36–37):** source `765e7667a680`
    repairs the candidate binding/table defect; the R4 diagnostic finds no
    MTM candidate scan/charge defect. All twelve groups pass (2,423 passes,
@@ -6916,7 +6916,7 @@ not by a passing identity lesson.
    not, no shared order-2 kind forms, and answers score 0/80. The census
    records 3,306 of 3,520 walks ending at the unary bound and zero departure
    wins; the supplied yes is absent from all 576 applicable terminal banks.
-   [Census receipt](doc/benchmarks/2026-10-29-item2-7-reading-census/README.md).
+   [Census receipt](benchmarks/2026-10-29-item2-7-reading-census/README.md).
    **Final-round design proposed (2026-10-29; spec §38):** generation,
    two-lane DEF learning, percept recombination/inversion, noun/kind
    measurements, guarded B28/W256 capacity search and corpus run, then the
@@ -6928,7 +6928,7 @@ not by a passing identity lesson.
    with A1–A4 in §40. **Final-round implementation (2026-10-29; §43):**
    F1–F3 and the percept-only §42 residual split are built in the live tree;
    source verification, scoped gates, lesson measurements and guarded capacity
-   work are in progress in the [final-round receipt](doc/benchmarks/2026-10-29-item2-7-final/README.md).
+   work are in progress in the [final-round receipt](benchmarks/2026-10-29-item2-7-final/README.md).
    No acceptance freeze or landing is claimed. The conceptual residual half
    remains item 2.5 round B; D5, slow cases and the landing sweep await November.
    **Alec's deferral (2026-10-29):** large-file B28/W256 capacity search and
@@ -6941,24 +6941,24 @@ not by a passing identity lesson.
    The final curriculum stopped at sentence 15 with an unwritten-introduction
    bind. §42's current chart conversion retains the full reconstruction
    gradient and needs explicit review. These remain open; return through Alec
-   for Claude, with no landing claim. [Review receipt](doc/benchmarks/2026-10-29-item2-7-final/REVIEW.md).
+   for Claude, with no landing claim. [Review receipt](benchmarks/2026-10-29-item2-7-final/REVIEW.md).
    **Producer repairs, spec §46:** freeze `0be76c6f84f4` passes all thirteen
    scoped groups (2,541 passes, 57 skips). Lesson-13 completes all 160
    sentences: ideas pass, relations fail, text available for all 80 answers
    but exact accuracy 0/80. Final curriculum exposes two further failures;
    the native-symbol origin repair and epoch capture continue in §46.
    §44's correction-output form of §42 awaits Alec's D7 confirmation and is
-   unbuilt. [Current receipt](doc/benchmarks/2026-10-29-item2-7-producer-repair-final/README.md).
+   unbuilt. [Current receipt](benchmarks/2026-10-29-item2-7-producer-repair-final/README.md).
    **Review handback `472f5000850e`, spec §46:** all thirteen scoped
    groups pass (2,545 passes, 57 skips), with native smoke and allocation
    checks. Diagnostic lesson-13 completes 160/160: ideas pass, relations
    fail, answers 0/80 with text present. Final curriculum stops at sentence
    132 with an unavailable query concept reference; earlier MTM-value and
    owned-gradient failures remain unresolved. D7 is pending and unbuilt;
-   return through Alec, no landing claim. [Receipt](doc/benchmarks/2026-10-29-item2-7-producer-repair-review/README.md).
+   return through Alec, no landing claim. [Receipt](benchmarks/2026-10-29-item2-7-producer-repair-review/README.md).
    **Clarified 2026-10-27 (Alec):** expectation predicts at each level;
    the approximately inverted object is the fully processed grammatical
-   understanding ([spec §13](doc/plans/2026-10-27-item2-7-corpus.md#13-local-expectation-and-inversion-of-the-understanding--alec-2026-10-27)).
+   understanding ([spec §13](plans/2026-10-27-item2-7-corpus.md#13-local-expectation-and-inversion-of-the-understanding--alec-2026-10-27)).
    *Earlier scope (ownership now follows §47 above):* the unforced 1-to-2 raise certificate; the
    fold trained from DEF rows with explicit and implicit definitions judged
    in the two lanes; parts of speech learned in order (proper, mass, count)
@@ -6972,7 +6972,7 @@ not by a passing identity lesson.
    inside is history. *Moved from FutureWork (Alec,
    2026-10-21):* **orders are learned, not written into the grammar**
    (design record below).
-   **Carried from the item 3.0 landing (2026-10-26; [orders §69](doc/plans/2026-10-26-item3-0-step5-orders-learned.md#69-claudes-review-of-the-serializer-round-and-the-item-30-sweep-test-freeze-ee7ca4e920bc-model-6fe273d2f12a7--2026-10-26-approved-for-landing-three-items-carried)):** certify the 1-to-2 raise on unforced text, “Felix is a cat. Ciao is a cat.”, measuring the shared word's object and both members without `force_order`; §70 records the current readers only.
+   **Carried from the item 3.0 landing (2026-10-26; [orders §69](plans/2026-10-26-item3-0-step5-orders-learned.md#69-claudes-review-of-the-serializer-round-and-the-item-30-sweep-test-freeze-ee7ca4e920bc-model-6fe273d2f12a7--2026-10-26-approved-for-landing-three-items-carried)):** certify the 1-to-2 raise on unforced text, “Felix is a cat. Ciao is a cat.”, measuring the shared word's object and both members without `force_order`; §70 records the current readers only.
    Alec: "we need not create an ordered grammar, because we have the
    rule that raises order." Parts of speech stay order-free.
    - **The definition: IS and its raise.** An equality writes an LTM1
@@ -6988,11 +6988,11 @@ not by a passing identity lesson.
      live caller today and must wait for that second row. This creates
      individuals ("this is Felix, that is Felix": 0 to 1) and kinds
      ("Felix is a cat, Ciao is a cat": 1 to 2).
-   - **Return to S0 by lowering** (amended 2026-10-22, [Orders §10](doc/Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3)).
+   - **Return to S0 by lowering** (amended 2026-10-22, [Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3)).
      One composition lowers one order: NP + VP, predication. The modal
      does not (Alec, 2026-10-23, reversing 2026-10-22): it withholds the
      lowering, so a modal clause stays above order 0 as an abstraction on
-     an alternative timeline of its identity ([iteration spec §4](doc/plans/2026-10-23-verb-and-modal.md)).
+     an alternative timeline of its identity ([iteration spec §4](plans/2026-10-23-verb-and-modal.md)).
      A determiner does not: it selects one
      of a plurality, and the phrase's order is that of what it selects,
      by lookup (a member of a kind, or a shaped portion of a mass, is an
@@ -7047,7 +7047,7 @@ not by a passing identity lesson.
      against lane, orthogonal to a positively defined concept, so it
      lengthens the candidate without entering the dot (it lowers the
      cosine). Audit of today's length and sphere readers in
-     [FutureWork](doc/FutureWork.md#concepts-as-regions-certainty-from-evidence-no-sphere-alec-2026-10-24).
+     [FutureWork](FutureWork.md#concepts-as-regions-certainty-from-evidence-no-sphere-alec-2026-10-24).
    - **Layout and removal** (Alec, 2026-10-23: "the layout spec should be
      done with 3.0"): LTM0 one slot (ideas), LTM1 two tagged references
      that chain, no sentence row, the stored derivation and its readers
@@ -7055,38 +7055,38 @@ not by a passing identity lesson.
      chunks. Lands with placement from the priming surface and the
      geometric channel, which it needs; it also removes the per-forward
      scans of the whole store (placement's context means, priming's
-     membership pairs). Step 1 is approved ([Claude's review, layout §13](doc/plans/2026-10-23-layout-and-removal.md#13-claudes-review-of-step-1-source-34848e154f--2026-10-25)); Alec commits source SHA256
+     membership pairs). Step 1 is approved ([Claude's review, layout §13](plans/2026-10-23-layout-and-removal.md#13-claudes-review-of-step-1-source-34848e154f--2026-10-25)); Alec commits source SHA256
      `34848e154f0fa9912223d4117136d7eb63657cefaeca94a76c6574559a73819e`
-     ([receipt](doc/benchmarks/2026-10-25-item3-0-layout/README.md)); the interim
-     context source and [remaining scans](doc/benchmarks/2026-10-25-item3-0-layout/remaining-scans.md)
-     are addressed by [step 2: placement](doc/plans/2026-10-25-item3-0-step2-placement.md#20-frozen-measurement-and-review-handoff--codex-2026-10-25),
+     ([receipt](benchmarks/2026-10-25-item3-0-layout/README.md)); the interim
+     context source and [remaining scans](benchmarks/2026-10-25-item3-0-layout/remaining-scans.md)
+     are addressed by [step 2: placement](plans/2026-10-25-item3-0-step2-placement.md#20-frozen-measurement-and-review-handoff--codex-2026-10-25),
      approved by Claude in placement §21; Alec commits source SHA256
      `1e94238b57c99ba2b1003de2467e6f6acf543b68dc425263bed708509677d55e`:
      **1,003 passes and seven standing prerequisite skips under the documented
      protocol**, with two original fixture failures and all measurement ports
-     retained in the [local receipt](doc/benchmarks/2026-10-25-item3-0-placement/README.md).
+     retained in the [local receipt](benchmarks/2026-10-25-item3-0-placement/README.md).
      **Step 3's repair is approved in §27**, source `4b7fa2aaf7`
-     ([review](doc/plans/2026-10-25-item3-0-step3-stm-chunks.md#27-claudes-review-of-the-repair-source-4b7fa2aaf7--2026-10-25-approved-with-two-items-before-the-commit),
-     [approved repair receipt](doc/benchmarks/2026-10-25-item3-0-stm-chunks/repair-resumed/final/README.md)).
+     ([review](plans/2026-10-25-item3-0-step3-stm-chunks.md#27-claudes-review-of-the-repair-source-4b7fa2aaf7--2026-10-25-approved-with-two-items-before-the-commit),
+     [approved repair receipt](benchmarks/2026-10-25-item3-0-stm-chunks/repair-resumed/final/README.md)).
      Both closing items are implemented: placement's unchanged replay has
      greedy coverage 1.0 too, carrying the 6/8 companion residual to item 0;
      estimates carry zero time, keep current time as input and consume no
      arrival tick. Closing source `cd49a1e845` passes **1,113 cases with seven
      standing prerequisite skips and zero test failures**, plus the smoke
-     ([§§28–29](doc/plans/2026-10-25-item3-0-step3-stm-chunks.md#28-closing-replay-the-companion-residual-is-learning-side--codex-2026-10-25),
-     [closing receipt](doc/benchmarks/2026-10-25-item3-0-stm-chunks/closeout/README.md)).
+     ([§§28–29](plans/2026-10-25-item3-0-step3-stm-chunks.md#28-closing-replay-the-companion-residual-is-learning-side--codex-2026-10-25),
+     [closing receipt](benchmarks/2026-10-25-item3-0-stm-chunks/closeout/README.md)).
      Prior failed and approved results remain separate. Step 4's repair
      `acac0b3448` is approved as a mechanism round in §20. The approved
      two-stream port closes gate 6: the file and both decomposition arms
-     pass 6/6, companions 6/8 ([§21 receipt](doc/benchmarks/2026-10-25-item3-0-retire-mode/repair-05/README.md)).
+     pass 6/6, companions 6/8 ([§21 receipt](benchmarks/2026-10-25-item3-0-retire-mode/repair-05/README.md)).
      **Step 5, orders learned**, is approved in orders §19 on `c4a1d92e3f`:
      1,647 passed, ten existing skips, zero failures, plus the smoke;
      companions remain 6/8
-     ([spec §18](doc/plans/2026-10-26-item3-0-step5-orders-learned.md#18-final-scoped-measurement-and-review-hand-off--codex-2026-10-26),
-     [receipt](doc/benchmarks/2026-10-26-item3-0-orders/README.md)).
-     **Item 3.0 LANDED — 2026-10-26**, approved in [orders spec §69](doc/plans/2026-10-26-item3-0-step5-orders-learned.md#69-claudes-review-of-the-serializer-round-and-the-item-30-sweep-test-freeze-ee7ca4e920bc-model-6fe273d2f12a7--2026-10-26-approved-for-landing-three-items-carried). The landing names step 5 `c4a1d92e3f`, serializer `caece43fc0`, sweep repair `03fbbf2a7d9c`, final model repair `6fe273d2f12a7`, and test budgets `ee7ca4e920bc`. The learning records stay at item 0 at their listed budgets; the four runtime failure groups move to item 1 as named below; the unforced 1-to-2 raise certificate for “Felix is a cat. Ciao is a cat.” moves to item 3's corpus round. The [serializer receipt](doc/benchmarks/2026-10-26-item3-0-serializer/README.md) and [sweep receipt](doc/benchmarks/2026-10-26-item3-0-sweep/README.md), including repair-01, repair-03 and repair-04-slow-budget, remain local and gitignored.
-     [Spec](doc/plans/2026-10-23-layout-and-removal.md);
-     decisions in [step-2 spec §§70–72](doc/plans/2026-10-21-step2-one-ltm.md#71-decided-alec-2026-10-23-ideas-in-ltm0-binary-chains-in-ltm1-no-sentence-row).
+     ([spec §18](plans/2026-10-26-item3-0-step5-orders-learned.md#18-final-scoped-measurement-and-review-hand-off--codex-2026-10-26),
+     [receipt](benchmarks/2026-10-26-item3-0-orders/README.md)).
+     **Item 3.0 LANDED — 2026-10-26**, approved in [orders spec §69](plans/2026-10-26-item3-0-step5-orders-learned.md#69-claudes-review-of-the-serializer-round-and-the-item-30-sweep-test-freeze-ee7ca4e920bc-model-6fe273d2f12a7--2026-10-26-approved-for-landing-three-items-carried). The landing names step 5 `c4a1d92e3f`, serializer `caece43fc0`, sweep repair `03fbbf2a7d9c`, final model repair `6fe273d2f12a7`, and test budgets `ee7ca4e920bc`. The learning records stay at item 0 at their listed budgets; the four runtime failure groups move to item 1 as named below; the unforced 1-to-2 raise certificate for “Felix is a cat. Ciao is a cat.” moves to item 3's corpus round. The [serializer receipt](benchmarks/2026-10-26-item3-0-serializer/README.md) and [sweep receipt](benchmarks/2026-10-26-item3-0-sweep/README.md), including repair-01, repair-03 and repair-04-slow-budget, remain local and gitignored.
+     [Spec](plans/2026-10-23-layout-and-removal.md);
+     decisions in [step-2 spec §§70–72](plans/2026-10-21-step2-one-ltm.md#71-decided-alec-2026-10-23-ideas-in-ltm0-binary-chains-in-ltm1-no-sentence-row).
      *Decided later the same day (Alec; in the spec):* every mental event
      has a perceptual and a conceptual part; episodic memory is the
      percept part of STM and LTM, semantic memory the concept part;
@@ -7108,9 +7108,9 @@ not by a passing identity lesson.
      the centroid of its constituents' forms; zeroth-order concepts start
      random and are moved by the priming surface; generation reverses
      meaning composition and reaches forms through the symbol index
-     ([layout spec](doc/plans/2026-10-23-layout-and-removal.md)).
+     ([layout spec](plans/2026-10-23-layout-and-removal.md)).
      *Moved to 3.5 the same day* (Alec: "The whole swap now"): built in
-     3.5's first remaining iteration ([spec](doc/plans/2026-10-23-verb-and-modal.md) §2).
+     3.5's first remaining iteration ([spec](plans/2026-10-23-verb-and-modal.md) §2).
    - **Retire mode** (Alec, 2026-10-22: "Removing mode should be a part
      of 3.0"; moved from FutureWork).
 
@@ -7122,7 +7122,7 @@ not by a passing identity lesson.
      mode is interrogative and its evidence empty, which is how a yes/no
      question ("is x three?") gets one. Without mode, that question looks
      exactly like an unasserted "x is three": no open slot, no evidence. Step 2
-     stops storing mode ([step-2 spec §22](doc/plans/2026-10-21-step2-one-ltm.md#22-decided-alec-2026-10-22-mode-is-not-stored));
+     stops storing mode ([step-2 spec §22](plans/2026-10-21-step2-one-ltm.md#22-decided-alec-2026-10-22-mode-is-not-stored));
      retiring the live mode means offering the episode at every close, with not
      thinking among the chooser's options, so the decision is learned from the
      parse's form. The remaining live uses go with it: `question()` in
@@ -7159,7 +7159,7 @@ not by a passing identity lesson.
 
      **Two order-1 stand-ins in item 3.5.** Without order in the parts of
      speech, 3.5 works with two assumptions
-     ([reconstruction spec §12](doc/plans/2026-10-21-reconstruction-reads-the-bind.md#12-decided-alec-2026-10-21-latest-a-name-is-order-1-by-its-reading-the-fixtures-supply-it)):
+     ([reconstruction spec §12](plans/2026-10-21-reconstruction-reads-the-bind.md#12-decided-alec-2026-10-21-latest-a-name-is-order-1-by-its-reading-the-fixtures-supply-it)):
 
      - A determiner always outputs order 1 (`ReferenceContext.operation_order`),
        whatever its noun, and never raises the noun. "The cat" comes out
@@ -7175,10 +7175,10 @@ not by a passing identity lesson.
      declared `NP3`, `NP4`, `VP1` and `S4 = lift(NP3, VP1)`, with polymorphic
      forms `NP*`, `NP*+1` and `NP*-1`; lift raised order and lower lowered
      it. The grammar was later collapsed to role-only positions, with
-     categories recovered from participation ([Language](doc/Language.md#grammar)).
+     categories recovered from participation ([Language](Language.md#grammar)).
      `Grammar._parse_category` still accepts the old forms, and
      `test_role_collapsed_grammar` bans them from shipped grammars. That scale
-     also differs from [Orders](doc/Orders.md): lift now keeps its subject's
+     also differs from [Orders](Orders.md): lift now keeps its subject's
      order.
 
      **Claude's recommendation.**
@@ -7210,7 +7210,7 @@ not by a passing identity lesson.
      Mass nouns are types at order 0. Count nouns are kinds at order 2, which
      a determiner lowers. Each stage therefore gives the parse one new order
      class to infer. Stages 4a and 4b of the
-     [curriculum](doc/Training.md#the-generated-supervised-curriculum-in-order-alec-2026-10-09)
+     [curriculum](Training.md#the-generated-supervised-curriculum-in-order-alec-2026-10-09)
      are where this order would go. Until parts of speech are learned, unit
      tests force them. Alec: "Unit tests can force parts of speech; they may
      take a while to learn, and we need to test without that."
@@ -7224,7 +7224,7 @@ not by a passing identity lesson.
      `ReferenceContext` comment still calls it an "objectless marker"; update
      that wording with the future classification work. This is distinct from
      the root-position and re-identification findings. See the
-     [review](doc/benchmarks/2026-10-21-item3-5-reference-reconstruction/claude-review.md);
+     [review](benchmarks/2026-10-21-item3-5-reference-reconstruction/claude-review.md);
      no source change or new learning claim is made in this receipt.
 
      **The learning sequence (Alec, 2026-10-21).** "This is Felix, that is
@@ -7247,7 +7247,7 @@ not by a passing identity lesson.
      **Where the two sentences are stored (open; decide with this entry).**
      Alec: "in the two sentences I gave, we have an S1 and an S2, possibly
      (which would be stored in LTM1 and LTM2, I guess?)". As decided for step 2
-     ([step-2 spec](doc/plans/2026-10-21-step2-one-ltm.md), S9), strata are
+     ([step-2 spec](plans/2026-10-21-step2-one-ltm.md), S9), strata are
      structural: a relation over LTM0 objects is LTM1, and one whose argument
      is a relation row is LTM2. Both sentences are therefore LTM1 rows, and
      their orders 1 and 2 belong to Felix and cat, in the conceptual order.
@@ -7400,9 +7400,9 @@ not by a passing identity lesson.
 
      **Clarified 2026-10-27 (Alec):** raised classes need initial learning
      to cover their members; explicit and implicit classes receive the
-     same treatment ([item 2.7 spec §12](doc/plans/2026-10-27-item2-7-corpus.md#12-initial-learning-for-every-raised-class--alec-2026-10-27)).
+     same treatment ([item 2.7 spec §12](plans/2026-10-27-item2-7-corpus.md#12-initial-learning-for-every-raised-class--alec-2026-10-27)).
      Synchronizing explicit and implicit meanings is a separate
-     [future-work item](doc/FutureWork.md#synchronize-explicit-and-implicit-meanings-alec-2026-10-27).
+     [future-work item](FutureWork.md#synchronize-explicit-and-implicit-meanings-alec-2026-10-27).
 
    *Added 2026-10-20 (Alec):* placement from
    the registered priming surface — SBOW's context is the surface after
@@ -7410,13 +7410,13 @@ not by a passing identity lesson.
    channel; the objective in the cube's own metric (raise the meet ratio
    with the registered context, lower it against negatives; the collapse
    diagnostic as the gate); one metric for SBOW, diffusion and `bind`
-   ([FutureWork](doc/FutureWork.md#placement-from-the-registered-priming-surface-one-metric-for-sbow-diffusion-and-bind-alec-2026-10-20-proposed-with-the-objective-to-decide)).
-   *Reversed 2026-10-22 (Alec; [Orders §10](doc/Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3)): one conceptual
+   ([FutureWork](FutureWork.md#placement-from-the-registered-priming-surface-one-metric-for-sbow-diffusion-and-bind-alec-2026-10-20-proposed-with-the-objective-to-decide)).
+   *Reversed 2026-10-22 (Alec; [Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3)): one conceptual
    space, concrete and abstract intermingled; the per-order spaces and the
    stratified surface read below are withdrawn, while the symbol tree, the
    Part edges as membership, membership by edge and the cross-order
    diffusion stand. The record:*
-   *Added 2026-10-20 (Alec; [Orders §9](doc/Orders.md#9-per-order-conceptual-spaces-ramsified-over-one-symbol-tree-the-stratified-priming-surface-alec-2026-10-20-decided)):*
+   *Added 2026-10-20 (Alec; [Orders §9](Orders.md#9-per-order-conceptual-spaces-ramsified-over-one-symbol-tree-the-stratified-priming-surface-alec-2026-10-20-decided)):*
    **per-order conceptual spaces, ramsified over the one symbol tree** —
    order *n*'s space is the cube over the order-(*n−1*) symbol index, its
    concepts characteristic vectors realized by LTM2's Part edges, similarity
@@ -7428,7 +7428,7 @@ not by a passing identity lesson.
    consumer (placement: the order-0 stratum before the geometric channel;
    `bind`: the request's order; attention and the chooser: all strata).
    *Added 2026-10-21 (Alec):* **`intuit`, one layer of order-0
-   prediction in the parallel calculus** ([spec §5](doc/plans/2026-10-21-intuit.md#5-revised-design-alec-2026-10-21-later-one-layer-of-order-0-prediction-in-the-parallel-calculus)):
+   prediction in the parallel calculus** ([spec §5](plans/2026-10-21-intuit.md#5-revised-design-alec-2026-10-21-later-one-layer-of-order-0-prediction-in-the-parallel-calculus)):
    union, intersection and negation (lane exchange) as one max–min layer
    over remembered `S1 → S2` LTM1 rows (Mamdani: fire at the meet ratio,
    union of clipped consequents; no parameters; after step 2); it leaves the knowing set, from
@@ -7444,18 +7444,18 @@ not by a passing identity lesson.
    gates (names and equality, roles, decomposition, `what` bound,
    conditionals and counterfactuals, ellipsis, generics, attribution,
    the inverse verb and the verb groups' exact bases, the carrier
-   variants) — [Testing](doc/Testing.md#fast-regression-and-slow-experiments),
-   coverage in [Training](doc/Training.md#the-generated-math-suite-what-it-exercises-and-what-it-cannot-2026-10-20).
+   variants) — [Testing](Testing.md#fast-regression-and-slow-experiments),
+   coverage in [Training](Training.md#the-generated-math-suite-what-it-exercises-and-what-it-cannot-2026-10-20).
    The same run is item 1's compiler parity test at scale (compiled and
    eager agree in actions, probabilities, costs, updates). Built from the
    `MM_math_chain` generator in the Viterbi order; throughput recorded,
    since item 1's runtime is where it bites.
    *Takes from item 4 (Alec, 2026-10-19,
-   [spec §3.1](doc/specs/2026-10-08-expectation-at-every-level.md#31-withdrawn-the-unfolding-by-inversion-rev-3--moved-to-item-3)):*
+   [spec §3.1](specs/2026-10-08-expectation-at-every-level.md#31-withdrawn-the-unfolding-by-inversion-rev-3--moved-to-item-3)):*
    the invertible-path program — exact inverted targets for the maps,
    sources going live, reconstruction retiring to an audit where the
    inverse is exact, the width `D ≈ c·k·log N` for the audit to read zero
-   ([FutureWork](doc/FutureWork.md#expectation-by-inversion-and-the-reconstruction-audit-decided-2026-10-06-unscheduled)).
+   ([FutureWork](FutureWork.md#expectation-by-inversion-and-the-reconstruction-audit-decided-2026-10-06-unscheduled)).
    Expectation no longer depends on it; item 0's condition reads it from
    here. Raise `maxDocs`, exercise multi-shard if needed,
    measure sentence-list/address-table memory and loader time, confirm
@@ -7482,14 +7482,14 @@ not by a passing identity lesson.
    `D ≈ c·k·log N`; derive it for the run's vocabulary and run the R==0
    identity audit (round 3a's) at that width on the run's config. Its
    reading decides item 0's condition below
-   ([FutureWork](doc/FutureWork.md#expectation-by-inversion-and-the-reconstruction-audit-decided-2026-10-06-unscheduled)).
+   ([FutureWork](FutureWork.md#expectation-by-inversion-and-the-reconstruction-audit-decided-2026-10-06-unscheduled)).
    Exit: the load and capacity measurement recorded, the width and the
    audit's reading, and
    `maxDocs`/`shardDir`/stream count/PS-CS-WS `nVectors`/`ltmCapacity` in the run config.
    *Added (Alec, 2026-10-08, from item 4.5):* the age-appropriate corpus
-   ([gradual training](doc/FutureWork.md#gradual-training-an-age-ordered-corpus-read-in-stages-proposed-2026-09-29))
+   ([gradual training](FutureWork.md#gradual-training-an-age-ordered-corpus-read-in-stages-proposed-2026-09-29))
    is assembled here so item 0 reads it in order; the
-   [Viterbi toy](doc/benchmarks/2026-10-08-viterbi-departure-toy/README.md)
+   [Viterbi toy](benchmarks/2026-10-08-viterbi-departure-toy/README.md)
    shows the order, not only the content, is what lets one departure escape
-   multi-step minima ([4.5 spec §5.3–§5.4](doc/specs/2026-10-08-expectation-at-every-level.md)).
+   multi-step minima ([4.5 spec §5.3–§5.4](specs/2026-10-08-expectation-at-every-level.md)).
 
