@@ -3570,3 +3570,57 @@ Pre-authorized steps and stops are as in §52.1.
 
 Work on main. No seed pinning beyond Alec's recorded 41001 and the approved diagnostic streams (replaying a recorded stream is one), no resize, no language named in code; fail loud; nothing retired silently. Return through Alec for Claude's review of the freeze; no commit or publication.
 ~~~
+
+## 56. Review of the §55 return (Claude, 2026-11-06): item 116's repair approved; item 117, the suite, the XOR fits and the three float32 arms pass; the discriminator's construction failure follows the repair's change of trajectory; no freeze offered
+
+The return was checked on the live tree, which equals Codex's candidate `a7851dde8a41` in all 995 source files. Against `8e9fe2634709`, two production files changed (`bin/ClauseRow.py` and `bin/ReferenceClose.py`), one test file was added and Architecture gained one record. Claude read all of it, and checked the receipts of the suite (output/tests/20261105-170621-ddd93f: 7,650 of 7,650 cases, exit 0, 699 seconds, peak 20.3 GiB) and of the forty runs.
+
+**Approved as built.**
+- *Item 116.* `ReferenceClose.is_forward_placeholder` is shared by the read and the thought bind: a token whose referent is only the forward word or that word's own objects does not discharge the name. A resolved kind takes precedence over an older naming symbol, so a selected native arrival still reads. `exclude` now does what `ThoughtClosing` records. Claude's captured stream is red on `8e9fe2634709` and green after, and the thirteen direct cases are red and green on the two producer files alone.
+- *Item 117:* twenty fresh passes in each order, counted from zero.
+- The default suite, the eight XOR_grammar fits, and the three float32 lesson arms, with no event at or above 1e8.
+
+**Finding 1: the discriminator's construction failure (§55.9).** This stops the round.
+- *The same run diverged.* The discriminator ran with the same command, construction stream (`7b339728410f`) and `PYTHONHASHSEED` 0 as in §53.9, where it completed all 160 sentences on `8e9fe2634709`. Claude compared the two runs' trial observations: identical through sentence 16, they first differ at sentence 17, the first of ideas epoch 2. So item 116 changed the trajectory, and the failure comes 35 sentences later.
+- *What the capture shows.* At "What is that?" the root bind (leaves 0 to 3) carries `compose_bind` 3. That handle's origin is a journal-local action (tag 3, action 0). Before the root, the preview had mapped only handles 4 and 5, so `handles.get(3)` is `None` and `ReferenceClose.preview` raises (about line 875). `pending_names` is `(14,)`.
+- *Two code facts bound the search.*
+  - `ReferenceClose.sites` gives a word-bearing node a site only when it is an addressed introduction, a participant, or a sign or no-op leaf (about lines 700 to 702).
+  - `ClauseJournal` registers a tag-3 introduction only under the conditions at about lines 309 and 310.
+
+  So a compose bind can name a local introduction that no site writes.
+- *Not yet known.* The capture cannot tell whether item 116 produces this state (for example a forward name it now keeps pending, whose introduction no site writes) or whether the new trajectory reaches an older one. A diagnostic replay can: float64 with the replayed stream is deterministic, as the identical first sixteen sentences show.
+- *The recorded invariant settles the repair:* "Scoring and admission must enumerate the same sites. Introductions precede their uses" (`ReferenceClose.sites`, about line 790). Item 116's rule stays.
+
+**Carried, unchanged:** §54's findings 2 to 7.
+
+**No freeze was offered.** Codex stopped where §54.1 required. The text below repairs finding 1.
+
+### 56.1 Text for Codex (2026-11-06)
+
+~~~
+Read §56. Item 116's repair, item 117 and the passed gates of §55 are approved as built. The float64 discriminator's construction failure (§55.9) stops the round. Order: 118, 119, then make test, item 71's runs and the freeze. Write receipts to doc/benchmarks/2026-11-06-item2-5-review56/.
+
+118. A compose bind names an introduction that no site writes (§56 finding 1).
+- Diagnose with the failed run itself. Run its exact command again on a7851dde8a41: the approved discriminator stream, PYTHONHASHSEED 0, float64. Add read-only probes on that sentence's identity transactions and on ReferenceClose.preview's site enumeration. This is a diagnostic replay of a captured model failure, not a retry. It must fail at attempted sentence 52 with the captured values; if it does not, stop.
+- On 8e9fe2634709 the same stream completed all 160 sentences. The two runs' trial observations are identical through sentence 16 and first differ at sentence 17.
+- Find which action introduced handle 3, and why no site before the root maps it. Find whether item 116's rule produces that state (for example a forward name it now keeps pending, whose introduction no site writes), or whether the new trajectory reaches an older one.
+- What the capture shows:
+  - the root bind (leaves 0 to 3) has compose_bind 3, origin tag 3 (journal-local action 0);
+  - before the root, the preview mapped only handles 4 and 5;
+  - pending_names is (14,);
+  - ReferenceClose.sites (about 700 to 702) gives a word-bearing node a site only as an addressed introduction, a participant, or a sign or no-op leaf;
+  - ClauseJournal registers a tag-3 introduction only under its conditions at about 309 and 310.
+- Repair at the producer under the recorded invariant: scoring and admission enumerate the same sites, and introductions precede their uses (ReferenceClose.sites, about 790). A compose bind never names an introduction that the closing does not write. Item 116's rule stays: a forward name's own word or object does not discharge it. Stop if the repair needs a new decision.
+- Certificates: a direct case of the condition, red on a7851dde8a41 and green after. Item 71's discriminator, from its unchanged stream, then certifies sentence 52 natively.
+
+119. Twenty runs of each order of test_forced_ordinary_pending_premise_in_both_orders, counted from zero, on the source of 118, as item 117.
+
+Then, on the green source, as §52.1 states them:
+- make test at ten workers until green (item 114, with its stops);
+- item 71's runs: the eight XOR_grammar fits first, then the three lesson-13 arms and the float64 discriminator;
+- item 73's freeze, with ports against a7851dde8a41, 8e9fe2634709, e0fc4a92719e and HEAD.
+
+Pre-authorized steps and stops are as in §52.1.
+
+Work on main. No seed pinning beyond Alec's recorded 41001 and the approved diagnostic streams (replaying a recorded stream is one), no resize, no language named in code; fail loud; nothing retired silently. Return through Alec for Claude's review of the freeze; no commit or publication.
+~~~

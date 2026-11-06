@@ -104,6 +104,15 @@ and reproduces exactly from its captured stream. The freeze is not accepted. The
 Codex text is §54.1: items 116 and 117, then the suite, item 71's runs and the
 freeze.
 
+**Update 2026-11-06:** the §55 return is reviewed in
+[thinking spec §56](doc/plans/2026-10-27-item2-5-thinking.md). Item 116's repair
+is approved; the forty pending-premise runs, the suite, the XOR fits and the three
+float32 arms pass. The float64 discriminator, from the stream that completed on
+`8e9fe2634709`, now diverges at sentence 17 and raises at sentence 52: a compose
+bind names an introduction that no closing site writes. No freeze was offered. The
+Codex text is §56.1: items 118 and 119, then the suite, item 71's runs and the
+freeze.
+
 **Order and branches (Alec, 2026-11-03):** work happens on main, with no
 sandbox branches; the countdown order stands, 2.5, 2.0, 2, then 1.5, 1 and 0;
 when item 2.5 completes, everything is on main, committed and pushed, then
