@@ -46,9 +46,9 @@ def inverse_step(language, kind, operation, parent, frame, *, coordinates=None, 
             # Selection discards case content. The single child's form is
             # preserved; no affine inverse invents the discarded meaning.
             if whole is not None:
-                mean, number = whole
-                mean = torch.nn.functional.pad(mean, (0, width-mean.shape[-1]))
-                form = torch.where(number > 0, parent[..., :width]*2-mean, parent[..., :width])
+                from FormCentroids import pad_whole
+                from MeaningKernels import uncenter
+                form = uncenter(parent[..., :width], pad_whole(whole, width))
             else:
                 form = parent[..., :width]
             return ((torch.cat((form, torch.zeros_like(parent[..., width:])), -1),
@@ -61,9 +61,9 @@ def inverse_step(language, kind, operation, parent, frame, *, coordinates=None, 
             return ((witness, torch.isfinite(witness)),)
         if whole is not None and getattr(op, 'meaning_layout', None) is not None:
             width = op.meaning_layout[0]
-            mean, number = whole
-            mean = torch.nn.functional.pad(mean, (0, width-mean.shape[-1]))
-            form = torch.where(number > 0, parent[..., :width]*2-mean, parent[..., :width])
+            from FormCentroids import pad_whole
+            from MeaningKernels import uncenter
+            form = uncenter(parent[..., :width], pad_whole(whole, width))
             parent = torch.cat((form, parent[..., width:]), -1)
         child, bad = language.reverse_unary_step(parent, op_index, live, return_status=True)
         if getattr(op, 'inverse_kind', None) == 'unary' and not hasattr(op, 'marker_base'):
@@ -82,7 +82,8 @@ def inverse_step(language, kind, operation, parent, frame, *, coordinates=None, 
         width = op.meaning_layout[0]
         witness = witness_frame[0:1]
         if whole is not None:
-            whole = (torch.nn.functional.pad(whole[0], (0, width-whole[0].shape[-1])), whole[1])
+            from FormCentroids import pad_whole
+            whole = pad_whole(whole, width)
         form = split_centroid(parent[..., :width], witness[..., :width], counts,
                               known_right=False, whole=whole)
         missing = torch.cat((form, torch.zeros_like(parent[..., width:])), -1)
@@ -127,11 +128,30 @@ def inverse_step(language, kind, operation, parent, frame, *, coordinates=None, 
     return ((left, left_defined), (right, right_defined))
 
 
-def reconstruct(language, record, programs, positions):
+def _transport_reread(value, operand, published, domain, layout):
+    """Carry a child's inverse discrepancy from an STM read to its producer."""
+    if layout is None or value.shape[-1] != layout[1]:
+        return value + (published - operand)
+    from Layers import cube_chart, cube_translate
+    from MeaningKernels import exact_initial
+    width = layout[0]
+    form = value[..., :width] + (published[..., :width] - operand[..., :width])
+    # An undefined coordinate has no inverse discrepancy to transport.
+    defined = domain[..., width:]
+    recovered, read, previous = (torch.where(defined, x[..., width:], 0.)
+                                 for x in (value, operand, published))
+    evidence = cube_translate(previous, cube_chart(recovered) - cube_chart(read))
+    # The exact identity of an ordinary numerical edge includes both rails.
+    evidence = exact_initial(recovered, evidence, previous == read)
+    return torch.cat((form, evidence), -1)
+
+
+def reconstruct(language, record, programs, positions, stm=None):
     B, W, D = record.word_values.shape
     recovered = torch.zeros_like(record.word_values)
     defined = torch.zeros_like(recovered, dtype=torch.bool)
     certified = torch.zeros_like(defined)
+    stack = None
     for b, program in enumerate(programs):
         if program is None:
             continue
@@ -152,9 +172,21 @@ def reconstruct(language, record, programs, positions):
             elif kind == 3:
                 forest[-2:] = reversed(forest[-2:])
         depth = int(record.end_depth[b])
+        if depth == -1:
+            # An unfinished reading trains from the actual surviving roots.
+            # Its publication tag is not a count, and the three sentence
+            # slots need not hold its whole forest.
+            if stm is None:
+                raise ValueError('an unfinished derivation requires its live STM')
+            if stack is None:
+                from STMChunks import stack_view
+                stack = stack_view(stm)
+            depth = int(stack[1][b])
+            values = stack[0][b, :depth]
+        else:
+            values = record.end_slots[b, :depth]
         if depth != len(forest):
-            raise ValueError('the recorded derivation must have the completed forest depth')
-        values = record.end_slots[b, :depth]
+            raise ValueError('the recorded derivation must have the actual forest depth')
         # The compose forest is oldest first; STM's occupied slots are newest first.
         pending = [(node, values[depth-1-i:depth-i],
                     torch.ones_like(values[depth-1-i:depth-i], dtype=torch.bool), True)
@@ -185,12 +217,35 @@ def reconstruct(language, record, programs, positions):
             layer = language._tree_layer(2 if kind == 1 else 1)
             op = (layer.ops if kind == 1 else layer.unary_ops)[operation]
             native_exact = certified_map(op)
+            frame = program.operation_values[index]
+            transaction = getattr(program, 'identity_actions', None) is not None
+            face = getattr(op, 'gl', op)
+            band = (getattr(face, 'percept_band', None)
+                    if transaction and getattr(face, 'meaning_layout', None) is not None else None)
+            if band is not None and parent.shape[-1] == band[2]:
+                # Publication stamps the chunk after composition. Its location
+                # is not a numerical output of the form or meaning operator.
+                start, end, _ = band
+                parent = torch.cat((parent[..., :start], frame[2:3, start:end], parent[..., end:]), -1)
+            else:
+                band = None
             children = inverse_step(language, kind, operation, parent,
-                program.operation_values[index], coordinates=coordinates,
+                frame, coordinates=coordinates,
                 case_bank=None if bank is None else bank.for_stream(b), live_witness=native_exact,
                 **inverse_context(program, index))
-            pending.extend((child_node, value, domain, exact_path and native_exact)
-                for child_node, (value, domain) in zip(node[3:], children, strict=True))
+            for role, (child, (value, domain)) in enumerate(zip(node[3:], children, strict=True)):
+                operand = frame[role:role+1]
+                if band is not None:
+                    value = torch.cat((value[..., :start], operand[..., start:end], value[..., end:]), -1)
+                if transaction and child[0] != 0:
+                    # The consumer may read an off-stack identity or a typed
+                    # reference in place of the prior publication. Transport
+                    # the inverse discrepancy back to that producer's chart.
+                    # A numerical edge between the two has exactly zero shift.
+                    published = program.operation_values[child[2], 2:3]
+                    value = _transport_reread(value, operand, published, domain,
+                                              getattr(face, 'meaning_layout', None))
+                pending.append((child, value, domain, exact_path and native_exact))
     language._last_derivation_certified = certified
     unavailable = record.word_valid & ~defined.all(-1)
     return recovered, unavailable, defined

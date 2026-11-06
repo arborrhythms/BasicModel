@@ -119,7 +119,7 @@ def run(folder, successors=1):
             sources[address['document'], address['sentence']] = store.meaning_of(store.location(field.row_id))
         (folder/'progress.json').write_text(json.dumps(dict(rows=observed,episodes=episodes,menus=menus,
             source_readings={str(key): value.role_refs for key,value in sources.items()},
-            storage=[dict(address=store.occurrence_of(i), order=int(store.order[i]), bindings=dict(store.raw_meaning_of(i).bindings)) for i in range(len(store))],
+            storage=[dict(address=store.occurrence_of(i), order=store.order_of_row(i), bindings=dict(store.raw_meaning_of(i).bindings)) for i in range(len(store))],
             chains=[dict(handle=i, refs=store.parts.references(i)) for i in store.parts.indices().tolist()],
             identities=[dict(key=key, kind=entry.kind, pending=entry.pending, names=[(str(occ), name.reading) for occ,name in model._concept_owner().mtm.names.items() if name.token==key]) for key,entry in model._concept_owner().mtm.entries.items()]),indent=2)+'\n')
         torch.save({key: value.roles for key, value in sources.items()}, folder/'source-values.pt')
@@ -141,7 +141,7 @@ def run(folder, successors=1):
         source_index = store._index_occurrences.get(bindings(meaning).get('_query_occurrence'))
         assert not unexpected, unexpected
         assert set(changed_rows) <= {source_index}, changed_rows
-        added = [store.KINDS[int(store.record_kind[i])] for i in range(start, len(store))]
+        added = [store.kind_of(i) for i in range(start, len(store))]
         episodes.append(dict(row=kwargs['row'], before=meaning.role_refs, after=result.meaning.role_refs,
             open=open_slots(result.meaning), metadata=bindings(result.meaning), work=result.work.spent,
             state_diff=dict(**observation, unexpected=unexpected, changed_old_rows=changed_rows,

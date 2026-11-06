@@ -119,7 +119,8 @@ def test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows(mon
 
 
 @pytest.mark.usefixtures('eager_reading')
-def test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats(monkeypatch):
+@pytest.mark.parametrize('preadmit', [False, True], ids=['first-encounter', 'admitted'])
+def test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats(monkeypatch, preadmit):
     from pathlib import Path
     from test_mm_xor import _fresh_model, _PROJECT
     from PartClosing import PartClosing
@@ -162,6 +163,11 @@ def test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats(monke
     monkeypatch.setattr(PartClosing, 'close', observe_seats)
     try:
         inputs, _ = next(iter(model.inputSpace.data.data_loader(split='train', num_streams=4)))
+        if preadmit:
+            from test_definition_rows import admit
+            for form in sorted({word for sentence in inputs for word in sentence.split()}):
+                assert admit(model, form) is not None
+        definitions = model.symbolSpace.ltm_store.relations('definition').clone()
         with capture_readings(model) as captured:
             model.forward(model.inputSpace.prepInput(inputs))
         assert model._concept_owner().nVectors == constructed_vectors
@@ -175,7 +181,7 @@ def test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats(monke
         from LTM1 import SYMBOL
         assert plans and all(ref is not None and ref[0] == SYMBOL for plan in plans for ref in plan)
         assert seat_counts and all(before == after for before, after in seat_counts)
-        assert not model.symbolSpace.ltm_store.relations('definition').numel()
+        torch.testing.assert_close(model.symbolSpace.ltm_store.relations('definition'), definitions)
     finally:
         model.End()
         model.symbolSpace.soft_reset()

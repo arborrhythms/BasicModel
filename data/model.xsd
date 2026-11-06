@@ -45,6 +45,11 @@
        ═══════════════════════════════════════════════════════════════════ -->
   <xs:complexType name="architectureType">
     <xs:all>
+      <xs:element name="separateChooser" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="reconstructionJitter" type="unitInterval" minOccurs="0"/>
+      <xs:element name="generateBudget" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="wordSurfaceCapacity" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="ltmWindow" type="xs:positiveInteger" minOccurs="0"/>
       <!-- The retired <modelType> (simple | embedding | passthrough | vq)
            moved into <data> as <dataType> (embedding | numeric) 2026-06-19:
            simple+passthrough collapsed to numeric, vq dropped (0 configs). -->
@@ -178,11 +183,7 @@
            routes a third (symbol) peer leg (PS/WS percepts + SS symbols). Default
            false -> the 2-stream (PS, WS) bind -> byte-identical. -->
       <xs:element name="symbolTower" type="xs:boolean" minOccurs="0"/>
-      <!-- Relevance integration (Architecture sec C, origin x axis): when
-           true the cutover assembles the per-tower salience/novelty +
-           symbolic-history priority and the pyramid's top-K consumes it as
-           a ranking bias. Default false -> byte-identical. -->
-      <xs:element name="relevance" type="xs:boolean" minOccurs="0"/>
+
       <!-- Exponential decay of the SEEN priming toward neutral 1.0, applied
            at each seen-write (sec C simplified law). Default 0.9. -->
       <xs:element name="primingDecay" type="xs:decimal" minOccurs="0"/>
@@ -291,6 +292,7 @@
            do not enable episodes, memory, or policy training. -->
       <xs:element name="whatThinkingHidden" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="whatThinkingDepth" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="intuitionCapacity" type="xs:positiveInteger" minOccurs="0"/>
       <!-- whatThinkingPressure (spec 6.4): closure-pressure schedule,
            monotone with p(L-1) = 1. -->
       <xs:element name="whatThinkingPressure" minOccurs="0">
@@ -1137,18 +1139,14 @@
       <xs:element name="placementRate" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="placementNegatives" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="placementNegativeWeight" type="nonNegativeFloat" minOccurs="0"/>
-      <xs:element name="geometricSpread" type="unitInterval" minOccurs="0"/>
       <xs:element name="primingBridgeCapacity" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="geometricNeighbours" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="geometricRadius" type="xs:decimal" minOccurs="0"/>
-      <xs:element name="geometricRadiusRate" type="xs:decimal" minOccurs="0"/>
-      <xs:element name="geometricRadiusMin" type="xs:decimal" minOccurs="0"/>
-      <xs:element name="geometricRadiusMax" type="xs:decimal" minOccurs="0"/>
       <!-- Reading drift tolerance: 15 degrees by default; three documents promote. -->
       <xs:element name="raiseEvidence" type="unitInterval" minOccurs="0"/>
+      <xs:element name="raiseCount" minOccurs="0">
+        <xs:simpleType><xs:restriction base="xs:integer"><xs:minInclusive value="2"/></xs:restriction></xs:simpleType>
+      </xs:element>
       <xs:element name="recurrenceAngle" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="recurrenceCapacity" type="xs:positiveInteger" minOccurs="0"/>
-      <xs:element name="primingMaxBoost" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="readerBlockNormalization" type="xs:boolean" minOccurs="0"/>
       <xs:element name="latticeMargin" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Incoming-connection L1 for the indexed conceptsFromPercepts Sigma.

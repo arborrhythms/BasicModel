@@ -44,7 +44,7 @@ def test_four_occurrences_after_four_hundred_presentations_and_full_upsert():
         for row in range(4):
             assert write(store, ('xor', row), value=epoch + 1.) == row
     assert len(store) == 4
-    assert store.witness_count.tolist() == [400] * 4
+    assert store.access_count.tolist() == [400] * 4
     assert store.slots[:, 0].eq(400).all()
     with pytest.raises(OverflowError, match='forgetting'):
         write(store, 'new-document')
@@ -58,7 +58,7 @@ def test_rereading_replaces_vectors_refreshes_time_and_joins_poles():
     assert write(store, value=3., evidence=(.2, .7)) == row
     torch.testing.assert_close(store.slots[row, :4], torch.full((4,), 3.))
     assert store.row(row)['evidence'] == pytest.approx((.8, .7))
-    assert int(store.witness_count[row]) == 2
+    assert int(store.access_count[row]) == 2
     assert torch.equal(band, store.entry_when(row))
     assert write(store, 'other-document') == 1
     assert write(store, position=1) == 2
@@ -73,7 +73,7 @@ def test_full_store_can_rewitness_both_existing_prediction_pair_addresses():
     first = store.append_expectation_pair(predicted, meaning(1.), **arguments)
     assert first == (0, 1) and len(store) == store.capacity
     assert store.append_expectation_pair(predicted, meaning(1.), **arguments) == first
-    assert store.witness_count.tolist() == [2, 2]
+    assert store.access_count.tolist() == [2, 2]
 
 
 def test_when_is_unit_bracket_with_coarse_fine_roundtrip():
@@ -90,7 +90,7 @@ def test_when_is_unit_bracket_with_coarse_fine_roundtrip():
 def test_references_and_content_keys_survive_compaction_and_checkpoint():
     store = LTM0(12, 8, percept_width=8)
     removed = write(store, 'discard')
-    store.set_origin(removed, store.ORIGIN_USER)
+    store.set_origin(removed, store.ORIGIN_USER, asserted=(float(store.truth_plus[removed]), float(store.truth_minus[removed])))
     source = write(store, 'kept')
     child = ConceptualMeaning(meaning(2.).roles, meaning().role_mask,
                              role_refs=(store.occurrence_of(source), None, None))
@@ -129,25 +129,29 @@ def test_live_gate_presentation_reuses_covers_and_addresses_with_new_time(monkey
         admit(model, form)
     boundary, endings = Forgetting.model_boundary, []
     def capture(model, **kwargs):
+        result = boundary(model, **kwargs)
         if kwargs.get('epoch_boundary'):
-            store = model.symbolSpace.ltm_store
-            rows = (store.record_kind[:len(store)] == store.KINDS.index('observation')).nonzero().flatten()
-            assert len(rows) == 4
-            endings.append(dict(content={store.content_key(int(row)) for row in rows},
-                addresses=store.address_keys[rows].clone(),
-                bands=torch.stack([store.entry_when(int(row)) for row in rows]).clone(),
-                covers={store.raw_meaning_of(i).role_refs[0][1] for i in range(len(store))
-                        if store.row(i)['kind'] == 'cover'},
-                kinds=[store.row(i)['kind'] for i in range(len(store))],
-                witnesses=store.witness_count[:len(store)].tolist()))
-        return boundary(model, **kwargs)
+            assert len(model.symbolSpace.ltm_store) == 0
+            assert not model._concept_owner().mtm.entries
+        return result
+
+    def capture_ending():
+        store = model.symbolSpace.ltm_store
+        rows = (store.kind_codes(torch.arange(len(store), device=store.count.device)) == store.KINDS.index('observation')).nonzero().flatten()
+        assert len(rows) == 4
+        endings.append(dict(content={store.content_key(int(row)) for row in rows},
+            addresses=store.address_keys[rows].clone(),
+            bands=torch.stack([store.entry_when(int(row)) for row in rows]).clone(),
+            covers={store.raw_meaning_of(i).role_refs[0][1] for i in range(len(store))
+                    if store.row(i)['kind'] == 'cover'},
+            kinds=[store.row(i)['kind'] for i in range(len(store))],
+            witnesses=store.access_count[:len(store)].tolist()))
     monkeypatch.setattr(Forgetting, 'model_boundary', capture)
     try:
         optimizer = model.getOptimizer(lr=.01)
         for _ in range(2):
             model.runEpoch(optimizer=optimizer, batchSize=4, split='train')
-            assert len(model.symbolSpace.ltm_store) == 0
-            assert not model._concept_owner().mtm.entries
+            capture_ending()
         first, second = endings
         expected = {sentence_key(tuple(text.split())) for text in
                     (b'hello world', b'hello there', b'loving world', b'loving there')}
@@ -278,7 +282,7 @@ def test_explicit_rewitness_keeps_a_self_reference_without_inventing_evidence():
     assert kept == row and store.meaning_of(row).role_refs[0] == reference
     # The self identity is a binding, not a composing cycle.
     assert store.read_structure(reference)['incomplete'] == ()
-    for name in ('c_plus', 'c_minus'):
+    for name in ('truth_plus', 'truth_minus'):
         torch.testing.assert_close(store.state_dict()[name], before[name], rtol=0, atol=0)
 
 

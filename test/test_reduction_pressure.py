@@ -205,3 +205,17 @@ def test_pressure_default_and_xml_override_share_the_compose_layer():
     finally:
         model.End()
         model.symbolSpace.soft_reset()
+
+
+def test_last_relative_closing_round_cannot_reduce_three_slots_to_two():
+    step = unary_first()
+    x = torch.ones(1, 2, 1)
+    # The serial chooser's window contains only two operands. The deadline
+    # concerns the three occupied chunks behind it.
+    for closing, rounds, reducing in ((True, 1, False), (True, 2, True), (False, 1, True)):
+        _, _, route = step(x, depth=torch.tensor([2]), slots=3, allowance=3, load_depth=torch.tensor([3]),
+                           rounds_left=rounds, closing=closing)
+        assert bool(route['logits'][0, 0].isfinite()) == reducing
+        assert route['logits'][0, -1].isfinite()
+    _, _, route = step(x, slots=1, load_depth=torch.tensor([2]), rounds_left=1, closing=True)
+    assert route['kind'].tolist() == [1]

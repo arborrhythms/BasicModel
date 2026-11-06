@@ -20,9 +20,10 @@ def retained_bank_distributions(model):
         for count in (1, 4, 7):
             # Eight shared chunks admit at most seven off-stack identities
             # beside this mention. All retained candidates enter the menu.
-            points = torch.arange(1, (count+1)*width+1, device=like.device,
-                                  dtype=like.dtype).reshape(count+1, width)
-            points = torch.nn.functional.normalize(points, dim=-1)
+            # §50 item 101 / §52 item 111: every retained identity is a
+            # part of the queried whole, so all candidates are admissible.
+            parts = torch.eye(width, device=like.device, dtype=like.dtype)[:count]
+            points = torch.cat((parts, parts.sum(0, keepdim=True)))
             import STMChunks as chunks
             state = chunks.empty(1,8,width,device=like.device,dtype=like.dtype)
             active = torch.ones(1,device=like.device,dtype=torch.bool)

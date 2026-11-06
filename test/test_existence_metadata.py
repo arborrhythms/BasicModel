@@ -54,7 +54,7 @@ def test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows():
     idea = torch.eye(6)[0]
     source.append_idea(idea, trust=.95, sentence_index=len(source))
     provisioned = source.append_idea(idea, trust=.6, sentence_index=len(source))
-    source.set_origin(provisioned, source.ORIGIN_PROVISIONED)
+    source.set_origin(provisioned, source.ORIGIN_PROVISIONED, asserted=(float(source.truth_plus[provisioned]), float(source.truth_minus[provisioned])))
     old_keys = {"slots", "rel_type", "timestamp", "trust", "count", "origin", "_next_ts"}
     old_state = {k: v.clone() for k, v in source.state_dict().items() if k in old_keys}
     restored = LTM0(6, capacity=8)
@@ -101,13 +101,15 @@ def test_question_cannot_be_written_as_accepted_fact():
 
 def test_conflict_degrees_and_stable_provenance_survive_compaction_and_reset():
     store = LTM0(6, capacity=8)
-    first = store.append_meaning(_meaning(), kind="fact", trust=.8, sentence_index=len(store))
-    second = store.append_meaning(_meaning(), kind="fact", trust=-.9, sentence_index=len(store))
+    first = store.append_meaning(_meaning(), kind="fact", trust=.8, document_key="first")
+    second = store.append_meaning(_meaning(), kind="fact", trust=-.9, document_key="second")
+    store.set_origin(first, store.ORIGIN_USER, asserted=(float(store.truth_plus[first]), float(store.truth_minus[first])))
+    store.set_origin(second, store.ORIGIN_PROVISIONED, asserted=(float(store.truth_plus[second]), float(store.truth_minus[second])))
     first_ref, second_ref = (store.row(i)["occurrence"] for i in (first, second))
     result = _evaluate(store, _meaning())
     assert result["posture"] == BOTH
     assert {c["occurrence"] for c in result["candidates"]} == {first_ref, second_ref}
-    store.set_origin(first, store.ORIGIN_USER)
+    store.set_origin(first, store.ORIGIN_USER, asserted=(float(store.truth_plus[first]), float(store.truth_minus[first])))
     store.clear_origin(store.ORIGIN_USER)
     assert store.row(0)["occurrence"] == second_ref
     assert _evaluate(store, _meaning())["support_false"] == pytest.approx(.9)
@@ -159,7 +161,7 @@ def test_store_checkpoint_keeps_scoped_evidence_and_rejects_missing_sidecar():
     source = LTM0(6, capacity=8)
     description = _meaning(scope={"where": ("sym", 11)}, bindings={"x": ("sym", 7)})
     row = source.append_meaning(description, kind="fact", trust=.85, sentence_index=len(source))
-    source.set_origin(row, source.ORIGIN_USER, text="scoped witness")
+    source.set_origin(row, source.ORIGIN_USER, text="scoped witness", asserted=(float(source.truth_plus[row]), float(source.truth_minus[row])))
     state = {k: v.clone() for k, v in source.state_dict().items()}
     extras = source.semantic_extras()
     restored = LTM0(6, capacity=8)
@@ -188,7 +190,7 @@ def test_actual_model_checkpoint_preserves_scoped_fact_identity(tmp_path):
                                bindings={"x": ("sym", 7)},
                                scope={"where": ("sym", 11)})
         row = store.append_meaning(description, kind="fact", trust=-.8, sentence_index=len(store))
-        store.set_origin(row, store.ORIGIN_USER, text="negative scoped witness")
+        store.set_origin(row, store.ORIGIN_USER, text="negative scoped witness", asserted=(float(store.truth_plus[row]), float(store.truth_minus[row])))
         expected_ref = store.row(row)["occurrence"]
         description = store.meaning_of(row)
         path = str(tmp_path / "scoped-fact.pt")

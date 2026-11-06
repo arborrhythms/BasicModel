@@ -36,6 +36,19 @@ def test_ladder_shape_and_rungs():
     assert math.isclose(float(key[..., 2:].norm()), 1.0, abs_tol=1e-5)
 
 
+def test_question_location_reads_the_configured_rung_ratio(monkeypatch):
+    from types import SimpleNamespace
+    import Models
+    config = Models.TheXMLConfig
+    get = config.get
+    monkeypatch.setattr(config, 'get', lambda name, *args, **kwargs:
+                        8 if name == 'architecture.whereRungRatio' else get(name, *args, **kwargs))
+    model = SimpleNamespace(inputSpace=SimpleNamespace(data=SimpleNamespace(what_extent=lambda split: 128)))
+    encoder = Models.BasicModel._what_where_encoder(model, 'train')
+    assert encoder.period_hf == 16
+    assert Models.BasicModel._what_where_encoder(model, 'train') is encoder
+
+
 def test_ladder_round_trip_exact_across_range():
     # Byte positions round-trip EXACTLY across the full period -- including
     # past the HF period (256), where the LF rung resolves the HF branch.

@@ -57,7 +57,7 @@ def test_capacity_requires_room_for_new_estimate_and_observation():
 def test_narrow_idea_retains_its_identity_without_a_predicate_operand():
     store, _ = clause_store()
     first = store.write_clause(idea_clause())
-    second = store.write_clause(idea_clause(refs=(int(store.row_ids[first]), 3, -1)))
+    second = store.write_clause(idea_clause(refs=(int(store.address_keys[first]), 3, -1)))
     assert not hasattr(store, 'refs')
     assert store.meaning_of(second).role_refs == (store.occurrence_of(first), None, None)
 

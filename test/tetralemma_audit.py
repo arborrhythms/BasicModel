@@ -51,8 +51,8 @@ def inspect_site(node, sources):
         if isinstance(value, ast.Attribute):
             if value.attr in PAIR_FIELDS:
                 return both
-            if value.attr in ('c_plus', 'c_minus'):
-                return frozenset(('for' if value.attr == 'c_plus' else 'against',))
+            if value.attr in ('truth_plus', 'truth_minus'):
+                return frozenset(('for' if value.attr == 'truth_plus' else 'against',))
             return tags(value.value)
         if isinstance(value, ast.Subscript):
             found = tags(value.value)

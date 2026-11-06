@@ -105,8 +105,12 @@ class CaseView(NamedTuple):
         weights = self.weights * values.ne(0).any(-1)
         weight = weights[..., None]
         mass = weights.sum(-2)[..., None]
+        # An empty lane contributes zero. Its zero numerator must not be
+        # divided by the smallest float: the backward can overflow before
+        # multiplication by its zero weights. Nonempty lanes keep their
+        # exact weighted mean, with no lower bound on positive mass.
         return ((values * weight).sum(-3) /
-                mass.clamp_min(torch.finfo(values.dtype).tiny)).flatten(-2)
+                torch.where(mass > 0, mass, 1.)).flatten(-2)
 
     def coverage(self, request, *, meaning_start):
         """An unselected head supplies no answer about a particular case."""

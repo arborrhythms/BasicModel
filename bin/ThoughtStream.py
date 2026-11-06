@@ -24,7 +24,7 @@ def materialize(result):
             meaning = frames[0]['meaning']
         elif torch.is_tensor(evidence.get('value')) and evidence['value'].ndim == 1:
             meaning = ConceptualMeaning.from_description(evidence['value'])
-        elif result.semantic_id in ('query', 'ask', 'infer'):
+        elif result.semantic_id in ('query', 'ask', 'infer', 'intuit'):
             # An empty or cut-off read has no returned content. Its request
             # can name a temporary question occurrence; treating that as an
             # answer would bind the question's own address into the goal.
@@ -83,12 +83,29 @@ def candidates(registry, root, active, current, records, descriptions=()):
     requests = list(registry.controller_candidates(root, active, current,
         descriptions=descriptions, result_meanings=meanings))
     if has_open_slots(root):
-        allowed = {'ask', 'query', 'infer', 'not', 'isTrue', 'bind', 'exist'}
-        requests = [item for item in requests if item.semantic_id in allowed]
+        allowed = {'ask', 'query', 'intuit', 'infer', 'not', 'isTrue', 'bind', 'exist'}
+        # A query can supply both operands while the episode's root is
+        # still open. The registry has already checked their concepts.
+        requests = [item for item in requests if item.semantic_id in allowed or
+                    (item.semantic_id == 'equal' and not item.open_roles
+                     and not has_open_slots(item.request))]
     if 'infer' in registry.executable_operation_ids:
         from ThoughtChunks import held
         stm = getattr(registry.space, 'stm', None)
         premises = () if stm is None or not hasattr(stm, 'state') else held(stm, getattr(registry, '_thought_row', 0))
+        for where, premise in premises:
+            from Intuition import held_terms
+            terms = held_terms(premise)
+            if not terms:
+                continue
+            for term, pair in zip(terms, bindings(premise)['_intuition_firings'], strict=True):
+                request = registry.form('infer', premise, premise)
+                refs = (request.role_refs[0], request.role_refs[1], term.rule)
+                data = dict(bindings(request), _intuition_rule=term.rule)
+                roles = request.roles.clone()
+                roles[2] = term.meaning.roles[term.meaning.role_mask].amax(0)
+                request = with_slots(replace(request, roles=roles, role_refs=refs, bindings=data), (), pair=pair)
+                requests.append(ThoughtOperationCandidate(registry.operation_spec('infer'), request, ()))
         for where, rule in premises:
             if not bindings(rule).get('_rule_row') or not bool(rule.role_mask[2]):
                 continue
@@ -154,11 +171,37 @@ def candidates(registry, root, active, current, records, descriptions=()):
     return tuple(requests)
 
 
+def completion_result(meaning, result):
+    """A finish carries a proof only when it concludes that proof's value.
+
+    A returned subgoal can leave its caller unchanged. Its checked proof stays
+    on the return record; it cannot certify the caller's different proposition.
+    Evidence pairs are deliberately not compared here: a changed pair on the
+    same proposition must still fail strict replay.
+    """
+    if result is None or not any(name in result.evidence for name in
+            ('derivation', 'intuition_derivation', 'pervasion_derivation', 'operand_pair')):
+        return result
+    supplied = result.evidence.get('meaning')
+    if supplied is None:
+        raise ValueError('a checked thought proof requires its concluded meaning')
+
+    def same(left, right):
+        return (left.role_refs == right.role_refs and left.polarity == right.polarity
+                and open_slots(left) == open_slots(right)
+                and torch.equal(left.role_mask, right.role_mask)
+                and torch.equal(left.roles, right.roles)
+                and len(left.constituents) == len(right.constituents)
+                and all(same(a, b) for a, b in zip(left.constituents, right.constituents)))
+
+    return result if same(meaning, supplied) else None
+
+
 def integrate(registry, goal, result, records, *, work=None):
     """Compose witnesses already read into serial slots; never search LTM here."""
     if result is None:
         return goal
-    if result.semantic_id == 'infer':
+    if result.semantic_id in ('infer', 'intuit'):
         return result.evidence.get('meaning', goal)
     if (result.semantic_id in ('query', 'ask') and bindings(goal).get('_subgoal_subject') is not None
             and result.evidence.get('meaning') is not None):
@@ -331,7 +374,7 @@ def write(model, meaning, *, row, _active=None, _bound=None):
                         location = store.location(reference)
                         if type(location) is not int:
                             raise ValueError('a concluded Part argument names an unavailable occurrence')
-                        refs.append(int(store.row_ids[location]))
+                        refs.append(int(store.address_keys[location]))
                     elif reference is None and ('referent', role) in open_slots(value):
                         from Meaning import ConceptualMeaning
                         data = {'_open_references': (('referent', 0),)}
@@ -459,7 +502,12 @@ def write(model, meaning, *, row, _active=None, _bound=None):
         token = None if mtm is None or identity is None else mtm.token_of(identity)
         if token is not None and point is not None:
             from RowTime import encoder
-            mtm.update(token, point, when=int(encoder().decode_index(store.entry_when(result))))
+            when = int(encoder().decode_index(store.entry_when(result)))
+            if any(branch.events for branch in mtm.entries[token].timelines):
+                mtm.update(token, point, when=when)
+            else:
+                mtm.bind(token, store.occurrence_of(result), kind=mtm.entries[token].kind,
+                         value=point, reading=None, when=when)
             mtm.entries[token] = replace(mtm.entries[token], pending=False)
     return result
 
@@ -519,7 +567,7 @@ def commit(model, result, *, row):
     if store is not None and result.work.spent == 0 and open_slots(result.meaning) and row < len(fields):
         field = fields[row]
         prior = None if field is None else store.index_of_row(field.row_id)
-        if (prior is not None and store.KINDS[int(store.record_kind[prior])] == 'question'
+        if (prior is not None and store.kind_of(prior) == 'question'
                 and torch.equal(store.slots[prior], result.meaning.roles[0])):
             index = prior
     if index is None:

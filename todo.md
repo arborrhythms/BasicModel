@@ -114,6 +114,14 @@ Codex text is §56.2 (Codex's diagnosis confirmed; it replaces §56.1): items 11
 119, then the suite, item 71's runs and the
 freeze.
 
+**Update 2026-11-06 (morning):** the §57 return is reviewed in
+[thinking spec §58](doc/plans/2026-10-27-item2-5-thinking.md). Item 118 is
+approved, and the freeze `e56b69715947` is accepted: **item 2.5 is complete**.
+It lands on Alec's word, as recorded below. Testing (Alec, 2026-11-06): until
+the implementation is finished, each round runs only fast checks: direct
+before-and-after cases, the targeted tests, and make test once at a freeze.
+Long runs (item 71's), repeats and stability come later. The Codex text is §58.1.
+
 **Order and branches (Alec, 2026-11-03):** work happens on main, with no
 sandbox branches; the countdown order stands, 2.5, 2.0, 2, then 1.5, 1 and 0;
 when item 2.5 completes, everything is on main, committed and pushed, then

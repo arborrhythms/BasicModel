@@ -361,3 +361,21 @@ def test_invalid_policy_fails_loud(monkeypatch):
     monkeypatch.setenv("MODEL_FINITE_GRAD_GUARD", "sometimes")
     with pytest.raises(ValueError, match="MODEL_FINITE_GRAD_GUARD"):
         preflight_finite_gradients(optimizer)
+
+
+def test_failed_preflight_reports_every_parameter_and_collected_objective():
+    from Optimizer import NonFiniteGradients
+    first = nn.Parameter(torch.ones(3))
+    second = nn.Parameter(torch.ones(2))
+    optimizer = Adam([first, second], lr=.01)
+    first.grad = torch.tensor([float('nan'), 0., float('inf')])
+    second.grad = torch.tensor([0., float('-inf')])
+    epochs = {'reconstruction': {first: first.grad}, 'output': {second: torch.zeros_like(second)}}
+    with pytest.raises(NonFiniteGradients) as stopped:
+        preflight_finite_gradients(optimizer, [('first', first), ('second', second)], epoch_gradients=epochs)
+    assert [(p['name'], p['nonfinite'], p['entries']) for p in stopped.value.parameters] == [
+        ('first', 2, 3), ('second', 1, 2)]
+    assert stopped.value.objectives == {'reconstruction': {'first': {'entries': 3, 'nonfinite': 2}},
+                                        'output': {'second': {'entries': 2, 'nonfinite': 0}}}
+    assert torch.equal(stopped.value.epoch_gradients['output']['second'], epochs['output'][second])
+    assert not optimizer.state and torch.equal(first, torch.ones(3)) and torch.equal(second, torch.ones(2))

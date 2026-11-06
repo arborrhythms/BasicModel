@@ -25,8 +25,8 @@ class TestDepth3RelativeEndState(unittest.TestCase):
         depths = []
         original = m._clause_end_state
 
-        def spy(state, sid, clauses, row_ids):
-            out = original(state, sid, clauses, row_ids)
+        def spy(state, sid, clauses, row_addresses):
+            out = original(state, sid, clauses, row_addresses)
             depths.append(out[0][1].detach().reshape(-1).tolist())
             return out
 

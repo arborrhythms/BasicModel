@@ -45,6 +45,7 @@
       <rule operands="field">F = or.forward(F)</rule>
 
       <rule>interpret_argout1 = interpret.forward(interpret_argin1)</rule>
+      <rule>sign_argout1 = sign.forward(sign_argin1)</rule>
       <!-- Subsymbolic tier (C): continuous activations. -->
       <rule>union_argout1 = union.forward(union_argin1, union_argin2)</rule>
       <rule>intersection_argout1 = intersection.forward(intersection_argin1, intersection_argin2)</rule>
@@ -87,6 +88,7 @@
 
     <generate>
       <rule>interpret_argin1 = interpret.reverse(interpret_argout1)</rule>
+      <rule>sign_argin1 = sign.reverse(sign_argout1)</rule>
       <!-- Mirror of compose: output role back to input roles. -->
       <rule>union_argin1, union_argin2 = union.reverse(union_argout1)</rule>
       <rule>intersection_argin1, intersection_argin2 = intersection.reverse(intersection_argout1)</rule>

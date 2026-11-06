@@ -49,9 +49,9 @@ def singletons(model):
         references[int(concept)] = form
     rows = []
     for index in range(len(store)):
-        if (store.KINDS[int(store.record_kind[index])] != 'observation'
+        if (store.kind_of(index) != 'observation'
                 or int(store.rel_type[index]) != store.REL_NONE
-                or int(store.order[index]) != 0):
+                or store.order_of_row(index) != 0):
             continue
         refs = store.refs[index].tolist()
         if refs[0] not in references or refs[1:] != [-1, -1]:
@@ -63,8 +63,8 @@ def singletons(model):
         value = meaning.roles[0, chart.meaning_start:chart.content_width]
         word_value = atoms[form][chart.meaning_start:chart.content_width]
         similarity, reason = cosine(value, word_value)
-        rows.append(dict(index=index, row=int(store.row_ids[index]), word=form,
-            concept=refs[0], witnesses=int(store.witness_count[index]),
+        rows.append(dict(index=index, row=int(store.address_keys[index]), word=form,
+            concept=refs[0], witnesses=int(store.access_count[index]),
             closed_meaning_norm=float(value.norm()), word_meaning_norm=float(word_value.norm()),
             cosine=similarity, undefined_reason=reason))
     matrix = component.nouns.matrix().detach()

@@ -45,27 +45,27 @@ def test_interpret_calls_bind_and_bare_forward_choices_share_the_chooser():
 
 def test_driver_batch_groups_share_constructed_priming_without_broadcast():
     from MathChainTraining import document_batches
-    from math_chain_corpus import MathChainCorpus, flatten
+    from math_chain_corpus import MathChainCorpus,flatten
     from test_priming_energy import _chain_cs
-    cs, _, _ = _chain_cs(batch_size=8)
-    _, _, addresses = flatten(MathChainCorpus().presentation()['train'], supplied=False)
-    sizes = [len(rows) for rows, end in document_batches(addresses, 8) if end]
-    assert {2, 3, 8}.issubset(sizes)
-    # A provisioning write must not leak row zero into the first batch.
+    cs,_,_=_chain_cs(batch_size=8)
+    _,_,addresses=flatten(MathChainCorpus().presentation()['train'],supplied=False)
+    sizes=[len(rows) for rows,end in document_batches(addresses,8) if end]
+    assert {2,3,8}.issubset(sizes)
     cs.prime_seen(torch.tensor([[3]]))
-    pointer = cs._priming_boosts.data_ptr()
+    pointer=cs._expected_knowing.data_ptr()
     for batch in sizes:
-        cs._priming_boosts.fill_(1.)
-        weights = cs.priming_weights(batch=batch)
-        assert weights.shape == (batch, cs._priming_dim())
-        assert torch.equal(weights, torch.ones_like(weights))
-        assert cs._priming_boosts.data_ptr() == pointer
-        cs.prime_seen(torch.arange(batch)[:, None] + 8)
-        weights = cs.priming_weights(batch=batch)
+        cs._expected_knowing.zero_()
+        weights=cs.priming_weights(batch=batch)
+        assert weights.shape==(batch,cs._priming_dim()) and weights.eq(1).all()
+        assert cs._expected_knowing.data_ptr()==pointer
+        cs.prime_seen(torch.arange(batch)[:,None]+8)
+        assert cs.priming_weights(batch=batch).eq(1).all()
+        cs._expected_knowing[torch.arange(batch),torch.arange(batch)+8,0]=.5
+        weights=cs.priming_weights(batch=batch)
         for row in range(batch):
-            assert weights[row, row + 8] > 1
-            assert all(weights[other, row + 8] == 1 for other in range(batch) if other != row)
-    with pytest.raises(RuntimeError, match='capacity'):
+            assert weights[row,row+8]==1.5
+            assert all(weights[other,row+8]==1 for other in range(batch) if other!=row)
+    with pytest.raises(RuntimeError,match='capacity'):
         cs.priming_weights(batch=9)
 
 
@@ -89,9 +89,11 @@ def test_pending_relation_fills_in_place_in_both_arrival_orders(forward_first):
     from ThoughtReferences import with_slots, bindings, open_slots
     from test_clause_storage import clause_store
     store, _ = clause_store()
+    from part_fixtures import symbol
+    word = symbol(store, torch.eye(4)[0], types=('word',))
     meaning = with_slots(ConceptualMeaning.from_description(torch.eye(4)[0]),
         (('referent', 0),), pair=(1., 0.))
-    data = dict(meaning.bindings, _forward_references=((0, 17),))
+    data = dict(meaning.bindings, _forward_references=((0, word),))
     meaning = replace(meaning, bindings=data)
     premise = replace(meaning, role_refs=(('sym', 1), None, None),
         bindings=dict(data, _equality=True))
@@ -103,7 +105,7 @@ def test_pending_relation_fills_in_place_in_both_arrival_orders(forward_first):
     document, position = store.document_keys[row].clone(), store.sentence_index[row].clone()
     if forward_first:
         assert ('referent', 0) in open_slots(store.meaning_of(row))
-        assert store._forward_addresses((17,)) == {int(store.address_keys[row])}
+        assert store._forward_addresses((word,)) == {int(store.address_keys[row])}
         # Loading invalidates only derived postings. The later occurrence is
         # evidence for the working read, never a rewrite of the earlier row.
         extras = store.semantic_extras()
@@ -113,9 +115,9 @@ def test_pending_relation_fills_in_place_in_both_arrival_orders(forward_first):
     # This direct storage fixture supplies the kept bind explicitly. Equality
     # rows alone stopped being a binder at §10.4; source rows stay immutable.
     pool = store._concept_owner().mtm
-    pool.open(address, kind=None, when=0, value=meaning.roles[0], reading=17)
+    pool.open(address, kind=None, when=0, value=meaning.roles[0], reading=word)
     pool.bind(address, store.occurrence_of(arrival), kind=1, when=1,
-              value=store._concept_point(1), reading=17)
+              value=store._concept_point(1), reading=word)
     resolved = store.meaning_of(row)
     assert ('referent', 0) not in open_slots(resolved)
     assert not bindings(resolved).get('_forward_references')

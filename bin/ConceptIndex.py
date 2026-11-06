@@ -1,5 +1,6 @@
 """Derived taxonomy and direct word references over native concept records."""
 import torch
+from LTM1 import NULL_CONCEPT
 from Spaces import _concept_alloc_of
 
 
@@ -38,6 +39,8 @@ def index_part_row(cs, part, whole):
     from LTM1 import SYMBOL
     alloc = _concept_alloc_of(cs)
     part_ref, whole_ref = alloc.parts.reference(part), alloc.parts.reference(whole)
+    if (SYMBOL, NULL_CONCEPT) in (part_ref, whole_ref):
+        raise ValueError('null-concept cannot participate in membership or raising')
     if part_ref == whole_ref:
         return whole_ref[1]
     part_order = (alloc.order_of(part_ref[1]) if part_ref[0] == SYMBOL

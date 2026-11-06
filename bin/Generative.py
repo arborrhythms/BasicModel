@@ -20,22 +20,32 @@ class InverseMenu(NamedTuple):
 
     @property
     def features(self):
-        return torch.cat((self.form_residual[..., None], self.meaning_residual,
+        values = torch.cat((self.form_residual[..., None], self.meaning_residual,
             self.exact.to(self.left)[..., None], self.stack_effect[..., None]), -1).detach()
+        # An unavailable inverse can have an infinite residual. It is not a
+        # scoring observation: a later logit mask cannot prevent 0 * inf in
+        # the scorer's weight gradient, even when its forward logits are finite.
+        values = torch.where(self.admissible[..., None], values, 0.)
+        torch._assert_async(torch.isfinite(values).all(),
+                            'an admissible generation menu requires finite features')
+        return values
 
 
-def relative_residual(parent, recovered, form_width=None):
-    """Independent full-parent form/for/against errors; no signed cancellation."""
+EXACT_RESIDUAL_TOLERANCE = 1e-8
+
+
+def absolute_residual(parent, recovered, form_width=None, *, numeric):
+    """Per-lane MSE in the native cube or numeric asinh chart."""
     width = parent.shape[-1] if form_width is None else form_width
+    if numeric:
+        parent, recovered = parent.asinh(), recovered.asinh()
     def error(start, end):
-        value, restored = parent[..., start:end], recovered[..., start:end]
-        scale = value.square().mean(-1)
-        return (restored-value).square().mean(-1) / torch.where(scale > 0, scale, 1.)
+        return (recovered[..., start:end] - parent[..., start:end]).square().mean(-1)
     form = error(0, width)
     if width == parent.shape[-1]:
         return form, torch.zeros(*form.shape, 2, device=form.device, dtype=form.dtype)
     middle = width + (parent.shape[-1]-width)//2
-    return form, torch.stack((error(width,middle), error(middle,parent.shape[-1])), -1)
+    return form, torch.stack((error(width, middle), error(middle, parent.shape[-1])), -1)
 
 
 def in_cube(value):
@@ -55,7 +65,7 @@ def native_recompose(op, parent, left, right=None, *, form_width=None,
     op = getattr(op,'gl',op)
     if form_width is not None:
         if right is None:
-            whole = None if whole_bank is None else whole_bank.read(left)
+            whole = None if whole_bank is None else whole_bank.read_presence(left)
             view = (case_bank.for_values(left,form_width=form_width) if case_bank is not None
                 and callable(getattr(op,'compose_case_meaning',None)) else None)
             return op.compose_blocks(op.compose,left,whole=whole,case_view=view)
@@ -89,7 +99,7 @@ def eligibility_menu(parent,lefts,rights,available,binary,unary,proposals,recomp
     """Admissibility preserves domain and witnesses; exactness measures error."""
     forms, meanings = [], []
     for value in recomposed:
-        f,m=relative_residual(parent,value,form_width)
+        f,m=absolute_residual(parent,value,form_width,numeric=not cube_domain)
         forms.append(f); meanings.append(m)
     exact = [exact_pairs[:,i] for i in range(len(binary))]
     for offset,wrapped in enumerate(unary):
@@ -100,39 +110,47 @@ def eligibility_menu(parent,lefts,rights,available,binary,unary,proposals,recomp
         safe=torch.where(valid[:,None],value,.5)
         folded=native_recompose(wrapped,parent,safe,form_width=form_width,
             whole_bank=whole_bank,case_bank=case_bank)
-        f,m=relative_residual(parent,folded,form_width)
-        valid=valid & torch.isfinite(f) & torch.isfinite(m).all(-1)
+        f,m=absolute_residual(parent,folded,form_width,numeric=not cube_domain)
         proposals.append(valid); forms.append(f); meanings.append(m)
-        exact.append(valid & (f <= 1e-8) & (m <= 1e-8).all(-1))
+        exact.append(valid & (f <= EXACT_RESIDUAL_TOLERANCE) & (m <= EXACT_RESIDUAL_TOLERANCE).all(-1))
     # An exact terminal retains its original activation and both meaning lanes.
     # An approximate STOP emits an admitted native code, never the arbitrary top.
     terminal=torch.where(singular[:,None],parent,terminal)
     lefts=list(lefts); lefts[-1]=terminal
     domain=in_cube(terminal) if cube_domain else torch.isfinite(terminal).all(-1)
     valid=terminal_available & domain & (parent.ne(0).any(-1) if cube_domain else True)
-    f,m=relative_residual(parent,terminal,form_width)
+    f,m=absolute_residual(parent,terminal,form_width,numeric=not cube_domain)
     proposals.append(valid); forms.append(f); meanings.append(m); exact.append(singular)
     admissible=torch.stack(proposals,1)&available
-    exact=torch.stack(exact,1)&admissible
+    exact=torch.stack(exact,1)
     # Preserve the existing pair-first exact reading. Approximate alternatives
     # are available only when no exact pair or terminal already explains it.
     compound=exact_pairs.any(-1)
     resolved=compound|singular
     strict=torch.cat((exact_pairs,torch.zeros_like(available[:,len(binary):-1]),
                       (singular&~compound)[:,None]),-1)
-    admissible=torch.where(resolved[:,None],strict,admissible)
+    if cube_domain:
+        admissible=torch.where(resolved[:,None],strict,admissible)
+    forms, meanings = torch.stack(forms,1), torch.stack(meanings,1)
+    torch._assert_async((~admissible | (torch.isfinite(forms) & torch.isfinite(meanings).all(-1))).all(),
+                        'an admissible generation proposal requires a finite absolute residual')
+    exact = exact & admissible
     effects=parent.new_zeros(available.shape)
     effects[:,:len(binary)]=1; effects[:,-1]=-1
     return InverseMenu(torch.stack(lefts,1),torch.stack(rights,1),admissible,exact,
-        torch.stack(forms,1),torch.stack(meanings,1),effects)
+        forms,meanings,effects)
 
 
 def selected_residual(language,parent,left,right,choice,active,*,form_width=None,
-                      whole_bank=None,case_bank=None):
+                      whole_bank=None,case_bank=None,numeric=False):
     """A fresh pullback through only the selected native recomposition."""
     binary,unary=language._generate_binary_ops,language._generate_unary_ops
     total=parent.new_zeros(len(parent),3)
     compiling=torch.compiler.is_compiling()
+    if compiling:
+        # Conditional kernels consume dense [B,D] planes. Separate streams
+        # must not share the stride of a selected pair's [B,2,D] carrier.
+        operands = torch.stack((parent, left, right), dim=0)
     indices=range(len(binary)+len(unary)) if compiling else choice[active].unique().tolist()
     for index in indices:
         if index >= len(binary)+len(unary):
@@ -141,36 +159,45 @@ def selected_residual(language,parent,left,right,choice,active,*,form_width=None
         op=(binary if index<len(binary) else unary)[index if index<len(binary) else index-len(binary)]
         def apply(p,a,b,mask):
             # Unselected rows may be padding, outside this operator's domain.
+            p=torch.where(mask[:,None],p,.5)
             a=torch.where(mask[:,None],a,.5); b=torch.where(mask[:,None],b,.5)
             folded=native_recompose(op,p,a,b if index<len(binary) else None,
                 form_width=form_width,whole_bank=whole_bank,case_bank=case_bank)
-            f,m=relative_residual(p,folded,form_width)
+            f,m=absolute_residual(p,folded,form_width,numeric=numeric)
             return torch.where(mask[:,None],torch.cat((f[:,None],m),-1),0.)
-        total=total+(torch.cond(use.any(),apply,lambda p,a,b,mask:p.new_zeros(len(p),3),
-            (parent,left,right,use)) if compiling else apply(parent,left,right,use))
-    f,m=relative_residual(parent,left,form_width)
-    return total+torch.where((active & (choice==len(binary)+len(unary)))[:,None],
+        if compiling:
+            def selected(values, mask):
+                return apply(values[0], values[1], values[2], mask)
+            cost = torch.cond(use.any(), selected,
+                lambda values, mask: values.new_zeros(values.shape[1], 3), (operands, use))
+        else:
+            cost = apply(parent, left, right, use)
+        total = total + cost
+    stop=active & (choice==len(binary)+len(unary))
+    f,m=absolute_residual(torch.where(stop[:,None],parent,.5),
+                          torch.where(stop[:,None],left,.5),form_width,numeric=numeric)
+    return total+torch.where(stop[:,None],
         torch.cat((f[:,None],m),-1),0.)
 
 
-def walk_residual(steps, frontier, initial, depth, *, form_width=None):
-    """Sum every local error plus unresolved frontier energy, without dilution."""
+def walk_residual(steps, frontier, initial, depth, *, form_width=None, numeric=False):
+    """Chosen errors plus unresolved stack energy, separately in each lane."""
     valid=torch.arange(frontier.shape[1],device=frontier.device)[None]<depth[:,None]
     frontier=torch.where(valid[...,None],frontier,0.)
+    if numeric:
+        frontier=frontier.asinh()
     width=initial.shape[-1] if form_width is None else form_width
     blocks=[(0,width)]
     if width<initial.shape[-1]:
         middle=width+(initial.shape[-1]-width)//2
         blocks.extend(((width,middle),(middle,initial.shape[-1])))
-    energy=initial.new_zeros(len(initial))
-    for start,end in blocks:
-        baseline=initial[...,start:end].square().mean(-1).sum(-1)
-        energy=energy+frontier[...,start:end].square().mean(-1).sum(-1)/torch.where(baseline>0,baseline,1.)
-    return steps.sum((1,2))+energy
+    energy=[frontier[...,start:end].square().mean(-1).sum(-1) for start,end in blocks]
+    energy.extend(torch.zeros_like(energy[0]) for _ in range(3-len(energy)))
+    return steps.sum(1)+torch.stack(energy,-1)
 
 
 @torch.no_grad()
-def lexical_candidates(owner,root,*,limit,chunk_size=256):
+def lexical_candidates(owner,root,*,limit,chunk_size=256,retain_bytes=True):
     """One root-conditioned scan; bounded chunks/top-k, never a per-step scan."""
     from SentenceUnderstanding import PrimedSymbols,readback_scores
     if limit<1 or chunk_size<1:
@@ -204,17 +231,13 @@ def lexical_candidates(owner,root,*,limit,chunk_size=256):
     weights=torch.where(valid,weights,0.)
     surfaces=[[owner.word_surface_for_row(row) if row>=0 else None for row in batch]
               for batch in selected.cpu().tolist()]
-    nbytes=max(1,max((len(raw or b'') for batch in surfaces for raw in batch),default=0)+1)
-    byte=torch.zeros(B,limit,nbytes,dtype=torch.long,device=root.device)
-    byte_valid=torch.zeros_like(byte,dtype=torch.bool)
-    for b,batch in enumerate(surfaces):
-        for j,raw in enumerate(batch):
-            if raw:
-                byte[b,j,:len(raw)]=byte.new_tensor(list(raw)); byte_valid[b,j,:len(raw)]=True
+    from WordSurfaces import stage
+    byte,byte_valid,present,support=stage(surfaces,owner.word_surface_capacity,
+        device=root.device,eos=True,retain_bytes=retain_bytes)
     report=dict(vocabulary=len(rows),chunks=chunks,chunk_size=chunk_size,limit=limit,
                 rows=selected.cpu().tolist())
     return PrimedSymbols(selected,codes,weights,torch.zeros_like(valid),byte,byte_valid,
-                         meaning_start=width),report
+                         meaning_start=width,surface_present=present,primitive_support=support),report
 
 
 def walk_bank(model,root,bank):
@@ -222,8 +245,10 @@ def walk_bank(model,root,bank):
     from dataclasses import replace
     import time
     started=time.monotonic()
+    identity=getattr(getattr(getattr(model,'perceptualSpace',None),'percept_store',None),'identity',None)
+    retain_bytes=identity is None
     lexical,report=lexical_candidates(model._concept_owner(),root,
-        limit=model.reconstruction_basis_limit)
+        limit=model.reconstruction_basis_limit,retain_bytes=retain_bytes)
     report['elapsed_seconds']=time.monotonic()-started
     model._last_lexical_retrieval=report
     if bank is None:
@@ -231,13 +256,19 @@ def walk_bank(model,root,bank):
     else:
         # Keep structural candidates; lexical availability is independent of
         # current heat. Duplicate identities are harmless to exact STOP.
-        width=max(bank.bytes.shape[-1],lexical.bytes.shape[-1])
-        def padded(value):
-            return torch.nn.functional.pad(value,(0,width-value.shape[-1]))
+        support=bank.primitive_support
+        if support is None:
+            from WordSurfaces import primitive_support
+            support=primitive_support(bank.bytes,bank.byte_valid)
+        if retain_bytes and bank.bytes.shape[-1] != lexical.bytes.shape[-1]:
+            raise ValueError('walk surfaces must share the constructed wordSurfaceCapacity')
         result=replace(bank,rows=torch.cat((bank.rows,lexical.rows),1),
             codes=torch.cat((bank.codes,lexical.codes),1),weights=torch.cat((bank.weights,lexical.weights),1),
-            own=torch.cat((bank.own,lexical.own),1),bytes=torch.cat((padded(bank.bytes),padded(lexical.bytes)),1),
-            byte_valid=torch.cat((padded(bank.byte_valid),padded(lexical.byte_valid)),1),
+            own=torch.cat((bank.own,lexical.own),1),
+            bytes=torch.cat((bank.bytes,lexical.bytes),1) if retain_bytes else None,
+            byte_valid=torch.cat((bank.byte_valid,lexical.byte_valid),1) if retain_bytes else None,
+            surface_present=torch.cat((bank.terminal_valid,lexical.terminal_valid),1),
+            primitive_support=torch.cat((support,lexical.primitive_support),1),
             forms=None if bank.forms is None else torch.cat((bank.forms,lexical.codes),1))
     from FormCentroids import candidates
     return replace(result,form_wholes=candidates(model.wholeSpace,result))
@@ -259,6 +290,9 @@ def preserve_operator_activations(function):
     """
     @wraps(function)
     def read(language, *args, **kwargs):
+        if torch.compiler.is_compiling():
+            # Numerical kernels already omit host activation publication in a HOP.
+            return function(language, *args, **kwargs)
         saved = {}
         for op in (*language._generate_binary_ops, *language._generate_unary_ops):
             for module in (op.modules() if isinstance(op, torch.nn.Module) else (op,)):
@@ -439,7 +473,10 @@ def selected_inverse(language, parent, choice, live, *, basis, basis_valid, prim
     use_binary = live & (choice < len(binary))
     use_unary = live & (choice >= len(binary)) & (choice < len(binary) + len(unary))
     left, right = parent, parent
-    if bool(use_binary.any()):
+    compiling = torch.compiler.is_compiling()
+    if binary and (compiling or bool(use_binary.any())):
+        # reverse_binary_step dispatches only indices selected by a live row,
+        # using conditional branches for a captured walk.
         a, b = language.reverse_binary_step(parent, choice, use_binary, ops=binary,
             basis=basis if require_symbols else None,
             basis_valid=basis_valid if require_symbols else None,
@@ -447,13 +484,27 @@ def selected_inverse(language, parent, choice, live, *, basis, basis_valid, prim
             free=require_symbols, case_bank=case_bank, whole_bank=whole_bank)
         left = torch.where(use_binary[:, None], a, left)
         right = torch.where(use_binary[:, None], b, right)
-    if bool(use_unary.any()):
-        local = choice - len(binary)
-        for index in local[use_unary].unique(sorted=True).tolist():
-            selected = use_unary & (local == index)
-            a = language.generate_unary_step(parent, torch.zeros_like(local), selected,
-                whole_bank=whole_bank, case_bank=case_bank, ops=(unary[index],))
-            left = torch.where(selected[:, None], a, left)
+    local = choice - len(binary)
+    indices = range(len(unary)) if compiling else local[use_unary].unique(sorted=True).tolist()
+    for index in indices:
+        selected = use_unary & (local == index)
+        # A different stream can select this operator. Only its own operand
+        # belongs to the inverse's graph.
+        operand = torch.where(selected[:, None], parent, .5)
+        def apply(value, active):
+            result, unavailable = language.generate_unary_step(value, torch.zeros_like(local), active,
+                whole_bank=whole_bank, case_bank=case_bank, ops=(unary[index],), return_status=True)
+            torch._assert_async((~active | ~unavailable).all(), 'selected unary inverse became unavailable')
+            return result.clone()
+        if compiling:
+            # The stack top can be a strided view of a pair. Give both cond
+            # branches the same physical layout that their compiled ABI sees.
+            planes = torch.stack((parent, operand))
+            a = torch.cond(selected.any(), lambda values, active: apply(values[1], active),
+                lambda values, active: values[0].clone(), (planes, selected))
+        else:
+            a = apply(operand, selected)
+        left = torch.where(selected[:, None], a, left)
     return left, right
 
 
@@ -462,9 +513,9 @@ class InverseMenuRead:
 
     Parameters and dictionary snapshots stay fixed inside a walk. Repeated
     values can reuse their menu while the selected inverse builds its fresh
-    pullback each time. The first differentiable menu still supplies every
-    operator's zero-gradient edge. Capacity is the existing stack capacity;
-    nothing survives the walk or enters a model checkpoint.
+    pullback each time. A rejected inverse has no backward edge. Capacity
+    is the existing stack capacity. Nothing survives the walk or enters a
+    model checkpoint.
     """
     def __init__(self, language, capacity):
         self.language, self.capacity = language, int(capacity)
@@ -545,8 +596,8 @@ def inverse_menu(language, parent, live, *, basis, basis_valid, priming=None,
         whole_bank=whole_bank,case_bank=case_bank) for i,op in enumerate(binary)]
     exact_pairs=[]
     for value in folded:
-        f,m=relative_residual(parent,value,width)
-        exact_pairs.append((f<=1e-8)&(m<=1e-8).all(-1))
+        f,m=absolute_residual(parent,value,width,numeric=True)
+        exact_pairs.append((f<=EXACT_RESIDUAL_TOLERANCE)&(m<=EXACT_RESIDUAL_TOLERANCE).all(-1))
     exact_pairs=torch.stack(exact_pairs,1) if exact_pairs else available[:,:0]
     # Nonsymbolic numeric walks retain their declared inverse-domain flags;
     # numeric values are not membership coordinates in the cube.
@@ -554,4 +605,4 @@ def inverse_menu(language, parent, live, *, basis, basis_valid, priming=None,
     menu=eligibility_menu(parent,lefts,rights,available,binary,unary,
         proposals,folded,exact_pairs,available[:,-1],parent,available[:,-1],width,
         whole_bank=whole_bank,case_bank=case_bank,cube_domain=False)
-    return menu._replace(admissible=torch.stack(proposals,1)&available)
+    return menu

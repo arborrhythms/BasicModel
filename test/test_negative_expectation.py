@@ -173,7 +173,7 @@ def test_pair_lookup_uses_occurrence_index_in_both_directions(state, monkeypatch
     meaning = ConceptualMeaning.from_description(torch.ones(4))
     for _ in range(24):
         row = store.append_idea(torch.ones(4), sentence_index=len(store))
-        store.set_origin(row, store.ORIGIN_USER)
+        store.set_origin(row, store.ORIGIN_USER, asserted=(float(store.truth_plus[row]), float(store.truth_minus[row])))
     source = store.append_meaning(meaning, kind="observation", sentence_index=len(store))
     from meaning_fixtures import symbol_prediction, estimate_meaning
     prior = symbol_prediction(torch.ones(1, 4), torch.tensor([[1., 0.]]))

@@ -11,6 +11,8 @@ class ClauseScope(nn.Module):
     it to a shared row. Absolute clauses retain their numerical point.
     """
     RELATIVE, GENERIC, SENTENCE, PREDICATE, LOCAL, DETERMINED = 1, 2, 4, 8, 16, 32
+    INTERPRETED_LEAF = 64
+    UNINTERPRETED_LEAF = 128
 
     def __init__(self, binary, unary):
         super().__init__()
@@ -41,6 +43,8 @@ class ClauseScope(nn.Module):
         self.register_buffer('unary_determined', torch.tensor(
             [getattr(rule, 'determiner_mode', None) in ('mint', 'bind') for rule in unary]
             or [False]), persistent=False)
+        self.register_buffer('unary_interpret', torch.tensor(
+            [getattr(rule, 'method_name', None) == 'interpret' for rule in unary] or [False]), persistent=False)
 
     @staticmethod
     def empty(buffer):
@@ -138,6 +142,9 @@ class ClauseScope(nn.Module):
             self.unary_determined.to(state.device)[choice.local_op.clamp(0, self.unary_determined.numel()-1)])
         determined |= retained & (previous_flags.bitwise_and(self.DETERMINED) != 0)
         flags |= torch.where(determined, self.DETERMINED, 0)
+        interpreted = unary & self.unary_interpret.to(state.device)[
+            choice.local_op.clamp(0, self.unary_interpret.numel()-1)]
+        flags |= torch.where(interpreted, self.INTERPRETED_LEAF, 0)
         parent = torch.stack((flags, reference), -1)
         if state.shape[-1] > 2:
             parent = torch.cat((parent,torch.where(preserved[:,None],head[:,2:],0)), -1)

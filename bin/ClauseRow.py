@@ -3,9 +3,14 @@ from dataclasses import dataclass, field, replace
 from contextlib import contextmanager
 from typing import Any
 
+from LTM1 import NULL_CONCEPT
 import torch
 
 from Meaning import ConceptualMeaning
+
+
+class ClauseCapacityError(OverflowError):
+    """A complete kept clause will not fit in the remaining LTM0 rows."""
 
 
 def predicate_identity(name):
@@ -65,6 +70,7 @@ class Composition:
     binding: Any = field(default=None, repr=False)
     word_id: int = -1
     formal_name: str | None = None
+    interpretation: str | None = None
 
 
 @dataclass(frozen=True, eq=False)
@@ -148,6 +154,7 @@ def attach_clause_index(model, store, space):
     from Spaces import _concept_alloc_of
     allocator = _concept_alloc_of(space)
     object.__setattr__(store, 'parts', allocator.parts)
+    allocator.parts._occurrence_store = weakref.ref(store)
     object.__setattr__(store, '_concept_owner', space_ref)
     language = getattr(model, 'languageSpace', None)
     occupations = getattr(language, 'parts_of_speech', None)
@@ -300,7 +307,7 @@ class ClauseRows:
             sentence_kind='relation', bindings=marks), opened, pair=pair)
         return dict(part, meaning=meaning, head_point=head_idea(self, symbol), occurrence=('sym', symbol), row_id=symbol,
             refs=part['refs'].clone(), readings=readings, evidence=pair,
-            trust=pair[0]-pair[1], source_trust=0., when=part['percept'][4:].clone(),
+            trust=pair[0]-pair[1], when=part['percept'][4:].clone(),
             kind='question' if opened else 'observation' if any(pair) else 'unverified', order=0, stream=(), pending=False,
             metadata_complete=True, expectation=self.expectation_of(('sym', symbol)), text=None, origin=0)
 
@@ -343,10 +350,10 @@ class ClauseRows:
     def _native_reference_indexes(self):
         """Derived identity-to-occurrence caches, invalidated by row edits."""
         count = len(self)
-        token = (count, id(self.row_ids), self.row_ids._version)
+        token = (count, id(self.address_keys), self.address_keys._version)
         if self.__dict__.get('_native_reference_token') != token:
             rows = {}
-            for row, identity in enumerate(self.row_ids[:count].tolist()):
+            for row, identity in enumerate(self.address_keys[:count].tolist()):
                 if identity not in (-1, 0):
                     rows.setdefault(identity, row)
             object.__setattr__(self, '_native_row_index', rows)
@@ -411,7 +418,7 @@ class ClauseRows:
     def _clause_reference(self, reference, children):
         if isinstance(reference, ClausePredicate):
             return reference.identity
-        return int(self.row_ids[children[reference[1]]]) if isinstance(reference, tuple) else reference
+        return int(self.address_keys[children[reference[1]]]) if isinstance(reference, tuple) else reference
 
     @torch.no_grad()
     def write_clause(self, clause, *, trust=None, origin=None, stream=-1, kind='observation',
@@ -450,6 +457,9 @@ class ClauseRows:
         if owner is None:
             raise ValueError('clause admission requires its native concept owner')
         closing = PartClosing(owner, self)
+        given = origin in (self.ORIGIN_USER, self.ORIGIN_PROVISIONED)
+        before_relations = ({row:{name:value.detach().cpu().clone() for name,value in self.parts.row(row).items()}
+                             for row in self.parts.indices().tolist()} if given else {})
         nodes, seen, visiting = [], set(), set()
         def visit(value):
             if id(value) in visiting:
@@ -470,44 +480,59 @@ class ClauseRows:
         if context is not None:
             from Occurrence import address_key
             root_existing = self._index_occurrences.get(address_key(*context))
-        needed, counted = 0, set()
+        needed, reserved = 0, {}
         def reserve(record, sentence=False, force=False):
             nonlocal needed
             term = record['value']
-            key = (id(term), sentence)
-            if key in counted:
-                return
-            counted.add(key)
+            forced_occurrence = force and (term.binding is not None or record.get('mention'))
+            previous = reserved.get(id(term))
+            if (previous is not None and not sentence
+                    and not (forced_occurrence and previous != OCCURRENCE)):
+                return previous
             ref, children = record['reference'], record['children']
+            assertion = term.operation in closing._assertions and len(children) == 2
             if (not sentence and not force and ref is not None
                     and (not children or term.operation not in (*closing._assertions, 'lift', 'verb'))):
-                return
-            if (record['resolved'] and term.operation not in closing._assertions) or not children or (force and (term.binding is not None or record.get('mention'))):
+                result = ref[0]
+            elif (record['resolved'] and not assertion) or not children or forced_occurrence:
                 from IdentityRows import carrier
                 carrier(owner, term.point)
                 needed += int(not sentence or root_existing is None)
+                result = OCCURRENCE
+            elif len(children) == 1:
+                result = reserve(children[0], sentence=sentence)
             else:
                 for child in children:
                     reserve(child)
+                result = RELATION
+            reserved[id(term)] = result
+            return result
         for value in nodes:
             sentence = value is clause
             if sentence or value in clause.companions or value.reference_request is not None or value.identity is not None:
                 record = closing._planned[id(closing._terms[id(value)])]
                 force = not sentence
-                reserve(record, sentence, force)
+                entry_kind = reserve(record, sentence, force)
+                # An unresolved sentence keeps its chain, while its reference
+                # request still names the phrase's own located occurrence.
+                if record.get('mention') and entry_kind != OCCURRENCE:
+                    needed += 1
         needed += int(expectation is not None and expectation.estimate is not None and bool(expectation.source_occurrences))
         if len(self) + needed > self.capacity:
-            raise OverflowError('LTM0 construction capacity exhausted before close')
+            raise ClauseCapacityError(f'LTM0 construction capacity exhausted before close: '
+                                      f'{len(self)} occupied + {needed} needed > {self.capacity}')
         closing.when = stamp(self)
-        rows, occurrences = {}, {}
+        rows, occurrences, mentions = {}, {}, {}
         context = self.__dict__.get('_write_address')
         root_key = native_content_key(clause.meaning) if context is None else context[2]
         closing.content_key = (context[0], context[1], root_key) if context is not None else ('direct', root_key)
         def location(entry):
             tag, value = entry
             return self.index_of_row(value) if tag == OCCURRENCE else ('sym', value)
-        # A mention needing a fresh working identity keeps its occurrence.
-        # Existing concepts need no second LTM0 copy solely for their role.
+        # Keep the outer semantic entry and each located mention distinct.
+        # A root already compressed to an occurrence supplies its own address;
+        # an open chain or symbol also needs a phrase occurrence for its request.
+        outer_pair, outer_from_trust = None, False
         for position, value in enumerate(nodes):
             sentence = value is clause
             if not sentence and value not in clause.companions and value.reference_request is None and value.identity is None:
@@ -516,6 +541,8 @@ class ClauseRows:
             from_trust = sentence and trust is not None and (authority is not None or evidence is None)
             if from_trust:
                 pair = max(float(trust), 0.), max(-float(trust), 0.)
+            if sentence:
+                outer_pair, outer_from_trust = pair, from_trust
             address = {} if value is clause else dict(document_key=('embedded', closing.content_key[0], closing.content_key[1]) if context is not None else ('mention', root_key),
                 sentence_index=position, content_key=native_content_key(value.meaning))
             record = closing._planned[id(closing._terms[id(value)])]
@@ -526,11 +553,28 @@ class ClauseRows:
             row = location(entry)
             rows[id(value)] = row
             occurrences[id(value)] = self.occurrence_of(row)
+            if record.get('mention'):
+                mention = entry
+                if entry[0] != OCCURRENCE:
+                    mention = closing._write_occurrence(record, pair=(0., 0.), sentence=False,
+                        kind='unverified', metadata=value.meaning,
+                        address=dict(document_key=('mention', closing.content_key),
+                            sentence_index=position, content_key=native_content_key(value.meaning)),
+                        stream=stream, surprise=-1.)
+                mentions[id(value)] = self.occurrence_of(location(mention))
             if isinstance(row, int) and sentence:
-                if trust is not None:
-                    self.source_trust[row] = float(trust)
                 if origin is not None or text is not None:
-                    self.set_origin(row, self.ORIGIN_CONVERSATION if origin is None else origin, text=text)
+                    self.set_origin(row, self.ORIGIN_CONVERSATION if origin is None else origin,
+                                    text=text, asserted=pair)
+        if given:
+            from PresentationMemory import supplied_closing
+            root = closing._entries[id(closing._terms[id(clause)])]
+            root_kind = 'occ' if root[0] == OCCURRENCE else 'rel'
+            asserted = outer_pair[::-1] if root_kind == 'rel' and outer_from_trust and not clause.meaning.polarity else outer_pair
+            supplied_closing(self, (root_kind,root[1]), origin=origin, asserted=asserted,
+                occurrences=closing.occurrences,
+                relations=set(closing.edges) | closing.relation_dependencies,
+                before_relations=before_relations)
         # Entries consumed inside a chain also remain addressable by the live
         # journal. This map ends with the close; it is not durable derivation.
         for value in nodes:
@@ -542,7 +586,18 @@ class ClauseRows:
         if written_rows is not None:
             written_rows.update(rows)
             written_rows.update({('occurrence', key): value for key, value in occurrences.items()})
+            written_rows.update({('mention', key): value for key, value in mentions.items()})
             written_rows['root_occurrence'] = occurrences[id(clause)]
+            written_rows['root_mention'] = mentions.get(id(clause))
+            if written_rows.get('observe_sides'):
+                term = closing._terms[id(clause)]
+                while len(term.children) == 1:
+                    term = term.children[0]
+                sides = []
+                for child in term.children[:2]:
+                    planned = closing._planned[id(child)]
+                    sides.append(closing._entries.get(id(child)) or planned['identity'] or planned['reference'])
+                written_rows['sides'] = tuple(sides)
             # The live closing keeps its working roles, without saving them
             # beside either stratum. This is also the binder's immediate read.
             for value in nodes:
@@ -631,7 +686,9 @@ class ClauseRows:
         """Read an already bound token; equality rows never select a binding.
 
         The journal's pending names and structural constituent references stay
-        immutable. Only ReferenceClose.commit can refine their MTM token.
+        immutable. A kept binding or thought owns refinement of their MTM
+        token; reading the forward name's own object does not bind it.
+        Explicitly excluded occurrences supply no witness for this read.
         """
         from ThoughtReferences import bindings, fill, open_slots, with_slots
         owner_ref = self.__dict__.get('_concept_owner')
@@ -640,6 +697,8 @@ class ClauseRows:
             return meaning
         resolver, mtm = owner.components.reference_close, owner.mtm
         occurrence = self.occurrence_of(index)
+        excluded = {item if isinstance(item, tuple) else self.occurrence_of(item)
+                    for item in exclude}
         raw_refs = meaning.role_refs
         if isinstance(index, tuple):
             references = list(meaning.role_refs)
@@ -655,8 +714,12 @@ class ClauseRows:
                 token = mtm.token_of(identity)
                 if token is not None and not mtm.entries[token].pending:
                     entry = mtm.entries[token]
-                    references[role] = ('sym', entry.kind) if entry.kind is not None else token
+                    if entry.occurrences and all(use in excluded for use in entry.occurrences):
+                        continue
+                    references[role] = ('sym', entry.kind) if entry.kind not in (None, NULL_CONCEPT) else token
                 elif identity[0] == 'sym':
+                    if reference in excluded:
+                        continue
                     references[role] = identity
             meaning = replace(meaning, role_refs=tuple(references))
         for role, _name in bindings(meaning).get('_forward_references', ()):
@@ -673,16 +736,20 @@ class ClauseRows:
                 target, uses = reference, (site,)
             else:
                 entry = mtm.entries[token]
-                kind = entry.kind
-                point = None if entry.pending else resolver.token_value(token)
+                kind = None if entry.kind == NULL_CONCEPT else entry.kind
+                point = None if entry.pending or entry.kind == NULL_CONCEPT else resolver.token_value(token)
                 # A token's own one-slot read exposes its derivation,
                 # terminating the address walk. A parent keeps its token.
                 target = ('sym', kind) if site == occurrence and kind is not None else token
                 uses = mtm.entries[token].occurrences
             # A forward word names the missing referent. Its lexical form
             # cannot fill that role merely because it now has a DEF row.
-            if kind == _name and _name in owner.definitions.word_ids:
+            if resolver.is_forward_placeholder(token if token is not None else reference, _name):
                 point = None
+            retained = tuple(use for use in uses if use not in excluded)
+            if uses and not retained:
+                point = None
+            uses = retained
             # The retained parent already points at its anonymous child. That
             # structural pointer is not the pending role's bound content.
             references = list(meaning.role_refs)
@@ -694,8 +761,8 @@ class ClauseRows:
             witnesses = [self.location(address) for address in uses]
             witnesses = [row for row in witnesses if isinstance(row, int)]
             meaning = fill(meaning, dict(reference=target, binding_value=point,
-                support_true=max((float(self.c_plus[row]) for row in witnesses), default=0.),
-                support_false=max((float(self.c_minus[row]) for row in witnesses), default=0.)), slots=(('referent', role),),
+                support_true=max((float(self.truth_plus[row]) for row in witnesses), default=0.),
+                support_false=max((float(self.truth_minus[row]) for row in witnesses), default=0.)), slots=(('referent', role),),
                 witnesses=uses, operation='bind')
         return meaning
 

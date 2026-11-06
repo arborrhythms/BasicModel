@@ -64,6 +64,25 @@ def test_transient_occurrence_is_deferred_and_covered_when_its_symbol_arrives():
     assert pointers == (cb.W.data_ptr(),cb.mereology.placement.data_ptr())
 
 
+def test_recurrent_named_token_defines_its_name_when_a_bound_mention_has_no_reading():
+    from FamiliarTier import promote_identity
+    from test_orders_learned import equality_fixture, event
+    cs, store, _ = equality_fixture()
+    word = cs.interpret.lookup_word([1], [], form='name')
+    point = cs.similarity_codebook.lookup_rows(cs._csw_row_of(word))
+    key = cs.mtm.named(word, value=point)
+    for place in range(cs.concept_mint_count):
+        address = event(cs, store, place)
+        occurrence = store.occurrence_of(store.index_of_row(address))
+        cs.mtm.bind(key, occurrence, kind=None, when=place, value=point)
+        assert cs.mtm.reading_of(occurrence) is None
+    symbol = promote_identity(cs, key)
+    assert cs.definitions.objects(word) == (symbol,)
+    cs.mtm.restore(None)
+    assert cs.interpret.reading(word)[0] == symbol
+    assert not cs.mtm.entries
+
+
 def test_defining_equality_promotes_a_pending_subject_without_an_order_or_choice():
     from test_orders_learned import equality_fixture, equal_close
     from Meaning import ConceptualMeaning
@@ -81,8 +100,22 @@ def test_defining_equality_promotes_a_pending_subject_without_an_order_or_choice
     equal_close(cs, store, key[-1], label)
     symbol = cs.mtm.entries[key].symbol
     assert symbol is not None and cs.definitions.objects(subject) == (symbol,)
+    assert not alloc.raised and not cs.definitions.objects(label)
+    other_symbols = []
+    for number in (1, 2):
+        point = value.detach().clone()
+        point[0] = value[0] + number
+        other = store.append_meaning(ConceptualMeaning.from_description(point),
+            document_key='definition', sentence_index=number)
+        token = store.occurrence_of(other)
+        cs.mtm.open(token, kind=None, when=number, value=point)
+        equal_close(cs, store, token[-1], label)
+        other_symbols.append(cs.mtm.entries[token].symbol)
+        if number == 1:
+            assert not alloc.raised and not cs.definitions.objects(label)
     parents = [parent for parent in alloc.raised if (SYMBOL,symbol) in alloc.parts.parts((SYMBOL,parent))]
     assert len(parents) == 1
+    assert {x for _, x in alloc.parts.parts((SYMBOL, parents[0]))} == {symbol, *other_symbols}
     row = cs._csw_row_of(parents[0])
     assert dict(cs.concept_weights(row))[cs._csw_row_of(symbol)] > 0
     assert cs.definitions.objects(label) == tuple(parents)
@@ -369,3 +402,114 @@ def test_answer_judges_the_carried_candidate_bind_without_an_individual_menu(mon
     else:
         assert result is meaning and open_slots(result) == (('referent', 0),)
     assert (pool.entries[key].count, pool.accesses, len(f.store)) == (count, accesses, size)
+
+
+def test_identity_promotion_at_capacity_preserves_the_open_token_and_rows():
+    from FamiliarTier import IdentityPromotionCapacityError, promote_identity
+    from test_presentation_memory import fixture, write
+    resolver, store, points = fixture()
+    owner = resolver.components.owner
+    alloc = owner._concept_allocator
+    occurrence = write(store, points[0], ('full', 0), order=0)
+    token = owner.mtm.open(occurrence, kind=None, value=points[0], when=0)
+    layer = alloc.layer()
+    for index in range(owner.nVectors):
+        layer.assign_row(('occupied', index), capacity=owner.nVectors, base=0)
+    assert len(layer._tensor_row_keys) == owner.nVectors
+    before = (alloc.next_id, dict(layer._tensor_rows), len(store.parts))
+    with pytest.raises(IdentityPromotionCapacityError, match='no order-1 concept seat'):
+        promote_identity(owner, token)
+    assert (alloc.next_id, dict(layer._tensor_rows), len(store.parts)) == before
+    assert owner.mtm.entries[token].symbol is None
+
+
+def test_mixing_keeps_lexical_witnesses_across_ten_presentations(monkeypatch, eager_reading):
+    from collections import Counter
+    from pathlib import Path
+    from Forgetting import model_boundary
+    import FamiliarTier
+    from reading_fixtures import capture_readings, force_absolute_reading
+    from test_mm_xor import _PROJECT, _fresh_model
+    model, _, _ = _fresh_model(str(Path(_PROJECT)/'data/MM_grammar.xml'))
+    owner = model._concept_owner()
+    forms = ('alpha', 'beta')
+    promotions = Counter()
+    promote = FamiliarTier.promote_identity
+    def counted(cs, key, **options):
+        word = cs.mtm.reading_of(key)
+        allocated = set(cs._concept_allocator.individuals)
+        symbol = promote(cs, key, **options)
+        if word is not None and symbol not in allocated:
+            promotions[word] += 1
+        return symbol
+    monkeypatch.setattr(FamiliarTier, 'promote_identity', counted)
+    force_absolute_reading(model)
+    model.eval()
+    witnesses = []
+    try:
+        for presentation in range(10):
+            model_boundary(model, epoch_boundary=True)
+            raw = model.inputSpace.prepInput(['alpha beta'] * 4)
+            with capture_readings(model) as captured, torch.no_grad():
+                model.forward(raw)
+            words = tuple(owner.interpret.word_for_form(s) for s in forms)
+            for program in captured[0]:
+                witnesses.append(None if program.word_ids is None else tuple(program.word_ids.tolist()))
+            # Keep the same open name and four real lexical operands in the
+            # retained case. The grammar need not choose a definition by chance.
+            from Meaning import ConceptualMeaning
+            store = owner._closed_clause_store()
+            for site, word in enumerate(words):
+                if not owner.interpret.no_object(word):
+                    continue
+                key = owner.mtm.token_of(('name', word))
+                if key is None:
+                    owner.interpret.reading(word)
+                    key = owner.mtm.token_of(('name', word))
+                for stream, program in enumerate(captured[0]):
+                    point = program.leaves[site]
+                    row = store.append_meaning(ConceptualMeaning.from_description(point), order=0,
+                        document_key=('kept-word', stream, word), sentence_index=0, when=False)
+                    reading = None if program.word_ids is None else int(program.word_ids[site])
+                    owner.mtm.bind(key, store.occurrence_of(row), kind=None, when=1,
+                                   value=point, reading=reading)
+                FamiliarTier.promote_identity(owner, key)
+            assert all(n <= 1 for n in promotions.values()), (presentation, promotions)
+        assert witnesses == [words] * 40
+        assert dict(promotions) == {word: 1 for word in words}, promotions
+        objects = [owner.interpret.denotations(word) for word in words]
+        assert all(len(ids) == 1 for ids in objects)
+        assert objects[0] != objects[1]
+    finally:
+        model.End()
+        model.symbolSpace.soft_reset()
+        torch._dynamo.reset()
+
+
+def test_named_promotion_counts_kept_words_independently_of_bind_aliases():
+    from FamiliarTier import commit_read_words, promote_candidates
+    from test_orders_learned import equality_fixture
+    owner, store, _ = equality_fixture()
+    assert owner.concept_mint_count == 3
+    label, other = (owner.interpret.lookup_word([unit], [], form=form)
+                    for unit, form in enumerate(('label', 'other'), 1))
+    for doc, word in enumerate((label, label, other, label)):
+        _, row, _ = owner.interpret.reading(word)
+        value = owner.similarity_codebook.lookup_rows(row)
+        program = SimpleNamespace(word_ids=torch.tensor([word]), leaves=value[None], symbol_where=None)
+        site = commit_read_words(owner, program, batch=0, document=doc, position=0)[0]
+        key = owner.mtm.token_of(('name', label))
+        alias = other if word == label else label
+        owner.mtm.bind(key, site, kind=None, when=doc+1, value=value, reading=alias)
+        assert owner.mtm.reading_of(site) == word
+        owner.mtm.close(store, stream=0, references=(site,))
+        promote_candidates(owner)
+        if doc < 3:
+            assert owner.interpret.no_object(label)
+        if doc == 1:
+            owner.mtm.restore(owner.mtm.state())
+    identity = owner.mtm.entries[key].symbol
+    assert identity is not None and owner.definitions.objects(label) == (identity,)
+    assert owner.interpret.no_object(other)
+    owner.mtm.open(site, kind=None, when=4, value=value, reading=other)
+    assert owner.mtm.reading_of(site) == label

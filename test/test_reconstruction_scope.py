@@ -48,7 +48,7 @@ def test_missing_candidate_cost_is_zero_with_zero_gradient():
         model.symbolSpace.soft_reset()
 
 
-def test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction(tmp_path, monkeypatch):
+def test_packed_reconstruction_report_zeros_missing_targets_without_diluting_the_owned_cost(tmp_path, monkeypatch):
     import util
     from test_packed_reconstruction_parity import build_model
     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
@@ -77,6 +77,11 @@ def test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction(tmp_pa
                 batch_override=(raw, torch.empty(1, 0)))
         assert int(model.inputSpace._reconstruction_missing_sentence_count) == 1
         assert float(model._recon_sentence_costs[0, 1]) == 0.
+        present, missing = model._sentence_reconstructions
+        assert model.inputSpace._reconstruction_sentence_available[0, :2].tolist() == [True, False]
+        for column in (1, 2, 4):  # idea cost, byte cost, and per-sentence costs
+            assert torch.count_nonzero(missing[column]) == 0
+            assert not present[column].requires_grad
         torch.testing.assert_close(model._recon_cost, model._recon_sentence_costs[:, 0])
     finally:
         model.End()

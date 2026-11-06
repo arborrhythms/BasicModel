@@ -21,16 +21,21 @@ def test_retained_four_clauses_recover_non_witnesses_without_a_discard_charge(tm
             # The archive has signed, pre-centroid forms. Keep its actions and
             # all three meaning values; map only forms into the current cube
             # and express each local output as its parts' centroid.
+            width = saved['meaning_start']
+            layer = model.languageSpace._tree_layer(2)
+            form_width = next(op.gl.meaning_layout[0] for op in layer.ops
+                              if op.gl.meaning_layout is not None)
             for program in programs:
-                program.operation_values = program.operation_values.clone()
-                width = saved['meaning_start']
-                program.operation_values[..., :width] = cube_unchart(
-                    program.operation_values[..., :width])
+                archive = program.operation_values
+                form = cube_unchart(archive[..., :width])
+                program.operation_values = torch.cat((
+                    torch.nn.functional.pad(form, (0, form_width - width)),
+                    archive[..., width:]), -1)
                 for step, (kind, _, _) in enumerate(program.actions.tolist()):
                     if kind in (1, 2):
                         frame = program.operation_values[step]
-                        frame[2, :width] = frame[:2 if kind == 1 else 1, :width].mean(0)
-            charge = forward_discard(model.languageSpace, programs, saved['meaning_start'], trial['other_cost'])
+                        frame[2, :form_width] = frame[:2 if kind == 1 else 1, :form_width].mean(0)
+            charge = forward_discard(model.languageSpace, programs, form_width, trial['other_cost'])
             torch.testing.assert_close(charge, torch.zeros(4))
             torch.testing.assert_close(trial['other_cost'], torch.full((4,), 1.85))
         # Every non retains its occurrence operand, without claiming a free inverse.

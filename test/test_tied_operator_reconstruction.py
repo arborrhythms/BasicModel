@@ -50,7 +50,7 @@ def test_surface_snapshot_does_not_turn_a_longer_word_into_a_full_window_match(w
         _ar_concept_lookup_rows=torch.tensor([[4, 5]]),
         _ar_concept_lookup_atoms=torch.eye(2).unsqueeze(0),
         _ar_word_part_ids=torch.zeros(1, 1, window, dtype=torch.long))
-    owner = SimpleNamespace(inputSpace=staged, _concept_owner=lambda: lexicon,
+    owner = SimpleNamespace(inputSpace=staged, word_surface_capacity=64, _concept_owner=lambda: lexicon,
                             _BYTE_ASSIGNMENT_TAU=.1)
     BasicModel._stage_snapshot_bytes(owner)
     ready, atoms, values, valid = BasicModel._snapshot_tables(owner, torch.zeros(1, 1, 2))

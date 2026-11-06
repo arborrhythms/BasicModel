@@ -5,6 +5,7 @@ writes native prototypes and evidence; the sentence read detaches them. Order-ze
 meaning is placed at kept closes from the registered priming surface,
 on the for pole, with no against evidence. Letters need no conceptual row.
 """
+import math
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -152,7 +153,9 @@ class MereologicalCodes(nn.Module):
         allocator = self.owner._concept_allocator
         # Members may themselves be classes. Lower orders are derived first.
         rows.sort(key=lambda row: allocator.order_of(self.owner.concept_id_at_row(row)))
-        threshold = self.owner._geometric_radius.cos()
+        # Class-location contiguity keeps the former construction threshold.
+        # It is no longer changed by the retired diffusion controller.
+        threshold = math.cos(math.radians(15.))
         for row in rows:
             members = weights = None
             if edges is not None:

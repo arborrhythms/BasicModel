@@ -49,7 +49,10 @@ def test_free_trial_uses_no_reference_or_offsets_and_keeps_identity_audit(monkey
             altered = altered[0]
         torch.testing.assert_close(result[0], altered[0])
         torch.testing.assert_close(result[2], altered[2])
-        calls.append('explore' if kw.get('decoder_exploit') is not None else 'greedy')
+        if kw.get('decoder_kept_actions') is not None:
+            calls.append('replay')
+        else:
+            calls.append('explore' if kw.get('decoder_exploit') is not None else 'greedy')
         return returned
     monkeypatch.setattr(model, '_reconstruct_sentences', observe)
     optimizer=model.getOptimizer(lr=.01)
@@ -57,18 +60,22 @@ def test_free_trial_uses_no_reference_or_offsets_and_keeps_identity_audit(monkey
         raw,target=next(iter(data.data_loader(split='train',num_streams=4)))
         model.runBatch(train=True,optimizer=optimizer,batchSize=4,split='train',
             batch_override=(model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)))
-        assert calls == ['greedy', 'explore', 'greedy', 'explore']
+        assert [call for call in calls if call != 'replay'] == ['greedy', 'explore', 'greedy', 'explore']
+        assert all(calls[i-1] == 'explore' for i, call in enumerate(calls) if call == 'replay')
         reconstruction = {name for name in model._sentence_cost_registry._terms if name.startswith('reconstruction.')}
         assert reconstruction - {'reconstruction.compose_score_function'} == {
             'reconstruction.free_bytes', 'reconstruction.content', 'reconstruction.forward_discard',
-            'reconstruction.decomposition',
-            'reconstruction.walk_policy'}
+            'reconstruction.walk_policy', 'reconstruction.walk_credit',
+            'reconstruction.walk_residual.form', 'reconstruction.walk_residual.for',
+            'reconstruction.walk_residual.against', 'reconstruction.free_percept',
+            'reconstruction.definition_fold'}
         terms = model._sentence_cost_registry._terms
         # XOR_grammar uses the mixing architecture, without native PS/WS
         # candidate supports. Its landing reconstruction objective remains.
         assert model.concept_binding == 'mixing'
         assert model._last_sentence_field is None
-        assert terms['reconstruction.free_bytes']['trained']
+        assert not terms['reconstruction.free_bytes']['trained']
+        assert terms['reconstruction.free_percept']['trained']
         assert terms['reconstruction.content']['trained']
         assert terms['reconstruction.forward_discard']['trained']
         # Round 2 credits the single departure only when its owner-step total

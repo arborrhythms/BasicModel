@@ -73,7 +73,7 @@ def test_presented_rejected_root_has_zero_weight_and_each_reader_steps_once():
 
 def test_sentence_advantage_reads_comparison_and_optimizer_owns_both(monkeypatch):
     from test_mm_xor import _fresh_model
-    model,_,data=_fresh_model('data/XOR_grammar.xml')
+    model,_,_=_fresh_model('data/XOR_grammar.xml')
     try:
         from AnswerComparison import AnswerComparison
         compare=AnswerComparison.forward
@@ -98,10 +98,17 @@ def test_sentence_advantage_reads_comparison_and_optimizer_owns_both(monkeypatch
         from Models import BasicModel
         monkeypatch.setattr(BasicModel,'_sentence_answer_error',lambda self,*a,**k:answer(*a,**k))
         optimizer=model.getOptimizer(lr=.01)
-        model.runEpoch(optimizer=optimizer,batchSize=4,split='train')
+        batch_audits = []
+        run_batch = model.runBatch
+        def capture_batch(*args, **kwargs):
+            result = run_batch(*args, **kwargs)
+            batch_audits.append((model._last_sentence_credit, model._last_sentence_understanding))
+            return result
+        monkeypatch.setattr(model, 'runBatch', capture_batch)
+        model.runEpoch(optimizer=optimizer, batchSize=4, split='train')
         assert len(observations)==2
         for returned,judge in observations:torch.testing.assert_close(returned,judge,rtol=0,atol=0)
-        audit=model._last_sentence_credit
+        (audit, record), = batch_audits
         for i,(_,judge) in enumerate(observations):
             torch.testing.assert_close(audit['components'][:,i,2],judge,rtol=0,atol=0)
         bank=tuple(model.comparison_reader.parameters())
@@ -114,7 +121,6 @@ def test_sentence_advantage_reads_comparison_and_optimizer_owns_both(monkeypatch
         assert all(r is not None for r in audit['readers'])
         assert any(not torch.equal(r['presented']['mse'],r['comparison']['mse']) for r in audit['readers'])
         # A later comparison read can never become the ordinary forward head.
-        record=model._last_sentence_understanding
         state=(record.root,record.end_slots,record.end_depth)
         before=model._forward_head(None,sentence_state=state,understanding=record).materialize().detach().clone()
         with torch.no_grad():

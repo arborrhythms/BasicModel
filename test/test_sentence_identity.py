@@ -24,8 +24,8 @@ def test_closing_idea_is_narrow_without_a_derivation_part(monkeypatch):
     assert row >= 0
     assert inventory(f.cs) == before
     assert f.store.parts.find(f.noun('cat'), f.noun('runs')) is None
-    assert int(f.store.row_ids[row]) not in _concept_alloc_of(f.cs).placement
-    torch.testing.assert_close(f.store.point_of_row(int(f.store.row_ids[row])), clause.point)
+    assert int(f.store.address_keys[row]) not in _concept_alloc_of(f.cs).placement
+    torch.testing.assert_close(f.store.point_of_row(int(f.store.address_keys[row])), clause.point)
 
 
 def test_referenced_phrase_is_an_occurrence_part_argument(monkeypatch):

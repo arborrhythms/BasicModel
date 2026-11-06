@@ -24,18 +24,14 @@ def test_form_audit_reports_cpu_double_without_moving_forms(device):
 @pytest.mark.parametrize('device', ['cpu', pytest.param('mps', marks=pytest.mark.skipif(
     not torch.backends.mps.is_available(), reason='MPS unavailable'))])
 def test_priming_energy_audit_keeps_device_values_and_double_totals(device):
-    from types import SimpleNamespace
-    from Priming import propagate
-    from test_priming_diffusion import owner as fixture_owner, directions
-    surface = torch.tensor([[2., 1., 0.], [1., 1., 4.]], device=device)
-    before = surface.cpu().double().sum(-1)
-    owner = fixture_owner(directions([0,10,80],dtype=torch.float32).to(device), spread=.25)
-    propagate(owner, surface, torch.tensor([True, False], device=device))
-    torch.testing.assert_close(surface.cpu(), torch.tensor([[1.75, 1.25, 0.], [1., 1., 4.]],
-        device='cpu'), rtol=0, atol=0)
-    assert surface.device.type == device
-    audit = owner._last_priming_diffusion
-    torch.testing.assert_close(audit['before'], before, rtol=0, atol=0)
-    torch.testing.assert_close(audit['after'], before, rtol=0, atol=0)
-    assert audit['before'].dtype == audit['after'].dtype == torch.float64
-    assert audit['receivers'].device == audit['budget_fraction'].device == surface.device
+    from Expectation import ActivationPredictor
+    predictor=ActivationPredictor(3).to(device)
+    keys=torch.tensor([[[1.,0.,.1],[1.,1.,.2],[0.,0.,1.]]],device=device,requires_grad=True)
+    knowing=torch.zeros(1,3,2,device=device,requires_grad=True)
+    context=torch.zeros(1,6,device=device,requires_grad=True)
+    before=keys.detach().clone()
+    predicted=predictor(keys,context,knowing).sigmoid()
+    predicted.square().sum().backward()
+    assert predicted.device.type==device and predicted.dtype==keys.dtype
+    assert keys.grad is None and context.grad is None and knowing.grad is None
+    torch.testing.assert_close(keys,before,rtol=0,atol=0)

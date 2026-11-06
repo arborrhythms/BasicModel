@@ -813,7 +813,12 @@ def test_canonical_thought_executors_use_only_their_named_capability_views():
         def equal(self, left, right): return float(torch.equal(left, right))
         def extent(self, value): return dict(value=value, support_true=1., support_false=0.)
         def negate(self, value): return value
+        def intuition(self, value, frames, *, row, work, premise):
+            assert frames == ('selected-rule',) and row == 0
+            assert isinstance(work, QueryWorkBudget)
+            return dict(value=value,meaning=value,support_true=.4,support_false=.1)
     class LTMRead:
+        def intuition_rules(self, **limits): return ('selected-rule',)
         def bind_reference(self, meaning, role, **limits):
             return dict(value=meaning, meaning=meaning, binding_role=role,
                         support_true=0., support_false=0.)
@@ -848,9 +853,8 @@ def test_canonical_thought_executors_use_only_their_named_capability_views():
     put(stm, rule, address(2), 0)
     context = replace(context, stm=stm)
     arguments['infer'] = {'argin1': ('chunk', address(1)), 'argin2': ('chunk', address(2))}
-    assert set(arguments) | {'intuit'} == set(THOUGHT_EXECUTORS)
-    with pytest.raises(NotImplementedError, match='round B'):
-        THOUGHT_EXECUTORS['intuit'].executor(context, {'argin1': meaning})
+    arguments['intuit'] = {'argin1': meaning}
+    assert set(arguments) == set(THOUGHT_EXECUTORS)
     assert {'what','lookup','quantize','arma','expect','true'}.isdisjoint(THOUGHT_EXECUTORS)
     results = {name:THOUGHT_EXECUTORS[name].executor(context,args) for name,args in arguments.items()}
     for result in results.values():
@@ -858,6 +862,7 @@ def test_canonical_thought_executors_use_only_their_named_capability_views():
     assert results['isPart']['witnesses'] == ('relation-row',)
     assert results['infer']['support_true'] == pytest.approx(.6)
     assert results['equal']['support_true'] == 1.
+    assert results['intuit']['support_true'] == .4
     assert not hasattr(context, 'reasoner')
 
 

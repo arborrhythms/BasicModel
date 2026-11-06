@@ -16,11 +16,10 @@ def segments(store, stream=None):
         return result
     times = encoder().decode_index(torch.stack([store.entry_when(row) for row in range(len(store))])).tolist()
     streams = range(store.stream.shape[1]) if stream is None else (int(stream),)
-    cover_kind = store.KINDS.index('cover')
     for batch in streams:
         current = None
         for row in sorted(store.stream_rows(batch).tolist(), key=lambda i: (times[i], i)):
-            if int(store.record_kind[row]) == cover_kind:
+            if store.kind_of(row) == 'cover':
                 current = store.occurrence_of(row)
             if current is not None:
                 result.setdefault(row, set()).add(current)
@@ -141,7 +140,7 @@ def read(store, description, *, references=(), max_records, work, role_mask=None
             candidates = tuple(row for row in range(len(store))
                 if dict(store._semantic_rows.get(int(store.address_keys[row]), {}).get('bindings', ())).get('_identity') == reference)
         for row in candidates:
-            if int(store.record_kind[row]) == store.KINDS.index('cover'):
+            if store.kind_of(row) == 'cover':
                 selected.add(store.occurrence_of(row))
                 cover_refs.add(reference)
     if not selected:

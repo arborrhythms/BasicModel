@@ -154,7 +154,12 @@ def stage(memory, result, row):
     data['_evidence_kind'] = result.evidence_kind
     frames = evidence.get('frames', ())
     if result.semantic_id in ('query', 'ask') and frames:
-        serial = int(context.stm.state[chunks.READ].amax()) + 1
+        # Chunk recency advances within each stream. Another stream can keep
+        # a larger tick unchanged across several recalls here; its maximum
+        # therefore cannot mint this stream's next address.
+        serial = int(context.stm.state[chunks.READ][row].amax()) + 1
+        if serial >= 1 << 48:
+            raise OverflowError('thought recall address exceeds its serial capacity')
         previous = read(context.stm, context.focus_where, row)
         if (previous.role_refs != value.role_refs
                 and not any(item.role_refs == previous.role_refs for other_where, item in held(context.stm, row)
@@ -175,6 +180,6 @@ def stage(memory, result, row):
         value = _write_serial(context, replace(value, bindings=data))
     evidence['meaning'] = value
     evidence['support_true'], evidence['support_false'] = evidence_pair(value)
-    if 'derivation' in evidence:
+    if result.semantic_id == 'infer' and ('derivation' in evidence or 'intuition_derivation' in evidence):
         evidence['alternatives'] = bindings(value).get('_alternative_pairs', ())
     return replace(result, evidence=_freeze_boundary_value(evidence))

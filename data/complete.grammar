@@ -101,6 +101,7 @@
       <rule operands="field">F = or.forward(F)</rule>
 
       <rule>interpret_argout1 = interpret.forward(interpret_argin1)</rule>
+      <rule>sign_argout1 = sign.forward(sign_argin1)</rule>
       <!-- Relations R (the relation family): part / whole / equal are
            COMPOSITIONAL operators, i.e. Relation(RI_1, RI_2) over two ideas,
            that head the relative-truth start. Their checked thought faces are
@@ -205,6 +206,7 @@
 
     <generate>
       <rule>interpret_argin1 = interpret.reverse(interpret_argout1)</rule>
+      <rule>sign_argin1 = sign.reverse(sign_argout1)</rule>
       <!-- Reverse rules: output -> inputs. -->
       <rule>part_argin1, part_argin2 = part.reverse(part_argout1)</rule>
       <rule family="part" permutation="argin2,argin1">whole_argin1, whole_argin2 = whole.reverse(whole_argout1)</rule>

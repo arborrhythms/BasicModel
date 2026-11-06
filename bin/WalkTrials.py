@@ -83,19 +83,47 @@ def stage_generate_credit(model, audit, tops, features=None):
         audit['credit'] = audit['costs'].new_zeros(audit['costs'].shape[0])
 
 
-def select_output(greedy,explore,wins):
-    def selected(a,b):
-        if torch.is_tensor(a) and torch.is_tensor(b):
-            if a.shape != b.shape:
-                raise ValueError('output trials require the same bounded realization shape')
-            return torch.where(wins.reshape(-1,*([1]*(a.ndim-1))),b,a)
-        if a is None and b is None:return None
-        raise ValueError('output trials disagree about their realization carrier')
-    values={name:selected(getattr(greedy,name),getattr(explore,name))
-            for name in ('actual','concepts','percepts','surface')}
-    texts=tuple(b if bool(wins[row]) else a for row,(a,b) in
-                enumerate(zip(greedy.texts,explore.texts)))
-    return replace(greedy,**values,texts=texts)
+def select_output(base, actions, costed, replay):
+    """Realize the already chosen per-stream actions on the final derivation."""
+    fields = ('actual', 'concepts', 'percepts', 'surface')
+    if actions.shape[0] == 1:
+        chosen, _ = costed[0]
+        return replace(base, **{name: getattr(chosen, name) for name in fields}, texts=chosen.texts)
+    selected = actions.detach().clone()
+    for row, (_, candidate_actions) in costed.items():
+        if candidate_actions.shape != actions.shape:
+            raise ValueError('costed output actions require the same bounded realization shape')
+        selected[row] = candidate_actions[row]
+    result, actual_actions = replay(selected)
+    torch._assert_async((actual_actions == selected).all(), 'costed output did not replay its chosen actions')
+    # The cached trials are evidence for the replay. Their discarded graphs
+    # cannot contribute a zero cotangent to a singular inverse.
+    with torch.no_grad():
+        for row in range(len(actions)):
+            expected = costed[row][0] if row in costed else base
+            for name in fields:
+                actual, saved = getattr(result, name), getattr(expected, name)
+                if actual is None and saved is None:
+                    continue
+                if actual is None or saved is None or actual.shape != saved.shape:
+                    raise ValueError(f'costed output disagrees on the {name} carrier')
+                torch._assert_async((actual[row] == saved[row]).all(), f'costed output changed its {name} value')
+            if result.texts[row:row+1] != expected.texts[row:row+1]:
+                raise ValueError('costed output changed its selected text')
+    return result
+
+
+def kept_walk(greedy, trace, explore, other, wins, action_index, replay):
+    """Return only the selected graph, replaying fixed actions for mixed streams."""
+    if bool(wins.all()):
+        return explore, other
+    if not bool(wins.any()):
+        return greedy, trace
+    actions = torch.where(wins[:, None], other[action_index], trace[action_index]).detach()
+    result, kept = replay(actions)
+    torch._assert_async((kept[action_index] == actions).all(),
+                        'the selected walk did not replay its actions')
+    return result, kept
 
 
 def output_pair(realize,score,*,owner=None):
@@ -110,19 +138,24 @@ def output_pair(realize,score,*,owner=None):
     explore,other=realize(exploit_actions=trace[0],departure=departure,
         departure_uniform=paired_action_draw(owner,'output',trace[3]))
     second=score(explore)
-    residual=torch.stack((trace[3],other[3]),-1)
-    costs=torch.stack((first,second),-1).detach()+residual.detach()
+    residual = torch.stack((trace[3].detach(), other[3].detach()), 1)
+    costs = torch.stack((first.detach(), second.detach()), -1) + residual.sum(-1)
     pending=torch.stack((trace[2],other[2]),-1).detach()
     certified=torch.stack((trace[4],other[4]),-1).detach()
     wins=trace[1].any(-1)&finished_wins(costs,pending,certified=certified)
-    audit=dict(costs=costs,wins=wins,departure=departure,
-               pending=pending,certified=certified,residual=residual.detach(),
-               selected_residual=torch.where(wins,residual[:,1],residual[:,0]),
-               greedy=trace[0].detach(),explore=other[0].detach(),
-               stable=(trace[0]==other[0]).all(-1))
-    result=replace(select_output(greedy,explore,wins),trace=greedy.trace+(
-        {'operation':'generate:owner_comparison','owner':'output',
-         'explore_kept':tuple(wins.tolist())},))
+    kept, kept_trace = kept_walk(greedy, trace, explore, other, wins, 0,
+                                 lambda actions: realize(kept_actions=actions))
+    if owner is not None and hasattr(owner, '_last_output_walk_trace'):
+        owner._last_output_walk_trace = kept_trace
+    selected_residual = kept_trace[3]
+    audit = dict(costs=costs, wins=wins, departure=departure,
+                 pending=pending, certified=certified, residual=residual,
+                 selected_residual=selected_residual,
+                 greedy=trace[0].detach(), explore=other[0].detach(),
+                 stable=(trace[0] == other[0]).all(-1))
+    result = replace(kept, trace=greedy.trace + (
+        {'operation': 'generate:owner_comparison', 'owner': 'output',
+         'explore_kept': tuple(wins.tolist())},))
     return result,audit
 
 

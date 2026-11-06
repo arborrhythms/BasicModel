@@ -3,7 +3,7 @@
 > **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
 > - Expectation is a **gain field** `c = m⊙a⊙o` with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
-> - Amended 2026-10-29/30 (Alec; [thinking spec §§16, 22](plans/2026-10-27-item2-5-thinking.md), [2.7 record §42](plans/2026-10-27-item2-7-corpus.md)): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are not built.
+> - Amended 2026-10-29/30 (Alec; [thinking spec §§16, 22](plans/2026-10-27-item2-5-thinking.md), [2.7 record §42](plans/2026-10-27-item2-7-corpus.md)): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output. Round B is frozen; the one-backward implementation passed its required test selections but remains unaccepted after a failed lesson comparison. [Current gradient boundaries and normalization review](GradientFlow.md#current-gradient-boundaries-and-loss-normalization) supersede the historical ownership descriptions below where the selected chooser setting differs.
 > - **Accepted as implemented (Alec, 2026-11-01; [thinking spec §32.2](plans/2026-10-27-item2-5-thinking.md), item 14).** D-iii is withdrawn. The one-backward path and round B's work are accepted; the three lesson-13 arms are measurements, not gates; the defaults stay `separateChooser=true` and `reconstructionJitter=0` until Alec changes them; a standing test or certificate that fails on an unresolved deviation is marked a strict xfail naming it, and the stage 2 freeze locks down what works. "Remains unaccepted" in the bullet above is superseded.
 > - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
 > - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded.
@@ -700,19 +700,23 @@ $$\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{model}} + \lambda \cdot \mathc
 
 where $\lambda$ is `<embeddingScale>` (default 0.1).
 
-Reconstruction, expectation and output have separately named objectives in
-Error and disjoint parameter owners. Reconstruction owns perception, trainable
+With `separateChooser=true`, reconstruction, expectation and output have
+separately named objectives in Error and disjoint parameter owners. Reconstruction owns perception, trainable
 codes, compose operators and their tied inverses, and the compose chooser.
 Expectation owns predictors; both their source and target are detached. The
 supplied answer owns its readers, and stops at the common understanding record.
 Compose and generate lessons update only their own choosers. Restricted
 backward enforces these boundaries even when a forward operator is shared.
-Decided direction (Alec, 2026-10-29; [GradientFlow](GradientFlow.md),
-[thinking spec §16](plans/2026-10-27-item2-5-thinking.md)): one backward with each band stopped at its
-output, output's terms reaching the understanding under a jittered
-reconstruction strength, and the chooser's term in the same objective;
-`<separateChooser>` (default `true`, today's per-owner backward) and
-`<reconstructionJitter>` (default 0) arrive with the one-backward round; not built.
+Under `separateChooser=false`, the implemented one-backward path sums the
+sentence's objectives, and output and compose-choice credit reach the same
+understanding parameters as reconstruction. Expectation and attention retain
+their stopped consumption boundaries; intuit's weights remain output-only.
+`<separateChooser>` defaults to `true`; `<reconstructionJitter>` defaults to zero
+and scales reconstruction by one `U[1-j,1]` draw per sentence. The percept
+predictor's arrival adaptation is now loop state, with its accumulated loss in
+the shared sentence optimizer in both modes. Stage 2 is not frozen because its
+lesson comparison failed. See [GradientFlow](GradientFlow.md#current-gradient-boundaries-and-loss-normalization)
+and [thinking spec §25](plans/2026-10-27-item2-5-thinking.md#25-one-backward-implementation-verified-gates-and-incomplete-measurement-2026-10-30).
 `branchDiagnosticsEvery` reports actual objective writers per optimizer parameter.
 See [GradientFlow](GradientFlow.md) for the complete term and record inventory.
 
@@ -849,6 +853,17 @@ For each B-wide batch:
 ## What questions and the two primary costs
 
 ### Relative errors and their owners (item 6.9, October 2)
+
+**Current review (2026-10-30).** The general registry rule below remains in the
+code, but generation's local walk residual bypasses it: each step/lane is
+normalized before registration, and its denominator is live. This difference
+is under review after the failed Stage 2 lesson. The user prefers avoiding
+term balancing where possible. Separate owner gradients do not need a scale
+balance to protect one owner from another; the false setting shares
+understanding parameters, and both settings still compare readings by `R + A`.
+Those facts make cost definitions consequential without requiring a particular
+normalization. No normalization policy changed in this documentation update.
+See the [explicit formulas and boundaries](GradientFlow.md#the-normalization-contract-and-the-generation-exception).
 
 `Layers.Error` stores every constituent's numerator, detached uninformed
 baseline, active count, configured priority and owner. Contributions with
@@ -1227,3 +1242,31 @@ stopped during the proper-name phase at sentence 15 with an unwritten
 introduction in `ReferenceClose.preview`, so mass/kind/kind-verb results are
 unavailable. See the final-round review receipt; this is not a completed
 production corpus or landing certificate.
+
+**Item 2.5 stage 2 repair (2026-10-30).** The generation reconstruction charge
+is now three absolute chart errors: form, for and against. Each sums all chosen
+steps and unresolved stack energy, then enters the named error registry with
+baseline one and the active-stream mask. Both sentence trials use the same
+terms in R. Exactness is absolute MSE `1e-8`; admissible nonfinite residuals
+raise before menu scoring. This supersedes the parent-energy quotient recorded
+in the earlier normalization review.
+
+Defaults remain `separateChooser=true` and `reconstructionJitter=0`. Per-epoch
+gradient receipts report the R and A norms into understanding alongside the
+existing per-operator dissonance and per-group chooser variance. The actual A
+norm is zero in the default ownership mode. Diagnostic work is excluded from
+mean and median training-step time. The repair protocol runs the certificate,
+thought, unchanged core and ports/finite selections, the native unseeded worked
+document and the four-sentence smoke before the three sequential lesson-13
+arms `(true,0)`, `(false,0)`, `(false,0.5)` on one source identity. Commands,
+environments, full before/after ports, retirement and allocation evidence live
+under `doc/benchmarks/2026-10-30-item2-5-repair/`; thinking §27 records the
+outcome. This protocol enables neither a full sweep nor `RUN_SLOW`.
+
+The 2026-10-30 return is incomplete: source `cb8a159a6792` passes the
+required test selections and unseeded worked document, but lesson-13's
+first arm fails at its second epoch boundary on a recorded-order/Part-
+structure disagreement. Only its first epoch is measured; the other two
+arms did not start. Thinking §27 and the repair review retain the native
+producer characterization and the structural-membership decision for Alec.
+This is not an accepted stage 2 freeze or a completed timing comparison.

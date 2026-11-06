@@ -54,8 +54,8 @@ def test_cue_fan_is_charged_and_scope_filters_before_ranking():
     result = store.cued_rows(_meaning(scope={"where": (2, 4)}),
         max_candidates=20, work=work, stream=0)
     assert [row['index'] for row in result['value']] == [2, 3]
-    assert result['records_scanned'] == work.spent == 5
-    assert 'work_budget' in result['incomplete']
+    assert result['records_scanned'] == 12 and work.spent == 2
+    assert 'work_budget' not in result['incomplete']
 
 
 

@@ -2,6 +2,7 @@
 import torch
 from Layers import GrammarLayer
 from Definitions import form_key
+from LTM1 import NULL_CONCEPT
 
 
 def positive_evidence(presence):
@@ -23,6 +24,74 @@ def activate_code(atoms, presence, form_width, *, evidence):
     code = atoms[..., form_width:form_width + width]
     return torch.cat((atoms[..., :form_width] * presence.unsqueeze(-1),
                       code * evidence[..., :1], code * evidence[..., 1:2]), -1)
+
+
+def leaf_readings(language, actions, count, *, forced):
+    """Read the two leaf decisions from the actual compose journal.
+
+    A stack entry retains a leaf only until its first non-reading operation.
+    The symbol and no-op are abstentions, so neither needs a grammar rule.
+    """
+    stack, readings, shifted = [], ['symbol' if forced else 'no_op'] * count, set()
+    for kind, local, position in actions.detach().cpu().tolist():
+        if kind < 0:
+            break
+        if kind == 0:
+            if position in shifted or not 0 <= position < count:
+                raise ValueError('a reading must shift each leaf exactly once')
+            shifted.add(position)
+            stack.append(position)
+            continue
+        if kind == 3:
+            stack[-2:] = reversed(stack[-2:])
+            continue
+        rules = language._compose_binary_rules if kind == 1 else language._compose_unary_rules
+        rule = rules[local]
+        name = getattr(rule, 'method_name', None)
+        arity = 2 if kind == 1 and name != 'bind' else 1
+        at = max(0, position) if kind == 2 else 0
+        if at:
+            stack.append(stack.pop(-1-at))
+        operands = stack[-arity:]
+        del stack[-arity:]
+        leaf = operands[0] if arity == 1 else None
+        if name == 'interpret':
+            if leaf is None or readings[leaf] != 'no_op':
+                raise ValueError('interpret requires an uninterpreted leaf')
+            readings[leaf] = 'symbol'
+        elif name == 'sign':
+            if leaf is None or readings[leaf] != 'symbol':
+                raise ValueError('sign requires an interpreted leaf')
+            readings[leaf] = 'sign'
+            leaf = None
+        else:
+            leaf = None
+        stack.append(leaf)
+        if at:
+            stack.insert(len(stack)-1-at, stack.pop())
+    if len(shifted) != count or forced and any(value == 'no_op' for value in readings):
+        raise ValueError('every forced reading leaf must be a sign or a symbol')
+    return tuple(readings)
+
+
+class SignLayer(GrammarLayer):
+    """Keep the lexical carrier for generation. The kept site opens the percept."""
+    rule_name = 'sign'
+    arity = 1
+    space_role = 'SS'
+    invertible = True
+    mandatory = False
+
+    def __init__(self, nInput=0, nOutput=0):
+        super().__init__(nInput=nInput, nOutput=nOutput)
+
+    def forward(self, word):
+        return word
+
+    compose = forward
+
+    def reverse(self, word):
+        return word
 
 
 class InterpretLayer(GrammarLayer):
@@ -73,6 +142,12 @@ class InterpretLayer(GrammarLayer):
         objects = self.owner.definitions.objects(int(word))
         return tuple(cid for cid in objects if alloc.relate_idx.get(
             ('part-kind', (SYMBOL, cid), alloc.order_of(cid)+1)) not in objects)
+
+    def remembered_objects(self, word):
+        """Names retained in the concepts, independent of live definition rows."""
+        alloc = self.owner._concept_allocator
+        return tuple(sorted(cid for cid in alloc.named_identities.get(int(word), ())
+                            if cid not in alloc.retired))
 
     def lexical_form(self, identity):
         if self.no_object(identity):
@@ -295,6 +370,8 @@ class InterpretLayer(GrammarLayer):
         """The sole writer of word DEF object. Operands name, never copy, codes."""
         from Spaces import _concept_alloc_of
         cs, word, obj = self.owner, int(word), int(obj)
+        if NULL_CONCEPT in (word, obj):
+            raise ValueError('the null-concept cannot define or be defined by a word')
         alloc, index = _concept_alloc_of(cs), cs.definitions
         store = alloc.parts
         if 'word' in alloc.symbol_types.get(obj, ()) or obj in index.word_ids:
@@ -305,6 +382,7 @@ class InterpretLayer(GrammarLayer):
             raise ValueError('definition requires distinct, live native identities')
         row = index.row(word, obj)
         if row is not None:
+            alloc.named_identities.setdefault(word, set()).add(obj)
             store.add(obj, word, truth_plus=1.)
             return row
         self._preflight(inventory=False, word=word)
@@ -319,12 +397,19 @@ class InterpretLayer(GrammarLayer):
         alloc.reference_orders.setdefault(word, 0)
         # A definition is an inner semantic relation. Its containing sentence,
         # when present, owns the percept clock stamp.
+        alloc.named_identities.setdefault(word, set()).add(obj)
         row = store.add(obj, word, truth_plus=1.)
         index.add(row)
         self._pending.pop(word, None)
         self._description_revision += 1
         self._field_pending.discard(word)
         return row
+
+    def compose(self, value, **interpretation):
+        """The field chooser supplies its resolved row. A direct read uses the word API."""
+        if torch.is_tensor(value) and not interpretation:
+            return value
+        return self.forward(value, **interpretation)
 
     def activate(self, atoms, presence, *, evidence):
         """Identify the form and carry both conceptual magnitudes intact."""
@@ -414,6 +499,21 @@ class InterpretLayer(GrammarLayer):
                     seen.add(token)
         return obj
 
+    def referent(self, word):
+        """Resolve a word without learning, opening a token, or reading MTM."""
+        word = int(word)
+        objects = self.denotations(word)
+        if objects:
+            return objects[0]
+        remembered = self.remembered_objects(word)
+        alloc = self.owner._concept_allocator
+        remembered = tuple(cid for cid in remembered if alloc.relate_idx.get(
+            ('part-kind', (alloc.parts.SYMBOL, cid), alloc.order_of(cid) + 1)) not in remembered)
+        if len(remembered) > 1:
+            form = alloc.word_descriptions.get(word, {}).get('forms', ())
+            raise ValueError(f'ambiguous identity reading for word {word} {form}: denotations {list(remembered)}')
+        return remembered[0] if remembered else word
+
     def reading(self, word):
         """Identify a read site's object, retaining an objectless name in MTM.
 
@@ -421,15 +521,19 @@ class InterpretLayer(GrammarLayer):
         eager word boundary supplies no grammatical order or operation.
         """
         word = int(word)
-        objects = self.denotations(word)
-        if objects:
-            obj = objects[0]
+        if not self.mandatory:
+            row = self.owner._csw_row_of(word)
+            if row is None:
+                raise RuntimeError('an identified word has no conceptual row')
+            return word, row, self.owner._concept_source_order(word)
+        obj = self.referent(word)
+        if self.denotations(word):
             return obj, self.owner._csw_row_of(obj), self.owner._concept_source_order(obj)
         row = self.owner._csw_row_of(word)
         if row is None:
             raise RuntimeError('an identified word has no conceptual row')
         if getattr(self.owner, '_online_learning_frozen', False):
-            return word, row, self.owner._concept_source_order(word)
+            return obj, self.owner._csw_row_of(obj), self.owner._concept_source_order(obj)
         pool = self.owner.mtm
         key = pool.named(word, value=self.owner.similarity_codebook.lookup_rows([row])[0],
                          when=max(pool.closes.values(), default=0))
@@ -439,6 +543,10 @@ class InterpretLayer(GrammarLayer):
             return entry.symbol, self.owner._csw_row_of(entry.symbol), self.owner._concept_source_order(entry.symbol)
         # The pending site's code and order are its observed word's witness.
         # Its transient identity is not a new row or an assigned object order.
+        if obj != word:
+            # The read can use the retained denotation immediately. The pending
+            # token acquires its new occurrence and DEF only at a kept close.
+            return obj, self.owner._csw_row_of(obj), self.owner._concept_source_order(obj)
         return entry.transient, row, self.owner._concept_source_order(word)
 
     def admit_discovered(self, word=None):
@@ -468,8 +576,6 @@ class InterpretLayer(GrammarLayer):
                     result = obj
                     break
         return result
-
-    compose = forward
 
     def reverse(self, obj, *, word_atoms=None, presence=None, evidence=None):
         if torch.is_tensor(obj):

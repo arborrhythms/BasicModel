@@ -63,7 +63,7 @@ def test_consolidated_prediction_reads_the_one_idea_presence():
     assert trust == pytest.approx(.8)
 
 
-@pytest.mark.parametrize("missing", ["record_kind", "metadata_required"])
+@pytest.mark.parametrize("missing", ["access_count", "addressing.metadata_required"])
 def test_partial_new_checkpoint_cannot_forget_required_scope(missing):
     meaning = ConceptualMeaning.from_payload(torch.eye(6)[:3].flatten()[None], depth=1, layout="infix",
                                              scope={"where": ("sym", 11)})

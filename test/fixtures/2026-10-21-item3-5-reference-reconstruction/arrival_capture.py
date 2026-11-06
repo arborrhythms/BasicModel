@@ -56,7 +56,7 @@ def snapshot(model):
     return dict(
         rows=[dict(index=i, address=store.occurrence_of(i),
                    document=store.document_keys[i], content=store.sentence_content_keys[i],
-                   kind=store.KINDS[int(store.record_kind[i])],
+                   kind=store.kind_of(i),
                    stream=store.stream[i], raw=meaning(store.raw_meaning_of(i)))
               for i in range(len(store))],
         mtm={str(key): vars(entry) for key, entry in owner.mtm.entries.items()},

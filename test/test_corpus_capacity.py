@@ -2,6 +2,7 @@
 from types import SimpleNamespace
 import pytest
 import torch
+from test_sweep_bridge_repair import prediction_tower
 
 
 def test_explicit_bridge_capacity_preserves_prefix_and_fails_before_targets(monkeypatch):
@@ -19,15 +20,13 @@ def test_explicit_bridge_capacity_preserves_prefix_and_fails_before_targets(monk
     monkeypatch.setattr(cs, '_csw_row_of', lambda identity: 63)
     monkeypatch.setattr(cs.definitions, 'objects', lambda word: (101,))
     monkeypatch.setattr(cs.interpret, 'no_object', lambda word: False)
-    cs._priming_boosts.fill_(1.)
-    cs._priming_boosts[0, 63] = 3.
-    monkeypatch.setattr(cs, 'priming_weights', lambda **kwargs: cs._priming_boosts[:1])
-    target = torch.ones(1, 64)
-    tower = SimpleNamespace(_priming_dim=lambda: 64, _priming_decay=1.,
-        _priming_surface=lambda *args, **kwargs: target)
+    cs._expected_knowing.zero_()
+    cs._expected_knowing[0,63] = torch.tensor([.7,.2])
+    target = torch.zeros(1,64,2)
+    tower=prediction_tower(target)
     cs.project_priming_to_towers(tower, None, batch=1)
-    expected = torch.ones_like(target)
-    expected[:, [4, 31]] = 3.
+    expected=torch.zeros_like(target)
+    expected[:,[4,31]]=torch.tensor([.7,.2])
     torch.testing.assert_close(target, expected, rtol=0, atol=0)
     saved = tuple(value.clone() for value in (cs._priming_bridge_src,
         cs._priming_bridge_dst, cs._priming_bridge_bits))

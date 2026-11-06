@@ -65,7 +65,7 @@ def _dot_unit(left, right, left_norm, right_norm):
     return float((a * b).sum())
 
 
-_OBJECTIVES = ("reconstruction", "output", "expectation")
+_OBJECTIVES = ("reconstruction", "output", "expectation", "chooser", "attention")
 
 
 def _sum_gradients(left, right):
@@ -124,7 +124,7 @@ def objective_agreement(objectives, groups, *, accumulated=None):
         norms = {key: tuple(_norm(gradients[key].get(p)) for p in parameters) for key in names}
         totals = {key: math.hypot(*values) for key, values in norms.items()}
         entry = {key + "_norm": totals[key] for key in names}
-        for other in ("output", "expectation"):
+        for other in ("output", "expectation", "chooser"):
             nr, no = totals["reconstruction"], totals[other]
             cosine = None
             if nr and no:
@@ -145,7 +145,7 @@ def record_opposition(report, history, *, persistence=3):
     """Name repeated opposition for the run log; never intervene in training."""
     for name, entry in report.items():
         persistent = []
-        for other in ("output", "expectation"):
+        for other in ("output", "expectation", "chooser"):
             key = (name, other)
             cosine = entry["reconstruction_" + other + "_cosine"]
             # An unused operator supplies no new agreement evidence.

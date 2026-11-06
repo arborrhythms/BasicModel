@@ -359,7 +359,7 @@ def forecast_percept(model, active):
 
 
 def observe_percept(model, forecast, payload, sub, index, active):
-    """One local update, then both composition trials share the frozen value."""
+    """Advance arrival state; both composition trials share the frozen value."""
     expectation = model.percept_expectation
     width = expectation.width
     native = sub[1][:,int(index)]
@@ -370,7 +370,8 @@ def observe_percept(model, forecast, payload, sub, index, active):
     arrival = expectation.arrive(forecast,observed,active,native=native,training=training)
     model._percept_expected[:,int(index)] = arrival.expected
     model._percept_arrival_loss[:,int(index)] = expectation.last_arrival['local_loss']
-    model._percept_arrivals.append(dict(expectation.last_arrival,index=int(index)))
+    model._percept_arrivals.append(dict({key: value.detach() if torch.is_tensor(value) else value
+        for key, value in expectation.last_arrival.items()}, index=int(index)))
     # Identity-valued forward chart, retaining the ordinary source pullback.
     # The two poles of conceptual evidence are unchanged by this P interface.
     from Expectation import recombine_percept

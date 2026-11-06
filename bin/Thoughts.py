@@ -153,7 +153,14 @@ def replay_thoughts(records, *, chunks_state=None, row=0):
     """Validate chronological execution and derive the most recent episode."""
     state = None
     previous = -1
-    conclusions = {}
+    conclusions, implicit = {}, {}
+    def judged(pair, record):
+        from ThoughtReferences import bindings
+        if record.kind == 'finish' and bindings(record.meaning).get('_implicit_judgements'):
+            if record.meaning.role_refs not in implicit:
+                raise ValueError('implicit judgement has no replayed pervasion')
+            return tuple(max(a, b) for a, b in zip(pair, implicit[record.meaning.role_refs]))
+        return pair
     for record in records:
         if not isinstance(record, ThoughtRecord):
             continue  # explicitly retained legacy prefix, not execution evidence
@@ -164,6 +171,15 @@ def replay_thoughts(records, *, chunks_state=None, row=0):
             from STMChunks import locate
             if int(locate(chunks_state, record.address)[row]) < 0:
                 raise ValueError('replay chunk is absent at its .where address')
+        if record.result is not None and 'pervasion_derivation' in record.result.evidence:
+            from Intuition import pervade
+            proof = record.result.evidence['pervasion_derivation']
+            pair = tuple(pervade(proof['parts'], proof['property']).tolist())
+            key = record.result.evidence['meaning'].role_refs
+            implicit[key] = tuple(max(a, b) for a, b in zip(pair, implicit.get(key, (0., 0.))))
+            if any(abs(a-b) > 1e-6 for a, b in zip(judged(pair, record),
+                    (record.support_true, record.support_false))):
+                raise ValueError('pervasion pair differs from its parts')
         if record.result is not None and 'derivation' in record.result.evidence:
             from ThoughtInference import replay_pair
             computed = replay_pair(record.result.evidence)
@@ -171,16 +187,32 @@ def replay_thoughts(records, *, chunks_state=None, row=0):
             if not record.result.evidence['derivation']['backward']:
                 computed = tuple(max(x, y) for x, y in zip(computed, conclusions.get(key, (0., 0.))))
                 conclusions[key] = computed
-            if any(abs(x-y) > 1e-6 for x, y in zip(computed,
+            if any(abs(x-y) > 1e-6 for x, y in zip(judged(computed, record),
                     (record.support_true, record.support_false))):
                 raise ValueError('thought derivation pair differs from replayed supports')
+        if record.result is not None and 'intuition_derivation' in record.result.evidence:
+            from Intuition import replay
+            proofs = record.result.evidence['intuition_derivation']
+            computed = tuple(replay(proofs)[1].tolist()) if proofs else (0., 0.)
+            for _, pair in record.result.evidence.get('alternatives', ()):
+                computed = tuple(max(a, b) for a, b in zip(computed, pair))
+            if record.operation == 'infer':
+                key = record.result.evidence['meaning'].role_refs
+                computed = tuple(max(x, y) for x, y in zip(computed, conclusions.get(key, (0., 0.))))
+                conclusions[key] = computed
+            if any(abs(x-y) > 1e-6 for x, y in zip(judged(computed, record),
+                    (record.support_true, record.support_false))):
+                raise ValueError('intuition pair differs from replayed rule firings: '
+                    f'event={record.kind}/{record.operation}, replay={judged(computed, record)}, '
+                    f'recorded={(record.support_true, record.support_false)}, '
+                    f'references={record.meaning.role_refs}')
         if record.result is not None and 'operand_pair' in record.result.evidence:
             computed = record.result.evidence['operand_pair'][::-1]
-            if any(abs(x-y) > 1e-6 for x, y in zip(computed,
+            if any(abs(x-y) > 1e-6 for x, y in zip(judged(computed, record),
                     (record.support_true, record.support_false))):
                 raise ValueError('thought negation pair differs from replayed supports')
         if record.kind == "begin":
-            conclusions = {}
+            conclusions, implicit = {}, {}
             if state is not None and not state.finished:
                 raise ValueError("new thought episode overlaps an active context")
             if (

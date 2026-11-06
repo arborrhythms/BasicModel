@@ -23,11 +23,16 @@ def test_every_entry_writes_once_with_one_trial_and_no_optimizer(tmp_path, monke
     monkeypatch.setattr(model, '_sentence_train_step', forbidden)
     writes = []
     store = model.symbolSpace.ltm_store
-    original = store.write_clause
-    def write(*args, **kwargs):
-        writes.append(args[0])
-        return original(*args, **kwargs)
-    monkeypatch.setattr(store, 'write_clause', write)
+    # Count external source closes. An admitted clause may itself contain
+    # several records, including an occurrence and anonymous constituents.
+    import Models
+    original = Models._append_observed_meaning
+    def write(store, clause, **kwargs):
+        address = store._write_address
+        result = original(store, clause, **kwargs)
+        writes.append((address[0], address[1]))
+        return result
+    monkeypatch.setattr(Models, '_append_observed_meaning', write)
     try:
         inputs = model.inputSpace.prepPackedInput([['1 plus 2', '3 plus 4']])
         model.train(entry == 'forward_train_mode')
@@ -37,7 +42,7 @@ def test_every_entry_writes_once_with_one_trial_and_no_optimizer(tmp_path, monke
                            batch_override=(inputs, torch.zeros(1, 1, 0)))
         else:
             model(inputs)
-        assert len(writes) == 2
+        assert len(writes) == len(set(writes)) == 2
         assert set(model._sentence_fields) == {0, 1}
         assert all(cost.shape == (1, 1) for cost in model._sentence_trial_costs)
         assert model._open_sentence_slot is None

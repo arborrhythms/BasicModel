@@ -12,7 +12,7 @@ from ClauseRow import Clause, Composition
 from Meaning import ConceptualMeaning
 from ReferenceContext import SituationFrame
 from test_medium_term_memory import keep, snapshot, unchanged
-from test_reference_arrivals import world, named
+from test_reference_arrivals import world, named, described
 
 
 @pytest.mark.parametrize('attachment', ('surface', 'predicate', 'punctuation'))
@@ -167,3 +167,49 @@ def test_bind_wrapper_keeps_the_verb_participant_and_excludes_its_predicate():
     eligible, _ = participant_terms(((root, False),))
     assert id(participant) in eligible
     assert id(predicate) not in eligible
+
+
+def test_a_pending_lexical_site_cannot_bind_to_its_enclosing_introduction(monkeypatch):
+    resolver, store, atoms, words, _ = world(pending_atom=0)
+    word = words['x']
+    earlier, _ = keep(resolver, described(atoms[0], word))
+    frame = SituationFrame.from_row(store.row(earlier))
+    point = atoms[0]
+    leaf = Composition(point, reference=word, word_id=word, leaves=(0,), order=1)
+    phrase = Composition(point, (leaf,), operation='compound_unary', head_role=1,
+                         leaves=(0,), order=1)
+    clause = Clause(ConceptualMeaning.from_description(point), point=point, order=1,
+                    composition=phrase, subject_word_id=word)
+    # The enclosing phrase takes its own object. At the lexical site choose
+    # that introduction if offered, otherwise the earlier pending occurrence.
+    def select(choices, logits, *, forward_identity=None, individuals=None):
+        if forward_identity != word:
+            return None
+        return choices.index(('new', 0)) if ('new', 0) in choices else 0
+
+    monkeypatch.setattr(resolver, 'select', select)
+    _, plan = keep(resolver, clause, (frame,), position=1)
+    intro, site = plan['items']
+    assert intro['own_object'] and intro['selected'] == ('new', 0)
+    assert site['lexical'] and ('new', 0) not in site['candidates']
+    assert site['selected'] in site['candidates']
+    assert resolver.components.owner.mtm.token_of(site['reference']) == (
+        resolver.components.owner.mtm.token_of(store.occurrence_of(earlier)))
+
+
+def test_two_retained_roles_can_reuse_the_same_leaf_introduction():
+    resolver, _, atoms, words, _ = world()
+    leaf = named(atoms[0], words['x'])
+    first = replace(leaf, identity=dict(handle=1, action=None), reference_request=dict(
+        leaf.reference_request, mode='bind', addressed_introduction=True, compose_bind=0))
+    second = replace(first, reference_request=dict(first.reference_request, role=2))
+    clause = Clause(ConceptualMeaning.from_description(atoms[0]), point=atoms[0],
+                    children=(first, second), refs=(('clause', 0), -1, ('clause', 1)))
+    plan = resolver.preview(clause, chunk_context(resolver, ()))
+    prepared = resolver.prepare(clause, plan)
+    first_item, second_item = plan['items']
+    assert first_item['own_object'] and not second_item['own_object']
+    assert first_item['selected'] == second_item['selected'] == ('new', 0)
+    term = prepared.children[1].composition
+    assert term is prepared.children[0].composition
+    assert term.binding is not term and term.binding.children == ()

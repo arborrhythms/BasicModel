@@ -36,23 +36,23 @@ def _make_model():
     return model
 
 
-def test_wholespace_W_identity_is_frozen_and_optimizer_visible():
+def test_wholespace_W_is_fixed_and_its_property_members_are_optimizer_visible():
     model = _make_model()
     ws = model.wholeSpace
     cb = ws.subspace.what
     W = cb.W
     assert cb._capacity_frozen
     assert cb.vq is None
-    assert any(param is W for param in ws.getParameters())
+    assert all(param is not W for param in ws.getParameters())
     optimizer = model.getOptimizer(lr=1e-3)
-    assert sum(param is W for group in optimizer.param_groups for param in group['params']) == 1
+    assert all(param is not W for group in optimizer.param_groups for param in group['params'])
     primitives = cb.primitive_properties.members
     assert sum(param is primitives for group in optimizer.param_groups for param in group['params']) == 1
     cb.replace_W(torch.nn.Parameter(torch.zeros_like(W)))
     assert cb.W is W
     assert torch.count_nonzero(W).item() == 0
-    assert any(param is W for param in ws.getParameters())
-    assert any(param is W for group in optimizer.param_groups for param in group['params'])
+    assert all(param is not W for param in ws.getParameters())
+    assert all(param is not W for group in optimizer.param_groups for param in group['params'])
 
 
 def _pending_split(ws):

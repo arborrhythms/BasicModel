@@ -27,7 +27,7 @@ def test_pre_layout_estimate_rejected_and_current_roundtrips_once():
     with pytest.raises(ValueError,match='semantic checkpoint version'):
         new.load_semantic_extras(historical)
     new.load_semantic_extras(copy.deepcopy(sidecar))
-    assert new.semantic_extras()['version'] == 10
+    assert new.semantic_extras()['version'] == 11
     assert 'kind_logit' not in new.expectation_of(e)
     bank = dict(new.meaning_of(e).bindings)['_expected_symbols']
     assert [(identity,order) for identity,order,*_ in bank] == [(i,0) for i in range(4)]

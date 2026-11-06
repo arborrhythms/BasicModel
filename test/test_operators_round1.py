@@ -43,7 +43,7 @@ def test_attention_uniform_departure_and_no_pathwise_credit(monkeypatch):
     assert any(p.grad is not None and p.grad.abs().sum() > 0 for p in chooser.parameters())
 
 
-def test_saved_review22_miss_has_exact_argmin_precedence():
+def test_saved_review22_roots_recover_multisets_and_recompose_exactly():
     from Language import ConjunctionLayer, LanguageSpace
     from DecompositionChooser import DecompositionChooser
     path = Path(__file__).resolve().parents[1] / 'test/fixtures/2026-10-05-operators-update/review22-miss.json'
@@ -51,9 +51,8 @@ def test_saved_review22_miss_has_exact_argmin_precedence():
     bank = torch.tensor(saved['codes'])[None].expand(4, -1, -1)
     roots = torch.tensor(saved['roots'])
     chooser = DecompositionChooser()
-    with torch.no_grad():
-        chooser.weight.copy_(torch.tensor(saved['weights']))
-        chooser.weight[1:] *= 1000  # Even extreme context cannot outvote an exact fit.
+    # The captured roots retain their multisets and exact recomposition. The old
+    # learned context weights are retired and are never installed.
     left, right, available, details = LanguageSpace._bounded_binary_reconstruction(
         ConjunctionLayer(), roots, torch.zeros_like(roots), torch.zeros(4, dtype=torch.bool),
         torch.zeros(4, dtype=torch.bool), bank, torch.ones(4, 4, dtype=torch.bool), 4,

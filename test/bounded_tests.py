@@ -13,6 +13,7 @@ import ctypes
 import errno
 import hashlib
 import html
+from importlib.metadata import version
 import json
 import math
 import os
@@ -279,13 +280,15 @@ class GuardedProcess:
     """One independently capped test worker that a suite can poll alongside peers."""
 
     def __init__(self, command, *, cwd, env, log_path, memory_bytes, timeout,
-                 terminate_grace=1, recycle_file=None):
+                 terminate_grace=1, recycle_file=None, memory_share=None):
         for name, value in (("memory_bytes", memory_bytes), ("timeout", timeout),
                             ("terminate_grace", terminate_grace)):
             positive(value, name)
         self.command = list(command)
         self.cwd, self.env, self.log_path = cwd, env, Path(log_path)
         self.memory_bytes, self.timeout = memory_bytes, timeout
+        reservation = memory_bytes if memory_share is None else min(memory_bytes, memory_share)
+        self.recycle_memory = max(reservation * .5, min(reservation * .8, reservation - 64 * MIB))
         self.terminate_grace, self.recycle_file = terminate_grace, recycle_file
         self.result = dict(command=self.command, pid=None, exit_code=125, reason="launch_error",
                            peak_memory_bytes=0, elapsed_seconds=0, log=str(self.log_path))
@@ -347,19 +350,15 @@ class GuardedProcess:
             if used > self.memory_bytes:
                 return self.stop(exit_code=137, reason="memory")
             elapsed = time.monotonic() - self.started
-            # Large workers can retain work until 80% of their reservation;
-            # small workers also keep a fixed allocator headroom so one more
-            # test cannot jump straight into the kernel cap.
-            recycle_memory = max(self.memory_bytes * .5,
-                                 min(self.memory_bytes * .8,
-                                     self.memory_bytes - 64 * MIB))
-            if self.recycle_file is not None and (used >= recycle_memory
+            # Recycle at a case boundary against this slot’s share. A single
+            # heavy case can still use the full per-process allowance.
+            if self.recycle_file is not None and (used >= self.recycle_memory
                                                   or elapsed >= self.timeout * .8):
                 # Finish the current test before releasing a high-water worker.
                 # The kernel/taskpolicy limit remains the hard backstop.
                 if not Path(self.recycle_file).exists():
                     write_json(self.recycle_file, dict(
-                        reason="memory_boundary" if used >= recycle_memory else "time_boundary",
+                        reason="memory_boundary" if used >= self.recycle_memory else "time_boundary",
                         measured_bytes=used, elapsed_seconds=elapsed))
             if elapsed >= self.timeout:
                 return self.stop(exit_code=124, reason="timeout")
@@ -487,6 +486,9 @@ def slow_coverage_warning(root, now=None):
 
 def worker_environment(root):
     env = os.environ.copy()
+    if 'PYTHONHASHSEED' not in env:
+        import secrets
+        env['PYTHONHASHSEED'] = str(secrets.randbelow(2**32))
     # The receipt worker always runs one pytest process; direct `make testp`
     # owns xdist iteration and may retain TEST_JOBS in its own environment.
     env.pop("TEST_JOBS", None)
@@ -567,7 +569,7 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
     devices, active, cache_retried = {}, {}, set()
     run_dir.mkdir(parents=True, exist_ok=False)  # Never reuse a stale success receipt.
     started, frozen, frozen_registry = time.monotonic(), None, None
-    result = dict(exit_code=125, reason="incomplete", selected=[], completed=[], workers=[],
+    result = dict(torch_version=version("torch"), exit_code=125, reason="incomplete", selected=[], completed=[], workers=[],
                   compile_cache_retries=[],
                   limits=dict(memory_bytes=memory_bytes, aggregate_memory_bytes=memory_bytes,
                               per_worker_memory_bytes=worker_memory_bytes, workers=workers,
@@ -628,7 +630,8 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
         guarded = GuardedProcess(
             [sys.executable, str(HERE / "pytest_worker.py"), str(request_file), str(response_file)],
             cwd=root, env=worker_env, log_path=run_dir / f"{name}.log",
-            memory_bytes=cap, timeout=min(timeout, remaining), recycle_file=recycle_file)
+            memory_bytes=cap, timeout=min(timeout, remaining), recycle_file=recycle_file,
+            memory_share=max(1, memory_bytes // workers))
         guarded.start()
         return dict(name=name, request=request, response_file=response_file,
                     guarded=guarded, device=worker_env["BASICMODEL_DEVICE"])
@@ -657,6 +660,8 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
         data = receipt.pop("pytest", {})
         receipt.update(selected=data.get("selected", []), completed=data.get("completed", []),
                        reports=data.get("reports", []), recycled=data.get("recycled", False),
+                       initial_random_stream=data.get("initial_random_stream"),
+                       failed_random_streams=data.get("failed_random_streams", {}),
                        active_case=data.get("active"))
         result["workers"].append(receipt)
         result["completed"].extend(receipt["completed"])

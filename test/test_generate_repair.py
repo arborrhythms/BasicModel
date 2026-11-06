@@ -124,7 +124,13 @@ def test_native_walk_below_bound_matches_frozen_103c(monkeypatch, tmp_path):
             after = Models.BasicModel._output_generate_walk(model, event, 144, **options)
         assert before[1].item() == 1 and not before[2].item()
         assert before[4][0, 0] == len(language._generate_binary_ops)+len(language._generate_unary_ops)
-        for a, b in zip(after[:len(before)], before):
+        assert after[3].shape == (1, 3)
+        torch.testing.assert_close(after[3], before[3][:, None].expand(-1, 3), rtol=0, atol=0)
+        # Item 51 emits the exact parent in inference, including its occurrence
+        # band. All other steps and returns still match the frozen 103c walk.
+        torch.testing.assert_close(after[0][:,0], event[:,0], rtol=0, atol=0)
+        torch.testing.assert_close(after[0][:,1:], before[0][:,1:], rtol=0, atol=0)
+        for a, b in zip(after[1:3] + after[4:len(before)], before[1:3] + before[4:]):
             torch.testing.assert_close(a, b, rtol=0, atol=0)
     finally:
         model.End()
@@ -143,21 +149,25 @@ def test_finished_wins_and_matching_pending_compares_cost(comparison,monkeypatch
     tops = torch.zeros(6, 2, 2)
     def realize(**options):
         side = int(options.get('exploit_actions') is not None)
-        value = costs[:, side, None]
+        selected = options.get('kept_actions', actions + side)
+        value = costs.gather(1, selected[:, :1])
+        unfinished = pending.gather(1, selected[:, :1])[:, 0]
         return AnswerConstruction(value,None,value,value,None,(),()), (
-            actions+side, alternatives, pending[:, side],value[:,0]*0,~pending[:,side],
+            selected, alternatives, unfinished, tops.new_zeros(6, 3), ~unfinished,
             tops.new_zeros(6,2,1,5),tops)
     if comparison == 'output':
         _, audit = output_pair(realize, lambda x: x.actual[:, 0])
     else:
         def reconstruct(*args, **options):
             side = int(options.get('decoder_exploit') is not None)
-            value = costs[:, side]
-            trace = (tops, torch.ones(6,dtype=torch.long), pending[:, side], value*0, actions+side)
+            selected = options.get('decoder_kept_actions', actions + side)
+            value = costs.gather(1, selected[:, :1])[:, 0]
+            unfinished = pending.gather(1, selected[:, :1])[:, 0]
+            trace = (tops, torch.ones(6,dtype=torch.long), unfinished, tops.new_zeros(6, 3), selected)
             if options.get('decoder_candidates'):
                 trace = (*trace, alternatives)
             from generation_fixtures import suffix
-            return (tops, value*0, value, pending[:, side], value[:, None]), (*trace, *suffix(tops,pending[:,side]))
+            return (tops, value*0, value, unfinished, value[:, None]), (*trace, *suffix(tops,unfinished))
         model = SimpleNamespace(_sentence_training=True, _compiled_reconstruct=lambda: reconstruct)
         from SentenceUnderstanding import SentenceUnderstanding
         record=SentenceUnderstanding(torch.zeros(6,2),tops,torch.ones(6),tops,torch.ones(6),
@@ -243,6 +253,7 @@ def test_epoch_guard_still_rejects_unwitnessed_constructed_individual():
     cid = alloc.new_concept()
     alloc.store_of(cid).add_constituent(cid, 'part', ('occ', occurrence[-1]))
     alloc.individuals.add(cid)
-    store.order[store.location(occurrence)] = -1
+    # An unavailable typed referent supplies no recorded order.
+    store._semantic_rows[occurrence[-1]]['bindings'] = (('_identity', ('sym', alloc.new_concept())),)
     with pytest.raises(RuntimeError, match='a promoted identity has no witnessed order at the epoch boundary'):
         model_boundary(model_for(owner, store), epoch_boundary=True)

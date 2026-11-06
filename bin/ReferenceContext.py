@@ -124,6 +124,8 @@ def denoted_order(rule, operand_orders, operand_ids, alloc):
             if isinstance(identity, int) and identity not in (-1, 0):
                 return alloc.order_of(identity)
         return orders[0]
+    if name == 'sign':
+        return torch.zeros_like(orders[0]) if torch.is_tensor(orders[0]) else 0
     if relation == 'equal' or name in ('equal', 'isEqual'):
         return orders[0]
     if relation in ('part', 'whole', 'kind') or name in ('part', 'whole', 'kind', 'assertPart', 'isPart'):
@@ -228,6 +230,13 @@ class ReferenceBank(NamedTuple):
     lexical_capacity: int = 0
     literal_ids: object = None
     exclusions: object = None
+    interpret_forced: bool | None = None
+
+    @property
+    def forces_interpretation(self):
+        if self.interpret_forced is not None:
+            return self.interpret_forced
+        return self.close_references and getattr(self.interpreter, 'mandatory', True)
 
     def detached(self):
         """Freeze the rebuilt situation at a compose fork, retaining its API."""
@@ -367,7 +376,8 @@ def resolve_operand(value, identity, position, *, mode, bank, live, active, orde
 
 
 def prepare_operands(window, identities, flags, positions, *, orders, rules, unary_rules,
-                     bank, live, active, chunk_state=None, source=None, meaning_blocks=False):
+                     bank, live, active, chunk_state=None, source=None, meaning_blocks=False,
+                     signable=None, interpretable=None):
     """Enumerate reference variants of each operation for one global softmax.
 
     A variant retains the grammar operation's index and learned scoring row.
@@ -375,8 +385,10 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
     """
     B, N, D = window.shape
     interpreter = getattr(bank, 'interpreter', None)
+    forced = getattr(bank, 'forces_interpretation',
+                     getattr(bank, 'close_references', False) and getattr(interpreter, 'mandatory', True))
 
-    def propose(value, ids, scope, pos, stamp, rule, role, valid):
+    def symbolic_options(value, ids, scope, pos, stamp, rule, role, valid):
         order, mode = binding_spec(rule, role, stamp, implicit=interpreter is not None)
         if chunk_state is not None and order is not None:
             # Determination supplies an object, never a reference alternative.
@@ -543,6 +555,18 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
                                 valid & ~available.any(-1)))
         return alternatives(options)
 
+    def propose(value, ids, scope, pos, stamp, rule, role, valid):
+        options = symbolic_options(value, ids, scope, pos, stamp, rule, role, valid)
+        if not forced and interpretable is not None:
+            from ClauseScope import ClauseScope
+            raw = scope.bitwise_and(ClauseScope.UNINTERPRETED_LEAF) != 0
+            options = [(*option[:3], option[3] & ~raw, *option[4:]) for option in options]
+            first = options[0]
+            options[0] = (torch.where(raw[..., None], value, first[0]),
+                torch.where(raw, ids, first[1]), first[2] & ~raw,
+                first[3] | (valid & raw), *first[4:])
+        return options
+
     def choice_tag(refs, rule, role, stamp, source):
         if chunk_state is not None:
             return torch.full_like(refs, -1)
@@ -580,7 +604,9 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
             own = identities.gather(1,newest)
             own_relative = flags.gather(1,newest).bitwise_and(1) != 0
             points, ids, chunks, available = STMChunks.bind_menu(chunk_state,mention,
-                exclusions=getattr(bank,'exclusions',None))
+                exclusions=getattr(bank,'exclusions',None), meaning_start=getattr(
+                    getattr(getattr(getattr(interpreter, 'owner', None), 'similarity_codebook', None),
+                            'mereology', None), 'percept_event_width', 0))
             for column in range(points.shape[2]):
                 binary_ops.append(operation)
                 binary_bind.append(True)
@@ -630,7 +656,42 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
     values, urefs, urels, uvalid, unary_ops = [], [], [], [], []
     own_values, record_values, identity_choices, bind_dummies = [], [], [], []
     for operation, rule in enumerate(unary_rules):
-        for operand in propose(window, identities, flags, positions, orders, rule, 'argin1', active):
+        name = getattr(rule, 'method_name', None)
+        if name == 'sign':
+            valid = active & signable if signable is not None else torch.zeros_like(active)
+            options = [(window, identities, torch.zeros_like(valid), valid)]
+        elif name == 'interpret':
+            # Reading initially forces interpretation at admission. Lifting
+            # mandatory on the layer exposes this same first decision.
+            options = [(window, identities, torch.zeros_like(active), torch.zeros_like(active))]
+            if not forced and interpretable is not None:
+                options = []
+                lexical_found = torch.zeros_like(active)
+                if bank.types is not None:
+                    # Reuse the staged lexical points. Interpretation can
+                    # read a known object without an earlier MTM mention.
+                    for order in bank.types.orders.unbind():
+                        point, identity = resolve_order(window, identities, order, bank.types)
+                        admitted = identity != identities
+                        options.append((point, identity, torch.zeros_like(active),
+                                        active & interpretable & admitted))
+                        lexical_found |= admitted
+                elif bank.associations is not None and bank.associations.numel() and bank.ids.shape[1]:
+                    available = ((identities[...,None,None] == bank.associations[:,0]) &
+                                 (bank.ids[:,None,:,None] == bank.associations[:,1])).any(-1) & bank.valid[:,None]
+                    count = min(bank.ids.shape[1], max(1, bank.lexical_capacity))
+                    priority = available * torch.arange(bank.ids.shape[1], 0, -1, device=window.device)
+                    for selected in priority.topk(count, dim=-1).indices.unbind(-1):
+                        point = bank.values.gather(1, selected[...,None].expand(-1,-1,D))
+                        admitted = available.gather(-1, selected[...,None]).squeeze(-1)
+                        options.append((point, bank.ids.gather(1, selected), torch.zeros_like(active),
+                                        active & interpretable & admitted))
+                        lexical_found |= admitted
+                # An objectless interpretation keeps the open lexical handle.
+                options.append((window, identities, torch.zeros_like(active), active & interpretable & ~lexical_found))
+        else:
+            options = propose(window, identities, flags, positions, orders, rule, 'argin1', active)
+        for operand in options:
             unary_ops.append(operation)
             values.append(operand[0])
             own_values.append(operand[0])

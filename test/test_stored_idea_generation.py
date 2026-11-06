@@ -370,7 +370,8 @@ def test_unnamed_primed_concept_cannot_complete_as_a_word(monkeypatch):
     # masquerade as a lexical leaf or obtain an exact completion certificate.
     assert not trace[-5].any()
     assert not any(torch.equal(value, root[0]) for value in trace[0][0,:int(trace[1][0])])
-    assert trace[3].item() > 0
+    assert trace[3].shape == (1, 3)
+    assert trace[3].sum().item() > 0
     # It stays available as structure; lexical exclusion does not erase it.
     assert record.constituent_valid.all() and bank.valid.all()
 

@@ -82,6 +82,44 @@ def acquisition(model, measurement, *, relations):
                 names=lexical, qualifying_classes=[obj['identity'] for obj in kinds])
 
 
+def observed_sides(owner, references):
+    """Resolve the kept operands in sentence order, preserving an unbound side."""
+    from LTM1 import SYMBOL, OCCURRENCE, RELATION
+    store = owner._closed_clause_store()
+    result = []
+    for ref in (*references, None, None)[:2]:
+        current, visited, symbol = ref, set(), None
+        while current is not None and current not in visited:
+            visited.add(current)
+            tag, identity = current
+            if tag == SYMBOL:
+                symbol = identity
+                break
+            if tag != OCCURRENCE:
+                break
+            location = store.index_of_row(identity)
+            if location is None:
+                break
+            token = owner.mtm.token_of(store.occurrence_of(location))
+            if token is not None:
+                entry = owner.mtm.entries[token]
+                symbol = entry.symbol if entry.symbol is not None else entry.native
+                if symbol is not None:
+                    break
+            native = dict(store.raw_meaning_of(location).bindings).get('_identity')
+            if native is None:
+                break
+            if native[0] == 'sym':
+                current = (RELATION if store.parts.contains(native[1]) else SYMBOL, native[1])
+            elif native[0] == 'ltm' and native[1] == store.address_domain:
+                current = (OCCURRENCE, native[-1])
+            else:
+                break
+        result.append(dict(reference=ref, symbol=symbol,
+                           order=None if symbol is None else owner._concept_source_order(symbol)))
+    return result
+
+
 def observed_field(model, field):
     """Read the kept denotation and its actual witnesses, never a POS guess."""
     if field is None:
@@ -145,7 +183,7 @@ def heldout(model, stage, data):
     return rows
 
 
-def measure(config, lessons, output, *, eager=False, presentations=None, curriculum_name='lesson-13'):
+def measure(config, lessons, output, *, eager=False, presentations=None, curriculum_name='lesson-13', gradient_report=False):
     import torch
     from data import TheData
     from Models import BaseModel
@@ -180,12 +218,16 @@ def measure(config, lessons, output, *, eager=False, presentations=None, curricu
     if model.inputSpace.data is not data:
         raise RuntimeError('lesson data differs from the native input owner')
     optimizer = model.getOptimizer(lr=.001)
+    model._measure_sentence_gradients = bool(gradient_report)
+    model._observe_lesson_sides = True
     records, phases = [], []
     forms = list(dict.fromkeys(form for stage in curriculum['stages'] for form in stage['measure']))
-    metadata = dict(config=str(config),
+    metadata = dict(torch_version=str(torch.__version__), config=str(config),
         config_sha256=hashlib.sha256(Path(config).read_bytes()).hexdigest(),
         lessons=str(lessons), curriculum=curriculum_name,manifest=data.source_manifest, eager=eager,
-        epochs=curriculum['epochs'], before=lexical_report(model, forms))
+        epochs=curriculum['epochs'], before=lexical_report(model, forms),
+        separate_chooser=model.separate_chooser, reconstruction_jitter=model.reconstruction_jitter,
+        gradient_report=bool(gradient_report))
     (output / 'protocol.json').write_text(json.dumps(metadata, indent=2) + '\n')
     try:
         for stage in curriculum['stages']:
@@ -193,12 +235,38 @@ def measure(config, lessons, output, *, eager=False, presentations=None, curricu
             from Corpus import admit_training_forms
             admitted=admit_training_forms(model,texts,targets)
             (output/(stage['name']+'-admission.json')).write_text(json.dumps([
-                dict(form=raw.decode('utf8','surrogateescape'),word=word)
+                dict(torch_version=str(torch.__version__), form=raw.decode('utf8','surrogateescape'),word=word)
                 for raw,word in admitted],indent=2)+'\n')
             for repetition in range(curriculum['epochs']):
                 model_boundary(model, epoch_boundary=True)
-                answers, fold_counts, observations = [], [], []
+                answers, fold_counts, observations, attention, placements, step_times = [], [], [], [], [], []
+                training_times, diagnostic_times = [], []
+                last_step = time.monotonic()
+                last_diagnostic = getattr(model, '_gradient_diagnostic_seconds', 0.)
                 def scored(model, split, rows, result):
+                    nonlocal last_step, last_diagnostic
+                    now = time.monotonic()
+                    step_times.append(now-last_step)
+                    diagnostic = getattr(model, '_gradient_diagnostic_seconds', 0.) - last_diagnostic
+                    diagnostic_times.append(diagnostic)
+                    training_times.append(now-last_step-diagnostic)
+                    owner = model._concept_owner()
+                    opened = getattr(model, '_last_open_attention', None)
+                    if opened is not None:
+                        expected = owner._expected_knowing.detach()
+                        attention.append(dict(brackets=opened['brackets'].tolist(),
+                            seen=opened['seen'], expected=[dict(rows=(value.amax(-1)>0).nonzero().flatten().tolist(),
+                                pairs=value[value.amax(-1)>0].tolist()) for value in expected],
+                            accepted=(None if not hasattr(model, '_attention_words') else
+                                      model._attention_words.accepted.detach().tolist())))
+                    codes = getattr(owner.similarity_codebook, 'mereology', None)
+                    if codes is not None:
+                        occupied = codes.placement_witnesses > 0
+                        placements.append(dict(rows=occupied.nonzero().flatten().tolist(),
+                            directions=codes.placement[occupied].tolist(),
+                            witnesses=codes.placement_witnesses[occupied].tolist(),
+                            valid=codes.placement_valid[occupied].tolist(),
+                            shape=list(codes.placement.shape), pointer=codes.placement.data_ptr()))
                     fold=getattr(model._concept_owner(),'_last_definition_fold',None)
                     if fold is not None:
                         fold_counts.append((fold['both'],fold['count']))
@@ -207,7 +275,12 @@ def measure(config, lessons, output, *, eager=False, presentations=None, curricu
                     actual = getattr(model, '_last_what_answers', ())
                     for batch, source in enumerate(rows):
                         field = fields[batch] if batch < len(fields) else None
-                        observations.append(dict(text=texts[source],**observed_field(model,field)))
+                        observed = observed_field(model, field)
+                        readings = getattr(model, '_last_leaf_readings', ())
+                        observed['leaf_readings'] = readings[batch] if batch < len(readings) else None
+                        refs = getattr(model, '_lesson_side_refs', ())
+                        observed['sides'] = observed_sides(owner, refs[batch] if batch < len(refs) else ())
+                        observations.append(dict(text=texts[source], **observed))
                         target = targets[source]
                         if target is None:
                             continue
@@ -223,15 +296,17 @@ def measure(config, lessons, output, *, eager=False, presentations=None, curricu
                             bound_correct=False if meaning is None else bool(matches(model, meaning, answer)),
                             binding_cost=None if meaning is None else float(cost(model, meaning, answer)),
                             answer_trial_costs=model._last_sentence_credit['components'][batch, :, 2].tolist()))
+                    last_diagnostic = getattr(model, '_gradient_diagnostic_seconds', 0.)
+                    last_step = time.monotonic()
                 summary = present(model, split='train', optimizer=optimizer, batch_size=1,
                                   after_batch=scored, epoch_boundary=False)
                 if summary['sentences'] != len(texts):
                     raise RuntimeError('native lesson did not consume every supplied sentence')
                 owner = model._concept_owner()
                 alloc = owner._concept_allocator
-                row = dict(phase=stage['name'], epoch=repetition + 1,
+                row = dict(torch_version=str(torch.__version__), phase=stage['name'], epoch=repetition + 1,
                     elapsed_seconds=time.monotonic() - started, **summary,
-                    lexical=lexical_report(model, forms),
+                    lexical=lexical_report(model, forms), null_concept=owner.null_concept_read(),
                     raised_classes=[dict(symbol=cid, order=alloc.order_of(cid),
                         members=list(alloc.parts.parts((SYMBOL, cid))),
                         membership_witnesses=membership_report(alloc,cid)) for cid in sorted(alloc.raised)],
@@ -240,6 +315,11 @@ def measure(config, lessons, output, *, eager=False, presentations=None, curricu
                         both=all(any(reading[pole] > 0 for reading in entry.readings) for pole in (2,3)))
                         for key, entry in owner.mtm.entries.items() if entry.order is not None],
                     answers_scored=answers, observations=observations,
+                    ltm1_rows=[dict(row=i, references=alloc.parts.references(i),
+                        evidence=[float(alloc.parts.truth_plus[i]), float(alloc.parts.truth_minus[i])],
+                        percept=alloc.parts.percept[i].tolist()) for i in alloc.parts.indices().tolist()],
+                    attention=attention, placements=placements, step_seconds=step_times,
+                    step_training_seconds=training_times, step_diagnostic_seconds=diagnostic_times,
                     class_both=dict(both=sum(x for x,_ in fold_counts),
                         readings=sum(n for _,n in fold_counts),
                         fraction=(sum(x for x,_ in fold_counts)/sum(n for _,n in fold_counts)
@@ -248,6 +328,9 @@ def measure(config, lessons, output, *, eager=False, presentations=None, curricu
                         relations=stage.get('produces') is not None),
                     native_forms=len(model.perceptualSpace.percept_store.identity.words),
                     rung0_audit=getattr(model, '_last_rung0_identity_audit', None))
+                if gradient_report:
+                    from SentenceTraining import gradient_receipt
+                    row['gradient_report'] = gradient_receipt(model, clear=True)
                 records.append(row)
                 with (output / 'epochs.jsonl').open('a') as target:
                     target.write(json.dumps(row) + '\n')
@@ -273,6 +356,7 @@ def measure(config, lessons, output, *, eager=False, presentations=None, curricu
                     model.save_weights(str(path))
                     phase.update(artifact_written=True, path=str(path),
                         sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+            phase['torch_version'] = str(torch.__version__)
             phases.append(phase)
             (output / 'phases.json').write_text(json.dumps(phases, indent=2) + '\n')
     finally:
@@ -289,11 +373,13 @@ def main():
     parser.add_argument('--lessons', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--eager', action='store_true')
+    parser.add_argument('--gradient-report', action='store_true')
     parser.add_argument('--presentations', '--epochs', type=int)
     parser.add_argument('--curriculum',choices=('lesson-13','final'),default='lesson-13')
     args = parser.parse_args()
     measure(args.config, args.lessons, args.output, eager=args.eager,
-            presentations=args.presentations,curriculum_name=args.curriculum)
+            presentations=args.presentations,curriculum_name=args.curriculum,
+            gradient_report=args.gradient_report)
 
 
 if __name__ == '__main__':

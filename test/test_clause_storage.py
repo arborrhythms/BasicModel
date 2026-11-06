@@ -20,7 +20,7 @@ def test_end_row_has_shared_references_and_field_coordinates():
     assert not hasattr(store, 'refs')
     assert 'refs' not in store.state_dict()
     assert store.slots.shape == (8, 4)
-    assert not hasattr(store, 'when') and not hasattr(store, 'role_mask')
+    assert store.when.shape == (8, 0) and not hasattr(store, 'role_mask')
 
 
 def test_both_evidence_poles_survive_checkpoint_separately_from_neither():
@@ -45,7 +45,7 @@ def test_relation_rows_never_enter_luminosity():
     store, _ = clause_store()
     idea = store.append_idea(torch.tensor([1.,0.,0.,0.]), trust=.6, evidence=(.6,0.))
     store.write_clause(part_clause(), evidence=(1.,0.))
-    store.set_origin(idea, store.ORIGIN_PROVISIONED)
+    store.set_origin(idea, store.ORIGIN_PROVISIONED, asserted=(float(store.truth_plus[idea]), float(store.truth_minus[idea])))
     light = TruthLayer(4, max_truths=8); light.attach_ltm(store)
     assert light.sync_from_ltm() == 1
     torch.testing.assert_close(light.truths[0], torch.tensor([.6,0.,0.,0.]))
@@ -214,12 +214,12 @@ def test_retired_relation_columns_are_rejected_without_dropping_rows():
 def test_native_provisioned_content_requires_its_layout_version():
     store = LTM0(4,capacity=8)
     row = store.append_idea(torch.ones(4),evidence=(.8,0.))
-    store.set_origin(row,store.ORIGIN_PROVISIONED)
+    store.set_origin(row,store.ORIGIN_PROVISIONED, asserted=(float(store.truth_plus[row]), float(store.truth_minus[row])))
     state = store.state_dict();state.pop('truth_schema')
     restored = LTM0(4,capacity=8)
     with pytest.raises(ValueError, match='layout checkpoint version'):
         restored.load_state_dict(state)
-    assert len(restored) == 0 and store.origin[row] == store.ORIGIN_PROVISIONED
+    assert len(restored) == 0 and store.source_document(row) == store.ORIGIN_PROVISIONED
 
 
 def test_verification_keeps_conflicting_observations_as_two_poles():

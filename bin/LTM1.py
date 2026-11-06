@@ -5,6 +5,8 @@ from torch import nn
 
 OCCURRENCE, SYMBOL, RELATION = 1, 2, 3
 VERSION = 2
+# Reserved outside both address inventories. It never consumes a learnable seat.
+NULL_CONCEPT = torch.iinfo(torch.int64).max
 
 
 class LTM1(nn.Module):
@@ -17,6 +19,7 @@ class LTM1(nn.Module):
         if self.capacity < 2:
             raise ValueError('LTM1 capacity must include a reserved zero and a relation seat')
         self.allocate = None
+        self.handle_reserved = None
         # One pair and two percept bands (where + when, four coordinates each)
         # per declared relation seat. No content vector and no growth on load.
         self.register_buffer('refs', torch.full((self.capacity, 2), -1, dtype=torch.long))
@@ -30,7 +33,45 @@ class LTM1(nn.Module):
         self.register_buffer('layout_version', torch.tensor(VERSION, dtype=torch.long))
         self._index_version = None
         self._symbol_epoch = 0
+        self.epoch_start = None
+        self.epoch_handles = set()
+        self._vacant_epoch_handles = []
         self._pairs, self._parts, self._wholes, self._references = {}, {}, {}, {}
+
+    def _reserved_handle(self, row):
+        if self.handle_reserved is not None and self.handle_reserved(row):
+            return True
+        if self.rows_referencing(SYMBOL, row):
+            return True
+        store_ref = getattr(self, '_occurrence_store', None)
+        store = None if store_ref is None else store_ref()
+        if store is None:
+            return False
+        if row in store._cover_symbols.values() or bool((store.recurrence_symbols == row).any()):
+            return True
+        names = (('sym', row), ('name', row))
+        return any(ref in names for context in store._semantic_rows.values()
+                   for ref in (*context.get('role_refs', ()), dict(context.get('bindings', ())).get('_identity')))
+
+    @torch.no_grad()
+    def begin_epoch(self):
+        """Restore the starting rows, including access counts and both evidence lanes."""
+        if self.epoch_start is None:
+            self.epoch_start = {name: value.detach().cpu().clone()
+                                for name, value in self.state_dict().items()}
+            return set()
+        before = set(self.indices().tolist())
+        state = {name:value for name,value in self.epoch_start.items() if not name.startswith('_')}
+        self.load_state_dict(state)
+        self.epoch_start.pop('_initial_observations', None)
+        occupied = set(self.indices().tolist())
+        # Only handles reserved by this relation allocator are available again.
+        # Explicit symbol handles belong to their concepts across epochs.
+        self._vacant_epoch_handles = sorted(self.epoch_handles - occupied, reverse=True)
+        self._symbol_epoch += 1
+        self._index_version = None
+        self._index()
+        return before - occupied
 
     def __len__(self):
         return int(self.count)
@@ -126,6 +167,8 @@ class LTM1(nn.Module):
     def add(self, part, whole, *, ref_kinds=(SYMBOL, SYMBOL), truth_plus=0., truth_minus=0.,
             when=None, where=None, surprise=-1., witness=True, symbol=None):
         left, right = self.reference(part, ref_kinds[0]), self.reference(whole, ref_kinds[1])
+        if (SYMBOL, NULL_CONCEPT) in (left, right):
+            raise ValueError('a null-concept cannot be a relation endpoint')
         if any(not math.isfinite(float(x)) or not 0 <= float(x) <= 1 for x in (truth_plus, truth_minus)):
             raise ValueError('relation evidence has two independent poles in [0, 1]')
         if not math.isfinite(float(surprise)) or not (surprise == -1. or 0. <= surprise <= 1.):
@@ -141,17 +184,27 @@ class LTM1(nn.Module):
             if kind == RELATION and not self.contains(value):
                 raise ValueError('relation child must exist before its parent')
         row = self.find(left, right)
+        new_row = row is None
         if row is None:
             if symbol is not None:
                 row = int(symbol)
             elif self.allocate is None:
                 free = self.ref_kinds[:, 0].eq(0).nonzero().flatten()
                 free = free[free > 0]
-                if not len(free):
+                row = next((cid for cid in free.tolist() if not self._reserved_handle(cid)), None)
+                if row is None:
                     raise OverflowError('LTM1 capacity exhausted; forgetting is required')
-                row = int(free[0])
             else:
-                row = int(self.allocate())
+                # A name or seat can arrive after the reset or checkpoint.
+                # Test its live owners at the actual point of reuse.
+                while self._vacant_epoch_handles:
+                    candidate = self._vacant_epoch_handles[-1]
+                    if not self.contains(candidate) and not self._reserved_handle(candidate):
+                        break
+                    self._vacant_epoch_handles.pop()
+                row = (self._vacant_epoch_handles.pop() if self._vacant_epoch_handles
+                       else int(self.allocate()))
+                self.epoch_handles.add(row)
             if not 0 < row < self.capacity:
                 raise OverflowError('LTM1 handle exceeds its constructed capacity')
             if self.contains(row):
@@ -175,6 +228,9 @@ class LTM1(nn.Module):
             self.surprise[row] = float(surprise)
         for name, value in bands.items():
             self.percept[row, 4:].copy_(value) if name == 'when' else self.percept[row, :4].copy_(value)
+        if new_row and self.epoch_start is not None:
+            self.epoch_start.setdefault('_initial_observations', {})[row] = (
+                int(self.access_count[row]), float(self.surprise[row]))
         return row
 
     @torch.no_grad()

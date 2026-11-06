@@ -130,6 +130,17 @@ class StepChoice:
 
 
 @dataclass(frozen=True)
+class PreparedGeneration:
+    """The one generation read and bounded lexical bank of a resolved answer."""
+
+    materialized: tuple
+    root: torch.Tensor
+    bank: Any
+    attention: Any
+    with_grad: bool
+
+
+@dataclass(frozen=True)
 class AnswerDerivation:
     """A resolved conceptual answer plus its owned derivation record.
 
@@ -168,6 +179,9 @@ class AnswerDerivation:
     # These are views of the prepared answer, not another memory owner.
     answer_meanings: Tuple[Tuple[ConceptualMeaning, ...], ...] = field(
         default_factory=tuple, repr=False, compare=False)
+    # Replacing a conceptual answer creates a new read of its own root.
+    generation: Optional[PreparedGeneration] = field(
+        default=None, init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "grammar_trace", tuple(self.grammar_trace))

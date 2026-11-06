@@ -43,3 +43,27 @@ def test_whole_mean_matches_direct_value_and_both_gradients():
 def test_invalid_whole_codes_still_reject(invalid):
     with pytest.raises(RuntimeError, match='finite coordinates'):
         weighted_mean(torch.ones(1, 1), torch.tensor([[invalid]]))
+
+
+@pytest.mark.parametrize('dtype', [torch.float32, torch.float64])
+@pytest.mark.parametrize('compiled', [False, True])
+def test_whole_mean_zero_prefix_has_the_final_mean_derivative(dtype, compiled):
+    # A whole property that becomes the first nonzero weight can have a
+    # tiny prefix even though the complete span has ordinary mass.
+    read = torch.compile(weighted_mean, backend='aot_eager', fullgraph=True) if compiled else weighted_mean
+    weights = torch.tensor([[0., 1.23e-7, 0.], [0., 1.23e-7, 1.]],
+                           dtype=dtype, requires_grad=True)
+    codes = torch.tensor([[.25, 1.], [.25, 0.], [.25, .5]],
+                         dtype=dtype, requires_grad=True)
+    mean, total = read(weights, codes)
+    direction = torch.tensor([[1000., 0.], [1., .75]], dtype=dtype)
+    weight_grad, code_grad = torch.autograd.grad((mean * direction).sum(), (weights, codes))
+    expected = ((codes[None] - mean[:, None]) * direction[:, None]).sum(-1) / total
+    torch.testing.assert_close(weight_grad, expected)
+    torch.testing.assert_close(code_grad, (weights / total).T @ direction)
+    assert torch.equal(weight_grad[0], torch.zeros_like(weight_grad[0]))
+
+    # A genuine inverse-total slope on a different code remains measurable.
+    mean, total = read(weights, codes)
+    gradient, = torch.autograd.grad(mean[0, 1], weights)
+    torch.testing.assert_close(gradient[0, 0], total[0, 0].reciprocal())

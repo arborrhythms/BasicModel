@@ -72,8 +72,7 @@ def symbolize(owner, store, key, token, timeline=0):
     """The name/mention form beside the selected timeline's working meaning."""
     from IdentityRows import point
     if token.order is not None:
-        from FamiliarTier import centroid
-        return centroid(owner, token.support)
+        return owner.mtm.value_of(key, timeline=timeline, live_candidate=True)
     derived = getattr(owner.similarity_codebook, 'mereology', None)
     # Legacy numerical fixtures have no separate form/meaning chart; their
     # entire point is content. The paired model supplies both explicit widths.
@@ -96,7 +95,7 @@ def symbolize(owner, store, key, token, timeline=0):
         forms = [store.slots[row, :form_width] for occurrence in token.occurrences
                  if isinstance((row := store.location(occurrence)), int)]
         form = torch.stack(forms).mean(0) if forms else token.value.new_zeros(form_width)
-    value = token.timelines[timeline].value.detach().clone()
+    value = owner.mtm.value_of(key, timeline=timeline).detach().clone()
     value[:form_width] = form.to(value)
     value[form_width:width] = 0
     return value
@@ -167,7 +166,9 @@ def stage(model, state, present):
         keys = {record.get('token') for _, record in records.values()} - {None}
         keys.update(key for key, token in pool.entries.items() if (token.order is not None or key[0] == 'name')
                     and (not pool.accesses.get(key) or b in pool.accesses[key]))
-        keys = sorted(keys, key=lambda key: (max((event.when for timeline in pool.entries[key].timelines
+        # Equal-time arrivals retain admission order. Sorting the set itself
+        # would make bind-menu positions and training depend on Python's hash.
+        keys = sorted((key for key in pool.entries if key in keys), key=lambda key: (max((event.when for timeline in pool.entries[key].timelines
             for event in timeline.events), default=pool.entries[key].when), pool.entries[key].when), reverse=True)
         choices = [(key, timeline) for key in keys for timeline in range(len(pool.entries[key].timelines))]
         for column, (key, timeline) in enumerate(choices[:entries.prepend]):

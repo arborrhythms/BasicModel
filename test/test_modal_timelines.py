@@ -212,10 +212,10 @@ def test_modal_bracketings_write_only_an_idea_and_preserve_the_actual(monkeypatc
     pool=f.cs.mtm
     assert len(pool.entries)==1
     token,entry=next(iter(pool.entries.items()))
-    assert clause.order>=1 and int(f.store.order[row])>=1
+    assert clause.order>=1 and f.store.order_of_row(row)>=1
     assert not entry.events and len(entry.timelines)==2
     assert len(entry.timelines[1].events)==1
-    assert not any(int(f.store.order[f.store.location(event.occurrence)])==0 for event in entry.timelines[1].events)
+    assert not any(f.store.order_of_row(f.store.location(event.occurrence))==0 for event in entry.timelines[1].events)
     torch.testing.assert_close(entry.value,torch.full((8,),.2))
     subject_value=torch.full((8,),.2)
     expected=(modifier(verb(subject_value,torch.full((8,),.3)),torch.full((8,),.4)) if post else
@@ -264,7 +264,9 @@ def test_fixed_query_reads_event_order_and_never_asserts_the_question(monkeypatc
     for n,query_tree,expected in ((2,('lift',subject,'move'),actual_row),(3,tree,idea_row)):
         c,_,row,written=close(f,recording(f,query_tree,(second,)),(second,),position=n,question=True)
         question=closing_question(c.meaning,c,store=f.store,written_rows=written)
-        assert bindings(question)['_query_event'][2]==int(f.store.order[row])
+        assert bindings(question)['_query_event'][2] == c.order
+        subject_ref = f.store.raw_meaning_of(row).role_refs[0]
+        assert f.store.order_of_row(row) == f.store.order_of_row(f.store.location(subject_ref))
         found=reader.best_match(question,max_records=64,work=QueryWorkBudget(256))
         assert found['witnesses']==(f.store.occurrence_of(expected),)
         current=f.cs.mtm.entries[token]
@@ -332,7 +334,7 @@ def test_promotion_folds_only_actual_events_and_document_end_keeps_ideas(monkeyp
         for _ in range(f.cs.mtm.horizon + 1):
             f.cs.mtm.close(f.store,stream=stream)
     assert not f.cs.mtm.entries and not f.cs.mtm.names
-    assert all(int(f.store.order[f.store.location(ref)])>=1 for ref in ideas)
+    assert all(f.store.order_of_row(f.store.location(ref))>=1 for ref in ideas)
     torch.testing.assert_close(f.store.slots,rows)
     torch.testing.assert_close(f.cs.similarity_codebook.W,bank)
 
@@ -424,13 +426,14 @@ def test_bound_idea_has_both_value_and_retained_identity_reference(monkeypatch,m
     bind=next(i for i,(kind,op,_) in enumerate(program.actions.tolist())
               if kind==1 and f.binary[op].method_name=='bind')
     torch.testing.assert_close(program.operation_values[bind,1],entry.value)
-    _,_,row,_=close(f,program,(frame,),position=1)
+    clause,_,row,_=close(f,program,(frame,),position=1)
     updated=f.cs.mtm.entries[token]
     mention=updated.occurrences[-1]
     reading=f.store.raw_meaning_of(f.store.location(mention)).role_refs[0]
     root=f.store.raw_meaning_of(row).role_refs[0]
     assert f.cs.mtm.token_of(mention)==token and f.cs.mtm.token_of(root)==token
-    assert (int(f.store.order[row])>0)==modal
+    assert (clause.order > 0) == modal
+    assert f.store.order_of_row(row) == f.store.order_of_row(f.store.location(mention))
 
 
 def test_modal_object_role_keeps_its_own_state(monkeypatch):

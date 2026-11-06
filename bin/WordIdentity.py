@@ -233,7 +233,9 @@ class WordIdentity(nn.Module):
                 if other is not None and other != word:
                     self._mint(other, word)
                     changed = set(self.words[other][-1:]) | set(self.words[word][-1:])
-                    touched = {w for w, parts in self.words.items() if changed.intersection(parts)}
+                    # The work stack inherits word admission order. Hash
+                    # order must not decide a later collision's mint roles.
+                    touched = [w for w, parts in self.words.items() if changed.intersection(parts)]
                     affected.update(touched)
                     for w in touched:
                         old = self.word_keys.pop(w, None)

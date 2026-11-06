@@ -67,7 +67,7 @@ class ColumnDictionary(nn.Module):
         return tuple(int(key) for key, scale in self.relevance.items()
                      if float(scale.detach()) <= 0)
 
-    def witness_count(self, identity):
+    def access_count(self, identity):
         return len(self._witnesses.get(int(identity), ()))
 
     def get_extra_state(self):
@@ -207,6 +207,13 @@ class SparseDictionary(ColumnDictionary):
         if float(residual.norm()) <= self.mint_threshold:
             return
         direction = F.normalize(residual.detach().to(self._anchor), dim=-1)
+        if self.directions:
+            # Shrinkage can leave a large residual parallel to an admitted
+            # direction. It witnesses that source again in either orientation.
+            similarity, index = (self.matrix() @ direction).abs().max(0)
+            if float(similarity) >= 1 - self.mint_threshold:
+                self._witnesses.setdefault(self.ids[int(index)], set()).add(witness)
+                return
         pending = next((entry for entry in self._pending
                         if float((entry['direction'] @ direction).abs()) >= 1 - self.mint_threshold), None)
         if pending is None:
@@ -409,7 +416,7 @@ class IndependentComponents(nn.Module):
             if meaning is not None and bool(active[b]):
                 prediction = predictions[b] if predictions is not None else None
                 if prediction is not None and self.individual_ids:
-                    residual = self.innovation(meaning.roles, prediction.roles.detach())
+                    residual = self.innovation(meaning.roles.detach(), prediction.roles.detach()).detach()
                     loss = self.verbs.loss(torch.cat((changes, residual[None]), 0))
                 elif len(changes):
                     loss = self.verbs.loss(changes)
@@ -444,7 +451,7 @@ class IndependentComponents(nn.Module):
         store = self.owner._closed_clause_store()
         retained = store.row(row)
         identity = retained['row_id']
-        witness = (identity, int(store.witness_count[row]) if isinstance(row, int)
+        witness = (identity, int(store.access_count[row]) if isinstance(row, int)
                    else int(retained['access_count']))
         before = {id(p) for p in self.parameters()}
         # A's individuals were admitted from the kept NP occurrences at this

@@ -107,7 +107,9 @@ def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch,eag
     monkeypatch.setattr(model,'_sentence_path_cost',cost)
     try:
         optimizer=model.getOptimizer(lr=.01)
-        model.runEpoch(optimizer=optimizer,batchSize=4,split='train')
+        raw, target = next(iter(data.data_loader(split='train', num_streams=4)))
+        model.runBatch(train=True, optimizer=optimizer, batchSize=4, split='train',
+            batch_override=(model.inputSpace.prepInput(raw), model.outputSpace.prepOutput(target)))
         assert len(snapshots)==2
         first,second=snapshots
         audit=model._last_sentence_credit

@@ -91,7 +91,8 @@ def test_integrated_checkpoint_restores_allocator_and_identity_caches(tmp_path):
     source.save_weights(path)
 
     saved = torch.load(path, map_location="cpu", weights_only=False)
-    assert saved["structural_extras"]["version"] == 2
+    # §50 item 102: v3 explicitly requires creation-observation stamps.
+    assert saved["structural_extras"]["version"] == 3
     # Count-based WS raising is deleted; even a stale source attribute must
     # not be saved beside the live concept-id and refinement state.
     assert "whole_spaces" not in saved["structural_extras"]

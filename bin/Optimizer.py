@@ -88,13 +88,36 @@ import torch.optim as _optim
 
 __all__ = [
     "Optimizer", "Adam", "SparseAdam", "RowLocalAdam", "SGD", "RowLocalSGD", "MultiOptimizer",
-    "finite_gradient_guard_enabled", "preflight_finite_gradients",
+    "NonFiniteGradients", "finite_gradient_guard_enabled", "preflight_finite_gradients",
     "configure_l1_proximal",
 ]
 
 
 _FINITE_GRAD_GUARD_ENV = "MODEL_FINITE_GRAD_GUARD"
 _FINITE_GRAD_GUARD_MODES = frozenset(("auto", "on", "off"))
+
+
+class NonFiniteGradients(FloatingPointError):
+    """The failed preflight, including the collected objective vectors at that step."""
+    def __init__(self, parameters, epoch_gradients, names):
+        self.parameters = parameters
+        self.epoch_gradients = {}
+        self.objectives = {}
+        for objective, gradients in (epoch_gradients or {}).items():
+            vectors, readings = {}, {}
+            for index, (parameter, gradient) in enumerate(gradients.items()):
+                name = names.get(id(parameter), f'unregistered epoch parameter {index}')
+                vector = gradient.detach()
+                values = vector.coalesce().values() if vector.is_sparse else vector
+                vectors[name] = vector
+                readings[name] = dict(entries=values.numel(), nonfinite=int((~values.isfinite()).sum()))
+            self.epoch_gradients[objective] = vectors
+            self.objectives[objective] = readings
+        super().__init__('\n'.join(
+            f"Non-finite gradient for {p['name']!r} before optimizer.step: "
+            f"{p['nonfinite']}/{p['entries']} stored entries are nan/inf "
+            f"(layout={p['layout']}, device={p['device']}, dtype={p['dtype']})."
+            for p in parameters))
 
 
 def _optimizer_parameters(optimizer):
@@ -158,7 +181,7 @@ def _parameter_name_map(named_parameters):
 
 
 def preflight_finite_gradients(optimizer, named_parameters=None, *,
-                               cache_for_step=False):
+                               cache_for_step=False, epoch_gradients=None):
     """Validate every optimizer-owned gradient before any parameter update.
 
     Dense gradients are checked directly. Sparse COO gradients are coalesced
@@ -237,18 +260,18 @@ def preflight_finite_gradients(optimizer, named_parameters=None, *,
 
     if failed_keys:
         failed = set(failed_keys)
-        for _param, checked, scanned, label in records:
+        affected = []
+        for param, checked, scanned, label in records:
             key = (scanned.device.type, scanned.device.index, scanned.dtype)
             if key not in failed:
                 continue
             nonfinite = ~torch.isfinite(checked)
             count = int(nonfinite.sum().detach().cpu().item())
             if count:
-                raise FloatingPointError(
-                    f"Non-finite gradient for {label!r} before optimizer.step: "
-                    f"{count}/{checked.numel()} stored entries are nan/inf "
-                    f"(layout={getattr(_param.grad, 'layout', None)}, "
-                    f"device={checked.device}, dtype={checked.dtype}).")
+                affected.append(dict(name=label, shape=list(param.shape), nonfinite=count, entries=checked.numel(),
+                    layout=str(param.grad.layout), device=str(checked.device), dtype=str(checked.dtype)))
+        if affected:
+            raise NonFiniteGradients(affected, epoch_gradients, names)
         # The fused primitive is authoritative; retain fail-loud behavior even
         # if a backend's diagnostic reduction cannot reproduce its flag.
         raise FloatingPointError(

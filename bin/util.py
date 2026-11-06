@@ -808,12 +808,10 @@ def compile(model, verbose=True, fullgraph=False):
     # cursor logic is plain Python control flow, not graph structure,
     # so unspecializing it changes no numerics.
     import torch._dynamo as _dyn
-    # The fixed word-loop buckets legitimately acquire a small number of new
-    # specializations when a dynamic codebook crosses a power-of-two growth
-    # boundary.  PyTorch 2.12's default of eight made the old long MPS run
-    # fail hard under fullgraph=True at a WholeSpace resize.  WholeSpace is
-    # fixed now, but PartSpace remains deliberately dynamic, so give those
-    # bounded growth transitions room without changing graph semantics.
+    # Dynamo's recompile_limit is per code object (and matching ID-guarded
+    # objects); accumulated_recompile_limit separately bounds all instances of
+    # that code object. Keep the latter unchanged. Declared initial phases can
+    # compile, but CompileGuard rejects guard churn in an already admitted phase.
     _dyn.config.recompile_limit = max(
         64, int(getattr(_dyn.config, "recompile_limit", 0) or 0))
     _dyn.config.allow_unspec_int_on_nn_module = True
@@ -1233,10 +1231,11 @@ def compile(model, verbose=True, fullgraph=False):
             f"({TheCompileMode} -> {effective_mode}); "
             "real CUDA targets retain the requested mode")
 
+    from CompileGuard import guarded_compile
     backends = _COMPILE_BACKENDS if TheCompileBackend == "auto" else (TheCompileBackend,)
     for backend in backends:
         try:
-            compiled = torch.compile(
+            compiled = guarded_compile(
                 model, mode=effective_mode, backend=backend,
                 fullgraph=fullgraph)
             requested = (

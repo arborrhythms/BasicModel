@@ -263,7 +263,7 @@ def test_free_search_scores_meaning_and_centroid_and_trains_inverse(paired):
     assert valid.all()
     torch.testing.assert_close(left, a[None])
     torch.testing.assert_close(right, b[None])
-    assert details['relative_residual'][0, 0, 2] > details['relative_residual'][0, 1, 2]
+    assert details['pair_residual'][0, 0, 2] > details['pair_residual'][0, 1, 2]
     (left[..., 4:] - .6).square().sum().backward()
     assert op.meaning_kernel.context.grad.abs().sum() > 0
 
@@ -415,7 +415,7 @@ def test_selected_inverse_matches_full_menu_values_and_pullbacks(paired):
 
 
 @pytest.mark.parametrize('compound', [False, True])
-def test_selected_walk_preserves_unused_gradients_and_optimizer_steps(paired, monkeypatch, compound):
+def test_selected_walk_matches_live_gradients_and_steps_only_used_parameters(paired, monkeypatch, compound):
     from types import MethodType, SimpleNamespace
     from DecompositionChooser import DecompositionChooser
     from Language import LanguageSpace, SurfaceLayer, LowerLayer, NullLayer
@@ -463,7 +463,34 @@ def test_selected_walk_preserves_unused_gradients_and_optimizer_steps(paired, mo
         results.append(result)
         optimizer.step();steps.append([p.detach().clone() for p in parameters])
     for a, b in zip(*results):torch.testing.assert_close(a, b, rtol=0, atol=0)
-    for a, b in zip(*gradients):
-        assert (a is None) == (b is None)
-        if a is not None:torch.testing.assert_close(a, b, rtol=1e-12, atol=1e-12)
-    for a, b in zip(*steps):torch.testing.assert_close(a, b, rtol=1e-12, atol=1e-12)
+    torch.testing.assert_close(gradients[0][0], gradients[1][0], rtol=1e-12, atol=1e-12)
+    assert any(full is not None and kept is None for full, kept in zip(gradients[0][1:], gradients[1][1:]))
+    for index, (full, kept) in enumerate(zip(gradients[0][1:], gradients[1][1:])):
+        if kept is None:
+            assert full is None or not bool(full.any())
+            torch.testing.assert_close(steps[1][index], before[index], rtol=0, atol=0)
+        else:
+            torch.testing.assert_close(kept, full, rtol=1e-12, atol=1e-12)
+            torch.testing.assert_close(steps[1][index], steps[0][index], rtol=1e-12, atol=1e-12)
+
+
+@pytest.mark.parametrize("dtype, exponent", [(torch.float32, -69), (torch.float64, -518)])
+@pytest.mark.parametrize("inverse", [False, True])
+def test_sign_and_verb_reflection_keep_the_parameter_pullback_at_small_object_scales(dtype, exponent, inverse):
+    from MeaningKernels import LaneKernel, MeaningAction
+    sign = LaneKernel(32).to(dtype)
+    verb = MeaningAction(32).to(dtype)
+    with torch.no_grad():
+        verb.readout.fill_(.04)
+    head = torch.linspace(.15, .85, 32, dtype=dtype)
+    subject = torch.linspace(.01, .95, 32, dtype=dtype)
+    parameters = (verb.readout, verb.object_vectors, sign.log_scale, sign.bias)
+    def evaluation(object_scale):
+        point = verb(sign(head), subject, object_value=torch.full_like(head, object_scale), inverse=inverse)
+        loss = (point - .4).square().mean()
+        return (point, *torch.autograd.grad(loss, parameters))
+    reference = evaluation(1.)
+    tiny = evaluation(2. ** exponent)
+    for actual, expected in zip(tiny, reference):
+        assert torch.isfinite(actual).all()
+        torch.testing.assert_close(actual, expected)

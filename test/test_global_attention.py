@@ -246,7 +246,8 @@ def test_ltm_space_appears_when_store_present_but_excludes_estimates():
     store = LTM0(D, capacity=8)
     store.slots[:3] = torch.randn(3, D)
     store.count = torch.tensor(3)
-    store.record_kind[2] = store.KINDS.index("estimate")
+    from Occurrence import document_digest
+    store.document_keys[2] = torch.tensor(list(document_digest(("direct","estimate"))), dtype=torch.uint8)
     object.__setattr__(m.symbolSpace, "ltm_store", store)
     prev = m._combine_last_cs_sub if m._combine_last_cs_sub is not None else m.conceptualSpace.subspace
     spaces, _ = m._addressable_spaces(prev, ps)

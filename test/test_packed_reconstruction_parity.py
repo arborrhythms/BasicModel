@@ -12,7 +12,8 @@ import torch
 ATOL, RTOL = 1e-6, 1e-5
 
 
-def build_model(tmp_path, *, active_vectors=None, word_capacity=32):
+def build_model(tmp_path, *, active_vectors=None, word_capacity=32,
+                separate_chooser=None, reconstruction_jitter=None):
     import Language
     from Models import BaseModel
     from data import TheData
@@ -20,6 +21,12 @@ def build_model(tmp_path, *, active_vectors=None, word_capacity=32):
 
     root = Path(__file__).resolve().parents[1]
     source = (root / "data/MM_ladder.xml").read_text()
+    architecture = ''
+    if separate_chooser is not None:
+        architecture += '<separateChooser>' + str(separate_chooser).lower() + '</separateChooser>'
+    if reconstruction_jitter is not None:
+        architecture += '<reconstructionJitter>' + str(reconstruction_jitter) + '</reconstructionJitter>'
+    source = source.replace('<architecture>', '<architecture>' + architecture, 1)
     if active_vectors is not None:
         source = source.replace("<activeVectors>4096</activeVectors>",
                                 f"<activeVectors>{active_vectors}</activeVectors>", 1)

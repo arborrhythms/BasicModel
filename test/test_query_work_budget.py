@@ -94,8 +94,8 @@ def test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence(monkeypa
     code = _existing_row(cs, ref)
     append_content(store, meaning, kind='fact', trust=0.6)
     append_content(store, meaning, kind='fact', trust=-0.4)
-    # This mechanism budgets primed candidate reads. Indexing precedes the
-    # query; its context supplies no generation work or renewal of the meter.
+    # The window is scored first; only returned records charge the shared
+    # meter. Query dispatch spends one unit and leaves one returned record.
     read, original = [], store.row
 
     def row(index):
@@ -111,7 +111,8 @@ def test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence(monkeypa
     from test_query_vp_boundaries import _signature
     result = _signature('query', 'argin1').invoke(
         context, replace(meaning))
-    assert read == [0] and result["records_scanned"] == 1
+    assert read == [1, 0] and result["records_scanned"] == 2
+    assert len(result["value"]) == 1
     assert result["value"][0]["trust"] == pytest.approx(.6)
     assert result["support_false"] == 0 and "work_budget" in result["incomplete"]
     assert meter.spent == 2

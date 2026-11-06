@@ -5,22 +5,19 @@ import pytest
 def test_attention_priming_read_never_resizes_or_republishes_its_source(tmp_path):
     from test_grounded_xor import grounded_model
     from ModelCandidateAttention import _heat
-    model, _ = grounded_model(tmp_path)
-    space = model.perceptualSpace
-    owner = space._priming_target()
-    width = owner._priming_dim()
-    surface = owner._priming_boosts
-    pointer = surface.data_ptr()
-    surface.fill_(1.)
-    result = _heat(space, 2, width, surface)
-    assert result.shape == (2, width) and result.eq(1).all()
-    assert owner._priming_boosts is surface
-    surface[0, 0] = 2.
-    result = _heat(space, 2, width, surface)
-    assert result[0,0] == 2 and result[1,0] == 1
-    with pytest.raises(RuntimeError, match='resizing is forbidden'):
-        _heat(space, len(surface)+1, width, surface)
-    assert owner._priming_boosts.data_ptr() == pointer and surface[0,0] == 2.
+    model,_=grounded_model(tmp_path)
+    space=model.perceptualSpace;owner=space._priming_target();width=owner._priming_dim()
+    surface=owner._expected_knowing;pointer=surface.data_ptr();surface.zero_()
+    result=_heat(space,2,width,surface[...,0])
+    assert result.shape==(2,width) and result.eq(1).all()
+    assert owner._expected_knowing is surface
+    surface[0,0,1]=1.
+    result=_heat(space,2,width,surface[...,0])
+    assert result[0,0]==2 and result[1,0]==1
+    with pytest.raises(RuntimeError,match='resizing is forbidden'):
+        _heat(space,len(surface)+1,width,surface[...,0])
+    assert surface.data_ptr()==pointer and surface[0,0,1]==1.
+    model.End();model.symbolSpace.soft_reset()
 
 
 def test_answer_boundary_credits_only_admission_parameters():

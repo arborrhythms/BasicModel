@@ -56,11 +56,11 @@ class TestNativeAddresses(unittest.TestCase):
         point = torch.zeros(store.nDim)
         point[0] = .5
         row = _write_point(store, point)
-        pos = int(store.row_ids[row])
+        pos = int(store.address_keys[row])
         self.assertIsInstance(pos, int)
         self.assertNotIn(pos, (-1, 0))
         self.assertEqual(int(store.raw_meaning_of(row).role_mask.sum()), 1)
         native_row = store.index_of_row(pos)
         self.assertIsInstance(native_row, int)
         self.assertGreaterEqual(native_row, 0)
-        self.assertEqual(int(store.row_ids[native_row]), pos)
+        self.assertEqual(int(store.address_keys[native_row]), pos)

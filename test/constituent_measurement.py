@@ -116,7 +116,7 @@ def observe(model):
             child = node.children[head[1]] if isinstance(head, tuple) else None
             owns_head = child is not None and child.order == 1 and child.subject_word_id == node.subject_word_id
             if index is not None and node.order == 1 and not owns_head:
-                records[key]['individual_writes'].append(int(store.row_ids[index]))
+                records[key]['individual_writes'].append(int(store.address_keys[index]))
             for child in (*node.children, *node.companions):
                 visit(child)
         visit(clause)
@@ -135,7 +135,7 @@ def observe(model):
                 records[key]['occurrences'].append(dict(
                     description=[leaves[key][i] for i in item['leaves']],
                     address=item['occurrence'], written=index is not None,
-                    order=None if index is None else int(store.order[index]),
+                    order=None if index is None else store.order_of_row(index),
                     reference=item['reference'], missing_reason=item['missing_reason']))
 
 

@@ -10,20 +10,23 @@ def test_output_pair_costs_complete_paths_and_keeps_greedy_ties():
     calls=[]
     def realize(**options):
         assert parameter.grad is None and parameter.item() == 1.
-        explore=options.get('exploit_actions') is not None
-        calls.append(('realize',explore))
-        costs=torch.tensor([1.,2.,4.] if explore else [4.,2.,1.])*parameter
-        trace=(torch.full((3,4),int(explore)),torch.ones(3,4,dtype=torch.bool), torch.zeros(3,dtype=torch.bool), torch.zeros(3), torch.ones(3,dtype=torch.bool), torch.zeros(3,4,1,5), torch.zeros(3,4,2))
+        replay = options.get('kept_actions')
+        explore = options.get('exploit_actions') is not None
+        choices = torch.full((3,4),int(explore)) if replay is None else replay
+        calls.append(('realize',explore) if replay is None else ('replay', choices[:, 0].tolist()))
+        take = choices[:, 0].bool()
+        costs = torch.where(take, torch.tensor([1.,2.,4.]), torch.tensor([4.,2.,1.])) * parameter
+        trace=(choices,torch.ones(3,4,dtype=torch.bool), torch.zeros(3,dtype=torch.bool), torch.zeros(3,3), torch.ones(3,dtype=torch.bool), torch.zeros(3,4,1,5), torch.zeros(3,4,2))
         result=AnswerConstruction(actual=costs[:,None],derivation=None,
-            concepts=torch.full((3,2,2),float(explore))*parameter,
+            concepts=take[:,None,None].expand(3,2,2)*parameter,
             percepts=costs[:,None,None],surface=None,trace=(),
-            texts=tuple(f'{"explore" if explore else "greedy"}-{row}' for row in range(3)))
+            texts=tuple(f'{"explore" if selected else "greedy"}-{row}' for row, selected in enumerate(take)))
         return result,trace
     def cost(construction):
         calls.append(('cost',int(construction.concepts[0,0,0].detach())))
         return construction.actual[:,0]
     result,audit=output_pair(realize,cost)
-    assert calls == [('realize',False),('cost',0),('realize',True),('cost',1)]
+    assert calls == [('realize',False),('cost',0),('realize',True),('cost',1),('replay',[1,0,0])]
     assert audit['wins'].tolist() == [True,False,False]
     assert audit['stable'].tolist() == [False,False,False]
     assert result.concepts[:,0,0].tolist() == [1.,0.,0.]
@@ -37,7 +40,7 @@ def test_output_without_a_legal_alternative_never_switches():
     from Output import AnswerConstruction
     def realize(**options):
         x=torch.ones(2,1)
-        return AnswerConstruction(x,None,x,x,None,(),()), (torch.zeros(2,3,dtype=torch.long),torch.zeros(2,3,dtype=torch.bool),torch.zeros(2,dtype=torch.bool),torch.zeros(2),torch.ones(2,dtype=torch.bool),torch.zeros(2,3,1,5),torch.zeros(2,3,2))
+        return AnswerConstruction(x,None,x,x,None,(),()), (torch.zeros(2,3,dtype=torch.long),torch.zeros(2,3,dtype=torch.bool),torch.zeros(2,dtype=torch.bool),torch.zeros(2,3),torch.ones(2,dtype=torch.bool),torch.zeros(2,3,1,5),torch.zeros(2,3,2))
     value,audit=output_pair(realize,lambda result:result.actual[:,0])
     assert not audit['wins'].any()
     assert audit['departure'].tolist() == [-1,-1]

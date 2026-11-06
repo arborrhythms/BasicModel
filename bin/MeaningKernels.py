@@ -24,14 +24,34 @@ def centroid(values, counts=None, *, whole=None):
         parts = sum(value * n for value, n in zip(values, counts)) / sum(counts).clamp_min(1)
     if whole is None:
         return parts
-    mean, count = whole
-    return torch.where(count > 0, (parts + mean) * .5, parts)
+    from FormCentroids import as_whole
+    mean, total, carrier = as_whole(whole)
+    presence = torch.where(total < 1, total, torch.ones_like(total))
+    # The lerp preserves exact common rails. The direct presence carrier
+    # gives its complete derivative without a reciprocal-small-mass edge.
+    value = parts * (1-presence*.5) + carrier*.5
+    rails = torch.lerp(parts.detach(), mean.detach(), presence.detach()*.5)
+    centered = rails + (value-value.detach())
+    return torch.where(total > 0, centered, parts)
+
+
+def uncenter(parent, whole):
+    """Invert the presence-weighted whole contribution before splitting."""
+    from FormCentroids import as_whole
+    mean, total, carrier = as_whole(whole)
+    presence = torch.where(total < 1, total, torch.ones_like(total))
+    value = (parent-carrier*.5)/(1-presence*.5)
+    # The exact mean keeps common rails exact in the inverse too. Preserve
+    # the direct carrier's pullback without a normalized-mean derivative.
+    half_presence = presence.detach()*.5
+    rails = (parent.detach()-mean.detach()*half_presence)/(1-half_presence)
+    parts = rails + (value-value.detach())
+    return torch.where(total > 0, parts, parent)
 
 
 def split_centroid(parent, known, counts, *, known_right=True, whole=None):
     if whole is not None:
-        mean, count = whole
-        parent = torch.where(count > 0, parent * 2 - mean, parent)
+        parent = uncenter(parent, whole)
     left, right = (torch.as_tensor(n, device=parent.device, dtype=parent.dtype) for n in counts)
     if left.ndim == parent.ndim-1:
         left, right = left[..., None], right[..., None]
@@ -73,12 +93,23 @@ class LaneKernel(nn.Module):
         return exact_initial(head, result, neutral)
 
 
+def _reflection_directions(vectors):
+    """A reflection depends only on direction. Scale by an exact power of two
+    before forming the squared norm. Two shifts also cover subnormal inputs
+    without requiring their reciprocal to fit in the working precision.
+    """
+    _, exponent = torch.frexp(vectors.abs().amax(-1, keepdim=True))
+    half = torch.div(exponent, 2, rounding_mode='floor')
+    one = torch.ones_like(vectors[..., :1])
+    return vectors * torch.ldexp(one, -half) * torch.ldexp(one, half - exponent)
+
+
 def householder(vectors):
     """Orthogonal product; a zero reflection vector is the identity."""
     size = vectors.shape[-1]
     eye = torch.eye(size, dtype=vectors.dtype, device=vectors.device)
     result = eye.expand(*vectors.shape[:-2], size, size)
-    for vector in vectors.unbind(-2):
+    for vector in _reflection_directions(vectors).unbind(-2):
         norm = vector.square().sum(-1, keepdim=True)
         projected = (result @ vector[..., None])[..., 0]
         result = result - 2 * projected[..., :, None] * vector[..., None, :] / torch.where(norm > 0, norm, 1.)[..., None]
@@ -91,7 +122,7 @@ def householder_action(values, vectors, *, transpose=False):
     Q = H1 ... Hk: Q.T acts in forward reflection order, Q in reverse.
     The carried evidence lanes add one axis beside the vector coordinates.
     """
-    reflections = vectors.unbind(-2)
+    reflections = _reflection_directions(vectors).unbind(-2)
     for vector in reflections if transpose else reversed(reflections):
         norm = vector.square().sum(-1, keepdim=True)
         projected = (values * vector[..., None, :]).sum(-1, keepdim=True)

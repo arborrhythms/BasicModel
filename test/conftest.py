@@ -115,6 +115,18 @@ def _reset_global_singletons():
 
 
 @pytest.fixture(autouse=True, scope="module")
+def _restore_xml_config():
+    """Keep a module's configuration changes out of subsequent modules."""
+    from copy import deepcopy
+    from util import TheXMLConfig
+    saved = {name: deepcopy(getattr(TheXMLConfig, name))
+             for name in ('_data', '_sources', '_requirements')}
+    yield
+    for name, value in saved.items():
+        setattr(TheXMLConfig, name, value)
+
+
+@pytest.fixture(autouse=True, scope="module")
 def _restore_process_device():
     """Unwind cross-module leaks of the process-wide device.
 

@@ -68,8 +68,8 @@ def meet_ratios(query, candidate):
     mass_q, mass_c = query.sum(-1), candidate.sum(-1)
     # An empty request supplies no content evidence. Empty content cannot
     # establish identity merely by vacuous containment.
-    return (torch.where(mass_c > 0, meet / mass_c.clamp_min(1e-12), 0.),
-            torch.where(mass_q > 0, meet / mass_q.clamp_min(1e-12), 0.))
+    return (torch.where(mass_c > 0, meet / torch.where(mass_c > 0, mass_c, 1.), 0.),
+            torch.where(mass_q > 0, meet / torch.where(mass_q > 0, mass_q, 1.), 0.))
 
 
 @torch.no_grad()
@@ -106,7 +106,7 @@ def witnesses(owner, identity):
     return parts.rows_referencing(parts.SYMBOL, int(identity))
 
 
-def witness_count(owner, identity):
+def access_count(owner, identity):
     parts = allocator(owner).parts
     count = sum(int(parts.access_count[row]) for row in witnesses(owner, identity))
     store = owner._closed_clause_store()
@@ -114,12 +114,14 @@ def witness_count(owner, identity):
         # Compression keeps the identity binding; its sentence is a witness
         # even though no composing Part row survives.
         for row in range(len(store)):
-            reference = dict(store.raw_meaning_of(row).bindings).get('_identity')
+            data = dict(store.raw_meaning_of(row).bindings)
+            if data.get('_reference_sites'):
+                continue  # The containing sentence owns this mention's observation.
+            reference = data.get('_identity')
             token = owner.mtm.token_of(reference)
             entry = owner.mtm.entries.get(token)
             if reference == ('sym', identity) or (entry is not None and identity in (entry.native, entry.symbol)):
-                if int(store.order[row]) != 1:
-                    count += int(store.witness_count[row])
+                count += int(store.access_count[row])
     return count
 
 

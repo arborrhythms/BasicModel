@@ -30,7 +30,8 @@ def test_resolved_sentence_compresses_to_one_idea_without_composing_edges():
     row = store.write_clause(clause)
     assert store.slots.shape == (32, 16)
     assert len(store) == 1 and len(store.parts) == 0
-    assert not hasattr(store, 'role_mask') and not hasattr(store, 'when')
+    assert not hasattr(store, 'role_mask')
+    torch.testing.assert_close(store.when[row], store.entry_when(row))
     assert 'role_refs' not in store._semantic_rows[int(store.address_keys[row])]
     assert dict(store.meaning_of(row).bindings)['_identity'] == ('sym', ids[0])
     torch.testing.assert_close(store.slots[row, :12], clause.point[:12])
@@ -63,7 +64,7 @@ def test_full_idea_inventory_can_rewitness_its_existing_sentence():
         store.append_idea(torch.eye(16)[0], document_key='filler', sentence_index=index)
     before = store.entry_when(row).clone()
     assert store.write_clause(clause, document_key='same', sentence_index=0) == row
-    assert len(store) == store.capacity and int(store.witness_count[row]) == 2
+    assert len(store) == store.capacity and int(store.access_count[row]) == 2
     torch.testing.assert_close(store.entry_when(row), before, rtol=0, atol=0)
 
 
@@ -124,6 +125,7 @@ def test_pending_sentence_is_a_tagged_chain_with_only_its_top_stamped():
     owner = store._concept_owner()
     token = store.occurrence_of(rows[2])
     owner.mtm.open(token, kind=None, value=store.slots[rows[2]], when=0, pending=True)
+    owner.mtm.event(token, token, verb=said, role=0, when=1)
     owner.mtm.update(token, torch.eye(16)[8], when=1)
     for name, value in before.items():
         torch.testing.assert_close(store.parts.state_dict()[name], value, rtol=0, atol=0)
@@ -327,7 +329,9 @@ def test_kept_thought_writes_identity_value_and_inference_without_rewriting_chai
     model = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store))
     row = write(model, meaning, row=0)
     assert store.row(row)['kind'] == 'inference'
-    torch.testing.assert_close(owner.mtm.value_of(identity), value)
+    # §50: a kept thought is one more reference until this identity has an event.
+    torch.testing.assert_close(owner.mtm.value_of(identity),
+        torch.maximum(store.point_of_row(identity[-1]), store.point_of_row(store.occurrence_of(row)[-1])))
     assert dict(store.raw_meaning_of(row).bindings)['_identity'] == identity
     from BindingAnswers import references
     assert references(store.meaning_of(row))[0][0] == meaning.role_refs[2]

@@ -72,7 +72,7 @@ def gain_field(observed, expected, *, strength=1., attention=1., confidence=1.,
     s = s.detach()
     gain = 1. - strength * (1. - exempt) * confidence * (1. - s)
     gain = gain * attention
-    content = gain[..., None] * observed
+    content = gain.detach()[..., None] * observed
     # These are content evidence coordinates, not signed identity-key codes.
     torch._assert_async((torch.isfinite(content) & (content >= 0)).all(),
                         'expectation content coordinates must be finite and nonnegative')
@@ -155,16 +155,11 @@ class PerceptMoments(nn.Module):
 
     @torch.no_grad()
     def observe(self, observed, valid):
-        selected = observed.detach()[valid]
-        if not selected.numel():
-            return
-        mean = selected.mean(0).to(self.mean)
-        variance = selected.var(0, unbiased=False).to(self.variance)
-        delta = mean - self.mean
-        rate = self.rate if int(self.count) else 1.
-        self.variance.mul_(1. - rate).add_(rate * variance + rate * (1. - rate) * delta.square())
-        self.mean.add_(rate * delta)
-        self.count.add_(len(selected))
+        mean, variance, count = percept_moment_state(self.mean, self.variance,
+            self.count, observed, valid, self.rate)
+        self.mean.copy_(mean)
+        self.variance.copy_(variance)
+        self.count.copy_(count)
 
 
 class ActivationPredictor(nn.Module):
@@ -355,7 +350,7 @@ def recombine_percept(observed, expected, attention=1.):
     # Jacobian are exactly the observed signal, including at zero residual.
     content = _PerceptIdentity.apply(observed, expected)
     attention = torch.as_tensor(attention, device=observed.device, dtype=observed.dtype)
-    content = attention * content
+    content = attention.detach() * content
     return PerceptArrival(observed, expected, residual, content, attention,
                           residual.relu(), (-residual).relu(), arithmetic)
 
@@ -380,12 +375,45 @@ def percept_reconstruction(recovered, observed, expected):
     return correction, target, reconstructed, (correction-target).square()
 
 
-class PerceptExpectation(nn.Module):
-    """Causal native-form expectation, updated only at eager word boundaries.
+def percept_moment_state(mean, variance, count, observed, active, rate):
+    """Fixed-shape, detached moment carry used by eager and compiled arrivals."""
+    values = observed.detach().reshape(-1, observed.shape[-1]).to(mean)
+    mask = active.detach().reshape(-1).to(values)[:, None]
+    amount = mask.sum()
+    average = (values * mask).sum(0) / amount.clamp_min(1.)
+    spread = ((values - average).square() * mask).sum(0) / amount.clamp_min(1.)
+    delta = average - mean
+    weight = torch.where(count > 0, mean.new_tensor(rate), mean.new_ones(()))
+    weight = torch.where(amount > 0, weight, 0.)
+    return (mean + weight * delta,
+            (1. - weight) * variance + weight * spread + weight * (1. - weight) * delta.square(),
+            count + amount.to(count))
 
-    Context and the sparse bank contain detached external observations. A new
-    bank key has a cold zero forecast for its first boundary; the next arrival
-    can use it. The local Adam optimizer never joins the sentence optimizer.
+
+def percept_arrival_state(mean, recent, count, last, observed, expected, active):
+    """Arrival k publishes the detached context read by forecast k + 1."""
+    observed, expected, active = observed.detach(), expected.detach(), active.detach()
+    updated = count + active.long()
+    return (torch.where(active[:, None], mean + (observed - mean) / updated.clamp_min(1)[:, None], mean),
+            torch.where(active[:, None], observed, recent), updated,
+            torch.where(active[:, None], expected, last))
+
+
+def percept_arrival_brick(mean, recent, count, last, moment_mean, moment_variance,
+                          moment_count, observed, expected, active, native, rate, training):
+    """Pure arrival carry: local loss is live, every state update is detached."""
+    state = percept_arrival_state(mean, recent, count, last, observed, expected, active)
+    moments = percept_moment_state(moment_mean, moment_variance, moment_count,
+        native, active & training, rate)
+    local = torch.where(active, .5 * (expected-observed.detach()).square().mean(-1), 0.)
+    return (*state, *moments, local)
+
+
+class PerceptExpectation(nn.Module):
+    """Causal native-form expectation with arrival state and sentence training.
+
+    Context and moments update at each arrival. Predictor parameters join the
+    sentence optimizer and receive the accumulated local arrival error once.
     """
     def __init__(self, width, *, streams, capacity, moment_width=None, rate=.05,
                  epsilon=1e-6, saturation='clip'):
@@ -401,15 +429,6 @@ class PerceptExpectation(nn.Module):
         self.register_buffer('last_expected', torch.zeros(streams, self.width))
         self.register_buffer('known', torch.zeros(capacity, dtype=torch.bool))
         self.register_buffer('updates', torch.zeros((), dtype=torch.long))
-        self.optimizer = None
-        self.learning_rate = .001
-
-    def ensure_optimizer(self, lr=None):
-        if self.optimizer is None:
-            self.learning_rate = self.learning_rate if lr is None else float(lr)
-            self.optimizer = torch.optim.Adam(self.predictor.parameters(), lr=self.learning_rate)
-        return self.optimizer
-
     def forecast(self, bank, batch, *, completed=None):
         if batch > len(self.context_count):
             raise ValueError('percept expectation exceeds constructed streams')
@@ -441,34 +460,31 @@ class PerceptExpectation(nn.Module):
             raise ValueError('percept arrival requires a batched native form and domain')
         frozen = expected.detach().clone()
         value = recombine_percept(observed, frozen)
-        local = .5*(expected-observed.detach()).square().mean(-1)
-        local = torch.where(active, local, 0.)
         before = int(self.updates)
-        if training and bool(active.any()):
-            optimizer = self.ensure_optimizer()
-            optimizer.zero_grad(set_to_none=True)
-            local.sum().div(active.sum()).backward()
-            if any(p.grad is not None and not torch.isfinite(p.grad).all() for p in self.parameters()):
-                raise FloatingPointError('nonfinite percept expectation gradient')
-            optimizer.step()
-            optimizer.zero_grad(set_to_none=True)
-            self.updates.add_(1)
+        B = len(active)
+        current = (self.context_mean[:B], self.context_recent[:B],
+                   self.context_count[:B], self.last_expected[:B],
+                   self.moments.mean, self.moments.variance, self.moments.count)
+        native = observed if native is None else native
+        if native.shape != (B, self.moments.mean.numel()):
+            raise ValueError('percept arrival moment width differs from its native field')
+        if '_arrival_brick' not in self.__dict__:
+            from SentenceCompose import compile_word_brick
+            from CompileGuard import percept_arrival_phase
+            self._arrival_brick = compile_word_brick(percept_arrival_brick,
+                                                    initial_phase=percept_arrival_phase)
+        updated = self._arrival_brick(*current, observed, expected, active,
+                                      native, self.moments.rate, training)
+        local = updated[-1]
         with torch.no_grad():
-            B = len(active)
-            count = self.context_count[:B]
-            new_count = count + active.long()
-            mean = self.context_mean[:B]
-            mean.copy_(torch.where(active[:, None], mean+(observed.detach()-mean)/new_count.clamp_min(1)[:, None], mean))
-            self.context_recent[:B].copy_(torch.where(active[:, None],observed.detach(),self.context_recent[:B]))
-            count.copy_(new_count)
-            self.last_expected[:B].copy_(torch.where(active[:, None],frozen,self.last_expected[:B]))
+            for destination, source in zip(current, updated[:-1]):
+                destination.copy_(source)
+            self.updates.add_(active.any().to(self.updates))
             if admitted:
                 self.known[list(admitted)] = True
-            if training:
-                self.moments.observe(observed if native is None else native, active)
         difference = (value.arithmetic.detach()-observed.detach()).abs()
         self.last_arrival = dict(expected=frozen, observed=observed.detach().clone(),
-            residual=value.residual.detach(), local_loss=local.detach(), active=active.detach().clone(),
+            residual=value.residual.detach(), local_loss=local, active=active.detach().clone(),
             updates_before=before, updates_after=int(self.updates),
             unequal=int(((value.arithmetic.detach()!=observed.detach()) & active[:,None]).sum()),
             max_difference=float(torch.where(active[:,None],difference,0.).max()))
@@ -485,15 +501,13 @@ class PerceptExpectation(nn.Module):
             getattr(self,name).zero_()
 
     def continuation(self):
-        return dict(optimizer=None if self.optimizer is None else self.optimizer.state_dict(),
-                    learning_rate=self.learning_rate)
+        # All tensor loop state is in state_dict; optimizer state belongs to
+        # the model's ordinary optimizer manifest, never to an arrival.
+        return dict(version=2, adaptation='arrival_state')
 
     def restore_continuation(self, state):
-        self.learning_rate = float(state['learning_rate'])
-        if state['optimizer'] is not None:
-            self.ensure_optimizer().load_state_dict(state['optimizer'])
-        elif self.optimizer is not None:
-            self.optimizer.state.clear()
+        if state != self.continuation():
+            raise ValueError('percept expectation requires arrival-state continuation; private optimizers retired')
 
     def migrate_expectation_checkpoint(self, state_dict, prefix=''):
         changed = False

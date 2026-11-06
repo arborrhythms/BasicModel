@@ -28,6 +28,19 @@ def test_add_edge_idempotent_and_grows_values():
     assert ly.nnz == 2 and ly.values.shape == (2,)
 
 
+def test_membership_fold_uses_the_input_dtype_and_growth_keeps_parameter_precision():
+    layer = SparseLayer(2, 1)
+    layer.add_edge(0, 0, weight=.5)
+    field = torch.tensor([[.25], [.75]], dtype=torch.float64)
+    value = layer.fold_presence(field, conjunctive=True)
+    assert value.dtype == field.dtype
+    gradient, = torch.autograd.grad(value.sum(), layer.values)
+    assert torch.isfinite(gradient).all()
+    layer.double()
+    layer.add_edge(0, 1, weight=.75)
+    assert layer.values.dtype == torch.float64
+
+
 def test_forward_matches_dense_tanh():
     torch.manual_seed(0)
     ly = SparseLayer(5, 3)

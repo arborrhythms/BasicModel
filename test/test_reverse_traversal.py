@@ -40,8 +40,11 @@ def _run(m, samples, fn=None):
 
 
 @pytest.mark.usefixtures('eager_reading')
-def test_free_walk_reports_missing_leaves_without_underflow(tmp_path):
-    from test_output_walk import _stop
+def test_free_walk_reports_missing_leaves_without_underflow(tmp_path, monkeypatch):
+    from test_output_walk import _stop, _walk_control_oracle
+    # §11 semantic eligibility may forbid STOP despite its policy bias.
+    # §52 item 111 isolates this coverage test with the existing legal-menu oracle.
+    _walk_control_oracle(monkeypatch)
     m = _traversal_model(tmp_path)
     m.eval()
     _stop(m)

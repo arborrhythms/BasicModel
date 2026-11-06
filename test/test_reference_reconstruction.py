@@ -12,7 +12,7 @@ from Meaning import ConceptualMeaning
 from ReferenceContext import SituationAddress, SituationFrame
 from ReferenceReconstruction import cost
 from test_medium_term_memory import keep, mention, snapshot, unchanged
-from test_reference_arrivals import world, named
+from test_reference_arrivals import world, named, described
 from test_reference_choices import noun
 
 
@@ -176,7 +176,7 @@ def test_registration_sums_sites_and_includes_zero_cost_active_rows(weight):
 
 @pytest.mark.parametrize('ending', ('own', 'mint', 'gap', 'empty', 'arrival', 'covered'))
 def test_unpriced_endings_and_covering_candidates_have_zero_reference_cost(ending):
-    resolver, store, a, words, _ = world()
+    resolver, store, a, words, _ = world(pending_atom=0 if ending == 'empty' else None)
     first, _ = keep(resolver, mention(a[0], reference=words['three']))
     frame = SituationFrame.from_row(store.row(first))
     if ending == 'own':
@@ -186,7 +186,11 @@ def test_unpriced_endings_and_covering_candidates_have_zero_reference_cost(endin
     elif ending == 'gap':
         plan = resolver.preview(mention(a[1], mode='elision'), chunk_context(resolver, (frame,)))
     elif ending == 'empty':
-        plan = resolver.preview(named(a[0], words['x']), chunk_context(resolver, (frame,)), departure=0)
+        # §50/§52: a correct named bind needs nonempty contained content;
+        # its reconstruction remainder is empty because the candidate covers it.
+        with torch.no_grad():
+            resolver.policy.zero_()  # retain the fixture's dummy-to-bind departure
+        plan = resolver.preview(described(a[0], words['x']), chunk_context(resolver, (frame,)), departure=0)
         assert not plan['items'][0]['own_object']
     else:
         plan = resolver.preview(description(a, words, a[0]), chunk_context(resolver, (frame,)))
@@ -205,3 +209,31 @@ def test_missing_candidate_coordinates_are_uncovered_description():
     plan = dict(items=[dict(node=node, selected=('new', 0), mode='bind', content=node.point)],
                 individuals={('new', 0): dict(content=a[0, :1])})
     torch.testing.assert_close(cost(resolver, [plan], a[:1]), torch.tensor([.5]))
+
+
+def test_multileaf_bound_root_keeps_its_own_occurrence():
+    from dataclasses import replace
+    from ReferenceContext import SituationFrame
+    resolver, store, atoms, words, _ = world()
+    first, _ = keep(resolver, mention(atoms[0], reference=words['three']))
+    antecedent = store.occurrence_of(first)
+    node = mention(atoms[0], mode='bind', reference=words['three'])
+    node = replace(node, reference_request=dict(node.reference_request, leaves=(0, 1, 2)))
+    plan = resolver.preview(node, chunk_context(resolver, (SituationFrame.from_row(store.row(first)),)))
+    kept = resolver.prepare(node, plan)
+    assert plan['items'][0]['selected'] == antecedent
+    # §52 item110: binding keeps the antecedent, but a multi-leaf phrase
+    # reads its own occurrence rather than substituting its head's carrier.
+    written = {}
+    row = store.write_clause(kept, document_key='carriers', sentence_index=1,
+                             written_rows=written)
+    occurrence = written['root_mention']
+    assert occurrence != antecedent
+    resolver.commit(plan, row, written, document='carriers', position=1,
+                    training=False, word_occurrences={0: antecedent})
+    pool = resolver.components.owner.mtm
+    assert pool.token_of(occurrence) == antecedent
+    assert pool.entries[antecedent].occurrences == (antecedent, occurrence)
+    state = pool.state()
+    pool.restore(state)
+    assert pool.entries[antecedent].occurrences == (antecedent, occurrence)

@@ -9,6 +9,7 @@ def named_individual(cs, store, alloc, name, offset):
     first, second = event(cs, store, offset), event(cs, store, offset + 1)
     equal_close(cs, store, first, word)
     equal_close(cs, store, second, word)
+    equal_close(cs, store, event(cs, store, offset + 2), word)
     individual = cs.interpret.forward(word)
     assert individual != word and alloc.order_of(individual) == 1
     row = store.index_of_row(first)
@@ -36,17 +37,20 @@ def test_two_witnessed_individuals_name_a_kind_without_forcing_any_order():
     from LTM1 import SYMBOL
     cs, store, alloc = equality_fixture()
     left = named_individual(cs, store, alloc, 'alpha', 1)
-    other = named_individual(cs, store, alloc, 'beta', 3)
+    other = named_individual(cs, store, alloc, 'beta', 4)
+    third = named_individual(cs, store, alloc, 'gamma', 7)
     word = cs.interpret.lookup_word([5], [6], form='category')
     pointer = alloc.singleton_values.data_ptr()
     symbol_equality(cs, store, left, word)
     assert alloc.order_of(word) == 0
     assert cs.interpret.forward(word) == word
     symbol_equality(cs, store, other, word)
+    assert not cs.definitions.objects(word)
+    symbol_equality(cs, store, third, word)
     kind = cs.interpret.forward(word)
     assert kind != word and alloc.order_of(kind) == 2
     assert alloc.order_of(word) == 0
-    assert set(alloc.parts.parts((SYMBOL, kind))) == {(SYMBOL, left), (SYMBOL, other)}
+    assert set(alloc.parts.parts((SYMBOL, kind))) == {(SYMBOL, left), (SYMBOL, other), (SYMBOL, third)}
     assert alloc.singleton_values.data_ptr() == pointer
 
 

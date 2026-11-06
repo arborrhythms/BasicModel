@@ -81,7 +81,7 @@ def test_first_three_slot_predicate_occurrence(monkeypatch, relation, use_regist
     reference = f.registry.clause_reference(relation)
     point = f.registry._payload(reference)
     leaves = torch.stack((f.store.slots[left], point, f.store.slots[right]))
-    refs = torch.tensor([int(f.store.row_ids[left]), reference[1], int(f.store.row_ids[right])])
+    refs = torch.tensor([int(f.store.address_keys[left]), reference[1], int(f.store.address_keys[right])])
     entry = Reading(rows=torch.full((3,), -1), word_rows=torch.full((3,), -1),
         word_ids=torch.full((3,), -1), activations=torch.ones(3), leaves=leaves,
         actions=torch.tensor([[0, -1, 0], [0, -1, 1], [0, -1, 2]]),

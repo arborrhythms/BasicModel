@@ -301,7 +301,9 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
         return result
     monkeypatch.setattr(layer, 'forward', forced)
     width = model.conceptualSpace.stm.concept_dim
-    prior = torch.nn.functional.normalize(torch.arange(1, width+1, dtype=torch.float32), dim=0)
+    # §50 item 101 / §52 item 111: every native word description is a part
+    # of this retained individual; the test forces its reference, not a fit.
+    prior = torch.ones(width, dtype=torch.float32)
     query = torch.nn.Parameter(prior.clone())
     from ClauseRow import Clause
     from Meaning import ConceptualMeaning
@@ -309,7 +311,7 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
     from ClauseRow import attach_clause_index
     attach_clause_index(model, store, model._concept_owner())
     index = store.write_clause(Clause(ConceptualMeaning.from_description(prior), point=prior, order=1))
-    cid = int(store.row_ids[index])
+    cid = int(store.address_keys[index])
     from Spaces import _concept_alloc_of
     from ReferenceContext import SituationAddress
     owner = model._concept_owner()

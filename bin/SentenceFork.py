@@ -1,27 +1,35 @@
-"""A detached reservoir snapshot, joined independently by each batch row."""
+"""A reservoir snapshot, joined independently by each batch row."""
 import torch
 from SentenceCompose import select_rows
 
 
-def detached(value):
+def snapshot(value, *, live=False):
     if torch.is_tensor(value):
-        return value.detach().clone()
+        return value.clone() if live else value.detach().clone()
     if isinstance(value, tuple):
-        return tuple(detached(item) for item in value)
+        return tuple(snapshot(item, live=live) for item in value)
     if isinstance(value, dict):
-        return {key: detached(item) for key, item in value.items()}
+        return {key: snapshot(item, live=live) for key, item in value.items()}
     raise TypeError(f'unsupported fork value: {type(value).__name__}')
 
 
+def detached(value):
+    return snapshot(value)
+
+
 class SentenceFork:
-    """Reservoir sampling costs no prefix replay and retains no prefix graph.
+    """Reservoir sampling costs no prefix replay.
+
+    The single-backward route retains its prefix graph until the sentence's
+    update; the separate route snapshots detached values.
 
     The greedy walk replaces a row's saved state with probability 1/k at its
     kth eligible decision. The explore walk joins that state at exactly that
     word and round. Before joining, a row performs no composition or deposit.
     Other rows may already be completing their suffix in the same batch.
     """
-    def __init__(self, active):
+    def __init__(self, active, *, live=False):
+        self.live = bool(live)
         self.count = torch.zeros_like(active, dtype=torch.long)
         self.word = torch.full_like(self.count, -1)
         self.slot = torch.full_like(self.count, -1)
@@ -48,7 +56,7 @@ class SentenceFork:
                            < self.count.clamp_min(1).reciprocal())
         if not bool(take.any()):
             return
-        state, latches = detached(state), detached(tuple(latches))
+        state, latches = snapshot(state, live=self.live), snapshot(tuple(latches), live=self.live)
         self.state = state if self.state is None else select_rows(self.state, state, take)
         self.latches = latches if self.latches is None else select_rows(self.latches, latches, take)
         if self.inverse_candidates is not None:

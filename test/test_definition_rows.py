@@ -58,6 +58,9 @@ def test_24_index_is_bidirectional_and_rebuilds_from_saved_rows(monkeypatch):
     assert restored.word(form='hello') == word
     assert restored.objects(word) == (obj,)
     assert restored.words(obj) == (word,)
+    # §52 item 109: only a rebuild certifies the complete current index.
+    # Once current, repeated lookup still must not scan or rebuild it.
+    index.rebuild()
     def forbidden(*args, **kwargs):
         pytest.fail('a definition lookup scanned or rebuilt the store')
     monkeypatch.setattr(store, 'relations', forbidden)

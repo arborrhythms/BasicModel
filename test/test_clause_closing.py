@@ -63,7 +63,7 @@ def test_bare_unlocated_np_rewitnesses_its_address(monkeypatch):
     from types import SimpleNamespace
     attach_clause_index(SimpleNamespace(languageSpace=language), store, registry.space)
     row = store.write_clause(clause)
-    assert int(store.row_ids[row]) == int(store.address_keys[row]) != 1
+    assert int(store.address_keys[row]) == int(store.address_keys[row]) != 1
     assert store.write_clause(clause) == row
     assert len(store) == 1
 

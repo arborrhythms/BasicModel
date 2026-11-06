@@ -58,6 +58,9 @@ def _matches(model, meaning, word, values):
             owner = model._concept_owner()
             token = owner.mtm.token_of(reference)
             entry = owner.mtm.entries.get(token)
+            from LTM1 import NULL_CONCEPT
+            if entry is not None and entry.kind == NULL_CONCEPT:
+                return False
             if entry is not None and not entry.pending:
                 from ChainRead import envelope
                 # Follow the last actual assertion about this identity. A
@@ -70,12 +73,15 @@ def _matches(model, meaning, word, values):
                         if owner.mtm.token_of(left) == token:
                             reference = right
                             continue
+                if entry.symbol is not None:
+                    reference = ('sym', entry.symbol)
+                    continue
             if reference[0] == 'name':
                 if entry is None or entry.pending or entry.symbol is None:
                     return False
                 reference = ('sym', entry.symbol)
                 continue
-            if int(store.row_ids[index]) in known:
+            if int(store.address_keys[index]) in known:
                 return True
             current = store.meaning_of(index)
         else:

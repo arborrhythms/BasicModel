@@ -67,9 +67,13 @@ def test_no_self_edge_via_populate():
     C = alloc.new_concept()
     alloc.add(C, "part", ("sym", C))                 # x = {x}: the Quine atom
     alloc.add(C, "part", ("sym", other))             # >= 2 sym constituents
-    with pytest.raises(ValueError, match='self-edge'):
-        cs._populate_concept_weights(C)
+    cs._populate_concept_weights(C)
+    assert alloc.parts.find(C, C) is not None
+    assert ('sym', C) not in cs.concept_parts(C)
     assert _layer(cs).nnz == 0
+    # An explicitly proposed recursive definition still fails at its writer.
+    with pytest.raises(ValueError, match='self-edge'):
+        cs._populate_concept_weights(C, witness=([('sym', C), ('sym', other)], []))
 
 
 def test_relate_x_x_merges_to_one_edge():

@@ -90,7 +90,8 @@ def read(store, description, *, max_records, work, fallback):
     scanned, incomplete, cache = 0, [], {}
     if entry is not None:
         groups = []
-        for timeline in (entry.timelines if order > 0 else entry.timelines[:1]):
+        actual_events = set()
+        for branch, timeline in enumerate(entry.timelines if order > 0 else entry.timelines[:1]):
             records = []
             for event in timeline.events:
                 # Charge a history read before inspecting its correspondence.
@@ -102,6 +103,8 @@ def read(store, description, *, max_records, work, fallback):
                     scanned += 1
                     row = store.location(event.occurrence)
                     cache[marker] = None if row is None else store.row(row)
+                if branch == 0:
+                    actual_events.add(marker)
                 row = cache[marker]
                 if (row is not None and event.role == 0 and event.verb == verb
                         and event.occurrence not in excluded and row['kind'] not in ('estimate', 'question', 'cover')):
@@ -111,7 +114,7 @@ def read(store, description, *, max_records, work, fallback):
                         if not any(evidence):
                             continue
                         row = dict(row, evidence=evidence)
-                    records.append(dict(row, match=1.))
+                    records.append(dict(row, match=1., alternative_event=marker not in actual_events))
             groups.append(tuple(records))
         return dict(groups=tuple(groups), records_scanned=scanned,
                     incomplete=tuple(dict.fromkeys(incomplete)), retained=False, order=order)

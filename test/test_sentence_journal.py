@@ -307,3 +307,31 @@ def test_ambiguous_typed_reading_is_open_in_preview_and_admission():
         leaf_orders=torch.tensor([2]), admit=admit) for admit in (False, True)]
     assert results[0][0].tolist() == results[1][0].tolist() == [-1]
     assert results[0][1].tolist() == results[1][1].tolist() == [2]
+
+
+def test_incomplete_stream_keeps_a_scoring_journal_but_cannot_admit_a_reading():
+    from types import MethodType
+    B, W, D = 2, 1, 4
+    rows = torch.tensor([[2], [3]])
+    words = torch.ones(B, W, D)
+    recorded = []
+    def resolve(owner, words, ids, actions, *, leaf_orders, admit):
+        recorded.append((ids.tolist(), admit))
+        return ids, torch.zeros_like(ids)
+    inp = SimpleNamespace(_word_active_mask=torch.ones(B, W, dtype=torch.bool))
+    trace = SimpleNamespace()
+    program = (torch.zeros(B, W, dtype=torch.long), torch.tensor([[[0, -1, 0]]] * B),
+               torch.zeros(B, W, dtype=torch.long), torch.full((B, W), -1))
+    host = SimpleNamespace(_open_sentence_slot=0, _tensor_pushed_ideas=words,
+        _concept_owner=lambda: SimpleNamespace(mtm=SimpleNamespace(entries={})),
+        inputSpace=inp, symbolSpace=SimpleNamespace(), languageSpace=SimpleNamespace(resolve_lexical_references=resolve),
+        _word_symbol_rows=lambda: rows, _word_symbol_concept_ids=lambda: rows,
+        _answer_leaf_slab=lambda _: words, _word_lexical_forms=lambda *args: [(), ()],
+        _derivation_program=lambda _: program, _reconstruction_stack=lambda: trace,
+        _tensor_sentence_roots_live=torch.ones(B, 1, 3 * D), _tensor_sentence_roots_depth=torch.tensor([[1], [-1]]))
+    host._program_entries = MethodType(BasicModel._program_entries, host)
+    _, scored = BasicModel._capture_reading_programs(host, sentence_slot=0, admit=False)
+    assert all(entry is not None for entry in scored[0])
+    _, committed = BasicModel._capture_reading_programs(host, sentence_slot=0, admit=True)
+    assert committed[0][0] is not None and committed[0][1] is None
+    assert sum(admit for _, admit in recorded) == 1

@@ -204,7 +204,7 @@ def test_compose_score_function_moves_toward_the_cheaper_departure(advantage):
     compared = torch.tensor([[1., 1. + advantage]], requires_grad=True)
     loss = BasicModel._compose_score_function_loss(model, path, compared)
     costs = registry_costs(registry)
-    backward_owned(costs, {'reconstruction': (logits, unrelated)})
+    backward_owned(costs, {'chooser': (logits, unrelated)})
     if advantage:
         probability = before.softmax(-1)
         expected = -probability * probability[:, 1:2]
@@ -216,7 +216,7 @@ def test_compose_score_function_moves_toward_the_cheaper_departure(advantage):
         torch.testing.assert_close(twice, 2 * logits.grad)
     optimizer.step()
     if advantage:
-        assert set(costs) == {'reconstruction'}
+        assert set(costs) == {'chooser'}
         assert (logits.softmax(-1)[0, 1] - before.softmax(-1)[0, 1]) * advantage < 0
         assert not torch.equal(logits, before)
     else:

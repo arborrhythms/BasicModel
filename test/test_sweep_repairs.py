@@ -6,24 +6,28 @@ import torch
 
 
 def test_semantic_word_chain_does_not_redefine_a_word_form_order():
+    from ConceptIndex import taxonomy_children
     from Layers import ConceptAllocator
     alloc = ConceptAllocator()
+    owner = SimpleNamespace(_concept_allocator=alloc)
     left, right = alloc.new_concept(), alloc.new_concept()
     for word, atom in ((left, 17), (right, 23)):
         alloc.symbol_types.setdefault(word, set()).add('word')
         alloc.add(word, 'part', atom)
         alloc.reference_orders[word] = 0
-    row = alloc.parts.add(left, right)
-    assert ('sym', left) in alloc.refs(right, 'part')
+    row = alloc.parts.add(left, right, truth_plus=1.)
     assert alloc.parts.find(left, right) == row
+    for a, b in ((left, right), (right, left)):
+        assert ('sym', a) not in alloc.refs(b, 'part')
+        assert ('sym', a) not in alloc.refs(b, 'whole')
+        assert a not in taxonomy_children(owner, b)
     assert alloc.settle(left) == alloc.settle(right) == 0
-    assert alloc.order_of(right) == 0
-    # Real concept definitions still enforce the inherited strict order check.
     parent = alloc.new_concept()
     alloc.reference_orders[parent] = 0
-    alloc.parts.add(left, parent)
-    with pytest.raises(ValueError, match='disagrees with its parts'):
-        alloc.settle(parent)
+    row = alloc.parts.add(left, parent, truth_plus=1.)
+    assert alloc.parts.find(left, parent) == row
+    assert ('sym', left) not in alloc.refs(parent, 'part')
+    assert alloc.settle(left) == alloc.settle(parent) == 0
 
 
 def test_closing_mask_uses_resolved_journal_references_and_keeps_open_sites(monkeypatch):

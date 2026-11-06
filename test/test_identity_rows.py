@@ -4,7 +4,7 @@ from dataclasses import replace
 import torch
 import pytest
 
-from IdentityRows import meet_ratios, point, witness_count
+from IdentityRows import meet_ratios, point, access_count
 from Layers import LTM0
 from Meaning import ConceptualMeaning
 from test_reference_close import fixture, close, form_exposure
@@ -30,8 +30,8 @@ def test_meet_ties_kind_requests_and_excludes_missing_defining_content():
     assert phi[:,0].tolist() == pytest.approx([.5, 1/3])
     assert phi[:,1].tolist() == [1.,1.]
     assert logits.tolist() == [1.,1.]
-    _, _, specific = resolver.score(q+atoms[1], q*0, q*0, 0, candidates)
-    assert specific[0] > specific[1]
+    specific_ids, _, specific = resolver.score(q+atoms[1], q*0, q*0, 0, candidates)
+    assert specific_ids == (1,) and specific.tolist() == [1.]
     with pytest.raises(ValueError, match='native concept'):
         resolver.coordinates(-q)
 
@@ -46,9 +46,9 @@ def test_content_meet_cannot_read_form_while_form_can_identify_its_region():
     q = atoms[0] + atoms[6]
     candidates = {1: dict(content=atoms[0]+atoms[7], role=0, position=(0,0)),
                   2: dict(content=atoms[1]+atoms[6], role=0, position=(0,0))}
-    _, phi, logits = resolver.score(q, q*0, q*0, 0, candidates)
-    assert phi[:, :2].tolist() == [[0., 0.], [1., 1.]]
-    assert logits[1] > logits[0]
+    identities, phi, logits = resolver.score(q, q*0, q*0, 0, candidates)
+    assert identities == (2,) and phi[:, :2].tolist() == [[1., 1.]]
+    assert logits.tolist() == [1.]
     changed_form = atoms[1] + atoms[6]
     _, changed, _ = resolver.score(changed_form, q*0, q*0, 0, candidates)
     torch.testing.assert_close(changed[:, :2], phi[:, :2], rtol=0, atol=0)
@@ -82,7 +82,7 @@ def test_mtm_holds_current_content_and_native_witnesses_are_live_queries():
     resolver, store, a = fixture()
     frame, address, _ = native_close(resolver,a[0],a[6],document='one',sentence=0)
     cid = resolver.last_audit[0]['reference']
-    assert witness_count(resolver.components.owner,cid) == 1
+    assert access_count(resolver.components.owner,cid) == 1
     owner = resolver.components.owner
     assert not hasattr(resolver.components,'nouns')
     assert all(not hasattr(resolver,k) for k in ('seen','cooccurrence','associations','predicates','cue_policy'))
@@ -91,10 +91,11 @@ def test_mtm_holds_current_content_and_native_witnesses_are_live_queries():
     with torch.no_grad(): owner.similarity_codebook.W[owner._csw_row_of(cid)].copy_(a[1])
     candidates = resolver.individuals(resolver.accessible(chunk_context(resolver, (frame,))))
     torch.testing.assert_close(point(owner,cid),a[1],rtol=0,atol=0)
-    torch.testing.assert_close(candidates[cid]['content'],a[0],rtol=0,atol=0)
+    # §50: the held native identity joins its live concept and its mention.
+    torch.testing.assert_close(candidates[cid]['content'],a[0]+a[1],rtol=0,atol=0)
     store.parts.remove_symbol(cid)
     store.reset()
-    assert witness_count(owner,cid) == 0
+    assert access_count(owner,cid) == 0
 
 
 def test_forgetting_and_reinterpretation_never_refold_a_native_identity():
@@ -116,7 +117,8 @@ def test_form_region_is_a_concept_and_known_exposure_changes_containment():
     form_exposure(resolver,a[4],a[0])
     candidates={1:dict(content=a[0],role=0,position=(0,0)),
                 2:dict(content=a[1],role=0,position=(0,0))}
-    _, features, _ = resolver.score(a[0]*0,a[0]*0,a[4],0,candidates)
+    # §50: both candidates are parts of this request; the cue still separates them.
+    _, features, _ = resolver.score(a[0]+a[1],a[0]*0,a[4],0,candidates)
     assert features[:,4].tolist() == [1.,0.]
     assert len(resolver.components.owner._concept_allocator.form_regions) == 1
 

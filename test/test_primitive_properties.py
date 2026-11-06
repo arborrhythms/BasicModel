@@ -139,6 +139,7 @@ def test_property_priming_projects_direct_surface_rows(tmp_path):
     cs.interpret.define(word, obj, description=dict(
         forms=('sample',), parts=((1, 3),), wholes=(0, 2)))
     cs.prime_seen(torch.tensor([row]), decay=1., bump=1.)
+    cs._expected_knowing[0,row]=torch.tensor([.25,.75])
     cs.project_priming_to_towers(ps, ws)
     assert set((ps.priming_weights()[0] > 1).nonzero().flatten().tolist()) == {1, 3}
     assert set((ws.priming_weights()[0] > 1).nonzero().flatten().tolist()) == {0, 2}
@@ -154,10 +155,19 @@ def test_native_fused_case_has_no_concept_location(tmp_path):
     raw = torch.zeros(1, 1, int(model.inputSpace.outputShape[0]), dtype=torch.long)
     raw[0, 0, :2] = torch.tensor([49, 48])
     model.forward(raw)
-    cs._observe_native_cases()
+    # Word admission is the writer of native feature membership.
+    word = cs.interpret.lookup_word(ps.percept_store.spell_out(b'10'), (), form=b'10',
+                                    word_reading=True)
+    assert word is not None
     store = Spaces._concept_alloc_of(cs).layer()
-    assert any(col == 4 * fused and float(store.features.values[pos]) > 0
-               for (row, col), pos in store.features._index.items())
+    identity = ps.percept_store.identity
+    units = identity.admit(b'10')
+    assert identity.read_parts(units) == b'10'
+    row = cs._csw_row_of(word)
+    column = 4 * units[0]
+    assert store.feature_groups[row, column] == units
+    edge = store.features._index[row, column]
+    assert float(store.features.values[edge].detach()) > 0
     assert not hasattr(store.conjunctive, 'locations')
     assert ps.percept_store.bytes_for(fused) == b'10'
     model.End()

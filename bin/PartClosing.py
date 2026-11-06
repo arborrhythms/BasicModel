@@ -3,7 +3,7 @@ import torch
 from dataclasses import replace
 from ClauseRow import Composition
 from Meaning import ConceptualMeaning
-from LTM1 import OCCURRENCE, SYMBOL, RELATION
+from LTM1 import OCCURRENCE, SYMBOL, RELATION, NULL_CONCEPT
 from Spaces import _concept_alloc_of
 
 
@@ -16,6 +16,8 @@ class PartClosing:
         self.parts = self.alloc.parts
         self._terms, self._planned, self._entries = {}, {}, {}
         self.symbols, self.edges = {}, []
+        self.occurrences = set()
+        self.relation_dependencies = set()
         self.when = None
         self.content_key = None
 
@@ -80,6 +82,8 @@ class PartClosing:
             identity = child.get('identity') or child['reference']
         record = dict(value=value, reference=reference, identity=identity,
                       children=children, resolved=resolved)
+        if value.operation == 'sign' or value.interpretation == 'no_op':
+            record.update(reference=None, identity=None, resolved=True, order=0)
         self._planned[id(value)] = record
         return record
 
@@ -110,6 +114,10 @@ class PartClosing:
         record['order'] = clause.order
         record['metadata'] = clause.meaning
         record['mention'] = clause.reference_request is not None
+        request = clause.reference_request or {}
+        if request.get('sign_leaf') or request.get('no_op_leaf'):
+            record['percept_value'] = request.get('percept')
+            record.update(reference=None, identity=None, order=0)
         marks = dict(clause.meaning.bindings)
         if clause.composition is None and clause.relation is None:
             record['resolved'] = not bool(marks.get('_forward_references') or marks.get('_open_references'))
@@ -146,95 +154,148 @@ class PartClosing:
         from ChainRead import envelope, point
         pool = self.owner.mtm
         token = pool.token_of(reference[1] if reference[0] == SYMBOL else envelope(self.store, reference))
-        value = pool.entries[token].value if token is not None else point(self.store, reference)
+        value = pool.value_of(token) if token is not None else point(self.store, reference)
         return token, value
 
-    def _observe_equality(self, left, right, record, pair):
+    def _distinct_member(self, member, token, value, witness):
+        other, other_token, previous = witness
+        if member == other:
+            return False
+        if token is not None and other_token is not None:
+            return token != other_token and not torch.equal(value.detach().to(previous), previous)
+        start = self.store.when_start
+        if token is None and other_token is None and member[0] == other[0] == OCCURRENCE and start is not None:
+            return not torch.equal(value[start-4:start+4].detach().to(previous), previous[start-4:start+4])
+        return False
+
+    def observe_members(self, left, right, evidence_refs, words=(None, None)):
+        """Both endpoints see the same admitted row, including a promoted token's origin."""
         from util import TheXMLConfig
-        # Zero means any positively asserted equality; both witnesses must
-        # exceed this same threshold. No work meter participates in a raise.
         threshold = float(TheXMLConfig.space('ConceptualSpace', 'raiseEvidence', 0.))
         if not 0 <= threshold <= 1:
             raise ValueError('raiseEvidence must lie in [0, 1]')
-        if not float(pair[0]) > threshold:
+        row = self.parts.find(*evidence_refs)
+        if row is None:
+            raise ValueError('equality observation requires its durable evidence')
+        if left == right or not float(self.parts.truth_plus[row]) > threshold:
             return
-        key = right[1] if right[0] == SYMBOL else right
-        token, value = self._equality_member(left)
-        if value is None:
-            return
+        for member, side, word in ((left, right, words[1]), (right, left, words[0])):
+            self._admit_member(member, side, word, evidence_refs, threshold)
+
+    def _admit_member(self, member, side, word, evidence_refs, threshold):
         from ConceptIndex import index_part_row, unbound_label
-        if (right[0] == SYMBOL and ('part-base', right[1]) in self.alloc.relate_idx
-                and self.owner._concept_source_order(left[1]) == self.alloc.order_of(right[1]) - 1):
-            index_part_row(self.owner, left, right)
+        if (SYMBOL, NULL_CONCEPT) in (member, side):
             return
-        # An unbound word supplies a name, not an object's order. Its first
-        # witnesses are kept separately by member order until two agree.
-        # An already denoted side still requires order-compatible members.
-        member_order = self.owner._concept_source_order(left[1])
-        shared_order = self.owner._concept_source_order(right[1])
-        if member_order < 0:
+        order = self.owner._concept_source_order(member[1])
+        if order < 0:
             return
-        if member_order != shared_order:
-            if not unbound_label(self.owner, right):
+        shared_order = self.owner._concept_source_order(side[1])
+        if (side[0] == SYMBOL and ('part-base', side[1]) in self.alloc.relate_idx
+                and order + 1 == shared_order):
+            index_part_row(self.owner, member, side)
+            return
+        key = side[1] if side[0] == SYMBOL else side
+        shared = side
+        if side[0] == OCCURRENCE:
+            shared_token, _ = self._equality_member(side)
+            if shared_token is not None:
+                key = shared_token
+                shared = (OCCURRENCE, int(shared_token[-1]))
+        parent = self.alloc.relate_idx.get(('part-kind', shared, order + 1))
+        if parent is not None:
+            index_part_row(self.owner, member, (SYMBOL, parent))
+            return
+        if order != shared_order:
+            if not unbound_label(self.owner, side):
                 return
-            key = (right, member_order)
-        right_token, _ = self._equality_member(right)
-        if right[0] == OCCURRENCE and right_token is not None:
-            key = right_token
-        first = self.alloc.singleton_members.get(key)
-        if first is None:
-            self.alloc.remember_singleton(key, left, token, value)
+            key = (side, order)
+        token, value = self._equality_member(member)
+        if value is None or (token is None and member[0] != OCCURRENCE):
             return
-        member, first_token, previous = first
-        previous_row = self.parts.find(member, right)
-        shared = right
-        if right[0] == OCCURRENCE and right_token is not None:
-            # Mentions of one MTM token share the token's native occurrence,
-            # even when the two equality rows name different mention events.
-            shared = (OCCURRENCE, int(right_token[-1]))
-            previous_row = next((self.parts.find(member, side)
-                for side in self.parts.wholes(member)
-                if self._equality_member(side)[0] == right_token), None)
-        if previous_row is None:
-            # The earlier equality has been forgotten or cleared at a
-            # presentation boundary. Start from this admitted witness,
-            # reusing its fixed snapshot seat rather than retaining a dead one.
-            self.alloc.remember_singleton(key, left, token, value, replace=True)
+        # The first seat keeps its original checkpoint key. All additional
+        # seats draw on the same fixed witness slab and can be renewed in place.
+        empty = None
+        members = []
+        for i in range(self.alloc.raise_count - 1):
+            seat = key if i == 0 else ('witness', key, i)
+            witness = self.alloc.singleton_members.get(seat)
+            if witness is not None:
+                old_refs = self.alloc.singleton_rows.get(seat, (witness[0], side))
+                old_row = self.parts.find(*old_refs)
+                if (old_row is not None and float(self.parts.truth_plus[old_row]) > threshold
+                        and self.owner._concept_source_order(witness[0][1]) == order):
+                    if old_refs == evidence_refs or not self._distinct_member(member, token, value, witness):
+                        return
+                    members.append(witness[0])
+                    continue
+            if empty is None:
+                empty = seat
+        if empty is not None:
+            self.alloc.remember_singleton(empty, member, token, value, replace=True)
+            self.alloc.singleton_rows[empty] = evidence_refs
             return
-        if not float(self.parts.truth_plus[previous_row]) > threshold:
-            return
-        if self.owner._concept_source_order(member[1]) != member_order:
-            # A prior witness whose current referent no longer has this order
-            # is renewed in its existing fixed snapshot seat.
-            self.alloc.remember_singleton(key, left, token, value, replace=True)
-            return
-        if token is not None and first_token is not None:
-            distinct = token != first_token and not torch.equal(value.detach().to(previous), previous)
-        elif token is None and first_token is None and left[0] == member[0] == OCCURRENCE:
-            start = self.store.when_start
-            distinct = start is not None and not torch.equal(
-                value[start-4:start+4].detach().to(previous), previous[start-4:start+4])
-        else:
-            distinct = False
-        if not distinct:
-            return
-        parent = index_part_row(self.owner, member, shared)
-        if index_part_row(self.owner, left, shared) != parent:
-            raise RuntimeError('equality witnesses disagree on their shared parent')
-        word = record['children'][-1]['value'].word_id
-        words = (() if word in (None, -1, 0) else (word,))
-        if not words and right[0] == SYMBOL:
-            words = ((right[1],) if 'word' in self.alloc.symbol_types.get(right[1], ())
-                     else self.owner.definitions.words(right[1]))
-        for word in words:
-            self.owner.interpret.define(word, parent)
+        parent = index_part_row(self.owner, members[0], shared)
+        for admitted in (*members[1:], member):
+            if index_part_row(self.owner, admitted, shared) != parent:
+                raise RuntimeError('equality witnesses disagree on their shared parent')
+        names = (word,) if 'word' in self.alloc.symbol_types.get(word, ()) else ()
+        if not names and side[0] == SYMBOL:
+            names = ((side[1],) if 'word' in self.alloc.symbol_types.get(side[1], ())
+                     else self.owner.definitions.words(side[1]))
+        for name in names:
+            self.owner.interpret.define(name, parent)
+
+    def _observe_equality(self, left, right, record, pair):
+        words = tuple(child['value'].word_id for child in record['children'])
+        self.observe_members(left, right, (left, right), words)
+
+    def _write_occurrence(self, record, *, pair, sentence, kind, metadata, address,
+                          stream, surprise):
+        """Write a mention's own idea without replacing its open chain."""
+        term, children = record['value'], record['children']
+        marks = {} if metadata is None else dict(metadata.bindings)
+        reference = record['identity']
+        if term.binding is not None:
+            reference = self._entries.get(id(term.binding), reference)
+        if term.operation in ('lift', 'verb') and children:
+            child = children[0 if term.operation == 'lift' else -1]
+            reference = child['reference']
+            if reference is None or reference[0] != OCCURRENCE:
+                reference = self._entries.get(id(child['value'])) or reference
+        if reference is not None and not (reference[0] == SYMBOL and self.owner.interpret.no_object(reference[1])):
+            from ChainRead import envelope
+            marks.setdefault('_identity', envelope(self.store, reference))
+            if reference[0] == RELATION:
+                self.relation_dependencies.add(reference[1])
+        content = term.point
+        if 'percept_value' in record or term.operation == 'sign':
+            content = record.get('percept_value')
+            if content is None:
+                content = torch.zeros_like(term.point)
+        value = replace(ConceptualMeaning.from_description(self.store._fit(content)),
+            bindings=marks, scope=() if metadata is None else metadata.scope,
+            polarity=True if metadata is None else metadata.polarity)
+        if address is None:
+            from Occurrence import native_content_key
+            address = dict(document_key=('operand', self.content_key),
+                sentence_index=list(self._planned).index(id(term)), content_key=native_content_key(value))
+        row = self.store.append_meaning(value, kind=kind, evidence=pair, order=record.get('order', term.order),
+            stream=stream, surprise=surprise,
+            when=self.when if sentence else False, **(address or {}))
+        result = OCCURRENCE, int(self.store.address_keys[row])
+        self.occurrences.add(result[1])
+        return result
 
     def _write(self, record, *, pair=(0., 0.), sentence=False, kind='unverified',
                metadata=None, address=None, stream=-1, surprise=-1., force=False, from_trust=False):
         term = record['value']
+        forced_occurrence = force and (term.binding is not None or record.get('mention'))
         # A sentence entry owns its kind, address and time even when its
         # projected head was already written as an embedded working mention.
-        if id(term) in self._entries and not sentence:
+        # An earlier projection can also have written this term as a chain.
+        # That chain cannot stand in for a determined mention's occurrence.
+        if (id(term) in self._entries and not sentence
+                and not (forced_occurrence and self._entries[id(term)][0] != OCCURRENCE)):
             return self._entries[id(term)]
         children = record['children']
         if metadata is None:
@@ -243,30 +304,9 @@ class PartClosing:
         if (not sentence and not force and record['reference'] is not None
                 and (not children or term.operation not in (*self._assertions, 'lift', 'verb'))):
             result = record['reference']
-        elif (record['resolved'] and not assertion) or not children or (force and (term.binding is not None or record.get('mention'))):
-            marks = {} if metadata is None else dict(metadata.bindings)
-            reference = record['identity']
-            if term.binding is not None:
-                reference = self._entries.get(id(term.binding), reference)
-            if term.operation in ('lift', 'verb') and children:
-                child = children[0 if term.operation == 'lift' else -1]
-                reference = child['reference']
-                if reference is None or reference[0] != OCCURRENCE:
-                    reference = self._entries.get(id(child['value'])) or reference
-            if reference is not None and not (reference[0] == SYMBOL and self.owner.interpret.no_object(reference[1])):
-                from ChainRead import envelope
-                marks.setdefault('_identity', envelope(self.store, reference))
-            value = replace(ConceptualMeaning.from_description(self.store._fit(term.point)),
-                bindings=marks, scope=() if metadata is None else metadata.scope,
-                polarity=True if metadata is None else metadata.polarity)
-            if address is None:
-                from Occurrence import native_content_key
-                address = dict(document_key=('operand', self.content_key),
-                    sentence_index=list(self._planned).index(id(term)), content_key=native_content_key(value))
-            row = self.store.append_meaning(value, kind=kind, evidence=pair, order=record.get('order', term.order),
-                stream=stream, surprise=surprise,
-                when=self.when if sentence else False, **(address or {}))
-            result = OCCURRENCE, int(self.store.address_keys[row])
+        elif (record['resolved'] and not assertion) or not children or forced_occurrence:
+            result = self._write_occurrence(record, pair=pair, sentence=sentence, kind=kind,
+                metadata=metadata, address=address, stream=stream, surprise=surprise)
         elif len(children) == 1:
             result = self._write(children[0], pair=pair, sentence=sentence, kind=kind,
                                  metadata=metadata, address=address, stream=stream, surprise=surprise,
@@ -280,15 +320,33 @@ class PartClosing:
             row = self.parts.add(left, right, truth_plus=pair[0], truth_minus=pair[1],
                 when=self.when if sentence else None, surprise=surprise, witness=sentence)
             self.edges.append(row)
+            promoted = False
             if assertion and term.operation in ('equal', 'part', 'assertPart') and pair[0] > 0:
                 from FamiliarTier import define_pending
-                word = children[0]['value'].word_id
-                word = None if word in (None, -1, 0) else word
-                if not define_pending(self.owner, left, right, word=word):
-                    self.owner.__dict__.setdefault('_kept_definition_witnesses', []).append((left, right, word))
+                subject = children[0]['value']
+                while len(subject.children) == 1 and subject.operation not in ('sign','bind'):
+                    subject = subject.children[0]
+                if subject.operation == 'sign' or subject.interpretation == 'no_op':
+                    # Commit owns the new occurrence and opens its independent
+                    # token before finish_definitions resolves this evidence.
+                    other_word = children[1]['value'].word_id
+                    self.owner.__dict__.setdefault('_kept_definition_witnesses', []).append(
+                        (left, right, None, other_word, True))
+                    promoted = True
+                elif (term.operation == 'equal' or left[0] != SYMBOL or right[0] != SYMBOL
+                      or not (self.owner.interpret.no_object(left[1])
+                              and self.owner.interpret.no_object(right[1]))):
+                    # Two bare word symbols can stand in a Part relation.
+                    # Neither supplies a witnessed object for a definition.
+                    word = children[0]['value'].word_id
+                    word = None if word in (None, -1, 0) else word
+                    promoted = define_pending(self.owner, left, right, word=word)
+                    if not promoted:
+                        self.owner.__dict__.setdefault('_kept_definition_witnesses', []).append((left, right, word, None, False))
             if assertion and term.operation == 'equal':
                 self.alloc.singletons.add(right[1] if right[0] == SYMBOL else right)
-                self._observe_equality(left, right, record, pair)
+                if not promoted:
+                    self._observe_equality(left, right, record, pair)
             result = RELATION, row
         self._entries[id(term)] = result
         self.symbols[id(term)] = result[1] if result[0] == SYMBOL else None

@@ -71,7 +71,7 @@ def write(store, point, document, origin=None, **kwargs):
     row = store.append_meaning(ConceptualMeaning.from_description(point),
         kind='observation', evidence=(1., 0.), document_key=document, **kwargs)
     if origin is not None:
-        store.set_origin(row, origin)
+        store.set_origin(row, origin, asserted=(float(store.truth_plus[row]), float(store.truth_minus[row])))
     return store.occurrence_of(row)
 
 
@@ -80,6 +80,7 @@ def test_boundary_clears_experience_and_occurrence_caches_preserving_learning(gi
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
     model = model_for(owner, store)
+    begin(model)
     experienced = write(store, atoms[0], 'experience')
     supplied = [] if not given else [
         write(store, atoms[n], ('given', n), origin)
@@ -135,11 +136,12 @@ def test_boundary_clears_experience_and_occurrence_caches_preserving_learning(gi
 def test_given_knowledge_keeps_its_required_dependency_without_experience_authority():
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
+    begin(model_for(owner, store))
     dependency = write(store, atoms[0], 'dependency')
     given = replace(ConceptualMeaning.from_description(atoms[1]),
                     role_refs=(dependency, None, None))
     parent = store.append_meaning(given, kind='observation', evidence=(1., 0.), document_key='given')
-    store.set_origin(parent, store.ORIGIN_PROVISIONED)
+    store.set_origin(parent, store.ORIGIN_PROVISIONED, asserted=(float(store.truth_plus[parent]), float(store.truth_minus[parent])))
     begin(model_for(owner, store))
     assert len(store) == 2 and store.location(dependency) is not None
     assert store.raw_meaning_of(parent).role_refs[0] == dependency
@@ -151,9 +153,10 @@ def test_boundary_removes_occurrence_relations_transitively_and_keeps_concept_re
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
     from LTM1 import OCCURRENCE, SYMBOL, RELATION
-    occurrence = write(store, atoms[0], 'dependency')
     left, right = owner.new_concept(), owner.new_concept()
     store.parts.add(left, right, symbol=400, truth_plus=1.)
+    begin(model_for(owner, store))
+    occurrence = write(store, atoms[0], 'dependency')
     store.parts.add((OCCURRENCE, occurrence[2]), (SYMBOL, right), symbol=401, truth_plus=.5)
     store.parts.add((RELATION, 401), (SYMBOL, left), symbol=402, truth_plus=.5)
     before = {name: value.clone() for name, value in store.parts.row(400).items()}
@@ -167,6 +170,7 @@ def test_cover_survives_empty_memory_checkpoint_and_reuses_symbol_without_rng():
     from ConceptForgetting import protected_concepts
     resolver, store, _ = fixture(percept=True)
     owner = resolver.components.owner
+    begin(model_for(owner, store))
     first = open_cover(owner, store, stream=0, document='book')
     symbol = store.raw_meaning_of(store.location(first)).role_refs[0][1]
     when = store.entry_when(store.location(first)).clone()
@@ -183,7 +187,7 @@ def test_cover_survives_empty_memory_checkpoint_and_reuses_symbol_without_rng():
     assert first == second and len(restored) == 1
     assert restored.raw_meaning_of(0).role_refs[0] == ('sym', symbol)
     assert not torch.equal(restored.entry_when(0), when)
-    assert restored.witness_count[0] == 1 and restored.stream_rows(2).tolist() == [0]
+    assert restored.access_count[0] == 1 and restored.stream_rows(2).tolist() == [0]
     torch.testing.assert_close(restored.cover_rng_state, rng, rtol=0, atol=0)
     open_cover(owner, restored, stream=2, document='other book')
     assert len(restored._cover_symbols) == 2 and not torch.equal(restored.cover_rng_state, rng)
@@ -227,3 +231,37 @@ def test_verb_group_boundary_forgets_witnesses_but_keeps_the_learned_basis():
     assert action.groups.witnesses == {} and action.groups.reports == []
     assert action.groups.used == 1 and action.groups.assignments == {7: 0}
     torch.testing.assert_close(action.groups.vectors, before, rtol=0, atol=0)
+
+
+@pytest.mark.parametrize('negative', [0., .8])
+def test_unasserted_part_does_not_raise_a_retained_identity_order(negative):
+    from FamiliarTier import promote_identity
+    from LTM1 import SYMBOL, RELATION
+    from order_fixtures import force_order
+    resolver, store, atoms = fixture()
+    owner = resolver.components.owner
+    alloc = owner._concept_allocator
+    begin(model_for(owner, store))
+    origin = write(store, atoms[0], 'identity-origin', order=0)
+    key = owner.mtm.open(origin, kind=None, value=atoms[0], when=0)
+    cid = promote_identity(owner, key)
+    assert alloc.order_of(cid) == 1
+    left = owner.new_concept()
+    force_order(owner, left, 0)
+    other_origin = write(store, atoms[1], 'other-identity-origin', order=0)
+    other = owner.mtm.open(other_origin, kind=None, value=atoms[1], when=0)
+    right = promote_identity(owner, other)
+    relation = store.parts.add(left, right, truth_plus=1.)
+    assert owner._concept_source_order(relation) == 1
+    unknown = store.parts.add((RELATION, relation), (SYMBOL, cid), truth_minus=negative)
+    assert alloc.settle(cid) == 1
+    assert ('part', ('rel', relation)) not in alloc.records(cid)
+    # Affirming this higher-order member is a real structural disagreement;
+    # the native order guard must still reject it.
+    store.parts.add((RELATION, relation), (SYMBOL, cid), truth_plus=.2)
+    assert ('part', ('rel', relation)) in alloc.records(cid)
+    with pytest.raises(ValueError, match='recorded concept order disagrees'):
+        alloc.settle(cid)
+    report = begin(model_for(owner, store))
+    assert report['removed'] == 2 and alloc.order_of(cid) == alloc.placement[cid] == 1
+    assert not store.parts.contains(unknown) and not store.parts.contains(relation)

@@ -21,7 +21,8 @@ def register(model, value, *, costs, source, row, category='reconstruction'):
         errors = getattr(model, 'errors', None)
         if errors is not None:
             errors.add(category+'.thought_score_function', value,
-                       space='SymbolSpace', category=category)
+                       space='SymbolSpace', category=category,
+                       objective='chooser' if category == 'reconstruction' else category)
 
 
 def complete(model, trace, other, departure, costs, row):

@@ -289,8 +289,9 @@ def test_intuition_requires_selection_and_retired_face_is_absent():
     selected = invoke(model, registry, registry.form('infer', value, rule))
     assert accepted(selected.evidence['meaning'])
     assert 'intuit' in THOUGHT_EXECUTORS and 'intuit' in registry.executable_operation_ids
-    with pytest.raises(NotImplementedError, match='round B'):
-        invoke(model, registry, registry.form('intuit', value))
+    result = invoke(model, registry, registry.form('intuit', value))
+    assert result.evidence_kind == 'intuition'
+    assert not accepted(result.evidence['meaning'])
     retired = 'is' + 'Implied'
     assert retired not in THOUGHT_EXECUTORS
     assert ('is_' + 'implied') not in Path('bin/ThoughtFaces.py').read_text()
@@ -298,7 +299,7 @@ def test_intuition_requires_selection_and_retired_face_is_absent():
         assert retired not in path.read_text()
 
 
-def test_question_thought_menu_masks_deferred_intuit(monkeypatch):
+def test_question_thought_menu_offers_built_intuit(monkeypatch):
     model, registry, store, refs = world()
     question = registry.form('isPart', refs[0], open_roles=('argin2',))
     observed = []
@@ -307,17 +308,16 @@ def test_question_thought_menu_masks_deferred_intuit(monkeypatch):
         actions = tuple(actions)
         offered = {action.semantic_id for action in actions if action is not None}
         observed.append(offered)
-        assert 'intuit' not in offered
+        assert 'intuit' in offered
         return choose(root, active, actions, **kwargs)
     monkeypatch.setattr(model, '_choose_selected_thought_action', inspect)
     run(model, question, work_budget=64)
     assert observed
-    # Even an explicit current request cannot re-enter the ordinary menu.
+    # D9 retires with the executor, including an explicit current request.
     request = registry.form('intuit', question)
-    assert all(action.semantic_id != 'intuit' for action in
+    assert any(action.semantic_id == 'intuit' for action in
                registry.controller_candidates(question, question, request))
-    with pytest.raises(NotImplementedError, match='round B'):
-        invoke(model, registry, request)
+    assert invoke(model, registry, request).evidence_kind == 'intuition'
 
 
 def test_binding_cost_grades_two_incorrect_text_trials_and_credits_better(monkeypatch):

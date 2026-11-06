@@ -149,33 +149,20 @@ def test_rereading_cannot_bind_the_occurrence_or_embedded_rows_it_replaces():
                                (('embedded', document_digest('current'), 1), 0)):
         rows.append(store.append_meaning(point, document_key=document,
                                         sentence_index=position, content_key=content))
-    ids = store.row_ids[rows]
+    ids = store.address_keys[rows]
     valid = torch.ones(len(rows), dtype=torch.bool)
     result = exclude_replaced_occurrences(store, ids, valid, 'current', 1)
     assert result.tolist() == [False, True, True, False]
     assert valid.all() and len(store) == 4
 
 
-def test_decomposition_targets_follow_actual_reversed_candidate_reads(tmp_path, monkeypatch):
+def test_reversed_candidate_reads_keep_native_field_order_without_teacher(tmp_path, monkeypatch):
     from test_reverse_traversal import _select_completed_binary_path
     model = _model(tmp_path, monkeypatch)
     _select_completed_binary_path(model)
     monkeypatch.setattr(model.candidate_attention, 'forward',
         lambda context, candidates: torch.arange(candidates.shape[1], device=candidates.device,
             dtype=candidates.dtype)[None].expand(candidates.shape[:2]))
-    original = model._decomposition_teacher_loss
-    checked = []
-    def teacher(observation, record):
-        result = original(observation, record)
-        for report in model._last_decomposition_teacher:
-            if 'target' in report and min(report['target']) >= 0:
-                row = report['row']
-                # The fixture reads source word 1, then source word 0. These
-                # are native symbol identities, not an inferred nearest code.
-                assert report['target'] == record.word_rows[row, [1, 0]].tolist()
-                checked.append(report)
-        return result
-    monkeypatch.setattr(model, '_decomposition_teacher_loss', teacher)
     # Isolate this read-order certificate from an independent reorder trial.
     import SentenceCredit
     departure = SentenceCredit.departure
@@ -185,7 +172,6 @@ def test_decomposition_targets_follow_actual_reversed_candidate_reads(tmp_path, 
         inputs = model.inputSpace.prepInput(['alpha beta', 'beta alpha'])
         model.runBatch(train=True, optimizer=model.getOptimizer(lr=.003), batchSize=2,
                        batch_override=(inputs, torch.empty(2, 0)))
-        assert checked
         assert model._last_sentence_field['trials'][0]['reads'][0]['action'].tolist() == [1, 1]
     finally:
         model.End()

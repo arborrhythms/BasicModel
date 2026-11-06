@@ -200,8 +200,8 @@ def test_free_generate_policy_has_no_numerical_credit(monkeypatch, eager_reading
         assert not bool(deterministic[3].any())
         torch.manual_seed(7)
         out,n_emitted,truncated,cost=m._output_generate_walk(event,8,basis_valid=torch.ones(event.shape[0],live,dtype=torch.bool),basis=event[:,:live],sample_actions=True)
-        assert cost.shape==(1,) and float(cost.detach())==0.
-        assert bool(torch.isfinite(cost))
+        assert cost.shape == (1, 3) and not cost.detach().any()
+        assert torch.isfinite(cost).all()
         out.square().sum().backward()
         assert language.generate_policy.weight.grad is None or not language.generate_policy.weight.grad.any()
     finally:
@@ -221,7 +221,7 @@ def test_generate_policy_decides_an_unstamped_top(monkeypatch):
     _prefer(m, names.index("lift"))
     out, n_emitted, truncated, cost = m._output_generate_walk(event, budget=1, basis=event[:, :live],basis_valid=torch.ones(event.shape[0],live,dtype=torch.bool))
     assert n_emitted.tolist() == [0] and bool(truncated.all())
-    assert float(cost) > 0.0  # The pending frontier has residual, not imitation loss.
+    assert cost.shape == (1, 3) and (cost > 0).any()  # The pending frontier has residual, not imitation loss.
     _stop(m)
     out2, n_emitted2, truncated2, _c = m._output_generate_walk(event, budget=8)
     assert n_emitted2.tolist() == [live] and not bool(truncated2.any())

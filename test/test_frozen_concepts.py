@@ -103,7 +103,6 @@ def test_set_reading_primes_the_concept():
     set_reading(False) clears the sustained desire (decay fades the rest)."""
     m = _build("data/MM_20M_xor.xml")
     cs0 = m.conceptualSpaces[0]
-    m.relevance_on = True
     try:
         cid = m.set_reading(True)
         assert cid is not None and cs0.is_frozen(cid)
@@ -114,6 +113,5 @@ def test_set_reading_primes_the_concept():
         m.set_reading(False)
         assert getattr(m, "_reading_desire", None) is None
     finally:
-        m.relevance_on = False
-        cs0._priming_boosts.fill_(1.)
+        cs0._desire.zero_()
         object.__setattr__(m, "_reading_desire", None)

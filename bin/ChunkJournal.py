@@ -178,7 +178,11 @@ class ChunkJournal(nn.Module):
         bind,determined = active & rule[:,2].bool(), active & rule[:,1].bool() & selected.order.eq(1)
         pair = active & (selected.kind == 1) & ~bind
         head = torch.where((rule[:,0] == 2)[:,None],right,left)
-        parent = torch.where(((selected.kind == 2) | (rule[:,0] > 0))[:,None],head,0)
+        # A headless result has no identity to refresh or offer to bind.
+        # Keep the scope's absent reference (-1) beside its ordinary zero flags.
+        blank = empty_scope(scope[:,:1])[:,0]
+        blank[:,IDENTITY] = -1
+        parent = torch.where(((selected.kind == 2) | (rule[:,0] > 0))[:,None],head,blank)
         chosen = torch.full_like(left[:,IDENTITY],-1) if selected.identity is None else selected.identity
         fresh = fresh_identity(state,records,free_ids,trial_base=self.trial_base,trial_limit=self.trial_limit)
         identity = torch.where(bind & (chosen > 0),chosen,
@@ -314,7 +318,16 @@ def capture(owner, state, scope, records, values, *, batch, positions, columns, 
     pool = owner.mtm
     alloc = allocator(owner)
     row = records[batch]
-    selected = row.index_select(0,columns.clamp_min(0))
+    operation = (actions[:,0] == 1) | (actions[:,0] == 2)
+    valid_column = (columns >= 0) & (columns < row.shape[0])
+    if bool((operation & ~valid_column).any()):
+        invalid = (operation & ~valid_column).nonzero().flatten().tolist()
+        raise ValueError(f'identity journal operations have invalid columns at actions {invalid}')
+    journalled = operation & valid_column
+    # SHIFT and transpose have no identity transaction. The safe gather
+    # address is not their provenance, including for identity enumeration.
+    selected = row.index_select(0,torch.where(journalled,columns,0))
+    selected = torch.where(journalled[:,None],selected,0)
     metadata = torch.cat((row[:,12:24],row[:,24:36],scope[batch,:,2:]),0)
     ids = []
     for member in metadata[:,IDENTITY-2].tolist():
@@ -328,7 +341,7 @@ def capture(owner, state, scope, records, values, *, batch, positions, columns, 
     origins = row.new_zeros(len(ids),3)
     actual,alternative = [],[]
     by_column = {int(column):index for index,column in enumerate(columns.tolist())
-                 if int(actions[index,0]) in (1,2)}
+                 if bool(journalled[index])}
     pos = {int(position):index for index,position in enumerate(positions.tolist())}
     leaves = row.new_zeros(len(positions))
     for identity in ids:
@@ -362,11 +375,14 @@ def capture(owner, state, scope, records, values, *, batch, positions, columns, 
                     leaves[introduction] = index+1
                 origins[index] = row.new_tensor((4,word,int(shifted[0,RESOLVED-2])))
             else:
-                introduced = ((selected[:,2] == identity) & (selected[:,3] < 0)).nonzero().flatten()
-                action = int(introduced[0]) if len(introduced) else 0
+                introduced = (journalled & (selected[:,2] == identity)
+                              & (selected[:,3] < 0)).nonzero().flatten()
+                if not len(introduced):
+                    raise RuntimeError(f'local identity {identity} has no introducing operation in its journal')
+                action = int(introduced[0])
                 origins[index] = row.new_tensor((3,action,int(members[:,RESOLVED-2].any()) if len(members) else 0))
-        base = (pool.entries[token].value.to(values) if token is not None else values.new_zeros(values.shape[-1]//3))
-        branch = (pool.entries[token].timelines[-1].value.to(values)
+        base = (pool.value_of(token).to(values) if token is not None else values.new_zeros(values.shape[-1]//3))
+        branch = (pool.value_of(token, timeline=len(pool.entries[token].timelines)-1).to(values)
                   if token is not None and len(pool.entries[token].timelines)>1 else base)
         for column in range(row.shape[0]):
             transaction = row[column]
@@ -403,10 +419,10 @@ def capture(owner, state, scope, records, values, *, batch, positions, columns, 
     for column in (0,1,2,4):
         events[:,column] = events.new_tensor([handles.get(int(identity),0 if column != 4 or int(identity)==0 else -1)
                                               for identity in events[:,column]])
-    events = torch.where((actions[:,0] > 0)[:,None],events,0)
+    events = torch.where(journalled[:,None],events,0)
     timeline = selected[:,8:12].clone()
     timeline[:,2] = timeline.new_tensor([by_column.get(int(origin)-1,-1)+1 for origin in timeline[:,2]])
-    timeline = torch.where((actions[:,0] > 0)[:,None],timeline,0)
+    timeline = torch.where(journalled[:,None],timeline,0)
     width = values.shape[-1]//3
     return dict(identity_ids=row.new_tensor(ids),identity_origins=origins,identity_values=torch.stack(actual) if actual else values.new_zeros(0,width),
         identity_actions=events,identity_leaves=leaves,timeline_actions=timeline,

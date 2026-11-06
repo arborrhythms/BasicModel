@@ -3,7 +3,7 @@ from order_fixtures import force_order
 import itertools
 from types import SimpleNamespace
 from dataclasses import replace
-from IdentityRows import witness_count
+from IdentityRows import access_count
 
 import pytest
 import torch
@@ -49,7 +49,7 @@ def test_row_definedness_survives_rewitness_and_checkpoint_without_changing_trut
     second = store.identity_code(row, 64, 3)
     torch.testing.assert_close(second / second.norm(), first / first.norm())
     assert second.norm().item() == pytest.approx(2 / 6)
-    assert store.c_plus[row] == store.c_minus[row] == 1
+    assert store.truth_plus[row] == store.truth_minus[row] == 1
     restored = LTM0(8, capacity=4)
     restored.load_state_dict(store.state_dict())
     torch.testing.assert_close(restored.identity_code(row, 64, 3), second)
@@ -237,7 +237,7 @@ def test_unretained_innovation_cannot_change_population_cost(monkeypatch):
     columns = component_fixture()
     store = LTM0(4, capacity=8)
     meaning = ConceptualMeaning.from_description(torch.eye(4)[0])
-    row = store.append_meaning(meaning, document_key='retained', sentence_index=0, kind='observation')
+    row = store.append_meaning(meaning, document_key='retained', sentence_index=0, kind='observation', evidence=(1., 0.))
     owner = columns.owner
     owner._closed_clause_store = lambda: store
     owner._order0_inventory_row = lambda physical: physical < 4
@@ -249,7 +249,7 @@ def test_unretained_innovation_cannot_change_population_cost(monkeypatch):
     prediction = SimpleNamespace(roles=torch.zeros(3, 4))
     columns.begin_forward()
     expected = columns.cost([meaning], [prediction], torch.tensor([True]))
-    retained = int(store.row_ids[row])
+    retained = int(store.address_keys[row])
     absent = retained + 100
     columns._innovations[absent] = torch.ones(3 * columns.capacity)
     columns.begin_forward()
@@ -357,7 +357,7 @@ def test_native_admission_optimizer_ownership_and_checkpoint(tmp_path, monkeypat
         restored.load_state_dict(state)
         assert restored.individual_ids == (identity,)
         torch.testing.assert_close(restored.column_point(identity), columns.column_point(identity))
-        assert witness_count(owner, identity) == 1
+        assert access_count(owner, identity) == 1
         path = tmp_path / 'admitted-columns.ckpt'
         model.save_weights(path)
         restored_model, _ = Models.BaseModel.from_config(str(config), data=TheData)
@@ -366,7 +366,7 @@ def test_native_admission_optimizer_ownership_and_checkpoint(tmp_path, monkeypat
             restored_owner = restored_model._concept_owner()
             assert restored_owner.components.individual_ids == (identity,)
             assert restored_owner._csw_row_of(identity) == owner._csw_row_of(identity)
-            assert witness_count(restored_owner, identity) == 1
+            assert access_count(restored_owner, identity) == 1
             torch.testing.assert_close(restored_owner.components.column_point(identity),
                                        columns.column_point(identity))
         finally:
@@ -382,14 +382,14 @@ def test_known_column_in_new_sentence_witnesses_without_pending_prototype():
     known, novel = torch.eye(4)[:2]
     witness(columns, known)
     identity = columns.ids[0]
-    before = columns.witness_count(identity)
+    before = columns.access_count(identity)
     # A new occurrence can be wholly surprising while already explainable.
     columns.observe(known, witness=('new sentence', 1), prediction=torch.zeros(4))
-    assert columns.witness_count(identity) == before + 1
+    assert columns.access_count(identity) == before + 1
     assert columns._pending == [] and columns.ids == (identity,)
     # A correct prediction has no surprise but still witnesses the whole row.
     columns.observe(known, witness=('new sentence', 2), prediction=known)
-    assert columns.witness_count(identity) == before + 2
+    assert columns.access_count(identity) == before + 2
     assert columns._pending == []
     # Only novel surprise becomes a prototype; it needs distinct recurrences.
     for occurrence in range(3):
@@ -399,6 +399,22 @@ def test_known_column_in_new_sentence_witnesses_without_pending_prototype():
     columns.observe(known + novel, witness=('novel sentence', 3), prediction=known)
     assert len(columns.ids) == 2
     torch.testing.assert_close(columns.matrix()[1], novel)
+
+
+def test_shrunk_residual_parallel_to_a_known_change_reuses_its_source():
+    columns = dictionary(sources=1)
+    direction = torch.eye(4)[0]
+    witness(columns, direction)
+    identity, = columns.ids
+    # A small learned relevance leaves a residual above the admission limit.
+    with torch.no_grad():
+        columns.relevance[str(identity)].fill_(.2)
+    for sign in (-1., 1.):
+        for i in range(columns.recurrence):
+            columns.observe(sign * direction, witness=('repeated change', sign, i))
+    assert columns.ids == (identity,)
+    assert not columns._pending
+    assert columns.access_count(identity) >= 2 * columns.recurrence
 
 
 def test_greedy_support_stops_when_an_extra_column_worsens_remainder():
@@ -421,12 +437,14 @@ def test_sparse_coding_is_confined_to_verbs_and_cannot_train_noun_signatures():
     assert not hasattr(columns, 'nouns')
     roles = torch.eye(4)[:3].clone().requires_grad_()
     meaning = ConceptualMeaning(roles, torch.ones(3, dtype=torch.bool))
-    prediction = SimpleNamespace(roles=torch.zeros_like(roles))
+    prediction = SimpleNamespace(roles=torch.zeros_like(roles, requires_grad=True))
     assert columns.cost([meaning], None, torch.tensor([True])).item() == 0
     innovation = columns.innovation(roles.detach(), prediction.roles)
     witness(columns.verbs, innovation)
     columns.cost([meaning], [prediction], torch.tensor([True])).sum().backward()
-    assert roles.grad is not None and roles.grad.abs().sum() > 0
+    # Component expectation owns its local weights, not the observed roles
+    # or the upstream forecast consumed by this band (thinking spec §16.1).
+    assert roles.grad is None and prediction.roles.grad is None
     assert all("nouns" not in name for name, _ in columns.named_parameters())
     assert any(parameter.grad is not None and parameter.grad.abs().sum() > 0
                for parameter in columns.verbs.parameters())

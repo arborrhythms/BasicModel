@@ -326,9 +326,18 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
     def episode(original, model, meaning, **kwargs):
         before_commits = len(commits)
         result = original(model, meaning, **kwargs)
+        if not result.records:
+            # The native compose comparison can keep an already closed
+            # field. Conclude at that opening creates no episode or commit.
+            assert not open_slots(meaning) and result.meaning is meaning
+            assert len(commits) == before_commits and result.work.spent == 0
+            examples.append(dict(already_closed=True, before=(), after=(),
+                source_pair=bindings(meaning).get('_source_evidence'),
+                operations=(), history=(), work=result.work.spent))
+            return result
         assert len(commits) == before_commits + 1
         operations = [record.operation for record in result.records if record.kind == 'thought']
-        examples.append(dict(source_pair=bindings(meaning).get('_source_evidence'),
+        examples.append(dict(already_closed=False, source_pair=bindings(meaning).get('_source_evidence'),
             occurrence=bindings(meaning).get('_query_occurrence'), committed=commits[-1],
             operations=operations, work=result.work.spent, allowance=model.attention_budget,
             history=[record.kind for record in result.records],
@@ -347,6 +356,9 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
         assert len(examples) == 2
         store = model.symbolSpace.ltm_store
         for item in examples:
+            if item['already_closed']:
+                assert not item['before'] and not item['after'] and not item['history']
+                continue
             # The forced query preference does not suppress live departures.
             # The retained walk must search and close within its real budget;
             # the source-authority and minting assertions below are invariant.
@@ -358,7 +370,14 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
             # The original occurrence retains its open reference.
             committed = store.meaning_of(item['committed'])
             assert open_slots(store.raw_meaning_of(index))
-            if tuple(item['source_pair']) == (0.,0.):
+            if 'cutoff' in item['history']:
+                # A live departure may spend the whole allowance before a
+                # complete empty search. Budget exhaustion cannot authorize
+                # minting, even when the source supplied evidence.
+                assert item['work'] == item['allowance']
+                assert item['after'] == item['before'] and open_slots(committed)
+                assert not item['minted'] and item['committed'] == item['occurrence']
+            elif tuple(item['source_pair']) == (0.,0.):
                 assert item['after'] and open_slots(committed)
                 assert open_slots(store.raw_meaning_of(index))
                 assert not item['minted']
@@ -369,8 +388,12 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
         model.End()
 
 
+class UnsupportedReversePremiseBinding(AssertionError):
+    """The reverse-order bind consumed a kind with no supplied antecedent."""
+
+
 @pytest.mark.parametrize('reverse', [False, True])
-def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager_reading):
+def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager_reading, request):
     """Certificate e: live bind choices may close correctly or remain pending."""
     import json
     from forced_math_grammar import ForcedGrammar
@@ -397,6 +420,30 @@ def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager
     batches = 0
 
     def check(store, index, names):
+        # Classify the input to the working read, before asking it to resolve
+        # the slot. The ordinary live chooser does not visit this branch on
+        # every run. A correct read on this input is a strict XPASS.
+        raw = store.raw_meaning_of(index)
+        site = store.occurrence_of(index)
+        entry = owner.mtm.entries.get(site) if reverse else None
+        unsupported_arrival = False
+        from LTM1 import NULL_CONCEPT
+        raw_ref = raw.role_refs[0]
+        open_word = raw_ref is not None and raw_ref[0] == 'sym' and owner.interpret.no_object(raw_ref[1])
+        if (entry is not None and not entry.pending and entry.native is None and entry.symbol is None
+                and entry.kind is not None and entry.kind != NULL_CONCEPT and entry.kind not in names
+                and not open_word and any(event.role == 0 for event in entry.events)
+                and any(name in names for _, name in bindings(raw).get('_forward_references', ()))):
+            kind = replace(ConceptualMeaning.from_description(raw.roles[0]),
+                           role_refs=(('sym', entry.kind), None, None),
+                           bindings={'_bound_roles': (('referent', 0),)})
+            unsupported_arrival = not matches(model, kind, 'three')
+            if unsupported_arrival:
+                request.node.add_marker(pytest.mark.xfail(strict=True, raises=UnsupportedReversePremiseBinding,
+                    reason='The reverse premise can select a fresh MTM kind that does not supply three and close x to that kind instead of preserving its open address.'))
+                (tmp_path/'unsupported-arrival.json').write_text(json.dumps(
+                    dict(site=site, kind=entry.kind, events=[e.occurrence for e in entry.events],
+                         target=owner.word_concepts('three'))) + '\n')
         value = store.meaning_of(index)
         correct = matches(model, value, 'three')
         slots = open_slots(value)
@@ -407,8 +454,11 @@ def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager
         if correct:
             assert not slots and not bindings(value).get('_pending')
         else:
-            assert any(identity in names and ('referent', role) in slots
-                       for role, identity in forwards), 'x must bind to three or retain its named open referent'
+            if not any(identity in names and ('referent', role) in slots for role, identity in forwards):
+                message = 'x must bind to three or retain its named open referent'
+                if unsupported_arrival:
+                    raise UnsupportedReversePremiseBinding(message)
+                raise AssertionError(message)
             assert not any(kind == 'referent' and role in {r for r, name in
                 bindings(store.raw_meaning_of(index)).get('_forward_references', ()) if name in names}
                 for kind, role in bindings(value).get('_bound_roles', ())), 'x bound to a wrong antecedent'
@@ -420,7 +470,7 @@ def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager
         names = set(model._concept_owner().word_concepts('x'))
         if batches == 1 and not reverse:
             for index in range(len(store)):
-                if store.KINDS[int(store.record_kind[index])] == 'estimate':
+                if store.kind_of(index) == 'estimate':
                     continue
                 value = store.meaning_of(index)
                 forwards = () if value is None else bindings(value).get('_forward_references', ())
@@ -433,7 +483,7 @@ def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager
                 check(store, index, names)
             if reverse:
                 for index in range(len(store)):
-                    if store.KINDS[int(store.record_kind[index])] == 'estimate':
+                    if store.kind_of(index) == 'estimate':
                         continue
                     raw = bindings(store.raw_meaning_of(index)).get('_forward_references', ())
                     read = bindings(store.meaning_of(index)).get('_forward_references', ())
@@ -480,7 +530,7 @@ def test_live_pending_premise_closes_in_both_orders(tmp_path, reverse, eager_rea
         if batches == 1 and not reverse:
             names = set(model._concept_owner().word_concepts('x'))
             for index in range(len(store)):
-                if store.KINDS[int(store.record_kind[index])] == 'estimate':
+                if store.kind_of(index) == 'estimate':
                     continue
                 value = store.meaning_of(index)
                 forwards = () if value is None else bindings(value).get('_forward_references', ())
@@ -502,7 +552,7 @@ def test_live_pending_premise_closes_in_both_orders(tmp_path, reverse, eager_rea
             if reverse:
                 names = set(model._concept_owner().word_concepts('x'))
                 for index in range(len(store)):
-                    if store.KINDS[int(store.record_kind[index])] == 'estimate':
+                    if store.kind_of(index) == 'estimate':
                         continue
                     value = store.meaning_of(index)
                     forwards = bindings(value).get('_forward_references', ())

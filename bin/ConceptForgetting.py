@@ -89,6 +89,8 @@ def protected_concepts(owner, store, retained=()):
                     protected.add(cid)
     # Situation and borrowed identity ties are additional live references.
     protected.update(_integers(alloc.identity))
+    protected.update(name.reading for name in owner.mtm.names.values()
+                     if name.reading is not None)
     for entry in owner.mtm.entries.values():
         if entry.symbol is not None:
             protected.add(entry.symbol)

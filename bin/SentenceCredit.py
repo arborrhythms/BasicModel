@@ -129,7 +129,15 @@ def score_function(probabilities, scale, mask, costs):
     trained = mask & advantage.ne(0)[:, None]
     torch._assert_async((~trained | (torch.isfinite(scale) & (scale > 0))).all(),
                         'credited departures require a positive finite proposal correction')
-    result = (torch.where(trained, probabilities * scale * advantage[:, None], 0.).sum(-1)
+    torch._assert_async((~trained | torch.isfinite(advantage[:, None])).all(),
+                        'credited departures require a finite paired advantage')
+    # An unused proposal can have zero probability and an infinite inverse
+    # correction. Mask its factors before multiplication: masking the product
+    # afterwards still differentiates 0 * inf and poisons the scorer's gradient.
+    probability = torch.where(trained, probabilities, 0.)
+    correction = torch.where(trained, scale, 0.)
+    difference = torch.where(trained, advantage[:, None], 0.)
+    result = ((probability * correction * difference).sum(-1)
               if bool(trained.any()) else probabilities.new_zeros(len(costs)))
     return result, dict(costs=costs.detach(), advantage=advantage, mask=mask.detach(),
                         probabilities=probabilities.detach(), scale=scale)

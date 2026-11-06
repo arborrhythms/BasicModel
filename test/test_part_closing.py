@@ -74,8 +74,8 @@ def test_sentence_projection_keeps_its_own_entry_after_an_embedded_mention(monke
                                evidence=(.7,.2), written_rows=written)
     embedded = written[id(mention)]
     assert isinstance(row,int) and isinstance(embedded,int) and row != embedded
-    assert f.store.KINDS[int(f.store.record_kind[row])] == 'observation'
-    assert f.store.KINDS[int(f.store.record_kind[embedded])] == 'unverified'
+    assert f.store.kind_of(row) == 'observation'
+    assert f.store.kind_of(embedded) == 'unverified'
     assert not f.store.entry_when(embedded).any()
     assert f.store.row(row)['evidence'] == pytest.approx((.7,.2))
 
@@ -166,7 +166,8 @@ def test_new_referent_closes_as_an_unminted_occurrence(monkeypatch):
     before = f.cs._concept_allocator.next_id, len(f.store.parts)
     bank = f.cs.similarity_codebook.W.detach().clone()
     row = f.store.write_clause(clause)
-    assert isinstance(row, int) and int(f.store.order[row]) == 1
+    assert isinstance(row, int) and root.order == 1
+    assert f.store.order_of_row(row) == f.cs._concept_source_order(kind) == 0
     torch.testing.assert_close(f.store.slots[row], root.point)
     assert f.store.raw_meaning_of(row).role_refs[0] == ('sym', kind)
     assert f.store.location(f.store.occurrence_of(row)) is not None
@@ -230,7 +231,8 @@ def test_same_description_tokens_keep_distinct_occurrence_identities(monkeypatch
         row = f.store.write_clause(clause, document_key='tokens', sentence_index=sentence,
                                    written_rows=written)
         addresses.append(f.store.occurrence_of(row))
-        assert int(f.store.order[row]) == 1
+        assert clause.order == 1
+        assert f.store.order_of_row(row) == f.cs._concept_source_order(kind) == 0
         assert f.store.raw_meaning_of(row).role_refs[0] == ('sym', kind)
         assert written[('symbols', id(clause))] == ()
         assert written[('activations', id(clause))] == ((addresses[-1], None, 0),)

@@ -48,6 +48,9 @@ class ResultCollector:
         self.result_path = Path(result_path) if result_path else None
         self.active = None
         self.device = None
+        self.initial_random_stream = None
+        self.case_random_stream = None
+        self.failed_random_streams = {}
 
     def publish(self, exit_code=125):
         """Persist completed cases even while a later test is still running."""
@@ -61,7 +64,8 @@ class ResultCollector:
             shared_training=self.shared_training,
             phase_certificates=self.phase_certificates,
             reports=self.reports, recycled=self.recycled, active=self.active,
-            device=self.device), indent=2) + "\n")
+            device=self.device, initial_random_stream=self.initial_random_stream,
+            failed_random_streams=self.failed_random_streams), indent=2) + "\n")
         temporary.replace(self.result_path)
 
     def pytest_collection_finish(self, session):
@@ -93,6 +97,11 @@ class ResultCollector:
         self.active = nodeid
         self.publish()
 
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_runtest_setup(self, item):
+        from random_streams import capture
+        self.case_random_stream = capture()
+
     def pytest_runtest_logfinish(self, nodeid, location):
         self.completed.append(nodeid)
         self.active = None
@@ -112,6 +121,15 @@ class ResultCollector:
 
     def pytest_runtest_logreport(self, report):
         self.failed = self.failed or report.failed
+        if (report.failed and self.case_random_stream is not None
+                and report.nodeid not in self.failed_random_streams
+                and self.result_path is not None):
+            from hashlib import sha256
+            from random_streams import write
+            key = sha256(report.nodeid.encode()).hexdigest()[:16]
+            self.failed_random_streams[report.nodeid] = write(
+                self.result_path.parent / (self.result_path.stem + '-' + key + '-streams.pt'),
+                scope='Before pytest setup: ' + report.nodeid, state=self.case_random_stream)
         if report.when != "call" and not (report.failed or report.skipped):
             return
         outcome = report.outcome
@@ -171,6 +189,10 @@ def main():
     code = 125
     try:
         collector.device = configure_device()
+        from random_streams import write
+        collector.initial_random_stream = write(
+            result_path.with_suffix('.initial-random-stream.pt'),
+            scope='Disposable pytest worker before collection')
         code = int(pytest.main(args, plugins=[collector]))
     finally:
         collector.publish(code)

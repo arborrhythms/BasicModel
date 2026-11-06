@@ -7718,10 +7718,10 @@ class Space(SpaceCarrierMixin, nn.Module):
         self.nStreams = int(TheXMLConfig.training('batchSize', 1))
         if self.nStreams < 1 or int(self.nVectors) < 0:
             raise ValueError('priming construction requires positive streams and a nonnegative inventory')
-        self.register_buffer('_priming_boosts', torch.ones(self.nStreams, int(self.nVectors)), persistent=False)
         self.register_buffer('_priming_seen', torch.ones(self.nStreams, int(self.nVectors)), persistent=False)
-        from Priming import configure
-        configure(self)
+        self.register_buffer('_expected_knowing', torch.zeros(self.nStreams, int(self.nVectors), 2), persistent=False)
+        self.register_buffer('_observed_knowing', torch.zeros(self.nStreams, int(self.nVectors), 2), persistent=False)
+        self.register_buffer('_desire', torch.zeros(self.nStreams, int(self.nVectors)), persistent=False)
         self.nDim         = spaceShape[1]  # content dimensionality of the codebook vectors
         # Resolve nInputDim/nOutputDim:
         #   0  -> inherit from constructor dim (inputShape[1] / outputShape[1]),
@@ -8041,12 +8041,12 @@ class Space(SpaceCarrierMixin, nn.Module):
         W = cb.getW() if (cb is not None and hasattr(cb, 'getW')) else None
         return int(W.shape[0]) if torch.is_tensor(W) else 0
 
-    def _priming_surface(self, V, device=None, batch=None):
-        """One persistent seen/desire surface for each batch stream."""
+    def _seen_surface(self, V, device=None, batch=None):
+        """One persistent seen ledger for each batch stream."""
         target = self._priming_target()
         if target is not self:
-            return target._priming_surface(V, device=device, batch=batch)
-        surface = self._priming_boosts
+            return target._seen_surface(V, device=device, batch=batch)
+        surface = self._priming_seen
         B = surface.shape[0] if batch is None else int(batch)
         if int(V) != surface.shape[1] or not 0 < B <= surface.shape[0]:
             raise RuntimeError('priming surface exceeds constructed stream/inventory capacity; resizing is forbidden')
@@ -8062,31 +8062,26 @@ class Space(SpaceCarrierMixin, nn.Module):
         return getattr(self, "_priming_canonical_ref", None) or self
 
     @torch.no_grad()
-    def prime_seen(self, rows, bump=1.0, decay=None, *, active_rows=None, propagate=True):
-        """Decay and register seen symbols, then optionally propagate once."""
+    def prime_seen(self, rows, bump=1.0, decay=None, *, active_rows=None):
+        """Decay and register observed symbols for placement context."""
         target = self._priming_target()
         if target is not self:
-            return target.prime_seen(rows, bump=bump, decay=decay, active_rows=active_rows, propagate=propagate)
+            return target.prime_seen(rows, bump=bump, decay=decay, active_rows=active_rows)
         V = self._priming_dim()
         if V <= 0 or not torch.is_tensor(rows):
             return None
         rows = rows.reshape(1, -1) if rows.ndim < 2 else rows.reshape(rows.shape[0], -1)
         B = rows.shape[0]
-        surface = self._priming_surface(V, device=rows.device, batch=B)
+        seen = self._seen_surface(V, device=rows.device, batch=B)
         active = (torch.ones(B, device=rows.device, dtype=torch.bool) if active_rows is None
                   else active_rows.to(device=rows.device, dtype=torch.bool))
         d = float(decay if decay is not None else getattr(self, '_priming_decay', .9))
         if active.shape != (B,) or not math.isfinite(d) or not 0 <= d <= 1:
             raise ValueError('priming requires one active flag per stream and decay in [0, 1]')
         valid = (rows >= 0) & (rows < V) & active[:, None]
-        seen = self._priming_seen[:B]
-        for target_surface in (surface, seen):
-            target_surface.copy_(torch.where(active[:, None], 1 + (target_surface - 1) * d, target_surface))
-            target_surface.scatter_add_(1, rows.long().clamp(0, V-1), valid.to(surface) * float(bump))
-            target_surface.clamp_(min=0.)
-        if propagate:
-            from Priming import propagate as step
-            step(self, surface, active)
+        seen.copy_(torch.where(active[:, None], 1 + (seen - 1) * d, seen))
+        seen.scatter_add_(1, rows.long().clamp(0, V-1), valid.to(seen) * float(bump))
+        seen.clamp_(min=0.)
         return self.relevance_weights(batch=B)
 
     @torch.no_grad()
@@ -8099,32 +8094,14 @@ class Space(SpaceCarrierMixin, nn.Module):
         if V <= 0 or not torch.is_tensor(rows):
             return None
         rows = rows.reshape(1, -1) if rows.ndim < 2 else rows.reshape(rows.shape[0], -1)
-        surface = self._priming_surface(V, device=rows.device, batch=rows.shape[0])
+        surface = self._seen_surface(V, device=rows.device, batch=rows.shape[0])
         valid = (rows >= 0) & (rows < V)
-        surface.scatter_add_(1, rows.long().clamp(0, V-1),
-                             valid.to(surface) * float(valence) * float(bump))
-        surface.clamp_(min=0.)
+        self._desire[:len(rows)].scatter_add_(1, rows.long().clamp(0, V-1),
+                                             valid.to(surface) * float(valence) * float(bump))
         return self.relevance_weights(batch=rows.shape[0])
 
-    def _bounded_priming(self, surface):
-        """Normalize positive energy for retrieval; neutral is always one.
-
-        Diffusion keeps its conservative energy ledger. Only the detached
-        consumer boost is bounded, so normalization cannot create stored energy.
-        """
-        from util import TheXMLConfig
-        if surface is None or not hasattr(self, '_closed_clause_store'):
-            return surface
-        maximum = float(TheXMLConfig.space('ConceptualSpace', 'primingMaxBoost', 2.))
-        if maximum < 1 or not math.isfinite(maximum):
-            raise ValueError('primingMaxBoost must be finite and at least one')
-        excess = surface.detach() - 1
-        scale = excess.clamp_min(0).amax(-1, keepdim=True).clamp_min(1.)
-        positive = excess.clamp_min(0) / scale * (maximum - 1)
-        return 1 + positive + excess.clamp_max(0)
-
     def placement_context(self, batch=0):
-        """Observed context only: the independent decay-and-SEEN ledger."""
+        """Observed symbols only: placement never reads a code-derived prediction."""
         target = self._priming_target()
         surface = target._priming_seen
         if not 0 <= int(batch) < len(surface):
@@ -8136,10 +8113,14 @@ class Space(SpaceCarrierMixin, nn.Module):
 
     @torch.no_grad()
     def relevance_weights(self, *, batch=None):
-        """Bound the already propagated surface without changing either ledger."""
+        """Detached predicted concept activation plus the separate desire channel."""
         target = self._priming_target()
-        surface = target._priming_surface(target._priming_dim(), batch=batch)
-        return target._bounded_priming(surface)
+        B = target.nStreams if batch is None else int(batch)
+        target._seen_surface(target._priming_dim(), batch=B)
+        if getattr(target, '_serial_concept_path', False):
+            return (1 + target._desire[:B].detach()).clamp_min(0)
+        return (1 + target._expected_knowing[:B].detach().amax(-1)
+                + target._desire[:B].detach()).clamp_min(0)
 
     def get_vectors(self):
         """Convenience accessor -- delegates to subspace."""
@@ -8766,13 +8747,20 @@ class Space(SpaceCarrierMixin, nn.Module):
                     registered.fill_(-1)
                 elif 0 <= int(batch) < len(registered):
                     registered[int(batch)].fill_(-1)
-            for name in ('_priming_boosts', '_priming_seen'):
+            for name in ('_priming_seen',):
                 surface = getattr(self, name, None)
                 if surface is not None:
                     if batch is None:
                         surface.fill_(1.)
                     elif 0 <= int(batch) < surface.shape[0]:
                         surface[int(batch)].fill_(1.)
+            for name in ('_expected_knowing', '_observed_knowing', '_desire'):
+                surface = getattr(self, name, None)
+                if surface is not None:
+                    if batch is None:
+                        surface.zero_()
+                    elif 0 <= int(batch) < len(surface):
+                        surface[int(batch)].zero_()
         for layer in self.layers:
             if hasattr(layer, 'Reset'):
                 layer.Reset(batch=batch, hard=hard)
@@ -10457,7 +10445,7 @@ class PartSpace(Space):
 
     Relevance: PARTICLE SALIENCE/NOVELTY (bottom-up, horizontal) -- the
     settle residual of the PS view half, stashed by the gated
-    ``<relevance>`` integration; ``relevance_weights()`` returns the last
+    relevance integration; ``relevance_weights()`` returns the last
     batch's ``[B, N]`` novelty (None while the gate is off).
 
     PS and WS are symmetric DUALS -- atoms (bottom-up sigma synthesis) vs
@@ -11005,7 +10993,7 @@ class PartSpace(Space):
                 stamp = (registry.encode('input', offsets) if registry is not None else
                          w_enc.encode(offsets.clamp(min=0)))
                 stamp = stamp * (offsets >= 0).unsqueeze(-1).to(stamp.dtype)
-                event[..., w_idx] = stamp
+                event[..., w_idx] = stamp.to(event)
         if self.subspace.nWhen:
             from Occurrence import event_positions
             event[..., -self.subspace.nWhen:] = self.subspace.whenEncoding.encode(
@@ -12580,6 +12568,10 @@ class ModalSpace(Space):
             self.whenSpace.paramUpdate()
 
 
+class ConceptRowCapacityError(RuntimeError):
+    """A fixed concept region has no physical seat for a proposed identity."""
+
+
 class _ConceptRoleView:
     """Dict-of-sets view over the consolidated per-order relation stores --
     the back-compat surface of the retired ``_concept_parts`` /
@@ -12783,6 +12775,14 @@ class ConceptualSpace(Space):
         self.stage_idx = (int(stage_idx)
                           if stage_idx is not None else 0)
         super().__init__(inputShape, spaceShape, outputShape)
+        from LTM1 import NULL_CONCEPT
+        self.null_concept_id = NULL_CONCEPT
+        # The reserved row is outside the trainable inventory and all sparse
+        # definition/expectation matrices. No optimizer owns these buffers.
+        self.register_buffer('null_concept_row', torch.zeros(self.outputShape[-1]))
+        self.register_buffer('null_concept_lanes', torch.zeros(2))
+        self.register_buffer('null_concept_certainty', torch.zeros(()))
+
         # Native PS/WS fields keep their widths and locations. The bounded
         # conceptsFromPercepts readout below operates on identified code
         # evidence, not native feature coordinates. Only the subsequent
@@ -12858,6 +12858,11 @@ class ConceptualSpace(Space):
         # reaches them (paramUpdate, ergodic plumbing).
         self.params = []
         self.layers = nn.ModuleList([])
+        from Expectation import ActivationPredictor
+        from IntuitionLayer import IntuitionLayer
+        with torch.random.fork_rng(devices=[]):
+            self.concept_predictor = ActivationPredictor(self.outputShape[-1])
+        self.intuition = IntuitionLayer(int(TheXMLConfig.get('architecture.intuitionCapacity', default=4096)))
         self._sparsity = SparsityRegLayer(
             l1_lambda=float(getattr(self, "l1_lambda", 0.0) or 0.0),
             enabled=bool(getattr(self, "codebook", False)),
@@ -13109,6 +13114,9 @@ class ConceptualSpace(Space):
         # A sentence cannot exceed the declared serial word capacity; legacy
         # nonserial fixtures use their input slot count as the same bound.
         # W sentence words plus at most mtmPrepend promoted leading entries.
+        from WordSurfaces import capacity as surface_capacity
+        self.word_surface_capacity = surface_capacity(
+            TheXMLConfig.get('architecture.wordSurfaceCapacity', default=64))
         seen_cap = int(TheXMLConfig.get('architecture.serialWordCapacity', default=None) or self.inputShape[0])
         seen_cap += int(TheXMLConfig.space('ConceptualSpace','mtmPrepend',default=64))
         seen_cap += int(self.outputShape[0]) * (max(2, int(getattr(self, '_symbolic_order', 0)))+1)
@@ -13410,7 +13418,7 @@ class ConceptualSpace(Space):
         grammar_slab.fill_(-1)
         concept_rows.fill_(-1)
         concept_activations.zero_()
-        if B > 0:
+        if B > 0 and not torch.compiler.is_compiling():
             cur_max = int(filled)
             if cur_max > int(stm._max_depth_host):
                 stm._max_depth_host = cur_max
@@ -13519,7 +13527,9 @@ class ConceptualSpace(Space):
         # advances the watermark by one, saturating at cap. Equals the old
         # ``new_depth.max()`` watermark in the monotonic-growth regime,
         # without the host sync.
-        if B > 0 and int(stm._max_depth_host) < cap:
+        # A compiled body owns tensor depth only. The existing eager
+        # whole-sentence boundary synchronizes the host mirror after it runs.
+        if B > 0 and not torch.compiler.is_compiling() and int(stm._max_depth_host) < cap:
             stm._max_depth_host = int(stm._max_depth_host) + 1
     # -- Task 3: explicit predict-then-perceive helpers ----------------
     def _stm_shift_for_predict(self):
@@ -14385,7 +14395,7 @@ class ConceptualSpace(Space):
                        for symbol in alloc.parts.indices().tolist())
         return nxt, nxt + n - int(alloc.reclaimed_seats) - unseated, capacity
 
-    def _preflight_concept_row(self, order=0):
+    def _preflight_concept_row(self, order=0, *, context="word admission"):
         """Check the physical seat before changing identity or definition records."""
         store = _concept_alloc_of(self).layer()
         caps, capacity = self._order_caps(), int(self.nVectors)
@@ -14406,7 +14416,7 @@ class ConceptualSpace(Space):
             while next_row < size and base + next_row in store._tensor_row_keys:
                 next_row += 1
         if next_row >= size:
-            raise RuntimeError('concept row capacity exhausted before word admission; no identity was minted')
+            raise ConceptRowCapacityError(f'concept row capacity exhausted before {context}; no identity was minted')
         return base + next_row
 
     def _preflight_concept_allocation(self, count=1, *, context="concept"):
@@ -14567,6 +14577,9 @@ class ConceptualSpace(Space):
         Parts / Wholes records and any idempotency-cache entries pointing at
         it (store-level lifecycle: :meth:`Layers.ConceptAllocator.drop`).
         FROZEN concepts never retire (no forgetting)."""
+        from LTM1 import NULL_CONCEPT
+        if sym == NULL_CONCEPT:
+            return
         if int(sym) in getattr(self, "_frozen_concepts", ()):
             return
         _concept_alloc_of(self).drop(sym)
@@ -15151,7 +15164,8 @@ class ConceptualSpace(Space):
         """
         base = list(self.params)
         seen = {id(p) for p in base}
-        for parameter in self.components.parameters():
+        for parameter in (*self.components.parameters(), *self.concept_predictor.parameters(),
+                          *self.intuition.parameters()):
             if id(parameter) not in seen:
                 base.append(parameter)
                 seen.add(id(parameter))
@@ -15496,6 +15510,9 @@ class ConceptualSpace(Space):
         Raw percept definitions witness zero; structural concepts are one
         above their members. Relation handles follow their tagged references.
         """
+        from LTM1 import NULL_CONCEPT
+        if concept_id == NULL_CONCEPT:
+            raise ValueError('the null-concept has no order')
         alloc = _concept_alloc_of(self)
         from LTM1 import OCCURRENCE, SYMBOL, RELATION
         if alloc.parts.contains(concept_id):
@@ -15517,7 +15534,7 @@ class ConceptualSpace(Space):
             store = self._closed_clause_store()
             row = None if store is None else store.index_of_row(concept_id)
             if row is not None:
-                return int(store.order[row])
+                return store.order_of_row(row, _seen)
         return alloc.order_of(concept_id, _seen)
 
     @property
@@ -15650,6 +15667,9 @@ class ConceptualSpace(Space):
         standing bias. Minimum support is two references, except singletons.
         Object bounds alone supply no perceptual feature membership.
         """
+        from LTM1 import NULL_CONCEPT
+        if concept_id == NULL_CONCEPT:
+            return
         # Word definitions exist even with zero symbolic recursion. The
         # iteration budget controls higher-order work, not whether a read
         # word is allowed to have native evidence and a symbol (§13 B).
@@ -16038,7 +16058,7 @@ class ConceptualSpace(Space):
         prioritized by the SUMMED heat of the symbols it references.
         Returns ``[nVectors]`` (zeros where unreferenced) or ``None`` on a
         dark/empty heat. Host-side; called once per batch under
-        ``<relevance>``."""
+        the parallel priority read."""
         if not heat:
             return None
         alloc = getattr(self, "_concept_allocator", None)
@@ -16451,6 +16471,23 @@ class ConceptualSpace(Space):
             object.__setattr__(self, '_interpret_operator', operator)
         return operator
 
+    def null_concept_read(self):
+        """Verify the reserved storage, including the sign bit of every zero."""
+        fields = (self.null_concept_row, self.null_concept_lanes, self.null_concept_certainty)
+        if any(t.requires_grad or bool(t.detach().reshape(-1).view(torch.uint8).any()) for t in fields):
+            raise RuntimeError('frozen null-concept storage changed')
+        return dict(identity=self.null_concept_id, order=None, zero_bytes=sum(t.numel()*t.element_size() for t in fields),
+                    shapes=[list(t.shape) for t in fields], pointers=[t.data_ptr() for t in fields])
+
+    @property
+    def sign(self):
+        operator = self.__dict__.get('_sign_operator')
+        if operator is None:
+            from Interpret import SignLayer
+            operator = SignLayer()
+            object.__setattr__(self, '_sign_operator', operator)
+        return operator
+
     def interpret_word(self, word_parts, word_whole, key=None, *, occurrence=None):
         """Admit a form and read its witnessed object, or the still-open form."""
         word = self.interpret.lookup_word(word_parts, word_whole, form=key)
@@ -16642,8 +16679,8 @@ class ConceptualSpace(Space):
         return out, mask
 
     @torch.no_grad()
-    def project_priming_to_towers(self, ps_space, ws_space, gain=1.0, *, batch=None):
-        """Project each stream's concept energy onto its native tower rows."""
+    def project_priming_to_towers(self, ps_space, ws_space, *, batch=None):
+        """Project each stream's detached prediction onto its native tower rows."""
         surface = self.priming_weights(batch=batch)
         if surface is None:
             return
@@ -16698,7 +16735,13 @@ class ConceptualSpace(Space):
         offset = 0
         for count, space in zip(self._priming_bridge_counts, (ps_space, ws_space)):
             start, offset = offset, offset + count
-            if space is None or not count or space._priming_dim() <= 0:
+            if space is None or space._priming_dim() <= 0:
+                continue
+            target_owner = space._priming_target()
+            target_owner._seen_surface(space._priming_dim(), device=surface.device, batch=len(surface))
+            target = target_owner._expected_knowing[:len(surface)]
+            target.zero_()
+            if not count or getattr(self, '_serial_concept_path', False):
                 continue
             sources = self._priming_bridge_src[start:offset].long() + self._priming_bridge_src_bias
             destinations = self._priming_bridge_dst[start:offset].long() + self._priming_bridge_dst_bias
@@ -16709,11 +16752,9 @@ class ConceptualSpace(Space):
             dst = (destinations[:, None] * 32 + positions[None, :])[live]
             V = space._priming_dim()
             valid = (dst >= 0) & (dst < V)
-            target = space._priming_surface(V, device=surface.device, batch=surface.shape[0])
-            decay = float(getattr(space, '_priming_decay', .9))
-            target.mul_(decay).add_(1-decay)
-            target.index_add_(1, dst[valid], float(gain) * (surface[:, src[valid]]-1))
-            target.clamp_(min=0.)
+            target.scatter_reduce_(1, dst[valid][None, :, None].expand(len(surface), -1, 2),
+                self._priming_target()._expected_knowing[:len(surface), src[valid]].detach(),
+                reduce='amax', include_self=True)
 
     def taxonomy_children(self, pos):
         """Native sigma members; no WholeSpace positions or relation trust."""

@@ -14,7 +14,7 @@ def fixture():
     return cs, cb, alloc
 
 
-def test_rows_conduct_to_other_words_without_crossing_batch_streams():
+def test_predicted_rows_do_not_cross_streams_or_read_placement_conduction():
     from Layers import LTM0
     from Meaning import ConceptualMeaning
     cs, cb, alloc = fixture()
@@ -28,10 +28,14 @@ def test_rows_conduct_to_other_words_without_crossing_batch_streams():
          sentence_kind='idea', role_refs=(('sym', root), None, None)), evidence=(1.,0.))
     cb.mereology.placement[[a,b,c]] = torch.tensor([[1.,0.],[1.,0.],[0.,1.]])
     cb.mereology.placement_witnesses[[a,b,c]] = 1
-    # Recorded relations do not conduct; nearby placements do.
+    # Neither recalled relations nor nearby placements write the prediction.
     cs.prime_seen(torch.tensor([[a],[c]]))
     surface = cs.prime_seen(torch.tensor([[a],[c]]))
-    assert surface[0,b] > 1 and surface[1,b] == 1
+    assert surface.eq(1).all()
+    cs._expected_knowing[0,b]=torch.tensor([.3,.7])
+    surface=cs.relevance_weights(batch=2)
+    torch.testing.assert_close(surface[0,b],torch.tensor(1.7))
+    assert surface[1,b]==1 and cs.placement_context(0)[b]==0
     assert not hasattr(cs, '_last_occurrence_priming')
     assert len(store) == 1
 

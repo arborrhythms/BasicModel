@@ -21,12 +21,21 @@ def event(cs, store, place, *, order=0, value=.5, token=False):
     point = torch.zeros(16)
     point[0] = value
     point[store.when_start-4] = place
-    row = store.append_meaning(ConceptualMeaning.from_description(point), order=order,
+    meaning = ConceptualMeaning.from_description(point)
+    if order:
+        from dataclasses import replace
+        referent = cs.new_concept()
+        force_order(cs, referent, order)
+        cs._csw_concept_row(order, referent)
+        meaning = replace(meaning, role_refs=(('sym', referent), None, None))
+    row = store.append_meaning(meaning, order=order,
                               document_key=('event', place), when=False)
     address = int(store.address_keys[row])
     if token:
         cs.mtm.open(store.occurrence_of(row), kind=17, when=place, value=point,
                     pending=False, where=point[store.when_start-4:store.when_start])
+        # §50: the explicit state below belongs to an event, not a cached mention.
+        cs.mtm.event(store.occurrence_of(row), store.occurrence_of(row), verb=17, role=0, when=place)
     return address
 
 
@@ -56,14 +65,19 @@ def test_two_event_witnesses_raise_the_named_object_without_work(tmp_path, monke
     equal_close(cs, store, first, word)
     assert cs.interpret.forward(word) == word and alloc.order_of(word) == 0
     equal_close(cs, store, second, word)
+    assert not alloc.raised and not cs.definitions.objects(word)
+    assert [alloc.parts.find((OCCURRENCE, member), (SYMBOL, word)) is not None
+            for member in (first, second)] == [True, True]
+    third = event(cs, store, 3)
+    equal_close(cs, store, third, word)
     parent = cs.interpret.forward(word)
     assert parent != word and alloc.reference_orders[parent] == alloc.order_of(parent) == 1
-    assert set(alloc.parts.parts((SYMBOL, parent))) == {(OCCURRENCE, first), (OCCURRENCE, second)}
+    assert set(alloc.parts.parts((SYMBOL, parent))) == {(OCCURRENCE, m) for m in (first, second, third)}
     assert alloc.singleton_values.data_ptr() == pointer
-    third = event(cs, store, 3)
-    equal_close(cs, store, third, parent, word=word)
+    fourth = event(cs, store, 4)
+    equal_close(cs, store, fourth, parent, word=word)
     assert cs.interpret.forward(word) == parent and alloc.order_of(parent) == 1
-    assert set(alloc.parts.parts((SYMBOL, parent))) == {(OCCURRENCE, first), (OCCURRENCE, second), (OCCURRENCE, third)}
+    assert set(alloc.parts.parts((SYMBOL, parent))) == {(OCCURRENCE, m) for m in (first, second, third, fourth)}
     (tmp_path/'certificate.json').write_text(json.dumps(dict(parent=parent, order=alloc.order_of(parent),
         members=alloc.parts.parts((SYMBOL, parent)), work=0, fixed_snapshot_slab=True), indent=2)+'\n')
 
@@ -87,11 +101,14 @@ def test_only_distinct_published_identities_raise(same_token, same_value, raises
                     kind=17, when=2)
     equal_close(cs, store, first, word)
     equal_close(cs, store, second, word)
+    assert not alloc.raised
+    third = event(cs, store, 3, order=1, value=.9, token=True)
+    equal_close(cs, store, third, word)
     result = cs.interpret.forward(word)
     assert (result != word) == raises
     if raises:
         assert alloc.reference_orders[result] == 2
-        assert set(alloc.parts.parts((SYMBOL, result))) == {(OCCURRENCE, first), (OCCURRENCE, second)}
+        assert set(alloc.parts.parts((SYMBOL, result))) == {(OCCURRENCE, m) for m in (first, second, third)}
 
 
 def test_one_identity_equality_and_weak_testimony_do_not_raise(monkeypatch):
@@ -105,6 +122,7 @@ def test_one_identity_equality_and_weak_testimony_do_not_raise(monkeypatch):
     equal_close(cs, store, first, word)
     assert not alloc.raised
     equal_close(cs, store, second, word, evidence=(.5, 0.))
+    equal_close(cs, store, event(cs, store, 3), word)
     assert not alloc.raised
 
 
@@ -259,8 +277,11 @@ def test_forgotten_first_equality_renews_its_existing_snapshot_seat():
     assert alloc.singleton_members[word][0] == (OCCURRENCE, second)
     assert alloc.singleton_members[word][2].data_ptr() == pointer
     equal_close(cs, store, third, word)
+    assert not alloc.raised
+    fourth = event(cs, store, 4)
+    equal_close(cs, store, fourth, word)
     parent = cs.interpret.forward(word)
-    assert set(alloc.parts.parts((SYMBOL, parent))) == {(OCCURRENCE, second), (OCCURRENCE, third)}
+    assert set(alloc.parts.parts((SYMBOL, parent))) == {(OCCURRENCE, m) for m in (second, third, fourth)}
 
 
 def test_retirement_handles_class_base_cache_without_losing_another_class():
@@ -269,6 +290,7 @@ def test_retirement_handles_class_base_cache_without_losing_another_class():
     first, second = event(cs, store, 1), event(cs, store, 2)
     equal_close(cs, store, first, word)
     equal_close(cs, store, second, word)
+    equal_close(cs, store, event(cs, store, 3), word)
     parent = cs.interpret.forward(word)
     base = alloc.relate_idx['part-base', parent]
     cs.retire_concept(cs.new_concept())
@@ -309,4 +331,5 @@ def test_kept_clause_and_durable_row_read_the_predication_order(monkeypatch, sub
     clause = finish_reading(f.language, entry, registry=f.registry)
     assert clause.order == closed_order
     row = f.store.write_clause(clause)
-    assert int(f.store.order[row]) == closed_order
+    assert dict(f.store.raw_meaning_of(row).bindings)['_identity'] == ('sym', int(entry.concept_ids[0]))
+    assert f.store.order_of_row(row) == subject_order

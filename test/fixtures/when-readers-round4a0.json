@@ -220,6 +220,16 @@
       ]
     },
     {
+      "file": "bin/PartClosing.py",
+      "function": "PartClosing._write_occurrence",
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "The existing occurrence writer extracted in item 2.5 section 52: a sentence carries the close's model-time band; an embedded mention remains untimed.",
+      "attributes": [
+        "when"
+      ]
+    },
+    {
       "file": "bin/PerceptField.py",
       "function": "PerceptField.select",
       "attributes": [

@@ -1,4 +1,4 @@
-"""Known referents train existing form/content weights, never a new scorer."""
+"""Reference departures receive episode credit; supplied answers judge the kept choice."""
 from chunk_fixtures import context as chunk_context
 from dataclasses import replace
 
@@ -12,7 +12,7 @@ from meaning_fixtures import unsupported as question
 from test_reference_close import fixture, close, form_exposure
 
 
-def context():
+def context(*, content_atoms=(0,)):
     resolver, store, atoms = fixture()
     resolver.components.weight = 1.
     frames = []
@@ -22,50 +22,45 @@ def context():
         frames.append(frame)
     form_exposure(resolver, atoms[4], atoms[0])
     request = dict(mode='bind', leaves=(0,), cue=atoms[4], predicate=atoms[6], role=0)
-    clause = Clause(ConceptualMeaning.from_description(atoms[0]), point=atoms[0],
+    content = atoms[list(content_atoms)].sum(0)
+    clause = Clause(ConceptualMeaning.from_description(content), point=content,
                     order=1, reference_request=request)
     return resolver, store, atoms, resolver.preview(clause, chunk_context(resolver, frames))
 
 
-def test_mention_objective_marginalizes_all_correct_antecedents_and_updates_only_form_content():
+def test_mention_menu_enters_the_ordinary_departure_with_its_live_probability():
     resolver, _, _, plan = context()
     item = plan['items'][0]
-    correct = set(item['candidates'][:2])
+    decision = plan['decisions'][0]
+    assert decision['candidates'] == (None, *item['candidates'])
     logits = resolver.logits(item['features'], item['cue'])
-    expected = -logits.softmax(0)[:2].sum().log()
-    loss = resolver.mention_loss(item, correct)
-    torch.testing.assert_close(loss, expected)
-    loss.backward()
-    assert resolver.policy.grad[0] != 0
-    assert resolver.policy.grad[[2,3,5,6,7]].tolist() == [0.] * 5
-    assert bool(resolver.policy.grad[4].ne(0))
-    assert resolver.mention_loss(item, {-999}) is None
-    all_correct = resolver.mention_loss(item, set(item['candidates']))
-    assert float(all_correct) == 0.
+    torch.testing.assert_close(decision['logits'][1:], logits)
+    selected = decision['selected']
+    assert selected > 0 and decision['candidates'][selected] == item['selected']
+    credit = -decision['probabilities'][selected].log()
+    credit.backward()
+    assert resolver.policy.grad is not None and resolver.policy.grad.abs().sum() > 0
 
 
-def test_supplied_answer_labels_only_its_role_without_reselecting_the_menu():
+def test_answer_judges_selected_roles_without_reselecting_the_mention():
+    from ThoughtReferences import open_slots
     resolver, _, atoms, plan = context()
     item = plan['items'][0]
-    correct = item['candidates'][1]
-    resolver.components.owner.word_concepts = lambda _: (correct,)
-    original = item['selected']
-    meaning = question(ConceptualMeaning.from_description(atoms[0]),
-                       (('referent', 0),))
-    loss = resolver.answer_loss(plan, meaning, 'supplied answer')
-    assert loss is not None and loss.requires_grad
-    assert item['selected'] == original
-    wrong_role = question(meaning, (('referent', 2),))
-    assert resolver.answer_loss(plan, wrong_role, 'supplied answer') is None
-    optimizer = torch.optim.SGD(resolver.parameters(), lr=.1)
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
-    assert resolver.answer_loss(plan, meaning, 'supplied answer') < loss.detach()
+    # Supply a resolved candidate as a compose bind does. The standalone
+    # arrival menu above carries MTM tokens that have no durable object yet.
+    identity = resolver._fixture_predicates[tuple(atoms[6].tolist())]
+    item.update(selected=identity, root_roles=(0,), record=dict(value=atoms[0]))
+    meaning = ConceptualMeaning.from_description(atoms[0])
+    subject = question(meaning, (('referent', 0),))
+    other = question(meaning, (('referent', 2),))
+    assert ('referent', 0) not in open_slots(resolver.answer_meaning(plan, subject))
+    assert ('referent', 2) in open_slots(resolver.answer_meaning(plan, other))
+    assert item['selected'] == identity and resolver.policy.grad is None
 
 
-def test_later_fill_trains_the_same_occurrence_menu_without_a_live_graph():
-    resolver, store, atoms, plan = context()
+def test_later_fill_releases_the_menu_without_an_expectation_loss():
+    # §50/§52: both retained alternatives are parts of this mention.
+    resolver, store, atoms, plan = context(content_atoms=(0, 1, 2))
     clause = plan['items'][0]['node']
     kept = resolver.prepare(clause, plan)
     written = {}
@@ -84,14 +79,10 @@ def test_later_fill_trains_the_same_occurrence_menu_without_a_live_graph():
                     slots=(('referent', 0),))
     assert ('referent', 0) not in open_slots(resolved)
     resolver.resolved(row, 0, ('sym', correct), errors)
-    loss = errors.total(objective='expectation')
-    assert loss is not None and loss.requires_grad
-    loss.backward()
-    assert bool(resolver.policy.grad[4].ne(0))
-    assert resolver.policy.grad[0] != 0
-    # Filling it twice cannot produce duplicate credit.
+    assert errors.total(objective='expectation') is None
+    assert resolver.policy.grad is None
     resolver.resolved(row, 0, ('sym', correct), errors)
-    assert errors._terms['expectation.reference_mentions']['count'] == 1
+    assert store.occurrence_of(row) not in resolver._mentions
     torch.testing.assert_close(store.slots, rows, rtol=0, atol=0)
     torch.testing.assert_close(store.parts.refs, refs, rtol=0, atol=0)
 

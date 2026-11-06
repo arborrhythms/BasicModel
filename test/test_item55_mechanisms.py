@@ -50,6 +50,21 @@ def _serial_read(tmp_path, clock=0, offset=0):
                 return {key:(('time-aware-logits',len(item)) if key == 'presence_logits'
                              else canonical(item)) for key,item in value.items()}
             if isinstance(value,(tuple,list)):
+                if len(value) == 2 and value[0] == '_reference_sites':
+                    # Exempt exactly the four physical clock coordinates
+                    # inside reference-site content, cue and predicate. Each
+                    # stores the observed percept clock, just like its slot.
+                    sites = []
+                    for role, record in value[1]:
+                        record = dict(record)
+                        for key in ('content', 'cue', 'predicate'):
+                            point = record.get(key)
+                            if point is not None:
+                                assert len(point) == store.nDim
+                                at = store.when_start
+                                record[key] = (*point[:at], 0., 0., 0., 0., *point[at+4:])
+                        sites.append((canonical(role), canonical(tuple(record.items()))))
+                    return value[0], tuple(sites)
                 if value and all(isinstance(item,(tuple,list)) and len(item)==2
                                  and isinstance(item[0],str) for item in value):
                     marks = dict(value)
@@ -66,12 +81,13 @@ def _serial_read(tmp_path, clock=0, offset=0):
                 return tuple(map(canonical,value))
             return value
         forecasts = tuple(i for i in range(len(store)) if i in omissions or
-                          store.KINDS[int(store.record_kind[i])] == 'estimate')
+                          store.kind_of(i) == 'estimate')
         semantics = store.semantic_extras()
         semantics = dict(semantics, records=tuple(record for i,record in enumerate(semantics['records'])
                                                  if i not in forecasts))
         return dict(programs=[p.actions.detach().clone() for p in programs],
-            rows={k:v.detach().clone() for k,v in store.state_dict().items()},
+            rows={k.removeprefix('addressing.'):v.detach().clone() for k,v in store.state_dict().items()},
+            forecast_errors=(store.surprise[:len(store)] >= 0).nonzero().flatten().tolist(),
             time_start=store.when_start,
             part_times=store.parts.percept[store.parts.ref_kinds[:,0].ne(0),4:].detach().clone(),
             omissions=omissions, forecasts=forecasts,
@@ -160,7 +176,7 @@ def test_clock_independence(tmp_path):
         # to vary. Keep their values in the certificate, not in content equality.
         measurements.append(dict(clock=clock, answer=value['answer'].tolist(),
             omission_rows=value['omissions'],
-            omission_evidence=value['rows']['c_minus'][list(value['omissions'])].tolist(),
+            omission_evidence=value['rows']['truth_minus'][list(value['omissions'])].tolist(),
             forecast_content=value['rows']['slots'][list(value['forecasts'])].tolist(),
             surprise=value['rows']['surprise'].tolist(),
             recurrence_weights=value['rows']['recurrence_weights'].tolist()))
@@ -186,12 +202,11 @@ def test_clock_independence(tmp_path):
         # compare the retained references by the same physical-row isomorphism.
         assert value['semantics'] == baseline['semantics']
         assert value['omissions'] == baseline['omissions']
-        assert torch.equal(value['rows']['row_ids'],value['rows']['address_keys'])
-        assert len(set(value['rows']['row_ids'][:value['count']].tolist())) == value['count']
+        assert len(set(value['rows']['address_keys'][:value['count']].tolist())) == value['count']
         for name in value['rows']:
             if name == 'model_clock':
                 continue  # Verified against the actual write times above.
-            if name in ('row_ids','address_keys','sentence_content_keys','semantic_fingerprint'):
+            if name in ('address_keys','sentence_content_keys','semantic_fingerprint'):
                 continue  # Content addresses/hashes; semantic equality is checked above.
             if name.startswith('recurrence_'):
                 # Summaries include the time-sensitive conceived absences.
@@ -199,14 +214,15 @@ def test_clock_independence(tmp_path):
                 if value['rows'][name].is_floating_point():
                     assert torch.isfinite(value['rows'][name]).all()
                 continue
-            if name in ('surprise', 'c_minus'):
+            if name in ('surprise', 'truth_minus'):
                 first, second = value['rows'][name].clone(), baseline['rows'][name].clone()
                 assert torch.isfinite(first).all()
                 if name == 'surprise':
                     # Forecast error on the observed sentences reads the stamp.
-                    from Layers import LTM0
-                    rows = value['rows']['record_kind'].eq(LTM0.KINDS.index('observation')).nonzero().flatten()
-                elif name == 'c_minus':
+                    rows = value['forecast_errors']
+                    assert rows == baseline['forecast_errors']
+                    assert first[rows].le(1).all() and second[rows].le(1).all()
+                elif name == 'truth_minus':
                     rows = list(value['omissions'])
                 assert first[rows].ge(0).all()
                 first[rows] = second[rows] = 0
@@ -229,7 +245,8 @@ def test_clock_independence(tmp_path):
             torch.testing.assert_close(value['rows'][name],baseline['rows'][name],rtol=0,atol=0,msg=name)
     import json
     (tmp_path/'certificate.json').write_text(json.dumps(dict(
-        exact_content_and_programs=True, time_sensitive_reads=measurements),indent=2))
+        exact_content_and_programs=True, time_sensitive_reads=measurements,
+        differing_binding_row=None, clock_dependent_binding=False),indent=2))
 
 
 @pytest.mark.usefixtures('eager_reading')
@@ -268,7 +285,7 @@ def test_stream_chain(tmp_path,monkeypatch):
             with store.at_address(document,index,sentence_key((f'{document}{index}'.encode(),))):
                 assert store.append_meaning(ConceptualMeaning.from_description(
                     torch.full((12,),float(10*stream+index))),kind='observation',stream=stream) == rows[stream,index]
-    assert len(store) == 4 and store.witness_count[:4].tolist() == [2]*4
+    assert len(store) == 4 and store.access_count[:4].tolist() == [2]*4
     torch.testing.assert_close(store.slots[:,4:8],before,rtol=0,atol=0)
     assert store.sentence_index[:4].tolist() == [1,1,2,2]
     torch.testing.assert_close(store.recency_weights(0),torch.tensor([.25, 1/3, .5, 1.]))
@@ -299,16 +316,16 @@ def test_stream_chain(tmp_path,monkeypatch):
                     from RowTime import encoder
                     assert encoder().decode_index(torch.stack([live.entry_when(int(row)) for row in observations])).tolist() == [model.present()]*2
                     before={key:getattr(live,key)[observations].clone()
-                            for key in ('row_ids','sentence_index')}
+                            for key in ('address_keys','sentence_index')}
                     before_time=torch.stack([live.entry_when(int(row)) for row in observations])
-                    witnesses=live.witness_count[observations].clone()
+                    witnesses=live.access_count[observations].clone()
                     first=[live.stream_rows(b).tolist() for b in (0,1)]
                     assert set(first[0]).isdisjoint(first[1])
                 else:
                     torch.testing.assert_close(torch.stack([live.entry_when(int(row)) for row in observations]),before_time,rtol=0,atol=0)
                     for key,value in before.items():
                         assert torch.equal(getattr(live,key)[observations],value)
-                    assert (live.witness_count[observations]>witnesses).all()
+                    assert (live.access_count[observations]>witnesses).all()
                     assert live.stream[observations, :2].all()
     finally:
         model.End()
@@ -542,8 +559,11 @@ def _native_step_comparison(tmp_path, monkeypatch):
                     torch.testing.assert_close(recovered[record.word_valid],expected[record.word_valid])
                     continue
                 audit = model._last_sentence_credit
-                torch.testing.assert_close(audit['keep_costs'][:,1]-audit['keep_costs'][:,0],
-                    torch.tensor([model.WHAT_STEP_COST]),rtol=1e-4,atol=2e-7)
+                # Compare the two totals in their own chart. Subtracting
+                # two rounded sentence costs loses bits of the 0.01 step.
+                expected_cost = audit['keep_costs'][:, 0] + model.WHAT_STEP_COST
+                next_cost = torch.nextafter(expected_cost, torch.full_like(expected_cost, torch.inf))
+                assert ((audit['keep_costs'][:, 1] - expected_cost).abs() <= next_cost - expected_cost).all()
                 trials = model._last_sentence_field['trials']
                 assert trials[1]['cost']['compose_steps'].item() == trials[0]['cost']['compose_steps'].item()+1
                 programs = [entry['entries'][0] for entry in observed[:2]]

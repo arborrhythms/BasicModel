@@ -46,7 +46,7 @@ from collections import namedtuple as _namedtuple
 # IsEqualLayer, PartLayer) physically live in this module
 # below, after the Grammar singleton.
 from Layers import GrammarLayer
-from Interpret import InterpretLayer
+from Interpret import InterpretLayer, SignLayer
 from Layers import EqualLayer
 # true/false/swap/copy/area/luminosity/isaPart were parked in bin/Legacy.py
 # in the 2026-07-17 cleanup (documented-dormant ops, not in this algebra).
@@ -4530,6 +4530,7 @@ GRAMMAR_LAYER_CLASSES = {
     'divide': DivideLayer, 'descend': DescendLayer, 'gloss': GlossLayer,
     'and': FieldAndLayer, 'or': FieldOrLayer,
     'interpret':    InterpretLayer,
+    'sign':         SignLayer,
     'bind':         BindLayer,
     'not':          NotLayer,
     'non':          NonLayer,
@@ -6699,6 +6700,7 @@ class OperationSelectionLayer(nn.Module):
                  op_names=None, unary_names=None, op_space_roles=None,
                  chooser="anchordot"):
         super().__init__()
+        self.separate_chooser = bool(TheXMLConfig.get("architecture.separateChooser", default=True))
         self.d_model = int(d_model)
         self.ops = nn.ModuleList(ops)
         self.unary_ops = nn.ModuleList(unary_ops)
@@ -6706,6 +6708,9 @@ class OperationSelectionLayer(nn.Module):
         self.pair_rewrites = tuple(bool(getattr(getattr(op, 'gl', op), 'preserves_pair', False))
                                    for op in self.ops)
         declared = tuple(getattr(op, 'gl', op) for op in self.unary_ops)
+        self.register_buffer('_reference_leaf', torch.tensor([
+            getattr(op, 'rule_name', None) in ('interpret', 'sign') for op in declared
+        ], dtype=torch.bool), persistent=False)
         self._unary_inverse_pairs = tuple(tuple(
             getattr(candidate, 'inverse_identity', None) is not None
             and getattr(candidate, 'inverse_identity', None) == getattr(previous, 'operation_identity', None)
@@ -7026,12 +7031,12 @@ class OperationSelectionLayer(nn.Module):
         return bias.detach()
 
     def forward(self, x, *, depth=None, slots=1, active=None, sample=False,
-                masked_action=None, what_ctx=None, op_prior=None, occupation=None,
+                masked_action=None, replay_action=None, what_ctx=None, op_prior=None, occupation=None,
                 grammar_context=None, allowance=None,
                 rounds_left=None, load_depth=None, reference_data=None,
                 previous_unary=None, stop_exact=None, operand_activations=None,
                 operand_content_activations=None, operand_identities=None, policy_grad=True,
-                expectation_prime=None):
+                expectation_prime=None, closing=False):
         B, N, D = x.shape
         if N < 1:
             raise ValueError("compose needs a nonempty static slab")
@@ -7056,7 +7061,8 @@ class OperationSelectionLayer(nn.Module):
         content = x[..., :self.d_model]
         symbol_read = getattr(self, '_symbol_expectation_read', None)
         what_ctx = getattr(self, '_what_context', None) if what_ctx is None else what_ctx
-        score_context = None if what_ctx is None else what_ctx.detach()
+        feature = (lambda value: value.detach()) if self.separate_chooser else (lambda value: value)
+        score_context = None if what_ctx is None else feature(what_ctx)
         # Only a sampled departure owns a policy graph. Other chooser
         # probabilities are observations; their selected operators still train.
         with torch.set_grad_enabled(torch.is_grad_enabled() and policy_grad):
@@ -7070,16 +7076,16 @@ class OperationSelectionLayer(nn.Module):
                     choices = reference_data[label + '_choices']
                     signs = (choices == -2).to(x.dtype) - (choices == 0).to(x.dtype)
                     contexts.append(dict(reference_ctx=torch.cat((*tuple(
-                        value[..., :self.d_model].detach() * signs[..., i, None]
+                        feature(value[..., :self.d_model]) * signs[..., i, None]
                         for i, value in enumerate(operands)),
                         reference_data[label + '_found'].to(x.dtype)), -1)))
                 reference_contexts = tuple(contexts)
             stop_scores, binary_scores = self.chooser.score_binary(
-                content.detach(), binary[..., :self.d_model].detach(), self.stop_anchor,
+                feature(content), feature(binary[..., :self.d_model]), self.stop_anchor,
                 self.reduce_anchor.index_select(0, bi), what_ctx=score_context,
                 op_indices=bi, **reference_contexts[0])
             _, unary_scores = self.chooser.score_unary(
-                content.detach(), unary[..., :self.d_model].detach(), self.stop_anchor,
+                feature(content), feature(unary[..., :self.d_model]), self.stop_anchor,
                 self.apply_anchor.index_select(0, ui), what_ctx=score_context,
                 op_offset=self.r_reduce, op_indices=ui, **reference_contexts[1])
             score_delta = None
@@ -7099,13 +7105,13 @@ class OperationSelectionLayer(nn.Module):
                                                        content_activations)
                 binary_gain = symbol_read.gains(binary.flatten(1,2)).reshape(binary.shape[:-1])
                 unary_gain = symbol_read.gains(unary.flatten(1,2)).reshape(unary.shape[:-1])
-                dimmed = content.detach() * operand_gain[...,None]
+                dimmed = feature(content) * operand_gain.detach()[...,None]
                 stop_content, binary_content = self.chooser.score_binary(dimmed,
-                    content_binary[..., :self.d_model].detach()*binary_gain[...,None], self.stop_anchor,
+                    feature(content_binary[..., :self.d_model])*binary_gain.detach()[...,None], self.stop_anchor,
                     self.reduce_anchor.index_select(0,bi), what_ctx=score_context,
                     op_indices=bi, **reference_contexts[0])
                 _, unary_content = self.chooser.score_unary(dimmed,
-                    unary[..., :self.d_model].detach()*unary_gain[...,None], self.stop_anchor,
+                    feature(unary[..., :self.d_model])*unary_gain.detach()[...,None], self.stop_anchor,
                     self.apply_anchor.index_select(0,ui), what_ctx=score_context,
                     op_offset=self.r_reduce, op_indices=ui, **reference_contexts[1])
                 stop_delta = ((stop_content-stop_scores).squeeze(-1)*live).sum(-1)/depth.clamp_min(1)
@@ -7145,6 +7151,7 @@ class OperationSelectionLayer(nn.Module):
             needs_cases = torch.tensor([bool(getattr(getattr(op, 'gl', op), 'case_head_role', 0))
                                         for op in self.ops], device=x.device, dtype=torch.bool)
             binary_scores = binary_scores.masked_fill(needs_cases[None, None], -torch.inf)
+            unary_scores = unary_scores.masked_fill(self._reference_leaf.index_select(0, ui)[None, None], -torch.inf)
         if reference_data is not None:
             binary_scores = binary_scores.masked_fill(~reference_data['binary_valid'], -torch.inf)
             unary_scores = unary_scores.masked_fill(~reference_data['unary_valid'], -torch.inf)
@@ -7162,6 +7169,11 @@ class OperationSelectionLayer(nn.Module):
             unary_scores = unary_scores.masked_fill(~allowed[self.r_reduce:].index_select(0, ui)[None,None], -torch.inf)
         binary_scores = binary_scores.masked_fill(~torch.where(binds[None,None],live.any(-1)[:,None,None],live[:,1:,None]),-torch.inf)
         binary_scores = binary_scores.masked_fill(binds[None,None] & deadline[:,None,None],-torch.inf)
+        if closing and rounds_left is not None:
+            # A relative field can close at three slots. A reduction to two
+            # needs a further round to reach one, even though three fits now.
+            stranded = (load == 3) & (torch.as_tensor(slots, device=x.device) == 3) & (rounds_left == 1)
+            binary_scores = binary_scores.masked_fill(stranded[:, None, None] & (~swaps & ~binds)[None, None], -torch.inf)
         # Transpose acts only on the newest pair and cannot meet a deletion deadline.
         swap_legal = (positions[:, :-1] == depth[:,None]-2) & ~deadline[:,None]
         if previous_unary is not None:
@@ -7218,7 +7230,7 @@ class OperationSelectionLayer(nn.Module):
         departure_eligible = self._distinct_departures(x, depth, candidates, logits, reference,
             nb, nu, r_reduce, r_apply, stop_exact=stop_exact, reference_ids=reference_ids, pair_rewrites=pair_rewrites, field_binds=reference_data.get('binary_bind',()) if reference_data is not None else ())
         action, probabilities, has_choice, proposal_inverse = self.select_logits(logits, structural=flags,
-            masked_action=masked_action,sample=sample, departure_eligible=departure_eligible,
+            masked_action=masked_action,replay_action=replay_action,sample=sample, departure_eligible=departure_eligible,
             alternative_logits=alternative_logits, return_proposal=True)
         torch._assert_async((~active | has_choice).all(),
                             "compose has no legal alternative at the selected exploration round")
@@ -7321,7 +7333,7 @@ class OperationSelectionLayer(nn.Module):
                 x, depth=depth, slots=slots, active=active,
                 sample=not greedy if exploit is None else False, masked_action=fork.mask(slot),
                 what_ctx=what_ctx,
-                grammar_context=grammar_context, allowance=slots, rounds_left=int(rounds) - i,
+                grammar_context=grammar_context, allowance=slots, rounds_left=int(rounds) - i, closing=True,
                 previous_unary=history)
             if self.training:
                 fork.record(SimpleNamespace(valid=route['valid'], action=route['action'],
@@ -11051,7 +11063,7 @@ class SymbolSubSpace(SubSpace):
         # row index exists), else fall back to row 0 (broadcast canonical).
         canonical_flat = self._flatten_selected_rules(rules_by_space_role)
         for b in range(B):
-            row_ids = []
+            row_addresses = []
             for space_role in sorted(rules_by_space_role.keys()) if rules_by_space_role else []:
                 per_space_role = rules_by_space_role.get(space_role)
                 if (isinstance(per_space_role, list) and per_space_role
@@ -11061,21 +11073,21 @@ class SymbolSubSpace(SubSpace):
                     row = per_space_role[b] if b < len(per_space_role) else per_space_role[0]
                     for rid in row:
                         try:
-                            row_ids.append(int(rid))
+                            row_addresses.append(int(rid))
                         except (TypeError, ValueError):
                             continue
                 else:
                     # Legacy flat list: shared across rows.
                     for rid in (per_space_role or []):
                         try:
-                            row_ids.append(int(rid))
+                            row_addresses.append(int(rid))
                         except (TypeError, ValueError):
                             continue
-            if not row_ids:
+            if not row_addresses:
                 # Per-row container existed but this row fired nothing AND
                 # there is no per-row fallback -> use the canonical flat.
-                row_ids = canonical_flat
-            for rid in row_ids:
+                row_addresses = canonical_flat
+            for rid in row_addresses:
                 if 0 <= rid < n_rules:
                     probs[b, rid] += 1.0
 
@@ -11351,9 +11363,8 @@ class SymbolSubSpace(SubSpace):
             if arity not in (1, 2):
                 continue
             rule_name = rule.method_name
-            if (not rule_name or rule.mandatory
+            if (not rule_name or (rule.mandatory and rule_name != 'interpret')
                     or getattr(GRAMMAR_LAYER_CLASSES.get(rule_name), 'field_only', False)):
-                # The word transaction always runs interpret before composition.
                 continue
             layer = self._resolve_rule_layer(
                 space_role, _dispatch_method_name_for_rule(rule))
@@ -11707,6 +11718,7 @@ class SymbolSubSpace(SubSpace):
                 builtin_layers['sigma'] = fold  # legacy alias
             if getattr(self, 'conceptualSpace', None) is not None:
                 builtin_layers['interpret'] = self.conceptualSpace.interpret
+                builtin_layers['sign'] = self.conceptualSpace.sign
             negation = getattr(space, 'propositional_negation', None)
             if negation is not None:
                 builtin_layers['not'] = negation
@@ -11726,9 +11738,11 @@ class SymbolSubSpace(SubSpace):
             # the layer up under the SS-space_role host registry.  The
             # canonical home (post-Stage 4) is the CS-space_role branch
             # above.
-            grammar_S_methods = {
+            # Host registration and ModuleList order follow the grammar's
+            # declaration order, including the first use of repeated names.
+            grammar_S_methods = tuple(dict.fromkeys(
                 r.method_name for r in TheGrammar.rules
-                if r.space_role == 'SS' and r.method_name is not None}
+                if r.space_role == 'SS' and r.method_name is not None))
             conceptualSpace = getattr(self, 'conceptualSpace', None)
             # Concepts are full-width codes (a codebook lookup generalised
             # over what/where/when): the grammar ops take the whole muxed
@@ -12338,7 +12352,7 @@ class GeneratePolicy(nn.Linear):
         nn.init.zeros_(self.menu_score[-1].weight)
 
     def forward(self,top,features=None):
-        logits=super().forward(top)
+        logits=super().forward(top.detach())
         return logits if features is None else logits+self.menu_score(features.detach()).squeeze(-1)
 
 
@@ -12723,7 +12737,7 @@ class LanguageSpace(nn.Module):
                          sample=True, masked_action=None,
                          allowance=None, rounds_left=None, reference_scope=None,
                          previous_unary=None, policy_grad=True, lesson_slot=None, occupation=None,
-                         form_spans=None, case_state=None):
+                         form_spans=None, case_state=None, closing=False):
         """The shared compose layer reads the two newest stack chunks."""
         import STMChunks
         chunks = state
@@ -12780,11 +12794,25 @@ class LanguageSpace(nn.Module):
             positions = depth[:, None] - 1 - source
             live_positions = depth[:, None] - 1 - torch.arange(K, device=buffer.device)[None]
             orders = torch.where(live_positions >= 0, state[2], -1)
+            from ChunkJournal import SOURCE, LEAVES
+            from ClauseScope import ClauseScope
+            signable = interpretable = None
+            if reference_scope.shape[-1] > LEAVES:
+                leaf = reference_scope[:,:,SOURCE].gather(1, source) < 0
+                forced = getattr(self._reference_bank, 'forces_interpretation',
+                    getattr(self._reference_bank, 'close_references', False) and
+                    getattr(getattr(self._reference_bank, 'interpreter', None), 'mandatory', True))
+                signable = ((leaf & forced) |
+                            (scopes[..., 0].bitwise_and(ClauseScope.INTERPRETED_LEAF) != 0))
+                interpretable = leaf & (not forced)
+                scopes = torch.stack((scopes[..., 0] | torch.where(interpretable,
+                    ClauseScope.UNINTERPRETED_LEAF, 0), scopes[..., 1]), -1)
             references = prepare_operands(window, scopes[..., 1], scopes[..., 0], positions,
                                           orders=orders.gather(1, source),
                                           rules=self._compose_binary_rules, unary_rules=self._compose_unary_rules,
                                           bank=self._reference_bank,
-                                          chunk_state=chunks, source=source,
+                                          chunk_state=chunks, source=source, signable=signable,
+                                          interpretable=interpretable,
                                           meaning_blocks=any(getattr(getattr(op, 'gl', op), 'meaning_layout', None) is not None
                                               for op in self._tree_layer(2).ops),
                                           live=(buffer, reference_scope[..., 1], orders,
@@ -12802,12 +12830,12 @@ class LanguageSpace(nn.Module):
         if structural_context is not None and form_bank is not None and form_spans is not None:
             from dataclasses import replace
             spans = form_spans[..., 3:5].gather(1, source[..., None].expand(B, n, 2))
-            whole = form_bank.read(spans)
+            whole = form_bank.read_presence(spans)
             pair_span = torch.stack((torch.minimum(spans[:, :-1, 0], spans[:, 1:, 0]),
                                      torch.maximum(spans[:, :-1, 1], spans[:, 1:, 1])), -1)
             stamps = state[2].gather(1, source)
             form_context = {1: (*whole, (stamps,)),
-                            2: (*form_bank.read(pair_span), (stamps[:, :-1], stamps[:, 1:])),
+                            2: (*form_bank.read_presence(pair_span), (stamps[:, :-1], stamps[:, 1:])),
                             'references': {1: (OrderReference(window_ids, window_timelines),),
                                 2: (OrderReference(window_ids[:, :-1], window_timelines[:, :-1]),
                                     OrderReference(window_ids[:, 1:], window_timelines[:, 1:]))}}
@@ -12842,15 +12870,20 @@ class LanguageSpace(nn.Module):
                 source[..., None].expand(B, n, occupation.shape[-1]))),
             active=row_gate.reshape(B), sample=sample, masked_action=masked_action,
             allowance=slots if allowance is None else allowance,
-            rounds_left=rounds_left, load_depth=depth,
+            rounds_left=rounds_left, load_depth=depth, closing=closing,
             stop_exact=stop_exact,
             operand_activations=window_activations,
             operand_content_activations=content_activations, operand_identities=state[4].gather(1, source), policy_grad=policy_grad,
             previous_unary=(None if previous_unary is None else previous_unary.gather(1, source)),
             op_prior=op_prior, grammar_context=structural_context, reference_data=references)
+        replay = getattr(self, '_kept_compose_actions', None)
+        if replay is not None:
+            slot = torch.as_tensor(lesson_slot, device=replay.device).expand(B).reshape(B, 1)
+            arguments['replay_action'] = replay.gather(1, slot)[:, 0]
+            arguments['sample'] = False
         _, _, route = layer(window, **arguments)
         lesson = getattr(self, '_compose_lesson_states', None)
-        if lesson is not None:
+        if lesson is not None and replay is None:
             # Freeze the context used by this decision before another sentence
             # can replace the layer's implicit What context.
             lesson.record(lesson_slot, window,
@@ -12869,6 +12902,20 @@ class LanguageSpace(nn.Module):
             (window_orders[:, 0], window_orders[:, min(1, n-1)]), denotations)
         unary_order = selected_stamp(getattr(self, '_compose_unary_rules', ()), (selected_order,))
         output_order = torch.where(route['kind'] == 1, binary_order, unary_order)
+        if references is not None:
+            interpreted = torch.zeros_like(route['valid'])
+            for index, rule in enumerate(self._compose_unary_rules):
+                if rule.method_name == 'interpret':
+                    interpreted = (route['kind'] == 2) & (route['op'] == index)
+            bank = self._reference_bank
+            identity = route['refs'][:, 0]
+            native_order = torch.full_like(output_order, -1)
+            if bank.orders is not None and bank.ids.shape[1]:
+                native_order = torch.where(bank.ids == identity[:, None], bank.orders, -1).amax(-1)
+            if bank.types is not None:
+                native_order = torch.maximum(native_order, torch.where(
+                    bank.types.identities == identity[:, None, None], bank.types.orders, -1).flatten(1).amax(-1))
+            output_order = torch.where(interpreted & (native_order >= 0), native_order, output_order)
         choice = LanguageOperationChoice(
             route['candidate'], route['kind'], position, route['op'],
             route['valid'] & (route['kind'] != 0), route['probability'],
@@ -12920,7 +12967,8 @@ class LanguageSpace(nn.Module):
 
 
     @torch.compiler.disable
-    def resolve_lexical_references(self, owner, word_rows, concept_ids, actions, *, leaf_orders=None, admit=True):
+    def resolve_lexical_references(self, owner, word_rows, concept_ids, actions, *, leaf_orders=None, admit=True,
+                                   interpreted=None):
         """Resolve the selected grammar's reference orders at capture time.
 
         Each operand's stamp and operation supply the order, never its name.
@@ -12937,6 +12985,8 @@ class LanguageSpace(nn.Module):
                 owner._concept_source_order(int(identity)) for identity in concept_ids])
         selected_requests = reference_requests(self, actions, leaf_orders=leaf_orders)
         for leaf, (order, mode) in selected_requests.items():
+            if interpreted is not None and not interpreted[leaf]:
+                continue
             if order < 0:
                 continue
             if order == 1:
@@ -13634,15 +13684,16 @@ class LanguageSpace(nn.Module):
                                        left_priming=None, right_priming=None,
                                        left_basis=None, right_basis=None,
                                        chooser=None, return_details=False, require_progress=False, whole_bank=None, case_bank=None):
-        """Reconstruction-owned hard pair, initially least residual; no straight-through search gradient.
+        """Fixed joint-residual hard pair; no straight-through search gradient.
 
         At most K constituents per side, with words snapped only at leaves.
         The search has
         at most K squared pairs, K=candidate_limit. Both evidence lanes are
         read independently only after the form has identified the words.
         Retrieval indices and any supplied reference are detached. Dictionary
-        candidates are detached constants. Residuals are relative to the
-        parent's mean square. The trial comparison trains the compose chooser.
+        candidates are detached constants. Their folded codes are scored by
+        absolute form MSE plus the mean error of the two meaning lanes.
+        The trial comparison trains the compose chooser.
         This is an approximate reconstruction; recomposition and child fidelity
         must be measured separately. No candidate means unavailable, never an
         identity pseudo-inverse. Callers own the snapshot and its row masks.
@@ -13662,7 +13713,8 @@ class LanguageSpace(nn.Module):
             scores = readback_scores(parent.detach(), candidates, priming,
                                      meaning_start=form_width)
             indices = scores.masked_fill(~valid, -torch.inf).topk(K, dim=-1).indices
-            # Top-k chooses the search set. The pair chooser owns orientation.
+            # Top-k chooses the search set. Fixed joint residuals rank its
+            # ordered pairs; no learned chooser weight determines orientation.
             indices = indices.sort(dim=-1).values
             candidates = candidates.gather(1, indices[:, :, None].expand(B, K, D))
             active = valid.gather(1, indices)
@@ -13687,9 +13739,10 @@ class LanguageSpace(nn.Module):
                 form = parent if form_width is None else parent[..., :form_width]
                 lf = older if form_width is None else older[..., :form_width]
                 rf = newer if form_width is None else newer[..., :form_width]
-                tolerance = 1e-8 * form.square().mean(-1).clamp_min(1. / form.shape[-1])
-                progressing = (((lf - form[:, None, None]).square().mean(-1) > tolerance[:, None, None])
-                              & ((rf - form[:, None, None]).square().mean(-1) > tolerance[:, None, None]))
+                from Generative import absolute_residual, EXACT_RESIDUAL_TOLERANCE
+                left_error, _ = absolute_residual(form[:, None, None], lf, numeric=False)
+                right_error, _ = absolute_residual(form[:, None, None], rf, numeric=False)
+                progressing = (left_error > EXACT_RESIDUAL_TOLERANCE) & (right_error > EXACT_RESIDUAL_TOLERANCE)
                 # Reject self-reproducing pairs before ranking, so a live whole
                 # cannot hide a supported lexical split with the same residual.
                 allowed = allowed & progressing
@@ -13725,19 +13778,11 @@ class LanguageSpace(nn.Module):
                 from MeaningCodes import repeated_symbol
                 folded = torch.where(same[..., None], repeated_symbol(older, form_width), folded)
             form = parent if form_width is None else parent[..., :form_width]
-            folded_form = folded if form_width is None else folded[..., :form_width]
-            residual = (folded_form - form[:, None, None, :]).square().mean(-1)
-            energy = form.square().mean(-1)[:, None, None]
-            # Exact zero origins use the existing Error squared-penalty convention;
-            # no floor changes any positive parent scale.
-            residual = residual / torch.where(energy > 0, energy, torch.ones_like(energy))
-            if form_width is not None:
-                meaning = parent[..., form_width:]
-                meaning_energy = meaning.square().mean(-1)[:, None, None]
-                residual = residual + (folded[..., form_width:] - meaning[:, None, None]).square().mean(-1) / torch.where(
-                    meaning_energy > 0, meaning_energy, 1.)
-        # The shortlist and eligibility are unchanged. Context learns only
-        # through the separate teacher loss, never through candidate codes.
+            from Generative import absolute_residual
+            form_error, lane_errors = absolute_residual(parent[:, None, None], folded, form_width, numeric=False)
+            residual = form_error + lane_errors.mean(-1)
+        # The shortlist and eligibility are unchanged. The fixed chooser
+        # reads the joint residual; activation and priming stay diagnostic.
         def candidate_features(candidates, indices, priming, active):
             candidates = candidates if form_width is None else candidates[..., :form_width]
             energy = candidates.square().sum(-1)
@@ -13762,9 +13807,8 @@ class LanguageSpace(nn.Module):
             logits = torch.where(allowed.flatten(1).any(-1)[:, None], logits, 0.)
         else:
             selected, _, logits = chooser(features, allowed)
-        # Any exact recomposition outranks an approximate one. Within that
-        # tolerance the learned chooser decides, so roundoff cannot bypass
-        # its orientation lesson. CE still sees every legal pair.
+        # Any exact recomposition outranks an approximate one. Within the
+        # unchanged tolerance the fixed joint residual argmin decides.
         fits = residual.detach().masked_fill(~allowed, torch.inf).flatten(1)
         exact_pairs = fits <= (8 * torch.finfo(parent.dtype).eps) ** 2
         exact = exact_pairs.any(-1)
@@ -13813,7 +13857,7 @@ class LanguageSpace(nn.Module):
         if return_details:
             return (*result, dict(logits=logits, selected=selected, allowed=allowed,
                 left_indices=left_indices, right_indices=right_indices, features=features,
-                exact=exact, relative_residual=residual.detach()))
+                exact=exact, pair_residual=residual.detach()))
         return result
 
     @staticmethod
@@ -13830,6 +13874,7 @@ class LanguageSpace(nn.Module):
         An inverse that merely repeats its parent is not a decomposition.
         A tie between different one-code explanations is not singular.
         """
+        from Generative import absolute_residual, EXACT_RESIDUAL_TOLERANCE
         binary_count = len(binary_ops)
         singular = torch.zeros_like(parent[:, 0], dtype=torch.bool)
         pair_masks = []
@@ -13864,14 +13909,11 @@ class LanguageSpace(nn.Module):
         terminal_mask = valid if terminal_valid is None else terminal_valid & terminals.square().sum(-1).gt(0)
         denominator = terminals.square().sum(-1).clamp_min(torch.finfo(bank.dtype).tiny)
         activation = (value[:, None] * terminals).sum(-1) / denominator
-        residual = (value[:, None] - activation[..., None] * terminals).square().mean(-1)
+        residual, _ = absolute_residual(value[:, None], activation[..., None] * terminals, numeric=False)
         residual = residual.masked_fill(~terminal_mask, torch.inf)
         best = residual.amin(-1)
-        # The reader's existing relative 1e-4 code tolerance applies to the
-        # entire inverse, not just emitted leaves. A shorter approximate pair
-        # must not declare a compound completely recovered after dropping the
-        # unsupported remainder. No target length or trace is available here.
-        tolerance = 1e-8 * value.square().mean(-1).clamp_min(1. / value.shape[-1])
+        # One absolute RMS code tolerance (1e-4), independent of parent energy.
+        tolerance = EXACT_RESIDUAL_TOLERANCE
         tied = terminal_mask & residual.eq(best[:, None])
         selected = terminals.gather(1, residual.argmin(-1)[:, None, None].expand(
             -1, 1, terminals.shape[-1]))
@@ -13905,9 +13947,6 @@ class LanguageSpace(nn.Module):
                 view = (case_bank.for_values(right, form_width=form_width) if case_bank is not None and
                         callable(getattr(op, 'compose_case_meaning', None)) else None)
                 folded = op.compose_blocks(op.compose, left, right, counts=(ratio, 1-ratio), whole=whole, case_view=view)
-                meaning_error = (folded[..., form_width:]-parent[..., form_width:]).square().mean(-1)
-                meaning_scale = parent[..., form_width:].square().mean(-1).clamp_min(1. / (parent.shape[-1]-form_width))
-                admissible = admissible & (meaning_error <= 1e-8*meaning_scale)
             elif getattr(op, 'inverse_kind', None) == 'case_search':
                 if case_bank is None:
                     pair_masks.append(torch.zeros_like(singular))
@@ -13926,11 +13965,10 @@ class LanguageSpace(nn.Module):
                     folded = torch.where(left.eq(right).all(-1)[:, None],
                                          repeated_symbol(left, form_width), folded)
             recomposed.append(folded)
-            folded = folded if form_width is None else folded[..., :form_width]
-            pair_error = (folded.detach() - value).square().mean(-1)
+            pair_error, lane_error = absolute_residual(parent.detach(), folded.detach(), form_width, numeric=False)
             pair_masks.append(admissible & left_readable & right_readable
                               & progress & (pair_error <= best + tolerance)
-                              & (pair_error <= tolerance))
+                              & (pair_error <= tolerance) & (lane_error <= tolerance).all(-1))
         pairs = (torch.stack(pair_masks, -1) if pair_masks else
                  available[:, :0])
         compound = pairs.any(-1)
@@ -14355,7 +14393,6 @@ class SymbolSpace(Space):
         # before getOptimizer walks the owners.
         if self.languageSpace.generate_policy is not None:
             self.params.extend(self.languageSpace.generate_policy.parameters())
-        self.params.extend(self.languageSpace.decomposition_chooser.parameters())
         # SymbolSubSpace.__init__ pointed the home spaces' ``.symbolSpace``
         # back-ref at ITSELF (the coordinator); re-point them at THIS container so
         # ``perceptualSpace.symbolSpace is model.symbolSpace`` holds (the pipeline

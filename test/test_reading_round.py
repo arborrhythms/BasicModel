@@ -126,6 +126,7 @@ def test_documents_retain_memory_and_mtm_until_epoch():
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
     model = model_for(owner, store)
+    model_boundary(model, epoch_boundary=True)
     first = write(store, atoms[0], 'first')
     owner.mtm.open(first, kind=None, when=0, value=atoms[0])
     begin(model)
@@ -191,6 +192,8 @@ def test_epoch_keeps_a_promoted_names_witnessed_order_after_deleting_its_occurre
     from test_orders_learned import equality_fixture
     from test_presentation_memory import model_for
     cs, store, alloc = equality_fixture()
+    model = model_for(cs, store)
+    model_boundary(model, epoch_boundary=True)
     word = cs.interpret.lookup_word((4, 7), (), form='label')
     identity, row, order = cs.interpret.reading(word)
     value = cs.similarity_codebook.lookup_rows(row)
@@ -203,11 +206,22 @@ def test_epoch_keeps_a_promoted_names_witnessed_order_after_deleting_its_occurre
     before = cs.interpret.reading(word)
     assert before == (obj, cs._csw_row_of(obj), 1)
     for _ in range(2):
-        model_boundary(model_for(cs, store), epoch_boundary=True)
+        model_boundary(model, epoch_boundary=True)
         assert store.location(occurrence) is None and not cs.mtm.entries
-        assert cs.interpret.reading(word) == before
+        assert not cs.definitions.objects(word) and alloc.named_identities[word] == {obj}
         assert alloc.settle(obj) == 1
         assert ('part', ('occ', occurrence[-1])) not in alloc.store_of(obj).constituents(obj)
+        assert cs.interpret.reading(word) == before
+        assert not cs.definitions.objects(word)  # a read alone creates no DEF
+        index = store.append_meaning(ConceptualMeaning.from_description(value),
+            order=order, document_key='first', sentence_index=0)
+        occurrence = store.occurrence_of(index)
+        token = cs.mtm.token_of(('name',word))
+        cs.mtm.bind(token, occurrence, kind=None, when=0, value=value, reading=word)
+        assert promote_identity(cs, token, word=word) == obj
+        assert cs.interpret.reading(word) == before
+        assert ('part', ('occ', occurrence[-1])) in alloc.store_of(obj).constituents(obj)
+
 
 
 def pending_reading_journal(monkeypatch):
@@ -265,15 +279,15 @@ def test_order_zero_bind_keeps_its_introduction_and_event(monkeypatch, durable_m
     row = f.store.write_clause(prepared, written_rows=written, document_key='order-zero')
     introduction = introductions[0]['written_node']
     if durable_mention:
-        # The storage adapter may return the durable referent. The reading
-        # close uses its already retained word occurrence as the mention.
+        # §50/§52: a durable semantic return leaves the separately recorded
+        # located mention intact; it does not substitute a word occurrence.
         durable = ('sym', f.noun('subject'))
         written[id(introduction)] = durable
         written[('occurrence', id(introduction))] = durable
     resolver.commit(plan, row, written, document='order-zero', position=0, training=False,
                     word_occurrences=word_occurrences)
-    occurrence = (word_occurrences[introductions[0]['leaves'][-1]] if durable_mention
-                  else written[('occurrence', id(introduction))])
+    occurrence = written[('mention', id(introduction))]
+    assert plan['mention_occurrences'][id(introduction)] == occurrence
     token = f.cs.mtm.token_of(occurrence)
     assert token is not None and len(f.cs.mtm.entries[token].events) == 1
 
@@ -344,16 +358,34 @@ def test_reading_event_cases_accept_native_part_rows_and_filter_open_questions(m
 
 def test_named_alias_follows_merge_restore_and_horizon_expiry():
     from MediumTermMemory import MediumTermMemory
+    from ClauseRow import Clause, attach_clause_index
+    from Layers import LTM0
+    from Meaning import ConceptualMeaning
+    from test_cs_sparse_weights import _cs
+    import weakref
+    # §50 item 100g / §52 item 111: lexical names and occurrences need
+    # their real dictionary/LTM owner, even in a lifecycle-only fixture.
+    owner = _cs(nS=16, dim=4)
+    store = LTM0(4, capacity=4)
+    attach_clause_index(SimpleNamespace(), store, owner)
+    object.__setattr__(owner, '_clause_store_ref', weakref.ref(store))
+    word = owner.interpret.lookup_word([3], (), form='alias')
+    with torch.no_grad():
+        owner.similarity_codebook.W[owner._csw_row_of(word)].fill_(1)
+    occurrences = [store.occurrence_of(store.write_clause(
+        Clause(ConceptualMeaning.from_description(torch.ones(4)), point=torch.ones(4), order=1),
+        document_key='alias', sentence_index=i)) for i in range(2)]
     pool = MediumTermMemory(capacity=4, horizon=2, n_vectors=16)
-    source = pool.named(3, value=torch.ones(4))
-    target = pool.open(('ltm', 'test', 1), kind=None, when=0, value=torch.ones(4))
-    pool.bind(source, ('ltm', 'test', 2), kind=None, when=0, reading=3)
+    pool._owner = weakref.ref(owner)
+    source = pool.named(word, value=torch.ones(4))
+    target = pool.open(occurrences[0], kind=None, when=0, value=torch.ones(4))
+    pool.bind(source, occurrences[1], kind=None, when=0, reading=word)
     pool.merge(source, target, when=0)
-    assert pool.token_of(('name', 3)) == target
-    assert pool.named(3, value=torch.zeros(4)) == target
+    assert pool.token_of(('name', word)) == target
+    assert pool.named(word, value=torch.zeros(4)) == target
     saved = copy.deepcopy(pool.state())
     pool.restore(saved)
-    assert pool.token_of(('name', 3)) == target
+    assert pool.token_of(('name', word)) == target
     pool.close(None, stream=0, references=(target,))
     for _ in range(pool.horizon + 1):
         pool.close(None, stream=0)
@@ -391,8 +423,8 @@ def test_kept_word_mention_retains_its_pending_referent():
     store = cs._closed_clause_store()
     index = store.location(occurrence)
     assert cs.mtm.entries[cs.mtm.token_of(occurrence)].pending
-    assert store.KINDS[int(store.record_kind[index])] == 'question'
-    assert float(store.c_plus[index]) == float(store.c_minus[index]) == 0.
+    assert store.kind_of(index) == 'question'
+    assert float(store.truth_plus[index]) == float(store.truth_minus[index]) == 0.
     for meaning in (store.raw_meaning_of(index), store.meaning_of(index)):
         assert open_slots(meaning) == (('referent',0),)
         assert dict(meaning.bindings)['_forward_references'] == ((0,word),)

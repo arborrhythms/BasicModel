@@ -51,9 +51,11 @@ def scorer(model, state, observation, sentence):
     trials = []
     def score(row, result):
         from ThoughtReferences import open_slots
+        from Intuition import live_meaning
+        meaning = live_meaning(model, result.meaning)
         bound, view = ((state, observation) if (not accepted(result.meaning)
                          or int(result.meaning.role_mask.sum()) not in (1, 3)) else
-                      bound_view(state, observation, sentence, row, result.meaning))
+                      bound_view(state, observation, sentence, row, meaning))
         active = torch.zeros(len(observation['meanings']),device=result.meaning.roles.device,dtype=torch.bool)
         active[row] = True
         presented, comparison = Error(row_mask=active), Error(row_mask=active)
@@ -63,11 +65,18 @@ def scorer(model, state, observation, sentence):
         # reader intermediates retain their existing storage, as at the
         # enclosing sentence boundary, rather than cloning every saved use.
         from SentenceCompose import saved_sentence_values
-        with saved_sentence_values(model.parameters(), model.buffers()):
-            value = model._sentence_reader_error(bound,sentence,active,view,registry=presented)
-            reader = getattr(model,'comparison_reader',None)
-            if reader is not None and value is not None:
-                value = reader(model,bound,sentence,active,view,registry=comparison)
+        from ThoughtReferences import bindings
+        live = bindings(meaning).get('_intuition_selected') is not None
+        previous = getattr(model, '_live_intuition_read', False)
+        model._live_intuition_read = live
+        try:
+            with saved_sentence_values(model.parameters(), model.buffers()):
+                value = model._sentence_reader_error(bound,sentence,active,view,registry=presented)
+                reader = getattr(model,'comparison_reader',None)
+                if reader is not None and value is not None:
+                    value = reader(model,bound,sentence,active,view,registry=comparison)
+        finally:
+            model._live_intuition_read = previous
         trials.append((presented,comparison,getattr(model,'_thought_walk',None)))
         data = model.inputSpace.data
         questions = model._sentence_answer_questions

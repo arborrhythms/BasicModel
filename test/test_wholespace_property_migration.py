@@ -191,7 +191,10 @@ def test_wholespace_owns_one_property_codebook_and_no_concept_store(tmp_path):
     property_rows = []
     for key, value in state.items():
         if "_owned_bases.what" in key and value.ndim > 0:
-            property_rows.append((key, int(value.shape[0])))
+            if key == '_owned_bases.what.primitive_properties.byte_bits':
+                assert value.shape == (256, 256)
+            else:
+                property_rows.append((key, int(value.shape[0])))
     assert property_rows
     assert all(rows == 8 for _key, rows in property_rows)
     assert not any(rows == model.nConceptCodes for _key, rows in property_rows)
@@ -228,9 +231,9 @@ def test_symbolspace_and_grammar_use_conceptual_not_property_width(tmp_path):
 
     # Concepts are opaque codes: no conceptual band, the whole width is
     # the code (2026-09-14).  Symbols are percepts and keep their band.
-    assert cs.subspace.nWhat == 112 and cs.subspace.muxedSize == 112
-    assert ws.subspace.nWhat == 96
-    assert ws.subspace.muxedSize == 104
+    assert cs.subspace.nWhat == 368 and cs.subspace.muxedSize == 368
+    assert ws.subspace.nWhat == 352
+    assert ws.subspace.muxedSize == 360
 
     assert ss.muxedSize == cs.subspace.muxedSize
     assert ss.nWhat == ss.muxedSize - ss.nWhere - ss.nWhen
@@ -282,7 +285,8 @@ def test_property_sidecar_cannot_recreate_lbg_or_downstream_state(tmp_path):
     assert not hasattr(ws, "_lbg_count")
 
     snapshot = model._collect_structural_extras()
-    assert snapshot["version"] == 2
+    # §50 item 102: v3 explicitly requires creation-observation stamps.
+    assert snapshot["version"] == 3
     for entry in snapshot.get("whole_properties", {}).values():
         attrs = entry.get("attributes", {})
         assert all(not str(name).startswith("_lbg_") for name in attrs)
@@ -292,7 +296,7 @@ def test_property_sidecar_cannot_recreate_lbg_or_downstream_state(tmp_path):
     # Ignore an early schema-2 sidecar that accidentally carried the legacy
     # accumulators; loading it must not materialize those attributes on WS.
     model._restore_structural_extras({
-        "version": 2,
+        **snapshot,
         "conceptual_spaces": {},
         "whole_properties": {
             "0": {

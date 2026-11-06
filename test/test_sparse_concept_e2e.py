@@ -196,7 +196,9 @@ def test_getparameters_byte_identical_when_inactive():
         nWords=64, nOutput=64, nWhere=0, nWhen=0)
     cs = with_definitions(Spaces.ConceptualSpace([nP, _D], [64, _D], [64, _D]))
     # No admitted word: forced interpret now activates feature parameters.
-    assert [id(p) for p in cs.getParameters()] == [id(p) for p in cs.params]
+    expected = (*cs.params, *cs.components.parameters(), *cs.concept_predictor.parameters(),
+                *cs.intuition.parameters())
+    assert [id(p) for p in cs.getParameters()] == list(dict.fromkeys(map(id, expected)))
 
 
 @pytest.mark.slow

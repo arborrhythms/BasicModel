@@ -67,7 +67,7 @@ class Observer:
                 if record.kind == 'thought':
                     self.operations[record.operation] += 1
             committed = [store.row(index) for index in range(start, len(store))
-                         if store.KINDS[int(store.record_kind[index])] == 'inference']
+                         if store.kind_of(index) == 'inference']
             self.results[row] = (value, committed)
             return value
 

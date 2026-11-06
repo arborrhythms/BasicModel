@@ -1,11 +1,12 @@
 """The sentence reconstruction brick uses the shared compiler policy."""
 import torch
+import pytest
 from torch import nn
 import util
 from Models import BasicModel
 
 
-def test_reconstruction_brick_accepts_more_than_default_eight_shapes(monkeypatch):
+def test_reconstruction_brick_rejects_second_width_in_one_phase(monkeypatch):
     class Probe(BasicModel):
         def __init__(self):
             nn.Module.__init__(self)
@@ -23,15 +24,14 @@ def test_reconstruction_brick_accepts_more_than_default_eight_shapes(monkeypatch
         model = Probe()
         compiled = model._compiled_reconstruct()
         assert model._compiled_reconstruct() is compiled
-        # Nine distinct fixed shapes cross the default cache limit once. This
-        # is a compile-capacity probe, not a model-size or learning-budget port.
-        inputs = [torch.arange(width, dtype=torch.float32).requires_grad_()
-                  for width in range(1, 10)]
+        # Reversed contract: a running phase admits its constructed width only.
+        value = torch.arange(1, dtype=torch.float32).requires_grad_()
         try:
-            for value in inputs:
-                actual = compiled(value)
-                torch.testing.assert_close(actual, value.square().sum(), rtol=0, atol=0)
-                actual.backward()
-                torch.testing.assert_close(value.grad, 2*value, rtol=0, atol=0)
+            actual = compiled(value)
+            torch.testing.assert_close(actual, value.square().sum(), rtol=0, atol=0)
+            actual.backward()
+            torch.testing.assert_close(value.grad, 2*value, rtol=0, atol=0)
+            with pytest.raises(RuntimeError, match='Unexpected model recompilation.*_reconstruct_sentences'):
+                compiled(torch.arange(2, dtype=torch.float32).requires_grad_())
         finally:
             torch._dynamo.reset()

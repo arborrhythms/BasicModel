@@ -28,7 +28,7 @@ def test_explicit_fact_admission_preserves_full_description_and_source():
         layout='infix', scope={'where': ('sym', 5)})
     store = LTM0(18, capacity=8, percept_width=0)
     row = store.append_meaning(description, kind='fact', trust=-.8)
-    store.set_origin(row, store.ORIGIN_USER, text='named witness')
+    store.set_origin(row, store.ORIGIN_USER, text='named witness', asserted=(float(store.truth_plus[row]), float(store.truth_minus[row])))
     reasoner = TruthGroundedReasoner(store=store)
     result = reasoner.evaluate(QuerySpec.from_surface('exist', description))
     assert result['support_false'] == pytest.approx(.8)

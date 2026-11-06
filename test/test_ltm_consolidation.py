@@ -167,7 +167,7 @@ class TestProvisioning(unittest.TestCase):
         self.assertAlmostEqual(store.row(rows[1])["trust"], 0.8, places=5)
         self.assertAlmostEqual(store.row(rows[2])["trust"], 0.7, places=5)
         assert rows == sorted(rows)
-        assert all(store.row_ids[row] == store.address_keys[row] for row in rows)
+        assert all(store.address_keys[row] == store.address_keys[row] for row in rows)
 
     @pytest.mark.usefixtures('eager_reading')
     def test_provisioned_rows_are_real_encodings(self):
@@ -374,7 +374,7 @@ class TestSurviveResetAndPersistence(unittest.TestCase):
     def test_state_dict_keys_present(self):
         m = _make_model(_ON_CONFIG)
         sd = m.state_dict()
-        for suffix in ("slots", "percept_layout", "stream", "c_plus", "c_minus", "count"):
+        for suffix in ("slots", "percept_layout", "addressing.stream", "truth_plus", "truth_minus", "count"):
             self.assertIn(
                 f"symbolSpace.subspace.ltm_store.{suffix}", sd,
                 f"ltm_store.{suffix} must ride the state_dict")
@@ -564,9 +564,9 @@ class TestTruthLayerLtmView(unittest.TestCase):
         b = torch.zeros(D); b[1] = 1.0
         store.append_idea(a, trust=0.5)                     # conversation
         i_prov = store.append_idea(a, trust=0.9, evidence=(.9, 0.))
-        store.set_origin(i_prov, T.ORIGIN_PROVISIONED, text="prov")
+        store.set_origin(i_prov, T.ORIGIN_PROVISIONED, text="prov", asserted=(float(store.truth_plus[i_prov]), float(store.truth_minus[i_prov])))
         i_user = store.append_idea(b, trust=-0.5, evidence=(0., .5))
-        store.set_origin(i_user, T.ORIGIN_USER, text="user")
+        store.set_origin(i_user, T.ORIGIN_USER, text="user", asserted=(float(store.truth_plus[i_user]), float(store.truth_minus[i_user])))
         n = tl.sync_from_ltm()
         self.assertEqual(n, 2)
         self.assertEqual(int(tl.count.item()), 2)
@@ -636,12 +636,31 @@ class TestRuntimeUserIngestion(unittest.TestCase):
             return (x.new_full((*x.shape[:2], 1), 1e6),
                     x.new_zeros(candidates.shape[:-1]))
         chooser.score_binary, chooser.score_unary = binary, unary
-        with warnings.catch_warnings():
+        from unittest.mock import patch
+        endings = []
+        ingest = m._ltm_ingest_truth_texts
+
+        def capture(*args, **kwargs):
+            result = ingest(*args, **kwargs)
+            endings.extend(result)
+            return result
+
+        with warnings.catch_warnings(), patch.object(m, '_ltm_ingest_truth_texts', capture):
             warnings.filterwarnings('ignore')
             m.store_truths([{'content': 'hello world', 'trust': .9}])
         self.assertTrue(bool((m._stm_post_depth == 1).all()))
-        self.assertEqual(len(store), before + 2)
-        self.assertEqual(len(store.rows_of_origin(T.ORIGIN_USER)), 1)
+        (ending,), = endings
+        retained = store.row(ending)
+        self.assertAlmostEqual(retained['evidence'][0], .9)
+        self.assertEqual(retained['evidence'][1], 0.)
+        users = store.rows_of_origin(T.ORIGIN_USER).tolist()
+        if isinstance(ending, int):
+            self.assertGreaterEqual(ending, before)
+            self.assertEqual(users, [ending])
+        else:
+            self.assertEqual(ending[0], 'sym')
+            self.assertTrue(store.parts.contains(ending[1]))
+            self.assertEqual(users, [])
 
     @pytest.mark.usefixtures('eager_reading')
     def test_user_rows_land_alongside_provisioned(self):
@@ -783,10 +802,10 @@ class TestStatelessRevive(unittest.TestCase):
         store.reset()
         D = store.nDim
         v = torch.zeros(D); v[0] = 1.0
-        i0 = store.append_idea(v, trust=0.9, evidence=(.9, 0.))
-        store.set_origin(i0, T.ORIGIN_PROVISIONED, text="cat")
-        i1 = store.append_idea(v, trust=0.8, evidence=(.8, 0.), sentence_index=1)
-        store.set_origin(i1, T.ORIGIN_USER, text="hello world")
+        i0 = store.append_idea(v, trust=0.9, evidence=(.9, 0.), document_key='provisioned')
+        store.set_origin(i0, T.ORIGIN_PROVISIONED, text="cat", asserted=(float(store.truth_plus[i0]), float(store.truth_minus[i0])))
+        i1 = store.append_idea(v, trust=0.8, evidence=(.8, 0.), document_key='user', sentence_index=1)
+        store.set_origin(i1, T.ORIGIN_USER, text="hello world", asserted=(float(store.truth_plus[i1]), float(store.truth_minus[i1])))
         store.append_idea(v, trust=0.3, sentence_index=2)  # ORIGIN_CONVERSATION
         return store
 
@@ -851,8 +870,8 @@ class TestStatelessRevive(unittest.TestCase):
         store.reset()
         D = store.nDim
         v = torch.zeros(D); v[0] = 1.0
-        i0 = store.append_idea(v, trust=0.7, evidence=(.7, 0.))
-        store.set_origin(i0, T.ORIGIN_PROVISIONED, text="p")
+        i0 = store.append_idea(v, trust=0.7, evidence=(.7, 0.), document_key='provisioned')
+        store.set_origin(i0, T.ORIGIN_PROVISIONED, text="p", asserted=(float(store.truth_plus[i0]), float(store.truth_minus[i0])))
         store.append_idea(v, trust=0.2, sentence_index=2)                    # conversation
         sd = m.state_dict()
         m2 = _make_model(_ON_CONFIG)

@@ -56,8 +56,12 @@ def allocation_plan(config, output):
     add('shared derived placements', [count, cs['meaningWidth']//2], 4, 1,
         'MereologicalCodes.py: placement')
     add('shared cached forms', [count, form], 4, 1, 'MereologicalCodes.py: _forms')
-    add('concept priming ledgers', [arch['training']['batchSize'], count], 4, 2*stages,
-        'Spaces.py Space.__init__: seen and propagated')
+    add('concept seen ledgers', [arch['training']['batchSize'], count], 4, stages,
+        'Spaces.py Space.__init__: observed placement context')
+    add('concept state fields', [arch['training']['batchSize'], count, 2], 4, 2*stages,
+        'Spaces.py Space.__init__: expected and observed knowing')
+    add('intuition sparse banks', [int(arch.get('intuitionCapacity',4096)), 1], 4, 2*stages,
+        'IntuitionLayer.py: preallocated Pi and Sigma parameters')
     add('percept prototypes and fixed copies', [parts, form], 4, 2,
         'RadixLayer codebook W and fixed_row_codes')
     add('retained LTM0 ideas', [capacity, cs['nDim']], 4, 1,
@@ -227,6 +231,17 @@ def materialize_optimizer(optimizer):
                for value in state.values() if torch.is_tensor(value))
 
 
+def optimizer_parameter_bytes(optimizer, parameters):
+    """Read one owner's existing shared optimizer state without allocating it."""
+    import torch
+    wanted = {id(parameter) for parameter in parameters}
+    available = {id(parameter) for group in optimizer.param_groups for parameter in group['params']}
+    if not wanted <= available:
+        raise ValueError('allocation read contains parameters outside the shared optimizer')
+    return sum(value.numel()*value.element_size() for parameter,state in optimizer.state.items()
+               if id(parameter) in wanted for value in state.values() if torch.is_tensor(value))
+
+
 def training_inventory(model):
     from Spaces import _concept_alloc_of
     rows = tensor_inventory(model)
@@ -337,7 +352,8 @@ def train_brick(config, output, *, complete_prefix=False):
         report['touched']=touch_reservations(model)
         report['optimizer_bytes_before']=materialize_optimizer(optimizer)
         report['optimizer_reservation']='dense Adam/SGD state reserved at step zero; row-local moments use their native touched prefix and are measured after the brick'
-        report['expectation_optimizer_bytes_before']=materialize_optimizer(model.percept_expectation.ensure_optimizer())
+        report['percept_optimizer']='shared sentence optimizer'
+        report['percept_optimizer_bytes_before']=optimizer_parameter_bytes(optimizer,model.percept_expectation.parameters())
         report['tensors']=training_inventory(model)
         report['resolved']=cfg
         save('construction.json',report)
@@ -378,7 +394,7 @@ def train_brick(config, output, *, complete_prefix=False):
                 cursor=getattr(model,'_checkpoint_corpus_cursor',None))
         report.update(status='complete',bricks=len(observations),observations=observations,
             optimizer_bytes_after=materialize_optimizer(optimizer),
-            expectation_optimizer_bytes_after=materialize_optimizer(model.percept_expectation.ensure_optimizer()),
+            percept_optimizer_bytes_after=optimizer_parameter_bytes(optimizer,model.percept_expectation.parameters()),
             tensors=training_inventory(model),rung0_audit=audit,
             occupied=dict(percept=len(model.perceptualSpace.percept_store),words=len(identity.word_rows),
                 conceptual_next=alloc.next_id,relation_highest=int(alloc.parts.count)-1,

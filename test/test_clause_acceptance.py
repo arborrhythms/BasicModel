@@ -149,6 +149,26 @@ def test_05_embedded_part_is_unasserted_and_propagates_operator_kind(monkeypatch
     assert outer['evidence'] == pytest.approx((.6, 0.))
 
 
+def test_pointless_predicate_retains_the_relative_child_as_an_occupied_role(monkeypatch):
+    from LTM1 import RELATION
+    f = SentenceFixture(monkeypatch)
+    predicate = ('union', ('part', 'cats', 'animals'), 'present')
+    clause = f.clause(('lift', 'he', ('verb', predicate, 'mice')))
+    assert clause.refs[1] == ('clause', 0)
+    assert clause.children[0].relation == 'operator' and clause.children[0].point is None
+    assert clause.meaning.role_mask.tolist() == [True, True, True]
+    assert not clause.meaning.roles[1].any()
+
+    row = f.store.write_clause(clause, trust=.5)
+    written = f.store.part_row(row[1])['meaning']
+    _, vp = f.store.parts.references(row[1])
+    relative, obj = f.store.parts.references(vp[1])
+    inner, _ = f.store.parts.references(relative[1])
+    assert relative[0] == RELATION and written.role_refs[1] == ('sym', relative[1])
+    assert inner == (RELATION, f.store.parts.find(f.noun('cats'), f.noun('animals')))
+    assert obj[1] == f.noun('mice')
+
+
 def test_12_generic_subject_is_a_relation_with_either_predicate(monkeypatch):
     f = SentenceFixture(monkeypatch)
     for predicate in ('breathe', ('verb', 'are', 'animals')):
@@ -213,9 +233,9 @@ def test_07_equality_is_one_membership_in_a_singleton(monkeypatch):
 def test_08_direct_bare_np_rewitnesses_its_address(monkeypatch):
     f = SentenceFixture(monkeypatch, percept_width=8)
     direct = f.store.write_clause(f.clause('cat', located=False))
-    assert f.store.row_ids[direct] == f.store.address_keys[direct] != f.noun('cat')
+    assert f.store.address_keys[direct] == f.store.address_keys[direct] != f.noun('cat')
     located = f.store.write_clause(f.clause('cat'))
-    assert located == direct and int(f.store.witness_count[direct]) == 2
+    assert located == direct and int(f.store.access_count[direct]) == 2
     assert f.store.entry_when(located).any()
 
 

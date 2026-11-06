@@ -95,8 +95,10 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
     monkeypatch.setattr(torch, 'while_loop', eager_while)
     if compiled:
         import SentenceCompose
+        from CompileGuard import guarded_compile
         monkeypatch.setattr(SentenceCompose, 'compile_word_brick',
-            lambda fn: torch.compile(fn, backend='eager', fullgraph=True))
+            lambda fn, *, initial_phase=None: guarded_compile(
+                fn, initial_phase=initial_phase, backend='eager', fullgraph=True))
     # Sentence ends land at different word columns in the two rows; the
     # first row's one-word sentence also exercises its dedicated closing trace.
     raw = model.inputSpace.prepPackedInput([['a', 'c d'], ['e f', 'g']])
@@ -165,9 +167,15 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
             roles, occupied = stored.roles, stored.role_mask
             committed[args[1], b] = roles.detach().clone(), occupied.clone()
             depth, payload, mask = disc._read_context(b)[0][-1]
-            assert depth == int(occupied.sum())
-            torch.testing.assert_close(payload, roles)
-            torch.testing.assert_close(mask, occupied)
+            # Inter-sentence context carries the occurrence's regional point.
+            # The retained field above still has the complete relation.
+            row = model.symbolSpace.ltm_store.row(model.symbolSpace.ltm_store.location(context[b][-1]))
+            point = roles[0] if stored.sentence_kind == 'idea' else row['head_point']
+            assert depth == int(point is not None) == int(mask.sum())
+            if point is not None:
+                assert mask[0]
+                torch.testing.assert_close(payload[0], point)
+            assert not payload[~mask].any()
         if args[1] == 0:
             prior_context.append(context)
         return result

@@ -44,9 +44,9 @@ class _CompiledSparseSandwich(nn.Module):
         self.codebook.sparse_lookup_grad = True
         self.scale = nn.Parameter(torch.randn(dim))
 
-    def forward(self, x, row_ids):
+    def forward(self, x, row_addresses):
         dense_prefix = torch.sin(x * self.scale)
-        selected = self.codebook.lookup_rows(row_ids)
+        selected = self.codebook.lookup_rows(row_addresses)
         return torch.cos(dense_prefix + selected)
 
 
@@ -67,11 +67,11 @@ def test_dynamo_eager_island_preserves_sparse_gradient_and_row_local_step():
     torch._dynamo.utils.counters.clear()
     model = _CompiledSparseSandwich()
     before = model.codebook.W.detach().clone()
-    row_ids = torch.tensor([2, 9, 2, 17])
+    row_addresses = torch.tensor([2, 9, 2, 17])
 
     try:
         compiled = torch.compile(model, backend="eager", fullgraph=False)
-        compiled(torch.randn(4, 6), row_ids).square().sum().backward()
+        compiled(torch.randn(4, 6), row_addresses).square().sum().backward()
 
         stats = dict(torch._dynamo.utils.counters.get("stats", {}))
         assert stats.get("unique_graphs", 0) > 0
@@ -119,9 +119,9 @@ def test_staged_sentence_bank_is_fullgraph_clean_and_gradient_equivalent():
             super().__init__()
             self.cs = cs
 
-        def forward(self, row_ids, source_a, source_b, bank_ids, atoms):
+        def forward(self, row_addresses, source_a, source_b, bank_ids, atoms):
             return self.cs.decode_sparse_concept_rows(
-                row_ids, source_a, source_b,
+                row_addresses, source_a, source_b,
                 staged_rows=bank_ids, staged_atoms=atoms)
 
     torch._dynamo.reset()
@@ -200,10 +200,10 @@ def test_compiled_step_relaxes_only_for_unstaged_sparse_concept_codebook(
             assert model._compiled_word_chunk_active is False
             assert model._compiled_step is model.forward
         else:
-            assert len(compile_calls) == 1
-            assert compile_calls[0][1]["fullgraph"] is expected_fullgraph
+            assert [fn.__name__ for fn, _ in compile_calls] == ['_forward_body', '_forward_head']
+            assert all(options['fullgraph'] is expected_fullgraph for _, options in compile_calls)
             assert model._compiled_word_chunk_active is False
-            assert model._compiled_step is compile_calls[0][0]
+            assert model._compiled_step is model.forward
     finally:
         init_device(previous_device)
 

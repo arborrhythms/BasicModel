@@ -35,7 +35,7 @@ def readback_scores(leaf, codes, priming, *, percept_width=None, meaning_start=N
 @torch.no_grad()
 def readback_decisions(words, counts, bank, active):
     """Code, priming, or exact tie, using the same leaves without re-decoding."""
-    valid = bank.valid & bank.byte_valid.any(-1)
+    valid = bank.terminal_valid
     result = []
     for position in range(words.shape[1]):
         code = readback_scores(words[:, position], bank.codes, torch.ones_like(bank.weights),
@@ -67,8 +67,8 @@ class PrimedSymbols:
     codes: torch.Tensor
     weights: torch.Tensor
     own: torch.Tensor
-    bytes: torch.Tensor
-    byte_valid: torch.Tensor
+    bytes: torch.Tensor | None
+    byte_valid: torch.Tensor | None
     case_bank: object = None
     percept_width: int | None = None
     forms: torch.Tensor | None = None
@@ -76,6 +76,18 @@ class PrimedSymbols:
     normalize_reader: bool = False
     type_families: object = None
     form_wholes: object = None
+    surface_present: torch.Tensor | None = None
+    primitive_support: torch.Tensor | None = None
+
+    def __post_init__(self):
+        # Each lexical table belongs to these candidate rows. WholeSpace's
+        # structural bank is separate and is rebuilt by walk_bank after joins.
+        for name in ('codes', 'weights', 'own', 'bytes', 'byte_valid',
+                     'forms', 'surface_present', 'primitive_support'):
+            table = getattr(self, name)
+            if table is not None and table.shape[:self.rows.ndim] != self.rows.shape:
+                raise ValueError(f'PrimedSymbols.{name} leading shape {tuple(table.shape[:self.rows.ndim])} '
+                                 f'differs from rows {tuple(self.rows.shape)}')
 
     @property
     def valid(self):
@@ -84,7 +96,10 @@ class PrimedSymbols:
     @property
     def terminal_valid(self):
         """Only a row with a lexical realization can end a word walk."""
-        return self.valid & self.byte_valid.any(-1)
+        present = self.surface_present
+        if present is None:
+            present = self.byte_valid.any(-1)
+        return self.valid & present
 
     def reader_value(self, value, *, reference=None):
         """Shared snapshot scales retain an affine read, including the sum control.
@@ -121,8 +136,8 @@ class SentenceUnderstanding:
     constituent_families: torch.Tensor | None = None
     percept_expected: torch.Tensor | None = None
 
-    def reader_features(self, *, attention=None):
-        """Fixed linear summaries; all evidence is detached at this boundary.
+    def reader_features(self, *, attention=None, live=False):
+        """Fixed linear summaries with the selected training boundary.
 
         The numeric reader is affine in the root, end slots and echoic bank.
         Neither the compose journal nor original per-word values are evidence
@@ -137,7 +152,8 @@ class SentenceUnderstanding:
         end = self.primed.reader_value(end)
         bank = self.primed.reader_value(bank, reference=bank)
         from AttentionCredit import fixed_input
-        return fixed_input(torch.cat((root, end.flatten(1), bank), -1), attention)
+        value = torch.cat((root, end.flatten(1), bank), -1)
+        return value if live else fixed_input(value, attention)
 
     def detached(self):
         return type(self)(**{f.name: getattr(self, f.name).detach()
@@ -145,22 +161,36 @@ class SentenceUnderstanding:
                             for f in fields(self)})
 
     @classmethod
-    def select(cls, greedy, explore, wins):
-        values = {}
-        for field in fields(cls):
-            left, right = getattr(greedy, field.name), getattr(explore, field.name)
-            if field.name == 'primed':
-                if left is not right:
-                    raise RuntimeError('sentence trials must share their priming snapshot')
-                values[field.name] = left
-            elif left is None and right is None:
-                values[field.name] = None
-            elif left.ndim == 0:
-                values[field.name] = left.detach()
-            else:
-                gate = wins.reshape((-1,) + (1,) * (left.ndim-1))
-                values[field.name] = torch.where(gate, right, left).detach()
-        return cls(**values)
+    def select(cls, greedy, explore, wins, *, live=False, replay=None):
+        """Keep a complete record. A live mixed record comes from one replay."""
+        if greedy.primed is not explore.primed:
+            raise RuntimeError('sentence trials must share their priming snapshot')
+        if bool(wins.all()) or not bool(wins.any()):
+            selected = explore if bool(wins.all()) else greedy
+            return selected if live else selected.detached()
+        with torch.no_grad():
+            values = {}
+            for field in fields(cls):
+                left, right = getattr(greedy, field.name), getattr(explore, field.name)
+                if not torch.is_tensor(left) or left.ndim == 0:
+                    values[field.name] = left
+                else:
+                    gate = wins.reshape((-1,) + (1,) * (left.ndim-1))
+                    values[field.name] = torch.where(gate, right, left)
+            expected = cls(**values)
+        if not live:
+            return expected
+        if replay is None:
+            raise RuntimeError('live mixed sentence records require the selected compose replay')
+        selected = replay()
+        if selected.primed is not expected.primed:
+            raise RuntimeError('kept sentence replay changed its priming snapshot')
+        with torch.no_grad():
+            for field in fields(cls):
+                value, target = getattr(selected, field.name), getattr(expected, field.name)
+                if torch.is_tensor(target):
+                    torch._assert_async((value == target).all(), 'kept sentence replay changed ' + field.name)
+        return selected
 
 
 class SentenceRecordReader(nn.Module):
@@ -169,5 +199,5 @@ class SentenceRecordReader(nn.Module):
         super().__init__()
         self.weight = nn.Parameter(torch.zeros(int(output_size), 5*int(dimension)))
 
-    def forward(self, record, *, attention=None):
-        return F.linear(record.reader_features(attention=attention), self.weight)
+    def forward(self, record, *, attention=None, live=False):
+        return F.linear(record.reader_features(attention=attention, live=live), self.weight)

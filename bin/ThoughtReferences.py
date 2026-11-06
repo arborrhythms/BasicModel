@@ -69,6 +69,10 @@ def conclude_exhausted(meaning):
     that individual through the ordinary LTM writer; a rejected trial has
     no durable allocation. A region without source evidence remains open.
     """
+    # A closed answer already owns its checked proof. The source question's
+    # ignorance is relevant only while we are trying to fill a reference.
+    if not open_slots(meaning):
+        return meaning
     if tuple(bindings(meaning).get('_source_evidence', evidence_pair(meaning))) == (0., 0.):
         return with_slots(meaning, open_slots(meaning), pair=(0., 0.), source_evidence=(0., 0.))
     from Meaning import ConceptualMeaning

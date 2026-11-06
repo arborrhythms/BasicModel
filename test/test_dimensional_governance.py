@@ -169,7 +169,7 @@ def test_cs_ws_recurrent_input_mismatch_raises():
         _build_from_text(broken, "cs_ws_mismatch")
     msg = str(ei.value)
     assert "CS->WS recurrent input" in msg, msg
-    assert "999" in msg and "104" in msg, msg
+    assert "999" in msg and "360" in msg, msg
 
 
 def test_cs_os_direct_handoff_mismatch_raises():
@@ -184,7 +184,7 @@ def test_cs_os_direct_handoff_mismatch_raises():
         _build_from_text(broken, "ws_os_mismatch")
     msg = str(ei.value)
     assert "CS->OS handoff" in msg, msg
-    assert "8x104" in msg and "7x104" in msg, msg
+    assert "8x360" in msg and "7x360" in msg, msg
 
 
 @pytest.mark.slow

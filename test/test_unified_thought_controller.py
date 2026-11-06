@@ -89,6 +89,8 @@ def test_child_context_can_refine_before_returning_its_causal_result(monkeypatch
         if len(child_choices) > 2:
             return None
         target = "query" if len(child_choices) == 1 else "equal"
+        if len(child_choices) == 1:
+            assert not any(action is not None and action.semantic_id == 'equal' for action in actions)
         return next(action for action in actions
                     if action is not None and action.semantic_id == target)
 

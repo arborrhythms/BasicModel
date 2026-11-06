@@ -55,8 +55,13 @@ def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capa
         for row in set(owner._concept_allocator.layer()._tensor_row_keys) - word_rows:
             cid = owner.concept_id_at_row(row)
             assert 'concept' in owner._concept_allocator.symbol_types.get(cid, ())
-            assert all(isinstance(part, tuple) and part[0] == 'sym'
-                       for part in owner.concept_parts(cid))
+            for tag, identity in owner.concept_parts(cid):
+                assert tag in ('sym', 'occ')
+                if tag == 'occ':
+                    store = model.symbolSpace.ltm_store
+                    index = store.index_of_row(identity)
+                    assert index is not None
+                    assert store.order_of_row(index) + 1 == owner._concept_allocator.order_of(cid)
         assert cb.mereology.context_width == 128
     finally:
         model.End()

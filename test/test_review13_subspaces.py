@@ -20,6 +20,11 @@ def fixture(*, meaning_pairs=1, batch_size=1, property_width=0):
     cb = Codebook()
     cb.W = nn.Parameter(torch.zeros(32, width+2*meaning_pairs))
     cs.similarity_codebook = cb
+    # This fixture substitutes the native key width at construction. Its
+    # predictor must be constructed on that same width; runtime never resizes.
+    from Expectation import ActivationPredictor
+    with torch.random.fork_rng(devices=[]):
+        cs.concept_predictor = ActivationPredictor(cb.W.shape[-1])
     cb.enable_derived_codes(cs, percept_width=width, identity_width=3,
                             property_width=property_width, content_width=width+2*meaning_pairs)
     cs._online_learning_frozen = False

@@ -3,6 +3,7 @@ from dataclasses import replace
 from functools import wraps
 
 import torch
+from LTM1 import NULL_CONCEPT
 
 
 def kept_close(method):
@@ -94,12 +95,27 @@ def remember_context(owner, focal, support):
             [(owner.concept_id_at_row(row), weight) for row, weight in support.items()])
 
 
+def _ground_candidate_members(owner, cid, support):
+    """A current field witnesses its actual members in this epoch's LTM1."""
+    from LTM1 import SYMBOL
+    bank = owner._concept_allocator.parts
+    scale = max(1., max(support.values()))
+    for row, weight in support.items():
+        symbol = owner.concept_id_at_row(row)
+        if symbol is not None and symbol != cid and bank.find(symbol, cid) is None:
+            bank.add((SYMBOL, symbol), (SYMBOL, cid), truth_plus=weight/scale)
+
+
 def use_witnessed(owner, cid, support, batch):
     """A durable match is an access; new members extend coverage by maximum."""
     store = owner._concept_allocator.store_of(cid)
     accesses = next((value for role, value in store.constituents(cid) if role == 'familiar_access'), 0)
     store.set_role_constituents(cid, 'familiar_access', [accesses + 1])
     previous = witnessed_support(owner, cid)
+    if (cid in owner._concept_allocator.raised and owner._concept_source_order(cid) > 0
+            and owner._csw_row_of(cid) not in support
+            and any(role == 'candidate_support' for role, _ in store.constituents(cid))):
+        _ground_candidate_members(owner, cid, support)
     merged = {row: max(weight, previous.get(row, 0.)) for row, weight in support.items()}
     merged.update({row: weight for row, weight in previous.items() if row not in merged})
     if merged != previous and owner._csw_row_of(cid) not in merged:
@@ -233,7 +249,7 @@ def observe_field(owner, field=None, *, active_streams=None):
         if used:
             current = centroid(owner, used)
             for key, entry in tuple(owner.mtm.entries.items()):
-                cosine = torch.nn.functional.cosine_similarity(entry.value.to(current), current, dim=0)
+                cosine = torch.nn.functional.cosine_similarity(owner.mtm.value_of(key).to(current), current, dim=0)
                 if float(cosine) > owner.concept_use_floor:
                     owner.__dict__.setdefault('_field_activated_references', {}).setdefault(batch, set()).add(key)
     return activated
@@ -306,6 +322,8 @@ def open_sentence(model, sid, present):
     from ConceptEvidence import symbols
     readings = symbols(acts)
     addresses = owner._field_inventory_rows(acts.device)
+    from ConceptSpread import observe
+    observe(model, acts, addresses, present)
     seen = {}
     for b in range(len(present)):
         rows = addresses[:, b] if addresses.ndim == 2 else addresses
@@ -343,9 +361,13 @@ def member_row(owner, kind, identity):
 
 def class_members(owner, cid):
     from LTM1 import SYMBOL
+    if cid == NULL_CONCEPT:
+        return {}
     parts = owner._concept_allocator.parts
     members = {}
     for kind, identity in parts.parts((SYMBOL, cid)):
+        if not owner._concept_allocator.class_member((kind, identity), (SYMBOL, cid)):
+            continue
         row = member_row(owner, kind, identity)
         edge = parts.find((kind, identity), (SYMBOL, cid))
         weight = max(0., float(parts.truth_plus[edge]-parts.truth_minus[edge]))
@@ -358,6 +380,8 @@ def class_members(owner, cid):
 def cover_members(owner, cid, members):
     """The same sigma, location and form initialization for every raise."""
     from MemoryConsolidation import _fold
+    if cid == NULL_CONCEPT:
+        return
     members = {int(row): float(weight) for row, weight in members.items() if weight > 0}
     alloc = owner._concept_allocator
     alloc.symbol_types.setdefault(cid, set()).add('concept')
@@ -398,17 +422,21 @@ def commit_read_words(owner, reading, *, batch, document, position, clause=None,
     pool, store = owner.mtm, owner._closed_clause_store()
     occurrences = {}
     retained, pending = {}, [clause]
+    percept_leaves = set()
     while pending:
         node = pending.pop()
         if node is None:
             continue
         pending.extend((*node.children, *node.companions))
+        request = node.reference_request or {}
+        if request.get('sign_leaf') or request.get('no_op_leaf'):
+            percept_leaves.update(request['leaves'])
         term = node.composition
         location = (written or {}).get(id(node))
         if term is not None and len(term.leaves) == 1 and isinstance(location, int):
             retained[term.leaves[0]] = location
     for index, word in enumerate(reading.word_ids.tolist()):
-        if word <= 0 or owner.definitions.objects(word):
+        if word <= 0 or owner.definitions.objects(word) or index in percept_leaves:
             continue
         name = pool.names.get(('name', word))
         key = name.token if name is not None else next((name.token for name in pool.names.values()
@@ -421,7 +449,7 @@ def commit_read_words(owner, reading, *, batch, document, position, clause=None,
             '_open_references': (('referent',0),)})
         order = owner._concept_source_order(word)
         row = retained.get(index)
-        if (row is None or int(store.order[row]) != order
+        if (row is None or store.order_of_row(row) != order
                 or not torch.equal(store.slots[row], value.to(store.slots))):
             # This is a retained unknown referent, not an asserted answer.
             # Use the existing open-question storage contract and evidence.
@@ -435,7 +463,13 @@ def commit_read_words(owner, reading, *, batch, document, position, clause=None,
                   when=pool.closes.get(batch, 0)+1,
                   where=None if reading.symbol_where is None else reading.symbol_where[index])
         owner.__dict__.setdefault('_field_activated_references', {}).setdefault(batch, set()).add(occurrence)
+        if word in owner._concept_allocator.named_identities and pool.reading_of(key) == word:
+            promote_identity(owner, key, word=word)
     return occurrences
+
+
+class IdentityPromotionCapacityError(RuntimeError):
+    """The occurrence requires an identity in a fully occupied concept region."""
 
 
 @torch.no_grad()
@@ -457,6 +491,36 @@ def promote_identity(owner, key, *, word=None):
     if member_order < 0:
         record = None if index is None else store.raw_meaning_of(index)
         raise RuntimeError(f'identity promotion has no witnessed order: occurrence={origin!r}, record={record!r}')
+    # A lexical alias introduced by a bind is an observation of the token.
+    # Naming belongs to the token's introducing word or the kept definition.
+    introducing_word = pool.reading_of(key) if entry.kind != NULL_CONCEPT else None
+    if 'word' not in alloc.symbol_types.get(introducing_word, ()):
+        introducing_word = None
+    words = {name for name in (introducing_word, word) if name is not None}
+    known = set()
+    for name in words:
+        active = owner.interpret.denotations(name)
+        candidates = (*active, *owner.interpret.remembered_objects(name))
+        known.update(cid for cid in candidates if cid not in alloc.retired
+                     and alloc.order_of(cid) == member_order + 1)
+    if len(known) > 1:
+        forms = [owner.interpret.lexical_form(name) for name in sorted(words)]
+        raise ValueError(f'ambiguous identity promotion for words {sorted(words)} {forms}: denotations {sorted(known)}')
+    if known:
+        cid, = known
+        if cid in alloc.individuals:
+            alloc.store_of(cid).add_constituent(cid, 'part', ('occ', origin[-1]))
+        pool.promote(key, cid)
+        for name in words:
+            owner.interpret.define(name, cid)
+        return cid
+    from Spaces import ConceptRowCapacityError
+    try:
+        owner._preflight_concept_row(member_order + 1, context='MTM identity promotion')
+    except ConceptRowCapacityError as error:
+        raise IdentityPromotionCapacityError(
+            f'no order-{member_order + 1} concept seat for MTM identity at {origin!r} '
+            f'in the {int(owner.nVectors)}-row inventory') from error
     owner._preflight_concept_allocation(1, context='MTM identity promotion')
     cid = alloc.new_concept()
     # An identity's retained occurrence supplies its order. No grammar choice
@@ -471,15 +535,24 @@ def promote_identity(owner, key, *, word=None):
     alloc.individuals.add(cid)
     alloc.symbol_types.setdefault(cid, set()).update(('concept', 'object'))
     from MemoryConsolidation import _fold
-    actual = set(entry.occurrences) | {event.occurrence for event in entry.events if event.role == 0}
-    members = [store.location(address) for address in actual]
-    members = [row for row in members if isinstance(row, int) and int(store.order[row]) == 0]
+    # An event's branch and a standalone percept's origin identify actual
+    # observations. A grammatical mention may also occur on a modal branch.
+    actual = dict.fromkeys(event.occurrence for event in entry.events if event.role == 0)
+    for address in entry.occurrences:
+        index = store.location(address)
+        if isinstance(index, int) and store.order_of_row(index) == 0:
+            idea = store.raw_meaning_of(index)
+            if idea is not None and not dict(idea.bindings).get('_reference_sites'):
+                actual[address] = None
+    locations = (store.location(address) for address in actual)
+    members = [index for index in locations if isinstance(index, int)]
     form = _fold(owner, store, members)
-    value = entry.value if form is None else form
+    current = pool.value_of(key)
+    value = current if form is None else form
     owner.similarity_codebook.W[row].copy_(value.to(owner.similarity_codebook.W))
     derived = getattr(owner.similarity_codebook, 'mereology', None)
     if derived is not None:
-        derived.remember_content(row, entry.value)
+        derived.remember_content(row, current)
         from Occurrence import sentence_key
         streams = pool.accesses.get(key, {})
         batch = next(reversed(streams), 0) or 0
@@ -487,9 +560,6 @@ def promote_identity(owner, key, *, word=None):
             (owner.placement_context(batch), sentence_key([str(key).encode()])))
         derived.place_rows([row], context, close_key)
     pool.promote(key, cid)
-    words = {pool.reading_of(address) for address in entry.occurrences} - {None}
-    if word is not None:
-        words.add(word)
     for name in words:
         owner.interpret.define(name, cid)
     owner._priming_edge_revision = None
@@ -497,16 +567,22 @@ def promote_identity(owner, key, *, word=None):
 
 
 @torch.no_grad()
-def define_pending(owner, left, right, *, word=None):
+def define_pending(owner, left, right, *, word=None, other_word=None, null_referent=False):
     """Consume a kept equality/IS witness once its subject token is retained."""
     from LTM1 import SYMBOL, OCCURRENCE
-    from ConceptIndex import index_part_row, unbound_label
+    from ConceptIndex import unbound_label
     store = owner._closed_clause_store()
     reference = left[1] if left[0] == SYMBOL else (
         ('ltm', store.address_domain, left[1]) if left[0] == OCCURRENCE and store is not None else None)
     key = owner.mtm.token_of(reference)
+    if null_referent:
+        if word is not None or key is None or owner.mtm.entries[key].kind != NULL_CONCEPT:
+            raise ValueError(f'null-kind definition has no open token at {left!r}')
+        return _resolve_null_token(owner, key, left, right, other_word)
     if key is None and word is not None:
         key = owner.mtm.token_of(('name', int(word)))
+    if key is not None and owner.mtm.entries[key].kind == NULL_CONCEPT:
+        return _resolve_null_token(owner, key, left, right, other_word)
     if key is None or not owner.mtm.entries[key].pending or owner.mtm.entries[key].order is not None:
         return False
     # An unresolved or order-incompatible shared side is still a premise,
@@ -524,16 +600,60 @@ def define_pending(owner, left, right, *, word=None):
         return False
     cid = promote_identity(owner, key, word=word)
     if left != right:
-        parent = index_part_row(owner, (SYMBOL, cid), right)
-        if unbound_label(owner, right):
-            owner.interpret.define(right[1], parent)
+        from PartClosing import PartClosing
+        PartClosing(owner, store).observe_members((SYMBOL, cid), right, (left, right), (word, None))
+    return True
+
+
+def _resolve_null_token(owner, key, left, right, other_word):
+    """Resolve an occurrence from evidence, without naming its pointing word."""
+    from ConceptIndex import unbound_label
+    from LTM1 import OCCURRENCE, SYMBOL
+    from ChainRead import envelope
+    pool, alloc, store = owner.mtm, owner._concept_allocator, owner._closed_clause_store()
+    entry = pool.entries[key]
+    if left[0] != OCCURRENCE or envelope(store,left) not in entry.occurrences:
+        raise ValueError(f'perceptual token has no kept occurrence at {left!r}')
+    order = owner._concept_source_order(left[1]) + 1
+    label = right[1] if right[0] == SYMBOL and 'word' in alloc.symbol_types.get(right[1], ()) else other_word
+    target = right[1] if right[0] == SYMBOL and right[1] != label else None
+    if label not in (None,-1,0):
+        denoted = owner.interpret.denotations(label)
+        if len(denoted) == 1:
+            target = denoted[0]
+    if target is None and right[0] == OCCURRENCE:
+        other = pool.entries.get(pool.token_of(envelope(store,right)))
+        if other is not None:
+            target = other.symbol or other.native
+            if label in (None,-1,0):
+                label = pool.reading_of(envelope(store,right))
+    if target is None and label not in (None,-1,0) and unbound_label(owner,(SYMBOL,label)):
+        target = promote_identity(owner,key,word=label)
+    elif (target is not None and alloc.order_of(target) == order and
+          (target in alloc.individuals or 'object' in alloc.symbol_types.get(target, ()))):
+        pool.promote(key,target)
+    elif target is not None and alloc.order_of(target) >= 0:
+        pool.entries[key] = replace(entry,kind=target)
+        return True
+    else:
+        return False
+    pool.entries[key] = replace(pool.entries[key],kind=target)
+    row = alloc.parts.find(left,right)
+    for address in entry.occurrences:
+        member = (OCCURRENCE, address[-1])
+        if owner._concept_source_order(address[-1]) + 1 != alloc.order_of(target):
+            raise ValueError(f'witnessed member {address!r} disagrees with the order of {target}')
+        if (member, (SYMBOL,target)) != (left,right):
+            alloc.parts.add(member,(SYMBOL,target),truth_plus=float(alloc.parts.truth_plus[row]),
+                            truth_minus=float(alloc.parts.truth_minus[row]),when=alloc.parts.percept[row,4:])
+    alloc.settle(target)
     return True
 
 
 def finish_definitions(owner):
     pending = owner.__dict__.pop('_kept_definition_witnesses', ())
-    for left, right, word in pending:
-        define_pending(owner, left, right, word=word)
+    for left, right, word, other_word, null_referent in pending:
+        define_pending(owner, left, right, word=word, other_word=other_word, null_referent=null_referent)
 
 
 @torch.no_grad()
@@ -543,6 +663,8 @@ def promote_candidates(owner):
         return []
     result = []
     for key, entry in tuple(pool.entries.items()):
+        if entry.kind == NULL_CONCEPT:
+            continue
         if entry.symbol is not None:
             continue
         active = getattr(owner, '_mtm_active_streams', None)
@@ -567,8 +689,12 @@ def promote_candidates(owner):
             mentions = entry.refinement.get('mentions', {})
             # Several closing adapters can reference the same read site.
             # Recurrence counts distinct kept readings, not those aliases.
-            count = (len({(stream, clock) for stream, clock in mentions.values()
-                          if pool.closes.get(stream, 0)-clock <= pool.horizon})
+            # A mention of another word can bind this named token without
+            # witnessing recurrence of its introducing word.
+            named = key[1] if isinstance(key, tuple) and key[:1] == ('name',) else None
+            count = (len({(stream, clock) for address, (stream, clock) in mentions.items()
+                          if address in entry.occurrences and (named is None or pool.reading_of(address) == named)
+                          and pool.closes.get(stream, 0)-clock <= pool.horizon})
                      if pool.closes else len(entry.occurrences))
         else:
             count = len(readings) if readings else entry.count
@@ -585,6 +711,24 @@ def promote_candidates(owner):
             continue
         entry = replace(entry, support=support)
         pool.entries[key] = entry
+        if entry.order > 0:
+            orders = {symbol: alloc.order_of(symbol) for row in support
+                      if (symbol := owner.concept_id_at_row(row)) is not None}
+            if not orders or min(orders.values()) < 0:
+                raise ValueError(f'MTM candidate {key!r} has unwitnessed member orders {orders!r}')
+            order = 1 + max(orders.values())
+            if order != entry.order:
+                # The open field is addressed by its focal row. A class from
+                # this same support can sit one order above its highest member.
+                existing = witnessed_match(owner, order, support)
+                if existing is not None:
+                    use_witnessed(owner, existing, support, next(iter(pool.accesses.get(key, {})), 0))
+                    pool.promote(key, existing)
+                    result.append(existing)
+                    continue
+        else:
+            order = 0
+        owner._preflight_concept_row(order, context='MTM candidate promotion')
         owner._preflight_concept_allocation(1, context='MTM candidate promotion')
         cid = alloc.new_concept()
         literal = entry.refinement.get('literal')
@@ -603,14 +747,14 @@ def promote_candidates(owner):
                 if symbol is not None:
                     alloc.store_of(cid).add_constituent(cid, 'part', ('field', symbol, weight/scale))
         else:
-            from LTM1 import SYMBOL
-            scale = max(1., max(entry.support.values()))
-            for member, weight in entry.support.items():
-                symbol = owner.concept_id_at_row(member)
-                if symbol is not None:
-                    alloc.parts.add((SYMBOL, symbol), (SYMBOL, cid), truth_plus=weight/scale)
-            alloc.settle(cid)
-        row = owner._csw_concept_row(alloc.order_of(cid), cid)
+            _ground_candidate_members(owner, cid, entry.support)
+        # Keep the order the actual parts derive when their historical
+        # grounding is withdrawn at the next epoch boundary.
+        derived = alloc.settle(cid)
+        if derived != order:
+            raise ValueError(f'MTM candidate {key!r} derives order {derived}, expected {order}')
+        alloc.reference_orders[cid] = derived
+        row = owner._csw_concept_row(derived, cid)
         if row is None:
             raise RuntimeError('candidate promotion exceeds the constructed inventory')
         pool.promote(key, cid)

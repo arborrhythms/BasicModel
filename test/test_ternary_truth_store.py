@@ -148,10 +148,9 @@ class TestPersistence(unittest.TestCase):
 
 
 class TestOriginProvenance(unittest.TestCase):
-    """Per-row writer provenance: the ``origin`` column + host-side source
-    text distinguish conversation / provisioned / user rows sharing the
-    store, and ``clear_origin`` gives runtime user rows replace-on-resubmit
-    semantics without touching the other writers' rows."""
+    """Input documents distinguish conversation, provisioned and user evidence.
+    Replacing a user document preserves other writers’ occurrences and texts.
+    """
 
     def test_append_defaults_conversation_origin(self):
         from Layers import LTM0 as T
@@ -165,7 +164,7 @@ class TestOriginProvenance(unittest.TestCase):
         from Layers import LTM0 as T
         s = _store()
         s.append_idea(_v(1), trust=0.4)
-        s.set_origin(0, T.ORIGIN_USER, text="the cat sat")
+        s.set_origin(0, T.ORIGIN_USER, text="the cat sat", asserted=(float(s.truth_plus[0]), float(s.truth_minus[0])))
         r = s.row(0)
         self.assertEqual(r['origin'], T.ORIGIN_USER)
         self.assertEqual(r['text'], "the cat sat")
@@ -176,18 +175,18 @@ class TestOriginProvenance(unittest.TestCase):
         from Layers import LTM0 as T
         s = _store()
         with self.assertRaises(IndexError):
-            s.set_origin(0, T.ORIGIN_USER)
+            s.set_origin(0, T.ORIGIN_USER, asserted=(float(s.truth_plus[0]), float(s.truth_minus[0])))
 
     def test_rows_of_origin_filters_in_row_order(self):
         from Layers import LTM0 as T
         s = _store()
-        s.append_idea(_v(1))                       # 0: conversation
-        s.append_idea(_v(2))                       # 1: -> provisioned
-        s.append_idea(_v(3))                       # 2: -> user
-        s.append_idea(_v(4))                       # 3: -> user
-        s.set_origin(1, T.ORIGIN_PROVISIONED, text="p")
-        s.set_origin(2, T.ORIGIN_USER, text="u1")
-        s.set_origin(3, T.ORIGIN_USER, text="u2")
+        s.append_idea(_v(1), document_key='conversation')
+        s.append_idea(_v(2), document_key='provisioned')
+        s.append_idea(_v(3), document_key='user', sentence_index=0)
+        s.append_idea(_v(4), document_key='user', sentence_index=1)
+        s.set_origin(1, T.ORIGIN_PROVISIONED, text="p", asserted=(float(s.truth_plus[1]), float(s.truth_minus[1])))
+        s.set_origin(2, T.ORIGIN_USER, text="u1", asserted=(float(s.truth_plus[2]), float(s.truth_minus[2])))
+        s.set_origin(3, T.ORIGIN_USER, text="u2", asserted=(float(s.truth_plus[3]), float(s.truth_minus[3])))
         self.assertEqual(
             s.rows_of_origin(T.ORIGIN_CONVERSATION).tolist(), [0])
         self.assertEqual(
@@ -201,13 +200,13 @@ class TestOriginProvenance(unittest.TestCase):
     def test_clear_origin_compacts_survivors_in_place(self):
         from Layers import LTM0 as T
         s = _store()
-        s.append_idea(_v(1), trust=0.1)            # 0: conversation
-        s.append_idea(_v(2), trust=0.2)            # 1: user
-        s.append_idea(_v(.3),trust=.3)   # 2: prov
-        s.append_idea(_v(4), trust=0.4)            # 3: user
-        s.set_origin(1, T.ORIGIN_USER, text="u1")
-        s.set_origin(2, T.ORIGIN_PROVISIONED, text="p")
-        s.set_origin(3, T.ORIGIN_USER, text="u2")
+        s.append_idea(_v(1), trust=.1, document_key='conversation')
+        s.append_idea(_v(2), trust=.2, document_key='user', sentence_index=0)
+        s.append_idea(_v(.3), trust=.3, document_key='provisioned')
+        s.append_idea(_v(4), trust=.4, document_key='user', sentence_index=1)
+        s.set_origin(1, T.ORIGIN_USER, text="u1", asserted=(float(s.truth_plus[1]), float(s.truth_minus[1])))
+        s.set_origin(2, T.ORIGIN_PROVISIONED, text="p", asserted=(float(s.truth_plus[2]), float(s.truth_minus[2])))
+        s.set_origin(3, T.ORIGIN_USER, text="u2", asserted=(float(s.truth_plus[3]), float(s.truth_minus[3])))
         removed = s.clear_origin(T.ORIGIN_USER)
         self.assertEqual(removed, 2)
         self.assertEqual(len(s), 2)
@@ -220,7 +219,7 @@ class TestOriginProvenance(unittest.TestCase):
         self.assertEqual(r1['text'], "p")
         # vacated tail rows are zeroed
         self.assertEqual(float(s.slots[2:4].abs().sum()), 0.0)
-        self.assertEqual(int(s.origin[2:4].abs().sum()), 0)
+        self.assertEqual(s.document_keys[2:4].count_nonzero(), 0)
         # the clock is NOT rewound: the next append lands after row 3's tick
         r = s.append_idea(_v(9))
         # idempotent: nothing left of that origin
@@ -230,7 +229,7 @@ class TestOriginProvenance(unittest.TestCase):
         from Layers import LTM0 as T
         s = _store()
         s.append_idea(_v(1))
-        s.set_origin(0, T.ORIGIN_USER, text="u")
+        s.set_origin(0, T.ORIGIN_USER, text="u", asserted=(float(s.truth_plus[0]), float(s.truth_minus[0])))
         s.reset()
         self.assertEqual(s._texts, [])
         s.append_idea(_v(2))
@@ -242,9 +241,11 @@ class TestOriginProvenance(unittest.TestCase):
         from Layers import LTM0 as T
         s = _store()
         s.append_idea(_v(1))
-        s.set_origin(0, T.ORIGIN_USER, text="u")
+        s.set_origin(0, T.ORIGIN_USER, text="u", asserted=(float(s.truth_plus[0]), float(s.truth_minus[0])))
         sd = s.state_dict()
-        self.assertIn('origin', sd)
+        self.assertIn('addressing.source_documents', sd)
+        self.assertIn('addressing.source_authorities', sd)
+        self.assertNotIn('origin', sd)
         s2 = _store()
         s2.load_state_dict(sd)
         r = s2.row(0)

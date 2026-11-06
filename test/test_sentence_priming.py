@@ -1,25 +1,33 @@
-"""Sentence priming is row-local and uses the placed conceptual neighbourhood."""
+"""Predicted sentence spread and the observed placement ledger are row-local."""
 import torch
 from test_priming_energy import _chain_cs
 
 
-def test_serial_reading_diffuses_over_placed_rows(monkeypatch):
+def test_serial_reading_keeps_prediction_separate_from_placed_rows(monkeypatch):
     cs, first, _ = _chain_cs()
     monkeypatch.setattr(cs, '_sparse_active', lambda: False)
     cs.prime_seen(torch.tensor([[3]]))
-    surface = cs.prime_seen(torch.tensor([[3]]))
-    assert surface.shape == (1, cs._priming_dim())
-    assert surface[0, first] > 1
+    assert cs.prime_seen(torch.tensor([[3]])).eq(1).all()
+    cs._expected_knowing[0,first]=torch.tensor([.2,.7])
+    surface=cs.relevance_weights(batch=1)
+    assert surface.shape==(1,cs._priming_dim())
+    torch.testing.assert_close(surface[0,first],torch.tensor(1.7))
+    assert cs.placement_context(0)[3]>0 and cs.placement_context(0)[first]==0
 
 
 def test_batch_rows_never_prime_each_other():
     cs, first, _ = _chain_cs()
-    surface = cs.prime_seen(torch.tensor([[3], [6]]))
-    assert surface.shape == (2, cs._priming_dim())
-    assert surface[0, 3] == 1.5 and surface[1, 3] == 1
-    assert surface[0, 6] == 1 and surface[1, 6] == 1.5
-    surface = cs.prime_seen(torch.tensor([[3], [6]]))
-    assert surface[0, first] > 1 and surface[1, first] == 1
+    cs._expected_knowing[0,3,0]=.5
+    cs._expected_knowing[1,6,1]=.5
+    surface=cs.prime_seen(torch.tensor([[3],[6]]))
+    assert surface.shape==(2,cs._priming_dim())
+    assert surface[0,3]==1.5 and surface[1,3]==1
+    assert surface[0,6]==1 and surface[1,6]==1.5
+    before=surface.clone()
+    assert torch.equal(cs.prime_seen(torch.tensor([[3],[6]])),before)
+    assert cs.placement_context(0)[3]==2 and cs.placement_context(0)[6]==0
+    assert cs.placement_context(1)[6]==2 and cs.placement_context(1)[3]==0
+    assert cs.placement_context(0)[first]==0
 
 
 def test_part_graph_uses_the_constructed_relation_capacity(monkeypatch):

@@ -1,4 +1,4 @@
-"""Bounded identities, current values and mention readings between kept closes."""
+"""Bounded identity references and event states between kept closes."""
 from dataclasses import dataclass, field, replace
 import copy
 from typing import NamedTuple
@@ -65,10 +65,11 @@ class Token:
 
 
 class MediumTermMemory:
-    """An introducing occurrence owns one value; names share that identity.
+    """Names share an identity read from its references until its first event.
 
     Mutation belongs to a kept close. The pool ends the sentence's graph;
-    trial-local values live in the shared STM chunks.
+    trial-local values live in the shared STM chunks. After an event, each
+    timeline retains its state. Neither read changes the stored layout.
     Mention membership, used by the settled-join guard, excludes events.
     """
 
@@ -159,11 +160,22 @@ class MediumTermMemory:
                      if any(event.occurrence == occurrence and event.role == 0
                             for timeline in entry.timelines for event in timeline.events)), None)
 
-    def _room(self):
+    def keep_access(self, reference, stream):
+        """Mark an actual use at the kept close before another seat is opened."""
+        key = self.token_of(reference)
+        if key is not None:
+            self.accesses.setdefault(key, {})[stream] = self.closes.get(stream, 0) + 1
+
+    def _room(self, retain=()):
         if len(self.entries) >= self.capacity:
-            # The common access clock governs both kinds of entry.
-            oldest = min(self.entries, key=lambda key: (
-                max(self.accesses.get(key, {}).values(), default=-1), self.entries[key].when))
+            protected = {self.token_of(reference) for reference in retain}
+            def recency(key):
+                uses = self.accesses.get(key, {})
+                current = any(tick > self.closes.get(stream, 0) for stream, tick in uses.items())
+                return current, max(uses.values(), default=-1), self.entries[key].when
+            oldest = min((key for key in self.entries if key not in protected), key=recency, default=None)
+            if oldest is None:
+                raise RuntimeError(f'MTM capacity {self.capacity} exhausted by pending definition operands')
             self._detach(oldest)
 
     def _support(self, support):
@@ -190,7 +202,7 @@ class MediumTermMemory:
 
     def match_candidate(self, order, value):
         value = self._value(value)
-        scored = [(float(torch.nn.functional.cosine_similarity(entry.value.to(value), value, dim=0)), key)
+        scored = [(float(torch.nn.functional.cosine_similarity(self.value_of(key).to(value), value, dim=0)), key)
                   for key, entry in self.entries.items() if entry.order == order]
         score, key = max(scored, key=lambda item: item[0], default=(-1., None))
         return key if score >= self.match_cos else None
@@ -249,12 +261,83 @@ class MediumTermMemory:
         name = self.names.get(occurrence)
         return None if name is None else name.reading
 
-    def value_of(self, reference):
-        token = self.token_of(reference)
-        return None if token is None else self.entries[token].value
+    def value_of(self, reference, *, timeline=0, live_candidate=False, references=None):
+        """Read held state after an event, otherwise join the live references.
 
-    def open(self, occurrence, *, kind, when, value, reading=None, native=None, pending=None, where=None, transient=None):
+        The model's meanings are detached at this host boundary, just as the
+        stored MTM state is. Standalone numerical pools have no dictionary or
+        occurrence owner and retain their explicit value API.
+        """
+        token = self.token_of(reference)
+        if token is None:
+            return None
+        entry = self.entries[token]
+        if type(timeline) is not int or not 0 <= timeline < len(entry.timelines):
+            raise ValueError(f'identity {token!r} has no timeline {timeline}')
+        stored = entry.timelines[timeline].value
+        owner_reference = getattr(self, '_owner', None)
+        if owner_reference is None:
+            from Occurrence import AddressIndex
+            held_names = [(address, name.reading) for address, name in self.names.items()
+                          if name.token == token]
+            semantic = any(reading is not None or AddressIndex.key(address) != address or
+                           isinstance(address, tuple) and address[:1] in (('name',), ('stm',), ('sym',))
+                           for address, reading in held_names)
+            if semantic or entry.native is not None or entry.symbol is not None:
+                raise ValueError(f'identity {token!r} holds references without an owner')
+            return stored
+        owner = owner_reference()
+        if owner is None:
+            raise ValueError(f'identity {token!r} has lost its reference owner')
+        if timeline or any(branch.events for branch in entry.timelines):
+            return stored
+        derived = getattr(owner.similarity_codebook, 'mereology', None)
+        start = 0 if derived is None else derived.percept_event_width
+        if getattr(derived, 'meaning_pairs', None) == 0 or start == stored.numel():
+            return stored
+        if entry.order is not None:
+            # Consolidation candidates have weighted concept support rather
+            # than mention names. Their existing live read remains separate.
+            from FamiliarTier import centroid
+            value = centroid(owner, entry.support)
+            return value if live_candidate else self._value(value)
+        if references is None:
+            references = [(address, name.reading) for address, name in self.names.items()
+                          if name.token == token]
+        held = tuple(dict.fromkeys(cid for cid in (entry.native, entry.symbol) if cid is not None))
+        if not references and not held:
+            raise ValueError(f'identity {token!r} has no name or mention references')
+        store, joined = owner._closed_clause_store(), None
+        alloc = owner._concept_allocator
+        for address, reading in (*references, *((('sym', cid), cid) for cid in held)):
+            is_word = reading is not None and 'word' in alloc.symbol_types.get(reading, ())
+            if is_word or address[:1] == ('sym',):
+                concept = owner.interpret.referent(reading) if is_word else reading
+                row = owner._csw_row_of(concept)
+                if row is None:
+                    raise ValueError(f'identity {token!r} reference {address!r} has unavailable reading {reading}, concept {concept}')
+                value = owner.similarity_codebook.lookup_rows([row])[0]
+            else:
+                location = None if store is None else store.location(address)
+                if not isinstance(location, int):
+                    raise ValueError(f'identity {token!r} has unavailable occurrence reference {address!r}')
+                value = store.point_of_row(address[-1])
+            if value is None:
+                raise ValueError(f'identity {token!r} reference {address!r} has no content')
+            if value.shape != stored.shape:
+                raise ValueError(f'identity {token!r} reference {address!r} has a different content width')
+            value = self._value(value).to(stored)
+            joined = value if joined is None else torch.maximum(joined, value)
+        current = stored.detach().clone()
+        current[start:] = joined[start:]
+        return current
+
+    def open(self, occurrence, *, kind, when, value, reading=None, native=None, pending=None, where=None,
+             transient=None, retain=()):
         value = self._value(value)
+        previous = self.reading_of(occurrence)
+        if previous is not None:
+            reading = previous
         pending = kind is None if pending is None else pending
         if type(pending) is not bool or (pending and kind is not None):
             raise ValueError('a pending identity has no resolved kind')
@@ -263,11 +346,11 @@ class MediumTermMemory:
         if occurrence in self.entries:
             entry = self.entries[occurrence]
             self.entries[occurrence] = entry.with_actual(count=entry.count + 1,
-                when=when, value=torch.maximum(entry.value.to(value), value),
+                when=when, value=torch.maximum(self.value_of(occurrence).to(value), value),
                 pending=entry.pending and pending, where=self._where(where, entry.where))
             self.names[occurrence] = Name(occurrence, reading)
             return occurrence
-        self._room()
+        self._room(retain)
         identity = self._allocate_id(transient)
         self.entries[occurrence] = Token((occurrence,), kind, 1, when, (Timeline((), value),),
             native=native, pending=pending, transient=identity, where=self._where(where))
@@ -298,19 +381,24 @@ class MediumTermMemory:
         if token is None:
             # Losing track does not resurrect an evicted introduction.
             return self.open(occurrence, kind=kind, when=when, value=value, reading=reading, where=where)
+        # Binding can move a retained occurrence to a new token. Its
+        # observed reading belongs to the occurrence, including after a move.
+        previous = self.reading_of(occurrence)
+        if previous is not None:
+            reading = previous
         if self.token_of(occurrence) != token:
             self._detach(occurrence)
         entry = self.entries[token]
         uses = entry.occurrences
         if occurrence not in uses:
             uses += (occurrence,)
-        joined = entry.value if value is None else torch.maximum(entry.value.to(value), self._value(value))
+        current = self.value_of(token)
+        joined = current if value is None else torch.maximum(current.to(value), self._value(value))
         self.entries[token] = entry.with_actual(occurrences=uses,
             kind=kind if entry.kind is None else entry.kind,
             pending=entry.pending and kind is None,
             count=entry.count + 1, when=when, value=joined, where=self._where(where, entry.where))
-        previous = self.names.get(occurrence)
-        self.names[occurrence] = Name(token, previous.reading if reading is None and previous else reading)
+        self.names[occurrence] = Name(token, reading)
         return token
 
     def alternative(self, token, *, when, before=None):
@@ -320,7 +408,7 @@ class MediumTermMemory:
             raise ValueError('an alternative requires a retained identity')
         entry = self.entries[key]
         if len(entry.timelines) == 1:
-            value = entry.value.clone() if before is None else self._value(before)
+            value = self.value_of(key).clone() if before is None else self._value(before)
             if value.shape != entry.value.shape:
                 raise ValueError('alternative value has a different width')
             self.entries[key] = replace(entry, when=when,
@@ -334,6 +422,8 @@ class MediumTermMemory:
         entry = self.entries[key]
         if type(timeline) is not int or not 0 <= timeline < len(entry.timelines):
             raise ValueError('cannot update an absent timeline')
+        if not any(branch.events for branch in entry.timelines):
+            raise ValueError(f'cannot update identity {key!r} without an event; retain its written reference')
         value = self._value(value)
         if value.shape != entry.value.shape:
             raise ValueError('timeline value has a different width')
@@ -350,6 +440,7 @@ class MediumTermMemory:
         if type(timeline) is not int or not 0 <= timeline < len(entry.timelines):
             raise ValueError('an event requires a retained timeline')
         old = entry.timelines[timeline]
+        current = (self.value_of(key), *(item.value for item in entry.timelines[1:]))
         if case_value is not None and (self._value(case_value).shape != old.value.shape or
                                      bool(((case_value < 0) | (case_value > 1)).any())):
             raise ValueError('an event case test requires its native content shape and chart')
@@ -367,7 +458,7 @@ class MediumTermMemory:
         else:
             events = (*old.events, event)
         self.entries[key] = replace(entry, when=when, timelines=tuple(
-            Timeline(events, item.value) if index == timeline else item
+            Timeline(events if index == timeline else item.events, current[index])
             for index, item in enumerate(entry.timelines)))
 
     def _detach(self, occurrence):
@@ -408,7 +499,7 @@ class MediumTermMemory:
             count=antecedent.count + previous.count, when=when,
             kind=previous.kind if antecedent.kind is None else antecedent.kind,
             pending=antecedent.pending and previous.pending,
-            value=torch.maximum(antecedent.value, previous.value.to(antecedent.value)),
+            value=torch.maximum(self.value_of(target), self.value_of(source).to(antecedent.value)),
             events=antecedent.events + tuple(event for event in previous.events
                 if not any((other.occurrence, other.role) == (event.occurrence, event.role)
                            for other in antecedent.events)))

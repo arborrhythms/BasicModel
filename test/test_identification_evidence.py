@@ -16,7 +16,7 @@ def store_and_clause():
     return store, Clause(ConceptualMeaning.from_description(point), point=point)
 
 
-def test_source_trust_enters_the_positive_pole():
+def test_source_authority_enters_the_positive_pole():
     store, clause = store_and_clause()
     row = store.write_clause(clause, trust=.8)
     assert store.row(row)['trust'] == pytest.approx(.8)
@@ -39,14 +39,29 @@ def test_pair_retains_both_and_neither_until_explicit_signed_reassertion():
     assert store.row(both)['trust'] == pytest.approx(.7)
 
 
+def recorded_clause(store, clause, order, evidence):
+    from ClauseRow import Composition
+    from order_fixtures import force_order
+    owner = store._concept_owner()
+    concept = owner.new_concept()
+    force_order(owner, concept, order)
+    owner._concept_allocator.symbol_types[concept] = {'concept'}
+    return replace(clause, composition=Composition(clause.point, reference=concept, order=order),
+                   order=order, evidence=evidence)
+
+
 def test_clause_order_and_evidence_are_stored_without_a_program():
     store, clause = store_and_clause()
-    clause = replace(clause, order=3, evidence=(.75, .5))
+    clause = recorded_clause(store, clause, 3, (.75, .5))
     row = store.write_clause(clause)
     assert store.row(row)['order'] == 3
     assert store.row(row)['evidence'] == pytest.approx((.75, .5))
     restored = LTM0(4, capacity=8)
+    from types import SimpleNamespace
+    from ClauseRow import attach_clause_index
+    attach_clause_index(SimpleNamespace(), restored, store._concept_owner())
     restored.load_state_dict(store.state_dict(), strict=True)
+    restored.load_semantic_extras(store.semantic_extras())
     assert restored.row(row)['order'] == 3
     assert restored.row(row)['trust'] == pytest.approx(.25)
     assert restored.row(row)['evidence'] == pytest.approx((.75, .5))
@@ -55,9 +70,9 @@ def test_clause_order_and_evidence_are_stored_without_a_program():
 
 def test_row_compaction_preserves_each_order_and_pole():
     store, clause = store_and_clause()
-    first = store.write_clause(replace(clause, order=1, evidence=(.2, .1)))
-    store.set_origin(first, store.ORIGIN_USER)
-    second = store.write_clause(replace(clause, order=3, evidence=(.6, .5)), document_key='second')
+    first = store.write_clause(recorded_clause(store, clause, 1, (.2, .1)))
+    store.set_origin(first, store.ORIGIN_USER, asserted=(float(store.truth_plus[first]), float(store.truth_minus[first])))
+    second = store.write_clause(recorded_clause(store, clause, 3, (.6, .5)), document_key='second')
     occurrence = store.occurrence_of(second)
     assert store.clear_origin(store.ORIGIN_USER) == 1
     assert store.occurrence_of(0) == occurrence
@@ -87,7 +102,8 @@ def test_open_reading_keeps_both_poles_and_its_order(monkeypatch):
         leaf_evidence=torch.tensor([[.8, .7], [.6, 0.]]))
     clause = finish_reading(fixture.language, reading, registry=fixture.registry)
     row = fixture.store.write_clause(clause)
-    assert fixture.store.row(row)['order'] == 3
+    assert clause.order == 3
+    assert fixture.store.row(row)['order'] == 0
     assert fixture.store.row(row)['evidence'] == pytest.approx((.6, .7))
     assert fixture.store.row(row)['trust'] == pytest.approx(-.1)
 
@@ -116,11 +132,11 @@ def test_old_scalar_checkpoint_does_not_invent_evidence_or_order():
     store.write_clause(clause, trust=.8)
     state = store.state_dict()
     state['trust'] = torch.full((store.capacity,), .8)  # legacy provenance
-    for name in ('order', 'c_plus', 'c_minus'):
+    for name in ('truth_plus', 'truth_minus'):
         del state[name]
     restored = LTM0(4, capacity=8)
     state['truth_schema'].fill_(10)
-    with pytest.raises(ValueError, match='layout checkpoint version'):
+    with pytest.raises(ValueError, match='checkpoint column: trust'):
         restored.load_state_dict(state, strict=True)
     assert len(restored) == 0
 

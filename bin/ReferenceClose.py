@@ -9,6 +9,7 @@ from dataclasses import replace
 import hashlib
 
 import torch
+from LTM1 import NULL_CONCEPT
 from torch import nn
 from IdentityRows import meet_ratios
 
@@ -19,7 +20,7 @@ def constituents(clause):
         if id(node) in seen:
             return
         seen.add(id(node))
-        if node.reference_request is not None and (node.order == 1 or 'compose_bind' in node.reference_request or 'reading_identity' in node.reference_request):
+        if node.reference_request is not None and (node.order == 1 or 'compose_bind' in node.reference_request or 'reading_identity' in node.reference_request or node.reference_request.get('interpret_leaf') or (node.reference_request.get('sign_leaf') or node.reference_request.get('no_op_leaf'))):
             result.append(node)
         for child in (*node.children, *node.companions):
             visit(child)
@@ -125,12 +126,36 @@ class ReferenceClose(nn.Module):
                 identity = dict(self.store.raw_meaning_of(location).bindings).get('_identity')
                 token = mtm.token_of(identity)
             if token is not None:
-                return mtm.entries[token].kind
+                kind = mtm.entries[token].kind
+                return None if kind == NULL_CONCEPT else kind
         return None
 
     def token_value(self, reference):
         """Read the identity's current value, never a union of past states."""
         return self.components.owner.mtm.value_of(reference)
+
+    def is_forward_placeholder(self, reference, name):
+        """A forward name and its own objects do not supply its missing referent.
+
+        A selected arrival can resolve the kind without replacing the token's
+        original naming symbol. That resolved kind takes precedence here.
+        Anonymous recursive identities have no forward name and remain legal.
+        """
+        if name is None:
+            return False
+        owner = self.components.owner
+        pool = owner.mtm
+        entry = pool.entries.get(pool.token_of(reference))
+        if entry is None:
+            referents = (self._derivation_symbol(reference),)
+        elif entry.kind not in (None, NULL_CONCEPT):
+            referents = (entry.kind,)
+        else:
+            referents = tuple(value for value in (entry.native, entry.symbol)
+                              if value is not None)
+        own = {name, *owner.definitions.objects(name),
+               *owner.interpret.remembered_objects(name)}
+        return bool(referents) and all(value in own for value in referents)
 
     def history_value(self, reference):
         """Diagnostic union of historical mentions; no live reader uses this."""
@@ -144,7 +169,7 @@ class ReferenceClose(nn.Module):
             return None
         value = value.detach().clone()
         location = self.store.location(token)
-        if entry.kind is not None and self.store.raw_meaning_of(location).role_refs[0] is None:
+        if entry.kind not in (None, NULL_CONCEPT) and self.store.raw_meaning_of(location).role_refs[0] is None:
             kind = self.store._concept_point(entry.kind)
             if kind is not None:
                 size = min(value.numel(), kind.numel())
@@ -218,6 +243,9 @@ class ReferenceClose(nn.Module):
                         and (stream >= store.stream.shape[1] or not bool(store.stream[row,stream]))):
                     continue
                 tokens.append(key)
+        names = {}
+        for address, name in pool.names.items():
+            names.setdefault(name.token, []).append((address, name.reading))
         for position, key in enumerate(dict.fromkeys(tokens)):
             entry = pool.entries[key]
             if entry.order is not None:
@@ -230,13 +258,14 @@ class ReferenceClose(nn.Module):
             uses = [(occurrence,store.location(occurrence)) for occurrence in entry.occurrences]
             uses = [(occurrence,row) for occurrence,row in uses if isinstance(row,int)]
             times = [int(encoder().decode_index(store.entry_when(row))) for _,row in uses]
+            value = pool.value_of(key, references=names.get(key, ()))
             for use,(occurrence,location) in enumerate(uses):
                 following = times[use+1] if use+1 < len(times) else float('inf')
                 events = [event for event in entry.events if times[use] <= event.when < following]
                 event = events[-1] if events else None
                 records[occurrence[-1]] = location, dict(role=0 if event is None else event.role,
                     position=(position,use), identity=entry.native or key,token=key,
-                    value=entry.value, mention_value=store.point_of_row(occurrence[-1]),
+                    value=value, mention_value=store.point_of_row(occurrence[-1]),
                     predicate=None if event is None else event.verb)
         return records
 
@@ -254,7 +283,8 @@ class ReferenceClose(nn.Module):
                         position=(position, 0), identity=identity)
             activations = list(frame.activations)
             location = store.location(frame.row_id)
-            if (isinstance(location, int) and int(store.order[location]) == 1
+            if (isinstance(location, int) and (mtm.token_of(store.occurrence_of(location)) is not None
+                                                or store.order_of_row(location) == 1)
                     and not any(item[0] == store.occurrence_of(location) for item in activations)):
                 activations.append((store.occurrence_of(location), None, 0))
             for token, entry in (() if frame.activations else mtm.entries.items()):
@@ -285,13 +315,9 @@ class ReferenceClose(nn.Module):
                      else context['identity'] or self.store.occurrence_of(location)
                      for location, context in self.context_records((frame,)).values())
 
-    def logits(self, features, cue=None, *, supervised=False):
-        """One factored score; known antecedents train content and form."""
-        policy = self.policy.clone()
-        if supervised:
-            train = torch.tensor([True,True,False,False,True,False,False,False],device=policy.device)
-            policy = torch.where(train,policy,policy.detach())
-        return features @ policy
+    def logits(self, features, cue=None):
+        """Score the retained alternatives for the ordinary departure choice."""
+        return features.detach() @ self.policy.clone()
 
     def cue(self, value):
         # A form identifies the symbol whose learned conceptual region is
@@ -304,11 +330,15 @@ class ReferenceClose(nn.Module):
         from itertools import combinations
         observed = []
         for row in range(len(self.store)):
-            if int(self.store.order[row]) != 1:
-                continue
+            if self.store.order_of_row(row) != 1:
+                # A kept mention is still an observation of an individual when
+                # its stored referent is the concrete description it came from.
+                meaning = self.store.raw_meaning_of(row)
+                if meaning is None or not dict(meaning.bindings).get('_reference_sites'):
+                    continue
             value = self.coordinates(self.store.slots[row])
             observed.append((set((value >= .3).nonzero().flatten().tolist()),
-                             int(self.store.witness_count[row])))
+                             int(self.store.access_count[row])))
         counts = {}
         for members, count in observed:
             for coordinate in members:
@@ -413,7 +443,8 @@ class ReferenceClose(nn.Module):
                     value = member['content'][:width]
                     return bool(((value >= .3) & (initial[:value.numel()] < .3)).any())
                 newer_a, newer_b = [x for x in a if new_support(x)], [x for x in b if new_support(x)]
-                common = any(float(meet_ratios(x['content'], y['content'])[1]) >= .9
+                common = any(any(bool(coverage == 1) for coverage in
+                    meet_ratios(x['content'], y['content']))
                     and predicate(x) == predicate(y) for x in newer_a for y in newer_b)
                 if common and not any(contradicts(x['content'], y['content']) for x in a for y in b):
                     groups[left].extend(groups.pop(right))
@@ -456,6 +487,8 @@ class ReferenceClose(nn.Module):
             if any(contradicts(own, value) for own in constraints):
                 continue
             candidate_coverage,request_coverage = meet_ratios(content,value)
+            if not bool((candidate_coverage == 1) | (request_coverage == 1)):
+                continue
             form = (content.sum()*0 if region is None else meet_ratios(region.to(value),value)[0])
             recency = sum(other['position'] > candidate['position'] for other in individuals.values())
             features.append(torch.stack((candidate_coverage,request_coverage,
@@ -561,7 +594,8 @@ class ReferenceClose(nn.Module):
         probability = float(decision['probabilities'][index+1].detach())
         pool = self.components.owner.mtm
         entry = pool.entries.get(pool.token_of(identity))
-        if entry is not None and entry.pending:
+        if ((entry is not None and (entry.pending or entry.kind == NULL_CONCEPT))
+                or self.is_forward_placeholder(identity, plan['forward_identity'])):
             # Selecting an unresolved identity is still a legal choice. Its
             # name does not supply the missing referent merely by being read.
             return dict(base, meaning=meaning, value=meaning, support_true=0., support_false=0.,
@@ -587,40 +621,6 @@ class ReferenceClose(nn.Module):
                       operation='bind', slots=(('referent', role),))
         result = with_slots(result, open_slots(result), pair=(probability, 1-probability))
         return dict(evidence, value=result, meaning=result)
-
-    def mention_loss(self, record, correct):
-        """Negative log marginal mass of all known correct antecedents.
-
-        No selected argmax becomes a label. If the known answer was outside
-        the retained menu there is no supervised update to that menu.
-        """
-        candidates = record['candidates']
-        gold = torch.tensor([identity in correct for identity in candidates],
-                            device=self.policy.device, dtype=torch.bool)
-        if not bool(gold.any()):
-            return None
-        features = torch.as_tensor(record['features'], device=self.policy.device,
-                                   dtype=self.policy.dtype).detach()
-        cue = torch.as_tensor(record['cue'], device=self.policy.device,
-                             dtype=self.policy.dtype).detach()
-        logits = self.logits(features, cue, supervised=True)
-        return logits.logsumexp(0) - logits[gold].logsumexp(0)
-
-    def answer_loss(self, plan, meaning, word):
-        """A supplied answer labels only the reference roles it answers."""
-        from ThoughtReferences import bindings
-        data = bindings(meaning)
-        roles = {role for kind, role in (*data.get('_open_references', ()),
-                 *data.get('_bound_roles', ())) if kind == 'referent'}
-        correct = set(self.components.owner.word_concepts(word))
-        losses = []
-        for item in plan['items']:
-            if not roles.intersection(item['root_roles']) or item['features'] is None:
-                continue
-            item['correct'] = correct.intersection(item['candidates'])
-            losses.append(self.mention_loss(item, correct))
-        losses = [value for value in losses if value is not None]
-        return torch.stack(losses).sum() if losses else None
 
     def answer_meaning(self, plan, meaning):
         """The supplied-referent judge observes this trial's selected binding.
@@ -656,28 +656,14 @@ class ReferenceClose(nn.Module):
         return result
 
     def resolved(self, row, role, reference, errors):
-        """A later fill trains the recorded menu for this exact occurrence."""
+        """Release the old diagnostic menu after the actual referent arrives."""
         mentions = self.__dict__.get('_mentions', {})
         occurrence = self.store.occurrence_of(row)
-        records = mentions.get(occurrence, ())
-        correct = {reference}
-        if isinstance(reference, tuple) and reference[:1] == ('sym',):
-            correct.add(reference[1])
-        losses = []
-        with torch.enable_grad():
-            for held_role, record in records:
-                if held_role == role:
-                    loss = self.mention_loss(dict(record), correct)
-                    if loss is not None:
-                        losses.append(loss)
-            if losses:
-                errors.add('expectation.reference_mentions', torch.stack(losses).sum(),
-                           category='expectation', weight=self.components.weight)
-                remaining = tuple(record for record in records if record[0] != role)
-                if remaining:
-                    mentions[occurrence] = remaining
-                else:
-                    mentions.pop(occurrence, None)
+        remaining = tuple(record for record in mentions.get(occurrence, ()) if record[0] != role)
+        if remaining:
+            mentions[occurrence] = remaining
+        else:
+            mentions.pop(occurrence, None)
 
     def sites(self, clause, *, pending_names=()):
         """Keep explicit open formations as one site, owned by their word.
@@ -710,8 +696,10 @@ class ReferenceClose(nn.Module):
                 return
             seen.add(id(node))
             nodes.append(node)
-            if node.reference_request is not None and (node.order == 1 or 'compose_bind' in node.reference_request or 'reading_identity' in node.reference_request):
-                if not self.has_word(node) or id(node) in participants:
+            if node.reference_request is not None and (node.order == 1 or 'compose_bind' in node.reference_request or 'reading_identity' in node.reference_request or node.reference_request.get('interpret_leaf') or (node.reference_request.get('sign_leaf') or node.reference_request.get('no_op_leaf'))):
+                if (node.reference_request.get('addressed_introduction')
+                        or node.reference_request.get('sign_leaf') or node.reference_request.get('no_op_leaf')
+                        or not self.has_word(node) or id(node) in participants):
                     result.append(dict(node=node, parent=None, site_role=None))
             else:
                 data = bindings(node.meaning)
@@ -832,7 +820,7 @@ class ReferenceClose(nn.Module):
         items, cost = [], self.policy.new_zeros(())
         plan = dict(items=items, records=records, pending_names=pending_names,
                     decisions=[], departure=int(departure), stream=stream)
-        handles = {}
+        handles, introductions, local_bindings = {}, {}, {}
         for site in self.sites(clause, pending_names=pending_names):
             node = site['node']
             request = node.reference_request
@@ -840,8 +828,18 @@ class ReferenceClose(nn.Module):
             content = self.coordinates(node.point)
             predicate = self.predicate_coordinates(request.get('predicate'))
             cue = self.cue(request.get('cue'))
-            choices, phi, logits = self.score(content, predicate, cue, role, individuals,
-                                             stream=stream, asserted=site['asserted'])
+            menu = individuals
+            if introductions and node.composition is not None:
+                # A trial-local introduction is constructed from its operands.
+                # It cannot serve as the referent of one of its own dependencies.
+                menu = {key: record for key, record in individuals.items()
+                        if key not in introductions or not self._term_depends_on(
+                            introductions[key], node.composition, local_bindings)}
+            if (request.get('sign_leaf') or request.get('no_op_leaf')):
+                choices, phi = (), self.policy.new_empty((0, 8))
+            else:
+                choices, phi, logits = self.score(content, predicate, cue, role, menu,
+                                                  stream=stream, asserted=site['asserted'])
             selected, probabilities = None, None
             if mode == 'mint':
                 # A trial-local handle is not a durable identity. It allows
@@ -880,7 +878,7 @@ class ReferenceClose(nn.Module):
                 choices, phi = (), None
             else:
                 index, decision = self.choose(plan, choices, phi, logits,
-                    forward_identity=request.get('forward_identity'), individuals=individuals)
+                    forward_identity=request.get('forward_identity'), individuals=menu)
                 probabilities = decision['probabilities']
                 selected = None if index is None else choices[index]
                 # Retained for diagnosis only; these local costs do not
@@ -896,6 +894,15 @@ class ReferenceClose(nn.Module):
                     role=role, position=(latest[0]+1, len(items)))
             if node.identity is not None and node.identity['handle'] > 0:
                 handles.setdefault(node.identity['handle'], selected)
+            if selected in introductions and selected not in menu:
+                raise ValueError(f'bind to {selected} depends on its own site {request["leaves"]}')
+            if node.composition is not None:
+                local_bindings[id(node.composition)] = introductions.get(selected, ())
+            if mode == 'mint' or own_object:
+                # prepare publishes an immutable copy of the introducing term.
+                # Its children remain dependencies. Its root is a new object,
+                # even when two native roles carry the same original term.
+                introductions[selected] = () if node.composition is None else node.composition.children
             items.append(dict(**site, mode=mode, content=content, predicate=predicate,
                 role=role, selected=selected, candidates=tuple(choices),
                 features=phi if choices else None, cue=cue,
@@ -906,11 +913,27 @@ class ReferenceClose(nn.Module):
                 items[-1]['record'] = dict(value=request['record'])
             elif 'reading_identity' in request:
                 token = self.components.owner.mtm.token_of(selected)
-                items[-1]['record'] = dict(value=self.components.owner.mtm.entries[token].value.detach().clone())
+                items[-1]['record'] = dict(value=self.components.owner.mtm.value_of(token).detach().clone())
         plan['cost'] = cost
         plan['individuals'] = individuals
         self._arrival_plan(clause, plan, individuals, stream=stream)
         return plan
+
+    @staticmethod
+    def _term_depends_on(operands, site, local_bindings):
+        pending, seen = list(operands), set()
+        while pending:
+            term = pending.pop()
+            if term is site:
+                return True
+            if term is not None and id(term) not in seen:
+                seen.add(id(term))
+                pending.extend(term.children)
+                if id(term) in local_bindings:
+                    pending.extend(local_bindings[id(term)])
+                elif term.binding is not None:
+                    pending.append(term.binding)
+        return False
 
     def _arrival_constituents(self, clause):
         """Only participant constituents and their lexical copies are objects."""
@@ -1073,7 +1096,7 @@ class ReferenceClose(nn.Module):
                     data.get('_forward_references', ()) if item[0] != 0)
                 meaning = with_slots(replace(meaning, bindings=data),
                     (slot for slot in data.get('_open_references', ()) if slot[1] != 0))
-            if selected is None or named or unresolved:
+            if selected is None or named or unresolved or (request.get('sign_leaf') or request.get('no_op_leaf')):
                 meaning = with_slots(meaning, (('referent', 0),), pair=node.evidence)
                 if request.get('forward_identity') is not None:
                     meaning = replace(meaning, bindings=dict(bindings(meaning),
@@ -1195,16 +1218,32 @@ class ReferenceClose(nn.Module):
         allocated, audit, uses, sites, native_tokens = {}, [], [], {}, {}
         closed_mentions, refinements = set(), []
         mention_occurrences = plan['mention_occurrences'] = {}
+        stream = plan.get('stream')
+        from ChainRead import envelope
+        from LTM1 import OCCURRENCE
+        retained = tuple(envelope(self.store, side)
+            for left, right, _, _, null in getattr(self.components.owner, '_kept_definition_witnesses', ())
+            if null for side in (left, right) if side[0] == OCCURRENCE)
+        for item in plan['items']:
+            if item['mode'] == 'bind':
+                mtm.keep_access(item['reference'], stream)
         for number, item in enumerate(plan['items']):
             node = item['written_node']
             location = written.get(id(node), row if node is plan['prepared_root'] else None)
             if location is None:
                 raise RuntimeError('kept reference constituent has no closing address')
-            occurrence = self.store.occurrence_of(location)
-            if occurrence[:1] == ('sym',) and word_occurrences and item['leaves']:
+            occurrence = written.get(('mention', id(node)))
+            if occurrence is None and node is plan['prepared_root']:
+                occurrence = written.get('root_mention')
+            if occurrence is None:
+                occurrence = self.store.occurrence_of(location)
+            if occurrence[:1] == ('sym',) and word_occurrences and len(item['leaves']) == 1:
                 # A durable concept is the mention's referent, not its address.
                 # Reading already retained the located word occurrence.
-                occurrence = word_occurrences.get(item['leaves'][-1], occurrence)
+                # ClauseJournal gives the head's first leaf the subject word.
+                occurrence = word_occurrences.get(item['leaves'][0], occurrence)
+            if occurrence[:1] == ('sym',) and len(item['leaves']) > 1:
+                raise ValueError(f'description {item["leaves"]!r} has no own occurrence: {occurrence!r}')
             mention_occurrences[id(node)] = occurrence
             sites[('site', number)] = occurrence
             reference = item['reference']
@@ -1216,7 +1255,7 @@ class ReferenceClose(nn.Module):
                 reference = allocated.get(item['selected'])
             item['reference'] = reference
             reading = (node.reference_request or {}).get('forward_identity')
-            if reading is None and node.subject_word_id >= 0:
+            if reading is None and node.subject_word_id >= 0 and len(item['leaves']) == 1:
                 reading = node.subject_word_id
             where = node.where
             if kept_reading is not None and kept_reading.symbol_where is not None and item['leaves']:
@@ -1224,7 +1263,14 @@ class ReferenceClose(nn.Module):
             # Binding a second timeline records the alias and its bracket,
             # while that timeline's event publishes its own value below.
             joined_value = None if node.identity is not None and node.identity.get('alternative') else node.point
-            if isinstance(reference, tuple) and reference[:1] == ('candidate',):
+            if (node.reference_request or {}).get('sign_leaf') or (node.reference_request or {}).get('no_op_leaf'):
+                # The chooser selected a leaf, not an antecedent. The envelope
+                # gives this mention its own time and place until ordinary MTM expiry.
+                content = (node.reference_request or {}).get('percept')
+                value = torch.zeros_like(node.point) if content is None else content
+                mtm.open(occurrence, kind=NULL_CONCEPT, when=when, value=value, where=where, retain=retained)
+                closed_mentions.add(occurrence)
+            elif isinstance(reference, tuple) and reference[:1] == ('candidate',):
                 # A selected familiar concept is a use, not an identity
                 # mention or another field observation. Its centroid/count
                 # are owned by the open pass and its mint by the update.
@@ -1237,23 +1283,32 @@ class ReferenceClose(nn.Module):
                     kind = None
                 elif kind is None and item['mode'] != 'mint' and not item.get('anonymous'):
                     kind = self._derivation_symbol(reference)
+                if reading is None and (len(item['leaves']) == 1 or
+                        'word' not in alloc.symbol_types.get(kind, ())):
+                    reading = kind
                 if item['mode'] == 'mint' or item.get('own_object'):
                     mtm.open(occurrence, kind=None if item.get('anonymous') else kind,
-                             when=when, value=node.point, reading=kind if reading is None else reading,
-                             pending=bool(item.get('anonymous')), where=where)
+                             when=when, value=node.point, reading=reading,
+                             pending=bool(item.get('anonymous')), where=where, retain=retained)
                     closed_mentions.add(occurrence)
                 else:
-                    uses.append((reference, occurrence, kind, joined_value, kind if reading is None else reading, where))
+                    uses.append((reference, occurrence, kind, joined_value, reading, where))
             elif isinstance(reference, int) and reference in alloc.individuals:
                 kind = self._derivation_symbol(occurrence)
+                if reading is None and (len(item['leaves']) == 1 or
+                        'word' not in alloc.symbol_types.get(kind, ())):
+                    reading = kind
                 token = plan['individuals'].get(reference, {}).get('token')
                 if token is None:
-                    token = mtm.open(occurrence, kind=reference, when=when, reading=kind if reading is None else reading,
-                             native=reference, value=torch.maximum(point(self.components.owner, reference), node.point), where=where)
+                    token = mtm.open(occurrence, kind=reference, when=when, reading=reading,
+                             native=reference, value=torch.maximum(point(self.components.owner, reference), node.point),
+                             where=where, retain=retained)
                     closed_mentions.add(occurrence)
                 else:
-                    uses.append((token, occurrence, kind, joined_value, kind if reading is None else reading, where))
+                    uses.append((token, occurrence, kind, joined_value, reading, where))
                 native_tokens[reference] = token
+            if occurrence in closed_mentions:
+                mtm.keep_access(occurrence, stream)
             if item['features'] is not None:
                 held = dict(candidates=tuple(allocated.get(identity, identity) for identity in item['candidates']),
                     features=item['features'].detach().cpu().tolist(), cue=item['cue'].detach().cpu().tolist())

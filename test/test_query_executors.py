@@ -30,8 +30,8 @@ def test_content_query_keeps_all_roles_and_conflicting_fact_sources():
     idea = replace(_meaning(), role_refs=(refs[0], None, None))
     first = store.append_meaning(idea, kind="fact", trust=0.6, sentence_index=len(store))
     second = store.append_meaning(idea, kind="fact", trust=-0.4, sentence_index=len(store))
-    store.set_origin(first, store.ORIGIN_PROVISIONED, text="teacher")
-    store.set_origin(second, store.ORIGIN_USER, text="witness")
+    store.set_origin(first, store.ORIGIN_PROVISIONED, text="teacher", asserted=(float(store.truth_plus[first]), float(store.truth_minus[first])))
+    store.set_origin(second, store.ORIGIN_USER, text="witness", asserted=(float(store.truth_plus[second]), float(store.truth_minus[second])))
     result = _signature('query', 'argin1').invoke(
         _context(cs, store=store), replace(idea))
     assert sorted(item['trust'] for item in result['value']) == pytest.approx([.6])

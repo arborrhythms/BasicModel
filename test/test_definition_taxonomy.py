@@ -83,7 +83,7 @@ def test_closing_uses_the_ordered_object_parent_and_deduplicates_it():
     attach_clause_index(model, store, cs)
     store._predicate_kind = lambda ref: 'part' if ref == predicate else 'operator'
     source = Clause(ConceptualMeaning(torch.ones(3, 8), torch.ones(3, dtype=torch.bool)),
-                    relation='part', refs=(first, predicate, second))
+                    relation='part', refs=(first, predicate, second), evidence=(1., 0.))
     row = store.write_clause(source)
     assert row == ('sym', store.parts.find(first, second))
     assert store.parts.refs[row[1]].tolist() == [first, second]
@@ -134,7 +134,10 @@ def test_closing_binds_subject_form_to_particular_without_widening_compose_acces
     f.store.write_clause(clause, written_rows=written)
     member = clause.children[0]
     occurrence = f.store.occurrence_of(written[id(member)])
-    assert int(f.store.order[written[id(member)]]) == 1
+    assert member.order == 1
+    retained = f.store.raw_meaning_of(written[id(member)]).role_refs[0]
+    assert retained == ('sym', f.words['cat'][0])
+    assert f.store.order_of_row(written[id(member)]) == f.cs._concept_source_order(retained[1]) == 0
     root = written[id(clause)]
     assert f.store.meaning_of(root).role_refs[0] == occurrence
     # The identity is the occurrence. Composing the particular adds no DEF
@@ -183,7 +186,7 @@ def test_selected_anaphor_form_binds_to_its_own_end_particular(monkeypatch):
     prior = f.store.write_clause(f.clause('cat'))
     entry = f.program(('lift', 'he', 'rests'))
     refs = entry.concept_ids.clone()
-    refs[0] = f.store.row_ids[prior]
+    refs[0] = f.store.address_keys[prior]
     values = entry.leaves.clone()
     values[0] = f.store.point_of_row(int(refs[0]))
     entry = replace(entry, reference_ids=refs, reference_orders=torch.tensor([1, -1]),

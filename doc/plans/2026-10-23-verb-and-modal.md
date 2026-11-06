@@ -784,6 +784,8 @@ focused development check: 46 passed, one existing prerequisite skip.
 The optional timing diagnostic completed the model call but failed while
 serializing its report; it supplies no timing or learning claim.
 
+**Retired 2026-11-01.** Item 2.5 removed the rejected menu entries from backward. A solely rejected parameter now has no gradient, and SGD leaves its momentum buffer and value untouched. [Thinking spec §35.1](2026-10-27-item2-5-thinking.md#351-the-numerical-producer-and-the-isolated-runs)
+
 ## 14. The pending-walk fixture's duplicate codes (Codex, 2026-10-23)
 
 Frozen source `d37ee1824` passes certificates, native, reference regressions,

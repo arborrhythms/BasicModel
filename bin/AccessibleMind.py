@@ -157,6 +157,11 @@ def apply_thought_effect(model, result, *, row, work, effect_round=None):
         # Anticipation can retrieve serial frames and form an estimate, but
         # cannot change the input's order-0 field or its reading attention.
         return
+    if kind == 'intuition':
+        effect_round.claim(S.KNOWING)
+        from Intuition import write_knowing
+        write_knowing(model, result.evidence, row)
+        return
     if kind not in ('reference', 'frames'):
         return
     space = getattr(model, 'conceptualSpace', None)

@@ -196,12 +196,15 @@ def refresh(state, indices, gate=None):
     return read(state, indices, gate), values
 
 
-def bind_menu(state, mention, *, exclusions=None):
+def bind_menu(state, mention, *, exclusions=None, meaning_start=0):
     """Fixed K+1 field variants: dummy first, then eligible off-stack chunks."""
     batch, positions, width = mention.shape
     own = mention[:, :, None]
     candidates = state[BUFFER][:, None].expand(batch, positions, -1, width)
     available = ((state[STACK] < 0) & (state[IDENTITY] >= 0))[:, None].expand(batch, positions, -1)
+    from IdentityRows import meet_ratios
+    covered, covers = meet_ratios(own[..., meaning_start:], candidates[..., meaning_start:])
+    available = available & ((covered == 1) | (covers == 1))
     if exclusions is not None:
         x, y = exclusions[:, 0], exclusions[:, 1]
         ax, ay = own.index_select(-1, x) >= .3, own.index_select(-1, y) >= .3

@@ -14,7 +14,7 @@ import torch
 CONTEXT = ('_stm_end_states', '_inter_context', '_inter_context_lanes',
            '_inter_context_ids', '_inter_context_occurrences',
            '_inter_last_meaning', '_expectation_documents')
-SURFACES = ('_priming_boosts', '_priming_seen')
+SURFACES = ('_priming_seen', '_expected_knowing', '_observed_knowing', '_desire')
 STM_META = ('_active_batch', '_scope_columns', '_whole_columns', '_live_max_depth_host')
 
 
@@ -68,6 +68,9 @@ def collect(model):
 def restore(model, state):
     if not isinstance(state, dict) or state.get('version') != 1:
         raise ValueError('corpus checkpoint requires continuation state version 1')
+    if 'percept_expectation' not in state:
+        raise ValueError('corpus checkpoint lacks percept expectation arrival-state version')
+    model.percept_expectation.restore_continuation(state['percept_expectation'])
     modules = dict(model.named_modules())
     expected = {name for name, module in modules.items()
                 if all(torch.is_tensor(getattr(module, key, None)) for key in SURFACES)}
@@ -81,7 +84,7 @@ def restore(model, state):
             target = getattr(modules[name], key)
             if (not torch.is_tensor(value) or value.shape != target.shape
                     or value.dtype != target.dtype or not torch.isfinite(value).all()
-                    or (value < 0).any()):
+                    or (key != '_desire' and (value < 0).any())):
                 raise ValueError('corpus priming ledger differs from construction')
             writes.append((target, value))
     spaces = list(model.conceptualSpaces)
@@ -134,8 +137,5 @@ def restore(model, state):
         device = next(expectation.parameters()).device
         for name, value in context['fields'].items():
             setattr(expectation, name, detached(value, device))
-    if 'percept_expectation' not in state:
-        raise ValueError('corpus checkpoint lacks percept expectation optimizer state')
-    model.percept_expectation.restore_continuation(state['percept_expectation'])
     model._document_covers = detached(state['document_covers'])
     model._curriculum_batches = int(state['curriculum_batches'])

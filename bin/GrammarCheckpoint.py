@@ -59,8 +59,13 @@ def align(model, state, old):
     from Layers import LTM0
     for name, module in model.named_modules(remove_duplicate=False):
         if isinstance(module, LTM0) and name+'.slots' in result:
-            if int(result.get(name+'.truth_schema', -1)) != 13:
-                raise ValueError('pre-layout LTM checkpoint; replay its producing lesson')
+            if int(result.get(name+'.truth_schema', -1)) != int(module.truth_schema):
+                prefix = name+'.'
+                obsolete = [k[len(prefix):] for k in result if k.startswith(prefix)
+                            and '.' not in k[len(prefix):] and k not in live
+                            and k[len(prefix):] not in module.addressing._buffers]
+                column = obsolete[0] if obsolete else 'truth_schema'
+                raise ValueError(f'pre-layout LTM checkpoint column {column}; replay its producing lesson')
     from Language import MarkerUnaryLayer
     identities = {name+'.marker' for name, module in model.named_modules(remove_duplicate=False)
                   if isinstance(module, MarkerUnaryLayer)

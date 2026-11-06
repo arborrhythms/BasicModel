@@ -171,4 +171,4 @@ def test_new_definitions_do_not_alias_later_sentence_identities():
     store = model.symbolSpace.ltm_store
     symbols = set(store.parts.refs[store.relations('definition')].reshape(-1).tolist())
     rows = store.rows_of_origin(store.ORIGIN_PROVISIONED)
-    assert symbols.isdisjoint(store.row_ids[rows].tolist())
+    assert symbols.isdisjoint(store.address_keys[rows].tolist())

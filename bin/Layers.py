@@ -17,6 +17,7 @@ import random
 import uuid
 import hashlib
 import json
+import copy
 import torch.nn as nn
 import torch.nn.functional as F
 from itertools import chain
@@ -137,6 +138,7 @@ def cube_translate(value, delta):
 
 # Device used by all layers.
 import util
+from LTM1 import NULL_CONCEPT
 from util import TheXMLConfig, TheDevice
 from util import TheMessage
 from What import LTMSlot, WhatQuestion, WhatSlotOperation
@@ -2503,7 +2505,8 @@ class GrammarLayer(Layer):
         form_width, _ = layout
         from MeaningKernels import centroid
         if whole is not None:
-            whole = (F.pad(whole[0], (0, form_width-whole[0].shape[-1])), whole[1])
+            from FormCentroids import pad_whole
+            whole = pad_whole(whole, form_width)
         form = centroid(tuple(value[..., :form_width] for value in operands), counts, whole=whole)
         meanings = tuple(value[..., form_width:] for value in operands)
         from MeaningCodes import compose
@@ -2529,7 +2532,8 @@ class GrammarLayer(Layer):
         from MeaningKernels import split_centroid
         form_width, _ = self.meaning_layout
         if whole is not None:
-            whole = (F.pad(whole[0], (0, form_width-whole[0].shape[-1])), whole[1])
+            from FormCentroids import pad_whole
+            whole = pad_whole(whole, form_width)
         if getattr(self, 'meaning_action', None) is not None:
             if not reference_right:
                 self.raise_no_inverse('an action requires its operator as the known operand')
@@ -5076,7 +5080,8 @@ class SparseLayer(Layer):
         if prev is not None and int(prev.shape[0]) == n:
             return
         dev = self._device()
-        new = torch.tensor(self._init_vals, dtype=torch.float32, device=dev)
+        dtype = torch.get_default_dtype() if prev is None else prev.dtype
+        new = torch.tensor(self._init_vals, dtype=dtype, device=dev)
         if prev is not None:
             keep = min(int(prev.shape[0]), n)
             if keep > 0:
@@ -5338,7 +5343,7 @@ class SparseLayer(Layer):
         mass = u.new_zeros(end - int(start))
         seen = torch.zeros_like(out, dtype=torch.bool)
         if self.values is not None:
-            raw = self.values.clone().to(u.device)[select]
+            raw = self.values.clone().to(u)[select]
             # Zero is the unwritten magnitude. Once a definition has an
             # observed part, prospective zero edges can receive credit;
             # projection after the update constrains their stored magnitude.
@@ -5803,7 +5808,12 @@ class ConceptAllocator:
         self.placement = {}              # cid -> derived order (bookkeeping)
         self.raised = set()              # σ-raised: never re-refined
         self.singletons = set()          # unit-set rows (min-support exempt)
-        self.singleton_members = {}     # right reference -> first equality witness
+        count = TheXMLConfig.space('ConceptualSpace', 'raiseCount', 3)
+        self.raise_count = int(count)
+        if self.raise_count < 2 or float(count) != self.raise_count:
+            raise ValueError('raiseCount must be an integer of at least two')
+        self.singleton_members = {}     # shared side and seat -> member, token, snapshot
+        self.singleton_rows = {}        # evidence endpoints, including a minted member's origin
         self.retired = set()
         self.identity = {}               # cid -> (part, whole) 1:1 ties
         self.relate_idx = {}             # (part, whole) / ("raise", fs) -> cid
@@ -5814,8 +5824,9 @@ class ConceptAllocator:
         from LTM1 import LTM1
         self.parts = LTM1(relation_capacity)  # LTM1 and the symbol taxonomy, one owner
         self.parts.allocate = self._allocate_part_symbol
-        # Each first equality witness requires an LTM1 equality row. Its
-        # right side may be an occurrence/token outside the codebook, so the
+        self.parts.handle_reserved = self._part_handle_reserved
+        # Admitted witnesses require durable LTM1 evidence. A shared
+        # side may be an occurrence/token outside the codebook, so the
         # relation capacity bounds this slab, not the symbol-vector inventory.
         # Each row holds one native concept vector; the slab never grows.
         capacity = 8192 if member_capacity is None else int(member_capacity)
@@ -5823,6 +5834,7 @@ class ConceptAllocator:
             raise ValueError("equality witness capacity must be positive")
         self.singleton_values = torch.zeros(capacity, int(member_width))
         self.symbol_types = {}           # types of bank arguments, never edge kinds
+        self.named_identities = {}        # learned object names, independent of the epoch's definition rows
         self.word_descriptions = {}      # native form definitions, keyed by word symbol
         from Definitions import DefinitionIndex
         self.definitions = DefinitionIndex(self.parts, self)
@@ -5870,6 +5882,28 @@ class ConceptAllocator:
             self._layers[0] = got
         return got
 
+    def _part_handle_reserved(self, cid):
+        """An expired relation handle can still name an independent symbol."""
+        if cid in self.reference_orders or self.symbol_types.get(cid) or self.store_of(cid).constituents(cid):
+            return True
+        for layer in self._layers.values():
+            if any(key == cid or isinstance(key, tuple) and key[-1] == cid for key in layer._tensor_rows):
+                return True
+        def names(ref):
+            return ref == cid or ref in (('sym', cid), ('name', cid), (self.parts.SYMBOL, cid))
+        for key, value in self.relate_idx.items():
+            if names(value):
+                return True
+            if key[0] == 'part-kind':
+                if names(key[1]):
+                    return True
+            elif key[0] == 'raise':
+                if any(names(ref) for ref in key[1]):
+                    return True
+            elif any(names(ref) for ref in key):
+                return True
+        return False
+
     def _allocate_part_symbol(self):
         if self.next_id >= self.parts.capacity:
             raise OverflowError('LTM2 symbol capacity exhausted before allocation')
@@ -5886,6 +5920,8 @@ class ConceptAllocator:
     def touch(self, cid):
         """Register an externally-supplied cid (first-touch, order 0)."""
         cid = int(cid)
+        if cid == NULL_CONCEPT:
+            raise ValueError('the null-concept is outside the definition inventory')
         if cid not in self.placement:
             self.placement[cid] = 0
             self.layer(0).ensure_row_key(cid)
@@ -5895,13 +5931,35 @@ class ConceptAllocator:
         """The layer currently holding ``cid``'s records."""
         return self.layer(self.placement.get(int(cid), 0))
 
+    def class_member(self, member, whole):
+        """Read a class membership from tagged referents and their recorded orders."""
+        member, whole = self.parts.reference(member), self.parts.reference(whole)
+        if (self.parts.SYMBOL, NULL_CONCEPT) in (member, whole):
+            return False
+        if member[0] != self.parts.SYMBOL or whole[0] != self.parts.SYMBOL:
+            return True
+        lower, upper = (self.reference_orders.get(ref[1]) for ref in (member, whole))
+        return lower is None or upper is None or lower + 1 == upper
+
     def records(self, cid):
+        if cid == NULL_CONCEPT:
+            return []
         raw = self.store_of(cid).constituents(cid)
         def structural(part, whole):
+            # A reflexive Part proposition does not create a constituent.
+            # Keep its evidence in LTM1, matching index_part_row's identity
+            # case instead of turning the fact into a recursive definition.
+            if self.parts.reference(part) == self.parts.reference(whole):
+                return False
             # The physical owner is shared, but a name is not a taxonomic
             # parent and a word's objects are not its composing constituents.
+            # An unasserted or negative-only Part row records a proposition,
+            # not a member of the whole's implicit definition.
+            member, parent = self.parts.reference(part), self.parts.reference(whole)
+            if not self.class_member(member, parent):
+                return False
             edge = self.parts.find(part, whole)
-            return 'definition' not in self.parts.readings(
+            return bool(self.parts.truth_plus[edge] > 0) and 'definition' not in self.parts.readings(
                 edge, lambda ref: self.symbol_types.get(ref[1], ()) if ref[0] == self.parts.SYMBOL else ())
         from LTM1 import SYMBOL, OCCURRENCE, RELATION
         tags = {SYMBOL: 'sym', OCCURRENCE: 'occ', RELATION: 'rel'}
@@ -5942,6 +6000,8 @@ class ConceptAllocator:
     def order_of(self, cid, _seen=None):
         """A witnessed order, or -1 when neither record nor definition exists."""
         cid = int(cid)
+        if cid == NULL_CONCEPT:
+            raise ValueError('the null-concept has no order')
         if cid <= 0:
             return -1  # Padding and unavailable references have no witness.
         if cid in self.reference_orders:
@@ -5970,6 +6030,8 @@ class ConceptAllocator:
     def settle(self, cid):
         """Re-derive ``cid``'s order (BOOKKEEPING ONLY, v3: records and rows
         are permanent in the single shared layer -- no migration)."""
+        if cid == NULL_CONCEPT:
+            return None
         cid = self.touch(cid)
         expected, structural = self._part_order(cid, {cid})
         if structural and cid in self.reference_orders and self.reference_orders[cid] != expected:
@@ -6015,6 +6077,8 @@ class ConceptAllocator:
         row assignments are permanent in the shared layer) and clear
         idempotency-cache entries pointing at ``cid``."""
         cid = int(cid)
+        if cid == NULL_CONCEPT:
+            return
         o = self.placement.pop(cid, None)
         if o is not None:
             self.layer(o).pop_row_key(cid)
@@ -6027,6 +6091,9 @@ class ConceptAllocator:
         self.parts.remove_symbol(cid)
         self.symbol_types.pop(cid, None)
         self.word_descriptions.pop(cid, None)
+        self.named_identities.pop(cid, None)
+        for objects in self.named_identities.values():
+            objects.discard(cid)
 
 
 class MeronymicFoldAdapter(Layer):
@@ -6376,7 +6443,7 @@ class MeronymicFoldAdapter(Layer):
         if getattr(self, "_compiled_mem_cascade", None) is not None:
             return True
         compiled = util.compile(
-            self._mem_cascade, verbose=False, fullgraph=True)
+            self._mem_cascade, fullgraph=True)
         object.__setattr__(self, "_compiled_mem_cascade", compiled)
         return True
 
@@ -7562,14 +7629,11 @@ class TruthLayer(Layer):
         # request-scoped occurrence may still be needed as grammatical content
         # after its fact status and trust have been withdrawn; it must not then
         # re-enter this flat accepted-truth view.
-        fact_kind = store.KINDS.index('fact')
-        idx_list = [i for i in idxs.tolist()
-                    if int(store.record_kind[i]) == fact_kind
-][:self.max_truths]
+        idx_list = [i for i in idxs.tolist() if store.kind_of(i) == 'fact'][:self.max_truths]
         self.truths.zero_()
         sources, trusts = [], []
         for row_i in idx_list:
-            poles = (float(store.c_plus[row_i]), -float(store.c_minus[row_i]))
+            poles = (float(store.truth_plus[row_i]), -float(store.truth_minus[row_i]))
             for t in poles:
                 if t == 0 or len(trusts) == self.max_truths:
                     continue
@@ -8836,6 +8900,19 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
         self.when_start = self.percept_width - 4 if self.percept_width >= 8 else None
         self.register_buffer('percept_layout', torch.tensor(self.percept_width, dtype=torch.long))
         self.register_buffer('slots', torch.zeros(capacity, nDim))
+        self.ltm_window = int(TheXMLConfig.get('architecture.ltmWindow', default=1024))
+        if self.ltm_window <= 0:
+            raise ValueError('ltmWindow must be a positive integer')
+        # Ephemeral cued-read scratch: fixed at construction, never checkpointed.
+        self.register_buffer('_cue_roles', torch.zeros(self.ltm_window, 3, nDim), persistent=False)
+        self.register_buffer('_cue_role_mask', torch.zeros(self.ltm_window, 3, dtype=torch.bool), persistent=False)
+        self.register_buffer('_cue_available', torch.zeros(self.ltm_window, dtype=torch.bool), persistent=False)
+
+        self.addressing = nn.Module()
+        # Source authority belongs to an input document, including during a
+        # tensor-only restore before semantic sidecars have been attached.
+        self.addressing.register_buffer('source_documents', torch.zeros(capacity, 32, dtype=torch.uint8))
+        self.addressing.register_buffer('source_authorities', torch.zeros(capacity, dtype=torch.int8))
         # Production supplies ConceptualSpace.recurrenceCapacity, default nVectors:
         # one fixed summary seat per allowed reading, independent of episode count.
         # Standalone stores without a concept owner use their declared row bound.
@@ -8844,41 +8921,36 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
             raise ValueError('recurrenceCapacity must be positive')
         reading_cap = self.recurrence_capacity
         self.register_buffer('recurrence_version', torch.tensor(2, dtype=torch.long))
-        self.register_buffer('recurrence_codes', torch.zeros(reading_cap, nDim))
-        self.register_buffer('recurrence_documents', torch.zeros(reading_cap, dtype=torch.long))
-        self.register_buffer('recurrence_weights', torch.zeros(reading_cap))
-        self.register_buffer('recurrence_used', torch.zeros(reading_cap, dtype=torch.bool))
-        self.register_buffer('recurrence_symbols', torch.full((reading_cap,), -1, dtype=torch.long))
+        self.addressing.register_buffer('recurrence_codes', torch.zeros(reading_cap, nDim))
+        self.addressing.register_buffer('recurrence_documents', torch.zeros(reading_cap, dtype=torch.long))
+        self.addressing.register_buffer('recurrence_weights', torch.zeros(reading_cap))
+        self.addressing.register_buffer('recurrence_used', torch.zeros(reading_cap, dtype=torch.bool))
+        self.addressing.register_buffer('recurrence_symbols', torch.full((reading_cap,), -1, dtype=torch.long))
         # One assignment per episode row; compaction moves these with the ideas.
-        self.register_buffer('recurrence_readings', torch.full((capacity,), -1, dtype=torch.long))
+        self.addressing.register_buffer('recurrence_readings', torch.full((capacity,), -1, dtype=torch.long))
         self._recurrence_identities = [None] * reading_cap
         # A batch must fit at least one close per stream in the declared
         # store. This bounds stream ids by capacity unless configured tighter.
         stream_capacity = capacity if stream_capacity is None else int(stream_capacity)
         if stream_capacity <= 0:
             raise ValueError('LTM0 stream capacity must be positive')
-        self.register_buffer('stream', torch.zeros(capacity, int(stream_capacity), dtype=torch.bool))
-        self.register_buffer('order', torch.full((capacity,), -1, dtype=torch.long))
-        self.register_buffer('c_plus', torch.zeros(capacity))
-        self.register_buffer('c_minus', torch.zeros(capacity))
-        self.register_buffer('source_trust', torch.zeros(capacity))
+        self.addressing.register_buffer('stream', torch.zeros(capacity, int(stream_capacity), dtype=torch.bool))
+        self.register_buffer('truth_plus', torch.zeros(capacity))
+        self.register_buffer('truth_minus', torch.zeros(capacity))
         for name in ('forget_passes', 'forget_sentences', 'forget_last_sentence'):
             self.register_buffer(name, torch.tensor(0, dtype=torch.long))
         self.register_buffer('forget_cutoff', torch.tensor(0.))
         self.register_buffer('forget_pending', torch.tensor(False))
-        self.register_buffer('row_ids', torch.full((capacity,), -1, dtype=torch.long))
         # At most one observation id per LTM0 seat, rebuilt only after a write.
         self.register_buffer('_observation_ids', torch.full((capacity,), -1, dtype=torch.long), persistent=False)
         self._observation_revision = None
         self._observation_count = 0
         self.register_buffer('model_clock', torch.tensor(0, dtype=torch.long))
-        self.register_buffer('truth_schema', torch.tensor(13, dtype=torch.long))
+        self.register_buffer('truth_schema', torch.tensor(14, dtype=torch.long))
         self.register_buffer('surprise', torch.full((capacity,), -1.))
         self.register_buffer('count', torch.tensor(0, dtype=torch.long))
         # Per-row writer provenance (ORIGIN_*); default 0 = conversation so
         # the observe-site push needs no change.
-        self.register_buffer('origin',
-                             torch.zeros(capacity, dtype=torch.long))
         # Source text is checkpointed in semantic_extras. A bare state_dict
         # restore has no text until that sidecar is supplied.
         self._texts = []
@@ -8886,38 +8958,198 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
         # Semantic provenance is separate from origin and signed evidence.
         # Scope/reference metadata rides the model's versioned sidecar; the
         # flag prevents a tensor-only restore from forgetting required scope.
-        self.register_buffer('record_kind', torch.zeros(capacity, dtype=torch.long))
-        self.register_buffer('polarity', torch.ones(capacity, dtype=torch.bool))
-        self.register_buffer('address_keys', torch.full((capacity,), -1, dtype=torch.long))
-        self.register_buffer('document_keys', torch.zeros(capacity, 32, dtype=torch.uint8))
-        self.register_buffer('sentence_content_keys', torch.zeros(capacity, 32, dtype=torch.uint8))
-        self.register_buffer('sentence_index', torch.full((capacity,), -1, dtype=torch.long))
-        self.register_buffer('witness_count', torch.zeros(capacity, dtype=torch.long))
-        self.register_buffer('metadata_required', torch.zeros(capacity, dtype=torch.bool))
-        self.register_buffer('semantic_fingerprint', torch.zeros(capacity, 32, dtype=torch.uint8))
+        self.addressing.register_buffer('address_keys', torch.full((capacity,), -1, dtype=torch.long))
+        self.addressing.register_buffer('document_keys', torch.zeros(capacity, 32, dtype=torch.uint8))
+        self.addressing.register_buffer('sentence_content_keys', torch.zeros(capacity, 32, dtype=torch.uint8))
+        self.addressing.register_buffer('sentence_index', torch.full((capacity,), -1, dtype=torch.long))
+        self.register_buffer('access_count', torch.zeros(capacity, dtype=torch.long))
+        self.addressing.register_buffer('metadata_required', torch.zeros(capacity, dtype=torch.bool))
+        self.addressing.register_buffer('semantic_fingerprint', torch.zeros(capacity, 32, dtype=torch.uint8))
+        from Occurrence import document_digest
+        self._direct_kinds = {document_digest(('direct', kind)): kind for kind in self.KINDS}
+        self._document_sources = {}
         self._semantic_rows = {}
         # Estimate/observation provenance has the same durable owner as the
         # rows themselves. It is sidecar data, not a second LTM: occurrence
         # IDs, role vectors and evidence kind remain in the buffers above.
         self._expectation_rows = {}
         self._index_occurrences = AddressIndex()
+        self.register_load_state_dict_post_hook(self._restore_address_index)
         from LTM1 import LTM1
         object.__setattr__(self, 'parts', LTM1(relation_capacity))
+        import weakref
+        self.parts._occurrence_store = weakref.ref(self)
 
-    def clear_recurrence(self):
-        """Discard presentation evidence; promoted concepts keep their own seats."""
-        for name in ('recurrence_codes', 'recurrence_documents', 'recurrence_weights', 'recurrence_used'):
+    @staticmethod
+    def _restore_address_index(store, _incompatible):
+        store.rebuild_addresses()
+        keys = store.addressing.source_documents
+        grades = store.addressing.source_authorities
+        occupied = grades.nonzero().flatten()
+        recorded = {bytes(key).hex(): grade for key, grade in
+                    zip(keys[occupied].tolist(), grades[occupied].tolist())}
+        live = {bytes(key).hex() for key in store.document_keys[:len(store)].tolist()}
+        if (len(recorded) != len(occupied) or not recorded.keys() <= live or
+                any(grade not in (store.ORIGIN_PROVISIONED, store.ORIGIN_USER) for grade in recorded.values())):
+            raise ValueError('invalid source document in LTM0 addressing checkpoint')
+        store._document_sources = recorded
+
+    def _replace_document_sources(self, recorded):
+        if recorded == self._document_sources:
+            return
+        if len(recorded) > self.capacity:
+            raise OverflowError('source document count exceeds LTM0 construction capacity')
+        keys, grades = self.addressing.source_documents, self.addressing.source_authorities
+        keys.zero_()
+        grades.zero_()
+        if recorded:
+            keys[:len(recorded)] = keys.new_tensor([list(bytes.fromhex(key)) for key in recorded])
+            grades[:len(recorded)] = grades.new_tensor(list(recorded.values()))
+        self._document_sources = recorded
+
+    @property
+    def when(self):
+        return self.slots[:, :0] if self.when_start is None else self.slots[:, self.when_start:self.when_start + 4]
+
+    @property
+    def address_keys(self):
+        return self.addressing.address_keys
+
+    @property
+    def document_keys(self):
+        return self.addressing.document_keys
+
+    @property
+    def sentence_content_keys(self):
+        return self.addressing.sentence_content_keys
+
+    @property
+    def sentence_index(self):
+        return self.addressing.sentence_index
+
+    @property
+    def stream(self):
+        return self.addressing.stream
+
+    @property
+    def metadata_required(self):
+        return self.addressing.metadata_required
+
+    @property
+    def semantic_fingerprint(self):
+        return self.addressing.semantic_fingerprint
+
+    @property
+    def recurrence_readings(self):
+        return self.addressing.recurrence_readings
+
+    @property
+    def recurrence_codes(self):
+        return self.addressing.recurrence_codes
+
+    @property
+    def recurrence_documents(self):
+        return self.addressing.recurrence_documents
+
+    @property
+    def recurrence_weights(self):
+        return self.addressing.recurrence_weights
+
+    @property
+    def recurrence_used(self):
+        return self.addressing.recurrence_used
+
+    @property
+    def recurrence_symbols(self):
+        return self.addressing.recurrence_symbols
+
+    def clear_recurrence(self, *, keep_learned=False):
+        """Clear episode evidence. Only an admitted reading remembers its symbol."""
+        for name in ('recurrence_documents', 'recurrence_weights', 'recurrence_used'):
             getattr(self, name).zero_()
-        self.recurrence_symbols.fill_(-1)
+        if keep_learned:
+            self.recurrence_codes.masked_fill_(self.recurrence_symbols.lt(0)[:, None], 0.)
+        else:
+            self.recurrence_codes.zero_()
+            self.recurrence_symbols.fill_(-1)
         self.recurrence_readings.fill_(-1)
         self._recurrence_identities[:] = [None] * self.recurrence_capacity
 
+    def source_document(self, row):
+        """Authority belongs to the input document. It is not an occurrence property."""
+        key = bytes(self.document_keys[int(row)].tolist()).hex()
+        return self._document_sources.get(key, self.ORIGIN_CONVERSATION)
+
+    def order_of_row(self, row, seen=None):
+        """A native occurrence is concrete unless it carries a higher-order referent."""
+        row = int(row)
+        address = int(self.address_keys[row])
+        seen = set() if seen is None else set(seen)
+        if address in seen:
+            return -1
+        seen.add(address)
+        bindings = dict(self._semantic_rows.get(address, {}).get('bindings', ()))
+        ref = bindings.get('_identity')
+        if not ref:
+            return 0
+        if ref[0] == 'ltm':
+            child = self.location(ref)
+            return -1 if child is None else self.order_of_row(child, seen)
+        if ref[0] == 'sym':
+            owner = self.__dict__.get('_concept_owner')
+            if owner is not None and owner() is not None:
+                return owner()._concept_source_order(ref[1], seen)
+        return 0
+
+    def kind_of(self, row):
+        i = int(row)
+        address = int(self.address_keys[i])
+        provenance = self._expectation_rows.get(address, {})
+        if provenance.get('kind') == 'estimate':
+            return 'estimate'
+        bindings = dict(self._semantic_rows.get(address, {}).get('bindings', ()))
+        identity = bindings.get('_identity')
+        if identity and identity[0]=='sym' and identity[1] in self._cover_symbols.values():
+            return 'cover'
+        if bindings.get('_open_references'):
+            from ThoughtReferences import has_open_slots
+            if has_open_slots(self.raw_meaning_of(i)):
+                return 'question'
+        # Direct typed input documents have stable addresses. In a native
+        # document, an affirmed occurrence is an observation unless its
+        # document supplied independent fact authority.
+        document = bytes(self.document_keys[i].tolist())
+        if document in self._direct_kinds:
+            direct = self._direct_kinds[document]
+            if (direct == 'fact' and self.source_document(i) != self.ORIGIN_CONVERSATION
+                    and not (bool(self.truth_plus[i]) or bool(self.truth_minus[i]))):
+                # Withdrawing an external source removes its authority. A
+                # direct fact document can still describe an unknown (0, 0).
+                return 'unverified'
+            return direct
+        if bool(self.truth_plus[i] > 0) or bool(self.truth_minus[i] > 0):
+            if bindings.get('_producing_operation') or bindings.get('_thought_witnesses'):
+                return 'inference'
+            return 'fact' if self.source_document(i) != self.ORIGIN_CONVERSATION else 'observation'
+        return 'unverified'
+
+    def kind_codes(self, rows):
+        return self.count.new_tensor([self.KINDS.index(self.kind_of(i)) for i in rows.tolist()])
+
+    def polarity_of(self, row):
+        ref = dict(self._semantic_rows.get(int(self.address_keys[row]), {}).get('bindings', ())).get('_identity')
+        if ref and ref[0] == 'sym':
+            owner = self.__dict__.get('_concept_owner')
+            if owner is not None and owner() is not None and 'negative' in owner()._concept_allocator.symbol_types.get(ref[1], ()):
+                return False
+        return True
+
     def observation_ids(self):
-        revision = (id(self.row_ids), self.row_ids._version, self.record_kind._version, len(self))
+        revision = (self.address_keys._version, self.truth_plus._version, self.truth_minus._version, len(self))
         if revision != self._observation_revision:
-            rows = (self.record_kind[:len(self)] == self.KINDS.index('observation')).nonzero().flatten()
+            rows = [i for i in range(len(self)) if self.kind_of(i) in ('observation', 'fact')]
             self._observation_count = len(rows)
-            self._observation_ids[:len(rows)].copy_(self.row_ids[rows])
+            self._observation_ids[:len(rows)].copy_(self.address_keys[rows])
             self._observation_revision = revision
         return self._observation_ids[:self._observation_count]
 
@@ -9211,7 +9443,7 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
             return None
         from dataclasses import replace
         value = ConceptualMeaning.from_description(self.slots[i].detach())
-        value = replace(value, polarity=bool(self.polarity[i]), sentence_kind='idea', **(context or {}))
+        value = replace(value, polarity=self.polarity_of(i), sentence_kind='idea', **(context or {}))
         identity = dict(value.bindings).get('_identity')
         return replace(value, role_refs=(identity, None, None)) if identity is not None else value
 
@@ -9230,7 +9462,8 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
             records.append({"id": identifier, "context": dict(context or {}),
                             "text": self.text_of(i),
                             "expectation": self.expectation_of(i)})
-        return {"version": 10,
+        return {"version": 11, "document_sources": dict(self._document_sources),
+                "supplies": copy.deepcopy(self.__dict__.get('_supplies', {})),
                 "namespace": self.address_domain,
                 "recurrence_identities": tuple(self._recurrence_identities),
                 "cover_symbols": dict(self._cover_symbols),
@@ -9238,7 +9471,7 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
 
     def load_semantic_extras(self, extras):
         """Restore metadata only onto the matching durable occurrences."""
-        if not isinstance(extras, dict) or extras.get('version') != 10:
+        if not isinstance(extras, dict) or extras.get('version') != 11:
             raise ValueError('unsupported LTM0 semantic checkpoint version')
         namespace = self.address_domain
         if extras.get('namespace') != namespace:
@@ -9266,7 +9499,8 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
             if identifier in getattr(self, '_discarded_occurrences', ()):
                 continue
             if identifier not in rows or identifier in incoming:
-                raise ValueError("truth semantic checkpoint has an unavailable or duplicate occurrence")
+                raise ValueError(f"truth semantic checkpoint has an unavailable or duplicate occurrence {identifier}; "
+                                 f"loaded addresses {tuple(rows)}")
             i = rows[identifier]
             context = record.get("context") or {}
             if not isinstance(context, dict) or set(context) - {"bindings", "scope"}:
@@ -9276,7 +9510,7 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
             stored_context = dict(context)
             from dataclasses import replace
             meaning = replace(ConceptualMeaning.from_description(self.slots[i].detach()),
-                polarity=bool(self.polarity[i]), **stored_context)
+                polarity=self.polarity_of(i), **stored_context)
             incoming[identifier] = {key: meaning.metadata()[key]
                                     for key in ("bindings", "scope")}
             text = record.get("text")
@@ -9306,29 +9540,39 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
         for identifier, provenance in expectation_rows.items():
             if provenance['kind'] == 'estimate' and '_expected_symbols' not in dict(incoming[identifier]['bindings']):
                 raise ValueError('estimate checkpoint lacks its symbol-bank prior')
+        sources = extras.get('document_sources', {})
+        documents = {bytes(doc.tolist()).hex() for doc in self.document_keys[:len(self)]}
+        if not isinstance(sources, dict) or not set(sources) <= documents or any(
+                value not in (self.ORIGIN_USER, self.ORIGIN_PROVISIONED) for value in sources.values()):
+            raise ValueError('invalid LTM0 source document in semantic checkpoint')
+        if sources != self._document_sources:
+            raise ValueError('source documents disagree with the LTM0 addressing checkpoint')
         self._semantic_rows = incoming
         self._texts = texts
         self._expectation_rows = expectation_rows
         self._cover_symbols = dict(covers)
         self._recurrence_identities[:] = [None if ref is None else tuple(ref) for ref in identities]
+        self._supplies = copy.deepcopy(extras.get('supplies', {}))
         self.rebuild_addresses()
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
-        if int(state_dict.get(prefix + 'truth_schema', -1)) != 13:
+        unknown = [key[len(prefix):] for key in state_dict if key.startswith(prefix)
+                   and '.' not in key[len(prefix):] and key[len(prefix):] not in self._buffers
+                   and key[len(prefix):] not in self.addressing._buffers]
+        if unknown:
+            raise ValueError(f'retired or unsupported LTM0 checkpoint column: {unknown[0]}')
+        if int(state_dict.get(prefix + 'truth_schema', -1)) != 14:
             raise ValueError('unsupported LTM0 layout checkpoint version; regenerate pre-layout memories')
         if int(state_dict.get(prefix + 'recurrence_version', -1)) != 2:
             raise ValueError('unsupported item 3.0 recurrenceCapacity checkpoint version')
         slots = state_dict.get(prefix + 'slots')
         if slots is None or slots.shape != self.slots.shape:
             raise ValueError('LTM0 checkpoint capacity/width differs from construction')
-        if state_dict.get(prefix + 'stream', self.stream).shape != self.stream.shape:
+        if state_dict.get(prefix + 'addressing.stream', self.stream).shape != self.stream.shape:
             raise ValueError('LTM0 checkpoint stream capacity differs from construction')
         if int(state_dict.get(prefix + 'percept_layout', -1)) != self.percept_width:
             raise ValueError('LTM0 checkpoint percept layout differs from construction')
-        for name in ('rel_type', 'refs', 'role_mask', 'when'):
-            if prefix + name in state_dict:
-                raise ValueError('retired LTM0 layout column in checkpoint')
         for name, expected in self.named_buffers(recurse=False):
             if name in self._non_persistent_buffers_set:
                 continue
@@ -9337,34 +9581,41 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
                 raise ValueError('LTM0 layout checkpoint column differs from construction: ' + name)
             if value.is_floating_point() and not bool(torch.isfinite(value).all()):
                 raise ValueError('nonfinite LTM0 checkpoint column: ' + name)
+        for name, expected in self.addressing.named_buffers():
+            value = state_dict.get(prefix + 'addressing.' + name)
+            if value is None or value.shape != expected.shape or value.dtype != expected.dtype:
+                raise ValueError('LTM0 layout checkpoint column differs from construction: ' + name)
+            if value.is_floating_point() and not bool(torch.isfinite(value).all()):
+                raise ValueError('nonfinite LTM0 checkpoint address index: ' + name)
         count = int(state_dict[prefix + 'count'])
-        readings = state_dict[prefix + 'recurrence_readings']
-        used = state_dict[prefix + 'recurrence_used']
+        readings = state_dict[prefix + 'addressing.recurrence_readings']
+        used = state_dict[prefix + 'addressing.recurrence_used']
         if (bool(((readings < -1) | (readings >= self.recurrence_capacity)).any())
                 or bool((readings[count:] != -1).any())
                 or not bool(used[readings[readings >= 0]].all())
-                or bool((state_dict[prefix + 'recurrence_documents'] < 0).any())
-                or bool((state_dict[prefix + 'recurrence_weights'] < 0).any())
-                or bool(((state_dict[prefix + 'recurrence_symbols'] == 0)
-                         | (state_dict[prefix + 'recurrence_symbols'] < -1)).any())):
+                or bool((state_dict[prefix + 'addressing.recurrence_documents'] < 0).any())
+                or bool((state_dict[prefix + 'addressing.recurrence_weights'] < 0).any())
+                or bool(((state_dict[prefix + 'addressing.recurrence_symbols'] == 0)
+                         | (state_dict[prefix + 'addressing.recurrence_symbols'] < -1)).any())):
             raise ValueError('invalid angular-recurrence checkpoint')
-        keys = state_dict[prefix + 'address_keys'][:count].tolist()
+        keys = state_dict[prefix + 'addressing.address_keys'][:count].tolist()
         if not 0 <= count <= self.capacity or len(set(keys)) != count or any(key in (-1, 0) for key in keys):
             raise ValueError('invalid LTM0 checkpoint addresses/count')
+        self._document_sources.clear()
         self._semantic_rows, self._expectation_rows, self._texts = {}, {}, []
+        self._supplies = {}
+        self._epoch_rows = None
         super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
                                       missing_keys, unexpected_keys, error_msgs)
-        self.rebuild_addresses()
 
     @torch.no_grad()
     def accept_fact(self, idx):
-        """Explicit TruthSet admission; writer origin alone never admits a fact."""
+        """Validate a TruthSet ending. Its input document and evidence carry admission."""
         i = int(idx)
         if not 0 <= i < len(self):
             raise IndexError(f"row {i} of {len(self)}")
-        if self.KINDS[int(self.record_kind[i])] in ("question", "estimate", "cover"):
+        if self.kind_of(i) in ("question", "estimate", "cover"):
             raise ValueError("a question, estimate or cover cannot certify its own referent")
-        self.record_kind[i] = self.KINDS.index("fact")
 
     def bind_constituents(self, meaning, *, reserve=0, stream=-1, parent_address=None):
         """Bind a pure compose tree through this existing occurrence owner.
@@ -9474,7 +9725,7 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
                                          parent_address=(document, position, content))
         n = len(self) if previous is None else previous
         if previous is not None:
-            evidence = (max(float(self.c_plus[n]), evidence[0]), max(float(self.c_minus[n]), evidence[1]))
+            evidence = (max(float(self.truth_plus[n]), evidence[0]), max(float(self.truth_minus[n]), evidence[1]))
         self._validate_local_references(meaning)
         if previous is not None and meaning.has_context:
             contexts = dict(self._semantic_rows)
@@ -9490,22 +9741,15 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
         # the content carrier supplied by this reading.
         original_stamp = read_stamp(self, n).clone() if previous is not None else None
         self.slots[n].copy_(meaning.roles[int(occupied[0])])
-        self.c_plus[n], self.c_minus[n] = evidence
-        if previous is None or abs(float(trust)) >= abs(float(self.source_trust[n])):
-            self.source_trust[n] = max(-1., min(1., float(trust)))
-        self.order[n] = order
+        self.truth_plus[n], self.truth_minus[n] = evidence
         self.surprise[n] = surprise
-        self.origin[n] = self.ORIGIN_CONVERSATION
-        self.record_kind[n] = self.KINDS.index(kind)
-        self.polarity[n] = meaning.polarity
         self.address_keys[n] = identifier
-        self.row_ids[n] = identifier
         self.document_keys[n] = self.document_keys.new_tensor(list(document))
         self.sentence_content_keys[n] = self.sentence_content_keys.new_tensor(list(content))
         self.sentence_index[n] = position
         write_stamp(self, n, original_stamp if previous is not None else
                     stamp(self) if when is True else when)
-        self.witness_count[n] += 1
+        self.access_count[n] += 1
         context = {key: meaning.metadata()[key] for key in ('bindings', 'scope')}
         if meaning.role_refs[0] is not None:
             context['bindings'] = tuple(sorted(dict(context['bindings'], _identity=meaning.role_refs[0]).items()))
@@ -9520,6 +9764,10 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
         self.witness_stream(n, stream)
         if previous is None:
             self.count.fill_(n + 1)
+            start = getattr(self, '_epoch_rows', None)
+            if start is not None:
+                start.setdefault('initial_observations', {})[identifier] = (
+                    int(self.access_count[n]), float(self.surprise[n]))
         self._index_occurrences[identifier] = n
         return n
 
@@ -9594,9 +9842,9 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
         estimate, observation = int(estimate), int(observation)
         if not 0 <= estimate < len(self) or not 0 <= observation < len(self):
             raise IndexError("expectation link row is unavailable")
-        if self.KINDS[int(self.record_kind[estimate])] != "estimate":
+        if self.kind_of(estimate) != "estimate":
             raise ValueError("expectation link must start at an estimate")
-        if self.KINDS[int(self.record_kind[observation])] not in ("observation", "question", "fact", "unverified"):
+        if self.kind_of(observation) not in ("observation", "question", "fact", "unverified"):
             raise ValueError("expectation link must end at an external observation")
         estimate_id = int(self.address_keys[estimate])
         observation_id = int(self.address_keys[observation])
@@ -9807,16 +10055,15 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
             'point': self.slots[i],
             'stream': tuple(self.stream[i].nonzero().flatten().tolist()),
             'trust': float(self.trust[i].item()),
-            'source_trust': float(self.source_trust[i].item()),
-            'order': int(self.order[i]),
-            'evidence': (float(self.c_plus[i]), float(self.c_minus[i])),
+            'order': self.order_of_row(i),
+            'evidence': (float(self.truth_plus[i]), float(self.truth_minus[i])),
             'corners': self.corners(i),
-            'row_id': int(self.row_ids[i]),
+            'row_id': int(self.address_keys[i]),
             'when': self.entry_when(i).clone(),
             'surprise': float(self.surprise[i].item()),
-            'origin': int(self.origin[i].item()),
+            'origin': self.source_document(i),
             'text': self.text_of(i),
-            'kind': self.KINDS[int(self.record_kind[i])],
+            'kind': self.kind_of(i),
             'pending': bool(dict(self._semantic_rows.get(int(self.address_keys[i]), {})
                                 .get('bindings', ())).get('_pending', False)),
             'occurrence': self.occurrence_of(i),
@@ -9842,8 +10089,8 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
 
     @property
     def trust(self):
-        """Compatibility signed evidence; provenance is ``source_trust``."""
-        return self.c_plus - self.c_minus
+        """Signed view of the two independent evidence lanes."""
+        return self.truth_plus - self.truth_minus
 
     @torch.no_grad()
     def set_trust(self, idx: int, trust: float):
@@ -9854,8 +10101,7 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
         if not math.isfinite(float(trust)):
             raise ValueError("fact trust must be finite")
         signed = max(-1.0, min(1.0, float(trust)))
-        self.c_plus[i], self.c_minus[i] = max(signed, 0.), max(-signed, 0.)
-        self.source_trust[i] = signed
+        self.truth_plus[i], self.truth_minus[i] = max(signed, 0.), max(-signed, 0.)
 
     @torch.no_grad()
     def set_evidence(self, idx, positive, negative):
@@ -9874,11 +10120,11 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
         i = int(idx)
         if not 0 <= i < len(self):
             raise IndexError(f"row {i} of {len(self)}")
-        self.c_plus[i], self.c_minus[i] = values
+        self.truth_plus[i], self.truth_minus[i] = values
 
     def corners(self, idx):
         """Compute four overlapping corners without collapsing the poles."""
-        p, n = float(self.c_plus[idx]), float(self.c_minus[idx])
+        p, n = float(self.truth_plus[idx]), float(self.truth_minus[idx])
         return min(p, 1-n), min(n, 1-p), min(p, n), min(1-p, 1-n)
 
     # -- Provenance ------------------------------------------------------
@@ -9894,7 +10140,7 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
         return self._texts[i] if 0 <= i < len(self._texts) else None
 
     @torch.no_grad()
-    def set_origin(self, idx: int, origin: int, text=None):
+    def set_origin(self, idx: int, origin: int, text=None, *, asserted=None):
         """Tag a row's writer provenance (``ORIGIN_*``) and optionally
         attach its source text -- retroactive, mirroring ``set_trust``,
         because provisioned / user rows land via the observe-site push
@@ -9906,7 +10152,16 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
         if (text is not None and bool(self.metadata_required[i])
                 and int(self.address_keys[i]) not in self._semantic_rows):
             raise ValueError("cannot update source text with missing semantic context")
-        self.origin[i] = int(origin)
+        if origin not in (self.ORIGIN_CONVERSATION, self.ORIGIN_PROVISIONED, self.ORIGIN_USER):
+            raise ValueError('unknown LTM0 source document authority')
+        key = bytes(self.document_keys[i].tolist()).hex()
+        if self._document_sources.get(key, self.ORIGIN_CONVERSATION) != origin:
+            sources = dict(self._document_sources)
+            if origin == self.ORIGIN_CONVERSATION:
+                sources.pop(key, None)
+            else:
+                sources[key] = int(origin)
+            self._replace_document_sources(sources)
         self._ensure_texts(n)
         if text is not None:
             self._texts[i] = str(text)
@@ -9914,6 +10169,9 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
                 self._semantic_rows.setdefault(int(self.address_keys[i]), {})
             self.metadata_required[i] = True
             self._update_semantic_fingerprint(i)
+        if origin in (self.ORIGIN_PROVISIONED, self.ORIGIN_USER):
+            from PresentationMemory import supplied_occurrence
+            supplied_occurrence(self, i, asserted=asserted)
 
     def rows_of_origin(self, *origins):
         """Row indices whose ``origin`` is any of ``origins``, in row
@@ -9921,7 +10179,7 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
         c = int(self.count.item())
         if c == 0 or not origins:
             return self.count.new_zeros(0)
-        og = self.origin[:c]
+        og = self.count.new_tensor([self.source_document(i) for i in range(c)])
         mask = torch.zeros_like(og, dtype=torch.bool)
         for o in origins:
             mask |= og == int(o)
@@ -9937,15 +10195,14 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
         all selected rows lose trust.
         """
         count = len(self)
-        selected = self.origin[:count] == int(origin)
+        selected = self.count.new_zeros(count,dtype=torch.bool)
+        selected[self.rows_of_origin(origin)] = True
         for key in preserve_addresses:
             selected &= self.address_keys[:count] != int(key)
-        facts = selected & (self.record_kind[:count] == self.KINDS.index("fact"))
-        self.record_kind[:count].masked_fill_(
-            facts, self.KINDS.index("unverified"))
-        self.c_plus[:count].masked_fill_(selected, 0)
-        self.c_minus[:count].masked_fill_(selected, 0)
-        self.source_trust[:count].masked_fill_(selected, 0)
+        self.truth_plus[:count].masked_fill_(selected, 0)
+        self.truth_minus[:count].masked_fill_(selected, 0)
+        from PresentationMemory import withdraw_supplies
+        withdraw_supplies(self, origin=origin, preserve=preserve_addresses)
 
     @torch.no_grad()
     def clear_origin(self, origin: int, *, retained_occurrences=(), preserve_addresses=()) -> int:
@@ -9960,11 +10217,14 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
         """
         c = int(self.count.item())
         if c == 0:
+            self.withdraw_origin(origin, preserve_addresses=preserve_addresses)
             return 0
-        selected = self.origin[:c] == int(origin)
+        selected = self.count.new_zeros(c,dtype=torch.bool)
+        selected[self.rows_of_origin(origin)] = True
         for key in preserve_addresses:
             selected &= self.address_keys[:c] != int(key)
         if not bool(selected.any()):
+            self.withdraw_origin(origin, preserve_addresses=preserve_addresses)
             return 0
         namespace = self.address_domain
         indices = {int(self.address_keys[i]): i for i in range(c)}
@@ -10027,6 +10287,11 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
         self.compact_rows(keep)
         return removed
 
+    row_columns = ('slots', 'surprise', 'address_keys', 'document_keys',
+                   'sentence_content_keys', 'sentence_index', 'access_count',
+                   'metadata_required', 'semantic_fingerprint', 'truth_plus', 'truth_minus',
+                   'stream', 'recurrence_readings')
+
     @torch.no_grad()
     def compact_rows(self, keep):
         """Compact physical rows in store order; stable addresses do not move."""
@@ -10036,6 +10301,9 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
         if rows != sorted(set(rows)) or any(i < 0 or i >= count for i in rows):
             raise ValueError('LTM compaction requires ordered, unique surviving rows')
         size = len(rows)
+        from PresentationMemory import withdraw_supplies
+        survivors = set(rows)
+        withdraw_supplies(self, removed=[int(self.address_keys[i]) for i in range(count) if i not in survivors])
         owner_ref = self.__dict__.get('_concept_owner')
         owner = None if owner_ref is None else owner_ref()
         if owner is not None:
@@ -10045,20 +10313,17 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
                     owner.mtm.forget(self.occurrence_of(index))
         self._ensure_texts(count)
         texts = [self._texts[i] for i in rows]
-        columns = ('slots', 'surprise', 'origin', 'record_kind',
-                   'polarity', 'address_keys', 'document_keys',
-                   'sentence_content_keys', 'sentence_index', 'witness_count',
-                   'metadata_required', 'semantic_fingerprint', 'c_plus', 'c_minus',
-                   'source_trust', 'row_ids', 'order', 'stream', 'recurrence_readings')
-        minus_one = {'surprise', 'address_keys', 'sentence_index', 'row_ids', 'order', 'recurrence_readings'}
-        for name in columns:
+        minus_one = {'surprise', 'address_keys', 'sentence_index', 'recurrence_readings'}
+        for name in self.row_columns:
             values = getattr(self, name)
             values[:size] = values[keep]
-            values[size:count].fill_(-1 if name in minus_one else name == 'polarity')
+            values[size:count].fill_(-1 if name in minus_one else 0)
         alive = set(map(int, self.address_keys[:size].tolist()))
         for name in ('_semantic_rows', '_expectation_rows'):
             setattr(self, name, {key: value for key, value in getattr(self, name).items() if key in alive})
         self._texts = texts + [None] * (len(self._texts) - size)
+        live_documents = {bytes(row.tolist()).hex() for row in self.document_keys[:size]}
+        self._replace_document_sources({k:v for k,v in self._document_sources.items() if k in live_documents})
         self.count.fill_(size)
         self.rebuild_addresses()
         self._validate_expectation_links()
@@ -10067,33 +10332,29 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
             rebuild()
 
     @torch.no_grad()
-    def reset(self):
+    def reset(self, *, keep_learned_readings=False):
         """Clear the store (idempotent)."""
+        self._supplies = {}
         self.slots.zero_()
         self.stream.zero_()
         self.surprise.fill_(-1.)
         self.count.zero_()
-        self.origin.zero_()
         self._texts = []
-        self.record_kind.zero_()
-        self.polarity.fill_(True)
         self.address_keys.fill_(-1)
         self.document_keys.zero_()
         self.sentence_content_keys.zero_()
         self.sentence_index.fill_(-1)
-        self.witness_count.zero_()
+        self.access_count.zero_()
         self.metadata_required.zero_()
         self.semantic_fingerprint.zero_()
         self._semantic_rows = {}
         self._expectation_rows = {}
-        self.clear_recurrence()
-        self.source_trust.zero_()
+        self.clear_recurrence(keep_learned=keep_learned_readings)
         for name in ('forget_passes', 'forget_sentences', 'forget_last_sentence', 'forget_cutoff', 'forget_pending'):
             getattr(self, name).zero_()
-        self.c_plus.zero_()
-        self.c_minus.zero_()
-        self.row_ids.fill_(-1)
-        self.order.fill_(-1)
+        self.truth_plus.zero_()
+        self.truth_minus.zero_()
+        self._replace_document_sources({})
         self._index_occurrences = AddressIndex()
         # Re-reading the same source after reset recomputes the same address. A held reference
         # cannot silently bind to a later fact at the same physical row.
@@ -11018,7 +11279,7 @@ class SymbolExpectation(Layer):
             if int(b) < 0 or (n is not None and int(n) <= 0):
                 return []
             indices = store.stream_rows(b)
-            indices = indices[store.record_kind[indices] != store.KINDS.index('estimate')]
+            indices = indices[store.kind_codes(indices) != store.KINDS.index('estimate')]
             if n is not None:
                 indices = indices[-int(n):]
             result = []

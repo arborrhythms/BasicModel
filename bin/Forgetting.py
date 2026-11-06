@@ -158,14 +158,14 @@ def retention_values(store, config, *, alive=None):
     """Return independent retention terms; no stored evidence is changed."""
     n = len(store)
     alive = set(range(n)) if alive is None else alive
-    trust = store.source_trust[:n].abs()
+    trust = torch.maximum(store.truth_plus[:n], store.truth_minus[:n])
     utility = torch.where(store.surprise[:n] < 0, 1., store.surprise[:n]).clamp(0, 1)
     luminosity = torch.ones_like(trust)
-    positive, negative = store.c_plus[:n], store.c_minus[:n]
+    positive, negative = store.truth_plus[:n], store.truth_minus[:n]
     # Intrinsic both is heterogeneous content, not two disagreeing sources.
     signs = (positive.gt(0) & negative.eq(0)).long() - (negative.gt(0) & positive.eq(0)).long()
     points = F.normalize(store.slots[:n], dim=-1)
-    orders = store.order[:n]
+    orders = store.count.new_tensor([store.order_of_row(i) for i in range(n)])
     scopes = _scope_keys(store)
     scope_ids = {key: i for i, key in enumerate(dict.fromkeys(scopes))}
     scope = torch.tensor([scope_ids[key] for key in scopes], device=trust.device)
@@ -263,7 +263,7 @@ def forget(store, config=None, *, document_boundary=False, epoch_boundary=False,
     if any(store.meaning_of(i) is None for i in range(n)):
         raise ValueError('forgetting requires the complete semantic sidecar')
     dependencies = {i: _references(store, i, contexts[key], indexes) for i, key in enumerate(keys)}
-    protected = {i for i in range(n) if int(store.origin[i]) in config.protect_origins}
+    protected = {i for i in range(n) if store.source_document(i) in config.protect_origins}
     from LTM1 import OCCURRENCE
     protected.update(indexes[value] for tag, value in store.parts.protected_references()
                      if tag == OCCURRENCE and value in indexes)
@@ -337,7 +337,7 @@ def forget(store, config=None, *, document_boundary=False, epoch_boundary=False,
     expectations = _trim_expectations(store, kept_keys)
     store._validate_expectation_links(expectations)
     removed = set(range(n)) - alive
-    by_origin = {origin: sum(int(store.origin[i]) == origin for i in removed) for origin in (0, 1, 2)}
+    by_origin = {origin: sum(store.source_document(i) == origin for i in removed) for origin in (0, 1, 2)}
     store._semantic_rows = contexts
     store._expectation_rows = expectations
     store._texts[:n] = texts

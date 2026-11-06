@@ -1,4 +1,4 @@
-"""Seen decay, stored location propagation, and unchanged tower projections."""
+"""Seen decay, predicted spread, and retained sparse tower projections."""
 
 import pytest
 import os
@@ -27,9 +27,6 @@ def _chain_cs(*, batch_size=2):
     derived.placement[selected] = directions([0,10,16,50,60], dtype=torch.float32)
     derived.placement_witnesses[selected] = 1
     derived.placement_valid[[rA,rB]] = True
-    cs._priming_boosts.fill_(1.)
-    cs._geometric_spread = .5
-    cs._geometric_radius_rate = 0.
     cs._priming_decay = 1.
     return cs, rA, rB
 
@@ -42,50 +39,39 @@ def test_membership_cache_is_directed_and_weighted():
     assert bool((w == 1).all())
 
 
-def test_energy_transfers_not_amplifies():
-    cs, rA, rB = _chain_cs()
-    cs.prime_seen(torch.tensor([3]), bump=1.)
-    assert cs._priming_boosts[0,3] == 1.5 and cs._priming_boosts[0,rA] == 1.5
-    e0 = (cs._priming_boosts[0]-1).double().sum()
-    cs.prime_seen(torch.tensor([3]), bump=1.)
-    e1 = (cs._priming_boosts[0]-1).double().sum()
-    assert e1 == pytest.approx(float(e0)+1, abs=1e-9*cs.nVectors)
-    audit = cs._last_priming_diffusion
-    torch.testing.assert_close(audit['before'],audit['after'],rtol=0,atol=1e-9*cs.nVectors)
+def test_seen_observations_do_not_amplify_or_replace_the_prediction():
+    cs,rA,rB=_chain_cs()
+    cs._expected_knowing[0,rA]=torch.tensor([.2,.7])
+    before=cs._expected_knowing.clone()
+    for _ in range(2):cs.prime_seen(torch.tensor([3]),bump=1.)
+    assert cs._priming_seen[0,3]==3 and cs._priming_seen[0,rA]==1
+    assert torch.equal(before,cs._expected_knowing)
+    assert cs.relevance_weights(batch=1)[0,rA]==pytest.approx(1.7)
 
 
-def test_successive_primes_propagate_further():
-    cs, rA, rB = _chain_cs()
-    cs.prime_seen(torch.tensor([3]), bump=1.)
-    assert cs._priming_boosts[0,5] == cs._priming_boosts[0,rB] == 1
-    before = cs._priming_boosts.clone()
-    cs.prime_seen(torch.tensor([-1]), bump=0., decay=.8)
-    assert cs._priming_boosts[0,5] > 1 and cs._priming_boosts[0,rB] == 1
-    assert cs._priming_boosts[0,5]-1 == pytest.approx(.8*.5, abs=1e-7)
-    assert (cs._priming_boosts[0]-1).double().sum() == pytest.approx(float((before[0]-1).sum())*.8,abs=1e-6)
+def test_successive_observations_decay_seen_without_geometric_spread():
+    cs,rA,rB=_chain_cs()
+    cs.prime_seen(torch.tensor([3]),bump=1.)
+    cs.prime_seen(torch.tensor([-1]),bump=0.,decay=.8)
+    assert cs._priming_seen[0,3]==pytest.approx(1.8)
+    assert cs._priming_seen[0,[5,rA,rB]].eq(1).all()
+    assert cs.relevance_weights().eq(1).all()
 
 
-def test_zero_spread_is_pure_decay_bump():
-    cs, _rA, _rB = _chain_cs()
-    cs._geometric_spread = 0.
-    b = cs.prime_seen(torch.tensor([3,5]), bump=1., decay=.5)
-    assert float(b[0,3]) == 2. and float(b[0,0]) == 1.
-    b = cs.prime_seen(torch.tensor([5]), bump=1., decay=.5)
-    assert float(cs._priming_boosts[0,3]) == 1.5
-    assert float(cs._priming_boosts[0,5]) == 2.5
-    assert float(b[0,3]) == pytest.approx(1+.5/1.5)
-    assert float(b[0,5]) == 2.
+def test_seen_ledger_retains_decay_and_bump():
+    cs,*_=_chain_cs()
+    cs.prime_seen(torch.tensor([3,5]),bump=1.,decay=.5)
+    cs.prime_seen(torch.tensor([5]),bump=1.,decay=.5)
+    assert cs._priming_seen[0,3]==1.5 and cs._priming_seen[0,5]==2.5
+    assert cs.relevance_weights().eq(1).all()
 
 
-def test_geometric_controls_constructed_with_standing_defaults():
+def test_predictor_and_seen_surfaces_have_constructed_standing_shapes():
     from test_review13_subspaces import fixture
-    import math
-    cs, *_ = fixture()
-    assert cs._geometric_spread == .05 and cs._geometric_neighbours == 8
-    assert cs._geometric_radius.item() == pytest.approx(math.radians(15))
-    assert cs._geometric_radius_rate == .02
-    assert cs._geometric_radius_min == math.radians(1)
-    assert cs._geometric_radius_max == math.radians(90)
+    cs,*_=fixture()
+    assert cs._expected_knowing.shape==(cs.nStreams,cs.nVectors,2)
+    assert cs._priming_seen.shape==(cs.nStreams,cs.nVectors)
+    assert not hasattr(cs,'_geometric_radius')
 
 
 # ---- CS->PS / CS->WS heat projection (Alec 2026-07-12) --------------------
@@ -178,14 +164,14 @@ def test_one_canonical_surface_per_tower():
         assert ws._priming_target() is ws_c
     for cs in m.conceptualSpaces:
         assert cs._priming_target() is m._concept_owner()
-    ws_c._priming_boosts.fill_(1.)
-    m.wholeSpaces[0].prime_seen(_t.tensor([1]), decay=1.0)
+    ws_c._expected_knowing.zero_()
+    ws_c._expected_knowing[0,1,0] = .5
     b0 = m.wholeSpaces[0].priming_weights()
     bc = ws_c.priming_weights()
     torch.testing.assert_close(b0, bc, rtol=0, atol=0)
-    assert m.wholeSpaces[0]._priming_target()._priming_boosts is ws_c._priming_boosts
+    assert m.wholeSpaces[0]._priming_target()._expected_knowing is ws_c._expected_knowing
     assert float(bc[0, 1]) > 1.0
-    assert bool(m.wholeSpaces[0]._priming_boosts.eq(1).all()), (
+    assert bool(m.wholeSpaces[0]._expected_knowing.eq(0).all()), (
         "a delegating tower must leave its unused local slab neutral")
 
 

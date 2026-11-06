@@ -59,9 +59,8 @@ def test_sentence_trials_keep_their_own_perception_pullbacks(tmp_path, monkeypat
         model.runBatch(train=True, optimizer=optimizer, batchSize=2, split='runtime',
             batch_override=(raw, torch.empty(2, 0)))
         assert created == [0, 1], created
-        # Each trial supplies its own pullback to reconstruction and to the
-        # mask's independently owned reconstruction-plus-answer objective.
-        assert called == [0, 0, 1, 1], called
+        # Reconstruction, attention and chooser each read their trial's perception.
+        assert called == [0, 0, 0, 1, 1, 1]
         assert versions[0] == versions[1], 'an optimizer update separated the sentence trials'
     finally:
         model.End()

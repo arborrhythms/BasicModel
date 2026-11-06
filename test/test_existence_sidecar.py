@@ -16,7 +16,7 @@ def test_restored_sidecar_cannot_erase_or_replace_recorded_scope(text, mutation)
         torch.eye(6)[:3].flatten()[None], depth=1, layout="infix", scope={"where": ("sym", 11)})
     row = source.append_meaning(meaning, trust=.8, sentence_index=len(source))
     if text is not None:
-        source.set_origin(row, source.ORIGIN_USER, text=text)
+        source.set_origin(row, source.ORIGIN_USER, text=text, asserted=(float(source.truth_plus[row]), float(source.truth_minus[row])))
     extras = deepcopy(source.semantic_extras())
     extras["records"][0]["context"]["scope"] = (() if mutation == "erase"
                                                  else (("where", ("sym", 12)),))
@@ -50,5 +50,5 @@ def test_source_update_cannot_certify_missing_semantic_context():
     restored = LTM0(18, capacity=8, percept_width=0)
     restored.load_state_dict(source.state_dict(), strict=True)
     with pytest.raises(ValueError, match="missing semantic"):
-        restored.set_origin(0, source.ORIGIN_USER, text="new source")
+        restored.set_origin(0, source.ORIGIN_USER, text="new source", asserted=(float(restored.truth_plus[0]), float(restored.truth_minus[0])))
     assert restored.meaning_of(0) is None

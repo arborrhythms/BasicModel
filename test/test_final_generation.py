@@ -55,8 +55,8 @@ def test_residual_charges_each_step_and_unresolved_frontier_without_cancellation
     errors=torch.tensor([[[.1,0.,0.],[.2,0.,0.],[0.,0.,0.]]])
     pending=walk_residual(errors,initial,initial,torch.tensor([1]))
     drained=walk_residual(errors,initial*0,initial,torch.tensor([0]))
-    torch.testing.assert_close(pending,torch.tensor([1.3]))
-    torch.testing.assert_close(drained,torch.tensor([.3]))
+    torch.testing.assert_close(pending,torch.tensor([[.64,0.,0.]]))
+    torch.testing.assert_close(drained,torch.tensor([[.3,0.,0.]]))
 
 
 def test_certified_completion_only_has_priority_and_pending_improvement_gets_credit():
@@ -85,12 +85,12 @@ def test_certified_completion_only_has_priority_and_pending_improvement_gets_cre
 
 
 def test_selected_residual_has_the_native_forward_gradient():
-    from Generative import selected_residual,relative_residual
+    from Generative import selected_residual,absolute_residual
     parent=torch.tensor([[.35,.65]],requires_grad=True)
     left,right=torch.tensor([[.2,.8]]),torch.tensor([[.6,.4]])
     op=Pair(); language=SimpleNamespace(_generate_binary_ops=(op,),_generate_unary_ops=())
     actual=selected_residual(language,parent,left,right,torch.tensor([0]),torch.tensor([True]))
-    expected=relative_residual(parent,op.compose(left,right))[0]
+    expected=absolute_residual(parent,op.compose(left,right),numeric=False)[0]
     torch.testing.assert_close(actual.sum(-1),expected,rtol=0,atol=0)
     a=torch.autograd.grad(actual.sum(),(parent,op.weight),retain_graph=True)
     b=torch.autograd.grad(expected.sum(),(parent,op.weight))
@@ -164,6 +164,9 @@ def test_single_root_lexical_scan_is_reused_across_walk_steps(monkeypatch, tmp_p
             monkeypatch.setattr(Generative,'lexical_candidates',counted)
             phase='retrieval'
             bank=Generative.walk_bank(model,root,None)
+            assert bank.bytes is None and bank.byte_valid is None
+            assert bank.primitive_support.dtype == torch.bool
+            assert bank.primitive_support.shape == (*bank.rows.shape, 256)
             first=bank.rows.clone()
             model._desired_answer='not a menu input'
             event=torch.cat((root,root.new_zeros(1,7,root.shape[-1])),1)

@@ -26,51 +26,96 @@ class EntryRead:
                 return False
         return True
 
-    def cued_rows(self, cue, *, primed=(), references=(), retrieved=(), max_candidates=32,
-                  work=None, stream=None, role_mask=None):
-        if type(max_candidates) is not int or max_candidates < 0:
-            raise ValueError('candidate limit must be a nonnegative integer')
+    @torch.no_grad()
+    def cued_rows(self, cue, *, primed=(), references=(), retrieved=(), max_candidates=None,
+                  max_records=32, work=None, stream=None, role_mask=None):
+        """Score one fixed window; charge only the returned, ranked records."""
+        max_candidates = self.ltm_window if max_candidates is None else max_candidates
+        for name, value in (('candidate', max_candidates), ('record', max_records)):
+            if type(value) is not int or value < 0:
+                raise ValueError(name + ' limit must be a nonnegative integer')
+        if max_candidates > self.ltm_window:
+            raise OverflowError('candidate limit exceeds constructed ltmWindow')
         from LTM1 import SYMBOL
         explicit = [self.location(ref) for ref in (*references, *retrieved)]
         for ref in cue.role_refs:
             if ref is not None and ref[0] == 'sym' and type(ref[1]) is int and ref[1] > 0:
                 explicit.extend(('sym', row) for row in self.parts.rows_referencing(SYMBOL, ref[1]))
         candidates = list(dict.fromkeys(row for row in explicit if row is not None))
-        candidates.extend(row for row in range(len(self)) if row not in candidates)
-        candidates.extend(('sym', row) for row in self.parts.indices().tolist() if ('sym', row) not in candidates)
-        occupied = cue.role_mask if role_mask is None else role_mask
-        found, incomplete, scanned = [], [], 0
-        for index in candidates:
-            if scanned >= max_candidates or (work is not None and not work.consume('record')):
-                incomplete.append('candidate_limit' if scanned >= max_candidates else 'work_budget')
-                break
-            scanned += 1
+        present = set(candidates)
+        # LTM0 compaction preserves physical row order; re-witnessing keeps
+        # the original stamp. Appends occupy the next seat after survivors.
+        candidates.extend(row for row in reversed(range(len(self))) if row not in present)
+        relations = self.parts.indices()
+        if len(relations):
+            # Relation handles can reuse freed seats, so their stamps, not
+            # handle magnitude, determine recency. Unstamped ties use address.
+            from RowTime import encoder
+            times = encoder().decode_index(self.parts.percept[relations, 4:]).tolist()
+            ordered = sorted(zip(times, relations.tolist()), reverse=True)
+            candidates.extend(('sym', row) for _, row in ordered if ('sym', row) not in present)
+        incomplete = ['ltm_window'] if len(candidates) > max_candidates else []
+        candidates = candidates[:max_candidates]
+        scanned = len(candidates)
+        if not scanned:
+            return dict(value=(), records_scanned=0, incomplete=tuple(incomplete))
+        occupied = (cue.role_mask if role_mask is None else role_mask).to(self.slots.device)
+        roles, masks, available = self._cue_roles, self._cue_role_mask, self._cue_available
+        roles.zero_(); masks.zero_(); available.zero_()
+        # Occurrence kind and question evidence are tensor-valued filters.
+        occurrence_slots = [slot for slot, index in enumerate(candidates) if isinstance(index, int)]
+        occurrence_rows = [index for index in candidates if isinstance(index, int)]
+        if occurrence_rows:
+            rows = torch.tensor(occurrence_rows, device=self.slots.device)
+            kinds = self.kind_codes(rows)
+            available[occurrence_slots] = ((kinds != self.KINDS.index('estimate')) &
+                (kinds != self.KINDS.index('cover')) &
+                ((kinds != self.KINDS.index('question')) | self.truth_plus[rows].ne(0) | self.truth_minus[rows].ne(0)))
+        records = []
+        for slot, index in enumerate(candidates):
             record = self.row(index)
-            if record['kind'] in ('estimate', 'cover') or (record['kind'] == 'question' and not any(record['evidence'])):
-                continue
+            records.append(record)
             meaning = record['meaning']
+            if isinstance(index, tuple):
+                available[slot] = (record['kind'] not in ('estimate', 'cover') and
+                    (record['kind'] != 'question' or any(record['evidence'])))
             if meaning is None:
-                incomplete.append('unavailable_metadata'); continue
-            # Query controls and proof records are not content constraints.
-            constraints = {key: value for key, value in cue.bindings if not key.startswith('_')}
+                if bool(available[slot]):
+                    incomplete.append('unavailable_metadata')
+                available[slot] = False
+                continue
+            roles[slot].copy_(meaning.roles)
+            masks[slot].copy_(meaning.role_mask)
+        wanted = cue.roles.to(roles).clone()
+        if self.when_start is not None:
+            wanted[:, self.when_start:self.when_start+4] = 0
+            roles[:, :, self.when_start:self.when_start+4] = 0
+        available &= ~(occupied[None] & ~masks).any(-1)
+        # Exactly one batched product, one batch for each semantic role.
+        similarities = torch.bmm(
+            F.normalize(roles, dim=-1, eps=1e-8).transpose(0, 1),
+            F.normalize(wanted, dim=-1, eps=1e-8).unsqueeze(-1)).squeeze(-1).transpose(0, 1)
+        if bool(occupied.any()):
+            matches = similarities.clamp(0, 1)[:, occupied].mean(-1)
+        else:
+            matches = torch.ones_like(similarities[:, 0])
+        ranked = sorted(range(scanned), key=lambda slot: (-float(matches[slot]),
+            (1, candidates[slot][1]) if isinstance(candidates[slot], tuple) else (0, candidates[slot])))
+        constraints = {key: value for key, value in cue.bindings if not key.startswith('_')}
+        found = []
+        for slot in ranked:
+            if len(found) >= max_records:
+                break
+            if not bool(available[slot]):
+                continue
+            record = records[slot]
+            meaning = record['meaning']
             if not self._scope_contains(cue.scope, meaning.scope) or not self._scope_contains(constraints, meaning.bindings):
                 continue
-            mask = occupied.to(meaning.role_mask.device)
-            if bool((mask & ~meaning.role_mask).any()):
-                continue
-            wanted, held = cue.roles.to(meaning.roles), meaning.roles
-            if self.when_start is not None:
-                wanted, held = wanted.clone(), held.clone()
-                wanted[:, self.when_start:self.when_start+4] = 0
-                held[:, self.when_start:self.when_start+4] = 0
-            similarities = F.cosine_similarity(wanted, held, dim=-1)
-            match = float(similarities[mask].clamp(0, 1).mean()) if bool(mask.any()) else 1.
-            found.append(dict(record, index=index, match=match))
-        # Preserve the reader's address-order tie break after removing leaf
-        # postings. Explicit cues affect which candidates fit the work budget,
-        # not the ranking of equally matching retained descriptions.
-        found.sort(key=lambda row: (-row['match'],
-            (1, row['index'][1]) if isinstance(row['index'], tuple) else (0, row['index'])))
+            if work is not None and not work.consume('record'):
+                incomplete.append('work_budget')
+                break
+            found.append(dict(record, index=candidates[slot], match=float(matches[slot])))
         return dict(value=tuple(found), records_scanned=scanned, incomplete=tuple(dict.fromkeys(incomplete)))
 
     def recall_time(self, when, *, max_records, work, window=1):
@@ -91,7 +136,7 @@ class EntryRead:
             stamp = self.entry_when(index)
             if not bool(stamp.ne(0).any()):
                 continue
-            if isinstance(index, int) and self.KINDS[int(self.record_kind[index])] in ('cover', 'estimate'):
+            if isinstance(index, int) and self.kind_of(index) in ('cover', 'estimate'):
                 continue
             distance = abs(int(encoder().decode_index(stamp))-target)
             if distance <= window:

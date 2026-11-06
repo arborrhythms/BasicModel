@@ -3,7 +3,7 @@ from pathlib import Path
 import torch
 
 
-def test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes(tmp_path, eager_reading):
+def test_mixing_reconstruction_keeps_non_ascii_percepts_in_the_target(tmp_path, eager_reading):
     import Models
     from test_mm_xor import _fresh_model
     root = Path(Models.__file__).resolve().parents[1]
@@ -24,8 +24,11 @@ def test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes(tmp_pa
         candidates = [bytes(v[m].tolist()) for v, m, row in
                       zip(isp._ar_bank_bytes[0], isp._ar_bank_valid[0],
                           lookup_view(isp, "lookup_rows")[0]) if int(row) >= 0]
-        assert candidates == [b'caf', 'é'.encode('utf-8')], candidates
-        assert b''.join(candidates) == surface.strip().encode('utf-8')
+        # Meronomy.percept_spans keeps high bytes as percepts. Only the
+        # maximal letter run is a word eligible for the reconstruction bank.
+        assert target[1] == 'é'.encode('utf-8')
+        assert candidates == [b'caf'], candidates
+        assert int(lookup_view(isp, 'lookup_rows')[0, 1]) == -1
         assert model._word_symbol_concept_ids() is None
     finally:
         model.End()
@@ -44,6 +47,7 @@ def test_mixing_bank_uses_byte_preserving_word_texts():
         _finalize_sentence_word_layout=lambda active: None)
     observed = 'café'.encode('utf-8')
     model = SimpleNamespace(word_brackets=True, reconstruct_in_loop=True, inputSpace=isp,
+        word_surface_capacity=64,
         _aligned_serial_word_mode=lambda: False,
         _concept_owner=lambda: SimpleNamespace(word_surface_for_row=lambda row: observed),
         perceptualSpace=SimpleNamespace(_forward_input={'word_texts': [[observed.decode('latin1')]]}))
@@ -64,7 +68,7 @@ def test_mixing_reconstruction_stages_objects_surfaces_and_occurrences(tmp_path,
         raw = model.inputSpace.prepInput(['hello world', 'hello there', 'loving world', 'loving there'])
         model._lex_embed_stem(raw)
         isp = model.inputSpace
-        from PrependedSymbols import lookup_view
+        from PrependedSymbols import lookup_view, word_view
         model._validate_reconstruction_bank()
         assert model._word_symbol_concept_ids() is None
         rows = lookup_view(isp, "lookup_rows")
@@ -83,6 +87,7 @@ def test_mixing_reconstruction_stages_objects_surfaces_and_occurrences(tmp_path,
                     byte = isp._ar_bank_bytes[b, w][isp._ar_bank_valid[b, w]]
                     surface = bytes(byte.tolist())
                     assert surface == owner.word_surface_for_row(int(rows[b, w]))
+                    assert int(word_view(isp, 'concept_ids')[b, w]) == owner.interpret.word_for_form(surface)
                     words.append(surface.decode('utf-8'))
             decoded.append(words)
         assert decoded == [['hello', 'world'], ['hello', 'there'], ['loving', 'world'], ['loving', 'there']]

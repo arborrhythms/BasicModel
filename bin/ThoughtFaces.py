@@ -85,7 +85,9 @@ def infer(context, arguments):
 
 
 def intuit(context, arguments):
-    raise NotImplementedError('intuit execution is deferred to item 2.5 round B')
+    frames = context.ltm.intuition_rules(max_records=context.max_records, work=context.work)
+    return context.conceptual_space.intuition(arguments['argin1'], frames,
+        row=context.row, work=context.work, premise=context.focus_where)
 
 
 def is_true(context, arguments):

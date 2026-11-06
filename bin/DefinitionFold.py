@@ -31,7 +31,7 @@ def examples(owner, field):
     result = []
     for witness in parts.indices().tolist():
         member, whole = parts.references(witness)
-        if whole[0] != SYMBOL:
+        if whole[0] != SYMBOL or not alloc.class_member(member, whole):
             continue
         cid = whole[1]
         row = owner._csw_row_of(cid)

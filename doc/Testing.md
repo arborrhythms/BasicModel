@@ -422,12 +422,14 @@ The exact landing commit and its one full sweep are recorded in the
   supports legitimate 4.8 GiB cases without allowing the pool to consume the
   8 GiB reserved for the machine. `--memory-gib` may lower the aggregate
   budget, but cannot leave less than 8 GiB for the machine.
-- At 80% of a worker deadline, or at the earlier of 80% of its 8 GiB cap and
-  that cap minus 64 MiB (never later than half its cap for a small cap), a
-  worker finishes its current test and exits. A fresh worker runs remaining
-  cases. Coverage records count one final completion per selected case; resource
-  recycling does not repeat cases. The hard memory limit still applies within a
-  test, and a killed worker is a failure.
+- A worker finishes its current test and recycles when it reaches 80% of its
+  deadline or the soft memory boundary. Its reservation is the smaller of its
+  process limit and the aggregate budget divided by the configured pool size.
+  The soft boundary is the earlier of 80% of that reservation and the
+  reservation minus 64 MiB, with a floor of half the reservation. With ten
+  workers and 28 GiB it is 2.24 GiB. A running test may use the full 8 GiB
+  process allowance. A fresh worker takes the remaining cases, preserving one
+  reported completion per selector.
 - An ordinary pytest assertion, setup or teardown failure does **not** cancel
   the remaining workers. The receipt keeps its `test_failure` outcome and
   runs every selected case so a diagnostic full run reports all failures.
@@ -618,3 +620,7 @@ the freeze; the receipts record the xfails. The round stops only for a
 source-hash mismatch or a numerical divergence, which stays fail-loud. `make
 test` remains the criterion: a strict xfail that starts passing fails the
 suite, and is removed together with the deviation it named.
+
+### Unexpected recompilation checks (2026-11-03)
+
+`test_compile_guard.py` checks that each declared model execution phase admits its initial graph, reuses it for compatible inputs, and raises on a later shape or owner-attribute guard failure. The failure must reach the caller even when an outer compiler policy requests silent fallback. Initial training/evaluation and decoder trial phases are explicit; arbitrary new shapes are not warmup exceptions. `test_generation_budget.py` checks the construction-time free-generation limit and preserves complete recorded-derivation replay independently of it.

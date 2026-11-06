@@ -5,14 +5,14 @@ import torch
 from ReferenceContext import SituationFrame
 from test_bind_thought import execute, native, occurrence, site
 from test_medium_term_memory import keep, mention, snapshot, unchanged
-from test_reference_arrivals import equality, force_named, named, world
+from test_reference_arrivals import equality, force_named, named, described, world
 
 
 def test_occurrence_bind_witness_is_a_locatable_address(monkeypatch):
     f = native(monkeypatch)
     target, _ = occurrence(f, f.atoms[0], f.atoms[4])
     address = f.identities[target]
-    result = execute(f, site(f, f.atoms[0]*0, predicate=f.atoms[4]))
+    result = execute(f, site(f, f.atoms[0], predicate=f.atoms[4]))
     assert result.value.role_refs[0] == address
     assert result.evidence['witnesses'] == (address,)
     assert all(f.store.location(witness) is not None for witness in result.evidence['witnesses'])
@@ -20,14 +20,14 @@ def test_occurrence_bind_witness_is_a_locatable_address(monkeypatch):
 
 def test_native_arrival_without_synthetic_occurrence_joins_its_working_entry(monkeypatch):
     from IdentityRows import mint
-    resolver, store, atoms, words, _ = world()
-    pending, _ = keep(resolver, named(atoms[0], words['x']))
+    resolver, store, atoms, words, _ = world(pending_atom=0)
+    pending, _ = keep(resolver, described(atoms[0], words['x']))
     token = store.occurrence_of(pending)
     individual = mint(resolver.components.owner, atoms[0])
     force_named(resolver, monkeypatch, individual)
     frame = SituationFrame(1, torch.stack((atoms[0], atoms[0]*0, atoms[0]*0)),
         torch.tensor([True, False, False]), -1, atoms[0], symbol_ids=(individual,))
-    clause = equality(atoms[1], words['x'], words['wrong'])
+    clause = equality(atoms[1], words['x'], words['wrong'], subject=atoms[0])
     plan = resolver.preview(clause, chunk_context(resolver, (SituationFrame.from_row(store.row(pending)), frame)))
     before, entries = snapshot(resolver), dict(resolver.components.owner.mtm.entries)
     prepared = resolver.prepare(clause, plan)
@@ -63,7 +63,7 @@ def test_arrival_without_a_selection_reports_it_without_reopening_the_token(monk
 
 
 def test_new_document_cannot_refine_a_same_stream_site_outside_its_frames(monkeypatch):
-    resolver, store, atoms, words, _ = world()
+    resolver, store, atoms, words, _ = world(pending_atom=0)
     force_named(resolver, monkeypatch, words['three'])
 
     def close(clause, document):
@@ -77,17 +77,18 @@ def test_new_document_cannot_refine_a_same_stream_site_outside_its_frames(monkey
         unchanged(resolver, retained)
         return row
 
-    pending = close(named(atoms[0], words['x']), 'old-document')
+    pending = close(described(atoms[0], words['x']), 'old-document')
     token = store.occurrence_of(pending)
     pool = resolver.components.owner.mtm
     before = pool.entries[token]
-    close(equality(atoms[0], words['x'], words['three']), 'new-document')
+    # §50/§52: containment permits this refinement; only frame scope blocks it.
+    close(equality(atoms[0], words['x'], words['three'], subject=atoms[0]), 'new-document')
     assert pool.entries[token] == before
 
 
 def test_refining_from_a_pooled_candidate_keeps_its_earlier_use_and_full_content(monkeypatch):
-    resolver, store, atoms, words, _ = world()
-    pending, _ = keep(resolver, named(atoms[0], words['x']))
+    resolver, store, atoms, words, _ = world(pending_atom=0)
+    pending, _ = keep(resolver, described(atoms[0], words['x']))
     token = store.occurrence_of(pending)
     description = atoms[0] + atoms[2]
     candidate, _ = keep(resolver, mention(description, reference=words['three']), position=1)
@@ -99,7 +100,7 @@ def test_refining_from_a_pooled_candidate_keeps_its_earlier_use_and_full_content
     assert pool.token_of(use) == candidate_token
     before = pool.entries[candidate_token]
     force_named(resolver, monkeypatch, words['three'])
-    keep(resolver, equality(atoms[1], words['x'], words['wrong']),
+    keep(resolver, equality(atoms[1], words['x'], words['wrong'], subject=atoms[0]),
          (SituationFrame.from_row(store.row(pending)), frame), position=3)
     token = pool.token_of(token)
     assert pool.entries[token].kind == words['three']

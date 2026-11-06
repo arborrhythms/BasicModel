@@ -55,26 +55,22 @@ def test_meet_step_uses_candidate_mass_and_negative_subgradient():
     torch.testing.assert_close(placement_step(q, context, weights, negatives), expected)
 
 
-def test_read_point_geometry_conserves_energy_and_never_writes(monkeypatch):
-    cs, derived, rows, reading = lesson(monkeypatch)
-    a,b = rows[:2]
-    derived.placement[[a,b]] = F.normalize(torch.ones(2,derived.meaning_pairs),dim=-1)
-    derived.placement_witnesses[[a,b]] = 1
+def test_prediction_and_placement_reads_never_write_each_other(monkeypatch):
+    cs,derived,rows,reading=lesson(monkeypatch)
+    a,b=rows[:2]
+    cs._expected_knowing[0,b]=torch.tensor([.2,.8])
     cs.prime_seen(torch.tensor([[a]]))
-    stored, seen = cs._priming_boosts.clone(), cs._priming_seen.clone()
-    context = cs.placement_context(0)
+    stored,seen=cs._expected_knowing.clone(),cs._priming_seen.clone()
+    context=cs.placement_context(0)
     torch.testing.assert_close(context,(seen[0]-1).clamp_min(0),rtol=0,atol=0)
-    assert stored[0,b] > 1 and seen[0,b] == 1
-    first, second = cs.relevance_weights(batch=1), cs.relevance_weights(batch=1)
-    assert torch.equal(first,second) and torch.equal(stored,cs._priming_boosts)
+    assert stored[0,b,1]==.8 and seen[0,b]==1
+    first,second=cs.relevance_weights(batch=1),cs.relevance_weights(batch=1)
+    assert torch.equal(first,second) and torch.equal(stored,cs._expected_knowing)
     assert torch.equal(seen,cs._priming_seen)
-    audit = cs._last_priming_diffusion
-    torch.testing.assert_close(audit['before'],audit['after'],rtol=0,atol=1e-9*cs.nVectors)
-    calls=[]
-    original=cs.placement_context
-    monkeypatch.setattr(cs,'placement_context',lambda batch=0: calls.append(batch) or original(batch))
+    calls=[];original=cs.placement_context
+    monkeypatch.setattr(cs,'placement_context',lambda batch=0:calls.append(batch) or original(batch))
     derived.observe_close(reading)
-    assert calls==[0]
+    assert calls==[0] and torch.equal(stored,cs._expected_knowing)
 
 
 def test_unchanged_forward_reuses_edges_bridge_forms_and_witnesses(monkeypatch):

@@ -64,6 +64,7 @@ class Reading:
     operation_relations: Any = None
     binding_choices: bool = False
     close_references: bool = False
+    interpret_forced: bool = True
     operation_probabilities: Any = None
     leaf_orders: Any = None
     leaf_evidence: Any = None
@@ -81,6 +82,7 @@ class Reading:
     operand_counts: Any = None
     form_wholes: Any = None
     form_whole_counts: Any = None
+    form_whole_presence: Any = None
     @property
     def _tensor_fields(self):
         core = ("rows", "word_rows", "activations", "leaves", "actions",
@@ -89,7 +91,7 @@ class Reading:
                                              "reference_values", "reference_relations", "operation_values", "operation_refs", "operation_relations", "operation_probabilities", "leaf_orders", "leaf_evidence",
                                              "identity_origins", "identity_ids", "identity_actions", "identity_values", "identity_leaves",
                                              "timeline_actions", "timeline_values", "case_values", "case_selected", "operand_counts",
-                                             "form_wholes", "form_whole_counts")
+                                             "form_wholes", "form_whole_counts", "form_whole_presence")
                             if getattr(self, name) is not None)
 
     def __post_init__(self) -> None:

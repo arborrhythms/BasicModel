@@ -48,9 +48,18 @@ class DefinitionIndex:
         obj, word = store.refs[row].tolist()
         allocator = self._allocator()
         value = allocator.word_descriptions.get(word)
-        if (value is None or 'definition' not in store.readings(
+        if (value is None or obj not in allocator.named_identities.get(word, ())
+                or 'definition' not in store.readings(
                 row, lambda ref: allocator.symbol_types.get(ref[1], ()) if ref[0] == store.SYMBOL else ())):
-            return  # only an object -> word edge has the definition reading
+            return  # Only interpret.define names a pair; a generic Part chain does not.
+        # A named class and its witnesses can all have object-typed handles.
+        # The witnessed members of this word's own class denote their parent
+        # through the word, even after this derived index is rebuilt.
+        for parent in store.wholes(obj):
+            if allocator.relate_idx.get(('part-base', parent)) == (store.SYMBOL, word):
+                membership = store.find(obj, parent)
+                if bool(store.truth_plus[membership] > 0):
+                    return
         if word <= 0 or obj <= 0 or word == obj:
             raise ValueError('DEF requires distinct native word and object identities')
         if (word, obj) in self._rows and self._rows[word, obj] != row:
@@ -59,7 +68,6 @@ class DefinitionIndex:
         self._objects[word] = tuple(sorted(set(self._objects.get(word, ())) | {obj}))
         self._words[obj] = tuple(sorted(set(self._words.get(obj, ())) | {word}))
         self._descriptions[word] = value
-        self._revision = store.revision
         if value.get('identity_key') is not None:
             self._identities[value['identity_key']] = word
         for form in value['forms']:

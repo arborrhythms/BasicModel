@@ -43,12 +43,18 @@ def test_chosen_pair_preserves_values_eligibility_gradients_and_optimizer_step(p
         left,right_value,valid,details=result
         loss=(left.square()+right_value*.3).sum()+details['logits'].square().sum()
         gradients=torch.autograd.grad(loss,parameters,allow_unused=True)
-        trainable=list(operator_copy.parameters())+list(chooser.parameters())
-        optimizer=torch.optim.SGD(trainable,lr=.01,momentum=.9)
-        for parameter,gradient in zip(trainable,gradients[1:]):
-            optimizer.state[parameter]['momentum_buffer']=torch.full_like(parameter,.1)
-            parameter.grad=gradient
-        optimizer.step()
+        # §50 item106 / item65: the joint-residual chooser is fixed, and
+        # only Product and Adverb among these operators own parameters.
+        assert not list(chooser.parameters())
+        trainable=list(operator_copy.parameters())
+        assert bool(trainable) == (operator in ('ProductLayer','AdverbLayer'))
+        if trainable:
+            optimizer=torch.optim.SGD(trainable,lr=.01,momentum=.9)
+            for parameter,gradient in zip(trainable,gradients[1:]):
+                optimizer.state[parameter]['momentum_buffer']=torch.full_like(parameter,.1)
+                parameter.grad=gradient
+            optimizer.step()
+        torch.testing.assert_close(chooser.weight,chooser.weight.new_tensor([1,0,0,0,0]),rtol=0,atol=0)
         outcomes.append((result,gradients,[p.detach().clone() for p in trainable],sum(saved)))
     before,after=outcomes
     for left,right in zip(before[0][:3],after[0][:3]):

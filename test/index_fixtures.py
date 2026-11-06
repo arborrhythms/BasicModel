@@ -21,6 +21,9 @@ def terminal_model_index(model, references):
                          if reference is not None
                          and predicate_relation(reference[1]) == 'operator'])
     space.prime_seen(rows)
+    # The mechanism's declared candidate set now arrives through the detached
+    # predicted field; the seen ledger only supplies placement context.
+    space._expected_knowing[:,rows.long(),0]=1.
     configure_model_index(model, model.symbolSpace.ltm_store)
     return max((space._row_order(int(row)) for row in rows), default=0)
 

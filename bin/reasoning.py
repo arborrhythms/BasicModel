@@ -160,7 +160,7 @@ class TruthGroundedReasoner:
                     diagnostics.append("work_budget")
                     break
                 scanned += 1
-                if int(store.record_kind[i]) != store.KINDS.index("fact"):
+                if store.kind_of(i) != 'fact':
                     continue
                 row = store.row(i)
                 fact = row["meaning"]

@@ -18,7 +18,10 @@ def _with_identity_bank(understanding, codes):
                    weights=codes.new_ones(batch, count),
                    own=torch.ones(batch, count, dtype=torch.bool),
                    bytes=bank.bytes[:, :1].expand(-1, count, -1),
-                   byte_valid=bank.byte_valid[:, :1].expand(-1, count, -1))
+                   byte_valid=bank.byte_valid[:, :1].expand(-1, count, -1),
+                   surface_present=bank.surface_present[:, :1].expand(-1, count),
+                   primitive_support=bank.primitive_support[:, :1].expand(-1, count, -1),
+                   forms=codes[..., :bank.forms.shape[-1]], form_wholes=None)
     return replace(understanding, sentence_records=(replace(record, primed=bank),))
 
 
@@ -38,12 +41,20 @@ def test_realization_uses_a_held_derivation_without_running_resolution(
             def forbidden(*args, **kwargs):
                 raise AssertionError("output realization must not run query or answer resolution")
 
+            def rescan(*args, **kwargs):
+                raise AssertionError("a held answer must reuse its bounded lexical read")
+
             monkeypatch.setattr(model, "_resolve_answer", forbidden)
             monkeypatch.setattr(model, "_resolve_step", forbidden, raising=False)
             monkeypatch.setattr(model, "answer_query", forbidden)
-            first = model.reverseOutput(understanding, held)
+            import Generative
+            with monkeypatch.context() as prepared:
+                prepared.setattr(Generative, "lexical_candidates", rescan)
+                first = model.reverseOutput(understanding, held)
             _capture_program_probe(model, ["5 plus 6", "7 plus 8"])
-            second = model.reverseOutput(understanding, held)
+            with monkeypatch.context() as prepared:
+                prepared.setattr(Generative, "lexical_candidates", rescan)
+                second = model.reverseOutput(understanding, held)
         assert first.derivation is held and second.derivation is held
         torch.testing.assert_close(second.actual, first.actual, rtol=0, atol=0)
         torch.testing.assert_close(second.concepts, first.concepts, rtol=0, atol=0)
@@ -194,7 +205,7 @@ def test_percept_answer_keeps_meaning_inverse_and_state_out_of_credit(tmp_path, 
             state[:, 0] = parent
         state.requires_grad_()
 
-        def one_split(top):
+        def one_split(top, features=None):
             # A tensor-only fixed policy exercises the real shared inverse.
             # Root expands once; its smaller children are emitted.
             scores = top.new_full((top.shape[0], language.generate_policy.out_features), -1000.)

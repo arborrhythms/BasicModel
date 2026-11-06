@@ -1,6 +1,7 @@
-"""Historical candidate search before the 2026-10-29 storage repair.
+"""Candidate materialization from before the 2026-10-29 storage repair.
 
-Preserved for value, choice, gradient and optimizer parity; never a production path.
+The §41 absolute pair residual replaces its old scale normalization. This reference
+checks value, choice, gradient, optimizer and allocation parity.
 """
 import torch
 
@@ -10,15 +11,15 @@ def _bounded_binary_reconstruction(op, parent, reference, on_right, known,
                                    left_priming=None, right_priming=None,
                                    left_basis=None, right_basis=None,
                                    chooser=None, return_details=False, require_progress=False, whole_bank=None, case_bank=None):
-    """Reconstruction-owned hard pair, initially least residual; no straight-through search gradient.
+    """Fixed joint-residual hard pair; no straight-through search gradient.
 
     At most K constituents per side, with words snapped only at leaves.
     The search has
     at most K squared pairs, K=candidate_limit. Both evidence lanes are
     read independently only after the form has identified the words.
     Retrieval indices and any supplied reference are detached. Dictionary
-    candidates are detached constants. Residuals are relative to the
-    parent's mean square. The trial comparison trains the compose chooser.
+    candidates are detached constants. Residuals use absolute error in the
+    walk's chart. The trial comparison trains the compose chooser.
     This is an approximate reconstruction; recomposition and child fidelity
     must be measured separately. No candidate means unavailable, never an
     identity pseudo-inverse. Callers own the snapshot and its row masks.
@@ -98,17 +99,15 @@ def _bounded_binary_reconstruction(op, parent, reference, on_right, known,
     form = parent if form_width is None else parent[..., :form_width]
     folded_form = folded if form_width is None else folded[..., :form_width]
     residual = (folded_form - form[:, None, None, :]).square().mean(-1)
-    energy = form.square().mean(-1)[:, None, None]
-    # Exact zero origins use the existing Error squared-penalty convention;
-    # no floor changes any positive parent scale.
-    residual = residual / torch.where(energy > 0, energy, torch.ones_like(energy))
+    # §41 carries the storage oracle forward with the absolute pair residual.
+    # Its historical full candidate tensor still supplies the allocation
+    # and pullback comparison against the current factored implementation.
     if form_width is not None:
         meaning = parent[..., form_width:]
-        meaning_energy = meaning.square().mean(-1)[:, None, None]
-        residual = residual + (folded[..., form_width:] - meaning[:, None, None]).square().mean(-1) / torch.where(
-            meaning_energy > 0, meaning_energy, 1.)
-    # The shortlist and eligibility are unchanged. Context learns only
-    # through the separate teacher loss, never through candidate codes.
+        lanes = (folded[..., form_width:] - meaning[:, None, None]).unflatten(-1, (2, -1))
+        residual = residual + lanes.square().mean(-1).mean(-1)
+    # The shortlist and eligibility are unchanged. The fixed chooser uses
+    # the joint residual; candidate codes are detached references.
     def candidate_features(candidates, indices, priming, active):
         candidates = candidates if form_width is None else candidates[..., :form_width]
         energy = candidates.square().sum(-1)
@@ -134,8 +133,8 @@ def _bounded_binary_reconstruction(op, parent, reference, on_right, known,
     else:
         selected, _, logits = chooser(features, allowed)
     # Any exact recomposition outranks an approximate one. Within that
-    # tolerance the learned chooser decides, so roundoff cannot bypass
-    # its orientation lesson. CE still sees every legal pair.
+    # tolerance the fixed joint-residual chooser ranks the legal pairs;
+    # exact ties follow their existing candidate order.
     fits = residual.detach().masked_fill(~allowed, torch.inf).flatten(1)
     exact_pairs = fits <= (8 * torch.finfo(parent.dtype).eps) ** 2
     exact = exact_pairs.any(-1)
@@ -169,5 +168,5 @@ def _bounded_binary_reconstruction(op, parent, reference, on_right, known,
     if return_details:
         return (*result, dict(logits=logits, selected=selected, allowed=allowed,
             left_indices=left_indices, right_indices=right_indices, features=features,
-            exact=exact, relative_residual=residual.detach()))
+            exact=exact, pair_residual=residual.detach()))
     return result

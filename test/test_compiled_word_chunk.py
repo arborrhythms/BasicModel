@@ -933,9 +933,9 @@ def test_no_grad_fallback_retains_eager_stm_depth_semantics(
     closing = [[], []]
     end = BasicModel._clause_end_state
     for model, seen in zip((legacy, chunked), closing):
-        def capture(state, sid, clauses, row_ids, seen=seen, model=model):
+        def capture(state, sid, clauses, row_addresses, seen=seen, model=model):
             seen.append(tuple(value.detach().clone() for value in state[0]))
-            return end(model, state, sid, clauses, row_ids)
+            return end(model, state, sid, clauses, row_addresses)
         monkeypatch.setattr(model, '_clause_end_state', capture)
 
     with torch.no_grad():

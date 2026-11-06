@@ -1,5 +1,7 @@
-"""The supervised inverse changes pair inference, never perception's codes."""
+"""The fixed inverse selects the joint residual without learning or RNG."""
 import torch
+import pytest
+from itertools import permutations
 from DecompositionChooser import DecompositionChooser
 from Language import LanguageSpace
 
@@ -31,61 +33,21 @@ def test_initial_choice_is_exactly_the_residual_argmin_without_rng():
     assert torch.equal(old[3]['selected'], new[3]['selected'])
 
 
-def test_learned_orientation_wins_among_roundoff_exact_pairs_in_any_bank_order():
-    chooser = DecompositionChooser()
-    with torch.no_grad():
-        chooser.weight.copy_(torch.tensor([1., 0., 0., 1., -1.]))
+@pytest.mark.parametrize('order', list(permutations(range(3))))
+def test_fixed_joint_argmin_selects_exact_multiset_in_every_bank_order(order):
     bank = torch.tensor([[[.2, .8], [.7, .3], [.2 + 1e-7, .8]]])
     parent = Product.compose(bank[:, 0], bank[:, 1])
-    priming = torch.tensor([[1., 2., 4.]])
-    for permutation in ([0, 1, 2], [2, 1, 0], [1, 0, 2]):
-        left, right, available, details = search(bank[:, permutation], parent, chooser,
-            left_priming=priming[:, permutation], right_priming=priming[:, permutation])
-        assert available.all() and details['exact'].all()
-        # The perturbed column has a worse residual but a better learned score.
-        torch.testing.assert_close(left, bank[:, 2], rtol=0, atol=0)
-        torch.testing.assert_close(right, bank[:, 1], rtol=0, atol=0)
-        fits = details['relative_residual'].flatten(1)
-        selected_fit = fits.gather(1, details['selected'][:, None])
-        assert selected_fit.item() > fits.min().item()
-
-
-def test_teacher_recovers_true_shortlisted_pair_despite_misleading_priming():
-    bank = torch.tensor([[[.2, .8], [.7, .3], [.8, .4]]], requires_grad=True)
-    # A lossy/noisy root is near the heavily primed distractor, but not exact.
-    parent = torch.tensor([[.161, .321]], requires_grad=True)
-    chooser = DecompositionChooser()
-    optimizer = torch.optim.SGD(chooser.parameters(), lr=.1)
-    rows = torch.tensor([[10, 11, 12]])
-    target = torch.tensor([[10, 11]])
-    options = dict(left_valid=torch.tensor([[True, False, False]]),
-                   right_valid=torch.tensor([[False, True, True]]),
-                   left_priming=torch.tensor([[1., 1., 10.]]),
-                   right_priming=torch.tensor([[1., 1., 10.]]))
-    before = search(bank, parent, chooser, **options)[3]
-    loss, present, correct = chooser.teacher_loss(before, rows, rows, target)
-    assert present.all() and not correct.any()
-    for _ in range(20):
-        details = search(bank, parent, chooser, **options)[3]
-        loss, _, _ = chooser.teacher_loss(details, rows, rows, target)
-        optimizer.zero_grad(); loss.sum().backward(); optimizer.step()
-    after = search(bank, parent, chooser, **options)
-    _, present, correct = chooser.teacher_loss(after[3], rows, rows, target)
-    assert present.all() and correct.all()
-    torch.testing.assert_close(after[1], bank[:, 1].detach())
-    assert bank.grad is None and parent.grad is None
-    assert not torch.equal(chooser.weight.detach(), torch.tensor([1., 0., 0., 0., 0.]))
-
-
-def test_absent_target_is_counted_and_has_no_training_gradient():
-    chooser = DecompositionChooser()
-    bank = torch.tensor([[[.2, .8], [.7, .3]]])
-    details = search(bank, torch.tensor([[.14, .24]]), chooser)[3]
-    loss, present, correct = chooser.teacher_loss(details, torch.tensor([[10, 11]]),
-        torch.tensor([[10, 11]]), torch.tensor([[10, 99]]))
-    assert not present.any() and not correct.any() and loss.item() == 0
-    loss.sum().backward()
-    assert not chooser.weight.grad.any()
+    priming = torch.tensor([[1., 2., 4.]])[:, order]
+    left, right, available, details = search(bank[:, order], parent,
+        DecompositionChooser(), left_priming=priming, right_priming=priming)
+    assert available.all() and details['exact'].all()
+    selected = int(details['selected'].item())
+    left_row = int(details['left_indices'][0, selected // 3])
+    right_row = int(details['right_indices'][0, selected % 3])
+    assert sorted((order[left_row], order[right_row])) == [0, 1]
+    residual = details['pair_residual'].reshape(1, -1)
+    torch.testing.assert_close(residual[:, selected], residual.amin(-1), rtol=0, atol=0)
+    torch.testing.assert_close(Product.compose(left, right), parent, rtol=0, atol=0)
 
 
 def test_uniform_round_and_action_proposal_carries_both_count_factors(monkeypatch):
@@ -104,28 +66,59 @@ def test_uniform_round_and_action_proposal_carries_both_count_factors(monkeypatc
     assert model._compose_sampling_scale.tolist() == [[4, 8, 0]]
 
 
-def test_teacher_uses_resolved_input_rows_when_the_legacy_word_lane_is_absent():
-    from types import SimpleNamespace
-    from Models import BasicModel
-    chooser = DecompositionChooser()
-    bank = SimpleNamespace(rows=torch.tensor([[10, 11]]),
-        codes=torch.tensor([[[.2, .8], [.7, .3]]]),
-        valid=torch.ones(1, 2, dtype=torch.bool), weights=torch.ones(1, 2))
-    parent = Product.compose(bank.codes[:, 0], bank.codes[:, 1])
-    values = torch.zeros(3, 3, 2)
-    values[2] = torch.stack((bank.codes[0, 0], bank.codes[0, 1], parent[0]))
-    program = SimpleNamespace(word_rows=torch.tensor([-1, -1]),
-        actions=torch.tensor([[0, -1, 0], [0, -1, 1], [1, 0, -1]]), operation_values=values)
-    record = SimpleNamespace(primed=bank, root=parent,
-        word_rows=bank.rows, word_valid=bank.valid)
-    language = SimpleNamespace(decomposition_chooser=chooser,
-        _compose_binary_rules=(SimpleNamespace(method_name="product"),),
-        language_layer=SimpleNamespace(operation_layer=SimpleNamespace(ops=[Product()])),
-        _bounded_binary_reconstruction=LanguageSpace._bounded_binary_reconstruction)
-    model = SimpleNamespace(languageSpace=language, reconstruction_basis_limit=2)
-    model._sentence_leaf_positions = lambda record, row: BasicModel._sentence_leaf_positions(model, record, row)
-    loss = BasicModel._decomposition_teacher_loss(model, {'entries': [program]}, record)
-    assert model._last_decomposition_teacher[0]['target'] == [10, 11]
-    assert model._last_decomposition_teacher[0]['present']
-    loss.sum().backward()
-    assert chooser.weight.grad is not None and chooser.weight.grad.abs().sum() > 0
+def test_retired_checkpoint_weight_is_reported_and_never_installed():
+    owner = torch.nn.Module()
+    owner.decomposition_chooser = DecompositionChooser()
+    saved = {'decomposition_chooser.weight': torch.tensor([2.37, 4.85, 7.81, 0., 0.])}
+    with pytest.warns(UserWarning, match='Dropped retired decomposition chooser checkpoint key decomposition_chooser.weight'):
+        incompatible = owner.load_state_dict(saved, strict=True)
+    assert not incompatible.missing_keys and not incompatible.unexpected_keys
+    torch.testing.assert_close(owner.decomposition_chooser.weight,
+                               torch.tensor([1., 0., 0., 0., 0.]), rtol=0, atol=0)
+    assert list(owner.parameters()) == [] and owner.state_dict() == {}
+
+
+def test_native_training_keeps_joint_argmin_out_of_optimizer_and_registry(tmp_path, monkeypatch):
+    from pathlib import Path
+    import Models
+    import util
+    from test_mm_xor import _fresh_model
+    monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+    config = Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'
+    model, _, data = _fresh_model(str(config))
+    try:
+        chooser = model.languageSpace.decomposition_chooser
+        optimizer = model.getOptimizer(lr=.01)
+        raw, target = next(iter(data.data_loader(split='train', num_streams=4)))
+        batch = model.inputSpace.prepInput(raw), model.outputSpace.prepOutput(target)
+        expected = chooser.weight.new_tensor([1., 0., 0., 0., 0.])
+        for _ in range(2):
+            model.runBatch(train=True, optimizer=optimizer, batchSize=4, split='train', batch_override=batch)
+            torch.testing.assert_close(chooser.weight, expected, rtol=0, atol=0)
+            assert not chooser.weight.requires_grad and chooser.weight.grad is None
+            assert list(chooser.parameters()) == []
+            assert all(p is not chooser.weight for group in optimizer.param_groups for p in group['params'])
+            assert 'reconstruction.decomposition' not in model._sentence_cost_registry._terms
+            assert 'reconstruction.walk_policy' in model._sentence_cost_registry._terms
+
+        checkpoint = tmp_path / 'retired_pair.ckpt'
+        model.save_weights(str(checkpoint))
+        saved = torch.load(checkpoint, weights_only=False)
+        aliases = [name + '.weight' for name, module in model.named_modules(remove_duplicate=False)
+                   if module is chooser]
+        assert aliases
+        assert not any(key in saved['state_dict'] for key in aliases)
+        for key in aliases:
+            saved['state_dict'][key] = expected.new_tensor([2.37, 4.85, 7.81, 0., 0.])
+        torch.save(saved, checkpoint)
+        messages = []
+        monkeypatch.setattr(Models, 'TheMessage', lambda message, *args, **kwargs: messages.append(str(message)))
+        assert model.load_weights(str(checkpoint), strict=True, require_match=True)
+        torch.testing.assert_close(chooser.weight, expected, rtol=0, atol=0)
+        for key in aliases:
+            assert any('Dropped retired decomposition chooser checkpoint key ' + key in message
+                       for message in messages)
+    finally:
+        model.End()
+
+

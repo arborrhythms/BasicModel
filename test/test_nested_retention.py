@@ -34,19 +34,19 @@ def _unchanged(store, before):
 def test_origin_replacement_retains_reachable_content_without_fact_authority():
     store = LTM0(6, capacity=8)
     leaf = store.append_meaning(_meaning(scope={"quote": "inner"}), trust=.8, sentence_index=len(store))
-    store.set_origin(leaf, store.ORIGIN_USER, text="reported content")
+    store.set_origin(leaf, store.ORIGIN_USER, text="reported content", asserted=(float(store.truth_plus[leaf]), float(store.truth_minus[leaf])))
     leaf_ref = store.occurrence_of(leaf)
     inner = store.append_meaning(
         _meaning(child=leaf_ref), kind="unverified"
     , sentence_index=len(store))
-    store.set_origin(inner, store.ORIGIN_USER)
+    store.set_origin(inner, store.ORIGIN_USER, asserted=(float(store.truth_plus[inner]), float(store.truth_minus[inner])))
     inner_ref = store.occurrence_of(inner)
     root = store.append_meaning(
         _meaning(child=inner_ref, scope={"speaker": "outer"}), kind="observation"
     , sentence_index=len(store))
     root_ref = store.occurrence_of(root)
     orphan = store.append_meaning(_meaning(), trust=.7, sentence_index=len(store))
-    store.set_origin(orphan, store.ORIGIN_USER)
+    store.set_origin(orphan, store.ORIGIN_USER, asserted=(float(store.truth_plus[orphan]), float(store.truth_minus[orphan])))
 
     assert store.clear_origin(store.ORIGIN_USER) == 1
     assert len(store) == 3
@@ -64,7 +64,7 @@ def test_origin_replacement_retains_reachable_content_without_fact_authority():
 def test_external_live_root_pins_an_occurrence_through_origin_replacement():
     store = LTM0(6, capacity=3)
     row = store.append_meaning(_meaning(), trust=1, sentence_index=len(store))
-    store.set_origin(row, store.ORIGIN_USER)
+    store.set_origin(row, store.ORIGIN_USER, asserted=(float(store.truth_plus[row]), float(store.truth_minus[row])))
     ref = store.occurrence_of(row)
     assert store.clear_origin(store.ORIGIN_USER, retained_occurrences=(ref,)) == 0
     assert store.row(0)["occurrence"] == ref
@@ -119,8 +119,8 @@ def test_nested_read_limits_are_separate_and_explicit(limit, reason):
 def test_retained_structure_and_reference_identity_survive_checkpoint_restore():
     store = LTM0(6, capacity=4)
     child = store.occurrence_of(store.append_meaning(_meaning(), sentence_index=len(store)))
-    store.set_origin(0, store.ORIGIN_USER)
-    root = store.occurrence_of(store.append_meaning(_meaning(child=child), sentence_index=len(store)))
+    store.set_origin(0, store.ORIGIN_USER, asserted=(float(store.truth_plus[0]), float(store.truth_minus[0])))
+    root = store.occurrence_of(store.append_meaning(_meaning(child=child), document_key='surviving document'))
     store.clear_origin(store.ORIGIN_USER)
     restored = LTM0(6, capacity=4)
     restored.load_state_dict(copy.deepcopy(store.state_dict()))
@@ -183,13 +183,13 @@ def test_context_cycle_stays_finite_without_derivation_or_evidence_transfer():
     reread = restored.read_structure(root, max_nodes=2, max_depth=2, max_records=2)
     assert reread["incomplete"] == () and reread["occurrences"] == (root,)
     assert restored.row(0)["kind"] == "unverified"
-    torch.testing.assert_close(restored.c_plus, store.c_plus, rtol=0, atol=0)
-    torch.testing.assert_close(restored.c_minus, store.c_minus, rtol=0, atol=0)
+    torch.testing.assert_close(restored.truth_plus, store.truth_plus, rtol=0, atol=0)
+    torch.testing.assert_close(restored.truth_minus, store.truth_minus, rtol=0, atol=0)
 
 
 def test_invalid_survivor_closure_cannot_partly_withdraw_evidence():
     store, child, root = _world()
-    store.set_origin(0, store.ORIGIN_USER)
+    store.set_origin(0, store.ORIGIN_USER, asserted=(float(store.truth_plus[0]), float(store.truth_minus[0])))
     _corrupt_child(store, child, child[:2] + (999,))
     before = copy.deepcopy(store.state_dict())
     with pytest.raises(ValueError, match="unavailable|constituent"):
@@ -221,7 +221,7 @@ def test_unavailable_owner_and_retired_reference_have_explicit_incomplete_result
 def test_withdrawal_preserves_occurrences_in_retained_semantic_context(field):
     store = LTM0(6, capacity=4)
     child = store.append_meaning(_meaning(), trust=.8, sentence_index=len(store))
-    store.set_origin(child, store.ORIGIN_USER)
+    store.set_origin(child, store.ORIGIN_USER, asserted=(float(store.truth_plus[child]), float(store.truth_minus[child])))
     ref = store.occurrence_of(child)
     outer = store.append_meaning(
         _meaning(**{field: {"referent": ref}}), kind="observation"

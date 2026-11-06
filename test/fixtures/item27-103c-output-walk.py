@@ -46,6 +46,8 @@ def _output_generate_walk(self, event, budget, stamped_events=False,
     # The first menu keeps the zero-gradient edges of rejected operators,
     # including their optimizer participation. Later menus use the same
     # catalogue and bank; only the selected inverse needs another graph.
+    # Historical 103c behavior. Item 2.5 §35.1 retired this momentum update
+    # on 2026-11-01. The frozen comparison keeps the original operator here.
     zero_menu = [None]
     # Host equality checks belong only to the explicitly eager CPU path.
     # Compiled/device walks keep their tensor-only body. A cache hit does

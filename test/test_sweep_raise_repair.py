@@ -24,8 +24,11 @@ def test_unlike_order_equality_keeps_evidence_without_a_partial_raise(mismatch_f
     assert alloc.singleton_members[word][0] == (OCCURRENCE, first)
     assert cs.interpret.forward(word) == word
     equal_close(cs, store, second, word)
+    assert not alloc.raised
+    third = event(cs, store, 4)
+    equal_close(cs, store, third, word)
     parent = cs.interpret.forward(word)
     assert parent != word and alloc.order_of(parent) == 1
-    assert set(alloc.parts.parts((SYMBOL, parent))) == {(OCCURRENCE, first), (OCCURRENCE, second)}
+    assert set(alloc.parts.parts((SYMBOL, parent))) == {(OCCURRENCE, m) for m in (first, second, third)}
     assert alloc.singleton_values.data_ptr() == pointer
     assert cs._concept_source_order(other) == 1

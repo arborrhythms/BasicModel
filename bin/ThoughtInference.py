@@ -8,6 +8,21 @@ from ThoughtReferences import bindings, evidence_pair, open_slots, with_slots
 def derive(context, arguments):
     from ThoughtChunks import read
     refs = [arguments[role] for role in ('argin1', 'argin2')]
+    if getattr(context, 'intuition_rule', None) is not None:
+        if refs[0][0] != 'chunk' or refs[1] != context.intuition_rule:
+            raise ValueError('intuition selection requires its addressed premise and rule')
+        premise = read(context.stm, refs[0][1], context.row)
+        from Intuition import held_terms
+        terms = [term for term in held_terms(premise)
+                 if term.rule == context.intuition_rule]
+        if len(terms) != 1:
+            raise ValueError('intuition selection requires exactly one resident firing')
+        meaning, pair, proof = context.conceptual_space.intuition_selection(terms[0])
+        return dict(value=meaning.roles[0], meaning=meaning,
+            support_true=float(pair[0]), support_false=float(pair[1]),
+            sources=(terms[0].premise, terms[0].rule), witnesses=(terms[0].rule,),
+            reason='intuition_selection', evidence_kind='inference',
+            intuition_derivation=(proof,), incomplete=())
     if any(not isinstance(ref, tuple) or len(ref) != 2 or ref[0] != 'chunk' for ref in refs):
         raise ValueError('infer requires a premise chunk and a rule chunk addressed by .where')
     premise, rule = [read(context.stm, ref[1], context.row) for ref in refs]

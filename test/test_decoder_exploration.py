@@ -97,11 +97,14 @@ def test_trial_selects_strictly_lower_full_reconstruction_before_backward(monkey
         assert parameter.item() == 1.
         assert parameter.grad is None
         explore = kwargs.get('decoder_exploit') is not None
-        calls.append(explore)
-        cost = (explore_cost if explore else greedy_cost) * parameter
-        value = torch.full((3, 2, 2), float(explore)) * parameter
+        replay = kwargs.get('decoder_kept_actions')
+        actions = torch.full((3, 4), int(explore)) if replay is None else replay
+        calls.append(explore if replay is None else 'replay')
+        take = actions[:, 0].bool()
+        cost = torch.where(take, explore_cost, greedy_cost) * parameter
+        value = take[:, None, None].expand(3, 2, 2) * parameter
         trace = (value, torch.full((3,), 2), torch.zeros(3, dtype=torch.bool),
-                 torch.zeros(3), torch.full((3, 4), int(explore)))
+                 torch.zeros(3, 3), actions)
         if kwargs.get('decoder_candidates'):
             trace = (*trace, torch.ones(3, 4, dtype=torch.bool))
         from generation_fixtures import suffix
@@ -109,7 +112,7 @@ def test_trial_selects_strictly_lower_full_reconstruction_before_backward(monkey
             *suffix(torch.zeros(3,4,2),torch.zeros(3,dtype=torch.bool)))
     model = SimpleNamespace(_sentence_training=True, _compiled_reconstruct=lambda: reconstruct)
     result = BasicModel._reconstruct_trial(model, record)
-    assert calls == [False, True]
+    assert calls == [False, True, 'replay']
     assert model._last_decoder_comparison['wins'].tolist() == [True, False, False]
     torch.testing.assert_close(result[2], torch.tensor([1., 2., 1.]))
     assert model._last_decoder_trace[4][:, 0].tolist() == [1, 0, 0]
@@ -139,7 +142,7 @@ def test_identical_outer_understandings_get_the_same_inner_decoder_cost(monkeypa
               if explore else torch.full((2,),10.))
         value=torch.ones(2,2,2)
         pending=torch.zeros(2,dtype=torch.bool)
-        trace=(value,torch.full((2,),2),pending,torch.zeros(2),torch.full((2,4),int(explore)))
+        trace=(value,torch.full((2,),2),pending,torch.zeros(2,3),torch.full((2,4),int(explore)))
         if kwargs.get('decoder_candidates'):trace=(*trace,torch.ones(2,4,dtype=torch.bool))
         return (value,cost*0,cost,pending,cost[:,None]),(*trace,*suffix(torch.zeros(2,4,2),pending))
     model=SimpleNamespace(_sentence_training=True,_compiled_reconstruct=lambda:reconstruct,

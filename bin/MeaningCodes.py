@@ -42,6 +42,26 @@ def exchange(value):
     return torch.cat((negative, positive), -1)
 
 
+class _BoundedInverseRatio(torch.autograd.Function):
+    """Exact positive-denominator inverse, with the chart's bounded tangent."""
+    @staticmethod
+    def forward(ctx, numerator, denominator):
+        ctx.save_for_backward(numerator, denominator)
+        return numerator / denominator
+
+    @staticmethod
+    def backward(ctx, incoming):
+        from Layers import ATANH_SLOPE_CAP_AT
+        numerator, denominator = ctx.saved_tensors
+        reciprocal_limit = 1. - ATANH_SLOPE_CAP_AT ** 2
+        # Apply the bound to each local partial *before* multiplying the
+        # cotangent. Forming n / d**2 first can overflow even for incoming=0.
+        numerator_scale = denominator.maximum(denominator.new_tensor(reciprocal_limit))
+        denominator_scale = denominator.maximum(numerator.abs().sqrt() * reciprocal_limit ** .5)
+        slope = -(numerator / denominator_scale) / denominator_scale
+        return incoming / numerator_scale, incoming * slope
+
+
 def recover_lanes(name, parent, left, right, form_width):
     """Recover compatible leaf magnitudes after identifying the two forms.
 
@@ -80,14 +100,16 @@ def recover_lanes(name, parent, left, right, form_width):
         det = aa * bb - ab.square()
         independent = det > torch.finfo(y.dtype).eps * aa * bb
         denominator = torch.where(independent, det, 1.)
-        u, v = (ay * bb - by * ab) / denominator, (by * aa - ay * ab) / denominator
+        solve = _BoundedInverseRatio.apply
+        u = solve(ay * bb - by * ab, denominator)
+        v = solve(by * aa - ay * ab, denominator)
         norm = (aa + bb).clamp_min(torch.finfo(y.dtype).tiny)
-        u, v = torch.where(independent, u, ay / norm), torch.where(independent, v, by / norm)
+        u, v = torch.where(independent, u, solve(ay, norm)), torch.where(independent, v, solve(by, norm))
         # Boundary solution if numerical noise or an inexact root placed the
         # unconstrained solution outside the nonnegative cone.
         u0, v0 = u, v
-        u = torch.where(v0 < 0, ay / aa.clamp_min(torch.finfo(y.dtype).tiny), u0).clamp_min(0)
-        v = torch.where(u0 < 0, by / bb.clamp_min(torch.finfo(y.dtype).tiny), v0).clamp_min(0)
+        u = torch.where(v0 < 0, solve(ay, aa.clamp_min(torch.finfo(y.dtype).tiny)), u0).clamp_min(0)
+        v = torch.where(u0 < 0, solve(by, bb.clamp_min(torch.finfo(y.dtype).tiny)), v0).clamp_min(0)
         return a * u, b * v
 
     if name in ('conjunction', 'intersection'):

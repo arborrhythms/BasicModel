@@ -21,7 +21,8 @@ from test_wholespace_property_migration import _set_text
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def grounded_model(tmp_path, pool=4, inventory=None, load_data=False, field_slots=None):
+def grounded_model(tmp_path, pool=4, inventory=None, load_data=False, field_slots=None,
+                   separate_chooser=None, reconstruction_jitter=None):
     tree = ET.parse(ROOT / 'data/MM_xor_fixture.xml')
     root = tree.getroot()
     slots = 2 * pool if field_slots is None else field_slots
@@ -42,6 +43,10 @@ def grounded_model(tmp_path, pool=4, inventory=None, load_data=False, field_slot
         'WholeSpace/analysis': 'meronomy', 'WholeSpace/digitWholes': False,
         'WholeSpace/divideWithinWhole': False, 'OutputSpace/nInput': slots,
     }
+    if separate_chooser is not None:
+        values['architecture/separateChooser'] = separate_chooser
+    if reconstruction_jitter is not None:
+        values['architecture/reconstructionJitter'] = reconstruction_jitter
     if inventory is not None:
         values['architecture/mereologyRaise'] = True
     if load_data:
@@ -70,9 +75,11 @@ def grounded_model(tmp_path, pool=4, inventory=None, load_data=False, field_slot
     return model, x
 
 
-def learn_grounded_xor(tmp_path, pool):
+def learn_grounded_xor(tmp_path, pool, *, separate_chooser=None, reconstruction_jitter=None,
+                       backward=None):
     from order_fixtures import force_order
-    model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
+    model, x = grounded_model(tmp_path, pool, field_slots=4 * pool,
+        separate_chooser=separate_chooser, reconstruction_jitter=reconstruction_jitter)
     cs, ws = model.conceptualSpaces[0], model.wholeSpaces[0]
     prior = ws.subspace.what.primitive_properties
     # Teach primitive memberships, then the name's feature definition.
@@ -96,7 +103,10 @@ def learn_grounded_xor(tmp_path, pool):
         optimizer.zero_grad()
         model.forward(native)
         loss = (model._combine_last_cs_sub._concept_activations[0, :, 0] - named).square().mean()
-        loss.backward()
+        if backward is None:
+            loss.backward()
+        else:
+            backward(model, optimizer, loss)
         optimizer.step()
         store.project_parts()
         model.End()
@@ -166,7 +176,10 @@ def learn_grounded_xor(tmp_path, pool):
         if step == 0:
             initial_mse = float(loss.detach())
             assert initial_mse >= .25, 'the unwritten XOR row must fail before learning'
-        loss.backward()
+        if backward is None:
+            loss.backward()
+        else:
+            backward(model, optimizer, loss)
         optimizer.step()
         store.project_parts()
     with torch.no_grad():

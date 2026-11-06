@@ -15,6 +15,32 @@ def address(number):
     return 'ltm', 'address-v1', number
 
 
+def reference_pool(values, *, readings=None, capacity=64):
+    """§50: semantic lifetime fixtures supply their actual reference owner."""
+    import weakref
+    class Owner:
+        pass
+    owner = Owner()
+    codes = {} if readings is None else readings
+    owner._concept_allocator = SimpleNamespace(symbol_types={key: ('word',) for key in codes})
+    owner.interpret = SimpleNamespace(referent=lambda word: word)
+    owner._csw_row_of = lambda concept: concept if concept in codes else None
+    owner.similarity_codebook = SimpleNamespace(lookup_rows=lambda rows: torch.stack([codes[row] for row in rows]))
+    store = SimpleNamespace(location=lambda reference: reference[-1] if reference in values else None,
+        point_of_row=lambda row: next((value for reference, value in values.items() if reference[-1] == row), None))
+    owner._closed_clause_store = lambda: store
+    pool = MediumTermMemory(capacity)
+    pool._owner = weakref.ref(owner)
+    return pool, owner
+
+
+def supply_meaning(fixture, name, value):
+    """Supply a part/whole fixture meaning for §50's exact association rule."""
+    concept = fixture.noun(name)
+    with torch.no_grad():
+        fixture.cs.similarity_codebook.W[fixture.cs._csw_row_of(concept)].copy_(value)
+
+
 def operations():
     return Walk((SimpleNamespace(method_name='bind',head_role=1),
                  SimpleNamespace(method_name='lift',clause_form='S',head_role=2)), ())
@@ -63,7 +89,8 @@ def test_second_verb_receives_first_result_through_bind_with_derivative(compiled
         walk.apply = torch.compile(walk.apply,backend='eager',fullgraph=True)
     changed = first*scale
     state = event(walk,state,changed,index=1,column=1)
-    mention = torch.zeros_like(first)
+    # §50: a nonempty part identifies the changed state; an empty cue does not.
+    mention = changed.detach() * .5
     state = push(walk,state,mention,word=303,index=2)
     points,ids,indices,available = chunks.bind_menu(state[0],mention[:,None])
     selected = available & (ids == 512)
@@ -85,11 +112,12 @@ def test_second_verb_receives_first_result_through_bind_with_derivative(compiled
 def test_latest_verb_replaces_state_and_two_aliases_share_description_join():
     walk,state = start(torch.tensor([[.1,.1,.1]]))
     state = event(walk,state,torch.tensor([[.8,.1,.1]]),index=1,column=1)
-    state = push(walk,state,torch.zeros(1,3),word=303,index=2)
-    state = select_bind(walk,state,torch.zeros(1,3),512,2)
+    mention = torch.full((1,3), .05)  # §50: contained by the first event's state.
+    state = push(walk,state,mention,word=303,index=2)
+    state = select_bind(walk,state,mention,512,2)
     state = event(walk,state,torch.tensor([[.1,.8,.1]]),index=3,column=3)
     torch.testing.assert_close(working_value(state,512),torch.tensor([[.1,.8,.1]]))
-    description = torch.tensor([[.1,.1,.9]])
+    description = torch.tensor([[.1,.8,.9]])  # Contains the current state, with new detail.
     state = push(walk,state,description,word=404,index=4)
     snapshot = working_value(state,512).clone()
     state = select_bind(walk,state,description,512,4)
@@ -107,8 +135,10 @@ def test_trial_values_are_isolated_and_only_selected_values_commit(keep_second):
     second = event(walk,original,torch.tensor([[.1,.9]]),index=1,column=1)
     kept = select_rows(first,second,torch.tensor([keep_second]))
     torch.testing.assert_close(working_value(original,512),torch.tensor([[.2,.3]]))
-    pool = MediumTermMemory()
-    pool.open(address(1),kind=None,when=1,value=working_value(original,512)[0])
+    original_value = working_value(original,512)[0]
+    pool, owner = reference_pool({address(1): original_value})
+    pool.open(address(1),kind=None,when=1,value=original_value)
+    pool.event(address(1), address(2), verb=202, role=0, when=2)
     pool.update(address(1),working_value(kept,512)[0],when=2)
     torch.testing.assert_close(pool.value_of(address(1)),working_value(second if keep_second else first,512)[0])
     assert not pool.value_of(address(1)).requires_grad
@@ -116,8 +146,9 @@ def test_trial_values_are_isolated_and_only_selected_values_commit(keep_second):
 
 
 def test_names_events_checkpoint_and_reclamation_have_separate_ownership():
-    pool = MediumTermMemory(2)
     x, alias, event_row = address(1), address(2), address(3)
+    pool, owner = reference_pool({x: torch.tensor([.5, .1]), alias: torch.tensor([.1, .7])},
+        readings={101: torch.tensor([.5, .1]), 102: torch.tensor([.1, .7])}, capacity=2)
     pool.open(x, kind=None, when=1, reading=101, value=torch.tensor([.5, .1]))
     pool.bind(x, alias, kind=None, when=2, reading=102, value=torch.tensor([.1, .7]))
     pool.event(x, event_row, verb=201, role=0, when=3)
@@ -127,6 +158,7 @@ def test_names_events_checkpoint_and_reclamation_have_separate_ownership():
     assert len(pool.entries[x].events) == 1
     assert pool.reading_of(x) == 101 and pool.reading_of(alias) == 102
     restored = MediumTermMemory(2)
+    restored._owner = pool._owner
     restored.restore(pool.state())
     assert restored.names == pool.names and restored.entries[x].events == pool.entries[x].events
     torch.testing.assert_close(restored.value_of(alias), torch.tensor([.2, .9]))
@@ -154,6 +186,9 @@ def test_frame_access_does_not_leak_a_native_individuals_other_stream_value():
         pool.open(store.occurrence_of(row),kind=native,native=native,when=index,value=atoms[0])
     first,second = map(store.occurrence_of,rows)
     assert first != second and pool.token_of(first) != pool.token_of(second)
+    # A state change is retained after an event. Before its first event an
+    # identity now reads its occurrence, so record this stream's event first.
+    pool.event(first, first, verb=native, role=0, when=20)
     pool.update(first,atoms[1],when=20)
     for row,expected in zip(rows,(atoms[1],atoms[0])):
         frame = replace(SituationFrame.from_row(store.row(row)),symbol_ids=(native,),
@@ -214,17 +249,23 @@ def test_compose_menu_uses_the_resolvers_observed_exclusions():
     from Meaning import ConceptualMeaning
     from test_reference_close import fixture
     resolver,store,atoms = fixture()
-    for index in (0,1):
-        row=store.write_clause(Clause(ConceptualMeaning.from_description(atoms[index]),
-            point=atoms[index],order=1),document_key='supports',sentence_index=index)
-        store.witness_count[row]=8
+    from IdentityRows import mint
+    from dataclasses import replace
+    for index in (0, 1):
+        individual = mint(resolver.components.owner, atoms[index])
+        idea = replace(ConceptualMeaning.from_description(atoms[index]),
+                      role_refs=(('sym', individual), None, None))
+        row = store.append_meaning(idea, document_key='supports', sentence_index=index)
+        store.access_count[row] = 8
     exclusions=torch.tensor(resolver.exclusion_pairs()).reshape(-1,2)
     state=chunks.empty(1,8,12)
     state,_=chunks.deposit(state,atoms[:1],torch.tensor([True]),identity=101)
     for own in (atoms[1],atoms[0],atoms[0]+atoms[1],atoms[1]*0):
         *_,available=chunks.bind_menu(state,own.reshape(1,1,-1),exclusions=exclusions)
         assert available[0,0,0]
-        assert bool(available[0,0,1]) == (not resolver.exclusion_query()(own,atoms[0]))
+        # §50 also excludes empty meaning. The other three inputs are either
+        # contained, containing, or a witnessed incompatible coordinate.
+        assert bool(available[0,0,1]) == (bool(own.any()) and not resolver.exclusion_query()(own,atoms[0]))
 
 
 
@@ -242,8 +283,9 @@ def test_kept_journal_commits_two_verbs_one_identity_and_immutable_occurrences(m
     from test_clause_acceptance import SentenceFixture
     from test_medium_term_memory import snapshot, unchanged
     f = SentenceFixture(monkeypatch)
-    tree = ('sum',
-        ('lift', ('lower_unary', 'subject'), ('verb', 'move', ('lower', 'd', 'place'))),
+    first = ('lift', ('lower_unary', 'subject'), ('verb', 'move', ('lower', 'd', 'place')))
+    supply_meaning(f, 'alias', f.program(first).end_state[0].detach() * .5)
+    tree = ('sum', first,
         ('lift', ('bind', 'alias'), ('verb', 'affect', ('lower', 'd', 'target'))))
     entry, inputs, handle = recorded_identity_reading(f, tree)
     lifts = [record for record in inputs if record[0] == 'lift']
@@ -274,7 +316,7 @@ def test_kept_journal_commits_two_verbs_one_identity_and_immutable_occurrences(m
 
 @pytest.mark.parametrize('corruption', ('membership', 'value', 'event', 'reading'))
 def test_invalid_identity_checkpoint_does_not_replace_the_pool(corruption):
-    pool = MediumTermMemory()
+    pool, owner = reference_pool({address(1): torch.ones(2)})
     pool.open(address(1), kind=None, when=1, value=torch.ones(2))
     before = pool.state()
     bad = pool.state()
@@ -299,8 +341,9 @@ def test_binding_an_unresolved_object_does_not_complete_its_verb():
     state=push(walk,state,torch.tensor([[.1,.1]]),word=303,index=2,resolved=False)
     unknown=int(state[1][0,0,IDENTITY])
     state=select_bind(walk,state,torch.tensor([[.1,.1]]),0,2)
-    state=push(walk,state,torch.zeros(1,2),word=404,index=3,resolved=False)
-    state=select_bind(walk,state,torch.zeros(1,2),unknown,3)
+    mention = torch.full((1,2), .05)  # §50: a nonempty part of the unresolved object.
+    state=push(walk,state,mention,word=404,index=3,resolved=False)
+    state=select_bind(walk,state,mention,unknown,3)
     assert state[1][0,0,RESOLVED] == 0
 
 
@@ -312,6 +355,7 @@ def test_later_bind_keeps_its_earlier_determination_under_a_wrapper(monkeypatch,
     from test_clause_acceptance import SentenceFixture
     from test_medium_term_memory import snapshot, unchanged
     f = SentenceFixture(monkeypatch)
+    supply_meaning(f, 'tail', f.program(('lower_unary', 'subject')).end_state[0].detach() * .5)
     entry, _, handle = recorded_identity_reading(f,
         ('bind', (wrapper, ('lower_unary', 'subject'), 'tail')))
     clause = finish_clause(f.language, entry, registry=f.registry)
@@ -343,13 +387,14 @@ def test_three_slot_close_keeps_the_introduction_used_by_its_embedded_bind(monke
     from ClauseJournal import finish_clause
     from test_clause_acceptance import SentenceFixture
     f = SentenceFixture(monkeypatch)
+    supply_meaning(f, 'alias', f.program(('lower_unary', 'subject')).end_state[0].detach() * .5)
     entry, _, handle = recorded_identity_reading(f, ('sum', ('lower_unary', 'subject'),
         ('sum', 'predicate', ('implies', ('bind', 'alias'), 'tail'))))
     # Stop the fixed operation journal before its final two sums. The three
     # surviving roots are subject, predicate, and an embedded relative clause.
     action_fields = ('actions', 'operation_values', 'operation_refs', 'operation_relations',
         'operation_probabilities', 'identity_actions', 'timeline_actions', 'case_values',
-        'case_selected', 'operand_counts', 'form_wholes', 'form_whole_counts')
+        'case_selected', 'operand_counts', 'form_wholes', 'form_whole_counts', 'form_whole_presence')
     entry = replace(entry, **{name: getattr(entry, name)[:-2] for name in action_fields
                               if getattr(entry, name) is not None})
     clause = finish_clause(f.language, entry, registry=f.registry)
@@ -398,7 +443,7 @@ def test_dummy_binds_preserve_the_relative_operand_in_a_three_slot_close(monkeyp
     entry, _, _ = recorded_identity_reading(f, tree, dummy_binds=(0, 1))
     action_fields = ('actions', 'operation_values', 'operation_refs', 'operation_relations',
         'operation_probabilities', 'identity_actions', 'timeline_actions', 'case_values',
-        'case_selected', 'operand_counts', 'form_wholes', 'form_whole_counts')
+        'case_selected', 'operand_counts', 'form_wholes', 'form_whole_counts', 'form_whole_presence')
     entry = replace(entry, **{name:getattr(entry, name)[:-2] for name in action_fields
                              if getattr(entry, name) is not None})
     relations = torch.zeros(len(entry.actions), 2, dtype=torch.bool)
@@ -595,6 +640,7 @@ def test_unminted_value_and_anonymous_name_have_distinct_pending_state(pending):
         assert read.role_refs[0]==token
         torch.testing.assert_close(read.roles[0],atoms[0])
     restored=MediumTermMemory(pool.capacity,n_vectors=int(pool.transient_ids[0]),field_width=pool.field_width)
+    restored._owner = pool._owner  # §50: restored references retain the existing owner.
     restored.restore(pool.state())
     assert restored.entries[token].pending==pending and restored.entries[token].kind is None
     torch.testing.assert_close(restored.value_of(token),atoms[0])
@@ -604,8 +650,9 @@ def test_unminted_value_and_anonymous_name_have_distinct_pending_state(pending):
 
 def test_pending_checkpoint_migration_and_validation_are_atomic():
     import copy
-    pool = MediumTermMemory()
     first, second = address(1), address(2)
+    pool, owner = reference_pool({first: torch.ones(3), second: torch.zeros(3),
+        address(3): torch.ones(3), address(4): torch.zeros(3)})
     pool.open(first, kind=None, pending=False, when=1, value=torch.ones(3))
     pool.open(second, kind=101, when=2, value=torch.zeros(3))
     state = pool.state()
@@ -616,6 +663,7 @@ def test_pending_checkpoint_migration_and_validation_are_atomic():
         entry.update(events=tuple(event[:4] for event in events), value=value)
         del entry['pending']
     restored = MediumTermMemory()
+    restored._owner = pool._owner
     with pytest.raises(ValueError,match="version"):
         restored.restore(legacy)
     restored.restore(state)
@@ -702,7 +750,8 @@ def test_bind_training_never_updates_or_creates_a_concept_region(monkeypatch, ph
     resolver.components.weight = 1.
     frames = []
     for index in range(3):
-        frame, _, _ = close(resolver, atoms[index], atoms[index+6], 'mint', frames,
+        # §50: three distinct descriptions all contain the request's part.
+        frame, _, _ = close(resolver, atoms[index]+atoms[3], atoms[index+6], 'mint', frames,
                             document='bank-isolation', sentence=index)
         frames.append(frame)
     owner = resolver.components.owner
@@ -714,7 +763,7 @@ def test_bind_training_never_updates_or_creates_a_concept_region(monkeypatch, ph
             owner.similarity_codebook.W[owner._csw_row_of(word)].copy_(atoms[4])
     monkeypatch.setattr(resolver, 'select', lambda choices, logits, **kwargs: 1)
     request = dict(mode='bind', leaves=(0,), cue=atoms[4], predicate=atoms[6], role=0)
-    clause = Clause(ConceptualMeaning.from_description(atoms[1]), point=atoms[1],
+    clause = Clause(ConceptualMeaning.from_description(atoms[3]), point=atoms[3],
                     order=1, reference_request=request)
     plan = resolver.preview(clause, chunk_context(resolver, frames))
     selected = plan['items'][0]['selected']
@@ -731,8 +780,7 @@ def test_bind_training_never_updates_or_creates_a_concept_region(monkeypatch, ph
     if phase == 'resolved':
         errors = Error()
         resolver.resolved(row, 0, ('sym', selected), errors)
-        loss = errors.total(objective='expectation')
-        assert loss is not None and loss.requires_grad
+        assert errors.total(objective='expectation') is None
     assert alloc.next_id == allocation and alloc.form_regions == regions
     unchanged(resolver, retained)
 
@@ -745,6 +793,9 @@ def test_relative_determination_keeps_its_introduction_and_later_bind(monkeypatc
     from test_clause_acceptance import SentenceFixture
     from test_medium_term_memory import snapshot, unchanged
     f = SentenceFixture(monkeypatch)
+    # §50: the alias is a nonempty part at every explicitly changed state.
+    for name, level in (('left', .2), ('right', .4), ('changed', .6), ('latest', .8), ('alias', .1)):
+        supply_meaning(f, name, torch.full((8,), level))
     relative = ('definite_unary', ('implies', 'left', 'right'))
     if dummy:
         relative = ('bind', relative)
@@ -837,7 +888,12 @@ def test_journal_native_bind_without_a_pool_token_keeps_its_symbol_origin(monkey
     content = entry.leaves[0].clone()
     symbol = mint(f.cs, content)
     for index in range(pool_aliases):
-        f.cs.mtm.open(address(index+1), kind=symbol, native=symbol, when=index, value=content)
+        # Reference-backed aliases require actual held occurrence rows.
+        from Meaning import ConceptualMeaning
+        row = f.store.append_meaning(ConceptualMeaning.from_description(content),
+            document_key='native-bind-aliases', sentence_index=index, order=1)
+        f.cs.mtm.open(f.store.occurrence_of(row), kind=symbol, native=symbol,
+                     when=index, value=content)
     # No token and an ambiguous pair both leave the durable symbol usable.
     assert f.cs.mtm.token_of(symbol) is None
     state = chunks.empty(1, 8, len(content))

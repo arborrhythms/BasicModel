@@ -35,7 +35,7 @@ def test_location_is_not_retained_and_time_survives_restore_and_compaction(legac
         state['where'] = torch.arange(store.capacity * 4).reshape(store.capacity, 4).float()
     restored, _ = clause_store()
     if legacy_where:
-        with pytest.raises(RuntimeError, match='Unexpected key'):
+        with pytest.raises(ValueError, match='checkpoint column: where'):
             restored.load_state_dict(state, strict=True)
         return
     restored.load_state_dict(state, strict=True)

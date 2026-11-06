@@ -109,7 +109,7 @@ def test_mint_uses_the_selected_member_order_instead_of_the_source_word_order():
     written = {}
     row = store.write_clause(kept, written_rows=written)
     resolver.commit(plan, row, written, document='member', position=0, training=True)
-    assert int(store.order[row]) == 1
+    assert store.order_of_row(row) == 0
     assert resolver.last_audit[0]['reference'] == store.occurrence_of(row)
     assert len(resolver.components.individual_ids) == before
     assert written[('activations', id(kept))] == ((store.occurrence_of(row), None, 0),)
@@ -136,7 +136,7 @@ def test_recent_token_returns_at_its_kinds_native_conceptual_order(order):
     assert identity in candidates and kind not in candidates
     candidate = candidates[identity]
     torch.testing.assert_close(candidate['value'], atoms[0], rtol=0, atol=0)
-    assert int(store.order[row]) == 1 and owner._concept_source_order(kind) == order
+    assert clause.order == 1 and store.order_of_row(row) == owner._concept_source_order(kind) == order
 
 
 def test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them():
@@ -279,12 +279,16 @@ def test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cue
     resolver, store, atoms = fixture()
     frames = []
     for sentence in range(2):
-        frame, _, _ = close(resolver, atoms[sentence], atoms[6+sentence], 'mint', frames,
+        # §50: one candidate is a part of the request and the other contains it.
+        # Request coverage and form evidence differ, so the credit is nonzero.
+        content = atoms[0] if sentence == 0 else atoms[0]+atoms[1]+atoms[2]
+        frame, _, _ = close(resolver, content, atoms[6+sentence], 'mint', frames,
                             document='credit', sentence=sentence)
         frames.append(frame)
     form_exposure(resolver, atoms[4], atoms[0])
     request = dict(mode='bind', leaves=(0,), cue=atoms[4], predicate=atoms[6], role=0)
-    clause = Clause(ConceptualMeaning.from_description(atoms[0]), point=atoms[0], order=1,
+    content = atoms[0]+atoms[1]
+    clause = Clause(ConceptualMeaning.from_description(content), point=content, order=1,
                     reference_request=request)
     plans = [resolver.preview(clause, chunk_context(resolver, frames)) for _ in range(2)]
     optimizer = torch.optim.SGD(resolver.parameters(), lr=.01)
@@ -426,9 +430,10 @@ def test_kept_journal_supplies_np_content_predicate_and_positional_provenance(mo
     assert isinstance(identity, tuple) and identity[:2] == ('ltm', f.store.address_domain)
     assert component.individual_ids == before
     assert f.store.raw_meaning_of(f.store.location(identity)).role_refs[0] == ('sym', program.concept_ids[1].item())
-    assert int(f.store.witness_count[f.store.location(identity)]) == 1 and not hasattr(component, 'nouns')
+    assert int(f.store.access_count[f.store.location(identity)]) == 1 and not hasattr(component, 'nouns')
     occurrence = resolver.last_audit[0]['occurrence']
-    assert f.store.row(f.store.index_of_row(occurrence))['order'] == 1
+    kind = int(program.concept_ids[1])
+    assert f.store.row(f.store.index_of_row(occurrence))['order'] == f.cs._concept_source_order(kind) == 0
     restored = LTM0(8, capacity=64, percept_width=0)
     restored.load_state_dict(f.store.state_dict())
     restored.load_semantic_extras(f.store.semantic_extras())

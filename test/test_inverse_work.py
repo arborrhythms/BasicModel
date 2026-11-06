@@ -147,7 +147,7 @@ def test_selected_unary_inverse_evaluates_only_live_choices():
         torch.testing.assert_close(a, b, rtol=0, atol=0)
 
 
-def test_unselected_unary_keeps_zero_gradient_optimizer_participation(monkeypatch):
+def test_rejected_unary_leaves_its_existing_optimizer_momentum_untouched(monkeypatch):
     from Models import BasicModel, _ensure_grad_anchors
     import util
     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
@@ -164,10 +164,12 @@ def test_unselected_unary_keeps_zero_gradient_optimizer_participation(monkeypatc
         exploit_actions=torch.tensor([[0, 0, 2, 2, 2, 2]]), departure=torch.tensor([6]),
         return_candidates=True)
     result[0].sum().backward()
-    assert rejected.scale.grad is not None and rejected.scale.grad.item() == 0
+    assert selected.scale.grad is not None and torch.isfinite(selected.scale.grad)
+    assert rejected.scale.grad is None
     optimizer.step()
-    torch.testing.assert_close(rejected.scale, torch.tensor(.5-.01*.9*.1, dtype=torch.float64),
-                               rtol=0, atol=0)
+    torch.testing.assert_close(rejected.scale, torch.tensor(.5, dtype=torch.float64), rtol=0, atol=0)
+    torch.testing.assert_close(optimizer.state[rejected.scale]['momentum_buffer'],
+                               torch.tensor(.1, dtype=torch.float64), rtol=0, atol=0)
 
 
 def test_inverse_whole_preparation_reuses_only_the_detached_dictionary_read(monkeypatch):
@@ -179,11 +181,11 @@ def test_inverse_whole_preparation_reuses_only_the_detached_dictionary_read(monk
     properties[0, 1], properties[1, 0] = .2, .3
     bank = CandidateWholes(forms, support, torch.ones(1, 2, dtype=torch.bool),
                            properties, torch.eye(2, dtype=torch.float64))
-    read, calls = CandidateWholes.read, []
+    read, calls = CandidateWholes.read_presence, []
     def counted(self, *parts):
         calls.append(1)
         return read(self, *parts)
-    monkeypatch.setattr(CandidateWholes, 'read', counted)
+    monkeypatch.setattr(CandidateWholes, 'read_presence', counted)
     prepared = prepare_inverse(bank)
     assert len(calls) == 1
     parent = torch.tensor([[.45, .55, .3]], dtype=torch.float64, requires_grad=True)
@@ -197,9 +199,9 @@ def test_inverse_whole_preparation_reuses_only_the_detached_dictionary_read(monk
     torch.testing.assert_close(a, b, rtol=0, atol=0)
     before = len(calls)
     per_stream = prepared.for_stream(0)
-    per_stream.read(per_stream.forms)
+    per_stream.read_presence(per_stream.forms)
     assert len(calls) == before
-    prepared.read(parent)
+    prepared.read_presence(parent)
     assert len(calls) == before+1, 'non-dictionary arguments must be read normally'
     differentiable = bank._replace(codes=bank.codes.clone().requires_grad_(True))
     assert prepare_inverse(differentiable) is differentiable

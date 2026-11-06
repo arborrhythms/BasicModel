@@ -37,6 +37,7 @@ def _catalog_world():
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     base = cs.new_concept()
     force_order(cs, base, 0)
+    cs._csw_concept_row(0, base)
     part, whole = ("sym", cs.synthesize_higher_order([("sym", base)])), ("sym", cs.new_concept())
     cs._csw_concept_row(cs._concept_source_order(part[1]), part[1])
     force_order(cs, whole[1], 0)

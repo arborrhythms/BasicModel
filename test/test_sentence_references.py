@@ -96,7 +96,7 @@ def test_predictor_context_carries_address_and_reads_only_that_retained_row():
     discourse.bind_observation_occurrence(0, store.occurrence_of(row))
     discourse.detach_prediction_context()
     anchors = discourse.situation_references(0)
-    assert len(anchors) == 1 and anchors[0].row_id == int(store.row_ids[row])
+    assert len(anchors) == 1 and anchors[0].row_id == int(store.address_keys[row])
     torch.testing.assert_close(anchors[0].point, store.slots[row])
     discourse._ltm_store = None
     assert discourse.situation_references(0) == ()

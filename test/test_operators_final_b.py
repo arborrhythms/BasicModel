@@ -22,15 +22,7 @@ def test_one_signless_form_per_word_and_two_independent_recovered_lanes():
         torch.ones(1, 2, dtype=torch.bool), 2, chooser=DecompositionChooser(), return_details=True)
     assert ready.all() and details['left_indices'].shape == (1, 2)
     torch.testing.assert_close(op.compose(left, right), parent, rtol=0, atol=0)
-    rows = torch.tensor([[4, 5]])
-    selected = int(details['selected'][0])
-    n = details['right_indices'].shape[1]
-    target = torch.stack((rows[0, details['left_indices'][0, selected//n]],
-                          rows[0, details['right_indices'][0, selected%n]]))[None]
-    loss, present, picked = DecompositionChooser.teacher_loss(details, rows, rows, target)
-    assert present.all() and picked.all() and loss.isfinite().all()
-    loss.sum().backward()
-    assert details['relative_residual'].min() == 0
+    assert details['pair_residual'].min() == 0
 
 
 def test_unknown_alias_does_not_destroy_single_symbol_stop():
@@ -66,17 +58,19 @@ def test_reader_block_scales_are_shared_and_preserve_additivity():
     assert torch.equal(bank.reader_value(a)[:,:2], bank.reader_value(a*torch.tensor([1.,1.,100.,100.,100.,100.]))[:,:2])
 
 
-def test_priming_has_neutral_one_and_configured_ceiling(monkeypatch):
-    from Spaces import Space
-    from util import TheXMLConfig
-    monkeypatch.setitem(TheXMLConfig.data.setdefault('ConceptualSpace', {}), 'primingMaxBoost', 2.)
-    owner = SimpleNamespace(_closed_clause_store=lambda: None)
-    raw = torch.tensor([[1., 11., 6., .5], [1., 3., 2., 0.]], requires_grad=True)
-    got = Space._bounded_priming(owner, raw)
-    torch.testing.assert_close(got, torch.tensor([[1., 2., 1.5, .5], [1., 2., 1.5, 0.]]))
+def test_prediction_has_neutral_one_and_desire_is_a_separate_channel():
+    from test_review13_subspaces import fixture
+    owner,*_=fixture(batch_size=2)
+    owner._expected_knowing[:,:4]=torch.tensor([[[0.,0.],[1.,.2],[.3,.5],[0.,.1]],
+                                             [[0.,0.],[.2,1.],[.5,.3],[.1,0.]]])
+    got=owner.relevance_weights(batch=2)
+    torch.testing.assert_close(got[:,:4],torch.tensor([[1.,2.,1.5,1.1],[1.,2.,1.5,1.1]]))
     assert not got.requires_grad
-    monkeypatch.setitem(TheXMLConfig.data['ConceptualSpace'], 'primingMaxBoost', 1.25)
-    assert Space._bounded_priming(owner, raw).max() == 1.25
+    before=owner._expected_knowing.clone()
+    owner.prime_desire(torch.tensor([[1],[2]]),valence=-3.)
+    after=owner.relevance_weights(batch=2)
+    assert after[0,1]==0 and after[1,2]==0 and after[0,2]==got[0,2]
+    assert torch.equal(before,owner._expected_knowing)
 
 
 def forced_prefix_certificate():

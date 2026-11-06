@@ -53,11 +53,12 @@ def test_dictionary_checkpoint_warns_and_keeps_prior_properties(tmp_path, monkey
             if is_legacy_wholespace_dense_key(name):
                 state[name] = torch.full_like(value, 71)
         checkpoint = tmp_path / 'dictionary.ckpt'
+        structural = model._collect_structural_extras()
+        structural['whole_spaces'] = {'0': {'attributes': {'_word_whole_ss': {'cat': 12}}}}
         torch.save({'state_dict': state,
                     'vocab_extras': {'well_known_atoms': {'cat': 12},
                                      'ws_taxonomy_extras': {'taxonomy': {7: [2, 3]}}},
-                    'structural_extras': {'version': 1, 'whole_spaces': {
-                        '0': {'attributes': {'_word_whole_ss': {'cat': 12}}}}}}, checkpoint)
+                    'structural_extras': structural}, checkpoint)
         with pytest.warns(UserWarning, match='11.4'):
             assert model.load_weights(checkpoint)
         for ws, prior in zip(model.wholeSpaces, priors):

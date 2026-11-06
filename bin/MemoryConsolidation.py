@@ -27,8 +27,27 @@ def recurrence_groups(store):
         raise ValueError('recurrenceAngle must lie in (0, 180] degrees')
     threshold = math.cos(math.radians(angle))
     groups, pending = {}, []
+    from LTM1 import NULL_CONCEPT
+    owner_ref = store.__dict__.get('_concept_owner')
+    owner = None if owner_ref is None else owner_ref()
+    # Epoch data is empty again, but a previously promoted reading already
+    # has a concept. Its fixed prototype is available for angular recognition.
+    learned_orders = {}
+    if owner is not None:
+        alloc = owner._concept_allocator
+        for seat in store.recurrence_symbols.gt(0).nonzero().flatten().tolist():
+            symbol = int(store.recurrence_symbols[seat])
+            if symbol in alloc.retired:
+                store.recurrence_symbols[seat] = -1
+            else:
+                learned_orders[seat] = alloc.order_of(symbol)
+    learned = store.recurrence_symbols.gt(0)
     for row in range(len(store)):
-        if store.KINDS[int(store.record_kind[row])] in ('estimate', 'question', 'cover'):
+        if store.kind_of(row) in ('estimate', 'question', 'cover'):
+            continue
+        pool = None if owner is None else owner.mtm
+        token = None if pool is None else pool.token_of(store.occurrence_of(row))
+        if token is not None and pool.entries[token].kind == NULL_CONCEPT:
             continue
         seat = int(store.recurrence_readings[row])
         (pending if seat < 0 else groups.setdefault(seat, [])).append(row)
@@ -42,7 +61,7 @@ def recurrence_groups(store):
             store._recurrence_identities[seat] = None
     def update(seat, rows):
         values = torch.stack([_content(store, row) for row in rows])
-        weights = (store.c_plus[rows] + store.c_minus[rows]).to(values)
+        weights = (store.truth_plus[rows] + store.truth_minus[rows]).to(values)
         total = weights.sum()
         store.recurrence_codes[seat].copy_((values * weights[:, None]).sum(0) / total.clamp_min(1e-12))
         store.recurrence_weights[seat] = total
@@ -51,14 +70,20 @@ def recurrence_groups(store):
     for row in pending:
         value = _content(store, row)
         scores = torch.nn.functional.cosine_similarity(store.recurrence_codes, value[None], dim=-1)
-        scores.masked_fill_(~store.recurrence_used, -torch.inf)
+        eligible = store.recurrence_used | learned
+        order = store.order_of_row(row)
+        for seat, registered in learned_orders.items():
+            if registered != order:
+                eligible[seat] = False
+        scores.masked_fill_(~eligible, -torch.inf)
         # Strict angle tolerance; equal scores choose the earliest fixed seat.
         seat = int(scores.argmax())
         if not float(scores[seat]) > threshold:
-            free = (~store.recurrence_used).nonzero().flatten()
+            free = (~(store.recurrence_used | learned)).nonzero().flatten()
             if not len(free):
                 raise RuntimeError('angular recurrence exceeds the constructed recurrenceCapacity')
             seat = int(free[0])
+        if not bool(store.recurrence_used[seat]):
             store.recurrence_used[seat] = True
             store._recurrence_identities[seat] = dict(store.raw_meaning_of(row).bindings).get('_identity')
         store.recurrence_readings[row] = seat
@@ -88,7 +113,7 @@ def _fold(owner, store, rows, *, order=1, members=None):
         value = cb.W.new_zeros(cb.W.shape[-1])
         value[:width] = (codes * weights[:, None]).sum(0) / weights.sum()
         return value
-    weights = store.c_plus[rows] + store.c_minus[rows]
+    weights = store.truth_plus[rows] + store.truth_minus[rows]
     if not bool(weights.any()):
         return None
     value = cb.W.new_zeros(cb.W.shape[-1])
@@ -142,9 +167,9 @@ def consolidate(owner, store, *, context=None, key=None, batch=0):
             if seat is not None and torch.equal(store.slots[rows[0]], owner.similarity_codebook.W[seat]):
                 store.recurrence_symbols[reading] = reference[1]
                 continue
-        value = _fold(owner, store, rows, order=int(store.order[rows[0]]))
+        value = _fold(owner, store, rows, order=store.order_of_row(rows[0]))
         if value is not None:
-            plans.append((int(store.order[rows[0]]), value))
+            plans.append((store.order_of_row(rows[0]), value))
             actions.append(('reading', reading))
     if plans:
         _preflight(owner, plans)

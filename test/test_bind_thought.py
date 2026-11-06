@@ -164,7 +164,9 @@ def test_g1_definite_generator_referent_with_distractor(monkeypatch, kind, other
 def test_g2_generated_leaf_without_object_uses_same_resolver(monkeypatch, kind, other):
     from ClauseJournal import finish_clause
     f = native(monkeypatch)
-    target, _ = occurrence(f, f.atoms[kind], f.atoms[4])
+    # §50 item 101 / §52 item 111: the new word's description is a part
+    # of this retained individual, distinct from the distractor.
+    target, _ = occurrence(f, f.atoms[kind]+f.atoms[7], f.atoms[4])
     occurrence(f, f.atoms[other], f.atoms[5])
     expected = f.identities[target]
     marker = f'm{kind}{other}'
@@ -227,6 +229,13 @@ def test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open(monkeypatc
     program = record_reading(f.language, program)
     clause = finish_clause(f.language, program, registry=f.registry)
     assert ('referent', 2) in open_slots(clause.meaning)
+    # §50/§52: a missing role alone provides no identifying content. Supply
+    # the fixture's nonempty description while retaining the native elision.
+    data = dict(clause.meaning.bindings)
+    sites = dict(data.get('_reference_sites', ()))
+    sites[2] = dict(sites.get(2, {}), content=f.atoms[kind].tolist())
+    clause = replace(clause, meaning=replace(clause.meaning,
+        bindings=dict(data, _reference_sites=tuple(sites.items()))))
     if not accessible:
         f.frames.clear()
     result = execute(f, clause.meaning, 2)
@@ -304,12 +313,17 @@ def test_bind_keeps_self_and_containing_identities_without_rewriting_occurrences
                                     sentence_index=position)
         child = f.store.occurrence_of(row)
         expected.add(child)
-        f.frames.append(SituationFrame.from_row(f.store.row(row)))
+        # The situation read exposes this occurrence by its native activation.
+        # Its concrete durable order comes from the referent it contains.
+        f.frames.append(replace(SituationFrame.from_row(f.store.row(row)),
+                                activations=((child, None, 0),)))
     if has_antecedent:
         row = f.store.append_meaning(ConceptualMeaning.from_description(f.atoms[0]*.5),
                                     order=1, document_key='independent')
-        expected.add(f.store.occurrence_of(row))
-        f.frames.append(SituationFrame.from_row(f.store.row(row)))
+        independent = f.store.occurrence_of(row)
+        expected.add(independent)
+        f.frames.append(replace(SituationFrame.from_row(f.store.row(row)),
+                                activations=((independent, None, 0),)))
     query = f.store.meaning_of(missing)
     query = replace(query,bindings=dict(bindings(query),_query_occurrence=target))
     result = execute(f,query)

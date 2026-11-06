@@ -244,7 +244,7 @@ class OccurrenceRows:
         """Read the fixed content direction at its durable definedness."""
         from MeaningCodes import identity_code, defined_code
         direction = identity_code(self.content_key(row), pairs, ones, like=self.slots)
-        return defined_code(direction, self.witness_count[int(row)])
+        return defined_code(direction, self.access_count[int(row)])
 
     def rows_for_content(self, key):
         return tuple(row for row in range(len(self)) if self.content_key(row) == key)

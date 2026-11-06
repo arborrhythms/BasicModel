@@ -181,8 +181,8 @@ def test_native_observer_uses_owned_individual_not_enclosing_sentence(monkeypatc
         child=written[id(clause.children[0])]
         assert root != child
         assert clause.order == 0 and clause.children[0].order == 1
-        assert token['reference']==int(fixture.store.row_ids[child])
-        assert token['reference']!=int(fixture.store.row_ids[root])
+        assert token['reference']==int(fixture.store.address_keys[child])
+        assert token['reference']!=int(fixture.store.address_keys[root])
         assert token['missing_reason'] is None
 
         # A later selected bind must expose the same address to the grader.
@@ -195,7 +195,7 @@ def test_native_observer_uses_owned_individual_not_enclosing_sentence(monkeypatc
         local=next(i for i,r in enumerate(fixture.binary) if r.determiner_mode=='bind')
         bound.actions[2,1]=local
         bound=record_reading(fixture.language,resolve_reading_references(
-            fixture.language,bound,frames=(SituationFrame.from_row(fixture.store.row(child)),),
+            fixture.language,bound,frames=(replace(SituationFrame.from_row(fixture.store.row(child)), order=clause.children[0].order),),
             forced={1:address}))
         entry=bound
         model.inputSpace._packed_sentence_ids.fill_(1)

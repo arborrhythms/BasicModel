@@ -108,10 +108,10 @@ class TestRuntimeSplitIngestion(unittest.TestCase):
         store = m.symbolSpace.ltm_store
         m.store_truths([{"content": "hello world", "trust": 0.9},
                         {"content": "loving there", "trust": 0.4}])
-        rows = (store.origin[:len(store)] == store.ORIGIN_USER).nonzero().flatten()
+        rows = store.rows_of_origin(store.ORIGIN_USER)
         self.assertEqual(rows.numel(), 2)
-        torch.testing.assert_close(store.c_plus[rows], torch.tensor([.9, .4]))
-        torch.testing.assert_close(store.c_minus[rows], torch.zeros(2))
+        torch.testing.assert_close(store.truth_plus[rows], torch.tensor([.9, .4]))
+        torch.testing.assert_close(store.truth_minus[rows], torch.zeros(2))
         self.assertNotIn('trust', store.state_dict())
 
     @pytest.mark.usefixtures('eager_reading')
@@ -120,15 +120,15 @@ class TestRuntimeSplitIngestion(unittest.TestCase):
         m, Models = _model()
         store = m.symbolSpace.ltm_store
         m.store_truths([{"content": "hello world", "trust": 0.8}])
-        rows = (store.origin[:len(store)] == store.ORIGIN_USER).nonzero().flatten()
+        rows = store.rows_of_origin(store.ORIGIN_USER)
         self.assertEqual(rows.numel(), 1)
-        torch.testing.assert_close(store.c_plus[rows], torch.tensor([.8]))
-        torch.testing.assert_close(store.c_minus[rows], torch.zeros(1))
+        torch.testing.assert_close(store.truth_plus[rows], torch.tensor([.8]))
+        torch.testing.assert_close(store.truth_minus[rows], torch.zeros(1))
         m.store_truths([{"content": "loving world", "trust": 0.6}])
-        rows = (store.origin[:len(store)] == store.ORIGIN_USER).nonzero().flatten()
+        rows = store.rows_of_origin(store.ORIGIN_USER)
         self.assertEqual(rows.numel(), 1)
-        torch.testing.assert_close(store.c_plus[rows], torch.tensor([.6]))
-        torch.testing.assert_close(store.c_minus[rows], torch.zeros(1))
+        torch.testing.assert_close(store.truth_plus[rows], torch.tensor([.6]))
+        torch.testing.assert_close(store.truth_minus[rows], torch.zeros(1))
 
 
 if __name__ == "__main__":

@@ -20,6 +20,11 @@ def test_grammar_resolves_each_word_to_its_full_object_code(tmp_path, monkeypatc
         from test_mm_xor import _fresh_model
         import Models
         model, _, _ = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data' / configuration))
+        if configuration == 'MM_grammar.xml':
+            # A sign/Part can define an unknown label after the read.
+            # Keep an absolute composition for this lexical read-back.
+            from reading_fixtures import force_absolute_reading
+            force_absolute_reading(model)
     model.eval()
     seen = []
     resolve = FunctionalPeerSTM.resolve_top_reference
@@ -43,6 +48,7 @@ def test_grammar_resolves_each_word_to_its_full_object_code(tmp_path, monkeypatc
         owner = model._concept_owner()
         expected_rows = {owner._csw_row_of(owner.interpret.forward(owner.interpret.word_for_form(word)))
                          for word in ('hello', 'loving', 'world', 'there')}
+        assert len(expected_rows) == 4
         assert set(seen) == expected_rows
     finally:
         model.End()

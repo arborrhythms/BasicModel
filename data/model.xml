@@ -15,6 +15,14 @@
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
   <architecture>
+    <separateChooser>true</separateChooser>
+    <reconstructionJitter>0</reconstructionJitter>
+    <!-- Fixed trips per free output or sentence-decoder walk. -->
+    <generateBudget>32</generateBudget>
+    <!-- Raw bytes in one word; lexical tables reserve EOS separately. -->
+    <wordSurfaceCapacity>64</wordSurfaceCapacity>
+    <!-- Cued retrieval scores this many recent candidates, then returns top-K. -->
+    <ltmWindow>1024</ltmWindow>
     <!-- LTM retention: bounded age and value choose rows under capacity pressure. -->
     <forgetting>true</forgetting>
     <forgetHighWater>0.9</forgetHighWater>
@@ -90,6 +98,7 @@
     <transformChooserDepth>1</transformChooserDepth>
     <whatThinkingHidden>16</whatThinkingHidden>
     <whatThinkingDepth>1</whatThinkingDepth>
+    <intuitionCapacity>4096</intuitionCapacity>
     <!-- One completed selected grammatical question owns this many shared
          controller/query-work units. Policy sampling remains separately off. -->
     <attentionBudget>32</attentionBudget>
@@ -505,20 +514,14 @@
     <placementRate>0.1</placementRate>
     <placementNegatives>5</placementNegatives>
     <placementNegativeWeight>1.0</placementNegativeWeight>
-    <geometricSpread>0.05</geometricSpread>
     <!-- Zero retains the complete bridge reservation; a positive capacity
          bounds the sparse 32-destination blocks and raises on exhaustion. -->
     <primingBridgeCapacity>0</primingBridgeCapacity>
-    <geometricNeighbours>8</geometricNeighbours>
-    <geometricRadius>15</geometricRadius>
-    <geometricRadiusRate>0.02</geometricRadiusRate>
-    <geometricRadiusMin>1</geometricRadiusMin>
-    <geometricRadiusMax>90</geometricRadiusMax>
     <recurrenceAngle>15</recurrenceAngle>
     <raiseEvidence>0</raiseEvidence>
+    <raiseCount>3</raiseCount>
     <mtmPrepend>64</mtmPrepend>
     <!-- recurrenceCapacity defaults to this space's resolved nVectors. -->
-    <primingMaxBoost>2.0</primingMaxBoost>
     <readerBlockNormalization>true</readerBlockNormalization>
     <!-- Deterministic room between the part and property-whole bounds. -->
     <latticeMargin>0</latticeMargin>

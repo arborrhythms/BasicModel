@@ -68,7 +68,7 @@ def test_update_has_one_promotion_after_placement_and_no_close_observer():
 
 def test_prime_boundary_joins_lexical_and_open_field_rows_in_one_step(monkeypatch):
     import pytest
-    import Priming
+    import ConceptSpread
     from Models import BasicModel
     cs, rows, model = fixture()
     lexical = rows[4][1]
@@ -76,22 +76,22 @@ def test_prime_boundary_joins_lexical_and_open_field_rows_in_one_step(monkeypatc
     model.inputSpace._ar_concept_lookup_sentence_ids = torch.tensor([[0]])
     model.inputSpace._packed_sentence_slot_mask = torch.tensor([[True]])
     calls = []
-    propagate = Priming.propagate
-    def step(owner, surface, active):
-        calls.append('propagate')
-        return propagate(owner,surface,active)
-    monkeypatch.setattr(Priming,'propagate',step)
+    predict=ConceptSpread.open_prediction
+    def step(model,active):
+        calls.append('prediction')
+        return predict(model,active)
+    monkeypatch.setattr(ConceptSpread,'open_prediction',step)
     prime = cs.prime_seen
     class ReachedReconstructionBank(Exception):
         pass
     def primed(seen, **kwargs):
         assert set(seen[0].tolist()) == {lexical,rows[0][1],rows[2][1]}
-        assert kwargs['propagate'] and kwargs['active_rows'].tolist() == [True]
+        assert kwargs['active_rows'].tolist() == [True]
         prime(seen,**kwargs)
         raise ReachedReconstructionBank
     monkeypatch.setattr(cs,'prime_seen',primed)
     before = cs._concept_allocator.next_id
     with pytest.raises(ReachedReconstructionBank):
         BasicModel._prime_sentence_symbols(model,0)
-    assert calls == ['propagate']
+    assert calls == ['prediction']
     assert cs._concept_allocator.next_id == before and len(_candidates(cs)) == 0

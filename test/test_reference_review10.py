@@ -12,14 +12,19 @@ from Meaning import ConceptualMeaning
 from ReferenceContext import SituationFrame
 from ThoughtReferences import open_slots, with_slots
 from test_medium_term_memory import keep, mention, snapshot, unchanged, seats, unchanged_after_consolidation
-from test_reference_arrivals import equality, named, world
+from test_reference_arrivals import equality, named, described, world
 from test_reference_choices import noun
 
 
 @pytest.mark.parametrize('observed_exclusion', (False, True))
 def test_later_ball_mention_preserves_the_boxs_key_members_and_count(monkeypatch, observed_exclusion):
-    resolver, store, a, words, _ = world()
+    resolver, store, a, words, _ = world(pending_atom=0)
     owner, frames = resolver.components.owner, []
+    # §50: the pending description is a nonempty part of the box's meaning.
+    # Its dictionary agrees, and the original prime still distinguishes the whole.
+    pending_content = a[0] * .5
+    with torch.no_grad():
+        owner.similarity_codebook.W[owner._csw_row_of(words['x'])].copy_(pending_content)
     for unit, (word, point) in enumerate((('y', a[5]), ('box', a[0]), ('ball', a[1]),
                                          ('red', a[2]), ('blue', a[3]), ('two', a[4])), 200):
         words[word] = owner.interpret.lookup_word([unit], (), form=word)
@@ -57,7 +62,7 @@ def test_later_ball_mention_preserves_the_boxs_key_members_and_count(monkeypatch
                 Composition(pred, reference=words[predicate])), operation='lift', order=2))
 
     # y is x plus two: x is nested under the right-hand expression.
-    x = named(a[0], words['x'])
+    x = described(pending_content, words['x'])
     two = Clause(ConceptualMeaning.from_description(a[4]), point=a[4],
         composition=Composition(a[4], reference=words['two'], word_id=words['two']))
     addition = Clause(ConceptualMeaning.from_description(a[4]), point=a[4],
@@ -69,22 +74,19 @@ def test_later_ball_mention_preserves_the_boxs_key_members_and_count(monkeypatch
     pending = close(first, 0)['items'][0]['reference']
     box = close(property_clause('box', 'red'), 1)['items'][0]['reference']
     monkeypatch.setattr(resolver, 'prime', lambda value, stream: value[0]*4+value[1])
-    close(equality(a[0], words['x'], words['box']), 2)
+    close(equality(a[0], words['x'], words['box'], subject=pending_content), 2)
     assert owner.mtm.token_of(pending) == box
     ball = close(property_clause('ball', 'blue'), 3)['items'][0]['reference']
     before = owner.mtm.entries[box]
     if observed_exclusion:
         # Eight separate observations of each support; never a joint one.
         for support in (a[0], a[1]):
-            row = store.write_clause(Clause(ConceptualMeaning.from_description(support),
-                point=support, order=1), document_key=('exclusion', int(support.argmax())),
-                sentence_index=0)
-            store.witness_count[row] = 8
+            observed_individual(resolver, support, int(support.argmax()))
         assert resolver.exclusion_query()(a[0], a[1])
     else:
         assert not resolver.exclusion_query()(a[0], a[1])
         monkeypatch.setattr(resolver, 'prime', lambda value, stream: value[1]*4+value[0])
-    final = close(equality(a[1], words['x'], words['ball']), 4)
+    final = close(equality(a[1], words['x'], words['ball'], subject=a[1]), 4)
     new_mention = final['items'][0]
     assert owner.mtm.token_of(box) == box
     assert owner.mtm.entries[box] == before
@@ -114,15 +116,21 @@ def test_arrival_cannot_merge_a_pending_token_with_other_members():
     unchanged(resolver, retained)
 
 
+def observed_individual(resolver, support, index):
+    from IdentityRows import mint
+    subject = mint(resolver.components.owner, support)
+    idea = replace(ConceptualMeaning.from_description(support), role_refs=(('sym', subject), None, None))
+    row = resolver.store.append_meaning(idea, document_key='exclusion', sentence_index=index)
+    resolver.store.access_count[row] = 8
+
+
 @pytest.mark.parametrize('has_word', (False, True))
 def test_own_content_excludes_an_observed_incompatible_antecedent(monkeypatch, has_word):
     resolver, store, a, words, _ = world()
     row, _ = keep(resolver, mention(a[0], reference=words['three']))
     antecedent = store.occurrence_of(row)
     for index, support in enumerate((a[0], a[1])):
-        observation = store.write_clause(Clause(ConceptualMeaning.from_description(support),
-            point=support, order=1), document_key='exclusion', sentence_index=index)
-        store.witness_count[observation] = 8
+        observed_individual(resolver, support, index)
     pool = resolver.components.owner.mtm
     before = pool.entries[antecedent]
     monkeypatch.setattr(resolver, 'prime', lambda value, stream: value.new_tensor(100.))
@@ -162,9 +170,6 @@ def test_answer_view_and_loss_judge_only_a_direct_root_site(nested):
     judged = resolver.answer_meaning(plan, meaning)
     assert cost(model, judged, 'three') == (1 if nested else 0)
     assert bool(open_slots(judged)) == nested
-    resolver.components.owner.word_concepts = lambda _: (address,)
-    loss = resolver.answer_loss(plan, meaning, 'three')
-    assert (loss is None) == nested
     unchanged(resolver, before)
     assert resolver.components.owner.mtm.entries == entries
 

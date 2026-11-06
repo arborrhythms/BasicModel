@@ -41,10 +41,9 @@ def test_surface_contract_cold_at_build():
     assert len(towers) == 2
     for t in towers:
         priming, relevance = t.priming_weights(), t.relevance_weights()
-        assert priming.shape == t._priming_target()._priming_boosts.shape
+        assert priming.shape == t._priming_target()._expected_knowing.shape[:-1]
         assert priming.eq(1).all(), type(t).__name__
         torch.testing.assert_close(priming, relevance, atol=0, rtol=0)
-    assert getattr(m, "relevance_on", None) is False, "default must be off"
 
 
 @pytest.mark.slow
@@ -53,15 +52,15 @@ def test_seen_bump_and_decay():
     m = _build("data/MM_20M_xor.xml")
     cs0 = m.conceptualSpaces[0]
     b = cs0.prime_seen(torch.tensor([3, 5]), bump=1.0, decay=0.5)
-    assert b is not None and float(b[0, 3]) == 2.0 and float(b[0, 0]) == 1.0
+    assert b is not None and b.eq(1).all()
     # A second write decays the old bump toward neutral before bumping.
     b = cs0.prime_seen(torch.tensor([5]), bump=1.0, decay=0.5)
-    raw = cs0._priming_target()._priming_boosts
+    raw = cs0._priming_target()._priming_seen
     assert float(raw[0, 3]) == 1.5, "old seen decays toward 1.0"
     assert float(raw[0, 5]) == 2.5, "refreshed seen re-bumps"
-    assert abs(float(b[0, 3]) - (1 + .5/1.5)) < 1e-6
-    assert float(b[0, 5]) == 2., "the consumer uses the unchanged bounded read"
-    cs0._priming_boosts.fill_(1.)
+    assert float(b[0, 3]) == 1.
+    assert float(b[0, 5]) == 1., "seen is placement context"
+    cs0._desire.zero_()
 
 
 @pytest.mark.slow
@@ -75,7 +74,7 @@ def test_desire_signed_floor():
     assert float(b[0, 4]) == 0.0, "hate suppresses"
     b = cs0.prime_desire(torch.tensor([4]), valence=-5.0)
     assert float(b[0, 4]) == 0.0, "floor at 0 -- suppression, never negative"
-    cs0._priming_boosts.fill_(1.)
+    cs0._desire.zero_()
 
 
 @pytest.mark.slow
@@ -86,7 +85,6 @@ def test_unconditional_integration_end_to_end(monkeypatch):
     m = _build("data/MM_20M_xor.xml")
     opt = m.getOptimizer(lr=0.01)
     cs0 = m._concept_owner()
-    assert m.relevance_on is False
     observed = []
     prime = m._prime_seen_step
     def capture():
@@ -105,11 +103,11 @@ def test_unconditional_integration_end_to_end(monkeypatch):
             assert float(priority.max()) > 0., "the surface feeds the pyramid"
         assert cs0.priming_weights().eq(1).all()
     finally:
-        cs0._priming_boosts.fill_(1.)
+        cs0._desire.zero_()
         object.__setattr__(cs0, "_relevance_priority", None)
-        m.wholeSpaces[0]._priming_boosts.fill_(1.)
+        m.wholeSpaces[0]._desire.zero_()
         for _ws in m.wholeSpaces:
-            _ws._priming_boosts.fill_(1.)
+            _ws._desire.zero_()
 
 
 @pytest.mark.slow
@@ -123,16 +121,16 @@ def test_native_attention_reads_canonical_whole_heat_by_stream():
     V = ws0._priming_dim()                 # canonical dim via delegation
     assert V > 0, "WS must carry a codebook surface"
     idx = torch.tensor([[2, 5], [2, 5]]).clamp(max=V - 1)
-    ws_c._priming_boosts.fill_(1.)  # fresh surface
+    ws_c._desire.zero_()  # fresh surface
     ws0.prime_desire(idx.gather(1, torch.tensor([[1], [0]])), valence=3.0)
-    before = ws_c._priming_boosts.clone()
+    before = ws_c._desire.clone()
     try:
         heat = _heat(ws0, 2, V, before)
         assert heat.gather(1, idx).argmax(-1).tolist() == [1, 0]
         torch.testing.assert_close(heat, ws_c.relevance_weights(batch=2), atol=0, rtol=0)
-        torch.testing.assert_close(ws_c._priming_boosts, before, atol=0, rtol=0)
+        torch.testing.assert_close(ws_c._desire, before, atol=0, rtol=0)
     finally:
-        ws_c._priming_boosts.fill_(1.)
+        ws_c._desire.zero_()
 
 
 def _minted_cs():

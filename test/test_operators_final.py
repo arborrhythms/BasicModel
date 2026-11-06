@@ -10,16 +10,15 @@ import torch
 
 
 
-def test_location_priming_shares_excess_budget_and_is_detached():
-    from Priming import propagate
-    from test_priming_diffusion import owner as fixture_owner, directions
-    owner = fixture_owner(directions([0,10,80], dtype=torch.float32))
-    surface = torch.tensor([[4., 1., 1.]])
-    before = torch.get_rng_state().clone()
-    propagate(owner, surface, torch.tensor([True]))
-    torch.testing.assert_close(surface, torch.tensor([[3.1, 1.9, 1.]]))
-    assert torch.equal(before, torch.get_rng_state()) and not surface.requires_grad
-    assert surface.sum() == pytest.approx(6.)
+def test_predictor_priming_preserves_both_lanes_and_is_detached():
+    from test_review13_subspaces import fixture
+    owner,*_=fixture()
+    owner._expected_knowing[0,:3]=torch.tensor([[.3,.7],[.9,.1],[0.,0.]])
+    before=owner._expected_knowing.clone();rng=torch.get_rng_state().clone()
+    result=owner.relevance_weights(batch=1)
+    torch.testing.assert_close(result[0,:3],torch.tensor([1.7,1.9,1.]))
+    assert not result.requires_grad
+    assert torch.equal(before,owner._expected_knowing) and torch.equal(rng,torch.get_rng_state())
 
 
 def test_bilattice_rule_survives_operator_rename():

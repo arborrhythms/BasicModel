@@ -163,9 +163,7 @@ class TestXorExactCliReconstruction(unittest.TestCase):
     @pytest.mark.learning_certificate
     def test_at_least_50_pct_inputs_reconstruct(self):
         # Initialization may expose a learning defect; never select a passing basin.
-        rc, stdout, stderr = _run_cli(
-            "data/XOR_exact.xml", timeout=480,
-            env_extra={"MODEL_COMPILE": "eager"})
+        rc, stdout, stderr = _run_cli("data/XOR_exact.xml", timeout=480)
         self.assertEqual(rc, 0, f"CLI failed: stderr={stderr[-1000:]}")
         ok, total = _parse_input_match_counts(stdout)
         print(f'XOR_exact reconstruction count: {ok}/{total}')
@@ -181,9 +179,7 @@ class TestXorExactCliReconstruction(unittest.TestCase):
     @pytest.mark.learning_certificate
     def test_output_mse_is_crisp(self):
         # Accuracy alone misses predictions clustered near .5; keep MSE < .05.
-        rc, stdout, stderr = _run_cli(
-            "data/XOR_exact.xml", timeout=480,
-            env_extra={"MODEL_COMPILE": "eager"})
+        rc, stdout, stderr = _run_cli("data/XOR_exact.xml", timeout=480)
         self.assertEqual(rc, 0, f"CLI failed: stderr={stderr[-1000:]}")
         mse, n = _parse_output_mse(stdout)
         self.assertIsNotNone(
@@ -199,7 +195,6 @@ class TestXorExactCliReconstruction(unittest.TestCase):
 
 def _run_xor_grammar_in_process():
     """Run the grammar capability gate without selecting an initialization."""
-    os.environ["MODEL_COMPILE"] = "none"
     from unittest.mock import patch
     from Models import BasicModel, ModelFactory
     commit = BasicModel._commit_sentence

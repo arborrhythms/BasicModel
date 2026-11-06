@@ -13,7 +13,7 @@ def _seed(model):
     store.reset()
     meaning = replace(ConceptualMeaning.from_description(torch.ones(store.nDim)), scope={"source": "reported"})
     row = store.append_meaning(meaning, trust=.75)
-    store.set_origin(row, store.ORIGIN_USER, text="a reported claim")
+    store.set_origin(row, store.ORIGIN_USER, text="a reported claim", asserted=(float(store.truth_plus[row]), float(store.truth_minus[row])))
     return store, store.occurrence_of(row)
 
 

@@ -295,8 +295,9 @@ def test_whole_contribution_follows_the_composed_stamp():
     assert selected({2: (mean, count, orders)}, 2, mean, rule)[1].flatten().tolist() == [1., 0.]
 
 
+@pytest.mark.parametrize('membership', (.3, 1.))
 @pytest.mark.parametrize('centered', (False, True))
-def test_free_inverse_reads_native_wholes_from_candidates_without_a_span(monkeypatch, centered):
+def test_free_inverse_reads_native_wholes_from_candidates_without_a_span(monkeypatch, centered, membership):
     from test_meaning_kernels import paired
     # Use the common paired-layout setup directly; no parse or target bytes
     # are supplied to the inverse search.
@@ -308,7 +309,7 @@ def test_free_inverse_reads_native_wholes_from_candidates_without_a_span(monkeyp
     support = torch.zeros(1, 2, 256, dtype=torch.bool)
     support[0, 0, 10] = support[0, 1, 20] = True
     properties = torch.zeros(1, 256, dtype=torch.float64)
-    properties[:, [10, 20]] = 1.
+    properties[:, [10, 20]] = membership
     wholes = CandidateWholes(torch.stack((a[:4], b[:4]))[None], support,
         torch.ones(1, 2, dtype=torch.bool), properties, torch.tensor([[.9, .7, .6, .3]], dtype=torch.float64))
     native = wholes.read(a[None], b[None])
@@ -322,8 +323,9 @@ def test_free_inverse_reads_native_wholes_from_candidates_without_a_span(monkeyp
     torch.testing.assert_close(right, b[None], rtol=0, atol=1e-12)
 
 
+@pytest.mark.parametrize('membership', (.3, 1.))
 @pytest.mark.parametrize('centered', (False, True))
-def test_free_unary_inverse_uses_the_same_native_form_equations(monkeypatch, centered):
+def test_free_unary_inverse_uses_the_same_native_form_equations(monkeypatch, centered, membership):
     from test_meaning_kernels import paired
     paired.__wrapped__(monkeypatch)
     from Language import LanguageSpace, SurfaceLayer, SurfaceUnaryLayer
@@ -333,7 +335,7 @@ def test_free_unary_inverse_uses_the_same_native_form_equations(monkeypatch, cen
     support = torch.zeros(1, 1, 256, dtype=torch.bool)
     support[..., 10] = True
     properties = torch.zeros(1, 256, dtype=torch.float64)
-    properties[:, 10] = 1.
+    properties[:, 10] = membership
     bank = CandidateWholes(value[:, None, :4], support, torch.ones(1, 1, dtype=torch.bool),
         properties, torch.tensor([[.9, .7, .6, .3]], dtype=torch.float64))
     parent = op.compose_blocks(op.compose, value, whole=bank.read(value) if centered else None)

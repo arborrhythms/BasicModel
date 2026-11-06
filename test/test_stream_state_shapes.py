@@ -196,10 +196,10 @@ def test_recall_batch_shape_cannot_change_before_reset():
 def test_document_reset_clears_only_the_finished_rows_priming():
     from Spaces import Space
     space = SimpleNamespace(layers=(), subspace=None,
-                            _priming_boosts=torch.tensor([[2., 3.], [4., 5.]]))
+                            _priming_seen=torch.tensor([[2., 3.], [4., 5.]]))
     Space.Reset(space, batch=0, hard=False)
-    torch.testing.assert_close(space._priming_boosts, torch.tensor([[2., 3.], [4., 5.]]))
+    torch.testing.assert_close(space._priming_seen, torch.tensor([[2., 3.], [4., 5.]]))
     Space.Reset(space, batch=0, hard=True)
-    torch.testing.assert_close(space._priming_boosts, torch.tensor([[1., 1.], [4., 5.]]))
+    torch.testing.assert_close(space._priming_seen, torch.tensor([[1., 1.], [4., 5.]]))
     Space.Reset(space, hard=True)
-    assert bool(space._priming_boosts.eq(1).all())
+    assert bool(space._priming_seen.eq(1).all())

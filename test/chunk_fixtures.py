@@ -48,6 +48,9 @@ def context(resolver, frames=()):
         entry = pool.entries.get(token)
         if entry is not None:
             references[0,1] = references.new_tensor((chunks.OCCURRENCE,token[-1]))
+            # §50: recalled identity chunks carry the computed current read,
+            # as production prepending does, rather than the earlier clause.
+            point = pool.value_of(token)
         identity = -1 if entry is None else entry.symbol if entry.symbol is not None else entry.transient
         state,_ = chunks.deposit(state,point[None],torch.tensor([True]),refs=references,
             identity=identity,order=frame.order,when=store.entry_when(location))
@@ -63,7 +66,7 @@ def context(resolver, frames=()):
                 continue
             refs = torch.tensor([[[chunks.SYMBOL if entry.symbol is not None else chunks.IDENTITY_REF,identity],
                                   [chunks.OCCURRENCE,key[-1]]]])
-            state,_ = chunks.deposit(state,entry.value[None],torch.tensor([True]),refs=refs,
+            state,_ = chunks.deposit(state,pool.value_of(key)[None],torch.tensor([True]),refs=refs,
                 identity=identity,order=1,where=entry.where,when=store.entry_when(location))
     return state
 

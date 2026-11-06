@@ -122,7 +122,7 @@ def test_pending_forgetting_pressure_survives_restore_below_high_water():
     from Forgetting import forget
     from test_forgetting import linked_store, config
     store, child, parent = linked_store()
-    store.source_trust[1] = 0.
+    store.set_evidence(1, 0., 0.)
     cfg = config(trust_weight=1, utility_weight=0, luminosity_weight=0, age_weight=0)
     with pytest.warns(RuntimeWarning, match='low water'):
         report = forget(store, cfg, document_boundary=True,
@@ -146,7 +146,12 @@ def test_truth_ingestion_restores_caller_recall_and_isolates_each_source(failure
     from MediumTermMemory import MediumTermMemory
     caller = {4: [object()]}
     caller_pool = MediumTermMemory()
-    owner = SimpleNamespace(mtm=caller_pool)
+    # §50 item 100g / §52 item 111: ingestion installs an owner-bound pool.
+    # This stub is weak-referenceable and supplies its construction width.
+    class Owner:
+        mtm = caller_pool
+        nVectors = 1
+    owner = Owner()
     model = SimpleNamespace(_what_recall_sentence_history=caller, _what_recall_batch_size=5,
         _concept_owner=lambda: owner,
         eval=lambda: None, set_sigma=lambda value: None, _what_memory=lambda: None,

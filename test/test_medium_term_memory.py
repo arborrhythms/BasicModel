@@ -107,6 +107,8 @@ def test_bound_use_reads_as_its_introduction_without_rewriting_rows(mode):
 def test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token():
     resolver, store, a = fixture()
     pool = resolver.components.owner.mtm = MediumTermMemory(2)
+    import weakref
+    pool._owner = weakref.ref(resolver.components.owner)
     frames, tokens = [], []
     for n in range(2):
         frame, _, plan = close(resolver, a[n], a[6], 'mint', (), document='lru', sentence=n)
@@ -138,6 +140,8 @@ def test_reclosed_occurrence_survives_eviction_of_its_previous_token(reclose):
     resolver, store, a = fixture()
     owner = resolver.components.owner
     pool = owner.mtm = MediumTermMemory(2)
+    import weakref
+    pool._owner = weakref.ref(owner)
     kind = owner.new_concept()
     force_order(owner, kind, 0)
     seat = owner._csw_concept_row(0, kind)

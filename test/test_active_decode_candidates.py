@@ -83,7 +83,7 @@ def test_radix_ws_decode_searches_bound_active_intersection_with_remap():
         torch.tensor([1.0, 0.0]), symbolic_space=_WholeSpace()) == b"active"
 
 
-def test_chunk_reverse_and_peel_preserve_active_prefix_row_ids():
+def test_chunk_reverse_and_peel_preserve_active_prefix_addresses():
     from Language import SynthesizeLayer
 
     cb = _PrefixCodebook(

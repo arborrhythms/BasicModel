@@ -171,7 +171,7 @@ def native_observer(model):
                 owns_head=(child is not None and child.order==1 and
                            child.subject_word_id==node.subject_word_id)
                 if index is not None and node.order==1 and not owns_head:
-                    by_word[node.subject_word_id].add(int(store.row_ids[index]))
+                    by_word[node.subject_word_id].add(int(store.address_keys[index]))
                 for child in (*node.children,*node.companions): visit(child)
             visit(clause)
             for token in captured[sid][b]['tokens'].values():

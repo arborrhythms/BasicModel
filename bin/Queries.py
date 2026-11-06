@@ -137,6 +137,7 @@ class ThoughtGrammarContext(GrammarContext):
     stm: object = None
     focus_where: tuple | None = None
     direction: tuple = (0, 2)
+    intuition_rule: tuple | None = None
 
     def __post_init__(self):
         super().__post_init__()
@@ -778,6 +779,18 @@ class ThoughtConceptualCapability:
     def quantize(self, *args, **kwargs):
         raise ValueError('quantize thought is retired; all-concept symbolization is future work')
 
+    def intuition(self, meaning, frames, *, row, work, premise):
+        from Intuition import execute
+        return execute(object.__getattribute__(self, '_ThoughtConceptualCapability__space'),
+                       meaning, frames, row=row, work=work, premise=premise)
+
+    def intuition_selection(self, term):
+        from Intuition import selected, proof
+        with torch.no_grad():
+            owner = object.__getattribute__(self, '_ThoughtConceptualCapability__space')
+            meaning, pair = selected(owner, term)
+            return meaning, pair, proof(owner, term, accepted=True)
+
 
 class ThoughtTaxonomyCapability:
     """Read-only bounded taxonomy traversal over one native conceptual owner."""
@@ -879,11 +892,11 @@ class ThoughtLTMCapability:
     """Narrow LTM/episode/prediction reader used only at a thought boundary."""
 
     __slots__ = ('__store', '__equal', '__tau', '__memory',
-                 '__discourse', '__row', '__primed', '__reference_close', '__reference_decisions')
+                 '__discourse', '__row', '__primed', '__expected', '__reference_close', '__reference_decisions')
 
     def __init__(self, *, store, equal, tau_id,
                  memory=None, discourse=None, row=0, primed=(), reference_close=None,
-                 reference_decisions=None):
+                 reference_decisions=None, expected=()):
         if not callable(store) or not callable(equal):
             raise TypeError('thought LTM capability requires bounded reader callables')
         object.__setattr__(self, '_ThoughtLTMCapability__store', store)
@@ -893,8 +906,38 @@ class ThoughtLTMCapability:
         object.__setattr__(self, '_ThoughtLTMCapability__discourse', discourse)
         object.__setattr__(self, '_ThoughtLTMCapability__row', int(row))
         object.__setattr__(self, '_ThoughtLTMCapability__primed', tuple(primed))
+        object.__setattr__(self, '_ThoughtLTMCapability__expected', tuple(expected))
         object.__setattr__(self, '_ThoughtLTMCapability__reference_close', reference_close)
         object.__setattr__(self, '_ThoughtLTMCapability__reference_decisions', reference_decisions)
+
+    def intuition_rules(self, *, max_records, work):
+        """Only rules indexed by the expected knowing; every row read is metered."""
+        store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
+        if store is None:
+            return ()
+        owner_ref = getattr(store, '_concept_owner', None)
+        owner = None if owner_ref is None else owner_ref()
+        if owner is None:
+            return ()
+        from LTM1 import SYMBOL
+        rows = []
+        index_limit = min(max_records, work.remaining // 4)
+        for row in object.__getattribute__(self, '_ThoughtLTMCapability__expected')[:index_limit]:
+            if not work.consume('index'):
+                break
+            cid = owner.concept_id_at_row(row)
+            if cid is not None:
+                rows.extend(store.parts.rows_referencing(SYMBOL, cid))
+        result = []
+        # Reserve a share of the same meter for the selected definitions.
+        limit = min(max_records, work.remaining // 3)
+        for symbol in dict.fromkeys(rows):
+            if len(result) >= limit or not work.consume('record'):
+                break
+            frame = store.part_row(symbol, reading='part')
+            if any(frame['evidence']):
+                result.append(frame)
+        return tuple(result)
 
     def bind_reference(self, meaning, role, *, max_records, work):
         """Read only situated frames and this episode's already held rows."""
@@ -920,10 +963,10 @@ class ThoughtLTMCapability:
             if len(frames) >= max_records:
                 break
             index = store._index_occurrences.get(occurrence) if store is not None else None
-            if index is not None and int(store.row_ids[index]) not in seen:
+            if index is not None and int(store.address_keys[index]) not in seen:
                 work.require('record')
                 frames.append(SituationFrame.from_row(store.row(index)))
-                seen.add(int(store.row_ids[index]))
+                seen.add(int(store.address_keys[index]))
         return resolver.bind_site(meaning, role, tuple(frames), stream=row,
             decisions=object.__getattribute__(self, '_ThoughtLTMCapability__reference_decisions'))
 
@@ -948,7 +991,7 @@ class ThoughtLTMCapability:
                 ref for ref in description.role_refs if ref and ref[0] == 'ltm'),
             retrieved=tuple(frame['occurrence'] for frame in self.held_frames()),
             stream=object.__getattribute__(self, '_ThoughtLTMCapability__row'),
-            max_candidates=max_records, work=work, role_mask=role_mask)
+            max_records=max_records, work=work, role_mask=role_mask)
 
     def _timeline_read(self, description, *, max_records, work, references=()):
         from ThoughtReferences import bindings
@@ -1027,7 +1070,7 @@ class ThoughtLTMCapability:
         if timelines is not None:
             from TimelineRead import evidence
             abstract = timelines['order'] > 0
-            scoped = tuple(tuple(row for row in records if (row['order'] > 0) == abstract)
+            scoped = tuple(tuple(row for row in records if row.get('alternative_event', row['order'] > 0) == abstract)
                            for records in timelines['groups'])
             return evidence(dict(timelines, groups=scoped), pattern)
         data = bindings(pattern)
@@ -1614,13 +1657,16 @@ _thought_executors = (
         (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC, Mind.BUDGET), (Mind.SERIAL,), 'containment', _implies,
         evidence_pair=True, method_grants=(('conceptual_space', ('payload', 'extent', 'negate')),)),
     ThoughtExecutorDescriptor('infer', 'symbolic-derivation', ('reference', 'reference'), Mind.SERIAL,
-        (Mind.SERIAL, Mind.SYMBOLIC, Mind.LTM, Mind.TAXONOMY, Mind.BUDGET), (Mind.SERIAL,), 'inference', _infer,
+        (Mind.SERIAL, Mind.SYMBOLIC, Mind.KNOWING, Mind.LTM, Mind.TAXONOMY, Mind.BUDGET), (Mind.SERIAL,), 'inference', _infer,
         evidence_pair=True, relation_directions=((0, 2), (2, 0)),
         method_grants=(('ltm', ('relation_evidence', 'premise_evidence')),
-                       ('taxonomy', ('evidence', 'neighbors')))),
+                       ('taxonomy', ('evidence', 'neighbors')),
+                       ('conceptual_space', ('intuition_selection',)))),
     ThoughtExecutorDescriptor('intuit', 'conceptual-inference', ('meaning',), Mind.SERIAL,
         (Mind.SERIAL, Mind.KNOWING, Mind.LTM, Mind.PRIMING, Mind.BUDGET),
-        (Mind.SERIAL, Mind.KNOWING), 'intuition', _intuit, evidence_pair=True),
+        (Mind.SERIAL, Mind.KNOWING), 'intuition', _intuit, evidence_pair=True,
+        effect_kind='intuition',
+        method_grants=(('ltm', ('intuition_rules',)), ('conceptual_space', ('intuition',)))),
     ThoughtExecutorDescriptor('isTrue', 'symbolic-truth', ('description',), Mind.SERIAL,
         (Mind.SERIAL, Mind.LTM, Mind.BUDGET), (Mind.SERIAL,), 'truth', _is_true, evidence_pair=True,
         method_grants=(('ltm', ('end_evidence', 'truth_evidence', 'resolve_description')),)),
@@ -1657,9 +1703,9 @@ def _descriptor_context(context, descriptor):
     fallback = {'conceptual_space': set(), 'ltm': set(), 'taxonomy': set()}
     methods = {
         Mind.SERIAL: ('ltm', ('query', 'resolve_held_description')),
-        Mind.LTM: ('ltm', ('retrieve', 'resolve_description', 'best_match', 'end_evidence', 'truth_evidence', 'relation_evidence', 'premise_evidence', 'bind_reference')),
+        Mind.LTM: ('ltm', ('retrieve', 'resolve_description', 'best_match', 'end_evidence', 'truth_evidence', 'relation_evidence', 'premise_evidence', 'bind_reference', 'intuition_rules')),
         Mind.EXPECTATION: ('ltm', ('expectation',)),
-        Mind.KNOWING: ('conceptual_space', ('payload', 'equal', 'extent', 'negate', 'order')),
+        Mind.KNOWING: ('conceptual_space', ('payload', 'equal', 'extent', 'negate', 'order', 'intuition', 'intuition_selection')),
         Mind.SYMBOLIC: ('conceptual_space', ('payload', 'equal', 'extent', 'negate', 'order')),
         Mind.TAXONOMY: ('taxonomy', ('evidence', 'neighbors')),
     }
@@ -2357,6 +2403,8 @@ class GrammaticalThoughtRegistry:
     def _form_candidate(self, operation, descriptor, bindings, *, source,
                         open_roles=()):
         """Build a request from held values only; no LTM/taxonomy read occurs."""
+        if operation.semantic_id == 'intuit':
+            return self.form('intuit', source)
         open_roles = tuple(open_roles)
         if (len(set(open_roles)) != len(open_roles)
                 or not set(open_roles).issubset(operation.operand_roles)):
@@ -2453,6 +2501,11 @@ class GrammaticalThoughtRegistry:
                 # what requires a checked question; use the owned question
                 # occurrences supplied below, never guess its mode from a code.
                 return
+            if operation.semantic_id == 'intuit':
+                request = self.form('intuit', candidate)
+                requests.append(ThoughtOperationCandidate(operation, request, ()))
+                seen.add(key)
+                return
             bindings = {}
             for role, kind in zip(operation.operand_roles,
                                   descriptor.kinds_for(open_roles)):
@@ -2523,10 +2576,6 @@ class GrammaticalThoughtRegistry:
                 break
         legal = []
         for request in requests:
-            if request.semantic_id == 'intuit':
-                # D9: round B enables this menu entry with its executor.
-                # Keep the grammar and direct-call error available meanwhile.
-                continue
             try:
                 if request.semantic_id == 'isPart':
                     # LTM occurrence provenance is not a taxonomy concept.
@@ -2673,7 +2722,7 @@ class GrammaticalThoughtRegistry:
             # call while retaining :meth:`ThoughtSignature.invoke`'s guard
             # for direct checked calls.
             from ThoughtReferences import bindings as thought_bindings
-            invocation = replace(context, direction=thought_bindings(meaning).get('_infer_direction', (0, 2)), operand_values=tuple(
+            invocation = replace(context, intuition_rule=thought_bindings(meaning).get('_intuition_rule'), direction=thought_bindings(meaning).get('_infer_direction', (0, 2)), operand_values=tuple(
                 (role, meaning.roles[self._slot_for_operand(role)])
                 for role in signature.occupied_roles), operand_references=tuple(
                 (role, meaning.role_refs[self._slot_for_operand(role)])

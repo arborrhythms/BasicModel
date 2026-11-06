@@ -71,24 +71,41 @@ def test_checkpoint_uses_consumed_positions_and_resumes_without_epoch_clear(tmp_
         for _ in range(2):
             percept.arrive(percept.forecast(percept_bank,1),torch.full((1,width),.5),
                            torch.tensor([True]),native=torch.full((1,percept.moments.mean.numel()),.5),training=True)
+        from Meaning import ConceptualMeaning
+        store = first.symbolSpace.ltm_store
+        row = store.append_meaning(ConceptualMeaning.from_description(store.slots[0].new_ones(store.nDim)),
+            evidence=(.8,.2), document_key='incomplete', sentence_index=0)
+        occurrence = store.occurrence_of(row)
+        owner = first._concept_owner()
+        left, right = owner.new_concept(), owner.new_concept()
+        handle = store.parts.add(left,right,truth_plus=.75,truth_minus=.25)
+        relation_state = {k:v.clone() for k,v in store.parts.state_dict().items()}
         checkpoint = tmp_path / 'cursor.ckpt'
         first.save_weights(str(checkpoint))
 
         resumed = create()
         assert resumed.load_weights(str(checkpoint), require_match=True)
         assert resumed._resume_corpus_cursor == saved_cursor
+        restored_store = resumed.symbolSpace.ltm_store
+        assert restored_store.location(occurrence) == row
+        for key,value in relation_state.items():
+            assert torch.equal(value,restored_store.parts.state_dict()[key])
         restored_percept=resumed.percept_expectation
         for key,value in percept.state_dict().items():
             assert torch.equal(value,restored_percept.state_dict()[key])
-        assert restored_percept.optimizer is not None
-        for key,values in percept.optimizer.state_dict()['state'].items():
-            for name,value in values.items():
-                assert torch.equal(value,restored_percept.optimizer.state_dict()['state'][key][name])
+        # This fixture stubs the learner. Arrivals carry causal context and
+        # moments, while parameter updates belong to the sentence optimizer.
+        assert not hasattr(percept, 'optimizer') and not hasattr(restored_percept, 'optimizer')
+        assert percept.continuation() == restored_percept.continuation() == dict(
+            version=2, adaptation='arrival_state')
+        parameters = {key:value.detach().clone() for key,value in percept.named_parameters()}
         for owner in (percept,restored_percept):
             owner.arrive(owner.forecast(percept_bank,1),torch.full((1,width),.5),
                          torch.tensor([True]),native=torch.full((1,percept.moments.mean.numel()),.5),training=True)
         for key,value in percept.state_dict().items():
             assert torch.equal(value,restored_percept.state_dict()[key])
+        assert all(torch.equal(value, dict(percept.named_parameters())[key])
+                   for key, value in parameters.items())
         restored_candidate = resumed._concept_owner().mtm.entries[candidate]
         assert restored_candidate.support == {3: .75, 5: .25}
         assert restored_candidate.readings == pool.entries[candidate].readings
@@ -105,15 +122,23 @@ def test_checkpoint_uses_consumed_positions_and_resumes_without_epoch_clear(tmp_
         with pytest.raises(ValueError, match='working-memory slab'):
             restore(resumed, saved_runtime)
         assert torch.equal(before, resumed._concept_owner()._priming_seen)
-        def no_epoch_clear():
-            raise AssertionError('a resumed corpus is the same presentation')
-        monkeypatch.setattr(resumed, 'begin_presentation', no_epoch_clear)
+        import Forgetting
+        boundary = Forgetting.model_boundary
+        def no_epoch_clear(model, **options):
+            if model is resumed and options.get('epoch_boundary'):
+                raise AssertionError('a resumed corpus is the same epoch')
+            return boundary(model, **options)
+        monkeypatch.setattr(Forgetting, 'model_boundary', no_epoch_clear)
         monkeypatch.setattr(resumed.inputSpace, 'sentence_unit_count', lambda *a, **k: 20)
         resumed.runEpoch(optimizer=object(), batchSize=1)
         assert observed == list(range(6))
         assert batch_numbers == [0, 1, 2, 3, 4]
         assert resumed._checkpoint_corpus_cursor is None
         assert resumed._epoch_batches_seen == 0
+        assert restored_store.location(occurrence) == row
+        assert restored_store.parts.find(left,right) == handle
+        for key,value in relation_state.items():
+            assert torch.equal(value,restored_store.parts.state_dict()[key])
 
         observed.clear()
         resumed.runEpoch(split='validation', batchSize=1)

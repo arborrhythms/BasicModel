@@ -41,6 +41,43 @@ def native(owner, point):
     return symbol
 
 
+def test_epoch_clears_the_readings_evidence_and_recognizes_its_learned_symbol():
+    from DocumentCover import open_cover
+    from Forgetting import model_boundary
+    from test_presentation_memory import model_for
+    resolver, store, atoms = fixture()
+    owner = resolver.components.owner
+    model = model_for(owner, store)
+    left, right = (native(owner, point) for point in atoms[:2])
+    value = atoms[0] + atoms[1]
+    tree = Composition(value, (Composition(atoms[0], reference=left),
+        Composition(atoms[1], reference=right)), operation='sum')
+    clause = Clause(ConceptualMeaning.from_description(value), point=value, composition=tree)
+    readings = []
+    storage = store.recurrence_codes.data_ptr()
+    for _ in range(2):
+        model_boundary(model, epoch_boundary=True)
+        assert len(store) == 0 and not store.recurrence_used.any()
+        assert not store.recurrence_documents.any() and not store.recurrence_weights.any()
+        assert store.recurrence_readings.eq(-1).all()
+        addresses = []
+        for n in range(3):
+            open_cover(owner, store, stream=0, document=('source', n))
+            row = store.write_clause(clause, document_key=('source', n), sentence_index=n,
+                                     stream=0, evidence=(1., 0.))
+            addresses.append(int(store.address_keys[row]))
+            consolidate(owner, store)
+        seat = int(store.recurrence_readings[row])
+        assert int(store.recurrence_documents[seat]) == 3
+        symbol = int(store.recurrence_symbols[seat])
+        assert symbol > 0
+        readings.append((addresses, symbol, owner._concept_allocator.next_id))
+    assert readings[0] == readings[1]
+    assert store.recurrence_codes.data_ptr() == storage
+    store.reset()
+    assert store.recurrence_symbols.eq(-1).all() and not store.recurrence_codes.any()
+
+
 @pytest.mark.parametrize('distinct', (False, True))
 def test_reading_recurrence_counts_distinct_documents_not_reobservations(distinct):
     resolver, store, atoms = fixture()
@@ -104,13 +141,15 @@ def test_token_promotes_at_three_sentences_with_the_occurrence_fold_and_keeps_it
     # Reclosing the same source sentence increments accesses, not recurrence.
     actual(mention(atoms[0]+atoms[1], mode='bind'), (frame,), position=1)
     assert pool.entries[token].symbol is None
-    third, _ = actual(mention(atoms[0]+atoms[2], mode='bind'), (frame,), position=2)
+    # §50: the third mention contains the held description instead of only overlapping it.
+    third, _ = actual(mention(atoms[0]+atoms[1]+atoms[2], mode='bind'), (frame,), position=2)
     entry = pool.entries[token]
     assert entry.occurrences == (token, store.occurrence_of(second), store.occurrence_of(third))
     assert entry.kind == kind and entry.symbol is not None and entry.count == 4
-    expected = atoms[0] + (atoms[1] + atoms[2]) / 3
+    expected = atoms[0] + (2*atoms[1] + atoms[2]) / 3
     torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(entry.symbol)], expected)
     assert resolver._derivation_symbol(token) == entry.symbol
+    pool.event(token, token, verb=verb, role=0, when=50)
     pool.update(token, atoms[3], when=50)
     consolidate(owner, store)
     torch.testing.assert_close(pool.value_of(token), atoms[3])
@@ -238,9 +277,9 @@ def test_event_without_factored_refs_uses_the_captured_verb_reading(monkeypatch)
     word = alloc.new_concept()
     alloc.symbol_types[word] = {'word'}
     alloc.symbol_types[verb] = {'concept', 'object'}
-    alloc.word_descriptions[word] = dict(forms=('event-form',), parts=((901,),), wholes=())
-    alloc.parts.add(verb, word)
-    f.cs.definitions.rebuild()
+    # §52 item 109: only the definition writer names this lexical pair.
+    f.cs.interpret.define(word, verb,
+        description=dict(forms=('event-form',), parts=((901,),), wholes=()))
     # A captured record can carry the lexical handle when the factored view
     # is absent; the word has no conceptual seat in this fixture.
     from Spaces import _concept_alloc_of
@@ -258,6 +297,10 @@ def test_event_without_factored_refs_uses_the_captured_verb_reading(monkeypatch)
 def test_pending_alias_and_later_self_arrival_leave_the_same_token_pending():
     from test_reference_arrivals import world, named
     resolver, store, atoms, words, _ = world()
+    # §50: a lexical site's held meaning is its dictionary's current content.
+    owner = resolver.components.owner
+    with torch.no_grad():
+        owner.similarity_codebook.W[owner._csw_row_of(words['x'])].copy_(atoms[0])
     def site(leaf):
         node = named(atoms[0], words['x'])
         return replace(node, point=atoms[0], meaning=ConceptualMeaning.from_description(atoms[0]),
@@ -323,6 +366,8 @@ def test_capacity_eviction_during_close_drops_only_the_evicted_tokens_history(mo
     from test_identity_threading import recorded_identity_reading
     f = SentenceFixture(monkeypatch)
     f.cs.mtm = MediumTermMemory(capacity=2,n_vectors=f.cs.nVectors)
+    import weakref
+    f.cs.mtm._owner = weakref.ref(f.cs)
     tree = ('sum',
         ('lift', ('lower_unary', 'subject'), ('verb', 'move', ('lower', 'd', 'place'))),
         ('lift', ('lower_unary', 'alias'), ('verb', 'affect', ('lower', 'd', 'target'))))
@@ -378,6 +423,8 @@ def test_surface_wrapped_relation_does_not_add_a_standalone_object():
 def test_retiring_a_token_keeps_another_tokens_event_until_row_reclamation(retirement):
     resolver, store, atoms = fixture()
     pool = resolver.components.owner.mtm = MediumTermMemory(capacity=2)
+    import weakref
+    pool._owner = weakref.ref(resolver.components.owner)
     arow, _ = kept(resolver, mention(atoms[0]), position=0)
     brow, _ = kept(resolver, mention(atoms[1]), position=1)
     crow = store.write_clause(mention(atoms[2]), document_key='consolidation', sentence_index=2)
@@ -418,7 +465,7 @@ def test_angular_recurrence_admits_drift_and_keeps_evidence_weighted_content():
     assert store.recurrence_readings[rows].tolist() == [seat]*3
     assert int(store.recurrence_documents[seat]) == 3
     assert store._recurrence_identities[seat] == ('sym', first)
-    weights = store.c_plus[rows] + store.c_minus[rows]
+    weights = store.truth_plus[rows] + store.truth_minus[rows]
     expected = (store.slots[rows] * weights[:, None]).sum(0) / weights.sum()
     torch.testing.assert_close(store.recurrence_codes[seat], expected)
     before = store.recurrence_codes.clone(), store.recurrence_weights.clone()

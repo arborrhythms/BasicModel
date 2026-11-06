@@ -59,14 +59,16 @@ def saved_sentence_values(parameters=(), buffers=()):
         yield
 
 
-def compile_word_brick(function):
+def compile_word_brick(function, *, initial_phase=None):
     """Capture a fixed-shape word step; the sentence/optimizer boundary is eager."""
     import util
     backend = util.TheCompileBackend
     if backend == 'none':
         return function
     backend = util._COMPILE_BACKENDS[0] if backend == 'auto' else backend
-    return torch.compile(function, backend=backend, fullgraph=True, dynamic=False)
+    from CompileGuard import guarded_compile
+    return guarded_compile(function, initial_phase=initial_phase,
+                           backend=backend, fullgraph=True, dynamic=False)
 
 
 def fork_perception(cache):
@@ -126,6 +128,25 @@ def select_rows(exploit, explore, wins):
     raise TypeError(f'unsupported sentence scratch state: {type(exploit).__name__}')
 
 
+@torch.no_grad()
+def kept_reading_plan(wins, paths, attention, fields, width):
+    """Fixed actions and field visits for the winning stream of each reading."""
+    actions = torch.where(wins[:, None], paths[-1], paths[0])
+    reading = attention[0]
+    if reading is not None:
+        parts = select_rows(reading, attention[-1], wins)
+        reading = type(reading)(type(reading.table)(*parts[0]), *parts[1:])
+    reads = []
+    if fields[0] is not None:
+        left, right = fields[0].reads, fields[-1].reads
+        exhausted = torch.full_like(actions[:, 0], width)
+        for turn in range(max(len(left), len(right))):
+            a = left[turn]['action'] if turn < len(left) else exhausted
+            b = right[turn]['action'] if turn < len(right) else exhausted
+            reads.append(torch.where(wins, b, a))
+    return dict(actions=actions, attention=reading, field=reads)
+
+
 def sentence_pair(cache, compose, score, step, *, active, training=True, before_step=None):
     """Compare reconstruction at one parameter state, then train both paths.
 
@@ -158,4 +179,10 @@ def sentence_pair(cache, compose, score, step, *, active, training=True, before_
     if before_step is not None:
         before_step(active)
     step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))
-    return select_rows(state_a, state_b, wins), torch.stack((saved_a, saved_b), -1), wins
+    if bool(wins.all()):
+        kept = state_b
+    elif not bool(wins.any()):
+        kept = state_a
+    else:
+        kept = select_rows(state_a, state_b, wins)
+    return kept, torch.stack((saved_a, saved_b), -1), wins

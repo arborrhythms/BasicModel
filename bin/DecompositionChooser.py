@@ -1,16 +1,32 @@
-"""Reconstruction's supervised choice among detached candidate pairs."""
+"""Fixed joint-residual choice among detached candidate pairs.
+
+The decomposition teacher retired on 2026-11-04. Form and both meaning
+lanes remain in the residual; no objective writes the chooser's weights.
+"""
+import warnings
 import torch
 from torch import nn
 
 
 class DecompositionChooser(nn.Module):
-    feature_names = ('negative_relative_residual', 'left_activation', 'right_activation',
+    feature_names = ('negative_pair_residual', 'left_activation', 'right_activation',
                      'left_priming', 'right_priming')
 
     def __init__(self):
         super().__init__()
-        # No random initialization: preserve the old residual argmin exactly.
-        self.weight = nn.Parameter(torch.tensor([1., 0., 0., 0., 0.]))
+        # A device/dtype-following constant, excluded from both parameters and
+        # checkpoints. A saved learned preference must never replace it.
+        self.register_buffer('weight', torch.tensor([1., 0., 0., 0., 0.]), persistent=False)
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        key = prefix + 'weight'
+        if key in state_dict:
+            state_dict.pop(key)
+            warnings.warn(f'Dropped retired decomposition chooser checkpoint key {key}; '
+                          'the fixed joint residual argmin is unchanged.', UserWarning)
+        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
+                                     missing_keys, unexpected_keys, error_msgs)
 
     def forward(self, features, allowed):
         logits = (features.detach() * self.weight).sum(-1)
@@ -20,21 +36,3 @@ class DecompositionChooser(nn.Module):
         probabilities = logits.softmax(-1)
         return logits.argmax(-1), probabilities, logits
 
-    @staticmethod
-    def teacher_loss(details, left_rows, right_rows, targets):
-        """Absent identities contribute no CE; a coincident code is not an ID."""
-        left = left_rows.gather(1, details['left_indices'])
-        right = right_rows.gather(1, details['right_indices'])
-        matches = ((left[:, :, None] == targets[:, 0, None, None])
-                   & (right[:, None, :] == targets[:, 1, None, None])
-                   & (targets >= 0).all(-1)[:, None, None]
-                   & details['allowed']).flatten(1)
-        present = matches.any(-1)
-        selected_true = matches.gather(1, details['selected'][:, None]).squeeze(1)
-        # The target is a word pair, independent of either symbol's polarity.
-        # Marginalize all of its legal symbols instead of teaching the first.
-        logits = details['logits']
-        accepted = matches | ~present[:, None]
-        loss = logits.logsumexp(-1) - logits.masked_fill(~accepted, -torch.inf).logsumexp(-1)
-        loss = torch.where(present, loss, torch.zeros_like(loss))
-        return loss, present, selected_true

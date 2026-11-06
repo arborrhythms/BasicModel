@@ -46,7 +46,7 @@ def test_retained_trial_reconstructs_every_admitted_leaf(committed):
         _ar_grammar_leaf_mask=saved['grammar_leaf'])
     model = SimpleNamespace(_reconstruction_stack=lambda: trace, languageSpace=language,
         inputSpace=isp, conceptualSpace=SimpleNamespace(stm=SimpleNamespace(capacity=8)),
-        _walk_budget=lambda: 128, _sentence_field=field)
+        _derivation_trace_capacity=lambda: 128, _sentence_field=field)
     with pytest.raises(ValueError, match='binary operation underflows'):
         BasicModel._derivation_program(model, t=context['sentence'])
     isp._ar_grammar_leaf_mask = field.grammar_leaves(isp._ar_grammar_leaf_mask)
@@ -79,7 +79,7 @@ def _program_fixture():
                                local_op_from_rule_ids=LanguageSpace.local_op_from_rule_ids)
     model = SimpleNamespace(_reconstruction_stack=lambda: trace, languageSpace=language,
         inputSpace=SimpleNamespace(_word_active_mask=torch.ones(1, 2, dtype=torch.bool)),
-        conceptualSpace=SimpleNamespace(stm=SimpleNamespace(capacity=2)), _walk_budget=lambda: 16)
+        conceptualSpace=SimpleNamespace(stm=SimpleNamespace(capacity=2)), _derivation_trace_capacity=lambda: 16)
     return model, trace, ids
 
 

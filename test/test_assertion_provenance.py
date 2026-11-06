@@ -6,7 +6,7 @@ import pytest
 
 
 @pytest.mark.usefixtures('eager_reading')
-def test_provisioning_retains_completed_fields_and_shared_row_ids():
+def test_provisioning_retains_completed_fields_and_shared_addresses():
     model = _make_model_provisioned(_SERIAL_CONFIG)
     store = model.symbolSpace.ltm_store
     asserted = store.rows_of_origin(store.ORIGIN_PROVISIONED).tolist()
@@ -18,7 +18,7 @@ def test_provisioning_retains_completed_fields_and_shared_row_ids():
     for row in asserted:
         assert int(store.meaning_of(row).role_mask.sum()) == 1
         assert not hasattr(store, 'clause_derivation')
-        assert int(store.row_ids[row]) not in (-1, 0)
+        assert int(store.address_keys[row]) not in (-1, 0)
         assert store.row(row)['kind'] == 'fact'
     for row in definitions:
         assert store.part_row(row)['kind'] == 'observation'

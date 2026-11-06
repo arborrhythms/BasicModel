@@ -24,6 +24,9 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         raise ValueError('cannot finish a reading that is not open')
     from Language import TheGrammar
     from ReferenceContext import binding_spec, operation_modes, denoted_order, OrderReference
+    from Interpret import leaf_readings
+    interpretations = leaf_readings(language, program.actions, len(program.leaves),
+                                    forced=program.interpret_forced)
     orders = program.leaf_orders
     if program.reference_orders is not None:
         orders = (program.reference_orders if orders is None else
@@ -35,7 +38,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
     store_ref = getattr(getattr(registry, 'space', None), '_clause_store_ref', None)
     store = store_ref() if callable(store_ref) else None
     if store is not None:
-        native_ids.update(store.row_ids[:len(store)].tolist())
+        native_ids.update(store.address_keys[:len(store)].tolist())
     def native(reference):
         return (reference > 0 or reference in native_ids or
                 (store is not None and store.slot_of_reference(reference) is not None))
@@ -55,6 +58,13 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
     if frames is None:
         raise ValueError('the open reading has no numerical operation journal')
     stack, introductions = [], {}
+    local_uses = set()
+    if program.identity_actions is not None:
+        # Subject, object and selected bind read the same handle table. Carry
+        # their actual introducing shift or grammar action into this close.
+        for subject, obj, bound in program.identity_actions[:, (1, 2, 4)].tolist():
+            local_uses.update(h for h in (subject, obj, bound)
+                              if h > 0 and int(program.identity_origins[h - 1, 0]) in (3, 4))
     def region(node):
         """Read the declared meaning without replaying numerical operators."""
         if not node['has_point']:
@@ -90,19 +100,27 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 program.reference_relations is None or not bool(program.reference_relations[word]))
             stack.append(dict(value=values[word], composed_value=values[word], ref=int(refs[word]), rule=None,
                               order=-1 if orders is None else int(orders[word]),
-                              children=(), leaves=(word,), has_point=has_point))
+                              children=(), leaves=(word,), has_point=has_point,
+                              interpretation='no_op' if interpretations[word] == 'no_op' else 'symbol'))
             handle = 0 if program.identity_leaves is None else int(program.identity_leaves[word])
             named = handle > 0 and int(program.identity_origins[handle-1, 0]) == 6
-            if stack[-1]['order'] == 1 or named:
+            addressed = handle in local_uses and int(program.identity_origins[handle - 1, 0]) == 4
+            if stack[-1]['order'] == 1 or named or addressed:
                 stack[-1]['close_request'] = dict(mode='bind', leaves=(word,),
                     cue=values[word], content=values[word],
                     forward_identity=forward_name(word), leaf=True)
+                if addressed:
+                    stack[-1]['close_request']['addressed_introduction'] = True
             if program.identity_leaves is not None:
-                stack[-1]['identity_handle'] = handle if stack[-1]['order'] == 1 or named else 0
+                stack[-1]['identity_handle'] = handle if stack[-1]['order'] == 1 or named or addressed else 0
                 if named:
                     stack[-1]['close_request']['reading_identity'] = handle
                 if stack[-1]['identity_handle']:
                     introductions.setdefault(stack[-1]['identity_handle'], stack[-1])
+            if interpretations[word] == 'no_op':
+                stack[-1].update(order=0, has_point=True)
+                stack[-1]['close_request'] = dict(mode='mint', no_op_leaf=True, leaves=(word,),
+                    cue=None, content=values[word], percept=values[word])
             continue
         if kind == 3:
             stack[-2:] = reversed(stack[-2:])
@@ -164,7 +182,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     operand['open_reference'] = True
                     selected['forward_identity'] = forward_name(selected['leaves'][0])
                     request = selected.get('close_request', {})
-                    if request.get('leaf'):
+                    if request.get('leaf') and not request.get('addressed_introduction'):
                         # A selected open formation already owns the role.
                         # Keep its cue for thought without adding a second NP
                         # closing decision or a second resolver cost.
@@ -176,7 +194,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                         # The operation's explicit formation owns this site.
                         # A provisional word request cannot override its mint.
                         for item in (selected, operand):
-                            if item.get('close_request', {}).get('leaf'):
+                            provisional = item.get('close_request', {})
+                        if provisional.get('leaf') and not provisional.get('addressed_introduction'):
                                 item.pop('close_request')
                 # A trial's newly requested singleton still had its source
                 # address. Resolve that alias to the winning host's admitted
@@ -199,8 +218,9 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                         item.pop('forward_identity', None)
                         item.pop('mint_reference', None)
                         request = item.get('close_request', {})
-                        if request.get('leaf') and (reference != request['forward_identity']
-                                or item.get('formation', {}).get('choice') == 'bind'):
+                        if (request.get('leaf') and not request.get('addressed_introduction')
+                                and (reference != request['forward_identity']
+                                     or item.get('formation', {}).get('choice') == 'bind')):
                             item.pop('close_request')
                     selected_refs[role] = reference
                     # A headed VP may retain a point-valued head while one
@@ -237,12 +257,42 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     if content is not None:
                         parent['close_request'] = dict(mode=mode, leaves=description['leaves'],
                             cue=None if cue is None else region(cue), content=content)
+        if catalog[local].method_name == 'interpret':
+            parent['interpretation'] = 'symbol'
+            parent['ref'] = operands[0]['ref'] if selected_refs is None else selected_refs[0]
+            owner = getattr(registry, 'space', None)
+            if owner is not None:
+                parent['order'] = owner._concept_source_order(parent['ref'])
+                if owner.interpret.no_object(parent['ref']):
+                    parent['close_request'] = dict(mode='bind', interpret_leaf=True, leaf=True,
+                        forward_identity=forward_name(parent['leaves'][0]), leaves=parent['leaves'],
+                        cue=parent['value'], content=parent['value'])
+        if catalog[local].method_name == 'sign':
+            leaf, = operands
+            while leaf['children'] and leaf['rule'].method_name == 'interpret':
+                leaf, = leaf['children']
+            if leaf['children'] or not leaf['leaves']:
+                raise ValueError('sign requires an interpreted leaf')
+            leaf_request = operands[0].pop('close_request', {})
+            if leaf is not operands[0]:
+                leaf_request.update(leaf.pop('close_request', {}))
+            parent.update(order=0, interpretation='sign')
+            percept = (leaf['value'] if program.word_ids is None or int(program.word_ids[leaf['leaves'][0]]) < 0
+                       else None)
+            content = torch.zeros_like(leaf['value']) if percept is None else percept
+            parent['close_request'] = dict(mode='mint', sign_leaf=True, leaves=leaf['leaves'],
+                cue=None, content=content, percept=percept)
+            if (leaf_request.get('addressed_introduction') and
+                    parent.get('identity_handle') == leaf.get('identity_handle')):
+                parent['close_request']['addressed_introduction'] = True
+                introductions[parent['identity_handle']] = parent
         if program.identity_actions is not None and catalog[local].method_name == 'bind':
             # The chooser already made this choice while the reading was live.
             # Retain the own description and the pre-join record independently.
             source = operands[0]
             request = dict(source.get('close_request', {}))
             request.pop('introduction', None)
+            request.pop('addressed_introduction', None)
             # An explicit bind supersedes the reading site's initial token.
             # Keep the chosen handle; the close must not select the old name.
             request.pop('reading_identity', None)
@@ -254,21 +304,26 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             parent['close_request'] = request
         if program.identity_actions is not None:
             handle, subject, _, _, selected, _ = parent['identity_event']
-            if (handle > 0 and not subject and selected <= 0
-                    and (parent['order'] == 1 or catalog[local].method_name == 'bind')
-                    and int(program.identity_origins[handle-1, 0]) == 3):
-                introductions.setdefault(handle, parent)
-                if introductions[handle] is parent and not parent['has_point']:
-                    # Determination opens the journal's actual working value,
-                    # even when its description is a relation. Retain that
-                    # relation separately instead of inventing a fused meaning.
-                    rule = catalog[local]
-                    description = operands[(getattr(rule, 'head_role', 0) or 1)-1]
-                    request = dict(parent.get('close_request', {}))
-                    request.update(mode=getattr(rule, 'determiner_mode', None) or 'bind',
-                        leaves=description['leaves'], content=frames[action, 2],
-                        introduction=True, determined=True, compose_bind=0)
-                    parent['close_request'] = request
+            if handle > 0 and not subject and selected <= 0:
+                tag, source = program.identity_origins[handle - 1, :2].tolist()
+                addressed = handle in local_uses and tag == 3 and source == action
+                if tag == 3 and (addressed or parent['order'] == 1 or catalog[local].method_name == 'bind'):
+                    if addressed:
+                        introductions[handle] = parent
+                    else:
+                        introductions.setdefault(handle, parent)
+                    if introductions[handle] is parent and (addressed or not parent['has_point']):
+                        request = dict(parent.get('close_request', {}))
+                        if not parent['has_point'] or not request:
+                            rule = catalog[local]
+                            description = operands[(getattr(rule, 'head_role', 0) or 1) - 1]
+                            request.update(mode=getattr(rule, 'determiner_mode', None) or 'bind',
+                                leaves=description['leaves'], content=frames[action, 2], compose_bind=0)
+                            if not parent['has_point']:
+                                request.update(introduction=True, determined=True)
+                        if addressed:
+                            request['addressed_introduction'] = True
+                        parent['close_request'] = request
         stack.append(parent)
         if unary_position:
             stack.insert(len(stack)-1-unary_position, stack.pop())
@@ -388,8 +443,10 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 # concept remains unknown; no allocator record is assigned.
                 order=max(0, int(current.get('mint_order', current['order']))),
                 leaves=current['leaves'],
-                word_id=subject_word_id(current) if not current['children'] else -1,
-                formal_name=None if rule is None else operation_name(rule))
+                word_id=subject_word_id(current) if not current['children'] or
+                    getattr(rule, 'method_name', None) == 'interpret' else -1,
+                formal_name=None if rule is None else operation_name(rule),
+                interpretation=current.get('interpretation'))
         return composition_cache[id(node)]
 
     def bands(node):
@@ -507,7 +564,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         excluded = False
         def close_member(item, *, referent=True):
             own_request = item.get('close_request', {})
-            if not item['has_point'] and not (own_request.get('introduction')
+            if not item['has_point'] and not (own_request.get('introduction') or own_request.get('addressed_introduction')
                     or 'compose_bind' in own_request and (
                         own_request['compose_bind'] > 0 or own_request.get('determined'))):
                 # A dummy bind over a relative field preserves that field.
@@ -528,11 +585,14 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 current = current['children'][role - 1]
                 request = current.get('close_request')
             if request is None or (item['order'] != 1
-                    and 'compose_bind' not in request and 'reading_identity' not in request):
+                    and 'compose_bind' not in request and 'reading_identity' not in request and not request.get('sign_leaf')
+                    and not request.get('no_op_leaf') and not request.get('interpret_leaf')
+                    and not request.get('addressed_introduction')):
                 return None
-            if program.identity_actions is not None:
+            if program.identity_actions is not None and not (request.get('sign_leaf') or request.get('no_op_leaf')):
                 request = dict(request, compose_bind=request.get('compose_bind', 0))
-            if request.get('leaf') and (not referent or id(composition(item)) not in noun_terms):
+            if (request.get('leaf') and not request.get('addressed_introduction')
+                    and (not referent or id(composition(item)) not in noun_terms)):
                 # A predicate's form is an operator operand, not an
                 # participant. A provisional marker likewise
                 # cannot become an occurrence object merely by ending a
@@ -694,8 +754,14 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 # occurrence, exactly as for either referenced operand.
                 predicate, predicate_ref = operand(role_nodes[1])
             zero = torch.zeros_like(program.leaves[0])
+            if predicate is None:
+                # A relative child supplies its address and has no fused point.
+                if not (isinstance(predicate_ref, tuple) and predicate_ref[0] == 'clause'
+                        and children[predicate_ref[1]].relation is not None):
+                    raise ValueError(f'clause predicate has neither a point nor a relative child: {predicate_ref!r}')
             roles = torch.stack((zero if left is None else left,
-                                 predicate.to(zero), zero if right is None else right))
+                                 zero if predicate is None else predicate.to(zero),
+                                 zero if right is None else right))
             mask = torch.tensor([True, True, right is not None or right_ref != -1],
                                 device=roles.device)
             described = ConceptualMeaning(roles, mask, polarity=polarity)
@@ -897,8 +963,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             handle, request = node.get('identity_handle', 0), node.get('close_request', {})
             if (handle in required and handle not in owners and request
                     and request.get('compose_bind', 0) <= 0
-                    and (node['order'] == 1 or 'compose_bind' in request)
-                    and id(composition(node)) in noun_terms):
+                    and (request.get('addressed_introduction') or
+                         ((node['order'] == 1 or 'compose_bind' in request) and id(composition(node)) in noun_terms))):
                 ended = recover(node)
                 if ended.reference_request is not None:
                     extra.append(ended)
@@ -909,6 +975,27 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 ended = recover(node)
                 extra.append(ended)
                 collect(ended)
+        return replace(result, children=(*result.children, *extra)) if extra else result
+
+    def retain_percepts(result):
+        # A no-op or sign owns its occurrence even in a predicate position.
+        # The word's syntax cannot remove this selected leaf decision.
+        retained, pending = set(), [result]
+        while pending:
+            node = pending.pop()
+            request = node.reference_request or {}
+            if request.get('sign_leaf') or request.get('no_op_leaf'):
+                retained.update(request['leaves'])
+            pending.extend((*node.children, *node.companions))
+        extra, pending = [], list(stack)
+        while pending:
+            node = pending.pop()
+            request = node.get('close_request', {})
+            if ((request.get('sign_leaf') or request.get('no_op_leaf'))
+                    and not retained.intersection(request['leaves'])):
+                extra.append(recover(node))
+                retained.update(request['leaves'])
+            pending.extend(node['children'])
         return replace(result, children=(*result.children, *extra)) if extra else result
 
     if len(stack) == 3:
@@ -960,7 +1047,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         if operation == 'whole':
             operation = 'part'
             references = references[2], references[1], references[0]
-        return retain_introductions(Clause(meaning, relation=operation, refs=tuple(references), children=tuple(children),
+        return retain_percepts(retain_introductions(Clause(meaning, relation=operation, refs=tuple(references), children=tuple(children),
                       **metadata(tuple(range(len(values)))),
-                      **bands(dict(leaves=tuple(range(len(values)))))))
-    return retain_introductions(recover(stack[0], top=True))
+                      **bands(dict(leaves=tuple(range(len(values))))))))
+    return retain_percepts(retain_introductions(recover(stack[0], top=True)))

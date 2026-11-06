@@ -65,7 +65,8 @@ def semantic_metadata(meanings):
             ('_evidence_pair', '_open_references', '_thought_witnesses',
              '_producing_operation', '_query_relation', '_query_exclude',
              '_formation_records', '_formation_reason', '_reference_mentions',
-             '_reference_sites', '_unresolved_operands'))), meaning.roles),
+             '_reference_sites', '_unresolved_operands', '_intuition_terms',
+             '_intuition_selected', '_intuition_field', '_intuition_firings'))), meaning.roles),
         field(meaning.scope, meaning.roles)))
         for meaning in meanings)
 

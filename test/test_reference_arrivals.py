@@ -16,12 +16,18 @@ from test_medium_term_memory import keep, snapshot, unchanged
 from test_reference_close import fixture
 
 
-def world():
+def world(*, pending_atom=None):
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
     words = {word: owner.interpret.lookup_word([unit], [], form=word)
              for word, unit in (('x', 120), ('three', 116), ('wrong', 119))}
     with torch.no_grad():
+        # §50: this bare request has the native chart's zero meaning.
+        owner.similarity_codebook.W[owner._csw_row_of(words['x'])].zero_()
+        if pending_atom is not None:
+            # §50: correct content-association fixtures give the pending name
+            # the same nonempty meaning as its held description.
+            owner.similarity_codebook.W[owner._csw_row_of(words['x'])].copy_(atoms[pending_atom])
         for word, atom in (('three', atoms[0]), ('wrong', atoms[1])):
             obj = owner.new_concept()
             force_order(owner, obj, 0)
@@ -41,19 +47,28 @@ def named(point, word):
             cue=point*0, content=point*0, predicate=point*0, role=0))
 
 
-def equality(point, word, complement, *, witness=1.):
+def described(point, word):
+    """§50: a correct content bind carries a nonempty contained description."""
+    node = named(point, word)
+    return replace(node, point=point, meaning=ConceptualMeaning.from_description(point),
+        composition=replace(node.composition, point=point),
+        reference_request=dict(node.reference_request, content=point))
+
+
+def equality(point, word, complement, *, witness=1., subject=None):
     child = Clause(ConceptualMeaning.from_description(point), point=point,
         composition=Composition(point, reference=complement, word_id=complement, leaves=(1,)))
     pred = predicate_point('equal', point)
-    value = ConceptualMeaning(torch.stack((point*0, pred, point)),
+    subject = point*0 if subject is None else subject
+    value = ConceptualMeaning(torch.stack((subject, pred, point)),
         torch.ones(3, dtype=torch.bool), bindings={'_equality': True,
             '_forward_references': ((0, word),),
             '_reference_sites': ((0, dict(role=0, leaves=(0,), cue=(point*0).tolist(),
-                                          content=(point*0).tolist(), predicate=pred.tolist())),)})
+                                          content=subject.tolist(), predicate=pred.tolist())),)})
     value = with_slots(value, (('referent', 0),), pair=(witness, 0.))
     # Supply the named participant's reading, as the journal does. Its
     # grammatical position and order license recovery of the open site.
-    source = Composition(point*0, reference=word, word_id=word, leaves=(0,), order=1)
+    source = Composition(subject, reference=word, word_id=word, leaves=(0,), order=1)
     composition = Composition(point, (source, child.composition), operation='equal')
     return Clause(value, relation='equal', refs=(-1, ClausePredicate(pred, 'equal'), ('clause', 0)),
                   children=(child,), evidence=(witness, 0.), composition=composition)
@@ -93,13 +108,13 @@ def test_arrival_bind_refines_and_reads_three_through_the_token(monkeypatch):
     from BindingAnswers import matches
     from ChainRead import components
     from QueryWork import QueryWorkBudget
-    resolver, store, a, words, model = world()
+    resolver, store, a, words, model = world(pending_atom=0)
     force_named(resolver, monkeypatch, words['three'])
-    pending, _ = keep(resolver, named(a[0], words['x']))
+    pending, _ = keep(resolver, described(a[0], words['x']))
     token = store.occurrence_of(pending)
     frame = SituationFrame.from_row(store.row(pending))
     raw, refs = store.slots.clone(), part_references(store)
-    arrival, plan = keep(resolver, equality(a[0], words['x'], words['three']), (frame,), position=1)
+    arrival, plan = keep(resolver, equality(a[0], words['x'], words['three'], subject=a[0]), (frame,), position=1)
     entry = resolver.components.owner.mtm.entries[token]
     assert entry.kind == words['three'] and entry.count == 3
     assert sum(item['token'] == token for item in plan['arrivals']) == 1
@@ -125,9 +140,9 @@ def test_arrival_bind_refines_and_reads_three_through_the_token(monkeypatch):
 @pytest.mark.parametrize('when', ('before', 'after'))
 def test_kept_wrong_equality_neither_binds_nor_reopens_a_token(monkeypatch, when):
     from BindingAnswers import matches
-    resolver, store, a, words, model = world()
+    resolver, store, a, words, model = world(pending_atom=0)
     force_named(resolver, monkeypatch, words['three'])
-    pending, _ = keep(resolver, named(a[0], words['x']))
+    pending, _ = keep(resolver, described(a[0], words['x']))
     token = store.occurrence_of(pending)
     frame = SituationFrame.from_row(store.row(pending))
     def wrong():
@@ -140,7 +155,7 @@ def test_kept_wrong_equality_neither_binds_nor_reopens_a_token(monkeypatch, when
     if when == 'before':
         assert open_slots(wrong())
         assert resolver.components.owner.mtm.entries[token].kind is None
-    keep(resolver, equality(a[0], words['x'], words['three']), (frame,), position=1)
+    keep(resolver, equality(a[0], words['x'], words['three'], subject=a[0]), (frame,), position=1)
     if when == 'after':
         assert matches(model, wrong(), 'three')
     assert matches(model, store.meaning_of(pending), 'three')
@@ -177,13 +192,13 @@ def test_unary_bind_keeps_the_objectless_word_site(monkeypatch):
 
 
 def test_bound_use_does_not_assign_a_kind_before_arrival(monkeypatch):
-    resolver, store, a, words, model = world()
-    pending, _ = keep(resolver, named(a[0], words['x']))
+    resolver, store, a, words, model = world(pending_atom=0)
+    pending, _ = keep(resolver, described(a[0], words['x']))
     token = store.occurrence_of(pending)
     frame = SituationFrame.from_row(store.row(pending))
-    site = replace(named(a[0], words['x']), subject_word_id=words['x'],
-        reference_request=dict(mode='bind', leaves=(0,), content=a[1], cue=a[1], predicate=a[1]*0),
-        composition=Composition(a[1], (Composition(a[1], reference=words['x']),),
+    site = replace(described(a[0], words['x']), subject_word_id=words['x'],
+        reference_request=dict(mode='bind', leaves=(0,), content=a[0], cue=a[1], predicate=a[1]*0),
+        composition=Composition(a[0], (Composition(a[0], reference=words['x']),),
                                 operation='definite_unary', head_role=1, order=1))
     # A positive prime makes this a selected bind under the zero-logit dummy.
     monkeypatch.setattr(resolver, 'prime', lambda signature, stream: signature.new_tensor(1.))
@@ -192,7 +207,7 @@ def test_bound_use_does_not_assign_a_kind_before_arrival(monkeypatch):
     assert resolver.components.owner.mtm.entries[token].kind is None
     assert store.raw_meaning_of(used).role_refs[0] is None
     force_named(resolver, monkeypatch, words['three'])
-    _, refined = keep(resolver, equality(a[0], words['x'], words['three']), (frame,), position=2)
+    _, refined = keep(resolver, equality(a[0], words['x'], words['three'], subject=a[0]), (frame,), position=2)
     assert sum(item['token'] == token for item in refined['arrivals']) == 1
     from BindingAnswers import matches
     assert matches(model, store.meaning_of(used), 'three')
@@ -218,9 +233,9 @@ def test_anonymous_parent_keeps_its_raw_open_role_and_query_predicate(monkeypatc
 @pytest.mark.parametrize('compiled', (False, True))
 def test_named_trial_plans_only_refine_the_kept_close(monkeypatch, compiled):
     from Language import LowerLayer
-    resolver, store, a, words, _ = world()
+    resolver, store, a, words, _ = world(pending_atom=0)
     force_named(resolver, monkeypatch, words['three'])
-    pending, _ = keep(resolver, named(a[0], words['x']))
+    pending, _ = keep(resolver, described(a[0], words['x']))
     pool, token = resolver.components.owner.mtm, store.occurrence_of(pending)
     frame = SituationFrame.from_row(store.row(pending))
     forward = LowerLayer(12, 12).compose
@@ -230,7 +245,7 @@ def test_named_trial_plans_only_refine_the_kept_close(monkeypatch, compiled):
     trials = []
     for _ in range(2):
         point = forward(a[1][None], a[0][None])[0]
-        clause = equality(point, words['x'], words['three'])
+        clause = equality(point, words['x'], words['three'], subject=a[0])
         plan = resolver.preview(clause, chunk_context(resolver, (frame,)))
         trials.append((resolver.prepare(clause, plan), plan))
         assert pool.entries == before
@@ -249,8 +264,8 @@ def test_named_root_can_retain_a_selected_lexical_constituent(monkeypatch):
     resolver, store, a, words, _ = world()
     force_named(resolver, monkeypatch, words['three'])
     leaf = Composition(a[0], reference=words['three'], word_id=words['three'], leaves=(0,))
-    clause = replace(named(a[0], words['three']),
-        composition=Composition(a[0]*0, (leaf,), operation='definite_unary', head_role=1, order=1))
+    clause = replace(described(a[0], words['three']),
+        composition=Composition(a[0], (leaf,), operation='definite_unary', head_role=1, order=1))
     row, _ = keep(resolver, clause)
     assert resolver.components.owner.mtm.entries[store.occurrence_of(row)].kind == words['three']
 
@@ -262,7 +277,7 @@ def test_named_bind_to_a_native_individual_keeps_an_occurrence_keyed_value(monke
     frame = SituationFrame(1, torch.stack((a[0], a[0]*0, a[0]*0)),
         torch.tensor([True, False, False]), -1, a[0], symbol_ids=(native,))
     monkeypatch.setattr(resolver, 'prime', lambda signature, stream: signature.new_tensor(1.))
-    row, plan = keep(resolver, named(a[0], words['x']), (frame,))
+    row, plan = keep(resolver, described(a[0], words['x']), (frame,))
     assert plan['items'][0]['reference'] == native
     value = store.meaning_of(row)
     assert value.role_refs[0] == ('sym', native) and not open_slots(value)
@@ -281,7 +296,7 @@ def test_named_bind_to_a_retained_unpooled_occurrence_keeps_its_kind(monkeypatch
     from chunk_fixtures import recall
     recall(resolver,(frame,))
     monkeypatch.setattr(resolver, 'prime', lambda signature, stream: signature.new_tensor(1.))
-    row, plan = keep(resolver, named(a[0], words['x']), (frame,), position=1)
+    row, plan = keep(resolver, described(a[0], words['x']), (frame,), position=1)
     pool = resolver.components.owner.mtm
     token = pool.token_of(store.occurrence_of(row))
     assert plan['items'][0]['reference'] == store.occurrence_of(antecedent)
@@ -293,8 +308,8 @@ def test_named_bind_to_a_retained_unpooled_occurrence_keeps_its_kind(monkeypatch
 @pytest.mark.parametrize('retained_occurrence', (False, True))
 def test_native_arrival_refines_an_existing_anonymous_token(monkeypatch, retained_occurrence):
     from IdentityRows import mint
-    resolver, store, a, words, _ = world()
-    pending, _ = keep(resolver, named(a[0], words['x']))
+    resolver, store, a, words, _ = world(pending_atom=0)
+    pending, _ = keep(resolver, described(a[0], words['x']))
     token = store.occurrence_of(pending)
     pool = resolver.components.owner.mtm
     native = mint(resolver.components.owner, a[0])
@@ -310,7 +325,7 @@ def test_native_arrival_refines_an_existing_anonymous_token(monkeypatch, retaine
     else:
         frame = SituationFrame(1, torch.stack((a[0], a[0]*0, a[0]*0)),
             torch.tensor([True, False, False]), -1, a[0], symbol_ids=(native,))
-    _, plan = keep(resolver, equality(a[1], words['x'], words['wrong']),
+    _, plan = keep(resolver, equality(a[1], words['x'], words['wrong'], subject=a[0]),
                    (SituationFrame.from_row(store.row(pending)), frame), position=1)
     refinement = next(item for item in plan['arrivals'] if item['token'] == token)
     assert refinement['selected'] == native
@@ -326,19 +341,19 @@ def test_native_arrival_refines_an_existing_anonymous_token(monkeypatch, retaine
 
 def test_cached_word_mention_still_binds_to_its_accessible_token(monkeypatch):
     from BindingAnswers import matches
-    resolver, store, a, words, model = world()
+    resolver, store, a, words, model = world(pending_atom=0)
     force_named(resolver, monkeypatch, words['three'])
-    pending, _ = keep(resolver, named(a[0], words['x']))
+    pending, _ = keep(resolver, described(a[0], words['x']))
     token = store.occurrence_of(pending)
     frame = SituationFrame.from_row(store.row(pending))
-    keep(resolver, equality(a[0], words['x'], words['three']), (frame,), position=1)
+    keep(resolver, equality(a[0], words['x'], words['three'], subject=a[0]), (frame,), position=1)
     # The cached concept carries no provisional request. Its order-one
     # participant reading still owns this occurrence's bind to the token.
     with torch.no_grad():
         owner = resolver.components.owner
-        owner.similarity_codebook.W[owner._csw_row_of(words['x'])].copy_(a[1])
-    cached = Clause(ConceptualMeaning.from_description(a[1]), point=a[1], order=1,
-        composition=Composition(a[1], reference=words['wrong'], word_id=words['x'], leaves=(0,), order=1))
+        owner.similarity_codebook.W[owner._csw_row_of(words['x'])].copy_(a[0]+a[1])
+    cached = Clause(ConceptualMeaning.from_description(a[0]+a[1]), point=a[0]+a[1], order=1,
+        composition=Composition(a[0]+a[1], reference=words['wrong'], word_id=words['x'], leaves=(0,), order=1))
     row, plan = keep(resolver, cached, (frame,), position=2)
     assert len(plan['items']) == 1 and plan['items'][0]['lexical']
     assert plan['items'][0]['reference'] == token

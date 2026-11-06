@@ -19,24 +19,42 @@ def native_parameters(model):
     return [(name,p) for name,p in model.named_parameters() if id(p) in ids]
 
 
+def identity_recovered(model, owner, rows, forms):
+    """Dictionary identity bits still equal the native surface identity bits.
+
+    This compares the consumer's forms with the native source, independently
+    of the source store's spelling reconstruction audit. Property coordinates
+    belong to the other form subspace and are not lexical identity bits.
+    """
+    identity = model.perceptualSpace.percept_store.identity
+    basis = model.perceptualSpace.subspace.what
+    width = owner.similarity_codebook.mereology.identity_width
+    if not rows:
+        return forms.shape[0] == 0
+    expected = torch.stack([basis.lookup_rows(identity.word_rows[owner.word_surface_for_row(row)])[:width]
+                            for row in rows]).detach().cpu()
+    return torch.equal(forms[:, :width].eq(1), expected.eq(1))
+
+
 @torch.no_grad()
 def storage_snapshot(model):
     store=model.symbolSpace.ltm_store
     n=len(store)
-    # Only the arrival entry carries time; estimates and operand ideas have
-    # zero stamps. This includes a kept cover without asserting evidence for it.
+    # Sentence arrivals are timed covers. Thought inference also carries a
+    # time stamp, so time alone cannot identify the input sentence rows.
     stamps = [store.entry_when(row).detach().cpu().tolist() for row in range(n)]
-    sentences=torch.tensor([row for row, stamp in enumerate(stamps) if any(stamp)],
+    row_kinds = [store.KINDS[int(k)] for k in store.kind_codes(torch.arange(n, device=store.count.device))]
+    sentences=torch.tensor([row for row, stamp in enumerate(stamps) if any(stamp) and row_kinds[row] == 'cover'],
                            dtype=torch.long, device=store.address_keys.device)
     return dict(rows_used=n, capacity=store.capacity, sentence_rows=len(sentences),
-        row_kinds=[store.KINDS[int(k)] for k in store.record_kind[:n]],
+        row_kinds=row_kinds, timed_rows=sum(any(stamp) for stamp in stamps),
         definition_rows=0,
         addresses=store.address_keys[sentences].detach().cpu().tolist(),
         sentence_indices=store.sentence_index[sentences].detach().cpu().tolist(),
         content_keys=[store.content_key(int(row)).hex() for row in sentences],
-        witness_counts=store.witness_count[sentences].detach().cpu().tolist(),
+        witness_counts=store.access_count[sentences].detach().cpu().tolist(),
         when=[stamps[int(row)] for row in sentences],
-        all_witness_counts=store.witness_count[:n].detach().cpu().tolist())
+        all_witness_counts=store.access_count[:n].detach().cpu().tolist())
 
 
 @torch.no_grad()
@@ -63,6 +81,7 @@ def geometry(model, record):
                 for label,v in evidence.items()}
         forms=values[:,:cb.mereology.percept_width]
         books.append(dict(rows=words,**metrics(values),forms=metrics(forms),
+                          identity_recovered=identity_recovered(model, cs, words, forms),
                           d_definition='relu(e_for - e_against), summed net 11b evidence per native address; d > 0 selects a full-presence part',
                           net_evidence=ranges, support=cb.mereology.support_audit(words),
                           containment=cb.mereology.containment_audit()))

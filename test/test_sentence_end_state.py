@@ -229,7 +229,7 @@ from test_clause_acceptance import SentenceFixture
 def test_program_meaning_reads_ended_points_from_their_rows(monkeypatch):
     f = SentenceFixture(monkeypatch)
     row = f.store.write_clause(f.clause('earlier'), trust=.8)
-    identity = int(f.store.row_ids[row])
+    identity = int(f.store.address_keys[row])
     assert f.cs._csw_row_of(identity) is None
     entry = f.program(('part', 'it', 'animals'))
     refs = entry.concept_ids.clone()

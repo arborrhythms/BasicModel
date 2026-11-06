@@ -5,6 +5,9 @@ from pathlib import Path
 
 
 def test_margin_and_ownership_observe_the_same_actual_steps():
+    from random_streams import write
+    write(Path(os.environ['OWNERSHIP_OBSERVER_OUTPUT'])/'initial-random-stream.pt',
+          scope='Observer probe before model imports and construction')
     from test_mm_xor import _fresh_model
     import operators_gate_observer
     model, _, data = _fresh_model('data/XOR_grammar.xml')
@@ -12,7 +15,9 @@ def test_margin_and_ownership_observe_the_same_actual_steps():
     owners=model.objective_parameter_groups(optimizer)
     assert 'compose_preference' not in owners
     preference=owners['reconstruction']
-    assert any(p is model.languageSpace.decomposition_chooser.weight for p in preference)
+    assert not any(p is model.languageSpace.decomposition_chooser.weight
+                   for group in optimizer.param_groups for p in group['params'])
+    assert list(model.languageSpace.decomposition_chooser.parameters()) == []
     operation=model.languageSpace._tree_layer(2)
     assert all(any(p is anchor for p in preference) for anchor in
                (operation.stop_anchor,operation.reduce_anchor,operation.apply_anchor))
@@ -28,6 +33,7 @@ def test_margin_and_ownership_observe_the_same_actual_steps():
     assert decomposition['start']['undos'] > 0
     assert decomposition['start']['true_pair_in_shortlist_rate'] == 1.
     assert decomposition['end']['undos'] > 0
+    assert decomposition['end']['weights'] == [1., 0., 0., 0., 0.]
     steps=run_audit['compose_score_function_steps']
     assert len(steps)==4
     assert all(row['sampling_scale']==row['W']*row['R_walk']*row['K'] for row in steps)
@@ -58,7 +64,8 @@ def test_margin_and_ownership_observe_the_same_actual_steps():
     assert all(all(row['rows']) for row in run_audit['reader_training_rows'])
     assert run_audit['pole_consumers']['_attention_sentence_payload'] > 0
     assert run_audit['pole_consumers']['commit_word_reference_slab:per_word'] > 0
-    assert all(book['containment']['after']['largest']==0 for phase in ('start','end') for book in run_audit[phase]['codes'])
+    assert all(band['largest']==0 for phase in ('start','end')
+               for book in run_audit[phase]['codes'] for band in book['containment']['after'].values())
     assert len(run_audit['before_learning_readback']['texts']) == 4
     assert all(row['nonzero']==0 for row in run_audit['sentence_gradients'].values())
     assert all(phase in run_audit for phase in ('start','end'))
@@ -68,7 +75,7 @@ def test_margin_and_ownership_observe_the_same_actual_steps():
         assert identity['rung0']['errors'] == 0
         assert identity['containment_violations'] == 0
     assert run_audit['start']['identity']['form_codes_sha256'] == run_audit['end']['identity']['form_codes_sha256']
-    assert all(phase in run_audit['centroid'] for phase in ('start','end'))
+    assert all(phase in run_audit['form_containment'] for phase in ('start','end'))
     operators_gate_observer.save_ownership(model)
     folder = Path(os.environ['OWNERSHIP_OBSERVER_OUTPUT'])
     events = [json.loads(line) for line in (folder/'events.jsonl').read_text().splitlines()]
@@ -83,7 +90,9 @@ def test_margin_and_ownership_observe_the_same_actual_steps():
     assert all(v==model._concept_owner().outputShape[-1]
                for v in run_audit['closing_image']['concept_widths'].values())
     assert all(v>=0 for v in run_audit['closing_image']['image_max'].values())
-    assert run_audit['end']['codes'][0]['centroid']['identity_recovered']
+    # The dictionary's identity subspace must preserve the native identity
+    # bits; a clean audit of the native store alone does not establish this.
+    assert all(book['identity_recovered'] for book in run_audit['end']['codes'])
     assert 'reconstruction.attention_score_function' not in model._sentence_cost_registry._terms
     assert json.loads((folder/'ownership.json').read_text())['conflicts'] == 0
     assert 'reconstruction.antipode' not in model._sentence_cost_registry._terms
@@ -111,5 +120,7 @@ def test_margin_and_ownership_observe_the_same_actual_steps():
         supports = [row for book in geometry['dictionary']
                     for row in book['word_perceptual_support']]
         assert {row['word'] for row in supports} == {'hello', 'world', 'loving', 'there'}
-        assert all(row['dimension'] == 96 and 'nonzero_fraction' in row
-                   and 'minimum_absolute_value' in row for row in supports)
+        assert all(row['dimension'] == space.similarity_codebook.mereology.percept_width
+                   and 'nonzero_fraction' in row and 'minimum_absolute_value' in row
+                   for book, space in zip(geometry['dictionary'], model.conceptualSpaces, strict=True)
+                   for row in book['word_perceptual_support'])

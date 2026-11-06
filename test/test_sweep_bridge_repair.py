@@ -4,6 +4,13 @@ import torch
 from test_review13_subspaces import fixture
 
 
+def prediction_tower(value):
+    tower=SimpleNamespace(_priming_dim=lambda:value.shape[1],_expected_knowing=value,
+        _seen_surface=lambda *args,**kwargs:value[...,0])
+    tower._priming_target=lambda:tower
+    return tower
+
+
 def test_bridge_projection_reads_only_its_counted_prefix(monkeypatch):
     cs, _, _, alloc = fixture(meaning_pairs=8)
     rows = {101: 1, 102: 2}
@@ -16,35 +23,33 @@ def test_bridge_projection_reads_only_its_counted_prefix(monkeypatch):
     monkeypatch.setattr(cs, '_csw_row_of', rows.get)
     monkeypatch.setattr(cs.definitions, 'objects', lambda word: (101 if word == 31 else 102,))
     monkeypatch.setattr(cs.interpret, 'no_object', lambda word: False)
-    cs._priming_boosts.fill_(1.)
-    cs._priming_boosts[0, 1:3] = torch.tensor([2., 3.])
-    monkeypatch.setattr(cs, 'priming_weights', lambda **kwargs: cs._priming_boosts[:1])
+    cs._expected_knowing.zero_()
+    cs._expected_knowing[0, 1:3] = torch.tensor([[.2,.3],[.7,.1]])
     # An invalid source and valid destination make any tail read fail, rather
     # than letting the destination filter hide an uninitialized source access.
     cs._priming_bridge_src.fill_(cs.nVectors + 1 - cs._priming_bridge_src_bias)
     cs._priming_bridge_dst.fill_(-cs._priming_bridge_dst_bias)
     cs._priming_bridge_bits.fill_(-1)
     pointers = (cs._priming_bridge_src.data_ptr(), cs._priming_bridge_dst.data_ptr())
-    targets = [torch.ones(1, 10), torch.ones(1, 10)]
-    towers = [SimpleNamespace(_priming_dim=lambda: 10, _priming_decay=1.,
-        _priming_surface=lambda *args, value=value, **kwargs: value) for value in targets]
+    targets = [torch.zeros(1,10,2),torch.zeros(1,10,2)]
+    towers = [prediction_tower(value) for value in targets]
     cs.project_priming_to_towers(*towers, batch=1)
-    expected = torch.ones(1, 10); expected[0, 4] = 2.; expected[0, 7] = 4.
+    expected = torch.zeros(1,10,2); expected[0,4]=torch.tensor([.2,.3]);expected[0,7]=torch.tensor([.7,.3])
     torch.testing.assert_close(targets[0], expected)
-    expected = torch.ones(1, 10); expected[0, 3] = 2.; expected[0, 5] = 3.
+    expected = torch.zeros(1,10,2);expected[0,3]=torch.tensor([.2,.3]);expected[0,5]=torch.tensor([.7,.1])
     torch.testing.assert_close(targets[1], expected)
     count = cs._priming_bridge_rebuilds
-    for value in targets: value.fill_(1.)
+    for value in targets:value.fill_(.9)
     cs.project_priming_to_towers(*towers, batch=1)
     assert cs._priming_bridge_rebuilds == count
     words.pop()
     alloc.word_descriptions[31] = dict(parts=((4,),), wholes=())
     cs.interpret._description_revision += 1
-    for value in targets: value.fill_(1.)
+    for value in targets:value.fill_(.9)
     cs.project_priming_to_towers(*towers, batch=1)
-    expected = torch.ones(1, 10); expected[0, 4] = 2.
+    expected=torch.zeros(1,10,2);expected[0,4]=torch.tensor([.2,.3])
     torch.testing.assert_close(targets[0], expected)
-    torch.testing.assert_close(targets[1], torch.ones(1, 10))
+    torch.testing.assert_close(targets[1],torch.zeros(1,10,2))
     assert cs._priming_bridge_counts == (1, 0)
     assert pointers == (cs._priming_bridge_src.data_ptr(), cs._priming_bridge_dst.data_ptr())
 
@@ -78,13 +83,11 @@ def test_bridge_masks_cover_bit_31_and_adjacent_blocks(monkeypatch):
     monkeypatch.setattr(cs, '_csw_row_of', lambda identity: 63)
     monkeypatch.setattr(cs.definitions, 'objects', lambda word: (101,))
     monkeypatch.setattr(cs.interpret, 'no_object', lambda word: False)
-    cs._priming_boosts.fill_(1.)
-    cs._priming_boosts[0, 63] = 3.
-    monkeypatch.setattr(cs, 'priming_weights', lambda **kwargs: cs._priming_boosts[:1])
-    target = torch.ones(1, 64)
-    tower = SimpleNamespace(_priming_dim=lambda: 64, _priming_decay=1.,
-        _priming_surface=lambda *args, **kwargs: target)
+    cs._expected_knowing.zero_()
+    cs._expected_knowing[0,63] = torch.tensor([.7,.2])
+    target = torch.zeros(1,64,2)
+    tower=prediction_tower(target)
     cs.project_priming_to_towers(tower, None, batch=1)
-    torch.testing.assert_close(target, torch.full_like(target, 3.), rtol=0, atol=0)
+    torch.testing.assert_close(target,torch.tensor([.7,.2]).expand_as(target),rtol=0,atol=0)
     assert cs._priming_bridge_counts == (2, 0)
     assert cs._priming_bridge_bits[:2].tolist() == [-1, -1]

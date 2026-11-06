@@ -42,7 +42,8 @@ def test_bind_menu_at_each_order_and_kept_mention_commit(monkeypatch,order):
         f.cs.mtm.open(key,kind=None,when=i,value=f.store.slots[row],pending=False)
         keys.append(key)
     state = prepend(f,(),1)
-    mention = torch.eye(8)[2].reshape(1,1,8)
+    # §50: both eligible identities are parts of the mention's meaning.
+    mention = (torch.eye(8)[0]+torch.eye(8)[1]).reshape(1,1,8)
     state,_ = chunks.deposit(state,mention[:,0],torch.tensor([True]),stack=True,order=order)
     age = state[chunks.READ].clone()
     bind = next(rule for rule in f.binary if rule.method_name == 'bind')
@@ -158,9 +159,11 @@ def test_prepend_transients_do_not_prime_or_place_and_promoted_symbol_registers(
         entries.stage_words(name,torch.tensor([[rows[0]]]))
     entries.stage_words('lookup_atoms',cs.similarity_codebook.W[rows[:1]][None])
     entries.stage_words('lookup_sentence_ids',torch.zeros(1,1,dtype=torch.long))
-    isp = SimpleNamespace(symbol_entries=entries,_packed_sentence_slot_mask=torch.ones(1,1,dtype=torch.bool))
+    isp = SimpleNamespace(symbol_entries=entries,_packed_sentence_slot_mask=torch.ones(1,1,dtype=torch.bool),
+                          data=SimpleNamespace(inputLength=32))
     class Model:
         _prime_sentence_symbols = BasicModel._prime_sentence_symbols
+        word_surface_capacity = 64
         reconstruction_basis_limit = 2
         _open_sentence_slot = 0
         inputSpace = isp
@@ -230,3 +233,33 @@ def test_restaging_reads_live_values_once_without_reading_the_menu(monkeypatch):
     torch.testing.assert_close(state[chunks.READ],age,rtol=0,atol=0)
     state,arrived = chunks.deposit(state,torch.ones(1,8),torch.tensor([True]),stack=True)
     assert arrived.tolist() == [1]
+
+
+@pytest.mark.parametrize('admission_order', ((0, 1, 2, 3), (3, 2, 1, 0)))
+def test_prepend_breaks_equal_time_ties_by_admission_and_keeps_event_recency(monkeypatch, admission_order):
+    from test_clause_acceptance import SentenceFixture
+    fixture = SentenceFixture(monkeypatch)
+    rows = [fixture.store.append_meaning(ConceptualMeaning.from_description(torch.eye(8)[i]),
+             sentence_index=i, document_key='same-time', order=1) for i in range(4)]
+    pool = fixture.cs.mtm
+    admitted = []
+    for index in admission_order:
+        row = rows[index]
+        key = fixture.store.occurrence_of(row)
+        pool.open(key, kind=None, when=7, value=fixture.store.slots[row], pending=False)
+        admitted.append(key)
+    entries = SymbolEntries(1, 1, 8, 8)
+    pointers = {name: value.data_ptr() for name, value in entries.named_buffers()}
+    model = SimpleNamespace(_concept_owner=lambda: fixture.cs,
+        inputSpace=SimpleNamespace(symbol_entries=entries),
+        symbolSpace=SimpleNamespace(ltm_store=fixture.store), _open_sentence_slot=0)
+    state = stage(model, chunks.empty(1, 8, 8), torch.tensor([True]))
+    expected = [pool.entries[key].transient for key in admitted]
+    assert entries.concept_ids[0, :4].tolist() == expected
+    assert chunks.bind_menu(state, torch.ones(1, 1, 8))[1][0, 0, 1:5].tolist() == expected
+
+    # A later event still outranks the tie; its older peers keep admission order.
+    pool.event(admitted[-1], admitted[-1], verb=1, role=0, when=8)
+    stage(model, chunks.empty(1, 8, 8), torch.tensor([True]))
+    assert entries.concept_ids[0, :4].tolist() == [expected[-1], *expected[:-1]]
+    assert pointers == {name: value.data_ptr() for name, value in entries.named_buffers()}

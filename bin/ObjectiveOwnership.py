@@ -17,6 +17,8 @@ def registry_costs(registry, *, reader_rows=None, expectation_rows=None, definit
         objective = term.get('objective', category)
         if category == 'grammar':
             owners = ('generate_lesson' if 'generate.' in name else 'compose_lesson',)
+        elif objective == 'chooser':
+            owners = ('chooser',)
         elif category == 'reg':
             # A regularizer writes only the owned parameters it actually uses.
             owners = tuple('penalty.' + owner for owner in PRIMARY)
@@ -67,7 +69,7 @@ def backward_owned(costs, owners, *, pullback=None, scale=1., audit=None):
         parameters = tuple(owners.get(key, ()))
         if not parameters:
             continue
-        objective = ('reconstruction' if key in ('compose_lesson', 'generate_lesson') else key)
+        objective = ('reconstruction' if key in ('compose_lesson', 'generate_lesson', 'chooser') else key)
         value = cost * scale
         gradients = (pullback.gradients(value, parameters)
                      if pullback is not None and objective in ('reconstruction', 'attention')

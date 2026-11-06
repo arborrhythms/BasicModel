@@ -1,5 +1,6 @@
 """Curriculum supervision stays at its declared reader and inverse boundaries."""
 from types import SimpleNamespace
+import pytest
 import torch
 from AttentionLesson import reading_lesson
 from AttentionTraversal import FieldTraversal
@@ -137,7 +138,8 @@ def test_partial_product_inverse_keeps_defined_coordinates_and_root_gradient():
     torch.testing.assert_close(root.grad,torch.tensor([[[1/3,0.]]]))
 
 
-def test_native_four_word_inverse_follows_composed_children_without_free_decoder(tmp_path,monkeypatch):
+@pytest.mark.parametrize('known', [False, True], ids=['pending-identities', 'admitted-objects'])
+def test_native_four_word_inverse_follows_composed_children_without_free_decoder(tmp_path,monkeypatch,known):
     from test_native_attention_field import _model
     from test_reverse_traversal import _select_completed_binary_path
     from attention_field_gates import words_from_leaves
@@ -146,6 +148,10 @@ def test_native_four_word_inverse_follows_composed_children_without_free_decoder
     _select_completed_binary_path(model)
     try:
         texts=['red blue green gold','gold green blue red']
+        if known:
+            from test_definition_rows import admit
+            for form in texts[0].split():
+                assert admit(model, form) is not None
         with torch.no_grad():
             model.runBatch(train=False,batchSize=2,batch_override=(model.inputSpace.prepInput(texts),torch.empty(2,0)))
         trial=model._last_sentence_field['trials'][0]
@@ -157,9 +163,20 @@ def test_native_four_word_inverse_follows_composed_children_without_free_decoder
         ops = model.languageSpace._tree_layer(2).ops
         kernel = next(getattr(op, 'gl', op) for op in ops
                       if getattr(getattr(op, 'gl', op), 'percept_band', None) is not None)
-        # Content inverses exclude occurrence coordinates; surface recovery stays exact.
+        if known:
+            # A lexical shift without an off-stack working token retains
+            # form times presence, including a presence strictly below one.
+            target = record.word_values[:, :4]
+        else:
+            # Each pending token is prepended. Its current full value is what
+            # the compose operation consumes when refreshing this stack word.
+            ids = [[model._concept_owner().interpret.word_for_form(w) for w in text.split()] for text in texts]
+            pool = model._concept_owner().mtm
+            target = torch.stack([torch.stack([pool.value_of(('name', word)) for word in row]) for row in ids])
+            assert not torch.equal(kernel.content_operand(record.word_values[:, :4]),
+                                   kernel.content_operand(target))
         torch.testing.assert_close(kernel.content_operand(recovered),
-            kernel.content_operand(record.word_values[:,:4]),atol=1e-5,rtol=1e-5)
+            kernel.content_operand(target), atol=1e-5, rtol=1e-5)
     finally:model.End()
 
 

@@ -495,7 +495,9 @@ class MathProblemGenerator:
                  depths: Sequence[int] = (1, 2, 3),
                  distractors: Sequence[int] = (0, 1, 2), stage: int = 1,
                  operators: Sequence[str] = ("add",)):
-        self.rng = random.Random(None if seed is None else int(seed))
+        # An unselected generator belongs to the recorded process stream.
+        # Random(None) would draw fresh OS entropy outside that replay state.
+        self.rng = random.Random(random.getrandbits(64) if seed is None else int(seed))
         self.range = int(range)
         self.depths = tuple(int(d) for d in depths)
         self.distractors = tuple(int(d) for d in distractors)
