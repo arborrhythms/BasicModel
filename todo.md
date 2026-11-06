@@ -110,7 +110,8 @@ is approved; the forty pending-premise runs, the suite, the XOR fits and the thr
 float32 arms pass. The float64 discriminator, from the stream that completed on
 `8e9fe2634709`, now diverges at sentence 17 and raises at sentence 52: a compose
 bind names an introduction that no closing site writes. No freeze was offered. The
-Codex text is §56.1: items 118 and 119, then the suite, item 71's runs and the
+Codex text is §56.2 (Codex's diagnosis confirmed; it replaces §56.1): items 118 and
+119, then the suite, item 71's runs and the
 freeze.
 
 **Order and branches (Alec, 2026-11-03):** work happens on main, with no

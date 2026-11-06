@@ -3624,3 +3624,40 @@ Pre-authorized steps and stops are as in §52.1.
 
 Work on main. No seed pinning beyond Alec's recorded 41001 and the approved diagnostic streams (replaying a recorded stream is one), no resize, no language named in code; fail loud; nothing retired silently. Return through Alec for Claude's review of the freeze; no commit or publication.
 ~~~
+
+### 56.2 Revised after Codex's diagnosis (Claude, 2026-11-06)
+
+Before §56.1 reached it, Codex located the producer in `ChunkJournal.capture`, and Claude confirmed the reading in the code:
+- `capture` selects journal rows with `columns.clamp_min(0)` (about line 321), so an action without a journal column, such as a SHIFT (kind 0), aliases row 0.
+- The introduction search (about lines 369 and 370) scans every action. `by_column`, two blocks earlier (about line 334), keeps only folds and rewrites (kinds 1 and 2).
+- In the capture, handle 3 records action 0, a SHIFT, while its introduction is action 5 (`lower_unary`). `ClauseJournal` (about lines 309 and 310) then registers no introduction at the real parent, no site writes it, and `ReferenceClose.preview` raises, as it should.
+- When no introduction is found, the search falls back to action 0 without a word.
+
+The producer is older than item 116, whose change of trajectory reached it. Item 116's rule stays. The text below replaces §56.1, whose diagnostic replay this reading makes unnecessary.
+
+~~~
+Read §56 and §56.2; this text replaces §56.1. Item 116's repair, item 117 and the passed gates of §55 are approved as built. The float64 discriminator's construction failure (§55.9) stops the round; your diagnosis of its producer is confirmed (§56.2). Order: 118, 119, then make test, item 71's runs and the freeze. Write receipts to doc/benchmarks/2026-11-06-item2-5-review56/.
+
+118. An introduction's recorded origin (§56 finding 1, §56.2).
+- ChunkJournal.capture selects rows with columns.clamp_min(0) (about 321), so an action without a journal column aliases row 0. The introduction search (about 369 and 370) scans every action, and falls back to action 0 when it finds none. In the capture, handle 3 records action 0, a SHIFT; its introduction is action 5, lower_unary.
+- Repair at the producer:
+  - search for an introduction only among folds and rewrites (kinds 1 and 2) with a valid journal column, as by_column already does (about 334);
+  - raise at the producer when no introducing operation is found, in place of the action-0 fallback.
+- Certify that no other reader of the clamped selection takes row 0 for an action without a journal column: the events table (about 410, masked only by kind > 0, so transposes included) and the timeline. Repair any that does under the same rule.
+- Keep ReferenceClose.preview's raise. Item 116's rule stays.
+- If the new raise fires for an identity that a recorded rule says has no introducing operation in its journal, stop with the case captured.
+- Certificates:
+  - a direct case in which a SHIFT aliases row 0: the recorded origin is the real introducing action, and the closing writes its introduction; red on a7851dde8a41, green after;
+  - the discriminator's exact command with --limit 52, on the repaired source from its unchanged stream: sentence 52 completes. This checks the repair before the long runs; it is not item 71's run.
+
+119. Twenty runs of each order of test_forced_ordinary_pending_premise_in_both_orders, counted from zero, on the source of 118, as item 117.
+
+Then, on the green source, as §52.1 states them:
+- make test at ten workers until green (item 114, with its stops);
+- item 71's runs: the eight XOR_grammar fits first, then the three lesson-13 arms and the float64 discriminator;
+- item 73's freeze, with ports against a7851dde8a41, 8e9fe2634709, e0fc4a92719e and HEAD.
+
+Pre-authorized steps and stops are as in §52.1.
+
+Work on main. No seed pinning beyond Alec's recorded 41001 and the approved diagnostic streams (replaying a recorded stream is one), no resize, no language named in code; fail loud; nothing retired silently. Return through Alec for Claude's review of the freeze; no commit or publication.
+~~~
