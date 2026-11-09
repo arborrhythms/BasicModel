@@ -68,7 +68,7 @@ def _aligned_model(rows, *, cs=None, css=None, ws=None):
     if concept_hosts:
         model.conceptualSpaces = nn.ModuleList(concept_hosts)
     if ws is not None:
-        model.wholeSpaces = nn.ModuleList([ws])
+        model.wholeSpace = ws
     return model
 
 
@@ -90,7 +90,7 @@ def test_smaller_codebook_checkpoint_prefix_expands_all_aliases():
                 and value.ndim > 0 and int(value.shape[0]) == new_n):
             value = value[:old_n].clone()
             expected_prefix[key] = value.clone()
-        elif (key.startswith("wholeSpaces.")
+        elif (key.startswith("wholeSpace.")
               and value.ndim > 0 and int(value.shape[0]) == new_n):
             # A same-sized legacy/property WS table is deliberately outside
             # concept checkpoint growth, even when its shape happens to match.

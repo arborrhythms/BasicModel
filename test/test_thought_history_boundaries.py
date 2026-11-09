@@ -32,7 +32,7 @@ def _model(memory):
     model.name = "LevelledHistoryCheckpoint"
     model.spaces = []
     model.conceptualSpaces = []
-    model.wholeSpaces = []
+    model.wholeSpace = None
     model.symbolSpace = torch.nn.Module()
     model.symbolSpace.what_memory = memory
     return model

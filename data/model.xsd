@@ -53,16 +53,9 @@
       <!-- The retired <modelType> (simple | embedding | passthrough | vq)
            moved into <data> as <dataType> (embedding | numeric) 2026-06-19:
            simple+passthrough collapsed to numeric, vq dropped (0 configs). -->
-      <!-- subsymbolicOrder = T = number of per-stage ConceptualSpace
-           instances in self.conceptualSpaces. Stage 10 (doc/plans/
-           2026-05-27-perceptstore-meta-taxonomy-reentrancy.md): each
-           stage owns its own Ramsified sigma_in (incoming fold) and
-           sigma_cs (PARALLEL-mode residual lift). In PARALLEL mode the
-           pipeline walks stages 0..T-1 with each stage's sigma_cs
-           applied to the prior stage's CS output; in SERIAL mode
-           SyntacticLayer.compose dispatch per stage replaces
-           sigma_cs[k] (the per-stage SERIAL dispatch is a follow-up;
-           currently the per-word loop uses the terminal CS). -->
+      <!-- bindingDepth counts ConceptualSpace stages and ramsification slots.
+           Every stage reads one model-owned WholeSpace property inventory;
+           WholeSpace is not copied when the conceptual depth increases. -->
       <xs:element name="bindingDepth" type="xs:nonNegativeInteger" minOccurs="0"/>
       <!-- Concept formation at the serial {PS,WS,SS} -> CS boundary.
            mixing: the historical learned ConceptualCombine matrix, retained
@@ -201,7 +194,7 @@
       <!-- Reading attention (doc/specs/reading-attention.md "(A) Reading
            attention"). When true, a learned .where producer runs at each t>0
            subsymbolic pass and writes _passback_scope_where (the normalized
-           [start, end] reading scope) on the stage-0 WholeSpace for the
+           [start, end] reading scope) on the shared WholeSpace for the
            <mereologyRaise> top-down handoff to consume. The producer scores the
            staged analysis spans (the word brackets) from a query built off the
            prior pass's concept + the active STM symbols (a small learned MLP

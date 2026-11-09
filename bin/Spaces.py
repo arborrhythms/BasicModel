@@ -72,8 +72,8 @@ from space_carrier import SpaceCarrierMixin
 
 
 LanguageOperationChoice = namedtuple(
-    "LanguageOperationChoice", "candidate kind position local_op applied probability action valid alternatives log_probability alternative_count order identity timeline head_role stack_arity chunk",
-    defaults=(None, None, None, None, None, None, None, None, None))
+    "LanguageOperationChoice", "candidate kind position local_op applied probability action valid alternatives log_probability alternative_count order identity timeline head_role stack_arity chunk action_context",
+    defaults=(None, None, None, None, None, None, None, None, None, None))
 """One immutable operation/location choice; only ConceptualSpace applies it."""
 
 
@@ -15753,7 +15753,7 @@ class ConceptualSpace(Space):
             literals = []
             for tower, refs in (('ps', parts), ('ws', wholes)):
                 if (tower == 'ws' and model is not None and not hasattr(
-                        model.wholeSpaces[0].subspace.what, 'primitive_properties')):
+                        model.wholeSpace.subspace.what, 'primitive_properties')):
                     # A word's taxonomy position is not a property row.
                     # Only the property inventory supplies WS memberships.
                     continue
@@ -18917,13 +18917,19 @@ class ConceptualSpace(Space):
         target = self._adopt_reverse_carrier(subspace)
         stash = self._reverse_stash(subspace)
         vspace = subspace
-        y = self.reverseBegin(vspace, returnVectors=True)
         if isinstance(self.subspace.what, ProjectionBasis):
+            # Projection outputs are one scalar per prototype. The generic
+            # event-width regroup would reinterpret that prototype axis as
+            # native feature coordinates before the basis can invert it.
+            self.reverseBegin(vspace, returnVectors=False)
+            y = vspace.materialize()
             # Codebook-side LDU inverse: own contract of ProjectionBasis,
             # not the retired substrate fold. Keeps the reverse shape
             # contract intact for downstream PS.reverse consumers.
-            V_orig = int(_inputShape[0])
+            V_orig = int(self.inputShape[0])
             y = self.subspace.what.reverse(y, V=V_orig)
+        else:
+            y = self.reverseBegin(vspace, returnVectors=True)
         # 2026-06-04 parallel-symbolic-substrate refactor: the
         # ``sigma_cs`` residual subtraction and the ``sigma_in.reverse``
         # fold are RETIRED along with the CS sigmas. ConceptualSpace is a

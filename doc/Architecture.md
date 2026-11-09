@@ -2763,3 +2763,35 @@ word occurrences or substitutes one for a symbol-addressed description: every
 such description, including one leaf, raises that it has no own occurrence.
 `commit_read_words` still runs for its effect. These are item 2.0 round 1;
 later linking, gradient, chooser, percept and loop work remains scheduled.
+
+### 2026-11-08: item 2.0 round-2 repairs
+
+Reverse-stage failures propagate through `_reverse_body`, `reverseReconstruct`
+and `runBatch`. Aligned stages do not dispatch a mixing-only combine inverse.
+ProjectionBasis descent reads the recorded input shape and retains its scalar
+prototype axis until the projection inverse has run.
+
+The selected forward action records its object value, presence and verb group
+beside the numerical journal frame. Derivation reconstruction and forward-discard
+accounting pass that witness to the inverse; a missing non-adverb action record
+raises. Free generation checks each candidate in its own proposed object's
+basis and verb group. A proposed verb phrase supplies its object through the
+bounded native decomposition over supplied concepts; a lexical verb has no
+object. Kept and free paths share the declared verb-group lookup. Missing
+objects and unknown groups follow MeaningAction's identity-basis rule. Pair
+ranking, the selected inverse and recomposition use the same proposed context,
+without reading an input journal, live STM or desired output.
+
+Every configuration owns one `wholeSpace`. Conceptual stages and ramsification
+slots still follow `bindingDepth`; their property readers share this inventory.
+The checkpoint migration selects the learned copy, merges copy 0's host metadata
+and nonconflicting split rows, translates persisted locations, and reports the
+rebuilt candidate-attention reader. Identity keys remain native identities.
+
+Every supplied training form has an admission, shortlist and exact-route report
+for each lexical bank. The lessons runner writes the bank reports beside its
+lexical observations. At the deferred `ReferenceClose.commit` binds, an MTM
+finite-value rejection writes the rejected value, token, members, pool and source
+position into the run receipt directory, then re-raises the same exception.
+The [2.0 plan, §14](plans/2026-11-03-gradient-projection.md) records the direct
+evidence and links the single offered-freeze sweep and its source audit.

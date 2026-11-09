@@ -619,8 +619,6 @@ def _live_state_fingerprint(m):
               "outputSpace": m.outputSpace}
     for i, sp in enumerate(m.conceptualSpaces or []):
         spaces[f"conceptualSpaces[{i}]"] = sp
-    for i, sp in enumerate(m.wholeSpaces or []):
-        spaces[f"wholeSpaces[{i}]"] = sp
     for name, sp in spaces.items():
         sub = getattr(sp, "subspace", None)
         if sub is not None:

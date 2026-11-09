@@ -71,7 +71,7 @@ def test_where_period_is_derived_from_the_registry():
 
 def test_input_and_inventory_share_the_same_encoding():
     model = _build(_FIXTURE)
-    spaces = (model.inputSpace, model.perceptualSpace, *model.wholeSpaces, model.symbolSpace)
+    spaces = (model.inputSpace, model.perceptualSpace, *[model.wholeSpace], model.symbolSpace)
     assert all(space.subspace.whereEncoding is model.where_encoding for space in spaces)
     assert all(space.subspace.whenEncoding is model.when_encoding for space in spaces)
 

@@ -175,7 +175,7 @@ def test_seen_ledger_guard_decay_bump_desire_and_fired_rows(monkeypatch):
     object.__setattr__(cs,'_cs_level_rows',[torch.tensor([3])])
     monkeypatch.setattr(cs,'_field_inventory_rows',lambda device:torch.arange(cs.nVectors,device=device))
     monkeypatch.setattr(cs,'project_priming_to_towers',lambda *args,**kwargs:None)
-    model=SimpleNamespace(wholeSpaces=[],_concept_owner=lambda:cs,_priming_batch_size=lambda:1)
+    model=SimpleNamespace(wholeSpace=None,_concept_owner=lambda:cs,_priming_batch_size=lambda:1)
     BasicModel._prime_seen_step(model)
     assert cs._priming_seen[0,3]>expected[0,3]
     assert torch.equal(frozen,cs._expected_knowing)

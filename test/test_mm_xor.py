@@ -76,11 +76,13 @@ class TestMMXorConvergence(unittest.TestCase):
         # Post-2026-05-05 merger: BasicModel is an alias for BasicModel,
         # so the class name is "BasicModel". The semantically meaningful
         # check is that the per-stage pipeline is built (conceptualSpaces
-        # / wholeSpaces lists), not the legacy class identity.
+        # and one WholeSpace), not the legacy class identity.
         self.assertTrue(hasattr(self.model, "conceptualSpaces"))
-        self.assertTrue(hasattr(self.model, "wholeSpaces"))
+        self.assertTrue(hasattr(self.model, "wholeSpace"))
         self.assertGreaterEqual(len(self.model.conceptualSpaces), 1)
-        self.assertGreaterEqual(len(self.model.wholeSpaces), 1)
+        self.assertFalse(hasattr(self.model, "wholeSpaces"))
+        self.assertTrue(all(stage['ws'] is self.model.wholeSpace
+                            for stage in self.model.body_stages))
 
     def test_has_conceptual_symbolic_spaces(self):
         self.assertTrue(hasattr(self.model, 'conceptualSpace'))

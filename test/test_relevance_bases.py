@@ -105,8 +105,8 @@ def test_unconditional_integration_end_to_end(monkeypatch):
     finally:
         cs0._desire.zero_()
         object.__setattr__(cs0, "_relevance_priority", None)
-        m.wholeSpaces[0]._desire.zero_()
-        for _ws in m.wholeSpaces:
+        m.wholeSpace._desire.zero_()
+        for _ws in [m.wholeSpace]:
             _ws._desire.zero_()
 
 
@@ -115,8 +115,8 @@ def test_native_attention_reads_canonical_whole_heat_by_stream():
     """The native attention reader sees canonical whole heat per stream."""
     from ModelCandidateAttention import _heat
     m = _build("data/MM_20M_xor.xml")
-    ws0 = m.wholeSpaces[0]
-    ws_c = m.wholeSpaces[-1]
+    ws0 = m.wholeSpace
+    ws_c = m.wholeSpace
     assert ws0._priming_target() is ws_c, "per-stage WS must delegate"
     V = ws0._priming_dim()                 # canonical dim via delegation
     assert V > 0, "WS must carry a codebook surface"

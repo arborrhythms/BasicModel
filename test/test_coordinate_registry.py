@@ -16,7 +16,7 @@ def test_where_ranges_are_fixed_and_owned_by_the_model(tmp_path):
     assert inputs[0] == 0 and inputs[1] == parts[0]
     assert parts[1] == wholes[0] and wholes[1] == symbols[0]
     assert first.perceptualSpace.subspace.what.where_offset == parts[0]
-    assert first.wholeSpaces[0].subspace.what.where_offset == wholes[0]
+    assert first.wholeSpace.subspace.what.where_offset == wholes[0]
     assert first.symbolSpace.subspace.what.where_offset == symbols[0]
     first.perceptualSpace.percept_store.ensure_atomic_bytes([b'x', b'y'])
     assert first.where_registry is layout
@@ -87,7 +87,7 @@ def test_model_owns_one_ladder_across_all_spaces(tmp_path):
     from test_packed_reconstruction_parity import build_model
     model = build_model(tmp_path, word_capacity=8)
     spaces = (model.inputSpace, model.perceptualSpace,
-              *model.wholeSpaces, model.symbolSpace)
+              *[model.wholeSpace], model.symbolSpace)
     assert len({id(space.subspace.whereEncoding) for space in spaces}) == 1
     assert len({id(space.subspace.whenEncoding) for space in spaces}) == 1
     assert model.where_encoding.maxVal > model.where_registry.capacity

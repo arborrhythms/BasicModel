@@ -168,7 +168,7 @@ def test_serial_ws_analysis_view_is_fixed_width_and_compact():
     m, _ = _serial_model_and_batch()
     # The compact serial fixture keeps WS analysis=raw; engage the same
     # meronymic cut BasicModel uses so this test has full span metadata.
-    for stage_ws in m.wholeSpaces:
+    for stage_ws in [m.wholeSpace]:
         stage_ws.analysis_mode = "meronomy"
     one = m.inputSpace.prepInput(["alpha beta gamma"])
     with torch.no_grad():

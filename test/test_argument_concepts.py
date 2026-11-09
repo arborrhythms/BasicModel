@@ -55,7 +55,7 @@ def test_argument_declarations_survive_native_structural_checkpoint():
     cs, bank, _, alloc = fixture(meaning_pairs=4)
     names = ('lift_argin1', 'lift_argin2')
     concepts = cs.prebuild_formal_arguments(names)
-    host = SimpleNamespace(conceptualSpaces=[cs], wholeSpaces=[], named_modules=lambda: ())
+    host = SimpleNamespace(conceptualSpaces=[cs], wholeSpace=None, named_modules=lambda: ())
     saved = BaseModel._collect_structural_extras(host)['conceptual_spaces'][0]['allocator']
     vectors = copy.deepcopy(bank.state_dict())
     restored, restored_bank, _, restored_alloc = fixture(meaning_pairs=4)
@@ -224,7 +224,7 @@ def test_learned_members_centroids_and_confidence_restore_into_a_fresh_owner():
     for _ in range(3):
         speech.observe_use('lift', ((words[0],), (words[1],)))
     refresh(cs)
-    host = SimpleNamespace(conceptualSpaces=[cs], wholeSpaces=[], named_modules=lambda: ())
+    host = SimpleNamespace(conceptualSpaces=[cs], wholeSpace=None, named_modules=lambda: ())
     structure = BaseModel._collect_structural_extras(host)['conceptual_spaces'][0]['allocator']
     vectors, grammar = copy.deepcopy(bank.state_dict()), copy.deepcopy(speech.state_dict())
     fresh, fresh_bank, _, restored, fresh_words = argument_fixture()

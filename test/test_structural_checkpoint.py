@@ -37,7 +37,7 @@ def _model_with(cs, ws):
     model.name = "StructuralCheckpointTest"
     model.spaces = []
     model.conceptualSpaces = [cs]
-    model.wholeSpaces = [ws]
+    model.wholeSpace = ws
     return model
 
 

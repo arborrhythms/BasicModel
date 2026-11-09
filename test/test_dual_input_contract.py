@@ -157,20 +157,16 @@ def test_ws_routing_law_typed():
 def test_model_forward_passes_unity_at_stage0():
     # Phase 2 wiring: the body hands the PARKED unity to the STAGE-0
     # WholeSpace only; later stages read the recurrent CS (input once).
-    # The per-stage WholeSpaces are DISTINCT objects (``m.wholeSpaces[t]``,
-    # ``body_stages[t]["ws"]``); the terminal ``m.wholeSpace`` is the LAST
-    # stage, so at bindingDepth>1 (MM_20M ships sO=3, T=3) the capture
-    # must hook EVERY stage's ws -- hooking only the terminal would miss the
-    # stage-0 unity call entirely.
+    # One WholeSpace serves every stage; capture the current pass at each call.
     m = _build("MM_20M_xor.xml")
     x = _staged_batch(m)
-    stage_ws = list(m.wholeSpaces)
+    stage_ws = list([m.wholeSpace])
     reals = [w.forward for w in stage_ws]
     calls = []  # (stage_idx, offered_unity, routed_source)
     def _mk(idx, real, w):
         def _capture(in_sub, *a, **k):
             out = real(in_sub, *a, **k)
-            calls.append((idx, in_sub,
+            calls.append((w._pump_pass_idx, in_sub,
                           getattr(w, "_ws_routed_source", None)))
             return out
         return _capture
@@ -216,7 +212,7 @@ def test_full_forward_green_with_dual_view():
 def test_parallel_ws_quantize_fires():
     """Retirement certificate: WholeSpace owns properties, not a word dictionary."""
     m = _build("MM_20M_xor.xml")
-    ws = m.wholeSpaces[0]
+    ws = m.wholeSpace
     basis = ws.subspace.what
     before = basis.getW().detach().clone()
     with torch.no_grad():
@@ -232,14 +228,14 @@ def test_ws_vq_asymmetric_flags():
     """Retirement certificate: WholeSpace owns properties, not a word dictionary."""
     m = _build("MM_20M_xor.xml")
     x = _staged_batch(m)
-    before = [ws.subspace.what.getW().detach().clone() for ws in m.wholeSpaces]
+    before = [ws.subspace.what.getW().detach().clone() for ws in [m.wholeSpace]]
     m.train()
     try:
         m.forward(x)
         m.forward(x)
     finally:
         m.eval()
-    for ws, rows in zip(m.wholeSpaces, before):
+    for ws, rows in zip([m.wholeSpace], before):
         assert not hasattr(ws, 'analysis_store')
         torch.testing.assert_close(ws.subspace.what.getW(), rows, rtol=0, atol=0)
         assert not any('analysis_store' in key for key in ws.state_dict())
@@ -272,7 +268,7 @@ def test_ws_recon_term_reaches_pipeline_errors():
         m.eval()
     terms = getattr(m.outputSpace.subspace.errors, '_terms', {})
     assert 'ws_codebook_recon' not in terms
-    assert all(getattr(ws, '_stage0_recon_loss', None) is None for ws in m.wholeSpaces)
+    assert all(getattr(ws, '_stage0_recon_loss', None) is None for ws in [m.wholeSpace])
 
 
 @pytest.mark.slow

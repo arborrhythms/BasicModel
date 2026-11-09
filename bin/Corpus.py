@@ -26,6 +26,13 @@ def admit_training_forms(model, texts, answers=(), *, split='train'):
     owner=model._concept_owner()
     identity=model.perceptualSpace.percept_store.identity
     forms=set()
+    answers = tuple(answers)
+    supplied = set(getattr(model, '_supplied_training_forms', ()))
+    for answer in answers:
+        if isinstance(answer, str):
+            raw = answer.encode('ascii', errors='replace')
+            supplied.update(raw[start:end] for start, end in percept_spans(raw)
+                            if end > start and is_lexical_form(raw[start:end]))
     from itertools import chain
     for text in chain(texts,(answer for answer in answers if isinstance(answer,str))):
         raw=text.encode('ascii',errors='replace')
@@ -39,6 +46,7 @@ def admit_training_forms(model, texts, answers=(), *, split='train'):
         if word is None:
             raise RuntimeError(f'training form admission failed: {raw!r}')
         admitted.append((raw,word))
+    model._supplied_training_forms = tuple(sorted(supplied))
     return tuple(admitted)
 
 

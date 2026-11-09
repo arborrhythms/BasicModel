@@ -12722,15 +12722,18 @@ class LanguageSpace(nn.Module):
 
     def stage_verb_groups(self, resolver, words, like):
         """Freeze host assignments before composition; the loop reads tensors."""
+        self._verb_group_table = self.verb_group_table(resolver, words, like)
+
+    def verb_group_table(self, resolver, words, like):
+        """Declared identities and lexical denotations share one assignment map."""
         action = self.verb_action()
         if action is None:
-            self._verb_group_table = None
-            return
+            return None
         assignments = action.groups.assignments
         entries = dict(assignments)
         for word in words.detach().flatten().unique().tolist():
             entries[int(word)] = assignments.get(resolver._event_symbol(int(word)), -1)
-        self._verb_group_table = (torch.tensor(tuple(entries) or (-1,), device=like.device),
+        return (torch.tensor(tuple(entries) or (-1,), device=like.device),
             torch.tensor(tuple(entries.values()) or (-1,), device=like.device))
 
     def choose_operation(self, state, row_gate, *, slots=1, op_prior=None,
@@ -12847,11 +12850,8 @@ class LanguageSpace(nn.Module):
             right = stack[:,1:]
             obj = right[...,OBJECT]
             object_value, present, _ = read_identity(chunks,obj,torch.zeros_like(obj))
-            groups = torch.full_like(right[...,VERB],-1)
-            group_table = getattr(self,'_verb_group_table',None)
-            if group_table is not None:
-                keys,assigned = group_table
-                groups = torch.where(right[...,VERB,None] == keys,assigned,-1).amax(-1)
+            from Generative import verb_groups
+            groups = verb_groups(right[...,VERB], getattr(self,'_verb_group_table',None))
             structural_context = replace(structural_context,
                 leaf_counts=(stack[:,:-1,LEAVES].clamp_min(1),stack[:,1:,LEAVES].clamp_min(1)),
                 action_context=dict(object_value=object_value,object_present=present,group=groups))
@@ -12939,6 +12939,14 @@ class LanguageSpace(nn.Module):
         bheads, uheads = rule_heads(self._compose_binary_rules), rule_heads(self._compose_unary_rules)
         choice = choice._replace(head_role=torch.where(choice.kind == 1,
             bheads[choice.local_op.clamp(0,len(bheads)-1)], uheads[choice.local_op.clamp(0,len(uheads)-1)]))
+        if structural_context is not None and structural_context.action_context is not None:
+            # Keep the exact context consumed by the selected forward face.
+            # A later identity refresh or group assignment cannot replace it.
+            context = structural_context.action_context
+            selected = route['position'].clamp(0, context['group'].shape[1]-1)
+            batch = torch.arange(B, device=buffer.device)
+            choice = choice._replace(action_context={name: value[batch, selected].clone()
+                for name, value in context.items()})
         if reference_scope is None:
             return choice
         return choice, route['refs'], route['relations'], route['operands']
@@ -13438,7 +13446,7 @@ class LanguageSpace(nn.Module):
                             basis=None, basis_valid=None, candidate_limit=16,
                             basis_priming=None, return_status=False, *, free=False,
                             left_basis=None, right_basis=None, case_bank=None,
-                            left_valid=None, right_valid=None, whole_bank=None):
+                            left_valid=None, right_valid=None, whole_bank=None,action_candidates=None):
         """``(left, right)`` ``[B, D]`` of one recorded binary fold.
 
         ``parent`` is the folded slot; ``op_local`` ``[B]`` the recorded
@@ -13498,7 +13506,8 @@ class LanguageSpace(nn.Module):
                     W_inv, (side[:, 0], side[:, 1]), basis, candidate_valid,
                     candidate_limit, basis_priming=basis_priming, free=free,
                     left_basis=left_basis, right_basis=right_basis, case_bank=case_bank,
-                    left_valid=left_valid, right_valid=right_valid, whole_bank=whole_bank)
+                    left_valid=left_valid, right_valid=right_valid, whole_bank=whole_bank,
+                    action_candidates=action_candidates)
                 return torch.stack((a, b, available[:, None].expand_as(a).to(a.dtype)), dim=1)
 
             if compiling:
@@ -13519,7 +13528,7 @@ class LanguageSpace(nn.Module):
                               reference_side="right", basis=None, basis_valid=None,
                               candidate_limit=16, *, basis_priming=None, free=False,
                               left_basis=None, right_basis=None, case_bank=None,
-                              left_valid=None, right_valid=None, whole_bank=None):
+                              left_valid=None, right_valid=None, whole_bank=None,action_candidates=None):
         op = getattr(op, "gl", op)          # the reducer wraps grammar layers
         if hasattr(op, 'content_operand'):
             parent = op.content_operand(parent)
@@ -13543,7 +13552,9 @@ class LanguageSpace(nn.Module):
                 if (reference is not None and not callable(getattr(op, 'compose_case_meaning', None))
                         and (has_kernel or has_action or op.meaning_rule == 'sum')):
                     right_known = has_action or op.meaning_head_role == 0
-                    left, right = op.reverse_blocks(parent, ref, reference_right=right_known)
+                    from Generative import candidate_action_context
+                    left, right = op.reverse_blocks(parent, ref, reference_right=right_known,
+                        action_context=candidate_action_context(op, ref, action_candidates))
                     valid = known & (on_right == right_known)
                     valid = valid & ((left >= 0) & (left <= 1) & (right >= 0) & (right <= 1)).all(-1)
                     return torch.where(valid[:, None], left, 0.), torch.where(valid[:, None], right, 0.), valid
@@ -13551,7 +13562,8 @@ class LanguageSpace(nn.Module):
                 basis, basis_valid, candidate_limit, left_priming=basis_priming,
                 right_priming=basis_priming, left_basis=left_basis, right_basis=right_basis,
                 left_valid=left_valid, right_valid=right_valid,
-                chooser=self.decomposition_chooser, require_progress=free, whole_bank=whole_bank, case_bank=case_bank)
+                chooser=self.decomposition_chooser, require_progress=free, whole_bank=whole_bank,
+                case_bank=case_bank,action_candidates=action_candidates)
 
         if inverse == 'case_search':
             if case_bank is None:
@@ -13683,7 +13695,8 @@ class LanguageSpace(nn.Module):
                                        left_valid=None, right_valid=None,
                                        left_priming=None, right_priming=None,
                                        left_basis=None, right_basis=None,
-                                       chooser=None, return_details=False, require_progress=False, whole_bank=None, case_bank=None):
+                                       chooser=None, return_details=False, require_progress=False, whole_bank=None,
+                                       case_bank=None,action_candidates=None):
         """Fixed joint-residual hard pair; no straight-through search gradient.
 
         At most K constituents per side, with words snapped only at leaves.
@@ -13769,7 +13782,14 @@ class LanguageSpace(nn.Module):
             case_view = (case_bank.for_values(newer, form_width=form_width)
                          if case_bank is not None and form_width is not None and
                          callable(getattr(op, 'compose_case_meaning', None)) else None)
-            folded = (op.compose_blocks(op.compose, older, newer, counts=counts, whole=whole, case_view=case_view) if form_width is not None else
+            from Generative import candidate_action_context
+            # The right shortlist is shared by every left hypothesis.
+            # Match its forms once, rather than materializing K² bank reads.
+            action_context = candidate_action_context(op, newer[:, 0], action_candidates)
+            if action_context is not None:
+                action_context = {name: value[:, None] for name, value in action_context.items()}
+            folded = (op.compose_blocks(op.compose, older, newer, counts=counts, whole=whole, case_view=case_view,
+                      action_context=action_context) if form_width is not None else
                       older if getattr(op, 'reconstructs_left', False) else op.compose(older, newer))
             if form_width is None and getattr(op, 'same_reference_idempotent', False):
                 same = left_indices[:, :, None] == right_indices[:, None, :]
@@ -13842,7 +13862,8 @@ class LanguageSpace(nn.Module):
                 fraction, selected_whole = fit(parent[..., :form_width], hard_left, hard_right, whole_bank)
                 right_known = op.meaning_head_role == 0 or getattr(op, 'meaning_action', None) is not None
                 left, right = op.reverse_blocks(parent, hard_right if right_known else hard_left,
-                    counts=(fraction, 1-fraction), reference_right=right_known, whole=selected_whole)
+                    counts=(fraction, 1-fraction), reference_right=right_known, whole=selected_whole,
+                    action_context=candidate_action_context(op, hard_right, action_candidates))
                 # The inverse recovers meaning; the selected symbol supplies
                 # its exact form. No parameter lives on the centroid side.
                 left = torch.cat((hard_left[..., :form_width], left[..., form_width:]), -1)
@@ -13864,7 +13885,7 @@ class LanguageSpace(nn.Module):
     def decoder_eligibility(parent, lefts, rights, available, binary_ops,
                             basis, basis_valid, *, case_bank=None,
                             terminal_basis=None, terminal_valid=None, whole_bank=None,
-                            details=False, unary_ops=()):
+                            details=False, unary_ops=(),action_candidates=None):
         """A supported pair takes precedence over a single-symbol projection.
 
         Use the pair search's squared reconstruction residual, compared with
@@ -13946,7 +13967,9 @@ class LanguageSpace(nn.Module):
                 ratio, whole = fit(value, left, right, whole_bank)
                 view = (case_bank.for_values(right, form_width=form_width) if case_bank is not None and
                         callable(getattr(op, 'compose_case_meaning', None)) else None)
-                folded = op.compose_blocks(op.compose, left, right, counts=(ratio, 1-ratio), whole=whole, case_view=view)
+                from Generative import candidate_action_context
+                folded = op.compose_blocks(op.compose, left, right, counts=(ratio, 1-ratio), whole=whole, case_view=view,
+                    action_context=candidate_action_context(op, right, action_candidates))
             elif getattr(op, 'inverse_kind', None) == 'case_search':
                 if case_bank is None:
                     pair_masks.append(torch.zeros_like(singular))
@@ -13981,7 +14004,7 @@ class LanguageSpace(nn.Module):
             -1, 1, parent.shape[-1]))[:, 0]
         return eligibility_menu(parent, lefts, rights, available, binary_ops, unary_ops,
             proposals, recomposed, pairs, singular, terminal, terminal_mask.any(-1),
-            form_width, whole_bank=whole_bank, case_bank=case_bank)
+            form_width, whole_bank=whole_bank, case_bank=case_bank,action_candidates=action_candidates)
 
     def generate_unary_step(self, x, op_local, valid, *, return_status=False, whole_bank=None,
                             case_bank=None, ops=None):

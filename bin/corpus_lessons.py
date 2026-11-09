@@ -39,7 +39,11 @@ def lexical_report(model, forms):
     alloc = _concept_alloc_of(cs)
     speech = model.languageSpace.parts_of_speech
     result = {}
-    for form in forms:
+    supplied = tuple(raw.decode('utf8', 'surrogateescape')
+                     for raw in getattr(model, '_supplied_training_forms', ()))
+    last = {row['form']: row for row in
+            getattr(model, '_last_lexical_retrieval', {}).get('supplied_forms', ())}
+    for form in dict.fromkeys((*forms, *supplied)):
         word = cs.interpret.word_for_form(form)
         objects = () if word is None else cs.interpret.denotations(word)
         result[form] = dict(word=word, objects=[dict(identity=obj, order=alloc.order_of(obj),
@@ -48,6 +52,9 @@ def lexical_report(model, forms):
             arguments=[] if word is None else [dict(argument=arg, concept=speech.concepts[arg],
                 score=float(score), member=word in speech.members(arg))
                 for arg, score in zip(speech.arguments, speech.similarities(word))])
+        if form in supplied:
+            result[form]['admission'] = last.get(form, dict(admitted=word is not None,
+                shortlisted=None, exact_route_available=None))
     return dict(forms=result, **readiness_report(cs))
 
 
@@ -223,6 +230,14 @@ def measure(config, lessons, output, *, eager=False, presentations=None, curricu
         torch.while_loop = eager_while
     started = time.monotonic()
     model = BaseModel.from_config(str(config), data=data)[0]
+    model._receipt_directory = output
+    bank_count = 0
+    def record_admission(report):
+        nonlocal bank_count
+        with (output / 'lexical-admission.jsonl').open('a') as stream:
+            stream.write(json.dumps(dict(bank=bank_count, **report)) + '\n')
+        bank_count += 1
+    model._lexical_admission_sink = record_admission
     if model.inputSpace.data is not data:
         raise RuntimeError('lesson data differs from the native input owner')
     optimizer = model.getOptimizer(lr=.001)

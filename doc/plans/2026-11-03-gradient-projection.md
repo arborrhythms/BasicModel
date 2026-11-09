@@ -574,3 +574,460 @@ Testing: fast checks only until the implementation is finished. Each item's dire
 **Confirmed (Alec, 2026-11-08): round 2 is the home of the supplied `yes` admission** ("Yes, round 2"), not item 0. The assumption stated in §11.7 item 7 is discharged; §7's "pending Alec's confirmation of that home over item 0" is closed. The §11.7 text stands as final with no open assumption.
 
 Landed as 6becc3dc47c88d787406ff94f1a4ba6acbf95eec, 2026-11-08
+
+
+## 12. Round 2 interim return through Alec (2026-11-08)
+
+**Historical interim status; decoding interpretation amended by §13 below.**
+Repairs and targeted certificates, not an offered freeze. At this return,
+item 5's free-generation routing was recorded as needing a decision. Its
+recorded derivation path was implemented; the independent items below were
+implemented and checked. The one
+`env -u RUN_TRAINED -u RUN_SLOW make test` has **not run**. No round-2 commit or
+push has occurred. This return is for Alec to pass to Claude; no external
+message was sent.
+
+### 12.1 Landing and scope
+
+Round 1's live source matched
+`2d2abfe10878a190926963ac5727ce6275e292da0665aff6368fbd1b51790faa` (1004 files).
+Its landing-only document check passed **1000 cases in 124.52s**; its accepted
+**7521 passed, 325 skipped, 1 xpassed** default sweep was not repeated.
+The code landing is `6becc3dc47c88d787406ff94f1a4ba6acbf95eec`; the landing-line
+commit is `04164eddb4ed0773a849d8e5e491979e39b8cd51`. One successful
+`git push -u origin main` pushed both. Round 2 began on that clean landed main.
+
+The local [command record](../benchmarks/2026-11-08-item2-0-round-2/commands.json)
+retains successes, failures, interrupted instrumentation and the reasons for
+corrective targeted runs. The [before source](../benchmarks/2026-11-08-item2-0-round-2/before-source.json),
+[current source](../benchmarks/2026-11-08-item2-0-round-2/current-source.json),
+[patch](../benchmarks/2026-11-08-item2-0-round-2/source.patch) and
+[exact ports](../benchmarks/2026-11-08-item2-0-round-2/ports.json) are local evidence.
+`current-source.json` is an interim snapshot, not the final `frozen-source.json`.
+The final frozen source and sealed offered-document manifest wait for the
+routing decision and completed implementation, before the single default sweep.
+
+### 12.2 Fail-loud reverse and recorded action inverse (items 4–5)
+
+Before, the injected decoder exception propagated through **0/3** callers;
+`_reverse_body` swallowed it and subsequently failed elsewhere, while the other
+two callers did not propagate it. After, **3/3** propagate the same injected
+exception object: `_reverse_body`, `reverseReconstruct`, and `runBatch`.
+Removing the handlers exposed an aligned-path attempt to invert a mixing
+combine that did not exist. The producer now invokes that inverse only for
+mixing; it still raises if a required mixing combine is absent.
+
+ProjectionBasis reconstruction uses the recorded input shape and its native
+coefficient carrier. Generic codebook reverse materialization incorrectly
+reshaped those coefficients as feature vectors; the producer now materializes
+coefficients before applying the projection inverse. The configured
+ConceptualSpace reverse case passes with the expected finite output shape.
+The required reverse files pass **33, skip 28**. No handler was restored.
+
+The journal now preserves the selected forward object's value, presence and
+verb group beside the numerical operation frame. Replay and forward-discard
+accounting read that record; a missing non-adverb action context raises.
+The context owns its value snapshot while preserving its gradient path.
+`native_recompose` accepts the same explicit context. Direct double-precision
+results ([before](../benchmarks/2026-11-08-item2-0-round-2/direct-before.json),
+[after](../benchmarks/2026-11-08-item2-0-round-2/direct-after.json)):
+
+| Action | Inverse maximum error before | After | Recomposition error after |
+|---|---:|---:|---:|
+| Transitive, non-identity object basis | 0.008796397368599718 | 1.1102230246251565e-16 | 0 |
+| Intransitive, verb group | 0.001113328976186767 | 1.1102230246251565e-16 | 0 |
+| Adverb | 1.1102230246251565e-16 | 1.1102230246251565e-16 | 0 |
+
+**Item 5 stops at the free-proposal boundary.** Replaying an existing sentence
+has a particular forward transaction to undo. Generating a new sentence can
+propose several verbs and objects and has no such transaction. Item 5 asks for
+the same forward record, while §3 and the Generative module contract forbid
+feeding the input's compose history into free generation. Selecting a matching
+input-journal record would violate that boundary; that suggestion was withdrawn.
+One possible resolution is to derive context from the proposal's own verb and
+object identities. The record does not yet authorize/specify that routing.
+The [pending decision](../benchmarks/2026-11-08-item2-0-round-2/pending-generation-routing.json)
+separates implemented replay from unimplemented free-proposal context construction
+and routing. No fallback or journal lookup was added to free generation.
+
+### 12.3 One WholeSpace and persistence (item 6)
+
+`wholeSpaces` is removed without an alias. Every stage references `wholeSpace`;
+bindingDepth still counts ConceptualSpaces and ramsification slots. All three
+required configurations have exactly one registered WholeSpace. Before, the
+serial checkpoint had **4** copies and the parallel checkpoint **3**; after,
+each has **1**. The native pre-change
+[serial checkpoint](../benchmarks/2026-11-08-item2-0-round-2/serial-before.ckpt) and
+[parallel checkpoint](../benchmarks/2026-11-08-item2-0-round-2/parallel-before.ckpt)
+strictly load, choosing copies **3** and **0**, respectively. Both native
+geometries reject a second changed inventory and preserve copy 0's host extras.
+The landed producer's native LBG split at row **9** retains its exact members
+and observed mask when merged into a retained copy 2; conflicting row contents
+raise. BasicModel.xml has no initially empty split seat. Split rows on initially
+empty, used copy-0 rows are host additions, not a second trained base inventory.
+
+The [native before](../benchmarks/2026-11-08-item2-0-round-2/checkpoints-before.json)
+and [after](../benchmarks/2026-11-08-item2-0-round-2/checkpoints-after.json) certificates
+record offsets, strict loads and candidate-attention rebuilding. Serial wholes
+shrink **36 → 9** rows, shifting later addresses by **27**; candidate input width
+falls **1,171,068 → 1,170,879** (**189**). Parallel wholes shrink **192 → 64**,
+shifting later addresses by **128**; candidate width falls **16,236 → 15,340**.
+All four candidate-attention parameters are rebuilt and reported. The selected
+property parameter's optimizer slots survive; rebuilt reader slots start fresh.
+
+The [persisted-address certificate](../benchmarks/2026-11-08-item2-0-round-2/persisted-address-certificate.json)
+identifies absolute bands in LTM0 slots/recurrence/epoch snapshots, LTM1 percepts,
+MTM values/events and corpus continuation; these migrate. Registry slices are
+reconstructed, and no derivation journal is persisted. Both native checkpoint
+samples have **0** moved occupied addresses. An explicit nine-address fixture
+covers the persisted locations, including every MTM event-value position, and
+preserves identity keys and original tensors. Old addresses
+`[0,9,12,15,20,21,26,27,34]` become `[0,9,12,12,14,15,20,21,28]`.
+
+The [reader certificate](../benchmarks/2026-11-08-item2-0-round-2/reader-certificate.json)
+records one membership tensor for word fills and **2** serial open reads, plus
+both readers assigning property row **0** address **8192**. The 32 existing test
+and audit files with WholeSpace ports retain their cases; exact before/after
+text is in ports.json. The old duplicate WholeSpace alias setup and duplicated
+fingerprint entry are removed because the shared owner is already represented.
+No test function was retired.
+
+Parallel attribution now reads the shared trained inventory. FormCentroids'
+compose read and presence weighting are unchanged. The
+[floor observation](../benchmarks/2026-11-08-item2-0-round-2/reverse-floor-counts.json)
+found **0 calls, 0 denominators, 0 floor hits** in each of `reverse` and
+`reverse_poles` on the required default reverse selection. This is explicitly
+empty coverage of those functions. The
+[observer control](../benchmarks/2026-11-08-item2-0-round-2/floor-observer-control.json)
+detects **1/2** and **3/4** floor hits on a separate two-row case. The divisions
+are unchanged; basic percepts replace this read in round 5.
+
+### 12.4 Admission, rejecting-close capture and empty large-event item (7–9)
+
+The admission producer already admits the direct fixture's supplied answers.
+The generic report now records admitted, shortlisted and exact-route-available
+for every supplied lexical form at every generated bank, beside the lessons
+runner's lexical forms and in `lexical-admission.jsonl`. It does not alter
+ranking. The fixture census is **20/20 supplied-form banks passing all three
+stages before and after**, including **8/8 yes banks**. The direct one-word
+cases include a second arbitrary form. These are fixture banks, not a claim
+that the historical 576 trained banks have been rerun. No lesson was run for
+admission. [Before](../benchmarks/2026-11-08-item2-0-round-2/admission-before.json) ·
+[After](../benchmarks/2026-11-08-item2-0-round-2/admission-after.json).
+
+ReferenceClose's deferred binds capture a rejected MTM working value, token,
+members, pool and stream/document/position, then re-raise the same exception.
+The unchanged commit `no_grad` boundary remains in place. The direct injected
+non-finite value produces **1 capture file** and the original exception object.
+`corpus_lessons.measure` completed **1 presentation, 1 sentence, 1 batch** with
+the rule installed; this was a micro case with no lesson arm and no claim of
+lesson acquisition. [Capture rule certificate](../benchmarks/2026-11-08-item2-0-round-2/capture-rule-certificate.json).
+
+The [large-event item](../benchmarks/2026-11-08-item2-0-round-2/large-events.json)
+is empty: the last item 71 runs found no event at or above `1e8` in any audited
+class. It reopens only if the end-of-2.0 runs show one. No item 71 run was made.
+
+### 12.5 Validation and carried work
+
+The wider ownership/checkpoint/admission selection produced **375 passed,
+32 skipped, 5 failed**. Three failures were optional-owner accesses exposed by
+the new ownership; two were compiler-cache sandbox denials. The five affected
+cases pass after the producer repair and cache access. Capture/lessons targets
+pass **70, skip 4**. The expanded persisted-address case passes separately.
+Journal, inverse, verb and reconstruction results, including the repaired
+journal record-width producer and native ProjectionBasis case, remain in
+commands.json. There are **19 new direct cases** and no retired test functions;
+the document-link check passed **1000 cases in 111.21s**. These targeted
+counts are overlapping selections, not a substitute for a default-suite count.
+The XOR convergence class, pending-premise pair and shared-concept case remain
+reserved for the one final sweep. No convergence or shared-concept gate failure
+has occurred; those gates have not been pre-run.
+
+Nothing from rounds 3–6 is built. Carried from thinking §54: finding **2**
+(elided-role content/full reference form) belongs to round 5; findings **4**
+(output gradient does not reach understanding) and **5** (momentum-only
+projection tail, including 318/320 re-clamps) belong to round 3; findings **6**
+(at most 1/80 bound or exact lesson answers) and **7** (stale weekly slow record)
+remain records. `make test_all` belongs to items 0 and 1. Item 60 metrics,
+item 71 runs and the measured before wait until the end of item 2.0 under
+§10.2. Momentum-carried projection and a learned pair policy remain conditional
+on the receipts. No seed pinning, resize, lesson arm or end-item panel was used.
+
+
+## 13. Alec's clarification: shared short-term strata and generative inversion (2026-11-08)
+
+**Decided.** STM0 and STM1 are short-lived versions of LTM0 and LTM1, sharing
+their implementation. Reconstruction, input-derived conditioning and MTM use
+the same stored structure. The detailed amendment, the operation-representation
+question and the implementation audit are in the
+[memory plan §10](2026-11-03-item2-0-behavioral-chains.md#10-shared-stmltm-strata-and-decoding-from-an-idea-alec-2026-11-08).
+This is more sharing than round 1's stateless snapshot base; it is planned work,
+not an assertion that the current chunk/journal arrangement already provides it.
+
+**The §12.2 blocker is withdrawn in its stated form.** A syntactic inverse is
+not required to be exact or to have all the original forward witnesses. A
+single LTM0 idea must support surface realization using active concepts,
+matching and the verb's available inverse. Absence of an input transaction is
+therefore not a reason to require or invent one for free generation. The
+recorded-action round trips in §12 remain limited numerical replay certificates;
+they must not become a prerequisite for the general decoder. The rule that a
+broken calculation fails loudly remains; an underdetermined decomposition is
+not by itself a broken calculation.
+
+The earlier §5 and §11.7 item 5 language about reusing forward context applies
+to replaying that known application. It does not require the free decoder to
+recover the historical object's value or group from an input journal. A
+candidate's forward check must agree with the candidate's own proposed action.
+The existing round-2 code still requires review/completion against this
+clarification; no new default sweep, code change or implementation acceptance
+is implied by this documentation amendment.
+
+**Conditioning.** Learn its context from input composition and use the composed
+grammar for top-down context, with limited influence on syntactic categories
+while grammar is unreliable. Architecture-generated sentences do not need a
+separate context-learning pass. This conditioning context is distinct from a
+verb application's object/group arguments; no new numerical weighting schedule
+is specified here.
+
+**Representation direction, clarified by Alec.** STM0 holds operator ideas as
+well as word/concept ideas, with operations represented as ordinary concepts;
+STM1 keeps ordered binary references. Alec suggests constructing the primitive
+operator concepts a priori. The [memory plan §10.5](2026-11-03-item2-0-behavioral-chains.md#105-operator-ideas-in-stm0-ordered-binary-branches-in-stm1-alec-2026-11-08)
+distinguishes a reusable operator concept from its temporary occurrences and
+a priori identity/execution availability from learned content and confidence.
+The exact nested application convention and initialization policy remain to be
+specified. Argument categories can constrain application without being assumed
+to identify every operation uniquely. No new per-branch operation column is
+introduced by this direction. Current LTM1 already has `operator` and
+`grammar_operation` trust/gating fields; their dependencies must be reconciled
+with the concept representation, not silently dropped.
+
+### 13.1 Codex text: round 2 continuation to the freeze (Claude, 2026-11-08, evening; for Alec to paste; final)
+
+~~~
+Item 2.0 round 2, continuation: complete item 5 against the 2.0 spec §13 and the memory plan §10.2 (doc/plans/2026-11-03-item2-0-behavioral-chains.md), then offer the freeze. Everything else in your §12 interim return stands. Fast checks only: direct before-and-after cases, the targeted files, and one make test when you offer the freeze. No item 71 runs, no lesson arms, no item 60 metrics, no repeats, no pre-checks (§10.2). Build nothing of rounds 3 to 6, nothing of memory plan §10 (the shared STM0/STM1 strata, the operator concept seats, the collapse of the pinned sentence's tree, authority onto the operator concepts' trust: planned work for the memory round; §10.6 keeps LTM1.operator and LTM1.grammar_operation as they are), and nothing of §13's conditioning paragraph. A failed test_convergence or shared-concept case stops the round; anything else is repaired at its producer under the recorded rules or recorded.
+
+1. Item 5, completed. Replay stays as built (§12.2): DerivationReconstruction.inverse_step and the forward-discard accounting read the journal's action record (ChunkJournal.action_context: object_value, object_present, group), a missing non-adverb record raises, and the recorded round trips are its certificate. Free generation changes. §11.7 item 5's "from the same record the forward used" for the proposal's forward map is withdrawn by §13, and the decision in pending-generation-routing.json is made by it: a candidate's forward check uses the candidate's own proposed action. At the free walk's native_recompose calls (Generative about lines 112, 165 and 610) pass an action context built from the candidate itself: object_value is the candidate's object operand, the operand the forward records as object_value for that operation; object_present is that operand's availability for the candidate (the negation of its missing flag); group is the group the forward assigns the candidate's verb operand, computed by the same function the kept path uses when it writes the record (locate it where lang[19] fills the record, Models about 20084 and 22952). Where a candidate has no object or no group, the identity basis, exactly as MeaningAction.forward states ("unknown groups and absent objects have exactly the identity basis"). No journal, STM or desired-output read on the free path, as Generative's module contract says; nothing raises for an absent record there: an underdetermined decomposition is not a broken calculation (§13); a non-finite value still propagates. Add the resolution to pending-generation-routing.json (status resolved by §13, with the rule above); delete nothing. Certificates: a direct before-and-after case in which a parent composed by lift in a non-identity object basis is checked, for the free candidate that proposes that object, in that object's basis: the recomposition residual is within EXACT_RESIDUAL_TOLERANCE after the change and was not under the identity-basis check before, numbers in the receipt; the same for an intransitive candidate whose verb has a group; an adverb candidate unchanged; a case that runs the free walk with no action record and no live STM and shows it neither reads nor raises for them; the reconstruction and verb files (test_free_reconstruction, test_output_walk, test_verb_learning, test_modal_timelines, test_grammar_word_learning) pass, ported with before/after text only where a test asserted the identity-basis check of a free candidate.
+
+2. Items 4, 6, 7, 8 and 9 as returned in §12. Re-read each once against §13 and record in your return "unaffected" or the change made; the §12.2 handlers stay removed, the one WholeSpace and its migration stand, the admission report, the capture rule and the empty large-event item stand.
+
+3. Documents, by append or exact replacement, fast: Architecture's item-5 text says that replay reads the recorded action context and that free generation checks a candidate in the candidate's own object basis and group; GradientFlow where it names the identity-basis inverse; FutureWork one line pointing to memory plan §10 as the memory round's planned work (shared strata, operator seats, the collapse at the end of the pinned sentence, authority onto the operator concepts' trust; §10.6: the two LTM1 columns stay until that round); Testing.md if a line is needed for the new direct cases. Run test/test_doc_links.py once after the appends; it must pass.
+
+4. The freeze. When item 5's certificates and the targeted files pass: write frozen-source.json by the receipt method (test/bounded_tests.source_snapshot(Path('.')), sha256 of json.dumps(files, sort_keys=True)); keep current-source.json as the interim record; before-source.json stays round 1's landed source 2d2abfe10878...; source.patch and ports.json cover every change since that source, item 5 included; seal offered-documents.json before the sweep over every handwritten document the return links to, including today's appends to this spec (§13, §13.1), the memory plan (§10 to §10.6) and todo.md; create sweep-result.json and final-audit.json as placeholders before the sweep; every file your return links to exists before the sweep starts. Then exactly one env -u RUN_TRAINED -u RUN_SLOW make test, nothing deselected; the XOR class, the pending-premise pair and the shared-concept case run inside it. Expect round 1's counts (7521 passed, 325 skipped, 1 xpassed) plus the new direct cases (your §12.5 counted 19; item 5 adds its own), less any case a port changes, each named. Source and sealed documents unchanged after the sweep, certified in final-audit.json.
+
+5. Return as §14 of this spec: the §12 interim numbers carried forward where unchanged, item 5's before-and-after numbers, the §13 re-read of items 4 and 6 to 9, the sweep counts, and the carried list (your §12.5's: §54 findings 2, 4, 5, 6 and 7 as placed there; item 60 metrics, item 71 runs and the measured before at the end of item 2.0 under §10.2; the momentum-carried projection and a learned pair policy only if the receipts call for them; memory plan §10 to the memory round). Through Alec for Claude's review. No seed pinning, no resize, nothing retired without a record, no language named in code, fail loud. No commit, no push of round 2.
+~~~
+
+### 13.2 Schedule with fewer passes (Alec, 2026-11-08, evening)
+
+Alec: "lets schedule a few fewer passes", then "Merge 3 and 4". The rounds
+after round 2 (todo.md, item 2.0, "Rounds") are rescheduled without cutting
+their content:
+
+- **Rounds 3 and 4 are one round** with one freeze, one review and one
+  landing: `separateChooser` false with the one-sided projection and the
+  sides (§§1–2, with 2.5 §54 findings 4 and 5), and generate under compose's
+  proposal and credit, `walk_policy` and the verb and modal teachers retired,
+  the XOR gate run once, output typing. Round 5 (memory and basic percepts)
+  also carries the memory plan §10 amendment. Round 6 is the loop.
+- **The end-of-item measurements are part of round 6's freeze** (§10.2:
+  item 71's runs and the item 60 metrics on round 2's frozen source and the
+  finished tree), returned with round 6, not as a pass of their own.
+- **Every landing is folded into the next build text**, as §11.7 was. Round
+  6's landing is §11.7's steps 1 to 3 on Alec's one line to Codex; no further
+  Claude text.
+- **Reviews accept with recorded warts** unless a gate fails: a failed
+  `test_convergence` or shared-concept case stops a round; anything else is
+  carried into the next text, as the 2.3 reviews did.
+
+Three Claude texts remain after round 2's §14 return: land 2 and build 3/4;
+land 3/4 and build 5; land 5 and build 6 with the measurements. Rounds 5 and
+6 stay apart: round 5 is already a merge and has grown, and the loop depends
+on it.
+
+## 14. Round 2 offered freeze, through Alec for Claude (2026-11-08)
+
+Item 5's free-generation routing is completed under §13. Replay retains its
+recorded action context and missing-record error. Free candidates propose their
+own action context from the supplied concept bank: `lift` uses the object of
+its proposed verb phrase, whose bounded native decomposition supplies that
+operand and its availability. A lexical verb has no object. Both paths use
+`LanguageSpace.verb_group_table` and `Generative.verb_groups` for the same
+declared verb assignment. Unknown groups and absent objects keep MeaningAction's
+identity basis. Pair ranking, the selected inverse and all free recompositions
+use that proposal, without input-journal, live-STM or desired-output reads.
+The temporary candidate tensors allocate no STM/LTM rows or operator seats.
+The [routing record](../benchmarks/2026-11-08-item2-0-round-2/pending-generation-routing.json)
+preserves its earlier statements and adds the §13 resolution.
+
+### 14.1 Item 5 certificates
+
+The same fixed candidate operands and native operation states were checked on
+the landed round-1 source and the repaired source. The residual is the largest
+of the form and two meaning-lane MSEs; `EXACT_RESIDUAL_TOLERANCE` is `1e-8`.
+[Before](../benchmarks/2026-11-08-item2-0-round-2/free-action-before.json) ·
+[After](../benchmarks/2026-11-08-item2-0-round-2/free-action-after.json).
+
+| Free candidate | Identity-basis check before | Candidate-basis check after |
+|---|---:|---:|
+| Transitive, non-identity object basis | 9.368469618548211e-5 | 7.703719777548943e-34 |
+| Intransitive, assigned verb group | 7.852916027480765e-6 | 7.703719777548943e-34 |
+| Adverb, unchanged | 7.703719777548943e-34 | 7.703719777548943e-34 |
+
+The after meaning MSEs are exactly zero in all three cases; the remaining
+form rounding error is at most `5.551115123125783e-17` in coordinates.
+The [twelve new direct cases](../../test/test_item20_round2_generation.py)
+pass, including free walks with journal/STM reads forbidden, eager and compiled
+selected pullbacks, mixed-stream object/group isolation, unknown-basis identity
+and a non-finite action that still raises. The compiled cases exposed an
+object-vector contraction pullback whose strides differed from the unused
+conditional branch. The producer now uses the equivalent linear weight view;
+both compiled cases and nine existing action/replay certificates pass. No
+existing test assertion was ported for item 5. Initial compiled failures and a
+receipt fixture's missing group `used` count are retained in the command logs;
+the corrected native fixture and fixed-operand checks pass.
+
+The five requested files (`test_free_reconstruction`, `test_output_walk`,
+`test_verb_learning`, `test_modal_timelines`, `test_grammar_word_learning`) pass
+**60, skip 7** in **132.61s**. The completed direct file passes **12** in
+**19.20s**. These are targeted selections, not the default sweep.
+[Commands and logs](../benchmarks/2026-11-08-item2-0-round-2/commands.json).
+
+### 14.2 One §13 re-read of the independent repairs
+
+| Item | §13 result | Carried §12 evidence |
+|---|---|---|
+| 4, fail-loud reverse | **Unaffected.** Removed handlers remain absent; ProjectionBasis keeps its native coefficient carrier. | Injected exception propagation **0/3 → 3/3**; required reverse files **33 passed, 28 skipped**. |
+| 6, one WholeSpace | **Unaffected.** Shared inventory, strict migration and address translation stand. | Native serial **4 → 1**, parallel **3 → 1**; retained copies **3**, **0**. Wholes **36 → 9**, **192 → 64**; later addresses shift **27**, **128**. Candidate widths **1,171,068 → 1,170,879**, **16,236 → 15,340**. Both strict loads pass, two changed inventories reject, native LBG row **9** survives. |
+| 7, admission report | **Unaffected.** Free-bank group staging does not change retrieval, ranking or reports. | **20/20** supplied-form banks pass all three stages before/after, including **8/8 yes** banks; no trained-bank or lesson rerun. |
+| 8, rejecting-close capture | **Unaffected.** The same exception is captured and re-raised; commit stays under `no_grad`. | **1** rejected-value capture; **1 presentation, 1 sentence, 1 batch** micro case. |
+| 9, large-event item | **Unaffected; empty.** | No audited event at or above `1e8` in the last item-71 records; no item-71 run here. |
+
+The replay certificate remains: object inverse error
+**0.008796397368599718 → 1.1102230246251565e-16**, grouped intransitive
+**0.001113328976186767 → 1.1102230246251565e-16**, adverb
+**1.1102230246251565e-16** unchanged, recomposition **0** afterward.
+The persisted-address fixture keeps the nine mappings listed in §12.3; native
+samples have **0** moved occupied addresses. The shared-reader certificate
+still has **2** serial reads and property row **0** at address **8192**.
+Floor observation remains explicitly empty (**0 calls, 0 denominators,
+0 hits** in each function); the separate control remains **1/2**, **3/4**.
+The overlapping wider targeted results remain **375 passed, 32 skipped,
+5 initially failed**, with all five repaired cases passing, and capture/lessons
+**70 passed, 4 skipped**. Their receipts remain linked in §12.
+
+### 14.3 Sealed offer and the single sweep
+
+This section is written before the sweep so the offered prose can remain
+unchanged. **The actual sweep counts, critical-gate outcomes and verdict are
+the fields in [sweep-result.json](../benchmarks/2026-11-08-item2-0-round-2/sweep-result.json)**;
+the placeholder is filled only after the one execution. Likewise,
+[final-audit.json](../benchmarks/2026-11-08-item2-0-round-2/final-audit.json)
+records whether both the source and sealed documents stayed unchanged.
+A placeholder or failed audit is not a passing freeze.
+
+The exact command is `env -u RUN_TRAINED -u RUN_SLOW make test`, without a
+selection or deselection. The XOR class, pending-premise pair and shared-concept
+case belong inside it; no gate was pre-checked. Expected counts are round 1's
+**7521 passed, 325 skipped, 1 xpassed**, plus **31 new direct cases** (the
+previous **19**, plus item 5's **12**): **7552 passed, 325 skipped, 1 xpassed**.
+No retired case or changed parameterization reduces that expectation.
+A failed convergence/shared-concept gate stops the round; other failures are
+recorded on this frozen source, without another full sweep.
+
+[frozen-source.json](../benchmarks/2026-11-08-item2-0-round-2/frozen-source.json)
+uses `bounded_tests.source_snapshot(Path('.'))` and SHA-256 of
+`json.dumps(files, sort_keys=True)`. The round-1
+[before-source.json](../benchmarks/2026-11-08-item2-0-round-2/before-source.json)
+remains `2d2abfe10878a190926963ac5727ce6275e292da0665aff6368fbd1b51790faa`;
+[current-source.json](../benchmarks/2026-11-08-item2-0-round-2/current-source.json)
+remains the historical interim snapshot. The
+[complete patch](../benchmarks/2026-11-08-item2-0-round-2/source.patch) and
+[exact before/after ports](../benchmarks/2026-11-08-item2-0-round-2/ports.json)
+cover all changes since landed round 1, including the 32 existing test/audit
+ports and all four new direct files. No test function is retired.
+
+[offered-documents.json](../benchmarks/2026-11-08-item2-0-round-2/offered-documents.json)
+seals the handwritten documents before the sweep, including this spec's §§13,
+13.1, 13.2 and 14, the [memory plan §§10–10.6](2026-11-03-item2-0-behavioral-chains.md),
+[todo.md](../../todo.md), [Architecture](../Architecture.md),
+[GradientFlow](../GradientFlow.md), [FutureWork](../FutureWork.md),
+[Testing](../Testing.md), [Spaces](../Spaces.md) and [Params](../Params.md).
+The once-only post-append document-link result is also recorded in the sweep
+receipt before execution. Every file linked by this return exists before the
+sweep starts. Round 2 is not committed or pushed.
+
+### 14.4 Carried work
+
+Thinking §54 finding **2** stays in round 5; findings **4** and **5**, including
+the **318/320** momentum-only projection re-clamps, stay in the merged round
+3/4 of §13.2. Findings **6** (at most **1/80** bound/exact lesson answers) and
+**7** (stale weekly slow record) remain records. `make test_all` belongs to
+items 0 and 1. Item 60 metrics, item 71 runs and the measured before stay at
+the end of item 2.0 under §10.2, inside round 6's freeze under §13.2.
+Momentum-carried projection and a learned pair policy remain conditional on
+those receipts. Memory plan §10 stays in the memory round: shared strata,
+operator seats, pinned-sentence collapse and authority on operator-concept
+trust. Its §10.6 keeps both LTM1 provenance columns until that round.
+No conditioning, rounds 3–6 implementation, seed pinning, resize, lesson arm
+or end-item panel is included in this offer.
+
+### 14.5 Review of the §14 return (Claude, 2026-11-09): accepted; round 2 is frozen at `8cde24380d44…`; one red case, ported at the landing
+
+Verified on the live checkout, logs under Claude's scratchpad:
+
+- **Source.** The live tree's hash by the receipt method equals [frozen-source.json](../benchmarks/2026-11-08-item2-0-round-2/frozen-source.json): `8cde24380d447493b0500898e6cfe4b6242d794ac763ebaf9061aab7be4e7387` (1008 files). [before-source.json](../benchmarks/2026-11-08-item2-0-round-2/before-source.json) is round 1's landed `2d2abfe10878…` (1004 files). 57 files differ between them: 20 under `bin/`, `data/model.xsd`, the 32 test ports and the 4 new test files, as [source.patch](../benchmarks/2026-11-08-item2-0-round-2/source.patch) (4408 lines, read in full) and [ports.json](../benchmarks/2026-11-08-item2-0-round-2/ports.json) list (no retired test function; no item-5 assertion port). HEAD is `04164eddb4`, equal to `origin/main`; round 2 is not committed or pushed.
+- **Documents.** The 121 files of [offered-documents.json](../benchmarks/2026-11-08-item2-0-round-2/offered-documents.json) re-hashed now: none changed; the sealed hash `76b749ca…` is the one [final-audit.json](../benchmarks/2026-11-08-item2-0-round-2/final-audit.json) records before and after the sweep. Every document change is an append or an exact replacement; §14 follows §13.2.
+- **The sweep.** One `env -u RUN_TRAINED -u RUN_SLOW make test`, 7878 cases, 921 s: **7551 passed, 325 skipped, 1 xpassed, 1 failed** against the expected 7552. The gates ran inside it and passed: `test_mm_xor.py::TestMMXorConvergence::test_convergence` (6.6 s), the shared-concept case `test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class`, and the pending-premise pair `test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]`/`[True]` (the live pair's two skips are the standing `RUN_SLOW` skips, as in round 1). The one failure is `test_operators_round1.py::test_walk_teacher_covers_binary_unary_and_leaf_stop_without_code_gradient`: `AttributeError: 'types.SimpleNamespace' object has no attribute 'verb_groups'` at `BasicModel._decomposition_walk_teacher_loss` (bin/Models.py about 20359), reproduced here (48 passed, 1 failed over the four new files and that file). The producer reads `bank.verb_groups`, a field every real bank carries (`PrimedSymbols.verb_groups`, default `None`, bin/SentenceUnderstanding.py about 81); the certificate's hand-built `SimpleNamespace` bank predates the field and omits it. The repair is the one-line fixture port `verb_groups=None`, with before/after text in ports.json, not the `getattr` default Codex proposed in `sweep-result.json`: a default in the producer would hide a missing field on a real bank, and the bank's contract is the dataclass.
+- **Certificates**, rerun from copies of the receipt's scripts against the live tree: free-action after, direct after, admission after, reader, floor-observer control and checkpoints-after (both native checkpoints, strict loads). All six JSONs equal Codex's apart from the run path: after residuals `7.7e-34` with meaning MSE 0 and maximum error `5.55e-17` in all three cases; replay inverse `1.11e-16` and recompose 0; the injected stage failure propagates through `_reverse_body`, `reverseReconstruct` and `runBatch`; 20/20 supplied-form banks admitted, shortlisted and routable; property row 0 at address 8192 with the wholes slice `[8192, 8201)`; floor control 1/2 and 3/4; serial copy 2 and parallel copy 0 retained, two changed copies rejected, native split row 9 merged, four candidate-attention tensors rebuilt.
+- **Targeted files.** The five generation files **60 passed, 7 skipped** (149 s; Codex 60/7). The five reverse files **33 passed, 28 skipped** (120 s; Codex 33/28). Capture and lessons **70 passed, 4 skipped** (21 s; Codex 70/4). Action-layout regressions **9 passed** (10 s; Codex 9). The 39-file WholeSpace, checkpoint and admission selection **380 passed, 32 skipped** (232 s; Codex 375 passed, 32 skipped, 5 failed before the compiler-cache repair, then 5 passed).
+- **Items 4 to 9 against §11.7 and §13.** The two handlers are gone; the aligned path skips the mixing-only combine inverse instead of swallowing its error; `ProjectionBasis` reverse reads `self.inputShape` and materialises before the basis inverse. The journal frame widens from `3D` to `4D+3` with the forward's object value, presence, group and a validity flag (`ChunkJournal.value_record`/`action_context`), read by `DerivationReconstruction.reconstruct` and `SentenceCredit.forward_discard`; a missing non-adverb record raises; `LanguageOperationChoice.action_context` is cloned at the selected position so a later refresh cannot replace it. Free generation proposes from the supplied bank only (`propose_actions`, `ActionCandidates`, `candidate_action_context`), threaded through `inverse_menu`, `selected_inverse`, `selected_residual`, `eligibility_menu`, `decoder_eligibility`, `_bounded_binary_reconstruction` and the walk-teacher loss, with the verb group from `LanguageSpace.verb_group_table` shared with the kept path. One `wholeSpace` is built at stage 0 and every `cs.wholeSpace_ref` points at it; the registry's wholes slice is one inventory; the migration selects the changed copy, merges copy 0's extras and split rows, translates persisted bands and rebuilds the candidate reader. The supplied-form report follows retrieval in `lexical_candidates` with the lessons-runner sink; `ReferenceClose._bind_with_capture` captures and re-raises; item 9 is recorded empty.
+
+**Recorded warts, no repair in this round.**
+
+1. `test_definition_writer._checkpoint_model` was ported to `model.spaces, model.conceptualSpaces, model.wholeSpace = None, [cs], []` (`spaces` is `None`, `wholeSpace` an empty list); it passes because that model never walks `self.spaces` and `hasattr([], 'property_extras')` is false. The intended line is `[], [cs], None`: a one-line port at the landing, before/after text recorded.
+2. The one WholeSpace keeps `is_last = True` and `quantize = False` (bin/Models.py about 16817); no reader of a WholeSpace consults either (the `is_last` reader is the merge glue), so the former per-stage `quantize = not is_last` was already dead. Two dead attributes, for the memory round to delete.
+3. `_migrate_whole_addresses` recognises a persisted location band by re-encoding its decoded index and comparing within `2e-5` (bin/checkpoint_migrations.py about 258); content that happened to equal a valid band would be rewritten. Certified on the fixture and on both native checkpoints (0 moved occupied addresses); it runs only on multi-copy checkpoints written before this round.
+4. `Generative.walk_bank` resolves concept ids for the verb-group table with a Python loop over every bank row per batch (about line 329), a host island beside the one that already builds surfaces. Measured with the other host loops at the end of the item, not now.
+5. `ReferenceClose._bind_with_capture` reads the rejected value out of `MediumTermMemory._value`'s frame (a local named `value`) by walking the traceback; a renamed local would lose the capture silently while the raise still propagates. The producer form is for `_value` to attach the rejected value to its exception; for the memory round, which owns `Memory.py`.
+6. The failed walk-teacher case above: a one-line fixture port at the landing.
+
+**Verdict: accepted under §13.2.** No gate failed; the one failure is a fixture port. **To confirm with Alec, before the landing text:** land the frozen source plus the two one-line test ports (`verb_groups=None` in the walk-teacher fixture; `[], [cs], None` in `_checkpoint_model`), rerun only `test_operators_round1.py` and `test_definition_writer.py`, and record the landed hash beside the sweep certificate on `8cde2438…` with the two-line delta named; or run a second full sweep after the ports. Claude recommends the former: the delta is two test lines, production is untouched, and §14.3 records other failures on the frozen source without another sweep.
+
+**Confirmed (Alec, 2026-11-09: "Fine with landing").** Round 2 lands with the two one-line test ports and a targeted rerun of the two files; no second sweep. The landing is folded into the next Codex text with the merged round 3/4.
+
+### 14.6 One Codex text: land round 2, build the merged round 3/4 (Claude, 2026-11-09; for Alec to paste; final)
+
+Steps 1 to 3 land round 2 as §14.5 confirmed; items 4 to 11 build rounds 3 and 4 as §13.2 merged them. Two readings of recorded text are stated inside the text as its assumptions, not left open: the decoder walk's credit stays on the R side this round (§2, and §8's list of interim bookings that move only with the loop), while every other choice reward is on A whole (§8 "Sequencing"); and §54 finding 5 of the thinking spec is read as calling for the small producer repair (the clamp's stored outward velocity), while the momentum-carried gradient projection of §1 keeps its condition on the end-of-item receipts. The rates parameter is named `training.actionRateRatio` ($\kappa$, default 1; §7, "keep in model file").
+
+~~~
+Item 2.0: land round 2, then build the merged round 3/4. Round 2 is accepted (2.0 spec doc/plans/2026-11-03-gradient-projection.md §14.5); Alec confirmed the landing form (§14.5, "Fine with landing"): the frozen source plus two one-line test ports, a targeted rerun of the two files, no second sweep. Steps 1 to 3 land round 2; round 3/4 starts from that landed main with a clean tree. Fast checks only throughout: direct before-and-after cases, the targeted files, the one gate run of item 8, and one make test when you offer the freeze. No item 71 runs, no lesson arms, no item 60 metrics, no repeats, no pre-checks: item 2.0's measurements are taken at the end of the item (§10.2, §13.2). Build nothing of rounds 5 and 6 (memory plan §10, basic percepts, the loop, the measurements). A failed test_convergence or shared-concept case stops the round; anything else is repaired at its producer under the recorded rules or recorded.
+
+1. Port and check. Two one-line test ports, with before/after text in doc/benchmarks/2026-11-08-item2-0-round-2/landing.json: in test/test_operators_round1.py the walk-teacher case's SimpleNamespace bank (about line 94) gains verb_groups=None, the field every PrimedSymbols carries; in test/test_definition_writer.py _checkpoint_model (about line 108) reads model.spaces, model.conceptualSpaces, model.wholeSpace = [], [cs], None. Nothing under bin/ changes. Run the two files (BASICMODEL_DEVICE=cpu PYTHONPATH=bin .venv/bin/python -m pytest -q test/test_operators_round1.py test/test_definition_writer.py); both green. Record the tree's source hash by the receipt method (test/bounded_tests.source_snapshot(Path('.')), sha256 of json.dumps(files, sort_keys=True)) as landed-source.json beside frozen-source.json, naming the two files as the whole difference from 8cde24380d447493b0500898e6cfe4b6242d794ac763ebaf9061aab7be4e7387. Since the sweep the handwritten documents changed only by appends (§14.5 and its confirmation, todo.md lines); run test/test_doc_links.py once; it must pass. No make test: the one sweep on 8cde24380d44… (7551 passed, 325 skipped, 1 xpassed, 1 failed, the failure the first port) plus the two-file rerun is the certificate.
+
+2. Commit, on main, every file round 2 changed, added or deleted, with the two ports: the modified tracked files under bin/, data/model.xsd, doc/, test/ and todo.md, and the four new files test/test_item20_round2_admission.py, test_item20_round2_generation.py, test_item20_round2_inverse.py, test_item20_round2_memory.py. Receipts stay local under the existing ignore rule; force nothing in. Commit message in the form of 6becc3dc47: subject "Land accepted item 2.0 round 2"; body: land freeze 8cde24380d44 with its certificates and the section 14.5 acceptance, plus the two test-fixture ports named; what it carries (the reverse and runBatch fail loud, the aligned path skipping the mixing-only combine inverse; the ProjectionBasis reverse on the recorded input shape; the forward's action context recorded beside the journal frame and read by the derivation inverse, forward discard and free generation's candidate-owned proposals; one WholeSpace with its checkpoint migration; the supplied-form admission report; the rejecting-bind capture; the large-event item empty); validation: one default make test on the frozen source with its one recorded fixture failure, the two-file rerun on the landed source, the direct before-and-after cases, the four round-2 direct files; generated evidence remains local under the ignore rules. No model or assistant identifier anywhere in the message.
+
+3. Record the landing: append one line to todo.md after its last 2.0 update and one line to the 2.0 spec after §14.6, "Landed as <hash>, 2026-11-09"; commit as "Record item 2.0 round 2 landing"; then push main once (git push -u origin main). Report both hashes to Alec in your return. Then continue with round 3/4 at once, from this landed main, without waiting.
+
+Round 3/4: one gradient and one choice mechanism (todo.md item 2.0 "Rounds", 3 and 4 as §13.2 merges them; spec §§1–5, §7, and §8 "Sequencing"). Every "about" line number is on the landed source.
+
+4. separateChooser false is the default (§1). data/model.xml line 18 and the code defaults (Models.py about 1790, Language.py about 6704) read false; the per-owner path stays for separateChooser true (ObjectiveOwnership.backward_owned; its module docstring "no gradient projection" now names the path it describes). The single-backward branch of Models._backward_training_loss (about 2662 to 2669) becomes the projection: the costs of SentenceTraining.current_costs are summed into two sides, R and A (item 5), reconstruction scaled by the drawn strength as surrogate does and each penalty once; two torch.autograd.grad calls over every optimizer parameter, the R call retaining the graph. For each unit u with <g_A^u, g_R^u> < 0: g_A^u <- g_A^u - (<g_A^u, g_R^u> / ||g_R^u||^2) g_R^u; then p.grad = g_R + g_A and the one optimizer step as now. Units: each parameter tensor; the concept tables (similarity_codebook.W) per concept row; the definition coefficients (_concept_allocator.layer(0).values) per edge; a unit stepped by Adam (the adaptive and attention groups, Models about 2866 to 2890) takes the inner product in Adam's metric, each coordinate weighted by 1/(sqrt(v_hat)+eps) read from that optimizer's state, the identity before its first step. Reconstruction's gradient is never altered; a unit with one writer is unchanged. reconstructionJitter stays, default 0. Receipt, per unit per epoch, in SentenceTraining.gradient_receipt beside the existing dissonance and understanding norms: the cosine of g_R and g_A before projection, the fraction of steps on which output was projected, the fraction of ||g_A|| removed; the read-only measure() path stays as it is. Certificates: a direct case with two hand-built costs over one shared tensor and one single-writer tensor, showing the opposing component removed exactly, the agreeing component kept, the single writer untouched, reconstruction's gradient unchanged, and an Adam-stepped unit projected in its metric; a direct case on data/model.xml running one runBatch under the default, the receipt's three fields populated and the optimizer stepping once; the seven files that assume the per-owner backward (test_generation_selection_backward, test_grounded_xor, test_item25_repair, test_item25_completion, test_one_backward, test_one_backward_standing, test_packed_reconstruction_parity) pass, ported with before/after text only where they asserted the separate backward or its single-writer audit.
+
+5. The sides (§2 as §8 "Sequencing" amends it). R: the reconstruction owner's terms (field, part, iterations, the decoder's walk residual, forward discard, content, reference), compose_lesson, expectation's predictor terms, attention's reading lesson and candidate cross-entropy, the penalties once, and the decoder walk's credit (judged by identity cost; an interim booking until the loop, §8). A: the output owner (answer, prediction, the readers), generate_lesson, the answer walk's residual, the output walk's credit, and every other choice reward whole (reconstruction.compose_score_function, expectation.bind_score_function, attention.candidate_departure, the thought score function): "every choice is in the output chain only" (§8). Code: the answer walk's residual, booked today as reconstruction.walk_residual.* from Models.reverseOutput (about 9731), becomes output.walk_residual.*, while the decoder's (Models._reconstruct_trial, about 20261 and 20288) keeps its name; _sentence_walk_credits (WalkTrials.stage_generate_credit) splits into a decoder list and an output list, registered as reconstruction.walk_credit and output.walk_credit (Models about 21693 to 21695); the four rewards' registrations (Models about 20035, 21715 and 21729; ThoughtCredit.register) carry objective output; registry_costs (ObjectiveOwnership about 15 to 35) routes every term by these objectives into the two sides. No term's value changes, only its side. Certificate: a direct case reading registry_costs on a registry holding one term of each name and asserting the side each lands on.
+
+6. Generate under compose's proposal and credit; walk_policy retired (§3). Both generate walks (Models._reconstruct_trial; WalkTrials.output_pair) draw their alternative action from Expectation.alternative_probabilities with compose's configured fraction and temperature, through Expectation.sample_alternative, in place of Language.sample_eligible_logits at unit temperature; the departure step stays WalkTrials.departure_at. Their credit is SentenceCredit.score_function with the proposal correction (q including the uniform step draw, as Models._compose_score_function_loss builds it, about 19989 to 20035) and delta C from the walk's own comparison (the decoder: identity cost plus residual, the costs _reconstruct_trial already stacks; the output: answer cost plus residual, output_pair's costs), in place of WalkTrials.generate_credit's cross-entropy; the exact-tie rule delta C != 0 is shared. walk_policy goes: Models._decomposition_walk_teacher_loss (about 20319 to 20375), observation['walk_loss'] (about 20492), the reconstruction.walk_policy registration (about 21691) and _last_decomposition_walk_teacher. GeneratePolicy keeps its STOP bias (a risk to measure, §3). Generate lessons stay (GrammarLessons.generate_loss, generate.choice, objective output). Certificates: a direct case in which a winning generate departure is credited by score_function with the recorded probability, correction and delta C, and an exact tie has no graph; a direct case that the alternative draw's probabilities are alternative_probabilities' mixture over the eligible actions with the greedy action excluded; the files §3 names, ported with before/after text: test_operators_round1's walk-teacher case retires with its teacher (recorded); test_grammar_word_learning::test_normal_text_reconstruction_updates_the_grammar_chooser and test_free_reconstruction::test_free_trial_uses_no_reference_or_offsets_and_keeps_identity_audit read the credit instead of the teacher; test_review14_contracts' review17 probe; test_output_walk's three runbatch cases assert a policy change where a departure won, not on every batch; test_mind_generativity::test_current_grammar_recovery_by_depth_training_and_chain_length loses its hand-written forcing.
+
+7. Verbs and modals by participation; teachers retired; the re-read (§5, §8). Retire the loss and its registration only. VerbLearning.observe keeps the pairing of previous and current entries, the residuals, groups.observe and the taught marking, and drops errors.add('verb_teacher', ...) and the deferred records; VerbLearning.register and ModalLearning.register go with _verb_teacher_records and _modal_teacher_records (Models about 21887 to 21895; PresentationMemory's list names); ModalLearning.observe keeps its pairing and marking for its report and drops its loss; the verbTeacherWeight and modalTeacherWeight knobs (Models about 2401 to 2406; data/model.xsd 855 to 856; Params.md about 420 to 430) and ReferenceClose.commit's verb_teacher_weight, teacher_records, modal_teacher_weight and modal_records arguments go; the report lists last_verb_teacher and last_modal_teacher keep their contents under names without "teacher" (recorded). MeaningAction.teacher stays as the assigner's no-grad residual. The assigner (VerbGroups.observe) runs only in training, and its residuals read the verb-phrase meaning the forward lift received: Memory.Event records that meaning beside its verb symbol (a tensor field, the symbol kept for the report), written where the event is committed (ReferenceClose._commit_events), and VerbLearning's residuals use it in place of point(event.verb). The re-read: where PrependedSymbols.symbolize presents a stored value to the next sentence (about line 98, owner.mtm.value_of(key, timeline).detach()), present v + A(b) - sg(A(b)) for a seat whose latest event on that timeline has a recorded input b: A is MeaningAction's forward on the event's before state, the recorded verb-phrase meaning and its basis or group, as MeaningAction.teacher evaluates it, and on the alternative timeline the adverb action over the event's modifiers; sg is the stop-gradient. The presented value equals v exactly; where no event or no recorded input exists, v as today. Nothing else about MTM changes: every write stays detached, each close cuts the graph. Rates: one model-file parameter, training.actionRateRatio (kappa, default 1, finite in (0, 1]; data/model.xsd, Params.md), scaling the lift action's optimizer group to kappa*eta and the adverb action's to kappa^2*eta inside the reconstruction SGD groups (Models about 2880 to 2886); the receipt reports each action's realized relative step ||delta theta||/||theta|| per epoch beside the codes'. Certificates: a direct case that the re-read's presented value equals v to the bit and its gradient reaches the action's parameters through a later sentence's answer and nothing else; a direct case that a seat without a recorded input presents v detached; the assigner's third-failed-fit rule unchanged on the recorded verb-phrase meaning, with the residuals on the verb word's code and on the phrase meaning in the receipt; test_verb_learning's four cases and the two test_modal_timelines cases §5 names ported with before/after text to the kept functions (pairing, residuals, assignment, marking), or retired with a record where they asserted the loss alone; kappa = 1 leaves every step unchanged and kappa = .1 orders the three realized steps (direct cases).
+
+8. The XOR gate, once. After item 6, run the trained xor_grammar phase of test_explicit_dimensions.py::TestXorGrammarReconstruction once, its artifact produced fresh as item 71 did (test/fixtures/phase-artifacts.json names the producer), with the chooser at the residual argmin: four of four multisets expected, transpositions allowed, no seed or budget change, no repeat. A failure stops nothing; record it with the run's evidence for Claude's review.
+
+9. Output typing (todo.md item 2.0, "Output typing", decided). PartsOfSpeech.observe_kept already teaches the argout faces (about 240 to 242); the generate side now reads them. For each generate choice the GeneratePolicy's menu features gain the occupation scores of the same measure the inputs use (PartsOfSpeech.argument_scores, as Models about 18091 and 21102 build the compose side's table): the parent's fit to the rule's argout1 concept and each proposed child's fit to its argin face; STOP contributes zeros; fixed operations without declared arguments contribute zeros. Scores, not masks: the type collapses to parts of speech as Language.md "Distributional parts of speech" describes, and the policy learns their weight. Certificates: a direct case that the features equal argument_scores on the same words; a direct case that, after observe_kept has taught both faces, a candidate occupying its argout face scores above one that does not; the generation and output-walk files pass.
+
+10. Finding 5 of the thinking spec §54: the primitive memberships were re-clamped on 318 of 320 updates and the last updates moved by momentum alone. The clamp (PerceptProperties.project, from Models._project_sentence_parameters, about 19953) discards each outward push, but the SGD velocity keeps it, so an inward gradient must first cancel the stored outward velocity. Repair at the producer: after the step and the clamp, zero the momentum buffer's component at every coordinate the clamp bound, in the outward direction, in whichever reconstruction SGD group owns primitive_properties.members (Optimizer.py about 594 to 672 for RowLocalSGD; torch SGD's momentum_buffer otherwise); the clamp itself is unchanged. Certificate: a direct case in which a coordinate at the bound with outward velocity moves inward on the first inward gradient after the change and did not before, with the numbers. The momentum-carried gradient projection of §1 is not built: its condition, reconstruction rising where output was projected, is read from the end-of-item receipts.
+
+11. Documents, by append or exact replacement: Architecture (the projection and its two sides; generate under one mechanism; the retired teachers and the re-read; output typing; the clamp's velocity), GradientFlow (the sides table as built; the projection receipt), Params.md and data/model.xsd (separateChooser's default, the retired knobs, actionRateRatio), Testing.md one line, Language.md where it names the argout faces, FutureWork (the momentum-carried gradient projection and a learned pair policy stay conditional on the end-of-item receipts; the loop moves the decoder's bookings to output), ObjectiveOwnership's module docstring; your return as §15 of the 2.0 spec, each item with its before-and-after numbers.
+
+Carried, not built here (record them in the return): memory plan §10 and basic percepts (round 5); the loop and the measurements (round 6, §10.2); §54 finding 2 (round 5); the decoder's bookings moving to output (the loop).
+
+Testing: fast checks only until the implementation is finished. Each item's direct before-and-after cases; the targeted files (the seven per-owner files of item 4; test_free_reconstruction, test_output_walk, test_grammar_word_learning, test_review14_contracts and test_mind_generativity for item 6; test_verb_learning, test_modal_timelines, test_reference_close and test_meaning_kernels for item 7; the files you port); the one gate run of item 8; and make test once when you offer the freeze (env -u RUN_TRAINED -u RUN_SLOW make test, nothing deselected; the XOR class, the pending-premise pair and the shared-concept case run inside it). Expect the landed counts (7552 passed, 325 skipped, 1 xpassed) plus the new direct cases, less each case a port retires or re-parameterizes, each named. Receipt under doc/benchmarks/2026-11-09-item2-0-round-3-4/ with commands.json, frozen-source.json, before-source.json (the landed round-2 source of step 3), source.patch, ports.json (every port's before/after text), offered-documents.json sealed before the sweep, placeholders filled only by the one execution; every file your return links to exists before the sweep starts. No seed pinning, no resize, nothing retired without a record, no language named in code, fail loud. Return through Alec for Claude's review; no commit or push of round 3/4.
+~~~

@@ -1918,7 +1918,7 @@ class BaseModel(Mereology, nn.Module):
         store = getattr(self.symbolSpace,"ltm_store",None)
         if store is not None:
             store.image_form_width = store.nDim if _derived is None else _derived.percept_event_width
-        for _ws in (getattr(self, "wholeSpaces", None) or []):
+        if (_ws := getattr(self, "wholeSpace", None)) is not None:
             # Same non-owning expansion seam for WholeSpace.insert_whole.
             object.__setattr__(_ws, "_model", self)
 
@@ -2235,16 +2235,10 @@ class BaseModel(Mereology, nn.Module):
         # cannot distinguish the legs.
         # Space construction (``self.create`` above) runs before this
         # knob is parsed, hence the post-hoc stamp.
-        for _ss in (getattr(self, 'wholeSpaces', None) or []):
+        if (_ss := getattr(self, "wholeSpace", None)) is not None:
             object.__setattr__(_ss, '_symbolic_order', self.concept_order_limit)
             object.__setattr__(_ss, '_serial', self.word_brackets)
             object.__setattr__(_ss, '_priming_decay', self.priming_decay)
-            # Canonical priming (Alec 2026-07-12): per-stage WS delegate to
-            # the terminal's order-indexed codebook surface.
-            _ws_list = list(getattr(self, 'wholeSpaces', None) or [])
-            if _ws_list and _ss is not _ws_list[-1]:
-                object.__setattr__(_ss, '_priming_canonical_ref',
-                                   _ws_list[-1])
         # The ConceptualSpaces need the same stamp so the sparse-coding edge
         # population + scatter (gated on ``_symbolic_order > 0`` and parallel)
         # activate together. A plain host-attribute stamp -- byte-identical.
@@ -3925,7 +3919,8 @@ class BaseModel(Mereology, nn.Module):
         concept_space = getattr(self, 'conceptualSpace', None)
         conceptual_extras = (
             concept_space.vocab_extras() if concept_space is not None and hasattr(concept_space, 'vocab_extras') else None)
-        whole_extras = whole_space.property_extras() if whole_space is not None else None
+        whole_extras = (whole_space.property_extras()
+                        if whole_space is not None and hasattr(whole_space, 'property_extras') else None)
         # Canonical abstraction-order provenance for the PS percept
         # codebook (the WS tables ride inside ws_extras). None when there
         # is nothing stamped, so pre-feature blobs stay byte-identical.
@@ -4109,7 +4104,7 @@ class BaseModel(Mereology, nn.Module):
 
         wholes = {}
         for i, ws in enumerate(list(
-                getattr(self, "wholeSpaces", None) or ())):
+                (self.wholeSpace,) if getattr(self, "wholeSpace", None) is not None else ())):
             entry = {}
             if hasattr(ws, 'property_extras'):
                 vocab_snapshot = ws.property_extras()
@@ -4438,7 +4433,7 @@ class BaseModel(Mereology, nn.Module):
             if callable(refresh):
                 refresh()
 
-        whole_spaces = list(getattr(self, "wholeSpaces", None) or ())
+        whole_spaces = list((self.wholeSpace,) if getattr(self, "wholeSpace", None) is not None else ())
         whole_entries = extras.get("whole_properties") or {}
         for raw_i, entry in whole_entries.items():
             i = int(raw_i)
@@ -4579,7 +4574,10 @@ class BaseModel(Mereology, nn.Module):
             saved = torch.load(
                 path, map_location="cpu", weights_only=False)
         migration = migrate_wholespace_checkpoint(
-            saved, dict(self.state_dict()))
+            saved, dict(self.state_dict()),
+            where_slices=(dict(self.where_registry.slices)
+                          if getattr(self, 'where_registry', None) is not None else None),
+            percept_width=getattr(self, '_image_form_width', None))
         saved = migration.checkpoint
         for message in migration.diagnostics.messages():
             TheMessage(f"[{self.name}] {message}")
@@ -4834,7 +4832,6 @@ class BaseModel(Mereology, nn.Module):
         _alias_renamed = 0
         _legacy_ws_grammar_dropped = []
         _last_cs = len(getattr(self, 'conceptualSpaces', ())) - 1
-        _last_ws = len(getattr(self, 'wholeSpaces', ())) - 1
         for _old_key in list(state.keys()):
             _target = None
             _parts = _old_key.split('.')
@@ -4915,11 +4912,6 @@ class BaseModel(Mereology, nn.Module):
                     f'conceptualSpaces.{_last_cs}.'
                     + _old_key[len('conceptualSpace.'):]
                 )
-            elif _last_ws >= 0 and _old_key.startswith('wholeSpace.'):
-                _target = (
-                    f'wholeSpaces.{_last_ws}.'
-                    + _old_key[len('wholeSpace.'):]
-                )
             else:
                 if (
                     len(_parts) >= 4
@@ -4927,14 +4919,9 @@ class BaseModel(Mereology, nn.Module):
                     and _parts[1].isdigit()
                     and _parts[2] in ('cs', 'ws')
                 ):
-                    _owner = (
-                        'conceptualSpaces'
-                        if _parts[2] == 'cs'
-                        else 'wholeSpaces'
-                    )
                     _target = '.'.join(
-                        [_owner, _parts[1], *_parts[3:]]
-                    )
+                        ['conceptualSpaces', _parts[1], *_parts[3:]]
+                        if _parts[2] == 'cs' else ['wholeSpace', *_parts[3:]])
                 else:
                     for _token in ('._model_symbolSpace.', '.symbolSpace.'):
                         if _token in _old_key:
@@ -6875,8 +6862,7 @@ class BasicModel(BaseModel):
         # codebook, and the terminal stamps its OWN unity selections on
         # both paths (per-stage on parallel, terminal-only on serial) --
         # the other stages' stamps are private-quantizer rows and dropped.
-        _ws_list = getattr(self, "wholeSpaces", None) or []
-        ws_c = _ws_list[-1] if len(_ws_list) else None
+        ws_c = getattr(self, "wholeSpace", None)
         if ws_c is not None:
             idx = getattr(ws_c, "_stage0_indices", None)
             if torch.is_tensor(idx):
@@ -6896,8 +6882,7 @@ class BasicModel(BaseModel):
         if cs0 is not None:
             cs0.project_priming_to_towers(
                 getattr(self, "perceptualSpace", None),
-                (self.wholeSpaces[-1]
-                 if getattr(self, "wholeSpaces", None) else None),
+                getattr(self, "wholeSpace", None),
                 batch=self._priming_batch_size())
 
     def _prime_sentence_symbols(self, sid):
@@ -8465,11 +8450,11 @@ class BasicModel(BaseModel):
         """Freeze meanings and centroids before the first lexical bank is staged."""
         if getattr(self, '_sentence_codes_snapshotted', False):
             return
-        for whole in getattr(self, 'wholeSpaces', ()):
+        if (whole := getattr(self, "wholeSpace", None)) is not None:
             whole.subspace.what.begin_forward()
         identity = getattr(getattr(self.perceptualSpace, 'percept_store', None), 'identity', None)
         if identity is not None and identity.property_width:
-            identity.refresh_property_fills(self.wholeSpaces[0].subspace.what.primitive_properties)
+            identity.refresh_property_fills(self.wholeSpace.subspace.what.primitive_properties)
         seen_books = set()
         for cs in getattr(self, 'conceptualSpaces', ()):
             cb = cs.similarity_codebook
@@ -9450,7 +9435,7 @@ class BasicModel(BaseModel):
         for name in ("inputSpace", "perceptualSpace", "conceptualSpace",
                      "wholeSpace", "outputSpace"):
             add(getattr(self, name, None))
-        for group in ("conceptualSpaces", "wholeSpaces"):
+        for group in ("conceptualSpaces",):
             for sp in (getattr(self, group, None) or []):
                 add(sp)
         for stage in (getattr(self, "body_stages", None) or ()):
@@ -9817,6 +9802,7 @@ class BasicModel(BaseModel):
                         case_bank=(None if bank is None or bank.case_bank is None
                                    else bank.case_bank.detached()),
                         whole_bank=None if bank is None else bank.form_wholes,
+                        verb_groups=None if bank is None else bank.verb_groups,
                         initial_depth=occupied.long().sum(-1),
                         require_symbols=(not self._aligned_serial_word_mode()
                             or (bank is not None and bank.meaning_start is not None
@@ -11258,7 +11244,7 @@ class BasicModel(BaseModel):
             return  # the canonical word boundary already calls interpret
         self.inputSpace._ar_word_concept_ids = None
         self._stage_mixing_grammar_leaf_mask()
-        ps, ws, owner = self.perceptualSpace, self.wholeSpaces[0], self._concept_owner()
+        ps, ws, owner = self.perceptualSpace, self.wholeSpace, self._concept_owner()
         fi = getattr(ps, '_forward_input', None) or {}
         raw = self._staged_concepts_in
         ids = fi.get('native_indices', fi.get('indices'))
@@ -12330,7 +12316,7 @@ class BasicModel(BaseModel):
                                     departure_uniform=None, kept_actions=None,
                                     return_candidates=False, case_bank=None,
                                     constituents=None, constituent_valid=None, constituent_families=None,
-                                    terminal_valid=None, whole_bank=None):
+                                    terminal_valid=None, whole_bank=None,verb_groups=None):
         """Decode from the idea, words and an unordered structural snapshot."""
         B, K, D = end_slots.shape
         positions = torch.arange(K, device=root.device)[None]
@@ -12343,7 +12329,7 @@ class BasicModel(BaseModel):
             exploit_actions=exploit_actions, departure=departure,
             departure_uniform=departure_uniform, kept_actions=kept_actions,
             return_candidates=return_candidates, case_bank=case_bank, terminal_valid=terminal_valid,
-            whole_bank=whole_bank,
+            whole_bank=whole_bank,verb_groups=verb_groups,
             constituents=constituents, constituent_valid=constituent_valid,
             constituent_families=constituent_families)
 
@@ -12417,7 +12403,8 @@ class BasicModel(BaseModel):
                 if candidate_basis is None and torch.is_tensor(ownership):
                     candidates = valid & (ownership == sid)
             decoder_options = ({} if understanding is None else
-                               dict(terminal_valid=bank.terminal_valid, whole_bank=bank.form_wholes))
+                               dict(terminal_valid=bank.terminal_valid, whole_bank=bank.form_wholes,
+                                    verb_groups=bank.verb_groups))
             if understanding is not None and bank.case_bank is not None:
                 decoder_options['case_bank'] = bank.case_bank
             if understanding is not None and understanding.constituents is not None:
@@ -12497,6 +12484,7 @@ class BasicModel(BaseModel):
         decoded = self._decode_conceptual_sentence(
             record.root, record.end_slots, record.end_depth, bank.codes, bank.valid, bank.weights,
             terminal_valid=bank.terminal_valid,
+            whole_bank=bank.form_wholes,verb_groups=bank.verb_groups,
             constituents=record.constituents, constituent_valid=record.constituent_valid,
             constituent_families=record.constituent_families,
             **({} if bank.case_bank is None else {"case_bank": bank.case_bank}))
@@ -13168,6 +13156,7 @@ class BasicModel(BaseModel):
             probabilities = log_probabilities.new_zeros(columns.shape)
             probabilities[batches, steps] = log_probabilities[batches, choice_columns].detach().exp()
         journal = getattr(self._reconstruction_stack(), "_choice_values", None)
+        action_records = getattr(self._reconstruction_stack(), "_choice_action_records", None)
         addresses = getattr(self._reconstruction_stack(), "_choice_refs", None)
         relations = getattr(self._reconstruction_stack(), "_choice_ref_relations", None)
         chunk_state = getattr(self._reconstruction_stack(), '_chunk_state', None)
@@ -13265,6 +13254,7 @@ class BasicModel(BaseModel):
                    if name != 'leaf_orders' and torch.is_tensor(value)},
                 operation_values=(None if journal is None else
                     operation_rows(journal).reshape(L, 3, leaf_slab.shape[-1])),
+                action_records=operation_rows(action_records),
                 operation_refs=(None if addresses is None else
                     operation_rows(addresses, fill=-1)),
                 operation_relations=(None if relations is None else
@@ -13310,7 +13300,7 @@ class BasicModel(BaseModel):
                               return_candidates=False, case_bank=None,
                               initial_depth=None, require_symbols=True,
                               constituents=None, constituent_valid=None, constituent_families=None,
-                              terminal_valid=None, whole_bank=None, structural_context=False):
+                              terminal_valid=None, whole_bank=None, structural_context=False,verb_groups=None):
         """The shared conceptual decoder. No compose actions enter this walk.
 
         Hard generate choices determine the stack topology. Reconstruction
@@ -13371,6 +13361,14 @@ class BasicModel(BaseModel):
             for op in (*language._generate_binary_ops,*language._generate_unary_ops)
             if getattr(getattr(op,'gl',op),'meaning_layout',None) is not None),None)
 
+        from Generative import propose_actions
+        proposed_actions = propose_actions(language, basis, basis_valid,
+            groups=verb_groups,terminal_valid=terminal_valid,
+            constituents=constituents,constituent_valid=constituent_valid,
+            limit=candidate_limit,whole_bank=whole_bank) if require_symbols else None
+        if proposed_actions is not None:
+            proposed_actions = type(proposed_actions)(*(own(value) for value in proposed_actions))
+
         def cond(t, stack, depth, emitted, count, actions, alternatives, progressing, unary_run, tops,
                  exact_path, residuals, features):
             return (t < T) & (depth > 0).any() & progressing
@@ -13389,7 +13387,8 @@ class BasicModel(BaseModel):
                     limit=candidate_limit, case_bank=case_bank,
                     constituents=constituents, constituent_valid=constituent_valid,
                     constituent_families=constituent_families,
-                    require_symbols=require_symbols, terminal_valid=terminal_valid, whole_bank=whole_bank)
+                    require_symbols=require_symbols, terminal_valid=terminal_valid, whole_bank=whole_bank,
+                    action_candidates=proposed_actions)
                 menu = (inverse_menu(language, parent, live, **menu_options)
                     if menu_read is None else menu_read.read(parent, live, **menu_options))
                 options,others,legal=menu.left,menu.right,menu.admissible
@@ -13430,7 +13429,8 @@ class BasicModel(BaseModel):
                 chosen_left, right = selected_inverse(language, parent, choice, live & ~missing,
                     basis=basis, basis_valid=basis_valid, priming=basis_priming,
                     limit=candidate_limit, case_bank=case_bank, constituents=constituents,
-                    constituent_valid=constituent_valid, require_symbols=require_symbols, whole_bank=whole_bank)
+                    constituent_valid=constituent_valid, require_symbols=require_symbols, whole_bank=whole_bank,
+                    action_candidates=proposed_actions)
                 left = torch.where((choice == stop)[:, None], left, chosen_left)
             left = torch.where(((choice == stop) & menu.exact[:, stop])[:, None], parent, left)
             binary = live & (choice < R2) & (depth < N) & ~missing
@@ -13440,7 +13440,8 @@ class BasicModel(BaseModel):
             exact_path1=exact_path & (~used | menu.exact.gather(1,choice[:,None])[:,0])
             if selected_graph:
                 step_residual=selected_residual(language,parent,left,right,choice,used,
-                    form_width=form_width,whole_bank=whole_bank,case_bank=case_bank,numeric=not require_symbols)
+                    form_width=form_width,whole_bank=whole_bank,case_bank=case_bank,numeric=not require_symbols,
+                    action_candidates=proposed_actions)
             else:
                 errors=torch.cat((menu.form_residual[...,None],menu.meaning_residual),-1)
                 step_residual=errors.gather(1,choice[:,None,None].expand(B,1,3))[:,0]
@@ -13515,8 +13516,7 @@ class BasicModel(BaseModel):
         bucket choice count units, not whitespace words) when the canonical
         ``meronomy`` analysis is live; legacy cuts keep ``None``."""
         isp = getattr(self, "inputSpace", None)
-        ws_list = getattr(self, "wholeSpaces", None) or []
-        ws = ws_list[0] if ws_list else getattr(self, "wholeSpace", None)
+        ws = getattr(self, "wholeSpace", None)
         if isp is None or ws is None:
             return
         fn = None
@@ -13591,57 +13591,52 @@ class BasicModel(BaseModel):
         # Phase 4b: host-eager analysis cut. The configured WS analysis
         # (word / analyse) divides the unity into parts HERE -- in the
         # eager stem, exactly like the PS host tokenization -- and parks
-        # the spans on each WholeSpace for the stage-0 evidence
+        # the spans on the shared WholeSpace for the stage-0 evidence
         # (pure tensor reads inside the compiled body). byte mode parks
         # None (uniform-region pooling needs no spans).
-        _ws_list = (list(getattr(self, "wholeSpaces", None) or [])
-                    or ([self.wholeSpace]
-                        if getattr(self, "wholeSpace", None) is not None
-                        else []))
-        if _ws_list:
-            _spans = (_ws_list[0].stage_analysis_spans(concepts_in)
-                      if hasattr(_ws_list[0], "stage_analysis_spans")
-                      else None)
-            _kinds = getattr(_ws_list[0], "_staged_analysis_kinds", None)
-            for _ss in _ws_list:
-                # Preserve the complete eager cut for diagnostics. The live
-                # WS kernel has exactly inputShape[0] locations and already
-                # consumed only that prefix via ``min(K, N)``. Fit it here so
-                # a compiled fixed-W graph does not specialize on the
-                # sentence-dependent number of type runs.
-                object.__setattr__(_ss, "_staged_analysis_spans_full", _spans)
-                object.__setattr__(_ss, "_staged_analysis_kinds_full", _kinds)
-                _live_spans = _spans
-                _live_kinds = _kinds
-                if (getattr(self, "serial_object_meta", False)
-                        and torch.is_tensor(_spans)):
-                    _n_live = max(1, int(_ss.inputShape[0]))
-                    _live_spans = _spans[:, :_n_live, :]
-                    if int(_live_spans.shape[1]) < _n_live:
-                        _live_spans = torch.cat([
-                            _live_spans,
-                            _live_spans.new_zeros(
-                                int(_live_spans.shape[0]),
-                                _n_live - int(_live_spans.shape[1]), 2),
+        _ss = getattr(self, "wholeSpace", None)
+        if _ss is not None:
+            _spans = (_ss.stage_analysis_spans(concepts_in)
+                      if hasattr(_ss, "stage_analysis_spans") else None)
+            _kinds = getattr(_ss, "_staged_analysis_kinds", None)
+            # Preserve the complete eager cut for diagnostics. The live
+            # WS kernel has exactly inputShape[0] locations and already
+            # consumed only that prefix via ``min(K, N)``. Fit it here so
+            # a compiled fixed-W graph does not specialize on the
+            # sentence-dependent number of type runs.
+            object.__setattr__(_ss, "_staged_analysis_spans_full", _spans)
+            object.__setattr__(_ss, "_staged_analysis_kinds_full", _kinds)
+            _live_spans = _spans
+            _live_kinds = _kinds
+            if (getattr(self, "serial_object_meta", False)
+                    and torch.is_tensor(_spans)):
+                _n_live = max(1, int(_ss.inputShape[0]))
+                _live_spans = _spans[:, :_n_live, :]
+                if int(_live_spans.shape[1]) < _n_live:
+                    _live_spans = torch.cat([
+                        _live_spans,
+                        _live_spans.new_zeros(
+                            int(_live_spans.shape[0]),
+                            _n_live - int(_live_spans.shape[1]), 2),
+                    ], dim=1)
+                # B=1 makes a sliced tensor report ``is_contiguous`` even
+                # when its size-1 batch stride still reflects full K.
+                # Force a compact allocation so stride guards are stable.
+                _live_spans = _live_spans.clone(
+                    memory_format=torch.contiguous_format)
+                if torch.is_tensor(_kinds):
+                    _live_kinds = _kinds[:, :_n_live]
+                    if int(_live_kinds.shape[1]) < _n_live:
+                        _live_kinds = torch.cat([
+                            _live_kinds,
+                            _live_kinds.new_zeros(
+                                int(_live_kinds.shape[0]),
+                                _n_live - int(_live_kinds.shape[1])),
                         ], dim=1)
-                    # B=1 makes a sliced tensor report ``is_contiguous`` even
-                    # when its size-1 batch stride still reflects full K.
-                    # Force a compact allocation so stride guards are stable.
-                    _live_spans = _live_spans.clone(
+                    _live_kinds = _live_kinds.clone(
                         memory_format=torch.contiguous_format)
-                    if torch.is_tensor(_kinds):
-                        _live_kinds = _kinds[:, :_n_live]
-                        if int(_live_kinds.shape[1]) < _n_live:
-                            _live_kinds = torch.cat([
-                                _live_kinds,
-                                _live_kinds.new_zeros(
-                                    int(_live_kinds.shape[0]),
-                                    _n_live - int(_live_kinds.shape[1])),
-                            ], dim=1)
-                        _live_kinds = _live_kinds.clone(
-                            memory_format=torch.contiguous_format)
-                _ss._staged_analysis_spans = _live_spans
-                _ss._staged_analysis_kinds = _live_kinds
+            _ss._staged_analysis_spans = _live_spans
+            _ss._staged_analysis_kinds = _live_kinds
         if in_sub is None:
             return in_sub
         if hasattr(in_sub, "is_empty") and in_sub.is_empty():
@@ -13654,8 +13649,7 @@ class BasicModel(BaseModel):
             # list (meronomy fold-ladder plan, contract 2: the towers share
             # one tiling); handed over transiently, like the callback.
             _unit_rows = None
-            _spans_full = (getattr(_ws_list[0], "_staged_unit_spans", None)
-                           if _ws_list else None)
+            _spans_full = getattr(_ss, "_staged_unit_spans", None)
             if torch.is_tensor(_spans_full) and _spans_full.dim() == 3:
                 _unit_rows = [[(int(a), int(z)) for (a, z) in row.tolist() if z > a]
                               for row in _spans_full.detach().to("cpu")]
@@ -13669,8 +13663,8 @@ class BasicModel(BaseModel):
             self.inputSpace.finalize_stem(in_sub, self.perceptualSpace)
             if target_only:
                 return in_sub
-            self._record_unit_pulls(_ws_list[0] if _ws_list else None)
-            self._pad_staged_unit_maps(_ws_list[0] if _ws_list else None)
+            self._record_unit_pulls(_ss)
+            self._pad_staged_unit_maps(_ss)
             self._ensure_pid_byte_table()
         if target_only:
             return in_sub
@@ -13747,7 +13741,7 @@ class BasicModel(BaseModel):
         self._staged_in_sub = None
         self._staged_concepts_in = None
         self._active_compiled_step = None
-        for _ss in (getattr(self, "wholeSpaces", None) or []):
+        if (_ss := getattr(self, "wholeSpace", None)) is not None:
             _ss._staged_analysis_spans = None
             _ss._staged_analysis_kinds = None
             _ss._staged_analysis_spans_full = None
@@ -14856,34 +14850,28 @@ class BasicModel(BaseModel):
             # The grammar path has already supplied its single byte objective.
             lossRev = torch.zeros((), device=TheDevice.get())
             _rev_dedupe = self.reconstruct_in_loop
-            try:
-                if forwardInput is not None and not _rev_dedupe:
-                    # reverseReconstruct owns the input inverse and its seed;
-                    # runBatch consumes its result and diagnostic score.
-                    # One understanding for both downward paths (Step 6):
-                    # reuse the one ``what()`` captured for this execution.
-                    understanding = getattr(self, "_last_understanding", None)
-                    if (understanding is None
-                            or understanding.execution is not (
-                                tuple(_forward_result)
-                                if isinstance(_forward_result, list)
-                                else _forward_result)
-                            and understanding.symbolic_state is not symbols):
-                        understanding = self._capture_understanding(
-                            _forward_result)
-                    self._last_understanding = understanding
-                    rev_ev, lossRev_rec = self.reverseReconstruct(
-                        understanding, target=forwardInput, train=train, registry=reverse_errors)
-                    if (not train and rev_ev is not None
-                            and torch.is_tensor(rev_ev)):
-                        inputDataPred = rev_ev.detach()
-                    if lossRev_rec is not None:
-                        lossRev = lossRev_rec
-            except Exception:
-                # Reverse round-trip is approximate through averaged
-                # loops; never let a reconstruction edge case stop the
-                # training step.
-                lossRev = torch.zeros((), device=TheDevice.get())
+            if forwardInput is not None and not _rev_dedupe:
+                # reverseReconstruct owns the input inverse and its seed;
+                # runBatch consumes its result and diagnostic score.
+                # One understanding for both downward paths (Step 6):
+                # reuse the one ``what()`` captured for this execution.
+                understanding = getattr(self, "_last_understanding", None)
+                if (understanding is None
+                        or understanding.execution is not (
+                            tuple(_forward_result)
+                            if isinstance(_forward_result, list)
+                            else _forward_result)
+                        and understanding.symbolic_state is not symbols):
+                    understanding = self._capture_understanding(
+                        _forward_result)
+                self._last_understanding = understanding
+                rev_ev, lossRev_rec = self.reverseReconstruct(
+                    understanding, target=forwardInput, train=train, registry=reverse_errors)
+                if (not train and rev_ev is not None
+                        and torch.is_tensor(rev_ev)):
+                    inputDataPred = rev_ev.detach()
+                if lossRev_rec is not None:
+                    lossRev = lossRev_rec
             if not _rev_dedupe:
                 self.record_loss(
                     "reconstruction_reverse", lossRev,
@@ -16655,7 +16643,6 @@ class BasicModel(BaseModel):
         # count reported to runBatch is still the configured value.
         T = max(1, int(n_stages))
         self.conceptualSpaces = nn.ModuleList()
-        self.wholeSpaces = nn.ModuleList()
         # A canonical aligned/property-basis model has one unpartitioned
         # conceptual namespace.  Build its large physical Codebook once at
         # stage 0 and hand that module to later folds at construction time.
@@ -16825,23 +16812,19 @@ class BasicModel(BaseModel):
                 # sparsity in backward so the dedicated row-local optimizer
                 # never allocates a dense 1M x ConceptDim gradient/moment set.
                 cs.similarity_codebook.sparse_lookup_grad = True
-            ws = WholeSpace(ws_in, stage_space_symbol, ws_out)
-            # Non-owning back-ref CS->WS (mirrors the perceptualSpace_ref
-            # idiom below): object.__setattr__ so it is NOT registered as
-            # an nn.Module child of cs. Read-only structural pairing.
-            object.__setattr__(cs, 'wholeSpace_ref', ws)
-            # Per-stage flags consumed by build_pipelines / forward.
-            ws.is_last = is_last
-            ws.quantize = not is_last
+            if t == 0:
+                self.wholeSpace = WholeSpace(ws_in, stage_space_symbol, ws_out)
+                self.wholeSpace.is_last = True
+                self.wholeSpace.quantize = False
+            # Every conceptual stage reads the one upstream property inventory.
+            object.__setattr__(cs, 'wholeSpace_ref', self.wholeSpace)
             self.conceptualSpaces.append(cs)
-            self.wholeSpaces.append(ws)
 
         # Backwards-compat aliases: read-only callers (e.g.
         # symbolSpace.truth_layer = self.wholeSpace) see the terminal stage.
         # Terminal convenience aliases are routing references; the ModuleLists
         # above are the sole structural owners.
         object.__setattr__(self, 'conceptualSpace', self.conceptualSpaces[-1])
-        object.__setattr__(self, 'wholeSpace', self.wholeSpaces[-1])
 
         # §6d reference-partitioned codebook update law (GrammarOpsPass;
         # author 2026-06-11): percepts are shaped by the parallel pass,
@@ -16906,7 +16889,7 @@ class BasicModel(BaseModel):
         # configs temporarily retain their separate ``analysis_store`` update
         # path for checkpoint compatibility; it is never involved in aligned
         # concept-capacity growth.
-        for _ws_stage in self.wholeSpaces:
+        for _ws_stage in [self.wholeSpace]:
             _ws_codebooks = [getattr(
                 getattr(_ws_stage, 'subspace', None), 'what', None)]
             pass
@@ -16950,13 +16933,8 @@ class BasicModel(BaseModel):
         # / ``conceptualSpace_ref`` plumbing. The WholeSpace lexicon
         # ref below is structural (vocabulary ownership), not forward
         # input, and is kept.
-        # Lexicon ownership (post-lexicon-migration): wire every
-        # WholeSpace stage to PartSpace so ``S.vocabulary``
-        # and the orthographic-API methods reach the physical Embedding
-        # that lives on PartSpace for input-pipeline reasons.
-        for ws in self.wholeSpaces:
-            object.__setattr__(ws, 'perceptualSpace_ref',
-                               self.perceptualSpace)
+        # The shared WholeSpace delegates vocabulary ownership to PartSpace.
+        object.__setattr__(self.wholeSpace, 'perceptualSpace_ref', self.perceptualSpace)
 
         # Task G auto-META on word learning: the auto-bind moved from
         # PartSpace to ConceptualSpace. Each ``cs`` already has
@@ -16969,13 +16947,8 @@ class BasicModel(BaseModel):
         # the first stage where the pid grid still aligns with the
         # incoming subspace event.
         #
-        # The autobind grows the META taxonomy, which is owned by the
-        # TERMINAL WholeSpace (``self.wholeSpace`` ==
-        # ``wholeSpaces[-1]``). Per-stage WS codebooks are slot-fixed
-        # by the where-space registry and cannot grow without overrunning
-        # a downstream slice -- so wire a separate
-        # ``terminalSymbolSpace_ref`` distinct from the per-stage
-        # ``wholeSpace_ref`` used by other CS consumers.
+        # The autobind and every stage's property reader share the one
+        # WholeSpace owner. Keep the named taxonomy reference for its readers.
         for cs in self.conceptualSpaces:
             object.__setattr__(cs, 'perceptualSpace_ref',
                                self.perceptualSpace)
@@ -17014,19 +16987,17 @@ class BasicModel(BaseModel):
         for sp in self.conceptualSpaces:
             object.__setattr__(sp, 'terminalConceptualSpace_ref',
                                self.conceptualSpace)
-        for sp in self.wholeSpaces:
+        for sp in [self.wholeSpace]:
             if not bool(isinstance(sp, WholeSpace)):
                 object.__setattr__(sp, 'terminalConceptualSpace_ref',
                                    self.conceptualSpace)
 
-        # Wire the back-ref WS <- Embedding (terminal stage:
-        # ``wholeSpaces[-1]`` == ``self.wholeSpace``) so the
+        # Wire the back-ref WS <- Embedding so the
         # vocabulary/orthographic API delegation keeps working. The
         # Stage-1.B paired-row contract this ref used to serve
         # (``insert_paired_word`` on PS-side OOV inserts) was RETIRED in
         # Step 3 of the 2026-06-10 symbolic-iteration plan.
-        terminal_ss = (self.wholeSpaces[-1]
-                       if self.wholeSpaces else None)
+        terminal_ss = self.wholeSpace
         emb = getattr(self.perceptualSpace, 'vocabulary', None)
         if terminal_ss is not None and isinstance(emb, Embedding):
             object.__setattr__(emb, 'wholeSpace_ref', terminal_ss)
@@ -17143,7 +17114,7 @@ class BasicModel(BaseModel):
 
         self.spaces.extend([self.inputSpace, self.perceptualSpace])
         self.spaces.extend(list(self.conceptualSpaces))
-        self.spaces.extend(list(self.wholeSpaces))
+        self.spaces.extend(list([self.wholeSpace]))
         self.spaces.extend([self.outputSpace])
         self.spaces.append(self.symbolSpace)
 
@@ -17157,10 +17128,7 @@ class BasicModel(BaseModel):
                 (f'conceptualSpaces.{i}', space)
                 for i, space in enumerate(self.conceptualSpaces)
             ],
-            *[
-                (f'wholeSpaces.{i}', space)
-                for i, space in enumerate(self.wholeSpaces)
-            ],
+            ('wholeSpace', self.wholeSpace),
             ('outputSpace', self.outputSpace),
             ('symbolSpace', self.symbolSpace),
         ]
@@ -17355,7 +17323,7 @@ class BasicModel(BaseModel):
         2026-05-26-two-loop-pi-sigma-substrate.md). Reverse-pass
         consumers read the terminal C-space_role idea from
         ``self.conceptualSpace.stm.snapshot()``; ``symbol_states`` is
-        rebuilt by iterating ``self.wholeSpaces`` directly.
+        rebuilt by iterating ``[self.wholeSpace]`` directly.
         ``self.symbol_cache`` is a property returning the terminal
         WholeSpace's ``.subspace`` — same role as before, no longer
         a CachePoint module and no longer a per-stage list lookup.
@@ -17387,7 +17355,7 @@ class BasicModel(BaseModel):
 
         # Subsymbolic passes retain the same attended geometry.
         self.body_stages = nn.ModuleList([
-            _BodyStage(self.conceptualSpaces[t], self.wholeSpaces[t])
+            _BodyStage(self.conceptualSpaces[t], self.wholeSpace)
             for t in range(T)])
         from WhereRegistry import install_where_registry
         install_where_registry(self)
@@ -17517,7 +17485,7 @@ class BasicModel(BaseModel):
 
         all_spaces = ([self.inputSpace, self.perceptualSpace]
                       + list(self.conceptualSpaces)
-                      + list(self.wholeSpaces)
+                      + list([self.wholeSpace])
                       + [self.outputSpace])
         self.any_invertible = any(
             s.invertible if hasattr(s, "invertible") else False
@@ -17644,7 +17612,7 @@ class BasicModel(BaseModel):
         owner = self._concept_owner()
         if not owner._sparse_active():
             return None
-        ws, raw = self.wholeSpaces[0], self._staged_concepts_in
+        ws, raw = self.wholeSpace, self._staged_concepts_in
         positions, extents = ws.concept_evidence_layout(raw, int(ws.inputShape[0]))
         from PerceptProperties import uniform_spans
         if part_ids is None:
@@ -18340,8 +18308,7 @@ class BasicModel(BaseModel):
     def _unit_provenance(self, p, B, device):
         """``(whole, unit, clause)`` ``[B]`` longs of loop position ``p``
         from the staged tiling ladder (``-1`` when no ladder is staged)."""
-        ws0 = (self.wholeSpaces[0]
-               if getattr(self, "wholeSpaces", None) else self.wholeSpace)
+        ws0 = self.wholeSpace
         parent = getattr(ws0, "_staged_unit_parent", None)
         clause = getattr(ws0, "_staged_unit_clause", None)
         minus = torch.full((B,), -1, dtype=torch.long, device=device)
@@ -19985,10 +19952,10 @@ class BasicModel(BaseModel):
 
     def _project_sentence_parameters(self):
         with torch.no_grad():
-            for ws in self.wholeSpaces:
-                primitives = getattr(getattr(ws.subspace, 'what', None), 'primitive_properties', None)
-                if primitives is not None:
-                    primitives.project()
+            subspace = getattr(self.wholeSpace, 'subspace', None)
+            primitives = getattr(getattr(subspace, 'what', None), 'primitive_properties', None)
+            if primitives is not None:
+                primitives.project()
             for cs in self.conceptualSpaces:
                 allocator = getattr(cs, '_concept_allocator', None)
                 if allocator is not None:
@@ -20127,7 +20094,8 @@ class BasicModel(BaseModel):
                                 '_choice_positions', '_choice_actions', '_choice_attempted'), lang[12:17]):
             setattr(trace, name, value)
         trace._choice_ends = lang[18]
-        trace._choice_values = lang[19]
+        trace._choice_values = lang[19][..., :3 * current_stm[0].shape[-1]]
+        trace._choice_action_records = lang[19][..., 3 * current_stm[0].shape[-1]:]
         trace._choice_journal_columns = getattr(self, '_sentence_journal_columns', None)
         trace._choice_refs = lang[20][:,:,:2]
         trace._choice_transactions = lang[20]
@@ -20383,16 +20351,21 @@ class BasicModel(BaseModel):
                         states.append(value.detach())
                         targets.append(target)
             if states and language.generate_policy is not None:
-                from Generative import inverse_menu
+                from Generative import inverse_menu, propose_actions
                 bank=record.primed
                 features=[]
                 with torch.no_grad():
+                    proposed = propose_actions(language,bank.codes[b:b+1],bank.valid[b:b+1],
+                        groups=None if bank.verb_groups is None else bank.verb_groups[b:b+1],
+                        terminal_valid=bank.terminal_valid[b:b+1],limit=self.reconstruction_basis_limit,
+                        whole_bank=None if bank.form_wholes is None else bank.form_wholes.for_stream(b))
                     for value in states:
                         menu=inverse_menu(language,value[None],torch.ones(1,device=value.device,dtype=torch.bool),
                             basis=bank.codes[b:b+1],basis_valid=bank.valid[b:b+1],priming=bank.weights[b:b+1],
                             terminal_valid=bank.terminal_valid[b:b+1],limit=self.reconstruction_basis_limit,
                             case_bank=None if bank.case_bank is None else bank.case_bank.for_stream(b),
-                            whole_bank=None if bank.form_wholes is None else bank.form_wholes.for_stream(b))
+                            whole_bank=None if bank.form_wholes is None else bank.form_wholes.for_stream(b),
+                            action_candidates=proposed)
                         features.append(menu.features[0])
                 logits = language.generate_policy_logits(torch.stack(states),torch.stack(features))
                 target = torch.tensor(targets, device=logits.device)
@@ -22164,8 +22137,7 @@ class BasicModel(BaseModel):
         if not torch.is_tensor(chunk_table):
             chunk_table = chunk_owner.chunk_row_table(words.device)
         chunk_table = chunk_table.to(device=words.device)
-        _ws0 = (self.wholeSpaces[0]
-                if getattr(self, "wholeSpaces", None) else ws)
+        _ws0 = getattr(self, "wholeSpace", ws)
         unit_parent = getattr(_ws0, "_staged_unit_parent", None)
         unit_clause = getattr(_ws0, "_staged_unit_clause", None)
         def _fixed_width(source):
@@ -22244,7 +22216,7 @@ class BasicModel(BaseModel):
             torch.zeros_like(choices[2]),
             ChunkJournal.empty_scope(stm._buffer),
             torch.zeros_like(choices[0]),
-            words.new_zeros(B, record_width, 3 * concept_dim),
+            words.new_zeros(B, record_width, 4 * concept_dim + 3),
             torch.full((B, record_width, ChunkJournal.RECORD_WIDTH), -1, dtype=torch.long, device=words.device),
             torch.zeros(B, record_width, 2, dtype=torch.bool, device=words.device),
             torch.full((B, capacity), -1, dtype=torch.long, device=words.device),
@@ -22563,7 +22535,7 @@ class BasicModel(BaseModel):
             if case_enabled and sentence_transactions:
                 case_state = CaseFlow.local(case_state, journal_columns)
             if sentence_transactions:
-                value_columns = journal_columns[..., None].expand(-1, -1, 3 * concept_dim)
+                value_columns = journal_columns[..., None].expand(-1, -1, current_cs_lang[19].shape[-1])
                 ref_columns = journal_columns[..., None].expand(-1, -1, 2)
                 operation_values = current_cs_lang[19].gather(1, value_columns)
                 operation_refs = current_cs_lang[20]
@@ -22664,9 +22636,7 @@ class BasicModel(BaseModel):
                 if sentence_transactions:
                     _, refs, relative, operands = proposal
                     clause_state = scope.resolve(clause_state, choice, refs, relative)
-                    frame = torch.cat((operands[:, 0],
-                        operands[:, 1],
-                        choice.candidate), -1)
+                    frame = ChunkJournal.value_record(operands, choice)
                     operation_values = self._tensor_record_selected_values(
                         operation_values, journal_slot, frame, choice.applied)
                     reference_relations = self._tensor_record_selected_values(
@@ -22751,9 +22721,7 @@ class BasicModel(BaseModel):
                 if sentence_transactions:
                     _, refs, relative, operands = proposal
                     clause_state = scope.resolve(clause_state, choice, refs, relative)
-                    frame = torch.cat((operands[:, 0],
-                        operands[:, 1],
-                        choice.candidate), -1)
+                    frame = ChunkJournal.value_record(operands, choice)
                     operation_values = self._tensor_record_selected_values(
                         operation_values, journal_slot, frame, choice.applied)
                     reference_relations = self._tensor_record_selected_values(
@@ -22999,7 +22967,8 @@ class BasicModel(BaseModel):
             trace._choice_actions = final_cs_lang[15].clone()
             trace._choice_attempted = final_cs_lang[16].clone()
             trace._choice_ends = final_cs_lang[18].clone()
-            trace._choice_values = final_cs_lang[19].clone()
+            trace._choice_values = final_cs_lang[19][..., :3 * concept_dim].clone()
+            trace._choice_action_records = final_cs_lang[19][..., 3 * concept_dim:].clone()
             trace._choice_journal_columns = record_columns
             trace._choice_refs = final_cs_lang[20][:,:,:2].clone()
             trace._choice_transactions = final_cs_lang[20]
@@ -23844,8 +23813,7 @@ class BasicModel(BaseModel):
         spaces = []
         # INPUT window: the staged word brackets pooled to per-span percept
         # content (the same keys reading uses); else the per-slot percept.
-        ws0 = (self.wholeSpaces[0]
-               if getattr(self, "wholeSpaces", None) else None)
+        ws0 = getattr(self, "wholeSpace", None)
         percept_ev = (ps_stage0.materialize()
                       if ps_stage0 is not None else None)
         if (percept_ev is not None and torch.is_tensor(percept_ev)
@@ -24197,7 +24165,7 @@ class BasicModel(BaseModel):
         radix = self.perceptualSpace.percept_store
         width = max(int(self.inputSpace.outputShape[0]), int(field.where.max()))
         activity = attributed.new_zeros(B, width, len(radix))
-        primitive = self.wholeSpaces[0].subspace.what.primitive_properties
+        primitive = self.wholeSpace.subspace.what.primitive_properties
         properties = attributed.new_zeros(B, width, len(primitive.members), 2)
         offsets = torch.arange(width, device=attributed.device)
         covering = ((offsets >= spans[..., :1]) & (offsets < spans[..., 1:]))
@@ -24256,12 +24224,9 @@ class BasicModel(BaseModel):
         B-shaped throughout (the legacy K-axis flatten/restore was
         retired with the AR cursor unfold).
 
-        The merge's forward-cached ``_merge_diff`` is overwritten on
-        each of the T recurrent passes, so its N-halving is only
-        exactly invertible for the last pass; per-stage reverse is
-        guarded so a shape mismatch in an earlier stage degrades the
-        reconstruction (approximate through the averaged loops, per the
-        single-input-reverse contract) instead of aborting.
+        Each stage decodes its recorded forward carrier. Decoder and shape
+        errors propagate to the caller; a broken inverse cannot silently
+        become an approximate reconstruction or a zero training loss.
         """
         if not self.word_brackets and self.concept_binding == 'aligned':
             # A free inverse cannot substitute the latest perception. Only
@@ -24317,73 +24282,65 @@ class BasicModel(BaseModel):
             # The combine-reverse demuxes ``sub``, recovers the content, and
             # writes it back via ``set_event`` so the downstream ``cs.reverse``
             # reads the canonical event.
-            if self.bindingDepth >= 1 and "merge" not in stage:
-                try:
-                    combine = getattr(stage["cs"], "combine", None)
-                    if combine is None:
-                        raise RuntimeError("stage cs has no combine")
-                    D = int(combine.content_dim)
-                    content, band, event = self._combine_demux(sub, D)
-                    if event is not None:
-                        # 2-stream EXACT inverse (C-10), in-Space per the
-                        # processing contract: ``cs.unbind`` reads the
-                        # bind carrier RIDING ON the stage's SubSpace
-                        # (``_bind_carrier``) and applies ILL^{-1} --
-                        # (PS_t, WS_t) exactly, nothing threaded
-                        # alongside. The PS stream is the percept leg
-                        # (re-fed at every stage), which the downstream
-                        # ``cs.reverse`` / ``_reverse_perceptual`` decode
-                        # back to the input: reconstruction ends at the
-                        # percept store (PS owns reconstruction). The
-                        # model-level ``carriers`` handle remains a
-                        # fallback for reverses driven from a foreign
-                        # subspace.
-                        _pure = bool(getattr(sub, "carrier_pure", False))
-                        rec = (None if _pure
-                               else stage["cs"].unbind(stage["cs"].subspace))
-                        if (not _pure and rec is None and carriers is not None
-                                and t < len(carriers)
-                                and carriers[t] is not None):
-                            rec = combine.reverse(carriers[t])
-                        if rec is not None:
-                            ps_rec, _ws_rec = rec
-                            recovered = ps_rec
-                            if t == 0:
-                                # Phase 7 (painting reverse): the stage-0
-                                # WS stream of the unbind IS the conceptual
-                                # reconstruction branch. Captured here and
-                                # stamped onto the RETURNED sub below (the
-                                # per-stage cs.reverse may swap subspace
-                                # objects); it rides the SubSpace down to
-                                # InputSpace.reverse (processing contract:
-                                # data in SubSpaces; reverse stays
-                                # single-arg), where the Universal view
-                                # paints the background and the Atomic
-                                # view is averaged in.
-                                _concepts_recon = _ws_rec.detach()
-                        else:
-                            # No carrier available (a reverse not preceded
-                            # by a body forward): surface the sub's own
-                            # content for cs.reverse's bookkeeping.
-                            recovered = content
-                        # Write the recovered slab back, band riding along
-                        # unchanged.
-                        if band is not None and band.shape[-1] > 0:
-                            sub.set_event(
-                                torch.cat([recovered, band], dim=-1))
-                        else:
-                            sub.set_event(recovered)
-                except (RuntimeError, AssertionError, ValueError):
-                    pass
+            if (self.concept_binding == "mixing" and self.bindingDepth >= 1
+                    and "merge" not in stage):
+                combine = getattr(stage["cs"], "combine", None)
+                if combine is None:
+                    raise RuntimeError("stage cs has no combine")
+                D = int(combine.content_dim)
+                content, band, event = self._combine_demux(sub, D)
+                if event is not None:
+                    # 2-stream EXACT inverse (C-10), in-Space per the
+                    # processing contract: ``cs.unbind`` reads the
+                    # bind carrier RIDING ON the stage's SubSpace
+                    # (``_bind_carrier``) and applies ILL^{-1} --
+                    # (PS_t, WS_t) exactly, nothing threaded
+                    # alongside. The PS stream is the percept leg
+                    # (re-fed at every stage), which the downstream
+                    # ``cs.reverse`` / ``_reverse_perceptual`` decode
+                    # back to the input: reconstruction ends at the
+                    # percept store (PS owns reconstruction). The
+                    # model-level ``carriers`` handle remains a
+                    # fallback for reverses driven from a foreign
+                    # subspace.
+                    _pure = bool(getattr(sub, "carrier_pure", False))
+                    rec = (None if _pure
+                           else stage["cs"].unbind(stage["cs"].subspace))
+                    if (not _pure and rec is None and carriers is not None
+                            and t < len(carriers)
+                            and carriers[t] is not None):
+                        rec = combine.reverse(carriers[t])
+                    if rec is not None:
+                        ps_rec, _ws_rec = rec
+                        recovered = ps_rec
+                        if t == 0:
+                            # Phase 7 (painting reverse): the stage-0
+                            # WS stream of the unbind IS the conceptual
+                            # reconstruction branch. Captured here and
+                            # stamped onto the RETURNED sub below (the
+                            # per-stage cs.reverse may swap subspace
+                            # objects); it rides the SubSpace down to
+                            # InputSpace.reverse (processing contract:
+                            # data in SubSpaces; reverse stays
+                            # single-arg), where the Universal view
+                            # paints the background and the Atomic
+                            # view is averaged in.
+                            _concepts_recon = _ws_rec.detach()
+                    else:
+                        # No carrier available (a reverse not preceded
+                        # by a body forward): surface the sub's own
+                        # content for cs.reverse's bookkeeping.
+                        recovered = content
+                    # Write the recovered slab back, band riding along
+                    # unchanged.
+                    if band is not None and band.shape[-1] > 0:
+                        sub.set_event(
+                            torch.cat([recovered, band], dim=-1))
+                    else:
+                        sub.set_event(recovered)
             if "merge" in stage:
-                try:
-                    sub = stage["merge"].reverse(sub)
-                except (RuntimeError, AssertionError, ValueError):
-                    pass
-            try:
-                sub = stage["cs"].reverse(sub)
-            except (RuntimeError, AssertionError, ValueError):
-                pass
+                sub = stage["merge"].reverse(sub)
+            sub = stage["cs"].reverse(sub)
         if _concepts_recon is not None and sub is not None:
             # Stamp the conceptual reconstruction branch onto the RETURNED
             # sub (the per-stage reverses may have swapped objects); the
@@ -24641,7 +24598,7 @@ class BasicModel(BaseModel):
                   ``_cs_cache`` capture lists were retired by Stage
                   1.F of doc/plans/2026-05-26-two-loop-pi-sigma-
                   substrate.md — terminal STM owns the C-space_role idea
-                  and ``self.wholeSpaces[*]`` own the per-stage
+                  and ``self.wholeSpace`` own the per-stage
                   symbolic state).
           head -> ``outputSpace``; result event ``[B, N, predDim]``.
 

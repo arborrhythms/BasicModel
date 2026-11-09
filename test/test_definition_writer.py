@@ -105,7 +105,7 @@ def _checkpoint_model(cs):
     from Models import BaseModel
     model = BaseModel()
     model.name = 'DefinitionWriterCheckpoint'
-    model.spaces, model.conceptualSpaces, model.wholeSpaces = [], [cs], []
+    model.spaces, model.conceptualSpaces, model.wholeSpace = [], [cs], None
     return model
 
 

@@ -68,7 +68,7 @@ def test_integrated_checkpoint_preserves_fineweb_progress(tmp_path):
     source = Models.BaseModel()
     source.spaces = []
     source.conceptualSpaces = []
-    source.wholeSpaces = []
+    source.wholeSpace = None
     host = _host()
     source.inputSpace = host.inputSpace
     source._last_understanding = host._last_understanding
@@ -80,7 +80,7 @@ def test_integrated_checkpoint_preserves_fineweb_progress(tmp_path):
     target = Models.BaseModel()
     target.spaces = []
     target.conceptualSpaces = []
-    target.wholeSpaces = []
+    target.wholeSpace = None
     assert target.load_weights(path, require_match=True)
     assert target._fineweb_training_progress == source._fineweb_training_progress
 

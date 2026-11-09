@@ -238,7 +238,7 @@ class Mereology:
     Required host attributes (all set by ``BaseModel.__init__``):
       * ``self.wholeSpace``  -- carrier of the higher-order
         bivector activation that drives every measure.
-      * ``self.conceptualSpace`` (and optionally ``self.wholeSpaces`` /
+      * ``self.conceptualSpace`` (and optionally ``self.wholeSpace`` /
         ``self.conceptualSpaces`` for staged models) -- back-projection
         targets.
       * ``self.symbolSpace``      -- chart / grammar host for
@@ -736,14 +736,10 @@ class Mereology:
         and per-step contiguity tracking).
         """
         try:
-            sym_stages = getattr(self, 'wholeSpaces', None)
+            sym = self.wholeSpace
             con_stages = getattr(self, 'conceptualSpaces', None)
-            if sym_stages is not None and stage_idx < len(sym_stages):
-                sym = sym_stages[stage_idx]
-                con = con_stages[stage_idx]
-            else:
-                sym = self.wholeSpace
-                con = self.conceptualSpace
+            con = (con_stages[stage_idx] if con_stages is not None
+                   else self.conceptualSpace)
         except (AttributeError, IndexError):
             return None
         try:

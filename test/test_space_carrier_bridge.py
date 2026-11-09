@@ -173,12 +173,9 @@ def test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners(tmp_path):
 
     # Recreate representative aliases from the pre-cleanup module graph.
     last_cs = len(original.conceptualSpaces) - 1
-    last_ws = len(original.wholeSpaces) - 1
     for key, value in list(legacy.items()):
         if key.startswith(f"conceptualSpaces.{last_cs}."):
             legacy["conceptualSpace." + key.split(".", 2)[2]] = value.clone()
-        if key.startswith(f"wholeSpaces.{last_ws}."):
-            legacy["wholeSpace." + key.split(".", 2)[2]] = value.clone()
         if key.startswith("symbolSpace."):
             legacy[
                 "inputSpace._model_symbolSpace." + key[len("symbolSpace.") :]

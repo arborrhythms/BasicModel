@@ -78,12 +78,13 @@ class PrimedSymbols:
     form_wholes: object = None
     surface_present: torch.Tensor | None = None
     primitive_support: torch.Tensor | None = None
+    verb_groups: torch.Tensor | None = None
 
     def __post_init__(self):
         # Each lexical table belongs to these candidate rows. WholeSpace's
         # structural bank is separate and is rebuilt by walk_bank after joins.
         for name in ('codes', 'weights', 'own', 'bytes', 'byte_valid',
-                     'forms', 'surface_present', 'primitive_support'):
+                     'forms', 'surface_present', 'primitive_support', 'verb_groups'):
             table = getattr(self, name)
             if table is not None and table.shape[:self.rows.ndim] != self.rows.shape:
                 raise ValueError(f'PrimedSymbols.{name} leading shape {tuple(table.shape[:self.rows.ndim])} '

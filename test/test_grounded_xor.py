@@ -80,7 +80,7 @@ def learn_grounded_xor(tmp_path, pool, *, separate_chooser=None, reconstruction_
     from order_fixtures import force_order
     model, x = grounded_model(tmp_path, pool, field_slots=4 * pool,
         separate_chooser=separate_chooser, reconstruction_jitter=reconstruction_jitter)
-    cs, ws = model.conceptualSpaces[0], model.wholeSpaces[0]
+    cs, ws = model.conceptualSpaces[0], model.wholeSpace
     prior = ws.subspace.what.primitive_properties
     # Teach primitive memberships, then the name's feature definition.
     # No conceptual truth table is installed as an activation.

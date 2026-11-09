@@ -122,7 +122,7 @@ def context(model, values, addresses, valid, *, when=None, parts=None, wholes=No
         torch.where(observed, time[..., 1], 0.), reduce='amax', include_self=True)
     time = torch.stack((torch.where(last > 0, first, 0.), last), -1)
     whole_heat, seen = [], set()
-    for space in model.wholeSpaces:
+    for space in [model.wholeSpace]:
         basis = space.subspace.what
         if id(basis) not in seen:
             seen.add(id(basis))

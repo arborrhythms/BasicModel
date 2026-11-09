@@ -121,7 +121,7 @@ def test_registry_installation_reuses_native_bindings_and_checkpoint(tmp_path):
         value.spaces = [space]
         value.conceptualSpaces = torch.nn.ModuleList([space])
         object.__setattr__(value, 'conceptualSpace', space)
-        value.wholeSpaces = []
+        value.wholeSpace = None
         return value
     source = model(cs)
     path = tmp_path / 'query-vps.ckpt'

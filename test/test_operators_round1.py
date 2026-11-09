@@ -96,7 +96,7 @@ def test_walk_teacher_covers_binary_unary_and_leaf_stop_without_code_gradient(mo
         actions=torch.tensor([[0, -1, 0], [2, 0, -1], [0, -1, 1], [1, 0, -1]]))
     model = SimpleNamespace(languageSpace=language, reconstruction_basis_limit=2)
     bank = SimpleNamespace(codes=leaves[None], valid=torch.ones(1,2,dtype=torch.bool),
-        terminal_valid=torch.ones(1,2,dtype=torch.bool),weights=torch.ones(1,2),case_bank=None,form_wholes=None)
+        terminal_valid=torch.ones(1,2,dtype=torch.bool),weights=torch.ones(1,2),case_bank=None,form_wholes=None,verb_groups=None)
     loss = BasicModel._decomposition_walk_teacher_loss(model, {'entries': [program]},
         SimpleNamespace(root=leaves[:1],primed=bank))
     assert [r['target'] for r in model._last_decomposition_walk_teacher] == [2, 1, 2, 0]

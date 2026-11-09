@@ -11,7 +11,7 @@ def test_configuration_without_property_element_binds_at_first_sentence(tmp_path
     model = _build_ladder_variant(tmp_path, 'properties_by_definition', [
         ('<architecture>', '<architecture><ltmConsolidation>true</ltmConsolidation>')])
     try:
-        for ws in model.wholeSpaces:
+        for ws in [model.wholeSpace]:
             assert not hasattr(ws, 'property_basis')
             assert ws.subspace.what.primitive_properties is not None
             assert not hasattr(ws, '_ws_pos_to_row')
@@ -47,7 +47,7 @@ def test_dictionary_checkpoint_warns_and_keeps_prior_properties(tmp_path, monkey
     model = _build_ladder_variant(tmp_path, 'old_dictionary_checkpoint', [])
     try:
         priors = [{name: value.detach().clone() for name, value in ws.subspace.what.state_dict().items()}
-                  for ws in model.wholeSpaces]
+                  for ws in [model.wholeSpace]]
         state = {name: value.detach().clone() for name, value in model.state_dict().items()}
         for name, value in state.items():
             if is_legacy_wholespace_dense_key(name):
@@ -61,7 +61,7 @@ def test_dictionary_checkpoint_warns_and_keeps_prior_properties(tmp_path, monkey
                     'structural_extras': structural}, checkpoint)
         with pytest.warns(UserWarning, match='11.4'):
             assert model.load_weights(checkpoint)
-        for ws, prior in zip(model.wholeSpaces, priors):
+        for ws, prior in zip([model.wholeSpace], priors):
             assert not hasattr(ws, '_word_whole_ss')
             assert not hasattr(ws, 'taxonomy')
             assert not hasattr(ws, '_ws_pos_to_row')

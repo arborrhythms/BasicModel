@@ -26,7 +26,7 @@ def test_overlay_rejects_retired_spelling(tmp_path):
 def test_selected_typed_scope_changes_the_attentive_extent(tmp_path):
     from test_grounded_xor import grounded_model
     model,inputs=grounded_model(tmp_path)
-    cs,ws=model.conceptualSpaces[0],model.wholeSpaces[0]
+    cs,ws=model.conceptualSpaces[0],model.wholeSpace
     prior=ws.subspace.what.primitive_properties
     prior.teach(9,[48,49],[0.,1.]);prior.teach(10,[48,49],[1.,0.])
     from order_fixtures import force_order

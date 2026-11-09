@@ -17,7 +17,7 @@ def fixture(*, meaning_pairs=1, batch_size=1, property_width=0, capacity=32):
         ps.W[7, :3] = torch.tensor([.8, .2, .4])
     object.__setattr__(cs, '_model', SimpleNamespace(perceptualSpace=SimpleNamespace(
         subspace=SimpleNamespace(what=ps), nDim=width),
-        wholeSpaces=[SimpleNamespace(subspace=SimpleNamespace(what=None))]))
+        wholeSpace=SimpleNamespace(subspace=SimpleNamespace(what=None))))
     cb = Codebook()
     cb.W = nn.Parameter(torch.zeros(capacity, width+2*meaning_pairs))
     cs.similarity_codebook = cb

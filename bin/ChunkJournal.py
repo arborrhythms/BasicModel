@@ -19,6 +19,30 @@ SCOPE_WIDTH = 14
 RECORD_WIDTH = 2 + 6 + 4 + 2*(SCOPE_WIDTH-2) + 1
 
 
+def value_record(operands, choice):
+    """Operands/result plus the selected forward's object/group witness."""
+    context = choice.action_context
+    value = choice.candidate
+    if context is None:
+        action = value.new_zeros(value.shape[0], value.shape[-1] + 3)
+    else:
+        action = torch.cat((context['object_value'],
+            context['object_present'][:, None].to(value),
+            context['group'][:, None].to(value),
+            torch.ones_like(value[:, :1])), -1)
+    return torch.cat((operands[:, 0], operands[:, 1], value, action), -1)
+
+
+def action_context(program, index):
+    """Read one recorded witness; a missing record is explicitly absent."""
+    records = getattr(program, 'action_records', None)
+    if records is None or not bool(records[index, -1]):
+        return None
+    record = records[index:index+1]
+    return dict(object_value=record[..., :-3], object_present=record[..., -3].bool(),
+                group=record[..., -2].long())
+
+
 def empty_scope(like):
     from ClauseScope import ClauseScope
     return torch.cat((ClauseScope.empty(like), torch.zeros(
@@ -264,7 +288,8 @@ class ChunkJournal(nn.Module):
         prior_values = chunks.gather(full_values,prior[:,None])[:,0]
         local_match = local_columns == prior[:,None]
         local_prior = chunks.gather(local_values,local_match.long().argmax(-1)[:,None])[:,0]
-        prior_values = torch.where(local_match.any(-1)[:,None],local_prior,prior_values).reshape(batch,3,-1)[:,0]
+        prior_values = torch.where(local_match.any(-1)[:,None],local_prior,prior_values)
+        prior_values = prior_values[:, :state[0].shape[-1]]
         later_actual = ((torch.arange(records.shape[1],device=records.device)[None] > prior[:,None])
             & (records[:,:,3] == subject[:,None]) & records[:,:,7].eq(1)
             & records[:,:,9].eq(0) & records[:,:,11].eq(0)).any(-1)

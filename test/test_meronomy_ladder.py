@@ -199,7 +199,7 @@ def _stage(m, surfaces, *, byte_witness=False):
 
 def test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes(ladder):
     m = ladder
-    assert m.perceptualSpace._meronomy and m.wholeSpaces[0].digit_wholes
+    assert m.perceptualSpace._meronomy and m.wholeSpace.digit_wholes
     units, atoms, ids, mask, offsets = _stage(m, ["12 plus 1", "hi, there"], byte_witness=True)
     # Digit wholes are units; whitespace runs are units (the null operation).
     assert units[0] == ["1", "2", " ", "plus", " ", "1"]
@@ -545,7 +545,7 @@ def test_stem_stages_loop_constants_with_fixed_shapes(ladder):
     _stage(m, ["12 plus 1", "ab"])
     isp = m.inputSpace
     W = int(isp._ar_embedded_N.shape[1]); B = int(isp._ar_embedded_N.shape[0])
-    ws = m.wholeSpaces[0]
+    ws = m.wholeSpace
     assert tuple(ws._staged_unit_parent.shape) == (B, W)
     assert tuple(ws._staged_unit_clause.shape) == (B, W)
     assert ws._staged_unit_parent[1, 2:].tolist() == [-1] * (W - 2)   # "ab" = 1 unit... padded
@@ -602,7 +602,7 @@ def test_recurring_same_whole_pair_is_proposed_and_admitted_as_a_phrase(tmp_path
 # -- Phase 2, step 2: learned boundary predicates ---------------------------------
 
 def test_boundary_predicates_reproduce_the_priors_tiling(ladder):
-    ws = ladder.wholeSpaces[0]
+    ws = ladder.wholeSpace
     assert all(torch.is_tensor(getattr(ws, n)) for n in ("begins_weight", "ends_weight", "atom_level"))
     begins_on, ends_on, atom_on, discard_on = ws._predicate_masks()
     from Layers import WHITESPACE, PUNCT, DIGIT, LETTER
@@ -645,7 +645,7 @@ def _build_none_ladder(tmp_path):
 
 def test_boundary_types_none_starts_without_boundaries(tmp_path):
     m = _build_none_ladder(tmp_path)
-    ws = m.wholeSpaces[0]
+    ws = m.wholeSpace
     assert ws.boundary_types == "none"
     b_on, e_on, a_on, _ = ws._predicate_masks()
     assert not bool(b_on.any() or e_on.any() or a_on.any())
@@ -693,7 +693,7 @@ def test_cold_start_learns_space_as_the_basic_boundary(tmp_path):
     TheData.load("inline", dat=dict(cfg["architecture"]["data"]))
     torch.manual_seed(0)
     m, _ = Models.BaseModel.from_config(str(config), data=TheData)
-    ws = m.wholeSpaces[0]
+    ws = m.wholeSpace
     A = ws._ATOMIC_COLUMNS
     space_cols = [A + r for r, cl in ws._predicate_rows.items() if WHITESPACE in cl]
     assert space_cols
@@ -787,7 +787,7 @@ def test_recurring_phrases_are_admitted_on_a_text_corpus_with_positive_gain():
 def test_utility_state_and_predicates_round_trip_a_checkpoint(tmp_path):
     m = _build_ladder(tmp_path=tmp_path, retained_presentations=6 * 8)
     cs = m._concept_owner()
-    ws = m.wholeSpaces[0]
+    ws = m.wholeSpace
     with torch.no_grad():
         cs.ensure_chunk_prior().fill_(50.0)
     opt = m.getOptimizer(lr=1e-3)
@@ -801,7 +801,7 @@ def test_utility_state_and_predicates_round_trip_a_checkpoint(tmp_path):
     m.save_weights(str(path))
     m2 = _build_ladder(tmp_path=tmp_path, retained_presentations=6 * 8)
     m2.load_weights(str(path), require_match=False)
-    cs2 = m2._concept_owner(); ws2 = m2.wholeSpaces[0]
+    cs2 = m2._concept_owner(); ws2 = m2.wholeSpace
     assert cs2.utility_counts()["n"] == counts
     assert {tuple(k): v for k, v in cs2.__dict__.get("_chunk_admitted", {}).items()} == \
         {tuple(k): v for k, v in admitted.items()}

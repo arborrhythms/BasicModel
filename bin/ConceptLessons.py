@@ -20,7 +20,7 @@ def teach_concept_lessons(model):
     if not path.is_absolute():
         path = Path(ProjectPaths.DATA_DIR) / path
     lesson = json.loads(path.read_text())
-    cs, ws = model.conceptualSpaces[0], model.wholeSpaces[0]
+    cs, ws = model.conceptualSpaces[0], model.wholeSpace
     if not (cs._sparse_active() and cs.conceptual_pi and cs._promotion_enabled):
         raise ValueError('concept lessons require symbolic order, conceptual pi and promotion')
     primitive = ws.subspace.what.primitive_properties

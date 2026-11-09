@@ -2451,3 +2451,25 @@ The [2026-11-08 panel](benchmarks/2026-11-08-item2-3-xor-grammar-panel/README.md
 ### Trained-tier artifacts from tiny models, and two class measurements (trust §36, 2026-11-08)
 
 Alec's observation ([trust §33.1](plans/2026-11-05-item2-3-trust.md#331-the-panel-alecs-decisions-and-finding-14-claude-2026-11-08)): highly trained models at very small sizes, with very few words, may be producible quickly and would serve as the registered artifacts that make trained-tier tests runnable; the eight-word `XOR_grammar.xml` model is one, and the `xor_grammar` and `mm_xor_grammar` phases already name their producers in `test/fixtures/phase-artifacts.json`. For the lessons item, beside the lesson artifacts. The same item reads two measurements before a lesson is said to have taught a part of speech (trust §31 and §36): that a word's class follows its participations rather than its meaning resemblance, and the collapse table of the [parts-of-speech spec](specs/2026-10-18-parts-of-speech.md) §2b read beside the argument radii under the class-contiguity rule.
+
+### Item 2.0 round 2: deferred measurements and property attribution (2026-11-08)
+
+The measured before, item 60 metrics and item 71 runs remain at the end of item
+2.0 under [§10.2](plans/2026-11-03-gradient-projection.md). No lesson arm or
+large-event panel runs in round 2. The last item 71 records contain no audited
+event at or above `1e8`; that repair item is empty unless the end measurements
+reopen it. The momentum-carried projection and learned pair policy remain
+conditional on those receipts.
+
+One WholeSpace changes parallel readers to the shared trained memberships.
+The `PerceptProperties.reverse` and `reverse_poles` divisions retain their
+`1e-12` floors; basic percepts replace that read in round 5. The required
+default reverse-file selection passed 33 cases with 28 skips, but invoked
+neither function: zero calls, zero denominators and zero floor hits for each.
+This is an empty observation, not a claim that trained attribution avoids the
+floor. A separate two-row observer control detected 1/2 and 3/4 floor hits.
+FormCentroids keeps its existing compose-time read and presence weighting.
+The [round-2 return, §14](plans/2026-11-03-gradient-projection.md) records the
+completed candidate-context routing and the evidence.
+
+The [memory plan §10](plans/2026-11-03-item2-0-behavioral-chains.md#10-shared-stmltm-strata-and-decoding-from-an-idea-alec-2026-11-08) reserves shared STM/LTM strata, operator concept seats, collapse at the end of the pinned sentence and authority onto operator concepts' trust for the memory round; §10.6 keeps `LTM1.operator` and `LTM1.grammar_operation` until that round.

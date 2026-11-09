@@ -19,7 +19,7 @@ def snapshot(cs):
 def test_23_fuse_parts_before_word_admission(tmp_path):
     from test_grounded_xor import grounded_model
     model, _ = grounded_model(tmp_path, 8)
-    cs, ps, ws = model.conceptualSpaces[0], model.perceptualSpace, model.wholeSpaces[0]
+    cs, ps, ws = model.conceptualSpaces[0], model.perceptualSpace, model.wholeSpace
     parts = ps.percept_store.spell_out(b'love')
     ps.percept_store.observe_chunk(b'love')
     fused = ps.percept_store.observe_chunk(b'love')
@@ -222,8 +222,8 @@ def test_grammar_word_admission_keeps_nonlexical_percept_extent(monkeypatch):
     captured = []
     model = SimpleNamespace(inputSpace=SimpleNamespace(_last_sentences=['.']),
         perceptualSpace=SimpleNamespace(_forward_input={'native_indices':ids,'native_part_spans':spans}),
-        wholeSpaces=[SimpleNamespace(inputShape=(1,), property_rows_for_bytes=lambda raw: (),
-            concept_evidence_layout=lambda raw, width: (spans,None), subspace=SimpleNamespace(what=None))],
+        wholeSpace=SimpleNamespace(inputShape=(1,), property_rows_for_bytes=lambda raw: (),
+            concept_evidence_layout=lambda raw, width: (spans,None), subspace=SimpleNamespace(what=None)),
         _staged_concepts_in=raw, _concept_owner=lambda: owner,
         _aligned_serial_word_mode=lambda: False, _stage_mixing_grammar_leaf_mask=lambda: None,
         _stage_reading_grammar_references=lambda words, fi: captured.extend(words))

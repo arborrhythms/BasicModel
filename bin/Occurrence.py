@@ -192,7 +192,7 @@ def stage_position(model, slot, batch, *, device):
     position = torch.tensor([source_at(model, b, slot)[1] for b in range(batch)],
                             dtype=torch.long, device=device)
     for space in (getattr(model, 'inputSpace', None), getattr(model, 'perceptualSpace', None),
-                  *getattr(model, 'wholeSpaces', ()), getattr(model, 'symbolSpace', None),
+                  *([getattr(model, "wholeSpace")] if getattr(model, "wholeSpace", None) is not None else []), getattr(model, 'symbolSpace', None),
                   *getattr(model, 'conceptualSpaces', ())):
         if space is not None:
             object.__setattr__(space, '_document_position', position)

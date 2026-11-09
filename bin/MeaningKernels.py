@@ -246,7 +246,8 @@ class MeaningAction(nn.Module):
         support = torch.ones_like(value[..., :size], dtype=torch.bool)
         if object_value is not None:
             support = object_value.unflatten(-1, (2, size)).ne(0).any(-2)
-            vectors = torch.einsum('...d,knd->...kn', object_value, self.object_vectors)
+            vectors = F.linear(object_value, self.object_vectors.flatten(0, 1)).unflatten(
+                -1, self.object_vectors.shape[:2])
             object_q = householder(vectors * support[..., None, :])
             if object_present is None:
                 q = object_q
@@ -270,7 +271,11 @@ class MeaningAction(nn.Module):
             result = torch.where((group >= 0)[..., None, None], selected, chart)
         if object_value is not None:
             support = object_value.unflatten(-1, (2, self.readout.shape[0])).ne(0).any(-2)
-            vectors = torch.einsum('...d,knd->...kn', object_value, self.object_vectors)
+            # Keep the weight pullback in its parameter's native layout.
+            # einsum's permuted gradient disagrees with the unused branch
+            # of a compiled conditional inverse in the free walk.
+            vectors = F.linear(object_value, self.object_vectors.flatten(0, 1)).unflatten(
+                -1, self.object_vectors.shape[:2])
             selected = householder_action(chart, vectors * support[..., None, :], transpose=transpose)
             result = selected if object_present is None else torch.where(
                 object_present[..., None, None], selected, result)

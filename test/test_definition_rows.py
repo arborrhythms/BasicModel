@@ -11,7 +11,7 @@ def model():
 
 
 def admit(m, text):
-    cs, ps, ws = m._concept_owner(), m.perceptualSpace, m.wholeSpaces[0]
+    cs, ps, ws = m._concept_owner(), m.perceptualSpace, m.wholeSpace
     native = getattr(ps, 'percept_store', None)
     parts = native.spell_out(text.encode()) if native is not None else list(text.encode())
     pair = cs.interpret_word(parts, ws.property_rows_for_bytes(text), key=text)

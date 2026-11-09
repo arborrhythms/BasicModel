@@ -154,10 +154,10 @@ class TestBackwardCompat(unittest.TestCase):
             np.random.set_state(np_state)
 
     def test_symbolicspace_per_stage_instances(self):
-        """BasicModel builds T independent WholeSpace instances
-        (T = bindingDepth) in the wholeSpaces ModuleList."""
+        """Every binding stage shares one registered WholeSpace."""
         model = _make_model('MentalModel.xml')
-        self.assertEqual(len(model.wholeSpaces), model.bindingDepth)
+        self.assertEqual(sum(isinstance(space, type(model.wholeSpace))
+                                 for space in model.modules()), 1)
 
 
 class TestNativePasses(unittest.TestCase):
@@ -165,10 +165,11 @@ class TestNativePasses(unittest.TestCase):
     def test_ramsified_passes_have_native_reads_and_no_perceptual_folds(self):
         model = _make_model('RamsifiedModel.xml')
         try:
-            self.assertEqual(len(model.wholeSpaces), model.bindingDepth)
+            self.assertEqual(sum(isinstance(space, type(model.wholeSpace))
+                                 for space in model.modules()), 1)
             self.assertTrue(callable(model.perceptualSpace.synthesize_word_parts))
             self.assertFalse(hasattr(model.perceptualSpace, 'sigmas'))
-            for space in model.wholeSpaces:
+            for space in [model.wholeSpace]:
                 self.assertTrue(callable(space.compute_word_property_event))
                 self.assertFalse(hasattr(space, 'pi'))
                 self.assertFalse(hasattr(space, 'pis'))

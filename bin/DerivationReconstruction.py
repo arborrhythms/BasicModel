@@ -21,7 +21,7 @@ def certified_map(op):
 
 
 def inverse_step(language, kind, operation, parent, frame, *, coordinates=None, case_bank=None,
-                 counts=(1, 1), whole=None, live_witness=False):
+                 counts=(1, 1), whole=None, live_witness=False, action_context=None):
     """Invert one step and return each child's value and defined coordinates.
 
     Omit coordinates to measure this operation's own inverse domain at its
@@ -93,9 +93,13 @@ def inverse_step(language, kind, operation, parent, frame, *, coordinates=None, 
             getattr(op, 'meaning_kernel', None) is not None or
             getattr(op, 'meaning_action', None) is not None or op.meaning_rule == 'sum'):
         right_known = getattr(op, 'meaning_action', None) is not None or op.meaning_head_role == 0
+        if (getattr(op, 'meaning_action', None) is not None
+                and op.rule_name != 'adverb' and action_context is None):
+            raise ValueError('an action inverse requires its recorded forward context')
         witness = witness_frame[1 if right_known else 0][None]
         left, right = op.reverse_blocks(parent, witness, counts=counts,
-                                        reference_right=right_known, whole=whole)
+                                        reference_right=right_known, whole=whole,
+                                        action_context=action_context)
         valid = ((left >= -1e-6) & (left <= 1+1e-6) & (right >= -1e-6) & (right <= 1+1e-6)).all(-1)
         domain = coordinates & valid[:, None]
         return ((left, domain), (right, domain))
@@ -229,9 +233,11 @@ def reconstruct(language, record, programs, positions, stm=None):
                 parent = torch.cat((parent[..., :start], frame[2:3, start:end], parent[..., end:]), -1)
             else:
                 band = None
+            from ChunkJournal import action_context
             children = inverse_step(language, kind, operation, parent,
                 frame, coordinates=coordinates,
                 case_bank=None if bank is None else bank.for_stream(b), live_witness=native_exact,
+                action_context=action_context(program, index),
                 **inverse_context(program, index))
             for role, (child, (value, domain)) in enumerate(zip(node[3:], children, strict=True)):
                 operand = frame[role:role+1]

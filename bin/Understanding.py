@@ -60,6 +60,7 @@ class Reading:
     reference_relations: Any = None
     # Actual left/right operands and result, only while this reading is open.
     operation_values: Any = None
+    action_records: Any = None
     operation_refs: Any = None
     operation_relations: Any = None
     binding_choices: bool = False
@@ -88,7 +89,7 @@ class Reading:
         core = ("rows", "word_rows", "activations", "leaves", "actions",
                 "targets", "end_state", "concept_ids")
         return core + tuple(name for name in ("word_ids", "reference_ids", "reference_orders", "symbol_where", "symbol_when",
-                                             "reference_values", "reference_relations", "operation_values", "operation_refs", "operation_relations", "operation_probabilities", "leaf_orders", "leaf_evidence",
+                                             "reference_values", "reference_relations", "operation_values", "action_records", "operation_refs", "operation_relations", "operation_probabilities", "leaf_orders", "leaf_evidence",
                                              "identity_origins", "identity_ids", "identity_actions", "identity_values", "identity_leaves",
                                              "timeline_actions", "timeline_values", "case_values", "case_selected", "operand_counts",
                                              "form_wholes", "form_whole_counts", "form_whole_presence")
@@ -129,6 +130,9 @@ class Reading:
         if self.operation_values is not None and self.operation_values.shape != (
                 self.actions.shape[0], 3, self.leaves.shape[-1]):
             raise ValueError('operation values must hold two operands and a result per action')
+        if self.action_records is not None and self.action_records.shape != (
+                self.actions.shape[0], self.leaves.shape[-1] + 3):
+            raise ValueError('action records must hold the forward object, presence, group and validity per action')
         if self.operation_refs is not None and (self.operation_refs.shape != (self.actions.shape[0], 2)
                 or self.operation_refs.dtype != torch.long):
             raise ValueError('operation references must hold two operand addresses per action')

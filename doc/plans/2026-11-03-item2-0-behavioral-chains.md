@@ -134,3 +134,229 @@ Alec's answer to item 2.5's item 83 (§1, 9) describes what MTM holds. Item 2.5 
 - The run stays a sequence (§1, 5): its members keep their path order.
 - Runs are how concepts form at every level. A recurring run promotes by the one rule (§3.4), whether its members are basic-level percepts ([basic-percepts spec §9](2026-11-04-item2-0-basic-percepts.md)), order-0 states or order-1 mentions.
 - Events as mereological neighbours in world-space stay in [future work](../FutureWork.md#events-as-mereological-neighbours-alec-2026-11-05) as the fuller account.
+
+
+## 10. Shared STM/LTM strata and decoding from an idea (Alec, 2026-11-08)
+
+This amendment records Alec's direction after the round-2 interim return and
+supersedes earlier readings that require a saved input derivation for decoding.
+It extends the memory design; it is not a claim that the shared strata or the
+new decoding contract are implemented.
+
+### 10.1 Decided: short-lived instances of the same stores
+
+Alec: "STM0 and STM1 should be short-lived versions of LTM0 and LTM1, sharing
+their implementation. Add that to the plan so reconstruction, conditioning and
+MTM use the same stored structure."
+
+- STM0 holds live concept/idea entries using the same storage and read
+  implementation as LTM0. STM1 holds binary branches using the same storage
+  and read implementation as LTM1. Their short lifetime and retention policy
+  distinguish them from LTM; a parallel parser-specific tree layout is not the
+  intended permanent architecture.
+- Reconstruction, input-derived conditioning and MTM read this common stored
+  structure. Current temporary `Reading`/`Composition` records and chunk
+  references must be accounted for when moving to it; a second authoritative
+  tree or hidden per-operation side table would not fulfil the consolidation.
+- Shared structure does not make its historical presence a prerequisite for
+  decoding. A single retrieved LTM0 idea must also be usable after the original
+  input STM and derivation are gone. Any working decomposition created while
+  decoding is a fresh proposal, not recovery of a required saved input tree.
+- Addressing must distinguish an entry from a reused physical slot. The MTM
+  reference form in §9 remains applicable: entry time plus the concept
+  referenced within the idea. Shared implementation must preserve entry
+  lifetime, reference validity and the kept-close ownership boundary.
+
+Alec also clarified that concept-conditioning context is learned from input.
+As its grammar is composed, the composition can supply learned top-down context;
+it should not condition syntactic categories too strongly before that grammar
+is reliable. Architecture-generated sentences need no separate context-learning
+pass. No numerical strength schedule is decided here.
+
+### 10.2 Decided: a syntactic inverse need not recover its original operands
+
+Alec: "the inverse of a syntactic operation is not expected to be fully
+invertible" and "we should be able to unfold a surface sentence from only a
+single LTM0 idea". The decoding contract is therefore generative matching:
+use the idea, active concepts and the verb's available inverse to propose
+constituents, and judge their composition against the idea. Exact original
+wording and the original syntax tree are not promised by a compressed idea.
+
+An exact conditional inverse, when its witnesses happen to be available, is
+one proposal or a diagnostic. It must not impose a saved-object-value,
+saved-group or input-journal requirement on ordinary idea decoding. Unknown or
+lost operands leave a search problem; they do not themselves mean that decoding
+is broken. A numerical failure in a supported calculation still propagates.
+For an object-conditioned verb hypothesis, its forward check must use the
+hypothesized object's semantics consistently with that hypothesis; substituting
+an unrelated identity-basis forward map would test a different action.
+
+This corrects the interpretation behind the main plan's §12.2 routing blocker.
+Recorded replay can continue to verify a particular known forward application;
+its certificate does not establish the architecture's general decoding ability.
+The exact free-decoder search/scoring changes still need implementation review
+against this contract; no new schema or search algorithm is declared implemented.
+
+### 10.3 Open representation question: operations in a two-reference branch
+
+The proposal as first discussed is retained below; §10.5 records Alec's subsequent
+endorsement of operator concepts and ordered binary branches.
+
+Alec asks whether the argument parts of speech can determine the operation,
+retaining the simple binary structure instead of adding operation fields. The
+following are design analysis and a proposal, not additional decisions:
+
+1. **Categories can constrain an operation without uniquely naming it.**
+   Verb/object and subject/verb-phrase roles may identify a compatible
+   application. Coarse category pairs alone need not distinguish, for example,
+   conjunction from disjunction between clauses when the connective is absent.
+   Lexical identity, operand meaning, order and the parent idea provide further
+   evidence. Multiple compatible operations can remain candidates.
+2. **The current formal names do not prove identifiability.**
+   `PartsOfSpeech.formal_arguments` constructs operation-specific names such as
+   `verb_argin1`; `observe_kept` learns participation from the selected grammar
+   operation. Reading its name back as an operation is circular unless the
+   actual occurrence's category membership independently resolves it. Learned
+   memberships can overlap. Any category-only proposal needs an ambiguity
+   certificate on actual memberships, not a count of distinct role names.
+3. **A possible representation without new row fields:** retain an operator
+   as an ordinary concept operand where its identity is semantically needed,
+   with nesting made entirely of the existing binary references. Schematically,
+   `pair(pair(operator, left), right)` uses two binary nodes; a unary application
+   can use `pair(operator, argument)`. These are graph illustrations, not new
+   edge opcodes or a specified storage encoding. A reader would interpret the
+   operator concept and roles; merely writing a part-of pair does not execute
+   an arbitrary operation. This needs a concrete mapping and certificates for
+   the actual grammar before adoption. Its cost is more nodes and reads, not a
+   wider row. Existing verb/connective concepts should be reused where possible.
+4. **No distinction can be recovered from nothing.** If different operations
+   produce the same retained representation, their historical selection is
+   unrecoverable. General decoding may choose a meaning-compatible realization.
+   Where a distinction matters to meaning, conditioning or MTM, retain it as
+   concept content/structure rather than silently assuming category uniqueness.
+
+No new operation field is authorized by this question. No representation is
+claimed biologically established merely because it uses fewer columns.
+
+### 10.4 Current implementation discrepancy and proposed certificates
+
+The live code is not a bare pair-only LTM1: `Memory.LTM1` registers `operator`
+and `grammar_operation`, `PartClosing` writes them, and `refresh_effective`
+uses them to limit authority through concept/operation trust and gates. This is
+an existing implementation fact, not a decision to perpetuate those fields or
+a solution to storing a complete grammar. The shared-store design must audit
+these dependencies before choosing how operation distinctions are represented;
+removing them without preserving their justified function would change trust.
+
+The implementation review should cover: the same data/read implementation for
+STM0/LTM0 and STM1/LTM1; common reads by reconstruction, conditioning and MTM;
+reference validity across short-term expiry; competing operations with
+compatible argument categories; and surface generation from one retained LTM0
+idea with the input journal and input STM absent. That last certificate judges
+meaning-compatible realization, not a uniquely recoverable original sentence.
+The existing order-zero loop's separation of perception and thought remains;
+this amendment does not insert a mandatory grammar-history dependency into
+perceptual reconstruction. Scheduling the storage change must be reconciled
+with the existing memory/loop rounds rather than silently expanding the
+round-2 repair freeze.
+
+
+### 10.5 Operator ideas in STM0; ordered binary branches in STM1 (Alec, 2026-11-08)
+
+Alec: "STM0 contains operators as well as words, so that STM1 relations can
+continue to be (ordered) binary relations. That sounds promising, but to be
+consistent we should represent the operations as ideas/concepts: probably those
+have to be created a priori."
+
+**Representation direction.** Operations are ordinary ideas/concepts. STM0 can
+hold occurrences of operator concepts beside word/concept occurrences; STM1
+continues to hold ordered pairs of references, including nested pairs. The
+operator is present in the referenced content, not supplied by a new operation
+column on every branch. Establishing a reusable operator concept and holding
+one of its applications in STM are distinct: the concept need not be recreated
+for each sentence, while its working occurrence has the short-term lifetime.
+This also makes it available through the shared LTM representation when needed;
+its identity is not a parser-private opcode.
+
+**A priori construction: working proposal following Alec's suggestion.** Seat
+concept identities for the primitive operations declared by the configured
+grammar before reading begins, and connect those identities to their native
+operation implementations. A reader must be able to apply an operator concept;
+merely assigning it a vector does not define an executable operation. The
+construction is analogous in placement, not identical in semantic role, to the
+existing pre-built formal argument concepts. It is not an instruction to create
+an operation concept for every word or every future compound action.
+
+A priori availability does not by itself decide a fixed concept direction,
+full initial confidence or frozen operation parameters. The suggested split is
+to declare identity and the primitive execution interface at construction,
+while learning the concept's participations, relations, applicability and any
+already-learnable numerical action parameters from experience. Preserve the
+existing fixed-versus-learned operation contracts until explicitly revised.
+This is not permission to feed textual operator names into lexical examples;
+operator concepts need no surface spelling unless the model learns one.
+
+**Concrete encoding remains to be specified.** The schematic
+`pair(pair(operator, left), right)` preserves order with two binary branches;
+it illustrates the direction, not a finalized application convention. Unary
+operations, partial applications, reference lifetimes and the relationship
+between an operator concept and its formal argument concepts need a consistent
+mapping using the shared stores. Any replacement of today's `operator` and
+`grammar_operation` authority fields must preserve their trust/gating function
+through the chosen representation and readers, with migration evidence.
+No executable storage or grammar change is made by this plan amendment.
+
+### 10.6 Decided: the tree collapses at the end of the pinned sentence; no new rows (Alec, 2026-11-08, evening)
+
+Alec, on a review that counted one LTM1 row per application: "If you mean
+storing operators in LTM, I would like to collapse the tree in STM at the end
+of the current pinned sentence, so that most STM sentences (and all LTM
+sentences) still have only (compacted) ideas in XXX0 and relations in XXX1."
+And, on a choice between a membership row and a nested pair: "we should not be
+adding rows, here or anywhere, without a lot of justification."
+
+**What this fixes.** The derivation tree of §10.5, with its operator
+occurrences in STM0 and its ordered binary branches in STM1, is the working
+structure of the one sentence on the STM stack (the pinned sentence; `pin` is
+the stack flag of `ThoughtChunks.put`). At the kept close it collapses: the
+sentence's compacted idea stays in STM0 as a recent entry, the relations the
+close writes today (`PartClosing._write`'s `parts.add` rows) stay in STM1 and
+LTM1, and the branches and operator occurrences are freed. LTM0 and LTM1 hold
+compacted ideas and relations only; an operator is in LTM only as an a priori
+concept seat (§10.5), never as an occurrence or an application row. The
+decoder unfolds an idea by generative matching (§10.2), not by reading a
+retained tree. In today's code the collapse is `STMChunks.keep_close` (the
+kept top becomes an off-stack recent entry and its stack peers are freed); the
+tree it frees is held today not in STM but in the `ChunkJournal` record and
+the `Composition` objects, the parser-private layout §10.1 retires, so the
+change is where the pinned sentence's tree lives, not whether it collapses.
+
+**Rows.** A membership row tying an application to its operator, and a
+persistent nested pair, are both rejected: neither adds a row to LTM1, here or
+anywhere, without a lot of justification. Within the pinned sentence the
+operator occurrence is justified as the record of the chooser's choice that
+credit reads before the close; after the close it is not needed. Sizing is by
+the sentence-length constant, preallocated: a sentence of $n$ words has at
+most $n-1$ binary applications, so the pinned region holds at most $n$ word
+occurrences and $n-1$ operator occurrences in STM0 and, under the nested
+schematic of §10.5, at most $2(n-1)$ branches in STM1, separate from the
+`stmCapacity` recent entries. Whether the nested schematic or a flatter
+working form is used inside the pinned sentence is an implementation choice
+for the round that builds the shared strata, under the same rule.
+
+**Open (for Alec).** `LTM1.operator` and `LTM1.grammar_operation` are today's
+collapsed provenance: two integers on a relation row, read by
+`refresh_effective` to re-scale a row's authority when a word's trust or a
+gate changes after the close. They add no row. Claude's reading: they can stay
+as the collapse's residue until the round that moves authority to the operator
+concepts' trust; removing them at the collapse would fix a row's authority at
+its close. Alec decides whether they stay.
+
+**Decided (Alec, 2026-11-08: "keep them until the round that moves operation
+authority onto the operator concepts' trust").** `LTM1.operator` and
+`LTM1.grammar_operation` stay as the collapse's residue until that round: two
+integers on a relation row, no row of their own, read by `refresh_effective` as
+today. That round retires them, with the gate-reopening function preserved
+there; no earlier round touches them. The open
+point above is closed; §10.5's open items are now the application convention
+inside the pinned sentence and the initialization policy of the seats.

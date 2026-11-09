@@ -1069,3 +1069,21 @@ For a mixed batch, the concluded sentence and the costed thought output replay t
 ### Hierarchical conceptual conditioning (2026-11-08)
 
 `ConceptHierarchy.condition` executes under `torch.no_grad` at the kept sentence boundary. It applies the existing conceptual placement step to native membership context, from higher orders downward, with a shared snapshot per order, then refreshes member centroids. This directional update preserves forms and stored confidence radii; the unscaled conceptual-content cache follows the changed direction. Optimizer projection separately keeps concept lengths at their stored radii. Generic member views own the confidence counters. Grammar argument concepts use exactly these paths, and no hierarchy update sends a gradient or placement target into perceptual form coordinates. [Architecture](Architecture.md#hierarchical-conceptual-context-alec-2026-11-08) specifies the chart and membership rules.
+
+### 2026-11-08: recorded action context in the derivation inverse
+
+The committed derivation retains the selected forward action's object value,
+object-presence flag and verb group beside its numerical operation frame.
+`DerivationReconstruction.inverse_step` and forward-discard accounting use that
+same witness. A missing non-adverb action record raises instead of selecting an
+identity basis. The object and grouped-intransitive direct cases recover their
+inputs to double-precision roundoff; the adverb action retains its single basis.
+Free proposals use their proposed object and the shared verb-group assignment
+lookup in pair ranking, the selected inverse and `Generative.native_recompose`.
+An absent object or unknown group has the identity basis; a missing input
+record is not an error on this path. The proposed context comes from the
+supplied concept bank, without the input's compose history or live STM.
+Object-vector contraction uses a linear weight view so the compiled selected
+branch's pullback has the parameter's native layout. It preserves the action's
+values and gradients. The [round-2 return, §14](plans/2026-11-03-gradient-projection.md)
+records the direct residuals and eager/compiled certificates.

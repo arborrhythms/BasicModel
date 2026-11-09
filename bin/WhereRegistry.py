@@ -47,13 +47,7 @@ class WhereRegistry:
 
 def install_where_registry(model):
     parts = model.perceptualSpace.subspace.what
-    wholes = []
-    seen = set()
-    for space in model.wholeSpaces:
-        basis = space.subspace.what
-        if id(basis) not in seen:
-            seen.add(id(basis))
-            wholes.append(basis)
+    whole = model.wholeSpace.subspace.what
     symbols = model.symbolSpace.subspace.what
 
     def capacity(basis):
@@ -77,7 +71,7 @@ def install_where_registry(model):
     registry = WhereRegistry((
         ('input', input_extent),
         ('parts', capacity(parts)),
-        ('wholes', sum(capacity(basis) for basis in wholes)),
+        ('wholes', capacity(whole)),
         ('symbols', 2 * max(capacity(symbols), int(model.conceptualSpaces[0].nVectors))),
         # The current conceptual eight-space has locations of its own.
         # The C stages use the same slot geometry, independently of which
@@ -85,16 +79,13 @@ def install_where_registry(model):
         ('conceptual', max(int(space.stm.capacity) for space in model.conceptualSpaces)),
     ))
     parts.where_offset = registry.slices['parts'][0]
-    offset = registry.slices['wholes'][0]
-    for basis in wholes:
-        basis.where_offset = offset
-        offset += capacity(basis)
+    whole.where_offset = registry.slices['wholes'][0]
     symbols.where_offset = registry.slices['symbols'][0]
-    for basis in (parts, *wholes, symbols):
+    for basis in (parts, whole, symbols):
         if callable(getattr(basis, 'freeze_capacity', None)) and not getattr(basis, '_capacity_frozen', False):
             basis.freeze_capacity('perceptual nVectors')
     import weakref
-    for space in (model.inputSpace, model.perceptualSpace, *model.wholeSpaces, model.symbolSpace):
+    for space in (model.inputSpace, model.perceptualSpace, model.wholeSpace, model.symbolSpace):
         object.__setattr__(space, '_address_model', weakref.ref(model))
     object.__setattr__(model, 'where_registry', registry)
     object.__setattr__(model.symbolSpace, 'where_registry', registry)
@@ -131,7 +122,7 @@ def install_where_registry(model):
         object.__setattr__(sub, 'whereEncoding', model.where_encoding)
         object.__setattr__(sub, 'whenEncoding', model.when_encoding)
     object.__setattr__(model.perceptualSpace, 'where_registry', registry)
-    for space in model.wholeSpaces:
+    for space in [model.wholeSpace]:
         object.__setattr__(space, 'where_registry', registry)
         if getattr(space, '_symbol_where', None) is not None:
             rows = torch.arange(space._symbol_where.shape[0])

@@ -34,6 +34,98 @@ class InverseMenu(NamedTuple):
 EXACT_RESIDUAL_TOLERANCE = 1e-8
 
 
+def verb_groups(verbs, table):
+    """The same declared group lookup for kept and proposed verb operands."""
+    if table is None:
+        return torch.full_like(verbs, -1)
+    keys, assigned = table
+    return torch.where(verbs[..., None] == keys, assigned, -1).amax(-1)
+
+
+class ActionCandidates(NamedTuple):
+    """Ephemeral proposals from the supplied bank, never input provenance."""
+    codes: torch.Tensor
+    valid: torch.Tensor
+    objects: torch.Tensor
+    object_present: torch.Tensor
+    groups: torch.Tensor
+
+    def context(self, value, form_width):
+        codes = self.codes.reshape(self.codes.shape[0], *([1]*(value.ndim-2)),
+                                  *self.codes.shape[-2:])
+        valid = self.valid.reshape(self.valid.shape[0], *([1]*(value.ndim-2)), -1)
+        match = (value[..., None, :form_width] == codes[..., :form_width]).all(-1) & valid
+        index = match.long().argmax(-1)
+        batch = torch.arange(value.shape[0], device=value.device).reshape(-1, *([1]*(value.ndim-2)))
+        present = match.any(-1)
+        return dict(object_value=self.objects[batch, index],
+                    object_present=present & self.object_present[batch, index],
+                    group=torch.where(present, self.groups[batch, index], -1))
+
+
+def candidate_action_context(op, right, action_candidates=None):
+    op = getattr(op, 'gl', op)
+    if (getattr(op, 'meaning_action', None) is None or op.rule_name == 'adverb'
+            or action_candidates is None):
+        return None
+    return action_candidates.context(right, op.meaning_layout[0])
+
+
+@torch.no_grad()
+def propose_actions(language, basis, valid, *, groups=None, terminal_valid=None,
+                      constituents=None, constituent_valid=None, limit=16, whole_bank=None):
+    """Propose a VP's verb/object from active concepts before the free walk.
+
+    Lift's right child is a verb phrase; its object is the right child of
+    that phrase, not lift's subject. A lexical verb has no proposed object.
+    The bounded native VP search supplies that operand for structural codes.
+    These temporary tensors live only for this walk and allocate no memory rows.
+    """
+    binary = language._generate_binary_ops
+    actions = [getattr(op, 'gl', op) for op in binary
+               if getattr(getattr(op, 'gl', op), 'meaning_action', None) is not None
+               and getattr(getattr(op, 'gl', op), 'rule_name', None) != 'adverb']
+    if not actions or basis is None or basis.shape[1] == 0:
+        return None
+    width = actions[0].meaning_layout[0]
+    groups = torch.full_like(valid, -1, dtype=torch.long) if groups is None else groups
+    terminals = valid if terminal_valid is None else valid & terminal_valid
+    lexical = ActionCandidates(basis, terminals, torch.zeros_like(basis),
+                               torch.zeros_like(valid), groups)
+    codes, available, _ = inverse_basis(basis[:, 0], basis, valid, None,
+                                       constituents, constituent_valid)
+    vp_ops = [getattr(op, 'gl', op) for op in binary
+              if getattr(getattr(op, 'gl', op), 'clause_form', None) == 'VP']
+    objects, present, assigned = [], [], []
+    for i in range(codes.shape[1]):
+        value = codes[:, i]
+        direct = ((value[:, None, :width] == basis[..., :width]).all(-1) & terminals).any(-1)
+        context = lexical.context(value, width)
+        obj, has_object, group = torch.zeros_like(value), torch.zeros_like(direct), context['group']
+        best = value.new_full(direct.shape, torch.inf)
+        for op in vp_ops:
+            if not torch.compiler.is_compiling() and not bool((~direct & available[:, i]).any()):
+                continue
+            verb, candidate, found = language._bounded_binary_reconstruction(
+                op, value, torch.zeros_like(value), direct, torch.zeros_like(direct),
+                codes, available & (~direct & available[:, i])[:, None], limit,
+                require_progress=True, whole_bank=whole_bank)
+            folded = native_recompose(op, value, verb, candidate,
+                                      form_width=width, whole_bank=whole_bank)
+            form, lanes = absolute_residual(value, folded, width, numeric=False)
+            residual = form + lanes.mean(-1)
+            torch._assert_async((~found | torch.isfinite(residual)).all(),
+                                'a proposed verb phrase requires a finite residual')
+            use = found & (residual < best)
+            obj = torch.where(use[:, None], candidate, obj)
+            group = torch.where(use, lexical.context(verb, width)['group'], group)
+            has_object = has_object | found
+            best = torch.where(use, residual, best)
+        objects.append(obj); present.append(has_object); assigned.append(group)
+    return ActionCandidates(codes, available, torch.stack(objects, 1),
+                            torch.stack(present, 1), torch.stack(assigned, 1))
+
+
 def absolute_residual(parent, recovered, form_width=None, *, numeric):
     """Per-lane MSE in the native cube or numeric asinh chart."""
     width = parent.shape[-1] if form_width is None else form_width
@@ -60,7 +152,7 @@ def empty_menu(parent, lefts, rights, available):
 
 
 def native_recompose(op, parent, left, right=None, *, form_width=None,
-                     whole_bank=None, case_bank=None):
+                     whole_bank=None, case_bank=None, action_context=None):
     """The proposal's actual forward map, with its native count witnesses."""
     op = getattr(op,'gl',op)
     if form_width is not None:
@@ -68,12 +160,14 @@ def native_recompose(op, parent, left, right=None, *, form_width=None,
             whole = None if whole_bank is None else whole_bank.read_presence(left)
             view = (case_bank.for_values(left,form_width=form_width) if case_bank is not None
                 and callable(getattr(op,'compose_case_meaning',None)) else None)
-            return op.compose_blocks(op.compose,left,whole=whole,case_view=view)
+            return op.compose_blocks(op.compose,left,whole=whole,case_view=view,
+                                     action_context=action_context)
         from FormCentroids import fit
         ratio, whole = fit(parent[..., :form_width],left,right,whole_bank)
         view = (case_bank.for_values(right,form_width=form_width) if case_bank is not None
             and callable(getattr(op,'compose_case_meaning',None)) else None)
-        return op.compose_blocks(op.compose,left,right,counts=(ratio,1-ratio),whole=whole,case_view=view)
+        return op.compose_blocks(op.compose,left,right,counts=(ratio,1-ratio),whole=whole,
+                                 case_view=view,action_context=action_context)
     if right is None:
         return op.compose(left)
     if getattr(op,'inverse_kind',None)=='case_search':
@@ -95,7 +189,7 @@ def native_recompose(op, parent, left, right=None, *, form_width=None,
 
 def eligibility_menu(parent,lefts,rights,available,binary,unary,proposals,recomposed,
                      exact_pairs,singular,terminal,terminal_available,form_width,*,
-                     whole_bank=None,case_bank=None,cube_domain=True):
+                     whole_bank=None,case_bank=None,cube_domain=True,action_candidates=None):
     """Admissibility preserves domain and witnesses; exactness measures error."""
     forms, meanings = [], []
     for value in recomposed:
@@ -109,7 +203,8 @@ def eligibility_menu(parent,lefts,rights,available,binary,unary,proposals,recomp
         valid=available[:,index]&domain&value.ne(parent).any(-1)
         safe=torch.where(valid[:,None],value,.5)
         folded=native_recompose(wrapped,parent,safe,form_width=form_width,
-            whole_bank=whole_bank,case_bank=case_bank)
+            whole_bank=whole_bank,case_bank=case_bank,
+            action_context=candidate_action_context(wrapped,safe,action_candidates))
         f,m=absolute_residual(parent,folded,form_width,numeric=not cube_domain)
         proposals.append(valid); forms.append(f); meanings.append(m)
         exact.append(valid & (f <= EXACT_RESIDUAL_TOLERANCE) & (m <= EXACT_RESIDUAL_TOLERANCE).all(-1))
@@ -142,7 +237,7 @@ def eligibility_menu(parent,lefts,rights,available,binary,unary,proposals,recomp
 
 
 def selected_residual(language,parent,left,right,choice,active,*,form_width=None,
-                      whole_bank=None,case_bank=None,numeric=False):
+                      whole_bank=None,case_bank=None,numeric=False,action_candidates=None):
     """A fresh pullback through only the selected native recomposition."""
     binary,unary=language._generate_binary_ops,language._generate_unary_ops
     total=parent.new_zeros(len(parent),3)
@@ -162,7 +257,8 @@ def selected_residual(language,parent,left,right,choice,active,*,form_width=None
             p=torch.where(mask[:,None],p,.5)
             a=torch.where(mask[:,None],a,.5); b=torch.where(mask[:,None],b,.5)
             folded=native_recompose(op,p,a,b if index<len(binary) else None,
-                form_width=form_width,whole_bank=whole_bank,case_bank=case_bank)
+                form_width=form_width,whole_bank=whole_bank,case_bank=case_bank,
+                action_context=candidate_action_context(op,b,action_candidates))
             f,m=absolute_residual(p,folded,form_width,numeric=numeric)
             return torch.where(mask[:,None],torch.cat((f[:,None],m),-1),0.)
         if compiling:
@@ -236,8 +332,22 @@ def lexical_candidates(owner,root,*,limit,chunk_size=256,retain_bytes=True):
         device=root.device,eos=True,retain_bytes=retain_bytes)
     report=dict(vocabulary=len(rows),chunks=chunks,chunk_size=chunk_size,limit=limit,
                 rows=selected.cpu().tolist())
-    return PrimedSymbols(selected,codes,weights,torch.zeros_like(valid),byte,byte_valid,
-                         meaning_start=width,surface_present=present,primitive_support=support),report
+    bank = PrimedSymbols(selected,codes,weights,torch.zeros_like(valid),byte,byte_valid,
+                         meaning_start=width,surface_present=present,primitive_support=support)
+    # Diagnostics follow retrieval; supplied forms never enter its score or
+    # shortlist. One native lexical terminal supplies an exact spelling route.
+    model = getattr(owner, '_model', None)
+    supplied = getattr(model, '_supplied_training_forms', ())
+    report['supplied_forms'] = [dict(form=raw.decode('utf8', 'surrogateescape'),
+        admitted=owner.interpret.word_for_form(raw) is not None,
+        shortlisted=[raw in row for row in surfaces],
+        exact_route_available=[any(form == raw and bool(bank.terminal_valid[b, i])
+            for i, form in enumerate(row)) for b, row in enumerate(surfaces)])
+        for raw in supplied]
+    observe = getattr(model, '_lexical_admission_sink', None)
+    if observe is not None:
+        observe(report)
+    return bank,report
 
 
 def walk_bank(model,root,bank):
@@ -269,9 +379,18 @@ def walk_bank(model,root,bank):
             byte_valid=torch.cat((bank.byte_valid,lexical.byte_valid),1) if retain_bytes else None,
             surface_present=torch.cat((bank.terminal_valid,lexical.terminal_valid),1),
             primitive_support=torch.cat((support,lexical.primitive_support),1),
+            verb_groups=None,
             forms=None if bank.forms is None else torch.cat((bank.forms,lexical.codes),1))
     from FormCentroids import candidates
-    return replace(result,form_wholes=candidates(model.wholeSpace,result))
+    groups = None
+    language = model.languageSpace
+    if getattr(language, 'verb_action', lambda: None)() is not None:
+        owner = model._concept_owner()
+        ids = result.rows.new_tensor([[owner.concept_id_at_row(int(row)) or -1
+            for row in stream] for stream in result.rows.cpu().tolist()])
+        table = language.verb_group_table(owner.components.reference_close, ids, result.codes)
+        groups = verb_groups(ids, table)
+    return replace(result,form_wholes=candidates(model.wholeSpace,result),verb_groups=groups)
 
 
 class TypeFamilies(NamedTuple):
@@ -465,7 +584,7 @@ def inverse_basis(parent, basis, basis_valid, priming, constituents, constituent
 @preserve_operator_activations
 def selected_inverse(language, parent, choice, live, *, basis, basis_valid, priming=None,
                      limit=16, case_bank=None, constituents=None, constituent_valid=None,
-                     require_symbols=True, whole_bank=None):
+                     require_symbols=True, whole_bank=None,action_candidates=None):
     """Pull back the hard choice without retaining every rejected inverse graph."""
     basis, basis_valid, priming = inverse_basis(
         parent, basis, basis_valid, priming, constituents, constituent_valid)
@@ -481,7 +600,8 @@ def selected_inverse(language, parent, choice, live, *, basis, basis_valid, prim
             basis=basis if require_symbols else None,
             basis_valid=basis_valid if require_symbols else None,
             basis_priming=priming, candidate_limit=limit,
-            free=require_symbols, case_bank=case_bank, whole_bank=whole_bank)
+            free=require_symbols, case_bank=case_bank, whole_bank=whole_bank,
+            action_candidates=action_candidates)
         left = torch.where(use_binary[:, None], a, left)
         right = torch.where(use_binary[:, None], b, right)
     local = choice - len(binary)
@@ -548,7 +668,7 @@ class InverseMenuRead:
 def inverse_menu(language, parent, live, *, basis, basis_valid, priming=None,
                  limit=16, case_bank=None, constituents=None,
                  constituent_valid=None, constituent_families=None, require_symbols=True,
-                 terminal_valid=None, whole_bank=None):
+                 terminal_valid=None, whole_bank=None,action_candidates=None):
     from Language import LanguageSpace
     words, word_valid = basis, basis_valid
     terminals = word_valid if terminal_valid is None else word_valid & terminal_valid
@@ -570,7 +690,8 @@ def inverse_menu(language, parent, live, *, basis, basis_valid, priming=None,
                 ops=(op,), basis=basis if require_symbols else None,
                 basis_valid=basis_valid if require_symbols else None,
                 basis_priming=priming, candidate_limit=limit,
-                free=require_symbols, return_status=True, case_bank=case_bank, whole_bank=whole_bank)
+                free=require_symbols, return_status=True, case_bank=case_bank, whole_bank=whole_bank,
+                action_candidates=action_candidates)
         lefts.append(left); rights.append(right); missing.append(unavailable)
     for op in unary:
         value, unavailable = language.generate_unary_step(
@@ -587,13 +708,14 @@ def inverse_menu(language, parent, live, *, basis, basis_valid, priming=None,
     if require_symbols:
         return LanguageSpace.decoder_eligibility(parent,lefts,rights,available,
             binary,basis,basis_valid,case_bank=case_bank,whole_bank=whole_bank,
-            details=True,unary_ops=unary,**options)
+            details=True,unary_ops=unary,action_candidates=action_candidates,**options)
     # A caller without symbolic guards still receives explicit residuals.
     layout=next((getattr(getattr(op,'gl',op),'meaning_layout',None)
         for op in (*binary,*unary) if getattr(getattr(op,'gl',op),'meaning_layout',None)),None)
     width=None if layout is None else layout[0]
     folded=[native_recompose(op,parent,lefts[i],rights[i],form_width=width,
-        whole_bank=whole_bank,case_bank=case_bank) for i,op in enumerate(binary)]
+        whole_bank=whole_bank,case_bank=case_bank,
+        action_context=candidate_action_context(op,rights[i],action_candidates)) for i,op in enumerate(binary)]
     exact_pairs=[]
     for value in folded:
         f,m=absolute_residual(parent,value,width,numeric=True)
@@ -604,5 +726,5 @@ def inverse_menu(language, parent, live, *, basis, basis_valid, priming=None,
     proposals=[available[:,i] for i in range(len(binary))]
     menu=eligibility_menu(parent,lefts,rights,available,binary,unary,
         proposals,folded,exact_pairs,available[:,-1],parent,available[:,-1],width,
-        whole_bank=whole_bank,case_bank=case_bank,cube_domain=False)
+        whole_bank=whole_bank,case_bank=case_bank,cube_domain=False,action_candidates=action_candidates)
     return menu

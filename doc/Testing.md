@@ -674,3 +674,7 @@ Argument-concepts continuation certificates cover coverage fit, separability/evi
 The argument-concepts-iii ports retain consolidation → promotion → one `ConceptHierarchy.refresh` derivation → condition, and read order-independent class fits after the boundary: aligned classes each have coverage one even with different radii.
 
 Item 2.0 round 1: `test_item20_round1.py` certifies thought WHEN stamps, absent nonoperation journal rows, symbol-description rejection and the shared memory snapshot base; the landed-checkpoint and source receipts accompany the single default freeze sweep.
+
+Item 2.0 round 2 uses direct and targeted checks, then one default sweep at its offered freeze; certificates and deferred measurements are recorded in the [2.0 plan, §12](plans/2026-11-03-gradient-projection.md).
+
+Round 2's continuation adds twelve direct cases in [test_item20_round2_generation.py](../test/test_item20_round2_generation.py): candidate object/group bases, unchanged adverbs, unknown-basis identity, non-finite propagation, mixed-stream isolation and free walks without an action record or live STM, including compiled gradients. The [§14 return](plans/2026-11-03-gradient-projection.md) links the fixed-operand before/after residuals and the one default sweep on the frozen source.

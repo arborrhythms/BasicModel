@@ -105,7 +105,7 @@ def native_word_poles(model, spans, forms, known):
         event_width = int(torch.where(positions[..., 1] > positions[..., 0],
             torch.arange(positions.shape[1], device=positions.device)[None] + 1, 0).max())
         ids, positions = ids[:, :event_width], positions[:, :event_width]
-    ws = model.wholeSpaces[0]
+    ws = model.wholeSpace
     whole_spans, _ = ws.concept_evidence_layout(raw, int(ws.inputShape[0]))
     field = owner.cs_read_memberships((ids, positions,
         getattr(ws.subspace.what, 'primitive_properties', None), raw, whole_spans), live_spans)

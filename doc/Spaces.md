@@ -1343,9 +1343,13 @@ It is perceptual and therefore strictly upstream of concepts and symbols.
 
 **Owned state.**
 
-- `self.subspace.what` is the one canonical whole-percept/property codebook at
-  width `nDim`. BasicModel initially contains roughly eight ASCII-class
-  properties. There is no second `analysis_store` codebook.
+- Every model owns exactly one `model.wholeSpace`, whose `subspace.what` is
+  the canonical whole-percept/property codebook at width `nDim`. Every
+  ConceptualSpace stage, the byte cut, word fills, lessons and attention read
+  this same inventory. `bindingDepth` counts ConceptualSpace stages and
+  ramsification slots; it does not multiply WholeSpace. BasicModel initially
+  contains roughly eight ASCII-class properties. There is no `wholeSpaces`
+  alias or second `analysis_store` codebook.
 - The `<analysis>` policy reads primitive memberships and partitions the field.
   There is no `PiLayer` in WholeSpace.
 - Dynamic property learning may add rows to this inventory. Its allocator and
@@ -1377,6 +1381,16 @@ concept/symbol prototypes and carried a second `analysis_store`. Schema 2 drops
 those semantically incompatible tensors and the retired WS taxonomy with a
 warning. Primitive properties start from their a-priori examples. This
 migration never rewrites the source artifact.
+
+The one-WholeSpace migration retains the sole old copy with changed primitive
+memberships or observations, rejecting competing changed inventories. Copy 0's
+standalone-byte and used-row metadata are merged. Host split rows that occupied
+previously empty rows are merged separately, with a conflict rejected. The
+registry's whole slice contains one inventory; later symbol and conceptual
+addresses move down by the removed copies' capacity. Persisted location bands
+are translated, while identity and occurrence keys keep their meaning. The
+candidate-attention reader is rebuilt for its new input geometry and the loader
+reports that rebuild. See the round-2 return in the [2.0 plan](plans/2026-11-03-gradient-projection.md).
 
 See [Philosophy.md](Philosophy.md), [Logic.md](Logic.md),
 [Mereology.md](Mereology.md), and [Language.md](Language.md).

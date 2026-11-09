@@ -86,7 +86,7 @@ def test_default_expectation_adds_only_its_owned_checkpoint_keys():
         assert added <= current
         assert not any('.sigmas.' in key or '.pis.' in key for key in current)
         assert all(not hasattr(space, 'sigmas') and not hasattr(space, 'pis')
-                   for space in (model.perceptualSpace, *model.wholeSpaces))
+                   for space in (model.perceptualSpace, *[model.wholeSpace]))
 
 
 @pytest.mark.slow
@@ -97,7 +97,7 @@ def test_space_is_the_single_structural_owner_of_slot_modules():
         m.inputSpace,
         m.perceptualSpace,
         *m.conceptualSpaces,
-        *m.wholeSpaces,
+        *[m.wholeSpace],
         m.outputSpace,
         m.symbolSpace,
     ]
@@ -141,7 +141,17 @@ def _run_one_epoch(cfg):
     else:
         m = _build(cfg)
     opt = m.getOptimizer(lr=0.01)
-    m.runEpoch(optimizer=opt, batchSize=4, split="train", max_batches=1)
+    original = m.wholeSpace.forward
+    m._test_whole_routes = {}
+    def observed(*args, **kwargs):
+        result = original(*args, **kwargs)
+        m._test_whole_routes[m.wholeSpace._pump_pass_idx] = m.wholeSpace._ws_routed_source
+        return result
+    m.wholeSpace.forward = observed
+    try:
+        m.runEpoch(optimizer=opt, batchSize=4, split="train", max_batches=1)
+    finally:
+        m.wholeSpace.forward = original
     return m
 
 
@@ -149,7 +159,7 @@ def _run_one_epoch(cfg):
 def test_ws_routes_universe_on_parallel_path():
     """Raw unity feeds stage zero; downstream carriers have neutral properties."""
     m = _run_one_epoch("sparse")
-    stamps = [getattr(ws, "_ws_routed_source", None) for ws in m.wholeSpaces]
+    stamps = [m._test_whole_routes[i] for i in range(len(m.body_stages))]
     assert len(stamps) > 1
     assert stamps == ["universe", *["property-neutral"] * (len(stamps) - 1)], stamps
 
@@ -165,7 +175,7 @@ def test_ws_routing_after_serial_migration():
     its unity raw (glue contract) and stamps universe regardless.
     """
     m = _build("data/MM_ladder.xml")
-    for w in m.wholeSpaces:                     # cached models: clear stamps
+    for w in [m.wholeSpace]:                     # cached models: clear stamps
         object.__setattr__(w, "_ws_routed_source", None)
     import torch
     with torch.no_grad():
@@ -179,10 +189,10 @@ def test_ws_routing_after_serial_migration():
     import torch as _t
     assert _t.is_tensor(getattr(m, "_ws_universe", None))
     m = _build("data/MM_20M_xor.xml")
-    for w in m.wholeSpaces:
+    for w in [m.wholeSpace]:
         object.__setattr__(w, "_ws_routed_source", None)
     m = _run_one_epoch("data/MM_20M_xor.xml")
-    stamps = [getattr(ws, "_ws_routed_source", None) for ws in m.wholeSpaces]
+    stamps = [m._test_whole_routes[i] for i in range(len(m.body_stages))]
     assert stamps[0] == "universe", stamps      # live unity at the bootstrap
 
 

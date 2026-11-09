@@ -795,6 +795,24 @@ generation is expected at this stage and is recorded, not tuned away.
       same reverse.
    The momentum-carried projection and a learned top-down pair policy are
    built only if the receipts call for them.
+   **Schedule with fewer passes (Alec, 2026-11-08, evening: "lets schedule a
+   few fewer passes"; "Merge 3 and 4").** Rounds 3 and 4 are one round, one
+   freeze, one review, one landing: `separateChooser` false with the
+   one-sided projection and the sides, and generate under compose's proposal
+   and credit with `walk_policy` and the verb and modal teachers retired, the
+   XOR gate run once, output typing. Round 5 carries the memory plan §10
+   amendment (shared STM0/STM1 strata, operator concept seats, the collapse
+   of the pinned sentence's tree, authority onto the operator concepts'
+   trust). The end-of-item measurements (§10.2: item 71's runs and the item
+   60 metrics on round 2's frozen source and the finished tree) are part of
+   round 6's freeze and return, not a pass of their own. Every landing is
+   folded into the next build text as 2.0 spec §11.7 did; round 6's landing
+   is the §11.7 steps 1 to 3 on Alec's one line, with no further text.
+   Reviews accept with recorded warts unless a gate fails (a failed
+   `test_convergence` or shared-concept case stops a round); everything else
+   is carried into the next text. Three Claude texts remain after round 2's
+   return: land 2 and build 3/4; land 3/4 and build 5; land 5 and build 6
+   with the measurements.
 - **2. Housekeeping.** Restore safe, faster bounded-test batching: the default
    256-case/16-file and 32-case/4-file workers exceeded the 8 GiB cap, and
    eight-case/one-file batches pass the same selection; do not raise caps or
@@ -1550,3 +1568,10 @@ round, unless Alec moves it to item 0); the sentence-82 capture rule at `Referen
 built in 2.0 round 2 (§11.7 item 7), not item 0; the §11.7 text has no open assumption.
 
 Landed as 6becc3dc47c88d787406ff94f1a4ba6acbf95eec, 2026-11-08
+- 2026-11-08 (evening): item 2.0, memory plan §10.6: the derivation tree (operator occurrences in STM0, ordered binary branches in STM1) is the pinned sentence's working structure and collapses at the kept close; LTM holds compacted ideas and relations only; no new rows "here or anywhere, without a lot of justification" (Alec). Open for Alec: whether `LTM1.operator`/`grammar_operation` stay as the collapse's residue.
+- 2026-11-08 (evening): item 2.0, memory plan §10.6: DECIDED (Alec: "keep them until the round that moves operation authority onto the operator concepts' trust") `LTM1.operator`/`grammar_operation` stay as the collapse's residue until that round, which retires them; no earlier round touches them.
+- 2026-11-08 (evening): item 2.0 round 2 at an interim return (2.0 spec §12; items 4–9 built, no freeze, no sweep); §13 withdrew the item-5 routing blocker; continuation Codex text given as 2.0 spec §13.1 (item 5 free generation checks a candidate in its own object basis and group, replay keeps the record; then the freeze; return as §14). Memory plan §10 is the memory round's planned work.
+- 2026-11-08 (evening): item 2.0 schedule with fewer passes (Alec: "Merge 3 and 4"): rounds 3 and 4 one round; measurements inside round 6's freeze; landings folded into the next text; reviews accept with warts unless a gate fails; three Claude texts remain after round 2's return (rounds block; 2.0 spec §13.2).
+- 2026-11-09: item 2.0 round 2 REVIEWED and ACCEPTED (2.0 spec §14.5): frozen source `8cde24380d44…` (1008 files) equals the live tree; before = round 1's `2d2abfe10878…`; one sweep 7551/325/1 with 1 failure (the `test_operators_round1` walk-teacher fixture lacks the new `PrimedSymbols.verb_groups` field; a one-line fixture port at the landing, not a producer `getattr`); gates passed; six certificates and five targeted selections reproduced; six warts recorded (a sloppy `_checkpoint_model` port, two dead WholeSpace flags, the band-recognition heuristic in the address migration, a host loop in `walk_bank`, the traceback-walking capture). To confirm with Alec: land with the two one-line test ports and a targeted rerun, or a second full sweep.
+- 2026-11-09: item 2.0 round 2 landing CONFIRMED (Alec: "Fine with landing"): the two one-line test ports and a targeted rerun, no second sweep; landing folded into the next Codex text with the merged round 3/4.
+- 2026-11-09: item 2.0, one Codex text GIVEN as 2.0 spec §14.6: land round 2 (two test ports, two-file rerun, commit, record, push) and build the merged round 3/4 (`separateChooser` false with the two-sided projection per unit and its receipt; the sides of §2 as §8 amends them; generate under compose's proposal and `score_function` credit, `walk_policy` retired; verb and modal teachers retired, the assigner kept on the recorded verb-phrase meaning, the re-read at `PrependedSymbols.symbolize`, `training.actionRateRatio`; the XOR gate once; output typing as generate-policy features from the `argout` faces; §54 finding 5's clamp velocity repaired); fast checks only; return as §15. Three texts remain two: land 3/4 + build 5; land 5 + build 6 with the measurements.

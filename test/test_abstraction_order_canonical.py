@@ -127,7 +127,7 @@ def test_no_flag_model_allocates_ps_ws_tables():
     assert isinstance(ps_cb, Codebook)
     assert ps_cb.ramsification is not None
     assert int(ps_cb.ramsification_max_order) == so
-    for ws in m.wholeSpaces:
+    for ws in [m.wholeSpace]:
         ws_cb = getattr(ws.subspace, "what", None)
         if isinstance(ws_cb, Codebook):
             assert ws_cb.ramsification is not None
@@ -156,7 +156,7 @@ def test_radix_multibyte_percept_stamps_sigma():
 
 def test_forward_keeps_the_property_basis_without_a_word_analysis_dictionary():
     m = _model()
-    ws = m.wholeSpaces[0]
+    ws = m.wholeSpace
     basis = ws.subspace.what
     assert isinstance(basis, Codebook) and basis.ramsification is not None
     before = basis.getW().detach().clone()
@@ -169,11 +169,12 @@ def test_forward_keeps_the_property_basis_without_a_word_analysis_dictionary():
 
 def test_property_passes_never_mint_symbolic_word_winners():
     m = _model()
-    assert len(m.wholeSpaces) > 1
-    before = [ws.subspace.what.getW().detach().clone() for ws in m.wholeSpaces]
+    assert len(m.conceptualSpaces) > 1
+    assert all(cs.wholeSpace_ref is m.wholeSpace for cs in m.conceptualSpaces)
+    before = [ws.subspace.what.getW().detach().clone() for ws in [m.wholeSpace]]
     with torch.no_grad():
         m.forward(_batch(m))
-    for ws, original in zip(m.wholeSpaces, before):
+    for ws, original in zip([m.wholeSpace], before):
         assert not hasattr(ws, '_symbolic_emission')
         assert not hasattr(ws, '_ws_pos_to_row')
         torch.testing.assert_close(ws.subspace.what.getW(), original, rtol=0, atol=0)

@@ -85,7 +85,7 @@ def test_witnesses_write_alternatives_without_conjoining_their_literals():
 def test_word_group_becomes_a_recurrent_row_without_changing_its_read(tmp_path):
     from test_grounded_xor import grounded_model
     model, _ = grounded_model(tmp_path, pool=8)
-    ps, cs, ws = model.perceptualSpace, model.conceptualSpaces[0], model.wholeSpaces[0]
+    ps, cs, ws = model.perceptualSpace, model.conceptualSpaces[0], model.wholeSpace
     letters = ps.percept_store.spell_out(b'love')
     whole = ws.property_rows_for_bytes(b'love')
     assert whole

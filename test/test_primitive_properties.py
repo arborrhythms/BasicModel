@@ -121,7 +121,7 @@ def test_old_acquired_predicate_migrates_into_primitive_parameters(tmp_path):
     entry = extras['whole_properties'][0]
     entry.setdefault('attributes', {})['_row_bytes'] = {'7': [97, 101]}
     model._restore_structural_extras(extras)
-    ws = model.wholeSpaces[0]
+    ws = model.wholeSpace
     target = torch.zeros(256)
     target[[97, 101]] = 1.
     torch.testing.assert_close(ws.subspace.what.primitive_properties.members[7], target)
@@ -133,7 +133,7 @@ def test_property_priming_projects_direct_surface_rows(tmp_path):
     from test_grounded_xor import grounded_model
     model, _ = grounded_model(tmp_path)
     cs = model.conceptualSpaces[0]
-    ps, ws = model.perceptualSpace, model.wholeSpaces[-1]
+    ps, ws = model.perceptualSpace, model.wholeSpace
     word, obj = cs._new_concepts(2, context='priming fixture')
     row = _mint_row(cs, 0, obj)
     _mint_row(cs, 0, word)

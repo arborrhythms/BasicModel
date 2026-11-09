@@ -1199,6 +1199,41 @@ class ReferenceClose(nn.Module):
         return result
 
     @torch.no_grad()
+    def _bind_with_capture(self, antecedent, occurrence, *, stream, document, position, **kwargs):
+        """Retain an invalid identity's evidence at its rejecting bind boundary."""
+        pool = self.components.owner.mtm
+        try:
+            return pool.bind(antecedent, occurrence, **kwargs)
+        except ValueError as error:
+            if str(error) != 'an identity requires one finite working value':
+                raise
+            from Memory import MediumTermMemory
+            trace = error.__traceback__
+            while trace is not None and trace.tb_frame.f_code is not MediumTermMemory._value.__code__:
+                trace = trace.tb_next
+            if trace is None:
+                raise
+            rejected = trace.tb_frame.f_locals['value']
+            from pathlib import Path
+            from uuid import uuid4
+            from CorpusCheckpoint import detached
+            model = getattr(self.components.owner, '_model', None)
+            directory = Path(getattr(model, '_receipt_directory', 'output'))
+            directory.mkdir(parents=True, exist_ok=True)
+            token = pool.token_of(antecedent)
+            entry = pool.entries.get(token)
+            capture = dict(version=1, error=str(error),
+                working_value=detached(rejected), antecedent=antecedent,
+                occurrence=occurrence, token=token,
+                members=() if entry is None else entry.occurrences,
+                pool=pool.state(), stream=stream, document=document, position=position,
+                arguments=detached(kwargs))
+            path = directory / f'mtm-value-rejection-{uuid4().hex}.pt'
+            torch.save(capture, path)
+            self.last_identity_rejection = str(path)
+            raise
+
+    @torch.no_grad()
     def commit(self, plan, row, written, *, document, position, training,
                verb_action=None, errors=None, verb_teacher_weight=.1, teacher_records=None,
                modifier_action=None, modal_teacher_weight=.1, modal_records=None, reading=None):
@@ -1218,6 +1253,9 @@ class ReferenceClose(nn.Module):
         closed_mentions, refinements = set(), []
         mention_occurrences = plan['mention_occurrences'] = {}
         stream = plan.get('stream')
+        def bind(antecedent, occurrence, **kwargs):
+            return self._bind_with_capture(antecedent, occurrence, stream=stream,
+                document=document, position=position, **kwargs)
         from ChainRead import envelope
         from Memory import OCCURRENCE
         retained = tuple(envelope(self.store, side)
@@ -1336,7 +1374,7 @@ class ReferenceClose(nn.Module):
                     if isinstance(selected, int):
                         selected = native_token
                     elif mtm.token_of(selected) is None:
-                        mtm.bind(native_token, selected, kind=self._derivation_symbol(selected),
+                        bind(native_token, selected, kind=self._derivation_symbol(selected),
                             value=self.store.point_of_row(selected[-1]), when=when)
                 else:
                     selected = None
@@ -1348,7 +1386,7 @@ class ReferenceClose(nn.Module):
                 # A native identity needs no synthetic occurrence holding its
                 # working vector. Refine through the existing introduction.
                 from RowTime import encoder, stamp
-                mtm.bind(token, token, kind=selected,
+                bind(token, token, kind=selected,
                          when=when, value=point(self.components.owner, selected))
                 selected = token
             if (isinstance(selected, tuple) and selected[:1] == ('ltm',)
@@ -1364,7 +1402,7 @@ class ReferenceClose(nn.Module):
                     # Re-observing an existing member is no new use.
                     pass
                 else:
-                    mtm.bind(token, selected, kind=self._derivation_symbol(selected), when=when,
+                    bind(token, selected, kind=self._derivation_symbol(selected), when=when,
                              value=self.store.point_of_row(selected[-1]))
             item['reference'] = selected if selected is not None else token
             if selected is not None:
@@ -1376,7 +1414,7 @@ class ReferenceClose(nn.Module):
         # Refinement may join a pending token to another antecedent. Attach
         # this close's uses to the owner of their chosen occurrence afterwards.
         for reference, occurrence, kind, value, reading, where in uses:
-            token = mtm.bind(reference, occurrence, kind=kind, value=value, reading=reading, when=when, where=where)
+            token = bind(reference, occurrence, kind=kind, value=value, reading=reading, when=when, where=where)
             if verb_action is not None and value is not None and bool(self.coordinates(value).ne(0).any()):
                 observed.add(token)
             closed_mentions.add(occurrence)

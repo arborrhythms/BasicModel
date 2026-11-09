@@ -141,7 +141,7 @@ def test_optimizer_step_preserves_for_lengths_and_leaves_against_update():
     torch.testing.assert_close(bank.W[rows,3:7].norm(dim=-1), before[rows,3:7].norm(dim=-1))
     against = bank.W[rows,7:].detach().clone()
     torch.testing.assert_close(against, before[rows,7:] + .1*torch.arange(8,12))
-    model = SimpleNamespace(wholeSpaces=[], conceptualSpaces=[owner],
+    model = SimpleNamespace(wholeSpace=None, conceptualSpaces=[owner],
         _clamp_symbolic_codebook=lambda: None, _normalize_perceptual_embedding=lambda: None)
     BasicModel._project_sentence_parameters(model)
     torch.testing.assert_close(bank.W[rows,3:7].norm(dim=-1), before[rows,3:7].norm(dim=-1))
@@ -246,7 +246,7 @@ def test_kept_word_views_use_written_content_and_for_radius_only():
     from test_review13_subspaces import fixture as paired_fixture
     from FamiliarTier import commit_read_words
     owner, bank, _, _ = paired_fixture(meaning_pairs=4)
-    owner._model.wholeSpaces = [SimpleNamespace(subspace=SimpleNamespace(what=None))]
+    owner._model.wholeSpace = SimpleNamespace(subspace=SimpleNamespace(what=None))
     word = owner.interpret.lookup_word([4], [], form='word')
     row = owner._csw_row_of(word)
     content = bank.lookup_rows(row).clone()

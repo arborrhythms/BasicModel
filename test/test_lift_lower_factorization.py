@@ -100,14 +100,14 @@ class TestSigmaSPiSRetired(unittest.TestCase):
             cls.model = _fresh_model()
 
     def test_no_sigma_S_on_symbolic_space(self):
-        for sym in self.model.wholeSpaces:
+        for sym in [self.model.wholeSpace]:
             self.assertFalse(
                 hasattr(sym, 'sigma_S') and getattr(sym, 'sigma_S') is not None,
                 f"WholeSpace must not retain `sigma_S` after the "
                 f"lift/lower refactor; found on {sym}")
 
     def test_no_pi_S_on_symbolic_space(self):
-        for sym in self.model.wholeSpaces:
+        for sym in [self.model.wholeSpace]:
             self.assertFalse(
                 hasattr(sym, 'pi_S') and getattr(sym, 'pi_S') is not None,
                 f"WholeSpace must not retain `pi_S` after the "

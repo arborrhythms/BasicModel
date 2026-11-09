@@ -95,7 +95,7 @@ def _projected_model(epochs=3):
         m._projection_fixture.append(tuple(
             None if value is None else value.detach().clone()
             for value in (m.perceptualSpace.priming_weights(),
-                          m.wholeSpaces[-1].priming_weights())))
+                          m.wholeSpace.priming_weights())))
     m._prime_seen_step = seen
     opt = m.getOptimizer(lr=0.01)
     for e in range(slow_count(epochs)):
@@ -163,20 +163,20 @@ def test_one_canonical_surface_per_tower():
     and every stage shares the same stored tensor."""
     import torch as _t
     m = _projected_model(epochs=1)
-    ws_c = m.wholeSpaces[-1]
-    for ws in m.wholeSpaces[:-1]:
+    ws_c = m.wholeSpace
+    for ws in (m.wholeSpace,):
         assert ws._priming_target() is ws_c
     for cs in m.conceptualSpaces:
         assert cs._priming_target() is m._concept_owner()
     ws_c._expected_knowing.zero_()
     ws_c._expected_knowing[0,1,0] = .5
-    b0 = m.wholeSpaces[0].priming_weights()
+    b0 = m.wholeSpace.priming_weights()
     bc = ws_c.priming_weights()
     torch.testing.assert_close(b0, bc, rtol=0, atol=0)
-    assert m.wholeSpaces[0]._priming_target()._expected_knowing is ws_c._expected_knowing
+    assert m.wholeSpace._priming_target()._expected_knowing is ws_c._expected_knowing
     assert float(bc[0, 1]) > 1.0
-    assert bool(m.wholeSpaces[0]._expected_knowing.eq(0).all()), (
-        "a delegating tower must leave its unused local slab neutral")
+    assert float(m.wholeSpace._expected_knowing[0, 1, 0]) == .5
+    assert all(stage['ws'] is ws_c for stage in m.body_stages)
 
 
 

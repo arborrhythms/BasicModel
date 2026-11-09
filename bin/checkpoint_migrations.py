@@ -109,14 +109,28 @@ class CheckpointMigrationDiagnostics:
     dropped_state_keys: tuple[str, ...] = ()
     dropped_state_bytes: int = 0
     dropped_structure_fields: tuple[str, ...] = ()
+    whole_copy: int | None = None
+    whole_copies: int = 0
+    rebuilt_parameters: tuple[str, ...] = ()
+    migrated_addresses: int = 0
+    merged_property_rows: tuple[int, ...] = ()
 
     @property
     def migrated(self) -> bool:
         return self.source_version != self.target_version or bool(
-            self.dropped_state_keys or self.dropped_structure_fields)
+            self.dropped_state_keys or self.dropped_structure_fields or self.whole_copies)
 
     def messages(self) -> tuple[str, ...]:
         lines = []
+        if self.whole_copies:
+            lines.append(f"checkpoint retained WholeSpace copy {self.whole_copy} of "
+                         f"{self.whole_copies}, merged copy 0's property extras, and "
+                         f"migrated {self.migrated_addresses} persisted addresses")
+        if self.merged_property_rows:
+            lines.append(f"checkpoint merged copy 0's split property rows: {self.merged_property_rows}")
+        if self.rebuilt_parameters:
+            lines.append("checkpoint rebuilt candidate attention for one WholeSpace: "
+                         + ", ".join(self.rebuilt_parameters))
         if self.dropped_state_keys:
             mib = self.dropped_state_bytes / (1024.0 * 1024.0)
             lines.append(
@@ -215,9 +229,258 @@ def _warn_whole_migration(diagnostics):
                       UserWarning, stacklevel=3)
 
 
+def _migrate_whole_addresses(checkpoint, slices, copies, percept_width):
+    """Move persisted location bands; concept IDs and occurrence keys do not move."""
+    import torch
+    from Spaces import WhereEncoding
+    start, end = slices['wholes']
+    width = end - start
+    delta = (copies - 1) * width
+    if not delta:
+        return checkpoint, 0
+    old_end = end + delta
+    capacity = max(hi for lo, hi in slices.values())
+    old = WhereEncoding(nWhere=4, nWhen=4).set_capacity(capacity + delta)
+    new = WhereEncoding(nWhere=4, nWhen=4).set_capacity(capacity)
+    changed = 0
+
+    def address(ids):
+        in_wholes = (ids >= start) & (ids < old_end)
+        return torch.where(in_wholes, start + (ids - start).remainder(width),
+                           torch.where(ids >= old_end, ids - delta, ids))
+
+    def bands(value):
+        nonlocal changed
+        if value.numel() == 0:
+            return value
+        # Zero/empty bands and numerical content are not registry locations.
+        finite = torch.isfinite(value).all(-1)
+        safe = torch.where(finite[..., None], value, 0.)
+        indices = old.decode_index(safe)
+        encoded = old.encode(indices).to(value)
+        located = finite & (indices >= 0) & (indices < capacity + delta)
+        located &= torch.isclose(value, encoded, rtol=0, atol=2e-5).all(-1)
+        moved = address(indices)
+        rewritten = new.encode(moved).to(value)
+        changed += int((located & (value != rewritten).any(-1)).sum())
+        return torch.where(located[..., None], rewritten, value)
+
+    state = checkpoint['state_dict']
+    layouts = {key[:-len('percept_layout')]: int(value) for key, value in state.items()
+               if key.endswith('.percept_layout')}
+    migrated = dict(state)
+    for key, value in state.items():
+        if not torch.is_tensor(value) or not value.is_floating_point() or value.ndim == 0:
+            continue
+        if key.endswith('.percept') and value.shape[-1] == 8:
+            migrated[key] = torch.cat((bands(value[..., :4]), value[..., 4:]), -1)
+        for prefix, layout in layouts.items():
+            if layout >= 8 and key in (prefix+'slots', prefix+'addressing.recurrence_codes'):
+                migrated[key] = torch.cat((value[..., :layout-8],
+                    bands(value[..., layout-8:layout-4]), value[..., layout-4:]), -1)
+    out = dict(checkpoint)
+    out['state_dict'] = migrated
+
+    def visit(value, name=''):
+        nonlocal changed
+        if torch.is_tensor(value):
+            if value.ndim == 0:
+                return value
+            if name in ('where', 'percept_where', 'symbol_where', '_live_where'):
+                if value.shape[-1] == 4 and value.is_floating_point():
+                    return bands(value)
+                if value.shape[-1] == 2 and not value.is_floating_point():
+                    first = address(value[..., 0])
+                    changed += int((first != value[..., 0]).sum())
+                    return torch.stack((first, first + value[..., 1] - value[..., 0]), -1)
+            if name == 'percept' and value.shape[-1] == 8 and value.is_floating_point():
+                return torch.cat((bands(value[..., :4]), value[..., 4:]), -1)
+            if (percept_width is not None and percept_width >= 8
+                    and value.shape[-1] >= percept_width and value.is_floating_point()
+                    and name in ('value', 'values', 'before', 'after', 'basis', 'slots',
+                                 'codes', 'buffer', '_live_buffer', 'recurrence_codes',
+                                 '_stm_end_states', '_inter_context', '_inter_context_lanes',
+                                 '_inter_last_meaning')):
+                at = percept_width - 8
+                return torch.cat((value[..., :at], bands(value[..., at:at+4]), value[..., at+4:]), -1)
+            return value
+        if isinstance(value, dict):
+            # MTM v8-v10 serializes timeline values and event operands as
+            # tuples. Their position, rather than a dictionary field name,
+            # identifies the native value; occurrence/verb keys stay intact.
+            if value.get('version') in (8, 9, 10) and 'entries' in value and 'candidate_counter' in value:
+                result = dict(value)
+                entries = []
+                for entry in value['entries']:
+                    item = visit({key: member for key, member in entry.items() if key != 'timelines'})
+                    timelines = []
+                    for events, current in entry['timelines']:
+                        migrated_events = []
+                        for event in events:
+                            event = list(event)
+                            for index in (4, 5, 7, 10):
+                                event[index] = visit(event[index], 'value')
+                            event[8] = tuple(visit(modifier, 'value') for modifier in event[8])
+                            migrated_events.append(tuple(event))
+                        timelines.append((tuple(migrated_events), visit(current, 'value')))
+                    item['timelines'] = tuple(timelines)
+                    entries.append(item)
+                result['entries'] = tuple(entries)
+                return result
+            return {key: visit(item, str(key)) for key, item in value.items()}
+        if isinstance(value, (list, tuple)):
+            return type(value)(visit(item, name) for item in value)
+        from collections import deque
+        if isinstance(value, deque):
+            return deque((visit(item, name) for item in value), maxlen=value.maxlen)
+        from dataclasses import fields, is_dataclass, replace
+        if is_dataclass(value) and not isinstance(value, type):
+            return replace(value, **{field.name: visit(getattr(value, field.name), field.name)
+                                      for field in fields(value)})
+        return value
+    for key in ('vocab_extras', 'structural_extras', 'training_state'):
+        if key in out:
+            out[key] = visit(out[key])
+    return out, changed
+
+
+def _one_wholespace(checkpoint, live, *, where_slices, percept_width, bundle):
+    """Retain the sole changed property inventory from the former stage copies."""
+    import copy
+    import torch
+    state = checkpoint['state_dict'] if bundle else checkpoint
+    member = '_owned_bases.what.primitive_properties.members'
+    observed = '_owned_bases.what.primitive_properties.observed'
+    copies = sorted({int(match[1]) for key in state
+                     if (match := re.fullmatch(r'wholeSpaces\.(\d+)\.' + re.escape(member), key))})
+    if not copies or live is None or 'wholeSpace.' + member not in live:
+        return checkpoint, {}
+    initial = {suffix: live['wholeSpace.' + suffix].detach().cpu()
+               for suffix in (member, observed)}
+    entries = (checkpoint.get('structural_extras') or {}).get('whole_properties', {}) if bundle else {}
+    first = entries.get(0, entries.get('0', {}))
+    used = first.get('attributes', {}).get('_property_rows_used', ())
+    # A split occupies a previously empty row. It is copy 0's host-produced
+    # addition, distinct from learning in the initially defined inventory.
+    # Existing rows in _property_rows_used remain part of copy selection.
+    split_rows = tuple(sorted(int(row) for row in used
+        if 0 <= int(row) < len(initial[member])
+        and not bool(initial[member][int(row)].any())
+        and not bool(initial[observed][int(row)].any())))
+    ordinary = torch.ones(len(initial[member]), dtype=torch.bool)
+    ordinary[list(split_rows)] = False
+    changed = []
+    for index in copies:
+        prefix = f'wholeSpaces.{index}.'
+        for suffix, baseline in initial.items():
+            saved = state.get(prefix + suffix)
+            if not torch.is_tensor(saved) or saved.shape != baseline.shape:
+                raise ValueError('checkpoint WholeSpace property width differs from construction')
+        rows = ordinary if index == 0 else torch.ones_like(ordinary)
+        if any(not torch.equal(state[prefix + suffix].cpu()[rows], baseline[rows])
+               for suffix, baseline in initial.items()):
+            changed.append(index)
+    if len(changed) > 1:
+        raise ValueError(f'checkpoint has more than one changed WholeSpace copy: {changed}')
+    selected = changed[0] if changed else copies[0]
+    prefix = f'wholeSpaces.{selected}.'
+    mapped = {}
+    for key, value in state.items():
+        match = re.match(r'wholeSpaces\.(\d+)\.(.*)', key)
+        if match:
+            if int(match[1]) != selected:
+                continue
+            key = 'wholeSpace.' + match[2]
+        mapped[key] = value
+    if selected != 0 and split_rows:
+        for suffix, baseline in initial.items():
+            key = 'wholeSpace.' + suffix
+            retained = mapped[key].clone()
+            host = state['wholeSpaces.0.' + suffix]
+            for row in split_rows:
+                if (not torch.equal(retained[row].cpu(), baseline[row])
+                        and not torch.equal(retained[row].cpu(), host[row].cpu())):
+                    raise ValueError(f'checkpoint split property row {row} conflicts with retained copy {selected}')
+                retained[row] = host[row].to(retained)
+            mapped[key] = retained
+    rebuilt = []
+    for key, current in live.items():
+        if key.startswith('candidate_attention.') and key in mapped and mapped[key].shape != current.shape:
+            rebuilt.append(key)
+    if rebuilt:
+        # The input addresses changed meaning as well as width. Rebuild the
+        # complete reader and its optimizer slots at the constructed geometry.
+        rebuilt = [key for key in live if key.startswith('candidate_attention.')]
+        for key in rebuilt:
+            mapped[key] = live[key].detach().cpu().clone()
+    out = dict(checkpoint) if bundle else mapped
+    if not bundle:
+        return out, dict(whole_copy=selected, whole_copies=len(copies), rebuilt_parameters=tuple(rebuilt))
+    out['state_dict'] = mapped
+    structural = copy.deepcopy(out.get('structural_extras'))
+    if structural is not None:
+        entries = structural.get('whole_properties', {})
+        kept = copy.deepcopy(entries.get(selected, entries.get(str(selected), {})))
+        first = entries.get(0, entries.get('0', {}))
+        attrs = kept.setdefault('attributes', {})
+        for name in ('_standalone_run_bytes', '_property_rows_used'):
+            values = set(attrs.get(name, ())) | set(first.get('attributes', {}).get(name, ()))
+            if values:
+                attrs[name] = values
+        vocab = kept.setdefault('vocab_extras', {})
+        first_vocab = first.get('vocab_extras', {})
+        values = set(vocab.get('standalone_run_bytes', ())) | set(first_vocab.get('standalone_run_bytes', ()))
+        if values:
+            vocab['standalone_run_bytes'] = sorted(values)
+        structural['whole_properties'] = {0: kept}
+        out['structural_extras'] = structural
+        if isinstance(out.get('vocab_extras'), dict):
+            out['vocab_extras'] = dict(out['vocab_extras'], whole_properties=copy.deepcopy(vocab))
+    runtime = (out.get('training_state') or {}).get('corpus_runtime')
+    if runtime is not None:
+        runtime = dict(runtime)
+        surfaces = {}
+        for name, value in runtime.get('surfaces', {}).items():
+            match = re.match(r'wholeSpaces\.(\d+)(\..*)?$', name)
+            if match:
+                if int(match[1]) != selected:
+                    continue
+                name = 'wholeSpace' + (match[2] or '')
+            surfaces[name] = value
+        runtime['surfaces'] = surfaces
+        out['training_state'] = dict(out['training_state'], corpus_runtime=runtime)
+    # Optimizer manifests name the same physical parameters. Preserve the
+    # chosen copy's slots, drop the discarded copies, and reset the rebuilt
+    # reader by leaving its old names unmatched.
+    manifest = copy.deepcopy(out.get(OPTIMIZER_PARAM_NAMES_KEY))
+    if manifest is not None:
+        def rename(value):
+            if isinstance(value, dict):
+                result = {key: rename(item) for key, item in value.items()}
+                name = value.get('name')
+                if isinstance(name, str):
+                    match = re.match(r'wholeSpaces\.(\d+)\.(.*)', name)
+                    if match and int(match[1]) == selected:
+                        result['name'] = 'wholeSpace.' + match[2]
+                    elif name in rebuilt:
+                        result['name'] = 'retired_candidate_attention.' + name
+                return result
+            if isinstance(value, list):
+                return [rename(item) for item in value]
+            return value
+        out[OPTIMIZER_PARAM_NAMES_KEY] = rename(manifest)
+    count = 0
+    if where_slices is not None:
+        out, count = _migrate_whole_addresses(out, where_slices, len(copies), percept_width)
+    return out, dict(whole_copy=selected, whole_copies=len(copies),
+                    rebuilt_parameters=tuple(rebuilt), migrated_addresses=count,
+                    merged_property_rows=split_rows)
+
+
 def migrate_wholespace_checkpoint(
     checkpoint: Mapping[str, Any],
     live_state_dict: Mapping[str, Any] | None = None,
+    *, where_slices=None, percept_width=None,
 ) -> CheckpointMigrationResult:
     """Migrate one checkpoint to the properties-only WholeSpace schema.
 
@@ -268,11 +531,13 @@ def migrate_wholespace_checkpoint(
     if already_properties:
         unchanged = dict(checkpoint)
         dropped_structure = _drop_legacy_whole_structure(unchanged)
-        diagnostics = CheckpointMigrationDiagnostics(
-            source_version=source_version, target_version=CHECKPOINT_SCHEMA_VERSION,
-            dropped_structure_fields=dropped_structure)
         if is_bundle:
             unchanged['state_dict'] = dict(state_obj)
+        unchanged, single = _one_wholespace(unchanged, live_state_dict,
+            where_slices=where_slices, percept_width=percept_width, bundle=is_bundle)
+        diagnostics = CheckpointMigrationDiagnostics(
+            source_version=source_version, target_version=CHECKPOINT_SCHEMA_VERSION,
+            dropped_structure_fields=dropped_structure, **single)
         _warn_whole_migration(diagnostics)
         return CheckpointMigrationResult(checkpoint=unchanged, diagnostics=diagnostics,
                                          legacy_state_shapes=legacy_shapes)
