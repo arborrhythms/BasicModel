@@ -53,7 +53,7 @@ def test_stm_depth_tracks_valid_len_not_N(monkeypatch):
         pytest.skip("model has no STM")
     # A grammatical closing reduces the stack. Count the physical pushes
     # at the current tensor boundary, then check the concluded depth too.
-    from Layers import ShortTermMemory
+    from Memory import ShortTermMemory
     original = ShortTermMemory.functional_push_step_masked
     pushes = []
     def observed(*args):

@@ -726,7 +726,8 @@ generation is expected at this stage and is recorded, not tuned away.
    report (admitted, shortlisted, exact route available) for every supplied
    form, with `yes` present in all applicable banks, and a certificate on
    the admission path (`Corpus.admit_training_forms` to
-   `Generative.lexical_candidates`); Alec to confirm this home over item 0.
+   `Generative.lexical_candidates`); home confirmed as 2.0 round 2 (Alec, 2026-11-08,
+   "Yes, round 2"; 2.0 spec §11.7 item 7).
    If the sentence-82 MTM rejection (`MediumTermMemory._value`, 2.7 receipt
    `failure-index.json`, never captured, not recurred in eight later runs)
    recurs in the round's lesson-13 arms, capture the working value and pool
@@ -762,7 +763,10 @@ generation is expected at this stage and is recorded, not tuned away.
       inverse given the forward's action context; one WholeSpace; the
       supplied `yes` admission; the item 60 metrics and receipts recorded as
       the baseline. The sentence-82 rejection is a capture rule on every
-      lesson-13 run.
+      lesson-13 run. (Alec, 2026-11-08: "Fast checks only"; the measured
+      "before" and every other measurement of 2.0 move to the end of the
+      item, taken on round 2's frozen source and on the finished tree; the
+      round builds the repairs with fast checks; 2.0 spec §10.2.)
    3. *One gradient:* `separateChooser` false with the one-sided projection
       and the sides (spec §§1–2). It starts from 2.5's receipts (§54): under
       the shared backward the output gradient reaches the percept-to-word
@@ -1498,3 +1502,49 @@ Alec's word: Codex commits and pushes on completion. Receipts stay local (doc/be
 ignored). Next: item 2.0 round 1 (handoff task 4) after the landing.
 
 Landed as 59cd46607744350dc905aca2effe3df12aaabfaa, 2026-11-08
+
+**Update 2026-11-08 (item 2.3 landed; item 2.0 round 1 text):** item 2.3 is landed and
+verified (BasicModel 59cd466077 + 87e74ff435 on main, pushed; tree clean; source hash
+f770cd13... recomputed; no model identifier in the messages); WikiOracle's submodule bump
+d8310f6 "Land accepted BasicModel item 2.3" is committed, push pending (Alec). Alec:
+"issue text for both you and codex to begin 2.0". Written: the hand-off
+[2026-11-08-handoff-2-0.md](doc/plans/2026-11-08-handoff-2-0.md) (state, text for Claude,
+text for Codex) and the 2.0 spec's §10 (the rounds, the round-1 Codex text: bin/Memory.py
+with STMChunks, ShortTermMemory, MediumTermMemory, LTM0 and LTM1 moved and the three old
+modules deleted; thought ideas stamped and found by .when, the behaviour-neutral part of
+loop-spec D5; ReferenceClose.commit's substitution and word_occurrences retired, §54 finding 3;
+no row for a SHIFT at the source, §58's note; documents; fast checks; return as §11). Round 2's
+measurements conflict with the fast-checks rule: put to Alec before its text.
+
+**Update 2026-11-08 (round 2 under the fast-checks rule):** Alec: "Fast checks only." Round 2
+builds its repairs (fail loud in the reverse and `runBatch`, the derivation inverse given the
+forward's action context, one WholeSpace, the supplied `yes` admission, the sentence-82 capture
+rule) with direct cases, the targeted files and one `make test` at its freeze; item 71's runs and
+the item 60 metrics move to the end of item 2.0, taken on round 2's frozen source and on the
+finished tree. Recorded as 2.0 spec §10.2. The round-2 text follows the round-1 review.
+
+**Update 2026-11-08 (§11/§11.5, round 1 reviewed and accepted):** Codex's round-1 return (2.0 spec
+§11, receipt `doc/benchmarks/2026-11-08-item2-0-round-1/`) is reviewed in §11.5 and accepted: the
+frozen source `2d2abfe10878…` (1004 files) equals the live tree, the before-source is the landed
+`f770cd13…`; `bin/Memory.py` holds STMChunks (a namespace class), ShortTermMemory, MediumTermMemory,
+LTM0 and LTM1 with the three old modules deleted and every moved function unchanged by AST; thought
+ideas carry their thought step's `.when` (the former address digits, offset 2, disjoint from model
+time) with an empty `.where`; the one-leaf substitution and `word_occurrences` are retired; a SHIFT
+gets an empty sentinel row and no row-0 copy; one `make test` 7521 passed / 325 skipped / 1 xpassed
+(= 7509 + 11 new + 1 link case); Claude's targeted run 2089 passed / 55 skipped. The stateless
+`MemoryStore` base, outside the §10 text, is Alec's direction (confirmed 2026-11-08: a base class to
+consolidate code; `Memory` is the module's name). Landing text §11.6 (Codex commits and pushes on
+Alec's word). Next: round 2's text (repairs under fast checks, §10.2) after the landing.
+
+**Update 2026-11-08 (§11.7, landing and round 2 in one text):** Alec: "add the round two text to
+this prompt, otherwise we take too many iterations to finish 2.0". The 2.0 spec's §11.7 is one Codex
+text: steps 1-3 land round 1 (2d2abfe10878…, push), then round 2 starts from the landed main: fail
+loud in `_reverse_body` and `runBatch` and the `_inputShape` repair; the derivation inverse and the
+walk recomposition given the forward's action context; one WholeSpace with the checkpoint migration
+and the persisted-address certificate; the supplied `yes` admission's three-stage report (home: this
+round, unless Alec moves it to item 0); the sentence-82 capture rule at `ReferenceClose.commit`'s
+`mtm.bind`; the ≥1e8 item recorded empty. Fast checks only; the measurements wait for the end of 2.0
+(§10.2). Return as §12.
+
+**Update 2026-11-08 (yes admission's home):** Alec: "Yes, round 2". The supplied `yes` admission is
+built in 2.0 round 2 (§11.7 item 7), not item 0; the §11.7 text has no open assumption.

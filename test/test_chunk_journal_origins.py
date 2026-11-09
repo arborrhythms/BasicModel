@@ -9,7 +9,7 @@ from dataclasses import replace
 import pytest
 import torch
 
-import STMChunks as chunks
+from Memory import STMChunks as chunks
 from ChunkJournal import IDENTITY, LEAVES, RECORD_WIDTH, RESOLVED, SOURCE, capture, empty_scope
 from chunk_fixtures import Walk, choice, context
 

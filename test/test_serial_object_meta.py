@@ -249,7 +249,7 @@ def test_serial_commit_gate_fires_once_per_active_word():
 @pytest.mark.slow
 def test_physical_push_uses_one_complete_unit_commit_boundary(monkeypatch):
     """The physical STM push uses exactly the complete-unit gate."""
-    from Layers import ShortTermMemory
+    from Memory import ShortTermMemory
     m, x = _serial_model_and_batch()
     pushed = []
     original_push = ShortTermMemory.functional_push_step_masked

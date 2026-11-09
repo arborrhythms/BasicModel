@@ -3,7 +3,6 @@ from dataclasses import dataclass, field, replace
 from contextlib import contextmanager
 from typing import Any
 
-from LTM1 import NULL_CONCEPT
 import torch
 
 from Meaning import ConceptualMeaning
@@ -214,7 +213,7 @@ class ClauseRows:
     @torch.no_grad()
     def part_row(self, symbol, *, reading=None):
         """Build a temporary working view from the two tagged references."""
-        from LTM1 import OCCURRENCE, SYMBOL, RELATION
+        from Memory import OCCURRENCE, SYMBOL, RELATION
         from ChainRead import envelope, point, head_idea
         from Spaces import _concept_alloc_of
         from ThoughtReferences import with_slots
@@ -429,7 +428,7 @@ class ClauseRows:
         """Compress resolved semantic journal compositions, retaining only open chains."""
         import math
         from PartClosing import PartClosing
-        from LTM1 import OCCURRENCE, SYMBOL, RELATION
+        from Memory import OCCURRENCE, SYMBOL, RELATION
         from RowTime import stamp
         from Occurrence import native_content_key
         from ThoughtReferences import bindings
@@ -699,6 +698,7 @@ class ClauseRows:
         token; reading the forward name's own object does not bind it.
         Explicitly excluded occurrences supply no witness for this read.
         """
+        from Memory import NULL_CONCEPT
         from ThoughtReferences import bindings, fill, open_slots, with_slots
         owner_ref = self.__dict__.get('_concept_owner')
         owner = None if owner_ref is None else owner_ref()
@@ -777,14 +777,14 @@ class ClauseRows:
 
     def relation_operands(self, symbol):
         """Read the actual operands in their tagged address domains."""
-        from LTM1 import RELATION
+        from Memory import RELATION
         from ChainRead import point
         symbol = symbol[1] if isinstance(symbol, tuple) else int(symbol)
         return tuple(self.part_row(ref[1]) if ref[0] == RELATION else point(self, ref)
                      for ref in self.parts.references(symbol))
 
     def consequents_by_row(self, reference, *, reading=None):
-        from LTM1 import SYMBOL
+        from Memory import SYMBOL
         return [(symbol, right[1] if right[0] == SYMBOL else right,
                  tuple(float(pole) for pole in self.parts.evidence(symbol)))
                 for symbol in self.relations(reading).tolist()

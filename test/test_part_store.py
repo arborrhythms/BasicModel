@@ -2,7 +2,7 @@
 import torch
 
 from Layers import ConceptAllocator
-from LTM1 import LTM1, SYMBOL, RELATION
+from Memory import LTM1, SYMBOL, RELATION
 
 
 def test_taxonomy_and_nested_relations_share_symbol_rows():

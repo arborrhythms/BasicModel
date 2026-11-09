@@ -75,7 +75,7 @@ def test_closing_uses_the_ordered_object_parent_and_deduplicates_it():
     from types import SimpleNamespace
     import torch
     from ClauseRow import Clause, attach_clause_index
-    from Layers import LTM0
+    from Memory import LTM0
     from Meaning import ConceptualMeaning
     cs, interpret = _operator()
     first = witness_object(cs, interpret.lookup_word([7], [1], form='cat'), point=torch.full((8,), .3))
@@ -101,7 +101,7 @@ def test_failed_closing_does_not_leave_a_taxonomy_prefix():
     from types import SimpleNamespace
     import torch
     from ClauseRow import Clause, attach_clause_index
-    from Layers import LTM0
+    from Memory import LTM0
     from Meaning import ConceptualMeaning
     cs, interpret = _operator()
     left = witness_object(cs, interpret.lookup_word([7], [1], form='cat'), point=torch.full((8,), .3))
@@ -153,7 +153,7 @@ def test_closing_binds_subject_form_to_particular_without_widening_compose_acces
 @pytest.mark.parametrize('invalid', ['width', 'capacity'])
 def test_referenced_phrase_admission_is_atomic(monkeypatch, invalid):
     from ClauseRow import attach_clause_index
-    from Layers import LTM0
+    from Memory import LTM0
     from Meaning import ConceptualMeaning
     f = SentenceFixture(monkeypatch)
     clause = f.clause(('part', 'cat', ('lift', 'chases', 'mouse')))

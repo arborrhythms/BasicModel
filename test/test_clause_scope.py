@@ -70,7 +70,7 @@ def test_committed_close_keeps_recent_chunks_beside_the_output_field():
            torch.zeros(2, 8, dtype=torch.long), torch.zeros(2, 8, dtype=torch.long),
            torch.full((2, 8), -1, dtype=torch.long), torch.ones(2, 8))
     from chunk_fixtures import from_stack
-    import STMChunks as chunks
+    from Memory import STMChunks as chunks
     stm = from_stack(*stm)
     lang = [torch.zeros(2)] * 19
     lang[6] = torch.zeros(2, 1, 4)
@@ -78,7 +78,7 @@ def test_committed_close_keeps_recent_chunks_beside_the_output_field():
     lang[11] = torch.ones(2, 1, dtype=torch.long)
     lang[17] = torch.zeros(2, 8, 2, dtype=torch.long)
     idea, relation = idea_clause(), part_clause()
-    from Layers import LTM0
+    from Memory import LTM0
     store = LTM0(4, capacity=16)
     owner = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store))
     state = BasicModel._clause_end_state(owner, (stm, tuple(lang), ()), 0, (idea, relation), (10, 11))

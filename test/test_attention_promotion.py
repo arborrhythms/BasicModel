@@ -7,7 +7,7 @@ from order_fixtures import force_order
 import Spaces
 from test_basicmodel import _populate_test_config
 from FamiliarTier import centroid, observe_candidate
-from MediumTermMemory import MediumTermMemory
+from Memory import MediumTermMemory
 
 _D = 8
 

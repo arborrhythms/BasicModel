@@ -74,7 +74,7 @@ class ConceptTrust(nn.Module):
 
     @torch.no_grad()
     def refresh(self, identity):
-        from LTM1 import NULL_CONCEPT
+        from Memory import NULL_CONCEPT
         if not self.tracks(identity) or identity == NULL_CONCEPT or self.owner.is_frozen(identity):
             return
         row = self.owner._csw_row_of(identity)
@@ -139,7 +139,7 @@ def positive_length(owner, identity=None, *, value=None):
 @torch.no_grad()
 def observe(owner, identity, content):
     """Add one kept view without allocating a memory row."""
-    from LTM1 import NULL_CONCEPT
+    from Memory import NULL_CONCEPT
     from IdentityRows import carrier, meet_ratios
     trust = owner.similarity_codebook.trust
     if not trust.tracks(identity) or identity == NULL_CONCEPT or owner.is_frozen(identity):

@@ -56,7 +56,7 @@ def align(model, state, old):
                 transforms[key] = None
     from IdentityRows import migrate_checkpoint
     migrate_checkpoint(model, result, live, drift, transforms)
-    from Layers import LTM0
+    from Memory import LTM0
     for name, module in model.named_modules(remove_duplicate=False):
         if isinstance(module, LTM0) and name+'.slots' in result:
             if int(result.get(name+'.truth_schema', -1)) != int(module.truth_schema):

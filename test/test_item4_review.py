@@ -5,7 +5,8 @@ from dataclasses import replace
 import pytest
 import torch
 from Expectation import sample_alternative, retention_surprise
-from Layers import SymbolExpectation, ExpectationComparison, LTM0
+from Layers import SymbolExpectation, ExpectationComparison
+from Memory import LTM0
 from Meaning import ClosingImage, ConceptualMeaning, retained_symbol_prediction, withheld_symbols
 from meaning_fixtures import symbol_prediction, estimate_meaning
 

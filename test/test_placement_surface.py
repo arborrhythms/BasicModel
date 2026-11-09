@@ -106,7 +106,7 @@ def test_unchanged_forward_reuses_edges_bridge_forms_and_witnesses(monkeypatch):
 def test_promotion_folds_form_and_takes_one_context_step(monkeypatch):
     import weakref
     from ClauseRow import attach_clause_index
-    from Layers import LTM0
+    from Memory import LTM0
     from MemoryConsolidation import consolidate
     from Meaning import ConceptualMeaning
     cs, derived, rows, reading = lesson(monkeypatch)

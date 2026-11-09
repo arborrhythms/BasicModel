@@ -6,7 +6,7 @@ import pytest
 import torch
 from torch import nn
 from torch.nn import functional as F
-from LTM1 import LTM1
+from Memory import LTM1
 from Priming import part_edges
 
 

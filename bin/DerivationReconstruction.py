@@ -179,8 +179,8 @@ def reconstruct(language, record, programs, positions, stm=None):
             if stm is None:
                 raise ValueError('an unfinished derivation requires its live STM')
             if stack is None:
-                from STMChunks import stack_view
-                stack = stack_view(stm)
+                from Memory import STMChunks
+                stack = STMChunks.stack_view(stm)
             depth = int(stack[1][b])
             values = stack[0][b, :depth]
         else:

@@ -9,7 +9,7 @@ from dataclasses import replace
 import hashlib
 
 import torch
-from LTM1 import NULL_CONCEPT
+from Memory import NULL_CONCEPT
 from torch import nn
 from IdentityRows import meet_ratios
 
@@ -211,7 +211,7 @@ class ReferenceClose(nn.Module):
 
     def accessible(self, chunks, *, stream=None, include_pool=False):
         """Read identities from shared chunks, optionally adding the live MTM pool."""
-        import STMChunks
+        from Memory import STMChunks
         if len(chunks) != len(STMChunks.FIELDS) or not all(torch.is_tensor(value) for value in chunks):
             raise ValueError('reference access requires the shared chunk tuple')
         store, pool = self.store, self.components.owner.mtm
@@ -1201,8 +1201,7 @@ class ReferenceClose(nn.Module):
     @torch.no_grad()
     def commit(self, plan, row, written, *, document, position, training,
                verb_action=None, errors=None, verb_teacher_weight=.1, teacher_records=None,
-               modifier_action=None, modal_teacher_weight=.1, modal_records=None, reading=None,
-               word_occurrences=None):
+               modifier_action=None, modal_teacher_weight=.1, modal_records=None, reading=None):
         """Record training inputs and the kept working decision, never rewrite LTM."""
         kept_reading = reading
         from collections import OrderedDict
@@ -1220,7 +1219,7 @@ class ReferenceClose(nn.Module):
         mention_occurrences = plan['mention_occurrences'] = {}
         stream = plan.get('stream')
         from ChainRead import envelope
-        from LTM1 import OCCURRENCE
+        from Memory import OCCURRENCE
         retained = tuple(envelope(self.store, side)
             for left, right, _, _, null in getattr(self.components.owner, '_kept_definition_witnesses', ())
             if null for side in (left, right) if side[0] == OCCURRENCE)
@@ -1237,12 +1236,7 @@ class ReferenceClose(nn.Module):
                 occurrence = written.get('root_mention')
             if occurrence is None:
                 occurrence = self.store.occurrence_of(location)
-            if occurrence[:1] == ('sym',) and word_occurrences and len(item['leaves']) == 1:
-                # A durable concept is the mention's referent, not its address.
-                # Reading already retained the located word occurrence.
-                # ClauseJournal gives the head's first leaf the subject word.
-                occurrence = word_occurrences.get(item['leaves'][0], occurrence)
-            if occurrence[:1] == ('sym',) and len(item['leaves']) > 1:
+            if occurrence[:1] == ('sym',):
                 raise ValueError(f'description {item["leaves"]!r} has no own occurrence: {occurrence!r}')
             mention_occurrences[id(node)] = occurrence
             sites[('site', number)] = occurrence
@@ -1422,7 +1416,7 @@ class ReferenceClose(nn.Module):
         trials. The close assigns actual pool seats; no trial mutates the pool.
         The journal's compact handle map identifies those admissions exactly.
         """
-        import STMChunks as chunks
+        from Memory import STMChunks as chunks
         from PrependedSymbols import symbolize, chunk_token
         owner, pool = self.components.owner, self.components.owner.mtm
         mapping = {}

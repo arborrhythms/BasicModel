@@ -6,7 +6,7 @@ import pytest
 import torch
 
 from Meaning import ConceptualMeaning
-from Layers import LTM0
+from Memory import LTM0
 from test_cs_symbol_table import _cs
 from order_fixtures import force_order
 from Language import Grammar

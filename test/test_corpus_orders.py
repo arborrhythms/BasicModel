@@ -14,7 +14,7 @@ def named_individual(cs, store, alloc, name, offset):
     assert individual != word and alloc.order_of(individual) == 1
     row = store.index_of_row(first)
     from ChainRead import point
-    from LTM1 import OCCURRENCE
+    from Memory import OCCURRENCE
     cs.mtm.open(store.occurrence_of(row), kind=individual, native=individual,
                 when=offset, value=point(store, (OCCURRENCE, first)))
     return individual
@@ -24,7 +24,7 @@ def symbol_equality(cs, store, left, right):
     from ClauseRow import Clause, Composition, predicate_identity
     from Meaning import ConceptualMeaning
     from ChainRead import point
-    from LTM1 import SYMBOL
+    from Memory import SYMBOL
     operands = tuple(Composition(point(store, (SYMBOL, value)), reference=value,
         word_id=value, order=cs._concept_source_order(value)) for value in (left, right))
     composed = Composition(operands[0].point, operands, operation='equal', order=operands[0].order)
@@ -34,7 +34,7 @@ def symbol_equality(cs, store, left, right):
 
 
 def test_two_witnessed_individuals_name_a_kind_without_forcing_any_order():
-    from LTM1 import SYMBOL
+    from Memory import SYMBOL
     cs, store, alloc = equality_fixture()
     left = named_individual(cs, store, alloc, 'alpha', 1)
     other = named_individual(cs, store, alloc, 'beta', 4)

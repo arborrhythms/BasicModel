@@ -7,7 +7,7 @@ import pytest
 import torch
 
 from DocumentCover import open_cover
-from Layers import LTM0
+from Memory import LTM0
 from Meaning import ConceptualMeaning
 from PresentationMemory import begin as begin_document
 from Forgetting import model_boundary
@@ -152,7 +152,7 @@ def test_given_knowledge_keeps_its_required_dependency_without_experience_author
 def test_boundary_removes_occurrence_relations_transitively_and_keeps_concept_relations():
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
-    from LTM1 import OCCURRENCE, SYMBOL, RELATION
+    from Memory import OCCURRENCE, SYMBOL, RELATION
     left, right = owner.new_concept(), owner.new_concept()
     store.parts.add(left, right, symbol=400, truth_plus=1.)
     begin(model_for(owner, store))
@@ -236,7 +236,7 @@ def test_verb_group_boundary_forgets_witnesses_but_keeps_the_learned_basis():
 @pytest.mark.parametrize('negative', [0., .8])
 def test_unasserted_part_does_not_raise_a_retained_identity_order(negative):
     from FamiliarTier import promote_identity
-    from LTM1 import SYMBOL, RELATION
+    from Memory import SYMBOL, RELATION
     from order_fixtures import force_order
     resolver, store, atoms = fixture()
     owner = resolver.components.owner

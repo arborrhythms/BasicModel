@@ -235,7 +235,7 @@ def restore_warmup(model, path, restore):
     # migration while leaving the new sidecar in place, corrupting the next
     # checkpoint. Only this derived metadata tensor changes; learned tensors
     # still receive the exact-retention checks below.
-    from Layers import LTM0
+    from Memory import LTM0
     migrated_stores={id(model.get_submodule(name)) for name,extras in
         (bundle.get('structural_extras',{}).get('truth_semantics') or {}).items()
         if extras.get('version',0)<6}

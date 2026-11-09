@@ -381,7 +381,7 @@ class LiveConstituents:
 
     @torch.no_grad()
     def observe(self, state, rows, support):
-        import STMChunks
+        from Memory import STMChunks
         values,depth = STMChunks.stack_view(state)[:2]
         for b in rows.nonzero().flatten().tolist():
             for slot, value in enumerate(values[b, :int(depth[b])].detach()):

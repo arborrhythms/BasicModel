@@ -39,7 +39,7 @@ def test_formation_provenance_is_not_a_chooser_input():
 
 
 def test_copula_fills_the_addressed_open_column_without_a_word_alias():
-    from Layers import LTM0
+    from Memory import LTM0
     from Occurrence import slot_key
     from ThoughtStream import write
     store = LTM0(4, capacity=32)
@@ -427,7 +427,7 @@ def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager
         site = store.occurrence_of(index)
         entry = owner.mtm.entries.get(site) if reverse else None
         unsupported_arrival = False
-        from LTM1 import NULL_CONCEPT
+        from Memory import NULL_CONCEPT
         raw_ref = raw.role_refs[0]
         open_word = raw_ref is not None and raw_ref[0] == 'sym' and owner.interpret.no_object(raw_ref[1])
         if (entry is not None and not entry.pending and entry.native is None and entry.symbol is None

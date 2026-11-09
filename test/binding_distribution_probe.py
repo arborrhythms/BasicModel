@@ -24,7 +24,7 @@ def retained_bank_distributions(model):
             # part of the queried whole, so all candidates are admissible.
             parts = torch.eye(width, device=like.device, dtype=like.dtype)[:count]
             points = torch.cat((parts, parts.sum(0, keepdim=True)))
-            import STMChunks as chunks
+            from Memory import STMChunks as chunks
             state = chunks.empty(1,8,width,device=like.device,dtype=like.dtype)
             active = torch.ones(1,device=like.device,dtype=torch.bool)
             ids = model._concept_owner().mtm.transient_ids[:count].to(like.device)

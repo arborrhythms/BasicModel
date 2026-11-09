@@ -75,10 +75,10 @@ def candidates(registry, root, active, current, records, descriptions=()):
     if stm is not None and hasattr(stm, 'state'):
         from ThoughtChunks import held
         resident = dict(held(stm, getattr(registry, '_thought_row', 0)))
-        meanings = tuple(resident[where] if where in resident else value
+        meanings = tuple(resident[when] if when in resident else value
             for value in meanings
-            if (where := bindings(value).get('_chunk_where')) is None
-                or (where in resident and resident[where].role_refs == value.role_refs))
+            if (when := bindings(value).get('_chunk_when')) is None
+                or (when in resident and resident[when].role_refs == value.role_refs))
     # Existing grammatical alternatives also bind to each result slot.
     requests = list(registry.controller_candidates(root, active, current,
         descriptions=descriptions, result_meanings=meanings))

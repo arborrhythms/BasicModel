@@ -7,7 +7,7 @@ import torch
 
 from Layers import Error
 from MeaningKernels import MeaningAction
-from MediumTermMemory import MediumTermMemory
+from Memory import MediumTermMemory
 from VerbLearning import observe
 
 

@@ -53,7 +53,7 @@ def test_native_surface_dispatch_keeps_nested_counts_and_inverts(postposed):
         content = forward('sum', forward('sum', leaves[0], leaves[1], (1, 1)), leaves[2], (2, 1))
         marker = leaves[3]
         if postposed:
-            import STMChunks as chunks
+            from Memory import STMChunks as chunks
             from Spaces import LanguageOperationChoice
             state = list(model.conceptualSpace.CSLang.state)
             state[chunks.BUFFER][0, :2] = torch.cat((marker, content))

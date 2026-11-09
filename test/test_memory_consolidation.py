@@ -10,7 +10,7 @@ import torch
 from ClauseRow import Clause, Composition
 from Meaning import ConceptualMeaning
 from MemoryConsolidation import consolidate
-from MediumTermMemory import MediumTermMemory
+from Memory import MediumTermMemory
 from ReferenceContext import SituationFrame
 from test_reference_close import fixture
 from test_medium_term_memory import mention, snapshot, unchanged
@@ -109,7 +109,7 @@ def test_reading_recurrence_counts_distinct_documents_not_reobservations(distinc
         before = snapshot(resolver)
         consolidate(owner, store)
         unchanged(resolver, before)
-        from Layers import LTM0
+        from Memory import LTM0
         restored = LTM0(12, capacity=512, percept_width=0)
         restored.load_state_dict(store.state_dict())
         restored.load_semantic_extras(store.semantic_extras())
@@ -482,7 +482,7 @@ def test_angular_recurrence_admits_drift_and_keeps_evidence_weighted_content():
 
 def test_recurrence_time_is_ignored_and_compaction_keeps_assignments():
     from MemoryConsolidation import recurrence_groups
-    from Layers import LTM0
+    from Memory import LTM0
     store = LTM0(12, capacity=8, percept_width=8)
     value = torch.tensor([1., 0., 0., 0., 0., 0., 0., 0., .5, 0., 0., 0.])
     a = store.append_idea(value, trust=1., document_key='time-a')

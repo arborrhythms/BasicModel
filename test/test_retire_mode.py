@@ -96,7 +96,7 @@ def test_open_first_menu_keeps_the_search_rule(monkeypatch):
 def test_mode_api_and_old_semantic_layout_are_rejected():
     import ThoughtReferences
     from Language import AskLayer, Grammar
-    from Layers import LTM0
+    from Memory import LTM0
     assert 'mode' not in {f.name for f in fields(ConceptualMeaning)}
     assert 'mode' not in ConceptualMeaning.from_description(torch.ones(4)).metadata()
     assert not hasattr(AskLayer, 'meaning_mode') and not hasattr(ThoughtReferences, 'question')
@@ -262,7 +262,7 @@ def test_opening_fork_can_keep_zero_work_without_history(monkeypatch):
 @pytest.mark.parametrize('budget', [0, 8])
 def test_chooser_opened_read_reuses_unchanged_chain_and_stamp(monkeypatch, budget, operation):
     from ClauseRow import attach_clause_index
-    from Layers import LTM0
+    from Memory import LTM0
     from meaning_fixtures import replay_thought_plan
     from test_normal_thought_controller import _catalog_world
     model, registry, memory, part, whole = _catalog_world()

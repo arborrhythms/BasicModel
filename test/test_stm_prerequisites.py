@@ -36,7 +36,7 @@ def test_unary_case_keeps_a_single_position_per_stream(monkeypatch, has_cases):
 
 
 def test_recurrence_capacity_is_independent_fixed_and_versioned():
-    from Layers import LTM0
+    from Memory import LTM0
     from MemoryConsolidation import recurrence_groups
     store = LTM0(4, capacity=9, recurrence_capacity=2)
     assert store.recurrence_codes.shape == (2, 4)

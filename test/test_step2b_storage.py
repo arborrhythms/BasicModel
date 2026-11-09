@@ -4,7 +4,7 @@ import copy
 import pytest
 import torch
 
-from Layers import LTM0
+from Memory import LTM0
 from Meaning import ConceptualMeaning
 
 
@@ -143,7 +143,7 @@ def test_truth_ingestion_restores_caller_recall_and_isolates_each_source(failure
     from contextlib import contextmanager, nullcontext
     from types import SimpleNamespace, MethodType
     from Models import BasicModel
-    from MediumTermMemory import MediumTermMemory
+    from Memory import MediumTermMemory
     caller = {4: [object()]}
     caller_pool = MediumTermMemory()
     # §50 item 100g / §52 item 111: ingestion installs an owner-bound pool.

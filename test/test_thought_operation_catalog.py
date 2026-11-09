@@ -794,7 +794,7 @@ def test_live_tree_choice_keeps_the_same_structural_context_contract():
     language._compose_binary_rules = (SimpleNamespace(head_role=1),)
     language._compose_unary_rules = ()
     buffer = torch.rand(1, 2, 4)
-    import STMChunks as chunks
+    from Memory import STMChunks as chunks
     state = chunks.empty(1,8,4)
     for value in buffer.unbind(1):
         state,_ = chunks.deposit(state,value,torch.tensor([True]),stack=True)
@@ -841,18 +841,18 @@ def test_canonical_thought_executors_use_only_their_named_capability_views():
     arguments.update({name: {'argin1':value} for name in ('exist','gain')})
     from dataclasses import replace
     arguments['bind'] = {'argin1': replace(meaning, bindings={'_bind_role': 0})}
-    from Layers import ShortTermMemory
-    from ThoughtChunks import put, address
-    from ThoughtReferences import with_slots
+    from Memory import ShortTermMemory
+    from ThoughtChunks import put
+    from ThoughtReferences import bindings, with_slots
     stm = ShortTermMemory(concept_dim=4)
     premise = with_slots(replace(meaning, role_refs=(('sym', 1), None, None)), (), pair=(.6, .2))
     rule = ConceptualMeaning(torch.ones(3, 4), torch.ones(3, dtype=torch.bool),
         role_refs=(('sym', 1), ('sym', 3), ('sym', 2)), bindings={
             '_rule_row': ('sym', 4), '_evidence_pair': (.8, .1)})
-    put(stm, premise, address(1), 0)
-    put(stm, rule, address(2), 0)
+    premise = put(stm, premise, row=0)
+    rule = put(stm, rule, row=0)
     context = replace(context, stm=stm)
-    arguments['infer'] = {'argin1': ('chunk', address(1)), 'argin2': ('chunk', address(2))}
+    arguments['infer'] = {'argin1': ('chunk', bindings(premise)['_chunk_when']), 'argin2': ('chunk', bindings(rule)['_chunk_when'])}
     arguments['intuit'] = {'argin1': meaning}
     assert set(arguments) == set(THOUGHT_EXECUTORS)
     assert {'what','lookup','quantize','arma','expect','true'}.isdisjoint(THOUGHT_EXECUTORS)

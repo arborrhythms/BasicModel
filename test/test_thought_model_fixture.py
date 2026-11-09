@@ -1,7 +1,8 @@
 """Small normal model shells for checked-boundary tests (no alternate executor)."""
 from types import SimpleNamespace
 from Language import Grammar, OperationSelectionLayer
-from Layers import WhatInteractionMemory, LTM0
+from Layers import WhatInteractionMemory
+from Memory import LTM0
 from Models import BasicModel
 from Queries import GrammaticalThoughtRegistry
 

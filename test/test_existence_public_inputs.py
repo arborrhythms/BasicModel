@@ -3,7 +3,7 @@ import pytest
 import torch
 
 from Meaning import ConceptualMeaning
-from Layers import LTM0
+from Memory import LTM0
 from reasoning import TruthGroundedReasoner
 from reasoning import QuerySpec
 

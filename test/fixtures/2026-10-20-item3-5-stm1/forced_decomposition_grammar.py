@@ -207,7 +207,7 @@ class ForcedDecompositionGrammar:
                         identities = refs[action-offset].tolist()
                         score = 0
                         if operation == 'bind':
-                            import STMChunks as chunks
+                            from Memory import STMChunks as chunks
                             seat = int(data['binary_choices'][b,0,action-offset,1])
                             if seat >= 0:
                                 # The old forced choice read MTM's value. Its

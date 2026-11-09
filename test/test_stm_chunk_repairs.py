@@ -44,9 +44,10 @@ def test_recorded_two_stream_readings(tmp_path, monkeypatch, eager_reading):
 
 
 def test_same_chunks_supply_current_time_and_untimed_estimate(tmp_path):
-    from Layers import SymbolExpectation, LTM0
+    from Layers import SymbolExpectation
+    from Memory import LTM0
     from RowTime import encoder
-    import STMChunks as chunks
+    from Memory import STMChunks as chunks
     width = 16
     predictor = SymbolExpectation(n_symbols=4, max_depth=8, n_dim=width,
                                   concept_dim=width, batch=1)

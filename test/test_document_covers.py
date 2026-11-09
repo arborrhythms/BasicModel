@@ -27,7 +27,7 @@ def append(store, value, stream=0, position=0, document='body'):
 
 def test_cover_generator_is_global_rng_neutral_advances_and_restores():
     import copy
-    from Layers import LTM0
+    from Memory import LTM0
     resolver, store, _ = fixture()
     owner = resolver.components.owner
     global_state = torch.get_rng_state().clone()

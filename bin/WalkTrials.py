@@ -224,7 +224,7 @@ class ThoughtTrialState:
     """
     def __init__(self,model, *, detach=False):
         memory=model._what_memory()
-        import STMChunks
+        from Memory import STMChunks
         stm = getattr(getattr(model, 'conceptualSpace', None), 'stm', None)
         owners=[(memory,('_what_slots','_what_closure_pressure','_episode_live','_thought_next_id','_address_sources')),
                 (model,('expectation_gain', '_answer_attention_obs', '_last_answer_construction',
@@ -233,7 +233,7 @@ class ThoughtTrialState:
                         '_sentence_answer_raw_cost'))]
         if stm is not None:
             owners.append((stm, tuple('_live_' + name for name in STMChunks.FIELDS) +
-                           ('_thought_contents', '_active_batch', '_max_depth_host')))
+                           ('_thought_contents', '_thought_clock', '_active_batch', '_max_depth_host')))
         carrier=getattr(getattr(model,'conceptualSpace',None),'subspace',None)
         if carrier is not None:
             owners.append((carrier,tuple(name for name in vars(carrier)
@@ -252,11 +252,12 @@ class ThoughtTrialState:
             if effects_only and ('_what_slots' in names or '_thought_contents' in names):
                 continue
             if '_thought_contents' in names:
-                import STMChunks
+                from Memory import STMChunks
                 owner.set_state(tuple(values['_live_' + name] for name in STMChunks.FIELDS))
                 owner.ensure_batch(values['_active_batch'])
                 owner._max_depth_host = values['_max_depth_host']
                 owner._thought_contents = values['_thought_contents']
+                owner._thought_clock = values['_thought_clock']
                 continue
             # A trial may introduce a knowing carrier for the first time.
             dynamic=tuple(name for name in vars(owner) if name.startswith('_concept_')) if '_thought_occurrence' in names else ()

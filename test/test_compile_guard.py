@@ -213,7 +213,7 @@ def test_carried_state_requires_a_declared_phase_and_only_two_initial_graphs():
 
 def test_whole_sentence_stm_tensor_write_does_not_guard_or_update_host_depth():
     from types import SimpleNamespace
-    from Layers import ShortTermMemory
+    from Memory import ShortTermMemory
     from Spaces import ConceptualSpace
     owner = SimpleNamespace(stm=ShortTermMemory(batch=1, capacity=4, concept_dim=3))
     def write_slots(slab):

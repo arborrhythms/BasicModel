@@ -96,7 +96,7 @@ def test_taxonomy_keeps_the_forms_derived_from_definition_rows():
 def test_retired_meta_checkpoint_is_permanently_rejected():
     from test_cs_sparse_weights import _cs
     from test_structural_checkpoint import _model_with
-    from Layers import LTM0
+    from Memory import LTM0
     fixture = torch.load(Path('test/fixtures/item7_legacy_definition.pt'), weights_only=False)
     cs = _cs(nS=64, order=3)
     target = _model_with(cs, SimpleNamespace())

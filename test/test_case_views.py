@@ -240,7 +240,7 @@ def test_phase_content_checkpoint_copies_and_rejects_invalid_values():
     from copy import deepcopy
     import pytest
     from test_modal_timelines import pool, address, same
-    from MediumTermMemory import MediumTermMemory
+    from Memory import MediumTermMemory
     p = pool()
     value = torch.full((8,), .3)
     p.event(address(1), address(2), verb=12, role=0, when=2, case_value=value)

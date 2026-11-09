@@ -27,7 +27,7 @@ def recurrence_groups(store):
         raise ValueError('recurrenceAngle must lie in (0, 180] degrees')
     threshold = math.cos(math.radians(angle))
     groups, pending = {}, []
-    from LTM1 import NULL_CONCEPT
+    from Memory import NULL_CONCEPT
     owner_ref = store.__dict__.get('_concept_owner')
     owner = None if owner_ref is None else owner_ref()
     # Epoch data is empty again, but a previously promoted reading already

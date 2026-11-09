@@ -58,7 +58,7 @@ def _matches(model, meaning, word, values):
             owner = model._concept_owner()
             token = owner.mtm.token_of(reference)
             entry = owner.mtm.entries.get(token)
-            from LTM1 import NULL_CONCEPT
+            from Memory import NULL_CONCEPT
             if entry is not None and entry.kind == NULL_CONCEPT:
                 return False
             if entry is not None and not entry.pending:

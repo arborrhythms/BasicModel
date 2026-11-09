@@ -33,7 +33,7 @@ def gate_data(monkeypatch, *, interpret='closed', clause='closed', excluded='int
 def gate_fixture(monkeypatch):
     import Language
     from ClauseRow import attach_clause_index
-    from Layers import LTM0
+    from Memory import LTM0
     from PartsOfSpeech import PartsOfSpeech,formal_arguments
     owner,bank,_,alloc = paired_fixture(meaning_pairs=4, capacity=160)
     grammar=Language.Grammar();grammar.load_from_grammar_file('complete.grammar')
@@ -132,7 +132,7 @@ def test_clause_gate_caps_recorded_operations_and_opens_on_lift_classes(monkeypa
 
 def test_open_gates_survive_checkpoint_and_epoch_and_missing_state_is_rejected(monkeypatch):
     from IndependentComponents import _pack_state,_unpack_state
-    from LTM1 import LTM1
+    from Memory import LTM1
     f,_,ids,_,row=named_fixture(monkeypatch);bank=f.store.parts
     bank.begin_epoch()
     agreeing_views(f.cs,ids[1]);expected=torch.stack(bank.evidence(row)).clone()
@@ -206,7 +206,7 @@ def test_empty_lift_classes_have_zero_radius_and_leave_the_clause_gate_closed(mo
 
 @pytest.mark.parametrize('field,value',[('closedTrust',float('nan')),('fraction',1.1),('threshold',-.1),('start','invalid')])
 def test_invalid_gate_data_fails_at_construction(monkeypatch,field,value):
-    from LTM1 import LTM1
+    from Memory import LTM1
     data=gate_data(monkeypatch)
     if field=='closedTrust':data[field]=value
     elif field=='fraction':data['interpret'][field]=value

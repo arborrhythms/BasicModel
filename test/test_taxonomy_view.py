@@ -53,7 +53,7 @@ def test_reified_relation_is_visible_without_endpoint_mutation():
 
 
 def test_percept_codes_vector_overlap_and_world_rows_are_not_taxonomy_edges():
-    from Layers import LTM0
+    from Memory import LTM0
     cs, (a, b, _c) = _world()
     cs.add_part(b, a)  # raw percept code, not a sym reference
     cs.add_whole(a, b)  # raw whole-space code, not a sym reference

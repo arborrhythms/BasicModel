@@ -8,7 +8,7 @@ import sys
 import pytest
 import torch
 
-from Layers import LTM0
+from Memory import LTM0
 from Meaning import ConceptualMeaning
 from Occurrence import address_key, document_digest, sentence_key
 

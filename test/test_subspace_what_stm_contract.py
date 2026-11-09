@@ -1304,8 +1304,8 @@ def test_shared_operation_writes_the_caller_owned_stack(_xor_model):
             state, torch.tensor([True]), slots=1, sample=False,
             rounds_left=rounds - step)
         state = _xor_model.conceptualSpace.apply_language_choice(state, choice)
-    from STMChunks import stack_view
-    out = stack_view(state)
+    from Memory import STMChunks
+    out = STMChunks.stack_view(state)
     assert out[0] is not None
     assert torch.isfinite(out[0]).all()
     assert out[1].tolist() == [1]

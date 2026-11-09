@@ -235,7 +235,7 @@ def test_selected_generic_grammar_ends_the_interpreted_kinds(monkeypatch):
     The closing receives resolved objects and never performs lexical resolution.
     """
     from dataclasses import replace
-    from Layers import LTM0
+    from Memory import LTM0
     from Models import _append_observed_meaning
     from test_selected_relation_meaning import _program_owner
     cs, _, registry, language, _, make_program, _, _ = _program_owner(monkeypatch)

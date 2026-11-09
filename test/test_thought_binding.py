@@ -195,7 +195,7 @@ def test_concluded_relation_keeps_its_occurrence_argument(monkeypatch, role):
     assert f.store.parts.contains(result)
     pair = f.store.parts.row(result)
     assert pair['refs'].tolist() == ([address[2], b] if role == 0 else [b, address[2]])
-    from LTM1 import OCCURRENCE, SYMBOL
+    from Memory import OCCURRENCE, SYMBOL
     assert pair['ref_kinds'].tolist() == ([OCCURRENCE, SYMBOL] if role == 0 else [SYMBOL, OCCURRENCE])
     assert (pair['truth_plus'], pair['truth_minus']) == pytest.approx((.8, .1))
     assert len(f.store) == row + 1  # the relation is owned by LTM1

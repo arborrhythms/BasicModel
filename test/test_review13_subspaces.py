@@ -66,7 +66,7 @@ def test_group_uses_native_perceptual_fold_without_letter_concept_rows():
 
 
 def test_close_placement_is_confined_to_detached_context_coordinates():
-    from Layers import LTM0
+    from Memory import LTM0
     from Meaning import ConceptualMeaning
     cs, cb, ps, _ = fixture()
     a, b = word(cs, [(4, 1.)]), word(cs, [(7, 1.)])

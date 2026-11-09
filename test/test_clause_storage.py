@@ -9,7 +9,8 @@ from dataclasses import replace
 import pytest
 import torch
 
-from Layers import LTM0, TruthLayer
+from Layers import TruthLayer
+from Memory import LTM0
 from Spaces import ConceptualSpace
 from ClauseRow import Clause
 from Meaning import ConceptualMeaning
@@ -36,7 +37,7 @@ def test_both_evidence_poles_survive_checkpoint_separately_from_neither():
 
 
 def test_relation_has_no_kind_column_or_catch_all():
-    from LTM1 import LTM1
+    from Memory import LTM1
     assert LTM1.columns == ('refs','ref_kinds','truth_plus','truth_minus','access_count','surprise','percept',
                            'effective_plus','effective_minus','operator','grammar_operation')
     assert not any(name.startswith('REL_') for name in vars(LTM0))
@@ -142,7 +143,7 @@ def test_second_order_implication_names_two_part_symbols():
     assert first['refs'].tolist() == [1,2] and second['refs'].tolist() == [1,4]
     assert first['evidence'] == second['evidence'] == (0.,0.)
     assert store.row(row)['readings'] == ('conditional',)
-    from LTM1 import RELATION
+    from Memory import RELATION
     matches = store.consequents_by_row((RELATION, first['row_id']), reading='implies')
     assert matches[0][:2] == (row[1], (RELATION, second['row_id']))
     assert store.parts.stratum(row[1]) == 2

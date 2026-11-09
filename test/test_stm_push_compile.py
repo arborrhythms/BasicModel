@@ -5,7 +5,7 @@ import pytest
 import torch
 
 from CompileGuard import guarded_compile
-from Layers import ShortTermMemory
+from Memory import ShortTermMemory
 from Spaces import ConceptualSpace
 
 

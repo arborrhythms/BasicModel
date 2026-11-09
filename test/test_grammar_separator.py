@@ -11,7 +11,7 @@ import torch
 def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, unadmitted, trailing):
     import Models
     import util
-    from Layers import ShortTermMemory
+    from Memory import ShortTermMemory
     from test_mm_xor import _fresh_model
     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
     def eager_while(condition, body, values):

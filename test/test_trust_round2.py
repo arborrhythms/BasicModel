@@ -22,7 +22,7 @@ def through_operation(clause, name):
 def test_first_composition_keeps_its_operation_when_another_merges_poles(monkeypatch):
     import Language
     from ClauseRow import attach_clause_index
-    from Layers import LTM0
+    from Memory import LTM0
     from PartsOfSpeech import PartsOfSpeech, formal_arguments
     owner,bank,_,alloc = paired_fixture(meaning_pairs=4, capacity=160)
     grammar = Language.Grammar()
@@ -267,7 +267,7 @@ def test_curriculum_readiness_requires_a_measured_radius_not_the_operand_fallbac
 
 
 def test_bind_menu_excludes_unknown_result_order_and_preserves_legal_referents(monkeypatch):
-    import STMChunks
+    from Memory import STMChunks
     from ReferenceContext import prepare_operands
     from Meaning import ConceptualMeaning
     f = SentenceFixture(monkeypatch)

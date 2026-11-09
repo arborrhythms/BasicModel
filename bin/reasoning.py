@@ -9,7 +9,7 @@ from typing import Any, Optional
 import torch
 
 from Spaces import ConceptualSpace
-from Layers import LTM0
+from Memory import LTM0
 from Meaning import ConceptualMeaning
 from Taxonomy import capture_taxonomy, concept_reference
 
@@ -306,7 +306,7 @@ class TruthGroundedReasoner:
         """The symbolic face reads the proposition's ended evidence pair."""
         from Queries import ThoughtLTMCapability
         from QueryWork import QueryWorkBudget
-        from Layers import LTM0
+        from Memory import LTM0
         store = self.reasoning_store()
         meter = QueryWorkBudget(getattr(self.model, 'attention_budget', 32))
         if isinstance(store, LTM0):

@@ -122,7 +122,8 @@ def test_trial_keep_and_credit_use_same_r_plus_a_judge():
 
 
 def test_expected_identity_survives_zero_content_and_retained_pair_restore():
-    from Layers import MeaningExpectation, LTM0
+    from Layers import MeaningExpectation
+    from Memory import LTM0
     from Meaning import ConceptualMeaning, ClosingImage
     keys = torch.eye(4)
     logits = torch.full((4,2), -60.); logits[0,0] = 60.
@@ -175,7 +176,8 @@ def test_non_mark_blocks_prime_and_gain_without_erasing_retained_modifier():
 
 def test_fused_retained_row_replays_original_two_lane_target():
     """A fused row is not a new observation of its nearest bank identity."""
-    from Layers import MeaningExpectation, LTM0
+    from Layers import MeaningExpectation
+    from Memory import LTM0
     from Meaning import ConceptualMeaning
     keys = torch.eye(4)
     expected = torch.tensor([[.8, .1], [.1, .7], [.2, .2], [.1, .1]])

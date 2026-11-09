@@ -32,7 +32,7 @@ def test_batch_rows_never_prime_each_other():
 
 def test_part_graph_uses_the_constructed_relation_capacity(monkeypatch):
     from types import SimpleNamespace
-    from LTM1 import LTM1
+    from Memory import LTM1
     cs, _, _ = _chain_cs()
     count = 4100
     parts = LTM1(capacity=count + 2)

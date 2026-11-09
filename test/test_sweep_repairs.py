@@ -150,7 +150,7 @@ def test_numerical_chain_reader_reads_both_references_without_writing_a_predicat
 
 
 def test_numerical_idea_query_reads_the_single_point_column():
-    from Layers import LTM0
+    from Memory import LTM0
     from reasoning import TruthGroundedReasoner
     store = LTM0(6, capacity=3, percept_width=0)
     first, wanted = torch.eye(6)[:2]

@@ -262,7 +262,8 @@ def test_offset_independence(tmp_path):
 
 @pytest.mark.usefixtures('eager_reading')
 def test_stream_chain(tmp_path,monkeypatch):
-    from Layers import LTM0, SymbolExpectation
+    from Layers import SymbolExpectation
+    from Memory import LTM0
     from Meaning import ConceptualMeaning
     from Occurrence import sentence_key
     store = LTM0(12,capacity=8,percept_width=8)
@@ -416,7 +417,7 @@ def test_surface_inverses(tmp_path, monkeypatch):
     from Spaces import ConceptualSpace, LanguageOperationChoice
     columns = tuple(torch.arange(4).reshape(2,2)+10*i for i in range(4))
     from chunk_fixtures import from_stack
-    import STMChunks as chunks
+    from Memory import STMChunks as chunks
     state=from_stack(slab,torch.tensor([2,2]),*columns)
     choice=LanguageOperationChoice(route['candidate'],route['kind'],torch.zeros(2,dtype=torch.long),
         route['op'],route['valid'],route['probability'],route['action'],route['valid'])
@@ -677,7 +678,7 @@ def test_nested_wholes_from_stage3_artifact(tmp_path, monkeypatch, restore_phase
 def test_absences():
     import Language
     from ClauseRow import Clause
-    from Layers import LTM0
+    from Memory import LTM0
     store = LTM0(4,8)
     assert not {'timestamp','_next_ts'} & set(store.state_dict())
     assert not any(hasattr(store,name) for name in ('timestamp','_next_ts','write_timestamp','recent','_timestamp_source'))

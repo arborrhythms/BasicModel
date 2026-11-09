@@ -5,8 +5,8 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from MediumTermMemory import MediumTermMemory
-import STMChunks as chunks
+from Memory import MediumTermMemory
+from Memory import STMChunks as chunks
 from chunk_fixtures import Walk, choice, value as working_value
 from Spaces import LanguageOperationChoice
 
@@ -436,7 +436,7 @@ def test_dummy_binds_preserve_the_relative_operand_in_a_three_slot_close(monkeyp
     from ClauseScope import ClauseScope
     from ReferenceContext import prepare_operands
     from test_clause_acceptance import SentenceFixture
-    import STMChunks
+    from Memory import STMChunks
     f = SentenceFixture(monkeypatch)
     tree = ('sum', 'prefix', ('sum', 'predicate',
         ('bind', ('bind', ('whole', 'subject', 'tail')))))
@@ -720,7 +720,7 @@ def test_nested_unresolved_operand_keeps_its_resolution_annotation(pending, wrap
         assert marks == ((2, occurrence),) and raw.role_refs[2] == occurrence
         assert occurrence[0] == 'sym' and store.parts.contains(occurrence[1])
         from ChainRead import point
-        from LTM1 import RELATION
+        from Memory import RELATION
         assert point(store, (RELATION, occurrence[1])) is None
         retained = snapshot(resolver)
         _, restored, _, _, _ = world()

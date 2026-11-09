@@ -61,7 +61,7 @@ on, FineWeb data); the comparison framing against a transformer LM is
 
 ## 1. STM data model
 
-`ShortTermMemory` ([Layers.py](../bin/Layers.py)) is a `Layer`
+`ShortTermMemory` ([Memory.py](../bin/Memory.py)) is a `Layer`
 (not a `Space`): it carries no SubSpace and no forward / reverse
 tensor-map contract. ConceptualSpace builds one at construction as
 `self.stm` and treats it as the primary structure it manages.
@@ -625,7 +625,7 @@ with a warning; old provisioned rows are re-provisioned from XML. WholeSpace
 META state is retired and the native concept index is rebuilt from its rows
 and bindings. Native word/object META bindings migrate to DEF rows in every
 reading, including the serial aligned path; their META identities and fold
-are retired. [Checkpoint migration](../bin/Layers.py).
+are retired. [Checkpoint migration](../bin/Memory.py).
 
 Admission preflights clause dependencies and native concept capacity. An
 insufficient store raises before publishing a child prefix; re-witnessing an
@@ -905,3 +905,17 @@ pinned on the stack while the episode is open. Trial restoration restores the
 active stream count with the fixed buffers. Record and design:
 [thinking spec §§3.1, 3.2, 17-21](plans/2026-10-27-item2-5-thinking.md); [Architecture](Architecture.md),
 "Retained grammatical occurrences".
+
+
+## Memory module and thought stamps (2026-11-08)
+
+The live `ShortTermMemory` owner and its unchanged shift/reduce scorer now live
+in [Memory.py](../bin/Memory.py), beside the `STMChunks` namespace,
+`MediumTermMemory`, `LTM0` and `LTM1`. Their reference tag values and capacities
+are unchanged; `MemoryStore` shares only tensor snapshot copying. Layers.py
+continues to own the other layers and `Ops`. STMChunks.py, MediumTermMemory.py
+and LTM1.py are removed and all imports use Memory. The kept close retains STM,
+commits MTM and writes LTM. Thought ideas in this shared STM use exact WHEN
+lookup and empty WHERE, with a per-stream deposit clock in a four-coordinate
+band disjoint from sentence time. Reads do not advance it and trial rollback
+restores it. This amends the older descriptions of thought's synthetic address.

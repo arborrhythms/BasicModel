@@ -50,7 +50,7 @@ def test_selected_clause_tree_owns_its_local_references(monkeypatch):
 
 
 def test_bare_unlocated_np_rewitnesses_its_address(monkeypatch):
-    from Layers import LTM0
+    from Memory import LTM0
     _, registry, language, entry, _ = _nested(monkeypatch)
     entry = replace(entry, rows=entry.rows[:1], word_rows=entry.word_rows[:1],
                     activations=entry.activations[:1], leaves=entry.leaves[:1],
@@ -70,7 +70,7 @@ def test_bare_unlocated_np_rewitnesses_its_address(monkeypatch):
 
 def test_three_slot_closing_registers_its_composite_operand(monkeypatch):
     from Meaning import ConceptualMeaning
-    from Layers import LTM0
+    from Memory import LTM0
     _, registry, language, entry, _ = _nested(monkeypatch)
     # A relative S may finish as a three-slot forest. Its left operand is a
     # completed inner relation and therefore has no fused-point reference.

@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import torch
 from test_reference_close import known_concept
 
-from Layers import LTM0
+from Memory import LTM0
 from reasoning import TruthGroundedReasoner
 from test_cs_symbol_table import _cs
 

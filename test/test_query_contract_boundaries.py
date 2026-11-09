@@ -6,7 +6,7 @@ import pytest
 import torch
 
 from Language import Grammar
-from Layers import LTM0
+from Memory import LTM0
 from Meaning import ConceptualMeaning
 from Queries import THOUGHT_EXECUTORS, ThoughtExecutorDescriptor
 from test_cs_symbol_table import _cs

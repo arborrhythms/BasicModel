@@ -2,7 +2,7 @@
 from types import SimpleNamespace
 import torch
 import pytest
-from Layers import LTM0
+from Memory import LTM0
 from Meaning import ConceptualMeaning
 from QueryWork import QueryWorkBudget
 from test_one_backward import receipt
@@ -156,30 +156,30 @@ def test_reflexive_part_fact_is_not_an_intuition_definition_cycle(tmp_path):
 def test_recalled_chunk_addresses_depend_only_on_their_own_stream(tmp_path):
     from dataclasses import replace
     from types import MappingProxyType
-    from Layers import ShortTermMemory
+    from Memory import ShortTermMemory
     from Queries import ThoughtResult
-    from ThoughtChunks import address, put, stage
-    from ThoughtReferences import with_slots
-    import STMChunks as chunks
+    from ThoughtChunks import put, stage
+    from ThoughtReferences import bindings, with_slots
+    from Memory import STMChunks as chunks
     def recall(batch):
         stm = ShortTermMemory(batch=batch, concept_dim=8)
         value = with_slots(replace(meaning((1., 0.)), role_refs=(('sym', 1), None, None)), (), pair=(.8, .1))
-        focus = address(1)
-        put(stm, value, focus, 0, pin=True)
+        focus = bindings(put(stm, value, row=0, pin=True))['_chunk_when']
         if batch > 1:
-            put(stm, value, address(1), 1, pin=True)
+            put(stm, value, row=1, pin=True)
             stm.set_state(chunks.read(stm.state, torch.tensor([-1, 0]), torch.tensor([False, True]), tick=1000))
         before = tuple(t[1:].clone() for t in stm.state)
         shapes = tuple(tuple(t.shape) for t in stm.state)
         truth_pointer = stm._live_chunk_truth.data_ptr()
-        memory = SimpleNamespace(_thought_stm=stm, thought_state=lambda b: SimpleNamespace(focus_where=focus))
+        memory = SimpleNamespace(_thought_stm=stm, thought_state=lambda b: SimpleNamespace(focus_when=focus))
         retrieved = replace(value, role_refs=(('sym', 2), None, None))
         result = ThoughtResult('query', 'conceptual-subgoal', 'set', 'retrieval', value,
             MappingProxyType(dict(meaning=retrieved, frames=({'occurrence': ('ltm', 'native', 7)},))))
         for _ in range(2):
             stage(memory, result, 0)
-        recalled = sorted(tuple(where) for item in stm._thought_contents[0] if item is not None
-                          for where, _ in (item,) if where[-1] == 3.)
+        recalled = sorted(tuple(when) for item in stm._thought_contents[0] if item is not None
+                          for when, content in (item,) if bindings(content).get('_rule_row')
+                          and when != focus)
         assert len(recalled) == len(set(recalled)) == 2
         assert shapes == tuple(tuple(t.shape) for t in stm.state)
         assert stm._live_chunk_truth.data_ptr() == truth_pointer

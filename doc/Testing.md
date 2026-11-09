@@ -672,3 +672,5 @@ Representation ports replace exclusive argmax/probability assertions in `test_pa
 Argument-concepts continuation certificates cover coverage fit, separability/evidence, boundary scope and scheduling, fit-weighted centroids, neutral unmeasurable charts, unique membership edges, object/binding isolation and named formal-class proof paths.
 
 The argument-concepts-iii ports retain consolidation → promotion → one `ConceptHierarchy.refresh` derivation → condition, and read order-independent class fits after the boundary: aligned classes each have coverage one even with different radii.
+
+Item 2.0 round 1: `test_item20_round1.py` certifies thought WHEN stamps, absent nonoperation journal rows, symbol-description rejection and the shared memory snapshot base; the landed-checkpoint and source receipts accompany the single default freeze sweep.

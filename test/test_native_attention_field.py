@@ -138,7 +138,7 @@ def test_native_candidate_departure_credits_only_scorer_parameters(tmp_path, mon
 
 def test_rereading_cannot_bind_the_occurrence_or_embedded_rows_it_replaces():
     from ReferenceContext import exclude_replaced_occurrences
-    from Layers import LTM0
+    from Memory import LTM0
     from Meaning import ConceptualMeaning
     from Occurrence import document_digest, sentence_key
     store = LTM0(4, capacity=8)

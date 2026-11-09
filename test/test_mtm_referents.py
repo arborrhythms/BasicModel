@@ -8,7 +8,7 @@ import torch
 
 def world(*, meaning_pairs=2):
     from ClauseRow import attach_clause_index
-    from Layers import LTM0
+    from Memory import LTM0
     from Meaning import ConceptualMeaning
     from test_review13_subspaces import fixture, word
     owner, bank, _, _ = fixture(meaning_pairs=meaning_pairs)
@@ -178,12 +178,12 @@ def test_update_requires_an_event_on_the_identity():
 @pytest.mark.parametrize('kind', ['reading', 'occurrence'])
 @pytest.mark.parametrize('eventful', [False, True])
 def test_ownerless_semantic_reference_fails_loudly(kind, eventful):
-    from MediumTermMemory import MediumTermMemory
+    from Memory import MediumTermMemory
     pool = MediumTermMemory()
     key = ('ltm', 'address-v1', 11) if kind == 'occurrence' else ('numeric', 11)
     pool.open(key, kind=None, when=0, value=torch.ones(3), reading=7 if kind == 'reading' else None)
     if eventful:
-        from MediumTermMemory import Event, Timeline
+        from Memory import Event, Timeline
         pool.entries[key] = replace(pool.entries[key], timelines=(
             Timeline((Event(('numeric', 2), 1, 0, 1),), torch.ones(3)),))
     with pytest.raises(ValueError, match='without an owner'):
@@ -191,7 +191,7 @@ def test_ownerless_semantic_reference_fails_loudly(kind, eventful):
 
 
 def test_ownerless_numerical_pool_keeps_explicit_value_api():
-    from MediumTermMemory import MediumTermMemory
+    from Memory import MediumTermMemory
     pool = MediumTermMemory()
     pool.open(('numeric', 1), kind=None, when=0, value=torch.tensor([.2, .7]))
     torch.testing.assert_close(pool.value_of(('numeric', 1)), torch.tensor([.2, .7]), rtol=0, atol=0)
@@ -256,7 +256,7 @@ def test_ingestion_pool_has_its_owner_and_reads_current_meanings():
 def test_accessible_reads_each_identity_once(monkeypatch):
     from test_reference_close import fixture
     from Meaning import ConceptualMeaning
-    import STMChunks
+    from Memory import STMChunks
     resolver, store, atoms = fixture()
     pool = resolver.components.owner.mtm
     uses = [store.occurrence_of(store.append_meaning(ConceptualMeaning.from_description(atoms[0]),
@@ -276,7 +276,7 @@ def test_accessible_reads_each_identity_once(monkeypatch):
 @pytest.mark.parametrize('case', ['exclusive', 'part', 'kind', 'empty', 'tiny'])
 def test_content_association_requires_exact_containment_in_both_menus(case):
     from test_reference_close import fixture
-    import STMChunks
+    from Memory import STMChunks
     resolver, _, atoms = fixture()
     if case == 'exclusive':
         mention, candidate, allowed = atoms[0]+atoms[1], atoms[0]+atoms[2], False
@@ -299,7 +299,7 @@ def test_content_association_requires_exact_containment_in_both_menus(case):
 
 
 def test_content_association_ignores_form_and_location():
-    import STMChunks
+    from Memory import STMChunks
     state = STMChunks.empty(1, 8, 6)
     candidate = torch.tensor([[1., 0., 1., 0., .2, .8]])
     mention = torch.tensor([[[0., 1., 0., 1., .2, 0.]]])

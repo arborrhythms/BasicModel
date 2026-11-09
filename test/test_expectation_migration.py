@@ -2,7 +2,7 @@
 import copy
 import pytest
 import torch
-from Layers import LTM0
+from Memory import LTM0
 from Meaning import ConceptualMeaning
 from meaning_fixtures import symbol_prediction, estimate_meaning
 

@@ -15,7 +15,7 @@ def test_unindexed_lexical_predicate_over_a_relation_has_an_ltm_reference(monkey
     before = set(f.store.parts.indices().tolist())
     row = f.store.write_clause(clause, trust=.7)
     assert isinstance(row, tuple) and f.store.parts.contains(row[1])
-    from LTM1 import OCCURRENCE, RELATION, SYMBOL
+    from Memory import OCCURRENCE, RELATION, SYMBOL
     assert torch.isin(f.store.parts.ref_kinds[f.store.relations()],
                       torch.tensor([OCCURRENCE, RELATION, SYMBOL])).all()
     state = int(f.store.row(row)['refs'][1])
@@ -39,7 +39,7 @@ def test_nested_relation_forest_keeps_its_unindexed_predicate(monkeypatch):
     before = set(f.store.parts.indices().tolist())
     row = f.store.write_clause(clause, trust=.7)
     assert isinstance(row, tuple) and f.store.parts.contains(row[1])
-    from LTM1 import OCCURRENCE, RELATION, SYMBOL
+    from Memory import OCCURRENCE, RELATION, SYMBOL
     assert torch.isin(f.store.parts.ref_kinds[f.store.relations()],
                       torch.tensor([OCCURRENCE, RELATION, SYMBOL])).all()
     state = int(f.store.row(row)['refs'][1])

@@ -30,7 +30,8 @@ from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model
 from Layers import LinearLayer, InvertibleLinearLayer, AssociationLayer, MapppingLayer
 from Layers import (CertaintyWeightedCrossEntropy, LeafDecoderHead, Loss,
                     ModelLoss, epsilon, Ops)
-from Layers import SortingLayer, TruthLayer, LTM0, LiftingLayer, SymbolExpectation, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
+from Layers import SortingLayer, TruthLayer, LiftingLayer, SymbolExpectation, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
+from Memory import LTM0
 from Layers import WhatInteractionMemory
 from Meaning import ConceptualMeaning
 from Queries import ConceptualSpaceCapability, StructuralGrammarContext
@@ -12738,7 +12739,7 @@ class LanguageSpace(nn.Module):
                          previous_unary=None, policy_grad=True, lesson_slot=None, occupation=None,
                          form_spans=None, case_state=None, closing=False):
         """The shared compose layer reads the two newest stack chunks."""
-        import STMChunks
+        from Memory import STMChunks
         chunks = state
         state = STMChunks.stack_view(chunks)
         buffer, depth = state[:2]

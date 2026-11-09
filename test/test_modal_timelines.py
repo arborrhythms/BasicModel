@@ -5,7 +5,7 @@ from copy import deepcopy
 import pytest
 import torch
 
-from MediumTermMemory import MediumTermMemory
+from Memory import MediumTermMemory
 from MeaningKernels import MeaningAction
 from ModalLearning import observe, register
 from Layers import Error
@@ -294,7 +294,7 @@ def test_some_every_include_actual_and_use_both_lanes(monkeypatch):
     token,entry=next(iter(f.cs.mtm.entries.items()))
     # Open an alternative at the same subject value with no event yet.
     branch=f.cs.mtm.alternative(token,when=10)
-    from MediumTermMemory import Timeline
+    from Memory import Timeline
     f.cs.mtm.entries[token]=replace(f.cs.mtm.entries[token],timelines=(entry.timelines[0],Timeline((),entry.value)))
     q=replace(ConceptualMeaning.from_description(entry.value),bindings={
         '_query_event':(token,entry.events[0].verb,1)})

@@ -4,7 +4,7 @@ from dataclasses import replace
 import pytest
 import torch
 
-from Layers import LTM0
+from Memory import LTM0
 from test_cs_symbol_table import _cs
 from order_fixtures import force_order
 from test_thought_model_fixture import model_for

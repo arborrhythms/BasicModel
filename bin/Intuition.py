@@ -76,7 +76,7 @@ def observation(owner, value):
 
 
 def _without_concept(owner, ref):
-    from LTM1 import NULL_CONCEPT
+    from Memory import NULL_CONCEPT
     if ref is None or ref[0] not in ('sym', 'ltm', 'name'):
         return False
     if ref == ('sym', NULL_CONCEPT):
@@ -429,7 +429,7 @@ def pervasion(owner, meaning, *, frames=(), work):
             and (taxonomy is None or predicate != ('sym', taxonomy))):
         return None
     alloc = owner._concept_allocator
-    from LTM1 import SYMBOL
+    from Memory import SYMBOL
     from Layers import Ops
     from QueryWork import QueryWorkExhausted
     parts = alloc.parts

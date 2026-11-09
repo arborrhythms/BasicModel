@@ -10,7 +10,8 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from Layers import SymbolExpectation, LTM0
+from Layers import SymbolExpectation
+from Memory import LTM0
 
 
 def layer(batch=1, consolidated=False):

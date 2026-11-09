@@ -34,7 +34,7 @@ def _v(*vals):
 class TestSchema(unittest.TestCase):
     def test_absolute_idea_is_np_null_null(self):
         s = _store()
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         r = s.append_idea(_v(1), trust=0.6)
         self.assertEqual(r, 0)
         row = s.row(0)
@@ -154,7 +154,7 @@ class TestOriginProvenance(unittest.TestCase):
     """
 
     def test_append_defaults_conversation_origin(self):
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         s = _store()
         s.append_idea(_v(1))
         r = s.row(0)
@@ -162,7 +162,7 @@ class TestOriginProvenance(unittest.TestCase):
         self.assertIsNone(r['text'])
 
     def test_set_origin_tags_row_and_text(self):
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         s = _store()
         s.append_idea(_v(1), trust=0.4)
         s.set_origin(0, T.ORIGIN_USER, text="the cat sat", asserted=(float(s.truth_plus[0]), float(s.truth_minus[0])))
@@ -173,13 +173,13 @@ class TestOriginProvenance(unittest.TestCase):
         self.assertAlmostEqual(r['trust'], 0.4, places=6)
 
     def test_set_origin_out_of_range_raises(self):
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         s = _store()
         with self.assertRaises(IndexError):
             s.set_origin(0, T.ORIGIN_USER, asserted=(float(s.truth_plus[0]), float(s.truth_minus[0])))
 
     def test_rows_of_origin_filters_in_row_order(self):
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         s = _store()
         s.append_idea(_v(1), document_key='conversation')
         s.append_idea(_v(2), document_key='provisioned')
@@ -199,7 +199,7 @@ class TestOriginProvenance(unittest.TestCase):
         self.assertEqual(s.rows_of_origin().tolist(), [])
 
     def test_clear_origin_compacts_survivors_in_place(self):
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         s = _store()
         s.append_idea(_v(1), trust=.1, document_key='conversation')
         s.append_idea(_v(2), trust=.2, document_key='user', sentence_index=0)
@@ -227,7 +227,7 @@ class TestOriginProvenance(unittest.TestCase):
         self.assertEqual(s.clear_origin(T.ORIGIN_USER), 0)
 
     def test_reset_clears_origin_and_texts(self):
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         s = _store()
         s.append_idea(_v(1))
         s.set_origin(0, T.ORIGIN_USER, text="u", asserted=(float(s.truth_plus[0]), float(s.truth_minus[0])))
@@ -239,7 +239,7 @@ class TestOriginProvenance(unittest.TestCase):
         self.assertIsNone(r['text'])
 
     def test_origin_rides_state_dict_texts_do_not(self):
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         s = _store()
         s.append_idea(_v(1))
         s.set_origin(0, T.ORIGIN_USER, text="u", asserted=(float(s.truth_plus[0]), float(s.truth_minus[0])))

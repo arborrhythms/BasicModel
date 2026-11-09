@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from Layers import LTM0
+from Memory import LTM0
 from Meaning import ConceptualMeaning
 from ThoughtReferences import bindings, evidence_pair, fill, open_slots, with_slots
 from meaning_fixtures import unsupported as question

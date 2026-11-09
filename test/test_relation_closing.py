@@ -33,7 +33,7 @@ def test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent(
     for leaf, child in zip(unknown, relation.children):
         assert child.relation is None
         torch.testing.assert_close(child.point, entry.leaves[leaf])
-    from LTM1 import OCCURRENCE
+    from Memory import OCCURRENCE
     from ChainRead import point
     assert len(f.store) == len(unknown)
     assert isinstance(row, tuple) and f.store.parts.contains(row[1])
@@ -63,7 +63,7 @@ def test_three_slot_relation_closes_unindexed_numerical_operands(monkeypatch):
     clause = finish_reading(f.language, entry, registry=f.registry)
     row = f.store.write_clause(clause, trust=.6)
     from ChainRead import point
-    from LTM1 import OCCURRENCE
+    from Memory import OCCURRENCE
     assert len(f.store) == 2 and isinstance(row, tuple)
     assert f.store.parts.ref_kinds[row[1]].tolist() == [OCCURRENCE, OCCURRENCE]
     for reference, expected in zip(f.store.parts.refs[row[1]].tolist(), leaves[[0, 2]]):
@@ -180,7 +180,7 @@ def test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats(monke
             expected = source._ar_grammar_object_ids[b, valid[b]]
             torch.testing.assert_close(program.concept_ids, expected, rtol=0, atol=0)
             assert bool((expected > 0).all())
-        from LTM1 import SYMBOL
+        from Memory import SYMBOL
         assert plans and all(ref is not None and ref[0] == SYMBOL for plan in plans for ref in plan)
         assert seat_counts and all(before == after for before, after in seat_counts)
         torch.testing.assert_close(model.symbolSpace.ltm_store.relations('definition'), definitions)

@@ -1,6 +1,6 @@
 """Derived taxonomy and direct word references over native concept records."""
 import torch
-from LTM1 import NULL_CONCEPT
+from Memory import NULL_CONCEPT
 from Spaces import _concept_alloc_of
 
 
@@ -27,7 +27,7 @@ def _available(cs, values):
 
 def unbound_label(cs, reference):
     """A lexical form with no denotation has no witnessed object order."""
-    from LTM1 import SYMBOL
+    from Memory import SYMBOL
     alloc = _concept_alloc_of(cs)
     return (reference[0] == SYMBOL
             and 'word' in alloc.symbol_types.get(reference[1], ())
@@ -36,7 +36,7 @@ def unbound_label(cs, reference):
 
 def index_part_row(cs, part, whole):
     """Admit a witnessed member to the next-order class of the shared side."""
-    from LTM1 import SYMBOL
+    from Memory import SYMBOL
     alloc = _concept_alloc_of(cs)
     part_ref, whole_ref = alloc.parts.reference(part), alloc.parts.reference(whole)
     if (SYMBOL, NULL_CONCEPT) in (part_ref, whole_ref):

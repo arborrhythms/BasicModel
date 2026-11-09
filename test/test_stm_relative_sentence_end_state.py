@@ -306,8 +306,8 @@ def test_relative_sentence_reduces_to_depth_three():
 
     assert post_depth.tolist() == [3, 3], (
         f"relative rows must stop at depth 3, got {post_depth.tolist()}")
-    from STMChunks import stack_view
-    buf = stack_view(model.conceptualSpace.stm.state)[0]
+    from Memory import STMChunks
+    buf = STMChunks.stack_view(model.conceptualSpace.stm.state)[0]
     for b in range(B):
         for slot in range(3):
             assert buf[b, slot].abs().sum() > 0, (

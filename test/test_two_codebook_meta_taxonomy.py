@@ -47,7 +47,7 @@ def _word_concept(model, raw):
 
 def _idea_store(model):
     from ClauseRow import attach_clause_index
-    from Layers import LTM0
+    from Memory import LTM0
     owner = model._concept_owner()
     store = LTM0(int(owner.outputShape[-1]), capacity=8, percept_width=0)
     attach_clause_index(model, store, owner)

@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from Layers import LTM0
+from Memory import LTM0
 from Meaning import ConceptualMeaning
 from Queries import THOUGHT_EXECUTORS, ThoughtSignature
 from Taxonomy import capture_taxonomy

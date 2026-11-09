@@ -4,7 +4,8 @@ import pytest
 import torch
 
 from ClauseRow import attach_clause_index
-from Layers import ExpectationComparison, MeaningExpectation, LTM0
+from Layers import ExpectationComparison, MeaningExpectation
+from Memory import LTM0
 from test_clause_acceptance import SentenceFixture
 
 

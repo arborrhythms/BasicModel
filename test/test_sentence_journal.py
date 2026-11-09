@@ -209,7 +209,7 @@ def test_deep_meaning_projection_accepts_configured_sentences():
 
 def test_program_keeps_the_identity_leaf_stamp_before_reference_resolution():
     from chunk_fixtures import Walk,choice
-    from MediumTermMemory import MediumTermMemory
+    from Memory import MediumTermMemory
     walk=Walk((SimpleNamespace(method_name='sum',head_role=0),),())
     state=walk.empty(torch.ones(1,4),3)
     state=walk.shift(state,torch.ones(1,4),word=101,index=0,order=1)
@@ -242,7 +242,7 @@ def test_program_keeps_the_identity_leaf_stamp_before_reference_resolution():
 def test_identity_admission_uses_the_resolved_stm_order(tmp_path, monkeypatch, eager_reading):
     from Models import FunctionalPeerSTM
     import ChunkJournal
-    import STMChunks
+    from Memory import STMChunks
     from test_compiled_word_chunk import _tiny_canonical_model
     from What import What
     model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',

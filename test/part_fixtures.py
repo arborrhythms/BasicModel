@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import torch
 
 from ClauseRow import attach_clause_index
-from Layers import LTM0
+from Memory import LTM0
 from Spaces import ConceptualSpace
 from test_basicmodel import _populate_test_config
 

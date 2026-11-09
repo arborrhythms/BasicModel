@@ -16,7 +16,7 @@ import reasoning
 from reasoning import (QuerySpec, TruthGroundedReasoner,
                        KIND_IS_TRUE, KIND_IS_PART, KIND_IS_EQUAL,
                        TRUE, FALSE, UNKNOWN, BOTH)
-from Layers import LTM0
+from Memory import LTM0
 
 
 def _v(*xs):

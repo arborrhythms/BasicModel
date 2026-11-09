@@ -5,7 +5,7 @@ import math
 import pytest
 import torch
 
-from LTM1 import SYMBOL, OCCURRENCE
+from Memory import SYMBOL, OCCURRENCE
 
 
 @pytest.mark.parametrize('operation', ['equal', 'part'])
@@ -386,7 +386,7 @@ def _sign_equation(f, form, label, position):
 def test_two_kept_signs_survive_a_full_pool_until_their_definition_is_read(monkeypatch):
     from ClauseRow import Clause, Composition
     from Meaning import ConceptualMeaning
-    from MediumTermMemory import MediumTermMemory
+    from Memory import MediumTermMemory
     from chunk_fixtures import context
     from test_clause_acceptance import SentenceFixture
 
@@ -872,7 +872,7 @@ def test_forced_symbol_reads_the_existing_object(monkeypatch, tmp_path):
 
 
 def test_compose_leaf_decisions_match_eager_and_compiled(tmp_path):
-    import STMChunks as chunks
+    from Memory import STMChunks as chunks
     from ChunkJournal import ChunkJournal, empty_scope, SOURCE, IDENTITY, WORD, LEAVES
     from ClauseScope import ClauseScope
     from Interpret import InterpretLayer, SignLayer

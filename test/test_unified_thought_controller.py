@@ -198,7 +198,8 @@ def test_runbatch_credits_each_controller_row_from_its_own_answer(monkeypatch, e
 @pytest.mark.parametrize('budget', [0, 1, 6, 12, 24])
 @pytest.mark.parametrize('with_expectation', [False, True])
 def test_nested_cutoff_drains_the_actual_depth_without_fresh_work(budget, with_expectation):
-    from Layers import LTM0, SymbolExpectation
+    from Layers import SymbolExpectation
+    from Memory import LTM0
     model, registry, memory, part, whole = _catalog_world()
     model.symbolSpace.ltm_store = LTM0(8, capacity=32)
     from ClauseRow import attach_clause_index

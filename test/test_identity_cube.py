@@ -131,7 +131,7 @@ def test_wide_cube_identity_length_is_not_a_compose_activation(gain):
         gain, 1e-6, 'clip', identities=torch.tensor([1,2]))
     host = SimpleNamespace(language_layer=SimpleNamespace(operation_layer=layer),
         _structural_context=lambda **kw: None, _compose_binary_rules=(), _compose_unary_rules=())
-    import STMChunks as chunks
+    from Memory import STMChunks as chunks
     state = chunks.empty(1,8,4)
     for index in (1,0):
         state,_ = chunks.deposit(state,values[:,index],torch.tensor([True]),

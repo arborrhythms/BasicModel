@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 import torch
 
-from Layers import LTM0
+from Memory import LTM0
 from Meaning import ConceptualMeaning
 from MemoryIndex import unfold_idea
 

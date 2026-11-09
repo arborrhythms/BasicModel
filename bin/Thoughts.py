@@ -134,7 +134,7 @@ class ThoughtState:
     finished: bool = False
     cutoff_depth: int | None = None
     drain_count: int = 0
-    focus_where: tuple | None = None
+    focus_when: tuple | None = None
 
     @property
     def level(self):
@@ -168,9 +168,9 @@ def replay_thoughts(records, *, chunks_state=None, row=0):
             raise ValueError("thought occurrences must be strictly chronological")
         previous = record.id
         if chunks_state is not None and record.address is not None:
-            from STMChunks import locate
-            if int(locate(chunks_state, record.address)[row]) < 0:
-                raise ValueError('replay chunk is absent at its .where address')
+            from Memory import STMChunks
+            if int(STMChunks.locate(chunks_state, record.address, band=STMChunks.WHEN)[row]) < 0:
+                raise ValueError('replay chunk is absent at its .when address')
         if record.result is not None and 'pervasion_derivation' in record.result.evidence:
             from Intuition import pervade
             proof = record.result.evidence['pervasion_derivation']
@@ -228,7 +228,7 @@ def replay_thoughts(records, *, chunks_state=None, row=0):
                 record.budget,
                 0,
                 0.0,
-                focus_where=record.address,
+                focus_when=record.address,
             )
         else:
             if state is None or state.finished or record.episode != state.episode:
@@ -528,10 +528,9 @@ class LevelledThoughtHistory:
     def _store_thought_events(self, events, *, b, reserve=0):
         current = list(self._what_slots[b])
         live = self.detach_mode == "episode" and b in self._episode_live
-        from ThoughtChunks import address
         active = replay_thoughts(current)
-        where = events[0].address or (active.focus_where if active is not None else address(events[0].id + 1))
-        addressed = [replace(record, address=record.address or where) for record in events]
+        when = events[0].address or (active.focus_when if active is not None else None)
+        addressed = [replace(record, address=record.address or when) for record in events]
         stored = [record.snapshot(detach=not live) for record in addressed]
         candidate = self._retain_thought_history(current + stored, reserve)
         replay_thoughts(candidate)  # validation precedes every owner mutation
@@ -557,11 +556,10 @@ class LevelledThoughtHistory:
         if type(work_budget) is not int or work_budget < 0:
             raise ValueError("thought work budget must be a non-negative integer")
         identifier = self._thought_next_id
-        from ThoughtChunks import address, begin
-        focus_where = address(identifier + 1)
+        from ThoughtChunks import begin
         record = ThoughtRecord(
             identifier, identifier, "begin", 0, meaning, budget=work_budget,
-            opened_by_chooser=opened_by_chooser, address=focus_where
+            opened_by_chooser=opened_by_chooser
         )
         events = [record]
         if work_budget == 0:
@@ -578,7 +576,8 @@ class LevelledThoughtHistory:
         # Reserve a cutoff and the one root finish, or just the pending finish.
         reserve = 1 if work_budget == 0 else 2
         self._retain_thought_history(list(self._what_slots[b]) + events, reserve)
-        begin(self, meaning, b, identifier)
+        when = begin(self, meaning, b)
+        events[0] = replace(events[0], address=when)
         self._episode_live[b] = []
         try:
             return self._store_thought_events(events, b=b, reserve=reserve)
@@ -684,7 +683,7 @@ class LevelledThoughtHistory:
         stored = self._store_thought_events(events, b=b, reserve=reserve)
         if kind == 'finish':
             from ThoughtChunks import release
-            release(self, state.focus_where, b)
+            release(self, state.focus_when, b)
         return stored
 
     def commit_thought(self, meaning, *, operation="refine", **kwargs):

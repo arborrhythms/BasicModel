@@ -8,7 +8,7 @@ import torch
 from order_fixtures import force_order
 
 from ClauseRow import Clause, Composition, attach_clause_index
-from Layers import LTM0
+from Memory import LTM0
 from Meaning import ConceptualMeaning
 from ReferenceClose import ReferenceClose
 from ReferenceContext import SituationFrame

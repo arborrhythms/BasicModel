@@ -8,7 +8,8 @@ import pytest
 import torch
 
 from Language import Grammar, OperationSelectionLayer
-from Layers import LTM0, WhatInteractionMemory, Error
+from Layers import WhatInteractionMemory, Error
+from Memory import LTM0
 from Meaning import ConceptualMeaning, ClosingImage
 from Models import BasicModel
 from Queries import GrammaticalThoughtRegistry, THOUGHT_EXECUTORS
@@ -519,7 +520,7 @@ def test_thought_nested_writer_is_restricted_and_preflights_capacity():
     write(model,parent,row=0)
     assert len(store)==2 and store.meaning_of(1).role_refs[0]==store.occurrence_of(0)
     # Capacity is derived at construction, never resized for the fixture.
-    from Layers import LTM0
+    from Memory import LTM0
     small = LTM0(store.nDim, capacity=1)
     model.symbolSpace.ltm_store = small
     with pytest.raises(OverflowError,match='forgetting'):

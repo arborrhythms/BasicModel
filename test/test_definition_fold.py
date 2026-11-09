@@ -4,7 +4,7 @@ import torch
 from test_familiar_tier import placed_fixture
 from ConceptIndex import index_part_row
 from DefinitionFold import examples, prepare, loss
-from LTM1 import SYMBOL
+from Memory import SYMBOL
 
 
 def fixture():

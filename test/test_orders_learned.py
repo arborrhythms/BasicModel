@@ -42,7 +42,7 @@ def event(cs, store, place, *, order=0, value=.5, token=False):
 def equal_close(cs, store, left, right, *, word=None, evidence=(1., 0.)):
     from ClauseRow import Clause, Composition, predicate_identity
     from Meaning import ConceptualMeaning
-    from LTM1 import OCCURRENCE, SYMBOL
+    from Memory import OCCURRENCE, SYMBOL
     from ChainRead import point
     operands = (Composition(point(store, (OCCURRENCE, left)), reference=left,
                             order=cs._concept_source_order(left)),
@@ -56,7 +56,7 @@ def equal_close(cs, store, left, right, *, word=None, evidence=(1., 0.)):
 
 def test_two_event_witnesses_raise_the_named_object_without_work(tmp_path, monkeypatch):
     from QueryWork import QueryWorkBudget
-    from LTM1 import OCCURRENCE, SYMBOL
+    from Memory import OCCURRENCE, SYMBOL
     cs, store, alloc = equality_fixture()
     word = cs.interpret.lookup_word([1], [2], form='label')
     first, second = event(cs, store, 1), event(cs, store, 2)
@@ -84,7 +84,7 @@ def test_two_event_witnesses_raise_the_named_object_without_work(tmp_path, monke
 
 @pytest.mark.parametrize('same_token,same_value,raises', [(False, False, True), (False, True, False), (True, False, False)])
 def test_only_distinct_published_identities_raise(same_token, same_value, raises):
-    from LTM1 import OCCURRENCE, SYMBOL
+    from Memory import OCCURRENCE, SYMBOL
     cs, store, alloc = equality_fixture()
     word = cs.interpret.lookup_word([1], [2], form='category')
     force_order(cs, word, 1)
@@ -223,7 +223,7 @@ def test_argument_concepts_stay_above_words_when_their_denotations_change_order(
 
 
 def test_relation_handles_read_their_tagged_reference_orders():
-    from LTM1 import SYMBOL, OCCURRENCE, RELATION
+    from Memory import SYMBOL, OCCURRENCE, RELATION
     cs, store, alloc = equality_fixture()
     member, whole, equal_side = (cs.new_concept() for _ in range(3))
     force_order(cs, member, 1)
@@ -263,7 +263,7 @@ def test_first_equality_witness_slab_is_bounded_and_restorable():
 
 
 def test_forgotten_first_equality_renews_its_existing_snapshot_seat():
-    from LTM1 import OCCURRENCE, SYMBOL
+    from Memory import OCCURRENCE, SYMBOL
     cs, store, alloc = equality_fixture()
     word = cs.interpret.lookup_word([1], [2], form='label')
     first, second, third = (event(cs, store, place) for place in (1, 2, 3))
@@ -300,7 +300,7 @@ def test_retirement_handles_class_base_cache_without_losing_another_class():
 
 @pytest.mark.parametrize('order', (0, 1, -1))
 def test_determiner_opens_a_chunk_identity_only_at_member_order_one(order):
-    import STMChunks as chunks
+    from Memory import STMChunks as chunks
     from chunk_fixtures import Walk, choice
     rule = NS(method_name='lower', head_role=2, determiner_mode='mint')
     walk = Walk((rule,), ())

@@ -33,7 +33,7 @@ def test_referenced_phrase_is_an_occurrence_part_argument(monkeypatch):
     clause = f.clause(('part', 'cat', ('lift', 'chases', 'mouse')))
     row = f.store.write_clause(clause)
     reference = int(f.store.row(row)['refs'][1])
-    from LTM1 import OCCURRENCE
+    from Memory import OCCURRENCE
     from ChainRead import point
     assert int(f.store.parts.ref_kinds[row[1], 1]) == OCCURRENCE
     assert f.cs._csw_row_of(reference) is None

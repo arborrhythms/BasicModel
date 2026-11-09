@@ -135,7 +135,7 @@ class ThoughtGrammarContext(GrammarContext):
     operand_references: tuple = ()
     operand_values: tuple = ()
     stm: object = None
-    focus_where: tuple | None = None
+    focus_when: tuple | None = None
     direction: tuple = (0, 2)
     intuition_rule: tuple | None = None
 
@@ -925,7 +925,7 @@ class ThoughtLTMCapability:
         owner = None if owner_ref is None else owner_ref()
         if owner is None:
             return ()
-        from LTM1 import SYMBOL
+        from Memory import SYMBOL
         rows = []
         index_limit = min(max_records, work.remaining // 4)
         for row in object.__getattribute__(self, '_ThoughtLTMCapability__expected')[:index_limit]:
@@ -983,7 +983,7 @@ class ThoughtLTMCapability:
 
     def _cued(self, description, *, max_records, work, references=(), role_mask=None):
         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
-        from Layers import LTM0
+        from Memory import LTM0
         if not isinstance(store, LTM0):
             return {'value': (), 'records_scanned': 0, 'incomplete': ('unavailable_ltm',)}
         from DocumentCover import read as read_cover
@@ -1043,7 +1043,7 @@ class ThoughtLTMCapability:
     def end_evidence(self, reference, *, max_records, work):
         """Read the two poles of one addressed ended clause, under the same bound."""
         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
-        from Layers import LTM0
+        from Memory import LTM0
         if not isinstance(store, LTM0) or store.location(reference) is None:
             raise ValueError('ended clause occurrence is unavailable')
         if not max_records:
@@ -1330,7 +1330,7 @@ class ThoughtLTMCapability:
                 reference, b=row, max_records=max_records, work=work)
             return value.detached(), scanned
         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
-        from Layers import LTM0
+        from Memory import LTM0
         if (isinstance(reference, tuple) and len(reference) == 2
                 and reference[0] == 'sym' and type(reference[1]) is int):
             if (isinstance(store, LTM0) and store.parts.contains(reference[1])
@@ -1726,7 +1726,7 @@ def _descriptor_context(context, descriptor):
         word_stream=context.word_stream if Mind.SERIAL in descriptor.read_scope else (),
         operand_values=context.operand_values if Mind.SERIAL in descriptor.read_scope else (),
         stm=context.stm if Mind.SERIAL in descriptor.read_scope else None,
-        focus_where=context.focus_where if Mind.SERIAL in descriptor.write_scope else None,
+        focus_when=context.focus_when if Mind.SERIAL in descriptor.write_scope else None,
         primed_symbols=context.primed_symbols if Mind.PRIMING in descriptor.read_scope else None,
         conceptual_space=_ThoughtCapabilityView(
             context.conceptual_space, grants['conceptual_space']),
@@ -1895,7 +1895,7 @@ def _occurrence_description(context, reference):
             raise ValueError(
                 'thought LTM description capability returned invalid occurrence data')
         return resolved
-    from Layers import LTM0
+    from Memory import LTM0
     if not isinstance(context, QueryContext):
         raise TypeError('occurrence reference requires its query context')
     if isinstance(reference, tuple) and reference and reference[0] == 'thought':
@@ -2289,10 +2289,10 @@ class GrammaticalThoughtRegistry:
             kind = kinds_by_role[role]
             if kind == 'reference' and isinstance(argument, ConceptualMeaning):
                 from ThoughtReferences import bindings as thought_bindings
-                where = thought_bindings(argument).get('_chunk_where')
-                if where is None:
+                when = thought_bindings(argument).get('_chunk_when')
+                if when is None:
                     raise ValueError('infer operands must be resident addressed chunks')
-                references[self._slot_for_operand(role)] = ('chunk', where)
+                references[self._slot_for_operand(role)] = ('chunk', when)
                 payloads[self._slot_for_operand(role)] = self._description_value(argument)
                 continue
             if (kind == 'meaning' and isinstance(argument, tuple) and len(argument) == 2
@@ -2718,10 +2718,10 @@ class GrammaticalThoughtRegistry:
                     raise ValueError('thought operand requires a grounded conceptual reference')
                 if isinstance(value, ConceptualMeaning):
                     from ThoughtReferences import bindings as thought_bindings
-                    where = thought_bindings(value).get('_chunk_where')
-                    if where is not None:
+                    when = thought_bindings(value).get('_chunk_when')
+                    if when is not None:
                         from ThoughtChunks import read
-                        value = read(context.stm, where, context.row)
+                        value = read(context.stm, when, context.row)
                 arguments.append(value)
             # ``execute`` already admitted this completed row before any
             # preparation/read above.  Avoid a second observable boundary

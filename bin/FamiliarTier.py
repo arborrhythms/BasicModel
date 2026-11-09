@@ -3,7 +3,7 @@ from dataclasses import replace
 from functools import wraps
 
 import torch
-from LTM1 import NULL_CONCEPT
+from Memory import NULL_CONCEPT
 
 
 def kept_close(method):
@@ -97,7 +97,7 @@ def remember_context(owner, focal, support):
 
 def _ground_candidate_members(owner, cid, support):
     """A current field witnesses its actual members in this epoch's LTM1."""
-    from LTM1 import SYMBOL
+    from Memory import SYMBOL
     bank = owner._concept_allocator.parts
     scale = max(1., max(support.values()))
     for row, weight in support.items():
@@ -336,7 +336,7 @@ def open_sentence(model, sid, present):
 
 
 def member_row(owner, kind, identity):
-    from LTM1 import SYMBOL, OCCURRENCE
+    from Memory import SYMBOL, OCCURRENCE
     if kind == SYMBOL:
         return owner._csw_row_of(identity)
     if kind != OCCURRENCE:
@@ -360,7 +360,7 @@ def member_row(owner, kind, identity):
 
 
 def class_members(owner, cid):
-    from LTM1 import SYMBOL
+    from Memory import SYMBOL
     if cid == NULL_CONCEPT:
         return {}
     parts = owner._concept_allocator.parts
@@ -532,7 +532,7 @@ def promote_identity(owner, key, *, word=None, trust=None, evidence=None):
     cid = alloc.new_concept()
     # An identity's retained occurrence supplies its order. No grammar choice
     # or caller order is supplied to this operation.
-    from LTM1 import OCCURRENCE
+    from Memory import OCCURRENCE
     alloc.store_of(cid).add_constituent(cid, 'part', ('occ', origin[-1]))
     alloc.reference_orders[cid] = member_order + 1
     alloc.settle(cid)
@@ -582,7 +582,7 @@ def promote_identity(owner, key, *, word=None, trust=None, evidence=None):
 @torch.no_grad()
 def define_pending(owner, left, right, *, word=None, other_word=None, null_referent=False):
     """Consume a kept equality/IS witness once its subject token is retained."""
-    from LTM1 import SYMBOL, OCCURRENCE
+    from Memory import SYMBOL, OCCURRENCE
     from ConceptIndex import unbound_label
     parts = owner._concept_allocator.parts
     relation = parts.find(left, right)
@@ -625,7 +625,7 @@ def define_pending(owner, left, right, *, word=None, other_word=None, null_refer
 def _resolve_null_token(owner, key, left, right, other_word):
     """Resolve an occurrence from evidence, without naming its pointing word."""
     from ConceptIndex import unbound_label
-    from LTM1 import OCCURRENCE, SYMBOL
+    from Memory import OCCURRENCE, SYMBOL
     from ChainRead import envelope
     pool, alloc, store = owner.mtm, owner._concept_allocator, owner._closed_clause_store()
     entry = pool.entries[key]

@@ -92,7 +92,7 @@ def test_nested_unknown_terminal_keeps_its_word_without_minting(monkeypatch):
     root = Composition(value, (left, right), operation='verb', formal_name='verb', head_role=1)
     clause = Clause(ConceptualMeaning.from_description(value), point=value, composition=root)
     row = f.store.write_clause(clause, evidence=(.8, .1))
-    from LTM1 import SYMBOL
+    from Memory import SYMBOL
     assert row[0] == 'sym'
     assert f.store.parts.references(row[1]) == ((SYMBOL, participant), (SYMBOL, word))
     assert f.store.parts.rows_referencing(SYMBOL, word) == (row[1],)
@@ -321,7 +321,7 @@ def test_new_relation_argument_needs_an_occurrence_and_no_concept_seat(monkeypat
     monkeypatch.setattr(f.cs, '_order_caps', lambda: [caps[0], 0, f.cs.nVectors-caps[0]])
     seats = set(f.cs._concept_allocator.layer()._tensor_row_keys)
     row = f.store.write_clause(clause)
-    from LTM1 import OCCURRENCE
+    from Memory import OCCURRENCE
     tag, address = f.store.parts.references(row[1])[1]
     assert tag == OCCURRENCE
     torch.testing.assert_close(f.store.point_of_row(address), argument.point)
@@ -344,7 +344,7 @@ def test_relation_argument_does_not_use_the_concept_tail(monkeypatch):
     caps = (f.cs._order_caps()[0], 0)
     monkeypatch.setattr(f.cs, '_order_caps', lambda: caps)
     row = f.store.write_clause(clause)
-    from LTM1 import OCCURRENCE
+    from Memory import OCCURRENCE
     tag, address = f.store.parts.references(row[1])[1]
     assert tag == OCCURRENCE and f.store.index_of_row(address) is not None
     assert f.cs._csw_row_of(address) is None
@@ -367,7 +367,7 @@ def test_surface_phrase_keeps_the_unknown_head_word_without_minting(monkeypatch)
     clause = Clause(ConceptualMeaning.from_description(root.point), point=root.point,
                     composition=root)
     row = f.store.write_clause(clause)
-    from LTM1 import SYMBOL
+    from Memory import SYMBOL
     assert f.store.parts.references(row[1])[0] == (SYMBOL, word)
     assert not f.cs.definitions.objects(word)
     assert f.store.parts.find(word, native) == row[1]

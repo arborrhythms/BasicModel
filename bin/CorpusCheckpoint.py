@@ -19,14 +19,14 @@ STM_META = ('_active_batch', '_scope_columns', '_whole_columns', '_live_max_dept
 
 
 def stm_owners(model):
-    from Layers import ShortTermMemory
+    from Memory import ShortTermMemory
     return {name: module for name, module in model.named_modules()
             if isinstance(module, ShortTermMemory)}
 
 
 def stm_fields():
-    from STMChunks import FIELDS
-    return tuple('_live_'+name for name in (*FIELDS, 'clause_state', 'wholes',
+    from Memory import STMChunks
+    return tuple('_live_'+name for name in (*STMChunks.FIELDS, 'clause_state', 'wholes',
                                            'last_unary', 'unary_history_depth'))
 
 

@@ -598,7 +598,7 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
         if getattr(rule, 'method_name', None) == 'bind':
             if chunk_state is None:
                 raise ValueError('binary bind requires the shared chunk field')
-            import STMChunks
+            from Memory import STMChunks
             newest = (active.long().sum(-1)-1).clamp_min(0)[:,None]
             mention = window.gather(1,newest[...,None].expand(B,1,D))
             own = identities.gather(1,newest)

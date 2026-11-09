@@ -5,11 +5,11 @@ from pathlib import Path
 import pytest
 import torch
 
-import STMChunks as chunks
+from Memory import STMChunks as chunks
 from Meaning import ConceptualMeaning
 from QueryWork import QueryWorkBudget
 from ThoughtReferences import bindings, evidence_pair, open_slots, with_slots
-from ThoughtChunks import address, attach, put, read, held, stage
+from ThoughtChunks import attach, put, read, held, stage
 from ThoughtStream import materialize
 from test_item6_2_thinking import world, run
 
@@ -45,26 +45,27 @@ def operands(model, registry, store, refs, *, premise_pair=(.8, .2), rule_pair=(
     rule_meaning = with_slots(replace(rule_meaning, bindings=dict(bindings(rule_meaning),
         _rule_row=rule, _rule_kind='part')), (), pair=rule_pair)
     stm = model.conceptualSpace.stm
-    return (put(stm, premise, address(100), 0), put(stm, rule_meaning, address(101), 0), rule)
+    return (put(stm, premise, row=0), put(stm, rule_meaning, row=0), rule)
 
 
 def test_chunk_truth_exact_address_clear_and_episode_pin():
     model, registry, store, refs = setup()
     stm, memory = model.conceptualSpace.stm, model._what_memory()
-    focus = memory.thought_state().focus_where
+    focus = memory.thought_state().focus_when
     pointer = stm._live_chunk_truth.data_ptr()
     assert len(focus) == 4
-    index = int(chunks.locate(stm.state, focus)[0])
+    index = int(chunks.locate(stm.state, focus, band=chunks.WHEN)[0])
     assert int(stm.state[chunks.STACK][0, index]) >= 0
+    deposited = []
     for number in range(10, 35):
-        put(stm, idea(registry, refs[0], (.6, .2)), address(number), 0)
-    assert int(chunks.locate(stm.state, focus)[0]) == index
-    assert int(chunks.locate(stm.state, address(10))[0]) == -1
+        deposited.append(put(stm, idea(registry, refs[0], (.6, .2)), row=0))
+    assert int(chunks.locate(stm.state, focus, band=chunks.WHEN)[0]) == index
+    assert int(chunks.locate(stm.state, bindings(deposited[0])['_chunk_when'], band=chunks.WHEN)[0]) == -1
     memory.finish_thought(memory.thought_state().contexts[0].meaning)
     assert stm.state[chunks.STACK][0, index] == -1
     for number in range(40, 50):
-        put(stm, idea(registry, refs[0]), address(number), 0)
-    assert int(chunks.locate(stm.state, focus)[0]) == -1
+        put(stm, idea(registry, refs[0]), row=0)
+    assert int(chunks.locate(stm.state, focus, band=chunks.WHEN)[0]) == -1
     state = chunks.clear(stm.state, torch.ones_like(stm.state[chunks.READ], dtype=torch.bool))
     assert not state[chunks.TRUTH].any()
     assert state[chunks.TRUTH].shape == (1, 8, 2)
@@ -72,18 +73,18 @@ def test_chunk_truth_exact_address_clear_and_episode_pin():
 
 
 def test_trial_restore_keeps_active_streams_inside_the_constructed_batch():
-    from Layers import ShortTermMemory
+    from Memory import ShortTermMemory
     from WalkTrials import ThoughtTrialState
     stm = ShortTermMemory(batch=3, concept_dim=8)
     stm.ensure_batch(1)
     value = with_slots(ConceptualMeaning.from_description(torch.ones(8)), (), pair=(.7, .2))
-    put(stm, value, address(1), 0, pin=True)
+    put(stm, value, row=0, pin=True)
     model = SimpleNamespace(_what_memory=lambda: None, conceptualSpace=SimpleNamespace(stm=stm))
     before = tuple(t.clone() for t in stm.state)
     pointer = stm._live_chunk_truth.data_ptr()
     trial = ThoughtTrialState(model)
     stm.ensure_batch(2)
-    put(stm, value, address(2), 1, pin=True)
+    put(stm, value, row=1, pin=True)
     trial.restore()
     assert stm._active_batch == 1 and stm.snapshot().shape == (1, 1, 8)
     assert stm._live_buffer.shape == (3, 8, 8)
@@ -96,30 +97,33 @@ def test_trial_restore_keeps_active_streams_inside_the_constructed_batch():
 def test_duplicate_occupied_thought_address_fails_before_mutation():
     model, registry, store, refs = setup()
     stm = model.conceptualSpace.stm
-    where = address(100)
-    value = put(stm, idea(registry, refs[0], (.7, .2)), where, 0)
+    value = put(stm, idea(registry, refs[0], (.7, .2)), row=0)
+    when = bindings(value)['_chunk_when']
     before = tuple(t.clone() for t in stm.state)
     contents = stm._thought_contents
+    clock = stm._thought_clock
+    # Corrupt the producer clock to offer the already occupied stamp again.
+    stm._thought_clock = (clock[0] - 1,)
     with pytest.raises(ValueError, match='already occupied'):
-        put(stm, idea(registry, refs[1]), where, 0)
+        put(stm, idea(registry, refs[1]), row=0)
+    stm._thought_clock = clock
     assert stm._thought_contents is contents
     for original, unchanged in zip(before, stm.state):
         torch.testing.assert_close(original, unchanged)
-    put(stm, with_slots(value, (), pair=(.6, .3)), where, 0, existing=True)
-    assert evidence_pair(read(stm, where, 0)) == pytest.approx((.6, .3))
-    other = address(101)
-    put(stm, value, other, 0)
-    first, second = (int(chunks.locate(stm.state, item)[0]) for item in (where, other))
+    put(stm, with_slots(value, (), pair=(.6, .3)), when, 0, existing=True)
+    assert evidence_pair(read(stm, when, 0)) == pytest.approx((.6, .3))
+    other = bindings(put(stm, value, row=0))['_chunk_when']
+    first, second = (int(chunks.locate(stm.state, item, band=chunks.WHEN)[0]) for item in (when, other))
     corrupt = list(stm.state)
-    corrupt[chunks.WHERE] = corrupt[chunks.WHERE].clone()
-    corrupt[chunks.WHERE][0, second] = corrupt[chunks.WHERE][0, first]
+    corrupt[chunks.WHEN] = corrupt[chunks.WHEN].clone()
+    corrupt[chunks.WHEN][0, second] = corrupt[chunks.WHEN][0, first]
     stm.set_state(tuple(corrupt))
     # The traceable tensor primitive still returns its first occupied match.
-    assert int(chunks.locate(stm.state, where)[0]) == min(first, second)
+    assert int(chunks.locate(stm.state, when, band=chunks.WHEN)[0]) == min(first, second)
     with pytest.raises(ValueError, match='multiple thought chunks'):
-        read(stm, where, 0)
+        read(stm, when, 0)
     with pytest.raises(ValueError, match='multiple thought chunks'):
-        put(stm, value, where, 0, existing=True)
+        put(stm, value, when, 0, existing=True)
 
 
 def test_membership_match_uses_the_existing_part_cache(monkeypatch):
@@ -137,9 +141,9 @@ def test_membership_match_uses_the_existing_part_cache(monkeypatch):
     premise, rule, row = operands(model, registry, store, refs, rule_pair=(.9, .7))
     # These fixtures name the cache's actual member and class rows.
     premise = put(model.conceptualSpace.stm,
-        replace(premise, role_refs=(('sym', 1), None, None)), address(100), 0, existing=True)
+        replace(premise, role_refs=(('sym', 1), None, None)), bindings(premise)['_chunk_when'], 0, existing=True)
     rule = put(model.conceptualSpace.stm,
-        replace(rule, role_refs=(('sym', 2), rule.role_refs[1], refs[1])), address(101), 0, existing=True)
+        replace(rule, role_refs=(('sym', 2), rule.role_refs[1], refs[1])), bindings(rule)['_chunk_when'], 0, existing=True)
     request = registry.form('infer', premise, rule)
     with model._query_boundary_scope((0,)):
         context = model._thought_grammar_context(request, row=0, work=QueryWorkBudget(32), continuation=None)
@@ -156,7 +160,7 @@ def test_membership_match_uses_the_existing_part_cache(monkeypatch):
 
 def test_unused_derived_idea_is_forgotten_by_existing_configuration():
     from Forgetting import forget, ForgettingConfig
-    from Layers import LTM0
+    from Memory import LTM0
     from ThoughtStream import write
     model, registry, store, refs = world()
     store = LTM0(8, capacity=4)
@@ -181,9 +185,9 @@ def test_forward_identity_lanes_alternative_max_and_no_extra_chunk():
     assert first.evidence['derivation']['match_support_true'] == 1.
     assert evidence_pair(first.evidence['meaning']) == pytest.approx((.8, .3))
     assert first.evidence['meaning'].role_refs[0] == refs[1]
-    assert first.evidence['sources'] == (address(100), row)
+    assert first.evidence['sources'] == (bindings(premise)['_chunk_when'], row)
     count = int((model.conceptualSpace.stm.state[chunks.READ] > 0).sum())
-    premise = put(model.conceptualSpace.stm, with_slots(premise, (), pair=(.95, .1)), address(100), 0, existing=True)
+    premise = put(model.conceptualSpace.stm, with_slots(premise, (), pair=(.95, .1)), bindings(premise)['_chunk_when'], 0, existing=True)
     second = invoke(model, registry, registry.form('infer', premise, rule))
     assert evidence_pair(second.evidence['meaning']) == pytest.approx((.9, .3))
     assert int((model.conceptualSpace.stm.state[chunks.READ] > 0).sum()) == count
@@ -192,7 +196,7 @@ def test_forward_identity_lanes_alternative_max_and_no_extra_chunk():
 def test_backward_writes_unknown_question_then_forward_uses_filled_premise():
     model, registry, store, refs = setup()
     premise, rule, row = operands(model, registry, store, refs)
-    goal = put(model.conceptualSpace.stm, idea(registry, refs[1]), address(102), 0)
+    goal = put(model.conceptualSpace.stm, idea(registry, refs[1]), row=0)
     result = invoke(model, registry, registry.form('inferBackward', rule, goal))
     assert result.evidence_kind == 'subgoal'
     assert evidence_pair(result.evidence['meaning']) == (0., 0.)
@@ -205,8 +209,8 @@ def test_backward_writes_unknown_question_then_forward_uses_filled_premise():
 def test_unmatched_inference_keeps_the_open_focus():
     model, registry, store, refs = setup()
     _premise, rule, _row = operands(model, registry, store, refs)
-    premise = put(model.conceptualSpace.stm, idea(registry, refs[2]), address(102), 0)
-    focus = model._what_memory().thought_state().focus_where
+    premise = put(model.conceptualSpace.stm, idea(registry, refs[2]), row=0)
+    focus = model._what_memory().thought_state().focus_when
     before = read(model.conceptualSpace.stm, focus, 0)
     result = invoke(model, registry, registry.form('infer', premise, rule))
     assert result.evidence['incomplete'] == ('antecedent_mismatch',)
@@ -221,7 +225,7 @@ def test_identity_match_reads_a_native_equality_witness():
     premise, rule, _row = operands(model, registry, store, refs, rule_pair=(.9, .7))
     model.conceptualSpace._concept_allocator.singletons.add(refs[0][1])
     identity = store.append_relation(refs[2][1], refs[0][1], truth_plus=.2)
-    premise = put(model.conceptualSpace.stm, idea(registry, refs[2], (.6, .1)), address(102), 0)
+    premise = put(model.conceptualSpace.stm, idea(registry, refs[2], (.6, .1)), row=0)
     result = invoke(model, registry, registry.form('infer', premise, rule))
     assert result.evidence['reason'] == 'identity'
     assert result.evidence['meaning'].role_refs[0] == refs[1]
@@ -249,8 +253,8 @@ def test_relation_rule_instantiates_its_consequent_with_the_member():
     index = write(model, rule, row=0)
     rule = replace(rule, bindings=dict(bindings(rule), _rule_row=store.occurrence_of(index), _rule_kind='implies'))
     premise = with_slots(registry.form('part', token, middle), (), pair=(.7, .2))
-    premise = put(model.conceptualSpace.stm, premise, address(100), 0)
-    rule = put(model.conceptualSpace.stm, rule, address(101), 0)
+    premise = put(model.conceptualSpace.stm, premise, row=0)
+    rule = put(model.conceptualSpace.stm, rule, row=0)
     result = invoke(model, registry, registry.form('infer', premise, rule))
     assert result.evidence['reason'] == 'membership'
     assert result.evidence['meaning'].role_refs == (token, consequent.role_refs[1], prop)
@@ -266,12 +270,12 @@ def test_negated_operand_and_equality_use_the_same_operator():
     assert evidence_pair(result.evidence['meaning']) == pytest.approx((.8, .7))
     from ThoughtInference import replay_pair
     assert replay_pair(result.evidence) == pytest.approx((.8, .7))
-    assert result.evidence['alternatives'] == ((address(100), pytest.approx((.8, .2))),)
+    assert result.evidence['alternatives'] == ((bindings(premise)['_chunk_when'], pytest.approx((.8, .2))),)
     model._what_memory().commit_thought(result.evidence['meaning'], operation='infer',
         result=result, support_true=result.support_true, support_false=result.support_false,
         evidence_kind='inference')
     equality = put(model.conceptualSpace.stm, replace(rule,
-        bindings=dict(bindings(rule), _rule_kind='equal')), address(101), 0, existing=True)
+        bindings=dict(bindings(rule), _rule_kind='equal')), bindings(rule)['_chunk_when'], 0, existing=True)
     result = invoke(model, registry, registry.form('infer', premise, equality))
     assert result.evidence['reason'] == 'equality'
     assert result.evidence['meaning'].role_refs[0] == refs[1]
@@ -285,7 +289,7 @@ def test_intuition_requires_selection_and_retired_face_is_absent():
         '_evidence_kind': 'intuition', '_producing_operation': 'intuit', '_evidence_pair': (.8, .2)})
     assert not accepted(value)
     _premise, rule, _row = operands(model, registry, store, refs)
-    value = put(model.conceptualSpace.stm, value, address(102), 0)
+    value = put(model.conceptualSpace.stm, value, row=0)
     selected = invoke(model, registry, registry.form('infer', value, rule))
     assert accepted(selected.evidence['meaning'])
     assert 'intuit' in THOUGHT_EXECUTORS and 'intuit' in registry.executable_operation_ids
@@ -358,14 +362,14 @@ def test_binding_cost_grades_two_incorrect_text_trials_and_credits_better(monkey
     from meaning_fixtures import replay_first_choice
     requests = []
     stm = model.conceptualSpace.stm
-    premise = put(stm, idea(registry, refs[2]), address(100), 0)
+    premise = put(stm, idea(registry, refs[2]), row=0)
     for number, (reference, value) in enumerate(zip(refs[:2], (.2, .8))):
         with torch.no_grad():
             owner.similarity_codebook.W[owner._csw_row_of(reference[1])].fill_(value)
         index = store.append_relation(refs[2][1], reference[1], truth_plus=.9, truth_minus=.1)
         rule = store.part_row(index[1], reading='part')['meaning']
         rule = with_slots(replace(rule, bindings={'_rule_row': index, '_rule_kind': 'part'}), (), pair=(.9, .1))
-        rule = put(stm, rule, address(101 + number), 0)
+        rule = put(stm, rule, row=0)
         requests.append(registry.form('infer', premise, rule))
     menu = tuple(ThoughtOperationCandidate(registry.operation_spec('infer'), request, ()) for request in requests)
     monkeypatch.setattr('ThoughtStream.candidates', lambda registry, root, active, current, records, descriptions=():

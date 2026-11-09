@@ -7,7 +7,7 @@ from test_orders_learned import equality_fixture, event, equal_close
 
 @pytest.mark.parametrize('mismatch_first', (False, True))
 def test_unlike_order_equality_keeps_evidence_without_a_partial_raise(mismatch_first):
-    from LTM1 import OCCURRENCE, SYMBOL
+    from Memory import OCCURRENCE, SYMBOL
     cs, store, alloc = equality_fixture()
     word = cs.interpret.lookup_word([1], [2], form='label')
     first = event(cs, store, 1)

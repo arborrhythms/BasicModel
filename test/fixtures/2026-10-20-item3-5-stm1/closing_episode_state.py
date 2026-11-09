@@ -75,8 +75,8 @@ raw_difference = difference
 def observed_difference(model, before, after):
     """Apply the landed observer ports without omitting any raw state change."""
     from MereologicalCodes import MereologicalCodes
-    from Layers import ShortTermMemory
-    import STMChunks
+    from Memory import ShortTermMemory
+    from Memory import STMChunks
 
     cache_fields, chunk_fields, chain_fields = set(), set(), {}
     store = getattr(getattr(model, 'symbolSpace', None), 'ltm_store', None)

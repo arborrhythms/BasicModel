@@ -87,7 +87,7 @@
       "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
     },
     {
-      "file": "bin/MediumTermMemory.py",
+      "file": "bin/Memory.py",
       "function": "MediumTermMemory._room",
       "attributes": [
         "when"
@@ -97,7 +97,7 @@
       "now": "Identities and familiar candidates share oldest-access eviction; the retained token tick breaks equal-access ties."
     },
     {
-      "file": "bin/MediumTermMemory.py",
+      "file": "bin/Memory.py",
       "function": "MediumTermMemory.restore",
       "attributes": [
         "when"
@@ -107,7 +107,7 @@
       "now": "Serializes or restores the retained identity time; no new clock or forward-path timestamp."
     },
     {
-      "file": "bin/MediumTermMemory.py",
+      "file": "bin/Memory.py",
       "function": "MediumTermMemory.state",
       "attributes": [
         "when"
@@ -913,19 +913,19 @@
       "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
     },
     {
-      "file": "bin/Layers.py",
+      "file": "bin/Memory.py",
       "function": "LTM0.__init__",
       "previous_absolute_time": false,
       "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
     },
     {
-      "file": "bin/Layers.py",
+      "file": "bin/Memory.py",
       "function": "LTM0._load_from_state_dict",
       "previous_absolute_time": false,
       "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
     },
     {
-      "file": "bin/Layers.py",
+      "file": "bin/Memory.py",
       "function": "LTM0.clear_origin",
       "previous_absolute_time": false,
       "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."

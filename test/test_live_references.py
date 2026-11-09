@@ -217,7 +217,7 @@ def test_operation_runs_on_the_selected_occurrence_eager_and_compiled():
                             _compose_unary_rules=(), _structural_context=lambda **kw: None,
                             _reference_bank=ReferenceBank(torch.tensor([[5]]), prior[None, None], torch.tensor([[True]]),
                                                           torch.tensor([[False]]), query[None], torch.tensor([True])))
-    import STMChunks as chunks
+    from Memory import STMChunks as chunks
     state=chunks.empty(1,8,4)
     state,_=chunks.deposit(state,prior[None],torch.tensor([True]),identity=5)
     state,_=chunks.deposit(state,first[None],torch.tensor([True]),identity=5,order=1,stack=True)
@@ -372,7 +372,7 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
         torch.testing.assert_close(clause.composition.point, frame[2], rtol=0, atol=0)
         # Thought may complete a different working field after the close.
         # The shared recent chunk retains the written sentence's own value.
-        import STMChunks as chunks
+        from Memory import STMChunks as chunks
         state = model.conceptualSpace.stm.state
         written = model._sentence_fields[0][0].row_id
         recent = state[chunks.REFS][0,:,0,1] == written

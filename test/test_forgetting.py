@@ -7,7 +7,7 @@ import pytest
 import torch
 
 from Forgetting import ForgettingConfig, forget, history_age, retention_values, model_boundary
-from Layers import LTM0
+from Memory import LTM0
 from Meaning import ConceptualMeaning
 
 
@@ -205,7 +205,7 @@ def test_pair_unlinking_preserves_observation_and_restores_cleanly():
 
 
 def test_transitive_row_has_its_own_utility():
-    from LTM1 import LTM1
+    from Memory import LTM1
     from Forgetting import forget_parts
     store = LTM1(capacity=5)
     rows = [store.add(left, right, truth_plus=1, surprise=utility)
@@ -436,7 +436,7 @@ def test_checkpoint_cannot_resize_the_constructed_inventory():
 
 def test_conflicting_proof_does_not_change_another_rows_utility():
     from Forgetting import forget_parts
-    from LTM1 import LTM1
+    from Memory import LTM1
     store = LTM1(capacity=5)
     proof = store.add(10, 20, truth_plus=1)
     store.add(20, 30, truth_plus=1)

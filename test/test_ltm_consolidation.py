@@ -96,7 +96,7 @@ def _make_model_provisioned(config):
 
 class TestConstruction(unittest.TestCase):
     def test_shared_store_is_unconditional(self):
-        from Layers import LTM0
+        from Memory import LTM0
         for config in (_OFF_CONFIG, _ON_CONFIG):
             m = _make_model(config)
             self.assertTrue(m.ltm_consolidation)
@@ -141,7 +141,7 @@ class TestProvisioning(unittest.TestCase):
 
     @pytest.mark.usefixtures('eager_reading')
     def test_truthset_rows_land_via_real_forward(self):
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         m = _make_model_provisioned(_SERIAL_CONFIG)
         store = m.symbolSpace.ltm_store
         # This numerical fixture's grammar composes absolute scenes. XML
@@ -211,7 +211,7 @@ class TestObserveWrites(unittest.TestCase):
         ``_forward_body_per_word``) against the model's ltm_store. The live
         forward needs sentenceExpectation + relative end-states; this isolates
         the write contract under test."""
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         store = m.symbolSpace.ltm_store
         for b in range(len(payloads)):
             payload = payloads[b]
@@ -228,7 +228,7 @@ class TestObserveWrites(unittest.TestCase):
         return store
 
     def test_absolute_depth1_appends_idea(self):
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         m = _make_model(_ON_CONFIG)
         m.symbolSpace.ltm_store.reset()
         D = m.symbolSpace.ltm_store.nDim
@@ -272,7 +272,7 @@ class TestObserveWrites(unittest.TestCase):
 
 class TestReasonOverLtm(unittest.TestCase):
     def test_reason_selects_ltm_store_when_consolidated(self):
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         m = _make_model(_ON_CONFIG)
         cs = m.conceptualSpace
         store = m.symbolSpace.ltm_store
@@ -293,7 +293,7 @@ class TestReasonOverLtm(unittest.TestCase):
         self.assertAlmostEqual(res["luminosity_gain"], 0.4, places=5)
 
     def test_reason_skips_absolute_idea_rows(self):
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         m = _make_model(_ON_CONFIG)
         cs = m.conceptualSpace
         store = m.symbolSpace.ltm_store
@@ -309,7 +309,7 @@ class TestReasonOverLtm(unittest.TestCase):
         self.assertEqual(len(res["derived"]), 0)
 
     def test_verify_relation_joins_evidence_without_changing_provenance_or_vectors(self):
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         m = _make_model(_ON_CONFIG)
         cs = m.conceptualSpace
         store = m.symbolSpace.ltm_store
@@ -380,7 +380,7 @@ class TestSurviveResetAndPersistence(unittest.TestCase):
                 f"ltm_store.{suffix} must ride the state_dict")
 
     def test_save_load_roundtrip(self):
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         m = _make_model(_ON_CONFIG)
         store = m.symbolSpace.ltm_store
         store.reset()
@@ -440,7 +440,7 @@ class TestDiscourseConsolidationWiring(unittest.TestCase):
 class TestStoreBackedChain(unittest.TestCase):
     def test_get_stm_chain_reads_stream_oldest_first(self):
         # The stream's occurrence rows retain store order.
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         m = _make_model(_SERIAL_CONFIG)
         store = m.symbolSpace.ltm_store
         disc = m.symbolSpace.expectation
@@ -552,7 +552,7 @@ class TestTruthLayerLtmView(unittest.TestCase):
             "attach_ltm must not re-register the store under truth_layer")
 
     def test_sync_materializes_user_and_provisioned_rows_only(self):
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         m = _make_model(_ON_CONFIG)
         store = m.symbolSpace.ltm_store
         tl = m.symbolSpace.truth_layer
@@ -583,7 +583,7 @@ class TestTruthLayerLtmView(unittest.TestCase):
         self.assertFalse(tl.is_empty())
 
     def test_sync_excludes_relation_rows(self):
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         m = _make_model(_ON_CONFIG)
         store = m.symbolSpace.ltm_store
         tl = m.symbolSpace.truth_layer
@@ -624,7 +624,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
 
     @pytest.mark.usefixtures('eager_reading')
     def test_unary_preference_still_ends_and_records_user_truth(self):
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         m, store, _ = self._fresh()
         m.provision_ltm()
         from definition_fixtures import learned_operation
@@ -676,7 +676,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
 
     @pytest.mark.usefixtures('eager_reading')
     def test_user_rows_land_alongside_provisioned(self):
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         m, store, tl = self._fresh()
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
@@ -729,7 +729,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
 
     @pytest.mark.usefixtures('eager_reading')
     def test_resubmit_replaces_user_rows_only(self):
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         m, store, tl = self._fresh()
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
@@ -759,7 +759,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
         # provisioned model (a raw state_dict round-trip can't be used here:
         # real provisioning grows the dynamic vocab, so the production reload
         # goes through load_weights' vocab restore, not bare load_state_dict).
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         m = _make_model_provisioned(_SERIAL_CONFIG)
         store = m.symbolSpace.ltm_store
         n_prov = len(store.rows_of_origin(T.ORIGIN_PROVISIONED))
@@ -776,7 +776,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
 
     @pytest.mark.usefixtures('eager_reading')
     def test_user_rows_coexist_with_conversation_rows(self):
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         m, store, tl = self._fresh()
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
@@ -809,7 +809,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
 class TestStatelessRevive(unittest.TestCase):
     def _seed(self, m):
         """Seed one row per origin (provisioned / user / conversation)."""
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         store = m.symbolSpace.ltm_store
         store.reset()
         D = store.nDim
@@ -834,7 +834,7 @@ class TestStatelessRevive(unittest.TestCase):
         self.assertFalse(m.symbolSpace._stateless)
 
     def test_stateless_load_prunes_only_after_structural_owners_are_restored(self):
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         m = _make_model(_ON_CONFIG)
         self._seed(m)
         sd = m.state_dict()
@@ -860,7 +860,7 @@ class TestStatelessRevive(unittest.TestCase):
         self.assertEqual(int(m2.symbolSpace.truth_layer.count.item()), 1)
 
     def test_stateful_load_keeps_user_rows(self):
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         m = _make_model(_ON_CONFIG, stateless=False)
         self._seed(m)
         sd = m.state_dict()
@@ -876,7 +876,7 @@ class TestStatelessRevive(unittest.TestCase):
     def test_load_syncs_view_even_with_no_user_rows(self):
         # A checkpoint with only provisioned + conversation rows still
         # rematerializes the view on load (stateless drop is a no-op).
-        from Layers import LTM0 as T
+        from Memory import LTM0 as T
         m = _make_model(_ON_CONFIG)
         store = m.symbolSpace.ltm_store
         store.reset()

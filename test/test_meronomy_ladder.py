@@ -411,7 +411,7 @@ def test_provenance_and_chunk_proposals_ride_the_fullgraph_word_loop():
 def test_admitted_phrase_row_snaps_at_the_folded_slot():
     """Contract 7 inside the loop primitives: a chunk of an admitted pair
     references the phrase's row (activation one) at slot 0."""
-    from Layers import ShortTermMemory
+    from Memory import ShortTermMemory
     m = _chunk_forced_ladder()
     cs = m._concept_owner()
     _stage_tensor_peer(m, ["12 plus 1"])

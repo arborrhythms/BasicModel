@@ -73,7 +73,8 @@ def test_old_context_checkpoint_resets_policy_and_its_optimizer_moments():
 
 
 def test_memory_attention_is_bounded_metered_and_row_local():
-    from Layers import WhatInteractionMemory, LTM0
+    from Layers import WhatInteractionMemory
+    from Memory import LTM0
     from QueryWork import QueryWorkBudget
     model, registry, _, part, whole = _catalog_world()
     memory = WhatInteractionMemory(batch=2, capacity=64, detach_mode='episode')

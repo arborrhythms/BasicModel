@@ -1,6 +1,6 @@
 """Normal thought credit and evidence cannot regain world-vector shortcuts."""
 import torch
-from Layers import LTM0
+from Memory import LTM0
 from Meaning import ConceptualMeaning
 from reasoning import QuerySpec
 from test_cs_symbol_table import _cs

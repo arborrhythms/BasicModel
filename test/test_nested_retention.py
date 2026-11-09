@@ -6,7 +6,7 @@ import copy
 import pytest
 import torch
 
-from Layers import LTM0
+from Memory import LTM0
 from Meaning import ConceptualMeaning
 
 
@@ -15,7 +15,7 @@ def _meaning(*, child=None, scope=(), twice=False, **metadata):
 
 
 def _chain(store, child, *, evidence=0.):
-    from LTM1 import OCCURRENCE
+    from Memory import OCCURRENCE
     row = store.parts.add((OCCURRENCE, child[-1]), (OCCURRENCE, child[-1]), truth_plus=evidence)
     return ('sym', row)
 

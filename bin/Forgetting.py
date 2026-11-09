@@ -74,7 +74,7 @@ class ForgettingConfig:
 def history_age(store):
     """Age in model time; unstamped operands inherit their sentence's stamp."""
     from RowTime import encoder
-    from LTM1 import OCCURRENCE, RELATION
+    from Memory import OCCURRENCE, RELATION
     now = max(0, int(store.model_clock)-1)
     ages = store.slots.new_zeros(len(store))
     known = set()
@@ -124,7 +124,7 @@ def forget_parts(parts, config, *, retained=(), now=None):
     known = parts.percept[rows, 4:].ne(0).any(-1)
     tail = (int(ticks[known].max()) if bool(known.any()) else 0) if now is None else int(now)
     ages = {row: max(0, tail-int(ticks[i])) if bool(known[i]) else 0 for i, row in enumerate(rows)}
-    from LTM1 import RELATION
+    from Memory import RELATION
     stamped = {row for i, row in enumerate(rows) if bool(known[i])}
     inherited = {}
     for root in stamped:
@@ -264,7 +264,7 @@ def forget(store, config=None, *, document_boundary=False, epoch_boundary=False,
         raise ValueError('forgetting requires the complete semantic sidecar')
     dependencies = {i: _references(store, i, contexts[key], indexes) for i, key in enumerate(keys)}
     protected = {i for i in range(n) if store.source_document(i) in config.protect_origins}
-    from LTM1 import OCCURRENCE
+    from Memory import OCCURRENCE
     protected.update(indexes[value] for tag, value in store.parts.protected_references()
                      if tag == OCCURRENCE and value in indexes)
     # A live segment cannot lose its boundary and acquire the preceding
@@ -403,7 +403,7 @@ def model_boundary(model, *, document_boundary=False, epoch_boundary=False):
             if pending is not None:
                 roots.update(getattr(pending, 'source_occurrences', ()))
     config = ForgettingConfig.from_xml()
-    from LTM1 import OCCURRENCE
+    from Memory import OCCURRENCE
     # Dependencies of a row removed in this pass are eligible next pass.
     roots.update(('ltm', store.address_domain, value)
                  for kind, value in store.parts.protected_references() if kind == OCCURRENCE)

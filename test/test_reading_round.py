@@ -284,9 +284,9 @@ def test_order_zero_bind_keeps_its_introduction_and_event(monkeypatch, durable_m
         durable = ('sym', f.noun('subject'))
         written[id(introduction)] = durable
         written[('occurrence', id(introduction))] = durable
-    resolver.commit(plan, row, written, document='order-zero', position=0, training=False,
-                    word_occurrences=word_occurrences)
+    resolver.commit(plan, row, written, document='order-zero', position=0, training=False)
     occurrence = written[('mention', id(introduction))]
+    assert occurrence not in word_occurrences.values()
     assert plan['mention_occurrences'][id(introduction)] == occurrence
     token = f.cs.mtm.token_of(occurrence)
     assert token is not None and len(f.cs.mtm.entries[token].events) == 1
@@ -357,9 +357,9 @@ def test_reading_event_cases_accept_native_part_rows_and_filter_open_questions(m
 
 
 def test_named_alias_follows_merge_restore_and_horizon_expiry():
-    from MediumTermMemory import MediumTermMemory
+    from Memory import MediumTermMemory
     from ClauseRow import Clause, attach_clause_index
-    from Layers import LTM0
+    from Memory import LTM0
     from Meaning import ConceptualMeaning
     from test_cs_sparse_weights import _cs
     import weakref

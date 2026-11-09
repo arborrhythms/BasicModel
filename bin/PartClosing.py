@@ -3,7 +3,7 @@ import torch
 from dataclasses import replace
 from ClauseRow import Composition
 from Meaning import ConceptualMeaning
-from LTM1 import OCCURRENCE, SYMBOL, RELATION, NULL_CONCEPT
+from Memory import OCCURRENCE, SYMBOL, RELATION, NULL_CONCEPT
 from Spaces import _concept_alloc_of
 
 

@@ -7629,7 +7629,7 @@ class SubSpace(nn.Module):
 # 2026-05-21-wordsubspace-stm-layer-refactor.md). Re-exported here so
 # ``from Spaces import ShortTermMemory`` continues to resolve for the
 # Models.py import site.
-from Layers import ShortTermMemory as _ShortTermMemory_relocated
+from Memory import ShortTermMemory as _ShortTermMemory_relocated
 ShortTermMemory = _ShortTermMemory_relocated
 
 
@@ -12777,7 +12777,7 @@ class ConceptualSpace(Space):
         self.stage_idx = (int(stage_idx)
                           if stage_idx is not None else 0)
         super().__init__(inputShape, spaceShape, outputShape)
-        from LTM1 import NULL_CONCEPT
+        from Memory import NULL_CONCEPT
         self.null_concept_id = NULL_CONCEPT
         # The reserved row is outside the trainable inventory and all sparse
         # definition/expectation matrices. No optimizer owns these buffers.
@@ -12903,7 +12903,7 @@ class ConceptualSpace(Space):
         self.concept_dim = int(concept_dim)
         self.stm = ShortTermMemory(
             batch=self.nStreams, capacity=stm_capacity, concept_dim=concept_dim)
-        from MediumTermMemory import MediumTermMemory
+        from Memory import MediumTermMemory
         self.mtm = MediumTermMemory(int(TheXMLConfig.space(
             section, "mtmCapacity", default=64)), horizon=int(TheXMLConfig.space(
             section, "mtmHorizon", default=16)), n_vectors=self.nVectors, field_width=int(self.outputShape[0]))
@@ -13348,7 +13348,7 @@ class ConceptualSpace(Space):
 
     @staticmethod
     def apply_language_choice(state, choice):
-        import STMChunks
+        from Memory import STMChunks
         return STMChunks.apply_choice(state, choice)
 
 
@@ -13758,7 +13758,7 @@ class ConceptualSpace(Space):
 
     @staticmethod
     def apply_phrase_rows(state, phrase_row, applied):
-        import STMChunks
+        from Memory import STMChunks
         index = STMChunks.at(state)
         valid = applied.reshape(-1).bool() & (phrase_row >= 0) & (index >= 0)
         result = list(state)
@@ -14587,7 +14587,7 @@ class ConceptualSpace(Space):
         Parts / Wholes records and any idempotency-cache entries pointing at
         it (store-level lifecycle: :meth:`Layers.ConceptAllocator.drop`).
         FROZEN concepts never retire (no forgetting)."""
-        from LTM1 import NULL_CONCEPT
+        from Memory import NULL_CONCEPT
         if sym == NULL_CONCEPT:
             return
         if int(sym) in getattr(self, "_frozen_concepts", ()):
@@ -15520,11 +15520,11 @@ class ConceptualSpace(Space):
         Raw percept definitions witness zero; structural concepts are one
         above their members. Relation handles follow their tagged references.
         """
-        from LTM1 import NULL_CONCEPT
+        from Memory import NULL_CONCEPT
         if concept_id == NULL_CONCEPT:
             raise ValueError('the null-concept has no order')
         alloc = _concept_alloc_of(self)
-        from LTM1 import OCCURRENCE, SYMBOL, RELATION
+        from Memory import OCCURRENCE, SYMBOL, RELATION
         if alloc.parts.contains(concept_id):
             from types import SimpleNamespace
             from ReferenceContext import denoted_order
@@ -15685,7 +15685,7 @@ class ConceptualSpace(Space):
         standing bias. Minimum support is two references, except singletons.
         Object bounds alone supply no perceptual feature membership.
         """
-        from LTM1 import NULL_CONCEPT
+        from Memory import NULL_CONCEPT
         if concept_id == NULL_CONCEPT:
             return
         # Word definitions exist even with zero symbolic recursion. The

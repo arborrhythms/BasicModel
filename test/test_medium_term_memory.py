@@ -7,7 +7,7 @@ import torch
 
 from ClauseRow import Clause, Composition
 from Meaning import ConceptualMeaning
-from MediumTermMemory import MediumTermMemory
+from Memory import MediumTermMemory
 from ReferenceContext import SituationFrame
 from test_reference_close import close, fixture
 from part_fixtures import part_references, assert_part_references

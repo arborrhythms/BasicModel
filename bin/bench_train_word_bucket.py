@@ -59,7 +59,7 @@ def _stage_peer_profile_batch(model, texts):
 def _profile_peer_legs(torch, model, device, texts, repeats):
     """Time the exact compiled CSSub, CSSym, and CSLang word stages."""
     from Models import FunctionalPeerSTM
-    from Layers import ShortTermMemory
+    from Memory import ShortTermMemory
     from Interpret import positive_evidence
     import util as model_util
 

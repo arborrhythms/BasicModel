@@ -29,7 +29,7 @@ def test_sentence_identity_is_recomputable_and_does_not_consume_global_rng():
 
 
 def test_content_address_is_independent_of_store_and_persists_with_occurrences():
-    from Layers import LTM0
+    from Memory import LTM0
     from Meaning import ConceptualMeaning
     stores = [LTM0(8, capacity=4) for _ in range(2)]
     keys = []

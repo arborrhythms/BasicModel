@@ -20,7 +20,7 @@ def readiness_report(owner):
 
 def membership_report(alloc, identity):
     """The durable row and both evidence poles for every named membership."""
-    from LTM1 import SYMBOL
+    from Memory import SYMBOL
     whole=(SYMBOL,identity)
     result=[]
     for member in alloc.parts.parts(whole):
@@ -34,7 +34,7 @@ def membership_report(alloc, identity):
 
 def lexical_report(model, forms):
     from Spaces import _concept_alloc_of
-    from LTM1 import SYMBOL
+    from Memory import SYMBOL
     cs = model._concept_owner()
     alloc = _concept_alloc_of(cs)
     speech = model.languageSpace.parts_of_speech
@@ -76,7 +76,7 @@ def stage_documents(data, stage, *, split='train'):
 
 
 def acquisition(model, measurement, *, relations):
-    from LTM1 import SYMBOL
+    from Memory import SYMBOL
     lexical = lexical_report(model, [*measurement['names'], measurement['kind']])['forms']
     members = [{obj['identity'] for obj in lexical[name]['objects'] if obj['order'] == 1}
                for name in measurement['names']]
@@ -92,7 +92,7 @@ def acquisition(model, measurement, *, relations):
 
 def observed_sides(owner, references):
     """Resolve the kept operands in sentence order, preserving an unbound side."""
-    from LTM1 import SYMBOL, OCCURRENCE, RELATION
+    from Memory import SYMBOL, OCCURRENCE, RELATION
     store = owner._closed_clause_store()
     result = []
     for ref in (*references, None, None)[:2]:
@@ -198,7 +198,7 @@ def measure(config, lessons, output, *, eager=False, presentations=None, curricu
     from MathChainTraining import present
     from Forgetting import model_boundary
     from BindingAnswers import matches, cost
-    from LTM1 import SYMBOL
+    from Memory import SYMBOL
     output = Path(output)
     output.mkdir(parents=True, exist_ok=False)
     curriculum = json.loads(Path(lessons).read_text())

@@ -20,7 +20,7 @@ from Spaces import (
 )
 from Models import StaticPeerPipeline, TensorPeerWhilePipeline
 from Language import LanguageSpace, RoutingState
-from Layers import ShortTermMemory
+from Memory import ShortTermMemory
 
 
 @pytest.fixture(autouse=True)
@@ -63,7 +63,7 @@ def test_language_chooses_and_conceptual_space_alone_applies_stm_update(monkeypa
              torch.tensor([[12, 11, 10], [15, -1, -1]]),
              torch.tensor([[.9, .8, .7], [.6, 0., 0.]]))
     from chunk_fixtures import from_stack
-    from STMChunks import stack_view
+    from Memory import STMChunks
     state = from_stack(*state)
     before = tuple(value.clone() for value in state)
     versions = tuple(value._version for value in state)
@@ -73,7 +73,7 @@ def test_language_chooses_and_conceptual_space_alone_applies_stm_update(monkeypa
     assert tuple(value._version for value in state) == versions
     assert choice.kind.tolist() == [1, 0]
     next_state = ConceptualSpace.apply_language_choice(state, choice)
-    next_view = stack_view(next_state)
+    next_view = STMChunks.stack_view(next_state)
     for actual, expected in zip(state, before):
         torch.testing.assert_close(actual, expected, rtol=0, atol=0)
     torch.testing.assert_close(next_view[0][0], torch.tensor([[4., 6.], [5., 6.], [0., 0.]]))
@@ -86,7 +86,7 @@ def test_language_chooses_and_conceptual_space_alone_applies_stm_update(monkeypa
     unary = language.choose_operation(next_state, gate, slots=1)
     assert unary.kind.tolist() == [2, 0]
     assert unary.position[0] == 1  # the older of the two slots
-    final = stack_view(ConceptualSpace.apply_language_choice(next_state, unary))
+    final = STMChunks.stack_view(ConceptualSpace.apply_language_choice(next_state, unary))
     torch.testing.assert_close(final[0][0], torch.tensor([[4., 6.], [-5., -6.], [0., 0.]]))
     torch.testing.assert_close(final[1], next_view[1])
     assert final[3][0, 1] == 1
@@ -658,8 +658,8 @@ def test_functional_stm_state_is_fullgraph_while_loop_safe():
     B, capacity, D = 4, 5, 3
 
     def recurrent(ideas, gates):
-        from STMChunks import empty
-        state = empty(B, capacity, D)
+        from Memory import STMChunks
+        state = STMChunks.empty(B, capacity, D)
         zero = torch.zeros((), dtype=torch.long)
 
         def cond(index, *state):

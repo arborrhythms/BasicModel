@@ -21,7 +21,8 @@ _BIN = _ROOT / "bin"
 if str(_BIN) not in sys.path:
     sys.path.insert(0, str(_BIN))
 
-from Layers import Error, ShortTermMemory  # noqa: E402
+from Layers import Error
+from Memory import ShortTermMemory  # noqa: E402
 import Language  # noqa: E402
 import Models  # noqa: E402
 import util  # noqa: E402

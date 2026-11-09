@@ -6,8 +6,8 @@ import pytest
 import torch
 
 from ClauseRow import Clause, Composition
-from LTM1 import LTM1, OCCURRENCE, SYMBOL, RELATION
-from Layers import LTM0
+from Memory import LTM1, OCCURRENCE, SYMBOL, RELATION
+from Memory import LTM0
 from Meaning import ConceptualMeaning
 from QueryWork import QueryWorkBudget
 from RowTime import encoder
@@ -302,7 +302,7 @@ def test_time_query_loads_the_requested_stream_and_identity_pool():
     store, rows, _, _, _, chain = pending_chain()
     owner = store._concept_owner()
     for key in tuple(owner.mtm.entries):owner.mtm.forget(key)
-    from Layers import ShortTermMemory
+    from Memory import ShortTermMemory
     owner.stm = ShortTermMemory(batch=2,capacity=8,concept_dim=16)
     discourse = SymbolExpectation(n_symbols=8, max_depth=8, n_dim=16, concept_dim=16)
     discourse._ltm_store = store

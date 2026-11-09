@@ -8,7 +8,7 @@ from part_fixtures import stored_pair
 import torch
 
 from FamiliarTier import promote_identity
-from LTM1 import OCCURRENCE, RELATION, SYMBOL
+from Memory import OCCURRENCE, RELATION, SYMBOL
 from Meaning import ConceptualMeaning
 from test_presentation_memory import begin, fixture, model_for, write
 

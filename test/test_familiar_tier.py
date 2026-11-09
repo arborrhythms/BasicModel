@@ -7,12 +7,12 @@ import torch
 from torch.nn import functional as F
 from test_review13_subspaces import fixture, word
 from ConceptIndex import index_part_row
-from LTM1 import SYMBOL, OCCURRENCE
+from Memory import SYMBOL, OCCURRENCE
 
 
 def placed_fixture():
     from ClauseRow import attach_clause_index
-    from Layers import LTM0
+    from Memory import LTM0
     cs, cb, ps, alloc = fixture(meaning_pairs=2)
     store = LTM0(cb.W.shape[-1], capacity=32)
     attach_clause_index(SimpleNamespace(), store, cs)
@@ -222,7 +222,7 @@ def test_same_field_readings_keep_both_lanes_without_counting_twice():
 
 
 def test_candidate_count_tracks_observations_when_the_open_read_crosses_its_horizon():
-    from MediumTermMemory import MediumTermMemory
+    from Memory import MediumTermMemory
     pool = MediumTermMemory(2, horizon=2, n_vectors=90)
     value, support = torch.ones(4), {1:1.}
     key = pool.open_candidate(order=1, when=0, value=value, support=support)
@@ -277,7 +277,7 @@ def test_kept_close_restricts_promotion_to_active_streams_and_defers_coverage():
 
 
 def test_prepend_carries_candidates_with_live_gradient_and_rejects_recycled_transients():
-    import STMChunks as chunks
+    from Memory import STMChunks as chunks
     from FamiliarTier import centroid, observe_candidate
     from PrependedSymbols import SymbolEntries, stage, chunk_token, reconcile
     from test_attention_promotion import _fixture
@@ -326,7 +326,7 @@ def test_promoting_an_identity_does_not_reinitialize_unrelated_classes():
 
 @pytest.mark.parametrize('promoted', (False, True))
 def test_candidate_zero_survives_the_kept_bind_journal_without_an_occurrence_alias(monkeypatch, promoted):
-    import STMChunks as chunks
+    from Memory import STMChunks as chunks
     from test_clause_acceptance import SentenceFixture
     from chunk_fixtures import prepend, record
     from ClauseJournal import finish_clause

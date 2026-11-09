@@ -3,7 +3,8 @@ from pathlib import Path
 import pytest
 import torch
 from ClauseRow import Clause
-from Layers import ConceptAllocator, LTM0
+from Layers import ConceptAllocator
+from Memory import LTM0
 from Meaning import ConceptualMeaning
 
 

@@ -3,7 +3,7 @@ from dataclasses import replace
 
 import torch
 
-from Layers import LTM0
+from Memory import LTM0
 from Meaning import ConceptualMeaning
 from test_ltm_consolidation import _ON_CONFIG, _make_model
 

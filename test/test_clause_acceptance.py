@@ -10,7 +10,7 @@ import pytest
 import Language
 from ClauseRow import attach_clause_index
 from reading_fixtures import finish_reading
-from Layers import LTM0
+from Memory import LTM0
 from Queries import GrammaticalThoughtRegistry
 from Understanding import Reading
 from test_cs_sparse_weights import _cs
@@ -156,7 +156,7 @@ def test_05_embedded_part_is_unasserted_and_propagates_operator_kind(monkeypatch
 
 
 def test_pointless_predicate_retains_the_relative_child_as_an_occupied_role(monkeypatch):
-    from LTM1 import RELATION
+    from Memory import RELATION
     f = SentenceFixture(monkeypatch)
     predicate = ('union', ('part', 'cats', 'animals'), 'present')
     clause = f.clause(('lift', 'he', ('verb', predicate, 'mice')))

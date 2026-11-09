@@ -21,7 +21,7 @@ class Example:
 
 def examples(owner, field):
     from FamiliarTier import member_row
-    from LTM1 import SYMBOL
+    from Memory import SYMBOL
     if field.ndim != 4 or field.shape[-1] != 2:
         raise ValueError('definition fold requires paired occurrence evidence')
     alloc = owner._concept_allocator

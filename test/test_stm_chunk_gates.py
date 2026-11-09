@@ -6,14 +6,14 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-import STMChunks as chunks
+from Memory import STMChunks as chunks
 from PrependedSymbols import SymbolEntries, stage, reconcile
 from Meaning import ConceptualMeaning
 from QueryWork import QueryWorkBudget
 
 
 def test_prepend_preserves_content_without_a_separate_meaning_chart():
-    from MediumTermMemory import MediumTermMemory
+    from Memory import MediumTermMemory
     from PrependedSymbols import symbolize
     pool = MediumTermMemory(2,n_vectors=90)
     key = ('ltm','fixture',1)
@@ -76,7 +76,7 @@ def test_bind_menu_at_each_order_and_kept_mention_commit(monkeypatch,order):
 
 def test_chain_query_reenters_shared_chunks_with_stored_stamp_and_identities():
     from test_layout_removal import pending_chain
-    from Layers import ShortTermMemory
+    from Memory import ShortTermMemory
     from Queries import ThoughtLTMCapability
     store,rows,_,_,_,chain = pending_chain()
     owner = store._concept_owner()
@@ -101,7 +101,7 @@ def test_chain_query_reenters_shared_chunks_with_stored_stamp_and_identities():
 
 
 def test_expired_and_promoted_transient_ids_cannot_alias_resident_chunks():
-    from MediumTermMemory import MediumTermMemory
+    from Memory import MediumTermMemory
     pool = MediumTermMemory(2,n_vectors=90)
     store = SimpleNamespace(address_domain='fixture')
     first,second = ('ltm','fixture',1),('ltm','fixture',2)
@@ -145,7 +145,7 @@ def test_unpublished_timeline_cannot_survive_as_a_recent_identity(monkeypatch):
 def test_prepend_transients_do_not_prime_or_place_and_promoted_symbol_registers(monkeypatch):
     from test_placement_surface import lesson
     from ClauseRow import attach_clause_index
-    from Layers import LTM0
+    from Memory import LTM0
     from Models import BasicModel
     import weakref
     cs,derived,rows,reading = lesson(monkeypatch)
@@ -198,7 +198,7 @@ def test_prepend_transients_do_not_prime_or_place_and_promoted_symbol_registers(
 
 
 def test_retired_modules_and_transient_checkpoint_version():
-    from MediumTermMemory import MediumTermMemory
+    from Memory import MediumTermMemory
     for name in ('MTMOverlay','TimelineOverlay'):
         with pytest.raises(ModuleNotFoundError):__import__(name)
     root = Path(__file__).resolve().parents[1]/'bin'

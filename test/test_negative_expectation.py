@@ -8,7 +8,8 @@ os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
 import pytest
 import torch
 
-from Layers import MeaningExpectation, ExpectationComparison, LTM0
+from Layers import MeaningExpectation, ExpectationComparison
+from Memory import LTM0
 from Meaning import ConceptualMeaning
 from meaning_fixtures import record_observation as record_source
 from test_sentence_expectation import layer, observe

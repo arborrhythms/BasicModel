@@ -108,7 +108,7 @@ def chunk_token(pool, store, state, batch, index):
     entries already carry an occurrence in their first reference. No epoch or
     additional identity/value slab is needed to reject a reused transient id.
     """
-    import STMChunks as chunks
+    from Memory import STMChunks as chunks
     refs = state[chunks.REFS][batch,index]
     if int(refs[1,0]) == chunks.IDENTITY_REF:
         code = int(refs[1,1])
@@ -124,7 +124,7 @@ def chunk_token(pool, store, state, batch, index):
 
 def reconcile(state, pool, store):
     """Retire expired field identities and remap promoted seats at staging."""
-    import STMChunks as chunks
+    from Memory import STMChunks as chunks
     result = [value.clone() for value in state]
     for b in range(state[0].shape[0]):
         for index in range(state[0].shape[1]):
@@ -146,7 +146,7 @@ def reconcile(state, pool, store):
 
 def stage(model, state, present):
     """Host boundary: prepend live identities, then deposit them off stack."""
-    import STMChunks as chunks
+    from Memory import STMChunks as chunks
     from RowTime import encoder
     owner, isp = model._concept_owner(), model.inputSpace
     entries = isp.symbol_entries

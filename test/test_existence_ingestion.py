@@ -1,7 +1,7 @@
 """Only the explicit evidence owner can admit assertions after kernel retirement."""
 import pytest
 import torch
-from Layers import LTM0
+from Memory import LTM0
 from Meaning import ConceptualMeaning
 from reasoning import QuerySpec, TruthGroundedReasoner, UNKNOWN
 

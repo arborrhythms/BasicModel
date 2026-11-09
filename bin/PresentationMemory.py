@@ -424,7 +424,7 @@ def _owners(model):
 
 def validate_checkpoint(model, extras, *, state=None):
     """An earlier history cannot be inferred from a checkpoint's last rows."""
-    from Layers import LTM0
+    from Memory import LTM0
     stores = [name for name, module in model.named_modules() if isinstance(module, LTM0)]
     if not isinstance(extras, dict):
         if state is not None and any(int(state.get(name + '.count', 0)) for name in stores):
@@ -564,7 +564,7 @@ def epoch(model):
         if alloc is not None and id(alloc) not in seen:
             seen.add(id(alloc))
             removed_relations = withdrawn[id(alloc.parts)]
-            from LTM1 import OCCURRENCE, RELATION
+            from Memory import OCCURRENCE, RELATION
             expired_refs = {(RELATION, row) for row in removed_relations}
             expired_refs.update((OCCURRENCE, address) for address in removed)
             alloc.singletons.difference_update(expired_refs)

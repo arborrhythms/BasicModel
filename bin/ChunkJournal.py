@@ -7,7 +7,7 @@ Only a kept Reading is translated to the closing transaction's host record.
 import torch
 from torch import nn
 
-import STMChunks as chunks
+from Memory import STMChunks as chunks
 
 # The first two scope columns remain ClauseScope's flags/reference. The rest
 # describe grammatical heads, not a second store of their numerical values.

@@ -8,7 +8,7 @@ import pytest
 import torch
 
 from ConceptForgetting import reclaim_concepts, warn_capacity
-from Layers import LTM0
+from Memory import LTM0
 from Meaning import ConceptualMeaning
 from dataclasses import replace
 from test_concept_capacity_policy import _cs

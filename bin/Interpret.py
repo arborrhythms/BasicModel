@@ -2,7 +2,7 @@
 import torch
 from Layers import GrammarLayer
 from Definitions import form_key
-from LTM1 import NULL_CONCEPT
+from Memory import NULL_CONCEPT
 
 
 def positive_evidence(presence):
@@ -137,7 +137,7 @@ class InterpretLayer(GrammarLayer):
     def denotations(self, word):
         """Keep definitions, reading a witnessed raised parent over its base."""
         from Spaces import _concept_alloc_of
-        from LTM1 import SYMBOL
+        from Memory import SYMBOL
         alloc = _concept_alloc_of(self.owner)
         objects = self.owner.definitions.objects(int(word))
         return tuple(cid for cid in objects if alloc.relate_idx.get(

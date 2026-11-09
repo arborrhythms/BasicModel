@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import torch
 
-import STMChunks as chunks
+from Memory import STMChunks as chunks
 from ChunkJournal import IDENTITY, empty_scope
 from chunk_fixtures import Walk, choice
 

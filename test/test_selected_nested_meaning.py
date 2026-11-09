@@ -6,7 +6,8 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from Layers import LTM0, WhatInteractionMemory
+from Layers import WhatInteractionMemory
+from Memory import LTM0
 from Models import BasicModel, _append_observed_meaning
 from test_selected_relation_meaning import _program_owner
 from reading_fixtures import commit_reading, sentence_state
@@ -56,7 +57,7 @@ def test_nested_observation_writers_retain_children_without_certifying_them(monk
     # The two native pairs retain ignorance independently in the common owner.
     assert len(store) == 0
     child_id = store.parts.find(*entry.concept_ids[:2].tolist())
-    from LTM1 import SYMBOL, RELATION
+    from Memory import SYMBOL, RELATION
     parent_id = store.parts.find((SYMBOL, int(entry.concept_ids[2])), (RELATION, child_id))
     assert set(store.parts.indices().tolist()) == store._test_initial_parts | {child_id, parent_id}
     child, parent = (store.part_row(index, reading='part') for index in (child_id, parent_id))

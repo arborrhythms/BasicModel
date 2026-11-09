@@ -41,7 +41,7 @@ def test_three_rule_union_not_first_and_one_candidate_per_firing():
         assert answer.evidence['sources'] == (term.premise, term.rule)
         # Restore the reference plan for the next independent selection.
         from ThoughtChunks import put
-        put(owner.stm, meaning, bindings(meaning)['_chunk_where'], 0, existing=True)
+        put(owner.stm, meaning, bindings(meaning)['_chunk_when'], 0, existing=True)
     plan = Idea(observed=torch.tensor([.2, .8]))
     bare = SimpleNamespace(similarity_codebook=SimpleNamespace(W=torch.zeros(2)),
         _concept_allocator=SimpleNamespace(layer=lambda _:SimpleNamespace(conjunctive=None)), outputShape=(1,2))

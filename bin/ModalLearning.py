@@ -3,7 +3,7 @@ from dataclasses import replace
 
 import torch
 
-from MediumTermMemory import Timeline
+from Memory import Timeline
 
 
 def teacher(action, actual, alternative, modifiers):

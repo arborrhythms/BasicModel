@@ -15,7 +15,7 @@ def fixture():
 
 
 def test_predicted_rows_do_not_cross_streams_or_read_placement_conduction():
-    from Layers import LTM0
+    from Memory import LTM0
     from Meaning import ConceptualMeaning
     cs, cb, alloc = fixture()
     a, b, c = [word(cs, [(p, 1.)]) for p in (4, 7, 8)]

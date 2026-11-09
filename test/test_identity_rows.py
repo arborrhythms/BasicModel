@@ -5,7 +5,7 @@ import torch
 import pytest
 
 from IdentityRows import meet_ratios, point, access_count
-from Layers import LTM0
+from Memory import LTM0
 from Meaning import ConceptualMeaning
 from test_reference_close import fixture, close, form_exposure
 

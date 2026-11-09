@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from Layers import LTM0
+from Memory import LTM0
 from reasoning import QuerySpec, TruthGroundedReasoner, TRUE, UNKNOWN
 from test_thought_model_fixture import model_for
 from test_cs_symbol_table import _cs

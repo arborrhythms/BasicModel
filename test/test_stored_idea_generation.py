@@ -130,7 +130,7 @@ def test_compound_candidates_are_not_word_emissions(compiled):
 @pytest.mark.parametrize('reference', [('meta', 1), ('sym', -1), ('sym', 0),
                                       ('sym', -42), ('sym', True), ('sym', 1.5)])
 def test_nontaxonomic_cue_does_not_enter_concept_order_reader(reference):
-    from Layers import LTM0
+    from Memory import LTM0
     from Meaning import ConceptualMeaning
     from Taxonomy import concept_reference
     store = LTM0(4, capacity=2)
@@ -182,7 +182,7 @@ def test_live_inverse_snapshot_is_bounded_detached_and_excludes_singletons():
     snapshot = LiveConstituents(words, torch.ones(1, 4, dtype=torch.bool), 2)
     for n in (1, 2, 3, 4):
         value = words[:, :n].sum(1).requires_grad_()[:, None]
-        import STMChunks as chunks
+        from Memory import STMChunks as chunks
         state,_ = chunks.deposit(chunks.empty(1,8,4),value[:,0],torch.tensor([True]),stack=True)
         support = torch.zeros(1,8,4,dtype=torch.bool)
         support[:,0] = torch.tensor([i < n for i in range(4)])

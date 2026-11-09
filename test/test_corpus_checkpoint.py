@@ -54,7 +54,7 @@ def test_checkpoint_uses_consumed_positions_and_resumes_without_epoch_clear(tmp_
         # Off-stack recent chunks feed the next symbol forecast, even when
         # the previous sentence left no parse stack. These are plain live
         # tensors, so a state_dict round-trip alone cannot preserve them.
-        import STMChunks as chunks
+        from Memory import STMChunks as chunks
         stm = first.conceptualSpace.CSLang
         chunk = list(stm.state)
         chunk[chunks.BUFFER][0, 0].fill_(.25)

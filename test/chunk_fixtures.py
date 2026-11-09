@@ -7,7 +7,7 @@ from dataclasses import replace
 from types import SimpleNamespace
 import torch
 
-import STMChunks as chunks
+from Memory import STMChunks as chunks
 from ChunkJournal import RECORD_WIDTH, ChunkJournal, empty_scope, push, capture, read_identity
 from ClauseScope import ClauseScope
 from Spaces import LanguageOperationChoice

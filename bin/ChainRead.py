@@ -1,5 +1,5 @@
 """Read only the surviving semantic chains, under the caller's work bound."""
-from LTM1 import OCCURRENCE, SYMBOL, RELATION
+from Memory import OCCURRENCE, SYMBOL, RELATION
 
 
 def envelope(store, reference):

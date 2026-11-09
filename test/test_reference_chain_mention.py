@@ -5,7 +5,7 @@ import pytest
 import torch
 
 from ClauseRow import Clause, Composition
-from LTM1 import SYMBOL
+from Memory import SYMBOL
 from Meaning import ConceptualMeaning
 from chunk_fixtures import context
 from test_clause_acceptance import SentenceFixture

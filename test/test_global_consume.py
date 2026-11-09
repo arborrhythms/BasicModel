@@ -212,7 +212,7 @@ def test_ltm_truthset_read_is_fed_to_the_answer():
     # reaches the consumer: the soft-read content (which ranges over SPACE_LTM)
     # injected into a head changes it.
     from Attention import PrimedSymbolReader as GA
-    from Layers import LTM0
+    from Memory import LTM0
     m = _build("MM_qa.xml")
     if getattr(m, "symbolSpace", None) is None:
         pytest.skip("no symbolSpace")

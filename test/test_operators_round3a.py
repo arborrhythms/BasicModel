@@ -151,7 +151,7 @@ def test_numeric_mm_keeps_its_original_geometry():
 @pytest.mark.parametrize('trust,polarity,expected', [(.7,True,(.7,0.)),(-.4,True,(0.,.4)),
     (.7,False,(.7,0.)),(-.4,False,(0.,.4)),(0.,True,(0.,0.))])
 def test_trust_to_pair_and_negation(trust, polarity, expected):
-    from Layers import LTM0
+    from Memory import LTM0
     from Meaning import ConceptualMeaning
     store = LTM0(4, capacity=4)
     meaning = ConceptualMeaning(torch.ones(3,4), torch.tensor([True,False,False]),

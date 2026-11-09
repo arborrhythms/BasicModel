@@ -23,15 +23,15 @@ _BIN = _ROOT / "bin"
 if str(_BIN) not in sys.path:
     sys.path.insert(0, str(_BIN))
 
-from Layers import ShortTermMemory  # noqa: E402
+from Memory import ShortTermMemory  # noqa: E402
 
 
 def _stack(stm):
     from types import SimpleNamespace
-    from STMChunks import stack_view
+    from Memory import STMChunks
     return SimpleNamespace(**dict(zip(
         ('_buffer', '_depth', '_orders', '_grammar_orders', '_concept_rows', '_concept_activations'),
-        stack_view(stm.state))))
+        STMChunks.stack_view(stm.state))))
 
 
 def _stm(*, batch=2, capacity=4, dim=2):
@@ -258,8 +258,8 @@ def test_wholesale_buffer_replacement_invalidates_identity_metadata():
     with pytest.raises(ValueError, match='cannot resize'):
         stm._buffer = torch.full((2, 5, 2), 7.0)
     replacement = torch.full((2, 3, 2), 7.0, dtype=torch.float64)
-    from STMChunks import empty
-    state = list(empty(2, 3, 2, dtype=torch.float64))
+    from Memory import STMChunks
+    state = list(STMChunks.empty(2, 3, 2, dtype=torch.float64))
     state[0] = replacement
     stm.set_state(tuple(state))
 

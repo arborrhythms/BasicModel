@@ -65,9 +65,9 @@ def allocation_plan(config, output):
     add('percept prototypes and fixed copies', [parts, form], 4, 2,
         'RadixLayer codebook W and fixed_row_codes')
     add('retained LTM0 ideas', [capacity, cs['nDim']], 4, 1,
-        'Layers.py LTM0.__init__: slots; excludes other columns')
+        'Memory.py LTM0.__init__: slots; excludes other columns')
     add('recurrence reading summaries', [int(cs.get('recurrenceCapacity', count)), cs['nDim']], 4, 1,
-        'Layers.py LTM0.__init__: recurrence_codes')
+        'Memory.py LTM0.__init__: recurrence_codes')
     report = dict(kind='source-derived nominal storage lower bound, not resident memory',
         config_sha256=hashlib.sha256(Path(config).read_bytes()).hexdigest(), rows=rows,
         total_nominal_bytes=sum(row['bytes'] for row in rows),

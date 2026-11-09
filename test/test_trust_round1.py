@@ -377,7 +377,7 @@ def test_nonconcept_operand_contributes_one(reference):
 
 
 def test_ordered_mereology_rises_without_reclosing_and_falls_with_stability():
-    from LTM1 import RELATION
+    from Memory import RELATION
     owner, store, wug, atoms = learned(1)
     bird, winged = built(owner, atoms[1]), built(owner, atoms[2])
     parts = store.parts
@@ -457,7 +457,7 @@ def test_lexical_operator_is_retained_and_composed_at_the_read():
 
 
 def test_order_survives_retention_checkpoint_and_rejects_cycles():
-    from LTM1 import LTM1, SYMBOL, RELATION
+    from Memory import LTM1, SYMBOL, RELATION
     parts=LTM1(16)
     a=parts.add(100,101,truth_plus=.8,symbol=8)
     b=parts.add((RELATION,a),(SYMBOL,102),truth_plus=.9,symbol=3)
@@ -506,7 +506,7 @@ def test_item107_generic_sentence_never_names_its_chain(monkeypatch):
 
 
 def test_relation_endpoint_uses_its_larger_effective_pole():
-    from LTM1 import LTM1, RELATION
+    from Memory import LTM1, RELATION
     parts=LTM1(12)
     child=parts.add(100,101,truth_minus=.7)
     parent=parts.add((RELATION,child),102,truth_plus=.8,truth_minus=.4)
@@ -635,7 +635,7 @@ def test_seatless_word_definition_uses_only_its_objects_radius(views):
 def close_named_sign(owner, store, label, number):
     """Keep an empty sign, then consume its lexical naming edge at the close."""
     from FamiliarTier import define_pending, finish_definitions
-    from LTM1 import OCCURRENCE, SYMBOL
+    from Memory import OCCURRENCE, SYMBOL
     empty = torch.zeros(owner.nDim)
     row = store.append_meaning(ConceptualMeaning.from_description(empty), order=0,
         document_key='pending-signs', sentence_index=number, evidence=(1., 0.), when=False)
@@ -656,7 +656,7 @@ def close_named_sign(owner, store, label, number):
 def test_sign_closes_wait_for_one_remembered_kind_then_join(tracked):
     import copy
     from definition_fixtures import agreeing_views
-    from LTM1 import OCCURRENCE, SYMBOL
+    from Memory import OCCURRENCE, SYMBOL
     owner, _, _, alloc = paired_fixture(meaning_pairs=4 if tracked else 0)
     owner._symbolic_order = 3
     store = owner._fixture_occurrences
@@ -705,7 +705,7 @@ def test_sign_closes_wait_for_one_remembered_kind_then_join(tracked):
 
 def test_pending_sign_expires_without_an_identity_or_member_row():
     from definition_fixtures import agreeing_views
-    from LTM1 import OCCURRENCE, SYMBOL
+    from Memory import OCCURRENCE, SYMBOL
     owner, store, _ = fixture()
     alloc = owner._concept_allocator
     label = owner.interpret.lookup_word([4], (), form='Felix')

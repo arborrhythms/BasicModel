@@ -7,7 +7,7 @@ import torch
 
 def _references():
     from ClauseRow import attach_clause_index
-    from Layers import LTM0
+    from Memory import LTM0
     from Meaning import ConceptualMeaning
     from test_review13_subspaces import fixture, word
     owner, bank, _, _ = fixture(meaning_pairs=2)
@@ -104,7 +104,7 @@ def test_missing_identity_reference_fails_loudly(monkeypatch, missing):
     if missing == 'concept':
         monkeypatch.setattr(owner, '_csw_row_of', lambda identity: None)
     else:
-        from MediumTermMemory import Name
+        from Memory import Name
         owner.mtm.names = {occurrences[0]: Name(key, None)}
         if missing == 'occurrence':
             monkeypatch.setattr(store, 'location', lambda reference: None)

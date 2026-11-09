@@ -22,7 +22,7 @@ warnings.filterwarnings(
     category=UserWarning,
 )
 import torch
-import STMChunks
+from Memory import STMChunks
 import ChunkJournal
 import collections
 import torch.nn as nn
@@ -93,7 +93,8 @@ from Layers import ConceptualCombine
 from Layers import LinearLayer
 from Layers import LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 from Layers import Error, TheError
-from Layers import MeaningExpectation, LTM0
+from Layers import MeaningExpectation
+from Memory import LTM0
 from Meaning import ConceptualMeaning
 from Layers import Ops, GRAMMAR_LAYER_CLASSES, CONTIGUITY_PRESERVING_OPS
 from Teacher import Teacher
@@ -1386,10 +1387,10 @@ class TensorPeerWhilePipeline:
 
 class FunctionalPeerSTM:
     """The complete fixed-capacity chunk tuple carried by SentenceFork."""
-    from STMChunks import allocate_chunk, soft_reset_rows, resolve_top_reference
-    allocate_chunk = staticmethod(allocate_chunk)
-    soft_reset_rows = staticmethod(soft_reset_rows)
-    resolve_top_reference = staticmethod(resolve_top_reference)
+    from Memory import STMChunks
+    allocate_chunk = staticmethod(STMChunks.allocate_chunk)
+    soft_reset_rows = staticmethod(STMChunks.soft_reset_rows)
+    resolve_top_reference = staticmethod(STMChunks.resolve_top_reference)
 
 # Per-word stage records deliberately carry tensors, not mutable SubSpace
 # carriers.  The next A tick reuses each Space's live carrier in place; a B/C
@@ -5122,7 +5123,7 @@ class BaseModel(Mereology, nn.Module):
         self._widen_what_projection_checkpoint_state(state, model_state)
 
         # Retired occurrence columns and index caches are not restore inputs.
-        from Layers import LTM0
+        from Memory import LTM0
         index_owners = [name for name, module in self.named_modules(remove_duplicate=False)
                         if isinstance(module, LTM0)]
         retired_leaf_columns = {name + '.' + column for name in index_owners
@@ -5776,7 +5777,7 @@ class BasicModel(BaseModel):
             taxonomy=ThoughtTaxonomyCapability(concept_owner),
             work=work, continuation=continuation,
             stm=getattr(self._what_memory(), '_thought_stm', None),
-            focus_where=(self._what_memory().thought_state(b=row).focus_where
+            focus_when=(self._what_memory().thought_state(b=row).focus_when
                 if self._what_memory() is not None and self._what_memory().thought_state(b=row) is not None else None),
             boundary=self._assert_query_boundary, row=row)
 
@@ -7176,7 +7177,7 @@ class BasicModel(BaseModel):
                     ('_what_recall_sentence_history', '_what_recall_batch_size')}
         self._what_recall_sentence_history = {}
         self._what_recall_batch_size = None
-        from MediumTermMemory import MediumTermMemory
+        from Memory import MediumTermMemory
         identity_owner = self._concept_owner()
         caller_pool = identity_owner.mtm
         identity_owner.mtm = MediumTermMemory(caller_pool.capacity, horizon=caller_pool.horizon,
@@ -13157,8 +13158,15 @@ class BasicModel(BaseModel):
                 raise ValueError(f'word reference {name} must align with the current word slab')
         positions, actions, targets, columns = program
         log_probabilities = getattr(self._reconstruction_stack(), '_choice_log_probabilities', None)
-        probabilities = (None if log_probabilities is None else
-                         log_probabilities.gather(1, columns.clamp_min(0)).detach().exp())
+        operations = (actions[..., 0] == 1) | (actions[..., 0] == 2)
+        batches, steps = operations.nonzero(as_tuple=True)
+        choice_columns = columns[batches, steps]
+        if bool((choice_columns < 0).any()):
+            raise ValueError('reading operations require a choice column')
+        probabilities = None
+        if log_probabilities is not None:
+            probabilities = log_probabilities.new_zeros(columns.shape)
+            probabilities[batches, steps] = log_probabilities[batches, choice_columns].detach().exp()
         journal = getattr(self._reconstruction_stack(), "_choice_values", None)
         addresses = getattr(self._reconstruction_stack(), "_choice_refs", None)
         relations = getattr(self._reconstruction_stack(), "_choice_ref_relations", None)
@@ -13167,8 +13175,12 @@ class BasicModel(BaseModel):
         transactions = getattr(self._reconstruction_stack(), '_choice_transactions', None)
         case_state = getattr(self._reconstruction_stack(), '_case_state', None)
         journal_columns = getattr(self._reconstruction_stack(), "_choice_journal_columns", None)
-        if journal_columns is not None:
-            columns = journal_columns.gather(1, columns.clamp(0, journal_columns.shape[1] - 1))
+        # Nonoperations keep -1: no SHIFT or transpose reads a choice row.
+        columns = torch.full_like(columns, -1)
+        columns[batches, steps] = (choice_columns if journal_columns is None else
+                                  journal_columns[batches, choice_columns])
+        if bool((columns[batches, steps] < 0).any()):
+            raise ValueError('reading operations require a journal column')
         entries = []
         for b in range(int(positions.shape[0])):
             pos = positions[b]
@@ -13228,6 +13240,15 @@ class BasicModel(BaseModel):
                 from ChunkJournal import capture
                 identity_record = capture(owner(),chunk_state,chunk_scope,transactions,journal,
                     batch=b,positions=pos,columns=columns[b,:L],actions=acts[:L])
+            def operation_rows(table, *, fill=0):
+                if table is None:
+                    return None
+                # Readers index by action and skip kinds 0 and 3. Preserve
+                # that alignment with empty sentinels; gather operations only.
+                active = operations[b, :L].nonzero().flatten()
+                result = table.new_full((L, *table.shape[2:]), fill)
+                return result.index_copy(0, active, table[b, columns[b, active]])
+
             entry = Reading(
                 rows=rows[b].index_select(0, pos.to(rows.device)),
                 word_rows=word_rows[b].index_select(0, pos.to(word_rows.device)),
@@ -13243,18 +13264,18 @@ class BasicModel(BaseModel):
                    for name, value, _ in reference_columns
                    if name != 'leaf_orders' and torch.is_tensor(value)},
                 operation_values=(None if journal is None else
-                    journal[b, columns[b, :L].clamp_min(0)].reshape(L, 3, leaf_slab.shape[-1])),
+                    operation_rows(journal).reshape(L, 3, leaf_slab.shape[-1])),
                 operation_refs=(None if addresses is None else
-                    addresses[b, columns[b, :L].clamp_min(0)]),
+                    operation_rows(addresses, fill=-1)),
                 operation_relations=(None if relations is None else
-                                     relations[b, columns[b, :L].clamp_min(0)]),
+                                     operation_rows(relations)),
                 binding_choices=bool(getattr(self, '_component_reading', False)),
                 close_references=bool(getattr(self, '_component_reading', False)),
                 interpret_forced=interpret_forced,
                 operation_probabilities=None if probabilities is None else probabilities[b, :L],
                 **identity_record,
-                case_values=None if case_state is None else case_state[3][b, columns[b, :L].clamp_min(0)],
-                case_selected=None if case_state is None else case_state[4][b, columns[b, :L].clamp_min(0)],
+                case_values=None if case_state is None else operation_rows(case_state[3]),
+                case_selected=None if case_state is None else operation_rows(case_state[4]),
                 **{name: value[b].index_select(0, pos.to(value.device))
                    for name, value in (
                        ('symbol_where', word_view(getattr(self, 'inputSpace', None), 'symbol_where')),
@@ -19847,7 +19868,7 @@ class BasicModel(BaseModel):
         ``index``: the concept rows of STM slot 1 (left, older) and slot 0
         (right, newest) of ``state`` (a functional STM state tuple), -1
         where the fold did not fire."""
-        import STMChunks
+        from Memory import STMChunks
         rows = STMChunks.stack_view(state)[4]
         B, width = int(left_slab.shape[0]), int(left_slab.shape[1])
         active = valid.reshape(B).to(device=left_slab.device, dtype=torch.bool)
@@ -20777,7 +20798,7 @@ class BasicModel(BaseModel):
 
     def _clause_end_state(self, state, sid, clauses, row_addresses):
         """Publish the ended field and keep its top as a recent shared chunk."""
-        import STMChunks as chunks
+        from Memory import STMChunks as chunks
         current, lang, feedback = state
         values = tuple(value.clone() for value in current)
         store = self.symbolSpace.ltm_store
@@ -20999,7 +21020,7 @@ class BasicModel(BaseModel):
                         trust=self.conceptualSpace._incoming_trust_multiplier(),
                         expectation=comparison, stream=b, written_rows=written_clauses[b])
                 from FamiliarTier import commit_read_words
-                read_word_occurrences = commit_read_words(self._concept_owner(), entries[b], batch=b,
+                commit_read_words(self._concept_owner(), entries[b], batch=b,
                     document=document, position=position, clause=clause, written=written_clauses[b])
                 if row is not None and row != -1:
                     row_addresses[b] = int(store.row(row)['row_id'])
@@ -21012,8 +21033,7 @@ class BasicModel(BaseModel):
                             teacher_records=getattr(self, '_verb_teacher_records', None),
                             modifier_action=self.languageSpace.modifier_action(),
                             modal_teacher_weight=getattr(self, 'modal_teacher_weight', .1),
-                            modal_records=getattr(self, '_modal_teacher_records', None), reading=entries[b],
-                            word_occurrences=read_word_occurrences)
+                            modal_records=getattr(self, '_modal_teacher_records', None), reading=entries[b])
                         state = (resolver.committed_chunks(state[0],reference_plan,written_clauses[b],stream=b),
                                  state[1],state[2])
                         self.__dict__.setdefault('_reference_close_audit', {})[(int(sid), b)] = resolver.last_audit
@@ -21856,7 +21876,7 @@ class BasicModel(BaseModel):
                 # Raw forward has not backpropagated. Expose its current
                 # numerical root to callers, while the committed history and
                 # the next sentence's carries remain detached below.
-                import STMChunks
+                from Memory import STMChunks
                 buffer, depth = STMChunks.stack_view(chosen[0])[:2]
                 root = buffer[torch.arange(B, device=words.device),
                               (depth - 1).clamp(0, buffer.shape[1] - 1)]
@@ -22444,7 +22464,7 @@ class BasicModel(BaseModel):
 
             # The previous word's deadline reserved this slot. Overflow is a
             # violated invariant, never permission to drop an incoming word.
-            import STMChunks
+            from Memory import STMChunks
             pre_state = current_stm
             pre_applied = torch.zeros_like(
                 current_stm[1], dtype=torch.bool)

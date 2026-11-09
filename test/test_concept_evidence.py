@@ -154,7 +154,7 @@ def test_candidate_alternatives_merge_sparse_support_before_discovery():
 
 
 def test_context_allocation_is_bounded_independently_of_the_shared_inventory():
-    from MediumTermMemory import MediumTermMemory
+    from Memory import MediumTermMemory
     pool = MediumTermMemory(64, n_vectors=1048576, field_width=8)
     key = pool.open_candidate(order=0, when=0, value=torch.ones(8), support={1048575: 1.})
     assert pool.entries[key].support == {1048575: 1.}

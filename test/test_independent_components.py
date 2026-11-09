@@ -35,7 +35,7 @@ def test_definedness_keeps_direction_input_uncertainty_and_evidence_separate():
 
 
 def test_row_definedness_survives_rewitness_and_checkpoint_without_changing_truth():
-    from Layers import LTM0
+    from Memory import LTM0
     from Meaning import ConceptualMeaning
     from MeaningCodes import sentence_key
     store = LTM0(8, capacity=4)
@@ -232,7 +232,7 @@ def component_fixture():
 
 def test_unretained_innovation_cannot_change_population_cost(monkeypatch):
     import Spaces
-    from Layers import LTM0
+    from Memory import LTM0
     from Meaning import ConceptualMeaning
     columns = component_fixture()
     store = LTM0(4, capacity=8)

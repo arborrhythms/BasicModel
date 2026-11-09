@@ -26,7 +26,7 @@ def test_code_answer_uses_the_checked_atom_and_keeps_its_reference():
 
 
 def _stored_query(model, registry, part, whole):
-    from Layers import LTM0
+    from Memory import LTM0
     store=LTM0(8, percept_width=0,capacity=16)
     model.symbolSpace.ltm_store=store
     source=registry.form('part',part,whole)
@@ -58,7 +58,7 @@ def test_open_relation_answer_preserves_every_member_without_another_reader():
 
 
 def _open_goal(model, registry, part, whole):
-    from Layers import LTM0
+    from Memory import LTM0
     from ClauseRow import attach_clause_index
     from Meaning import ConceptualMeaning
     from ThoughtReferences import with_slots
@@ -140,7 +140,7 @@ def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch
         program_meaning=lambda item, _registry: query,
         # This adapter fixture stubs every numerical synthesis operation.
         generation_scope=nullcontext))
-    from Layers import ShortTermMemory
+    from Memory import ShortTermMemory
     object.__setattr__(model.conceptualSpace, 'stm', ShortTermMemory(concept_dim=8))
     model._what_grammar_context = lambda *_a, **_k: (torch.zeros(1, 8), None)
     model._select_perceptual_bindings = lambda *_a: ()

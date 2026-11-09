@@ -3,7 +3,7 @@ import json
 
 import torch
 
-from Layers import LTM0
+from Memory import LTM0
 from Meaning import ConceptualMeaning
 from MemoryIndex import unfold_idea
 from test_prepared_answer_boundary import _native_answer_model

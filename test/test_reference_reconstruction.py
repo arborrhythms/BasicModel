@@ -230,7 +230,7 @@ def test_multileaf_bound_root_keeps_its_own_occurrence():
     occurrence = written['root_mention']
     assert occurrence != antecedent
     resolver.commit(plan, row, written, document='carriers', position=1,
-                    training=False, word_occurrences={0: antecedent})
+                    training=False)
     pool = resolver.components.owner.mtm
     assert pool.token_of(occurrence) == antecedent
     assert pool.entries[antecedent].occurrences == (antecedent, occurrence)

@@ -2,7 +2,7 @@
 import pytest
 import torch
 
-import STMChunks as chunks
+from Memory import STMChunks as chunks
 
 
 def put(state, scalar, *, stack=False, identity=-1):
@@ -91,7 +91,7 @@ def test_close_keeps_one_recent_chunk_and_fork_does_not_share_mutation():
 
 
 def test_identity_pool_is_fixed_releases_at_promotion_and_rejects_old_layout():
-    from MediumTermMemory import MediumTermMemory
+    from Memory import MediumTermMemory
     pool = MediumTermMemory(2, n_vectors=90)
     value = torch.tensor([.1,.3,.5,.7])
     first, second, third = [('ltm','fixture',i) for i in (1,2,3)]
@@ -156,7 +156,7 @@ def test_publication_and_refresh_choose_the_field_beside_a_recent_sentence():
 
 
 def test_stm_construction_bounds_are_loud_and_soft_reset_retains_recent():
-    from Layers import ShortTermMemory
+    from Memory import ShortTermMemory
     memory = ShortTermMemory(batch=2, capacity=8, concept_dim=4)
     state, _ = put(memory.state, .3, identity=9)
     state, _ = put(state, .6, stack=True)
@@ -197,7 +197,7 @@ def test_reduce_retains_the_head_percept_in_buffer_and_sidecars():
 
 
 def test_metadata_prefix_writes_preserve_the_constructed_stream_extent():
-    from Layers import ShortTermMemory
+    from Memory import ShortTermMemory
     from ChunkJournal import empty_scope
     memory = ShortTermMemory(batch=4,capacity=8,concept_dim=4)
     shapes = {name:value.shape for name,value in memory.__dict__.items()

@@ -373,7 +373,8 @@ def test_selected_relation_preserves_declared_outer_polarity(
 @pytest.mark.parametrize("path", ["forward", "packed"])
 def test_observation_boundary_uses_selected_relation_before_prediction_and_ltm(
         monkeypatch, path):
-    from Layers import SymbolExpectation, LTM0
+    from Layers import SymbolExpectation
+    from Memory import LTM0
     from reading_fixtures import commit_reading
 
     cs, _grammar, registry, owner, leaves, program, _a, _b = _program_owner(

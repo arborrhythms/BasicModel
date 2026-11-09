@@ -13,7 +13,7 @@ def pending_chain(store, value, name, complement, *, sentence):
     from dataclasses import replace
     from Meaning import ConceptualMeaning
     from meaning_fixtures import unsupported as question
-    from LTM1 import OCCURRENCE
+    from Memory import OCCURRENCE
     atom = replace(ConceptualMeaning.from_description(value),
                    bindings={'_forward_references': ((0, name),)})
     row = store.append_meaning(question(atom, (('referent', 0),)),
@@ -26,7 +26,7 @@ def pending_chain(store, value, name, complement, *, sentence):
 def test_closing_and_reads_keep_a_name_pending_without_a_resolver_choice():
     from ThoughtReferences import bindings, open_slots
     from part_fixtures import native_store
-    from LTM1 import SYMBOL
+    from Memory import SYMBOL
     store, (name, predicate, answer) = native_store(points=torch.eye(4)[:3])
     store._concept_owner()._concept_allocator.singletons.add(answer)
     first = pending_chain(store, torch.eye(4)[0], name, (SYMBOL, answer), sentence=0)
@@ -46,7 +46,7 @@ def test_forward_name_stays_pending_beside_a_witnessed_occurrence_complement(rel
     from Meaning import ConceptualMeaning
     from ThoughtReferences import bindings, open_slots
     from part_fixtures import native_store
-    from LTM1 import OCCURRENCE, RELATION
+    from Memory import OCCURRENCE, RELATION
     store, (name, predicate, answer) = native_store(points=torch.eye(4)[:3])
     if relative:
         complement = (RELATION, store.parts.add(predicate, answer))

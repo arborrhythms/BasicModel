@@ -271,7 +271,7 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
     owner._clause_end_state = MethodType(BasicModel._clause_end_state,owner)
     owner._discard_sentence_record = BasicModel._discard_sentence_record
     owner._sentence_observation = lambda *args, **kwargs: BasicModel._sentence_observation(owner, *args, **kwargs)
-    import STMChunks
+    from Memory import STMChunks
     stm = STMChunks.empty(1,8,width,device=entry.leaves.device,dtype=entry.leaves.dtype)
     for index in reversed(range(3)):
         if bool(entry.end_state[index].ne(0).any()):

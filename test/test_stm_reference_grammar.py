@@ -43,8 +43,8 @@ def test_stop_preserves_all_slots_and_references():
 def test_binary_shifts_surviving_reference_and_updates_orders():
     before = state()
     after = ConceptualSpace.apply_language_choice(before, choice(1))
-    from STMChunks import stack_view
-    after = stack_view(after)
+    from Memory import STMChunks
+    after = STMChunks.stack_view(after)
     assert after[1].tolist() == [2]
     assert after[2].tolist() == [[2, 4, -1, -1]]
     assert after[3].tolist() == [[2, 2, -1, -1]]

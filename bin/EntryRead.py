@@ -36,7 +36,7 @@ class EntryRead:
                 raise ValueError(name + ' limit must be a nonnegative integer')
         if max_candidates > self.ltm_window:
             raise OverflowError('candidate limit exceeds constructed ltmWindow')
-        from LTM1 import SYMBOL
+        from Memory import SYMBOL
         explicit = [self.location(ref) for ref in (*references, *retrieved)]
         for ref in cue.role_refs:
             if ref is not None and ref[0] == 'sym' and type(ref[1]) is int and ref[1] > 0:
@@ -151,7 +151,7 @@ class EntryRead:
         if not callable(owner_ref):
             return ()
         owner = owner_ref()
-        from LTM1 import OCCURRENCE, RELATION
+        from Memory import OCCURRENCE, RELATION
         from ChainRead import envelope
         from RowTime import encoder
         missing = []
@@ -194,7 +194,7 @@ class EntryRead:
         stm = getattr(owner,'stm',None)
         if stm is None:
             return tuple(missing)
-        import STMChunks as chunks
+        from Memory import STMChunks as chunks
         from ChainRead import head_idea
         state = stm.state
         if not 0 <= stream < state[0].shape[0]:

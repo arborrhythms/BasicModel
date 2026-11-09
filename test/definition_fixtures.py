@@ -1,5 +1,5 @@
 """Definition owner for isolated conceptual-inventory mechanism fixtures."""
-from Layers import LTM0
+from Memory import LTM0
 
 
 def with_definitions(cs):

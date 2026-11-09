@@ -124,7 +124,7 @@ def read(store, description, *, max_records, work, fallback):
     if phase is not None:
         return dict(groups=((),), records_scanned=scanned,
                     incomplete=('phase_history_expired',), retained=True, order=order)
-    from LTM1 import RELATION, SYMBOL
+    from Memory import RELATION, SYMBOL
     from ChainRead import envelope
     roots = {reference if isinstance(reference, tuple) else ('sym', reference)}
     records = []

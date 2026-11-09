@@ -92,7 +92,7 @@ def test_first_three_slot_predicate_occurrence(monkeypatch, relation, use_regist
     assert f.store.parts.refs.shape[-1] == 2
     arguments = f.store.row(row)['refs'].tolist()
     assert reference[1] not in arguments
-    from LTM1 import OCCURRENCE
+    from Memory import OCCURRENCE
     assert f.store.parts.ref_kinds[row[1]].tolist() == [OCCURRENCE, OCCURRENCE]
     assert arguments == [int(f.store.address_keys[source]) for source in (left, right)]
     for role, source in zip((0, 2), (left, right)):

@@ -232,7 +232,7 @@ def test_ltm_space_appears_when_store_present_but_excludes_estimates():
     # synthetic LTM0 so the path is exercised without
     # <ltmConsolidation>.
     from Attention import PrimedSymbolReader as GA
-    from Layers import LTM0
+    from Memory import LTM0
     m = _build("MM_global.xml")
     if getattr(m, "symbolSpace", None) is None:
         pytest.skip("no symbolSpace on this config")

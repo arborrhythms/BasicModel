@@ -5,7 +5,7 @@ import pytest
 import torch
 
 from ClauseRow import Clause
-from Layers import LTM0
+from Memory import LTM0
 from Meaning import ConceptualMeaning
 
 

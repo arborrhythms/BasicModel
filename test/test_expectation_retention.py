@@ -7,7 +7,8 @@ from types import SimpleNamespace
 import torch
 import pytest
 
-from Layers import SymbolExpectation, LTM0
+from Layers import SymbolExpectation
+from Memory import LTM0
 from Meaning import ConceptualMeaning
 from meaning_fixtures import record_observation, symbol_prediction, estimate_meaning
 from reasoning import QuerySpec, TruthGroundedReasoner, UNKNOWN

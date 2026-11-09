@@ -18,7 +18,7 @@ BIN = ROOT / "bin"
 if str(BIN) not in sys.path:
     sys.path.insert(0, str(BIN))
 
-from Layers import ShortTermMemory  # noqa: E402
+from Memory import ShortTermMemory  # noqa: E402
 from Language import SymbolSpace  # noqa: E402
 from Models import FunctionalPeerSTM  # noqa: E402
 from Spaces import ConceptualSpace, WholeSpace  # noqa: E402
