@@ -1,5 +1,6 @@
 """October 8 repair contracts; no arithmetic executor or seeded learner."""
 from dataclasses import replace
+from generation_fixtures import undeclared_arguments
 from types import SimpleNamespace
 
 import pytest
@@ -71,7 +72,7 @@ def test_driver_batch_groups_share_constructed_priming_without_broadcast():
 
 def test_unfold_reads_the_readers_priming_row():
     from MemoryIndex import unfold_idea
-    language = SimpleNamespace(_generate_binary_ops=(), _generate_unary_ops=(), generate_policy_logits=lambda point,features=None: point.new_zeros(1, 1))
+    language = undeclared_arguments(SimpleNamespace(_generate_binary_ops=(), _generate_unary_ops=(), generate_policy_logits=lambda point,features=None: point.new_zeros(1, 1)))
     basis = torch.eye(3)
     weights = torch.tensor([[2., 1., 1.], [1., 2., 1.]])
     for row in range(2):

@@ -269,7 +269,7 @@ def _answer_training_probe(m, opt, questions):
         sentence = getattr(m, '_sentence_backward', False)
         if sentence:
             assert 'output' not in recorded
-            reader = m._sentence_reader_costs
+            reader = m._single_sentence_objectives
             if 'output' not in reader:
                 return backward(total, amp_scaler, **kwargs)
             total = reader['output']

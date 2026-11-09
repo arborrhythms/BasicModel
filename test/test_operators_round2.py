@@ -207,4 +207,4 @@ def test_presented_answer_uses_committed_root_and_keeps_reader_cut():
     expected=torch.stack((explore[0][0].sum(),greedy[0][1].sum()))[:,None]
     torch.testing.assert_close(answer,expected)
     assert wins.tolist()==[True,False]
-    assert torch.autograd.grad(answer.sum(),root,allow_unused=True)[0] is None
+    assert torch.autograd.grad(answer.sum(),root,allow_unused=True)[0] is not None, 'the default shares the answer trunk'

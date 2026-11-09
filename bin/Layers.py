@@ -14304,7 +14304,7 @@ class Error:
 
     def add(self, name: str, value, *, weight: float = 1.0,
             space: str = None, category: str = "other", kind="penalty",
-            objective=None, trained=True):
+            objective=None, side=None, trained=True):
         """Register a pre-computed scalar term.
 
         Repeated ``name`` values are summed (useful when a term is
@@ -14315,6 +14315,10 @@ class Error:
             return
         if not isinstance(value, torch.Tensor):
             value = torch.as_tensor(value)
+        from ObjectiveOwnership import default_side, term_owner
+        side = default_side(term_owner(name, category, objective or category)) if side is None else side
+        if side not in ('R', 'A'):
+            raise ValueError('an error side must be R or A')
         rec = self._terms.get(name)
         if rec is None:
             self._terms[name] = {
@@ -14325,6 +14329,7 @@ class Error:
                 "count": 1,
                 "kind": kind,
                 "objective": objective or category,
+                "side": side,
                 "trained": trained,
             }
         else:
@@ -14345,7 +14350,7 @@ class Error:
 
     def error(self, name, error, baseline, *, mask=None, weight=1.,
               space=None, category='other', objective=None, trained=True, row=None,
-              entry_weight=None):
+              entry_weight=None, side=None):
         """Register active error and uninformed-baseline sums, never an EMA.
 
         Repeated contributions are combined before division. The baseline is
@@ -14354,6 +14359,10 @@ class Error:
         With ``row_mask``, row contributions average to the one global ratio,
         so a small-target row cannot acquire its own large normalization.
         """
+        from ObjectiveOwnership import default_side, term_owner
+        side = default_side(term_owner(name, category, objective or category)) if side is None else side
+        if side not in ('R', 'A'):
+            raise ValueError('an error side must be R or A')
         error = torch.as_tensor(error)
         baseline = torch.as_tensor(baseline, device=error.device, dtype=error.dtype).detach()
         error, baseline = torch.broadcast_tensors(error, baseline)
@@ -14387,7 +14396,7 @@ class Error:
         rec = self._terms.get(name)
         if rec is None:
             rec = dict(weight=float(weight), space=space, category=category,
-                objective=objective or category, trained=trained, kind='relative', count=0,
+                objective=objective or category, side=side, trained=trained, kind='relative', count=0,
                 numerators=[], baselines=[], entries=[], row_mask=self.row_mask)
             self._terms[name] = rec
         if 'numerators' not in rec or rec['weight'] != float(weight):

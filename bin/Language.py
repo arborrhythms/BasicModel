@@ -6701,7 +6701,7 @@ class OperationSelectionLayer(nn.Module):
                  op_names=None, unary_names=None, op_space_roles=None,
                  chooser="anchordot"):
         super().__init__()
-        self.separate_chooser = bool(TheXMLConfig.get("architecture.separateChooser", default=True))
+        self.separate_chooser = bool(TheXMLConfig.get("architecture.separateChooser", default=False))
         self.d_model = int(d_model)
         self.ops = nn.ModuleList(ops)
         self.unary_ops = nn.ModuleList(unary_ops)
@@ -12344,17 +12344,24 @@ _SYMBOLSPACE_FORWARD_WRITES = {
 
 
 class GeneratePolicy(nn.Linear):
-    """One reconstruction-owned policy, with shared menu-quality features."""
+    """One policy reading inverse quality and formal argument occupation."""
     def __init__(self,width,choices):
         super().__init__(width,choices)
         # Adding a scorer must not shift unrelated model initialization.
         with torch.random.fork_rng(devices=[]):
             self.menu_score=nn.Sequential(nn.Linear(5,8),nn.Tanh(),nn.Linear(8,1,bias=False))
+            self.occupation_score=nn.Linear(3,1,bias=False)
         nn.init.zeros_(self.menu_score[-1].weight)
+        nn.init.zeros_(self.occupation_score.weight)
 
     def forward(self,top,features=None):
         logits=super().forward(top.detach())
-        return logits if features is None else logits+self.menu_score(features.detach()).squeeze(-1)
+        if features is None:
+            return logits
+        features = features.detach()
+        logits = logits + self.menu_score(features[..., :5]).squeeze(-1)
+        return logits + self.occupation_score(features[..., 5:]).squeeze(-1)
+
 
 
 class LanguageSpace(nn.Module):
@@ -12629,7 +12636,7 @@ class LanguageSpace(nn.Module):
         migrations = {}
         for name, live in self.generate_policy.state_dict().items():
             key = prefix + "generate_policy." + name
-            if name.startswith('menu_score.'):
+            if name.startswith(('menu_score.', 'occupation_score.')):
                 if key not in state:
                     state[key]=live.detach().clone()
                 elif state[key].shape!=live.shape:
@@ -12658,15 +12665,6 @@ class LanguageSpace(nn.Module):
         cw = self._generate_policy_width
         return (self.generate_policy(top[:, :cw]) if features is None else
                 self.generate_policy(top[:, :cw],features))
-
-    def generate_policy_credit(self, logits, target, valid):
-        """``[B]`` cross-entropy of the policy against the recorded choice
-        ``target`` (an index into the policy's choices) on rows where
-        ``valid``; zero elsewhere."""
-        n = int(logits.shape[-1])
-        logp = torch.log_softmax(logits, dim=-1)
-        picked = logp.gather(1, target.clamp(0, n - 1).reshape(-1, 1)).reshape(-1)
-        return torch.where(valid, -picked, torch.zeros_like(picked))
 
     def choose_generate(self, logits):
         """The existing generate policy's hard decision, with the same tie rule."""

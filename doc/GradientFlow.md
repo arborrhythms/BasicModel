@@ -1087,3 +1087,53 @@ Object-vector contraction uses a linear weight view so the compiled selected
 branch's pullback has the parameter's native layout. It preserves the action's
 values and gradients. The [round-2 return, §14](plans/2026-11-03-gradient-projection.md)
 records the direct residuals and eager/compiled certificates.
+
+### Item 2.0 round 3/4: default projected gradients (2026-11-09)
+
+This update supersedes the earlier default ownership and teacher descriptions
+above. The separate-owner implementation remains available with
+`separateChooser=true`. The default takes two `autograd.grad` traversals over all
+optimizer parameters, preserving the reconstruction gradient and projecting only
+the opposing answer component before one optimizer step.
+
+| Side | Owner in the optional separate path | Costs as implemented |
+|---|---|---|
+| R | reconstruction | Field, part, iterations, forward discard, content, reference, decoder residual and decoder credit (interim). |
+| R | compose_lesson | Compose lessons. |
+| R | expectation | Predictor terms. |
+| R | attention | Reading lessons and candidate cross-entropy. |
+| R | Each parameter's owner | Regularizers, once in the projected aggregate. |
+| A | output | Answers, prediction and readers. |
+| A | generate_lesson | Generate lessons. |
+| A | reconstruction | Answer-walk residual, whole. |
+| A | chooser | Output-walk credit, compose rewards and reconstruction-category thought rewards, whole. |
+| A | expectation | Bind and expectation-category thought rewards, whole. |
+| A | attention | Candidate-departure rewards, whole. |
+
+`Error.add` and `Error.error` retain owner and side separately. Registry keys use
+the owner alone for its default side, or append `.A`/`.R` for the other side.
+The separate path strips that suffix and routes to the owner's parameters,
+including its existing perception pullback. The default reads the sides of the
+same costs. Both default traversals retain the batch graph; sentence-boundary
+cuts release completed sentence writes without cutting batch perception.
+
+Only the `reconstruction` key's R aggregate is multiplied by the drawn
+`reconstructionJitter` strength; its default remains zero jitter. A shared
+regularizer enters R once. Unit projection uses a tensor, concept row or durable
+definition edge; Adam coordinates have weight `1/(sqrt(v_hat)+eps)` from existing
+state, with identity before the first step. A single-writer unit is unchanged.
+Sparse row gradients retain sparse support, without densifying the concept table.
+
+`SentenceTraining.gradient_receipt` adds per-unit epoch averages
+`cosine_before`, `fraction_projected` and `fraction_answer_removed`, with a step
+count. The cosine and removed norm use the unit's optimizer metric; zero-vector
+cosines and removed fractions are reported as zero. `realized_steps` reports
+root-sum-squared actual displacements divided by root-sum-squared pre-step
+parameter norms for codes, lift and adverb, with null for a zero denominator.
+The existing read-only `measure()` dissonance and understanding norms are retained.
+
+The decoder and answer generate credits use their own complete paired costs,
+including residuals, and the same proposal-corrected score function as compose.
+Exact ties do not create a gradient. No walk, verb or modal teacher remains.
+A stored MTM value receives only the current action's local straight-through
+pullback from its recorded forward input; earlier sentence graphs stay cut.

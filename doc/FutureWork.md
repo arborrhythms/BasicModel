@@ -2473,3 +2473,14 @@ The [round-2 return, §14](plans/2026-11-03-gradient-projection.md) records the
 completed candidate-context routing and the evidence.
 
 The [memory plan §10](plans/2026-11-03-item2-0-behavioral-chains.md#10-shared-stmltm-strata-and-decoding-from-an-idea-alec-2026-11-08) reserves shared STM/LTM strata, operator concept seats, collapse at the end of the pinned sentence and authority onto operator concepts' trust for the memory round; §10.6 keeps `LTM1.operator` and `LTM1.grammar_operation` until that round.
+
+### Conditions retained after item 2.0 round 3/4 (2026-11-09)
+
+The instantaneous R/A projection and primitive clamp velocity repair are built.
+Projection of momentum-carried gradients remains conditional on the end-of-item
+receipts showing reconstruction rising where output was projected. A learned pair
+policy also remains conditional on those receipts. The decoder's residual and
+walk credit keep their interim R booking; the unified loop moves these bookings
+to output. Memory plan §10, basic percepts and thinking-spec §54 finding 2 remain
+round 5; the loop and end-of-item measurements remain round 6. This round makes
+no claim from repeated fits, lesson arms or item 60 measurements.

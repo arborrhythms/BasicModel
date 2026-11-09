@@ -184,18 +184,22 @@ def test_winning_departure_credit_reaches_only_generate_policy_and_its_owner():
     from Language import LanguageSpace
     from Models import BaseModel
     from WalkTrials import generate_credit, stage_generate_credit
-    policy = torch.nn.Linear(2, 3)
+    from Language import GeneratePolicy
+    policy = GeneratePolicy(2, 3)
     upstream = torch.nn.Linear(2, 2)
-    language = SimpleNamespace(generate_policy=policy, _generate_policy_width=2)
-    for name in ('generate_policy_logits', 'generate_policy_credit'):
+    language = SimpleNamespace(generate_policy=policy, _generate_policy_width=2,
+        _tree_layer=lambda arity: SimpleNamespace(exploration_fraction=.5, exploration_temperature=1.))
+    for name in ('generate_policy_logits',):
         setattr(language, name, MethodType(getattr(LanguageSpace, name), language))
     tops = upstream(torch.ones(3, 4, 2))
     audit = dict(departure=torch.tensor([1, 2, -1]), wins=torch.tensor([True, False, False]),
-        explore=torch.tensor([[0, 1, 2, 0]]*3), costs=torch.zeros(3,2))
-    model = SimpleNamespace(languageSpace=language, _sentence_walk_credits=[])
-    stage_generate_credit(model, audit, tops)
-    credit, = model._sentence_walk_credits
-    assert credit[0] > 0 and credit[1:].eq(0).all()
+        explore=torch.tensor([[0, 1, 2, 0]]*3), costs=torch.tensor([[1.,0.],[0.,1.],[0.,0.]]),
+        greedy=torch.tensor([[2,0,1,0]]*3), eligible=torch.ones(3,4,dtype=torch.bool))
+    features = torch.ones(3,4,3,9)
+    model = SimpleNamespace(languageSpace=language, _sentence_decoder_walk_credits=[])
+    stage_generate_credit(model, audit, tops, features)
+    credit, = model._sentence_decoder_walk_credits
+    assert credit[0] < 0 and credit[1] > 0 and credit[2] == 0
     credit.sum().backward()
     assert policy.weight.grad.abs().sum() > 0
     assert all(p.grad is None for p in upstream.parameters())
@@ -203,8 +207,9 @@ def test_winning_departure_credit_reaches_only_generate_policy_and_its_owner():
     groups = BaseModel.objective_parameter_groups(model, optimizer)
     assert {id(p) for p in policy.parameters()} <= {id(p) for p in groups['reconstruction']}
     assert not {id(p) for p in policy.parameters()} & {id(p) for p in groups['output']}
-    audit['wins'].zero_()
-    assert generate_credit(language, audit, tops).eq(0).all()
+    audit['costs'].zero_()
+    tied = generate_credit(language, audit, tops, features)
+    assert tied.eq(0).all() and not tied.requires_grad
 
 
 def identity_fixture():

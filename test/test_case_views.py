@@ -253,7 +253,7 @@ def test_phase_content_checkpoint_copies_and_rejects_invalid_values():
     for bad_value in (torch.ones(7), torch.full((8,), 1.1), torch.full((8,), float('nan'))):
         invalid = deepcopy(saved)
         event = invalid['entries'][0]['timelines'][0][0][0]
-        invalid['entries'][0]['timelines'] = ((((*event[:-1], bad_value),), torch.full((8,), .2)),)
+        invalid['entries'][0]['timelines'] = ((((*event[:-2], bad_value, event[-1]),), torch.full((8,), .2)),)
         before = restored.state()
         with pytest.raises(ValueError):
             restored.restore(invalid)

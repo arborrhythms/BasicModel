@@ -69,15 +69,17 @@ def test_certified_completion_only_has_priority_and_pending_improvement_gets_cre
     wins=finished_wins(costs,pending,certified=certified)
     assert wins.tolist()==[False,True,True]
     policy=GeneratePolicy(2,2)
-    language=SimpleNamespace(generate_policy=policy,_generate_policy_width=2)
-    for name in ('generate_policy_logits','generate_policy_credit'):
+    language=SimpleNamespace(generate_policy=policy,_generate_policy_width=2,
+        _tree_layer=lambda arity: SimpleNamespace(exploration_fraction=.5, exploration_temperature=1.))
+    for name in ('generate_policy_logits',):
         setattr(language,name,MethodType(getattr(LanguageSpace,name),language))
     tops=torch.ones(3,1,2,requires_grad=True)
-    features=torch.ones(3,1,2,5,requires_grad=True)
+    features=torch.ones(3,1,2,9,requires_grad=True)
     features.data[:,0,0,0]=.1
-    audit=dict(departure=torch.tensor([0,0,0]),wins=wins,explore=torch.zeros(3,1,dtype=torch.long))
+    audit=dict(departure=torch.tensor([0,0,0]),wins=wins,explore=torch.zeros(3,1,dtype=torch.long),
+        greedy=torch.ones(3,1,dtype=torch.long), eligible=torch.ones(3,1,dtype=torch.bool), costs=costs)
     loss=generate_credit(language,audit,tops,features)
-    assert loss[0]==0 and (loss[1:]>0).all()
+    assert (loss[:2] > 0).all() and loss[2] < 0
     loss.sum().backward()
     assert tops.grad is None and features.grad is None
     assert policy.weight.grad.abs().sum()>0

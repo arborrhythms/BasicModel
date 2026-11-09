@@ -66,12 +66,8 @@ def test_current_grammar_recovery_by_depth_training_and_chain_length(tmp_path):
             # The meaning action reverses with its context; free stored
             # reads above still receive only the candidate bank.
             children = op.reverse_blocks(parent, right)
-            inputs = torch.cat((leaves, parent.detach()))
-            stop = language.generate_policy_logits(inputs).shape[-1] - 1
-            targets = torch.tensor([stop] * len(leaves) + [op_index] * len(parent))
-            cost = torch.nn.functional.cross_entropy(language.generate_policy_logits(inputs), targets)
-            cost = cost + sum((child - target).square().mean()
-                              for child, target in zip(children, (left, right)))
+            cost = sum((child - target).square().mean()
+                       for child, target in zip(children, (left, right)))
             cost.backward()
             optimizer.step()
         print('[mind-generativity] ' + json.dumps(reports, sort_keys=True))

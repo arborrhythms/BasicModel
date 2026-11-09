@@ -401,6 +401,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             result=None if action is None else (frames[action, 1] if
                 getattr(node['rule'], 'relation_kind', None) == 'equal' else frames[action, 2]),
             before=None if source_action is None else frames[source_action, 0], basis=basis,
+            verb_meaning=None if source_action is None else frames[source_action, 1],
             operation=None if semantic['rule'] is None else semantic['rule'].method_name,
             alternative=node.get('timeline', False), modifiers=tuple(modifiers),
             timeline_order=program.timeline_actions is not None,

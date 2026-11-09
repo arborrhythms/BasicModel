@@ -239,10 +239,11 @@ def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkey
                    for step in model._last_answer_construction.trace)
         generator_changed = any(not torch.equal(old, new)
                                 for old, new in zip(generate_before, generator.parameters()))
-        # The teacher-forced CE supplies STOP/undo targets independently of
-        # the free decoder's eligibility (whose straight-through was retired).
-        assert generator_changed
-        assert any(row['present'] for row in model._last_decomposition_walk_teacher)
+        audit = model._last_decoder_comparison
+        credit = audit['score_function']
+        assert torch.isfinite(credit['probabilities']).all()
+        if bool((credit['mask'] & credit['advantage'].ne(0)[:, None]).any()):
+            assert generator_changed
         ids={id(p) for p in model.objective_parameter_groups(optimizer)['reconstruction']}
         assert all(id(p) in ids for p in generator.parameters())
     finally:

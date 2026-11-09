@@ -92,7 +92,8 @@ def test_trial_consumers_share_one_record_and_answer_cannot_write_it(monkeypatch
         record = observation['record']
         answered.append(record)
         cost = answer(self, state, sid, active, observation, **kwargs)
-        assert torch.autograd.grad(cost.sum(), record.root, retain_graph=True, allow_unused=True)[0] is None
+        gradient = torch.autograd.grad(cost.sum(), record.root, retain_graph=True, allow_unused=True)[0]
+        assert gradient is not None and not bool(gradient.abs().any())
         return cost
     monkeypatch.setattr(model, '_reconstruct_trial', read)
     monkeypatch.setattr(Models.BasicModel, '_sentence_answer_error', score)
@@ -113,7 +114,7 @@ def test_trial_consumers_share_one_record_and_answer_cannot_write_it(monkeypatch
         # Candidate selection has no pathwise derivative. A scorer writes
         # only when this unseeded trial samples a non-tied candidate departure.
         assert writers <= {'reconstruction', 'expectation', 'output', 'attention'}
-        assert all(not row['writers'] or row['writers'] == [row['owner']] for row in report['parameters'])
+        assert all(set(row['writers']) <= {'R', 'A'} for row in report['parameters'])
     finally:
         model.End()
         model.symbolSpace.soft_reset()

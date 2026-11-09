@@ -21,6 +21,7 @@ def layer():
         result.reduce_anchor.fill_(1)
         result.apply_anchor.fill_(0)
         result.stop_anchor.fill_(100)
+    result.separate_chooser = True
     return result
 
 

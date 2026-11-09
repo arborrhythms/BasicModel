@@ -678,3 +678,7 @@ Item 2.0 round 1: `test_item20_round1.py` certifies thought WHEN stamps, absent 
 Item 2.0 round 2 uses direct and targeted checks, then one default sweep at its offered freeze; certificates and deferred measurements are recorded in the [2.0 plan, §12](plans/2026-11-03-gradient-projection.md).
 
 Round 2's continuation adds twelve direct cases in [test_item20_round2_generation.py](../test/test_item20_round2_generation.py): candidate object/group bases, unchanged adverbs, unknown-basis identity, non-finite propagation, mixed-stream isolation and free walks without an action record or live STM, including compiled gradients. The [§14 return](plans/2026-11-03-gradient-projection.md) links the fixed-operand before/after residuals and the one default sweep on the frozen source.
+
+Item 2.0 merged round 3/4 uses direct projection/routing, proposal-credit, action re-read/rate, output-typing and clamp-velocity cases, the named targeted files, one fresh XOR reconstruction gate and one unfiltered default freeze sweep; [§15](plans/2026-11-03-gradient-projection.md) records exact ports and receipts.
+
+Item 2.0 round 3/4 repair adds an unseeded packed-sentence graph scan and an optional chooser-owner certificate; eight consecutive native solo runs precede one frozen, unfiltered sweep (see [spec §16](plans/2026-11-03-gradient-projection.md)).

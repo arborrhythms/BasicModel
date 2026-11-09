@@ -1,4 +1,5 @@
 """Candidate-owned action bases, independent of the input derivation."""
+from generation_fixtures import undeclared_arguments
 from types import MethodType, SimpleNamespace
 
 import pytest
@@ -22,8 +23,8 @@ def proposal(kind):
                            [.1,.1,.8,.1,.2,.6,.3,.5,.3,.5,.2,.6]]], dtype=torch.float64)
     subject, verb, obj = words.unbind(1)
     right = vp.compose(verb, obj) if kind == 'object' else verb
-    language = SimpleNamespace(_generate_binary_ops=(lift, vp), _generate_unary_ops=(),
-                               decomposition_chooser=DecompositionChooser())
+    language = undeclared_arguments(SimpleNamespace(_generate_binary_ops=(lift, vp), _generate_unary_ops=(),
+                               decomposition_chooser=DecompositionChooser()))
     for name in ('reverse_binary_step', '_reverse_of_binary_op', '_finish_binary_inverse',
                  'generate_unary_step', 'choose_generate', 'verb_group_table'):
         setattr(language, name, MethodType(getattr(LanguageSpace, name), language))

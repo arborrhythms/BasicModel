@@ -6,7 +6,7 @@ from ObjectiveOwnership import registry_costs
 
 
 def separate(model):
-    return bool(getattr(model, 'separate_chooser', True))
+    return bool(getattr(model, 'separate_chooser', False))
 
 
 def strength(model, like):
@@ -24,7 +24,7 @@ def current_costs(model, registry, *, sentence):
         expectation_rows=torch.zeros_like(registry.row_mask) if readers is not None else None,
         definition_rows=getattr(model, '_sentence_definition_rows', None) if sentence else None)
     if readers is not None:
-        result.update(readers)
+        combine(result, readers)
     return result
 
 
@@ -241,11 +241,15 @@ def gradient_receipt(model, *, clear=False):
             destinations[name] = dict(norm=norm, understanding=parameter in understanding_set,
                                       reconstruction_owned=parameter in reconstruction_set)
     sent['output_destinations'] = destinations
-    result = dict(dissonance=dissonance, chooser_variance=variance, understanding=sent,
+    from GradientProjection import receipt as projection_receipt
+    from ActionLearning import receipt as step_receipt
+    result = dict(realized_steps=step_receipt(model), projection=projection_receipt(model), dissonance=dissonance, chooser_variance=variance, understanding=sent,
         sample='one sentence, summing its trial and close gradients',
         cosine='weighted gradient vectors summed across the epoch in parameter coordinates')
     if clear:
         model._epoch_objective_gradients = {}
         model._understanding_epoch = {}
         model._chooser_gradient_moments = {}
+        model._projection_epoch = {}
+        model._realized_steps_epoch = {}
     return result

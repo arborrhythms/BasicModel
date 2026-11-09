@@ -20,10 +20,12 @@ def decoder(monkeypatch=None):
     with torch.no_grad():
         policy.weight.zero_()
         policy.bias.copy_(torch.tensor([0., -1., 2.]))
-    language = SimpleNamespace(_generate_binary_ops=(SimpleNamespace(meaning_layout=None),),
+    language = SimpleNamespace(_tree_layer=lambda arity: SimpleNamespace(exploration_fraction=.5, exploration_temperature=1.), _generate_binary_ops=(SimpleNamespace(meaning_layout=None),),
         _generate_unary_ops=(SimpleNamespace(meaning_layout=None),), generate_policy=policy, _generate_policy_width=2,
         _generate_binary_rule_ids=torch.tensor([0]), _generate_binary_names=('toy_split',),
         _generate_unary_rule_ids=torch.tensor([1]), _generate_unary_names=('toy_negate',))
+    from generation_fixtures import undeclared_arguments
+    undeclared_arguments(language)
     language.generate_policy_logits = MethodType(LanguageSpace.generate_policy_logits, language)
     language.choose_generate = lambda logits: logits.argmax(-1)
     def binary(parent, *args, return_status=False, **kwargs):
@@ -176,7 +178,7 @@ def test_paired_output_inverse_reuses_action_quantile_in_the_actual_walk(monkeyp
         while bool(cond(*values)):values=body(*values)
         return values
     monkeypatch.setattr(Models,'_reconstruction_while_loop',loop)
-    language=SimpleNamespace(_generate_binary_ops=(),
+    language=SimpleNamespace(_tree_layer=lambda arity: SimpleNamespace(exploration_fraction=.5, exploration_temperature=1.), _generate_binary_ops=(),
         _generate_unary_ops=(SimpleNamespace(meaning_layout=None),)*3,
         _generate_policy_width=2,
         generate_policy_logits=lambda x,features=None:x.new_zeros(len(x),4),

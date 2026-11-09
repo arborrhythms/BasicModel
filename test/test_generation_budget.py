@@ -92,7 +92,7 @@ def test_free_walk_cap_retains_each_lane_and_fixed_arrays(monkeypatch, numeric):
     assert result[4].tolist() == [[0, 1]]
     assert result[0].shape == (1, 2, 3)
     assert result[-4].shape == (1, 2, 3)  # chosen residuals
-    assert result[-2].shape == (1, 2, 4, 5)  # detached menu features
+    assert result[-2].shape == (1, 2, 4, 9)  # detached menu features
     assert result[-1].shape == (1, 2, 3)  # detached parent tops
     frontier = torch.tensor([[3., 4., 5.]])
     if numeric:

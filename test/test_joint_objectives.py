@@ -191,7 +191,9 @@ def test_model_parameter_ownership_and_backward_dispatch():
     p, w, c, excluded, head = [torch.nn.Parameter(torch.tensor([1., 1.])) for _ in range(5)]
     reader = torch.nn.Module()
     reader.register_parameter('weight', head)
-    owner = SimpleNamespace(outputSpace=reader, synthesis_parameters=lambda: (), errors=Error())
+    owner = torch.nn.Module()
+    owner.outputSpace, owner.synthesis_parameters, owner.errors = reader, lambda: (), Error()
+    owner.conceptualSpaces = []
     owner.objective_parameter_groups = lambda opt: BaseModel.objective_parameter_groups(owner, opt)
     optimizer = torch.optim.SGD([p, w, c, head], lr=.1)
     selected = owner.objective_parameter_groups(optimizer)['reconstruction']
@@ -202,7 +204,7 @@ def test_model_parameter_ownership_and_backward_dispatch():
     owner.errors.add('output.probe', o, objective='output')
     BaseModel._backward_training_loss(owner, r + o, optimizer=optimizer)
     for param in (p, w, c):
-        torch.testing.assert_close(param.grad, torch.tensor([2., 0.]))
+        torch.testing.assert_close(param.grad, torch.tensor([2., 4.]))
     torch.testing.assert_close(head.grad, torch.ones(2))
     assert excluded.grad is None
 
@@ -233,7 +235,7 @@ def test_truth_modulation_scales_objectives_without_state_feedback():
 @pytest.mark.usefixtures('eager_reading')
 @pytest.mark.parametrize('config_name, expected', [
     ('MM_xor.xml', ['batch']),
-    ('MM_xor_loopback.xml', ['exploit', 'explore', 'batch']),
+    ('MM_xor_loopback.xml', ['single']),
 ])
 def test_real_runbatch_steps_sentence_trials_then_batch_only_objectives(monkeypatch, config_name, expected):
     import Models
@@ -256,11 +258,11 @@ def test_real_runbatch_steps_sentence_trials_then_batch_only_objectives(monkeypa
 
     def inspect_backward(total, *args, **kwargs):
         assert total.requires_grad
-        calls.append(model._sentence_trial if getattr(model, '_sentence_backward', False) else 'batch')
+        calls.append((model._sentence_trial or 'single') if getattr(model, '_sentence_backward', False) else 'batch')
         return original_backward(total, *args, **kwargs)
 
     def inspect_step(*args, **kwargs):
-        steps.append(getattr(model, '_sentence_trial', None) or 'batch')
+        steps.append(getattr(model, '_sentence_trial', None) or ('single' if model._single_sentence_objectives is not None else 'batch'))
         return original_step(*args, **kwargs)
 
     monkeypatch.setattr(model, "_backward_training_loss", inspect_backward)

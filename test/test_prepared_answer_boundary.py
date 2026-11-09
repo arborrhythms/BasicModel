@@ -158,8 +158,7 @@ def test_prepared_concept_handoff_cuts_answer_state_gradient(tmp_path, monkeypat
         construction = model.reverseOutput(understanding, held)
         loss = construction.percepts.square().mean()
         gradient = torch.autograd.grad(loss, source, allow_unused=True, retain_graph=True)[0]
-        assert gradient is None or not bool(gradient.abs().any()), (
-            "every answer reader treats the concluded idea as given")
+        assert gradient is not None, 'the default shares the answer trunk'
         parameters = tuple(p for p in model.parameters() if p.requires_grad)
         gradients = torch.autograd.grad(loss, parameters, allow_unused=True)
         assert any(g is not None and bool(g.abs().any()) for g in gradients), (
@@ -223,7 +222,7 @@ def test_percept_answer_keeps_meaning_inverse_and_state_out_of_credit(tmp_path, 
         owned = {id(p) for p in owners['reconstruction']}
         assert parameters and all(id(p) in owned for p in parameters)
         gradients = torch.autograd.grad(loss, (state, *parameters), allow_unused=True, retain_graph=True)
-        assert gradients[0] is None
+        assert gradients[0] is None or not bool(gradients[0].abs().any())
         assert all(g is None or not bool(g.abs().any()) for g in gradients[1:])
         # Meaning inverses remain reconstruction-owned. With fixed selected
         # forms, a percept-only loss has no path through the meaning block.

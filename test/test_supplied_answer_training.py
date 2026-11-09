@@ -70,7 +70,7 @@ def test_real_supplied_trials_cost_before_updates_and_reach_only_reader(monkeypa
         error = getattr(model, '_sentence_answer_cost', None)
         assert torch.is_tensor(error) and error.requires_grad
         params = tuple(model.parameters())
-        grads = model._sentence_pullback.gradients(error.mean(), params)
+        grads = torch.autograd.grad(error.mean(), params, retain_graph=True, allow_unused=True)
         names = {id(p): name for name, p in model.named_parameters()}
         live = [names[id(p)] for p, g in zip(params, grads) if g is not None and bool(g.abs().any())]
         assert not any(name.startswith('conceptualSpaces.') for name in live), live

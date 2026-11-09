@@ -2795,3 +2795,65 @@ finite-value rejection writes the rejected value, token, members, pool and sourc
 position into the run receipt directory, then re-raises the same exception.
 The [2.0 plan, §14](plans/2026-11-03-gradient-projection.md) records the direct
 evidence and links the single offered-freeze sweep and its source audit.
+
+### Item 2.0 merged round 3/4: gradients and choices (2026-11-09)
+
+`separateChooser=false` is the default. Each sentence assembles reconstruction
+R and answer A, takes their gradients over every optimizer parameter, and removes
+only A's component opposing R before the existing single optimizer step. Units
+are parameter tensors, concept rows and definition edges. Adam units use their
+current bias-corrected second-moment metric; an unstepped unit uses the identity.
+Reconstruction is unchanged, as is a unit reached by only one side. The explicit
+`separateChooser=true` path still restricts gradients to parameter owners.
+
+R includes reconstruction, compose lessons, predictor terms, reading and
+candidate-CE lessons, regularizers once and the decoder walk's interim credit.
+A includes answers, generate lessons, answer-walk residual and credit, and all
+other choice rewards whole. Both generate walks use compose's uniform/temperature
+proposal mixture and `SentenceCredit.score_function`, correcting for the sampled
+action and the uniformly sampled departure step. Exact cost ties have no graph.
+The generate STOP bias remains. `reconstruction.walk_policy`, `verb_teacher` and
+`modal_teacher` are retired; no recorded parse supplies a forced walk lesson.
+
+Verb and modal observations still pair events, report residuals and mark them.
+Only training updates the verb-group assigner, using the verb-phrase meaning
+recorded at the forward lift, rather than the verb word's code. MTM event version
+11 stores that operand alongside the symbol; versions 8–10 load it as absent.
+On a later read, the stored value v is presented as `v + (A(b) - A(b).detach())`.
+The parentheses preserve v bit for bit. Operands are detached and only the current
+action parameters receive this additional pullback; alternative timelines also
+apply their recorded modifiers. Writes and close boundaries remain detached.
+
+Generate menu features now include parent argout and child argin occupation
+scores, using the same candidate-coverage measure as compose. STOP and undeclared
+faces contribute zero; scores never mask choices. The new occupation weights
+start at zero and old checkpoints retain their quality scorer. After clamping
+primitive memberships, reconstruction SGD clears only velocity pointing outward
+at a bound, including compact row-local momentum. It preserves inward velocity.
+Each walk trace has nine feature lanes: five inverse-quality measures, three
+argument-occupation scores and the legal-action mask. Credit retains the ninth
+lane to rebuild the sampled departure step's logit mask; the policy reads the
+first eight. `Generative.WALK_FEATURE_WIDTH` owns this width, including dense
+synthesis's empty trace.
+
+Owner and side are independent attributes of each cost. Under the optional
+`separateChooser=true`, compose and reconstruction-category thought rewards
+and output-walk credit belong to chooser; bind rewards belong to expectation;
+candidate departures belong to attention; both walks' residuals belong to
+reconstruction. Their R/A side controls only the default projection: output
+residual and credit and every other non-decoder choice reward are A whole.
+Decoder residual and credit remain R. Reader exposure does not mask choice
+rewards or either walk's residual.
+
+Both default gradient traversals retain the batch perception graph until the
+batch releases it. `SentenceBoundary.finish` cuts the completed sentence's
+choice records, roots, decoder trace, attention state, diagnostic costs,
+percept-field state, arrival loss and full STM buffers, including inactive
+capacity rows. Threaded sub/sym state is rebuilt from detached written positions
+and the original pre-loop perception values at unwritten positions. The batch
+reference-vector and readout-coefficient slabs remain live. Publishing a chosen
+sentence can replace the symbol-presence slab; that sentence's writes are cut
+while original unwritten perception positions remain live. Thus a later sentence
+can credit batch perception without traversing an earlier sentence's operations.
+The [2.0 plan, §§15–16](plans/2026-11-03-gradient-projection.md) records certificates
+and the offered-freeze sweeps.

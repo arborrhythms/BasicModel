@@ -360,3 +360,5 @@ today. That round retires them, with the gate-reopening function preserved
 there; no earlier round touches them. The open
 point above is closed; §10.5's open items are now the application convention
 inside the pinned sentence and the initialization policy of the seats.
+
+**Decided (Alec, 2026-11-09: "good recomendations", on Claude's recommendation).** The seats' initialization policy of §10.5: each operator concept's identity and its primitive execution interface are declared at construction; its direction, confidence, participations, relations and applicability are learned from experience. The application convention inside the pinned sentence stays an implementation choice of the round that builds the shared strata (§10.6). Both open items of §10.5 are closed.

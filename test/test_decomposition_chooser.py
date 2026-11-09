@@ -99,7 +99,7 @@ def test_native_training_keeps_joint_argmin_out_of_optimizer_and_registry(tmp_pa
             assert list(chooser.parameters()) == []
             assert all(p is not chooser.weight for group in optimizer.param_groups for p in group['params'])
             assert 'reconstruction.decomposition' not in model._sentence_cost_registry._terms
-            assert 'reconstruction.walk_policy' in model._sentence_cost_registry._terms
+            assert 'reconstruction.walk_policy' not in model._sentence_cost_registry._terms
 
         checkpoint = tmp_path / 'retired_pair.ckpt'
         model.save_weights(str(checkpoint))

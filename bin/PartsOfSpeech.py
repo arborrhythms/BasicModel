@@ -65,6 +65,8 @@ class PartsOfSpeech(nn.Module):
         self.concepts = {}
         self._revision = 0
         self.frozen = False
+        self.register_buffer('_value_arguments', torch.empty(0, 0), persistent=False)
+        self._value_start = self._value_width = 0
         if space is not None:
             self.bind(space)
 
@@ -82,6 +84,29 @@ class PartsOfSpeech(nn.Module):
         self.concepts = space.prebuild_formal_arguments(self.arguments)
         self._space = weakref.ref(space)
         self._revision += 1
+        self.prepare_values()
+
+    @torch.no_grad()
+    def prepare_values(self):
+        """Stage the same committed argument directions used by argument_scores."""
+        if self._space is None or self._space() is None or not self.arguments:
+            return
+        owner = self.owner
+        bank = owner.similarity_codebook
+        derived = getattr(bank, 'mereology', None)
+        self._value_start = 0 if derived is None else derived.percept_event_width
+        self._value_arguments = torch.stack([self._direction(self.concepts[name])
+            for name in self.arguments]) * self.radii()[:, None]
+        self._value_width = self._value_arguments.shape[-1]
+
+    def value_scores(self, values):
+        """Candidate coverage in the same normalized meaning coordinates."""
+        from IdentityRows import meet_ratios
+        if not self._value_width:
+            return values.new_zeros(*values.shape[:-1], len(self.arguments))
+        direction = torch.nn.functional.normalize(
+            values[..., self._value_start:self._value_start+self._value_width], dim=-1)
+        return meet_ratios(direction[..., None, :], self._value_arguments.to(values))[0]
 
     @property
     def owner(self):

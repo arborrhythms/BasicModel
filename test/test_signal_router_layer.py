@@ -23,6 +23,7 @@ def test_layer_forward_shapes():
 def test_chosen_operator_has_full_gradient_and_separate_probability_credit():
     x = torch.tensor([[[1.], [2.]]], requires_grad=True)
     step = OperationSelectionLayer(d_model=1, ops=[Add(), Mul()])
+    step.separate_chooser = True
     with torch.no_grad():
         step.reduce_anchor.zero_()
     _, path, route = step(x)

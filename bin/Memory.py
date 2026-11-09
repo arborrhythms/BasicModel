@@ -937,6 +937,7 @@ class Event:
     modifiers: tuple = ()
     modal_taught: bool = False
     case_value: torch.Tensor | None = None
+    verb_meaning: torch.Tensor | None = None
 
 
 class Timeline(NamedTuple):
@@ -1343,7 +1344,7 @@ class MediumTermMemory(MemoryStore):
             for index, item in enumerate(entry.timelines)))
 
     def event(self, token, occurrence, *, verb, role, when, before=None, basis=None,
-              after=None, modifiers=(), timeline=0, case_value=None):
+              after=None, modifiers=(), timeline=0, case_value=None, verb_meaning=None):
         key = self.token_of(token)
         if key is None or role not in (0, 2) or type(verb) is not int:
             raise ValueError('an event requires a retained identity, verb and participant role')
@@ -1360,7 +1361,8 @@ class MediumTermMemory(MemoryStore):
             self._value(basis) if torch.is_tensor(basis) else basis,
             after=None if after is None else self._value(after),
             modifiers=tuple(self._value(value) for value in modifiers),
-            case_value=None if case_value is None else self._value(case_value))
+            case_value=None if case_value is None else self._value(case_value),
+            verb_meaning=None if verb_meaning is None else self._value(verb_meaning))
         previous = next((item for item in old.events
                          if (item.occurrence, item.role) == (occurrence, role)), None)
         if previous is not None:
@@ -1484,8 +1486,8 @@ class MediumTermMemory(MemoryStore):
             return (event.occurrence, event.verb, event.role, event.when,
                 snapshot(event.before), snapshot(event.basis), event.taught,
                 snapshot(event.after), tuple(map(snapshot, event.modifiers)), event.modal_taught,
-                snapshot(event.case_value))
-        return dict(version=10, candidate_counter=self.candidate_counter, field_width=self.field_width,
+                snapshot(event.case_value), snapshot(event.verb_meaning))
+        return dict(version=11, candidate_counter=self.candidate_counter, field_width=self.field_width,
             transient_ids=snapshot(self.transient_ids), transient_used=snapshot(self.transient_used),
             closes=tuple(self.closes.items()),
             accesses=tuple((key, tuple(value.items())) for key, value in self.accesses.items()),
@@ -1506,8 +1508,8 @@ class MediumTermMemory(MemoryStore):
             self.transient_used.zero_()
             self.candidate_counter = 0
             return
-        if not isinstance(state, dict) or state.get('version') not in (8, 9, 10):
-            raise ValueError('MTM checkpoint requires transient pool version 8, 9 or 10')
+        if not isinstance(state, dict) or state.get('version') not in (8, 9, 10, 11):
+            raise ValueError('MTM checkpoint requires transient pool version 8, 9, 10 or 11')
         counter = state.get('candidate_counter', 0)
         if type(counter) is not int or counter < 0 or state.get('field_width', self.field_width) != self.field_width:
             raise ValueError('candidate checkpoint disagrees with construction')
@@ -1571,7 +1573,7 @@ class MediumTermMemory(MemoryStore):
                     raise ValueError('identity checkpoint values have different widths')
                 if device is not None:
                     value = value.to(device)
-                size = 11 if state['version'] >= 7 else 10 if state['version'] >= 5 else 7 if state['version'] == 4 else 4
+                size = 12 if state['version'] >= 11 else 11 if state['version'] >= 7 else 10 if state['version'] >= 5 else 7 if state['version'] == 4 else 4
                 if not isinstance(history, (tuple, list)) or any(
                         not isinstance(event, (tuple, list)) or len(event) != size for event in history):
                     raise ValueError('invalid identity checkpoint event')
@@ -1584,7 +1586,7 @@ class MediumTermMemory(MemoryStore):
                             or (event.basis is not None and not torch.is_tensor(event.basis)
                                 and (type(event.basis) is not int or event.basis < -1))):
                         raise ValueError('invalid identity event basis or teacher metadata')
-                    for snapshot in (event.before, event.after, event.case_value, *event.modifiers):
+                    for snapshot in (event.before, event.after, event.case_value, event.verb_meaning, *event.modifiers):
                         if snapshot is not None and self._value(snapshot).shape != value.shape:
                             raise ValueError('invalid identity event snapshot')
                     if torch.is_tensor(event.basis) and self._value(event.basis).shape != value.shape:
@@ -1593,6 +1595,7 @@ class MediumTermMemory(MemoryStore):
                     before=None if event.before is None else self._value(event.before).to(value),
                     after=None if event.after is None else self._value(event.after).to(value),
                     case_value=None if event.case_value is None else self._value(event.case_value).to(value),
+                    verb_meaning=None if event.verb_meaning is None else self._value(event.verb_meaning).to(value),
                     modifiers=tuple(self._value(item).to(value) for item in event.modifiers),
                     basis=self._value(event.basis).to(value) if torch.is_tensor(event.basis) else event.basis)
                     for event in events)

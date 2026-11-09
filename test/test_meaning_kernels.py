@@ -383,6 +383,8 @@ def test_selected_inverse_matches_full_menu_values_and_pullbacks(paired):
             op.meaning_kernel.bias.fill_(.005 * index)
     language = SimpleNamespace(_generate_binary_ops=binary, _generate_unary_ops=unary,
                               decomposition_chooser=DecompositionChooser())
+    from generation_fixtures import undeclared_arguments
+    undeclared_arguments(language)
     for name in ('reverse_binary_step', '_reverse_of_binary_op', '_finish_binary_inverse',
                  'generate_unary_step'):
         setattr(language, name, MethodType(getattr(LanguageSpace, name), language))
@@ -426,6 +428,8 @@ def test_selected_walk_matches_live_gradients_and_steps_only_used_parameters(pai
     unary = (NullLayer().double(),)
     language = SimpleNamespace(_generate_binary_ops=binary, _generate_unary_ops=unary,
                               decomposition_chooser=DecompositionChooser())
+    from generation_fixtures import undeclared_arguments
+    undeclared_arguments(language)
     for name in ('reverse_binary_step', '_reverse_of_binary_op', '_finish_binary_inverse',
                  'generate_unary_step', 'choose_generate'):
         setattr(language, name, MethodType(getattr(LanguageSpace, name), language))

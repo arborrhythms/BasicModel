@@ -34,7 +34,7 @@ def test_sentence_trials_keep_their_own_perception_pullbacks(tmp_path, monkeypat
     import util
     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
     model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',
-        training_overrides={'reconstructInLoop': False})
+        training_overrides={'reconstructInLoop': False}, architecture_overrides={'separateChooser': True})
     model._tensor_peer_while_eager = True
     optimizer = model.getOptimizer(lr=1e-4)
     model.inputSpace.data.has_supervised_outputs=False
@@ -54,13 +54,28 @@ def test_sentence_trials_keep_their_own_perception_pullbacks(tmp_path, monkeypat
         owned.gradients = gradients
         return trial, owned
     monkeypatch.setattr(SentenceCompose, 'fork_perception', observed)
+    import ObjectiveOwnership
+    count_calls = []
+    backward_owned = ObjectiveOwnership.backward_owned
+    def counted(costs, owners, **kwargs):
+        if kwargs.get('pullback') is not None:
+            count_calls.append(sum(torch.is_tensor(cost) and cost.requires_grad
+                and key.removeprefix('penalty.').split('.')[0] in ('reconstruction', 'chooser', 'attention')
+                and bool(owners.get(key.removeprefix('penalty.').split('.')[0], ()))
+                for key, cost in costs.items()))
+        return backward_owned(costs, owners, **kwargs)
+    monkeypatch.setattr(ObjectiveOwnership, 'backward_owned', counted)
     try:
         raw = model.inputSpace.prepInput(['a b', 'c d'])
         model.runBatch(train=True, optimizer=optimizer, batchSize=2, split='runtime',
             batch_override=(raw, torch.empty(2, 0)))
         assert created == [0, 1], created
-        # Reconstruction, attention and chooser each read their trial's perception.
-        assert called == [0, 0, 0, 1, 1, 1]
+        # Every graph-bearing perception owner uses its own trial's pullback.
+        assert len(count_calls) == 2
+        assert called == [0] * count_calls[0] + [1] * count_calls[1], called
+        from test_item20_round34_projection import record
+        record('perception-pullbacks', dict(before=[0,0,0,1,1,1], after=called,
+            counts=count_calls, separateChooser=True))
         assert versions[0] == versions[1], 'an optimizer update separated the sentence trials'
     finally:
         model.End()
@@ -91,7 +106,8 @@ def test_replaying_real_greedy_derivation_ties_in_every_row(monkeypatch):
     try:
         batch = next(iter(data.data_loader(split='train', num_streams=4)))
         raw = model.inputSpace.prepInput(batch[0])
-        target = model.outputSpace.prepOutput(batch[1])
+        model.inputSpace.data.has_supervised_outputs = False
+        target = torch.empty(4, 0)
         model.runBatch(train=True, optimizer=optimizer, batchSize=4,
                        split='runtime', batch_override=(raw, target))
         assert comparisons

@@ -40,7 +40,7 @@ def test_trial_and_batch_answer_leave_the_decoder_to_reconstruction(monkeypatch,
         params = tuple(model.languageSpace.generate_policy.parameters())
         gradients = torch.autograd.grad(result.actual.square().mean(), (point,),
                                         allow_unused=True, retain_graph=True)
-        assert gradients[0] is None
+        assert gradients[0] is not None, 'the default shares the answer trunk'
         from ObjectiveOwnership import backward_owned
         optimizer = model.getOptimizer(lr=.01)
         owners = model.objective_parameter_groups(optimizer)

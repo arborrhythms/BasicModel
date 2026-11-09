@@ -21,6 +21,7 @@ warnings.filterwarnings(
     message="Initializing zero-element tensors is a no-op",
     category=UserWarning,
 )
+from Generative import WALK_FEATURE_WIDTH
 import torch
 from Memory import STMChunks
 import ChunkJournal
@@ -1787,7 +1788,7 @@ class BaseModel(Mereology, nn.Module):
 
         arch = cfg["architecture"]
         self._configure_generate_budget(arch.get('generateBudget', 32))
-        self.separate_chooser = bool(arch.get('separateChooser', True))
+        self.separate_chooser = bool(arch.get('separateChooser', False))
         self.reconstruction_jitter = float(arch.get('reconstructionJitter', 0.))
         if not math.isfinite(self.reconstruction_jitter) or not 0 <= self.reconstruction_jitter <= 1:
             raise ValueError('reconstructionJitter must be finite and in [0, 1]')
@@ -2398,12 +2399,9 @@ class BaseModel(Mereology, nn.Module):
             TheXMLConfig.training('reconstructionReferenceWeight', .1))
         if not math.isfinite(self.reconstruction_reference_weight) or self.reconstruction_reference_weight < 0:
             raise ValueError('reconstructionReferenceWeight must be finite and nonnegative')
-        self.modal_teacher_weight = float(TheXMLConfig.training('modalTeacherWeight', .1))
-        if not math.isfinite(self.modal_teacher_weight) or self.modal_teacher_weight < 0:
-            raise ValueError('modalTeacherWeight must be finite and nonnegative')
-        self.verb_teacher_weight = float(TheXMLConfig.training('verbTeacherWeight', .1))
-        if not math.isfinite(self.verb_teacher_weight) or self.verb_teacher_weight < 0:
-            raise ValueError('verbTeacherWeight must be finite and nonnegative')
+        self.action_rate_ratio = float(TheXMLConfig.training('actionRateRatio', 1.))
+        if not math.isfinite(self.action_rate_ratio) or not 0 < self.action_rate_ratio <= 1:
+            raise ValueError('actionRateRatio must be finite and in (0, 1]')
         # Slice 3: the answer realisation's generate walk as the second
         # compiled loop (its own state, policy and termination).
         self.output_in_loop = bool(
@@ -2620,17 +2618,19 @@ class BaseModel(Mereology, nn.Module):
     def ownership_gradient_diagnostics(self, optimizer):
         """Report actual backward writers, including inactive owned parameters."""
         names = {id(p): name for name, p in self.named_parameters()}
-        observed = getattr(self, '_objective_gradient_writers', {})
+        from SentenceTraining import separate
+        restricted = separate(self)
+        observed = getattr(self, '_objective_gradient_writers' if restricted else '_projection_writers', {})
         owners = self.objective_parameter_groups(optimizer)
         rows = []
         for owner in ('reconstruction', 'expectation', 'output', 'attention'):
             for parameter in owners[owner]:
                 writers = sorted(observed.get(id(parameter), ()))
-                if writers and writers != [owner]:
+                if restricted and writers and writers != [owner]:
                     raise RuntimeError('objective ownership audit failed')
                 rows.append(dict(parameter=names.get(id(parameter), '<unregistered>'),
                     owner=owner, writers=writers, elements=parameter.numel()))
-        return dict(parameters=rows, conflicts=0,
+        return dict(mode='separate' if restricted else 'projection', parameters=rows, conflicts=0,
                     active=sum(bool(row['writers']) for row in rows),
                     inactive=sum(not row['writers'] for row in rows))
 
@@ -2647,7 +2647,7 @@ class BaseModel(Mereology, nn.Module):
         TheMessage('  [objective-ownership] ' + json.dumps(report, sort_keys=True))
 
     def _backward_training_loss(self, total_loss, amp_scaler=None, *, optimizer=None):
-        """Restrict every registered objective to its own optimizer weights."""
+        """Project answer against reconstruction, or use explicit separate owners."""
         from ObjectiveOwnership import registry_costs, backward_owned
         sentence = bool(getattr(self, '_sentence_backward', False))
         optimizer = self._sentence_optimizer if sentence else optimizer
@@ -2663,8 +2663,9 @@ class BaseModel(Mereology, nn.Module):
             if sentence and getattr(self, '_sentence_pullback', None) is not None:
                 raise RuntimeError('single backward must retain the perception graph')
             measure(self, costs, optimizer, reconstruction_strength=drawn)
-            combined = surrogate(costs, drawn)
-            (combined if amp_scaler is None else amp_scaler.scale(combined)).backward()
+            from GradientProjection import backward
+            backward(self, costs, optimizer, drawn,
+                     scale=1. if amp_scaler is None else amp_scaler.get_scale())
             self._single_backward_calls = getattr(self, '_single_backward_calls', 0) + 1
             return
         measure(self, costs, optimizer, pullback=getattr(self, '_sentence_pullback', None) if sentence else None,
@@ -2880,7 +2881,10 @@ class BaseModel(Mereology, nn.Module):
         # Momentum .9 retains the existing first-moment time constant. The
         # learning rate stays configured; there is no variance normalization.
         dense_reconstruction = [p for p in reconstruction if p.data_ptr() not in row_local_ptrs]
-        optimizers.append(SGD(dense_reconstruction or [{'params': []}], lr=lr, momentum=.9))
+        from ActionLearning import rate_groups
+        action_groups = rate_groups(dense_reconstruction, getattr(self, 'languageSpace', None),
+                                    getattr(self, 'action_rate_ratio', 1.), lr)
+        optimizers.append(SGD(action_groups or [{'params': []}], lr=lr, momentum=.9))
         optimizers[-1].objective_owner = 'reconstruction'
         row_reconstruction = [p for p in reconstruction if p.data_ptr() in row_local_ptrs]
         if row_reconstruction:
@@ -9727,8 +9731,8 @@ class BasicModel(BaseModel):
                         meter.require('space-read')
             self._last_output_comparison=audit
             from WalkTrials import observe_comparison, stage_generate_credit
-            stage_generate_credit(self, audit, self._last_output_walk_trace[-1],self._last_output_walk_trace[-2])
-            held=getattr(self,'_sentence_walk_residuals',None)
+            stage_generate_credit(self, audit, self._last_output_walk_trace[-1],self._last_output_walk_trace[-2], owner='output')
+            held=getattr(self,'_sentence_output_walk_residuals',None)
             if held is not None:
                 held.append(audit['selected_residual'])
             observe_comparison(self,"generate.output",audit,sentence=getattr(self,"_open_sentence_slot",None))
@@ -9887,7 +9891,7 @@ class BasicModel(BaseModel):
                 torch.zeros(batch,1,device=actual.device,dtype=torch.bool),
                 torch.zeros(batch,device=actual.device,dtype=torch.bool),
                 actual.new_zeros(batch),torch.ones(batch,device=actual.device,dtype=torch.bool),
-                actual.new_zeros(batch,1,len(self.languageSpace._generate_binary_ops)+len(self.languageSpace._generate_unary_ops)+1,5),
+                actual.new_zeros(batch,1,len(self.languageSpace._generate_binary_ops)+len(self.languageSpace._generate_unary_ops)+1,WALK_FEATURE_WIDTH),
                 actual.new_zeros(batch,1,self.languageSpace._generate_policy_width))
         return construction
 
@@ -12755,7 +12759,7 @@ class BasicModel(BaseModel):
         from ThoughtReferences import bindings as thought_bindings
         live_intuition = any(thought_bindings(meaning).get('_intuition_selected') is not None
             for meanings in derivation.answer_meanings for meaning in meanings)
-        if getattr(self, "separate_chooser", True) and not live_intuition and not getattr(self, '_live_intuition_read', False):
+        if getattr(self, "separate_chooser", False) and not live_intuition and not getattr(self, '_live_intuition_read', False):
             idea = fixed_input(idea, getattr(self, 'candidate_attention', None))
         context = derivation.conditioning_context
         idea = self._condition_answer_on_question(idea,
@@ -13410,8 +13414,11 @@ class BasicModel(BaseModel):
                 prior = exploit_actions.gather(1, t.reshape(1, 1).expand(B, 1)).reshape(B)
                 excluded = F.one_hot(prior.clamp_min(0), stop + 1).bool()
                 other_logits = logits.masked_fill(excluded, -torch.inf)
-                from Language import sample_eligible_logits
-                alternate = sample_eligible_logits(other_logits, departure_draw)
+                from Expectation import alternative_probabilities, sample_alternative
+                proposal = alternative_probabilities(other_logits,
+                    fraction=language._tree_layer(2).exploration_fraction,
+                    temperature=language._tree_layer(2).exploration_temperature)
+                alternate = sample_alternative(proposal, departure_draw)
                 choice = torch.where((t == departure) & legal.sum(-1).gt(1), alternate, choice)
                 choice = torch.where((t < departure) & (prior >= 0), prior, choice)
             if kept_actions is not None:
@@ -13447,8 +13454,9 @@ class BasicModel(BaseModel):
                 step_residual=errors.gather(1,choice[:,None,None].expand(B,1,3))[:,0]
                 step_residual=torch.where(used[:,None],step_residual,0.)
             residuals1=residuals.scatter(1,t.reshape(1,1,1).expand(B,1,3),step_residual[:,None])
-            features1=features.scatter(1,t.reshape(1,1,1,1).expand(B,1,stop+1,5),
-                torch.where(used[:,None,None],menu.features,0.)[:,None])
+            observed = torch.cat((menu.features, legal.to(menu.features)[..., None]), -1)
+            features1=features.scatter(1,t.reshape(1,1,1,1).expand(B,1,stop+1,WALK_FEATURE_WIDTH),
+                torch.where(used[:,None,None],observed,0.)[:,None])
             rewritten = torch.where((binary | unary)[:, None], left, parent)
             stack1 = stack.clone()
             stack1[ar, pos] = torch.where(pop[:, None], 0., rewritten)
@@ -13482,7 +13490,7 @@ class BasicModel(BaseModel):
                 torch.ones((), device=event.device, dtype=torch.bool),
                 zeros.new_zeros(B, N), event.new_zeros(B, T, cw),
                 torch.ones(B,device=event.device,dtype=torch.bool),event.new_zeros(B,T,3),
-                event.new_zeros(B,T,stop+1,5))))
+                event.new_zeros(B,T,stop+1,WALK_FEATURE_WIDTH))))
         index = (torch.arange(T, device=event.device)[None] + (T-count)[:, None]).clamp_max(T-1)
         out = emitted.gather(1, index[..., None].expand(B, T, D))
         keep = torch.arange(T, device=event.device)[None] < count[:, None]
@@ -14188,6 +14196,7 @@ class BasicModel(BaseModel):
         self._reading_lesson_reports = []
         self._sentence_reconstructions = []
         self._objective_gradient_writers = {}
+        self._projection_writers = {}
         # Keep the initial and later compiled entries structurally identical.
         self._compose_fork = self._compose_forced_slots = None
         self._compose_sampling_scale = None
@@ -15190,6 +15199,7 @@ class BasicModel(BaseModel):
             if (_every > 0 and int(getattr(
                     self, "_training_step_count", 0) or 0) % _every == 0):
                 self._sample_gradient_diagnostics(gradient_objectives, optimizer)
+            step_before = {}
             if not totalLoss.requires_grad:
                 # An input-only batch already trained at its sentence endings.
                 # With no batch-end teacher term there is no third backward.
@@ -15202,6 +15212,8 @@ class BasicModel(BaseModel):
                 self._backward_training_loss(
                     totalLoss, amp_scaler, optimizer=optimizer)
                 self._assert_finite_train_state("after backward")
+                from ActionLearning import snapshot as snapshot_steps
+                step_before = snapshot_steps(self)
                 if self.ergodic:
                     self.paramUpdate()
                 # CUDA fp16 GradScaler owns its fused unscale/non-finite
@@ -15213,6 +15225,8 @@ class BasicModel(BaseModel):
                 self._backward_training_loss(
                     totalLoss, optimizer=optimizer)
                 self._assert_finite_train_state("after backward")
+                from ActionLearning import snapshot as snapshot_steps
+                step_before = snapshot_steps(self)
                 preflight_finite_gradients(
                     optimizer, self.named_parameters(),
                     epoch_gradients=getattr(self, '_epoch_objective_gradients', None),
@@ -15222,7 +15236,9 @@ class BasicModel(BaseModel):
                     self.paramUpdate()
                 optimizer.step()
                 _fineweb_step_performed = True
-            self._project_sentence_parameters()
+            self._project_sentence_parameters(optimizer)
+            from ActionLearning import record as record_steps
+            record_steps(self, step_before)
             self._assert_finite_train_state("after optimizer.step")
             # The episode credit boundary (spec 8.2): durable LTM detaches
             # here, after the one optimizer step of the episode.
@@ -17543,7 +17559,7 @@ class BasicModel(BaseModel):
                 'the answer map cannot hold the concluded understanding')
             record = understanding if understanding is not None else getattr(self, '_last_sentence_understanding', None)
             from AttentionCredit import fixed_input
-            value = (slots if not getattr(self, "separate_chooser", True) or getattr(self, '_live_intuition_read', False) else
+            value = (slots if not getattr(self, "separate_chooser", False) or getattr(self, '_live_intuition_read', False) else
                      fixed_input(slots, getattr(self, 'candidate_attention', None)))
             if record is not None:
                 value = record.primed.reader_value(value)
@@ -17562,7 +17578,7 @@ class BasicModel(BaseModel):
             value = result.materialize()
             result.set_event(value + reader(record,
                 attention=getattr(self, 'candidate_attention', None),
-                live=not getattr(self, "separate_chooser", True)).reshape_as(value))
+                live=not getattr(self, "separate_chooser", False)).reshape_as(value))
         return result
 
     @staticmethod
@@ -18073,6 +18089,7 @@ class BasicModel(BaseModel):
     def _stage_reconstruction_teacher(self):
         """Stage detached surface targets before any compiled sentence body."""
         self._occupation_word_table = None
+        self.languageSpace.parts_of_speech.prepare_values()
         trace = self._reconstruction_stack()
         isp = getattr(self, "inputSpace", None)
         if trace is None or isp is None or not getattr(self, "word_brackets", False):
@@ -19950,12 +19967,12 @@ class BasicModel(BaseModel):
                 write(position_slab, choice.position), write(action_slab, choice.action),
                 write(attempted_slab, choice.valid))
 
-    def _project_sentence_parameters(self):
+    def _project_sentence_parameters(self, optimizer=None):
         with torch.no_grad():
             subspace = getattr(self.wholeSpace, 'subspace', None)
             primitives = getattr(getattr(subspace, 'what', None), 'primitive_properties', None)
             if primitives is not None:
-                primitives.project()
+                primitives.project(optimizer=optimizer)
             for cs in self.conceptualSpaces:
                 allocator = getattr(cs, '_concept_allocator', None)
                 if allocator is not None:
@@ -20033,7 +20050,7 @@ class BasicModel(BaseModel):
         # credit remains one policy term at scale one; candidate attention
         # has its separate local departure/lesson terms.
         self._sentence_cost_registry.add('reconstruction.compose_score_function', surrogate,
-            category='reconstruction', objective='chooser')
+            category='reconstruction', objective='chooser', side='A')
         active = self._sentence_cost_registry.row_mask
         return (surrogate.mean() if active is None else
                 (surrogate * active).sum() / active.sum().clamp_min(1))
@@ -20055,6 +20072,8 @@ class BasicModel(BaseModel):
         # The same proximal regularizer belongs to each actual smooth update.
         # Input-only batches may have no additional batch-end backward at all.
         self._configure_concept_readout_l1(optimizer)
+        from ActionLearning import snapshot as snapshot_steps
+        step_before = snapshot_steps(self)
         if self.ergodic:
             self.paramUpdate()
         if self._sentence_amp_scaler is not None:
@@ -20065,7 +20084,9 @@ class BasicModel(BaseModel):
                 epoch_gradients=getattr(self, '_epoch_objective_gradients', None),
                 cache_for_step=hasattr(optimizer, '_step_without_finite_preflight'))
             optimizer.step()
-        self._project_sentence_parameters()
+        self._project_sentence_parameters(optimizer)
+        from ActionLearning import record as record_steps
+        record_steps(self, step_before)
         self._advance_codebook_parameter_versions()
         self._assert_finite_train_state('after sentence optimizer.step')
         optimizer.zero_grad()
@@ -20278,7 +20299,7 @@ class BasicModel(BaseModel):
         certified=torch.stack((trace[-5],other[-5]),-1).detach()
         wins = eligible.any(-1) & finished_wins(costs, pending,certified=certified)
         self._last_decoder_comparison = dict(costs=costs, identity_audit=identity_costs, wins=wins, departure=departure,
-            pending=pending, certified=certified,residual=residuals.detach(),
+            pending=pending, certified=certified,residual=residuals.detach(), eligible=eligible.detach(),
             greedy=trace[4].detach(), explore=other[4].detach())
         stage_generate_credit(self, self._last_decoder_comparison, other[-1],other[-2])
         self._last_decoder_byte_identity = torch.where(wins, byte_costs[1].detach(), byte_costs[0].detach())
@@ -20316,70 +20337,13 @@ class BasicModel(BaseModel):
             width=width, closing_base=closing_base, closing_width=closing_width,
             attempted=self._reconstruction_stack()._choice_attempted)
 
-    def _decomposition_walk_teacher_loss(self, observation, record):
-        """Teach undo/unary/STOP on the actual compose tree's detached states.
-
-        Each leaf teaches STOP; each recorded parent teaches its declared
-        generate face. Replaying these states is teacher forcing, independent
-        of the free decoder's decisions, legal mask and numerical inverses.
-        No target or compose trace enters inference.
-        """
-        language = self.languageSpace
-        stop = len(language._generate_binary_ops) + len(language._generate_unary_ops)
-        keys = language._generate_rule_keys.detach().cpu().tolist() if language.generate_policy is not None else []
-        mappings = {}
-        for kind, arity, rules in ((1, 2, language._compose_binary_rules),
-                                    (2, 1, language._compose_unary_rules)):
-            for index, rule in enumerate(rules):
-                key = language._generate_rule_key(rule, arity)
-                mappings[kind, index] = keys.index(key) if key in keys else -1
-        terms, reports = [], []
-        for b, program in enumerate(observation['entries']):
-            states, targets = [], []
-            if program is not None and program.operation_values is not None:
-                for index, (kind, operation, word) in enumerate(program.actions.detach().cpu().tolist()):
-                    if kind == 0:
-                        value, target = program.leaves[word], stop
-                    elif kind in (1, 2):
-                        value = program.operation_values[index, 2]
-                        target = mappings.get((kind, operation), -1)
-                    else:
-                        continue
-                    reports.append(dict(row=b, kind=kind, operation=operation, target=target,
-                                        present=target >= 0))
-                    if target >= 0:
-                        states.append(value.detach())
-                        targets.append(target)
-            if states and language.generate_policy is not None:
-                from Generative import inverse_menu, propose_actions
-                bank=record.primed
-                features=[]
-                with torch.no_grad():
-                    proposed = propose_actions(language,bank.codes[b:b+1],bank.valid[b:b+1],
-                        groups=None if bank.verb_groups is None else bank.verb_groups[b:b+1],
-                        terminal_valid=bank.terminal_valid[b:b+1],limit=self.reconstruction_basis_limit,
-                        whole_bank=None if bank.form_wholes is None else bank.form_wholes.for_stream(b))
-                    for value in states:
-                        menu=inverse_menu(language,value[None],torch.ones(1,device=value.device,dtype=torch.bool),
-                            basis=bank.codes[b:b+1],basis_valid=bank.valid[b:b+1],priming=bank.weights[b:b+1],
-                            terminal_valid=bank.terminal_valid[b:b+1],limit=self.reconstruction_basis_limit,
-                            case_bank=None if bank.case_bank is None else bank.case_bank.for_stream(b),
-                            whole_bank=None if bank.form_wholes is None else bank.form_wholes.for_stream(b),
-                            action_candidates=proposed)
-                        features.append(menu.features[0])
-                logits = language.generate_policy_logits(torch.stack(states),torch.stack(features))
-                target = torch.tensor(targets, device=logits.device)
-                terms.append(F.cross_entropy(logits, target))
-            else:
-                terms.append(record.root.new_zeros(()))
-        self._last_decomposition_walk_teacher = reports
-        return torch.stack(terms)
-
     def _sentence_path_cost(self, state, sid, active):
         """Both trials use the registry's named, relative objectives."""
         self._sentence_generation_cursors = {}
-        self._sentence_walk_credits = []
+        self._sentence_decoder_walk_credits = []
+        self._sentence_output_walk_credits = []
         self._sentence_walk_residuals = []
+        self._sentence_output_walk_residuals = []
         self._publish_sentence_scratch(state)
         current_stm, lang, _feedback = state
         B, W, D = self._tensor_pushed_ideas.shape
@@ -20489,8 +20453,6 @@ class BasicModel(BaseModel):
             # Keep its value as an audit, as under the restricted backward.
             errors.add('expectation.equal', equal_cost.detach(), weight=self.equality_loss_weight,
                        category='expectation')
-        observation['walk_loss'] = (self._decomposition_walk_teacher_loss(observation, record)
-            if getattr(self, '_sentence_training', False) and torch.is_grad_enabled() else None)
         if getattr(self, '_reading_lesson_enabled', False) and self.grammar_lesson_weight > 0:
             source_rows = self._reading_lesson_sources
             for b, program in enumerate(observation['entries']):
@@ -20577,15 +20539,23 @@ class BasicModel(BaseModel):
             errors.error(category + '.definition_fold', definition_cost, 1., mask=active,
                          category=category)
         BasicModel._sentence_answer_error(self, state, sid, active, observation, registry=errors)
-        if self._sentence_walk_residuals:
-            residual=torch.stack(self._sentence_walk_residuals).sum(0)
-            for lane, name in enumerate(('form', 'for', 'against')):
-                errors.error('reconstruction.walk_residual.' + name, residual[:,lane], 1.,
-                             mask=active, category='reconstruction')
-        self._sentence_walk_residuals=None
-        observation['walk_credit'] = (torch.stack(self._sentence_walk_credits).sum(0)
-            if self._sentence_walk_credits else None)
-        self._sentence_walk_credits = None
+        for owner, attr in (('reconstruction', '_sentence_walk_residuals'),
+                            ('output', '_sentence_output_walk_residuals')):
+            held = getattr(self, attr)
+            if held:
+                residual = torch.stack(held).sum(0)
+                for lane, name in enumerate(('form', 'for', 'against')):
+                    errors.error(owner + '.walk_residual.' + name, residual[:, lane], 1.,
+                                 mask=active, category=owner, objective='reconstruction',
+                                 side='R' if owner == 'reconstruction' else 'A')
+            setattr(self, attr, None)
+        observation['walk_credit'] = {}
+        for owner in ('decoder', 'output'):
+            attr = '_sentence_' + owner + '_walk_credits'
+            held = getattr(self, attr)
+            if held:
+                observation['walk_credit'][owner] = torch.stack(held).sum(0)
+            setattr(self, attr, None)
         if getattr(self, '_sentence_training', False):
             configure_l1 = getattr(self, '_configure_concept_readout_l1', None)
             penalty = None if configure_l1 is None else configure_l1(None, stage=False)
@@ -20702,7 +20672,7 @@ class BasicModel(BaseModel):
             # idea above stays live for the shared backward.
             meanings = [None if meaning is None else meaning.detached() for meaning in meanings]
             fields = tuple(None if value is None else SentenceEndState(value) for value in meanings)
-            if getattr(self, 'separate_chooser', True) and getattr(self, 'candidate_attention', None) is None and not getattr(self, '_live_intuition_read', False):
+            if getattr(self, 'separate_chooser', False) and getattr(self, 'candidate_attention', None) is None and not getattr(self, '_live_intuition_read', False):
                 idea = idea.detach()
             context, _ = self._what_grammar_context(questions, device=root.device, dtype=root.dtype)
             held = AnswerDerivation(answer_symbol=None, sentence_states=fields,
@@ -21002,11 +20972,8 @@ class BasicModel(BaseModel):
                             document=document, position=position,
                             training=bool(self._sentence_training),
                             verb_action=self.languageSpace.verb_action(), errors=self.errors,
-                            verb_teacher_weight=getattr(self, 'verb_teacher_weight', .1),
-                            teacher_records=getattr(self, '_verb_teacher_records', None),
                             modifier_action=self.languageSpace.modifier_action(),
-                            modal_teacher_weight=getattr(self, 'modal_teacher_weight', .1),
-                            modal_records=getattr(self, '_modal_teacher_records', None), reading=entries[b])
+                            reading=entries[b])
                         state = (resolver.committed_chunks(state[0],reference_plan,written_clauses[b],stream=b),
                                  state[1],state[2])
                         self.__dict__.setdefault('_reference_close_audit', {})[(int(sid), b)] = resolver.last_audit
@@ -21095,6 +21062,7 @@ class BasicModel(BaseModel):
                 _bound, view = bound_view(state, view, sid, row, result.meaning)
                 self._last_sentence_understanding = view['record']
                 self._sentence_understandings[sid] = view['record']
+        self.languageSpace.parts_of_speech.prepare_values()
         table = getattr(self, '_occupation_word_table', None)
         if table is not None:
             # A packed batch may continue with another sentence. Refresh at
@@ -21301,8 +21269,6 @@ class BasicModel(BaseModel):
     def _run_sentence_word_bricks(self, words, active, sentence_ids, stm, sub, sym,
                                 lang, empty_feedback, perceive, symbolize, native_support, compose_word):
         from SentenceCompose import sentence_pair, fork_perception
-        self._verb_teacher_records = []
-        self._modal_teacher_records = []
         # Raw forward enters here without runBatch's eager setup. Compiled
         # reconstruction must find its autograd anchors already allocated.
         _ensure_grad_anchors(words.device)
@@ -21312,6 +21278,9 @@ class BasicModel(BaseModel):
         slots = self.inputSpace._packed_sentence_slot_mask
         feedback = empty_feedback
         live_root = None
+        perception_sub, perception_sym = sub, sym
+        perception_presences = self.symbolSpace._word_reference_presences
+        written = torch.zeros_like(active)
         for sid in range(slots.shape[1]):
             present = slots[:, sid].to(torch.bool)
             if not bool(present.any()):
@@ -21644,7 +21613,7 @@ class BasicModel(BaseModel):
                         self._attention_meters = meters
                 if self._sentence_training and torch.is_grad_enabled():
                     pending_steps[-1] = (*pending_steps[-1], self._sentence_cost_registry,
-                        observation['walk_loss'], observation['walk_credit'])
+                        observation['walk_credit'])
                     reader_registries.append(self._sentence_cost_registry)
                     comparison_registries.append(self._sentence_comparison_registry)
                 reader_observations.append(self._sentence_reader_observation)
@@ -21661,7 +21630,7 @@ class BasicModel(BaseModel):
             def train_trial(loss):
                 # Both graphs now exist. Restore this trial's perception
                 # pullback and scratch bindings before its own backward.
-                trial, pullback, path, registry, walk_loss, walk_credit = pending_steps.pop(0)
+                trial, pullback, path, registry, walk_credit = pending_steps.pop(0)
                 self._sentence_trial, self._sentence_pullback = trial, pullback
                 self._sentence_cost_registry = registry
                 from SentenceCredit import reader_weights, reader_costs, expectation_costs
@@ -21687,12 +21656,13 @@ class BasicModel(BaseModel):
                 self._restore_sentence_state(path)
                 loss = registry.total()
                 loss = (loss * registry.row_mask).sum() / registry.row_mask.sum().clamp_min(1)
-                if walk_loss is not None and walk_loss.requires_grad:
-                    registry.add('reconstruction.walk_policy', walk_loss, category='reconstruction')
-                    loss = loss + (walk_loss * registry.row_mask).sum() / registry.row_mask.sum().clamp_min(1)
-                if walk_credit is not None and walk_credit.requires_grad:
-                    registry.add('reconstruction.walk_credit', walk_credit, category='reconstruction', objective='chooser')
-                    loss = loss + (walk_credit * registry.row_mask).sum() / registry.row_mask.sum().clamp_min(1)
+                for owner, credit in walk_credit.items():
+                    if credit.requires_grad:
+                        side = 'reconstruction' if owner == 'decoder' else 'output'
+                        registry.add(side + '.walk_credit', credit, category=side,
+                            objective='reconstruction' if owner == 'decoder' else 'chooser',
+                            side='R' if owner == 'decoder' else 'A')
+                        loss = loss + (credit * registry.row_mask).sum() / registry.row_mask.sum().clamp_min(1)
                 taught = field_trials[0].lesson_cost() if field_trials[0] is not None else None
                 if trial == 'exploit' and taught is not None:
                     registry.add('attention.reading_lesson', taught, category='other', objective='attention')
@@ -21712,13 +21682,11 @@ class BasicModel(BaseModel):
                             (draw['walk_count'] * draw['walk_rounds'])[:, None],
                             (draw['bind_round'] >= 0)[:, None], torch.stack(paired_costs, -1))
                         self._last_bind_score_function = details
-                        registry.add('expectation.bind_score_function', policy, category='expectation')
+                        registry.add('expectation.bind_score_function', policy, category='expectation', objective='expectation', side='A')
                         # The resolver retains its sole parameter owner, also
                         # used by known-referent supervision. Its chooser
                         # credit is the same sentence R + A surrogate.
                         credit = (policy * present).sum() / present.sum().clamp_min(1)
-                        self._sentence_reader_costs['expectation'] = (
-                            self._sentence_reader_costs.get('expectation', 0) + credit)
                         loss = loss + credit
                     if field_trials[-1] is not None and field_trials[-1].backup is not None:
                         backup = field_trials[-1].backup
@@ -21727,7 +21695,7 @@ class BasicModel(BaseModel):
                             backup['scale'][:, None], backup['rows'][:, None],
                             torch.stack(paired_costs, -1))
                         registry.add('attention.candidate_departure', policy,
-                                     category='other', objective='attention')
+                                     category='other', objective='attention', side='A')
                         loss = loss + policy.mean()
                 if single:
                     combine(single_costs, current_costs(self, registry, sentence=True))
@@ -21884,16 +21852,9 @@ class BasicModel(BaseModel):
             close_errors = Error(row_mask=present) if single else batch_errors
             previous_close_errors = getattr(self, '_sentence_close_errors', None)
             self._sentence_close_errors = close_errors
-            verb_start, modal_start = len(self._verb_teacher_records), len(self._modal_teacher_records)
             try:
                 chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
                 if single:
-                    from VerbLearning import register as register_verb
-                    from ModalLearning import register as register_modal
-                    register_verb(self._verb_teacher_records[verb_start:], close_errors)
-                    register_modal(self._modal_teacher_records[modal_start:], close_errors)
-                    del self._verb_teacher_records[verb_start:]
-                    del self._modal_teacher_records[modal_start:]
                     from ObjectiveOwnership import registry_costs
                     combine(single_costs, registry_costs(close_errors))
                     self._single_sentence_objectives = single_costs
@@ -21936,6 +21897,10 @@ class BasicModel(BaseModel):
             stm = tuple(v.detach() for v in stm)
             lang = tuple(v.detach() for v in lang)
             feedback = tuple(v.detach() for v in feedback)
+            if single:
+                from SentenceBoundary import finish
+                written = written | (active & (sentence_ids == sid))
+                sub, sym = finish(self, sub, sym, perception_sub, perception_sym, written, perception_presences)
             reset = present & ((sentence_ids.amax(-1) > sid) | (lang[11][:, sid] <= 0))
             stm = FunctionalPeerSTM.soft_reset_rows(stm, reset)
             lang = (*lang[:7], ShortTermMemory.functional_wholes_reset(lang[7], reset),
@@ -21961,10 +21926,6 @@ class BasicModel(BaseModel):
             self._recon_cost = self._recon_sentence_costs.sum(-1) / count
             self._recon_truncated = torch.stack([v[3] for v in values]).any(0)
             self._recon_completed = True
-        from VerbLearning import register
-        register(self._verb_teacher_records, self.errors)
-        from ModalLearning import register as register_modal
-        register_modal(self._modal_teacher_records, self.errors)
         return stm, sub, sym, lang, feedback, words.new_tensor(W, dtype=torch.long)
 
     def _run_tensor_peer_word_pipeline(self, width):

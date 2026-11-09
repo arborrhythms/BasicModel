@@ -852,8 +852,11 @@
            it does not subtract from the answer's priority. -->
       <xs:element name="reconstructionScale" type="unitInterval" minOccurs="0"/>
       <xs:element name="reconstructionReferenceWeight" type="nonNegativeFloat" minOccurs="0"/>
-      <xs:element name="verbTeacherWeight" type="nonNegativeFloat" minOccurs="0"/>
-      <xs:element name="modalTeacherWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="actionRateRatio" minOccurs="0" default="1">
+        <xs:simpleType><xs:restriction base="xs:double">
+          <xs:minExclusive value="0"/><xs:maxInclusive value="1"/>
+        </xs:restriction></xs:simpleType>
+      </xs:element>
       <!-- Every N batches, log weighted reconstruction/output/expectation
            norms and cosine per shared operator/codebook. Read-only; 0 disables. -->
       <xs:element name="branchDiagnosticsEvery" type="xs:nonNegativeInteger" minOccurs="0"/>

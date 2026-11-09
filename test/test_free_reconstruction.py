@@ -55,6 +55,13 @@ def test_free_trial_uses_no_reference_or_offsets_and_keeps_identity_audit(monkey
             calls.append('explore' if kw.get('decoder_exploit') is not None else 'greedy')
         return returned
     monkeypatch.setattr(model, '_reconstruct_sentences', observe)
+    registries = []
+    path_cost = model._sentence_path_cost
+    def observe_registry(*args, **kwargs):
+        result = path_cost(*args, **kwargs)
+        registries.append(model._sentence_cost_registry)
+        return result
+    monkeypatch.setattr(model, '_sentence_path_cost', observe_registry)
     optimizer=model.getOptimizer(lr=.01)
     try:
         raw,target=next(iter(data.data_loader(split='train',num_streams=4)))
@@ -62,14 +69,13 @@ def test_free_trial_uses_no_reference_or_offsets_and_keeps_identity_audit(monkey
             batch_override=(model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)))
         assert [call for call in calls if call != 'replay'] == ['greedy', 'explore', 'greedy', 'explore']
         assert all(calls[i-1] == 'explore' for i, call in enumerate(calls) if call == 'replay')
-        reconstruction = {name for name in model._sentence_cost_registry._terms if name.startswith('reconstruction.')}
-        assert reconstruction - {'reconstruction.compose_score_function'} == {
+        terms = {name:term for registry in registries for name,term in registry._terms.items()}
+        reconstruction = {name for name in terms if name.startswith('reconstruction.')}
+        assert reconstruction - {'reconstruction.compose_score_function', 'reconstruction.walk_credit'} == {
             'reconstruction.free_bytes', 'reconstruction.content', 'reconstruction.forward_discard',
-            'reconstruction.walk_policy', 'reconstruction.walk_credit',
             'reconstruction.walk_residual.form', 'reconstruction.walk_residual.for',
             'reconstruction.walk_residual.against', 'reconstruction.free_percept',
             'reconstruction.definition_fold'}
-        terms = model._sentence_cost_registry._terms
         # XOR_grammar uses the mixing architecture, without native PS/WS
         # candidate supports. Its landing reconstruction objective remains.
         assert model.concept_binding == 'mixing'
@@ -85,7 +91,12 @@ def test_free_trial_uses_no_reference_or_offsets_and_keeps_identity_audit(monkey
         audit = model.ownership_gradient_diagnostics(optimizer)
         assert audit['conflicts'] == 0
         decoder = [row for row in audit['parameters'] if 'generate_policy' in row['parameter']]
-        assert decoder and all(row['owner'] == 'reconstruction' and row['writers'] == ['reconstruction'] for row in decoder)
+        assert decoder and audit['mode'] == 'projection'
+        from SentenceTraining import gradient_receipt
+        credit = model._last_decoder_comparison['score_function']
+        assert gradient_receipt(model)['projection']
+        if bool((credit['mask'] & credit['advantage'].ne(0)[:, None]).any()):
+            assert any('generate_policy' in name for name in gradient_receipt(model)['projection'])
     finally:
         model.End()
 

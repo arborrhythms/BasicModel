@@ -183,7 +183,7 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
     try:
         model.runBatch(train=True, optimizer=optimizer, batchSize=2,
             batch_override=(raw, torch.empty(2, 0)), split='runtime')
-        assert [e[0] for e in events] == ['step', 'step', 'commit'] * 2
+        assert [e[0] for e in events] == ['commit', 'step'] * 2
         assert len(model._sentence_winners) == 2
         assert all(cost.shape == (2, 2) for cost in model._sentence_trial_costs)
         assert set(model._last_understanding.sentence_fields) == {0, 1}

@@ -1,9 +1,25 @@
-"""One objective writes each optimizer parameter; no gradient projection."""
+"""Cost routing and the per-owner backward used only with separateChooser true."""
 import torch
 from GradientDiagnostics import _sum_gradients
 
 
 PRIMARY = ('reconstruction', 'expectation', 'output', 'attention')
+
+
+def term_owner(name, category, objective):
+    if category == 'grammar':
+        return 'generate_lesson' if 'generate.' in name else 'compose_lesson'
+    if objective in ('chooser', 'attention', 'compose_lesson', 'generate_lesson'):
+        return objective
+    if objective in ('expectation', 'intra', 'inter'):
+        return 'expectation'
+    if objective in ('output', 'prediction', 'policy'):
+        return 'output'
+    return 'reconstruction'
+
+
+def default_side(owner):
+    return 'A' if owner in ('output', 'generate_lesson', 'chooser') else 'R'
 
 
 def registry_costs(registry, *, reader_rows=None, expectation_rows=None, definition_rows=None):
@@ -14,27 +30,17 @@ def registry_costs(registry, *, reader_rows=None, expectation_rows=None, definit
                 or term['category'] in registry._disabled):
             continue
         category = term['category']
-        objective = term.get('objective', category)
-        if category == 'grammar':
-            owners = ('generate_lesson' if 'generate.' in name else 'compose_lesson',)
-        elif objective == 'chooser':
-            owners = ('chooser',)
-        elif category == 'reg':
-            # A regularizer writes only the owned parameters it actually uses.
-            owners = tuple('penalty.' + owner for owner in PRIMARY)
-        elif objective in ('expectation', 'intra', 'inter', 'expectation'):
-            owners = ('expectation',)
-        elif objective in ('output', 'prediction', 'policy'):
-            owners = ('output',)
-        elif objective == 'attention':
-            owners = ('attention',)
-        else:
-            owners = ('reconstruction',)
+        owner = term_owner(name, category, term.get('objective', category))
+        owners = (tuple('penalty.' + owner for owner in PRIMARY) if category == 'reg'
+                  else (owner,))
+        side = term['side']
         raw = term['weight'] * term.get('multiplier', 1.) * registry._value(term)
         for owner in owners:
             value = raw
             rows = (reader_rows if owner in ('output', 'penalty.output') else
                     expectation_rows if owner in ('expectation', 'penalty.expectation') else None)
+            if side != default_side(owner):
+                rows = None
             if name == 'reconstruction.definition_fold':
                 rows = definition_rows
             if rows is not None:
@@ -50,14 +56,15 @@ def registry_costs(registry, *, reader_rows=None, expectation_rows=None, definit
                 active = registry.row_mask
                 value = (value.mean() if active is None else
                          (value * active.to(value)).sum() / active.sum().clamp_min(1))
-            result[owner] = result.get(owner, 0) + value
+            key = owner if category == 'reg' or side == default_side(owner) else owner + '.' + side
+            result[key] = result.get(key, 0) + value
     return result
 
 
 def backward_owned(costs, owners, *, pullback=None, scale=1., audit=None):
     """Accumulate exact objective gradients only into that objective's owners.
 
-    The perception pullback is traversed for reconstruction and attention. Shared
+    The perception pullback is traversed for reconstruction, chooser and attention. Shared
     operator hosts remain differentiable for generation's reader but never
     receive its cotangent. Saved trial graphs remain alive until their caller
     releases the registry, so both trials use their pre-update forward values.
@@ -65,7 +72,7 @@ def backward_owned(costs, owners, *, pullback=None, scale=1., audit=None):
     for name, cost in costs.items():
         if not torch.is_tensor(cost) or not cost.requires_grad:
             continue
-        key = name.removeprefix('penalty.')
+        key = name.removeprefix('penalty.').split('.')[0]
         parameters = tuple(owners.get(key, ()))
         if not parameters:
             continue

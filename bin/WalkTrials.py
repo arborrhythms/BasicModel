@@ -61,25 +61,48 @@ def finished_wins(costs, pending, *, certified=None):
         (finished[:,0]==finished[:,1]) & (costs[:,1]<costs[:,0]))
 
 
-def generate_credit(language, audit, tops, features=None):
-    """Teach only winning departures, on the policy's detached input."""
+def generate_credit(language, audit, tops, features):
+    """The compose score function, including action and departure proposal q."""
+    from Expectation import alternative_probabilities
+    from SentenceCredit import score_function
     departure = audit['departure']
     ar = torch.arange(len(departure), device=tops.device)
     step = departure.clamp_min(0)
+    observed = features[ar, step].detach()
+    from Generative import WALK_FEATURE_WIDTH
+    legal = observed[..., WALK_FEATURE_WIDTH - 1].bool()
     logits = language.generate_policy_logits(tops[ar, step].detach(),
-        **({} if features is None else dict(features=features[ar,step].detach())))
-    return language.generate_policy_credit(logits, audit['explore'][ar, step],
-        valid=audit['wins'] & (departure >= 0))
+        features=observed[..., :WALK_FEATURE_WIDTH - 1])
+    logits = logits.masked_fill(~legal, -torch.inf)
+    logits = torch.where(legal.any(-1, keepdim=True), logits, 0.)
+    excluded = torch.nn.functional.one_hot(audit['greedy'][ar, step].clamp_min(0), logits.shape[-1]).bool()
+    proposal = alternative_probabilities(logits.detach().masked_fill(excluded, -torch.inf),
+        fraction=language._tree_layer(2).exploration_fraction,
+        temperature=language._tree_layer(2).exploration_temperature)
+    action = audit['explore'][ar, step].clamp_min(0)[:, None]
+    probability = logits.softmax(-1).gather(1, action)
+    q_action = proposal.gather(1, action)
+    rounds = audit['eligible'].sum(-1, keepdim=True)
+    mask = departure.ge(0)[:, None]
+    correction = torch.where(mask, rounds / q_action.clamp_min(torch.finfo(q_action.dtype).tiny), 0.)
+    credit, details = score_function(probability, correction.detach(), mask, audit['costs'])
+    audit['score_function'] = dict(details, proposal=q_action.detach(), eligible_rounds=rounds.detach())
+    return credit
 
 
-def stage_generate_credit(model, audit, tops, features=None):
-    """The paired sentence owner collects both decoder and output credits."""
-    held = getattr(model, '_sentence_walk_credits', None)
+def stage_generate_credit(model, audit, tops, features=None, *, owner="decoder"):
+    """Keep the decoder's interim R booking separate from output's A credit."""
+    held = getattr(model, '_sentence_' + owner + '_walk_credits', None)
     if held is not None and torch.is_grad_enabled():
-        credit = generate_credit(model.languageSpace, audit, tops,features)
+        # The explored departure is credited even when the greedy walk wins.
+        tops = audit.pop('credit_tops', tops)
+        features = audit.pop('credit_features', features)
+        credit = generate_credit(model.languageSpace, audit, tops, features)
         held.append(credit)
         audit['credit'] = credit.detach()
     else:
+        audit.pop('credit_tops', None)
+        audit.pop('credit_features', None)
         audit['credit'] = audit['costs'].new_zeros(audit['costs'].shape[0])
 
 
@@ -148,7 +171,8 @@ def output_pair(realize,score,*,owner=None):
     if owner is not None and hasattr(owner, '_last_output_walk_trace'):
         owner._last_output_walk_trace = kept_trace
     selected_residual = kept_trace[3]
-    audit = dict(costs=costs, wins=wins, departure=departure,
+    audit = dict(costs=costs, wins=wins, departure=departure, eligible=trace[1].detach(),
+                 credit_tops=other[-1], credit_features=other[-2],
                  pending=pending, certified=certified, residual=residual,
                  selected_residual=selected_residual,
                  greedy=trace[0].detach(), explore=other[0].detach(),

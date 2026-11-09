@@ -12,8 +12,7 @@ _EMPTY_DICTS = (
     '_reference_close_audit', '_costed_thought_outputs', '_thought_ordinals',
 )
 _EMPTY_LISTS = (
-    '_what_policy_records', '_what_episode_steps', '_verb_teacher_records',
-    '_modal_teacher_records', '_sentence_credit_audits', '_sentence_trial_costs',
+    '_what_policy_records', '_what_episode_steps', '_sentence_credit_audits', '_sentence_trial_costs',
     '_sentence_winners', '_sentence_reconstructions',
 )
 _EMPTY_TUPLES = ('_thought_document_ends', '_last_what_answers',
@@ -598,7 +597,7 @@ def epoch(model):
             resolver = components.reference_close
             resolver.__dict__.pop('_mentions', None)
             resolver.last_audit = ()
-            for name in ('last_verb_teacher', 'last_modal_teacher'):
+            for name in ('last_verb_observation', 'last_modal_observation'):
                 resolver.__dict__.pop(name, None)
         # Knowing's eager carrier can retain an occurrence after its thought
         # history has gone. Sentence STM itself is initialized by the driver.

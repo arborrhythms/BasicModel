@@ -89,7 +89,7 @@ sub-elements `<training>` and `<data>` (see below).
 | `whatThinkingHidden` | int | `16` | Positive hidden width of the sole `SelectedThoughtChooser` MLP. Its context includes masked root/active/candidate roles, semantic metadata, attended visible STM/LTM and execution state; see [SelectedMeaning](SelectedMeaning.md). |
 | `whatThinkingDepth` | int | `1` | Positive number of hidden Linear/GELU blocks in the selected-thought MLP, followed by its zero-initialized scalar head. It does not change the shared work allowance or enable policy credit. |
 | `intuitionCapacity` | positive int | `4096` | Slots in each preallocated sparse Pi and Sigma bank owned by output. Pi addresses are rule/literal references and Sigma addresses are rules. Unit initial exponents give the exact max-min DNF. Exhaustion raises; storage never grows. |
-| `separateChooser` | bool | `true` | Architecture training mode: true retains per-owner backward with detached compose chooser features; false uses one sentence surrogate, backward and shared optimizer step, with live compose features. Thought and generate features remain detached. |
+| `separateChooser` | bool | `false` | False retains live compose features and projects the answer gradient against reconstruction per optimizer unit before one shared step. True is the optional per-owner backward: each cost trains its declared owner, independently of its R/A side. Thought and generate features remain detached. |
 | `reconstructionJitter` | real in `[0,1]` | `0` | Draw one strength `s ~ U[1-j,1]` per sentence and apply it to reconstruction alone, shared by both compose trials. Zero draws no random number. Output, expectation, attention and chooser credit retain scale 1.0. |
 | `generateBudget` | positive int | `32` | Architecture capacity of each free output and sentence-decoder generation walk. Fixed at model construction; its output, action, residual and feature arrays are allocated to this trip count before the walk. Exhaustion reports pending work and retains its per-lane frontier residual. Recorded input derivations keep their full structural trace capacity independently. |
 | `wordSurfaceCapacity` | positive int | `64` | Maximum raw bytes in one word, fixed at construction independently of sentence input length and word count. Targets have this width; candidate byte tables reserve one additional EOS position. Bytes remain `uint8`. A longer surface raises before staging; no clipping or resizing. Native walk banks carry terminal presence and primitive support without copying the raw byte slab. |
@@ -417,18 +417,14 @@ unions symbols at higher orders. Grammatical lift/lower own their chart maps.
 | `verbBasisReflections` | positive even int | `4` | Householder reflections per object/group basis. Identical initial pairs give the identity. |
 | `verbGroupFit` | nonnegative float | `0.1` | Maximum mean squared chart residual for admitting a verb to an existing basis. |
 
-`training.verbTeacherWeight` defaults to `0.1`. It weights the explicit
-across-close `verb_teacher` term in the reconstruction owner. The term trains
-the action's readouts and bases from detached retained observations. These
-defaults are read only by paired meaning configurations; `model.xml` and
-the numeric configurations retain their existing behavior.
-
-`training.modalTeacherWeight` defaults to `0.1`. It weights the equal-time
-actual/alternative `modal_teacher` term in the reconstruction owner. The
-retained event values supply detached teacher targets; the modifier readout
-and shared basis receive the gradient. Tokens own actual and alternative
-timelines, which share the token's capacity and expiry. Only actual order-0
-occurrences enter a promoted identity's content.
+`training.actionRateRatio` (κ) defaults to `1` and must be finite in `(0, 1]`.
+Inside reconstruction SGD, the lift action uses κ times the configured rate and
+the adverb action uses κ² times that rate. Codes retain the configured rate.
+`SentenceTraining.gradient_receipt` reports realized relative displacements for
+codes and each action. `verbTeacherWeight` and `modalTeacherWeight` are retired;
+their residual observations and once-only markings remain, without a loss.
+MTM writes stay detached. A later read presents its saved value with the current
+action's local pullback on the recorded forward operands; the value is unchanged.
 
 > `ConceptualSpace` owns definitions, evidence and STM/event state. The
 > former per-stage `sigma_in` / `sigma_cs` layers are retired and no longer

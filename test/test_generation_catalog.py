@@ -113,7 +113,7 @@ def test_alias_catalog_reordering_preserves_shared_identity_and_separate_policy(
         assert {name for name in result.state_dict() if not name.startswith('_generate_')} == {
             'generate_policy.weight','generate_policy.bias',
             'generate_policy.menu_score.0.weight', 'generate_policy.menu_score.0.bias',
-            'generate_policy.menu_score.2.weight',
+            'generate_policy.menu_score.2.weight', 'generate_policy.occupation_score.weight',
             'parts_of_speech._extra_state'}
         return result
 

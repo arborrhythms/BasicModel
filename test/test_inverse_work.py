@@ -23,7 +23,9 @@ class Unary(torch.nn.Module):
 
 def language(ops):
     from Language import LanguageSpace
-    owner = SimpleNamespace(_generate_binary_ops=(), _generate_unary_ops=ops)
+    owner = SimpleNamespace(_tree_layer=lambda arity: SimpleNamespace(exploration_fraction=.5, exploration_temperature=1.), _generate_binary_ops=(), _generate_unary_ops=ops)
+    from generation_fixtures import undeclared_arguments
+    undeclared_arguments(owner)
     owner.generate_unary_step = MethodType(LanguageSpace.generate_unary_step, owner)
     return owner
 

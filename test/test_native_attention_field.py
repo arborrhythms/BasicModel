@@ -16,6 +16,13 @@ def _model(tmp_path, monkeypatch):
 def test_native_reads_one_supported_word_and_charges_only_kept_trial(tmp_path, monkeypatch):
     model = _model(tmp_path, monkeypatch)
     model.candidate_attention = None  # the specified source-order control
+    registries = []
+    path_cost = model._sentence_path_cost
+    def observed(*args, **kwargs):
+        result = path_cost(*args, **kwargs)
+        registries.append(model._sentence_cost_registry)
+        return result
+    monkeypatch.setattr(model, '_sentence_path_cost', observed)
     try:
         inputs = model.inputSpace.prepInput(['alpha alpha', 'beta beta'])
         model.runBatch(train=True, optimizer=model.getOptimizer(lr=.003), batchSize=2,
@@ -37,7 +44,7 @@ def test_native_reads_one_supported_word_and_charges_only_kept_trial(tmp_path, m
         # The NULL closing must not erase the final read's symbol activation.
         record = model._last_sentence_understanding
         assert record.word_values[record.word_valid].abs().sum(-1).gt(0).all()
-        terms = model._sentence_cost_registry._terms
+        terms = registries[-1]._terms
         assert not terms['reconstruction.free_bytes']['trained']
         assert terms['reconstruction.field']['trained']
         assert terms['reconstruction.iterations']['trained']
@@ -130,8 +137,8 @@ def test_native_candidate_departure_credits_only_scorer_parameters(tmp_path, mon
         assert any(not torch.equal(value, before[key]) for key,value in model.candidate_attention.state_dict().items())
         gradient = model.ownership_gradient_diagnostics(optimizer)
         parameters = [row for row in gradient['parameters'] if row['parameter'].startswith('candidate_attention.')]
-        assert parameters and any(row['writers'] == ['attention'] for row in parameters)
-        assert all(not row['writers'] or row['writers'] == ['attention'] for row in parameters)
+        assert parameters and any(row['writers'] == ['A'] for row in parameters)
+        assert all(not row['writers'] or row['writers'] == ['A'] for row in parameters)
     finally:
         model.End()
 

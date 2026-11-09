@@ -93,7 +93,7 @@ def test_native_lesson_teaches_scorer_and_keeps_one_word_per_read(tmp_path,monke
                 torch.testing.assert_close(read['unrecovered_words'],undefined.any(-1).long())
         assert not torch.equal(model.candidate_attention.readout.weight,before)
         owners = model.ownership_gradient_diagnostics(optimizer)['parameters']
-        assert all(row['writers']==['attention'] for row in owners if row['owner']=='attention')
+        assert all(row['writers']==['R'] for row in owners if row['owner']=='attention')
         assert model._attention_reading_lesson is None
     finally:model.End()
 

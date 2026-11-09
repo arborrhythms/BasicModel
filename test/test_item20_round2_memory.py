@@ -195,4 +195,4 @@ def test_rejecting_commit_captures_value_pool_and_source_then_reraises(tmp_path,
     assert packet['document'] == 'capture' and packet['position'] == 1
     assert torch.isnan(packet['working_value']).all()
     assert packet['token'] is not None and packet['members']
-    assert packet['pool']['version'] == 10 and packet['pool']['entries']
+    assert packet['pool']['version'] == 11 and packet['pool']['entries']

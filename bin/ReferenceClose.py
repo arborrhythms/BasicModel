@@ -1235,8 +1235,7 @@ class ReferenceClose(nn.Module):
 
     @torch.no_grad()
     def commit(self, plan, row, written, *, document, position, training,
-               verb_action=None, errors=None, verb_teacher_weight=.1, teacher_records=None,
-               modifier_action=None, modal_teacher_weight=.1, modal_records=None, reading=None):
+               verb_action=None, errors=None, modifier_action=None, reading=None):
         """Record training inputs and the kept working decision, never rewrite LTM."""
         kept_reading = reading
         from collections import OrderedDict
@@ -1421,12 +1420,10 @@ class ReferenceClose(nn.Module):
         events = self._commit_events(plan, written, when=when, closed_mentions=closed_mentions,
                                     observed=observed, verb_action=verb_action)
         from VerbLearning import observe
-        self.last_verb_teacher = observe(verb_action, mtm, previous, observed,
-            lambda symbol: point(self.components.owner, symbol), errors=errors,
-            weight=verb_teacher_weight, training=training, deferred=teacher_records)
+        self.last_verb_observation = observe(verb_action, mtm, previous, observed, training=training)
         from ModalLearning import observe as observe_modal
-        self.last_modal_teacher = observe_modal(modifier_action, mtm, events,
-            errors=errors, weight=modal_teacher_weight, training=training, deferred=modal_records)
+        self.last_modal_observation = observe_modal(modifier_action, mtm, events,
+            training=training)
         # Several kept closes can share one model-present tick. Actual
         # mention/refinement/event references, not equal timestamps, refresh
         # the pool's independent kept-close access counter.
@@ -1629,6 +1626,7 @@ class ReferenceClose(nn.Module):
                 result = record.get('result')
                 mtm.event(token, event, verb=int(verb), role=role, when=when, timeline=timeline,
                     before=record.get('before') if is_action else None,
+                    verb_meaning=record.get('verb_meaning') if is_action else None,
                     basis=basis if is_action else None,
                     after=result if role == 0 else None,
                     case_value=record.get('case_value') if role == 0 else None,

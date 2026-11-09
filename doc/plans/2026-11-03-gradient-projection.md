@@ -1033,3 +1033,777 @@ Testing: fast checks only until the implementation is finished. Each item's dire
 ~~~
 
 Landed as acbe466e871df474f864bfd403e11c0921441529, 2026-11-09
+
+## 15. Merged round 3/4 return (2026-11-09)
+
+Round 2 landed as `acbe466e871df474f864bfd403e11c0921441529`; its landing record
+is `e4b72d69899a98676c6cbe032901a54018365e9e`. Main was pushed once. The two
+fixture ports passed (34 cases), and the append-only document check passed
+(1000 cases), without another round-2 sweep. The
+[landing receipt](../benchmarks/2026-11-08-item2-0-round-2/landing.json) records
+both exact ports and the landed source `cff4fb245235c247ce8a14a582c883b5c574766acba221a95fe0cf4f0fd56f4e`.
+
+Round 3/4 is offered, uncommitted and unpushed, as source `40676b500b3a292b51d9edfa6babb783ceec5d525ca41dbdb09362216d92822c`.
+This text is sealed before the one default sweep. Its final outcome, counts,
+critical-gate decisions and source/document equality checks are filled by that
+execution in the [sweep result](../benchmarks/2026-11-09-item2-0-round-3-4/sweep-result.json)
+and [final audit](../benchmarks/2026-11-09-item2-0-round-3-4/final-audit.json);
+this pre-sweep return does not assert a sweep result before it exists.
+
+### 15.1 Items 4–6: gradients, sides and one choice mechanism
+
+- **4 — Default projection.** `separateChooser` changes from true to false in
+  defaults and code. On the shared-tensor direct case, the former combined
+  gradient `[-1, 3]` becomes `[1, 3]`; R remains `[1, 0]`, the agreeing A
+  `[2, 3]` is unchanged, and the single writer remains `[4]`. In Adam's
+  metric `[1, .25]`, the shared sparse row changes from `[-1, 4]` to `[0, 5]`;
+  the other rows remain `[1, 1]` and `[2, 3]`. The `data/model.xml` probe uses
+  the model's constructed input shape, changes no capacity, takes one step,
+  and populates cosine, projection fraction and removed-answer fraction.
+  [Projection cases](../benchmarks/2026-11-09-item2-0-round-3-4/projection.json),
+  [Adam case](../benchmarks/2026-11-09-item2-0-round-3-4/adam-projection.json),
+  [native default receipt](../benchmarks/2026-11-09-item2-0-round-3-4/native-default-projection.json).
+  The native numeric probe reports the existing placeholder-answer and absent
+  percept-target warnings; it certifies update wiring, not learned reconstruction.
+- **5 — R/A routing.** Sixteen representative terms retain their values and
+  enter the declared side. Output residual and credit have separate collectors;
+  decoder credit stays R. Compose, bind, candidate-departure and thought rewards
+  are A whole. Reader exposure masks do not suppress or duplicate these choice
+  terms; regularizers enter R once. [Routes](../benchmarks/2026-11-09-item2-0-round-3-4/routes.json).
+- **6 — Proposal and credit.** The alternative distribution changes from
+  `[0, .731059, .268941]` at unit temperature to the configured mixture
+  `[0, .561230, .438770]` in the direct case (fraction .5, temperature 2).
+  With selected probability `.244728`, two eligible departure steps and
+  delta C `-2`, correction is `3.563603` and credit is `-1.744230`.
+  The old winning-departure CE was `1.407606`; the former masked tie retained
+  a graph, while the shared score function now returns a graph-free tie.
+  `reconstruction.walk_policy` and its forced-tree producer are absent.
+  Generate lessons and STOP bias remain.
+  [Old-producer comparison](../benchmarks/2026-11-09-item2-0-round-3-4/before-direct.json),
+  [proposal-credit case](../benchmarks/2026-11-09-item2-0-round-3-4/generate-credit.json).
+
+### 15.2 Items 7–10: participation, gate, typing and clamp
+
+- **7 — Action participation.** Verb and modal teacher registrations go from
+  present to absent; pairing, residuals, assignment and marking remain.
+  MTM event version 11 adds the detached forward verb-phrase operand;
+  old versions 8–10 load it as absent. Direct ordinary and alternative reads
+  preserve v bit for bit, reach lift/modifier parameters through a later answer,
+  and leave all stored inputs without gradients. Missing-input reads remain
+  detached. The assigner's three failed fits report groups `[-1, -1, 0]`;
+  the word-code residual is `1.278706`, versus `9.429863` on the recorded phrase,
+  which is the residual actually used. Evaluation does not assign groups.
+  κ=1 gives equal relative steps `.1, .1, .1`; κ=.1 gives `.1, .01, .001`
+  for codes, lift and adverb. [Re-read](../benchmarks/2026-11-09-item2-0-round-3-4/reread.json),
+  [absent input and legacy event](../benchmarks/2026-11-09-item2-0-round-3-4/reread-no-input.json),
+  [phrase assignment](../benchmarks/2026-11-09-item2-0-round-3-4/phrase-assignment.json),
+  [rates](../benchmarks/2026-11-09-item2-0-round-3-4/action-rates.json).
+- **8 — One fresh XOR gate.** The unchanged producer ran once, 400 epochs,
+  with residual-argmin chooser, no pinned seed and no budget change. The
+  maintained reconstruction class passed 4/4 word multisets; two surfaces
+  are transpositions. The fresh checkpoint and its SHA-256 are recorded in
+  the [gate result](../benchmarks/2026-11-09-item2-0-round-3-4/xor-gate/result.json).
+  This is the gate after item 6, not an item-71 panel or an end-of-item measurement.
+- **9 — Output typing.** Three occupation features replace the former absence
+  of output type features. They equal `argument_scores`'s candidate coverage
+  on the same words. After kept participation and the ordinary hierarchy
+  refresh, the occupied parent scores `.5`, the unoccupied parent `0`, both
+  child input faces `1`, and STOP `0`. Undeclared fixed faces remain zero.
+  Existing quality weights survive checkpoint loading; the new occupation
+  weight starts at zero. [Feature certificate](../benchmarks/2026-11-09-item2-0-round-3-4/output-typing.json).
+- **10 — Clamp velocity.** At upper/lower bounds, velocity `[-2, 2]` previously
+  kept coordinates at `[1, 0]` after the first inward gradient. Clearing only
+  outward velocity gives `[.9, .1]`. An interior velocity `-.5` remains;
+  its coordinate moves from `.5` to `.545`. Both ordinary and compact SGD
+  produce these results. [Velocity certificate](../benchmarks/2026-11-09-item2-0-round-3-4/clamp-velocity.json).
+
+### 15.3 Item 11: documents, ports and the offered freeze
+
+Architecture, GradientFlow, Params/XSD, Language, FutureWork and Testing are
+updated. The unchanged read-only measurement path remains beside the new
+per-unit projection and realized-step receipts. Twelve direct cases are added.
+Two cases retire with their sole loss producer: the round-1 forced walk teacher
+and the deferred verb-teacher registration case. Other affected tests retain
+pairing, marking, residual, checkpoint, update and decoding assertions, with
+exact [before/after ports](../benchmarks/2026-11-09-item2-0-round-3-4/ports.json).
+The seven gradient files and specified generation/action files were run;
+producer/fixture failures and their targeted repairs remain visible in the
+[command log](../benchmarks/2026-11-09-item2-0-round-3-4/commands.json).
+The compile-cache permission failure was rerun with its cache in writable
+`/private/tmp`; no test was deselected to bypass it.
+
+The expected default count is the landed 7552 passed, 325 skipped, 1 xpassed,
+plus 12 direct cases minus 2 named retirements: 7562 passed, 325 skipped,
+1 xpassed (7888 selected). Raw unittest subtest reports are counted separately
+from unique cases. The single command is `env -u RUN_TRAINED -u RUN_SLOW make test`.
+A failed convergence or shared-concept gate stops the round without a retry.
+[Before source](../benchmarks/2026-11-09-item2-0-round-3-4/before-source.json),
+[frozen source](../benchmarks/2026-11-09-item2-0-round-3-4/frozen-source.json),
+[patch](../benchmarks/2026-11-09-item2-0-round-3-4/source.patch),
+[sealed documents](../benchmarks/2026-11-09-item2-0-round-3-4/offered-documents.json)
+and [result index](../benchmarks/2026-11-09-item2-0-round-3-4/result.json)
+exist before that execution.
+
+**Carried:** memory plan §10, basic percepts and thinking-spec §54 finding 2
+remain round 5; the loop and §10.2 measurements remain round 6. The loop moves
+the decoder's bookings to output. Momentum-carried projection and a learned
+pair policy remain conditional on end-of-item receipts. Nothing of those rounds,
+no lesson arms, no item-60 metrics and no repeated gate fits is built here.
+
+### 15.4 Review of the §15 return (Claude, 2026-11-09): round 2 landed; round 3/4 is NOT landable as frozen: 49 red cases (48 test ports, one defect), gates green, one repair pass then the landing
+
+**Round 2 landing.** `acbe466e871d` ("Land accepted item 2.0 round 2") carries exactly the two one-line ports of §14.5 and nothing else beyond the freeze; `e4b72d6989` records it; main equals origin/main. The landed source `cff4fb245235c247ce8a14a582c883b5c574766acba221a95fe0cf4f0fd56f4e` (1008 files) equals before-source.json of the round 3/4 receipt.
+
+**Source and documents.** frozen-source.json `40676b500b3a292b51d9edfa6babb783ceec5d525ca41dbdb09362216d92822c` (1014 files) equals the live tree; 42 files differ from the landed source (18 under bin, 2 under data, 7 under doc, 9 ported test files, 3 new modules ActionLearning/GenerateOccupation/GradientProjection, 3 new direct test files). source.patch (2524 lines) and ports.json (9 files, 2 retirements, 12 added cases) read in full. offered-documents.json seals the 7 changed .md files (`aff327ca…`), recomputed equal; no other .md differs from HEAD.
+
+**Gates, sweep, certificates.** Codex's one sweep (7888 cases, 15 min): test_convergence, the shared-concept case and the pending-premise pair passed; 7513 passed, 325 skipped, 1 xpassed, 49 failed against the expected 7562/325/1. §15 was sealed before the sweep and does not describe the failures; result.json records "completed with recorded failures". A first `make test` died in a sandbox on `sysctl hw.memsize` before collecting anything (sandbox-launch.json); the counted sweep is the one real run. I reran the twelve direct cases from the live tree into the scratchpad (5 s): ten JSONs equal Codex's to $10^{-6}$; native-default-projection.json differs only in one unit's cosine and the realized step (unseeded initialization), and on that one-batch probe no unit was projected in either run (fraction_projected 0 for all 4112 units), so it certifies wiring, not an opposition. The XOR gate ran once: 4/4 multisets at 400 epochs; the checkpoint's sha256 equals result.json.
+
+**The 49 red cases** (each reproduced alone; each port verified green on a scratch copy; none is in ports.json). 48 are test ports under the new design, one is a producer defect; none is a retirement.
+
+- Cause A, five cases: a SimpleNamespace language without `_tree_layer`, which the walk body (Models ~13419) and `WalkTrials.generate_credit` now read for the exploration fraction and temperature: test_decoder_exploration (two cases), test_inverse_work (two, one helper), test_review10_contracts::test_decoder_departure_samples_lower_rank_and_keeps_greedy_suffix (shares the first fixture). Port: `_tree_layer=lambda arity: SimpleNamespace(exploration_fraction=.5, exploration_temperature=1.)`; every assertion holds.
+- Cause B, six cases: menu features 5 → 8 and the walk arrays 9 (the step's legal mask rides as a ninth lane, unstated in §15): test_generative_residual_finite (shape 8), test_generation_budget (two, shape 9), test_generation_catalog (the new `occupation_score.weight` key), test_final_generation and test_generate_repair (both bound to the retired cross-entropy credit `generate_policy_credit`; they move to the score-function credit with 9-wide features, `greedy`/`eligible`/`costs` in the audit, the sign of $\Delta C$ in the assertions, `_sentence_decoder_walk_credits` as the collector, and the exact-tie rule in place of `wins.zero_()`).
+- Cause C, five cases: retired or renamed terms and MTM version 11: test_decomposition_chooser (`walk_policy` now asserted absent), test_item20_round2_memory (version 11), test_case_views (the event tuple's last slot is now `verb_meaning`; the bad `case_value` goes at slot −2), test_bind_thought and test_reference_review10 (the thought score function is objective output).
+- Cause D, four cases: `ownership_gradient_diagnostics` reports sides `R`/`A` in projection mode: test_reading_curriculum (`['R']`), test_native_attention_field::…credits_only_scorer_parameters (`['A']`), test_objective_ownership (zero gradient instead of None; writers $\subseteq$ {R, A}), test_joint_objectives::…ownership_and_backward_dispatch (a `torch.nn.Module` owner, expected $g_R + \Pi(g_A) = [2, 4]$).
+- Cause E, twelve cases: single mode is the default (one backward per sentence after the commit, no per-trial step, no batch-end step, no perception fork, no pullback): test_compose_pair_driver, test_joint_objectives::…real_runbatch (`['single']`), test_native_attention_field::…charges_only_kept_trial (capture the trial registry as the author's test_free_reconstruction port does), test_sentence_comparison (two: the pullback case and the replay case, whose fixture labels both trials exploit so the batch-end answer stays trained and hits the fail-loud raise at Models ~15207; it supplies no targets), test_sentence_compose (`['commit', 'step']`), test_supplied_answer_training (`autograd.grad` in place of the pullback), test_output_path_supervised (`_single_sentence_objectives`), test_operators_round2c (four: the closing thought's exposure trains in the same sentence step, so one output step, not two), test_operators_round2e (same).
+- Cause F, five cases: direct chooser-layer tests read the config default, so the live compose features share the graph and the test's own second backward collides: test_compose_operations, test_compose_review, test_signal_router_layer, test_signal_router_unary (each a one-line `separate_chooser = True` on the layer if that path stays), test_live_references (`retain_graph=True` on the test's first backward).
+- Cause G, eleven cases: the answer-side stop-gradients at Models ~12763 (reverseOutput's idea), ~17562 and ~17581 (`_forward_head`), ~20674 (`_sentence_answer_error`) have been conditional on `separate_chooser` since item 2.5's landing; under the default the trunk is shared, as §2 states, and the projection is what protects reconstruction. test_trial_policy_ownership (two), test_understanding_readout (four), test_prepared_answer_boundary (three; the percept case's gradient exists and is identically zero), test_operators_round2 (one) assert the gradient present instead of None. This is the design, not a removed cut; recorded here so Alec can object.
+- DEFECT, one case, nondeterministic (unseeded; failed 5 of 8 solo runs): test_learning_readiness::test_native_progress_and_trained_artifact_evaluation_path. Cross-sentence graph carry on the default training path. At the single-path sentence boundary only `stm`, `lang` and `feedback` are detached (Models ~21888–21893); `sub`, `sym` and the word-aligned slabs the next sentence reads (inputSpace `_ar_part_reference_vectors`, `_ar_whole_reference_vectors`, `_ar_readout_coefficients`; symbolSpace `_word_reference_presences`; the reconstruction stack's `_choice_values`, `_choice_action_records`, `_choice_log_probabilities`; `_tensor_pushed_ideas`, `_tensor_sentence_roots_live`, `_packed_sentence_roots`, `_attention_words`, `_last_decoder_trace`) keep the previous sentence's graph. The second sentence's R gradient then traverses the first sentence's nodes: when the first sentence had an A cost, its A traversal ran with `retain_graph=False` (GradientProjection ~94) and freed them, raising "backward through the graph a second time" at GradientProjection ~93; when it had none, the traversal succeeds silently and the second sentence's gradient crosses the optimizer step. The per-owner path masked both (`fork_perception` on detached leaves per trial; `backward_owned` always retains). Packed streams of two or more sentences are the ordinary path, so this must be repaired before landing: detach every carried word-aligned tensor at the boundary exactly as `stm`/`lang`/`feedback` are, with a certificate (a seeded two-sentence packed batch whose first sentence has an output-side term steps twice; a per-tensor `autograd.grad(..., retain_graph=True)` scan finds no second-sentence cost reaching a first-sentence node).
+
+**Two further findings from the patch.** (1) Models ~9895's dense-synthesis placeholder `_last_output_walk_trace` still allocates 5-wide features while the walk arrays are 9-wide; a dense-synthesis model trained with a score would reach `generate_credit` with four columns and fail as test_final_generation did. The width belongs in one named constant (Generative) read at ~9895, ~13458, ~13494 and by `generate_credit`. (2) The `separateChooser` true path is kept but degraded: the compose, bind, candidate-departure and thought rewards are now objective output, so `backward_owned` hands them to the readers' parameters and the compose chooser, the resolver and the attention scorer get no credit in that mode; the `chooser` owner is dead (ObjectiveOwnership's branch, Models ~2600, SentenceTraining ~175, GradientProjection.sides); no test in the default sweep runs that mode. Under "no legacy code paths" my recommendation is to delete it (the knob in model.xml/xsd/Params, `backward_owned`, the four conditional detaches made unconditional in the live direction, the `chooser` owner), porting the five Cause-F and two Cause-E tests that would otherwise pin `separate_chooser = True` to single mode or retiring them with a record; the per-owner diagnostics stay as the projection receipt. Alec decides.
+
+**Warts, recorded; the one-line ones go into the repair pass.** `amp_scaler.scale(total_loss)` at Models ~2666 computes a value and discards it. `_projection_writers` is never reset (its per-owner predecessor is reset at Models ~14199). `GeneratePolicy.forward` tolerates 5-wide features (`features.shape[-1] == 5`), a producer tolerance for old fixtures; remove it and port test/generation_fixtures.suffix (5-wide at line 23). `LanguageSpace.generate_policy_credit` (~12674) has no caller left. `VerbLearning.observe`'s `point` parameter is unused. `VerbLearning.reread` runs its action forward on every read including evaluation (the correction is exactly zero there). model.xml's "Adam learning rate" comment now sits above `actionRateRatio`. `getattr` defaults that only serve fixtures: GenerateOccupation ~8–12 (`parts_of_speech`, `_generate_*_rules`), ActionLearning's callers at Models ~2886 (`languageSpace`, `action_rate_ratio`), GradientProjection.units ~29 (`conceptualSpaces`). The occupation weight is migrated twice (GeneratePolicy._load_from_state_dict and LanguageSpace ~12644). Recorded without repair: GenerateOccupation.features is a host loop over rules per menu; PartsOfSpeech `_value_arguments` is a staging buffer reassigned at `prepare_values`; `registry_costs` recognizes choice rewards by name suffix.
+
+**Verdict.** No gate failed, so the round continues (§13.2). The frozen tree is not accepted for landing: 49 red cases and one producer defect on the default path. One repair pass follows: the defect, the placeholder width, the 48 ports with before/after text, the one-line warts, the §15 record of the ninth lane; then one sweep expecting 7562 passed, 325 skipped, 1 xpassed (less any case the separate-path decision retires, each named).
+
+**To confirm with Alec before the Codex text.** (a) Delete the `separateChooser` true path (recommended) or keep it and repair its routing. (b) The pass: one Codex text that repairs, sweeps once and lands on a green sweep in the §11.7 form, returning the landing record as §16 (recommended; every repair is specified here and the sweep is the certificate), or a repair text returned for review before the landing.
+
+**Decided (Alec, 2026-11-09).** (a) "keep it, it's an option, not a legacy path": the `separateChooser` true path stays and its routing is repaired, so that every choice reward reaches the parameters it reached before the round in that mode, while the projection keeps the sides of §8. (b) "your recommendation": one Codex text that repairs, sweeps once and lands on a green sweep; the landing record returns as §16. The build-5 text follows §16.
+
+### 15.5 One Codex text: repair round 3/4, one sweep, landing on green (Claude, 2026-11-09; for Alec to paste; final)
+
+Preface for Alec. Owner and side become two attributes of a cost term: the owner says which parameters receive it under `separateChooser` true, the side says whether it is R or A under the default. That is the smallest change that keeps both paths exact. The carry repair retains the batch's perception graph across sentences, as the per-owner path always did, and cuts only what a finished sentence produced. The Cause-G ports record that the answer reads the concluded idea live under the default; if you want that cut unconditional, say so before pasting.
+
+~~~
+Item 2.0, merged round 3/4: repair pass, one sweep, landing on green. The reviewer's findings are 2.0 spec §15.4 (doc/plans/2026-11-03-gradient-projection.md); the landed round-2 source is cff4fb245235c247ce8a14a582c883b5c574766acba221a95fe0cf4f0fd56f4e; your §15 freeze is 40676b500b3a292b51d9edfa6babb783ceec5d525ca41dbdb09362216d92822c. Alec decided (2026-11-09): the separateChooser true path stays as an option and its routing is repaired; this one text repairs, sweeps once and lands on a green sweep. Fast checks only until the implementation is finished. Receipt under doc/benchmarks/2026-11-09-item2-0-round-3-4-repair/: commands.json; before-source.json (the §15 freeze); frozen-source.json; source.patch against the landed round-2 source (the whole round); ports.json with every port of the round, the 48 below included, before/after text; offered-documents.json sealed before the sweep; sweep-result.json; final-audit.json; landing.json. Return as §16 of the 2.0 spec, each item with its before-and-after numbers. No commit before step 7.
+
+1. Cross-sentence graph carry (§15.4, the defect). Invariant: at the entry of every sentence after the first in a packed stream, a cost of that sentence reaches its own graph and the batch forward's perception graph (the parameter-derived word slabs computed before the sentence loop), and no node created between an earlier sentence's entry and its optimizer step. Two mechanisms. (a) GradientProjection.backward (about 93 to 94): both traversals retain the graph (the A call retain_graph=True like the R call), so the batch's perception graph survives the first sentence's step for the later sentences, as backward_owned always did; the graph is released when the batch's references drop. (b) At the single-path sentence boundary (Models about 21888 to 21893, where stm, lang and feedback are detached after the step), one named helper detaches every tensor the finished sentence produced and the next sentence reads: the reconstruction stack's _choice_values, _choice_action_records and _choice_log_probabilities; _tensor_pushed_ideas, _tensor_sentence_roots_live, _packed_sentence_roots, _attention_words, _last_decoder_trace, and whatever else the certificate scan finds. For the threaded word states sub and sym, cut only the finished sentence's writes: rebuild each as torch.where(written, state.detach(), perception_state), the batch forward's pre-loop values standing at the unwritten positions, so the perception graph stays reachable for the next sentence's words. inputSpace._ar_part_reference_vectors, _ar_whole_reference_vectors, _ar_readout_coefficients and symbolSpace._word_reference_presences are batch-level perception products and stay attached under (a). Certificate, a direct case, unseeded (the assertion is structural and holds for every draw): a two-sentence packed stream under the default whose first sentence has an output-side term takes two optimizer steps without a raise, and a scan at the second sentence's entry over the model's and the spaces' carried tensors and the threaded sub/sym finds no tensor with a grad_fn created between the first sentence's entry and its step (autograd.grad(cost2, tensor, allow_unused=True, retain_graph=True) over the first sentence's choice records is None). test_learning_readiness::test_native_progress_and_trained_artifact_evaluation_path then passes eight consecutive solo runs; record the eight.
+
+2. One walk-feature width. One named constant in Generative (the menu's eight quality-and-occupation lanes plus the legal lane: 9), read at Models about 9895 (the dense-synthesis placeholder, now 5-wide), about 13458 and 13494, and by WalkTrials.generate_credit's split of the legal lane. GeneratePolicy.forward (Language about 12358 to 12364) loses the features.shape[-1] == 5 branch and always adds occupation_score(features[..., 5:]); test/generation_fixtures.suffix (line 23) builds 9-wide features. Record the ninth lane (the step's legal mask, kept so the credit can rebuild the departure-step logit mask) in Architecture's round 3/4 section and in §16.
+
+3. Owners for separateChooser true, sides for the default. Error.add and Error.error (Layers about 14305 and 14346) take side='R' or 'A', defaulting by owner (output, generate_lesson and chooser to A, every other owner to R). Registrations: reconstruction.compose_score_function objective 'chooser', side A (Models about 20052, back from 'output'); thought_score_function objective 'chooser' when its category is reconstruction, else its category (ThoughtCredit about 23 to 25, as before the round), side A; expectation.bind_score_function objective 'expectation', side A (about 21679); attention.candidate_departure objective 'attention', side A (about 21691); output.walk_credit objective 'chooser', side A (about 21658; the decoder's reconstruction.walk_credit stays objective reconstruction, side R); output.walk_residual.* objective 'reconstruction', side A (about 20548), rows None, whole, like the decoder residual. ObjectiveOwnership.registry_costs keys each sum by the owner when the side is the owner's default and by owner + '.A' (or '.R') otherwise; choice terms keep rows None; the choice_rewards flag and the name-suffix test go, and SentenceCredit.reader_costs filters on the keys output and penalty.output as before. GradientProjection.sides: A is the keys output, generate_lesson, chooser and every key ending in '.A'; R is the rest; reconstruction scaled by the drawn strength; each penalty once. ObjectiveOwnership.backward_owned: the owner is the key before its first '.', the parameters owners[owner], the pullback traversed for reconstruction, chooser and attention as before the round. Effect: under separateChooser true every choice reward and the output walk's residual and credit reach the parameters they reached before the round (the chooser set is the reconstruction set, Models about 2600); under the default only the keys change. Certificates: the routes direct case in test_item20_round34_projection asserts owner and side per term (routes.json gains the owner); a direct case under separateChooser true in which a compose score function with an advantage trains the chooser's logits and nothing in the readers (test_review14_contracts' probe returns to backward_owned(costs, {'chooser': (logits, unrelated)}) and set(costs) == {'chooser'}); the option's ported tests of item 4 run that mode.
+
+4. The 48 test ports (§15.4 causes A to G; before/after text in ports.json). Cause A, the fixture language gains _tree_layer=lambda arity: SimpleNamespace(exploration_fraction=.5, exploration_temperature=1.): test_decoder_exploration's decoder() about line 22 and its inline language about line 184; test_inverse_work's language(ops) helper about line 26 (both cases); test_review10_contracts::test_decoder_departure_samples_lower_rank_and_keeps_greedy_suffix shares decoder(). Cause B: test_generative_residual_finite line 70 shape (2, 1, 8); test_generation_budget line 95 shape (1, 2, 4, 9), both parameters; test_generation_catalog line 116 adds 'generate_policy.occupation_score.weight'; test_final_generation lines 72 to 80: the language gains _tree_layer and binds only generate_policy_logits, features ones(3, 1, 2, 9), the audit adds greedy ones(3, 1) long, eligible ones(3, 1) bool and costs, the assertion becomes (loss[:2] > 0).all() and loss[2] < 0 (the sign of delta C: +.1, +9.9, -.5); test_generate_repair lines 187 to 207: GeneratePolicy(2, 3), the language gains _tree_layer and binds only generate_policy_logits, features ones(3, 4, 3, 9), the audit adds greedy [[2, 0, 1, 0]] three times, eligible ones(3, 4) bool and costs [[1, 0], [0, 1], [0, 0]], the collector is _sentence_decoder_walk_credits, the assertion credit[0] < 0 and credit[1] > 0 and credit[2] == 0, and the wins.zero_() tail becomes the exact-tie rule (costs zeros(3, 2): zero credit without a graph). Cause C: test_decomposition_chooser line 102 asserts 'reconstruction.walk_policy' not in the registry; test_item20_round2_memory line 198 version 11; test_case_views line 257 writes the bad case_value at slot -2, (*event[:-2], bad_value, event[-1]); test_bind_thought and test_reference_review10 line 235 need no port once item 3 restores the bind owner (verify that errors.total(objective='expectation') returns the term). Cause D: test_reading_curriculum line 96 writers ['R']; test_native_attention_field::test_native_candidate_departure_credits_only_scorer_parameters lines 133 to 134 ['A']; test_objective_ownership line 95 the gradient present (zeros) and line 116 set(row['writers']) <= {'R', 'A'}; test_joint_objectives::test_model_parameter_ownership_and_backward_dispatch line 194 an owner that is a torch.nn.Module carrying outputSpace, synthesis_parameters and errors, line 205 expected [2., 4.]. Cause E: test_compose_pair_driver line 64 _build('<separateChooser>true</separateChooser>'), the option's per-trial certificate; test_joint_objectives::test_real_runbatch_steps_sentence_trials_then_batch_only_objectives line 236 ['single'] for MM_xor_loopback, lines 259 and 263 recording 'single' when _sentence_backward holds with _sentence_trial None and when _single_sentence_objectives is set; test_native_attention_field::test_native_reads_one_supported_word_and_charges_only_kept_trial captures the trial registry through a _sentence_path_cost wrapper as your test_free_reconstruction port does and reads registries[-1]._terms at line 40; test_sentence_comparison::test_sentence_trials_keep_their_own_perception_pullbacks line 37 adds architecture_overrides={'separateChooser': True} and line 63's read counts are re-derived with the chooser owner restored by item 3 (before/after recorded); test_sentence_comparison::test_replaying_real_greedy_derivation_ties_in_every_row lines 93 to 94 set inputSpace.data.has_supervised_outputs False and target torch.empty(4, 0) (its replay labels both trials exploit, so no reader update and the fail-loud raise at Models about 15207); test_sentence_compose line 186 ['commit', 'step'] twice; test_supplied_answer_training line 73 torch.autograd.grad(error.mean(), params, retain_graph=True, allow_unused=True); test_output_path_supervised line 272 m._single_sentence_objectives; test_operators_round2c line 145 one output step (the closing thought's exposure trains in the same sentence step; comment lines 143 to 144 say so); test_operators_round2e line 120 {1.}. Cause F, the option's direct certificates: test_compose_operations after line 19 result.separate_chooser = True; test_compose_review after line 11, test_signal_router_layer after line 25 and test_signal_router_unary after line 33 step.separate_chooser = True; test_live_references line 395 backward(retain_graph=True). Cause G: test_trial_policy_ownership line 43, test_understanding_readout line 45, test_prepared_answer_boundary lines 161 to 162 and test_operators_round2 line 210 assert the gradient present (the trunk is shared under the default, §2; the message says so); test_prepared_answer_boundary line 226 gradients[0] is None or not bool(gradients[0].abs().any()). A port that does not hold as written is repaired on its own fixture with the assertion's claim unchanged and recorded; no producer gains a default for a fixture.
+
+5. The one-line warts of §15.4: delete amp_scaler.scale(total_loss) at Models about 2666; reset _projection_writers beside _objective_gradient_writers at about 14199; delete LanguageSpace.generate_policy_credit (about 12674); drop VerbLearning.observe's unused point parameter and its callers' lambdas (ReferenceClose about 1424, the tests); VerbLearning.reread returns value unchanged when torch.is_grad_enabled() is False; move model.xml's "Adam learning rate" comment back above learningRate; remove the getattr defaults in GenerateOccupation.features (parts_of_speech, _generate_binary_rules, _generate_unary_rules; every LanguageSpace has them) and in GradientProjection.units (conceptualSpaces); keep the one occupation migration at LanguageSpace about 12644 and drop GeneratePolicy._load_from_state_dict. Recorded without repair: the host loop in GenerateOccupation.features; PartsOfSpeech._value_arguments reassigned at prepare_values; the two getattr at Models about 2886 stay if any constructed BaseModel lacks languageSpace (say which in §16).
+
+6. Documents, by append or exact replacement: Architecture (the ninth lane; owner and side as two attributes; the option's restored routing; the sentence-boundary detach and the retained batch graph), GradientFlow (the sides table gains the owner column), Testing one line, Params.md's separateChooser row (an option: both paths named). §16 lists every item with its numbers.
+
+7. Sweep and landing. Seal frozen-source.json and offered-documents.json, then run env -u RUN_TRAINED -u RUN_SLOW make test once, outside the sandbox that denied sysctl, nothing deselected. Expected: 7562 passed, 325 skipped, 1 xpassed plus the new direct cases of items 1 and 3, each named; the XOR class, the pending-premise pair and the shared-concept case run inside it. Green means every selected case passed or skipped as expected. On green, land in the §11.7 form: landing.json and landed-source.json (the frozen hash is the landed hash; nothing changes after the sweep); commit on main every file the round changed, added or deleted since cff4fb24…, the message in the 6becc3dc47 form: subject "Land accepted item 2.0 round 3/4"; body: the §15.4 review and this repair; what the round carries (the default projection with per-unit sides; owners kept for separateChooser true; generate under the proposal and the score-function credit, walk_policy retired; the teachers retired, the assigner on the recorded verb-phrase meaning, the re-read, actionRateRatio; output typing; the clamp velocity; the sentence-boundary detach); validation (the one sweep's counts, the direct certificates, §15's one gate run); generated evidence local under the ignore rules; no model or assistant identifier. Append "Landed as <commit hash>, 2026-11-09" after §15.5 in the 2.0 spec and a line in todo.md; commit "Record item 2.0 round 3/4 landing"; push once. On any red case: no commit, no push; §16 lists the failures with their tracebacks and your diagnosis, nothing retried.
+
+Carried: memory plan §10, basic percepts and thinking-spec §54 finding 2 (round 5); the loop and §10.2's measurements (round 6); the decoder's bookings move to output with the loop; momentum-carried projection and a learned pair policy stay conditional on the end-of-item receipts. No seed pinning, no resize, nothing retired without a record, no language named in code, fail loud.
+~~~
+
+## 16. Merged round 3/4 repair and landing return (2026-11-09)
+
+This is the repair authorized in §15.5, preserving `separateChooser=true` as an
+option. It starts at the §15 source `40676b500b3a292b51d9edfa6babb783ceec5d525ca41dbdb09362216d92822c`
+and offers `420c0c0b388ba24da5b67248d1bffb37dd98570a2bb3fa4febc72b9a395981f0`. The whole-round patch is against landed round 2,
+`cff4fb245235c247ce8a14a582c883b5c574766acba221a95fe0cf4f0fd56f4e` (main
+`e4b72d69899a98676c6cbe032901a54018365e9e`). This prose is sealed before the
+single sweep; its outcome and any landing are filled by that execution in the
+[sweep result](../benchmarks/2026-11-09-item2-0-round-3-4-repair/sweep-result.json),
+[final audit](../benchmarks/2026-11-09-item2-0-round-3-4-repair/final-audit.json)
+and [landing record](../benchmarks/2026-11-09-item2-0-round-3-4-repair/landing.json).
+
+1. **Sentence graph lifetime.** Both traversals now retain the batch graph
+   (R/A retention `true/false` → `true/true`). The unseeded two-sentence
+   certificate takes **2** steps with an explicit first-sentence A term.
+   At the second entry its scan finds **0** earlier-sentence graph nodes in
+   the carried tensors; all three eligible old choice-record pullbacks are
+   `None`, while batch perception remains reachable. The scan found additional
+   carries: sampling scale, expectation comparison, gradient-objective reports,
+   percept-field values/events, arrival loss and full STM buffers. Detaching only
+   the active STM prefix retained the inactive rows' old graph through `cat`;
+   the helper now cuts the whole buffer. Threaded sub/sym preserves original
+   perception values at unwritten positions via `where`. The reference vectors
+   and readout coefficients remain live. In this native fixture the initial
+   symbol-presence slab is absent; sentence publication creates it, so the helper
+   cuts those sentence writes and preserves original unwritten positions when a
+   pre-loop slab exists. This distinguishes that replacement from a batch
+   perception product. The review reported **5 failures in 8** native solo runs;
+   the repair passes **8 consecutive runs out of 8**, unseeded, each in its own
+   single-test process. [Boundary certificate](../benchmarks/2026-11-09-item2-0-round-3-4-repair/sentence-boundary.json),
+   [eight solo runs](../benchmarks/2026-11-09-item2-0-round-3-4-repair/eight-solo.json).
+
+2. **One feature width.** The dense placeholder was **5** wide while real traces
+   were **9** wide; all now read `Generative.WALK_FEATURE_WIDTH = 9`. Policy
+   inputs are always **8** lanes (five quality, three occupation); lane **9** is
+   the legal-action mask used to rebuild departure logits. The 5-wide policy
+   fallback is removed. The suffix fixture supplies 9 lanes. Strict native-menu
+   and toy-fixture checks passed **77**, skipped **3**; fixtures with no declared
+   arguments explicitly supply an empty inventory.
+
+3. **Owner and side.** Each error term now records **2** independent attributes.
+   Six formerly output-owned reward/residual families regain their declared
+   owners: compose and reconstruction thought → chooser; bind → expectation;
+   candidate departure → attention; output credit → chooser; output residual →
+   reconstruction. Their side remains A; decoder credit/residual remain R.
+   Sixteen direct routes preserve each weighted value at **6** and assert its
+   side and owner. Reader exposure uses output keys, without suffix-based choice
+   detection. The option's direct compose case moves logits
+   `[.2, -.1, .4]` → `[.174672, -.043737, .369065]` toward the cheaper departure;
+   reader and unrelated gradients remain `None`. The default projection's
+   original hand-built gradient remains `[1, 3]`, with R unchanged at `[1, 0]`.
+   [Routes with owners](../benchmarks/2026-11-09-item2-0-round-3-4-repair/routes.json),
+   [optional-owner certificate](../benchmarks/2026-11-09-item2-0-round-3-4-repair/separate-owner.json).
+
+4. **Ports.** The [complete port manifest](../benchmarks/2026-11-09-item2-0-round-3-4-repair/ports.json)
+   retains landed, reviewed and repaired text, including all **48** reviewed
+   non-defect cases. Bind/thought expectation assertions remain unchanged and
+   pass with restored owners. The pullback fixture's old fixed **6** calls becomes
+   **4**, plus **1** for a non-tied explored chooser reward; the final targeted
+   draw records **5**. It retains the claim that each trial uses its own
+   perception at the same pre-update parameter version.
+   [Pullback counts](../benchmarks/2026-11-09-item2-0-round-3-4-repair/perception-pullbacks.json).
+   One combined targeted command was interrupted after **267 passed, 23 skipped,
+   9 failed** while constructing a large codebook; its diagnostics are retained.
+   Five failures were missing toy inventories, already repaired in the strict
+   menu checks. The other four were port mistakes (a misplaced return, an unused
+   lambda and two unrelated AMP expectations), repaired in their fixtures.
+   Remaining files ran separately with one CPU thread; their sole initial
+   mismatch was the pullback count above, which then passed. The error/reader
+   routing checks passed **16**. No producer default was added for a fixture.
+   [All commands and outcomes](../benchmarks/2026-11-09-item2-0-round-3-4-repair/commands.json).
+
+5. **Small repairs.** The discarded projection AMP scale call, dead
+   `generate_policy_credit`, unused `observe` operand and four fixture-only
+   attribute defaults are removed. Projection writers reset once per batch.
+   Evaluation re-read action calls go from an unnecessary forward to **0**
+   under `no_grad`; training keeps the bit-exact local pullback. Occupation
+   checkpoint migration goes from **2** sites to **1**, in LanguageSpace. The
+   Adam-rate comment again labels `learningRate`. The two ActionLearning call-site
+   defaults remain: bare `BaseModel()` checkpoint hosts are constructed without
+   `languageSpace` or configured `action_rate_ratio`, including
+   `test_structural_checkpoint` and `test_learning_readiness`'s progress roundtrip.
+   The GenerateOccupation host loop and reassigned PartsOfSpeech staging buffer
+   remain recorded without repair.
+
+6. **Documents and case accounting.** Architecture names the ninth lane, both
+   cost attributes and both graph lifetimes; GradientFlow has the owner column;
+   Params names both supported paths; Testing records the new certificates.
+   The round adds **14** direct cases (the prior **12**, plus
+   `test_packed_sentence_boundary_cuts_prior_writes_and_retains_perception` and
+   `test_separate_chooser_option_routes_compose_credit_without_reader_updates`).
+   The same **2** teacher-only cases recorded in §15 remain retired; no further
+   case retires or changes parametrization. [Before source](../benchmarks/2026-11-09-item2-0-round-3-4-repair/before-source.json),
+   [frozen source](../benchmarks/2026-11-09-item2-0-round-3-4-repair/frozen-source.json),
+   [whole-round patch](../benchmarks/2026-11-09-item2-0-round-3-4-repair/source.patch),
+   [sealed documents](../benchmarks/2026-11-09-item2-0-round-3-4-repair/offered-documents.json).
+
+7. **One sweep; landing only on green.** The expected unique count is
+   **7,564 passed, 325 skipped, 1 xpassed** (**7,890 selected**): landed 7,552
+   passes plus 14 additions minus 2 retirements. The command is
+   `env -u RUN_TRAINED -u RUN_SLOW make test`, outside the sandbox that denied
+   `sysctl`, with nothing deselected. Native subtest reports are also preserved
+   separately. The XOR class, pending-premise pair and shared-concept case run
+   inside it. §15's single fresh XOR gate remains **4/4**; this repair adds
+   **0** gate fits. On green, [landed source](../benchmarks/2026-11-09-item2-0-round-3-4-repair/landed-source.json)
+   has the frozen source hash; the landing record contains both commits and the
+   one push. On red, no commit/push occurs and the sweep receipt retains every
+   traceback, with the diagnosis recorded in this return.
+
+**Carried:** memory plan §10, basic percepts and thinking-spec §54 finding 2
+remain round 5; the loop and §10.2 measurements remain round 6. Decoder bookings
+move to output with the loop. Momentum-carried projection and a learned pair
+policy remain conditional on end-of-item receipts. No seed pinning, model resize,
+new language-specific code, lesson arms or end-of-item measurements are introduced.
+
+
+### 16.1 Single-sweep result: red; not landed
+
+The one sweep completed all **7,890** selected cases: **7,553 passed, 324 skipped, 1 xpassed, 12 failed**.
+Source and offered documents stayed unchanged throughout the execution.
+Of the earlier 49 failing cases, **48 pass** and **1 fails**.
+The structural graph and optional-owner certificates, convergence, shared-concept,
+pending-premise pair and ordinary XOR class all passed, as recorded in the sweep receipt.
+The one-case skip difference is `test_data_loader_list_outputs_survive_worker_pickling`: its existing spawn-only skip did not trigger, and it passed (previously skipped). No selection or test changed to produce that difference.
+No test was retried after the freeze. No commit or push was made; the source
+remains `420c0c0b388ba24da5b67248d1bffb37dd98570a2bb3fa4febc72b9a395981f0` and main remains `e4b72d69899a98676c6cbe032901a54018365e9e`.
+
+The remaining failures are incomplete fixture ports, including the deliberately
+removed producer tolerances and an insufficient pullback-count condition. They were not repaired after this frozen run.
+The complete tracebacks and per-case diagnoses follow and are also retained in
+[failure diagnoses](../benchmarks/2026-11-09-item2-0-round-3-4-repair/failure-diagnoses.json).
+This result-only appendix is the authorized red return, appended after the
+sweep and its equality audit; the sealed offered prose remains in the patch.
+
+**1. `test/test_echoic_decoder.py::test_same_walk_infers_binary_and_unary_without_a_journal[False]`**
+
+Missed fixture port after removal of the producer's getattr fallback. This test's SimpleNamespace language lacks parts_of_speech and the explicit generate-rule inventory required by GenerateOccupation.features. Its toy algebra needs an explicit empty argument inventory; the behavioral assertion should remain unchanged. The compiled variants fail while capturing the same missing attribute. No producer fallback should be restored.
+
+<details>
+<summary>Recorded traceback</summary>
+
+```text
+test/test_echoic_decoder.py:122: in test_same_walk_infers_binary_and_unary_without_a_journal
+    decoded = fn(event, bank)
+              ^^^^^^^^^^^^^^^
+test/test_echoic_decoder.py:118: in walk
+    return Models.BasicModel._output_generate_walk(owner, event, 8,
+bin/Models.py:13486: in _output_generate_walk
+    _, stack, depth, emitted, count, actions, alternatives, _, _, tops, exact_path, residuals, features = _reconstruction_while_loop(
+bin/Models.py:441: in _reconstruction_while_loop
+    values = body(*values)
+             ^^^^^^^^^^^^^
+bin/Models.py:13397: in body
+    if menu_read is None else menu_read.read(parent, live, **menu_options))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Generative.py:663: in read
+    result = inverse_menu(self.language, parent, live, **options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Generative.py:721: in inverse_menu
+    return menu._replace(occupation=occupation_features(language, parent, menu.left, menu.right))
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/GenerateOccupation.py:8: in features
+    speech = language.parts_of_speech
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'parts_of_speech'
+```
+
+</details>
+
+**2. `test/test_identification_evidence.py::test_abstract_unfold_descends_each_sigma_rung`**
+
+Missed fixture port after removal of the producer's getattr fallback. This test's SimpleNamespace language lacks parts_of_speech and the explicit generate-rule inventory required by GenerateOccupation.features. Its toy algebra needs an explicit empty argument inventory; the behavioral assertion should remain unchanged. The compiled variants fail while capturing the same missing attribute. No producer fallback should be restored.
+
+<details>
+<summary>Recorded traceback</summary>
+
+```text
+test/test_identification_evidence.py:123: in test_abstract_unfold_descends_each_sigma_rung
+    result = unfold_idea(language, basis, basis[2], 8, activation=torch.ones(3) * 2,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:158: in no_grad
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Generative.py:429: in read
+    return function(language, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/MemoryIndex.py:71: in unfold_idea
+    menu = inverse_menu(language, top, gate,
+bin/Generative.py:721: in inverse_menu
+    return menu._replace(occupation=occupation_features(language, parent, menu.left, menu.right))
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/GenerateOccupation.py:8: in features
+    speech = language.parts_of_speech
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'parts_of_speech'
+```
+
+</details>
+
+**3. `test/test_item20_round2_generation.py::test_free_walk_has_no_action_record_or_live_stm[value-object]`**
+
+Missed fixture port after removal of the producer's getattr fallback. This test's SimpleNamespace language lacks parts_of_speech and the explicit generate-rule inventory required by GenerateOccupation.features. Its toy algebra needs an explicit empty argument inventory; the behavioral assertion should remain unchanged. The compiled variants fail while capturing the same missing attribute. No producer fallback should be restored.
+
+<details>
+<summary>Recorded traceback</summary>
+
+```text
+test/test_item20_round2_generation.py:101: in test_free_walk_has_no_action_record_or_live_stm
+    result = walk(event)
+             ^^^^^^^^^^^
+test/test_item20_round2_generation.py:94: in walk
+    return BasicModel._output_generate_walk(FreeOwner(), value, 6, basis=words,
+bin/Models.py:13486: in _output_generate_walk
+    _, stack, depth, emitted, count, actions, alternatives, _, _, tops, exact_path, residuals, features = _reconstruction_while_loop(
+bin/Models.py:441: in _reconstruction_while_loop
+    values = body(*values)
+             ^^^^^^^^^^^^^
+bin/Models.py:13397: in body
+    if menu_read is None else menu_read.read(parent, live, **menu_options))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Generative.py:663: in read
+    result = inverse_menu(self.language, parent, live, **options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Generative.py:721: in inverse_menu
+    return menu._replace(occupation=occupation_features(language, parent, menu.left, menu.right))
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/GenerateOccupation.py:8: in features
+    speech = language.parts_of_speech
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'parts_of_speech'
+```
+
+</details>
+
+**4. `test/test_item20_round2_generation.py::test_free_walk_has_no_action_record_or_live_stm[value-group]`**
+
+Missed fixture port after removal of the producer's getattr fallback. This test's SimpleNamespace language lacks parts_of_speech and the explicit generate-rule inventory required by GenerateOccupation.features. Its toy algebra needs an explicit empty argument inventory; the behavioral assertion should remain unchanged. The compiled variants fail while capturing the same missing attribute. No producer fallback should be restored.
+
+<details>
+<summary>Recorded traceback</summary>
+
+```text
+test/test_item20_round2_generation.py:101: in test_free_walk_has_no_action_record_or_live_stm
+    result = walk(event)
+             ^^^^^^^^^^^
+test/test_item20_round2_generation.py:94: in walk
+    return BasicModel._output_generate_walk(FreeOwner(), value, 6, basis=words,
+bin/Models.py:13486: in _output_generate_walk
+    _, stack, depth, emitted, count, actions, alternatives, _, _, tops, exact_path, residuals, features = _reconstruction_while_loop(
+bin/Models.py:441: in _reconstruction_while_loop
+    values = body(*values)
+             ^^^^^^^^^^^^^
+bin/Models.py:13397: in body
+    if menu_read is None else menu_read.read(parent, live, **menu_options))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Generative.py:663: in read
+    result = inverse_menu(self.language, parent, live, **options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Generative.py:721: in inverse_menu
+    return menu._replace(occupation=occupation_features(language, parent, menu.left, menu.right))
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/GenerateOccupation.py:8: in features
+    speech = language.parts_of_speech
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'parts_of_speech'
+```
+
+</details>
+
+**5. `test/test_item20_round2_generation.py::test_free_walk_has_no_action_record_or_live_stm[gradient-object]`**
+
+Missed fixture port after removal of the producer's getattr fallback. This test's SimpleNamespace language lacks parts_of_speech and the explicit generate-rule inventory required by GenerateOccupation.features. Its toy algebra needs an explicit empty argument inventory; the behavioral assertion should remain unchanged. The compiled variants fail while capturing the same missing attribute. No producer fallback should be restored.
+
+<details>
+<summary>Recorded traceback</summary>
+
+```text
+test/test_item20_round2_generation.py:101: in test_free_walk_has_no_action_record_or_live_stm
+    result = walk(event)
+             ^^^^^^^^^^^
+test/test_item20_round2_generation.py:94: in walk
+    return BasicModel._output_generate_walk(FreeOwner(), value, 6, basis=words,
+bin/Models.py:13486: in _output_generate_walk
+    _, stack, depth, emitted, count, actions, alternatives, _, _, tops, exact_path, residuals, features = _reconstruction_while_loop(
+bin/Models.py:441: in _reconstruction_while_loop
+    values = body(*values)
+             ^^^^^^^^^^^^^
+bin/Models.py:13397: in body
+    if menu_read is None else menu_read.read(parent, live, **menu_options))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Generative.py:663: in read
+    result = inverse_menu(self.language, parent, live, **options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Generative.py:721: in inverse_menu
+    return menu._replace(occupation=occupation_features(language, parent, menu.left, menu.right))
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/GenerateOccupation.py:8: in features
+    speech = language.parts_of_speech
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'parts_of_speech'
+```
+
+</details>
+
+**6. `test/test_item20_round2_generation.py::test_free_walk_has_no_action_record_or_live_stm[gradient-group]`**
+
+Missed fixture port after removal of the producer's getattr fallback. This test's SimpleNamespace language lacks parts_of_speech and the explicit generate-rule inventory required by GenerateOccupation.features. Its toy algebra needs an explicit empty argument inventory; the behavioral assertion should remain unchanged. The compiled variants fail while capturing the same missing attribute. No producer fallback should be restored.
+
+<details>
+<summary>Recorded traceback</summary>
+
+```text
+test/test_item20_round2_generation.py:101: in test_free_walk_has_no_action_record_or_live_stm
+    result = walk(event)
+             ^^^^^^^^^^^
+test/test_item20_round2_generation.py:94: in walk
+    return BasicModel._output_generate_walk(FreeOwner(), value, 6, basis=words,
+bin/Models.py:13486: in _output_generate_walk
+    _, stack, depth, emitted, count, actions, alternatives, _, _, tops, exact_path, residuals, features = _reconstruction_while_loop(
+bin/Models.py:441: in _reconstruction_while_loop
+    values = body(*values)
+             ^^^^^^^^^^^^^
+bin/Models.py:13397: in body
+    if menu_read is None else menu_read.read(parent, live, **menu_options))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Generative.py:663: in read
+    result = inverse_menu(self.language, parent, live, **options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Generative.py:721: in inverse_menu
+    return menu._replace(occupation=occupation_features(language, parent, menu.left, menu.right))
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/GenerateOccupation.py:8: in features
+    speech = language.parts_of_speech
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'parts_of_speech'
+```
+
+</details>
+
+**7. `test/test_item20_round2_generation.py::test_free_walk_has_no_action_record_or_live_stm[compiled_gradient-object]`**
+
+Missed fixture port after removal of the producer's getattr fallback. This test's SimpleNamespace language lacks parts_of_speech and the explicit generate-rule inventory required by GenerateOccupation.features. Its toy algebra needs an explicit empty argument inventory; the behavioral assertion should remain unchanged. The compiled variants fail while capturing the same missing attribute. No producer fallback should be restored.
+
+<details>
+<summary>Recorded traceback</summary>
+
+```text
+test/test_item20_round2_generation.py:101: in test_free_walk_has_no_action_record_or_live_stm
+    result = walk(event)
+             ^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1276: in compile_wrapper
+    raise e.with_traceback(
+E   torch._dynamo.exc.UncapturedHigherOrderOpError: This higher order operator doesn't work unless it is captured completely with torch.compile. Got graph break/error:
+E
+E   raised exception AttributeError("'SimpleNamespace' object has no attribute 'parts_of_speech'")
+E     Higher Order Operator: torch.while_loop
+E
+E   from user code:
+E      File "/Users/arogers/github/WikiOracle/basicmodel/test/test_item20_round2_generation.py", line 94, in walk
+E       return BasicModel._output_generate_walk(FreeOwner(), value, 6, basis=words,
+E              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           basis_valid=torch.ones(1, 3, dtype=torch.bool),verb_groups=groups,
+E           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           constituents=structure,constituent_valid=None if structure is None else torch.ones(1, 1, dtype=torch.bool),
+E           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           candidate_limit=3,return_trace=True)
+E           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py", line 13486, in _output_generate_walk
+E       _, stack, depth, emitted, count, actions, alternatives, _, _, tops, exact_path, residuals, features = _reconstruction_while_loop(
+E     File "/Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py", line 439, in _reconstruction_while_loop
+E       return torch.while_loop(condition, body, values)
+E              ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 227, in while_loop
+E       return while_loop_op(flat_cond_fn, flat_body_fn, tuple(flat_inputs), tuple())
+E              ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 224, in flat_body_fn
+E       return body_fn(*carried, *additional)
+E              ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py", line 13396, in body
+E       menu = (inverse_menu(language, parent, live, **menu_options)
+E               ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/test/../bin/Generative.py", line 721, in inverse_menu
+E       return menu._replace(occupation=occupation_features(language, parent, menu.left, menu.right))
+E                                       ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/GenerateOccupation.py", line 8, in features
+E       speech = language.parts_of_speech
+E                ^^^^^^^^^^^^^^^^^^^^^^^^
+E
+E   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+```
+
+</details>
+
+**8. `test/test_item20_round2_generation.py::test_free_walk_has_no_action_record_or_live_stm[compiled_gradient-group]`**
+
+Missed fixture port after removal of the producer's getattr fallback. This test's SimpleNamespace language lacks parts_of_speech and the explicit generate-rule inventory required by GenerateOccupation.features. Its toy algebra needs an explicit empty argument inventory; the behavioral assertion should remain unchanged. The compiled variants fail while capturing the same missing attribute. No producer fallback should be restored.
+
+<details>
+<summary>Recorded traceback</summary>
+
+```text
+test/test_item20_round2_generation.py:101: in test_free_walk_has_no_action_record_or_live_stm
+    result = walk(event)
+             ^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1276: in compile_wrapper
+    raise e.with_traceback(
+E   torch._dynamo.exc.UncapturedHigherOrderOpError: This higher order operator doesn't work unless it is captured completely with torch.compile. Got graph break/error:
+E
+E   raised exception AttributeError("'SimpleNamespace' object has no attribute 'parts_of_speech'")
+E     Higher Order Operator: torch.while_loop
+E
+E   from user code:
+E      File "/Users/arogers/github/WikiOracle/basicmodel/test/test_item20_round2_generation.py", line 94, in walk
+E       return BasicModel._output_generate_walk(FreeOwner(), value, 6, basis=words,
+E              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           basis_valid=torch.ones(1, 3, dtype=torch.bool),verb_groups=groups,
+E           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           constituents=structure,constituent_valid=None if structure is None else torch.ones(1, 1, dtype=torch.bool),
+E           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           candidate_limit=3,return_trace=True)
+E           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py", line 13486, in _output_generate_walk
+E       _, stack, depth, emitted, count, actions, alternatives, _, _, tops, exact_path, residuals, features = _reconstruction_while_loop(
+E     File "/Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py", line 439, in _reconstruction_while_loop
+E       return torch.while_loop(condition, body, values)
+E              ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 227, in while_loop
+E       return while_loop_op(flat_cond_fn, flat_body_fn, tuple(flat_inputs), tuple())
+E              ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 224, in flat_body_fn
+E       return body_fn(*carried, *additional)
+E              ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py", line 13396, in body
+E       menu = (inverse_menu(language, parent, live, **menu_options)
+E               ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/test/../bin/Generative.py", line 721, in inverse_menu
+E       return menu._replace(occupation=occupation_features(language, parent, menu.left, menu.right))
+E                                       ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/GenerateOccupation.py", line 8, in features
+E       speech = language.parts_of_speech
+E                ^^^^^^^^^^^^^^^^^^^^^^^^
+E
+E   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+```
+
+</details>
+
+**9. `test/test_one_backward.py::test_thought_and_generate_features_stay_detached_when_compose_is_live`**
+
+Missed fixture port after removal of the five-lane policy branch. test_one_backward supplies features of shape (1, 2, 5); the strict policy consumes eight menu lanes, so its occupation slice has zero columns and cannot multiply the three-column weight. The fixture needs (1, 2, 8), preserving its detached-feature and policy-gradient assertions.
+
+<details>
+<summary>Recorded traceback</summary>
+
+```text
+test/test_one_backward.py:247: in test_thought_and_generate_features_stay_detached_when_compose_is_live
+    policy(semantic[None],features).square().sum().backward()
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1787: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1798: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:12363: in forward
+    return logits + self.occupation_score(features[..., 5:]).squeeze(-1)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1787: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1798: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/linear.py:134: in forward
+    return F.linear(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: mm: mat1 and mat2 shapes cannot be multiplied (2x0 and 3x1)
+```
+
+</details>
+
+**10. `test/test_reference_index.py::test_unfold_candidates_are_the_current_priming_surface`**
+
+Missed fixture port after removal of the producer's getattr fallback. This test's SimpleNamespace language lacks parts_of_speech and the explicit generate-rule inventory required by GenerateOccupation.features. Its toy algebra needs an explicit empty argument inventory; the behavioral assertion should remain unchanged. The compiled variants fail while capturing the same missing attribute. No producer fallback should be restored.
+
+<details>
+<summary>Recorded traceback</summary>
+
+```text
+test/test_reference_index.py:21: in test_unfold_candidates_are_the_current_priming_surface
+    cold = unfold_idea(language, basis, basis[0], 4, activation=active)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:158: in no_grad
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Generative.py:429: in read
+    return function(language, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/MemoryIndex.py:71: in unfold_idea
+    menu = inverse_menu(language, top, gate,
+bin/Generative.py:721: in inverse_menu
+    return menu._replace(occupation=occupation_features(language, parent, menu.left, menu.right))
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/GenerateOccupation.py:8: in features
+    speech = language.parts_of_speech
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'parts_of_speech'
+```
+
+</details>
+
+**11. `test/test_math_chain_repair.py::test_unfold_reads_the_readers_priming_row`**
+
+Missed fixture port after removal of the producer's getattr fallback. This test's SimpleNamespace language lacks parts_of_speech and the explicit generate-rule inventory required by GenerateOccupation.features. Its toy algebra needs an explicit empty argument inventory; the behavioral assertion should remain unchanged. The compiled variants fail while capturing the same missing attribute. No producer fallback should be restored.
+
+<details>
+<summary>Recorded traceback</summary>
+
+```text
+test/test_math_chain_repair.py:78: in test_unfold_reads_the_readers_priming_row
+    result = unfold_idea(language, basis, basis[row], 4, activation=lambda: weights, stream=row)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:158: in no_grad
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Generative.py:429: in read
+    return function(language, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/MemoryIndex.py:71: in unfold_idea
+    menu = inverse_menu(language, top, gate,
+bin/Generative.py:721: in inverse_menu
+    return menu._replace(occupation=occupation_features(language, parent, menu.left, menu.right))
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/GenerateOccupation.py:8: in features
+    speech = language.parts_of_speech
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'parts_of_speech'
+```
+
+</details>
+
+**12. `test/test_sentence_comparison.py::test_sentence_trials_keep_their_own_perception_pullbacks`**
+
+The count port is still too narrow. The sweep observed [0, 0, 1, 1, 1] while the final compose non_tied flag was false, so the fixture expected only [0, 0, 1, 1]. It incorrectly treats that final compose flag as the sole source of an extra per-owner pullback. Other restored chooser or reconstruction.A costs can also traverse perception; this traceback does not identify which supplied the fifth read. A further fixture repair should observe each trial's actual cost owners and preserve the same-version, trial-specific-pullback claim. No rerun was made to attribute that fifth read. This failure supersedes the pre-sweep item 4 claim that the conditional count was sufficient.
+
+<details>
+<summary>Recorded traceback</summary>
+
+```text
+test/test_sentence_comparison.py:65: in test_sentence_trials_keep_their_own_perception_pullbacks
+    assert called == [0, 0, 1, 1] + ([1] if chooser else []), called
+E   AssertionError: [0, 0, 1, 1, 1]
+E   assert [0, 0, 1, 1, 1] == [0, 0, 1, 1]
+E
+E     Left contains one more item: 1
+E     Use -v to get more diff
+```
+
+</details>
+
+### 16.2 Review of the §16 return (Claude, 2026-11-09): the repair accepted; 12 red cases, all fixture ports; landing with the ports
+
+**Source and documents.** frozen-source.json `420c0c0b388ba24da5b67248d1bffb37dd98570a2bb3fa4febc72b9a395981f0` (1016 files) equals the live tree; before-source.json equals the §15 freeze `40676b500b3a…`; 53 files differ between them (13 under bin plus the new `bin/SentenceBoundary.py`, data/model.xml, 37 ported test files, the new test_item20_round34_repair.py). The production delta was read in full against Codex's before-tree copy. The seal over eight documents recomputes equal except this spec, which §16.1 appended after the sweep; final-audit.json records that append as the authorized red return. HEAD is still `e4b72d6989`; nothing committed or pushed.
+
+**What the repair built, and that it matches §15.5.** (1) Both traversals of GradientProjection.backward retain the graph; `SentenceBoundary.finish`, called at the single-path boundary beside the stm/lang/feedback detach, detaches the finished sentence's choice records, roots, decoder trace, attention words, sampling scale, expectation comparison, gradient-objective reports, STM's live buffers whole (the active-prefix detach left the inactive rows' graph reachable through `cat`), the percept field and the last arrival, and rebuilds the threaded sub/sym and the symbol-presence slab by `torch.where(written, detached, perception)`, so unwritten positions keep the batch's perception graph. The structural certificate finds 0 leaked nodes over 14 carried tensors at the second sentence's entry, the three old choice-record pullbacks None, the perception reachable, two optimizer steps; test_learning_readiness passed 8 of 8 unseeded solo runs (eight-solo.json). (2) `Generative.WALK_FEATURE_WIDTH = 9` read at the dense placeholder (Models ~9892), the walk arrays and `generate_credit`; the 5-wide policy branch and `_load_from_state_dict` are gone; `generation_fixtures.suffix` is 9-wide; `undeclared_arguments` supplies a toy language an empty inventory. (3) `Error.add`/`error` take `side`, defaulting from `ObjectiveOwnership.default_side(term_owner(...))`; `registry_costs` keys by owner, or owner + '.A'/'.R' when the side is not the owner's default; `backward_owned` reads the owner before the first '.'; the registrations carry exactly the owner-and-side pairs of §15.5 item 3 (routes.json: 16 terms, each with owner and side); the option's direct case moves the compose logits toward the cheaper departure with the reader's gradient None. (5) The dead AMP line, `generate_policy_credit`, the unused `point`, the GenerateOccupation and `units` getattr defaults and the second occupation migration are gone; `_projection_writers` resets per batch; `reread` returns the value unchanged under no_grad; the model.xml comment is back above learningRate. The two ActionLearning call-site getattr defaults stay, with the reason recorded (bare `BaseModel()` checkpoint hosts have no languageSpace).
+
+**Certificates.** The fourteen direct cases rerun from the live tree into the scratchpad (7.8 s): thirteen JSONs equal Codex's; native-default-projection.json differs in one unit (unseeded; in my run one unit was projected, in Codex's none). Gates in the sweep: test_convergence, the shared-concept case, the pending-premise pair, the XOR reconstruction class, the two new certificates all passed.
+
+**The sweep.** 7890 cases: 7553 passed, 324 skipped, 1 xpassed, 12 failed, against the expected 7564/325/1; the one skip-to-pass is `test_data_loader_list_outputs_survive_worker_pickling`, whose spawn-only skip did not trigger in this environment. Of the 49 red cases of §15.4, 48 pass. The 12 are fixture ports, none a producer defect, each diagnosed in failure-diagnoses.json: ten toy languages without `parts_of_speech` after the getattr default was removed as §15.5 asked (test_echoic_decoder, test_identification_evidence, test_item20_round2_generation's `FreeOwner` with its six parameters including the two compiled variants, test_reference_index, test_math_chain_repair; the port is `undeclared_arguments(language)` from generation_fixtures); one 5-lane features fixture in test_one_backward::test_thought_and_generate_features_stay_detached_when_compose_is_live (8 lanes); and the pullback-count port in test_sentence_comparison::test_sentence_trials_keep_their_own_perception_pullbacks, whose fixed list `[0, 0, 1, 1] + [1 if non_tied]` met `[0, 0, 1, 1, 1]`: under the option `backward_owned` traverses the pullback once per cost key among reconstruction, chooser and attention, and `output.walk_residual.*` (owner reconstruction, side A) is a key of its own beside `reconstruction`, so the count is the number of such keys with a graph per trial; the fixture derives it from each trial's costs instead of a fixed list, keeping its claim (each trial's own perception at one parameter version).
+
+**Warts, recorded.** `SentenceBoundary.finish` detaches by a list of attribute names; a new carried attribute would leak until the scan certificate catches it, which is what the certificate is for. Under the option two keys with one owner traverse the pullback twice (`reconstruction` and `reconstruction.A`); summing keys per owner before the traversal would save one pass. The dual-process and three-stage design is not in Architecture.md or Philosophy.md; its text for Codex is [2026-11-09-item2-0-dual-process-architecture.md](2026-11-09-item2-0-dual-process-architecture.md) (Alec, 2026-11-09), to be added at the round-5 build.
+
+**Verdict.** The production repair is accepted; the tree is not landable until the 12 fixture ports are in. The production source does not change for them. Recommended landing form, as round 2's: the 12 ports with before/after text, a rerun of the six files, landing in the §11.7 form with "Land accepted item 2.0 round 3/4", no second sweep; alternative: one more sweep before the landing. Either way the landing is folded into the round-5 build text, as §13.2 schedules.
+
+**Confirmed (Alec, 2026-11-09: "good recomendations").** Round 3/4 lands with the 12 fixture ports and a rerun of the six files, no second sweep; the landing is folded into the round-5 build text (§16.3). Round 5's seat initialization: identity and execution interface declared at construction, direction, confidence and participations learned (memory plan §10.5, decided the same day).
+
+### 16.3 One Codex text: land round 3/4, build round 5 (Claude, 2026-11-09; for Alec to paste; final)
+
+Preface for Alec. §16.2 said six files; the twelve ports touch seven. Assumptions stated inside the text: the LTM1 authority columns are replaced by one reference to the operation's seat concept, no row added, and the word-concept column retires where the operator word is already an endpoint; the verb and modal state terms are relative errors against the no-change prediction, so no weight knob returns; a supplied training form is declared a basic percept at admission while forms met in reading promote by recurrence, which keeps round 2's supplied-form report true; the pinned sentence's working form is the nested schematic unless Codex finds the flatter form cheaper, recorded. If any of these is not your intent, say so before pasting.
+
+~~~
+Item 2.0: land the merged round 3/4, then build round 5 (memory, basic percepts, the pinned sentence and the seats, verbs over the state of affairs). The review of the §16 return is 2.0 spec §16.2 (doc/plans/2026-11-03-gradient-projection.md); the offered source is 420c0c0b388ba24da5b67248d1bffb37dd98570a2bb3fa4febc72b9a395981f0, the landed round-2 source cff4fb245235c247ce8a14a582c883b5c574766acba221a95fe0cf4f0fd56f4e, main e4b72d69899a98676c6cbe032901a54018365e9e. Alec decided (2026-11-09): round 3/4 lands with the twelve fixture ports and a rerun of their seven files, no second sweep; the operator seats declare identity and execution interface at construction and learn direction, confidence and participations. Fast checks only until the implementation is finished. Steps 1 to 3 land; items 4 to 10 build round 5 and freeze it for review as §17; no commit or push of round 5.
+
+1. Port and check. Twelve ports, before/after text in doc/benchmarks/2026-11-09-item2-0-round-3-4-repair/landing.json; nothing under bin/ or data/ changes. (a) The toy languages gain the declared empty inventory by test/generation_fixtures.undeclared_arguments(language), wrapping the SimpleNamespace at test/test_echoic_decoder.py line 25, test/test_identification_evidence.py line 117, test/test_item20_round2_generation.py line 25 (the module language FreeOwner reads; this clears all six parameters, the two compiled ones included), test/test_reference_index.py line 17 and test/test_math_chain_repair.py line 74. (b) test/test_one_backward.py line 246: features torch.ones(1, 2, 5, ...) becomes torch.ones(1, 2, 8, ...). (c) test/test_sentence_comparison.py lines 62 to 65: in place of the fixed list, wrap ObjectiveOwnership.backward_owned to record, per call, the number of costs with a graph whose key before its first '.' (after 'penalty.' is removed) is reconstruction, chooser or attention and has parameters in owners; assert called == [0] * count_0 + [1] * count_1, keep versions[0] == versions[1], and record the counts in perception-pullbacks.json beside the before list. Rerun the seven files (BASICMODEL_DEVICE=cpu PYTHONPATH=bin .venv/bin/python -m pytest -q test/test_echoic_decoder.py test/test_identification_evidence.py test/test_item20_round2_generation.py test/test_reference_index.py test/test_math_chain_repair.py test/test_one_backward.py test/test_sentence_comparison.py, with the writable inductor cache the repair used); all green. Record the tree's source hash by the receipt method as landed-source.json beside the repair's frozen-source.json, naming the seven files as the whole difference from 420c0c0b…. The handwritten documents changed since the sweep only by appends (§16.1, §16.2, two confirmation paragraphs, a memory-plan paragraph, a todo line, the new file doc/plans/2026-11-09-item2-0-dual-process-architecture.md); run test/test_doc_links.py once; it must pass. No make test: the repair's one sweep (7553 passed, 324 skipped, 1 xpassed, the twelve fixture failures) plus the seven-file rerun is the certificate.
+
+2. Commit, on main, every file the round changed, added or deleted since cff4fb24…: the modified tracked files under bin/, data/, doc/, test/ and todo.md, the new modules bin/ActionLearning.py, bin/GenerateOccupation.py, bin/GradientProjection.py and bin/SentenceBoundary.py, the new tests test/test_item20_round34_actions.py, test_item20_round34_projection.py, test_item20_round34_repair.py and test_item20_round34_typing.py, and doc/plans/2026-11-09-item2-0-dual-process-architecture.md. Receipts stay local under the ignore rules; force nothing in. Message in the form of 6becc3dc47: subject "Land accepted item 2.0 round 3/4"; body: land the repaired freeze 420c0c0b with the §15.4 and §16.2 reviews and the twelve fixture ports named; what the round carries (the default projection with per-unit sides and owners kept for separateChooser true; generate under the proposal and the score-function credit, walk_policy retired; the verb and modal teachers retired, the assigner on the recorded verb-phrase meaning, the re-read, actionRateRatio; output typing as generate-policy features; the clamp velocity; the sentence-boundary detach with both traversals retaining the batch graph); validation (the repair's one sweep with its twelve fixture failures ported and rerun, the fourteen direct certificates, §15's one XOR gate); generated evidence local under the ignore rules; no model or assistant identifier.
+
+3. Record. Append "Landed as <commit hash>, 2026-11-09" after §16.3 in the 2.0 spec and a line in todo.md; commit "Record item 2.0 round 3/4 landing"; push once. Then round 5 starts from that tree; before-source.json of its receipt is the landed hash.
+
+4. Memory: one link, references, promotion (memory spec doc/plans/2026-11-03-item2-0-behavioral-chains.md §§3.2 to 3.5 as §9 and its 2026-11-05 additions amend them; §3.1 landed in round 1). ConceptualSpace.link(occurrence, candidates, *, value, where, when, stream), called from forward() at the kept close in place of ReferenceClose.commit's bind and _commit_events, with three callers: reference sites (today's binds and commit_read_words' familiar candidates, questions included), verb events, and each kept sentence's order-0 state (never an estimate, a question, a cover, a modal or an unlowered idea). A member is a reference: the .when of the STM0 or LTM0 entry and the concept referenced within that idea; a word reads the concept it denotes, a mention without a word reads its own idea, a known individual or the promoted concept is one reference, a kept thought's written idea is a member. Values are computed from the members when read (MediumTermMemory.value_of over references); Token.value, the timelines' stored values and the join in open and bind retire; Event keeps before, verb_meaning, basis and modifiers as the recorded forward operands of the re-read, and its after retires with the stored values; the state version becomes 12, old versions load with their stored values dropped and reported. Re-entry (EntryRead.recall_identities, recall_chunks) records the recalled member's link time as the stream's current close and joins an individual already open in MTM instead of opening a duplicate. The path: link order is time order; merge interleaves by close clock (test_reference_arrival_review ported with before/after). Enforced: the window (a collection is a candidate only while its latest member is within mtmHorizon kept closes, read from refinement['mentions'], which every link and re-entry now records) and likeness (one order, one kind set by the first member; containment: one of IdentityRows.meet_ratios' two coverages exactly 1). Scored at zero weight: where-band overlap with the tail member, the gap over mtmHorizon, the first difference against the tail member, presence in STM's chunks; the policy row grows from eight to twelve features, old checkpoints zero-padded and reported; the choice is credited by the departure rule, output side whole. Candidates from MTM's pool and STM's chunks alike (D4). Runs form concepts at every level: an extended event's state is computed from its members when read, one order lower, no update sets it; the run keeps its path order. Promotion by the one rule: conceptMintCount recurrences within horizon promote a collection one order above its members through promote_identity's path, writing membership rows (OCCURRENCE, m_i) -> (SYMBOL, cid) by _resolve_null_token's writer and successor rows (OCCURRENCE, m_{i-1}) -> (OCCURRENCE, m_i) with m_i's bands (LTM1.add, witness=True); the epoch boundary withdraws them and keeps the concept; ChainRead.path(cid) reads the path back with a visited set. Nouns from chains: an identity that is the participant of conceptMintCount consecutive links of one collection of states receives one mention witness per link and mints through promote_identity with no new count. The judge: reconstruction.reference (Models about 20364; ReferenceReconstruction.cost) becomes memory.link_coverage on every link, owner reconstruction, side R, its gradient reaching what the coverage reads, the choice discrete. Certificates: memory spec §4 items 2 to 9 (the three callers on one fixture, with two consecutive kept closes linking two order-0 states, a recurrence, a distant close taking the dummy, a modal clause adding no link; the window and likeness; the path after merge; re-entry's link time and the join; promotion with membership and successor rows, the id released, the path read back and stopped on a cycle, the boundary withdrawing the rows; nouns from chains; no concept at order 0, collections of states absent from stage's leading field, the input reconstruction unchanged with STM and MTM emptied; the judge in the registry); the unchanged MTM, identity, timeline, familiar-tier, forgetting and reference files on the same hash, ported with before/after where D4 changes a choice, each named with the reason.
+
+5. Verbs and modals over the state of affairs (loop spec §3.8; 2.0 spec §8: "the verb and modal teachers are MTM"). At the kept close, in training only, inside link's caller for events: for an event member whose identity has a later reference, memory.verb_state is a relative error (Error.error): the error is the cube-chart squared distance on defined coordinates (ModalLearning.residual's form) between the lift action's forward on the recorded operands, verb_action()(before, verb_meaning, basis or group), and the identity's computed value at its next reference, detached; the baseline is the same distance between before and that value, the no-change prediction, so the term needs no weight. memory.modal_state likewise for the modifier action: the actual timeline's computed value mapped through the event's modifiers against the alternative timeline's computed value at equal time, baseline the distance between actual and alternative. Both owner reconstruction, side R, registered in the close registry (_sentence_close_errors) so the single backward carries them; their gradient reaches the lift and adverb parameters (the actionRateRatio groups) and nothing stored; the assigner and the re-read stay as landed. Certificates: a direct two-sentence fixture where the second reading moves the identity's state: both terms finite, the verb term's gradient reaching verb_action().readout and no stored tensor, the error equal to the baseline when the action is the identity map, the modal term on an alternative() timeline; the round 3/4 re-read case still passing; under evaluation no term registered.
+
+6. Shared strata, the pinned sentence, the seats, authority (memory plan §10.1, §10.5, §10.6; the seat policy decided 2026-11-09). STM0 holds live ideas with LTM0's storage and read implementation and a retention policy; STM1 holds ordered binary branches with LTM1's two tagged references per row; STMChunks stays the eight-entry recent buffer (stmCapacity). During the pinned sentence (pin, the stack flag of ThoughtChunks.put) its derivation tree lives in these strata: word occurrences and operator-concept occurrences in STM0, ordered binary branches in STM1, the operator present in the referenced content and not in a column; nested pairs pair(pair(operator, left), right) and pair(operator, argument), or a flatter working form if cheaper, recorded; sized by the sentence-length constant and preallocated (n word and n-1 operator occurrences, at most 2(n-1) branches), separate from stmCapacity, never resized. At the kept close the tree collapses in STMChunks.keep_close: the sentence's compacted idea stays in STM0 as a recent entry, the relation rows PartClosing._write adds stay in STM1 and LTM1, the branches and operator occurrences are freed; LTM0 and LTM1 hold compacted ideas and relations only. Reconstruction's derivation inverse (DerivationReconstruction), conditioning and MTM read the shared structure; the ChunkJournal record and the Composition objects stop being an authoritative second tree (views at most; no hidden side table), and decoding from a retained LTM0 idea requires none of it (§10.2: generative matching). Operator concept seats: one concept per primitive operation of the configured grammar (_compose_binary_rules and _compose_unary_rules, named by operation_name), seated at construction with its identity and its execution interface (the native operation implementation; FIXED_OPERATIONS membership read from the seat), its direction, confidence, participations, relations and applicability learned from experience (PartsOfSpeech.observe_kept teaches the seat's participations as it teaches the argument concepts); no seat enters a lexical example or gets a surface spelling. Authority onto the seats' trust: LTM1.refresh_effective's write(row) scales a row by min(the endpoints' trusts, the operation seat's trust by positive_length, gates.cap(named, operation=the seat's name)); the categorizer's occupations.operation(name)['trust'] factor retires in favour of the seat's trust; the grammar_operation catalog index becomes the reference to the seat concept, the one integer the row keeps (no row added; buffer renamed), and the operator word-concept column retires where the operator word is an endpoint of the row, concept(operator) being that endpoint's trust; a row whose operator word is not an endpoint is recorded with its case and keeps the reference. _primitive_evidence and the gate-reopening function (gates.advance over measurements) are preserved; a checkpoint migration renames the column and drops the retired one, reported. Certificates: memory plan §10.4's list (one data/read implementation for STM0/LTM0 and STM1/LTM1; common reads by reconstruction, conditioning and MTM; reference validity across short-term expiry; two operations with compatible argument categories distinguished by their seat references; one retained LTM0 idea unfolding to a surface with the input journal and the input STM absent, judged as meaning-compatible realization); after a kept close STM0 holds the compacted idea and no operator occurrence and STM1 no branch of that sentence; a row's effective truth equals the min above on a hand-built row; the input reconstruction unchanged.
+
+7. Basic percepts (basic-percepts spec doc/plans/2026-11-04-item2-0-basic-percepts.md §§3.1 to 3.3, §8, §9; D1 and D2 decided; D3 landed in round 2). BasicPercepts: a preallocated table of basicPerceptCapacity rows (data/model.xml and model.xsd, 262144 where the percept store has word identity; lesson configurations may set less; Params.md), a row recording its parts (identity atoms, nested rows, radix chunks) and wholes (properties) with its code at their centroid (the identity join of the parts and the property meet of the wholes, MereologicalCodes._subspace_bounds moved into perception), laid out in the item 2.8 subspaces; a full table raises. Its read at a bracket ties parts and wholes live: the minimum that fold_presence takes over both towers today, with the complement pole from the property lanes, so the parallel field keeps its gradient to PrimitiveProperties.members and the fill written without gradient goes. Order-0 concepts collect basic percepts: features column 2*bp + pole; the literal writers (_populate_concept_weights, add_concept_feature, lookup_word, FamiliarTier, ConceptLessons, _witness_concept_poles) write basic-percept literals; cs_read_memberships reads basic-percept evidence per bracket and folds by the existing sigma and pi (_compose_order0 unchanged, the working[:n0] contract kept); the lexical gate and the cross-tower minimum leave the concept read; a concept that is not a word unit collects the basic percepts carrying its property or part (D2). Symbols have no mereological read: MereologicalCodes.derive stops deriving order-0 forms from the two towers and FormContainment.audit's premises move to basic percepts. The compose-time whole read (FormCentroids, MeaningKernels.centroid, with item 2.5's presence weighting) and the per-word typed slots (IndexedSigmaConceptsFromPercepts, admit_references) keep their logic and read basic percepts; thinking spec §45.8's gradient receipts are re-taken after the change. MTM creates basic percepts (§9): an occurrence of a basic-level percept, a word Interpret.lookup_word admits, is a link member at the perceptual level, its parts and wholes never members alone; a collection recurring conceptMintCount times within horizon promotes to a BasicPercepts row, which replaces admission as the writer; before promotion the occurrence reads and reverses through its own parts and wholes; a supplied training form (Corpus.admit_training_forms) is declared a basic percept at admission, so round 2's three-stage report and yes in every applicable bank stand. The input reconstruction reads no MTM state: promoted rows persist in the table. The reverse through basic percepts (§3.4) is round 6's, with the loop's reverse. Certificates: basic-percepts §4 items 1 to 5 and 7 (preallocation from model.xml and a full table raising; every admitted word one basic percept at its centroid; no part or whole literal column left in order-0 features; the cross-tower minimum absent from cs_read_memberships and present in the basic-percept read; the parallel field's gradient reaching members through it; FormContainment.audit on basic percepts), promotion of a recurring basic-level collection writing one row, the supplied form declared at admission, and the §45.8 receipts.
+
+8. The elided role's content (thinking spec §54 finding 2, carried here with the full reference form). At the kept close a reference site with no word, an elided role, takes as its content the description the expected role's witnesses established, the identity's prior reference in that role read as a member reference, so that link has a candidate for it; where no witness established the role the site provides no identifying content, as §§50 and 52 certify. G3 (test/test_bind_thought.py about 232 to 238) drops its fixture-supplied content and passes on the native supply, ported with before/after.
+
+9. Documents, by append or exact replacement: doc/plans/2026-11-09-item2-0-dual-process-architecture.md §§1 to 4 into Architecture.md as a dated section "Dual process: System 1, knowing and System 2" with a status bullet at the document's head, decided-not-built statements marked with their round, and §5 into Philosophy.md under "Object Files, File Cards and Dharmakīrti's Particulars", both by append; the memory spec §6's documents (Architecture: the one link and the references; the FutureWork pointer; Orders by append, order 1's continuity as every collection's connected path); the memory plan §10's (Architecture: the shared strata, the collapse, the seats, authority onto their trust); the basic-percepts spec §3.5's (Orders §1 and §9, Mereology, Architecture's "Two spaces, one index" and its order-alternation passage, Spaces.md, the item 2.8 spec's dated note) and Params.md with model.xsd for basicPerceptCapacity; GradientFlow (memory.link_coverage, memory.verb_state and memory.modal_state with owner and side; reconstruction.reference retired); Testing one line; your return as §17 of the 2.0 spec, each item with its before-and-after numbers.
+
+10. Carried, not built here: round 6 (reconstruction from the parallel field, reverse as the one decoder through basic percepts, generate with the occurrence writer, loop spec D1 to D6, the §10.2 measurements, the decoder's bookings to output); momentum-carried projection and a learned pair policy, conditional on the end-of-item receipts; events as mereological neighbours (future work); item 1.5's port onto the new features layout.
+
+Testing: fast checks only until the implementation is finished. Each item's direct certificates; the targeted files (the memory, identity, timeline, familiar-tier, forgetting and reference files for items 4 to 6 and 8; the word-identity, mereology, containment, parts-of-speech and compose-centroid files for item 7; every file you port); one make test when you offer the freeze (env -u RUN_TRAINED -u RUN_SLOW make test, outside the sandbox, nothing deselected; the XOR class, the pending-premise pair and the shared-concept case inside it). Expect the landed counts (7565 passed, 324 or 325 skipped by the spawn-only skip, 1 xpassed) plus the new direct cases, less each case a port retires or re-parameterizes, each named. Receipt under doc/benchmarks/2026-11-09-item2-0-round-5/ with commands.json, before-source.json (the landed round-3/4 source of step 3), frozen-source.json, source.patch, ports.json (every port's before/after text), offered-documents.json sealed before the sweep, placeholders filled only by the one execution; every file your return links to exists before the sweep starts. No seed pinning, no resize, nothing retired without a record, no language named in code, fail loud. Return through Alec for Claude's review; no commit or push of round 5.
+~~~

@@ -16,6 +16,8 @@ def additive_language():
             return left + right
     language = SimpleNamespace(_generate_binary_ops=(Add(),), _generate_unary_ops=(),
         decomposition_chooser=DecompositionChooser())
+    from generation_fixtures import undeclared_arguments
+    undeclared_arguments(language)
     for name in ('reverse_binary_step', '_reverse_of_binary_op', '_finish_binary_inverse',
                  'generate_unary_step', 'choose_generate'):
         setattr(language, name, MethodType(getattr(LanguageSpace, name), language))

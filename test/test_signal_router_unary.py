@@ -31,6 +31,7 @@ def test_exactly_one_unary_position_changes():
 
 def test_unary_and_stop_anchors_receive_only_score_function_credit():
     step = OperationSelectionLayer(d_model=1, unary_ops=[Negate()])
+    step.separate_chooser = True
     with torch.no_grad():
         step.stop_anchor.zero_(); step.apply_anchor.fill_(-1)
     x = torch.tensor([[[1.]]], requires_grad=True)

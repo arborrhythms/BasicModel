@@ -61,7 +61,7 @@ def _batch(m):
 
 @pytest.mark.usefixtures('eager_reading')
 def test_pair_trains_twice_and_commits_once(monkeypatch):
-    m = _build()
+    m = _build('<separateChooser>true</separateChooser>')
     optimizer = torch.optim.SGD(m.parameters(), lr=0.0)
     batch = _batch(m)
     clock0 = m.present()

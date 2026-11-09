@@ -9,6 +9,7 @@ from test_compose_operations import Add, Negate, layer
 def test_zero_temperature_keeps_the_score_function_gradient():
     step = OperationSelectionLayer(d_model=1, ops=[Add()], unary_ops=[Negate()],
                                    temperature=0)
+    step.separate_chooser = True
     with torch.no_grad():
         step.reduce_anchor.fill_(1)
         step.apply_anchor.zero_()

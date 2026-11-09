@@ -392,7 +392,7 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
         changed = model._reconstruct_trial(replace(record, word_values=record.word_values+19))[0]
         torch.testing.assert_close(model._recon_ideas[active], expected[active], rtol=1e-4, atol=1e-4)
         torch.testing.assert_close(changed[active], expected[active], rtol=0, atol=0)
-        clause.composition.point.sum().backward()
+        clause.composition.point.sum().backward(retain_graph=True)
         assert query.grad is None
         route = next(route for route in routes if bool((route['kind'] == 1).any()))
         credit = route['logits'].log_softmax(-1).gather(1, route['action'][:, None]).sum()

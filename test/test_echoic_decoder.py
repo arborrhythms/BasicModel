@@ -1,6 +1,7 @@
 """The conceptual generate decoder is shared, reconstruction-owned and journal-free."""
 from dataclasses import fields
 from DecompositionChooser import DecompositionChooser
+from generation_fixtures import undeclared_arguments
 from types import SimpleNamespace, MethodType
 
 import torch
@@ -98,9 +99,9 @@ def test_same_walk_infers_binary_and_unary_without_a_journal(monkeypatch, compil
         policy.weight.copy_(torch.tensor([[1., 1.], [-1., -1.], [0., 0.]]))
         # The composed root has unit activation, independent of form norms.
         policy.bias.copy_(torch.tensor([-1., -1., 0.]))
-    language = SimpleNamespace(_generate_binary_ops=(conjunction,), _generate_unary_ops=(Reflection(0, 0),),
+    language = undeclared_arguments(SimpleNamespace(_generate_binary_ops=(conjunction,), _generate_unary_ops=(Reflection(0, 0),),
         generate_policy=policy, _generate_policy_width=2,
-        decomposition_chooser=DecompositionChooser())
+        decomposition_chooser=DecompositionChooser()))
     for name in ('reverse_binary_step', '_reverse_of_binary_op', '_finish_binary_inverse',
                  'generate_unary_step', 'generate_policy_logits', 'choose_generate'):
         setattr(language, name, MethodType(getattr(LanguageSpace, name), language))

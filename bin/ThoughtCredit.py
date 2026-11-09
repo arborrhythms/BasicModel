@@ -22,7 +22,7 @@ def register(model, value, *, costs, source, row, category='reconstruction'):
         if errors is not None:
             errors.add(category+'.thought_score_function', value,
                        space='SymbolSpace', category=category,
-                       objective='chooser' if category == 'reconstruction' else category)
+                       objective='chooser' if category == 'reconstruction' else category, side='A')
 
 
 def complete(model, trace, other, departure, costs, row):

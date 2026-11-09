@@ -6,7 +6,7 @@ import torch
 from Memory import Timeline
 
 
-def teacher(action, actual, alternative, modifiers):
+def residual(action, actual, alternative, modifiers):
     from Layers import cube_chart
     actual, alternative = actual.detach(), alternative.detach()
     predicted = actual
@@ -17,7 +17,7 @@ def teacher(action, actual, alternative, modifiers):
     return error.sum(-1) / defined.sum(-1).clamp_min(1)
 
 
-def observe(action, pool, references, *, errors=None, weight=.1, training=True, deferred=None):
+def observe(action, pool, references, *, training=True):
     reports = []
     if action is None:
         return reports
@@ -40,12 +40,8 @@ def observe(action, pool, references, *, errors=None, weight=.1, training=True, 
                 before, after = (value[-width:].to(action.readout).detach()
                                  for value in (actual.after, event.after))
                 modifiers = tuple(value[-width:].to(action.readout).detach() for value in event.modifiers)
-                with torch.set_grad_enabled(training and deferred is None):
-                    term = teacher(action, before, after, modifiers)
-                if training and deferred is not None:
-                    deferred.append((action, before, after, modifiers, weight))
-                elif training and errors is not None:
-                    errors.add('modal_teacher', term, weight=weight, category='reconstruction')
+                with torch.no_grad():
+                    term = residual(action, before, after, modifiers)
                 reports.append(dict(token=key, timeline=index, occurrence=event.occurrence,
                     actual=actual.occurrence, when=event.when, error=float(term.detach()),
                     defined=int((before.ne(0) & after.ne(0)).sum())))
@@ -53,11 +49,3 @@ def observe(action, pool, references, *, errors=None, weight=.1, training=True, 
             timelines[index] = Timeline(tuple(events), timeline.value)
         pool.entries[key] = replace(entry, timelines=tuple(timelines))
     return reports
-
-
-def register(records, errors):
-    """Construct graphs at the post-pair parameter version, as for the verb."""
-    for action, actual, alternative, modifiers, weight in records:
-        errors.add('modal_teacher', teacher(action, actual, alternative, modifiers),
-                   weight=weight, category='reconstruction')
-    records.clear()

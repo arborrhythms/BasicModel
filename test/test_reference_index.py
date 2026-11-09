@@ -1,5 +1,6 @@
 """Retrieval postings follow a bounded Part read; generation stays separate."""
 import copy
+from generation_fixtures import undeclared_arguments
 from types import SimpleNamespace
 
 import torch
@@ -14,7 +15,7 @@ from MemoryIndex import unfold_idea
 
 
 def test_unfold_candidates_are_the_current_priming_surface():
-    language = SimpleNamespace(_generate_binary_ops=(), _generate_unary_ops=(), generate_policy_logits=lambda point,features=None: point.new_zeros(1, 1))
+    language = undeclared_arguments(SimpleNamespace(_generate_binary_ops=(), _generate_unary_ops=(), generate_policy_logits=lambda point,features=None: point.new_zeros(1, 1)))
     basis = torch.eye(3)
     weights = torch.tensor([1., 2., 1.])
     active = lambda: weights

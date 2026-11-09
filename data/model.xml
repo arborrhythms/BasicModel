@@ -15,7 +15,7 @@
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
   <architecture>
-    <separateChooser>true</separateChooser>
+    <separateChooser>false</separateChooser>
     <reconstructionJitter>0</reconstructionJitter>
     <!-- Fixed trips per free output or sentence-decoder walk. -->
     <generateBudget>32</generateBudget>
@@ -253,6 +253,7 @@
       <batchSize>64</batchSize>
       <!-- DataLoader prefetch workers; 0 = synchronous in-process. -->
       <numWorkers>0</numWorkers>
+      <actionRateRatio>1</actionRateRatio>
       <!-- Adam learning rate. -->
       <learningRate>0.001</learningRate>
       <!-- Teacher owns clean reconstruction lessons when enabled. -->

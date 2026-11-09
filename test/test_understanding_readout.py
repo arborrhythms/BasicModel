@@ -42,7 +42,7 @@ def test_answer_reads_understanding_with_gradient_cut(depth, supplied):
     answer.sum().backward()
     assert readout.weight.grad is not None and readout.weight.grad.abs().sum() > 0
     assert slab.grad is None
-    assert root.grad is None and field.grad is None
+    assert (root.grad if depth == 1 else field.grad) is not None, 'the default shares the answer trunk'
 
 
 def test_named_concept_head_keeps_its_identity_carrier():

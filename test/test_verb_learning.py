@@ -11,29 +11,6 @@ from Memory import MediumTermMemory
 from VerbLearning import observe
 
 
-def test_teacher_graph_is_built_after_the_paired_optimizer_steps():
-    from VerbLearning import register
-    mtm = MediumTermMemory()
-    token, event = ('ltm', 'unit', 1), ('ltm', 'unit', 2)
-    before, after, verb = (torch.full((8,), value) for value in (.2, .35, .3))
-    action = MeaningAction(8, capacity=1)
-    mtm.open(token, kind=11, value=before, when=1)
-    mtm.event(token, event, verb=12, role=0, when=2, before=before, basis=-1)
-    previous = dict(mtm.entries)
-    mtm.update(token, after, when=3)
-    records, errors = [], Error()
-    observe(action, mtm, previous, {token}, lambda _: verb, errors=errors, deferred=records)
-    assert errors.total(objective='reconstruction') is None
-    assert len(records) == 1 and all(not value.requires_grad for value in records[0][1:4])
-    with torch.no_grad():
-        action.readout.add_(.1)  # a later sentence's ordinary paired update
-    register(records, errors)
-    expected = action.teacher(before, after, verb, group=torch.tensor(-1)) * .1
-    torch.testing.assert_close(errors.total(objective='reconstruction'), expected)
-    errors.total(objective='reconstruction').backward()
-    assert action.readout.grad.abs().sum() > 0 and not records
-
-
 def record(f, tree, frames=()):
     """Fixed operations over prepended identities and the production journal."""
     from chunk_fixtures import record as record_chunks
@@ -60,20 +37,20 @@ def test_two_kept_sentences_join_the_copular_observation_and_teach_once(monkeypa
         written = {}
         row = f.store.write_clause(kept, written_rows=written, document_key='teacher', sentence_index=position)
         resolver.commit(plan, row, written, document='teacher', position=position, training=True,
-                        verb_action=action, errors=errors)
+                        verb_action=action)
         return SituationAddress(f.store.occurrence_of(row),
             symbols=written.get(('symbols', id(kept)), ()),
             activations=written.get(('activations', id(kept)), ())).read(f.store)
     frame = close(('lift', ('lower_unary', 'subject'), 'move'))
     token = next(key for key, entry in f.cs.mtm.entries.items() if entry.events)
-    assert not resolver.last_verb_teacher
+    assert not resolver.last_verb_observation
     close(('part', ('bind', 'subject'), 'property'), (frame,), position=1)
-    assert len(resolver.last_verb_teacher) == 1
-    assert resolver.last_verb_teacher[0]['token'] == token
+    assert len(resolver.last_verb_observation) == 1
+    assert resolver.last_verb_observation[0]['token'] == token
     torch.testing.assert_close(f.cs.mtm.value_of(token), torch.full((8,), .4))
     assert sum(event.taught for event in f.cs.mtm.entries[token].events) == 1
-    errors.total(objective='reconstruction').backward()
-    assert action.readout.grad.abs().sum() > 0
+    assert errors.total(objective='reconstruction') is None
+    assert action.readout.grad is None
 
 
 def test_observed_state_trains_readout_once_without_concept_gradients():
@@ -83,20 +60,19 @@ def test_observed_state_trains_readout_once_without_concept_gradients():
     verb = torch.full((8,), .2, requires_grad=True)
     action = MeaningAction(8, capacity=2)
     mtm.open(token, kind=11, value=before, when=1)
-    mtm.event(token, event, verb=12, role=0, when=2, before=before, basis=-1)
+    mtm.event(token, event, verb=12, role=0, when=2, before=before, basis=-1, verb_meaning=verb)
     previous = dict(mtm.entries)
     observed = torch.tensor([.3, .4, .8, .45, .3, .4, .8, .45], requires_grad=True)
     mtm.update(token, observed, when=3)
     errors = Error()
-    report = observe(action, mtm, previous, {token}, lambda _: verb, errors=errors)
+    report = observe(action, mtm, previous, {token})
     assert len(report) == 1 and report[0]['defined'] == 6
-    term = errors.total(objective='reconstruction')
-    term.backward()
-    assert action.readout.grad.abs().sum() > 0
+    assert errors.total(objective='reconstruction') is None
+    assert action.readout.grad is None
     assert before.grad is None and observed.grad is None and verb.grad is None
-    # The optimizer receives only the defined-coordinate chart discrepancy.
-    assert torch.equal(action.readout.grad[[2]], torch.zeros_like(action.readout.grad[[2]]))
-    assert observe(action, mtm, dict(mtm.entries), {token}, lambda _: verb, errors=errors) == []
+    expected = action.teacher(before, observed, verb, group=torch.tensor(-1))
+    assert report[0]['error'] == float(expected.detach())
+    assert observe(action, mtm, dict(mtm.entries), {token}) == []
     copy = MediumTermMemory()
     copy.restore(mtm.state())
     assert copy.entries[token].events[0].taught
@@ -145,14 +121,11 @@ def test_copular_join_is_kept_and_fires_the_previous_verb_teacher(monkeypatch):
     f.cs.mtm.update(token,joined,when=3)
     errors = Error()
     from IdentityRows import point
-    reports = observe(action, f.cs.mtm, previous, {token}, lambda symbol: point(f.cs, symbol), errors=errors)
+    reports = observe(action, f.cs.mtm, previous, {token})
     assert len(reports) == 1
-    loss = errors.total(objective='reconstruction')
-    loss.backward()
-    assert action.readout.grad.abs().sum() > 0
-    with torch.no_grad():
-        action.readout.sub_(10 * action.readout.grad)
-    before_error = reports[0]['error']
+    assert errors.total(objective='reconstruction') is None
+    assert action.readout.grad is None
     remembered = previous[token].events[-1]
-    after_error = action.teacher(remembered.before, f.cs.mtm.value_of(token), point(f.cs, remembered.verb))
-    assert after_error < before_error
+    assert remembered.verb_meaning is not None
+    error = action.teacher(remembered.before, f.cs.mtm.value_of(token), remembered.verb_meaning)
+    assert reports[0]['error'] == float(error.detach())

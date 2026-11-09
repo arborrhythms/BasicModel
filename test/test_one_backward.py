@@ -193,11 +193,17 @@ def test_native_sentence_counts_one_backward_and_step_and_preserves_band_gradien
             assert model._sentence_backward
             costs=model._single_sentence_objectives
             groups=model.objective_parameter_groups(optimizer)
+            from GradientProjection import sides, project, metric
+            objectives = sides(costs, model._sentence_reconstruction_strength)
             expected={}
             for name in ('expectation','attention'):
-                parameters=groups[name];cost=costs.get(name)
-                expected[name]=(tuple(None for _ in parameters) if cost is None or not cost.requires_grad else
-                    torch.autograd.grad(cost,parameters,retain_graph=True,allow_unused=True))
+                parameters=groups[name]
+                gradients = [tuple(None for _ in parameters) if cost is None else
+                    torch.autograd.grad(cost, parameters, retain_graph=True, allow_unused=True)
+                    for cost in objectives.values()]
+                expected[name] = tuple(a if r is None else r if a is None else
+                    r + project(r, a, metric(optimizer, p, r))[0]
+                    for p, r, a in zip(parameters, *gradients))
             result=train(*args,**kwargs)
             for name,gradients in expected.items():
                 for parameter,gradient in zip(groups[name],gradients):
@@ -211,7 +217,8 @@ def test_native_sentence_counts_one_backward_and_step_and_preserves_band_gradien
             return result
         monkeypatch.setattr(model,'_backward_training_loss',checked)
         result=present(model,split='train',optimizer=optimizer,batch_size=1)
-        assert result['sentences']==2 and len(calls)==len(steps)==len(audits)==2
+        assert result['sentences']==2 and len(calls)==0 and len(steps)==len(audits)==2
+        assert model._single_backward_calls == 1  # counter resets for each presented batch
         assert storage()==allocated
         receipt(tmp_path,'native-single-backward',dict(sentences=2,backward_calls=calls,
             optimizer_steps=steps,band_gradient_equality=audits,
@@ -236,7 +243,7 @@ def test_thought_and_generate_features_stay_detached_when_compose_is_live():
     assert semantic.grad is None
     assert any(p.grad is not None and p.grad.abs().sum()>0 for p in layer.parameters())
     policy=GeneratePolicy(4,2)
-    features=torch.ones(1,2,5,requires_grad=True)
+    features=torch.ones(1,2,8,requires_grad=True)
     policy(semantic[None],features).square().sum().backward()
     assert semantic.grad is None and features.grad is None
     assert policy.weight.grad.abs().sum()>0

@@ -67,7 +67,7 @@ def test_cube_menu_features_keep_all_three_lane_errors_in_the_unit_interval():
     parent = torch.tensor([[.5, .5, 1e-30, 1e-30, 0., 0.], [0., 1., .2, .8, 1., 0.]])
     terminal = 1-parent
     menu = terminal_menu(parent, terminal)
-    assert menu.admissible.all() and menu.features.shape == (2, 1, 5)
+    assert menu.admissible.all() and menu.features.shape == (2, 1, 8)
     assert ((menu.features[..., :3] >= 0) & (menu.features[..., :3] <= 1)).all()
     torch.testing.assert_close(menu.features[:, 0, :3], (terminal-parent).reshape(2, 3, 2).square().mean(-1))
 

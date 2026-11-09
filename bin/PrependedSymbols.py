@@ -96,9 +96,10 @@ def symbolize(owner, store, key, token, timeline=0):
                  if isinstance((row := store.location(occurrence)), int)]
         form = torch.stack(forms).mean(0) if forms else token.value.new_zeros(form_width)
     value = owner.mtm.value_of(key, timeline=timeline).detach().clone()
-    value[:form_width] = form.to(value)
+    value[:form_width] = form.detach().to(value)
     value[form_width:width] = 0
-    return value
+    from VerbLearning import reread
+    return reread(owner, token, timeline, value)
 
 
 def chunk_token(pool, store, state, batch, index):

@@ -2,6 +2,7 @@
 from dataclasses import replace
 
 import pytest
+from generation_fixtures import undeclared_arguments
 import torch
 
 from ClauseRow import Clause
@@ -114,8 +115,8 @@ def test_abstract_unfold_descends_each_sigma_rung():
     from types import SimpleNamespace
     from MemoryIndex import unfold_idea
     basis = torch.eye(3)
-    language = SimpleNamespace(_generate_binary_ops=(), _generate_unary_ops=(),
-        generate_policy_logits=lambda value,features=None: value.new_zeros(len(value), 1))
+    language = undeclared_arguments(SimpleNamespace(_generate_binary_ops=(), _generate_unary_ops=(),
+        generate_policy_logits=lambda value,features=None: value.new_zeros(len(value), 1)))
     calls = []
     def descend(code, order):
         calls.append((code, order))

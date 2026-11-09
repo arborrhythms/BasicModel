@@ -43,6 +43,8 @@ def decoder():
     language = SimpleNamespace(_generate_binary_ops=(Sum(),), _generate_unary_ops=(),
         generate_policy=policy, _generate_policy_width=2,
         decomposition_chooser=DecompositionChooser())
+    from generation_fixtures import undeclared_arguments
+    undeclared_arguments(language)
     for name in ('generate_policy_logits', 'reverse_binary_step', '_reverse_of_binary_op'):
         setattr(language, name, MethodType(getattr(LanguageSpace, name), language))
     language._bounded_binary_reconstruction = LanguageSpace._bounded_binary_reconstruction

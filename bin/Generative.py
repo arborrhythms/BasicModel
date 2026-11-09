@@ -8,6 +8,9 @@ from typing import NamedTuple
 from functools import wraps
 import torch
 
+# Eight menu lanes followed by the legal-action mask used by credit.
+WALK_FEATURE_WIDTH = 9
+
 
 class InverseMenu(NamedTuple):
     left: torch.Tensor
@@ -17,11 +20,14 @@ class InverseMenu(NamedTuple):
     form_residual: torch.Tensor
     meaning_residual: torch.Tensor
     stack_effect: torch.Tensor
+    occupation: torch.Tensor | None = None
 
     @property
     def features(self):
+        occupation = (self.left.new_zeros(*self.left.shape[:-1], 3)
+                      if self.occupation is None else self.occupation)
         values = torch.cat((self.form_residual[..., None], self.meaning_residual,
-            self.exact.to(self.left)[..., None], self.stack_effect[..., None]), -1).detach()
+            self.exact.to(self.left)[..., None], self.stack_effect[..., None], occupation), -1).detach()
         # An unavailable inverse can have an infinite residual. It is not a
         # scoring observation: a later logit mask cannot prevent 0 * inf in
         # the scorer's weight gradient, even when its forward logits are finite.
@@ -232,8 +238,7 @@ def eligibility_menu(parent,lefts,rights,available,binary,unary,proposals,recomp
     exact = exact & admissible
     effects=parent.new_zeros(available.shape)
     effects[:,:len(binary)]=1; effects[:,-1]=-1
-    return InverseMenu(torch.stack(lefts,1),torch.stack(rights,1),admissible,exact,
-        forms,meanings,effects)
+    return InverseMenu(torch.stack(lefts,1),torch.stack(rights,1),admissible,exact,forms,meanings,effects)
 
 
 def selected_residual(language,parent,left,right,choice,active,*,form_width=None,
@@ -384,6 +389,9 @@ def walk_bank(model,root,bank):
     from FormCentroids import candidates
     groups = None
     language = model.languageSpace
+    speech = getattr(language, 'parts_of_speech', None)
+    if speech is not None:
+        speech.prepare_values()
     if getattr(language, 'verb_action', lambda: None)() is not None:
         owner = model._concept_owner()
         ids = result.rows.new_tensor([[owner.concept_id_at_row(int(row)) or -1
@@ -656,7 +664,7 @@ class InverseMenuRead:
         activations = tuple((module, module.activation) for module in self.modules.values()
                             if 'activation' in getattr(module, '__dict__', {}))
         entry = (parent.detach().clone(), live.clone(),
-                 type(result)(*(value.detach() for value in result)), activations)
+                 type(result)(*(value.detach() if torch.is_tensor(value) else value for value in result)), activations)
         if len(self.entries) < self.capacity:
             self.entries.append(entry)
         else:
@@ -705,10 +713,12 @@ def inverse_menu(language, parent, live, *, basis, basis_valid, priming=None,
     # forward search while restricting only STOP to lexical realizations.
     options = ({} if constituents is None and terminal_valid is None else
                dict(terminal_basis=words, terminal_valid=terminals))
+    from GenerateOccupation import features as occupation_features
     if require_symbols:
-        return LanguageSpace.decoder_eligibility(parent,lefts,rights,available,
+        menu = LanguageSpace.decoder_eligibility(parent,lefts,rights,available,
             binary,basis,basis_valid,case_bank=case_bank,whole_bank=whole_bank,
             details=True,unary_ops=unary,action_candidates=action_candidates,**options)
+        return menu._replace(occupation=occupation_features(language, parent, menu.left, menu.right))
     # A caller without symbolic guards still receives explicit residuals.
     layout=next((getattr(getattr(op,'gl',op),'meaning_layout',None)
         for op in (*binary,*unary) if getattr(getattr(op,'gl',op),'meaning_layout',None)),None)
@@ -727,4 +737,4 @@ def inverse_menu(language, parent, live, *, basis, basis_valid, priming=None,
     menu=eligibility_menu(parent,lefts,rights,available,binary,unary,
         proposals,folded,exact_pairs,available[:,-1],parent,available[:,-1],width,
         whole_bank=whole_bank,case_bank=case_bank,cube_domain=False,action_candidates=action_candidates)
-    return menu
+    return menu._replace(occupation=occupation_features(language, parent, menu.left, menu.right))

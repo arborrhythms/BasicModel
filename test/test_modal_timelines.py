@@ -7,7 +7,7 @@ import torch
 
 from Memory import MediumTermMemory
 from MeaningKernels import MeaningAction
-from ModalLearning import observe, register
+from ModalLearning import observe
 from Layers import Error
 
 
@@ -112,13 +112,12 @@ def test_equal_time_teacher_uses_only_defined_coordinates_once_and_defers_its_gr
     p.event(address(1), address(3), verb=13, role=0, when=7, timeline=branch,
         after=after, modifiers=(modifier,))
     records, errors = [], Error()
-    report = observe(action, p, (address(1),), errors=errors, deferred=records)
+    report = observe(action, p, (address(1),))
     assert len(report) == 1 and report[0]['defined'] == 6 and report[0]['when'] == 7
-    assert errors.total(objective='reconstruction') is None and len(records) == 1
-    register(records, errors)
-    errors.total(objective='reconstruction').backward()
-    assert action.readout.grad.abs().sum() > 0
-    assert torch.count_nonzero(action.readout.grad[2]) == 0
+    assert errors.total(objective='reconstruction') is None and not records
+    assert action.readout.grad is None
+    from ModalLearning import residual
+    assert report[0]['error'] == float(residual(action, actual, after, (modifier,)).detach())
     assert observe(action, p, (address(1),)) == []
     assert not records
 

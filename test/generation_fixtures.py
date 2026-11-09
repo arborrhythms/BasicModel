@@ -20,4 +20,14 @@ def all_available(parent,left,right,available,*args,**kwargs):
 def suffix(tops, pending, *, choices=1):
     B,T,D=tops.shape
     return (~pending,tops.new_zeros(B,T,3),tops.new_zeros(B,1,D),
-            tops.new_zeros(B,T,choices,5),tops)
+            tops.new_zeros(B,T,choices,9),tops)
+
+
+def undeclared_arguments(language):
+    """Toy algebra has no learned syntactic argument inventory."""
+    from types import SimpleNamespace
+    language.parts_of_speech = SimpleNamespace(index={},
+        value_scores=lambda value: value.new_zeros(*value.shape[:-1], 0))
+    language._generate_binary_rules = ()
+    language._generate_unary_rules = ()
+    return language

@@ -308,7 +308,7 @@ def _migrate_whole_addresses(checkpoint, slices, copies, percept_width):
             # MTM v8-v10 serializes timeline values and event operands as
             # tuples. Their position, rather than a dictionary field name,
             # identifies the native value; occurrence/verb keys stay intact.
-            if value.get('version') in (8, 9, 10) and 'entries' in value and 'candidate_counter' in value:
+            if value.get('version') in (8, 9, 10, 11) and 'entries' in value and 'candidate_counter' in value:
                 result = dict(value)
                 entries = []
                 for entry in value['entries']:
@@ -320,6 +320,8 @@ def _migrate_whole_addresses(checkpoint, slices, copies, percept_width):
                             event = list(event)
                             for index in (4, 5, 7, 10):
                                 event[index] = visit(event[index], 'value')
+                            if len(event) > 11:
+                                event[11] = visit(event[11], 'value')
                             event[8] = tuple(visit(modifier, 'value') for modifier in event[8])
                             migrated_events.append(tuple(event))
                         timelines.append((tuple(migrated_events), visit(current, 'value')))

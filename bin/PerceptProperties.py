@@ -244,9 +244,17 @@ class PrimitiveProperties(nn.Module):
         return float(before), float(after)
 
     @torch.no_grad()
-    def project(self):
+    def project(self, optimizer=None):
         self.members.clamp_(0, 1)
         self.members.copy_(torch.where(self.fixed_rows[:,None],self.fixed_members,self.members))
+        if optimizer is not None:
+            velocity = optimizer.state.get(self.members, {}).get('momentum_buffer')
+            if velocity is not None:
+                current = self.members[:velocity.shape[0]]
+                # SGD subtracts velocity: negative pushes out at the upper
+                # bound, positive pushes out at the lower bound.
+                outward = ((current >= 1) & (velocity < 0)) | ((current <= 0) & (velocity > 0))
+                velocity.masked_fill_(outward, 0.)
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
