@@ -5,20 +5,21 @@ import torch
 from torch import nn
 
 
-def fixture(*, meaning_pairs=1, batch_size=1, property_width=0):
+def fixture(*, meaning_pairs=1, batch_size=1, property_width=0, capacity=32):
     from test_cs_sparse_weights import _cs
     from Spaces import Codebook, _concept_alloc_of
-    cs = _cs(nS=32, order=0, batch_size=batch_size)
-    ps = Codebook()
     width = 3 + property_width
+    cs = _cs(nS=capacity, order=0, batch_size=batch_size, dim=width+2*meaning_pairs)
+    ps = Codebook()
     ps.W = nn.Parameter(torch.zeros(16, width))
     with torch.no_grad():
         ps.W[4, :3] = torch.tensor([.2, .6, .8])
         ps.W[7, :3] = torch.tensor([.8, .2, .4])
     object.__setattr__(cs, '_model', SimpleNamespace(perceptualSpace=SimpleNamespace(
-        subspace=SimpleNamespace(what=ps), nDim=width)))
+        subspace=SimpleNamespace(what=ps), nDim=width),
+        wholeSpaces=[SimpleNamespace(subspace=SimpleNamespace(what=None))]))
     cb = Codebook()
-    cb.W = nn.Parameter(torch.zeros(32, width+2*meaning_pairs))
+    cb.W = nn.Parameter(torch.zeros(capacity, width+2*meaning_pairs))
     cs.similarity_codebook = cb
     # This fixture substitutes the native key width at construction. Its
     # predictor must be constructed on that same width; runtime never resizes.
@@ -69,6 +70,8 @@ def test_close_placement_is_confined_to_detached_context_coordinates():
     from Meaning import ConceptualMeaning
     cs, cb, ps, _ = fixture()
     a, b = word(cs, [(4, 1.)]), word(cs, [(7, 1.)])
+    from definition_fixtures import agreeing_views
+    agreeing_views(cs, cs.concept_id_at_row(a), cs.concept_id_at_row(b))
     store = LTM0(5, capacity=8)
     cs.symbolSpace = SimpleNamespace(ltm_store=store)
     part = store.parts.add(cs.concept_id_at_row(a), cs.concept_id_at_row(b),
@@ -84,7 +87,11 @@ def test_close_placement_is_confined_to_detached_context_coordinates():
     cb.mereology.observe_close(reading)
     codes = cb.lookup_rows(torch.tensor([a,b]))
     torch.testing.assert_close(codes[:,:3], ps.W[[4,7]])
-    torch.testing.assert_close(codes[:,3:], torch.tensor([[1/5,0.],[1/5,0.]]))
+    # Three agreeing views supply the radius independently of placement.
+    radius = 1 - __import__("math").exp(-1)
+    direction = torch.nn.functional.normalize(cb.mereology.placement[[a,b]], dim=-1)
+    torch.testing.assert_close(codes[:,3:4], direction * radius)
+    assert not codes[:,4:5].any()
     assert not codes.requires_grad
     assert root.grad is None and not store.slots.requires_grad
     newer = store.append_meaning(ConceptualMeaning(roles*2, torch.tensor([True,False,False]),
@@ -93,7 +100,7 @@ def test_close_placement_is_confined_to_detached_context_coordinates():
     cs.prime_seen(torch.tensor([[a,b]]))
     cb.mereology.observe_close(reading)
     torch.testing.assert_close(cb.lookup_rows(a)[:3], ps.W[4])
-    torch.testing.assert_close(cb.lookup_rows(a)[3:], torch.tensor([2/6,0.]))
+    torch.testing.assert_close(cb.lookup_rows(a)[3:].reshape(2,-1).norm(dim=-1), torch.tensor([radius, 0.]))
     assert len(store) == 2
 
 

@@ -8,7 +8,19 @@
     "copular_identity": null,
     "stage4e": null,
     "pending_premise_learning": null,
-    "mtm_reidentification": null
+    "mtm_reidentification": null,
+    "words": null,
+    "interpret": null,
+    "clause": null,
+    "ask": null,
+    "verb": null,
+    "modifiers": null,
+    "determiners": null,
+    "adverb": null,
+    "prepositions": null,
+    "relations": null,
+    "mm_xor_grammar": null,
+    "xor_grammar": null
   },
   "producers": {
     "copular_identity": {
@@ -16,6 +28,82 @@
       "phase": "relations",
       "runner": "bin/corpus_lessons.py",
       "criterion": "unforced order-1 names and order-2 kind containing both"
+    },
+    "words": {
+      "runner": "bin/corpus_lessons.py",
+      "lesson": "doc/specs/2026-10-18-parts-of-speech.md#5b-order-of-operations-alec-2026-11-07-claudes-filling-out-confirmed-in-part",
+      "row": 0,
+      "phase": "words"
+    },
+    "interpret": {
+      "runner": "bin/corpus_lessons.py",
+      "lesson": "doc/specs/2026-10-18-parts-of-speech.md#5b-order-of-operations-alec-2026-11-07-claudes-filling-out-confirmed-in-part",
+      "row": 1,
+      "phase": "interpret"
+    },
+    "clause": {
+      "runner": "bin/corpus_lessons.py",
+      "lesson": "doc/specs/2026-10-18-parts-of-speech.md#5b-order-of-operations-alec-2026-11-07-claudes-filling-out-confirmed-in-part",
+      "row": 2,
+      "phase": "clause"
+    },
+    "ask": {
+      "runner": "bin/corpus_lessons.py",
+      "lesson": "doc/specs/2026-10-18-parts-of-speech.md#5b-order-of-operations-alec-2026-11-07-claudes-filling-out-confirmed-in-part",
+      "row": 3,
+      "phase": "ask"
+    },
+    "verb": {
+      "runner": "bin/corpus_lessons.py",
+      "lesson": "doc/specs/2026-10-18-parts-of-speech.md#5b-order-of-operations-alec-2026-11-07-claudes-filling-out-confirmed-in-part",
+      "row": 4,
+      "phase": "verb"
+    },
+    "modifiers": {
+      "runner": "bin/corpus_lessons.py",
+      "lesson": "doc/specs/2026-10-18-parts-of-speech.md#5b-order-of-operations-alec-2026-11-07-claudes-filling-out-confirmed-in-part",
+      "row": 5,
+      "phase": "modifiers"
+    },
+    "determiners": {
+      "runner": "bin/corpus_lessons.py",
+      "lesson": "doc/specs/2026-10-18-parts-of-speech.md#5b-order-of-operations-alec-2026-11-07-claudes-filling-out-confirmed-in-part",
+      "row": 6,
+      "phase": "determiners"
+    },
+    "adverb": {
+      "runner": "bin/corpus_lessons.py",
+      "lesson": "doc/specs/2026-10-18-parts-of-speech.md#5b-order-of-operations-alec-2026-11-07-claudes-filling-out-confirmed-in-part",
+      "row": 7,
+      "phase": "adverb"
+    },
+    "prepositions": {
+      "runner": "bin/corpus_lessons.py",
+      "lesson": "doc/specs/2026-10-18-parts-of-speech.md#5b-order-of-operations-alec-2026-11-07-claudes-filling-out-confirmed-in-part",
+      "row": 8,
+      "phase": "prepositions"
+    },
+    "relations": {
+      "runner": "bin/corpus_lessons.py",
+      "lesson": "doc/specs/2026-10-18-parts-of-speech.md#5b-order-of-operations-alec-2026-11-07-claudes-filling-out-confirmed-in-part",
+      "row": 9,
+      "phase": "relations"
+    },
+    "mm_xor_grammar": {
+      "runner": "test/test_mm_xor.py::TestMMXorConvergence::_fit_xor",
+      "test": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+      "config": "data/MM_grammar.xml",
+      "seed": 41001,
+      "epochs": 900,
+      "criterion": "best output MSE below 0.20",
+      "spec": "doc/plans/2026-10-27-item2-5-thinking.md",
+      "section": "41.7"
+    },
+    "xor_grammar": {
+      "runner": "Models.ModelFactory.run",
+      "config": "data/XOR_grammar.xml",
+      "fixture": "test/test_explicit_dimensions.py::trained_xor_grammar",
+      "criterion": "four answers correct and output MSE below 0.05"
     }
   }
 }

@@ -1044,6 +1044,11 @@ branching round, and keep the snapshot only if it saves significantly.
 
 ## Stages of learning as gates (proposed, 2026-09-28)
 
+**2026-11-08:** the clause measurement now reads learned argument-concept radii, zero before any conceptual views. General bidirectional hierarchy learning is the current [Architecture rule](Architecture.md#hierarchical-conceptual-context-alec-2026-11-08); further curriculum criteria, category transfer and chooser policy experiments remain lesson work.
+
+
+Item 2.3 implements the two coarse authority gates described in [Architecture](Architecture.md#authority-gates-item-23-round-2b-2026-11-08); finer progression and the chooser question remain with the lessons item.
+
 Proposed by Alec, not decided: "We have to wait until a model is trained
 before we can express truth in that model, before LTM is meaningful in a
 consistent way. This suggests stages of learning, and perhaps they can act
@@ -2434,3 +2439,15 @@ Revisit if a trained model's answers show given knowledge cut off from the belie
 Asked how a state is computed from a run of event members ([memory spec §9](plans/2026-11-03-item2-0-behavioral-chains.md)), Alec: "Just as some nouns share an identity, some events are mereological neighbors (in world-space, not .where, although we can infer one from the other for words, if not what they represent). We can defer this to future work." Nouns that share an identity are one identity in MTM; events that are neighbours share a boundary in world-space. For words the two addresses can be inferred from each other, but not for what the words represent. Item 2.0 builds extended events as paths only, with no computed state.
 
 **Superseded in part (Alec, 2026-11-05, later).** "We might just say that event runs are the mechanism that is currently used to form concepts at any level; it would work the same as for identity, but only order lower." Item 2.0 computes an event run's state from its members as an identity's value is computed from its references, one order lower ([memory spec](plans/2026-11-03-item2-0-behavioral-chains.md)). The world-space neighbour account stays here.
+
+### Separate word form order from leaf referent order (trust §31.3)
+
+Word concepts should generalize token instances at form order 1, with argument classes at order 2. The reading leaf separately carries its referent’s order. This changes grammar order rules, including bind eligibility and lift lowering, and is deferred until after item 2.3; this round retains native words at 0 and arguments at 1.
+
+### Grammar XOR optimization that does not settle (trust §33.1 finding 14)
+
+The [2026-11-08 panel](benchmarks/2026-11-08-item2-3-xor-grammar-panel/README.md) observed grammar-XOR non-convergence in about a third of initializations on both the §30 and §32 sources. Failing trajectories oscillated between roughly 0.05 and 0.25 loss through all 400 epochs, with transient lower minima rather than sustained convergence. The mechanism remains open for the lessons item and §5 review. The panel does not identify the argument-fit carrier as the producer; silencing it lost all three runs. Highly trained models at small sizes and with few words may provide inexpensive registered artifacts, including the XOR grammar model, as Alec suggested.
+
+### Trained-tier artifacts from tiny models, and two class measurements (trust §36, 2026-11-08)
+
+Alec's observation ([trust §33.1](plans/2026-11-05-item2-3-trust.md#331-the-panel-alecs-decisions-and-finding-14-claude-2026-11-08)): highly trained models at very small sizes, with very few words, may be producible quickly and would serve as the registered artifacts that make trained-tier tests runnable; the eight-word `XOR_grammar.xml` model is one, and the `xor_grammar` and `mm_xor_grammar` phases already name their producers in `test/fixtures/phase-artifacts.json`. For the lessons item, beside the lesson artifacts. The same item reads two measurements before a lesson is said to have taught a part of speech (trust §31 and §36): that a word's class follows its participations rather than its meaning resemblance, and the collapse table of the [parts-of-speech spec](specs/2026-10-18-parts-of-speech.md) §2b read beside the argument radii under the class-contiguity rule.

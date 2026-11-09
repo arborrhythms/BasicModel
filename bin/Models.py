@@ -4001,7 +4001,7 @@ class BaseModel(Mereology, nn.Module):
             "placement", "raised", "singletons", "singleton_members", "singleton_rows", "retired", "identity",
             "relate_idx", "word_forms", "reference_orders", "testimony_seen",
             "testimony_current", "reclaimed_seats", "individuals", "form_regions",
-            "symbol_types", "word_descriptions", "named_identities",
+            "symbol_types", "word_descriptions", "named_identities", "formal_arguments",
         )
         cs_fields = (
             "_autobound_percept_ids", "_recognized_words",
@@ -4181,7 +4181,7 @@ class BaseModel(Mereology, nn.Module):
             "placement", "raised", "singletons", "singleton_members", "singleton_rows", "retired", "identity",
             "relate_idx", "word_forms", "reference_orders", "testimony_seen",
             "testimony_current", "reclaimed_seats", "individuals", "form_regions",
-            "symbol_types", "word_descriptions", "named_identities",
+            "symbol_types", "word_descriptions", "named_identities", "formal_arguments",
         )
         for name in fields:
             if name not in saved:
@@ -11275,6 +11275,7 @@ class BasicModel(BaseModel):
                     spans[b, i] = spans.new_tensor((offset, end))
                     offset = end
         from Meronomy import percept_spans, word_spans
+        from WordSurfaces import is_lexical_form
         raw_rows = raw.detach().to('cpu').reshape(raw.shape[0], -1).long().tolist()
         id_rows, span_rows = ids.detach().to('cpu').tolist(), spans.detach().to('cpu').tolist()
         extents, grammar_words = [], []
@@ -11302,7 +11303,7 @@ class BasicModel(BaseModel):
                 # A truncated or unresolved native unit cannot name unseen bytes.
                 if sum(span_rows[b][i][1] - span_rows[b][i][0] for i in selected) != hi - lo:
                     continue
-                if (lo, hi) not in word_spans(data):
+                if (lo, hi) not in word_spans(data) or not is_lexical_form(data[lo:hi]):
                     words.append((lo, hi))
                     continue
                 form = data[lo:hi].decode('latin1')
@@ -11589,6 +11590,9 @@ class BasicModel(BaseModel):
                 value = texts_b[p] if p < len(texts_b) else None
                 if value is None:
                     pending.append((b, p, None))
+                    continue
+                from WordSurfaces import is_lexical_form
+                if not is_lexical_form(value):
                     continue
                 key = str(value)
                 word_id = definitions.word(form=key)
@@ -16548,7 +16552,8 @@ class BasicModel(BaseModel):
         nvec_concept = self._nvec("ConceptualSpace", nConcepts)
         nvec_whole_properties = self._nvec("WholeSpace", nSymbols)
         nvec_output  = self._nvec("OutputSpace",     nOutput)
-        self.nConceptCodes = int(nvec_concept)
+        from PartsOfSpeech import formal_arguments
+        self.nConceptCodes = int(nvec_concept) + len(formal_arguments(TheGrammar.rules_upward))
         # Symbols are downstream references into the conceptual inventory;
         # they do not allocate a second learned prototype table. Preserve the
         # historical attribute name for consumers that ask for reference
@@ -16769,6 +16774,11 @@ class BasicModel(BaseModel):
             # Right-half loopback widening retired (see ConceptualSpace
             # docstring): per-order input sourcing replaces the concat,
             # so the C-space_role PiLayer input width is just nInputDim.
+            # Grammar declarations have explicit concept seats from construction.
+            # Add their fixed reservation before any tensor/optimizer is built.
+            from PartsOfSpeech import formal_arguments
+            stage_space_concept = [int(stage_space_concept[0]) +
+                len(formal_arguments(TheGrammar.rules_upward)), stage_space_concept[1]]
             cs = ConceptualSpace(
                 cs_in, stage_space_concept, cs_out,
                 stage_idx=t, is_last=is_last,
@@ -16780,6 +16790,7 @@ class BasicModel(BaseModel):
                 shared_percept_readout=(
                     _shared_percept_readout if _share_concept_dictionary else None),
             )
+            object.__setattr__(cs, '_formal_reservation', len(formal_arguments(TheGrammar.rules_upward)))
             if _shared_concept_fold_support is not None:
                 object.__setattr__(
                     cs, "_concept_fold_support",
@@ -18088,7 +18099,7 @@ class BasicModel(BaseModel):
                 and tuple(word_mask.shape) == tuple(word_ids.shape)):
             trace.store_words(word_ids, word_mask & (word_ids >= 0))
             if torch.is_tensor(leaves):
-                self._occupation_word_table = self.languageSpace.parts_of_speech.probabilities(word_ids, leaves)
+                self._occupation_word_table = self.languageSpace.parts_of_speech.argument_scores(word_ids, leaves)
         part_ids = getattr(isp, "_ar_word_part_ids", None)
         part_mask = getattr(isp, "_ar_word_part_mask", None)
         if (torch.is_tensor(part_ids) and part_ids.dim() == 3
@@ -19965,6 +19976,9 @@ class BasicModel(BaseModel):
         self._clamp_symbolic_codebook()
         self._normalize_perceptual_embedding()
 
+        for cs in self.conceptualSpaces:
+            cs.similarity_codebook.trust.project()
+
     def _attention_sentence_payload(self, payload, index):
         """Carry both field magnitudes beside the independent form presence."""
         reading = getattr(self, '_attention_words', None)
@@ -21023,14 +21037,16 @@ class BasicModel(BaseModel):
         if bool(active.any()):
             owner = self._concept_owner()
             owner.mtm.promote_candidates(owner)
-        # All active streams have completed their placement and promotion steps.
-        derived = getattr(self._concept_owner().similarity_codebook, 'mereology', None)
-        if derived is not None and bool(active.any()):
-            derived.derive_class_placements()
+        # One hierarchy refresh and participant-scoped context per kept boundary.
+        observed_members = set()
         for b, program in enumerate(entries):
             if bool(active[b]):
-                self.languageSpace.parts_of_speech.observe_kept(program,
-                    self.languageSpace._compose_binary_rules, self.languageSpace._compose_unary_rules)
+                observed_members.update(self.languageSpace.parts_of_speech.observe_kept(program,
+                    self.languageSpace._compose_binary_rules, self.languageSpace._compose_unary_rules))
+        if bool(active.any()):
+            from ConceptHierarchy import refresh, condition
+            refresh(self._concept_owner())
+            condition(self._concept_owner(), observed_members)
         fields = []
         registry = _boundary_registry(self)
         from ThoughtClosing import closing_question
@@ -21090,7 +21106,7 @@ class BasicModel(BaseModel):
         if table is not None:
             # A packed batch may continue with another sentence. Refresh at
             # this eager admission boundary, after both trials have finished.
-            table.copy_(self.languageSpace.parts_of_speech.probabilities(
+            table.copy_(self.languageSpace.parts_of_speech.argument_scores(
                 word_view(self.inputSpace, 'concept_ids'), table))
         state = self._clause_end_state(state, sid, view['clauses'], row_addresses)
         state = self._discard_sentence_record(state, active)
@@ -21278,10 +21294,9 @@ class BasicModel(BaseModel):
                              owner.definitions.objects(word) if target in retained)
             associations = ids.new_tensor(sorted(pairs)).reshape(-1, 2)
             lexical_capacity = max(collections.Counter(word for word, _ in pairs).values(), default=0)
-            occupations = self.languageSpace.parts_of_speech.counts
-            literals = ids.new_tensor([identity for identity, counts in occupations.items()
-                if any(argument == 'surface_argin1' and count > 0
-                       for (argument, order), count in counts.items())])
+            arguments = self.languageSpace.parts_of_speech
+            literals = ids.new_tensor(arguments.members('surface_argin1')
+                if 'surface_argin1' in arguments.index else ())
         return ReferenceBank(ids, values, valid, relations, torch.stack(queries), predicted,
                              types, cases, inventory, interpreter, associations, orders,
                              close_references=bool(getattr(self, '_component_reading', False)),
@@ -21981,7 +21996,7 @@ class BasicModel(BaseModel):
         occupations = getattr(self, '_occupation_word_table', None)
         argument_count = len(self.languageSpace.parts_of_speech.arguments)
         if occupations is None:
-            occupations = words.new_full((*words.shape[:2], argument_count), 1. / max(1, argument_count))
+            occupations = words.new_zeros(*words.shape[:2], argument_count)
         if occupations.shape != (*words.shape[:2], argument_count):
             raise ValueError('staged occupation table does not match the word slab')
         from PartsOfSpeech import update_flow

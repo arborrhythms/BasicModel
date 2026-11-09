@@ -271,7 +271,7 @@ def test_named_root_can_retain_a_selected_lexical_constituent(monkeypatch):
 
 
 def test_named_bind_to_a_native_individual_keeps_an_occurrence_keyed_value(monkeypatch):
-    from IdentityRows import mint
+    from test_reference_close import known_concept as mint
     resolver, store, a, words, _ = world()
     native = mint(resolver.components.owner, a[0])
     frame = SituationFrame(1, torch.stack((a[0], a[0]*0, a[0]*0)),
@@ -307,7 +307,7 @@ def test_named_bind_to_a_retained_unpooled_occurrence_keeps_its_kind(monkeypatch
 
 @pytest.mark.parametrize('retained_occurrence', (False, True))
 def test_native_arrival_refines_an_existing_anonymous_token(monkeypatch, retained_occurrence):
-    from IdentityRows import mint
+    from test_reference_close import known_concept as mint
     resolver, store, a, words, _ = world(pending_atom=0)
     pending, _ = keep(resolver, described(a[0], words['x']))
     token = store.occurrence_of(pending)

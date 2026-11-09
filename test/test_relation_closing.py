@@ -38,7 +38,9 @@ def test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent(
     assert len(f.store) == len(unknown)
     assert isinstance(row, tuple) and f.store.parts.contains(row[1])
     assert not f.store.trust[:len(unknown)].any()
-    assert f.store.row(row)['evidence'] == pytest.approx((.7, 0.))
+    # An unasserted relation child bounds the parent's effective authority;
+    # the parent's own source pair remains .7 in storage below.
+    assert f.store.row(row)['evidence'] == pytest.approx((0. if nested else .7, 0.))
     operand_rows = f.store.ideas().tolist()
     for index, leaf in zip(operand_rows, unknown):
         assert f.store.row(index)['kind'] == 'unverified'

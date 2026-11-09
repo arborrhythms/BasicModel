@@ -15,7 +15,7 @@ from What import What, WhatAnswer
 
 def test_native_every_completed_field_reaches_the_chooser(tmp_path, monkeypatch, eager_reading):
     import ThoughtClosing
-    from test_parts_of_speech import test_kept_readings_alone_supply_occupation_counts
+    from test_parts_of_speech import test_kept_readings_alone_supply_argument_views
     pending, offered, menus, work_rows = [], [], [], []
     close, run, choose = ThoughtClosing.close, BasicModel.run_selected_thought, BasicModel._choose_selected_thought_action
     def boundary(model, values, **kwargs):
@@ -52,7 +52,7 @@ def test_native_every_completed_field_reaches_the_chooser(tmp_path, monkeypatch,
     monkeypatch.setattr(ThoughtClosing, 'close', boundary)
     monkeypatch.setattr(BasicModel, 'run_selected_thought', offer)
     monkeypatch.setattr(BasicModel, '_choose_selected_thought_action', menu)
-    test_kept_readings_alone_supply_occupation_counts(tmp_path, monkeypatch, eager_reading)
+    test_kept_readings_alone_supply_argument_views(tmp_path, monkeypatch, eager_reading)
     assert pending and offered == pending and menus
     print('RETIRE_MODE_OFFERS', json.dumps(dict(completed=len(pending), offered=len(offered), menus=menus, work=work_rows)))
 

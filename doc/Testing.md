@@ -337,10 +337,10 @@ The slow set, from those timings (durations in seconds, call phase):
 | 15 | weekly (slow contract) | `test/test_tied_operator_reconstruction.py::test_snapshot_owns_values_across_same_shape_dictionary_update` |
 | 15 | weekly (slow contract) | `test/test_sentence_journal.py::test_no_numerical_frames_without_a_sentence_closing_reader` |
 | 15 | weekly (slow contract) | `test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance` |
-| 14 | retired (2026-10-18) | Category-VQ context smoke; replaced by the distributional certificates in `test/test_parts_of_speech.py` |
+| 14 | retired (2026-10-18) | Category-VQ context smoke; covered by the native argument-concept certificates in `test/test_parts_of_speech.py` |
 | 14 | weekly (slow contract) | `test/test_echoic_decoder.py::test_same_walk_infers_binary_and_unary_without_a_journal[True]` |
 | 14 | weekly (slow contract) | `test/test_compiled_word_chunk.py::test_tensor_peer_word_loop_rejects_external_full_stm` |
-| 13 | retired (2026-10-18) | Category-VQ allocation/EM smoke; occupation counts have no trained codebook |
+| 13 | retired (2026-10-18) | Category-VQ allocation/EM smoke; argument concepts now use shared native concept storage (2026-11-08) |
 | 12 | default (certificate) | `test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path` |
 | 10 | weekly (slow contract) | `test/test_bounded_test_recycling.py::test_recycle_on_memory_pressure_keeps_every_case_once` |
 | 10 | weekly (slow contract) | `test/test_output_path_supervised.py::test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer[development]` |
@@ -624,3 +624,51 @@ suite, and is removed together with the deviation it named.
 ### Unexpected recompilation checks (2026-11-03)
 
 `test_compile_guard.py` checks that each declared model execution phase admits its initial graph, reuses it for compatible inputs, and raises on a later shape or owner-attribute guard failure. The failure must reach the caller even when an outer compiler policy requests silent fallback. Initial training/evaluation and decoder trial phases are explicit; arbitrary new shapes are not warmup exceptions. `test_generation_budget.py` checks the construction-time free-generation limit and preserves complete recorded-derivation replay independently of it.
+
+Item 2.3 round 1's concept radii, ordered effective relation evidence, definition-index threshold and lexical-admission certificates (`test_trust_round1.py`) run in the default sweep; `RUN_TRAINED` belongs to round 2.
+
+Item 2.3 admission uses `WordSurfaces.is_lexical_form` in corpus, aligned, grammar-word and eager paths; `test_word_admission.py` certifies Unicode classification and retained punctuation percepts without lexical identities.
+
+Item 2.3 Q2 certificates use `test_trust_round1.close_named_sign` on the paired fixture to close a kept sign through `define_pending(null_referent=True)`, with no explicit promotion; the full `SentenceFixture` case also covers an already resolved remembered endpoint.
+
+
+### Item 2.3 round 2a: operation trust and RUN_TRAINED
+
+`RUN_TRAINED` is independent of `RUN_SLOW`. `@pytest.mark.trained('phase')` skips before fixture setup unless `RUN_TRAINED=1`; the phase and reason are counted in terminal output, `skipped_trained_by_phase` in JSON, and the HTML report. Enabled tests require the exact artifact through `phase_artifacts.PhaseRegistry`, failing on unknown phases, null or absent files, wrong hashes and absent producing receipts. `BASICMODEL_PHASE_ARTIFACTS` selects a private registry for the tier's own certificate. Existing `phase` certificates are unchanged. The registry names `words`, `interpret`, `clause`, `ask`, `verb`, `modifiers`, `determiners`, `adverb`, `prepositions` and `relations`, each with a null artifact and the lesson runner's §5b producer row.
+
+The original eight functions and the two grammar-XOR functions added on 2026-11-08 are listed below (the answer-quality function retains both parameter cases). Their assertion bodies are unchanged. The two syntax-learning expected-failure decorators and the successor/free-derivation `RUN_SLOW` skip guards are replaced by this prerequisite; their former text is preserved in the round-2a receipt. Central `slow` markers no longer gate a `trained` test.
+
+| Test | Phase |
+|---|---|
+| `test/test_meronomy_ladder.py::test_cold_start_learns_space_as_the_basic_boundary` | `words` |
+| `test/test_math_thinking_training.py::test_stage_zero_direct_arithmetic_learns_as_syntax` | `verb` |
+| `test/test_math_thinking_training.py::test_stage_one_dependency_chains_learn_as_syntax` | `relations` |
+| `test/test_math_thinking_training.py::test_successor_is_learned_as_a_verb` | `verb` |
+| `test/test_what_training.py::test_joint_training_keeps_both_primary_costs_in_band` | `ask` |
+| `test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training` | `ask` |
+| `test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_serial_topology` | `ask` |
+| `test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip` | `clause` |
+| `test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal` | `mm_xor_grammar` (2026-11-08) |
+| `test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy` | `xor_grammar` (2026-11-08) |
+
+The two grammar-XOR moves follow trust §33.1 and Alec's 2026-11-08 decision. `mm_xor_grammar` registers a null artifact with the test's own `_fit_xor` producer: `data/MM_grammar.xml`, existing seed 41001, 900 epochs and the 0.20 bar from thinking §41.7. The argument-seat reservation re-rolled that seeded initialization, which plateaus near 0.235 on the §30 and §32 sources. `xor_grammar` registers a null artifact with `ModelFactory.run(data/XOR_grammar.xml)` as producer and the unchanged criterion of four answers correct plus MSE below 0.05. The [attribution panel](benchmarks/2026-11-08-item2-3-xor-grammar-panel/README.md) passed 2 of 3 initializations on each of §30 and §32, and 0 of 3 with the carrier silenced. The carrier stays unchanged. Both test bodies are unchanged; the `shared_training('xor_grammar')` group and `TestXorGrammarReconstruction` remain in the fast suite. No other test moves in this continuation.
+
+The criterion is acquisition from presented sentences or a required free chooser decision in an untrained first batch. Numeric XOR convergence, direct tensor optimization, loss/gradient ownership, admission and checkpoint mechanics, and fixtures with explicit forced choices remain default/slow mechanisms under their existing rules; older artifact-backed `phase` tests are unchanged. The three-document token case retains its body and remains a mechanism: `test_reading_round.symbol_interpretation` uses the existing `OperationSelectionLayer.set_stage_menu` on fixture instances to exclude `sign`, fixing the second decision at the symbol without a production setting.
+
+`definition_fixtures.learned_operation` sits beside `agreeing_views` and requires an explicit kept-use count and fixture occupants. It calls `PartsOfSpeech.observe_use`, the same application writer used by `observe_kept`; it never writes counts directly. It supplies input member views to native argument concepts; complete kept programs retain their ordinary output/head-flow member views. `test_trust_round2` certifies one and three kept uses, argument agreement and shared membership, fixed and identity exemptions, checkpoint pointers/catalogue/native argument geometry/use counts/effective pairs, epoch persistence, empty occupations and hand-counted curriculum measurements. These and the private-registry trained-tier certificate run in the default sweep. Gate mechanisms are certified separately by the closed-gate fixtures below.
+
+The moved trained-tier tests still train a fresh model after the prerequisite is checked; restoring the registered artifact into that model belongs to the lessons item. The two strict expected failures recorded before the tier (`test_stage_zero_direct_arithmetic_learns_as_syntax` and `test_stage_one_dependency_chains_learn_as_syntax`) are now trained-tier skips without `RUN_TRAINED=1`.
+
+Round 2a-ii adds `test_trust_round2` certificates for first-writer operation provenance, naming that clears an operation cap, ownerless catalogue reattachment and bind result-order eligibility. The three-document mechanism uses the existing instance menu with `STOP`, `interpret` and `union`: interpretation retains the symbol and union reduces the word and punctuation spans. Its body is unchanged. The user-ingestion fixture supplies union through `learned_operation` and checks the stored source pair plus effective evidence by the measured operation formula; the checkpoint inventory includes the operation column and catalogue extra state.
+
+Round 2a-iii ports both parameters of `test_identity_threading::test_compose_bind_locations_share_the_operation_chooser_and_zero_dummy` by depositing each antecedent with order 1, as a working token requires, preserving all identity, zero-dummy-logit, three-variant and gradient assertions.
+
+Item 2.3 round 2b's `test_trust_gates.py` uses `gate_data` to close gates through construction data and `gate_fixture` to attach the paired owner to the ordinary clause writer, without unused thought rows or resizing. Its certificates cover named-row caps with D9 identity maps, opening and later falling readiness, operation and fixed-relation caps and exceptions, lift definiteness, epoch/checkpoint persistence and missing-state rejection, open default and closed lesson models, readiness reports without lesson execution, empty lift classes and invalid data. The only existing assertion port is `test_trust_round2::test_fixed_operations_and_identity_mechanics_stay_at_one`: the part row carries its catalogue index and still contributes operation trust one; it is not a weak port. All existing test configurations retain open starts.
+
+The 2026-11-08 argument-concept correction uses `argument_fixtures.argument_inventory` and `view_counts` for native seated words and explicit concept views. `test_argument_concepts` covers zero-view declarations, atomic capacity refusal, native orders, native checkpoint addresses, member centroids, shared roles, generic nested-class feedback, preserved forms/radii, and whole-value chart behavior. The nested-class certificate has no grammar catalogue. `test_trust_gates` now requires zero empty-class readiness and tests empty `except` elements. The input carrier retains repeated lexical occurrences; `test_direct_operand_occupations` observes exact writer calls and per-class view increments rather than a stored word-by-role count table. The kept-reading certificate compares the view increments against its independent journal replay and proves annotations and rejected trials cannot write them.
+
+Representation ports replace exclusive argmax/probability assertions in `test_parts_of_speech`, denotation-order count slices in `test_orders_learned`, count migration in `test_grammar_checkpoint`, count snapshots in `test_part_closing`, and the operation/gate probability formula in `test_trust_round2` and `test_trust_gates`. `test_reference_participants` supplies actual lexical members separate from their object referents. `test_config_scoping` includes the fixed declaration seats in reference capacity while retaining ordinary input/output sizes. The two small round-1 paired fixtures and round-2 fixtures declare capacity for the formal concepts before construction. No mechanism is retired; the old representation assertions and every before/after text are recorded in the [argument-concept receipt](benchmarks/2026-11-08-item2-3-argument-concepts/README.md). Artifact-backed restoration requires a new native-geometry artifact; old count artifacts fail loudly. `RUN_TRAINED`, phase prerequisites, and the default sweep's XOR and pending-premise cases retain their tier rules.
+
+Argument-concepts continuation certificates cover coverage fit, separability/evidence, boundary scope and scheduling, fit-weighted centroids, neutral unmeasurable charts, unique membership edges, object/binding isolation and named formal-class proof paths.
+
+The argument-concepts-iii ports retain consolidation → promotion → one `ConceptHierarchy.refresh` derivation → condition, and read order-independent class fits after the boundary: aligned classes each have coverage one even with different radii.

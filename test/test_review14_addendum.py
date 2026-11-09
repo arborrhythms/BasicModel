@@ -36,7 +36,7 @@ def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capa
         rows = model.inputSpace._ar_grammar_object_rows
         word_rows = set(rows[rows >= 0].tolist())
         assert len(word_rows) == 4
-        assert set(owner._concept_allocator.layer()._tensor_row_keys) == word_rows
+        assert set(owner._concept_allocator.layer()._tensor_row_keys) == word_rows | {owner._csw_row_of(cid) for cid in owner._concept_allocator.formal_arguments.values()}
         admitted.append(word_rows)
     model._stage_reading_word_concepts = observe_admission
     try:
@@ -47,7 +47,8 @@ def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capa
         cb = owner.similarity_codebook
         rows = model.inputSpace._ar_grammar_object_rows
         word_rows = set(rows[rows >= 0].tolist())
-        assert owner.nVectors == capacity and cb.W.shape[0] == capacity
+        assert owner.nVectors == capacity + len(owner._concept_allocator.formal_arguments)
+        assert cb.W.shape[0] == owner.nVectors
         assert len(word_rows) == 4
         assert admitted and admitted[-1] == word_rows
         # A kept relation may seat an argument at its parsed order, including

@@ -885,8 +885,14 @@ reduction before the next word. An unfused NP VP is never a two-slot allowance.
 `truth_criterion` and the multiplicative relation learn-score gate are
 retired. The grammatical closing writes all completed clauses. Source trust
 remains a supplied scalar, separate from the input-identification evidence
-pair. Neither pole is inferred from trust, and changing trust preserves both
-poles. Rows also retain their order for sigma-inverse decoding. These are
+pair. Within `clause_assertions` (a truth-set or user authority), the authority
+supplies the pair from its signed trust: support at its positive magnitude or
+counter-evidence at its negative magnitude. An explicit input pair is ignored
+in that context, as landed. Outside an authority context, an explicit pair is
+scaled by the source trust (for example, .8 evidence times .8 source is .64);
+without an explicit pair the close derives its polarity from signed trust.
+External source trust remains configured truth-set row trust times architecture
+trust (trust spec §5.4; §11 finding 5(i)). Rows also retain their order for sigma-inverse decoding. These are
 schema fields, not new configuration switches. Legacy rows missing evidence
 load as neither; a missing order loads as unknown (`-1`) with a warning and
 cannot be silently decoded as a concrete row.
@@ -951,3 +957,32 @@ Environment variables: the code reads 57 names; the tables above list `BASIC_SEE
 
 Configurations: every element of `data/MM_corpus_orders.xml` is read except
 `<WholeSpace><butterfly>` (no reader; only `architecture.sigmaPi` is read).
+
+### Item 2.3 round 1 (2026-11-06)
+
+| Parameter | Reader | Default | Meaning |
+|---|---|---|---|
+| `ConceptualSpace.trustViews` | `ConceptTrust`, `PartsOfSpeech.operation` | `3` | Finite positive view scale in $\ell=s(1-e^{-n/\mathrm{trustViews}})$; $n$ is the kept-view counter and $s$ is accumulated request coverage divided by that counter; views allocate no memory rows. Empty stored content agrees with a view by one; its first nonempty view becomes the reference. The radius applies only to the for lane. Operand trust comes from a seated, tracked concept row; otherwise an operand contributes one. Meaning charts track their concept rows, and explicit class views on whole conceptual charts can also allocate tracked radii. The whole norm on an untracked chart remains its extent, not its operand trust. The same rule gives a formal argument its class-view radius; operation trust is the minimum input separability times `1-exp(-views/trustViews)`, without a second operation-use factor. Explicit class views allocate a tracked radius even on a whole-value chart; ordinary untracked operands retain one. Identity mechanics and fixed relations contribute one. No new operation-trust parameter is introduced. |
+| `ConceptualSpace.definitionTrust` | `DefinitionIndex.add` | `0.5` | Finite threshold in $[0,1]$ for a named row's effective positive pole to admit its word-to-object binding; equality is admitted. The threshold gates the binding, never the word's identity: a named word resolves by its form below it. Naming writes the source evidence even below the threshold; learning can change binding admission without another write. |
+| `ConceptualSpace.gates.closedTrust` | `TrustGates.cap`, `LTM1.refresh_effective` | `0.1` | Finite value in [0,1], contributed to the authority minimum by every covering closed gate; stored evidence is unchanged. |
+| `ConceptualSpace.gates.interpret.start` | `TrustGates` | `open` | Exactly `open` or `closed`; initial named-pair gate state. The lesson default is `closed`. Saved state governs checkpoint restoration; epoch restoration never closes an opened gate. |
+| `ConceptualSpace.gates.interpret.fraction` | `TrustGates.advance` | `0.5` | Finite value in [0,1]; opens when the fraction of admitted words with measured radius at least `definitionTrust` reaches this value. |
+| `ConceptualSpace.gates.clause.start` | `TrustGates` | `open` | Exactly `open` or `closed`; initial composition gate state. The lesson default is `closed`. |
+| `ConceptualSpace.gates.clause.threshold` | `TrustGates.advance` | `0.75` | Finite value in [0,1]; opens when the mean definiteness of the two lift arguments reaches this value. Definiteness is separability times `1-exp(-views/trustViews)`; empty measurable classes read zero. A chart without conceptual views has undefined clause readiness and neutral operation trust one. |
+| `ConceptualSpace.gates.clause.except` | `TrustGates.cap` | `interpret sign bind lift` | Whitespace-separated operation names outside the clause cap; an empty list exempts none. Fixed relations are covered by default and can be added here. Rows with no recorded operation are outside this gate. |
+
+`<gates>` is a child of `<ConceptualSpace>` beside `<trustViews>` and `<definitionTrust>`, with child elements rather than attributes so configuration serialization preserves its shape:
+
+```xml
+<gates>
+  <closedTrust>0.1</closedTrust>
+  <interpret><start>open</start><fraction>0.5</fraction></interpret>
+  <clause><start>open</start><threshold>0.75</threshold><except>interpret sign bind lift</except></clause>
+</gates>
+```
+
+`data/MM_corpus_lessons.xml` supplies the same values with both starts `closed`, and is the lesson runner's default configuration; ordinary models and test configurations inherit the open starts. Runtime validation rejects malformed starts and nonfinite or out-of-range numeric values. Gate settings are construction data; gate openings are checkpointed model state. No new operation-count scale is introduced.
+
+The learned-argument inventory reserves one additional native concept seat per declared formal argument at model construction; configured ordinary inventory capacity is preserved. This is a fixed reservation, not runtime growth or a new knob. Higher-order conceptual conditioning uses the existing `placementRate`, `placementNegatives` and `placementNegativeWeight` values, preserves forms and radii, and requires a meaning band. `trustViews` controls the view-and-agreement radius for ordinary and argument classes by the same rule. Scalar kept operation uses remain measurements only. An empty `<except/>` and whitespace-only `<except>` both name no exemptions.
+
+Whole conceptual charts may supply a complete conceptual value to the generic class-view writer. A paired chart with `meaningWidth=0` supplies only form: membership records remain possible, but those form coordinates supply neither class directions nor conceptual views. It needs a meaning band for hierarchical conditioning. No fallback uses perceptual similarity to learn grammatical or other conceptual classes.

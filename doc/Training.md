@@ -1270,3 +1270,9 @@ structure disagreement. Only its first epoch is measured; the other two
 arms did not start. Thinking §27 and the repair review retain the native
 producer characterization and the structural-membership decision for Alec.
 This is not an accepted stage 2 freeze or a completed timing comparison.
+
+### Concept hierarchy learning and curriculum order (Alec, 2026-11-08)
+
+The architecture learns class direction from member meaning and conditions members from higher-order context through `ConceptHierarchy`. Kept grammar applications supply members to prebuilt formal-argument concepts, using this general mechanism. Each argument starts at zero radius and learns confidence by the ordinary views-and-agreement rule. Part-of-speech learning has no special centroid, count distribution or feedback rule. Directional conditioning changes no perceptual form and no trust radius.
+
+The corpus supplies the teaching progression: word concepts, object concepts through interpretation, early simple clauses and questions, then further operations. Nouns and verbs are learned before the other parts of speech; this is a curriculum requirement, not a grammatical-class prerequisite hard-coded into the learning algorithm. The configured coarse authority gates remain data-driven: empty lift arguments report zero readiness. A kept application can record members while its resulting relation has low authority. The current mechanism is described in [Architecture](Architecture.md#hierarchical-conceptual-context-alec-2026-11-08); demonstrating transfer and stable category distinctions belongs to the lesson evidence.

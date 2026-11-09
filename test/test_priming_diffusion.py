@@ -17,13 +17,14 @@ def owner(points):
         placement_witnesses=torch.ones(len(points), dtype=torch.long, device=points.device),
         placement_derived=torch.zeros(len(points), dtype=torch.bool, device=points.device),
         placement_valid=torch.zeros(len(points), dtype=torch.bool, device=points.device)))
-    native._concept_allocator = SimpleNamespace(parts=LTM1(256), relate_idx={('part-base', 2): (2, 1), ('part-base', 3): (2, 2)})
+    native._concept_allocator = SimpleNamespace(symbol_types={}, parts=LTM1(256), relate_idx={('part-base', 2): (2, 1), ('part-base', 3): (2, 2)})
     native._priming_edge_src = torch.full((512,), -1, dtype=torch.long)
     native._priming_edge_dst = torch.full((512,), -1, dtype=torch.long)
     native._priming_edge_weight = torch.ones(512)
     native._priming_edge_count = native._priming_edge_rebuilds = 0
     native._priming_edge_revision = None
     native._csw_row_of = lambda symbol: symbol - 1 if 0 < symbol <= len(points) else None
+    native.concept_id_at_row = lambda row: row + 1
     return native
 
 def directions(angles, *, dtype=torch.float64):

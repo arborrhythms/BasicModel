@@ -10,6 +10,13 @@ import json
 from pathlib import Path
 import time
 
+LESSON_CONFIG = Path(__file__).resolve().parents[1] / 'data/MM_corpus_lessons.xml'
+
+
+def readiness_report(owner):
+    """The same measured readiness in presentation and lexical records."""
+    return dict(trust_measurements=owner.trust_measurements(), gates=owner.gate_measurements())
+
 
 def membership_report(alloc, identity):
     """The durable row and both evidence poles for every named membership."""
@@ -38,9 +45,10 @@ def lexical_report(model, forms):
         result[form] = dict(word=word, objects=[dict(identity=obj, order=alloc.order_of(obj),
             members=list(alloc.parts.parts((SYMBOL, obj))),
             membership_witnesses=membership_report(alloc,obj)) for obj in objects],
-            occupations=[] if word is None else [dict(argument=arg, order=order, count=count)
-                for (arg, order), count in sorted(speech.counts.get(word, {}).items())])
-    return result
+            arguments=[] if word is None else [dict(argument=arg, concept=speech.concepts[arg],
+                score=float(score), member=word in speech.members(arg))
+                for arg, score in zip(speech.arguments, speech.similarities(word))])
+    return dict(forms=result, **readiness_report(cs))
 
 
 def stage_documents(data, stage, *, split='train'):
@@ -69,7 +77,7 @@ def stage_documents(data, stage, *, split='train'):
 
 def acquisition(model, measurement, *, relations):
     from LTM1 import SYMBOL
-    lexical = lexical_report(model, [*measurement['names'], measurement['kind']])
+    lexical = lexical_report(model, [*measurement['names'], measurement['kind']])['forms']
     members = [{obj['identity'] for obj in lexical[name]['objects'] if obj['order'] == 1}
                for name in measurement['names']]
     ideas = all(members) and (len(members)<2 or any(a!=b for a in members[0] for b in members[1]))
@@ -276,6 +284,7 @@ def measure(config, lessons, output, *, eager=False, presentations=None, curricu
                     for batch, source in enumerate(rows):
                         field = fields[batch] if batch < len(fields) else None
                         observed = observed_field(model, field)
+                        observed.update(readiness_report(owner))
                         readings = getattr(model, '_last_leaf_readings', ())
                         observed['leaf_readings'] = readings[batch] if batch < len(readings) else None
                         refs = getattr(model, '_lesson_side_refs', ())
@@ -306,7 +315,8 @@ def measure(config, lessons, output, *, eager=False, presentations=None, curricu
                 alloc = owner._concept_allocator
                 row = dict(torch_version=str(torch.__version__), phase=stage['name'], epoch=repetition + 1,
                     elapsed_seconds=time.monotonic() - started, **summary,
-                    lexical=lexical_report(model, forms), null_concept=owner.null_concept_read(),
+                    lexical=lexical_report(model, forms), **readiness_report(owner),
+                    null_concept=owner.null_concept_read(),
                     raised_classes=[dict(symbol=cid, order=alloc.order_of(cid),
                         members=list(alloc.parts.parts((SYMBOL, cid))),
                         membership_witnesses=membership_report(alloc,cid)) for cid in sorted(alloc.raised)],
@@ -341,7 +351,7 @@ def measure(config, lessons, output, *, eager=False, presentations=None, curricu
                 candidates=last['candidates'], answers_scored=[answer for record in records
                     if record['phase'] == stage['name'] for answer in record['answers_scored']])
             if stage.get('measurement',{}).get('mode')=='proper':
-                histories=[row['lexical'] for row in records if row['phase']==stage['name']]
+                histories=[row['lexical']['forms'] for row in records if row['phase']==stage['name']]
                 stable={name:sorted(set.intersection(*[{obj['identity'] for obj in report[name]['objects']
                     if obj['order']==1} for report in histories])) for name in stage['measurement']['names']}
                 phase['stable_individuals']=stable
@@ -369,7 +379,7 @@ def measure(config, lessons, output, *, eager=False, presentations=None, curricu
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--config', type=Path, required=True)
+    parser.add_argument('--config', type=Path, default=LESSON_CONFIG)
     parser.add_argument('--lessons', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--eager', action='store_true')

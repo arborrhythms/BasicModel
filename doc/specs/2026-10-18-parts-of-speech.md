@@ -1,5 +1,9 @@
 # Parts of speech: one order-2 set per operand slot, taught one operation at a time
 
+> **Representation correction (Alec, 2026-11-08).** Each formal argument is a learned vector, initially of zero magnitude, with the concept view-and-stability rule governing its confidence. Shared word uses supply pressure for argument vectors to cluster. This replaces the occupation-count/class-probability representation and the fixed unit-length prototypes described below. Dimensionality is a capacity choice, not a predefined list of parts of speech. Alec subsequently instructed implementation in the existing concept hierarchy: prebuild each formal argument one order above words, with general bidirectional conceptual influence and no parts-of-speech-specific learning algorithm. [Item 2.3 §29.2](../plans/2026-11-05-item2-3-trust.md#292-alecs-representation-correction-learned-formal-argument-vectors-2026-11-08) records the decision, implementation questions and psychological literature. The implementation return is [item 2.3 §30](../plans/2026-11-05-item2-3-trust.md#30-argument-concepts-and-general-hierarchical-context-codex-2026-11-08); the earlier text remains the record.
+
+> **Learning-order clarification (Alec, 2026-11-07).** [Item 2.3 §6.3.1](../plans/2026-11-05-item2-3-trust.md#631-learning-order-belongs-to-the-corpus-alec-2026-11-07) requires nouns and verbs to be learned before the curriculum teaches the other parts of speech. The corpus supplies this progression; the architecture does not enforce grammatical-class prerequisites for learning. This supersedes the claim below that the teaching order is arbitrary and any earlier lesson sequence that teaches other parts of speech before verbs. Those sequences remain as the historical record. The occupation-based learning mechanism is unchanged. The order itself (Alec, 2026-11-07, later the same day): word-concepts, then object-concepts through `interpret`, then the verb operator, then the modifiers, each operator introducing its parts of speech; and, later that night, questions early, simple before complex, intransitive before transitive, with the coarse order (words before operations, NP + VP before other operations) enforceable in the architecture and the rest in the corpus; the lesson table is §5b below, governed by [item 2.3 §6.3.2](../plans/2026-11-05-item2-3-trust.md#632-the-progression-operator-by-operator-alec-2026-11-07-claudes-filling-out-of-631-to-confirm).
+
 > **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](../plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](2026-10-08-expectation-at-every-level.md).
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
 > - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
@@ -47,6 +51,8 @@ one at a time.
   words), not rows in the truth store.
 
 ## 2a. Linguistic types are distributional *(Alec's worry, 2026-10-18; Claude's resolution to confirm)*
+
+*Amended 2026-11-08: the mechanism is now geometric; [trust §30 and §31](../plans/2026-11-05-item2-3-trust.md) supersede the distributional representation below.*
 
 Alec: object categories can be divided cleanly into classes, because objects
 have a structural presence in conceptual space; words are arbitrary, so a
@@ -208,6 +214,29 @@ collisions), and the stamps and the kept operators are reported, never
 required. The bare-description control (no occurrence for "small cat") is a
 report, not a gate; whether a bare description licenses a later reference is
 a behavior to be measured by a later sentence, not demanded of a reading.
+
+## 5b. Order of operations (Alec, 2026-11-07; Claude's filling-out, confirmed in part)
+
+**Decided (Alec, 2026-11-07; recorded in [item 2.3 §6.3.1 and §6.3.2](../plans/2026-11-05-item2-3-trust.md#631-learning-order-belongs-to-the-corpus-alec-2026-11-07)).** Nouns and verbs are learned before the other parts of speech: word-concepts first, then object-concepts through `interpret`, then the verb operator, which differentiates the one class of words into noun and verb classes (or at least into separate classes), then the modifiers. What is ordered is the operations we learn, not the parts of speech; each operation introduces its parts of speech. Questions go in early: synthetic sentences such as "bill ran." and "who ran?" test comprehension, and testing comprehension teaches syntactic category. Simple before complex, to whatever degree possible, enforced in part by the architecture (words before operations, NP + VP before other operations) and taught in part by the corpus presentation, which models child development and the Piagetian stages. Intransitive before transitive. This supersedes §3's "the order is arbitrary" and §5's NP-first order: the NP stage's determiner and adjective lessons follow the clause lessons. The lesson form of §5 (one operation per lesson; receipt, artifact, the next lesson's fixture), §5a's behaviours-not-operators rule, §3's occupation mechanism and §2b's carrying table are unchanged.
+
+*Claude's filling-out (to confirm).* An operation's arguments presuppose what earlier operations produce, which fixes the order; the parts of speech are read off afterwards from what each operation's arguments make of the words.
+
+| lesson | operation(s) learned | formal arguments | the parts of speech that follow | the lesson ends when (a measurement; data in the lesson manifest) |
+|---|---|---|---|---|
+| 0 | none | none | none: forms are kept and gain trust by views (2.3 §6.1) | a set fraction of admitted forms have $\ell \ge$ `definitionTrust` |
+| 1 | `interpret` (`witness` beside it) | the word in; its object-concept out | one class: every word occupies the same argument, the categorizer has one prototype in use, the chooser reads no class | a set fraction of defined words have a denotation (named row admitted by the index) |
+| 2 | `lift` (intransitive clause: "bill ran.") | subject NP and VP | nouns (occupants of the subject) and verbs (occupants of the VP argument through the words a VP carries, §2b); new words by occupation and, where the categorizer is silent, by elimination (§3) | the two occupant classes are definite (mean $d_j$ of 2.3 §6.3 above a threshold) |
+| 3 | `ask` with the question words ("who ran?") | the clause and its open role | interrogatives (occupants of the open role); the answers test the classes of lesson 2, since the answer to "who ran?" is a subject noun | the answers to the held-out questions (§5a) |
+| 4 | `verb` (transitive clause: "bill chased felix."; "who chased felix?", "what did bill chase?") | verb head and object NP | object nouns; whether subject and object collapse into one noun class is read from the collapse table, never declared | the new argument's class definite; the answers |
+| 5 | `intersection`, `product` | modifier and head, symmetric | adjectives: the words beside a noun that are not nouns | the new argument's class definite |
+| 6 | `lower`, `definite` | the determiner cue and the noun | determiners | as above |
+| 7 | `adverb` | modifier and head (the head is to be declared; it has none today) | adverbs | as above |
+| 8 | `preposition`, `surface`, `compound` | directional pairs | prepositions and the remaining function words | as above |
+| 9 | `equal`, `part`, `whole`, `implies`, `generic`, `query`, `infer`, `isTrue` | clauses and relations | none: a clause has no word occupant (§2b) | 2.3 §6.3's groups 4 and 5 |
+
+Sizes and budgets as §5: declared per lesson before the run; no lesson extends its budget to pass. The verb lessons' sentences use names and bare plurals as subjects and objects, so that no untaught operation is needed; an article that appears before its lesson is a form that occupies no argument yet, and its incidental learning is not suppressed (2.3 §6.3.1). Where the architecture enforces order, it is coarse (words before operations, NP + VP before other operations; 2.3 §6.3.2 item 3); rows 3 to 9 are the corpus's order. Resolved by Alec (2026-11-07, night): the order after the verb stands, with questions early; the verb lessons' sentence form as above; intransitive before transitive.
+
+*Amended 2026-11-07 by [2.3 §20](../plans/2026-11-05-item2-3-trust.md): the definiteness $d_j$ the table's last column reads is distributional, the count-weighted mean over an argument's occupants of the categorizer's probability of that argument (`PartsOfSpeech.distribution`), not content coverage; `interpret`, `sign` and `bind` contribute 1. Round 2a computes and reports the lesson-end measurements; the manifest's criterion field waits for the lessons item.*
 
 ## 6. Measurement
 

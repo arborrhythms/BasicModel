@@ -90,12 +90,12 @@ def test_define_names_the_pair_before_the_store_and_index_read_it(monkeypatch):
 
 
 @pytest.mark.parametrize('pair', ((0., 0.), (0., 1.), (1., 0.)))
-def test_named_pair_permission_is_not_an_evidence_filter(monkeypatch, pair):
+def test_named_pair_also_requires_effective_positive_authority(monkeypatch, pair):
     f, word, _, _, genuine = _setup(monkeypatch)
     row = f.cs.interpret.define(word, genuine)
     f.store.parts.truth_plus[row], f.store.parts.truth_minus[row] = pair
     f.cs.definitions.rebuild()
-    assert f.cs.definitions.objects(word) == (genuine,)
+    assert f.cs.definitions.objects(word) == ((genuine,) if pair[0] >= .5 else ())
     f.store.parts.remove(genuine, word)
     assert f.cs.definitions.objects(word) == ()
     assert f.cs.interpret.remembered_objects(word) == (genuine,)

@@ -39,7 +39,7 @@ def test_part_graph_uses_the_constructed_relation_capacity(monkeypatch):
     parts.refs[1:count+1] = torch.stack((torch.arange(1, count+1), torch.arange(2, count+2)), -1)
     parts.ref_kinds[1:count+1].fill_(parts.SYMBOL)
     parts.count.fill_(count)
-    monkeypatch.setattr(cs, '_concept_allocator', SimpleNamespace(parts=parts, relate_idx={('part-base', i): (2, i-1) for i in range(2,count+2)}))
+    monkeypatch.setattr(cs, '_concept_allocator', SimpleNamespace(symbol_types={}, parts=parts, relate_idx={('part-base', i): (2, i-1) for i in range(2,count+2)}))
     monkeypatch.setattr(cs, '_csw_row_of', lambda symbol: symbol - 1)
     from Priming import part_edges
     src, dst, weight = part_edges(cs)

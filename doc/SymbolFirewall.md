@@ -74,6 +74,12 @@ that bifurcation needs to be complete; we don't want leakage."
   only as form identification (the word symbol). Where earlier text says
   "the cube" for these, read the conceptual cube.
 
+## Hierarchical context preserves the firewall (Alec, 2026-11-08)
+
+A higher-order concept is valid conceptual context for its members. `ConceptHierarchy` derives class directions from member meanings and sends class context back down membership edges at kept closes, through the same architecture at every order. This includes word concepts and formal-argument concepts. Grammar only declares the arguments and supplies kept memberships; it owns no separate class-learning geometry.
+
+The downward update changes meaning directions and preserves form coordinates and confidence radii. A paired chart without a meaning band cannot supply a conceptual view: its form coordinates are never used as a surrogate direction. A whole conceptual chart can supply its native conceptual value, but the implemented downward placement step requires a meaning band. No operator is inserted into perceptual or lexical form context to achieve this influence. [Architecture](Architecture.md#hierarchical-conceptual-context-alec-2026-11-08) gives the current rule and [the certificates](../test/test_argument_concepts.py) exercise ordinary and formal classes.
+
 ## Principle
 
 > All computation must be composed over known, typed, introspectable units —

@@ -122,6 +122,180 @@ the implementation is finished, each round runs only fast checks: direct
 before-and-after cases, the targeted tests, and make test once at a freeze.
 Long runs (item 71's), repeats and stability come later. The Codex text is §58.1.
 
+**Update 2026-11-06 (afternoon):** **item 2.5 is LANDED** by Codex: BasicModel
+`1e02cebf5d` and WikiOracle `b126029` (pointers: basicmodel `1e02cebf5d`,
+nanochat reset to the fork's `7be4dc3`, openclaw `87b9a89`), pushed. Item 2.3
+is decided ([spec §5](doc/plans/2026-11-05-item2-3-trust.md)) and starts with
+round 1 (spec §7.1); hand-off [2026-11-06](doc/plans/2026-11-06-handoff-2-3.md).
+
+**Update 2026-11-06 (night):** Codex's 2.3 round-1 return is reviewed in
+[spec §9](doc/plans/2026-11-05-item2-3-trust.md). The mechanisms are built as
+specified and certified; the one `make test` fails 82 cases, traced to four
+producers: relations and bookkeeping rows counted as views, trust applied to
+charts without a meaning band (where it reads identically 0, which is why the
+pending-premise pair fails), the operand's trust read from the derived vector
+instead of the radius, and the pair sealed against all later evidence. Claude's
+design decisions D1 to D5 (views as counters; trust in the meaning lanes only;
+the radius is the trust; a non-concept operand contributes 1; no lexical
+identity for whitespace or punctuation under either `whitespaceUnits` setting)
+amend §6. **Q1 for Alec:** where operand trust acts; as built, the same sentence
+cannot define after its word is learned and a configured truth is dead on
+arrival; Claude recommends composing operand trust at the read, the written
+pair kept. Alec answered the same night (spec §9.2): the sealing flag goes; a
+relation's pair is fixed relative to the relations it enters into, the trust of
+"a wug is a bird" is $\min(x_1, x_2) \times x_3$ over uncoupled stored values, and
+an order on the pairs maintains the relations; §9.3 is the design (stored and
+effective pairs, the sort, the threshold at the index). The Codex text is §9.4.
+
+**Update 2026-11-07:** Codex's completion (§9.4) is reviewed in
+[spec §11](doc/plans/2026-11-05-item2-3-trust.md): §9.3 is built and certified (28
+certificates; the pending-premise pair passes once each on the final source); the one
+sweep failure, the XOR convergence loss, is traced to the against lane carrying the
+radius (a defect from §6.1's wording), which also makes `negate` the identity on a
+stored concept; empty kinds cannot gain trust (a view of empty content counts 0).
+D6 and D7 repair both; three weak ports are named. **Q2 for Alec:** whether a sign
+whose name is not yet a denotation keeps its token pending instead of minting a new
+identity (recommended). The Codex text is §11.1; the freeze follows it.
+
+**Update 2026-11-07 (evening):** Codex's §11.1 return (§12) is reviewed in
+[spec §13](doc/plans/2026-11-05-item2-3-trust.md): D6 and D7 are built and certified
+(33 trust certificates); the offered production source is unswept (the lookup changed
+after the sweep). The four sweep failures resolve to: a seatless operand contributing
+zero where D4 says one (the landed captured-verb test passes under the one-line rule);
+D5 incomplete at admission (punctuation forms are still minted as words, so each is a
+seat with no view and no grounding); and D8, operand trust on an untracked chart is one
+(D2's norm reading scaled pairs on charts with no trust and made exact-one contracts
+machine-dependent). `test_convergence` is unattributable (`MM_xor` is untracked,
+unseeded, variable history); one intermittent is on watch. Not accepted; the Codex text
+is §13.1; Q2 still open.
+
+**Update 2026-11-07 (night):** Codex's §13.1 return (§14, round 1d) is reviewed in
+[spec §15](doc/plans/2026-11-05-item2-3-trust.md): the seatless rule, D5 at admission
+and D8 are built and certified, the thirteen ports are sound, and the frozen sweep is
+red by one native-grammar case. That case is a defect in the §9.3 build, not noise: the
+index's threshold early-return withholds a named word's identity maps along with its
+binding, `define` pops the pending entry, and a second naming rebuilds the description
+without its form, so a word defined on a one-view object (effective $0.2835$ against
+$0.5$) can no longer be found by its form and the next reading mints a duplicate
+identity. The same state is behind two more intermittent native-grammar cases; all three
+reproduce on the live source and the 1c candidate and never on the landed tree. D9: the
+threshold gates the word $\to$ object binding only. Not accepted; the Codex text is
+§15.1 (round 1e); Q2 still open.
+
+**Update 2026-11-07 (night, later):** Alec answered Q2 as (b): a sign of a name below the
+definition threshold stays a pending token and joins the name's object when the index
+admits its named row (spec §11, §15.1 item 5; built in round 1e). He also fixed the
+curriculum's operator order: nouns and verbs before the other parts of speech, that is
+word-concepts, then object-concepts through `interpret`, then the verb operator, then
+the modifiers, each operator introducing its parts of speech; recorded as spec §6.3.2
+and parts-of-speech spec §5b (the lesson table and three opens for Alec), superseding
+that spec's NP-first order. Later that night Alec resolved the three opens: what is
+ordered is the operations learned, not the parts of speech; questions go in early
+("bill ran." / "who ran?" tests comprehension, which teaches syntactic category); simple
+before complex, enforced in part by the architecture (words before operations, NP + VP
+before other operations) and in part by the corpus presentation (child development, the
+Piagetian stages); intransitive before transitive. The §5b table is reordered accordingly
+(`lift`, `ask`, `verb`, then the modifiers); round 2's architectural gates are bounded to
+the coarse order (spec §6.3.2 item 3, Claude's reading to confirm).
+
+**Update 2026-11-07 (night, §16/§17):** Codex's round-1e return (§16) built D9 and
+stopped the round on my item-2 wording ("record the producer and stop" meant the item).
+Reviewed in [spec §17](doc/plans/2026-11-05-item2-3-trust.md): D9 as built is approved
+(80 ported and new cases pass here; the two native-grammar probes that failed now pass
+10 of 10); finding 2's producer is the lexical span mask of `cs_read_memberships`, a
+percept reader whose input set D9 restores, no publisher change; the three-document case
+still fails 1 in 3 with a different producer, a witness reading kept at a word transaction
+where interpret should be mandatory in reading mode, left to Codex to attribute. Not
+accepted because unswept. Codex text §17.1 (round 1f): Q2(b), finding 3's attribution,
+targeted run, one make test.
+
+**Update 2026-11-07 (morning, §18/§19):** Codex's round-1f return (§18, receipt
+`doc/benchmarks/2026-11-07-item2-3-round-1f`, offered source `4abb6a6b…`) built Q2(b)
+as §15.1 item 5 with four certificates through the sign close; reviewed in
+[spec §19](doc/plans/2026-11-05-item2-3-trust.md): approved as built (84 cases pass
+here). Finding 3 is closed as attributed by my traced diagnostic: the untrained chooser
+takes `sign` at the word's leaf, the Architecture's legal second decision, and the
+three-document test asserts a free chooser outcome; its port (fixture fixes the symbol
+decision, or `RUN_TRAINED`) and the sign logit's response to the radius are round 2's.
+The one `make test` (nothing deselected) is 7451 passed, 1 failed: `test_doc_links` on
+§18's links to receipt files written after the sweep, which passes on the live tree now;
+rule from now on: every linked file exists before the sweep. Recommendation: accept the
+freeze at `4abb6a6b…` as round 1's frozen source (alternative: one more sweep after the
+receipt pre-creates its targets); Alec's word pending. Next: round 2's Codex text
+(gates bounded to §6.3.2's coarse order) and the §5 review before the push (D8, D9,
+Q2(b), the pending null-kind state).
+
+**Update 2026-11-07 (round 1 accepted; round 2a, §20):** Alec accepted the freeze
+("Great, round 2"): `4abb6a6b…` is item 2.3 round 1's frozen source, uncommitted.
+Round 2 is two freezes ([spec §20](doc/plans/2026-11-05-item2-3-trust.md)): 2a builds
+operation trust (decision 2; definiteness corrected to distributional, the
+categorizer's probability of the argument over its occupants; `interpret`, `sign`,
+`bind` and the fixed relations contribute 1; `trustViews` scales the use count; the
+operation recorded on the row and entering the effective pair at the read),
+`RUN_TRAINED` (`@pytest.mark.trained('<phase>')`, the §5b lessons as null phases, the
+moved tests listed) and the curriculum measurements (reported, acted on by nothing);
+2b builds the three gates after Alec's word on their data (fractions, closed-by-default,
+the chooser question). Codex text §20.1; Codex's return is §21.
+
+**Update 2026-11-07 (§21/§22):** Codex's round-2a return (§21, receipt
+`doc/benchmarks/2026-11-07-item2-3-round-2a`, source `7b4ccfa1…`) built operation trust,
+`RUN_TRAINED` (eight tests moved, ten null phases) and the measurements; reviewed in
+[spec §22](doc/plans/2026-11-05-item2-3-trust.md): approved as built (96 cases pass here;
+the minimum, not my 3(a) product, is the rule). The sweep is red by 49 in five attributed
+groups: D10 (a row's learned operation is its first writer's; a later write merges and
+leaves the tag), D11 (the naming write of `define` clears the tag), the thought-boundary
+re-attachment guard (45 cases; keep the bank's catalogue and owner when none is passed),
+one decision-5 fixture port (`test_ltm_consolidation` user ingestion) and one state-key
+port. Finding 6: the three-document fixture holds against `sign` (5/5 traced) but the real
+test raised once in three with a negative clause order from another free unary choice at
+the leaf; Codex attributes the eligibility and narrows the fixture's menu to what reads
+the sentence. Codex text §22.1 (round 2a-ii); return §23. 2b opens unchanged.
+
+**Update 2026-11-08 (§23/§24):** Codex's round-2a-ii return (§23, receipt
+`doc/benchmarks/2026-11-07-item2-3-round-2a-ii`, source `0218bfb5…`) built D10 (first
+writer owns the tag), D11 (`LTM1.clear_operation` on both `define` paths), the inert
+ownerless attachment, the two ports, and finding 6's repair: the chooser had been offered
+the dummy field bind on an unknown-order mention; eligibility now checks the bind result's
+order, and the three-document fixture's menu is STOP, interpret, union. Reviewed in
+[spec §24](doc/plans/2026-11-05-item2-3-trust.md): approved as built (200 cases pass here;
+three-document 4/4). All 49 prior failures pass; the sweep is red by 2: one fixture
+(`test_identity_threading` bind locations) deposits referents without an order, which
+production never does; a port. Codex text §24.1 (round 2a-iii); return §25; a green sweep
+freezes 2a. 2b waits on Alec's answers to §20's opens.
+
+**Update 2026-11-08 (§25/§26, round 2a frozen):** Codex's round-2a-iii return (§25,
+receipt `doc/benchmarks/2026-11-08-item2-3-round-2a-iii`) ported the bind-location fixture
+(order 1 on each antecedent) and swept green: 7470 passed, 323 skipped, 1 xpassed, exit 0,
+nothing deselected. Accepted in [spec §26](doc/plans/2026-11-05-item2-3-trust.md): round 2a
+is frozen at `bfd6903f…`, uncommitted. Next: Alec's answers to §20's opens (gate data,
+closed-by-default, the chooser), then round 2b's Codex text (the three gates), then the §5
+review before the push (D8–D11, Q2(b), pending null-kind state, checkpoint schemas, bind
+eligibility, attachment rule).
+
+**Update 2026-11-08 (round 2b text, §27):** Alec asked to finish 2.3 without answering
+§20's opens; [spec §27](doc/plans/2026-11-05-item2-3-trust.md) carries the defaults as
+stated assumptions (all data): two gates in `<gates>` (interpret: stable-word fraction 0.5,
+caps the named rows; clause: mean definiteness 0.75 of `lift`'s classes, caps every row
+whose operation is not in `except`, default interpret sign bind lift), closedTrust 0.1 in
+the row's minimum, open stays open (checkpointed), **open by default in model.xml and
+closed in the lesson configuration** (a reversal of §20's recommendation: closed by default
+would gate every definition and the learning certificates for no mechanism gained), the
+chooser unchanged, the tag now recorded for fixed relations too (trust 1 by name). Codex
+text §27.1; return §28; then the §5 review before the push.
+
+**Update 2026-11-08 (§28/§29, round 2b reviewed):** Codex's round 2b return (§28, receipt
+doc/benchmarks/2026-11-08-item2-3-round-2b, offered source fcc65c54..., 1002 files) built the
+gates as §27 specified: `<gates>` in model.xml/xsd, `TrustGates`, `MM_corpus_lessons.xml`
+(closed starts, the runner's default), LTM1 layout 5 with `gate_open` in the extra state,
+the cap in `refresh_effective`'s minimum, fixed relations tagged, one port; one green
+`make test` (7483/323/1 xpassed). Review §29: not accepted by one defect in my §27 text,
+finding 7: the clause measurement inherits round 2a's empty-class definiteness of one and
+opens the clause gate on a lesson model's first effective read, before lift is used; D12 makes
+an unoccupied class measure zero for the gate (operation trust unchanged). Finding 8: an empty
+`<except>` is rejected although Params allows it. Codex text §29.1 (round 2b-ii, return §30);
+green there freezes round 2b and completes 2.3's code; then the §5 review before the push.
+Observation for §5: one stable word of one opens the interpret gate (a `<minimum>` datum if wanted).
+
 **Order and branches (Alec, 2026-11-03):** work happens on main, with no
 sandbox branches; the countdown order stands, 2.5, 2.0, 2, then 1.5, 1 and 0;
 when item 2.5 completes, everything is on main, committed and pushed, then
@@ -473,9 +647,18 @@ generation is expected at this stage and is recorded, not tuned away.
    [notes](doc/plans/2026-11-05-item2-3-trust.md)). A concept's trust is its
    magnitude. Operators need a trust value of their own, unless they exist as
    vectors, and a relation's trust composes its operands' and its operator's.
-   Gates open in an order the data specifies: words first, then operations one
-   at a time. A trained-model test tier (`RUN_TRAINED`) takes many grammar
-   tests. Specified after 2.5 closes; nothing is built.
+   **Decided 2026-11-06 ([spec §5](doc/plans/2026-11-05-item2-3-trust.md),
+   provisional until the review before the push):** a concept's lane length
+   is set from its views and its stability (agreement among its occurrences'
+   parts and wholes), training moving direction only; an operation's trust
+   is the definiteness of its formal arguments, else its count; gates open in
+   psychologically motivated groups, not one at a time (spec §6.3, for Alec's
+   review); trust composes by minimum and acts as a weight with one threshold
+   at the definition writer; source trust stays separate; `RUN_TRAINED` takes
+   the tests that assert learned behaviour, no lesson run; the serial
+   reader's whitespace admission is repaired here. Two rounds (spec §6.5);
+   round 1's Codex text is spec §7.1; hand-off
+   [2026-11-06](doc/plans/2026-11-06-handoff-2-3.md).
 - **2.0. One gradient, one choice mechanism, memory as the state of
    affairs, behavioral chains and basic percepts** (Alec, 2026-11-03 and
    2026-11-04;
@@ -1234,3 +1417,82 @@ Everything that is decided in direction but not on this path is in
 - `3ffb465` Bounded runner foundations, 512 MiB VQ tile, MPS routing receipt.
 - Expectation review (plan §11): implemented and validated on September 16 ([record](doc/plans/2026-09-15-next-sentence-as-the-production-objective.md#116-implementation-and-validation-september-16)).
 - Xcode licence accepted; trust term sign `|trust|` (Alec, September 18).
+
+**Update 2026-11-08 (§29.2/§30/§31, argument concepts):** Alec's representation correction
+(§29.2, recorded by Codex): formal arguments are learned concept vectors in the existing
+hierarchy, pre-built one order above word concepts, directions from members' meanings,
+bidirectional conditioning, no parts-of-speech special case beyond construction and grammar
+use. Codex built it (§30; receipt doc/benchmarks/2026-11-08-item2-3-argument-concepts, source
+bcf39ff2..., 1005 files; sweep 7475/26/323/1 xpassed, red, every failure attributed).
+Claude's design review §31: the representation reads grammatical function from meaning
+(Alec's bet, the participation-beats-resemblance certificate is the test); finding 9 the
+meet-ratio agreement caps a class radius at its members' spread (0.69 for two orthogonal
+members, the 0.75 gate unreachable; D13 agreement = centroid stability); finding 10 every
+member of every class is conditioned every sentence and a class collapses (cosine 1 in 20
+boundaries; D14 condition the boundary's members only, refresh once); finding 11 word
+concepts stay order 0 (fixture port); observations on evidence-less membership, 96 seats,
+thought proofs over grammatical classes. Receipt review §31.1: not accepted (part_edges
+double-counts relation-backed members, the centroid schedule, the seeded XOR learning
+certificate at .234 with conditioning the prime suspect, 22 fixture/inventory ports;
+finding 12 zero operation trust on form-only charts, D16 neutral factor). Codex text §31.2
+(receipt argument-concepts-ii, return §32); green there freezes the round; then the §5
+review before the push.
+
+**Update 2026-11-08 (§31.3/§31.4, Alec's answers):** Alec accepted the hierarchical training
+regime; his answers re-design the read and the measures: D17 the class read is coverage of
+the class vector by the word (meet ratio; low magnitude = lenient, so a dominant class cannot
+starve a new part of speech); D13 revised: definiteness = separability (fit-weighted fraction
+of members nearer their class than any competitor outside the 15-degree contiguity angle) x
+evidence (1-exp(-views/trustViews)), the stability D13 withdrawn, the meet-ratio agreement
+kept as tightness; finding 10 reframed (word-concept contraction toward the class centroid is
+the membership degree; D14 keeps it following the word's own participations); D15 members
+weigh their fit in the centroid; D16 kept; word-order separation (form order vs referent
+order) recorded as a later item; thought over grammatical classes allowed and recorded
+(Orders.md new subsection). Codex text §31.4 supersedes §31.2 (receipt argument-concepts-ii,
+return §32).
+
+**Update 2026-11-08 (§32/§33, argument-concepts-ii reviewed):** Codex built D13 revised, D14-D17
+and the part_edges fix (§32; receipt doc/benchmarks/2026-11-08-item2-3-argument-concepts-ii,
+source 037afb6b..., 1005 files; sweep 7505/4/323/1 xpassed). §33: not accepted; two ports
+(a source-inspection literal in test_serial_concepts; Codex's own §30 order test under the
+old read) and finding 13: the grammar-XOR learning certificates regress (the seeded one at
+.2355 again; the unseeded test_xor_class_accuracy newly, two answers wrong); prime suspect
+the fit carrier added unweighted to the chooser's scores (co-occurring words fit any young
+class by ~0.78 once placed), not established; a controlled attribution panel (§32 source,
+carrier silenced, §30 baseline; 3 inits each, ~40 min) is proposed for Alec to authorize;
+the seeded certificate's standing is his. Codex text waits on those two answers.
+
+**Update 2026-11-08 (§33.1/§33.2, the XOR panel):** Alec: run the panel here; move the seeded
+certificate behind RUN_TRAINED. Panel (doc/benchmarks/2026-11-08-item2-3-xor-grammar-panel):
+nine unseeded XOR_grammar trainings: §32 as built 2/3 pass, carrier silenced 0/3, §30
+baseline 2/3. Finding 13 closed (the carrier helps; no regression from the round; D17 stands).
+Finding 14 opened (FutureWork): the grammar XOR training does not converge in about a third
+of initializations (the loss oscillates between ~0.05 and 0.25 for all 400 epochs; momentary
+dips near zero do not hold), on §30's source too; the unseeded
+certificate's "arbitrary initialization" bar is a coin with a one-in-three tail. Assumption for
+Codex text §33.2: it moves behind RUN_TRAINED too (trained('xor_grammar')), the seeded one as
+trained('mm_xor_grammar'); two ports; receipt argument-concepts-iii, return §34; green there
+freezes the round. Alec's aside: tiny trained models (few words) as registered artifacts for
+the trained tier (lessons item).
+
+**Update 2026-11-08 (§34/§35, argument-concepts-iii accepted):** Codex's return (receipt
+doc/benchmarks/2026-11-08-item2-3-argument-concepts-iii, source f770cd13..., 1005 files) changed
+only the two ported tests, the two trained markers and the phase registry; make test 7509/325/1
+xpassed, exit 0. Accepted (§35): f770cd13... is the argument-concepts round's frozen source and
+item 2.3's complete code (rounds 1, 2a, 2b-in-§30, argument concepts). Next: the §5 review with
+code in hand before the push, on Alec's word (carry D8-D17, Q2(b), the word-order convention and
+FutureWork item, finding 14, the lesson measurements, tiny trained artifacts). Then item 2.0
+round 1 (handoff task 4).
+
+**Update 2026-11-08 (§36, the §5 review before the push):** §5's seven decisions re-read
+against f770cd13... with the code in hand: all stand as decided and amended (D1-D17, Q1,
+Q2(b)); two wording changes recorded (the source trust scales the stored pair and the
+learned factors are a minimum at the read, Alec's §9.3 form; the kept-use count is
+telemetry, the class views being the count factor). §36.2 lists seven items for Alec,
+each with a recommendation: confirm D13 revised/D15/D16/D17 as built; the m_o change; the
+composition form; the two-gate coarse order; gate data defaults (push as frozen, change in
+the lessons item, where a `<minimum>` word count for the interpret gate also belongs); the
+word-orders item after 2.0; finding 14 with item 0's learning findings. §36.3 is the Codex
+landing text ("Land accepted item 2.3 implementation", record the landing, push main);
+Alec's word: Codex commits and pushes on completion. Receipts stay local (doc/benchmarks is
+ignored). Next: item 2.0 round 1 (handoff task 4) after the landing.

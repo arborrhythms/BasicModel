@@ -8,7 +8,7 @@ def test_native_kept_readings_have_transitive_percept_codes(tmp_path, monkeypatc
     from Models import BasicModel
     from Layers import Ops
     from PrependedSymbols import word_view
-    from test_parts_of_speech import test_kept_readings_alone_supply_occupation_counts
+    from test_parts_of_speech import test_kept_readings_alone_supply_argument_views
 
     certificates = []
     commit = BasicModel._commit_sentence
@@ -77,7 +77,7 @@ def test_native_kept_readings_have_transitive_percept_codes(tmp_path, monkeypatc
         return result
 
     monkeypatch.setattr(BasicModel,'_commit_sentence',committed)
-    test_kept_readings_alone_supply_occupation_counts(tmp_path,monkeypatch,eager_reading)
+    test_kept_readings_alone_supply_argument_views(tmp_path,monkeypatch,eager_reading)
     (tmp_path/'certificate.json').write_text(json.dumps(dict(closes=certificates),indent=2)+'\n')
     assert certificates
     assert not any(c['failures'] for c in certificates), 'native identity containment failed; stop and report'

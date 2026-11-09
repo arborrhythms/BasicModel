@@ -504,12 +504,12 @@ def worker_environment(root):
     return env
 
 
-def skipped_certificates_by_phase(result):
+def skipped_certificates_by_phase(result, field='certificate_phase'):
     """Keep prerequisite skips visible in the landing receipt, by lesson."""
     grouped = {}
     for worker in result['workers']:
         for report in worker.get('reports', []):
-            phase = report.get('certificate_phase')
+            phase = report.get(field)
             if phase and report['outcome'] == 'skipped':
                 grouped.setdefault(phase, {})[report['nodeid']] = report.get('message', '')
     return {phase: [dict(nodeid=node, reason=reason) for node, reason in sorted(nodes.items())]
@@ -536,6 +536,11 @@ def render_report(path, result):
             f"<li>{html.escape(record['nodeid'])}: {html.escape(record['reason'])}</li>"
             for record in records) + '</ul>'
             for phase, records in result.get('skipped_certificates_by_phase', {}).items())
+        + '<h2>Skipped trained tests</h2>'
+        + ''.join(f'<h3>{html.escape(phase)} ({len(records)})</h3><ul>' + ''.join(
+            f"<li>{html.escape(record['nodeid'])}: {html.escape(record['reason'])}</li>"
+            for record in records) + '</ul>'
+            for phase, records in result.get('skipped_trained_by_phase', {}).items())
         +
         "<table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr>"
         + "".join(rows) + "</table></body></html>")
@@ -589,6 +594,7 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
     def save():
         result["elapsed_seconds"] = time.monotonic() - started
         result['skipped_certificates_by_phase'] = skipped_certificates_by_phase(result)
+        result['skipped_trained_by_phase'] = skipped_certificates_by_phase(result, 'trained_phase')
         write_json(run_dir / "result.json", result)
         render_report(run_dir / "report.html", result)
 
@@ -756,6 +762,7 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
             result["collection"] = collect
             result["selected"] = collect.get("pytest", {}).get("selected", [])
             result['phase_certificates'] = collect.get('pytest', {}).get('phase_certificates', {})
+            result['trained_tests'] = collect.get('pytest', {}).get('trained_tests', {})
             if collect["exit_code"] != 0:
                 result.update(exit_code=collect["exit_code"], reason="collection_" + collect["reason"])
             elif not result["selected"]:
@@ -897,4 +904,6 @@ def main(argv=None):
           f"{len(result['completed'])}/{len(result['selected'])} cases completed.\n{run_dir / 'result.json'}", flush=True)
     for phase, records in result.get('skipped_certificates_by_phase', {}).items():
         print(f"Skipped phase certificates: {phase}: {len(records)}", flush=True)
+    for phase, records in result.get('skipped_trained_by_phase', {}).items():
+        print(f"Skipped trained tests: {phase}: {len(records)}", flush=True)
     return result["exit_code"], run_dir / "report.html"

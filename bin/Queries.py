@@ -807,10 +807,10 @@ class ThoughtTaxonomyCapability:
         edges = part_edges(space)
         if edges is not None and part[0] == whole[0] == 'sym':
             start, target = space._csw_row_of(part[1]), space._csw_row_of(whole[1])
-            pending, seen = [(start, 1., 0)], set()
+            pending, seen = [(start, 1., 0, ())], set()
             expanded = 0
             while pending and expanded < max_expansions:
-                point, strength, depth = pending.pop(0)
+                point, strength, depth, path = pending.pop(0)
                 if point is None or point in seen or depth >= max_steps:
                     continue
                 seen.add(point)
@@ -821,11 +821,17 @@ class ThoughtTaxonomyCapability:
                         break
                     degree = min(strength, float(edges[2][edge]))
                     next_point = int(edges[1][edge])
+                    from Taxonomy import TaxonomyEdge
+                    left, right = (('sym', space.concept_id_at_row(row)) for row in (point, next_point))
+                    trail = (*path, TaxonomyEdge(left, right, right, 'part', (degree, 0.)))
+                    names = getattr(space._concept_allocator, 'formal_arguments', {})
+                    classes = tuple((name, cid) for name, cid in names.items()
+                        if any(cid in (edge.part[1], edge.whole[1]) for edge in trail))
                     if degree > 0 and next_point == target:
-                        return dict(support_true=degree, support_false=0., path=(),
-                                    reason='membership', edges_expanded=expanded)
+                        return dict(support_true=degree, support_false=0., path=trail,
+                                    formal_arguments=classes, reason='membership', edges_expanded=expanded)
                     if degree > 0:
-                        pending.append((next_point, degree, depth+1))
+                        pending.append((next_point, degree, depth+1, trail))
         nodes, records = capture_limits(work, max_nodes, max_records)
         view = capture_taxonomy(
             object.__getattribute__(self, '_ThoughtTaxonomyCapability__space'),

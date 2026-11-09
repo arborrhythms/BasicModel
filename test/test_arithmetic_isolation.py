@@ -89,7 +89,7 @@ def test_renamed_native_vocabulary_preserves_checked_relation_answers(monkeypatc
     torch.testing.assert_close(x.roles, y.roles)
     _poison_oracles(monkeypatch)
     a, b = first[1].execute(x, first[4]), second[1].execute(y, second[4])
-    assert a.support_true == b.support_true == 1
+    assert (a.support_true, b.support_true) == pytest.approx((1., 1.))
     assert a.support_false == b.support_false == 0
     reverse = second[1].execute(second[1].form('isPart', second[3], second[2]), second[4])
     assert reverse.support_true == 0

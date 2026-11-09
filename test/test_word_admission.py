@@ -162,3 +162,79 @@ def test_33_grounded_xor_with_word_boundary(tmp_path, trial, pool):
     namespace = dict(vars(original))
     exec(compile(source, __file__ + ':test33', 'exec'), namespace)
     namespace['learn_grounded_xor'](tmp_path, pool)
+
+
+def test_training_admission_keeps_period_percept_without_lexical_identity(monkeypatch):
+    from Corpus import admit_training_forms
+    from Models import BaseModel
+    from data import TheData
+    import util
+    monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+    TheData.processLM({s: dict(text=['alpha.'] if s == 'train' else [], label=[])
+                      for s in ('train', 'validation', 'test')})
+    model = BaseModel.from_config('data/MM_corpus_orders.xml', data=TheData)[0]
+    try:
+        owner = model._concept_owner()
+        percepts = model.perceptualSpace.percept_store
+        admitted = admit_training_forms(model, ['alpha.'])
+        assert len(admitted) == 1 and admitted[0][0] == b'alpha'
+        assert owner.interpret.word_for_form('alpha') == admitted[0][1]
+        assert owner.interpret.word_for_form('.') is None
+        assert b'.' in percepts.identity.words
+        assert percepts.bytes_for(percepts.identity.word_rows[b'.']) == b'.'
+        from Meronomy import percept_spans
+        assert (5, 6) in percept_spans(b'alpha.')
+    finally:
+        model.End()
+
+
+@pytest.mark.parametrize('surface', ['', ' ', '.', ' \u2014\u3002 ', b'\xe2\x80\x94'])
+def test_eager_admission_never_looks_up_nonlexical_forms(monkeypatch, surface):
+    from test_concept_capacity_policy import _cs, _property_ws, _D
+    cs = _cs(32)
+    calls = []
+    lookup = cs.interpret.lookup_word
+    def observed(parts, wholes, **kw):
+        calls.append(kw.get('form'))
+        return lookup(parts, wholes, **kw)
+    monkeypatch.setattr(cs.interpret, 'lookup_word', observed)
+    assert cs.interpret_word([10], (), key=surface) is None
+    if isinstance(surface, str):
+        cs._autobind_property_concepts(torch.tensor([[10]]), torch.zeros(1, 1, _D),
+            torch.tensor([[0]]), [[surface]], [[surface]], percept_where=None,
+            percept_when=None, tile_spans=None, percept_store=None, ws=_property_ws())
+    assert calls == []
+    assert cs.interpret.word_for_form(surface) is None
+
+
+def test_grammar_word_admission_keeps_nonlexical_percept_extent(monkeypatch):
+    from types import SimpleNamespace
+    from Models import BasicModel
+    import Meronomy
+    lookups = []
+    owner = SimpleNamespace(interpret=SimpleNamespace(lookup_word=lambda *a, **kw: lookups.append(kw)))
+    raw = torch.tensor([[46]])
+    ids, spans = torch.tensor([[0]]), torch.tensor([[[0, 1]]])
+    # Exercise the lexical guard independently of the current word-span
+    # splitter: even a supplied grammar-word span cannot admit punctuation.
+    monkeypatch.setattr(Meronomy, 'word_spans', lambda data: [(0, 1)])
+    monkeypatch.setattr(Meronomy, 'percept_spans', lambda data: [(0, 1)])
+    captured = []
+    model = SimpleNamespace(inputSpace=SimpleNamespace(_last_sentences=['.']),
+        perceptualSpace=SimpleNamespace(_forward_input={'native_indices':ids,'native_part_spans':spans}),
+        wholeSpaces=[SimpleNamespace(inputShape=(1,), property_rows_for_bytes=lambda raw: (),
+            concept_evidence_layout=lambda raw, width: (spans,None), subspace=SimpleNamespace(what=None))],
+        _staged_concepts_in=raw, _concept_owner=lambda: owner,
+        _aligned_serial_word_mode=lambda: False, _stage_mixing_grammar_leaf_mask=lambda: None,
+        _stage_reading_grammar_references=lambda words, fi: captured.extend(words))
+    BasicModel._stage_reading_word_concepts(model)
+    assert not lookups and not captured
+    torch.testing.assert_close(model._reading_word_extents, spans)
+
+
+@pytest.mark.parametrize('surface, expected', [('', False), (b'', False), (' \t', False),
+    ('\u2014\u3002', False), (' \u2014 ', False), (b'\xe2\x80\x94', False),
+    ('alpha', True), ('alpha.', True), ('2', True), ('+', True)])
+def test_lexical_form_predicate_uses_unicode_categories(surface, expected):
+    from WordSurfaces import is_lexical_form
+    assert is_lexical_form(surface) is expected

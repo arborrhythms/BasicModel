@@ -656,6 +656,7 @@ def test_boundary_types_none_starts_without_boundaries(tmp_path):
 
 # -- Phase 2, step 3: the cold start learns space as the basic boundary ---------
 
+@pytest.mark.trained('words')
 @pytest.mark.usefixtures('eager_reading')
 @pytest.mark.slow
 def test_cold_start_learns_space_as_the_basic_boundary(tmp_path):

@@ -54,6 +54,10 @@ def test_relative_links_resolve(path):
     # the original document's home. Audit every target without rewriting
     # historical evidence or excluding the archived documents.
     origins = {
+        "doc/benchmarks/2026-11-06-item2-3-round-1b/part1-return/README.md":
+            "doc/benchmarks/2026-11-06-item2-3-round-1b/README.md",
+        "doc/benchmarks/2026-11-06-item2-3-round-1b/part1-return/spec-before-completion.md":
+            "doc/plans/2026-11-05-item2-3-trust.md",
         **{f"doc/benchmarks/2026-10-25-item3-0-retire-mode/repair-04/development/upstream/{name}.md": "doc/FutureWork.md"
            for name in ("base", "local", "merged", "remote")},
         **{f"doc/benchmarks/2026-10-25-item3-0-retire-mode/repair-04/publication/FutureWork.{name}.md": "doc/FutureWork.md"

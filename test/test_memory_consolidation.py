@@ -104,7 +104,8 @@ def test_reading_recurrence_counts_distinct_documents_not_reobservations(distinc
     if distinct:
         symbol = int(store.recurrence_symbols[reading])
         assert symbol > 0
-        torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(symbol)], value)
+        from definition_fixtures import projected_content
+        torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(symbol)], projected_content(owner, symbol, value))
         before = snapshot(resolver)
         consolidate(owner, store)
         unchanged(resolver, before)

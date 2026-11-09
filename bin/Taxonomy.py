@@ -193,7 +193,7 @@ def capture_taxonomy(conceptual_space, *, max_nodes=256, max_records=1024,
                 continue
             part, whole = ('sym', a), ('sym', b)
             concepts.update((part, whole))
-            evidence = (float(record['truth_plus']), float(record['truth_minus']))
+            evidence = tuple(float(pole) for pole in part_store.evidence(symbol))
             edges.append(TaxonomyEdge(part, whole, ('sym', symbol), 'part', evidence))
         if 'work_budget' in incomplete or 'capture_limit' in incomplete:
             break

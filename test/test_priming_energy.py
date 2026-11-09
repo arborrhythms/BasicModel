@@ -36,7 +36,11 @@ def test_membership_cache_is_directed_and_weighted():
     cs, rA, rB = _chain_cs()
     src, dst, w = part_edges(cs)
     assert set(zip(src.tolist(), dst.tolist())) == {(3,rA), (5,rB)}
-    assert bool((w == 1).all())
+    assert not w.any()  # A newly constructed class has no kept views yet.
+    from definition_fixtures import agreeing_views
+    agreeing_views(cs, *(cs.concept_id_at_row(row) for row in (3,rA,5,rB)))
+    _, _, w = part_edges(cs)
+    torch.testing.assert_close(w, w.new_full(w.shape, 1.-__import__('math').exp(-1.)))
 
 
 def test_seen_observations_do_not_amplify_or_replace_the_prediction():

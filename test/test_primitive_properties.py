@@ -136,6 +136,7 @@ def test_property_priming_projects_direct_surface_rows(tmp_path):
     ps, ws = model.perceptualSpace, model.wholeSpaces[-1]
     word, obj = cs._new_concepts(2, context='priming fixture')
     row = _mint_row(cs, 0, obj)
+    _mint_row(cs, 0, word)
     cs.interpret.define(word, obj, description=dict(
         forms=('sample',), parts=((1, 3),), wholes=(0, 2)))
     cs.prime_seen(torch.tensor([row]), decay=1., bump=1.)

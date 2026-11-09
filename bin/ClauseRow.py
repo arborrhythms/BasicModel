@@ -158,12 +158,14 @@ def attach_clause_index(model, store, space):
     object.__setattr__(store, '_concept_owner', space_ref)
     language = getattr(model, 'languageSpace', None)
     occupations = getattr(language, 'parts_of_speech', None)
+    allocator.parts.configure_operations(occupations)
+    occupations = (None if allocator.parts._occupation_owner is None
+                   else allocator.parts._occupation_owner())
     if occupations is not None:
         # Staged word IDs and kept clauses use this registry's allocator;
         # a terminal stage's local IDs need not name the same concepts.
-        object.__setattr__(occupations, '_space', space_ref)
-    object.__setattr__(store, '_occupation_owner',
-                       None if occupations is None else weakref.ref(occupations))
+        occupations.bind(space)
+    object.__setattr__(store, '_occupation_owner', allocator.parts._occupation_owner)
     object.__setattr__(store, '_part_read_rules', tuple(
         getattr(language, '_compose_binary_rules', ())))
     # The declared inverse catalogue is fixed when the owner is attached.
@@ -299,7 +301,7 @@ class ClauseRows:
             marks['_reference_sites'] = tuple(sites)
         if unresolved:
             marks['_unresolved_operands'] = tuple(unresolved)
-        pair = tuple(float(part[name]) for name in ('truth_plus', 'truth_minus'))
+        pair = tuple(float(pole) for pole in self.parts.evidence(symbol))
         # A chain view exposes only its actual operands. An absent third
         # grammatical role is not a missing referent manufactured by storage.
         marks['_chain_view'] = True
@@ -457,6 +459,7 @@ class ClauseRows:
         if owner is None:
             raise ValueError('clause admission requires its native concept owner')
         closing = PartClosing(owner, self)
+        closing.source_trust = 1. if trust is None else min(1., abs(float(trust)))
         given = origin in (self.ORIGIN_USER, self.ORIGIN_PROVISIONED)
         before_relations = ({row:{name:value.detach().cpu().clone() for name,value in self.parts.row(row).items()}
                              for row in self.parts.indices().tolist()} if given else {})
@@ -540,7 +543,7 @@ class ClauseRows:
             pair = tuple(value.evidence if evidence is None or not sentence else evidence)
             from_trust = sentence and trust is not None and (authority is not None or evidence is None)
             if from_trust:
-                pair = max(float(trust), 0.), max(-float(trust), 0.)
+                pair = (1., 0.) if trust >= 0 else (0., 1.)
             if sentence:
                 outer_pair, outer_from_trust = pair, from_trust
             address = {} if value is clause else dict(document_key=('embedded', closing.content_key[0], closing.content_key[1]) if context is not None else ('mention', root_key),
@@ -550,6 +553,11 @@ class ClauseRows:
             entry = closing.close(value, pair=pair, sentence=sentence, kind=kind if sentence else 'unverified',
                 address=address, stream=stream, force=force, from_trust=from_trust,
                 surprise=-1. if expectation is None or not sentence else expectation.surprise_for(clause.meaning))
+            if sentence:
+                # Record this source's assertion, never a prior source's merged pair.
+                if entry[0] == RELATION or from_trust:
+                    pair = tuple(pole * closing.source_trust for pole in pair)
+                outer_pair = pair
             row = location(entry)
             rows[id(value)] = row
             occurrences[id(value)] = self.occurrence_of(row)
@@ -650,6 +658,7 @@ class ClauseRows:
                 source_occurrences=tuple(expectation.source_occurrences), stream=expectation.stream,
                 document=expectation.document)
             self.link_estimate_observation(index, result)
+        self.parts.refresh_effective()
         if authority is not None:
             authority['rows'].append(result)
         return result
@@ -777,7 +786,7 @@ class ClauseRows:
     def consequents_by_row(self, reference, *, reading=None):
         from LTM1 import SYMBOL
         return [(symbol, right[1] if right[0] == SYMBOL else right,
-                 (float(self.parts.truth_plus[symbol]), float(self.parts.truth_minus[symbol])))
+                 tuple(float(pole) for pole in self.parts.evidence(symbol)))
                 for symbol in self.relations(reading).tolist()
                 for left, right in (self.parts.references(symbol),)
                 if left == self.parts.reference(reference)]
@@ -786,8 +795,7 @@ class ClauseRows:
         result = self.slots.new_zeros(2)
         for symbol in self.relations(reading).tolist():
             if self.parts.references(symbol) == (self.parts.reference(left), self.parts.reference(right)):
-                result = torch.maximum(result, result.new_tensor((
-                    self.parts.truth_plus[symbol], self.parts.truth_minus[symbol])))
+                result = torch.maximum(result, result.new_tensor(self.parts.evidence(symbol)))
         return result
 
     def _vector_relations(self, reading=None):
@@ -806,7 +814,7 @@ class ClauseRows:
         for symbol, left, right in self._vector_relations(reading):
             score = float(meet_ratios(state.to(left), left)[1])
             if score > threshold:
-                result.append((symbol, score*float(self.parts.truth_plus[symbol]), right.clone()))
+                result.append((symbol, score*float(self.parts.evidence(symbol)[0]), right.clone()))
         return sorted(result, key=lambda record: -record[1])
 
     @torch.no_grad()
@@ -815,6 +823,5 @@ class ClauseRows:
         result = self.slots.new_zeros(2)
         for symbol, a, b in self._vector_relations(reading):
             match = meet_ratios(left.to(a), a)[1] * meet_ratios(right.to(b), b)[1]
-            result = torch.maximum(result, match * result.new_tensor((
-                self.parts.truth_plus[symbol], self.parts.truth_minus[symbol])))
+            result = torch.maximum(result, match * result.new_tensor(self.parts.evidence(symbol)))
         return result

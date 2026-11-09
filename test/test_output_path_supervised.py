@@ -130,6 +130,7 @@ def test_serial_answer_path_varies_with_the_input(serial_synth_config, eager_rea
 
 
 @pytest.mark.slow
+@pytest.mark.trained('ask')
 def test_output_path_memorizes_supervised_labels_on_the_serial_topology(serial_synth_config, eager_reading):
     m = _build(serial_synth_config, "phrases")
     completed = m.understand(m.inputSpace.prepInput(

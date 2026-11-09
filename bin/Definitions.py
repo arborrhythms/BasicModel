@@ -31,7 +31,7 @@ class DefinitionIndex:
         return result
 
     def _ensure(self):
-        if self._revision != self._store().revision:
+        if self._revision != (self._store().revision, self._store().effective_revision):
             self.rebuild()
 
     def rebuild(self):
@@ -41,7 +41,7 @@ class DefinitionIndex:
         store = self._store()
         for row in store.indices().tolist():
             self.add(row)
-        self._revision = store.revision
+        self._revision = (store.revision, store.effective_revision)
 
     def add(self, row):
         store = self._store()
@@ -52,21 +52,10 @@ class DefinitionIndex:
                 or 'definition' not in store.readings(
                 row, lambda ref: allocator.symbol_types.get(ref[1], ()) if ref[0] == store.SYMBOL else ())):
             return  # Only interpret.define names a pair; a generic Part chain does not.
-        # A named class and its witnesses can all have object-typed handles.
-        # The witnessed members of this word's own class denote their parent
-        # through the word, even after this derived index is rebuilt.
-        for parent in store.wholes(obj):
-            if allocator.relate_idx.get(('part-base', parent)) == (store.SYMBOL, word):
-                membership = store.find(obj, parent)
-                if bool(store.truth_plus[membership] > 0):
-                    return
         if word <= 0 or obj <= 0 or word == obj:
             raise ValueError('DEF requires distinct native word and object identities')
-        if (word, obj) in self._rows and self._rows[word, obj] != row:
-            raise ValueError('duplicate word DEF object row')
-        self._rows[word, obj] = row
-        self._objects[word] = tuple(sorted(set(self._objects.get(word, ())) | {obj}))
-        self._words[obj] = tuple(sorted(set(self._words.get(obj, ())) | {word}))
+        # Naming retains the lexical identity even before its binding has
+        # enough authority to denote an object.
         self._descriptions[word] = value
         if value.get('identity_key') is not None:
             self._identities[value['identity_key']] = word
@@ -74,11 +63,27 @@ class DefinitionIndex:
             self._forms[form_key(form)] = word
         for parts in value['parts']:
             self._units[tuple(parts)] = word
+        from ConceptTrust import definition_threshold
+        if float(store.evidence(row)[0]) < definition_threshold():
+            return
+        # A named class and its witnesses can all have object-typed handles.
+        # The witnessed members of this word's own class denote their parent
+        # through the word, even after this derived index is rebuilt.
+        for parent in store.wholes(obj):
+            if allocator.relate_idx.get(('part-base', parent)) == (store.SYMBOL, word):
+                membership = store.find(obj, parent)
+                if bool(store.evidence(membership)[0] > 0):
+                    return
+        if (word, obj) in self._rows and self._rows[word, obj] != row:
+            raise ValueError('duplicate word DEF object row')
+        self._rows[word, obj] = row
+        self._objects[word] = tuple(sorted(set(self._objects.get(word, ())) | {obj}))
+        self._words[obj] = tuple(sorted(set(self._words.get(obj, ())) | {word}))
 
     @property
     def word_ids(self):
         self._ensure()
-        return self._objects.keys()
+        return self._descriptions.keys()
 
     @property
     def object_ids(self):

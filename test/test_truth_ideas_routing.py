@@ -293,7 +293,8 @@ class TestRelativeTrustPersistence(unittest.TestCase):
     def test_evidence_and_unscaled_argument_identity_survive_checkpoint(self):
         st=_store();edge=part(st,_v(1,1),_v(0,0,1),evidence=(.7,.2))
         state=st.parts.state_dict()
-        self.assertEqual(set(state),{'layout_version','ref_kinds','refs','truth_plus','truth_minus','access_count','surprise','percept','count'})
+        self.assertEqual(set(state),{'layout_version','ref_kinds','refs','truth_plus','truth_minus','access_count','surprise','percept','count',
+                                    'effective_plus','effective_minus','operator','relation_order','grammar_operation','_extra_state'})
         fresh=_store();same=part(fresh,_v(1,1),_v(0,0,1),evidence=(0.,0.))
         self.assertEqual(same,edge)
         fresh.parts.load_state_dict(state)

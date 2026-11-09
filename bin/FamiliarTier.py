@@ -403,6 +403,7 @@ def cover_members(owner, cid, members):
         owner.similarity_codebook.W[destination, :width].copy_(value[:width])
         if derived is not None:
             derived._form_valid[destination] = False
+        owner.similarity_codebook.trust.remember(cid, value)
     alloc.layer().witnessed[destination] = True
     return destination
 
@@ -436,6 +437,12 @@ def commit_read_words(owner, reading, *, batch, document, position, clause=None,
         if term is not None and len(term.leaves) == 1 and isinstance(location, int):
             retained[term.leaves[0]] = location
     for index, word in enumerate(reading.word_ids.tolist()):
+        if word > 0:
+            # A kept lexical occurrence contributes independently of whether
+            # its interpretation already has an object.
+            from ConceptTrust import observe
+            value = reading.leaves[index].detach()
+            observe(owner, word, value)
         if word <= 0 or owner.definitions.objects(word) or index in percept_leaves:
             continue
         name = pool.names.get(('name', word))
@@ -473,7 +480,7 @@ class IdentityPromotionCapacityError(RuntimeError):
 
 
 @torch.no_grad()
-def promote_identity(owner, key, *, word=None):
+def promote_identity(owner, key, *, word=None, trust=None, evidence=None):
     """A kept definition or recurrent mention supplies an object's witness."""
     pool, alloc = owner.mtm, owner._concept_allocator
     entry = pool.entries[key]
@@ -512,7 +519,7 @@ def promote_identity(owner, key, *, word=None):
             alloc.store_of(cid).add_constituent(cid, 'part', ('occ', origin[-1]))
         pool.promote(key, cid)
         for name in words:
-            owner.interpret.define(name, cid)
+            owner.interpret.define(name, cid, trust=trust, evidence=evidence)
         return cid
     from Spaces import ConceptRowCapacityError
     try:
@@ -550,6 +557,12 @@ def promote_identity(owner, key, *, word=None):
     current = pool.value_of(key)
     value = current if form is None else form
     owner.similarity_codebook.W[row].copy_(value.to(owner.similarity_codebook.W))
+    owner.similarity_codebook.trust.remember(cid, current)
+    from ConceptTrust import observe
+    for address in entry.occurrences:
+        location = store.location(address)
+        if isinstance(location, int):
+            observe(owner, cid, store.slots[location])
     derived = getattr(owner.similarity_codebook, 'mereology', None)
     if derived is not None:
         derived.remember_content(row, current)
@@ -561,7 +574,7 @@ def promote_identity(owner, key, *, word=None):
         derived.place_rows([row], context, close_key)
     pool.promote(key, cid)
     for name in words:
-        owner.interpret.define(name, cid)
+        owner.interpret.define(name, cid, trust=trust, evidence=evidence)
     owner._priming_edge_revision = None
     return cid
 
@@ -571,6 +584,10 @@ def define_pending(owner, left, right, *, word=None, other_word=None, null_refer
     """Consume a kept equality/IS witness once its subject token is retained."""
     from LTM1 import SYMBOL, OCCURRENCE
     from ConceptIndex import unbound_label
+    parts = owner._concept_allocator.parts
+    relation = parts.find(left, right)
+    if relation is None:
+        raise ValueError('definition requires its kept relation')
     store = owner._closed_clause_store()
     reference = left[1] if left[0] == SYMBOL else (
         ('ltm', store.address_domain, left[1]) if left[0] == OCCURRENCE and store is not None else None)
@@ -598,7 +615,7 @@ def define_pending(owner, left, right, *, word=None, other_word=None, null_refer
     if not (unbound_label(owner, right) or member_order == shared_order
             or existing_class and member_order == shared_order-1):
         return False
-    cid = promote_identity(owner, key, word=word)
+    cid = promote_identity(owner, key, word=word, evidence=(float(parts.truth_plus[relation]), float(parts.truth_minus[relation])))
     if left != right:
         from PartClosing import PartClosing
         PartClosing(owner, store).observe_members((SYMBOL, cid), right, (left, right), (word, None))
@@ -627,8 +644,31 @@ def _resolve_null_token(owner, key, left, right, other_word):
             target = other.symbol or other.native
             if label in (None,-1,0):
                 label = pool.reading_of(envelope(store,right))
+    if label not in (None,-1,0) and not owner.interpret.denotations(label):
+        remembered = tuple(obj for obj in owner.interpret.remembered_objects(label)
+                           if alloc.order_of(obj) == order)
+        if len(remembered) == 1 and target in (None, remembered[0]):
+            # A sign can strengthen a remembered kind before that kind is a
+            # denotation. Keep the occurrence pending; do not mint or add rows.
+            target = remembered[0]
+            refinement = dict(entry.refinement)
+            views = dict(refinement.get('sign_views', {}))
+            seen = tuple(views.get(target, ()))
+            from ConceptTrust import observe
+            for address in entry.occurrences:
+                if address not in seen:
+                    observe(owner, target, store.slots[store.location(address)])
+                    seen += (address,)
+            views[target] = seen
+            refinement['sign_views'] = views
+            refinement['pending_sign_definition'] = (left, right, label)
+            entry = replace(entry, pending=True, refinement=refinement)
+            pool.entries[key] = entry
+            if owner.interpret.denotations(label) != (target,):
+                return True
     if target is None and label not in (None,-1,0) and unbound_label(owner,(SYMBOL,label)):
-        target = promote_identity(owner,key,word=label)
+        row = alloc.parts.find(left, right)
+        target = promote_identity(owner,key,word=label,evidence=(float(alloc.parts.truth_plus[row]), float(alloc.parts.truth_minus[row])))
     elif (target is not None and alloc.order_of(target) == order and
           (target in alloc.individuals or 'object' in alloc.symbol_types.get(target, ()))):
         pool.promote(key,target)
@@ -637,7 +677,9 @@ def _resolve_null_token(owner, key, left, right, other_word):
         return True
     else:
         return False
-    pool.entries[key] = replace(pool.entries[key],kind=target)
+    refinement = dict(pool.entries[key].refinement)
+    refinement.pop('pending_sign_definition', None)
+    pool.entries[key] = replace(pool.entries[key],kind=target,refinement=refinement)
     row = alloc.parts.find(left,right)
     for address in entry.occurrences:
         member = (OCCURRENCE, address[-1])
@@ -650,10 +692,25 @@ def _resolve_null_token(owner, key, left, right, other_word):
     return True
 
 
+def _finish_pending_signs(owner):
+    joined = []
+    for key, entry in tuple(owner.mtm.entries.items()):
+        pending = entry.refinement.get('pending_sign_definition')
+        if entry.kind != NULL_CONCEPT or not entry.pending or pending is None:
+            continue
+        left, right, label = pending
+        denoted = owner.interpret.denotations(label)
+        if len(denoted) == 1:
+            _resolve_null_token(owner, key, left, right, label)
+            joined.append(denoted[0])
+    return joined
+
+
 def finish_definitions(owner):
     pending = owner.__dict__.pop('_kept_definition_witnesses', ())
     for left, right, word, other_word, null_referent in pending:
         define_pending(owner, left, right, word=word, other_word=other_word, null_referent=null_referent)
+    _finish_pending_signs(owner)
 
 
 @torch.no_grad()
@@ -661,7 +718,7 @@ def promote_candidates(owner):
     pool, alloc = owner.mtm, owner._concept_allocator
     if getattr(owner, '_online_learning_frozen', False):
         return []
-    result = []
+    result = _finish_pending_signs(owner)
     for key, entry in tuple(pool.entries.items()):
         if entry.kind == NULL_CONCEPT:
             continue

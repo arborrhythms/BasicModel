@@ -170,7 +170,7 @@ def test_names_events_checkpoint_and_reclamation_have_separate_ownership():
 
 def test_frame_access_does_not_leak_a_native_individuals_other_stream_value():
     from dataclasses import replace
-    from IdentityRows import mint
+    from test_reference_close import known_concept as mint
     from ReferenceContext import SituationFrame
     from test_medium_term_memory import keep,mention
     from test_reference_close import fixture
@@ -216,7 +216,7 @@ def test_compose_bind_locations_share_the_operation_chooser_and_zero_dummy(compi
     def run(mention,antecedent):
         state=chunks.empty(1,8,2)
         for index in range(2):
-            state,_=chunks.deposit(state,antecedent[:,index],torch.tensor([True]),identity=100+index)
+            state,_=chunks.deposit(state,antecedent[:,index],torch.tensor([True]),identity=100+index,order=1)
         ids=torch.full((1,2),-1,dtype=torch.long)
         active=torch.tensor([[True,False]])
         data=prepare_operands(mention,ids,ids*0,ids*0,orders=ids+2,
@@ -249,7 +249,7 @@ def test_compose_menu_uses_the_resolvers_observed_exclusions():
     from Meaning import ConceptualMeaning
     from test_reference_close import fixture
     resolver,store,atoms = fixture()
-    from IdentityRows import mint
+    from test_reference_close import known_concept as mint
     from dataclasses import replace
     for index in (0, 1):
         individual = mint(resolver.components.owner, atoms[index])
@@ -881,7 +881,7 @@ def test_journal_native_bind_without_a_pool_token_keeps_its_symbol_origin(monkey
     from dataclasses import replace
     from ChunkJournal import capture
     from ClauseJournal import finish_clause
-    from IdentityRows import mint
+    from test_reference_close import known_concept as mint
     from test_clause_acceptance import SentenceFixture
     f = SentenceFixture(monkeypatch)
     entry = f.program(('bind', 'alias'))

@@ -520,6 +520,13 @@
     <recurrenceAngle>15</recurrenceAngle>
     <raiseEvidence>0</raiseEvidence>
     <raiseCount>3</raiseCount>
+    <trustViews>3</trustViews>
+    <definitionTrust>0.5</definitionTrust>
+    <gates>
+      <closedTrust>0.1</closedTrust>
+      <interpret><start>open</start><fraction>0.5</fraction></interpret>
+      <clause><start>open</start><threshold>0.75</threshold><except>interpret sign bind lift</except></clause>
+    </gates>
     <mtmPrepend>64</mtmPrepend>
     <!-- recurrenceCapacity defaults to this space's resolved nVectors. -->
     <readerBlockNormalization>true</readerBlockNormalization>

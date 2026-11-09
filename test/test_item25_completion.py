@@ -28,9 +28,10 @@ def test_same_order_identity_row_survives_the_epoch_boundary(operation):
     term = Composition(operands[0].point, operands, operation=operation, order=1)
     clause = Clause(ConceptualMeaning.from_description(term.point), relation=operation,
         refs=(left, predicate_identity(operation), right), composition=term, order=1)
+    trust = min(float(store._concept_point(cid).norm()) for cid in symbols)
     written = store.write_clause(clause, evidence=(1., .25))
     row = alloc.parts.find(left, right)
-    assert written == ('sym', row) and store.row(written)['evidence'] == (1., .25)
+    assert written == ('sym', row) and store.row(written)['evidence'] == pytest.approx((trust, .25*trust))
     assert ('sym', left) not in alloc.refs(right, 'part')
     assert ('sym', right) not in alloc.refs(left, 'whole')
     begin(model_for(owner, store))
@@ -208,6 +209,12 @@ def test_ambiguous_pointer_identity_across_time_is_empty(tmp_path):
                                    document_key=('given', form), when=False)
         occurrence = store.occurrence_of(row)
         token = pool.open(occurrence, kind=None, value=points[i], when=i)
+        # These relata are supplied as known operands of the pointer test.
+        # Three agreeing occurrences meet the new definition threshold.
+        for view in range(2):
+            extra = store.append_meaning(ConceptualMeaning.from_description(points[i]), order=0,
+                document_key=('given-view', form, view), when=False)
+            pool.bind(token, store.occurrence_of(extra), kind=None, value=points[i], when=i)
         symbol = promote_identity(owner, token, word=label)
         assert alloc.order_of(symbol) == 1
         relata.append((label, symbol))
@@ -254,6 +261,11 @@ def test_ambiguous_pointer_identity_across_time_is_empty(tmp_path):
             first_mention = plan['mention_occurrences'][id(plan['items'][0]['written_node'])]
             assert pool.entries[pool.token_of(first_mention)].symbol == identity
             assert alloc.order_of(identity) == 1
+            from ConceptTrust import observe
+            for view in range(2):
+                extra = store.append_meaning(ConceptualMeaning.from_description(points[3]), order=0,
+                    document_key=('pointer-view', view), when=False)
+                observe(owner, identity, points[3])
         pair = ((SYMBOL, identity), (SYMBOL, member))
         direct, reverse = alloc.parts.find(*pair), alloc.parts.find(*reversed(pair))
         stored = alloc.parts.references(address[1])
@@ -468,6 +480,10 @@ def test_sign_question_reads_the_latest_named_token_and_no_concept_for_an_unname
         pool.update(reference, observed, when=when)
         assert resolver.coordinates(pool.value_of(reference)).sum() > 0
     observe(occurrence, 1)
+    target, = f.cs.interpret.remembered_objects(label)
+    with torch.no_grad():
+        f.cs.similarity_codebook.W[f.cs._csw_row_of(target)].copy_(observed)
+    assert f.cs.definitions.objects(label) == (target,)
     model=SimpleNamespace(_concept_owner=lambda: f.cs, symbolSpace=SimpleNamespace(ltm_store=f.store))
     # §50 item 101 / §52 item 111: the retained nonempty occurrence is a
     # part of this query; an empty query supplies no association evidence.

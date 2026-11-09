@@ -497,6 +497,18 @@ def test_lesson13_has_two_phases_distinct_documents_and_supplied_math_records():
     assert registry['producers']['copular_identity']['phase'] == 'relations'
 
 
+@pytest.fixture
+def symbol_interpretation(monkeypatch):
+    """Keep the symbol in a one-word clause with the existing instance menu."""
+    from Language import OperationSelectionLayer
+    configure = OperationSelectionLayer.configure_arguments
+    def configured(layer, *args, **kwargs):
+        configure(layer, *args, **kwargs)
+        layer.set_stage_menu(('STOP', 'interpret', 'union'))
+    monkeypatch.setattr(OperationSelectionLayer, 'configure_arguments', configured)
+
+
+@pytest.mark.usefixtures('symbol_interpretation')
 def test_native_read_sites_carry_one_token_across_three_documents(eager_reading):
     from data import TheData
     from Models import BaseModel

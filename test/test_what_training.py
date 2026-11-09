@@ -400,6 +400,7 @@ def test_curriculum_drives_question_families_through_run(synth_model):
     assert {"past", "future", "inference"} <= set(report["families"])
 
 
+@pytest.mark.trained('ask')
 @pytest.mark.slow
 def test_joint_training_keeps_both_primary_costs_in_band(synth_config_path):
     """Section 12.14: under joint training neither primary cost blows up and
@@ -441,6 +442,7 @@ def _surface_answer_cost(m, batch, questions):
         return float(m._reverse_event_loss(surface, target))
 
 
+@pytest.mark.trained('ask')
 @pytest.mark.slow
 @pytest.mark.parametrize("family", ["future", "past"])
 def test_supplied_text_answer_quality_improves_with_training(synth_discourse_config_path, family):

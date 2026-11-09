@@ -2,6 +2,7 @@
 from types import SimpleNamespace
 
 import torch
+from test_reference_close import known_concept
 
 from Layers import LTM0
 from reasoning import TruthGroundedReasoner
@@ -22,7 +23,7 @@ def test_public_part_helpers_cannot_accept_geometric_or_world_row_evidence():
 
 def test_public_part_helpers_follow_typed_links_without_world_materialization():
     cs = _cs()
-    a, b, c = (("sym", cs.new_concept()) for _ in range(3))
+    a, b, c = (("sym", known_concept(cs, torch.ones(cs.nDim))) for _ in range(3))
     cs.add_whole(a[1], b)
     cs.add_whole(b[1], c)
     store = LTM0(8)

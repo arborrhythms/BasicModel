@@ -19,7 +19,7 @@ def test_occurrence_bind_witness_is_a_locatable_address(monkeypatch):
 
 
 def test_native_arrival_without_synthetic_occurrence_joins_its_working_entry(monkeypatch):
-    from IdentityRows import mint
+    from test_reference_close import known_concept as mint
     resolver, store, atoms, words, _ = world(pending_atom=0)
     pending, _ = keep(resolver, described(atoms[0], words['x']))
     token = store.occurrence_of(pending)

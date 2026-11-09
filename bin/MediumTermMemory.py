@@ -4,6 +4,7 @@ import copy
 from typing import NamedTuple
 
 import torch
+from LTM1 import NULL_CONCEPT
 
 
 @dataclass(frozen=True)
@@ -339,8 +340,8 @@ class MediumTermMemory:
         if previous is not None:
             reading = previous
         pending = kind is None if pending is None else pending
-        if type(pending) is not bool or (pending and kind is not None):
-            raise ValueError('a pending identity has no resolved kind')
+        if type(pending) is not bool or (pending and kind not in (None, NULL_CONCEPT)):
+            raise ValueError('a pending identity has no resolved kind other than the null concept')
         if self.token_of(occurrence) != occurrence:
             self._detach(occurrence)
         if occurrence in self.entries:
@@ -396,7 +397,7 @@ class MediumTermMemory:
         joined = current if value is None else torch.maximum(current.to(value), self._value(value))
         self.entries[token] = entry.with_actual(occurrences=uses,
             kind=kind if entry.kind is None else entry.kind,
-            pending=entry.pending and kind is None,
+            pending=entry.pending and kind in (None, NULL_CONCEPT),
             count=entry.count + 1, when=when, value=joined, where=self._where(where, entry.where))
         self.names[occurrence] = Name(token, reading)
         return token
@@ -643,7 +644,7 @@ class MediumTermMemory:
                     type(record['when']) is not int):
                 raise ValueError('invalid identity checkpoint metadata')
             pending = record['kind'] is None if state['version'] == 1 else record.get('pending')
-            if type(pending) is not bool or (pending and record['kind'] is not None):
+            if type(pending) is not bool or (pending and record['kind'] not in (None, NULL_CONCEPT)):
                 raise ValueError('invalid identity checkpoint pending state')
             saved = record['timelines'] if state['version'] >= 5 else ((record['events'], record['value']),)
             if not isinstance(saved, (tuple, list)) or not saved:

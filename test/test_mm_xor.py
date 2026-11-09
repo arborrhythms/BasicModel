@@ -182,6 +182,7 @@ class TestMMXorConvergence(unittest.TestCase):
         """Reach the affine MSE floor .25 (tolerance .01) in 600 epochs."""
         self._fit_xor(_CONFIG, epochs=600, threshold=.26)
 
+    @pytest.mark.trained('mm_xor_grammar')
     @pytest.mark.learning_certificate
     def test_mm_grammar_learns_xor_signal(self):
         """The first initialization in thinking §41.7 must cross the .20 bar."""

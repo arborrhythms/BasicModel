@@ -106,7 +106,7 @@ def test_aligned_model_accepts_unequal_inventory_capacities(tmp_path):
     model = _small_property_model(tmp_path)
 
     assert model.concept_binding == "aligned"
-    assert model.nConceptCodes == 16
+    assert model.nConceptCodes == 16 + len(model._concept_owner()._concept_allocator.formal_arguments)
     assert model.nSymbols == model.nConceptCodes  # downstream concept refs
     assert model.nWholeProperties == 8
     assert model.nSymbolSlots == 8

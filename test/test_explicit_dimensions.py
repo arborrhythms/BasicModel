@@ -229,6 +229,7 @@ def _bind_trained_xor_grammar(request, trained_xor_grammar):
 class TestXorGrammarLearnsXor(unittest.TestCase):
     """Grammar XOR convergence must survive an arbitrary initialization."""
 
+    @pytest.mark.trained('xor_grammar')
     @pytest.mark.learning_certificate
     def test_xor_class_accuracy(self):
         model = self.trained_xor_grammar

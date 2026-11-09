@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 
 import pytest
+from part_fixtures import stored_pair
 import torch
 
 from FamiliarTier import promote_identity
@@ -51,6 +52,7 @@ def test_epoch_restores_every_relation_column_index_and_given_row():
     alloc = owner._concept_allocator
     alloc.remember_singleton((b,0),(SYMBOL,a),None,points[0])
     alloc.singleton_rows[b,0] = ((SYMBOL,a),(SYMBOL,b))
+    bank.refresh_effective()  # Snapshot the live derived authority, not its lazy zeros.
     initial = {k:v.clone() for k,v in bank.state_dict().items()}
     expected_indexes = indexes()
     pointers = {k:v.data_ptr() for k,v in bank.named_buffers()}
@@ -61,7 +63,8 @@ def test_epoch_restores_every_relation_column_index_and_given_row():
     bank.add(a, b, truth_plus=.85, truth_minus=.99, when=torch.arange(4.), surprise=.01)
     store.truth_plus[store.location(given)] = .5
     store.access_count[store.location(given)] += 4
-    c = owner.new_concept()
+    from test_reference_close import known_concept
+    c = known_concept(owner, points[2])
     alloc.remember_singleton((b,1),(SYMBOL,c),None,points[1])
     alloc.singleton_rows[b,1] = ((SYMBOL,c),(SYMBOL,b))
     outer = bank.add((RELATION, preexisting), (SYMBOL, c), truth_plus=.9)
@@ -99,7 +102,8 @@ def test_relative_member_write_expires_with_its_epoch(member_order, evidence):
     for i, point in enumerate(points[:3]):
         occ = write(store, point, ('admission',i), order=0)
         key = owner.mtm.open(occ, kind=None, value=point, when=i)
-        symbols.append(promote_identity(owner, key))
+        from test_reference_close import known_concept
+        symbols.append(known_concept(owner, point))
     a,b,target = symbols
     if member_order == 0:
         a,b = [owner.interpret.lookup_word([n], [], form=bytes([n])) for n in (97,98)]
@@ -112,7 +116,8 @@ def test_relative_member_write_expires_with_its_epoch(member_order, evidence):
         refs=(inside, predicate_identity('part'), target), composition=term, order=1)
     outer = store.write_clause(clause, evidence=evidence)
     assert outer == ('sym',alloc.parts.find((RELATION,inside),(SYMBOL,target)))
-    assert store.row(outer)['evidence'] == evidence
+    assert stored_pair(store,outer) == evidence
+    assert store.row(outer)['evidence'] == (0., 0.)
     begin(model)
     assert not alloc.parts.contains(inside) and not alloc.parts.contains(outer[1])
     assert alloc.settle(target) == 1
@@ -209,7 +214,6 @@ def test_native_train_keeps_last_grounding_and_recognizes_it_across_ten_epochs(t
     original_boundary, run = Forgetting.model_boundary, model.runEpoch
     starts, seen, reports = [], set(), []
     baseline = set()
-
     def observed_boundary(target, **options):
         if target is not model or not options.get('epoch_boundary'):
             return original_boundary(target,**options)

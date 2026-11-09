@@ -19,6 +19,8 @@ def _references():
     # §50: a lexical reading is an allocator-typed word, not a derived kind.
     for concept in concepts:
         owner._concept_allocator.symbol_types.setdefault(concept, set()).add('word')
+    from definition_fixtures import agreeing_views
+    agreeing_views(owner, *concepts)
     values = bank.lookup_rows(rows).detach()
     occurrences = [store.occurrence_of(store.append_meaning(
         ConceptualMeaning.from_description(value), document_key='reference-values',

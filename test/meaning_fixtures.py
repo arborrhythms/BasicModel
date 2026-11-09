@@ -61,9 +61,11 @@ def replay_thought_plan(model, monkeypatch, plan):
     decisions = iter(plan) if not callable(plan) else None
     def recorded(root, active, actions, **kwargs):
         selected = plan(root, active, actions, **kwargs) if callable(plan) else next(decisions)
-        index = next(i for i, action in enumerate(actions)
-                     if action is selected or (isinstance(selected, str) and action is not None
-                                               and action.semantic_id == selected))
+        matches = [i for i, action in enumerate(actions)
+                   if action is selected or (isinstance(selected, str) and action is not None
+                                             and action.semantic_id == selected)]
+        assert matches, (selected, [None if action is None else action.semantic_id for action in actions])
+        index = matches[0]
         chooser = model._selected_thought_chooser(active)
         select = chooser.select_logits
         def replay(logits, **options):

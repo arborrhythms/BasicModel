@@ -91,7 +91,8 @@ def test_default_interpret_reuses_a_witnessed_association():
     word = interpret.lookup_word([7], [], form='cat')
     kind = cs.new_concept()
     force_order(cs, kind, 2)
-    interpret.define(word, kind)
+    cs._csw_concept_row(2, kind)
+    assert interpret.define(word, kind) is not None
     cs.bind_word_concept('cat', kind)
     assert interpret.forward(word) == kind
     assert interpret.reverse(kind) == word
@@ -145,7 +146,8 @@ def test_grammar_resolution_distinguishes_particular_and_kind():
     particular = interpret.forward(word, order=1)
     kind = cs.new_concept()
     force_order(cs, kind, 2)
-    interpret.define(word, kind)
+    cs._csw_concept_row(2, kind)
+    assert interpret.define(word, kind) is not None
     cs.bind_word_concept('cat', kind)
     assert particular != kind
     assert cs._concept_source_order(particular) == 0

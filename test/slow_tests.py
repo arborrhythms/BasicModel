@@ -76,7 +76,7 @@ PHASE_CERTIFICATES = {
         'fineweb',
     'test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact':
         'stage3',
-    'test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_occupation_state_exactly':
+    'test/test_parts_of_speech.py::test_artifact_restoration_retains_weights_and_argument_state_exactly':
         'np_definite',
     'test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode':
         'copular_identity',
@@ -145,7 +145,7 @@ def _switch_gated(obj, decorators_only=False):
 
 
 def is_slow(item):
-    if item.get_closest_marker("phase"):
+    if item.get_closest_marker("phase") or item.get_closest_marker("trained"):
         return False
     if item.nodeid in DEFAULT_CERTIFICATES or item.get_closest_marker('learning_certificate'):
         return False

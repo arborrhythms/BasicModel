@@ -151,12 +151,8 @@ def stage_zero_config(tmp_path_factory):
     return path
 
 
+@pytest.mark.trained('verb')
 @pytest.mark.slow
-@pytest.mark.xfail(strict=True, reason=(
-    "learning gate (Alec 2026-09-09: no mathematical machinery in the runtime; "
-    "plus is a transitive verb the grammar learns): the small syntactic "
-    "configuration does not yet learn direct arithmetic -- the large stage-0 "
-    "run is the experiment; flip to required when a configuration passes"))
 def test_stage_zero_direct_arithmetic_learns_as_syntax(stage_zero_config):
     """Alec 2026-09-09: the stack must answer direct problems ("3 plus 4"
     in, 7 out, the input reconstructed) before any substitution, with
@@ -188,12 +184,8 @@ def stage_one_config(tmp_path_factory):
     return path
 
 
+@pytest.mark.trained('relations')
 @pytest.mark.slow
-@pytest.mark.xfail(strict=True, reason=(
-    "learning gate (Alec 2026-09-09: no mathematical machinery in the runtime): "
-    "dependency chains must be resolved by subquestions whose answers live in "
-    "LTM and by the grammar's verbs; not yet learned -- flip when a "
-    "configuration passes"))
 def test_stage_one_dependency_chains_learn_as_syntax(stage_one_config):
     """The original variable-substitution problems (spec section 1, stage
     1) on the syntactic route: subquestions about presented words, their
@@ -206,7 +198,7 @@ def test_stage_one_dependency_chains_learn_as_syntax(stage_one_config):
     assert min(best) >= 0.9, best
 
 
-# -- the first learned rung: the successor as a verb (RUN_SLOW) -----------------
+# -- the first learned rung: the successor as a verb (RUN_TRAINED) -----------------
 
 @pytest.fixture(scope="module")
 def successor_config(tmp_path_factory):
@@ -234,7 +226,7 @@ def successor_config(tmp_path_factory):
     return path
 
 
-@pytest.mark.skipif(os.environ.get("RUN_SLOW") != "1", reason="RUN_SLOW: ~20 min on CPU")
+@pytest.mark.trained('verb')
 def test_successor_is_learned_as_a_verb(successor_config):
     """Alec 2026-09-09: addition is iterated succession, and the successor
     must be learnable by the existing VP.  On the verb grammar with the

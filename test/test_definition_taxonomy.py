@@ -51,7 +51,10 @@ def test_definition_binding_preserves_ambiguous_objects_until_selection():
     first = witness_object(cs, word)
     second = cs.new_concept()
     force_order(cs, second, 1)
-    interpret.define(word, second)
+    cs._csw_concept_row(1, second)
+    from definition_fixtures import agreeing_views
+    agreeing_views(cs, word, second)
+    assert interpret.define(word, second) is not None
     assert interpret.forward(word, selected=second) == second
     assert interpret.forward(word, selected=first) == first
     assert cs.definitions.objects(word) == (first, second)

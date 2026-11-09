@@ -5818,6 +5818,7 @@ class ConceptAllocator:
         self.identity = {}               # cid -> (part, whole) 1:1 ties
         self.relate_idx = {}             # (part, whole) / ("raise", fs) -> cid
         self.word_forms = {}             # surface -> set of persistent concept ids
+        self.formal_arguments = {}       # declared argument -> ordinary higher-order concept
         self.reference_orders = {}       # grammar-resolved object order
         self.testimony_seen = {}         # object id -> first two distinct occurrences
         self.testimony_current = {}      # deduplication within this observation boundary
@@ -5959,6 +5960,8 @@ class ConceptAllocator:
             if not self.class_member(member, parent):
                 return False
             edge = self.parts.find(part, whole)
+            # These records establish order and construction, before a seat
+            # can have a radius; they are not an authority read.
             return bool(self.parts.truth_plus[edge] > 0) and 'definition' not in self.parts.readings(
                 edge, lambda ref: self.symbol_types.get(ref[1], ()) if ref[0] == self.parts.SYMBOL else ())
         from LTM1 import SYMBOL, OCCURRENCE, RELATION
@@ -10113,7 +10116,9 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
             i = int(idx[1])
             if not self.parts.contains(i):
                 raise IndexError(f"unavailable Part {i}")
-            self.parts.truth_plus[i], self.parts.truth_minus[i] = values
+            self.parts.truth_plus[i] = max(float(self.parts.truth_plus[i]), values[0])
+            self.parts.truth_minus[i] = max(float(self.parts.truth_minus[i]), values[1])
+            self.parts.refresh_effective()
             if bool(self.parts.ref_kinds[i].eq(self.parts.SYMBOL).all()):
                 self.parts._symbol_epoch += 1
             return

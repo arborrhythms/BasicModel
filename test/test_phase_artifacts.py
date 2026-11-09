@@ -75,3 +75,50 @@ def test_rejected(restore_phase):
     assert manifest['phase_registry_override']==dict(path=str(path),sha256=hashlib.sha256(path.read_bytes()).hexdigest())
     html=(tmp_path/'result/report.html').read_text()
     assert 'Skipped phase certificates' in html and 'absent (1)' in html and 'missing (1)' in html
+
+
+def test_trained_tier_skips_by_phase_and_requires_a_real_registered_artifact(tmp_path, monkeypatch):
+    from bounded_tests import run_suite
+    artifact, receipt = tmp_path/'trained.ckpt', tmp_path/'receipt.md'
+    artifact.write_bytes(b'private registry certificate; no training')
+    receipt.write_text('Private tier certificate.\n')
+    registry = PhaseRegistry(dict(absent=None,
+        wrong=PhaseArtifact(str(artifact), '0'*64, str(receipt)),
+        missing=PhaseArtifact(str(tmp_path/'missing.ckpt'), '0'*64, str(receipt))))
+    path = tmp_path/'registry.json'; registry.write(path)
+    monkeypatch.setenv('BASICMODEL_PHASE_ARTIFACTS', str(path))
+    monkeypatch.delenv('RUN_TRAINED', raising=False)
+    (tmp_path/'conftest.py').write_text('pytest_plugins = ["slow_tests", "phase_artifacts"]\n')
+    (tmp_path/'test_trained.py').write_text('''import pytest
+@pytest.mark.trained('absent')
+@pytest.mark.skipif(True, reason='historical slow gate')
+def test_absent():
+    raise AssertionError('tier must stop before the body')
+@pytest.mark.trained('wrong')
+def test_wrong():
+    raise AssertionError('tier must stop before the body')
+@pytest.mark.trained('missing')
+def test_missing():
+    raise AssertionError('tier must stop before the body')
+@pytest.mark.trained('unknown')
+def test_unknown():
+    raise AssertionError('tier must stop before the body')
+''')
+    skipped = run_suite(root=tmp_path, selectors=['test_trained.py'], run_dir=tmp_path/'skipped',
+        memory_bytes=512*1024**2, timeout=30, suite_timeout=90, lock_path=tmp_path/'lock')
+    assert skipped['exit_code'] == 0
+    assert set(skipped['skipped_trained_by_phase']) == {'absent','wrong','missing','unknown'}
+    assert len(skipped['trained_tests']) == 4
+    assert 'Skipped trained tests' in (tmp_path/'skipped/report.html').read_text()
+    for worker in skipped['workers']:
+        for row in worker.get('reports', ()):
+            assert row['outcome'] == 'skipped' and 'RUN_TRAINED=1' in row['message']
+    monkeypatch.setenv('RUN_TRAINED', '1')
+    failed = run_suite(root=tmp_path, selectors=['test_trained.py'], run_dir=tmp_path/'required',
+        memory_bytes=512*1024**2, timeout=30, suite_timeout=90, lock_path=tmp_path/'lock')
+    assert failed['exit_code'] == 1 and failed['completed'] == failed['selected']
+    reports = {row['nodeid'].rsplit('::',1)[-1]: row for worker in failed['workers'] for row in worker.get('reports', ())}
+    for case, reason in [('test_absent','artifact absent'), ('test_wrong','hash mismatch'),
+                         ('test_missing','artifact absent'), ('test_unknown','unknown certificate phase')]:
+        assert reports[case]['phase'] == 'setup' and reports[case]['outcome'] == 'failed'
+        assert reason in reports[case]['message']

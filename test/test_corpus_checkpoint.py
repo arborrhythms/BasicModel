@@ -79,6 +79,8 @@ def test_checkpoint_uses_consumed_positions_and_resumes_without_epoch_clear(tmp_
         owner = first._concept_owner()
         left, right = owner.new_concept(), owner.new_concept()
         handle = store.parts.add(left,right,truth_plus=.75,truth_minus=.25)
+        # Materialize the derived authority before the exact checkpoint snapshot.
+        assert tuple(map(float, store.parts.evidence(handle))) == pytest.approx((.75,.25))
         relation_state = {k:v.clone() for k,v in store.parts.state_dict().items()}
         checkpoint = tmp_path / 'cursor.ckpt'
         first.save_weights(str(checkpoint))

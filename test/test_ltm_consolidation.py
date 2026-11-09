@@ -627,6 +627,11 @@ class TestRuntimeUserIngestion(unittest.TestCase):
         from Layers import LTM0 as T
         m, store, _ = self._fresh()
         m.provision_ltm()
+        from definition_fixtures import learned_operation
+        owner = m._concept_owner()
+        occupants = [owner.interpret.word_for_form(form) for form in ('hello','world')]
+        assert all(word is not None for word in occupants)
+        learned_operation(m.languageSpace.parts_of_speech,'union',*occupants,count=64)
         before = len(store)
         chooser = m.symbolSpace.languageLayer.operation_layer.chooser
         def binary(x, candidates, *_args, **_kwargs):
@@ -651,8 +656,15 @@ class TestRuntimeUserIngestion(unittest.TestCase):
         self.assertTrue(bool((m._stm_post_depth == 1).all()))
         (ending,), = endings
         retained = store.row(ending)
-        self.assertAlmostEqual(retained['evidence'][0], .9)
-        self.assertEqual(retained['evidence'][1], 0.)
+        bank,index = (store,ending) if isinstance(ending,int) else (store.parts,ending[1])
+        self.assertAlmostEqual(float(bank.truth_plus[index]), .9)
+        self.assertEqual(float(bank.truth_minus[index]), 0.)
+        if bank is store.parts:
+            operation = bank.operation_catalog[int(bank.grammar_operation[index])]
+            self.assertEqual(operation,'union')
+            measured = m.languageSpace.parts_of_speech.operation(operation)['trust']
+            self.assertAlmostEqual(retained['evidence'][0], .9*measured,places=6)
+            self.assertEqual(retained['evidence'][1],0.)
         users = store.rows_of_origin(T.ORIGIN_USER).tolist()
         if isinstance(ending, int):
             self.assertGreaterEqual(ending, before)

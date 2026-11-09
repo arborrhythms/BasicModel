@@ -81,6 +81,7 @@ def mint(owner, content, *, form=None):
     except RuntimeError:
         return None
     content = carrier(owner, content)
+    witnessed_content = content.clone()
     alloc = allocator(owner)
     identity = owner.new_concept()
     alloc.reference_orders[identity] = 1
@@ -98,6 +99,10 @@ def mint(owner, content, *, form=None):
         alloc.individuals.add(identity)
     else:
         alloc.form_regions[int(form)] = identity
+    if derived is not None and derived.meaning_pairs:
+        derived.place_rows([row], torch.zeros_like(derived.placement_witnesses), derived.content_key(row))
+    from ConceptTrust import observe
+    observe(owner, identity, witnessed_content)
     return identity
 
 

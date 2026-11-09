@@ -1,5 +1,6 @@
 """Repeated lexical occurrences flow through direct operands and end at a clause."""
 from collections import Counter
+from argument_fixtures import argument_inventory, view_counts
 from types import SimpleNamespace
 
 import pytest
@@ -16,18 +17,18 @@ def test_repeated_occurrences_keep_direct_counts_through_unary_and_clause(compil
     rules = {operation_name(rule): rule for rule in grammar.rules_upward if operation_name(rule)}
     binary = tuple(rules[name] for name in ('intersection', 'compound', 'lift'))
     unary = (rules['compound_unary'],)
-    parts = PartsOfSpeech(formal_arguments((*binary, *unary)))
-    # Arbitrary, distinct prior distributions expose a wrong occurrence gather.
+    _, parts, ids = argument_inventory(formal_arguments((*binary, *unary)), count=3)
+    # Arbitrary, distinct prior geometric scores expose a wrong occurrence gather.
     # The same word occurs twice; its second occurrence is not another word type.
-    for word, argument in zip((101, 102, 103), parts.arguments):
+    for word, argument in zip(ids, parts.arguments):
         parts.add(word, argument, parts.order_of(word))
-    initial = {word: counts.copy() for word, counts in parts.counts.items()}
-    word_ids = torch.tensor([101, 102, 102, 103])
+    initial = view_counts(parts)
+    word_ids = torch.tensor([ids[0], ids[1], ids[1], ids[2]])
     actions = ((0, -1, 0), (0, -1, 1), (0, -1, 2),
                (1, 0, 0), (1, 1, 0), (2, 0, 0),
                (0, -1, 3), (1, 2, 0), (2, 0, 0))
     program = SimpleNamespace(word_ids=word_ids, actions=torch.tensor(actions))
-    probabilities = parts.probabilities(word_ids, torch.zeros(1))
+    probabilities = parts.argument_scores(word_ids, torch.zeros(1))
     binary_flow, unary_flow = tuple(map(flow_mask, binary)), tuple(map(flow_mask, unary))
 
     choices = tuple(None if kind == 0 else SimpleNamespace(
@@ -57,12 +58,20 @@ def test_repeated_occurrences_keep_direct_counts_through_unary_and_clause(compil
         if words:
             expected[index, 0, :len(words)] = torch.stack(words)
     torch.testing.assert_close(observed, expected, rtol=0, atol=0)
-    assert parts.counts == initial
+    assert view_counts(parts) == initial
 
+    events = []
+    add = parts.add
+    def observed_add(word, argument, order=None):
+        events.append((int(word), argument))
+        add(word, argument, order)
+    parts.add = observed_add
     parts.observe_kept(program, binary, unary)
-    delta = {word: parts.counts[word] - initial[word] for word in initial}
-    assert delta[101] == Counter({('compound_argin1',-1):1})
-    assert delta[102] == Counter({('intersection_argin1',-1):1, ('intersection_argin2',-1):1, ('intersection_argout1',-1):2, ('compound_argin2',-1):2, ('compound_argout1',-1):2, ('compound_unary_argin1',-1):2, ('compound_unary_argout1',-1):2, ('lift_argin1',-1):2})
-    assert delta[103] == Counter({('lift_argin2',-1):1})
+    delta = {word: Counter(arg for member, arg in events if member == word) for word in ids}
+    assert delta[ids[0]] == Counter({'compound_argin1':1})
+    assert delta[ids[1]] == Counter({'intersection_argin1':1, 'intersection_argin2':1, 'intersection_argout1':2, 'compound_argin2':2, 'compound_argout1':2, 'compound_unary_argin1':2, 'compound_unary_argout1':2, 'lift_argin1':2})
+    assert delta[ids[2]] == Counter({'lift_argin2':1})
+    increments = Counter(arg for _, arg in events)
+    assert view_counts(parts) == {arg: initial[arg] + increments[arg] for arg in parts.arguments}
     # Clause completion clears both occurrences before the final unary call.
     assert observed[-2:].count_nonzero() == 0

@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'bin'))
 
 import unittest
 import torch
+from test_reference_close import known_concept
 
 import reasoning
 from reasoning import (QuerySpec, TruthGroundedReasoner,
@@ -110,7 +111,7 @@ def _taxonomy(*links):
     from types import SimpleNamespace
     from test_cs_symbol_table import _cs
     cs = _cs()
-    refs = tuple(("sym", cs.new_concept()) for _ in range(4))
+    refs = tuple(("sym", known_concept(cs, torch.ones(cs.nDim))) for _ in range(4))
     from ClauseRow import attach_clause_index
     store = _store()
     model = SimpleNamespace(conceptualSpace=cs)

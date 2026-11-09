@@ -13,12 +13,17 @@ from test_thought_model_fixture import model_for
 def _world():
     cs = _cs()
     bases = tuple(cs.new_concept() for _ in range(4))
-    for base in bases:
+    for index, base in enumerate(bases):
         force_order(cs, base, 0)
+        row = cs._csw_concept_row(0, base)
+        with torch.no_grad():
+            cs.similarity_codebook.W[row].copy_(torch.eye(cs.nDim)[index])
     refs = tuple(('sym', cs.synthesize_higher_order([('sym', base)]))
                  for base in bases)
-    for ref in refs:
-        cs._csw_concept_row(cs._concept_source_order(ref[1]), ref[1])
+    for index, ref in enumerate(refs):
+        row = cs._csw_concept_row(cs._concept_source_order(ref[1]), ref[1])
+        with torch.no_grad():
+            cs.similarity_codebook.W[row].copy_(torch.eye(cs.nDim)[index])
     store = LTM0(8, capacity=32)
     model = model_for(cs, store)
     return model, model.grammatical_thoughts, store, refs

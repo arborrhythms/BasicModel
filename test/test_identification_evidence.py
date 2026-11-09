@@ -190,6 +190,9 @@ def test_native_sentence_carries_paired_identification_to_its_row(tmp_path, monk
     model._install_unit_span_fn()
     model.reconstruct_in_loop = False
     model.loss.reconstruction_scale = 0.
+    from test_definition_rows import admit
+    supplied = [admit(model, form) for form in ('1', 'plus', '2')]
+    operand_minimum = 1.
     # Supply an absolute reading for this evidence-storage contract; an
     # untrained exclusion operator deliberately removes positive support.
     from reading_fixtures import force_absolute_reading
@@ -209,10 +212,14 @@ def test_native_sentence_carries_paired_identification_to_its_row(tmp_path, monk
         store = model.symbolSpace.ltm_store
         row = store.location(field.row_id)
         assert calls and row is not None
-        assert field.evidence == pytest.approx((.8, .6))
-        assert store.row(row)['evidence'] == pytest.approx((.8, .6))
+        t = operand_minimum if isinstance(row, tuple) else 1.
+        if isinstance(row, tuple):
+            assert (float(store.parts.truth_plus[row[1]]), float(store.parts.truth_minus[row[1]])) == pytest.approx((.8, .6))
+        assert t == pytest.approx(operand_minimum) and t >= .5
+        assert field.evidence == pytest.approx((.8*t, .6*t))
+        assert store.row(row)['evidence'] == pytest.approx((.8*t, .6*t))
         assert store.row(row)['order'] == field.order
-        assert store.row(row)['trust'] == pytest.approx(.2)
+        assert store.row(row)['trust'] == pytest.approx(.2*t)
     finally:
         model.End()
         model.symbolSpace.soft_reset()

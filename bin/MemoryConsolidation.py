@@ -188,6 +188,10 @@ def consolidate(owner, store, *, context=None, key=None, batch=0):
             derived.placement_witnesses[row] = 0
             derived.placement_dirty[row] = True
         owner.similarity_codebook.W[row].copy_(value)
+        owner.similarity_codebook.trust.remember(symbol, value)
+        from ConceptTrust import observe
+        for occurrence in readings[key]:
+            observe(owner, symbol, _content(store, occurrence))
         promoted.append(row)
         alloc.settle(symbol)
         store.recurrence_symbols[key] = symbol

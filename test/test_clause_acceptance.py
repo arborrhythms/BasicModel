@@ -14,12 +14,14 @@ from Layers import LTM0
 from Queries import GrammaticalThoughtRegistry
 from Understanding import Reading
 from test_cs_sparse_weights import _cs
+from part_fixtures import stored_pair
 
 
 class SentenceFixture:
-    def __init__(self, monkeypatch, *, native_cube=True, percept_width=0):
+    def __init__(self, monkeypatch, *, native_cube=True, percept_width=0, cs=None):
         self.native_cube = native_cube
-        self.cs = _cs(nS=512, order=5)
+        self.cs = _cs(nS=512, order=5) if cs is None else cs
+        width = self.cs.nDim
         if native_cube:
             # These are native concept fixtures; signed event charts are not
             # valid identity inputs, including newly admitted objectless forms.
@@ -37,10 +39,10 @@ class SentenceFixture:
             if name not in self.ops:
                 cls = Language.GRAMMAR_LAYER_CLASSES[name]
                 if issubclass(cls, Language.MarkerUnaryLayer):
-                    base = Language.GRAMMAR_LAYER_CLASSES[cls.marker_base](8, 8)
+                    base = Language.GRAMMAR_LAYER_CLASSES[cls.marker_base](width, width)
                     self.ops[name] = cls(base)
                 else:
-                    self.ops[name] = cls(8, 8) if name in ('lift', 'verb', 'lower', 'surface', 'sum', 'implies') else cls()
+                    self.ops[name] = cls(width, width) if name in ('lift', 'verb', 'lower', 'surface', 'sum', 'implies') else cls()
             return self.ops[name]
         self.operation = operation
         self.language = SimpleNamespace(_compose_binary_rules=self.binary, _compose_unary_rules=self.unary,
@@ -53,7 +55,7 @@ class SentenceFixture:
         self.words = {}
         from PartsOfSpeech import PartsOfSpeech, formal_arguments
         self.language.parts_of_speech = PartsOfSpeech(formal_arguments((*self.binary, *self.unary)))
-        self.store = LTM0(8, capacity=64, percept_width=percept_width)
+        self.store = LTM0(width, capacity=64, percept_width=percept_width)
         self.model = SimpleNamespace(languageSpace=self.language, grammatical_thoughts=self.registry)
         attach_clause_index(self.model, self.store, self.cs)
 
@@ -67,8 +69,11 @@ class SentenceFixture:
             seat = self.cs._csw_concept_row(0, obj)
             if self.native_cube:
                 with torch.no_grad():
-                    self.cs.similarity_codebook.W[seat].copy_(torch.eye(8)[len(self.words) % 8])
-            self.cs.interpret.define(wid, obj)
+                    self.cs.similarity_codebook.W[seat].copy_(torch.eye(self.cs.nDim)[len(self.words) % self.cs.nDim])
+            from definition_fixtures import agreeing_views
+            agreeing_views(self.cs, wid, obj)
+            row = self.cs.interpret.define(wid, obj)
+            assert row is not None and self.cs.definitions.row(wid, obj) == row
             self.words[word] = wid, self.cs.interpret.forward(wid)
         return self.words[word][1]
 
@@ -146,7 +151,8 @@ def test_05_embedded_part_is_unasserted_and_propagates_operator_kind(monkeypatch
     assert f.store.parts.refs[verb, 1] == child
     assert len(f.store) == 0
     assert f.store.row(('sym', child))['evidence'] == (0., 0.)
-    assert outer['evidence'] == pytest.approx((.6, 0.))
+    assert stored_pair(f.store,row) == pytest.approx((.6, 0.))
+    assert outer['evidence'] == (0., 0.)
 
 
 def test_pointless_predicate_retains_the_relative_child_as_an_occupied_role(monkeypatch):
@@ -205,7 +211,8 @@ def test_06_implication_keeps_two_unasserted_relation_operands(monkeypatch):
     assert right['refs'].tolist() == [f.noun('cats'), f.noun('breathers')]
     assert left['evidence'] == right['evidence'] == (0., 0.)
     assert f.store.row(row)['readings'] == ('conditional',)
-    assert f.store.row(row)['evidence'] == pytest.approx((.7, 0.))
+    assert stored_pair(f.store,row) == pytest.approx((.7, 0.))
+    assert f.store.row(row)['evidence'] == (0., 0.)
     assert len(f.store) == 0
 
 
@@ -227,7 +234,7 @@ def test_07_equality_is_one_membership_in_a_singleton(monkeypatch):
     assert 'equality' in f.store.row(first)['readings']
     assert f.store.parts.find(b, a) is None
     f.store.set_evidence(first, .2, .4)
-    assert f.store.row(first)['evidence'] == pytest.approx((.2, .4))
+    assert f.store.row(first)['evidence'] == pytest.approx((.49, .4))
 
 
 def test_08_direct_bare_np_rewitnesses_its_address(monkeypatch):
@@ -247,7 +254,7 @@ def test_09_attribution_cannot_assert_its_child_and_negation_is_content(monkeypa
     edge = ('sym', f.store.parts.find(f.noun('cats'), f.noun('animals')))
     assert f.store.row(edge)['evidence'] == (0., 0.)
     f.store.write_clause(f.clause(('not', inner)), trust=.6, evidence=(0., .6))
-    assert f.store.row(edge)['evidence'] == pytest.approx((0., .6))
+    assert f.store.row(edge)['evidence'] == pytest.approx((0., .36))
 
 
 def test_end_clause_survives_a_later_head_projection(monkeypatch):

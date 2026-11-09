@@ -729,8 +729,16 @@ class Optimizer:
         torch.set_default_device(None)
         try:
             if closure is None:
-                return self._inner.step()
-            return self._inner.step(closure=closure)
+                result = self._inner.step()
+            else:
+                result = self._inner.step(closure=closure)
+            for group in self._inner.param_groups:
+                for parameter in group['params']:
+                    ref = getattr(parameter, '_concept_trust_projection', None)
+                    projector = None if ref is None else ref()
+                    if projector is not None:
+                        projector.project()
+            return result
         finally:
             _set_torch_default_device()
 

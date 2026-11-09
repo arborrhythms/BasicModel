@@ -52,13 +52,16 @@ def test_named_and_unnamed_classes_share_the_teacher_and_opposite_edges_keep_ada
     word=cs.new_concept()
     alloc.symbol_types[word]={'word'}
     alloc.reference_orders[word]=0
-    cs._csw_concept_row(0,word)
+    word_row=cs._csw_concept_row(0,word)
+    cs.add_concept_feature(word_row, "ps", 4, 1.)
+    from definition_fixtures import agreeing_views
+    agreeing_views(cs, word, cid)
     owner=SimpleNamespace(_optimizer=optimizer)
     object.__setattr__(cs,'_model',owner)
     staged=prepare(cs,field)
     assert torch.equal(optimizer.state[matrix.values]['exp_avg'][:len(old)],old)
     unnamed=loss(cs,staged).detach()
-    cs.interpret.define(word,cid,description=dict(forms=('label',),parts=((4,),),wholes=()))
+    assert cs.interpret.define(word,cid,description=dict(forms=('label',),parts=((4,),),wholes=())) is not None
     named=loss(cs,prepare(cs,field))
     torch.testing.assert_close(named,unnamed)
     assert any(e.names==(word,) for e in examples(cs,field))

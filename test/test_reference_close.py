@@ -28,9 +28,27 @@ def fixture(*, percept=False):
 
 
 @torch.no_grad()
+def known_concept(owner, content, *, form=None):
+    """A supplied, fully trusted native region; learning is certified separately."""
+    from Spaces import _concept_alloc_of
+    alloc = _concept_alloc_of(owner)
+    identity = owner.new_concept()
+    alloc.reference_orders[identity] = 1
+    alloc.settle(identity)
+    row = owner._csw_concept_row(1, identity)
+    owner.similarity_codebook.W[row].copy_(content)
+    if form is None:
+        alloc.individuals.add(identity)
+    else:
+        alloc.form_regions[int(form)] = identity
+    owner.freeze_concept(identity)
+    return identity
+
+
+@torch.no_grad()
 def form_exposure(resolver, cue, content):
     """The fixture supplies a previously known native cue region."""
-    from IdentityRows import mint
+    from test_reference_close import known_concept as mint
     owner = resolver.components.owner
     word = owner.interpret.lookup_word([101], (), form='fixture-cue')
     row = owner._csw_row_of(word)

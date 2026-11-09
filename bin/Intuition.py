@@ -437,7 +437,7 @@ def pervasion(owner, meaning, *, frames=(), work):
     for kind, cid in parts.parts((SYMBOL, subject[1])):
         if kind == SYMBOL and owner._csw_row_of(cid) is not None:
             edge = parts.find((kind, cid), (SYMBOL, subject[1]))
-            refs[('sym', cid)] = (float(parts.truth_plus[edge]), float(parts.truth_minus[edge]))
+            refs[('sym', cid)] = tuple(float(pole) for pole in parts.evidence(edge))
     for ref in alloc.refs(subject[1], 'part'):
         if isinstance(ref, tuple) and ref[0] in ('sym', 'field'):
             refs.setdefault(('sym', ref[1]), (float(ref[2]) if len(ref) > 2 else 1., 0.))
@@ -453,7 +453,7 @@ def pervasion(owner, meaning, *, frames=(), work):
         value = chart(owner, leaf(owner, owner._csw_row_of(cid)))
         if bool(Ops.partOf(whole.amax(-1), value.amax(-1))):
             edge = parts.find((SYMBOL, subject[1]), (kind, cid))
-            trust = value.new_tensor((float(parts.truth_plus[edge]), float(parts.truth_minus[edge])))
+            trust = value.new_tensor(tuple(float(pole) for pole in parts.evidence(edge)))
             surrounding.append(torch.maximum(torch.minimum(value, trust[0]),
                                               torch.minimum(value.flip(-1), trust[1])))
     fields, witnesses = [], []

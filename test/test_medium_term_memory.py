@@ -175,7 +175,7 @@ def test_reclosed_occurrence_survives_eviction_of_its_previous_token(reclose):
 
 
 def test_native_individual_mint_and_bind_share_an_occurrence_keyed_value():
-    from IdentityRows import mint
+    from test_reference_close import known_concept as mint
     resolver, store, a = fixture()
     native = mint(resolver.components.owner, a[0])
     row, plan = keep(resolver, mention(a[0], reference=native))

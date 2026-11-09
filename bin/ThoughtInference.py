@@ -43,6 +43,7 @@ def derive(context, arguments):
     match, subject = None, None
     match_support = 1.
     substitutions = {}
+    membership_proofs = []
 
     def equivalent(left, right):
         nonlocal witnesses, match_support
@@ -89,6 +90,8 @@ def derive(context, arguments):
                     matches.append(proof.get('support_true', 0.) > 0)
                     match_support = min(match_support, float(proof.get('support_true', 0.)))
                     witnesses += tuple(edge.owner for edge in proof.get('path', ()))
+                    membership_proofs.append(proof)
+
                 else:
                     matches.append(False)
             if all(matches):
@@ -106,6 +109,8 @@ def derive(context, arguments):
                 match = 'membership'
                 match_support = min(match_support, float(proof['support_true']))
                 witnesses += tuple(edge.owner for edge in proof.get('path', ()))
+                membership_proofs.append(proof)
+
     if match is None:
         return dict(value=None, support_true=0., support_false=0., witnesses=(),
                     incomplete=('antecedent_mismatch',), reason='unmatched')
@@ -151,7 +156,7 @@ def derive(context, arguments):
         (('referent', 0),) if backward else (), pair=result_pair)
     return dict(value=conclusion.roles[0], meaning=conclusion,
         support_true=result_pair[0], support_false=result_pair[1], witnesses=witnesses,
-        sources=(refs[0][1], rule_row), reason=match,
+        sources=(refs[0][1], rule_row), reason=match, membership_proofs=tuple(membership_proofs),
         evidence_kind='subgoal' if backward else 'inference',
         derivation=dict(premise_pair=p, match_support_true=match_support, rule_pair=r,
                         backward=backward, negated=negated),

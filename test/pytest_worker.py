@@ -42,6 +42,7 @@ class ResultCollector:
         self.requested_devices = {}
         self.shared_training = {}
         self.phase_certificates = {}
+        self.trained_tests = {}
         self.recycle_file = Path(recycle_file) if recycle_file else None
         self.recycled = False
         self.failed = False
@@ -62,7 +63,7 @@ class ResultCollector:
             slow_selected=self.slow_selected,
             requested_devices=self.requested_devices,
             shared_training=self.shared_training,
-            phase_certificates=self.phase_certificates,
+            phase_certificates=self.phase_certificates, trained_tests=self.trained_tests,
             reports=self.reports, recycled=self.recycled, active=self.active,
             device=self.device, initial_random_stream=self.initial_random_stream,
             failed_random_streams=self.failed_random_streams), indent=2) + "\n")
@@ -74,6 +75,10 @@ class ResultCollector:
                               if item.get_closest_marker("slow") is not None
                               and item.get_closest_marker('phase') is None]
         for item in session.items:
+            from phase_artifacts import trained_phase
+            trained = trained_phase(item)
+            if trained is not None:
+                self.trained_tests[item.nodeid] = trained
             phase = item.get_closest_marker('phase')
             if phase is not None:
                 from phase_artifacts import certificate_phase
@@ -138,6 +143,7 @@ class ResultCollector:
         record = dict(
             nodeid=report.nodeid, phase=report.when, outcome=outcome,
             certificate_phase=self.phase_certificates.get(report.nodeid),
+            trained_phase=self.trained_tests.get(report.nodeid),
             duration=report.duration, message=str(report.longrepr or "")[-4000:],
             stdout="\n".join(content for name, content in report.sections if "stdout" in name.lower())[-4000:])
         if getattr(report, "compile_cache_failure", None) is not None:

@@ -2,10 +2,12 @@
 
 The cached representation is [form | meaning]. Perception reconstruction alone
 writes native prototypes and evidence; the sentence read detaches them. Order-zero
-meaning is placed at kept closes from the registered priming surface,
-on the for pole, with no against evidence. Letters need no conceptual row.
+meaning is placed at kept closes from the registered priming surface;
+the for lane reads its close-owned trust radius. Letters need no conceptual row.
 """
 import math
+
+CLASS_CONTIGUITY_COSINE = math.cos(math.radians(15.))
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -71,6 +73,7 @@ class MereologicalCodes(nn.Module):
         self.negative_count = int(TheXMLConfig.space('ConceptualSpace', 'placementNegatives', 5))
         self.negative_weight = float(TheXMLConfig.space('ConceptualSpace', 'placementNegativeWeight', 1.))
         import math
+
         if (not math.isfinite(self.placement_rate) or self.placement_rate < 0
                 or self.negative_count < 0 or not math.isfinite(self.negative_weight) or self.negative_weight < 0):
             raise ValueError('placement rate and negative controls must be finite and nonnegative')
@@ -148,14 +151,14 @@ class MereologicalCodes(nn.Module):
     def derive_class_placements(self):
         """Place raised classes at their members' evidence-weighted centroids."""
         from Priming import part_edges
-        edges = part_edges(self.owner)
+        edges = part_edges(self.owner, authority=False)
         rows = self.placement_derived.nonzero().flatten().tolist()
         allocator = self.owner._concept_allocator
         # Members may themselves be classes. Lower orders are derived first.
         rows.sort(key=lambda row: allocator.order_of(self.owner.concept_id_at_row(row)))
         # Class-location contiguity keeps the former construction threshold.
         # It is no longer changed by the retired diffusion controller.
-        threshold = math.cos(math.radians(15.))
+        threshold = CLASS_CONTIGUITY_COSINE
         for row in rows:
             members = weights = None
             if edges is not None:
@@ -260,7 +263,7 @@ class MereologicalCodes(nn.Module):
         self.placement_valid.zero_()
         from Priming import part_edges
         self.owner._priming_edge_revision = None
-        edges = part_edges(self.owner)
+        edges = part_edges(self.owner, authority=False)
         if edges is not None:
             self.placement_derived[edges[1]] = True
         self.derive_class_placements()
@@ -428,11 +431,13 @@ class MereologicalCodes(nn.Module):
             out[row_index[row], :self.percept_width] = (
                 cached[row, :self.percept_width] if row in retained else self._forms[row])
             self._form_valid[row] = True
-        from MeaningCodes import defined_code
         if unique and self.meaning_pairs:
             start, k = self.percept_event_width, self.meaning_pairs
-            out[:, start:start+k] = defined_code(self.placement[unique], self.placement_witnesses[unique])
-        # All bands and the against lane remain zero; retained rows cache form
-        # only. Every meaning, including a promoted identity's, reads placement.
+            trust = owner.similarity_codebook.trust
+            directions = F.normalize(self.placement[unique], dim=-1)
+            out[:, start:start+k] = directions * trust.lengths[unique, 0, None]
+            out[:, start+k:start+2*k] = cached[unique][:, start+k:start+2*k]
+        # Bands remain zero. Placement supplies only for evidence; written
+        # against evidence keeps its own magnitude and direction.
         result = out[torch.tensor([row_index[r] for r in requested], device=out.device, dtype=torch.long)]
         return result.reshape(*shape, self.code_width)

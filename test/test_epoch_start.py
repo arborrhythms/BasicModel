@@ -4,6 +4,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 import pytest
+from part_fixtures import stored_pair
 import torch
 
 from FamiliarTier import promote_identity
@@ -83,6 +84,7 @@ def test_new_given_knowledge_retains_its_relation_and_transitive_dependencies():
     given=write(store,points[1],'new-given',store.ORIGIN_USER)
     claim=_supply_relation(store,points[1],given[-1],child)
     unrelated=bank.add(symbol,owner.new_concept(),truth_plus=.8)
+    assert tuple(map(float,bank.evidence(claim))) == pytest.approx((.9*.35,0.))
     saved_claim={k:v.clone() for k,v in bank.row(claim).items()}
     for _ in range(2):
         begin(model)
@@ -93,7 +95,12 @@ def test_new_given_knowledge_retains_its_relation_and_transitive_dependencies():
             assert torch.equal(bank.row(child)[key],saved_child[key])
         assert float(bank.truth_plus[child]) == float(bank.truth_minus[child]) == 0.
         assert int(bank.access_count[child]) == 1 and float(bank.surprise[child]) == -1.
-        assert all(torch.equal(value,bank.row(claim)[key]) for key,value in saved_claim.items())
+        # The supply's stored pair survives; its closure-only dependency
+        # loses evidence at the boundary, so the effective pair becomes zero.
+        assert tuple(map(float,bank.evidence(claim))) == (0.,0.)
+        for key,value in saved_claim.items():
+            expected = torch.zeros_like(value) if key in ('effective_plus','effective_minus') else value
+            assert torch.equal(expected,bank.row(claim)[key]), key
         index=store.location(dependency)
         assert store.row(index)['evidence'] == (0.,0.)
         assert int(store.access_count[index]) == 3 and float(store.surprise[index]) == pytest.approx(.4)
@@ -123,7 +130,8 @@ def test_supplied_outer_keeps_history_relation_as_unverified_dependency():
     for _ in range(2):
         begin(model)
         assert store.row(('sym',child))['evidence'] == (0.,0.)
-        assert store.row(claim)['evidence'] == pytest.approx((.7,0.))
+        assert stored_pair(store,claim) == pytest.approx((.7,0.))
+        assert store.row(claim)['evidence'] == (0.,0.)
         for key in ('refs','ref_kinds','percept'):
             assert torch.equal(store.parts.row(child)[key],saved[key])
 
@@ -202,7 +210,8 @@ def test_supply_outer_alone_keeps_authority_for_all_closing_nodes(node_kind):
     retained=store.occurrence_of(written[id(child)])
     for _ in range(2):
         begin(model)
-        assert store.row(root)['evidence']==pytest.approx((.7,0.))
+        assert stored_pair(store,root)==pytest.approx((.7,0.))
+        assert store.row(root)['evidence'] == pytest.approx((.7 if node_kind == 'request' else 0., 0.))
         assert store.row(store.location(retained))['evidence']==(0.,0.)
 
 
@@ -383,7 +392,8 @@ def test_embedded_supply_keeps_only_its_own_assertion_authority(asserted_first):
     for _ in range(2):
         begin(model)
         assert store.row(('sym',store.parts.find(1,2)))['evidence'] == pytest.approx((.6 if asserted_first else 0.,0.))
-        assert store.row(claim)['evidence'] == pytest.approx((.7,0.))
+        assert stored_pair(store,claim) == pytest.approx((.7,0.))
+        assert store.row(claim)['evidence'] == pytest.approx((.42 if asserted_first else 0.,0.))
 
 
 @pytest.mark.parametrize('already_given',[False,True])
@@ -494,7 +504,8 @@ def test_other_order_active_definition_does_not_hide_remembered_identity():
     begin(model)
     other=owner.new_concept()
     force_order(owner,other,2)
-    owner.interpret.define(word,other)
+    owner._csw_concept_row(2,other)
+    assert owner.interpret.define(word,other) is not None
     now=write(store,points[1],'again',order=0)
     token=owner.mtm.open(now,kind=None,value=points[1],when=1,reading=word)
     assert promote_identity(owner,token,word=word)==known
@@ -512,7 +523,8 @@ def test_read_of_ambiguous_remembered_name_fails_before_opening_mtm(frozen):
     names=[owner.new_concept(),owner.new_concept()]
     for cid in names:
         force_order(owner,cid,1)
-        owner.interpret.define(word,cid)
+        owner._csw_concept_row(1,cid)
+        assert owner.interpret.define(word,cid) is not None
     begin(model)
     owner._online_learning_frozen=frozen
     assert not owner.mtm.entries
@@ -557,6 +569,7 @@ def test_unstarted_checkpoint_preserves_setup_until_its_first_epoch_boundary(tmp
         setup = write(store, point, 'intentional-setup')
         relation = store.parts.add((OCCURRENCE, setup[-1]), (SYMBOL, symbol),
                                    truth_plus=.7, truth_minus=.2)
+        assert tuple(map(float,store.parts.evidence(relation))) == pytest.approx((.7,.2))
         owner.mtm.open(setup, kind=None, value=point, when=0)
         extras = model._collect_structural_extras()
         assert extras['epoch_rows'] == {}

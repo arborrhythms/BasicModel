@@ -317,7 +317,7 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
     owner = model._concept_owner()
     owner.interpret.lookup_word(tuple(map(ord, 'alpha')), (), form='alpha')
     for word in owner.word_concepts('alpha'):
-        force_order(owner, word, 1)
+        assert owner._concept_allocator.order_of(word) == 0
     occurrence = store.occurrence_of(index)
     owner.mtm.open(occurrence, kind=None, when=0, value=prior, pending=False)
     held_identity = owner.mtm.entries[owner.mtm.token_of(occurrence)].transient

@@ -222,7 +222,7 @@ def test_event_chart_excludes_address_bands_and_preserves_evidence_poles():
 
 def component_fixture():
     from test_cs_sparse_weights import _cs
-    from IdentityRows import mint
+    from test_reference_close import known_concept as mint
     owner = _cs(nS=32, order=2, dim=4)
     model = owner.components
     for value in torch.eye(4)[:2]:
@@ -266,7 +266,7 @@ def test_continuity_is_binding_evidence_and_never_a_column_signature():
     from IndependentComponents import EventChart
     from ReferenceContext import SituationFrame
     from test_cs_sparse_weights import _cs
-    from IdentityRows import mint
+    from test_reference_close import known_concept as mint
     owner = _cs(nS=32, order=2, dim=12)
     columns = owner.components
     value = torch.zeros(12); value[4] = 1.
@@ -336,7 +336,7 @@ def test_native_admission_optimizer_ownership_and_checkpoint(tmp_path, monkeypat
         attach_clause_index(model, owner._closed_clause_store(), owner)
         # This is a native-column checkpoint fixture. A determiner's mint
         # opens an MTM token; native concepts are minted explicitly here.
-        from IdentityRows import mint
+        from test_reference_close import known_concept as mint
         identity = mint(owner, code[0])
         owner._closed_clause_store().parts.add(identity, event, truth_plus=1.)
         identity, = columns.individual_ids

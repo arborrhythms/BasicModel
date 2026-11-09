@@ -117,7 +117,7 @@ def test_arrival_cannot_merge_a_pending_token_with_other_members():
 
 
 def observed_individual(resolver, support, index):
-    from IdentityRows import mint
+    from test_reference_close import known_concept as mint
     subject = mint(resolver.components.owner, support)
     idea = replace(ConceptualMeaning.from_description(support), role_refs=(('sym', subject), None, None))
     row = resolver.store.append_meaning(idea, document_key='exclusion', sentence_index=index)

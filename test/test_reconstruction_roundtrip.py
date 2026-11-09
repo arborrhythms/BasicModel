@@ -463,8 +463,7 @@ def test_mm20m_xor_roundtrip_at_harness_budget(tmp_path):
     assert rec.where_recovery == 1.0
 
 
-@pytest.mark.skipif(os.environ.get("RUN_SLOW") != "1",
-                    reason="~40s (build + 3 epochs + decode) -- RUN_SLOW gates it")
+@pytest.mark.trained('clause')
 def test_mm20m_grammar_free_derivation_roundtrip(tmp_path):
     """Free derivation should recover the input; a measured zero is a gap.
 

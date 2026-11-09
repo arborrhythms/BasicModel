@@ -187,41 +187,39 @@ def test_row_request_cannot_write_an_order():
     assert cs._csw_concept_row(0, cid) is not None
 
 
-def test_occupations_follow_current_order_and_checkpoint_version(tmp_path):
-    from test_cs_sparse_weights import _cs
+def test_argument_concepts_stay_above_words_when_their_denotations_change_order(tmp_path):
+    from argument_fixtures import argument_inventory
     from PartsOfSpeech import PartsOfSpeech
+    from ConceptHierarchy import refresh
     from IndependentComponents import _pack_state, _unpack_state
-    cs = _cs(nS=32, order=3)
-    word = cs.new_concept()
-    parts = PartsOfSpeech(('select_argin1', 'modify_argin1'), cs)
-    assert parts.order_of(word) == -1
-    parts.add(word, 'select_argin1', -1)
-    force_order(cs, word, 1)
-    # The same kept position is observed at two witnessed orders; an
-    # additional kept modifier makes the two distributions distinguishable.
-    def kept(name):
-        rule = NS(method_name=name, surface_name=name, rhs_symbols=('x',), lhs='y', head_role=0)
-        program = NS(word_ids=torch.tensor([word]), actions=torch.tensor([[0,-1,0],[2,0,0]]))
-        parts.observe_kept(program, (), (rule,))
-    kept('select')
-    first = parts.probabilities(torch.tensor([word]), torch.zeros(1))
-    force_order(cs, word, 2)
-    kept('select')
-    kept('modify')
-    kept('modify')
-    second = parts.probabilities(torch.tensor([word]), torch.zeros(1))
-    assert first.tolist() == [[1., 0.]]
-    torch.testing.assert_close(second, torch.tensor([[1/3, 2/3]]))
-    assert parts.counts[word]['select_argin1', 1] == parts.counts[word]['select_argin1', 2] == 1
-    assert parts.labels[word] == 'modify_argin1'
+    cs, parts, (word,) = argument_inventory(('select_argin1', 'modify_argin1'), count=1)
+    obj = cs.new_concept()
+    force_order(cs, obj, 1)
+    cs._csw_concept_row(1, obj)
+    cs.interpret.define(word, obj)
+    parts.add(word, 'select_argin1')
+    refresh(cs)
+    assert cs._concept_allocator.order_of(obj) == 1
+    first = parts.argument_scores(torch.tensor([word]), torch.zeros(1))
+    force_order(cs, obj, 2)
+    parts.add(word, 'modify_argin1'); parts.add(word, 'modify_argin1')
+    refresh(cs)
+    assert cs._concept_allocator.order_of(obj) == 2
+    second = parts.argument_scores(torch.tensor([word]), torch.zeros(1))
+    assert parts.order_of(word) == 0
+    assert all(cs._concept_allocator.order_of(cid) == 1 for cid in parts.concepts.values())
+    assert float(first[0, 0]) == pytest.approx(float(second[0, 0]))
+    torch.testing.assert_close(first, torch.tensor([[1., 0.]]))
+    torch.testing.assert_close(second, torch.ones(1, 2))
+    assert parts.radii()[1] > parts.radii()[0]  # Coverage is one at either radius.
     restored = PartsOfSpeech(parts.arguments, cs)
     restored.set_extra_state(parts.get_extra_state())
-    assert restored.counts == parts.counts and restored.distribution(word) == parts.distribution(word)
+    torch.testing.assert_close(restored.similarities(word), parts.similarities(word))
     old = dict(_unpack_state(parts.get_extra_state()), version=1)
     with pytest.raises(ValueError, match='schema'):
         restored.set_extra_state(_pack_state(old))
     (tmp_path/'certificate.json').write_text(json.dumps(dict(first=first.tolist(), second=second.tolist(),
-        counts=[(argument, order, count) for (argument, order), count in parts.counts[word].items()]), indent=2)+'\n')
+        concepts=parts.concepts), indent=2)+'\n')
 
 
 def test_relation_handles_read_their_tagged_reference_orders():

@@ -1,5 +1,7 @@
+from ConceptHierarchy import refresh
 """Default certificates for the occupation categorizer, independent of learning gates."""
 from collections import Counter
+from argument_fixtures import argument_inventory, view_counts
 from pathlib import Path
 from types import SimpleNamespace as NS
 
@@ -33,15 +35,16 @@ def chooser():
     arguments = formal_arguments(binary+unary)
     layer = OperationSelectionLayer(d_model=4, ops=[Pair(), Pair()], unary_ops=[Unary()], reduce_pressure=0.)
     layer.configure_arguments(arguments, binary, unary)
-    return layer, PartsOfSpeech(arguments)
+    _, parts, _ = argument_inventory(arguments)
+    return layer, parts
 
 
-def test_kept_readings_alone_supply_occupation_counts(tmp_path, monkeypatch, eager_reading):
+def test_kept_readings_alone_supply_argument_views(tmp_path, monkeypatch, eager_reading):
     from test_compiled_word_chunk import _tiny_canonical_model
     from What import What
     from AttentionLesson import prompt_need
     import GrammarLessons
-    model = _tiny_canonical_model(tmp_path, monkeypatch, batch_size=2, word_buckets='16')
+    model = _tiny_canonical_model(tmp_path, monkeypatch, batch_size=2, word_buckets='16', concept_meaning_width=8)
     model._tensor_peer_while_eager = True
     model.languageSpace.language_layer.operation_layer.set_stage_menu(('STOP', 'lower', 'definite', 'intersection'))
     model.inputSpace.data.has_supervised_outputs = True
@@ -53,6 +56,7 @@ def test_kept_readings_alone_supply_occupation_counts(tmp_path, monkeypatch, eag
         dict(text='the blue dog', tree=['definite',0,['intersection',1,2]], waits=True)]}, raising=False)
     parts = model.languageSpace.parts_of_speech
     events, lessons, initial = [], [], {}
+    initial_views = {}
     stage = model._stage_reconstruction_teacher
     def seeded_stage():
         # Distinct, arbitrary prior classes expose an incorrect head gather.
@@ -61,17 +65,20 @@ def test_kept_readings_alone_supply_occupation_counts(tmp_path, monkeypatch, eag
             words = model.inputSpace._ar_word_concept_ids
             for i, word in enumerate(sorted(set(words[words>=0].flatten().tolist()))):
                 parts.add(word,parts.arguments[i], parts.order_of(word))
-            initial.update({word:dict(counts) for word,counts in parts.counts.items()})
+            refresh(parts.owner)
+            initial.update({int(word): parts.similarities(int(word)).clone().cpu()
+                            for word in words[words>=0].unique().tolist()})
+            initial_views.update(view_counts(parts))
         stage()
     monkeypatch.setattr(model,'_stage_reconstruction_teacher',seeded_stage)
     observe, lesson = parts.observe_kept, GrammarLessons.compose_loss
     def observation(program, binary, unary):
         events.append((program, binary, unary))
-        observe(program, binary, unary)
+        return observe(program, binary, unary)
     def annotation(*args, **kwargs):
-        before = {key: dict(value) for key,value in parts.counts.items()}
+        before = view_counts(parts)
         result = lesson(*args, **kwargs)
-        assert parts.counts == before
+        assert view_counts(parts) == before
         lessons.append(args[1])
         return result
     monkeypatch.setattr(parts, 'observe_kept', observation)
@@ -112,8 +119,7 @@ def test_kept_readings_alone_supply_occupation_counts(tmp_path, monkeypatch, eag
                 for i,span in enumerate(state['spans']):
                     expected_probability=torch.zeros(len(parts.arguments))
                     for word in heads[span]:
-                        counts=initial.get(word,{})
-                        expected_probability+=torch.tensor([counts.get((arg,parts.order_of(word)),0)/max(1,sum(counts.values())) for arg in parts.arguments])
+                        expected_probability += initial.get(word, torch.zeros(len(parts.arguments)))
                     torch.testing.assert_close(state['kwargs']['occupation'][b,i].cpu(),expected_probability,rtol=0,atol=0)
         return result
     monkeypatch.setattr(model,'_commit_sentence',committed)
@@ -124,39 +130,64 @@ def test_kept_readings_alone_supply_occupation_counts(tmp_path, monkeypatch, eag
             questions=(What.supervised(0,split='train',prompt='what is red ?'),
                        What.supervised(1,split='train',prompt='what is blue ?')))
     assert len(events) == 2 and len(lessons) == 4
-    expected = PartsOfSpeech(parts.arguments, model._concept_owner())
-    expected.counts={word:Counter(counts) for word,counts in initial.items()}
+    expected_views = Counter(initial_views)
     for program, binary, unary in events:
-        expected.observe_kept(program, binary, unary)
-    # A close may record occupations of minted symbols; it need not mint.
-    # Word occupations come only from the kept programs, exactly once.
-    assert {word: parts.counts[word] for word in expected.counts} == expected.counts
-    assert parts.counts
-    before = {word:dict(counts) for word,counts in parts.counts.items()}
+        stack = []
+        for kind, local, position in program.actions.tolist():
+            if kind < 0:
+                break
+            if kind == 0:
+                stack.append((int(program.word_ids[position]),))
+                continue
+            operation = (unary if kind == 2 else binary)[local]
+            name = operation.surface_name or operation.method_name
+            if kind == 2:
+                at = len(stack)-1-position
+                operands = [stack[at]]
+            else:
+                operands = stack[-2:]
+            for i, carried in enumerate(operands):
+                expected_views[f'{name}_argin{i+1}'] += len(carried)
+            mask = flow_mask(operation)
+            results = operands[::-1] if kind == 3 else [tuple(
+                word for i, carried in enumerate(operands) if mask & (1 << i) for word in carried)]
+            for i, carried in enumerate(results):
+                expected_views[f'{name}_argout{i+1}'] += len(carried)
+            if kind == 2:
+                stack[at] = results[0]
+            else:
+                stack[-2:] = results
+    assert view_counts(parts) == dict(expected_views)
+    # Only the kept programs write input/output concept views; the paired
+    # scoring and annotation passes above leave these counters unchanged.
+    before = view_counts(parts)
     parts.frozen = True
     for program,binary,unary in events:
         observe(program,binary,unary)
-    assert parts.counts == before
+    assert view_counts(parts) == before
     malformed = NS(word_ids=torch.tensor([11]),actions=torch.tensor([[0,-1,0],[2,0,2]]))
-    measured = PartsOfSpeech(formal_arguments([rule('surface_unary',1)]))
+    _, measured, _ = argument_inventory(formal_arguments([rule('surface_unary',1)]))
     with pytest.raises(ValueError,match='unary position'):
         measured.observe_kept(malformed,(),[rule('surface_unary',1)])
+        refresh(measured.owner)
     model.End()
 
 
-def test_one_stored_part_of_speech_is_the_recomputed_argmax(chooser):
+def test_one_word_can_belong_to_several_argument_concepts(chooser):
     _, parts = chooser
+    word = parts.owner.interpret.word_for_form('form-0')
     a, b = parts.arguments[:2]
-    assert parts.part_of_speech(7) == a
-    assert sum(parts.distribution(7)) == pytest.approx(1.)
-    parts.add(7,b, parts.order_of(7))
-    assert parts.part_of_speech(7) == b
-    parts.add(7,a, parts.order_of(7)); parts.add(7,a, parts.order_of(7))
-    assert parts.part_of_speech(7) == a and parts.labels == {7:a}
-    assert parts.distribution(7)[parts.index[a]] == pytest.approx(2/3)
-    # Cosines report shared occupants without changing either argument.
+    assert not parts.similarities(word).any()
+    parts.add(word, b)
+    parts.add(word, a); parts.add(word, a)
+    import math
+    refresh(parts.owner)
+    scores = parts.similarities(word)
+    assert float(scores[parts.index[a]]) == pytest.approx(1.)
+    assert float(scores[parts.index[b]]) == pytest.approx(1.)
+    assert parts.members(a) == parts.members(b) == (word,)
     before = parts.get_extra_state().clone()
-    assert next(row for row in parts.collapse() if row['left']==(a,-1) and row['right']==(b,-1))['cosine'] == 1.
+    assert next(row for row in parts.collapse() if row['left']==a and row['right']==b)['cosine'] == 1.
     assert torch.equal(before, parts.get_extra_state())
 
 
@@ -175,14 +206,16 @@ def test_word_flow_follows_the_catalogue_and_ends_at_a_clause():
     for name,mask in expected.items():
         r=rules[name];arity=1 if name=='bind' else len(r.rhs_symbols)
         assert flow_mask(r)==mask
-        parts=PartsOfSpeech(formal_arguments([r]))
+        _, parts, ids = argument_inventory(formal_arguments([r]))
         actions=[[0,-1,i] for i in range(arity)]+[[2 if arity==1 and name!='bind' else 1,0,0]]
-        parts.observe_kept(NS(word_ids=torch.tensor([101,102][:arity]),
+        parts.observe_kept(NS(word_ids=torch.tensor(ids[:arity]),
                               actions=torch.tensor(actions)),[r] if arity==2 or name=='bind' else (),[r] if arity==1 and name!='bind' else ())
-        for i,word in enumerate([101,102][:arity]):
-            gold=Counter({(f'{name}_argin{i+1}',-1):1})
-            if mask & (1<<i):gold[f'{name}_argout1',-1]=1
-            assert parts.counts[word]==gold
+        refresh(parts.owner)
+        for i, word in enumerate(ids[:arity]):
+            expected = {f'{name}_argin{i+1}'}
+            if mask & (1 << i): expected.add(f'{name}_argout1')
+            assert {arg for arg in parts.arguments if word in parts.members(arg)} == expected
+        assert sum(view_counts(parts).values()) == arity + sum(bool(mask & (1 << i)) for i in range(arity))
         # The compiled carrier must implement the same flow as the kept journal.
         words=torch.tensor([[[0.,1.],[1.,0.],[3.,4.]]])
         choice=NS(applied=torch.tensor([True]),kind=torch.tensor([1 if arity==2 else 2]),
@@ -208,24 +241,23 @@ def test_word_flow_follows_the_catalogue_and_ends_at_a_clause():
     torch.testing.assert_close(compiled(words),result,rtol=0,atol=0)
     binary=[rules[name] for name in ('intersection','lower','lift','transpose')]
     unary=[rules[name] for name in ('not','lower_unary')]
-    parts=PartsOfSpeech(formal_arguments(binary+unary))
+    _, parts, ids = argument_inventory(formal_arguments(binary+unary))
     # lower(a, intersection(black, cat)), then lift that NP with a VP word.
     # The description's two words both cross the declared head operand.
-    program=NS(word_ids=torch.tensor([101,102,103,104]),actions=torch.tensor([
+    program=NS(word_ids=torch.tensor(ids),actions=torch.tensor([
         [0,-1,0],[0,-1,1],[0,-1,2],[1,0,0],[1,1,0],
         [0,-1,3],[3,3,0],[3,3,0],[1,2,0],[2,0,0],[2,1,0]]))
     parts.observe_kept(program,binary,unary)
-    for word in (102,103):
-        assert parts.counts[word]['intersection_argout1',-1]==1
-        assert parts.counts[word]['lower_argin2',-1]==parts.counts[word]['lower_argout1',-1]==1
-        assert parts.counts[word]['lift_argin1',-1]==1
-    assert parts.counts[101]==Counter({('lower_argin1',-1):1})
-    assert parts.counts[104]['lift_argin2',-1]==1
-    assert not any(counts.get(('lift_argout1',-1)) or counts.get(('not_argin1',-1)) or counts.get(('lower_unary_argin1',-1))
-                   for counts in parts.counts.values())
+    refresh(parts.owner)
+    for word in ids[1:3]:
+        for argument in ('intersection_argout1','lower_argin2','lower_argout1','lift_argin1'):
+            assert word in parts.members(argument)
+    assert {arg for arg in parts.arguments if ids[0] in parts.members(arg)} == {'lower_argin1'}
+    assert parts.members('lift_argin2') == (ids[3],)
+    assert not any(parts.members(arg) for arg in ('lift_argout1','not_argin1','lower_unary_argin1'))
     cosines={(row['left'],row['right']):row['cosine'] for row in parts.collapse()}
-    assert cosines[('intersection_argin1',-1),('intersection_argout1',-1)]==pytest.approx(2**-.5)
-    assert cosines[('intersection_argin2',-1),('intersection_argout1',-1)]==pytest.approx(2**-.5)
+    assert cosines['intersection_argin1','intersection_argout1']==pytest.approx(2**-.5)
+    assert cosines['intersection_argin2','intersection_argout1']==pytest.approx(2**-.5)
 
 
 def test_kept_product_carries_both_operands_words_into_the_enclosing_np():
@@ -234,19 +266,21 @@ def test_kept_product_carries_both_operands_words_into_the_enclosing_np():
     grammar=Grammar();grammar.load_from_grammar_file('complete.grammar')
     rules={operation_name(r):r for r in grammar.rules_upward if operation_name(r)}
     binary=[rules['product'],rules['lower']]
-    parts=PartsOfSpeech(formal_arguments(binary))
+    _, parts, ids = argument_inventory(formal_arguments(binary), count=3)
     # lower(a, product(black, cat)): both words survive into lower's head.
-    program=NS(word_ids=torch.tensor([101,102,103]),actions=torch.tensor([
+    program=NS(word_ids=torch.tensor(ids),actions=torch.tensor([
         [0,-1,0],[0,-1,1],[0,-1,2],[1,0,0],[1,1,0]]))
     parts.observe_kept(program,binary,())
+    refresh(parts.owner)
     assert flow_mask(binary[0])==3
-    assert parts.counts[101]==Counter({('lower_argin1',-1):1})
-    for role,word in enumerate((102,103),1):
-        assert parts.counts[word]==Counter({(f'product_argin{role}',-1):1,
-            ('product_argout1',-1):1,('lower_argin2',-1):1,('lower_argout1',-1):1})
+    assert {arg for arg in parts.arguments if ids[0] in parts.members(arg)} == {'lower_argin1'}
+    for role, word in enumerate(ids[1:], 1):
+        assert {arg for arg in parts.arguments if word in parts.members(arg)} == {
+            f'product_argin{role}', 'product_argout1', 'lower_argin2', 'lower_argout1'}
+    assert view_counts(parts)['product_argout1'] == view_counts(parts)['lower_argout1'] == 2
 
 
-def test_chooser_adds_input_probabilities_directly_and_carries_words(chooser):
+def test_chooser_adds_input_similarities_directly_and_carries_words(chooser):
     layer, parts = chooser
     x = torch.randn(1,2,4)
     probabilities = torch.zeros(1,2,len(parts.arguments))
@@ -327,7 +361,7 @@ def test_stage_menu_masks_every_undeclared_operation(chooser):
 @pytest.mark.parametrize('phase',[
     pytest.param('np_definite',marks=pytest.mark.phase('np_definite')),
     pytest.param('np_description',marks=pytest.mark.phase('np_description'))])
-def test_artifact_restoration_retains_weights_and_occupation_state_exactly(tmp_path, monkeypatch, phase, restore_phase):
+def test_artifact_restoration_retains_weights_and_argument_state_exactly(tmp_path, monkeypatch, phase, restore_phase):
     from Models import BaseModel
     from identity_experiment import make_model,restore_warmup
     from IndependentComponents import _unpack_state
@@ -335,11 +369,13 @@ def test_artifact_restoration_retains_weights_and_occupation_state_exactly(tmp_p
     model = make_model(tmp_path, monkeypatch)
     restore_phase(lambda path: restore_warmup(model,path,restore))  # Asserts every retained tensor, with declared migration.
     parts = model.languageSpace.parts_of_speech
-    assert parts.counts
-    for word in range(123,143):
-        parts.add(word,parts.arguments[0], parts.order_of(word));parts.add(word,parts.arguments[-1], parts.order_of(word))
+    assert sum(view_counts(parts).values())
+    words = tuple(model._concept_owner()._word_definition_ids())[:20]
+    for word in words:
+        parts.add(word,parts.arguments[0]); parts.add(word,parts.arguments[-1])
     expected = _unpack_state(parts.get_extra_state())
-    expected_labels=dict(parts.labels)
+    expected_members={arg:parts.members(arg) for arg in parts.arguments}
+    expected_views=view_counts(parts)
     path = tmp_path/'occupation.ckpt'
     model.save_weights(str(path))
     saved_size=parts.get_extra_state().numel()
@@ -347,16 +383,17 @@ def test_artifact_restoration_retains_weights_and_occupation_state_exactly(tmp_p
     fresh=tmp_path/'fresh';fresh.mkdir()
     model=make_model(fresh,monkeypatch)
     parts=model.languageSpace.parts_of_speech
-    assert parts.counts=={} and parts.get_extra_state().numel()!=saved_size
+    assert not any(view_counts(parts).values())
     restore_warmup(model,path,restore)
     assert _unpack_state(parts.get_extra_state()) == expected
-    assert parts.labels == expected_labels
+    assert {arg:parts.members(arg) for arg in parts.arguments} == expected_members
+    assert view_counts(parts) == expected_views
     from GrammarCheckpoint import align,catalog
     damaged = model.state_dict()
     key = next(key for key in damaged if key.endswith('.parts_of_speech._extra_state'))
     del damaged[key]
-    with pytest.raises(ValueError,match='missing its occupation state'):
+    with pytest.raises(ValueError,match='missing its argument concept state'):
         align(model,damaged,catalog(model))
-    migrated,_,_ = align(model,damaged,None)
-    assert _unpack_state(migrated[key])['counts'] == {}
+    with pytest.raises(ValueError,match='missing its argument concept state'):
+        align(model,damaged,None)
     model.End()

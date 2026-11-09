@@ -65,6 +65,7 @@ class TestSchema(unittest.TestCase):
         row=s.row(edge)
         torch.testing.assert_close(row['meaning'].roles[0],_v(.2))
         torch.testing.assert_close(row['meaning'].roles[1],_v(0,0,.4))
+        self.assertAlmostEqual(float(s.parts.truth_plus[edge[1]]),.5,places=6)
         self.assertAlmostEqual(row['trust'],.5,places=6)
 
 

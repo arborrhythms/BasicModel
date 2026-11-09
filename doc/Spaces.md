@@ -1478,3 +1478,7 @@ ergodic mode.
 **Invertibility.** Pseudoinverse (vector-mode); the activation-mode branch
 is exactly invertible via its `InvertibleLinearLayer`; not exactly
 invertible in general.
+
+### Shared conceptual hierarchy (Alec, 2026-11-08)
+
+`ConceptualSpace` owns one native hierarchy for word meanings, classes and classes of classes. Member centroids provide bottom-up direction; `ConceptHierarchy.condition` supplies higher-order context to member meanings at kept closes. Formal grammar arguments are ordinary concepts prebuilt one order above words and use this same learning path. Groups over arguments lie one further order up. `PartsOfSpeech` owns the declaration mapping and grammar reads, not another conceptual space or category codebook. The fixed declaration reservation is included at initial model construction; codebooks and trust columns do not resize during use. Form and meaning retain their separate coordinates and learning paths. See [Architecture](Architecture.md#hierarchical-conceptual-context-alec-2026-11-08).

@@ -20,6 +20,7 @@ class PartClosing:
         self.relation_dependencies = set()
         self.when = None
         self.content_key = None
+        self.source_trust = 1.
 
     def _point(self, symbol):
         if symbol in (None, -1, 0):
@@ -114,6 +115,8 @@ class PartClosing:
         record['order'] = clause.order
         record['metadata'] = clause.meaning
         record['mention'] = clause.reference_request is not None
+        if clause.relation == 'operator':
+            record['operator'] = clause.refs[1]
         request = clause.reference_request or {}
         if request.get('sign_leaf') or request.get('no_op_leaf'):
             record['percept_value'] = request.get('percept')
@@ -243,7 +246,8 @@ class PartClosing:
             names = ((side[1],) if 'word' in self.alloc.symbol_types.get(side[1], ())
                      else self.owner.definitions.words(side[1]))
         for name in names:
-            self.owner.interpret.define(name, parent)
+            row = self.parts.find(*evidence_refs)
+            self.owner.interpret.define(name, parent, evidence=(float(self.parts.truth_plus[row]), float(self.parts.truth_minus[row])))
 
     def _observe_equality(self, left, right, record, pair):
         words = tuple(child['value'].word_id for child in record['children'])
@@ -305,6 +309,8 @@ class PartClosing:
                 and (not children or term.operation not in (*self._assertions, 'lift', 'verb'))):
             result = record['reference']
         elif (record['resolved'] and not assertion) or not children or forced_occurrence:
+            if from_trust:
+                pair = tuple(pole * self.source_trust for pole in pair)
             result = self._write_occurrence(record, pair=pair, sentence=sentence, kind=kind,
                 metadata=metadata, address=address, stream=stream, surprise=surprise)
         elif len(children) == 1:
@@ -317,8 +323,19 @@ class PartClosing:
                 left, right = right, left
             if from_trust and metadata is not None and not metadata.polarity:
                 pair = pair[::-1]
+            pair = tuple(pole * self.source_trust for pole in pair)
+            operator = record.get('operator')
+            operator = operator if type(operator) is int and operator > 0 else -1
+            occupation_owner = getattr(self.store, '_occupation_owner', None)
+            occupations = None if occupation_owner is None else occupation_owner()
+            grammar_operation = None
+            if occupations is not None:
+                index = occupations.operation_index(term.formal_name or term.operation)
+                if index >= 0:
+                    grammar_operation = index
             row = self.parts.add(left, right, truth_plus=pair[0], truth_minus=pair[1],
-                when=self.when if sentence else None, surprise=surprise, witness=sentence)
+                when=self.when if sentence else None, surprise=surprise, witness=sentence,
+                operator=operator, grammar_operation=grammar_operation)
             self.edges.append(row)
             promoted = False
             if assertion and term.operation in ('equal', 'part', 'assertPart') and pair[0] > 0:
@@ -355,6 +372,8 @@ class PartClosing:
     def close(self, clause, *, pair=(0., 0.), sentence=False, kind='unverified',
               address=None, stream=-1, surprise=-1., force=False, from_trust=False):
         record = self._planned[id(self._terms[id(clause)])]
-        return self._write(record, pair=pair, sentence=sentence, kind=kind,
+        result = self._write(record, pair=pair, sentence=sentence, kind=kind,
             metadata=clause.meaning, address=address, stream=stream, surprise=surprise,
             force=force, from_trust=from_trust)
+        self.parts.refresh_effective()
+        return result

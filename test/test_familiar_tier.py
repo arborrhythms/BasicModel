@@ -470,6 +470,8 @@ def test_mixing_keeps_lexical_witnesses_across_ten_presentations(monkeypatch, ea
                     point = program.leaves[site]
                     row = store.append_meaning(ConceptualMeaning.from_description(point), order=0,
                         document_key=('kept-word', stream, word), sentence_index=0, when=False)
+                    from ConceptTrust import observe
+                    observe(owner, word, point)
                     reading = None if program.word_ids is None else int(program.word_ids[site])
                     owner.mtm.bind(key, store.occurrence_of(row), kind=None, when=1,
                                    value=point, reading=reading)

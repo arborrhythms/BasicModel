@@ -62,7 +62,8 @@ def snapshot(model):
         mtm={str(key): vars(entry) for key, entry in owner.mtm.entries.items()},
         words=alloc.word_forms, types=alloc.symbol_types,
         singletons=sorted(alloc.singletons),
-        occupations=dict(model.languageSpace.parts_of_speech.counts),
+        argument_members={name:model.languageSpace.parts_of_speech.members(name)
+            for name in model.languageSpace.parts_of_speech.arguments},
         parts={int(i):store.parts.row(i) for i in store.parts.indices().tolist()},
         parameters={name:tensor_hash(value) for name,value in model.named_parameters()},
         sources=getattr(model, '_sentence_sources', None),

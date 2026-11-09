@@ -296,7 +296,7 @@ def test_chunk_views_keep_one_graph_across_part_and_bucket_widths():
 def _tiny_canonical_model(
         tmp_path, monkeypatch, *, input_width=128, batch_size=2,
         word_buckets="16,32,64,128,256", forward_grammar_weight=0.0,
-        concept_rows=64, dimension=16,
+        concept_rows=64, dimension=16, concept_meaning_width=0,
         chooser_depth=None, training_overrides=None, architecture_overrides=None,
         part_rows=256, stm_capacity=None, ltm_capacity=None):
     """Build the real aligned serial model with 16-coordinate events."""
@@ -336,6 +336,12 @@ def _tiny_canonical_model(
                 node = root.find(f"./{section}/{tag}")
                 if node is not None and node.text == "16":
                     node.text = str(dimension)
+    if concept_meaning_width:
+        _set("./ConceptualSpace/nDim", dimension + concept_meaning_width)
+        _set("./ConceptualSpace/nOutputDim", dimension + concept_meaning_width)
+        _set("./ConceptualSpace/meaningWidth", concept_meaning_width)
+        for section in ("ConceptualSpace", "WholeSpace", "OutputSpace"):
+            _set(f"./{section}/nInputDim", dimension + concept_meaning_width)
     _set("./architecture/training/batchSize", batch_size)
     if ltm_capacity is not None:
         _set("./SymbolSpace/ltmCapacity", ltm_capacity)

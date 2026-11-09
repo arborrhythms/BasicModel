@@ -97,7 +97,7 @@ def test_nested_unknown_terminal_keeps_its_word_without_minting(monkeypatch):
     assert f.store.parts.references(row[1]) == ((SYMBOL, participant), (SYMBOL, word))
     assert f.store.parts.rows_referencing(SYMBOL, word) == (row[1],)
     assert not f.cs.definitions.objects(word)
-    assert not f.language.parts_of_speech.counts
+    assert not f.language.parts_of_speech.uses
 
 
 def test_bound_terminal_keeps_its_object_without_defining_a_new_word(monkeypatch):
@@ -175,8 +175,8 @@ def test_new_referent_closes_as_an_unminted_occurrence(monkeypatch):
     # introduction consumes neither a seat nor an unseated Part handle.
     assert (f.cs._concept_allocator.next_id, len(f.store.parts)) == before
     torch.testing.assert_close(f.cs.similarity_codebook.W, bank, rtol=0, atol=0)
-    counts = f.language.parts_of_speech.counts
-    assert not counts  # only observe_kept(reading) updates occupations
+    uses = f.language.parts_of_speech.uses
+    assert not uses  # only observe_kept(reading) updates occupations
 
 
 def test_lower_word_alias_does_not_double_count_kept_occupations(monkeypatch):
@@ -198,15 +198,16 @@ def test_lower_word_alias_does_not_double_count_kept_occupations(monkeypatch):
         (0, -1, 2), (1, operations['intersection'], 0)]))
     parts = f.language.parts_of_speech
     parts.observe_kept(program, f.binary, f.unary)
-    expected = {word: dict(parts.counts[word]) for word in words}
+    from argument_fixtures import view_counts
+    expected = view_counts(parts)
     clause = Clause(ConceptualMeaning.from_description(root.point), point=root.point,
                     composition=root)
     row = f.store.write_clause(clause)
-    assert {word: dict(parts.counts[word]) for word in words} == expected
+    assert view_counts(parts) == expected
     assert row[0] == 'sym'
-    assert row[1] not in parts.counts
-    assert parts.counts[words[1]]['lower_argout1', parts.order_of(words[1])] == 1
-    assert parts.counts[words[1]]['intersection_argin1', parts.order_of(words[1])] == 1
+    assert all(row[1] not in parts.members(arg) for arg in parts.arguments)
+    assert parts.members('lower_argout1') == parts.members('intersection_argin1') == (words[1],)
+    assert expected['lower_argout1'] == expected['intersection_argin1'] == 1
 
 
 def test_same_description_tokens_keep_distinct_occurrence_identities(monkeypatch):

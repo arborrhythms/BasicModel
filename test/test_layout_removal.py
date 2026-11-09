@@ -237,6 +237,7 @@ def test_deep_checkpoint_chains_validate_without_a_python_recursion_limit():
     state['refs'][1:, 1] = 2
     state['ref_kinds'][-1, 0] = SYMBOL
     state['count'].fill_(2047)
+    state['relation_order'][:2047] = torch.arange(2047, 0, -1)
     store.load_state_dict(state)
     assert len(store.protected_references((1,))) == 2048
     state['ref_kinds'][-1, 0] = RELATION
@@ -267,6 +268,8 @@ def test_close_placement_updates_meaning_and_content_retrieval_finds_idea(monkey
     from test_review13_subspaces import fixture, word
     cs, cb, _, _ = fixture()
     a, b = word(cs, [(4, 1.)]), word(cs, [(7, 1.)])
+    from definition_fixtures import agreeing_views
+    agreeing_views(cs, cs.concept_id_at_row(a), cs.concept_id_at_row(b))
     monkeypatch.setattr(cs, 'word_surface_for_row', lambda row: {a: b'p', b: b'q'}.get(row))
     derived = cb.mereology
     reading = SimpleNamespace(word_rows=torch.tensor([a, b, a]), concept_ids=None)
@@ -281,7 +284,10 @@ def test_close_placement_updates_meaning_and_content_retrieval_finds_idea(monkey
     assert int(derived.placement_witnesses[a]) == int(derived.placement_witnesses[b]) == 1
     derived.begin_forward()
     value = cb.lookup_rows(a)
-    assert value[derived.percept_event_width:].ne(0).any()
+    radius = 1 - __import__("math").exp(-1)
+    direction = torch.nn.functional.normalize(derived.placement[a], dim=0)
+    torch.testing.assert_close(value[3:4], direction * radius)
+    assert not value[4:5].any()
     store = LTM0(5, capacity=4, percept_width=0)
     row = store.append_idea(value, trust=1.)
     cue = ConceptualMeaning.from_description(value)

@@ -165,7 +165,7 @@ def _ensure_base(store, *, first=False):
                 base.pop(address, None)
             start['_base'] = _join_rows(store, base)
     if '_base' not in bank.epoch_start:
-        base = {name:value.clone() for name,value in bank.epoch_start.items() if not name.startswith('_')}
+        base = {name: bank.epoch_start[name].clone() for name in bank.state_dict()}
         if first:
             previous = {}
             for source in _supply_records(store).values():
@@ -173,7 +173,7 @@ def _ensure_base(store, *, first=False):
                     previous.setdefault(row, value)
             for row, value in previous.items():
                 for name in bank.columns:
-                    base[name][row] = (-1 if name in ('refs','surprise') else 0) if value is None else value[name]
+                    base[name][row] = (-1 if name in ('refs','surprise','operator','grammar_operation') else 0) if value is None else value[name]
             base['count'].fill_(int(base['ref_kinds'][:, 0].ne(0).sum()))
         bank.epoch_start['_base'] = base
     return True
@@ -296,6 +296,10 @@ def refresh_supplies(store, *, first=False):
     updated['initial_observations'] = observations
     store._epoch_rows = updated
     relations['count'].fill_(int(relations['ref_kinds'][:,0].ne(0).sum()))
+    ordered = bank.ordered_rows(relations['refs'], relations['ref_kinds'])
+    relations['relation_order'].fill_(-1)
+    if ordered:
+        relations['relation_order'][:len(ordered)] = relations['relation_order'].new_tensor(ordered)
     relations['_base'] = relation_base
     relations['_initial_observations'] = relation_observations
     bank.epoch_start = relations

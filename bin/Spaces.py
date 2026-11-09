@@ -2493,6 +2493,8 @@ class Codebook(Tensor):
         self.mereology = MereologicalCodes(owner, initial,
             percept_width=percept_width, percept_event_width=percept_event_width,
             identity_width=identity_width, property_width=property_width)
+        from ConceptTrust import ConceptTrust
+        self.trust = ConceptTrust(owner, self)
         if hasattr(self, 'params'):
             self.params = [p for p in self.params if p is not old] + list(self.mereology.parameters())
         vq = getattr(self, 'vq', None)
@@ -13073,6 +13075,11 @@ class ConceptualSpace(Space):
         if derived_similarity_codebook and getattr(_sim_cb, 'mereology', None) is None:
             _sim_cb.enable_derived_codes(self)
         self.similarity_codebook = _sim_cb
+        if not hasattr(_sim_cb, 'trust'):
+            from ConceptTrust import ConceptTrust
+            _sim_cb.trust = ConceptTrust(self, _sim_cb)
+        import weakref
+        _concept_alloc_of(self).parts._concept_owner = weakref.ref(self)
         # Retain the constructed edge slabs as the directed membership cache.
         parts_cap = _concept_alloc_of(self).parts.capacity
         self.register_buffer('_priming_edge_src', torch.full((2*parts_cap,), -1, dtype=torch.long), persistent=False)
@@ -14080,6 +14087,7 @@ class ConceptualSpace(Space):
         concept; WholeSpace contributes only one or more primitive property
         row ids.  No WS row is minted for a word, META, or class combination.
         """
+        from WordSurfaces import is_lexical_form
         if (pid_2d is None or vec_tensor is None
                 or not torch.is_tensor(pid_2d)
                 or not torch.is_tensor(vec_tensor)):
@@ -14110,12 +14118,12 @@ class ConceptualSpace(Space):
                     and g is not None and g < len(word_texts[b])):
                 value = word_texts[b][g]
                 if value is not None:
-                    return str(value).encode('latin1')
+                    return str(value).encode('latin1') if is_lexical_form(value) else value
             if (tokens is not None and b < len(tokens)
                     and g is not None and g < len(tokens[b])):
                 value = tokens[b][g]
                 if value is not None:
-                    return str(value)
+                    return str(value) if is_lexical_form(value) else value
             if percept_store is not None and hasattr(percept_store, "bytes_for"):
                 try:
                     return b"".join(
@@ -14137,6 +14145,8 @@ class ConceptualSpace(Space):
             for g, slots in groups.items():
                 parts = [int(pid_host[b][n]) for n in slots]
                 key = _surface_key(b, g if grouped else None, parts)
+                if not is_lexical_form(key):
+                    continue
                 prop_rows = ws.property_rows_for_bytes(key)
                 # If a token label is unavailable, classify its actual stored
                 # byte parts rather than treating the Python tuple key as text.
@@ -14741,7 +14751,7 @@ class ConceptualSpace(Space):
         gathers every reachable definition through ``_field_caps``; inventory
         rows beyond this initial partition are not an attention limit.
         """
-        N = int(self.nVectors)
+        N = int(self.nVectors) - int(getattr(self, '_formal_reservation', 0))
         K = int(getattr(self, "_symbolic_order", 0) or 0)
         sparse = int(getattr(self, '_symbolic_order', 0)) > 0
         key = (N, K, sparse)
@@ -15580,7 +15590,14 @@ class ConceptualSpace(Space):
             raise ValueError('an unwitnessed concept has no storage order')
         caps = self._order_caps()
         ly = alloc.layer(0)
-        if getattr(self, '_concept_binding', 'mixing') == 'aligned':
+        if 'formal-argument' in alloc.symbol_types.get(int(concept_id), ()):
+            region, cap = "formal argument inventory", int(self.nVectors)
+            key = ('shared', int(concept_id))
+            row = ly.row_of(key)
+            if row is None:
+                free = next((r for r in range(cap-1, -1, -1) if r not in ly._tensor_row_keys), None)
+                row = None if free is None else ly.assign_row(key, capacity=1, base=free)
+        elif getattr(self, '_concept_binding', 'mixing') == 'aligned':
             region, cap = "shared concept inventory", int(self.nVectors)
             row = ly.assign_row(("shared", int(concept_id)),
                                 capacity=cap, base=0)
@@ -15648,6 +15665,7 @@ class ConceptualSpace(Space):
                     f"{int(concept_id)} gets records only, no weighted "
                     f"reading (overflow #{n})", RuntimeWarning)
         if row is not None and len(ly._tensor_row_keys) != previous_rows:
+            self.similarity_codebook.trust.capture(row)
             self._priming_edge_revision = None
             derived = getattr(self.similarity_codebook, 'mereology', None)
             if derived is not None:
@@ -15991,6 +16009,9 @@ class ConceptualSpace(Space):
             frz = set()
             object.__setattr__(self, "_frozen_concepts", frz)
         frz.add(int(concept_id))
+        row = self._csw_row_of(concept_id)
+        if row is not None:
+            self.similarity_codebook.trust.capture(row)
         self._refresh_frozen_values_hook()
         return frz
 
@@ -16032,6 +16053,59 @@ class ConceptualSpace(Space):
                 return result
             matrix._frozen_hook_handle = matrix.values.register_hook(zero_frozen)
             object.__setattr__(matrix, "_frozen_hook_parameter", matrix.values)
+
+    @torch.no_grad()
+    def prebuild_formal_arguments(self, arguments):
+        """Seat the declared classes above words, with no invented views.
+
+        Native word concepts have order zero. Argument classes have order
+        one; a class over those arguments therefore has order two. These
+        are ordinary mutable concept seats, not frozen primitive meanings.
+        The complete declaration must fit before any identity is allocated.
+        """
+        arguments = tuple(arguments)
+        if any(not isinstance(name, str) or not name for name in arguments) or len(set(arguments)) != len(arguments):
+            raise ValueError('formal argument declarations require distinct names')
+        alloc = _concept_alloc_of(self)
+        missing = tuple(name for name in arguments if name not in alloc.formal_arguments)
+        if missing:
+            layer = alloc.layer()
+            available = int(self.nVectors) - len(layer._tensor_row_keys)
+            if len(missing) > available:
+                raise RuntimeError('formal argument concepts exceed the constructed higher-order capacity')
+            self._preflight_concept_allocation(len(missing), context='formal argument concepts')
+            object.__setattr__(self, '_formal_reservation', max(
+                int(getattr(self, '_formal_reservation', 0)), len(alloc.formal_arguments)+len(missing)))
+            bank = self.similarity_codebook
+            trust = bank.trust
+            derived = getattr(bank, 'mereology', None)
+            for name in missing:
+                identity = self.new_concept()
+                alloc.reference_orders[identity] = 1
+                alloc.symbol_types.setdefault(identity, set()).update(('concept', 'class', 'formal-argument'))
+                alloc.settle(identity)
+                row = self._csw_concept_row(1, identity)
+                if row is None:
+                    raise RuntimeError('formal argument inventory changed after preflight')
+                bank.W[row].zero_()
+                trust.allocated[row] = True
+                trust.known[row] = True
+                trust.lengths[row].zero_()
+                trust.views[row] = 0
+                trust.agreement[row] = 0
+                trust.content[row].zero_()
+                if derived is not None:
+                    derived.placement[row].zero_()
+                    derived.placement_witnesses[row] = 0
+                    derived.placement_derived[row] = True
+                    derived.placement_valid[row] = False
+                    derived.placement_dirty[row] = True
+                alloc.formal_arguments[name] = identity
+        for name in arguments:
+            identity = alloc.formal_arguments[name]
+            if alloc.order_of(identity) != 1 or self._csw_row_of(identity) is None:
+                raise ValueError('formal argument concept has no native order-one seat')
+        return {name: alloc.formal_arguments[name] for name in arguments}
 
     def mint_frozen_concept(self, name):
         """Mint a HARD-CODED named concept (stable handle + order-0 snap
@@ -16471,6 +16545,13 @@ class ConceptualSpace(Space):
             object.__setattr__(self, '_interpret_operator', operator)
         return operator
 
+    def trust_measurements(self):
+        from ConceptTrust import measurements
+        return measurements(self)
+
+    def gate_measurements(self):
+        return _concept_alloc_of(self).parts.gate_measurements()
+
     def null_concept_read(self):
         """Verify the reserved storage, including the sign bit of every zero."""
         fields = (self.null_concept_row, self.null_concept_lanes, self.null_concept_certainty)
@@ -16490,6 +16571,9 @@ class ConceptualSpace(Space):
 
     def interpret_word(self, word_parts, word_whole, key=None, *, occurrence=None):
         """Admit a form and read its witnessed object, or the still-open form."""
+        from WordSurfaces import is_lexical_form
+        if not is_lexical_form(key):
+            return None
         word = self.interpret.lookup_word(word_parts, word_whole, form=key)
         if word is None:
             return None
@@ -17138,7 +17222,7 @@ class ConceptualSpace(Space):
         negative = max(float(store.parts.truth_minus[idx]), w if supporting < relevant else 0.)
         store.parts.add(*store.parts.refs[idx].tolist(), ref_kinds=store.parts.ref_kinds[idx].tolist(), truth_plus=positive,
                         truth_minus=negative, witness=False)
-        return positive - negative
+        return float(store.parts.evidence(idx)[0] - store.parts.evidence(idx)[1])
 
 
     # ------------------------------------------------------------------

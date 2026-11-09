@@ -4,14 +4,14 @@ import torch
 from torch import nn
 
 OCCURRENCE, SYMBOL, RELATION = 1, 2, 3
-VERSION = 2
+VERSION = 5
 # Reserved outside both address inventories. It never consumes a learnable seat.
 NULL_CONCEPT = torch.iinfo(torch.int64).max
 
 
 class LTM1(nn.Module):
     OCCURRENCE, SYMBOL, RELATION = OCCURRENCE, SYMBOL, RELATION
-    columns = ('refs', 'ref_kinds', 'truth_plus', 'truth_minus', 'access_count', 'surprise', 'percept')
+    columns = ('refs', 'ref_kinds', 'truth_plus', 'truth_minus', 'access_count', 'surprise', 'percept', 'effective_plus', 'effective_minus', 'operator', 'grammar_operation')
 
     def __init__(self, capacity=8192):
         super().__init__()
@@ -21,12 +21,26 @@ class LTM1(nn.Module):
         self.allocate = None
         self.handle_reserved = None
         # One pair and two percept bands (where + when, four coordinates each)
-        # per declared relation seat. No content vector and no growth on load.
+        # per declared relation seat; there is no growth on load.
         self.register_buffer('refs', torch.full((self.capacity, 2), -1, dtype=torch.long))
         self.register_buffer('ref_kinds', torch.zeros(self.capacity, 2, dtype=torch.int8))
         self.register_buffer('percept', torch.zeros(self.capacity, 8))
         self.register_buffer('truth_plus', torch.zeros(self.capacity))
         self.register_buffer('truth_minus', torch.zeros(self.capacity))
+        self.register_buffer('effective_plus', torch.zeros(self.capacity))
+        self.register_buffer('effective_minus', torch.zeros(self.capacity))
+        self.register_buffer('operator', torch.full((self.capacity,), -1, dtype=torch.long))
+        self.register_buffer('grammar_operation', torch.full((self.capacity,), -1, dtype=torch.long))
+        self.operation_catalog = ()
+        from TrustGates import TrustGates
+        self.gates = TrustGates()
+        self._occupation_owner = None
+        self._refreshing_effective = False
+        self._primitive_evidence = set()
+        self.register_buffer('relation_order', torch.full((self.capacity,), -1, dtype=torch.long))
+        self._order_revision = None
+        self._effective_source = None
+        self._concept_owner = None
         self.register_buffer('access_count', torch.zeros(self.capacity, dtype=torch.long))
         self.register_buffer('surprise', torch.full((self.capacity,), -1.))
         self.register_buffer('count', torch.tensor(0, dtype=torch.long))
@@ -61,7 +75,9 @@ class LTM1(nn.Module):
                                 for name, value in self.state_dict().items()}
             return set()
         before = set(self.indices().tolist())
-        state = {name:value for name,value in self.epoch_start.items() if not name.startswith('_')}
+        state = {name: self.epoch_start[name] for name in self.state_dict()}
+        # Learned readiness is monotone across epoch row restoration.
+        state['_extra_state'] = self.get_extra_state()
         self.load_state_dict(state)
         self.epoch_start.pop('_initial_observations', None)
         occupied = set(self.indices().tolist())
@@ -80,6 +96,184 @@ class LTM1(nn.Module):
     def revision(self):
         return (id(self.refs), self.refs._version, self.ref_kinds._version,
                 self.truth_plus._version, self.truth_minus._version, self.access_count._version, len(self))
+
+    @property
+    def _topology_revision(self):
+        return (id(self.refs), self.refs._version, self.ref_kinds._version, len(self))
+
+    @staticmethod
+    def ordered_rows(refs, kinds):
+        """Topological order for a live slab or an epoch snapshot."""
+        occupied = set(kinds[:, 0].ne(0).nonzero().flatten().tolist())
+        visiting, visited, ordered = set(), set(), []
+        for root in sorted(occupied):
+            pending = [(root, False)]
+            while pending:
+                row, finished = pending.pop()
+                if finished:
+                    visiting.remove(row)
+                    visited.add(row)
+                    ordered.append(row)
+                elif row in visiting:
+                    raise ValueError('cyclic relation reference')
+                elif row not in visited:
+                    if row not in occupied:
+                        raise ValueError('dangling relation reference')
+                    visiting.add(row)
+                    pending.append((row, True))
+                    pending.extend((value, False) for kind, value in
+                                   zip(kinds[row].tolist(), refs[row].tolist()) if kind == RELATION)
+        return ordered
+
+    @torch.no_grad()
+    def _sort(self):
+        """Keep the constructed order slab in dependency order; handles stay stable."""
+        if self._order_revision == self._topology_revision:
+            return
+        ordered = self.ordered_rows(self.refs, self.ref_kinds)
+        self.relation_order.fill_(-1)
+        if ordered:
+            self.relation_order[:len(ordered)] = self.relation_order.new_tensor(ordered)
+        self._order_revision = self._topology_revision
+
+    def configure_operations(self, occupations):
+        import weakref
+        if occupations is None or not occupations.operations:
+            return
+        catalogue = occupations.operations
+        if self.operation_catalog and catalogue != self.operation_catalog:
+            raise ValueError('relation operation catalogue cannot change after attachment')
+        self.operation_catalog = catalogue
+        self._occupation_owner = weakref.ref(occupations)
+        self._effective_source = None
+
+    def get_extra_state(self):
+        from IndependentComponents import _pack_state
+        return _pack_state(dict(operation_catalog=self.operation_catalog, gate_open=dict(self.gates.open)))
+
+    @torch.no_grad()
+    def clear_operation(self, row):
+        """Naming makes a live pair independent of learned-operation authority."""
+        if not self.contains(row):
+            raise IndexError('unavailable relation')
+        self.grammar_operation[row] = -1
+        self._effective_source = None
+
+    def _check_extra_state(self, value):
+        from IndependentComponents import _unpack_state
+        state = _unpack_state(value)
+        if not isinstance(state, dict) or 'gate_open' not in state:
+            raise ValueError('LTM1 checkpoint requires gate state; regenerate pre-gate memories')
+        if tuple(state['operation_catalog']) != self.operation_catalog:
+            raise ValueError('relation operation catalogue does not match the loaded grammar')
+        return self.gates.validate_state(state['gate_open'])
+
+    def set_extra_state(self, value):
+        self.gates.restore(self._check_extra_state(value))
+        self._effective_source = None
+
+    def gate_measurements(self):
+        """Report readiness; only refresh_effective can open a gate."""
+        self.refresh_effective()
+        owner = None if self._concept_owner is None else self._concept_owner()
+        occupations = None if self._occupation_owner is None else self._occupation_owner()
+        values = self.gates.measurements(owner, occupations)
+        result = {name: dict(open=self.gates.open[name], measurement=values[name]) for name in self.gates.names}
+        if occupations is not None and 'lift' in occupations.operations:
+            result['clause']['arguments'] = occupations.operation('lift')['argument_measurements']
+        return result
+
+    @torch.no_grad()
+    def refresh_effective(self):
+        """Propagate changed concept and operation authority in dependency order."""
+        if self._refreshing_effective:
+            return
+        self._sort()
+        owner = None if self._concept_owner is None else self._concept_owner()
+        trust = None if owner is None else owner.similarity_codebook.trust
+        occupations = None if self._occupation_owner is None else self._occupation_owner()
+        revision = (self._topology_revision, self.truth_plus._version, self.truth_minus._version,
+                    self.operator._version, self.grammar_operation._version,
+                    None if occupations is None else occupations.revision,
+                    None if trust is None else trust.revision, self.gates.revision)
+        if revision == self._effective_source:
+            return
+        from ConceptTrust import positive_length
+        def concept(identity):
+            return 1. if owner is None else positive_length(owner, identity)
+        def endpoint(kind, value):
+            if kind == RELATION:
+                return max(float(self.effective_plus[value]), float(self.effective_minus[value]))
+            if kind == SYMBOL and owner is not None and value in owner._concept_allocator.placement:
+                return concept(value)
+            return 1.
+        def write(row, operation_trust=1.):
+            scale = min(endpoint(*ref) for ref in self.references(row))
+            operator = int(self.operator[row])
+            if operator != -1:
+                scale = min(scale, concept(operator))
+            scale = min(scale, operation_trust)
+            left, right = self.references(row)
+            named = (owner is not None and left[0] == right[0] == SYMBOL
+                     and left[1] in owner._concept_allocator.named_identities.get(right[1], ()))
+            operation = int(self.grammar_operation[row])
+            name = None if operation == -1 else self.operation_catalog[operation]
+            scale = min(scale, self.gates.cap(named=named, operation=name))
+            self.effective_plus[row] = self.truth_plus[row] * scale
+            self.effective_minus[row] = self.truth_minus[row] * scale
+        rows = self.relation_order[:len(self)].tolist()
+        # Occupation distributions use denotation to select an order. Native
+        # named/membership pairs have no grammar factor: make those independent
+        # authorities available before asking the categorizer for its factors.
+        from PartsOfSpeech import FIXED_OPERATIONS
+        self._primitive_evidence = {row for row in rows
+            if (int(self.grammar_operation[row]) == -1 or
+                self.operation_catalog[int(self.grammar_operation[row])] in FIXED_OPERATIONS)
+            and all(kind != RELATION for kind, _ in self.references(row))}
+        self._refreshing_effective = True
+        try:
+            for row in self._primitive_evidence:
+                write(row)
+            # Empty banks keep their declared start. Opening is an authority
+            # read over live rows, never a construction-time side effect.
+            if rows and not all(self.gates.open.values()):
+                for name in self.gates.names:
+                    if self.gates.open[name]:
+                        continue
+                    measured = self.gates.measurements(owner, occupations)[name]
+                    if self.gates.advance(name, measured):
+                        self._effective_source = None
+                        # A newly admitted name can change the categorizer's
+                        # order selection for the next measurement/factor.
+                        for row in self._primitive_evidence:
+                            write(row)
+            factors = {}
+            for row in rows:
+                operation = int(self.grammar_operation[row])
+                if operation != -1 and operation not in factors:
+                    if occupations is None:
+                        raise ValueError('relation operation has no loaded occupation owner')
+                    factors[operation] = occupations.operation(self.operation_catalog[operation])['trust']
+            for row in rows:
+                if row not in self._primitive_evidence:
+                    write(row, factors.get(int(self.grammar_operation[row]), 1.))
+        finally:
+            self._refreshing_effective = False
+        self._effective_source = (*revision[:-2], None if trust is None else trust.revision, self.gates.revision)
+
+    @property
+    def effective_revision(self):
+        self.refresh_effective()
+        return (id(self), self.effective_plus._version, self.effective_minus._version)
+
+    def evidence(self, row):
+        """The single authority read: effective support and counter-evidence."""
+        if not self.contains(row):
+            raise IndexError('unavailable relation')
+        if self._refreshing_effective and row not in self._primitive_evidence:
+            raise ValueError('operation occupation depends cyclically on learned relation authority')
+        self.refresh_effective()
+        return self.effective_plus[row], self.effective_minus[row]
 
     @property
     def symbol_revision(self):
@@ -103,7 +297,7 @@ class LTM1(nn.Module):
         return tuple(zip(self.ref_kinds[int(row)].tolist(), self.refs[int(row)].tolist()))
 
     def _index(self):
-        version = (id(self.refs), self.refs._version, self.ref_kinds._version, len(self))
+        version = (id(self.refs), self.refs._version, self.ref_kinds._version, self.operator._version, len(self))
         if self._index_version == version:
             return
         pairs, parts, wholes, refs = {}, {}, {}, {}
@@ -114,7 +308,10 @@ class LTM1(nn.Module):
             pairs[left, right] = row
             parts.setdefault(right, []).append(left)
             wholes.setdefault(left, []).append(right)
-            for ref in {left, right}:
+            dependencies = {left, right}
+            if int(self.operator[row]) != -1:
+                dependencies.add((SYMBOL, int(self.operator[row])))
+            for ref in dependencies:
                 refs.setdefault(ref, []).append(row)
         self._pairs, self._parts, self._wholes, self._references = pairs, parts, wholes, refs
         self._index_version = version
@@ -155,6 +352,8 @@ class LTM1(nn.Module):
             if row in seen:
                 continue
             seen.add(row)
+            if int(self.operator[row]) != -1:
+                references.add((SYMBOL, int(self.operator[row])))
             for reference in self.references(row):
                 references.add(reference)
                 if reference[0] == RELATION:
@@ -165,12 +364,18 @@ class LTM1(nn.Module):
 
     @torch.no_grad()
     def add(self, part, whole, *, ref_kinds=(SYMBOL, SYMBOL), truth_plus=0., truth_minus=0.,
-            when=None, where=None, surprise=-1., witness=True, symbol=None):
+            when=None, where=None, surprise=-1., witness=True, symbol=None,
+            operator=None, grammar_operation=None):
         left, right = self.reference(part, ref_kinds[0]), self.reference(whole, ref_kinds[1])
         if (SYMBOL, NULL_CONCEPT) in (left, right):
             raise ValueError('a null-concept cannot be a relation endpoint')
         if any(not math.isfinite(float(x)) or not 0 <= float(x) <= 1 for x in (truth_plus, truth_minus)):
             raise ValueError('relation evidence has two independent poles in [0, 1]')
+        if operator is not None and (type(operator) is not int or operator == 0 or operator < -1):
+            raise ValueError('relation operator must be a word identity or -1')
+        if grammar_operation is not None and (type(grammar_operation) is not int
+                or not -1 <= grammar_operation < len(self.operation_catalog)):
+            raise ValueError('relation operation must index the loaded catalogue or be -1')
         if not math.isfinite(float(surprise)) or not (surprise == -1. or 0. <= surprise <= 1.):
             raise ValueError('relation surprise must be unknown (-1) or in [0, 1]')
         bands = {}
@@ -184,7 +389,12 @@ class LTM1(nn.Module):
             if kind == RELATION and not self.contains(value):
                 raise ValueError('relation child must exist before its parent')
         row = self.find(left, right)
+        self._sort()
         new_row = row is None
+        if row is not None and operator is not None and int(self.operator[row]) != operator:
+            raise ValueError('one tagged relation cannot have different lexical operators')
+        # The first composition owns this provenance tag. Later closes merge
+        # their poles without replacing that origin (including a cleared tag).
         if row is None:
             if symbol is not None:
                 row = int(symbol)
@@ -211,7 +421,11 @@ class LTM1(nn.Module):
                 raise RuntimeError('a live relation cannot be reassigned')
             self.refs[row] = self.refs.new_tensor((left[1], right[1]))
             self.ref_kinds[row] = self.ref_kinds.new_tensor((left[0], right[0]))
+            self.relation_order[len(self)] = row
             self.count += 1
+            self._order_revision = self._topology_revision
+            self.operator[row] = -1 if operator is None else operator
+            self.grammar_operation[row] = -1 if grammar_operation is None else grammar_operation
             if right[0] == SYMBOL and (left[0] == SYMBOL or right[1] in getattr(self, '_class_rows', ())):
                 self._symbol_epoch += 1
         elif symbol is not None and int(symbol) != row:
@@ -246,8 +460,10 @@ class LTM1(nn.Module):
         if bool((erase & self.ref_kinds[:, 1].eq(SYMBOL)).any()):
             self._symbol_epoch += 1
         for name in self.columns:
-            getattr(self, name)[erase] = -1 if name in ('refs', 'surprise') else 0
+            getattr(self, name)[erase] = -1 if name in ('refs', 'surprise', 'operator', 'grammar_operation') else 0
         self.count.fill_(len(indices))
+        self._sort()
+        self.refresh_effective()
 
     def remove(self, part, whole):
         row = self.find(part, whole)
@@ -295,6 +511,9 @@ class LTM1(nn.Module):
                 raise ValueError('invalid relation checkpoint version or count')
         if int(state.get(prefix + 'layout_version', -1)) != VERSION or prefix + 'ref_kinds' not in state:
             raise ValueError('unsupported LTM1 layout checkpoint version; regenerate pre-layout memories')
+        if prefix + '_extra_state' not in state:
+            raise ValueError('LTM1 checkpoint requires gate state; regenerate pre-gate memories')
+        self._check_extra_state(state[prefix + '_extra_state'])
         refs, kinds = state.get(prefix + 'refs'), state[prefix + 'ref_kinds']
         if refs is None or refs.shape != self.refs.shape or kinds.shape != self.ref_kinds.shape:
             raise ValueError('LTM1 checkpoint capacity differs from construction')
@@ -335,7 +554,7 @@ class LTM1(nn.Module):
             value = state.get(prefix + name)
             if value is None or value.shape != getattr(self, name).shape or value.dtype != getattr(self, name).dtype:
                 raise ValueError('relation checkpoint column differs from construction')
-        for name in ('truth_plus', 'truth_minus'):
+        for name in ('truth_plus', 'truth_minus', 'effective_plus', 'effective_minus'):
             values = state[prefix + name]
             if not bool(torch.isfinite(values).all() & (values >= 0).all() & (values <= 1).all()):
                 raise ValueError('invalid restored relation evidence')
@@ -346,7 +565,28 @@ class LTM1(nn.Module):
             raise ValueError('invalid restored relation surprise')
         if bool((state[prefix + 'access_count'] < 0).any()):
             raise ValueError('invalid restored relation access count')
+        operators = state[prefix + 'operator']
+        if bool(((operators < -1) | (operators == 0)).any()):
+            raise ValueError('invalid restored relation operator')
+        operations = state.get(prefix + 'grammar_operation')
+        if (operations is None or operations.shape != self.grammar_operation.shape or operations.dtype != torch.long
+                or bool(((operations < -1) | (operations >= len(self.operation_catalog))).any())):
+            raise ValueError('invalid restored grammar operation catalogue index')
+        order = state.get(prefix + 'relation_order')
+        if order is None or order.shape != self.relation_order.shape or order.dtype != torch.long:
+            raise ValueError('relation order differs from construction')
+        count = int(occupied.sum())
+        ordered = order[:count].tolist()
+        if set(ordered) != set(occupied.nonzero().flatten().tolist()) or len(set(ordered)) != count or bool(order[count:].ne(-1).any()):
+            raise ValueError('invalid restored relation order')
+        before = set()
+        for row in ordered:
+            if any(k == RELATION and v not in before for k, v in zip(kinds[row].tolist(), refs[row].tolist())):
+                raise ValueError('restored relation order must put parts before wholes')
+            before.add(row)
         super()._load_from_state_dict(state, prefix, *args, **kwargs)
+        self._order_revision = self._topology_revision
+        self._effective_source = None
         self._index_version = None
         self._symbol_epoch += 1
         self._index()

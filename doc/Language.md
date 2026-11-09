@@ -188,6 +188,7 @@ order; what raises order is symbolization, not sigma
 > lowering). So `lift` will lower rather than keep the subject's order.
 > Parts of speech come only from positions and occupations, never from
 > definitions ([reconstruction spec §10](plans/2026-10-21-reconstruction-reads-the-bind.md#10-decided-alec-2026-10-21-later-parts-of-speech-only-from-the-grammar)).
+> **Amended 2026-11-08:** formal arguments are explicit higher-order concepts. Their members come from kept grammar participation and their geometry learns through the general bidirectional hierarchy; see [Learned argument concepts](#learned-argument-concepts).
 
 > **SS-analysis vs CS-execution.** `SymbolSubSpace.compose` is the
 > SS-side *analysis* stage (it selects the per-space hard rule dict
@@ -606,45 +607,22 @@ See [chooser tests](../test/test_chooser_architecture.py) and
 [review probes](../test/test_thought_review.py).
 
 *Moved to [DevelopmentHistory](DevelopmentHistory.md#soft-operator-superposition) (2026-10-30): "Soft Operator Superposition".*
-### Distributional parts of speech
+### Learned argument concepts
 
-The [parts-of-speech specification](specs/2026-10-18-parts-of-speech.md),
-especially §2a–b, governs. `LanguageSpace.parts_of_speech` stores sparse counts
-by word identity on the forms ladder. Every formal input and output of every
-compose operation is a fixed argument class, including distinct semantic
-faces and both outputs of transpose. A kept operation contributes one count
-per word carried on an input or output. Annotation operands never contribute evidence.
+The [parts-of-speech specification](specs/2026-10-18-parts-of-speech.md) is amended by [item 2.3 §29.2 and §30](plans/2026-11-05-item2-3-trust.md#30-argument-concepts-and-general-hierarchical-context-codex-2026-11-08). `LanguageSpace.parts_of_speech` maps every declared formal input and output to a prebuilt native concept, including distinct semantic faces and both outputs of transpose. Word concepts have native order 0, these argument concepts order 1, and classes over arguments order 2. Declaration gives each argument a seat and a zero vector, radius and view count; it supplies no learned evidence.
 
-A word's distribution is its normalized counts; an unseen word has the
-uniform distribution. Its single label is the argmax, recomputed on every
-count change (ties use argument order). The chooser adds the sum of the input
-argument probabilities directly to the operation score, with coefficient one.
-Output classes receive evidence but are not read. Carried word distributions
-travel with the STM through composition, transposition and trial forks.
-Count updates occur only after the paired trials select their kept reading.
-Symmetric intersection, union, conjunction and disjunction retain every
-operand's words; not/non retain their operand's words. Headed operations
-retain the declared head operand's words, including lower/definite and their
-unary faces and verb. Adverb declares its modified phrase (argin1) as head.
-Clause-forming operations retain none, including unary ask and generic.
-Thus both black and cat in `lower(a, intersection(black, cat))` occupy
-lower's second argument and travel with the selected description operand;
-there is no lexical selector that removes black. Their distributions add in
-the chooser, one direct term per carried lexical occurrence, without phrase
-renormalization. Transpose swaps both word carriers. No first-word fallback
-is used. Output typing remains deferred.
+Each carried lexical occurrence in a kept application supplies a member view through `ConceptHierarchy.observe_member`. Members teach the same centroid and view-and-agreement confidence as other explicit classes. Shared words can belong to several arguments and bring their directions together. The general concept hierarchy also conditions members from their higher-order context, so word meaning and class meaning influence one another. Parts of speech have special construction and grammar use only; their learning and hierarchical feedback are ordinary concept mechanisms. Operator names are not inserted into lexical context. Annotation operands and unkept trials supply no member views.
 
-The fixed argument classes have no trained prototypes or merge rule.
-Cosines between their occupant distributions are reported as collapse.
-The old category VQ, context feature block and per-operator priors are retired.
-Checkpoint migration drops those tensors and feature columns explicitly,
-retaining the remaining learned coordinates exactly. A noun-prior table of
-word concepts tied to individual columns is measurement only.
+The chooser's existing argument carrier reads candidate coverage of the radius-bearing class vector by a word's unit meaning direction. Scores add once per carried occurrence, without normalization or exclusive labels. Zero classes score zero. Output arguments receive member views; the chooser reads inputs. Operation authority is the minimum input separability times view evidence; the fixed and identity-mechanics exemptions remain one. Empty measurable arguments supply zero readiness. A form-only chart supplies neutral operation authority and undefined clause readiness. Kept-use counts remain telemetry. Centroids refresh once at the kept boundary; only observed members and their ancestors receive contextual conditioning.
+
+Word flow is unchanged: symmetric intersection, union, conjunction and disjunction retain every operand's words; not/non retain their operand's words. Headed operations retain the declared head operand's words, including lower/definite and their unary faces and verb. Adverb declares argin1 as head. Clause-forming operations retain none, including unary ask and generic. Thus both black and cat in `lower(a, intersection(black, cat))` occupy lower's second argument and travel with the description. Transpose swaps both carriers; repeated occurrences remain repeated contributions. Output typing remains deferred.
+
+Argument vectors, memberships, orders and confidence use ordinary native concept checkpoint storage. Argument schema 4 saves the grammar-to-concept mapping and scalar uses; old occupation-count checkpoints require producer replay. Geometric cosines remain reported for inspection. The retired category VQ and probability/argmax table have no replacement side bank. The corpus controls the teaching sequence: word concepts, object concepts and early simple clauses/questions, then further operations; nouns and verbs precede the other parts of speech. The NP sequence below is the retained lesson-specific record, governed by the current curriculum specification.
 
 The NP curriculum scopes the existing operation validity masks to STOP,
 lower, definite and intersection. Reference-expanded candidates remain
 unchanged. The bracket lesson labels the student's own visited states and
-teaches operation choice; it never supplies occupation evidence.
+teaches operation choice; it never supplies member views.
 The curriculum introduces one unknown at a time, against material already
 established by a previous lesson. The first NP lesson teaches one determiner
 construction over stage-3 words; the other determiner and adjective
@@ -912,3 +890,5 @@ adaptation remain separate work.
 at the completed answer boundary; the normal linguistic derivation adapter,
 sense selection and paraphrase realization remain separate work. See
 [Query phases](QueryPhases.md).
+
+The learned-argument read is amended by trust §31.3: candidate coverage replaces cosine gain. Classes outside the shared 15-degree contiguity angle compete for their members; fit-weighted strict wins times view evidence determine definiteness. Conditioning follows kept participation at one boundary refresh. Class radius retains the existing coverage-agreement rule. A form-only chart contributes neutral operation authority and no clause-gate measurement.

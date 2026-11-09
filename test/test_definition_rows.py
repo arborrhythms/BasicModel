@@ -20,6 +20,7 @@ def admit(m, text):
     word, obj = pair[:2]
     if cs.interpret.no_object(word):
         obj = witness_object(cs, word)
+    assert cs.definitions.row(word, obj) is not None
     return word, obj
 
 
@@ -145,16 +146,23 @@ def test_31_read_forms_wait_for_object_testimony_without_changing_the_configurat
     cs, store = m._concept_owner(), m.symbolSpace.ltm_store
     for form in ('hi', 'no', 'we', 'go'):
         word = cs.definitions.word(form=form)
-        if word is None:
+        if word is not None and cs.definitions.objects(word):
+            obj, = cs.definitions.objects(word)
+            assert 'definition' in store.part_row(cs.definitions.row(word, obj))['readings']
+            assert cs._csw_row_of(obj) is not None
+        elif word is not None:
+            from ConceptTrust import definition_threshold
+            obj, = cs.interpret.remembered_objects(word)
+            row = store.parts.find(obj, word)
+            assert 'definition' in store.part_row(row)['readings']
+            assert float(store.parts.evidence(row)[0]) < definition_threshold()
+            assert cs._csw_row_of(word) is not None
+        else:
             word, = (word for word, value in cs.interpret._pending.items()
                      if form in value['forms'])
             assert cs.interpret.no_object(word)
             assert cs.interpret.forward(word) == word
             assert cs._csw_row_of(word) is not None
-        else:
-            obj, = cs.definitions.objects(word)
-            assert 'definition' in store.part_row(cs.definitions.row(word, obj))['readings']
-            assert cs._csw_row_of(obj) is not None
     assert path.read_bytes() == before
 
 

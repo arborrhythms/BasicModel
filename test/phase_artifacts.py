@@ -50,15 +50,16 @@ class PhaseRegistry:
     def resolve(self, path):
         return (self.root / path).resolve()
 
-    def require(self, phase):
+    def require(self, phase, *, strict=False):
         if phase not in self.phases:
             pytest.fail(f'unknown certificate phase: {phase}', pytrace=False)
         artifact = self.phases[phase]
         if artifact is None:
-            pytest.skip(f'phase artifact absent: {phase} (no producing lesson registered)')
+            (pytest.fail if strict else pytest.skip)(
+                f'phase artifact absent: {phase} (no producing lesson registered)')
         path = self.resolve(artifact.path)
         if not path.is_file():
-            pytest.skip(f'phase artifact absent: {phase} ({artifact.path})')
+            (pytest.fail if strict else pytest.skip)(f'phase artifact absent: {phase} ({artifact.path})')
         with path.open('rb') as stream:
             digest = hashlib.file_digest(stream, 'sha256').hexdigest()
         if digest != artifact.sha256:
@@ -78,6 +79,44 @@ def certificate_phase(item):
     return marker.args[0]
 
 
+def trained_phase(item):
+    marker = item.get_closest_marker('trained')
+    if marker is None:
+        return None
+    if len(marker.args) != 1 or marker.kwargs or not isinstance(marker.args[0], str):
+        raise ValueError('trained marker requires one lesson phase name')
+    return marker.args[0]
+
+
+def pytest_configure(config):
+    config.addinivalue_line('markers',
+        'trained(name): learned behavior requiring RUN_TRAINED=1 and a registered phase artifact')
+
+
+def pytest_collection_modifyitems(items):
+    for item in items:
+        phase = trained_phase(item)
+        if phase is not None:
+            item.user_properties.append(('trained_phase', phase))
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_runtest_setup(item):
+    phase = trained_phase(item)
+    if phase is not None:
+        if os.environ.get('RUN_TRAINED') != '1':
+            pytest.skip(f'trained phase {phase}: requires learned behavior; set RUN_TRAINED=1')
+        PhaseRegistry.read(os.environ.get('BASICMODEL_PHASE_ARTIFACTS', REGISTRY)).require(phase, strict=True)
+
+
+def pytest_terminal_summary(terminalreporter):
+    from collections import Counter
+    counts = Counter(dict(report.user_properties).get('trained_phase')
+                     for report in terminalreporter.stats.get('skipped', ()))
+    for phase, count in sorted((phase, count) for phase, count in counts.items() if phase):
+        terminalreporter.write_line(f'Skipped trained tests: {phase}: {count}')
+
+
 @pytest.fixture
 def phase_registry():
     return PhaseRegistry.read(os.environ.get('BASICMODEL_PHASE_ARTIFACTS', REGISTRY))
@@ -85,10 +124,10 @@ def phase_registry():
 
 @pytest.fixture
 def phase_artifact(request, phase_registry):
-    phase = certificate_phase(request.node)
+    phase = certificate_phase(request.node) or trained_phase(request.node)
     if phase is None:
         pytest.fail('artifact restoration requires a phase marker', pytrace=False)
-    return phase_registry.require(phase)
+    return phase_registry.require(phase, strict=trained_phase(request.node) is not None)
 
 
 @pytest.fixture(autouse=True)

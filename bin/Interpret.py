@@ -285,6 +285,7 @@ class InterpretLayer(GrammarLayer):
             cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
             cs._csw_concept_row(0, word)
             self._pending[word] = dict(forms=() if form is None else (form,), parts=(parts,), wholes=wholes)
+            cs.similarity_codebook.trust.remember(word, cs.similarity_codebook.lookup_rows(cs._csw_row_of(word)))
             self._description_revision += 1
             if form is not None:
                 cs.bind_word_concept(form, word)
@@ -315,6 +316,7 @@ class InterpretLayer(GrammarLayer):
         cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
         cs._csw_concept_row(0, word)
         self._pending[word] = dict(forms=() if form is None else (form,), parts=(parts,), wholes=wholes)
+        cs.similarity_codebook.trust.remember(word, cs.similarity_codebook.lookup_rows(cs._csw_row_of(word)))
         self._description_revision += 1
         if form is not None:
             cs.bind_word_concept(form, word)
@@ -366,7 +368,7 @@ class InterpretLayer(GrammarLayer):
         self._identity_revision = identity.revision
 
     @torch.no_grad()
-    def define(self, word, obj, *, description=None):
+    def define(self, word, obj, *, description=None, trust=None, evidence=None):
         """The sole writer of word DEF object. Operands name, never copy, codes."""
         from Spaces import _concept_alloc_of
         cs, word, obj = self.owner, int(word), int(obj)
@@ -380,10 +382,17 @@ class InterpretLayer(GrammarLayer):
             return index.row(word, obj)
         if word == obj or any(cid not in alloc.placement or cid in alloc.retired for cid in (word, obj)):
             raise ValueError('definition requires distinct, live native identities')
-        row = index.row(word, obj)
-        if row is not None:
+        pair = ((1. if trust is None else float(trust), 0.) if evidence is None
+                else tuple(float(pole) for pole in evidence))
+        import math
+        if len(pair) != 2 or any(not math.isfinite(pole) or not 0 <= pole <= 1 for pole in pair):
+            raise ValueError('definition evidence must be two poles in [0, 1]')
+        row = store.find(obj, word)
+        if row is not None and obj in alloc.named_identities.get(word, ()):
             alloc.named_identities.setdefault(word, set()).add(obj)
-            store.add(obj, word, truth_plus=1.)
+            store.add(obj, word, truth_plus=pair[0], truth_minus=pair[1])
+            store.clear_operation(row)
+            index.add(row)
             return row
         self._preflight(inventory=False, word=word)
         description = description or self._pending.get(word) or index.description(word)
@@ -398,7 +407,8 @@ class InterpretLayer(GrammarLayer):
         # A definition is an inner semantic relation. Its containing sentence,
         # when present, owns the percept clock stamp.
         alloc.named_identities.setdefault(word, set()).add(obj)
-        row = store.add(obj, word, truth_plus=1.)
+        row = store.add(obj, word, truth_plus=pair[0], truth_minus=pair[1])
+        store.clear_operation(row)
         index.add(row)
         self._pending.pop(word, None)
         self._description_revision += 1

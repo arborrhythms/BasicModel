@@ -59,12 +59,15 @@ def test_one_presentation_updates_detached_context_at_the_close():
         derived = model._concept_owner().similarity_codebook.mereology
         assert derived.context_width == 128 and derived.meaning_pairs == 64 and derived.meaning_ones == 3
         context = derived.context_audit()
-        assert len(context) == 4
+        argument_rows = {model._concept_owner()._csw_row_of(cid) for cid in model._concept_owner()._concept_allocator.formal_arguments.values()}
+        assert len([item for item in context if item["row"] not in argument_rows]) == 4
         for record in context:
-            assert record['placement_witnesses'] == 2 and record['direction_norm'] == pytest.approx(1.)
+            assert record['direction_norm'] == pytest.approx(1.)
+            if record['row'] not in argument_rows:
+                assert record['placement_witnesses'] == 2
             assert not derived.placement.requires_grad
         derived.begin_forward()
-        assert len(derived.context_audit()) == 4 and not list(derived.parameters())
+        assert len(derived.context_audit()) == len(context) and not list(derived.parameters())
     finally:
         model.End(); model.symbolSpace.soft_reset()
 

@@ -2,6 +2,7 @@
 from test_ltm_consolidation import _make_model_provisioned, _SERIAL_CONFIG
 from test_clause_storage import clause_store, part_clause
 from ClauseRow import Clause
+from part_fixtures import stored_pair
 import pytest
 
 
@@ -37,12 +38,14 @@ def test_truthset_asserts_only_outer_ends_including_deduplicated_roots():
     child_row = ('sym', store.parts.find(1, 2))
     assert store.row(child_row)['kind'] == 'unverified'
     assert store.row(child_row)['evidence'] == (0., 0.)
-    assert store.row(parent)['evidence'] == pytest.approx((.7, 0.))
+    assert stored_pair(store,parent) == pytest.approx((.7, 0.))
+    assert store.row(parent)['evidence'] == (0., 0.)
     with store.clause_assertions(trust=.8, origin=store.ORIGIN_USER,
                                 text='cats are animals') as rows:
         assert store.write_clause(child, evidence=(.8, 0.)) == child_row
     assert rows == [child_row] and len(store.parts) == 2
     assert store.row(child_row)['evidence'] == pytest.approx((.8, 0.))
+    assert store.row(parent)['evidence'] == pytest.approx((.56, 0.))
 
 
 def test_external_assertion_context_cannot_declare_a_kind():

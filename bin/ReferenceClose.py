@@ -1294,6 +1294,8 @@ class ReferenceClose(nn.Module):
                 else:
                     uses.append((reference, occurrence, kind, joined_value, reading, where))
             elif isinstance(reference, int) and reference in alloc.individuals:
+                from ConceptTrust import observe
+                observe(self.components.owner, reference, node.point)
                 kind = self._derivation_symbol(occurrence)
                 if reading is None and (len(item['leaves']) == 1 or
                         'word' not in alloc.symbol_types.get(kind, ())):

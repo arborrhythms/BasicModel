@@ -28,7 +28,9 @@ def test_closing_audit_survives_bank_changes_and_checkpoint(monkeypatch, relativ
     torch.testing.assert_close(pair['residual'], target-logits.sigmoid())
     assert pair['source_occurrences'] == (f.store.occurrence_of(source),)
     assert pair['surprise'] == pytest.approx(comparison.surprise)
-    assert len(f.store.parts.columns) == 7  # tagged references and percept, no separate clock
+    # The effective pair, lexical operator and grammar operation columns
+    # are preallocated beside the original tagged references and percept.
+    assert len(f.store.parts.columns) == 11
     # The mutable current bank is not the historical target's owner.
     with torch.no_grad():
         f.cs.similarity_codebook.W.fill_(.25)

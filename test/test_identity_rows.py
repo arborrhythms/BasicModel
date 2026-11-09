@@ -13,7 +13,7 @@ from test_reference_close import fixture, close, form_exposure
 def native_close(resolver, content, predicate, *, document, sentence):
     """Supply the explicit native individual these bank certificates examine."""
     from types import SimpleNamespace
-    from IdentityRows import mint
+    from test_reference_close import known_concept as mint
     identity = mint(resolver.components.owner, content)
     assert identity is not None
     frame = SimpleNamespace(symbol_ids=(identity,), row_id=-1, activations=())

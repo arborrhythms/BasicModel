@@ -1,5 +1,6 @@
 """Declared operation identity survives a catalogue edit and its aliases."""
 import torch
+import pytest
 
 from GrammarCheckpoint import align, align_optimizer, catalog
 from Language import OperationSelectionLayer
@@ -43,21 +44,19 @@ def test_operation_parameters_and_optimizer_follow_identity_across_removed_posit
     assert unchanged.keys() == current.state_dict().keys()
 
 
-def test_occupation_migration_retains_counts_by_declared_argument():
+def test_count_checkpoint_and_changed_argument_catalogue_require_explicit_replay():
     from PartsOfSpeech import PartsOfSpeech
-    from IndependentComponents import _unpack_state
+    from IndependentComponents import _pack_state, _unpack_state
     previous, current = host(('first',)), host(('first',))
     for model, arguments in ((previous, ('first_argin1', 'removed_argin1')),
                              (current, ('first_argin1', 'new_argin1'))):
         model.language = torch.nn.Module()
         model.language.parts_of_speech = PartsOfSpeech(arguments)
-    previous.language.parts_of_speech.add(17, 'first_argin1', previous.language.parts_of_speech.order_of(17))
-    previous.language.parts_of_speech.add(17, 'first_argin1', previous.language.parts_of_speech.order_of(17))
-    previous.language.parts_of_speech.add(17, 'removed_argin1', previous.language.parts_of_speech.order_of(17))
-    migrated, drift, _ = align(current, previous.state_dict(), catalog(previous))
+    with pytest.raises(ValueError, match='catalogue'):
+        align(current, previous.state_dict(), catalog(previous))
     key = 'language.parts_of_speech._extra_state'
-    assert _unpack_state(migrated[key])['counts'] == {17: {('first_argin1', -1): 2}}
-    assert drift[key]['retired'] == ['removed_argin1']
-    current.load_state_dict(migrated, strict=True)
-    assert current.language.parts_of_speech.part_of_speech(17) == 'first_argin1'
-    assert current.language.parts_of_speech.distribution(17) == [1., 0.]
+    saved = current.state_dict()
+    saved[key] = _pack_state(dict(version=3, arguments=current.language.parts_of_speech.arguments,
+        counts={17: {('first_argin1', -1): 2}}, uses={'first':2}))
+    with pytest.raises(ValueError, match='replay its producer'):
+        align(current, saved, catalog(current))

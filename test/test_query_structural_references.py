@@ -34,6 +34,7 @@ def _request():
         torch.stack((torch.ones(8), registry._payload(vp), torch.ones(8))),
         torch.ones(3, dtype=torch.bool),
         role_refs=(('sym', inner), vp, ('sym', right)))
+    alloc.parts.refresh_effective()  # Materialize the derived read before the no-write snapshot.
     return cs, registry, request, witness
 
 

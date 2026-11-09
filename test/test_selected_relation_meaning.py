@@ -14,7 +14,7 @@ from test_query_vp_boundaries import _world
 
 
 def _program_owner(monkeypatch, *, face="part", interrogative=False):
-    cs, grammar, _legacy_registry, a, b, _context = _world()
+    cs, grammar, _legacy_registry, a, b, _context = _world(capacity=160)
     with torch.no_grad():
         cs.similarity_codebook.W.copy_(cs.similarity_codebook.W.sigmoid())
     registry = GrammaticalThoughtRegistry.install(cs, grammar)

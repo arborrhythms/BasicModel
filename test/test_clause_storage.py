@@ -37,7 +37,8 @@ def test_both_evidence_poles_survive_checkpoint_separately_from_neither():
 
 def test_relation_has_no_kind_column_or_catch_all():
     from LTM1 import LTM1
-    assert LTM1.columns == ('refs','ref_kinds','truth_plus','truth_minus','access_count','surprise','percept')
+    assert LTM1.columns == ('refs','ref_kinds','truth_plus','truth_minus','access_count','surprise','percept',
+                           'effective_plus','effective_minus','operator','grammar_operation')
     assert not any(name.startswith('REL_') for name in vars(LTM0))
 
 
@@ -125,9 +126,9 @@ def test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_
     assert store.row(row)['refs'].tolist() == [4,child_row[1]]
     assert store.write_clause(child, trust=.8, evidence=(.8,0.)) == child_row
     assert len(store) == 0 and len(store.parts) == 2
-    assert store.row(child_row)['evidence'] == pytest.approx((.8,0.))
+    assert store.row(child_row)['evidence'] == pytest.approx((.64,0.))
     store.parts.truth_plus[row[1]] = 0
-    assert store.row(child_row)['evidence'] == pytest.approx((.8,0.))
+    assert store.row(child_row)['evidence'] == pytest.approx((.64,0.))
 
 
 def test_second_order_implication_names_two_part_symbols():
@@ -185,7 +186,7 @@ def test_negation_contributes_negative_evidence_without_erasing_positive():
     store.write_clause(part_clause(), trust=.8, evidence=(.8, 0.))
     store.write_clause(part_clause(polarity=False), trust=.7, evidence=(0., .7))
     assert len(store.parts) == 1
-    assert store.row(store.location(store.parts.find(1,2)))['evidence'] == pytest.approx((.8, .7))
+    assert store.row(store.location(store.parts.find(1,2)))['evidence'] == pytest.approx((.64, .49))
 
 
 def test_clause_end_state_and_evidence_checkpoint_roundtrip():

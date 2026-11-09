@@ -7493,3 +7493,7 @@ not by a passing identity lesson.
    shows the order, not only the content, is what lets one departure escape
    multi-step minima ([4.5 spec §5.3–§5.4](specs/2026-10-08-expectation-at-every-level.md)).
 
+
+### 2026-11-08: formal arguments reuse general conceptual learning
+
+Alec replaced the occupation-count/probability representation with explicit formal-argument concepts, initially zero, one native order above words. He clarified that upward member centroids and downward contextual influence belong to the general concept architecture; parts of speech have special construction and grammar use only. The implementation introduces `ConceptHierarchy` as that shared path, keeps form and meaning separate, reads operation trust from input argument radii, and leaves empty lift classes at zero gate readiness. Scalar uses remain telemetry. Schema 4 rejects count-only checkpoints for producer replay. [Item 2.3 §30](plans/2026-11-05-item2-3-trust.md#30-argument-concepts-and-general-hierarchical-context-codex-2026-11-08) and its receipt record the implementation choices, ports and validation; acceptance awaits Alec and Claude's review.

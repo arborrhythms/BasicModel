@@ -321,7 +321,10 @@ def supply_object(owner, word):
         owner.add_whole(obj, whole)
     owner._populate_concept_weights(obj, witness=(parts, wholes), word_reading=True)
     owner._csw_concept_row(0, obj)
-    owner.interpret.define(word, obj)
+    from definition_fixtures import agreeing_views
+    agreeing_views(owner, word, obj)
+    row = owner.interpret.define(word, obj)
+    assert row is not None and owner.definitions.row(word, obj) == row
     return obj
 
 

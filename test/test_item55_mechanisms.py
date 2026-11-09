@@ -516,7 +516,7 @@ def _native_step_comparison(tmp_path, monkeypatch):
                 result['reading_tokens'] = {word: (token.pending, token.symbol, token.value.clone())
                     for program in result['entries'] if program is not None
                     for word in program.word_ids.tolist()
-                    if (key := pool.token_of(('name',word))) is not None
+                    if word > 0 and (key := pool.token_of(('name',word))) is not None
                     for token in (pool.entries[key],)}
                 observed.append(result)
                 return result
@@ -553,6 +553,8 @@ def _native_step_comparison(tmp_path, monkeypatch):
                     for b, program in enumerate(programs):
                         positions = model._sentence_leaf_positions(record,b)
                         for position, word in zip(positions,program.word_ids.tolist()):
+                            if word <= 0:
+                                continue
                             pending, symbol, point = observed[0]['reading_tokens'][word]
                             assert pending and symbol is None
                             expected[b,position] = point

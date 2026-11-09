@@ -18,6 +18,8 @@ def world(*, meaning_pairs=2):
     rows = [word(owner, [(source, 1.)]) for source in (4, 7)]
     concepts = [owner.concept_id_at_row(row) for row in rows]
     owner._concept_allocator.symbol_types.setdefault(concepts[0], set()).add('word')
+    from definition_fixtures import agreeing_views
+    agreeing_views(owner, *concepts)
     values = bank.lookup_rows(rows).detach()
     occurrences = [store.occurrence_of(store.append_meaning(
         ConceptualMeaning.from_description(value), document_key='referents',

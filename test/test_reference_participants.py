@@ -21,7 +21,7 @@ def test_positive_marker_or_predicate_is_never_an_arrival_candidate(monkeypatch,
     resolver, store, atoms, words, _ = world()
     pending, _ = keep(resolver, named(atoms[0], words['x']))
     noun = Composition(atoms[0], reference=words['three'], word_id=words['three'], leaves=(2,))
-    from IdentityRows import mint
+    from test_reference_close import known_concept as mint
     marker_reference = mint(resolver.components.owner, atoms[1]) if lexical_copy else words['wrong']
     marker = Composition(atoms[1], reference=marker_reference, word_id=words['wrong'], leaves=(1,))
     x = Composition(atoms[0]*0, reference=words['x'], word_id=words['x'], leaves=(0,))
@@ -96,11 +96,15 @@ def test_ordinary_menu_uses_the_retained_argument_occupations(monkeypatch):
     owner = resolver.components.owner
     rule = SimpleNamespace(method_name='lift', surface_name=None, head_role=2,
                            rhs_symbols=('NP', 'VP'), clause_form='S', relation_kind=None)
-    from IdentityRows import mint
+    from test_reference_close import known_concept as mint
     words = dict(three=mint(owner, atoms[0]), wrong=mint(owner, atoms[1]))
-    occupations = PartsOfSpeech(('lift_argin1', 'lift_argin2'))
-    occupations.add(words['three'], 'lift_argin1', 1)
-    occupations.add(words['wrong'], 'lift_argin2', 1)
+    occupations = PartsOfSpeech(('lift_argin1', 'lift_argin2'), owner)
+    labels = {name: owner.interpret.lookup_word([120+i], (), form=name)
+              for i, name in enumerate(words)}
+    for name, word in labels.items():
+        owner.interpret.define(word, words[name])
+    occupations.add(labels['three'], 'lift_argin1')
+    occupations.add(labels['wrong'], 'lift_argin2')
     object.__setattr__(store, '_occupation_owner', weakref.ref(occupations))
     object.__setattr__(store, '_part_read_rules', (rule,))
     # Explicitly minted native identities; the predicate position in this

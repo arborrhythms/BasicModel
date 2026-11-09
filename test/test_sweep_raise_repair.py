@@ -19,7 +19,8 @@ def test_unlike_order_equality_keeps_evidence_without_a_partial_raise(mismatch_f
         equal_close(cs, store, address, word, evidence=(1., 1.))
     edge = alloc.parts.find((OCCURRENCE, other), (SYMBOL, word))
     assert edge is not None
-    assert float(alloc.parts.truth_plus[edge]) == float(alloc.parts.truth_minus[edge]) == 1.
+    assert float(alloc.parts.truth_plus[edge]) == pytest.approx(1.)
+    assert float(alloc.parts.truth_minus[edge]) == pytest.approx(1.)
     assert not alloc.raised
     assert alloc.singleton_members[word][0] == (OCCURRENCE, first)
     assert cs.interpret.forward(word) == word

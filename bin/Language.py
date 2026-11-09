@@ -12421,8 +12421,7 @@ class LanguageSpace(nn.Module):
         self.register_buffer('_free_transient_ids', torch.full((int(TheXMLConfig.space(
             'ConceptualSpace', 'mtmCapacity', default=64)),), -1, dtype=torch.long), persistent=False)
         from PartsOfSpeech import PartsOfSpeech, formal_arguments, flow_mask
-        self.parts_of_speech = PartsOfSpeech(formal_arguments(TheGrammar.rules_upward),
-            getattr(symbol_space.subspace, 'conceptualSpace', None))
+        self.parts_of_speech = PartsOfSpeech(formal_arguments(TheGrammar.rules_upward))
         self._occupation_binary_flow = tuple(flow_mask(rule) for rule in self._compose_binary_rules)
         self._occupation_unary_flow = tuple(flow_mask(rule) for rule in self._compose_unary_rules)
         if self._compose_binary_rules or self._compose_unary_rules:

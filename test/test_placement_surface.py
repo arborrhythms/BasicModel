@@ -1,6 +1,7 @@
 """Placement mechanism certificates on the layout gate-4 native-row fixture."""
 import copy
 import json
+import math
 from types import SimpleNamespace
 
 import pytest
@@ -147,8 +148,10 @@ def test_promotion_folds_form_and_takes_one_context_step(monkeypatch):
     expected = derived.placement_step(q, before_codes[positives], context[positives], before_codes[negatives])
     torch.testing.assert_close(derived.placement[row], expected)
     assert int(derived.placement_witnesses[row]) == 1
-    torch.testing.assert_close(cb.W[row,3:11], defined_code(expected,1))
-    assert cb.W[row,11:].eq(0).all()
+    radius = cb.trust.lengths[row, 0]
+    assert float(radius) == pytest.approx(1 - math.exp(-3/3))
+    torch.testing.assert_close(cb.W[row,3:11], expected * radius)
+    assert not cb.W[row,11:].any()
 
 
 def test_placement_checkpoint_is_versioned_and_fixed_capacity(monkeypatch):

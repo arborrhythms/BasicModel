@@ -620,7 +620,12 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
                 # when the dummy returns it unchanged. Field identities on
                 # the right carry working points, not relative addresses.
                 brels.append(torch.stack((own_relative,torch.zeros_like(own_relative)),-1))
-                bvalid.append(available[:,:,column] & active.any(-1)[:,None])
+                # A dummy retains the mention's order; a real field bind
+                # takes the selected chunk's order. Neither may publish an
+                # unknown order as a closed reference.
+                result_order = (orders.gather(1,newest) if column == 0 else
+                                chunk_state[STMChunks.ORDERS][:,column-1:column])
+                bvalid.append(available[:,:,column] & active.any(-1)[:,None] & (result_order >= 0))
                 case_weights.append(window.new_zeros(B,N-1,case_count,2))
             continue
         left_options = propose(window[:, :-1], identities[:, :-1], flags[:, :-1], positions[:, :-1],

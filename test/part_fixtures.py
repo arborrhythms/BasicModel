@@ -51,3 +51,13 @@ def assert_part_references(store, before):
     for row, (kinds, references) in before.items():
         torch.testing.assert_close(store.parts.ref_kinds[row], kinds, rtol=0, atol=0)
         torch.testing.assert_close(store.parts.refs[row], references, rtol=0, atol=0)
+
+
+def stored_pair(store, entry):
+    """Storage/provenance assertions select the recorded pair explicitly."""
+    if isinstance(entry, tuple):
+        assert entry[0] == 'sym' and store.parts.contains(entry[1])
+        bank, row = store.parts, entry[1]
+    else:
+        bank, row = store, entry
+    return float(bank.truth_plus[row]), float(bank.truth_minus[row])

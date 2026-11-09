@@ -22,6 +22,7 @@ def admit_training_forms(model, texts, answers=(), *, split='train'):
     if split != 'train':
         raise ValueError('form admission accepts training data only')
     from Meronomy import percept_spans
+    from WordSurfaces import is_lexical_form
     owner=model._concept_owner()
     identity=model.perceptualSpace.percept_store.identity
     forms=set()
@@ -32,6 +33,8 @@ def admit_training_forms(model, texts, answers=(), *, split='train'):
     admitted=[]
     for raw in sorted(forms):
         parts=identity.admit(raw)
+        if not is_lexical_form(raw):
+            continue
         word=owner.interpret.lookup_word(parts,(),form=raw,word_reading=False)
         if word is None:
             raise RuntimeError(f'training form admission failed: {raw!r}')

@@ -62,8 +62,8 @@ def _signature(semantic_id, *roles):
         THOUGHT_EXECUTORS[semantic_id], tuple(roles))
 
 
-def _world():
-    cs = _cs()
+def _world(capacity=64):
+    cs = _cs(nS=capacity)
     grammar = Grammar()
     grammar.load_from_grammar_file('complete.grammar')
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
