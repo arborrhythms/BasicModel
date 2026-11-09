@@ -1548,3 +1548,5 @@ round, unless Alec moves it to item 0); the sentence-82 capture rule at `Referen
 
 **Update 2026-11-08 (yes admission's home):** Alec: "Yes, round 2". The supplied `yes` admission is
 built in 2.0 round 2 (§11.7 item 7), not item 0; the §11.7 text has no open assumption.
+
+Landed as 6becc3dc47c88d787406ff94f1a4ba6acbf95eec, 2026-11-08

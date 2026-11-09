@@ -572,3 +572,5 @@ Testing: fast checks only until the implementation is finished. Each item's dire
 ~~~
 
 **Confirmed (Alec, 2026-11-08): round 2 is the home of the supplied `yes` admission** ("Yes, round 2"), not item 0. The assumption stated in §11.7 item 7 is discharged; §7's "pending Alec's confirmation of that home over item 0" is closed. The §11.7 text stands as final with no open assumption.
+
+Landed as 6becc3dc47c88d787406ff94f1a4ba6acbf95eec, 2026-11-08
