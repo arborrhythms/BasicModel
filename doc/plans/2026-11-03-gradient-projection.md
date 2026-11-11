@@ -5446,3 +5446,5 @@ The six order repairs are what the texts asked for: each failure taken to its pr
 **Documents.** The 19 statements that the documentation pass of this day marked "working tree, not landed" (Architecture, GradientFlow, FutureWork, STM, Philosophy, Reasoning, the accessible-mind specification) now read "accepted 2026-11-11".
 
 **The landing is folded into the next build text** (§13.2). That text is the whole-path round's: [specification](2026-11-11-one-pair-per-stage.md) §8, whose steps 1 to 3 land round 7.
+
+Landed as 984a75b20e88d5b052011adb31ccd90d28234519, 2026-11-11
