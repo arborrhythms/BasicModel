@@ -172,7 +172,7 @@ def _ensure_base(store, *, first=False):
                     previous.setdefault(row, value)
             for row, value in previous.items():
                 for name in bank.columns:
-                    base[name][row] = (-1 if name in ('refs','surprise','operator','grammar_operation') else 0) if value is None else value[name]
+                    base[name][row] = (-1 if name in ('refs','surprise','operator_reference','operation_seat') else 0) if value is None else value[name]
             base['count'].fill_(int(base['ref_kinds'][:, 0].ne(0).sum()))
         bank.epoch_start['_base'] = base
     return True
@@ -544,6 +544,9 @@ def epoch(model):
     # Restore intentional setup only after its occurrence rows are back.
     for item in owners:
         item.mtm.restore(item._epoch_mtm, device=item.similarity_codebook.W.device)
+        # The driver resets its threaded sentence tensors; the shared STM
+        # stores own recent ideas and thoughts whose references expire here.
+        item.stm.clear()
     for alloc, cid, order, records in witnesses:
         expired = [(role, ref) for role, ref in records
                    if ref[1] in (removed if ref[0] == 'occ' else withdrawn[id(alloc.parts)])]
@@ -599,11 +602,6 @@ def epoch(model):
             resolver.last_audit = ()
             for name in ('last_verb_observation', 'last_modal_observation'):
                 resolver.__dict__.pop(name, None)
-        # Knowing's eager carrier can retain an occurrence after its thought
-        # history has gone. Sentence STM itself is initialized by the driver.
-        carrier = getattr(item, 'subspace', None)
-        if carrier is not None:
-            object.__setattr__(carrier, '_thought_occurrence', None)
     for name in _EMPTY_DICTS:
         setattr(model, name, {})
     for name in _EMPTY_LISTS:

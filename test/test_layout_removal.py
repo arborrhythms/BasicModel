@@ -125,8 +125,10 @@ def test_pending_sentence_is_a_tagged_chain_with_only_its_top_stamped():
     owner = store._concept_owner()
     token = store.occurrence_of(rows[2])
     owner.mtm.open(token, kind=None, value=store.slots[rows[2]], when=0, pending=True)
-    owner.mtm.event(token, token, verb=said, role=0, when=1)
-    owner.mtm.update(token, torch.eye(16)[8], when=1)
+    changed = store.append_idea(torch.eye(16)[8], when=False,
+        document_key='changed-state')
+    owner.mtm.event(token, store.occurrence_of(changed), verb=said, role=0, when=1,
+        before=store.slots[rows[2]])
     for name, value in before.items():
         torch.testing.assert_close(store.parts.state_dict()[name], value, rtol=0, atol=0)
 

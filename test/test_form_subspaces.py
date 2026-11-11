@@ -34,10 +34,11 @@ def extended_fixture():
         ps.W[7, :3] = torch.tensor([.8, .3, .2])
     ws.begin_forward()
     cs._model.wholeSpace = NS(subspace=NS(what=ws))
-    a, b = word(cs, [(4, 1.)]), word(cs, [(4, 1.), (7, 1.)])
-    cs.add_concept_feature(a, 'ws', 0, 1.)
-    cs.add_concept_feature(a, 'ws', 1, 1.)
-    cs.add_concept_feature(b, 'ws', 1, 1.)
+    from BasicPercepts import BasicPercepts
+    basic = BasicPercepts(NS(_basis=ps), 3, 256, 64)
+    basic.bind(ws)
+    object.__setattr__(cs, '_basic_percepts', basic)
+    a, b = word(cs, [(4, 1.)], (0, 1)), word(cs, [(4, 1.), (7, 1.)], (1,))
     return cs, cb, ps, ws, alloc, a, b
 
 
@@ -116,7 +117,7 @@ def test_tower1_refresh_preserves_storage_and_routes_gradient_to_members():
     assert book.W[0, 3 + 97] == .75
 
 
-def test_fixed_property_fills_refresh_on_membership_revision():
+def test_retired_property_fills_leave_live_basic_percept_reads():
     from Spaces import Codebook
     basis = Codebook()
     basis.W = nn.Parameter(torch.zeros(4, 352))
@@ -130,8 +131,10 @@ def test_fixed_property_fills_refresh_on_membership_revision():
     properties.teach(0, [97, 98], [1., 1.], steps=1, rate=1.)
     pointers = basis.W.data_ptr(), basis.fixed_row_codes.data_ptr()
     identity.refresh_property_fills(properties)
-    torch.testing.assert_close(basis.W[1, 96:], properties.fill(b'a'))
-    assert basis.W[2, 96:].eq(1).all()
+    assert not basis.W[:, 96:].any()
+    identity.basic.bind(NS(lookup_rows=lambda rows: torch.cat((torch.ones(2, 96), properties.codes()), -1)[rows]))
+    row = identity.basic.reserve((0,), (0,), word=10)
+    torch.testing.assert_close(identity.basic.code(row)[96:], properties.codes()[0])
     before = basis.W[:, :96].detach().clone()
     revision = properties.revision
     properties.teach(1, [97, 99], [.5, .8], steps=1, rate=1.)
@@ -139,7 +142,8 @@ def test_fixed_property_fills_refresh_on_membership_revision():
     identity.refresh_property_fills()
     p = properties.on_counts(torch.nn.functional.one_hot(torch.tensor(97), 256).float())
     expected = (1-p[:, None]*(1-properties.codes())).amin(0)
-    torch.testing.assert_close(basis.W[1, 96:], expected)
+    assert not basis.W[:, 96:].any()
+    torch.testing.assert_close(identity.basic.code(row)[96:], properties.codes()[0])
     torch.testing.assert_close(basis.W[:, :96], before, rtol=0, atol=0)
     assert pointers == (basis.W.data_ptr(), basis.fixed_row_codes.data_ptr())
 
@@ -218,9 +222,10 @@ def test_containment_certificate_and_constructed_before_violation():
     assert report['order0']['pairs'] == 1 and report['order0']['non_strict_pairs'] == 0
     assert report['tower1']['pairs'] > 0
     assert report['cross']['pairs'] == 0 and not report['cross']['applicable']
-    values = dict(zip((a, b), cb.lookup_rows(torch.tensor([a, b]))))
+    basic = cs.basic_percepts
+    values = {row: basic.code(row).detach() for row in basic.index.values()}
     displaced = {r: v.clone() for r, v in values.items()}
-    displaced[a][0] = 1
+    displaced[basic.words[cs.concept_id_at_row(a)]][0] = 1
     audit = cb.mereology.containment_audit(before=displaced, after=values)
     assert audit['before']['order0']['violating_pairs'] == 1
     assert audit['after']['order0']['violating_pairs'] == 0
@@ -241,7 +246,7 @@ def test_one_call_conjoins_both_subspaces_and_wholeof_is_dual():
     assert Ops.partOf(small, big) and Ops.partOf(small, small)
 
 
-def test_certificate_orders_weights_allows_ties_and_imposes_no_part_type_order():
+def test_basic_certificate_allows_ties_and_imposes_no_part_type_order():
     from Layers import Ops
     from test_review13_subspaces import word
     cs, cb, ps, ws, alloc, a, b = extended_fixture()
@@ -258,8 +263,8 @@ def test_certificate_orders_weights_allows_ties_and_imposes_no_part_type_order()
     assert properties.fill(b'a')[97] == .75
     assert properties.codes()[0, 97] == .5
     report = cb.mereology.containment_audit()
-    assert report['tower1']['pairs'] == 4
-    assert report['tower1']['support_pairs_without_weight_order'] == 2
+    assert report['tower1']['pairs'] == 3
+    assert report['premises'] == 'basic_percepts'
     assert report['tower1']['violating_pairs'] == 0
     assert not report['cross']['applicable'] and report['cross']['pairs'] == 0
     left = word(cs, [(4, 1.)])
@@ -271,26 +276,31 @@ def test_certificate_orders_weights_allows_ties_and_imposes_no_part_type_order()
     assert report['order0']['non_strict_pairs'] > 0  # Informational, not a failure.
 
 
-def test_certificate_requires_weighted_whole_nesting_for_a_soft_meet():
+def test_concept_weights_do_not_change_basic_containment_premises():
     from test_review13_subspaces import word
     cs, cb, ps, ws, alloc, a, b = extended_fixture()
     left, right = word(cs, [(4, 1.)]), word(cs, [(4, 1.)])
     cs.add_concept_feature(left, 'ws', 0, .25)
     cs.add_concept_feature(right, 'ws', 0, .75)
     report = cb.mereology.containment_audit()
-    assert report['support_pairs_without_weight_order'] > 0
+    assert report['support_pairs_without_weight_order'] == 0
+    assert report['premises'] == 'basic_percepts'
     assert report['order0']['violating_pairs'] == 0
 
 
-def test_overlapping_feature_groups_keep_soft_meet_presence_in_the_cube():
+def test_overlapping_feature_groups_collect_basic_percepts_in_the_cube():
     from test_review13_subspaces import word
     cs, cb, ps, ws, alloc, a, b = extended_fixture()
-    row = word(cs, [(4, 1.)])
+    row = word(cs, [(4, 1.)], (0, 1))
     cs.add_concept_feature(row, 'ws', (0, 1), 1.)
     cs.add_concept_feature(row, 'ws', 1, 1.)
-    assert (1, 1, 2.) in cb.mereology._definitions([row])[row]
+    bp = cs.basic_percepts.words[cs.concept_id_at_row(row)]
+    assert any(member == bp for member, weight in cb.mereology._definitions([row])[row])
     value = cb.lookup_rows(row)[:cb.mereology.percept_width]
-    expected = torch.cat((ps.W[4, :3], ws.W[:2, 3:].amin(0)))
+    # The property selector collects both basic percepts carrying property 1.
+    # Each contributes its own tied identity/property centroid once.
+    expected = (torch.cat((ps.W[4, :3], ws.W[:2, 3:].amin(0))) +
+                torch.cat((ps.W[[4, 7], :3].amax(0), ws.W[1, 3:]))) / 2
     torch.testing.assert_close(value, expected, rtol=0, atol=0)
     assert (value >= 0).all() and (value <= 1).all()
 

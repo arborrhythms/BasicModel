@@ -398,7 +398,7 @@ def walk_bank(model,root,bank):
             for row in stream] for stream in result.rows.cpu().tolist()])
         table = language.verb_group_table(owner.components.reference_close, ids, result.codes)
         groups = verb_groups(ids, table)
-    return replace(result,form_wholes=candidates(model.wholeSpace,result),verb_groups=groups)
+    return replace(result,form_wholes=candidates(model.wholeSpace,result,owner=model._concept_owner()),verb_groups=groups)
 
 
 class TypeFamilies(NamedTuple):

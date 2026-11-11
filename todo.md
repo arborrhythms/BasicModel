@@ -17,6 +17,22 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
+**Plan to the long run (Alec, 2026-11-09):** "The transformation-games note
+and all other testing and harness work can move to 0.5 which becomes a test
+development pass that can happen on Codex, so that you can do the compiler
+work in 1.0 at the same time." Item 0.5 is new, between items 1 and 0
+([spec](doc/plans/2026-11-09-item0-5-test-development.md)): Codex builds it
+while Claude builds item 1, an exception for this pair to the division of
+2026-09-21. It takes the test and harness work that sat in items 2, 1 and 0,
+the generated corpora (transformation games, the synthetic math problems
+corpus) and the training corpus (the synthetic examples first, then the
+corpus NanoChat trains on). Remaining order (Alec's answers of 2026-11-09,
+spec §15): Codex finishes 2.0, then builds 0.5, with item 2's remainder in a
+gap between its rounds; Claude builds 1.5 and then 1 in a second, detached
+worktree; then 0, which trains three analyzable stages (words only; simple
+sentences and synthetics; math), each read operator by operator and saved
+with tests, before the million-plus sentence corpus.
+
 **Current (2026-10-29):** Items 3.5, 3.0, 2.9 (BasicModel `17e9454763`)
 and 2.8 (`a8a09a6acb`) are LANDED. Item 2.7 is closed code-complete at
 review freeze `472f5000850e` ([record](doc/plans/2026-10-27-item2-7-corpus.md)
@@ -746,7 +762,7 @@ generation is expected at this stage and is recorded, not tuned away.
    and read by the same occupation measure as the inputs.
    **Rounds (Alec, 2026-11-05: "after 2.5, 2.3 then 2.0, nothing else";
    "Just divide the work").** 2.0 stays one item, built in rounds, each with
-   its own freeze; the loop is the last, as recorded. Already done in 2.5,
+   its own freeze; the loop was the last, as recorded, until Alec added round 7 on 2026-11-10. Already done in 2.5,
    struck from 2.0: the decomposition teacher's retirement (2.5 item 65), the
    `XOR_grammar.xml` fits around it (2.5 §52.1 item 71; 2.0 still runs the
    gate once after `walk_policy`'s retirement), and the spike attribution
@@ -793,6 +809,97 @@ generation is expected at this stage and is recorded, not tuned away.
       percepts ("Why would this logic change?").
    6. *The order-zero loop*, input reconstruction then output through the
       same reverse.
+   7. *Episodic memory* (Alec, 2026-11-10: "lets schedule episodic memory as a
+      round inside 2.0"): a few percepts per sentence, their number a model
+      parameter, read from the open attention pass (`FamiliarTier.open_sentence`),
+      stamped with model time and read back by the time-only `query`, whose
+      review makes them the attended field. Open points and Claude's proposals:
+      [2.0 spec §21](doc/plans/2026-11-03-gradient-projection.md#21-round-7-episodic-memory-from-the-open-attention-pass-scheduled-alec-2026-11-10).
+   **2026-11-09 repair return:** the pinned-bank repair and twelve ports pass
+   their targeted checks, but the one sweep stopped at the aggregate memory
+   guard (28.29/28 GiB), 6,955/7,941 cases completed, 28 failed. Round 6 and
+   the end-of-item measurements were not started; no retry, commit or push.
+   See [2.0 spec §18](doc/plans/2026-11-03-gradient-projection.md#18-round-5-repair-and-the-conditional-round-6-continuation-2026-11-09).
+   **2026-11-09 second repair (§19):** the 256-word bound stays; the runner
+   now uses six workers with 12 GiB per worker and 28 GiB aggregate. Fixture
+   ports, the fixed compiled bank, and trial/commit order routing were swept
+   once: **5,615/7,943 completed; 5,391 passed, 218 skipped, 6 failed** before
+   the aggregate guard stopped it at **28.056/28 GiB**. The six failures have
+   three diagnosed causes (span stream selection, local introduction order,
+   and the forced empty-search fixture). Twelve fresh-worker comparisons
+   and constructor allocation probes attribute the memory increase to the
+   existing round-5 stores with the inherited 256 bound; the seven-model
+   audit has identical constructor storage before and after this repair.
+   Source `a48eff54…` remains frozen and unaccepted. Round 6 and the
+   measurements were not started; no second sweep, commit or push.
+   See [2.0 spec §19](doc/plans/2026-11-03-gradient-projection.md#19-second-repair-of-round-5-and-the-conditional-round-6-continuation-2026-11-09).
+   **2026-11-10 third repair (§20):** the approved three-worker default
+   completed **7,955/7,955 cases** with **zero memory stops**: **7,627 passed,
+   325 skipped, 1 xpassed, 2 failed**. All required gates passed. The archive
+   origin fixture was ported and its full file passed **1,003/1,003**;
+   the item-1.5 layout failure remains carried. Five measured large cases
+   passed in fresh workers. The 256-word bound, 28 GiB aggregate and 8 GiB
+   reserve remain unchanged. Round-5 return freeze **`0cef3933bef3…`**;
+   twenty XOR_exact repetitions at its immutable archive returned **19 passed,
+   1 failed**. Round 6 now implements the common order-zero decoder, separate
+   generate writer, two field losses, post-thought expectation and timed STM
+   thought ideas. Its full sweep completed 7,972 cases; 101 of its 102 failures
+   now pass in affected-file reruns, with item 1.5's feature-layout case carried.
+   The two-source measurements exposed stored-reference, convex-mean, thought-link
+   and surface-only introduction defects; their repairs, captures, direct checks
+   and affected-file reruns are retained. Final source **`afb18256c7ac…`** is
+   frozen for review. All four final lesson arms completed **160/160**, with
+   **0 recorded ≥1e8 events**, but **0/320 correct answers** and no acquisition
+   criterion met. The baseline lesson arms stopped at **8, 16, 2 and 16**
+   sentences, so no full-length learning comparison is available. Eight native
+   400-epoch XOR fits gave **2/8 → 6/8** numeric passes, all **4/4** word
+   multisets; every draw is retained. The final twenty XOR_exact repetitions
+   passed **20/20**. Claude's concurrent §20.13 diagnosis identifies three
+   further post-sweep regressions, including a grammar gate that now reads the
+   field decoder. Those findings and the grammar-inverse gate remain unresolved;
+   the source stays frozen for the separate follow-up text in §20.14. The return
+   makes no population-level learning claim. No commit or push. See
+   [2.0 spec §20](doc/plans/2026-11-03-gradient-projection.md#20-third-repair-of-round-5-and-the-round-6-continuation-2026-11-10).
+   **2026-11-10 follow-up (§20.20, replacing unapplied §20.14):** restore the
+   grammar inverse → generated occurrences → native reverse for order-zero
+   reconstruction and the grammar gate, beside the unchanged System-1 field
+   reconstruction. Restore reconstruction walk residual and credit on R; keep
+   the output bookings on A. The attribution-share and positive-definition
+   centroid contracts follow Alec's decisions. The reported failure groups
+   and dead synthesis methods are repaired and recorded under
+   `doc/benchmarks/2026-11-10-item2-0-round-6-repair/`. The unchanged grammar
+   gate passes **4/4** on its captured failed draw; the field audit is separate.
+   Two measurement-exposed candidate/commit mismatches have producer repairs,
+   whole-file checks and passing original-stream replays (**38/38**, **104/104**).
+   A concluded-thought definition now finishes before epoch withdrawal;
+   its original failed stream passes **33/33**. A later consolidation-order
+   failure has a producer repair, **82/82** targeted passes and a **78/78**
+   original-stream replay. The next panel exposes prepared-arrival order and
+   event-token reads; both have producer repairs, **25/25** direct passes and
+   **135 passed / 4 skipped** in their affected files. The event stream
+   passes **92/92**; the arrival replay exposes a duplicate planned-member
+   offer, now repaired with **162 passed / 4 skipped** and an **85/85**
+   original-stream replay before the final measurement panel (§20.29).
+   The next event-link failure exposes a word-trust update between selection
+   and its write. Deferred word views preserve the link's scored radius;
+   **177 passed / 4 skipped** cover the producer and callers; the original
+   failed stream completes **85/85** on the repair (§20.30).
+   All four final lesson arms now complete **160/160**, on one unchanged
+   source, with **0 recorded ≥1e8 events** and **0/320 correct answers**.
+   All **8/8** final XOR fits pass both the numeric and **4/4** grammar bars;
+   the previous recorded numeric counts remain **2/8** and **6/8** (§§20.31–32).
+   Source `eb81e90f4d7f182142942f9abc8e5cd73ec8578297f0fb2e98534ec52ef995dd`
+   is frozen for review. Focused validation completes **904/904**:
+   **875 passed, 29 expected skips, 0 failures**. The convergence, shared-concept,
+   symbolic grammar and forced pending-premise gates pass; the live pending-premise
+   variants retain their missing-lesson-artifact skips (§20.34).
+   Alec accepted about **730 affected cases and
+   all required gates** in place of the full sweep, retaining all eight XOR
+   fits (§20.26); the added producer certificates and caller coverage bring
+   the final collection to **904**. Earlier source panels and every failed
+   prefix remain historical. The new return starts at §20.21;
+   final focused results follow the freeze in §§20.33–34. No complete-suite
+   sweep or learning improvement beyond the receipts is claimed. No commit or push.
    The momentum-carried projection and a learned top-down pair policy are
    built only if the receipts call for them.
    **Schedule with fewer passes (Alec, 2026-11-08, evening: "lets schedule a
@@ -813,11 +920,9 @@ generation is expected at this stage and is recorded, not tuned away.
    is carried into the next text. Three Claude texts remain after round 2's
    return: land 2 and build 3/4; land 3/4 and build 5; land 5 and build 6
    with the measurements.
-- **2. Housekeeping.** Restore safe, faster bounded-test batching: the default
-   256-case/16-file and 32-case/4-file workers exceeded the 8 GiB cap, and
-   eight-case/one-file batches pass the same selection; do not raise caps or
-   omit cases; reconsider [fixture reuse](doc/plans/2026-09-17-bounded-fixture-reuse.md)
-   if useful ([evidence](doc/DevelopmentHistory.md#forward-owned-lexical-forms-september-19)).
+- **2. Housekeeping.** *Moved to item 0.5 on 2026-11-09 (Alec): bounded-test
+   batching, D5, the deferred slow marks, the weekly sweep, the per-interval
+   logger, the resume certificate and two stale test entries.*
    Delete the radix-backed non-word-major meronomy path (no legacy paths), and
    remove the stale `dispatch_per_row_reset` note in
    [the fold-ladder plan](doc/plans/2026-09-10-meronomy-fold-ladder.md#open-defects-found-on-the-way)
@@ -869,45 +974,12 @@ generation is expected at this stage and is recorded, not tuned away.
    - delete the unread `timeout`; fix the side findings of its §6.
    The measured values of its §4 are item 0's decisions.
    **Carried into item 2 on 2026-11-03 (audit of the items above 2.5):**
-   D5 (2.8 spec §5 and §7; 2.7 record §38.6): regenerate the two
-   decomposition snapshots under `output/item3-5-identity-initial/` from
-   seeds 4199722147 and 2428440506 under the 256-wide layout, keep both old
-   hashes (`dbd7315f...`, `f1d141ab...`) beside the new ones with the
-   generator command and the layout difference, then run both
-   `test_math_chain_decomposition` arms at budgets 512 and 768 with the
-   original assertions; no legacy loader, no seed replaced. Then the slow
-   marks deferred at the 2.8 and 2.9 freezes (26 core, 4 tower-projection,
-   3 native packing, both decomposition arms, and
-   `test_review17_measurement_wiring_on_one_ordinary_batch`) run once under
-   `RUN_SLOW`: in item 2.5's `make test_all` (thinking spec §40 item 64) if
-   that freeze comes first, else here; `make test_all` green once on one
-   hash after D5 (the four item-1 runtime groups excepted) and the default
-   sweep green at the ten-worker 28 GiB ceiling, the `XOR_grammar.xml` gate
-   decided first (item 2.0). The training harness's per-interval logger
-   (carried from item 4): reconstruction loss, expectation discrepancy, LTM
-   occupancy and forgetting passes, the categorical-discrimination index on
-   the fixed four XOR and 68 FineWeb probes (CP, within and between
-   distances, no thresholds) with the both-rate per bracket level, the
-   luminosity of provisioned truths at each forgetting pass, the held-out
-   two-truths §7 test-12 probe, one fixed reconstruction sample per
-   interval, and order-0 inventory rows against `nVectors`, reusing
-   captured readings and budgeting their collection cost; item 0's stop
-   conditions read it; the 11–11c pool, raise, refinement and
-   unknown-per-order counters are retired with learned orders. Extend
-   `test/test_corpus_checkpoint.py` to run the real `runBatch` on a small
-   config and assert the resumed next batch's losses and kept programs
-   byte-identical, with explicit checks on LTM0 `surprise`, `access_count`
-   and `forget_*`, the relevance weights, the comparison reader's weights
-   and the form centroids; exit for the resume certificate: one `train.py`
-   command on a small config with `checkpointEveryBatches` set, re-run to
-   resume, recorded in a receipt. Give every configuration a meaning block,
+   (D5, the deferred slow marks, the weekly sweep, the per-interval logger
+   and the resume certificate moved to item 0.5 on 2026-11-09.)
+   Give every configuration a meaning block,
    then retire `Language.py`'s unpaired form-kernel path and its
    `meaning_layout` guards (iteration spec §19 note 2; 58 guards, 20
-   configurations without `meaningWidth`). Remove the deleted
-   `test_forced_ordinary_bound_declaratives_open_no_episode` entry from
-   `DEFAULT_CERTIFICATES` (`test/slow_tests.py` line 100). Confirm the 7.5
-   shared-operator report assertion is gone under 6.9's one-owner rule and
-   strike the FutureWork sentence that defers its verification. Reword the
+   configurations without `meaningWidth`). Reword the
    "objectless marker" comment at `ReferenceContext.py` about line 460 when
    parts of speech are learned. In the one-pass document correction, add:
    [FutureWork](doc/FutureWork.md) still keeps `timestamp` and leaves
@@ -958,7 +1030,10 @@ generation is expected at this stage and is recorded, not tuned away.
    (`9151b6f10b`, about 1,400 lines over `EntryRead`, `LTM1`, `Layers`,
    `MediumTermMemory` and `Spaces`) is a reference, ported onto main after
    2.0's move of the three stores into `bin/Memory.py`, not merged.
-- **1. Compiler work.** *Added 2026-10-20:* the generated math suite under
+- **1. Compiler work.** *Built by Claude, side by side with item 0.5 on
+   Codex (Alec, 2026-11-09): the generated math corpus, its generator and its
+   frozen manifest are item 0.5's; the comparison of compiled and eager runs
+   on that corpus stays here.* *Added 2026-10-20:* the generated math suite under
    `RUN_SLOW` (item 3, moved from 3.5 on 2026-10-21) is the compiler test at scale — compiled and eager
    runs of the identical corpus, seed and budget agree in actions,
    probabilities, costs and parameter updates.
@@ -1022,6 +1097,104 @@ generation is expected at this stage and is recorded, not tuned away.
    5); exercise the three `torch._assert_async` sites (`ChunkJournal.py`,
    `Expectation.py`) once on MPS before the run (iteration spec §62 watch
    item). The generated math suite under `RUN_SLOW` was already here.
+- **0.5. Test development pass** (Alec, 2026-11-09; built by Codex, side by
+   side with item 1, which Claude builds;
+   [spec](doc/plans/2026-11-09-item0-5-test-development.md)). On the day item 0
+   starts, every measurement it reads has a harness that has run once on a
+   small model; the training corpus is frozen data under one manifest, with
+   every held-out set listed and certified disjoint; each lesson has a
+   corpus, a criterion and one recorded small-model run; and the weekly tier
+   has been green once on the hash that holds this item and item 1. The item
+   changes no learner mechanism and makes no learning claim at scale; a
+   mechanism defect it finds keeps its strict assertion and goes to Alec.
+   File ownership against item 1 is in spec §3.
+
+   The work:
+   (a) the existing test and harness work from items 2, 1 and 0 (spec §5;
+   the text moved from item 2 is below, unchanged);
+   (b) transformation games (spec §6; Alec's note is below): one corpus per
+   grammar rule, a template tier and a written tier, both frozen;
+   acquisition, vocabulary transfer, context transfer and composition, each
+   against an ablated arm and a shuffled-pairing arm; the unary-chain game
+   supplies the evidence the note asks for;
+   (c) the synthetic math problems corpus as frozen graded rows, with
+   protocol corrections 1 and 2 and the measurement declared again after
+   item 2.0 (spec §7); item 1's comparison of compiled and eager runs reads
+   these rows;
+   (d) the training corpus under `data/training-corpus.json` (spec §8),
+   staged by Alec's word of 2026-11-09: words only, then simple sentences
+   and the synthetic games, then math, each stage read operator by operator
+   (spec §9.1) and its model saved with tests (spec §9.2); only after that
+   gate the million-plus sentence corpora (the developmental assembly,
+   NanoChat's base corpus), prepared here as data; with one list of
+   held-out sets and a disjointness certificate;
+   (e) lessons and registered artifacts (spec §9): stage data for the ten
+   lesson rows, a criterion per stage, and artifact restoration into the
+   trained-tier tests;
+   (f) the harnesses item 0 reads (spec §10): item 8's 256-task generator
+   and arms, 6.5's six gates, the held-out cost set, the per-interval
+   logger and the resume certificate.
+
+   Exit: spec §12. The five decisions of spec §14 were answered on
+   2026-11-09 (spec §15); no round text is written until he asks.
+
+   **Test development feedback (Alec, 2026-11-09):** teach individual
+   operations through focused transformation games. For example, give a
+   sentence and ask for its negation, with a corpus devoted to that one
+   transformation: the learner recognizes the “negation game” as an
+   exercise. Current LLMs can generate synthetic examples for these
+   single-rule corpora; many other grammatical operations may be taught
+   this way. Test both acquisition within the game and transfer to new
+   contexts, since learning in one context may carry over in part. As
+   these lessons supply evidence, revisit and relax arbitrary structural
+   restrictions such as prohibiting several unary operations at the same
+   location; the increasing repeat penalty is provisional, not a claim
+   that legitimate unary chains are impossible.
+
+   **Moved from item 2 on 2026-11-09 (text unchanged):**
+   Restore safe, faster bounded-test batching: the default
+   256-case/16-file and 32-case/4-file workers exceeded the 8 GiB cap, and
+   eight-case/one-file batches pass the same selection; do not raise caps or
+   omit cases; reconsider [fixture reuse](doc/plans/2026-09-17-bounded-fixture-reuse.md)
+   if useful ([evidence](doc/DevelopmentHistory.md#forward-owned-lexical-forms-september-19)).
+   D5 (2.8 spec §5 and §7; 2.7 record §38.6): regenerate the two
+   decomposition snapshots under `output/item3-5-identity-initial/` from
+   seeds 4199722147 and 2428440506 under the 256-wide layout, keep both old
+   hashes (`dbd7315f...`, `f1d141ab...`) beside the new ones with the
+   generator command and the layout difference, then run both
+   `test_math_chain_decomposition` arms at budgets 512 and 768 with the
+   original assertions; no legacy loader, no seed replaced. Then the slow
+   marks deferred at the 2.8 and 2.9 freezes (26 core, 4 tower-projection,
+   3 native packing, both decomposition arms, and
+   `test_review17_measurement_wiring_on_one_ordinary_batch`) run once under
+   `RUN_SLOW`: in item 2.5's `make test_all` (thinking spec §40 item 64) if
+   that freeze comes first, else here; `make test_all` green once on one
+   hash after D5 (the four item-1 runtime groups excepted) and the default
+   sweep green at the ten-worker 28 GiB ceiling, the `XOR_grammar.xml` gate
+   decided first (item 2.0). The training harness's per-interval logger
+   (carried from item 4): reconstruction loss, expectation discrepancy, LTM
+   occupancy and forgetting passes, the categorical-discrimination index on
+   the fixed four XOR and 68 FineWeb probes (CP, within and between
+   distances, no thresholds) with the both-rate per bracket level, the
+   luminosity of provisioned truths at each forgetting pass, the held-out
+   two-truths §7 test-12 probe, one fixed reconstruction sample per
+   interval, and order-0 inventory rows against `nVectors`, reusing
+   captured readings and budgeting their collection cost; item 0's stop
+   conditions read it; the 11–11c pool, raise, refinement and
+   unknown-per-order counters are retired with learned orders. Extend
+   `test/test_corpus_checkpoint.py` to run the real `runBatch` on a small
+   config and assert the resumed next batch's losses and kept programs
+   byte-identical, with explicit checks on LTM0 `surprise`, `access_count`
+   and `forget_*`, the relevance weights, the comparison reader's weights
+   and the form centroids; exit for the resume certificate: one `train.py`
+   command on a small config with `checkpointEveryBatches` set, re-run to
+   resume, recorded in a receipt.
+   Remove the deleted
+   `test_forced_ordinary_bound_declaratives_open_no_episode` entry from
+   `DEFAULT_CERTIFICATES` (`test/slow_tests.py` line 100). Confirm the 7.5
+   shared-operator report assertion is gone under 6.9's one-owner rule and
+   strike the FutureWork sentence that defers its verification.
+
 - **0. The full training session**: the long FineWeb run, only with items 11–1.5
    done and item 1 measured. Expectation on in `model.xml`; the
    `BasicModel.xml` flip follows the plan's §10 gates. Stop on rising
@@ -1211,6 +1384,23 @@ generation is expected at this stage and is recorded, not tuned away.
    compiled retention and c's marker-headed `five` as named gates, not
    completed learning. The paired zero-cost invariant is repaired by Step 0,
    with its original counterexample preserved in the receipt.
+
+   **Prepared in item 0.5 (2026-11-09):** the test development feedback
+   that stood here moved to item 0.5 with its work. Built there before this
+   run ([spec](doc/plans/2026-11-09-item0-5-test-development.md) §10): the
+   math-chain corpus with corrections 1 and 2 and its measurement declared
+   again (correction 4 is mechanism and is not item 0.5's); item 8's
+   256-task generator, its hashes, the arms and the routing catalogs; 6.5's
+   harness; the held-out cost set; the per-interval logger and the resume
+   certificate; the training-corpus manifest. The runs, the registrations
+   at the trained checkpoint, the capacity search and the measured
+   constants stay here. Item 0 opens with the three analyzable stages of
+   the training corpus at the long run's configuration, saves a model after
+   each, and starts the million-plus sentence corpus only after Alec has
+   read the operator table (Alec, 2026-11-09; item 0.5 spec §8, §9.1,
+   §15; decided by Alec the same day, spec §15.1: small models for the
+   experiments of item 0.5, the full size for the long run only, though
+   the math corpus may need it).
 
 Everything that is decided in direction but not on this path is in
 [FutureWork](doc/FutureWork.md).
@@ -1583,3 +1773,6 @@ Landed as acbe466e871df474f864bfd403e11c0921441529, 2026-11-09
 - 2026-11-09 (Alec: "good recomendations"): round 3/4 lands with the twelve fixture ports and a seven-file rerun, no second sweep; the operator seats declare identity and execution interface at construction and learn direction, confidence and participations (memory plan §10.5 closed). ONE Codex text GIVEN as 2.0 spec §16.3: steps 1–3 land round 3/4 ("Land accepted item 2.0 round 3/4", record line, push); items 4–10 build round 5 (the one `link` over references with computed values and promotion of paths; `memory.verb_state`/`memory.modal_state` as relative errors over the state of affairs; shared STM0/STM1 strata, the pinned sentence's tree collapsing at the close, operator concept seats, authority onto their trust with `grammar_operation` becoming the seat reference; basic percepts with MTM as their writer, supplied forms declared at admission; the elided role's content; the dual-process and memory documents); return = §17. Then: land 5 + build round 6 with the measurements.
 
 Landed as b7d0914ab33987ce8f786f400298bc4bc6ee2075, 2026-11-09
+- 2026-11-10 (Alec): episodic memory "can happen now as long as we only store a few percepts (let's set that as a model parameter). It should come from the open-attention round." Recorded, with Claude's proposal (an entry beside each `LTM0` row, `episodicPercepts` percepts per entry, read from `FamiliarTier.open_sentence`), in [FutureWork §7](doc/FutureWork.md#7-episodic-memory-a-few-active-indices-beside-each-row); `.when` is model time in every store, with the drift remedy "we will need to reset the time when we reset the epoch", in [FutureWork](doc/FutureWork.md#when-is-model-time-in-every-store-alec-2026-11-10). Placed later the same day as round 7 of item 2.0 (next line). That round also moves the remaining `.when` stamps to model time with the epoch reset (Alec, same day; next lines).
+- 2026-11-10 (Alec, later): "lets schedule episodic memory as a round inside 2.0": round 7 of item 2.0. Rounds 5 and 6 (return §20.21 to §20.34, freeze `eb81e90f4d7f`) reviewed and accepted in [2.0 spec §20.35](doc/plans/2026-11-03-gradient-projection.md#2035-review-of-the-round-6-repair-return-on-eb81e90f4d7f-claude-2026-11-10-accepted); they land as the first three steps of round 7's text.
+- 2026-11-10 (Alec, question tool): round 7 decided. The stamps still per document move to model time in the same round, one tick per sentence ("One sentence") and per thought step, one clock for thoughts and the MTM pool ("One clock"), both clocks put back at each epoch reset; entries beside `LTM0` rows ("in particular, beside LTM0"), `episodicPercepts` 4; review rides on the thought loop's time-only recall. Codex text (land rounds 5 and 6, build round 7): [2.0 spec §21.1](doc/plans/2026-11-03-gradient-projection.md#211-codex-text-land-rounds-5-and-6-then-build-round-7-claude-2026-11-10-final-when-given).

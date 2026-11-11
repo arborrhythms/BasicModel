@@ -31,7 +31,7 @@ def test_generate_unary_calls_generate_face():
     assert not unavailable.any()
 
 
-def test_generate_chooser_belongs_to_reconstruction():
+def test_generate_chooser_belongs_to_output():
     from Models import BasicModel
     from Language import GeneratePolicy
     policy = GeneratePolicy(2, 3)
@@ -41,7 +41,7 @@ def test_generate_chooser_belongs_to_reconstruction():
         synthesis_parameters=lambda: tuple(policy.parameters()), conceptualSpaces=())
     optimizer = SimpleNamespace(param_groups=[{'params': [*policy.parameters(), *reader.parameters()]}])
     owners = BasicModel.objective_parameter_groups(model, optimizer)
-    assert {id(p) for p in policy.parameters()} <= {id(p) for p in owners['reconstruction']}
+    assert {id(p) for p in policy.parameters()} <= {id(p) for p in owners['output']}
     assert {id(p) for p in reader.parameters()} <= {id(p) for p in owners['output']}
     assert not {id(p) for p in owners['reconstruction']} & {id(p) for p in owners['output']}
 

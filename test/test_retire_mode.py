@@ -131,7 +131,7 @@ def test_closed_zero_is_unverified_and_only_open_references_make_question(monkey
     assert f.store.row(index)['kind'] == 'unverified'
     assert f.store.row(index)['evidence'] == (0., 0.)
     from ReferenceClose import ReferenceClose
-    assert ReferenceClose._commit_events(SimpleNamespace(), {'prepared_root': closed}, {}, when=1) == set()
+    assert ReferenceClose.link_events(SimpleNamespace(), {'prepared_root': closed}, {}, when=1) == set()
     from ClauseRow import Clause
     child = Clause(with_slots(ConceptualMeaning.from_description(closed.meaning.roles[0]),
         (('referent', 0),), pair=(0., 0.)), point=closed.meaning.roles[0])
@@ -186,7 +186,8 @@ def test_surface_silence_uses_the_real_empty_embedding(tmp_path, monkeypatch):
         empty = model._embed_answer_texts(['', ''])
         spoken = model._embed_answer_texts(['atom', ''])
         assert torch.is_tensor(empty) and empty.shape[1] > 0
-        model._last_answer_construction = SimpleNamespace(surface=empty)
+        from Output import AnswerConstruction
+        model._last_answer_construction = AnswerConstruction(actual=empty, derivation=None, percepts=empty, surface=empty)
         model._last_what_desired = (WhatAnswer.silence(questions[0]), WhatAnswer(questions[1], 'atom'))
         target, mask = model._what_answer_target(questions, torch.ones(2, 1, 1), supervised_only=True)
         assert mask.tolist() == [True, True]

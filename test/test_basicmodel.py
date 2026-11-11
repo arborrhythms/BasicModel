@@ -2090,6 +2090,11 @@ class TestVocabSaveRestore(unittest.TestCase):
             ckpt_path = f.name
         try:
             m1.save_weights(ckpt_path)
+            m1.End()
+            Layers.GrammarLayer.set_chart_authority(None)
+            del m1, emb1
+            import gc
+            gc.collect()
 
             # Create a fresh model (will have smaller vocab)
             m2 = Models.BasicModel()

@@ -156,8 +156,14 @@ def test_default_test_budget_reserves_eight_gib_for_the_machine(runner, monkeypa
     assert runner.default_test_memory_bytes() == 28 * runner.GIB
 
 
-def test_fast_pool_uses_cpu_minus_four_workers(runner, monkeypatch):
+def test_fast_pool_reserves_memory_and_four_cpu_slots(runner, monkeypatch):
     monkeypatch.setattr(runner.os, "cpu_count", lambda: 14)
+    monkeypatch.setattr(runner, "physical_memory", lambda: 36 * runner.GIB)
+    assert runner.default_worker_count() == 3
+    assert runner.DEFAULT_WORKER_MEMORY_BYTES == 12 * runner.GIB
+    monkeypatch.setattr(runner, "physical_memory", lambda: 80 * runner.GIB)
+    assert runner.default_worker_count() == 8
+    monkeypatch.setattr(runner, "physical_memory", lambda: 128 * runner.GIB)
     assert runner.default_worker_count() == 10
 
 
@@ -277,12 +283,12 @@ def test_parallel_workers_share_the_aggregate_budget_and_overlap(runner, tmp_pat
         batch_size=1, workers=2, lock_path=tmp_path / "lock")
     assert result["exit_code"] == 0, result["reason"]
     assert result["limits"]["aggregate_memory_bytes"] == aggregate
-    assert result["limits"]["per_worker_memory_bytes"] == aggregate
+    assert result["limits"]["per_worker_memory_bytes"] == aggregate // 2
     assert result["limits"]["workers"] == 2
     assert len({line.split(":", 1)[1] for line in (tmp_path / "starts").read_text().splitlines()}) == 4
 
 
-def test_aggregate_cap_terminates_parallel_workers_before_host_pressure(runner, tmp_path):
+def test_worker_reservations_terminate_the_offender_before_host_pressure(runner, tmp_path):
     """Independent worker caps cannot let the pool exceed its shared budget."""
     (tmp_path / "pytest.ini").write_text("[pytest]\n")
     (tmp_path / "test_aggregate.py").write_text(
@@ -301,8 +307,53 @@ def test_aggregate_cap_terminates_parallel_workers_before_host_pressure(runner, 
         batch_size=1, workers=2, worker_memory_bytes=256 * 1024**2,
         lock_path=tmp_path / "lock")
     assert result["exit_code"] == 137
-    assert result["reason"] == "aggregate_memory"
-    assert result["peak_aggregate_memory_bytes"] > 256 * 1024**2
+    assert result["reason"] == "memory"
+    assert result["peak_aggregate_memory_bytes"] <= 256 * 1024**2
+    assert any(worker['reason'] == 'memory' for worker in result['workers'])
+
+
+@pytest.mark.parametrize('machine_gib,cpu_count', [(16,8),(24,12),(36,14),(64,24),(128,32)])
+def test_both_memory_phases_reserve_at_most_the_aggregate(runner, monkeypatch, machine_gib, cpu_count):
+    monkeypatch.setattr(runner, 'physical_memory', lambda:machine_gib*runner.GIB)
+    monkeypatch.setattr(runner.os, 'cpu_count', lambda:cpu_count)
+    aggregate=runner.default_test_memory_bytes()
+    for workers in (1, runner.default_worker_count()):
+        ordinary,large=runner.phase_reservations(aggregate,workers)
+        for phase in (ordinary,large):
+            assert phase['workers']*phase['per_worker_memory_bytes'] <= aggregate
+        assert ordinary['workers']==workers
+        assert ordinary['per_worker_memory_bytes']==min(runner.DEFAULT_WORKER_MEMORY_BYTES,aggregate//workers)
+        assert large['per_worker_memory_bytes']==min(runner.DEFAULT_WORKER_MEMORY_BYTES,aggregate)
+
+
+def test_memory_phases_partition_marks_and_compose_the_user_selection(runner,tmp_path):
+    (tmp_path/'pytest.ini').write_text('[pytest]\nmarkers =\n large_memory: larger reservation\n chosen: user selection\n')
+    (tmp_path/'test_phases.py').write_text(
+        'import pytest\n'
+        '@pytest.mark.chosen\ndef test_ordinary(): pass\n'
+        '@pytest.mark.chosen\n@pytest.mark.large_memory\ndef test_large(): pass\n'
+        '@pytest.mark.large_memory\ndef test_unselected(): pass\n')
+    result=runner.run_suite(root=tmp_path,selectors=['test_phases.py'],run_dir=tmp_path/'result',
+        memory_bytes=512*runner.MIB,workers=2,marker='chosen',timeout=30,suite_timeout=120)
+    assert result['exit_code']==0,result
+    ordinary,large=result['phases']
+    assert ordinary['selected']==['test_phases.py::test_ordinary']
+    assert large['selected']==['test_phases.py::test_large']
+    for phase in (ordinary,large):
+        assert phase['completed']==phase['selected']
+    for worker in result['workers']:
+        phase=ordinary if worker['phase']=='ordinary' else large
+        assert set(worker['selected'])<=set(phase['selected'])
+        if worker['phase']=='large_memory':
+            assert len(worker['selected'])==1
+        assert worker['case_memory']
+
+
+def test_worker_recycles_at_half_its_reservation(runner,tmp_path):
+    for cap,share in ((12*runner.GIB,12*runner.GIB),(4*runner.GIB,3*runner.GIB),(128*runner.MIB,None)):
+        worker=runner.GuardedProcess([sys.executable,'-V'],cwd=tmp_path,env=os.environ.copy(),
+            log_path=tmp_path/'unused.log',memory_bytes=cap,memory_share=share,timeout=5)
+        assert worker.recycle_memory==min(cap,cap if share is None else share)/2
 
 
 @pytest.mark.parametrize("value", [0, -1, float("nan"), float("inf")])
@@ -401,10 +452,13 @@ def test_aborted_peer_preserves_completed_and_active_cases(runner, tmp_path):
         lock_path=tmp_path / "lock")
     assert result["exit_code"] == 42
     assert "test_peer.py::test_finished" in result["completed"]
-    peer = next(w for w in result["workers"] if "test_peer.py::test_finished" in w["completed"])
+    # Half-cap recycling may retire the peer's completed prefix before the
+    # next case. The aborted worker still reports the live case exactly.
+    peer = next(w for w in result["workers"] if w['reason']=='aborted'
+                and 'test_peer.py::test_active' in w['selected'])
     assert peer["active_case"] == "test_peer.py::test_active"
     assert peer["reason"] == "aborted"
-    assert len(result["workers"]) == 2
+    assert 2 <= len(result["workers"]) <= 3
 
 
 def test_source_change_cannot_receive_a_passing_receipt(runner, tmp_path):

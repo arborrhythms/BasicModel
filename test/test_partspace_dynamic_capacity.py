@@ -245,6 +245,15 @@ def test_checkpoint_restores_fixed_owner_and_optimizer_by_name(
     assert len(entries) == 1
     assert entries[0]["shape"] == list(grown_w.shape)
 
+    # Only the native store's identity comparison remains; the completed
+    # source model, optimizer and serialized tensor payload can be released.
+    source_model.End()
+    from Layers import GrammarLayer
+    GrammarLayer.set_chart_authority(None)
+    del source_model, optimizer, old_w, grown_w, saved, manifest, entries
+    import gc
+    gc.collect()
+
     Language.TheGrammar._configured = False
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")

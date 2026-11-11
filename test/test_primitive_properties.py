@@ -165,8 +165,9 @@ def test_native_fused_case_has_no_concept_location(tmp_path):
     units = identity.admit(b'10')
     assert identity.read_parts(units) == b'10'
     row = cs._csw_row_of(word)
-    column = 4 * units[0]
-    assert store.feature_groups[row, column] == units
+    bp = cs.basic_percepts.words[word]
+    column = 2 * bp
+    assert cs.basic_percepts.occurrences[bp][0] == tuple(units)
     edge = store.features._index[row, column]
     assert float(store.features.values[edge].detach()) > 0
     assert not hasattr(store.conjunctive, 'locations')
@@ -191,7 +192,9 @@ def test_grounded_read_has_one_owner_and_checkpoint_keeps_native_events(tmp_path
     from test_grounded_xor import grounded_model
     model, x = grounded_model(tmp_path)
     cs = model.conceptualSpaces[0]
-    cs.add_concept_feature(0, 'ws', 0, .7)
+    from basic_fixtures import feature
+    ids = model.perceptualSpace.percept_store.spell_out(b'01')
+    feature(cs, 0, 'ws', 0, .7, parts=ids)
     model.forward(x)
     carrier = model._combine_last_cs_sub
     optimizer = model.getOptimizer(lr=.001)

@@ -204,12 +204,25 @@ def _run_xor_grammar_in_process():
             # discarded. This neither advances the clock nor keeps the trace.
             with torch.no_grad():
                 texts, unavailable = model.reconstruct_grammar_sentence(state, sid, active)
+                field_texts, field_unavailable = model.reconstruct_field_sentence(state, sid, active)
             model._grammar_gate_reconstructions = texts
             model._grammar_gate_unavailable = unavailable.detach().cpu().tolist()
+            model._field_gate_reconstructions = field_texts
+            model._field_gate_unavailable = field_unavailable.detach().cpu().tolist()
         return commit(model, state, sid, active, *args)
     with patch.object(BasicModel, '_commit_sentence', capture):
         results = ModelFactory.run("data/XOR_grammar.xml")
-    return results[0][2]  # (name, rCorrect, model)
+    model = results[0][2]  # (name, rCorrect, model)
+    from collections import Counter
+    inputs, _ = model.inputSpace.getTestData()
+    originals = [model._bytes_to_text(value).replace("\x00", " ") for value in inputs]
+    model._field_gate_matches = sum(not missing and recovered is not None and
+        Counter(original.split()) == Counter(recovered.replace("\x00", " ").split())
+        for original, recovered, missing in zip(originals, model._field_gate_reconstructions,
+                                                model._field_gate_unavailable))
+    print(f'Field reconstruction audit: {model._field_gate_matches}/{len(inputs)}; '
+          f'texts={model._field_gate_reconstructions!r}')
+    return model
 
 
 @pytest.fixture(scope="module")
@@ -226,6 +239,7 @@ def _bind_trained_xor_grammar(request, trained_xor_grammar):
 
 @pytest.mark.usefixtures("_bind_trained_xor_grammar")
 @pytest.mark.shared_training("xor_grammar")
+@pytest.mark.large_memory
 class TestXorGrammarLearnsXor(unittest.TestCase):
     """Grammar XOR convergence must survive an arbitrary initialization."""
 
@@ -255,6 +269,7 @@ class TestXorGrammarLearnsXor(unittest.TestCase):
 
 @pytest.mark.usefixtures("_bind_trained_xor_grammar")
 @pytest.mark.shared_training("xor_grammar")
+@pytest.mark.large_memory
 class TestXorGrammarReconstruction(unittest.TestCase):
     """All four understandings return their own words, allowing transpositions."""
 

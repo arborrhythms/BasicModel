@@ -122,6 +122,7 @@ def test_ordinary_menu_uses_the_retained_argument_occupations(monkeypatch):
     occurrence = store.occurrence_of(row)
     pool = resolver.components.owner.mtm
     pool.open(occurrence,kind=words['three'],native=words['three'],when=0,value=atoms[0])
+    pool.record_link(occurrence, occurrence, None, kind='reference', order=0)
     pool.event(occurrence,occurrence,verb=words['wrong'],role=0,when=0)
     held = snapshot(resolver)
     records = resolver.accessible(chunk_context(resolver, (frame,)))

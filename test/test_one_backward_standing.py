@@ -34,6 +34,8 @@ def test_grounded_xor_with_sentence_backward(tmp_path,separate,jitter,pool,trial
 
 @pytest.mark.parametrize('separate,jitter',[(True,0.),(False,0.),(False,.5)])
 def test_native_packing_after_training_with_selected_backward(tmp_path,monkeypatch,eager_reading,separate,jitter):
+    import gc
+    from Layers import GrammarLayer
     from test_packed_reconstruction_parity import build_model,warm_vocabulary,measure_layout,reset,ATOL,RTOL
     from Language import OperationSelectionLayer
     from operation_fixtures import selected_action
@@ -54,6 +56,7 @@ def test_native_packing_after_training_with_selected_backward(tmp_path,monkeypat
         first.candidate_attention=None  # retained source-order control
         first._install_unit_span_fn()
         warm_vocabulary(first,rows)
+        first.answer_synthesis = False  # This fixture's supplied labels use the numeric forward head.
         first.begin_presentation()
         optimizer=first.getOptimizer(lr=.001)
         # Training owns its actual sampled departure. The forced operation is
@@ -79,7 +82,9 @@ def test_native_packing_after_training_with_selected_backward(tmp_path,monkeypat
         first.save_weights(checkpoint)
         checkpoint_without_random_state(checkpoint)
         first.End();first.symbolSpace.soft_reset();models.clear()
+        GrammarLayer.set_chart_authority(None)
         first=None;optimizer=None
+        gc.collect()
         monkeypatch.setattr(OperationSelectionLayer,'forward',compose)
         results=[]
         for packed in (True,False):
@@ -92,6 +97,11 @@ def test_native_packing_after_training_with_selected_backward(tmp_path,monkeypat
             model._install_unit_span_fn()
             model.begin_presentation()
             results.append(measure_layout(model,rows,packed=packed))
+            model.End();model.symbolSpace.soft_reset()
+            GrammarLayer.set_chart_authority(None)
+            models.clear()
+            del model
+            gc.collect()
         packed,single=results
         for key,actual in packed.items():
             expected=single[key]

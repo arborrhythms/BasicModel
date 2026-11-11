@@ -39,7 +39,7 @@ def test_both_evidence_poles_survive_checkpoint_separately_from_neither():
 def test_relation_has_no_kind_column_or_catch_all():
     from Memory import LTM1
     assert LTM1.columns == ('refs','ref_kinds','truth_plus','truth_minus','access_count','surprise','percept',
-                           'effective_plus','effective_minus','operator','grammar_operation')
+                           'effective_plus','effective_minus','operator_reference','operation_seat')
     assert not any(name.startswith('REL_') for name in vars(LTM0))
 
 

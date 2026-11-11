@@ -73,15 +73,25 @@ def test_native_attention_checkpoint_and_missing_legacy_parameters(tmp_path):
         owner.step()
     torch.testing.assert_close(restored.candidate_attention.readout.bias,
                                model.candidate_attention.readout.bias, rtol=0, atol=0)
+    model.End();model.symbolSpace.soft_reset()
+    restored.End();restored.symbolSpace.soft_reset()
+    from Layers import GrammarLayer
+    GrammarLayer.set_chart_authority(None)
+    del model, restored, optimizer, resumed, current, owner
+    import gc
+    gc.collect()
     legacy = torch.load(path, map_location='cpu', weights_only=False)
     legacy['state_dict'] = {key: value for key, value in legacy['state_dict'].items()
                             if not key.startswith('candidate_attention.')}
     legacy['optimizer_state'] = None
     torch.save(legacy, path)
+    del legacy
+    gc.collect()
     fresh, _ = grounded_model(tmp_path)
     initialized = {key: value.clone() for key, value in fresh.candidate_attention.state_dict().items()}
     assert fresh.load_weights(path, require_match=True)
     for name, value in fresh.candidate_attention.state_dict().items():
         torch.testing.assert_close(value, initialized[name], rtol=0, atol=0)
+    fresh.End();fresh.symbolSpace.soft_reset()
 
 

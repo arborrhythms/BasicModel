@@ -20,8 +20,9 @@ def register(model, value, *, costs, source, row, category='reconstruction'):
     if value is not None and value.requires_grad:
         errors = getattr(model, 'errors', None)
         if errors is not None:
-            errors.add(category+'.thought_score_function', value,
-                       space='SymbolSpace', category=category,
+            booking = 'output' if category == 'reconstruction' else category
+            errors.add(booking+'.thought_score_function', value,
+                       space='SymbolSpace', category=booking,
                        objective='chooser' if category == 'reconstruction' else category, side='A')
 
 

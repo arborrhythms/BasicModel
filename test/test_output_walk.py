@@ -350,36 +350,45 @@ def _policy_training_probe(m, opt, questions):
     backward=m._backward_training_loss
     observed={'reconstruction':[], 'output':[]}
     before=[p.detach().clone() for p in params]
+    path_cost = m._sentence_path_cost
+    def reconstruction_probe(*args, **kwargs):
+        value = path_cost(*args, **kwargs)
+        loss = m._sentence_cost_registry.total(objective='reconstruction')
+        observed['reconstruction'].append(torch.autograd.grad(
+            loss.sum(), params, allow_unused=True, retain_graph=True))
+        return value
+    m._sentence_path_cost = reconstruction_probe
     def probe(*args,**kwargs):
         result=backward(*args,**kwargs)
-        owner='reconstruction' if getattr(m,'_sentence_backward',False) else 'output'
+        owner='output'  # the common sentence step contains both projection sides
         observed[owner].append(tuple(None if p.grad is None else p.grad.detach().clone() for p in params))
         return result
     m._backward_training_loss=probe
     try:
         # Words exercise the serial decoder. Numeric percepts are a separate
         # field under the fixed letters-only word extent (6.8 §3a).
-        batch=(m.inputSpace.prepInput(['one plus two','three plus four']),torch.zeros(2,1,1))
-        torch.manual_seed(11)
+        batch=(m.inputSpace.prepInput(['one plus two','three plus four']),torch.empty(2,0))
         # Isolate ownership from whether this fresh grammar happens to offer
         # two supported actions. The support masks have their own real-op
         # contracts in test_review11_contracts.
         with pytest.MonkeyPatch.context() as patch:
             _walk_control_oracle(patch)
+            patch.setattr(m.inputSpace.data, 'text_answers', {'train': ['one', 'three']})
             m.runBatch(train=True,batchSize=2,split='train',optimizer=opt,batch_override=batch,questions=questions)
     finally:
         m._backward_training_loss=backward
+        m._sentence_path_cost=path_cost
     observed['changed']=[not torch.equal(p,old) for p,old in zip(params,before)]
     observed['mask']=m._last_answer_mask.tolist()
     observed['departure_won'] = any(bool(audit['wins'].any()) for audit in
-        (m._last_decoder_comparison, m._last_output_comparison) if audit is not None)
+        (m._last_output_comparison,) if audit is not None)
     assert not hasattr(m,'_output_policy_cost')
-    assert all(g is None or not bool(g.abs().any()) for row in observed['output'] for g in row)
+    assert all(g is None or not bool(g.abs().any()) for row in observed['reconstruction'] for g in row)
     return observed
 
 
 @pytest.mark.parametrize('supplied',[True,False])
-def test_runbatch_trains_generate_policy_from_reconstruction(supplied,eager_reading):
+def test_runbatch_trains_generate_policy_from_output(supplied,eager_reading):
     from What import What
     m=_model();m._tensor_peer_while_eager=True;m._chart_compose_per_word=lambda:None
     m.inputSpace.data.has_supervised_outputs=supplied
@@ -387,12 +396,12 @@ def test_runbatch_trains_generate_policy_from_reconstruction(supplied,eager_read
     try:
         got=_policy_training_probe(m,opt,(What.supervised(0),What.supervised(1)))
         if got['departure_won']:
-            assert any(g is not None and bool(g.abs().sum()>0) for row in got['reconstruction'] for g in row)
+            assert any(g is not None and bool(g.abs().sum()>0) for row in got['output'] for g in row)
             assert any(got['changed'])
         owned=[id(p) for group in opt.param_groups for p in group['params']]
         assert all(owned.count(id(p))==1 for p in m.languageSpace.generate_policy.parameters())
         groups=m.objective_parameter_groups(opt)
-        assert all(any(p is candidate for candidate in groups['reconstruction']) for p in m.languageSpace.generate_policy.parameters())
+        assert all(any(p is candidate for candidate in groups['output']) for p in m.languageSpace.generate_policy.parameters())
     finally:
         m.End();m.symbolSpace.soft_reset()
 
@@ -408,11 +417,11 @@ def test_runbatch_answer_availability_never_reassigns_the_decoder(eager_reading)
             if got['departure_won']:
                 assert any(got['changed'])
             groups=m.objective_parameter_groups(opt)
-            assert not any(any(p is q for q in groups['output']) for p in m.languageSpace.generate_policy.parameters())
+            assert not any(any(p is q for q in groups['reconstruction']) for p in m.languageSpace.generate_policy.parameters())
         m.answer_synthesis=False
-        got=_policy_training_probe(m,opt,(What.present(0),What.present(1)))
-        if got['departure_won']:
-            assert any(got['changed'])
+        m.inputSpace.data.has_supervised_outputs=False
+        got=_policy_training_probe(m,opt,(What.inference(0, split='train'),What.inference(1, split='train')))
+        assert not any(got['changed'])
     finally:
         m.End();m.symbolSpace.soft_reset()
 

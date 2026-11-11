@@ -41,9 +41,10 @@ def held(stm, row):
     """Enumerating a menu neither reads nor retains an evicted chunk."""
     state = stm.state
     result = []
-    for when, meaning in (item for item in stm._thought_contents[row] if item is not None):
+    for when, view in (item for item in stm._thought_contents[row] if item is not None):
         index = int(chunks.locate(state, when, band=chunks.WHEN)[row])
         if index >= 0:
+            meaning = view.read()
             result.append((when, with_slots(meaning, open_slots(meaning),
                 pair=state[chunks.TRUTH][row, index].tolist())))
     return tuple(result)
@@ -58,7 +59,8 @@ def read(stm, when, row):
     gate = torch.arange(len(index), device=index.device) == row
     pair = state[chunks.TRUTH][row, index[row]].tolist()
     stm.set_state(chunks.read(state, index, gate))
-    return with_slots(item[1], open_slots(item[1]), pair=pair)
+    meaning = item[1].read()
+    return with_slots(meaning, open_slots(meaning), pair=pair)
 
 
 def put(stm, meaning, when=None, row=0, *, pin=False, existing=False):
@@ -91,7 +93,8 @@ def put(stm, meaning, when=None, row=0, *, pin=False, existing=False):
     meaning = with_slots(replace(meaning, bindings=data), open_slots(meaning), pair=pair)
     rows = list(stm._thought_contents)
     contents = list(rows[row])
-    contents[int(index[row])] = (tuple(when), meaning.detached())
+    from ThoughtStrata import write
+    contents[int(index[row])] = (tuple(when), write(stm._thought_stores[row][int(index[row])], meaning, key=when))
     rows[row] = tuple(contents)
     stm._thought_contents = tuple(rows)
     stm.set_state(state)

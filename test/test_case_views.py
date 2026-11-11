@@ -192,11 +192,11 @@ def test_accessible_event_stages_before_change_after_with_bilateral_memberships(
     before = f.cs.mtm.state()
     staged = stage_event_cases(bank, f.cs.components.reference_close, [(frame,)], limit=4)
     assert staged.codes.shape == (1, 4, 8)
-    for actual, expected in zip(staged.codes[0, 1:], (event.before, code, event.after)):
+    for actual, expected in zip(staged.codes[0, 1:], (event.before, code, f.cs.mtm.event_value(event))):
         torch.testing.assert_close(actual, expected)
     torch.testing.assert_close(staged.cases[0, 0, 1:], code.new_tensor([[.8, .2]]).expand(3, -1))
     assert staged.eligible.tolist() == [[True, False, False, False]]
-    torch.testing.assert_close(staged.view(torch.tensor([verb])).reference[0], entry.value)
+    torch.testing.assert_close(staged.view(torch.tensor([verb])).reference[0], f.cs.mtm.value_of(token))
     assert stage_event_cases(bank, f.cs.components.reference_close, [(frame,)], limit=3) is bank
     from test_modal_timelines import same
     same(f.cs.mtm.state(), before)
@@ -217,9 +217,10 @@ def test_phase_question_uses_selected_content_and_never_the_event_clock(monkeypa
     wanted = torch.tensor([1., 1., 0., 0., 1., 1., 0., 0.])
     partial = torch.tensor([1., 0., 0., 0., 1., 0., 0., 0.])
     reader = ThoughtLTMCapability(store=lambda: f.store, equal=lambda a,b: 1., tau_id=.9)
+    query_value = f.cs.mtm.value_of(token)
     def ask(content):
         from TimelineRead import phase_request
-        question = replace(ConceptualMeaning.from_description(entry.value), bindings={
+        question = replace(ConceptualMeaning.from_description(query_value), bindings={
             '_query_event': (token, event.verb, 0)})
         question = phase_request(question, content)
         return reader.truth_evidence(question, max_records=16, work=QueryWorkBudget(32))
@@ -243,7 +244,7 @@ def test_phase_content_checkpoint_copies_and_rejects_invalid_values():
     from Memory import MediumTermMemory
     p = pool()
     value = torch.full((8,), .3)
-    p.event(address(1), address(2), verb=12, role=0, when=2, case_value=value)
+    p.event(address(1), address(2), verb=12, role=0, when=2, before=value, case_value=value)
     saved = p.state()
     restored = MediumTermMemory()
     restored.restore(saved)
@@ -252,8 +253,8 @@ def test_phase_content_checkpoint_copies_and_rejects_invalid_values():
     assert restored.entries[address(1)].events[0].case_value.sum() > 0
     for bad_value in (torch.ones(7), torch.full((8,), 1.1), torch.full((8,), float('nan'))):
         invalid = deepcopy(saved)
-        event = invalid['entries'][0]['timelines'][0][0][0]
-        invalid['entries'][0]['timelines'] = ((((*event[:-2], bad_value, event[-1]),), torch.full((8,), .2)),)
+        event = invalid['entries'][0]['timelines'][0][0]
+        invalid['entries'][0]['timelines'] = (((*event[:-2], bad_value, event[-1]),),)
         before = restored.state()
         with pytest.raises(ValueError):
             restored.restore(invalid)
@@ -261,9 +262,6 @@ def test_phase_content_checkpoint_copies_and_rejects_invalid_values():
     for version in (5, 6):
         legacy = deepcopy(saved)
         legacy['version'] = version
-        entry = legacy['entries'][0]
-        entry['timelines'] = tuple((tuple(event[:-1] for event in history), value)
-                                  for history, value in entry['timelines'])
         with pytest.raises(ValueError, match='transient pool version'):
             restored.restore(legacy)
         same(restored.state(), before)

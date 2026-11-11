@@ -5,6 +5,15 @@ from Memory import LTM0
 def with_definitions(cs):
     from ClauseRow import attach_clause_index
     from types import SimpleNamespace
+    from BasicPercepts import BasicPercepts
+    from Layers import RadixLayer
+    native = RadixLayer(cs.nDim, initial_cap=16384)
+    basic = BasicPercepts(native, cs.nDim, 0, 16384)
+    object.__setattr__(cs, '_fixture_percepts', native)
+    cs._fixture_basic_percepts = basic
+    object.__setattr__(cs, '_basic_percepts', basic)
+    if not hasattr(cs, '_model'):
+        object.__setattr__(cs, '_model', SimpleNamespace())
     store = LTM0(cs.nDim, capacity=1024)
     object.__setattr__(cs, '_fixture_occurrences', store)
     attach_clause_index(SimpleNamespace(), store, cs)
@@ -76,5 +85,6 @@ def learned_operation(occupations, operation, *occupants, count):
                      for words in occupants)
     for _ in range(count):
         occupations.observe_use(operation, operands)
+        occupations.observe_seat(operation, operands)
         from ConceptHierarchy import refresh
         refresh(occupations.owner)

@@ -37,7 +37,17 @@ def gate_fixture(monkeypatch):
     from PartsOfSpeech import PartsOfSpeech,formal_arguments
     owner,bank,_,alloc = paired_fixture(meaning_pairs=4, capacity=160)
     grammar=Language.Grammar();grammar.load_from_grammar_file('complete.grammar')
-    language=SimpleNamespace(parts_of_speech=PartsOfSpeech(formal_arguments(grammar.rules_upward)))
+    binary = tuple(rule for rule in grammar.rules_upward if rule.arity == 2)
+    unary = tuple(rule for rule in grammar.rules_upward if rule.arity == 1)
+    def operation(rule):
+        if rule.method_name is None: return None
+        cls = Language.GRAMMAR_LAYER_CLASSES[rule.method_name]
+        if issubclass(cls, Language.MarkerUnaryLayer):
+            return cls(Language.GRAMMAR_LAYER_CLASSES[cls.marker_base](owner.nDim, owner.nDim))
+        return cls(owner.nDim, owner.nDim) if rule.method_name in ('lift','verb','lower','surface','sum','implies') else cls()
+    language=SimpleNamespace(parts_of_speech=PartsOfSpeech(formal_arguments(grammar.rules_upward)),
+        _compose_binary_rules=binary, _compose_unary_rules=unary,
+        _tree_layer=lambda arity: SimpleNamespace(ops=tuple(map(operation,binary)), unary_ops=tuple(map(operation,unary))))
     store=LTM0(owner.nDim,capacity=64)
     attach_clause_index(SimpleNamespace(languageSpace=language),store,owner)
     return SimpleNamespace(cs=owner,store=store,language=language)
@@ -112,8 +122,8 @@ def test_clause_gate_caps_recorded_operations_and_opens_on_lift_classes(monkeypa
     assert not bank.gates.open['clause']
     stored=torch.tensor([.8,.4])
     for row,name,operands in zip(rows,('verb','lift','part'),((c,d),(a,b),(c,a))):
-        assert bank.operation_catalog[int(bank.grammar_operation[row])]==name
-        scale=min(*(positive_length(owner,x) for x in operands),speech.operation(name)['trust'])
+        assert speech.seats[int(bank.operation_seat[row])].name==name
+        scale=min(*(positive_length(owner,x) for x in operands),positive_length(owner, speech.seats[name].concept))
         if name=='verb' or name=='part' and not except_part:scale=min(scale,data['closedTrust'])
         torch.testing.assert_close(torch.stack(bank.evidence(row)),stored*scale)
     before=bank.truth_plus.clone(),bank.truth_minus.clone()
@@ -121,10 +131,11 @@ def test_clause_gate_caps_recorded_operations_and_opens_on_lift_classes(monkeypa
     measured=speech.operation('lift')
     definiteness=-math.expm1(-8/3)
     assert measured['definiteness']==pytest.approx((definiteness,definiteness))
-    assert measured['trust']==pytest.approx(definiteness)
+    assert 'trust' not in measured
+    assert positive_length(owner, speech.seats['lift'].concept) > 0
     assert sum(measured['definiteness'])/2 >= data['clause']['threshold']
     for row,name,operands in zip(rows,('verb','lift','part'),((c,d),(a,b),(c,a))):
-        scale=min(*(positive_length(owner,x) for x in operands),speech.operation(name)['trust'])
+        scale=min(*(positive_length(owner,x) for x in operands),positive_length(owner, speech.seats[name].concept))
         torch.testing.assert_close(torch.stack(bank.evidence(row)),stored*scale)
     assert bank.gates.open['clause']
     torch.testing.assert_close(bank.truth_plus,before[0]);torch.testing.assert_close(bank.truth_minus,before[1])
@@ -197,7 +208,7 @@ def test_empty_lift_classes_have_zero_radius_and_leave_the_clause_gate_closed(mo
     a,b=words(f,2);agreeing_views(f.cs,a,b)
     address=f.store.write_clause(composition(f,a,b,'part'),evidence=(1.,0.))
     row=f.store.location(address)[1]
-    torch.testing.assert_close(torch.stack(bank.evidence(row)), torch.tensor([bank.gates.closed_trust, 0.]))
+    torch.testing.assert_close(torch.stack(bank.evidence(row)), torch.tensor([min(bank.gates.closed_trust, positive_length(f.cs, f.language.parts_of_speech.seats['part'].concept)), 0.]))
     assert f.language.parts_of_speech.operation('lift')['definiteness']==(0.,0.)
     assert f.language.parts_of_speech.operation('lift')['uses']==0
     assert not bank.gates.open['clause']

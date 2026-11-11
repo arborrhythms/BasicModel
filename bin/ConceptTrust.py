@@ -1,5 +1,6 @@
 """Observed concept radii and relation admission (item 2.3)."""
 import math
+from contextlib import contextmanager
 import torch
 from torch import nn
 
@@ -33,6 +34,7 @@ class ConceptTrust(nn.Module):
         self.register_buffer('content', torch.zeros_like(bank.W))
         self.register_buffer('known', torch.zeros(len(bank.W), dtype=torch.bool, device=bank.W.device))
         self.register_buffer('allocated', torch.zeros(len(bank.W), dtype=torch.bool, device=bank.W.device))
+        self._deferred_word_views = None
         if isinstance(bank.W, nn.Parameter):
             import weakref
             bank.W._concept_trust_projection = weakref.ref(self)
@@ -136,12 +138,35 @@ def positive_length(owner, identity=None, *, value=None):
     return float(radii.lengths[row, 0])
 
 
+@contextmanager
+def defer_word_views(owner):
+    """Finish a kept close's scored links before learning its word radii."""
+    trust = owner.similarity_codebook.trust
+    if trust._deferred_word_views is not None:
+        yield
+        return
+    pending = trust._deferred_word_views = []
+    completed = False
+    try:
+        yield
+        completed = True
+    finally:
+        trust._deferred_word_views = None
+        if completed:
+            for identity, content in pending:
+                observe(owner, identity, content)
+
+
 @torch.no_grad()
 def observe(owner, identity, content):
     """Add one kept view without allocating a memory row."""
     from Memory import NULL_CONCEPT
     from IdentityRows import carrier, meet_ratios
     trust = owner.similarity_codebook.trust
+    if (trust._deferred_word_views is not None
+            and 'word' in owner._concept_allocator.symbol_types.get(identity, ())):
+        trust._deferred_word_views.append((identity, content.detach().clone()))
+        return
     if not trust.tracks(identity) or identity == NULL_CONCEPT or owner.is_frozen(identity):
         return
     trust.remember(identity, content)

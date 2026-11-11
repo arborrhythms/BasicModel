@@ -373,7 +373,7 @@ def test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads(
     restored = _tiny_canonical_model(fresh, monkeypatch, batch_size=1,
         word_buckets='16', ltm_capacity=32, architecture_overrides=settings)
     try:
-        assert restore(restored, str(checkpoint))
+        assert restore(restored, str(checkpoint), require_match=True)
         loaded = restored.symbolSpace.ltm_store
         assert len(loaded) == occupancy
         torch.testing.assert_close(loaded.address_keys[:occupancy], addresses, rtol=0, atol=0)

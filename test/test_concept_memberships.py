@@ -1,4 +1,5 @@
 """Order-zero definitions read native features, independently of codes."""
+from basic_fixtures import feature as basic_feature
 import pytest
 import torch
 
@@ -11,8 +12,8 @@ def binary_features(cs, raw):
     primitive = PrimitiveProperties(2)
     primitive.teach(0, [48, 49], [0., 1.])
     primitive.teach(1, [48, 49], [1., 0.])
-    cs.add_concept_feature(0, 'ws', 0, 1.)
-    cs.add_concept_feature(0, 'ws', 1, -1.)
+    basic_feature(cs, 0, 'ws', 0, 1., parts=(48, 49))
+    basic_feature(cs, 0, 'ws', 1, -1., parts=(48, 49))
     b, length = raw.shape
     ix = torch.arange(length)
     spans = torch.stack((ix, ix + 1), -1)[None].expand(b, -1, -1)
@@ -53,8 +54,8 @@ def test_a_located_part_need_not_pervade_but_the_whole_property_must():
     primitive = PrimitiveProperties(1)
     primitive.teach(0, [48, 49], [0., 1.])
     # A PS percept and a WS property have independent native addresses.
-    cs.add_concept_feature(0, 'ps', 7, .5)
-    cs.add_concept_feature(0, 'ws', 0, 1.)
+    basic_feature(cs, 0, 'ps', 7, .5)
+    basic_feature(cs, 0, 'ws', 0, 1., parts=(7, 8))
     raw = torch.tensor([[49, 49], [49, 48], [48, 48]])
     part_ids = torch.tensor([[7, 8], [7, 8], [8, 8]])
     parts = torch.tensor([[[0, 1], [1, 2]]]).expand(3, -1, -1)
@@ -63,18 +64,18 @@ def test_a_located_part_need_not_pervade_but_the_whole_property_must():
     # The part at [0,1] suffices at [0,2]; the property must hold at both
     # positions. A missing property adds no counterevidence to the present part.
     # Inspect this occurrence before the extent readout union.
-    torch.testing.assert_close(cs._percept_field.event_evidence([('ws', 0)])[0, :, 0, -1],
+    torch.testing.assert_close(cs._percept_field.event_evidence([('bp', cs.basic_percepts.index[((part,), (0,))]) for part in (7, 8)]).amax(0)[:, 0, -1],
                                torch.tensor([[1., 0.], [0., 0.], [0., 1.]]))
     # A missing byte supplies neither pole, including a missing complement.
     raw[2, 1] = 0
     cs.cs_read_memberships((part_ids, parts, primitive, raw, whole), whole)
-    assert cs._percept_field.event_evidence([('ws', 0)])[0, 2, 0, -1].count_nonzero() == 0
+    assert cs._percept_field.event_evidence([('bp', cs.basic_percepts.index[((part,), (0,))]) for part in (7, 8)]).amax(0)[2, 0, -1].count_nonzero() == 0
 
 
 @pytest.mark.parametrize('literal', [(7,), (7, 8)])
 def test_part_containment_belongs_to_the_subject_extent(literal):
     cs = _cs()
-    cs.add_concept_feature(0, 'ps', literal, 1.)
+    basic_feature(cs, 0, 'ps', literal, 1.)
     raw = torch.full((1, 8), 65)
     ids = torch.tensor([[7, 8, 9, 9, 9, 9, 9, 9]])
     starts = torch.arange(8)
@@ -117,14 +118,14 @@ def test_fractional_feature_weights_use_per_pole_min_and_max_extent_union():
     primitive = PrimitiveProperties(2)
     with torch.no_grad():
         primitive.members[:, 65] = torch.tensor([.25, .36])
-    cs.add_concept_feature(0, 'ws', 0, .5)
-    cs.add_concept_feature(0, 'ws', 1, -1.)
+    basic_feature(cs, 0, 'ws', 0, .5, parts=(65,))
+    basic_feature(cs, 0, 'ws', 1, -1., parts=(65,))
     raw = torch.tensor([[65, 65]])
     spans = torch.tensor([[[0, 1], [1, 2]]])
     extent = torch.tensor([[[0, 2]]])
     read = cs.cs_read_memberships((raw, spans, primitive, raw, spans), extent)
     occurrence = torch.tensor([.25 ** .5, .36])
-    native = cs._percept_field.event_evidence([('ws', 0), ('ws', 1)])
+    native = cs._percept_field.event_evidence([('bp', cs.basic_percepts.index[((65,), (prop,))]) for prop in (0, 1)])
     torch.testing.assert_close(native[:, 0, 0, 0], torch.tensor([[.25, .75], [.36, .64]]))
     torch.testing.assert_close(read[0, 0, 0], occurrence)
 
@@ -132,7 +133,7 @@ def test_fractional_feature_weights_use_per_pole_min_and_max_extent_union():
 def test_feature_definitions_use_the_existing_sparsity_penalty_and_sidecar():
     cs = _cs()
     for feature, weight in enumerate((.8, -.6, .4)):
-        cs.add_concept_feature(0, 'ws', feature, weight)
+        basic_feature(cs, 0, 'ws', feature, weight, parts=(65,))
     store = Spaces._concept_alloc_of(cs).layer()
     penalty = cs.definition_sparsity_loss(1.)
     torch.testing.assert_close(penalty, torch.tensor(.4))
@@ -153,11 +154,11 @@ def test_sentence_boundary_offers_candidates_and_getter_remains_pure():
     cs = _cs()
     row = _mint_field(cs, 100)
     cs.add_concept_edge(row, 0, 1., conjunctive=True)
-    cs.add_concept_feature(0, 'ws', 7, 1.)
+    basic_feature(cs, 0, 'ws', 7, 1., parts=(65,))
     store = Spaces._concept_alloc_of(cs).layer()
     cs.Reset(hard=True)
     assert (row, store.nOutput + 1) in store.conjunctive._index
-    assert (0, 4 * 7 + 3) in store.features._index
+    assert (0, 2 * cs.basic_percepts.index[((65,), (7,))] + 1) in store.features._index
     before = [(tuple(m._index), m.values) for m in store.definition_matrices()]
     cs.getParameters()
     for (indices, parameter), matrix in zip(before, store.definition_matrices()):
@@ -167,12 +168,13 @@ def test_sentence_boundary_offers_candidates_and_getter_remains_pure():
 def test_pruning_a_feature_preserves_the_other_tower_at_the_same_address():
     cs = _cs()
     row = _mint_row(cs, 0, 100)
-    cs.add_concept_feature(row, 'ps', 7, .5)
-    cs.add_concept_feature(row, 'ws', 7, -.5)
+    basic_feature(cs, row, 'ps', 7, .5)
+    basic_feature(cs, row, 'ws', 7, -.5, parts=(65,))
     cs._prepare_part_learning()
     cs._drop_concept_edge(100, 7, side='part')
     matrix = Spaces._concept_alloc_of(cs).layer().features
-    assert set(matrix._index) == {(row, 30), (row, 31)}
+    bp = cs.basic_percepts.index[((65,), (7,))]
+    assert set(matrix._index) == {(row, 2*bp), (row, 2*bp+1)}
     cs._drop_concept_edge(100, 7, side='whole')
     assert matrix.nnz == 0 and matrix.values is None
 
@@ -183,8 +185,8 @@ def test_feature_growth_preserves_frozen_rows_and_optimizer_moments(tmp_path):
     cs = model.conceptualSpaces[0]
     frozen = _mint_row(cs, 0, 100)
     live = _mint_row(cs, 0, 101)
-    cs.add_concept_feature(frozen, 'ws', 0, .5)
-    cs.add_concept_feature(live, 'ws', 1, .5)
+    basic_feature(cs, frozen, 'ws', 0, .5, parts=(65,))
+    basic_feature(cs, live, 'ws', 1, .5, parts=(65,))
     cs.freeze_concept(100)
     optimizer = model.getOptimizer(lr=.001)
     matrix = Spaces._concept_alloc_of(cs).layer().features
@@ -208,7 +210,7 @@ def test_definition_boundary_preserves_gradient_owned_codes(tmp_path):
     from test_grounded_xor import grounded_model
     model, x = grounded_model(tmp_path)
     cs = model.conceptualSpaces[0]
-    cs.add_concept_feature(0, 'ws', 0, 1.)
+    basic_feature(cs, 0, 'ws', 0, 1., parts=(65,))
     codes = cs.similarity_codebook.getW().detach().clone()
     cs.Reset(hard=True)
     torch.testing.assert_close(cs.similarity_codebook.getW(), codes, rtol=0, atol=0)

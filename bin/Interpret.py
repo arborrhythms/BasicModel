@@ -204,7 +204,6 @@ class InterpretLayer(GrammarLayer):
             identity_key = identity.key(identity.form(raw)).hex()
         elif native is not None:
             parts = tuple(ps.fuse_parts(parts))
-        cs._canonicalize_part_literals()
         form = form_key(form)
         word = index.word(unit=parts, form=form, identity=identity_key)
         for cid, value in self._pending.items():
@@ -234,7 +233,7 @@ class InterpretLayer(GrammarLayer):
                     drops[reason] = drops.get(reason, 0) + 1
                     return word
                 cs._populate_concept_weights(obj if obj is not None else word,
-                    witness=(parts, wholes), word_reading=word_reading)
+                    witness=(parts, wholes), word_reading=True)
             for part in parts:
                 cs.add_part(word, part)
             for whole in wholes:
@@ -268,7 +267,7 @@ class InterpretLayer(GrammarLayer):
         if discovering:
             features = alloc.layer()
             case = next((row for (row, col) in features.features._index
-                         if len(parts) == 1 and col == 4 * parts[0] and bool(features.assigned[row])), None)
+                         if len(parts) == 1 and col // 2 in cs.basic_percepts.carrying('ps', parts[0]) and bool(features.assigned[row])), None)
             obj = None if case is None else cs.concept_id_at_row(case)
             try:
                 self._preflight(inventory=False)
@@ -494,6 +493,10 @@ class InterpretLayer(GrammarLayer):
             if len(choices) != 1:
                 return None  # Enumerate associations; the grammar chooses.
             obj = choices[0]
+        elif word in index.word_ids:
+            # The lexical identity survives while its definition is below
+            # the authority threshold. It has no usable denotation yet.
+            return None
         else:
             raise ValueError('interpret requires an admitted word')
         if frozen:

@@ -231,7 +231,8 @@ def test_training_output_keeps_lexical_text_and_output_gradients(monkeypatch):
         owner=model._concept_owner()
         row=owner._csw_row_of(owner.interpret.word_for_form('alpha'))
         word=owner.similarity_codebook.lookup_rows(torch.tensor([[row]]),streams=True)[:,0]
-        meaning=ConceptualMeaning.from_description(word[0].detach())
+        leaf = word[0].detach().requires_grad_()
+        meaning=ConceptualMeaning.from_description(leaf)
         held=AnswerDerivation(answer_symbol=None,conceptual_answer=meaning.roles[None],
             sentence_states=(SimpleNamespace(meaning=meaning),))
         understood=Understanding()
@@ -242,9 +243,11 @@ def test_training_output_keeps_lexical_text_and_output_gradients(monkeypatch):
         assert trained.texts == evaluated.texts == ('alpha',)
         torch.testing.assert_close(trained.concepts,evaluated.concepts,rtol=0,atol=0)
         torch.testing.assert_close(trained.actual,evaluated.actual,rtol=0,atol=0)
-        parameters=tuple(model.outputSpace.percept_adapter.parameters())
-        expected=torch.autograd.grad(evaluated.actual.sum(),parameters)
-        actual=torch.autograd.grad(trained.actual.sum(),parameters)
+        # Bytes are the detached face; the common reverse's native percepts
+        # retain the output cotangent to the supplied conceptual idea.
+        parameters=(leaf,)
+        expected=torch.autograd.grad(evaluated.percepts.sum(),parameters, retain_graph=True)
+        actual=torch.autograd.grad(trained.percepts.sum(),parameters)
         assert any(bool(g.abs().any()) for g in actual)
         for first,second in zip(expected,actual,strict=True):
             torch.testing.assert_close(first,second,rtol=0,atol=0)

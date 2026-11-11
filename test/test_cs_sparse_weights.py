@@ -3,6 +3,7 @@
 Each part matrix reads 2(S+1) sources: S positive poles and EVERYTHING,
 then S negative poles and its absent counterpart. Codes are stored once.
 """
+from basic_fixtures import feature as basic_feature
 from order_fixtures import force_order
 import os
 import sys
@@ -60,7 +61,7 @@ def _mint_field(cs, cid):
     """Eight existing native predicates before a composed order-0 row."""
     for i in range(8):
         row = _mint_row(cs, 0, 10000 + i)
-        cs.add_concept_feature(row, 'ps', 1000 + i, 1.)
+        basic_feature(cs, row, 'ps', 1000 + i, 1.)
     return _mint_row(cs, 0, cid)
 
 

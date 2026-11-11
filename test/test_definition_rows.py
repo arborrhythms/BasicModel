@@ -46,6 +46,7 @@ def test_22_supplied_object_keeps_its_form_row_and_writes_one_definition():
     assert all(not hasattr(alloc, name) for name in ('interpretations', 'word_obj_meta'))
 
 
+@pytest.mark.large_memory
 def test_24_index_is_bidirectional_and_rebuilds_from_saved_rows(monkeypatch):
     from Memory import LTM0
     m = model()

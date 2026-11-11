@@ -83,11 +83,12 @@ def test_trial_consumers_share_one_record_and_answer_cannot_write_it(monkeypatch
     root = Path(Models.__file__).resolve().parents[1]
     model, _, data = _fresh_model(str(root/'data/XOR_grammar.xml'))
     reconstructed, answered = [], []
-    reconstruct = model._reconstruct_trial
+    import SentenceField
+    reconstruct = SentenceField.reconstruct
     answer = Models.BasicModel._sentence_answer_error
-    def read(record):
+    def read(owner, record, errors, active):
         reconstructed.append(record)
-        return reconstruct(record)
+        return reconstruct(owner, record, errors, active)
     def score(self, state, sid, active, observation, **kwargs):
         record = observation['record']
         answered.append(record)
@@ -95,7 +96,7 @@ def test_trial_consumers_share_one_record_and_answer_cannot_write_it(monkeypatch
         gradient = torch.autograd.grad(cost.sum(), record.root, retain_graph=True, allow_unused=True)[0]
         assert gradient is not None and not bool(gradient.abs().any())
         return cost
-    monkeypatch.setattr(model, '_reconstruct_trial', read)
+    monkeypatch.setattr(SentenceField, 'reconstruct', read)
     monkeypatch.setattr(Models.BasicModel, '_sentence_answer_error', score)
     optimizer = model.getOptimizer(lr=.01)
     try:

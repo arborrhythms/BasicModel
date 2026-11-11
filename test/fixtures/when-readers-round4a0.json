@@ -27,6 +27,39 @@
       "now": "Live focus uses word subdivisions within the existing sentence interval; stored sentence coordinates remain unchanged."
     },
     {
+      "file": "bin/BasicPercepts.py",
+      "function": "BasicPercepts.read",
+      "attributes": [
+        "when",
+        "when_band"
+      ],
+      "role": "basic percept read",
+      "previous_absolute_time": false,
+      "now": "The grouped basic percept field preserves the native field time and band."
+    },
+    {
+      "file": "bin/ClauseRow.py",
+      "function": "ClauseRows.write_clause",
+      "attributes": [
+        "when"
+      ],
+      "role": "clause closing",
+      "previous_absolute_time": false,
+      "now": "The stamped closing time is passed to each native occurrence."
+    },
+    {
+      "file": "bin/FieldReverse.py",
+      "function": "reverse",
+      "attributes": [
+        "nWhen",
+        "when",
+        "whenEncoding"
+      ],
+      "role": "order-zero loop",
+      "previous_absolute_time": false,
+      "now": "Decode the supplied field time into native percept coordinates; never read a saved input span."
+    },
+    {
       "file": "bin/Language.py",
       "function": "SymbolSpace._publish_symbol_snapshot",
       "attributes": [
@@ -115,6 +148,16 @@
       "role": "identity checkpoint model-time provenance",
       "previous_absolute_time": false,
       "now": "Serializes or restores the retained identity time; no new clock or forward-path timestamp."
+    },
+    {
+      "file": "bin/MemoryLink.py",
+      "function": "menu",
+      "attributes": [
+        "when"
+      ],
+      "role": "reference menu",
+      "previous_absolute_time": false,
+      "now": "The retained entry time supplies the candidate position."
     },
     {
       "file": "bin/ModalLearning.py",
@@ -301,6 +344,46 @@
       ]
     },
     {
+      "file": "bin/SentenceField.py",
+      "function": "after_understanding",
+      "attributes": [
+        "when"
+      ],
+      "role": "order-zero loop",
+      "previous_absolute_time": false,
+      "now": "The order-zero face retains its open field occurrence times."
+    },
+    {
+      "file": "bin/SentenceField.py",
+      "function": "descended",
+      "attributes": [
+        "when"
+      ],
+      "role": "order-zero loop",
+      "previous_absolute_time": false,
+      "now": "Higher-order descent keeps the supplied field times unchanged."
+    },
+    {
+      "file": "bin/SentenceField.py",
+      "function": "open_field",
+      "attributes": [
+        "_cs_field_when"
+      ],
+      "role": "order-zero loop",
+      "previous_absolute_time": false,
+      "now": "Capture the live sentence-open field time for both composition trials."
+    },
+    {
+      "file": "bin/SentenceField.py",
+      "function": "publish",
+      "attributes": [
+        "when"
+      ],
+      "role": "order-zero loop",
+      "previous_absolute_time": false,
+      "now": "Publish the same parallel field time to the conceptual carrier."
+    },
+    {
       "file": "bin/Spaces.py",
       "function": "ConceptualSpace._clear_percept_field",
       "attributes": [
@@ -331,6 +414,16 @@
       "role": "binding/closing reader",
       "previous_absolute_time": true,
       "now": "Percept fields carry the current sentence unit interval for located binding."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "ConceptualSpace.cs_symbolic_phase",
+      "attributes": [
+        "_cs_field_when"
+      ],
+      "role": "order-zero loop",
+      "previous_absolute_time": false,
+      "now": "Retain the parallel pump field time beside its order-zero evidence."
     },
     {
       "file": "bin/Spaces.py",

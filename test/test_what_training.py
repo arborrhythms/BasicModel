@@ -320,10 +320,14 @@ def test_past_and_future_text_answers_are_scored_in_input_space(synth_discourse_
     opt = m.getOptimizer(lr=1e-4)
     batch = _batch(m, rows=2)
     # Prime the discourse ring so recall/prediction resolve.
+    # The underlying corpus has numeric supervised labels. Prime its forward
+    # head (loop D4), then use text synthesis for the temporal questions below.
+    m.answer_synthesis = False
     for _ in range(2):
         m.begin_presentation()
         m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
                    batch_override=batch)
+    m.answer_synthesis = True
     # Rows 0,1 presented; ask for the row after each.
     questions = (What.future(0), What.future(1))
     with torch.no_grad():
@@ -338,7 +342,7 @@ def test_past_and_future_text_answers_are_scored_in_input_space(synth_discourse_
     # input slots) -- ``_reverse_event_loss`` clips to the shared window.
     assert torch.is_tensor(target) and target.dim() == 3
     assert target.shape[0] == construction.surface.shape[0]
-    assert target.shape[-1] == construction.surface.shape[-1]
+    assert target.shape[-1] == construction.percepts.shape[-1]
     assert not target.requires_grad                      # a target, not an input
     # The target is the embedded DESIRED sentence, not the presented input's
     # own embedding (a silent-substitution guard).
@@ -374,6 +378,8 @@ def test_curriculum_drives_question_families_through_run(synth_model):
     """Step 9 / section 12.8: Model.run() trains present, past, future and
     inference questions through the one execution path."""
     m = synth_model
+    # The curriculum fixture supplies numeric XOR labels (loop D4).
+    m.answer_synthesis = False
     m.what_curriculum = "full"
     m.what_curriculum_ratio = 0.5
     m.what_curriculum_distance = 1

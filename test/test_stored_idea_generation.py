@@ -407,6 +407,75 @@ def test_unspelled_primed_compound_stays_available_for_decomposition():
     assert all(any(torch.equal(value, word) for word in words[0]) for value in trace[0][0, :3])
 
 
+def _field_trial(words, returned, *, available=True, meaning_start=None):
+    """A fixed proposal, the real occurrence writer, and a linear field decoder."""
+    from contextlib import nullcontext
+    from unittest.mock import patch
+    from Models import BasicModel
+    from Layers import ModelLoss
+    from Understanding import ConceptualField
+    from SentenceUnderstanding import PrimedSymbols, SentenceUnderstanding
+    from OutputOccurrences import generated
+    width = words.shape[-1]
+    field = ConceptualField(torch.arange(2),
+        torch.stack((torch.eye(2), torch.zeros(2, 2)), -1)[:, None],
+        torch.tensor([[[0, 1], [1, 2]]]), torch.ones(1, 2, 2), None)
+    carrier = SimpleNamespace(carrier_like=SimpleNamespace)
+    codebook = SimpleNamespace(getW=lambda: words[0], mereology=(None if meaning_start is None
+        else SimpleNamespace(percept_event_width=meaning_start)))
+    owner = SimpleNamespace(subspace=carrier, similarity_codebook=codebook,
+        _csw_row_of=int, _row_order=lambda row: 0, _field_caps=lambda: (2,),
+        _field_codes=lambda codes, rows: codes[rows], cs_reverse_presence=lambda query, **kwargs: query,
+        _concept_allocator=SimpleNamespace(layer=lambda order: SimpleNamespace(_rows=(), _cols=(), nOutput=2)),
+        concept_id_at_row=int, word_surface_for_row=lambda row: bytes([97 + row]))
+    bank = PrimedSymbols(torch.tensor([[0, 1]]), words, torch.ones(1, 2),
+        torch.ones(1, 2, dtype=torch.bool), torch.tensor([[[97], [98]]]),
+        torch.ones(1, 2, 1, dtype=torch.bool), meaning_start=meaning_start)
+    root = returned.sum(1)
+    end = torch.cat((returned, returned.new_zeros(1, 3-returned.shape[1], width)), 1)
+    record = SentenceUnderstanding(root, end, torch.tensor([returned.shape[1]]),
+        end.flatten(1)[:, None], torch.tensor([[returned.shape[1]]]), words,
+        torch.tensor([[0, 1]]), torch.ones(1, 2, dtype=torch.bool), bank, torch.tensor(0),
+        open_field=field)
+    def events(field):
+        # This fixture measures retained conceptual support, independently of
+        # word order. Each native row exposes the two concepts' two poles.
+        result = words.new_zeros(2, 1, 2)
+        result[field.concept_ids] = field.evidence.sum(2)
+        return result.permute(1, 0, 2).flatten(1)[:, None].expand(1, 2, 4)
+    observed = events(field)
+    native = SimpleNamespace(bytes_for=lambda row: bytes([97 + row]), get_id=lambda raw: raw[0] - 97)
+    model = SimpleNamespace(reconstruct_in_loop=True, _sentence_reconstruction=available, _sentence_training=False,
+        loss=ModelLoss(reconstruction_scale=1., what_scale=1., where_scale=0., when_scale=0.),
+        conceptualSpace=owner, conceptualSpaces=(owner,), _concept_owner=lambda: owner,
+        inputSpace=SimpleNamespace(subspace=SimpleNamespace(nWhere=0, nWhen=0)),
+        perceptualSpace=SimpleNamespace(percept_store=native,
+            _forward_input=dict(native_indices=torch.tensor([[0, 1]]), native_part_spans=field.where),
+            _radix_part_events=lambda ids, positions: observed),
+        languageSpace=SimpleNamespace(generation_scope=nullcontext), _synthesis_guard=nullcontext,
+        inter_loss_weight=0., symbolSpace=SimpleNamespace(expectation=None),
+        _staged_concepts_in=torch.ones(1, 1, 2, dtype=torch.long), _input_reconstructions={},
+        _publish_sentence_scratch=lambda state: None, _trial_understanding=lambda *args: record,
+        _tensor_pushed_ideas=words, _sentence_field=None,
+        _sentence_observation=lambda *args: dict(entries=(None,), meanings=(None,), reference_plans=()))
+    def reverse(carrier, *, field):
+        percepts = events(field)
+        return SimpleNamespace(_reconstruction_percepts=percepts,
+            materialize=lambda: percepts[..., ::2].sum(-1).gt(0).long()[:, None])
+    model.reverse = reverse
+    model._reverse_event_loss = MethodType(BasicModel._reverse_event_loss, model)
+    trace = (torch.zeros(1, 1, dtype=torch.long), torch.zeros(1, 1, dtype=torch.bool),
+        torch.tensor([False]), words.new_zeros(1, 3), torch.tensor([True]),
+        words.new_zeros(1, 1, 1, 9), words[:, :1])
+    def proposal(model, record, **options):
+        return generated(model, returned, record.end_depth, torch.tensor([False]), bank, trace)
+    lang = [None] * 12
+    lang[6], lang[10], lang[11] = root[:, None], record.roots, record.depths
+    with patch('SentenceField.sentence_generated', proposal):
+        cost, *_ = BasicModel._sentence_path_cost(model, ((end,), lang, None), 0, torch.tensor([True]))
+    return cost, model._sentence_cost_registry.breakdown()
+
+
 @pytest.mark.parametrize('near', [False, True])
 def test_dropped_constituent_is_charged_and_never_complete(near, eager_reading, monkeypatch):
     from Models import BasicModel
@@ -441,65 +510,22 @@ def test_dropped_constituent_is_charged_and_never_complete(near, eager_reading, 
     assert result[3].tolist() == [True]  # Dropped coverage is still a failure.
     assert result[2].tolist() == [.5]
 
-    # Under the field objective, free_bytes is reporting-only. Verify that
-    # the lost support still changes the actual trial/keep cost when the
-    # derivation inverse has no defined coordinates to charge.
-    import DerivationReconstruction
-    monkeypatch.setattr(DerivationReconstruction, 'reconstruct', lambda *a:
-        (words * 0, torch.ones(1, dtype=torch.bool), torch.zeros_like(words, dtype=torch.bool)))
-    field = SimpleNamespace(scope=bank.valid, observed=words,
-        costs=lambda rec, values, **kw: ({key: root.new_zeros(1)
-            for key in ('inside', 'outside', 'work')}, values))
-    owner.__dict__.update(reconstruct_in_loop=True, loss=SimpleNamespace(reconstruction_scale=1.),
-        inter_loss_weight=0., inter_contrastive_weight=0., symbolSpace=SimpleNamespace(expectation=None),
-        _publish_sentence_scratch=lambda state: None, _trial_understanding=lambda *a: record,
-        _tensor_pushed_ideas=words, _sentence_field=field, _last_decoder_trace=trace,
-        _sentence_leaf_positions=lambda *a: torch.arange(2), WHAT_STEP_COST=1.,
-        _reconstruct_trial=lambda rec: result, _last_decoder_byte_identity=result[2],
-        _sentence_observation=lambda *a: dict(entries=(None,), meanings=(None,)))
-    owner.inputSpace._reconstruction_sentence_available = torch.ones(1, 1, dtype=torch.bool)
-    lang = [None] * 12
-    lang[6], lang[10], lang[11] = root[:, None], end.flatten(1)[:, None], record.depths
-    cost, *_ = BasicModel._sentence_path_cost(owner, ((end,), lang, None), 0, torch.tensor([True]))
-    assert cost.tolist() == [.5]
-    terms = owner._sentence_cost_registry.breakdown()
-    assert terms['reconstruction.coverage']['trained']
+    # The common input reverse remains exact. Only the order-zero face
+    # after the lossy composition can charge the missing conceptual support.
+    cost, terms = _field_trial(words, root[:, None])
+    assert cost.item() == pytest.approx(.5)  # The single emitted word cannot realize the dropped word.
+    assert terms['reconstruction_order_zero.what']['trained']
+    assert not terms['reconstruction.coverage']['trained']
     assert not terms['reconstruction.free_bytes']['trained']
 
 
 @pytest.mark.parametrize('available', [True, False])
 def test_keep_cost_charges_erased_meaning_even_with_every_surface_leaf(available):
-    from types import SimpleNamespace
-    from Models import BasicModel
-    from SentenceUnderstanding import PrimedSymbols, SentenceUnderstanding
-    # Opposing leaves retain content even when their signed sum is zero.
     words = torch.tensor([[[1., 0., .2, 0.], [0., 1., -.2, 0.]]])
-    root = words.sum(1)
-    end = torch.cat((root[:, None], root.new_zeros(1, 2, 4)), 1)
-    valid = torch.ones(1, 2, dtype=torch.bool)
-    bank = PrimedSymbols(torch.tensor([[0, 1]]), words, torch.ones(1, 2), valid,
-        torch.tensor([[[97], [98]]]), torch.ones(1, 2, 1, dtype=torch.bool), meaning_start=2)
-    record = SentenceUnderstanding(root, end, torch.ones(1, dtype=torch.long),
-        end.flatten(1)[:, None], torch.ones(1, 1, dtype=torch.long), words,
-        bank.rows, valid, bank, torch.tensor(0))
-    # Surface-perfect free leaves with no meaning: byte/count checks cannot
-    # distinguish this value from a complete reading. No operator is masked.
     returned = words.clone()
     returned[..., 2:] = 0.
-    owner = SimpleNamespace(reconstruct_in_loop=True, loss=SimpleNamespace(reconstruction_scale=1.),
-        inter_loss_weight=0., inter_contrastive_weight=0., symbolSpace=SimpleNamespace(expectation=None),
-        inputSpace=SimpleNamespace(_reconstruction_sentence_available=torch.tensor([[available]])),
-        _publish_sentence_scratch=lambda state: None, _trial_understanding=lambda *a: record,
-        _tensor_pushed_ideas=words, _sentence_field=None,
-        _reconstruct_trial=lambda rec: (returned, root.new_zeros(1), root.new_zeros(1)),
-        _last_decoder_byte_identity=root.new_zeros(1),
-        _sentence_observation=lambda *a: dict(entries=(None,), meanings=(None,)))
-    lang = [None] * 12
-    lang[6], lang[10], lang[11] = root[:, None], record.roots, record.depths
-    state = ((end,), lang, None)
-    erased, *_ = BasicModel._sentence_path_cost(owner, state, 0, torch.tensor([True]))
-    returned = words.flip(1)
-    retained, *_ = BasicModel._sentence_path_cost(owner, state, 0, torch.tensor([True]))
+    erased, _ = _field_trial(words, returned, available=available, meaning_start=2)
+    retained, _ = _field_trial(words, words.flip(1), available=available, meaning_start=2)
     assert erased.item() == float(available)
     assert retained.item() == 0.
 

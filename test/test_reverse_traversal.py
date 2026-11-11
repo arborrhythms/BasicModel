@@ -58,7 +58,10 @@ def test_free_walk_reports_missing_leaves_without_underflow(tmp_path, monkeypatc
         assert not m._recon_ideas[~active].any()
         # STOP cannot recover these multiword inputs. Coverage is reported,
         # rather than manufacturing a traversal from the target length.
-        assert m._recon_truncated.all()
+        record = m._last_sentence_understanding
+        with torch.no_grad():
+            report = m._reconstruct_trial(record)
+        assert report[3].all()
     finally:
         m.End(); m.symbolSpace.soft_reset()
 

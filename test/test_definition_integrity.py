@@ -6,6 +6,7 @@ from test_definition_rows import model, admit
 from definition_fixtures import witness_object
 
 
+@pytest.mark.large_memory
 def test_copied_definition_index_is_owned_by_the_copied_store():
     m=model(); word,obj=admit(m,'hello'); original=m._concept_owner()._concept_allocator
     restored=copy.deepcopy(original)

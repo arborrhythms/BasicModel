@@ -156,6 +156,14 @@ def test_firing_metadata_reaches_chooser_and_choice_loss_reaches_its_parameters(
     low = with_slots(registry.form('intuit', root), (), pair=(.1, .2))
     high = with_slots(low, (), pair=(.9, .2))
     chooser = model.shared_grammar
+    # Supply an active candidate-content path; this is a wiring probe,
+    # independent of a random hidden layer's saturation.
+    with torch.no_grad():
+        first, last = chooser.chooser.mlp[0], chooser.chooser.mlp[-1]
+        first.weight.zero_(); first.bias.fill_(1.)
+        first.weight[:, chooser.d_model:2*chooser.d_model].copy_(
+            torch.eye(first.out_features, chooser.d_model))
+        last.weight.fill_(1./last.in_features); last.bias.zero_()
     logits = chooser.thought_logits(root, (low, high))
     assert not torch.equal(logits[:, 0], logits[:, 1])
     loss = -logits.log_softmax(-1)[0, 1]
@@ -370,7 +378,7 @@ def test_sparse_intuition_allocation_read(tmp_path):
         pointers=pointers,pointers_unchanged=True,shapes=sorted(shapes),inventory_square=False),indent=2)+'\n')
 
 
-def test_knowing_effect_preserves_field_shape_and_unaddressed_content():
+def test_knowing_effect_preserves_field_shape_and_unaddressed_content(monkeypatch):
     from Intuition import write_knowing
     model, registry, store, refs = setup()
     owner = model._concept_owner()
@@ -380,8 +388,15 @@ def test_knowing_effect_preserves_field_shape_and_unaddressed_content():
     carrier = owner.subspace
     carrier._concept_activations = field
     carrier._concept_inventory_rows = rows
-    carrier._thought_occurrence = 0
-    write_knowing(model,{'knowing':((int(rows[0]),(.7,.4)),)},0)
+    carrier._concept_where = torch.tensor([[[0, 1], [0, 0]]])
+    from Intuition import pack_term, chart, leaf
+    term = Term(('sym', 1), Idea(), Idea(row=int(rows[0])), (.7, .4),
+                idea(registry, refs[0]), (), (2.,) * 4)
+    meaning = replace(term.meaning, bindings={'_intuition_terms': (pack_term(term),)})
+    code = chart(owner, leaf(owner, int(rows[0]))).amax(-1)
+    monkeypatch.setattr('Intuition.evaluate', lambda owner, term:
+                        (code[:, None] * code.new_tensor([.7, .4]), code.new_tensor([.7, .4])))
+    write_knowing(model,{'meaning': meaning, 'knowing':((int(rows[0]),(.7,.4)),)},0)
     after = carrier._concept_activations
     assert after.shape == field.shape
     torch.testing.assert_close(after[0,0,0],torch.tensor([.7,.4]))
@@ -622,6 +637,21 @@ def test_finish_keeps_an_empty_child_proof_off_an_open_zero_referent(dtype):
     assert torch.equal(caller.roles, child.roles) and torch.equal(caller.role_mask, child.role_mask)
     assert completion_result(caller, proof) is None
     assert completion_result(with_slots(child, (), pair=(1., 1.)), proof) is proof
+
+
+def test_empty_child_proof_does_not_certify_a_zero_valued_witnessed_caller():
+    from types import MappingProxyType
+    from Meaning import ConceptualMeaning
+    from Queries import ThoughtResult
+    from ThoughtReferences import with_slots
+    from ThoughtStream import completion_result
+    empty = ConceptualMeaning.from_description(torch.zeros(392))
+    child = with_slots(replace(empty, bindings={'_thought_witnesses': ()}), (), pair=(0., 0.))
+    caller = with_slots(replace(empty, bindings={'_thought_witnesses': (('sym', 7),)}), (), pair=(.3, 0.))
+    proof = ThoughtResult('ask', 'conceptual-subgoal', 'idea', 'unverified', child,
+        MappingProxyType({'meaning': child, 'intuition_derivation': (), 'support_true': 0., 'support_false': 0.}))
+    assert completion_result(caller, proof) is None
+    assert completion_result(with_slots(child, (), pair=(.3, 0.)), proof) is proof
 
 
 def test_exhausted_ask_child_without_result_keeps_its_evidence(monkeypatch):

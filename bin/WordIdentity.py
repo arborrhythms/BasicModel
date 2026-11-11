@@ -86,7 +86,7 @@ class WordIdentity(nn.Module):
     PREFIX = b'\x00identity/atom/'
     WORD_PREFIX = b'\x00identity/form/'
 
-    def __init__(self, store, pair_dim=64, ones=3, length_dim=32, property_width=0):
+    def __init__(self, store, pair_dim=64, ones=3, length_dim=32, property_width=0, basic_capacity=None):
         super().__init__()
         object.__setattr__(self, 'store', store)
         self.pair_dim, self.ones = int(pair_dim), int(ones)
@@ -106,6 +106,9 @@ class WordIdentity(nn.Module):
         self.nested = {}
         self._marker_pattern = None
         self.revision = 0
+        from BasicPercepts import BasicPercepts
+        self.basic = BasicPercepts(store, self.width, self.property_width,
+            store._capacity if basic_capacity is None else basic_capacity)
         basis = store._basis
         if not hasattr(basis, 'fixed_row_mask'):
             basis.register_buffer('fixed_row_mask', torch.zeros(store._capacity, dtype=torch.bool, device=basis.W.device))
@@ -130,10 +133,7 @@ class WordIdentity(nn.Module):
         if raw is not None:
             self._fixed_bytes[int(row)] = bytes(raw)
         if self.property_width:
-            raw = self._fixed_bytes[int(row)]
-            fill = (basis.W.new_ones(self.property_width) if self.properties is None
-                    else self.properties.fill(raw).to(basis.W))
-            value = torch.cat((value[:self.width], fill))
+            value = torch.nn.functional.pad(value[:self.width], (0, self.property_width))
         basis.fixed_row_mask[row] = True
         basis.fixed_row_codes[row].copy_(value)
         basis.W[row].copy_(value)
@@ -146,14 +146,8 @@ class WordIdentity(nn.Module):
             object.__setattr__(self, 'properties', properties)
         if not self.property_width or self.properties is None:
             return
-        revision = self.properties.revision
-        if revision == self._property_revision:
-            return
-        for atom, row in self.atoms.items():
-            self._fixed(row, self.atom_code(atom), bytes_of(atom[1]))
-        for raw, row in self.word_rows.items():
-            self._fixed(row, self.form(raw), raw)
-        self._property_revision = revision
+        # BasicPercepts reads the property lanes live; identity atoms own no fill.
+        self._property_revision = self.properties.revision
 
     def _storage_code(self, identity_code):
         """Admission reserves both subspaces; _fixed writes the property fill."""

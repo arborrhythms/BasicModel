@@ -229,13 +229,7 @@ def test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open(monkeypatc
     program = record_reading(f.language, program)
     clause = finish_clause(f.language, program, registry=f.registry)
     assert ('referent', 2) in open_slots(clause.meaning)
-    # §50/§52: a missing role alone provides no identifying content. Supply
-    # the fixture's nonempty description while retaining the native elision.
-    data = dict(clause.meaning.bindings)
-    sites = dict(data.get('_reference_sites', ()))
-    sites[2] = dict(sites.get(2, {}), content=f.atoms[kind].tolist())
-    clause = replace(clause, meaning=replace(clause.meaning,
-        bindings=dict(data, _reference_sites=tuple(sites.items()))))
+    # The role's retained witnesses now supply the elided description natively.
     if not accessible:
         f.frames.clear()
     result = execute(f, clause.meaning, 2)

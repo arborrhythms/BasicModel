@@ -37,17 +37,15 @@ def test_native_reads_one_supported_word_and_charges_only_kept_trial(tmp_path, m
         assert report['iterations'].tolist() == [2, 2]
         assert [m.counts['serial-word-loop'] for m in model._field_meters] == [2, 2]
         assert all('serial-word-loop' not in m.counts for m in model._attention_meters)
-        assert all(torch.isfinite(value).all() for value in model._last_field_cost.values())
-        torch.testing.assert_close(model._last_field_cost['work'],
-            (2+model._last_field_cost['compose_steps'])*model.WHAT_STEP_COST)
+        assert model._last_field_cost is None  # the compose-forest reconstruction is retired
         assert model._sentence_field is None and model._sentence_read_order is None
         # The NULL closing must not erase the final read's symbol activation.
         record = model._last_sentence_understanding
         assert record.word_values[record.word_valid].abs().sum(-1).gt(0).all()
         terms = registries[-1]._terms
         assert not terms['reconstruction.free_bytes']['trained']
-        assert terms['reconstruction.field']['trained']
-        assert terms['reconstruction.iterations']['trained']
+        assert terms['reconstruction_reverse.what']['trained']
+        assert terms['reconstruction_order_zero.what']['trained']
     finally:
         model.End()
 

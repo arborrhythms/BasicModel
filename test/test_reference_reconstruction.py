@@ -10,7 +10,7 @@ import torch
 from ClauseRow import Clause
 from Meaning import ConceptualMeaning
 from ReferenceContext import SituationAddress, SituationFrame
-from ReferenceReconstruction import cost
+from MemoryLink import preview_cost as cost
 from test_medium_term_memory import keep, mention, snapshot, unchanged
 from test_reference_arrivals import world, named, described
 from test_reference_choices import noun
@@ -23,7 +23,7 @@ def description(atoms, words, point):
         reference_request=dict(node.reference_request, content=point))
 
 
-def sentence_cost(resolver, plans, *, active=None, enabled=True, weight=.1):
+def sentence_cost(resolver, plans, *, active=None, enabled=True):
     """Exercise the production registration with unrelated objectives zero."""
     from Models import BasicModel
     root = resolver.policy.new_zeros(len(plans), 12)
@@ -31,7 +31,7 @@ def sentence_cost(resolver, plans, *, active=None, enabled=True, weight=.1):
     record = SimpleNamespace(primed=SimpleNamespace(meaning_start=None),percept_expected=None)
     observation = dict(reference_plans=plans, entries=(None,)*len(plans), meanings=(None,)*len(plans))
     model = SimpleNamespace(reconstruct_in_loop=True, _sentence_reconstruction=enabled,
-        reconstruction_reference_weight=weight, loss=SimpleNamespace(reconstruction_scale=7.),
+        loss=SimpleNamespace(reconstruction_scale=7.),
         inter_loss_weight=0., symbolSpace=SimpleNamespace(expectation=None),
         inputSpace=SimpleNamespace(_reconstruction_sentence_available=active[:, None]),
         _concept_owner=lambda: resolver.components.owner,
@@ -39,12 +39,17 @@ def sentence_cost(resolver, plans, *, active=None, enabled=True, weight=.1):
         _trial_understanding=lambda *args: record,
         _tensor_pushed_ideas=root[:, None],
         _last_decoder_byte_identity=root[:,0],
+        _input_reconstructions={0: None},
+        _sentence_order_zero_field=None,
         _sentence_observation=lambda *args: observation,
         _reconstruct_trial=lambda *args: (root[:, None], root[:, 0], root[:, 0],
                                          active, root[:, 0]))
     lang = [None]*12
     lang[6], lang[10], lang[11] = root[:, None], root.repeat(1, 3)[:, None], active[:, None]
-    BasicModel._sentence_path_cost(model, (None, lang, None), 0, active)
+    # This reference-cost fixture zeros unrelated native reverse terms.
+    from unittest.mock import patch
+    with patch('SentenceField.reconstruct', model._reconstruct_trial):
+        BasicModel._sentence_path_cost(model, (None, lang, None), 0, active)
     return model._sentence_cost_registry
 
 
@@ -65,7 +70,7 @@ def test_bind_departure_changes_r_keep_and_the_resolvers_score_function():
     assert explore['decisions'][0]['departed']
     registries = [sentence_cost(resolver, [plan]) for plan in (greedy, explore)]
     parts = torch.stack([components(registry, None, torch.zeros(1)) for registry in registries], 1)
-    torch.testing.assert_close(parts, torch.tensor([[[0., 0., 0.], [.05, 0., 0.]]]))
+    torch.testing.assert_close(parts, torch.tensor([[[0., 0., 0.], [.5, 0., 0.]]]))
     audit = comparison(parts, torch.tensor([True]))
     assert audit['keep_decision'] == ['greedy'] and audit['deciding'] == ['reconstruction']
     decision = explore['decisions'][0]
@@ -87,7 +92,7 @@ def test_same_close_alias_charges_the_bound_mention_and_not_the_mint():
     assert plan['items'][0]['mode'] == 'mint'
     assert plan['items'][1]['selected'] == ('new', 0) and not plan['items'][1]['own_object']
     assert 'value' not in plan['individuals'][('new', 0)]
-    torch.testing.assert_close(cost(resolver, [plan], a[:1]), torch.tensor([.5]))
+    torch.testing.assert_close(cost(resolver, [plan], a[:1]), torch.tensor([1./5]))  # The state link contributes its two covered coordinates too.
     unchanged(resolver, before)
 
 
@@ -157,8 +162,7 @@ def test_named_token_keeps_its_content_before_and_after_the_close():
     assert owner.mtm.entries == pool
 
 
-@pytest.mark.parametrize('weight', (0., .1, .35))
-def test_registration_sums_sites_and_includes_zero_cost_active_rows(weight):
+def test_registration_averages_coverage_and_includes_zero_cost_active_rows():
     resolver, store, a, words, _ = world()
     first, _ = keep(resolver, mention(a[0], reference=words['three']))
     plan = resolver.preview(description(a, words, a[0]+a[1]), chunk_context(resolver, (SituationFrame.from_row(store.row(first)),)))
@@ -166,16 +170,17 @@ def test_registration_sums_sites_and_includes_zero_cost_active_rows(weight):
     twice = dict(plan, items=plan['items']*2)
     empty = dict(plan, items=[])
     registry = sentence_cost(resolver, [twice, plan, empty, twice],
-        active=torch.tensor([True, True, True, False]), weight=weight)
+        active=torch.tensor([True, True, True, False]))
     torch.testing.assert_close(registry.total(objective='reconstruction'),
-        torch.tensor([weight, weight/2, 0., 0.]))
-    assert registry._terms['reconstruction.reference']['count'] == 1
+        torch.tensor([.5, .5, 0., 0.]))
+    assert registry._terms['memory.link_coverage']['count'] == 1
     disabled = sentence_cost(resolver, [twice], enabled=False)
     assert 'reconstruction.reference' not in disabled._terms
+    assert 'memory.link_coverage' in disabled._terms  # Every link, independently of the input reconstruction switch.
 
 
 @pytest.mark.parametrize('ending', ('own', 'mint', 'gap', 'empty', 'arrival', 'covered'))
-def test_unpriced_endings_and_covering_candidates_have_zero_reference_cost(ending):
+def test_every_link_uses_coverage_including_arrivals(ending):
     resolver, store, a, words, _ = world(pending_atom=0 if ending == 'empty' else None)
     first, _ = keep(resolver, mention(a[0], reference=words['three']))
     frame = SituationFrame.from_row(store.row(first))
@@ -196,10 +201,10 @@ def test_unpriced_endings_and_covering_candidates_have_zero_reference_cost(endin
         plan = resolver.preview(description(a, words, a[0]), chunk_context(resolver, (frame,)))
         assert not plan['items'][0]['own_object']
         if ending == 'arrival':
-            # An arrival is outside the closing-item sum, even with uncovered content.
+            # Arrivals now use the same link coverage as closing sites.
             plan = dict(plan, arrivals=[dict(plan['items'][0], content=a[1])], items=[])
     before = snapshot(resolver)
-    torch.testing.assert_close(cost(resolver, [plan], a[:1]), torch.zeros(1))
+    torch.testing.assert_close(cost(resolver, [plan], a[:1]), torch.tensor([1. if ending == 'arrival' else 0.]))
     unchanged(resolver, before)
 
 

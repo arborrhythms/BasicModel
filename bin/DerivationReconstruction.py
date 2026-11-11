@@ -160,21 +160,24 @@ def reconstruct(language, record, programs, positions, stm=None):
         if program is None:
             continue
         source = positions(b)
-        forest = []
-        for index, (kind, operation, word) in enumerate(program.actions.tolist()):
-            if kind == 0:
-                forest.append((kind, word))
-            elif kind == 1:
-                if language._compose_binary_rules[operation].method_name == 'bind':
-                    forest[-1] = (kind, operation, index, forest[-1])
-                else:
-                    right, left = forest.pop(), forest.pop()
-                    forest.append((kind, operation, index, left, right))
-            elif kind == 2:
-                position = len(forest)-1-max(0,word)
-                forest[position] = (kind, operation, index, forest[position])
-            elif kind == 3:
-                forest[-2:] = reversed(forest[-2:])
+        if program.tree is not None:
+            forest = list(program.tree.forest())
+        else:
+            forest = []
+            for index, (kind, operation, word) in enumerate(program.actions.tolist()):
+                if kind == 0:
+                    forest.append((kind, word))
+                elif kind == 1:
+                    if language._compose_binary_rules[operation].method_name == 'bind':
+                        forest[-1] = (kind, operation, index, forest[-1])
+                    else:
+                        right, left = forest.pop(), forest.pop()
+                        forest.append((kind, operation, index, left, right))
+                elif kind == 2:
+                    position = len(forest)-1-max(0,word)
+                    forest[position] = (kind, operation, index, forest[position])
+                elif kind == 3:
+                    forest[-2:] = reversed(forest[-2:])
         depth = int(record.end_depth[b])
         if depth == -1:
             # An unfinished reading trains from the actual surviving roots.

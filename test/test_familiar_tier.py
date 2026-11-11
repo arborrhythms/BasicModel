@@ -300,7 +300,7 @@ def test_prepend_carries_candidates_with_live_gradient_and_rejects_recycled_tran
     assert cs.similarity_codebook.W.grad[rows[0][1]].abs().sum() > 0
     assert cs.similarity_codebook.W.grad[rows[1][1]].abs().sum() > 0
     cs.mtm.forget(key)
-    next_key = cs.mtm.open_candidate(order=1,when=2,value=token.value,support=token.support)
+    next_key = cs.mtm.open_candidate(order=1,when=2,value=cs.mtm.value_of(token),support=token.support)
     assert cs.mtm.entries[next_key].transient == token.transient
     restored = reconcile(state,cs.mtm,store)
     assert restored[chunks.IDENTITY][0,seat] == -1
@@ -356,7 +356,7 @@ def test_candidate_zero_survives_the_kept_bind_journal_without_an_occurrence_ali
         document_key='candidate-bind', sentence_index=0)
     resolver.commit(plan, closed, written, document='candidate-bind', position=0, training=False)
     assert pool.entries[key].count == original.count
-    torch.testing.assert_close(pool.entries[key].value, original.value)
+    torch.testing.assert_close(pool.value_of(key), pool.value_of(original))
     assert pool.accesses[key][None] == pool.closes[None]
     committed = resolver.committed_chunks(state, plan, written, stream=0)
     identity = symbol if promoted else original.transient
@@ -439,7 +439,10 @@ def test_mixing_keeps_lexical_witnesses_across_ten_presentations(monkeypatch, ea
         word = cs.mtm.reading_of(key)
         allocated = set(cs._concept_allocator.individuals)
         symbol = promote(cs, key, **options)
-        if word is not None and symbol not in allocated:
+        # Count newly named objects. A higher-order collection of those
+        # objects is another concept, without another lexical definition.
+        if (word is not None and symbol not in allocated
+                and symbol in (*cs.interpret.denotations(word), *cs.interpret.remembered_objects(word))):
             promotions[word] += 1
         return symbol
     monkeypatch.setattr(FamiliarTier, 'promote_identity', counted)
@@ -499,7 +502,10 @@ def test_named_promotion_counts_kept_words_independently_of_bind_aliases():
         _, row, _ = owner.interpret.reading(word)
         value = owner.similarity_codebook.lookup_rows(row)
         program = SimpleNamespace(word_ids=torch.tensor([word]), leaves=value[None], symbol_where=None)
-        site = commit_read_words(owner, program, batch=0, document=doc, position=0)[0]
+        from Meaning import ConceptualMeaning
+        root = store.append_meaning(ConceptualMeaning.from_description(value), document_key=doc, sentence_index=0, order=0)
+        site = commit_read_words(owner, program, batch=0, document=doc, position=0,
+            written={'root_occurrence': store.occurrence_of(root)})[0]
         key = owner.mtm.token_of(('name', label))
         alias = other if word == label else label
         owner.mtm.bind(key, site, kind=None, when=doc+1, value=value, reading=alias)

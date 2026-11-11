@@ -220,6 +220,190 @@ are not part of this proposal.
 
 ## 7. Episodic memory: a few active indices beside each row
 
+**Decided in direction (Alec, 2026-11-10): an episodic entry is the percept
+set of a moment, read by `query()`.** These paragraphs supersede the rest of
+this section where they conflict; the older text is kept as the record.
+
+Alec, on what episodic LTM is when it is added: "the set of active percepts
+located by the .where of attention", and "we store it with the existing
+.when (so that it becomes a set of percept codes for that moment)"; it is
+read through "a query() method that allows episodic perceptual access from
+that time to review". The same day: "This effectively gives all of the
+Memory structures (LTM, MTM, STM) both percepts and concepts."
+
+**Decided later the same day (Alec, 2026-11-10).** On the clock of an
+entry: "Yes, model time". On `.when` everywhere: ".when should not be
+per-document, it should be model time, even for semantic memory." On
+review: "review of episodic memory should be represented as the attended
+field, otherwise we could not reason about as a previously lived
+experience. This is also justification for the timestamp on incoming
+concepts; the historicity of the presentation will be baked-in." The first
+and the third are recorded under `query()` and points 1 and 7 below; the
+second, with the record of why `.when` became a position in a document, in
+[`.when` is model time in every store](#when-is-model-time-in-every-store-alec-2026-11-10).
+His question whether `.when` should become a duration is in
+[`.when` as a duration](#when-as-a-duration-store-only-the-deltas-alec-2026-11-10).
+
+**Scheduled (Alec, 2026-11-10, later).** "Episodic memory can happen now as
+long as we only store a few percepts (let's set that as a model parameter).
+It should come from the open-attention round." The open attention pass is
+`FamiliarTier.open_sentence`, which `BasicModel._prime_sentence_symbols`
+runs once per sentence before composition: one
+`ConceptualSpace.cs_read_memberships` over every present word's bracket,
+with no grammar and no narrowing
+([item 2.7 record](plans/2026-10-27-item2-7-corpus.md), §26.2). It leaves
+`_last_open_attention` (the sentence, its brackets, the field's rows and
+the rows seen). An entry is therefore read once per sentence from that
+field, not from each serial reading, and keeps only a few percepts. Its
+place (Alec, 2026-11-10, later): "lets schedule episodic memory as a round
+inside 2.0", round 7 of item 2.0 ([2.0 spec](plans/2026-11-03-gradient-projection.md)
+§21; [todo](../todo.md), item 2.0, "Rounds"). Decided for that round (Alec,
+2026-11-10): the entry sits beside the sentence's `LTM0` row ("in
+particular, beside LTM0"), `episodicPercepts` defaults to 4, and review
+rides on the thought loop's time-only recall. Within a sentence the words are
+perceived one at a time first, the open attention pass then reads them all at
+once, and composition then reads them one at a time under the grammar (2.0 spec
+§21).
+
+*The entry in code names.* No new kind of thing is added. The entry is a
+field in the sense of [Architecture](Architecture.md), "Three kinds of
+thing": one convex `.where` bracket, one `.when` interval, many codes. It is
+already computed on every reading: `ConceptualSpace.cs_read_memberships`
+pools the percept poles inside each attention bracket and holds the result
+as a [`PerceptField`](../bin/PerceptField.py) in `_percept_field` (`keys`;
+`values[percept, batch, reading, pole]`;
+`events[percept, batch, reading, event prefix, pole]` over
+`spans[batch, event, 2]`, which place each occurrence;
+`where[batch, reading, 2]`; `when[batch, reading, 2]`;
+`when_band[batch, reading, 4]`, that interval as
+a band; `percept_where`, the address bands of the codes), and
+`_clear_percept_field` releases it. Episodic LTM keeps it:
+
+- one entry per kept reading, which is one attention bracket of one stream;
+- the entry holds the codes that are active in that bracket (either pole
+  nonzero) with their two poles, never netted into one signed value, the
+  bracket, and the `.when` stamp;
+- the stamp is the one that the ideas of the same close receive from
+  [`RowTime.stamp`](../bin/RowTime.py), so the ideas and the percepts of a
+  moment share a time, and several entries may share one stamp;
+- storage is declared at construction (entries per stream, codes per
+  entry), preallocated and checkpointed, with no growth on load;
+- a code is stored as a row reference with its activation, not as a vector.
+
+*Claude's proposal for the scheduled round, to confirm.* The entry sits
+beside the sentence's own `LTM0` row, as this section's title has it,
+instead of in a store of its own per stream. Three columns added to
+`LTM0.row_columns`, sized at construction to `ltmCapacity` by $K$, hold
+each kept percept's row reference, its two poles and the `.where` bracket
+of the word reading in which it was strongest; $K$ is `episodicPercepts`, a
+`SymbolSpace` parameter beside `ltmCapacity`. The $K$ kept are the field's
+percepts with the largest sum of the two poles, a ranking that does not net
+them. The open pass leaves them with `_last_open_attention`, and
+`ClauseRows.write_clause` writes them beside the row it stamps. The entry
+then has the row's `RowTime` stamp; a re-witnessed row keeps its first
+entry as it keeps its first stamp; forgetting a row forgets its entry, and
+detail may go first; and the epoch reset restores the starting rows'
+entries with the rows, since `PresentationMemory._rows` copies
+`row_columns`. `query(when=...)` returns the entries of the rows that
+`EntryRead.recall_time` finds, as a `PerceptField`, and review reinstates
+that field.
+
+*`query()`.* The read by time exists for ideas:
+`ThoughtLTMCapability.query(pattern=None, *, when=None, window=1, max_records, work)`
+in [Queries.py](../bin/Queries.py) calls `EntryRead.recall_time`
+([EntryRead.py](../bin/EntryRead.py)), which finds the nearest stamps inside
+the window, and loads those rows into STM's chunks. The episodic read is the
+same call, returning the percept entries of the same stamps beside the
+ideas, metered on the same `work`.
+
+*Review is reinstatement (Alec, 2026-11-10, decided above).* The entries
+come back as a `PerceptField`, the type that perception itself produces,
+and review makes the returned field the attended field: it is held where
+the present field is held (`_percept_field`, with its bracket and stamp in
+`_cs_field_where` and `_cs_field_when`), so the readers of the present
+read it as a perceived field (order-zero definitions read `values`;
+`cs_percept_attribution(..., perception=field)` locates a demand in its
+events) and thought can reason over it as an experience lived before.
+*Claude's reading, to confirm:* the reinstated field keeps the stamp it was
+stored with, and the concepts read from it take that stamp, not now. This
+follows the decisions of 2026-10-23 that a concept pulled from the index
+is stamped now while a recalled entry keeps the percept part it was stored
+with ([layout spec §2](plans/2026-10-23-layout-and-removal.md)). Claude's
+earlier reading, that a reviewed field does not replace the present one,
+is withdrawn.
+
+*Percepts and concepts in every store.* Only the percept side of LTM is new.
+
+| store | concepts | percepts |
+|---|---|---|
+| STM | `STMChunks` (`buffer`, `chunk_refs`) | the current `PerceptField`; a chunk carries only its `chunk_where` and `chunk_when` bands |
+| MTM | the identity collections of `MediumTermMemory` | collections whose `member_kind` is `'percept'`, linked by `FamiliarTier` at order $-1$ (item 2.0 working tree, not landed) |
+| LTM | `LTM0` rows and `LTM1` relations | the episodic store of this entry; today a row carries one percept band, its form point with `.where` and `.when` |
+
+At a close the STM chunk becomes an `LTM0` row; the episodic entry is the
+STM percept field of the same close, kept.
+
+*Grounding (2026-11-10).*
+[Kaufmann and Viera (2026), "Temporal cognition in apes"](https://doi.org/10.1080/00048402.2026.2649411)
+separate temporal cognition from temporal perception by independence from
+the stimulus: the cases they count as cognitive run over longer spans than
+perceptual memory, which holds several seconds. They hold that temporal
+cognition "encompasses more than just episodic memory" (their note 2) and
+they propose no memory architecture, so this is a consistency check and not
+a derivation. A percept set kept with its time gives the order-zero path
+that independence without symbols. Their three marks of a temporal
+representation are systematic use, flexible use and informational transfer
+(a duration with a count gives a rate; a duration with a velocity gives a
+distance). `.when` is read today as an age by forgetting, as a distance by
+`recall_time`, as an order by `relation_evidence` for `'implies'`, and as
+the present by `ActivationPredictor` (`now`). No computation takes the
+duration between two remembered events as a quantity for another
+computation; episodic entries supply its operands, the same code at two
+stamps with two brackets.
+
+**To specify (2026-11-10).**
+
+1. *The clock.* Decided (Alec, 2026-11-10): "Yes, model time". The entry
+   is keyed by the `RowTime` stamp of its close, which `recall_time`
+   matches. The field's own `when` is still $[p, p + 1]$, where $p$ is the
+   staged position of the sentence in its document
+   (`Occurrence.event_positions`), the same for every reading of that
+   sentence, and its `when_band` is that bracket on `model.when_encoding`,
+   whose capacity (`max(ltm_capacity, document_bound)`) is not
+   `RowTime.HORIZON`, so neither band is read on the other's ladder. That
+   position is the per-document value which
+   [`.when` is model time in every store](#when-is-model-time-in-every-store-alec-2026-11-10)
+   retires. *Claude's reading:* the entry stores the `RowTime` stamp, not
+   the position bracket; how model time orders the readings inside one
+   close is open there (point 2).
+2. *The codes.* The field's keys are native `('ps', row)` and `('ws', row)`
+   percepts in the landed code and basic percepts `('bp', row)` in the item
+   2.0 working tree. To decide: which is stored, and whether each code keeps
+   its own spans (`events`, `spans`), which exact placement inside the
+   bracket needs. Proposed above: the keys of the open-attention field,
+   whichever kind it reads, each with the bracket of its strongest word
+   reading and no spans.
+3. *The brackets.* Decided (Alec, 2026-11-10): one read per sentence, the
+   open attention pass over every present word's bracket (above).
+4. *Capacity and eviction.* Decided (Alec, 2026-11-10): only a few
+   percepts per entry, their number a model parameter. Proposed above: the
+   entry follows its row's capacity and forgetting. Detail goes first
+   ([forgetting spec §4a](specs/2026-09-16-forgetting.md#4a-detail-before-rows-alec-2026-09-20)).
+5. *The cue by content.* A read from a percept code to the stamps at which
+   it was active, which needs no grammar. The MTM percept collections are
+   the candidate; their `when` is the pool's close count, not `RowTime`.
+6. *Narrowing by place.* Whether `query()` also takes a `.where` bracket.
+7. *Review.* Decided (Alec, 2026-11-10): a reviewed field is reinstated as
+   the attended field (above). Open: what becomes of the present field it
+   displaces (set aside and restored, or released), the bound and decay of
+   a reinstated field, and how learning and expectation treat a field that
+   is lived again but not observed again.
+8. *Transfer.* The operation that takes two entries and returns a
+   duration, and who reads it.
+9. *The earlier design.* What remains of the 2026-09-20 indices beside each
+   row: the percept half is this entry; the top-K concept indices below
+   (`d`, `m`) are open.
+
 **Spatial bank (Alec, 2026-10-09, item 6.1 dialogue).** The current
 conceptual eight-space has a sinusoidal `.where` index for each of its eight
 slots, in addition to the addresses of its codebook. These are fixed slot
@@ -436,6 +620,9 @@ discrimination (§5). Not recorded: the `.where` trajectory of a reading and
 the kept program.
 
 Unscheduled; §7 specifies the episodic part, this section is the umbrella.
+*2026-11-10 (Alec):* §7 now opens with the decided shape of the episodic
+part: the percept set of a moment, kept with its `.when` and read by
+`query()`.
 
 ## Four corners as prompts
 
@@ -571,6 +758,12 @@ from item 5.5 into the [accepted operators update](benchmarks/2026-10-07-operato
 position `[i, i+1]`; absolute model time is retained only in `timestamp`.
 Re-reading re-witnesses one row, and full capacity raises. That correctness
 item is closed in the accepted landing.
+
+*Superseded in direction (Alec, 2026-11-10):* ".when should not be
+per-document, it should be model time, even for semantic memory." The
+document position above is the value that decision retires; stored
+entries have carried model time since 2026-10-26. See
+[`.when` is model time in every store](#when-is-model-time-in-every-store-alec-2026-11-10).
 
 The separate carrier simplification remains open: carrying one shared bracket
 per sentence could avoid repeating it on every element. It must preserve
@@ -1693,6 +1886,10 @@ sentence's ideas; episodic memory would make that grouping a read
 same day:* recall by `.when` alone is item 3's, in the
 [layout-and-removal spec](plans/2026-10-23-layout-and-removal.md); this
 entry is its record.
+*2026-11-10 (Alec):* the percept counterpart is decided in direction in
+[§7](#7-episodic-memory-a-few-active-indices-beside-each-row): the percept
+codes of a moment are stored with the stamp of that moment's ideas, and
+the same `query(when=...)` reads both.
 
 ## Identity event histories: review follow-ups (2026-10-23)
 
@@ -1731,6 +1928,10 @@ sessions; it needs the percept part of rows to be retained and matched,
 the episodic memory of the stores decision (every mental event has a
 perceptual and a conceptual part; the percept part is episodic). Until
 then a re-read mints a new cover.
+*2026-11-10 (Alec):* the stored shape of the percept part is decided in
+direction in [§7](#7-episodic-memory-a-few-active-indices-beside-each-row);
+matching a re-read against a kept percept set is the cue by content that
+§7 lists as to specify.
 
 ## A cheaper forgetting pass: running luminosity on LTM (Alec, 2026-10-24)
 
@@ -2484,3 +2685,197 @@ walk credit keep their interim R booking; the unified loop moves these bookings
 to output. Memory plan §10, basic percepts and thinking-spec §54 finding 2 remain
 round 5; the loop and end-of-item measurements remain round 6. This round makes
 no claim from repeated fits, lesson arms or item 60 measurements.
+
+## Item 2.0 memory and loop boundary (2026-11-09)
+
+Round 5's reference collections, shared STM/LTM strata, seats and basic percepts are described in the [memory plan](plans/2026-11-03-item2-0-behavioral-chains.md) and the [round-5 return](plans/2026-11-03-gradient-projection.md#17-round-5-memory-basic-percepts-and-shared-strata). Round 6 carries reconstruction from the parallel field, reverse as the one decoder through basic percepts, generate with the occurrence writer, loop D1–D6, memory §10.2's measurements, and decoder bookings moving to output. Events as mereological neighbours and item 1.5's new-feature-layout port remain future work. Momentum-carried projection and a learned pair policy remain conditional on end-of-item receipts.
+
+## `.when` is model time in every store (Alec, 2026-11-10)
+
+**Decided in direction, unscheduled.** Alec: ".when should not be
+per-document, it should be model time, even for semantic memory." He asked
+why it had been changed; the record follows.
+
+*How `.when` became a position in a document.*
+
+- 2026-09-30, measured
+  ([occurrence spec §1.1](specs/2026-09-30-occurrence-tense-aspect.md)):
+  the reading clock's stamp rode inside every idea into the store, the
+  chooser read it, and the answers of a trained MM_xor moved with the clock
+  (largest error .061 at tick 802, .240 at tick 1802).
+- 2026-10-03, Alec kept the band and changed its value (occurrence spec
+  §0): "I see it as a valuable value when stamped inside concepts, just as
+  .where is currently stamped, so that concepts have information about
+  temporal order that they would not otherwise have access to." The spec
+  put the defect in the value, a global clock that was the same for every
+  word of a batch and different for every batch, and made the value the
+  sentence's index in its document, the same at every reading.
+- 2026-10-07, built in operators round 4a-0 and landed in `f4a68404ea`
+  (`DocumentWhenEncoding`, `Occurrence.stage_position`,
+  `Occurrence.event_positions`); re-reading a sentence re-witnesses one row
+  ([reader inventory](benchmarks/2026-10-07-operators-round4a0/when-readers.md)).
+
+*How stored entries returned to model time.*
+
+- 2026-10-20, Alec's revision as the occurrence spec records it (§0):
+  `.when` is model time, in a column of the row that composition never
+  reads.
+- 2026-10-23 ([layout spec §2](plans/2026-10-23-layout-and-removal.md)),
+  Alec: "A mind should be able to recall mental content by filling in only
+  the `.when`, and leaving the rest blank." and "when a concept is written
+  to an STM row, it should receive a timestamp, which makes its width
+  equivalent to an LTM0." Decided the same day: `.when` belongs to the
+  percept part of an entry; a concept pulled from the index is stamped now,
+  and a recalled entry keeps the percept part it was stored with.
+- 2026-10-26, built in item 3.0 (`8b523874f9`):
+  [`RowTime`](../bin/RowTime.py) writes model time into the percept band of
+  each stored sentence entry.
+
+The per-document value was the decision of 2026-10-03 against the defect of
+2026-09-30; the decisions of 2026-10-20 and 2026-10-23 moved stored entries
+back to model time. The stamp inside the events of a sentence as it is read
+was not moved back, and no round was asked to move it.
+
+*A second remedy for the drift (Alec, 2026-11-10).* In place of the
+per-document value: "we will need to reset the time when we reset the
+epoch." At an epoch boundary, `Forgetting.model_boundary(...,
+epoch_boundary=True)` calls `PresentationMemory.epoch`, which withdraws the
+epoch's history: it restores `LTM0`'s starting rows (`_epoch_rows`) and the
+Part banks (`LTM1.begin_epoch`), restores MTM (`MediumTermMemory.restore`,
+which also empties the pool close counts, so `FamiliarTier._clock` already
+restarts) and clears STM. It leaves `BasicModel.when_time`,
+`LTM0.model_clock` and `ShortTermMemory._thought_clock` running, so a
+second presentation of a history is stamped later than the first.
+*Claude's reading of the remedy, to confirm:* the boundary records
+`when_time` and `model_clock` with `_epoch_rows` the first time and
+restores both at every later boundary; they move together because
+`RowTime.stamp` stamps with the first and `Forgetting` reads the second as
+now. The starting rows then keep stamps earlier than the history, with no
+negative age, and a history presented in the same order gets the same
+stamps in every epoch: the property the per-document value bought, on
+model time. Three conditions: the stamps recur only when the order recurs
+(some generated corpora in `data.py` shuffle premises each epoch);
+`BasicModel.runEpoch` crosses the boundary only at the start of a training
+epoch on the train split that is not resumed, so an evaluation after an
+epoch starts at the same time in every epoch and one inside an epoch does
+not; and both clocks are registered buffers, so a checkpoint keeps them and
+a resumed epoch continues its own time. With the clock bounded by one
+epoch, `RowTime.HORIZON` could be the declared epoch length, which bears on
+point 4 below.
+
+*On model time today.* `ClauseRows.write_clause` stamps each close with
+`RowTime.stamp`; `LTM0.append_meaning` writes the stamp into the row's
+percept band and keeps the first stamp when the same sentence is witnessed
+again at its address (document, index and content).
+`EntryRead.entry_when` reads it for `EntryRead.recall_time`, `Forgetting`
+(an age), `DocumentCover`, `ReferenceClose`, `ThoughtStream` and
+`ThoughtLTMCapability.relation_evidence` (an order);
+`SymbolExpectation.expect_next_meaning`, `ActivationPredictor` and
+`PrependedSymbols.stage` encode now on the same ladder. In STM,
+`BasicModel._clause_end_state` gives a kept close the stamp of its stored
+entry, and `EntryRead.recall_chunks` gives a recalled entry its stored
+stamp. Semantic memory is on model time.
+
+*Still a position in a document.* The staged position
+(`Occurrence.stage_position`, `Occurrence.relative_positions`,
+`Occurrence.source_at`) on `model.when_encoding`, whose capacity
+`WhereRegistry` sets to `max(ltm_capacity, document_bound)`, is read by:
+
+- `Occurrence.event_positions`, which stamps the events of
+  `InputSpace._lex_and_embed`, `PartSpace._radix_part_events`,
+  `PartSpace._embed_radix` and `ConceptualSpace.cs_read_memberships` (the
+  percept field's `when` and `when_band`);
+- `BasicModel._stage_serial_concept_rows`, which encodes each word's
+  symbol `.when` (`_ar_word_symbol_when`), and
+  `SentenceAttention.SentenceField`, which decodes it into each word's
+  sub-bracket;
+- `BasicModel._commit_sentence`, which sets a clause's `when` to its
+  position, and `BasicModel._clause_end_state`, which falls back to that
+  value when a close has no stored entry, so one STM column can hold bands
+  from two ladders;
+- `ModelCandidateAttention.context`, which takes the position, divided by
+  the ladder's `maxVal`, as a candidate feature;
+- in the item 2.0 working tree, `OutputOccurrences.generated`, which stamps
+  generated events, and `FieldReverse`, which re-encodes a field's `when`
+  into the percept events it reconstructs.
+
+`test_when_time_does_not_stamp_live_position_encoders` in
+[test_model_time_when.py](../test/test_model_time_when.py) and
+[Architecture](Architecture.md) ("When (final operators update)") still
+state the per-document behaviour, and
+`test/fixtures/when-readers-round4a0.json` lists the readers of round 4a-0.
+
+*Two other counts.* A thought idea deposited in STM takes its `.when` from
+`ThoughtChunks._next_when`, a per-stream count of thought deposits written
+as four exact 16-bit digits offset by 2 and used as an exact address
+([Architecture](Architecture.md), thought time), and `FamiliarTier._clock`
+gives an MTM pool entry the pool's close count. Neither is model time.
+
+*To specify before a round.*
+
+1. *The age, not the clock.* The defect of 2026-09-30 returns wherever a
+   chooser or an attention reads an absolute stamp that does not recur, as
+   `ModelCandidateAttention.context` would if it read model time in place
+   of the position. The epoch reset above makes the stamp recur with the
+   history. *Claude's reading:* a reader that compares still takes the
+   difference from now (an age) or between two stamps; composition does
+   not read the stamp (2026-10-23: operations on meaning, centroids on
+   form).
+2. *Resolution.* `BasicModel._advance_when_time` advances model time once
+   per batch, and `RowTime.stamp` gives every close of one batch the same
+   stamp. Today the document position orders the sentences of one document
+   and `SentenceAttention.SentenceField` the words of one sentence. Model
+   time must carry that order (a tick per close or per word), or the order
+   must be kept beside the tick.
+3. *The other counts.* Whether thought ideas and MTM pools take model time,
+   and how the exact addresses of thought ideas survive if they do. MTM
+   pools already restart at the epoch boundary; `ShortTermMemory._thought_clock`
+   does not, though the boundary clears the STM whose ideas it addresses.
+4. *One ladder.* `RowTime.encoder()` and `model.when_encoding` share a class
+   with different capacities; an episodic entry, a row and a percept field
+   can be compared only on one ladder.
+
+*Decided for round 7 of item 2.0 (Alec, 2026-11-10, question tool).* The
+round moves these stamps ("Yes, same round"); one tick per sentence ("One
+sentence"); the thought count and the MTM close count read the one clock,
+each thought step a tick of its own ("One clock"). Points 1 and 4 are
+specified in the round's text ([2.0 spec](plans/2026-11-03-gradient-projection.md)
+§21.1, assumptions A4 and A5).
+
+## `.when` as a duration: store only the deltas? (Alec, 2026-11-10)
+
+**To consider.** Alec: "should .when become a duration (and serve as a
+means of compression) by only storing memory deltas?"
+
+Two readings, Claude's, neither decided:
+
+1. *Time as a difference.* An entry's `.when` stores the time since the
+   previous entry of its stream, and absolute time is the running sum. A
+   difference does not depend on when the model reads, the property that
+   the document position bought on 2026-10-03
+   ([`.when` is model time in every store](#when-is-model-time-in-every-store-alec-2026-11-10)),
+   and it is the quantity that transfer takes
+   ([§7](#7-episodic-memory-a-few-active-indices-beside-each-row), point 8).
+2. *Write on change.* Memory writes an entry only when its content
+   changes, and the entry's `.when` is the interval over which that
+   content held, a run-length code in time. A temporal whole is then a
+   maximal run of constant content, as a word whole is a maximal run of
+   letters.
+
+*In the code.* The endpoint bracket of 2026-06-16 carried a duration; the
+encoding pass of 2026-07-04 retired the duration from the event tail
+because nothing decoded it. `DocumentWhenEncoding.encode(start, end=None)`
+still takes an end (the band is the mean of the codes of the two
+endpoints; the end defaults to `start + 1`), and its `decode_span` returns
+`start, start + 1`, so a width other than one can be written and is never
+read back. `RowTime` stores a point.
+
+*To settle if taken up:* whether a delta runs per stream or per store; what
+a recall by time (`EntryRead.recall_time`) and forgetting (an age) read
+when only deltas are stored (a running sum per read, or an absolute stamp
+kept at intervals); whether write-on-change applies to percept entries
+alone, where one field can persist across closes, or to idea rows too; and
+whether a re-witness extends an interval instead of keeping the first
+stamp. [Kaufmann and Viera (2026)](https://doi.org/10.1080/00048402.2026.2649411)
+count a duration used as a quantity, informational transfer, among the
+marks of a temporal representation (§7, "Grounding").

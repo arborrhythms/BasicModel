@@ -28,14 +28,14 @@ def fixture(*, percept=False):
 
 
 @torch.no_grad()
-def known_concept(owner, content, *, form=None):
+def known_concept(owner, content, *, form=None, order=1):
     """A supplied, fully trusted native region; learning is certified separately."""
     from Spaces import _concept_alloc_of
     alloc = _concept_alloc_of(owner)
     identity = owner.new_concept()
-    alloc.reference_orders[identity] = 1
+    alloc.reference_orders[identity] = order
     alloc.settle(identity)
-    row = owner._csw_concept_row(1, identity)
+    row = owner._csw_concept_row(order, identity)
     owner.similarity_codebook.W[row].copy_(content)
     if form is None:
         alloc.individuals.add(identity)
@@ -180,6 +180,9 @@ def test_later_common_evidence_merges_accessible_occurrences_without_rewriting_t
 
 def same_kind_fourth_close(kind):
     resolver, store, atoms = fixture()
+    accessible = resolver.accessible
+    # This revision fixture deliberately cues its menu; D4's pool-wide choice has its own certificates.
+    resolver.accessible = lambda chunks, **options: accessible(chunks, **dict(options, include_pool=False))
     noun, black, white, runs, sleeps = atoms[kind], *atoms[4:8]
     # Evidence teaches exclusivity; no color/word identities enter the owner.
     for i in range(8):
@@ -270,6 +273,9 @@ def test_answer_credit_credits_the_departure_without_changing_exact_reconstructi
 
 def test_revision_merges_three_accessible_groups_transitively_across_cued_documents():
     resolver, store, atoms = fixture()
+    accessible = resolver.accessible
+    # This revision fixture deliberately cues its menu; D4's pool-wide choice has its own certificates.
+    resolver.accessible = lambda chunks, **options: accessible(chunks, **dict(options, include_pool=False))
     frames, addresses = [], []
     for document in range(3):
         first, a, _ = close(resolver, atoms[0], atoms[6], 'mint', (),

@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import torch
+import pytest
 from GradientProjection import backward, project, sides
 from ObjectiveOwnership import registry_costs
 
@@ -54,19 +55,18 @@ def test_adam_metric_and_sparse_concept_rows():
 
 def test_registry_routes_all_declared_sides_without_changing_values():
     routes = {
-        'reconstruction.field': ('reconstruction', 'R'),
-        'reconstruction.walk_residual.form': ('reconstruction', 'R'),
-        'reconstruction.walk_credit': ('reconstruction', 'R'),
+        'reconstruction_reverse.what': ('reconstruction', 'R'),
+        'reconstruction_order_zero.what': ('reconstruction', 'R'),
         'expectation.predictor': ('expectation', 'R'),
         'attention.reading_lesson': ('attention', 'R'),
         'attention.candidate_ce': ('attention', 'R'),
         'output.answer': ('output', 'A'),
-        'output.walk_residual.form': ('reconstruction', 'A'),
-        'output.walk_credit': ('chooser', 'A'),
-        'reconstruction.compose_score_function': ('chooser', 'A'),
+        'output.walk_residual.form': ('output', 'A'),
+        'output.walk_credit': ('output', 'A'),
+        'output.compose_score_function': ('chooser', 'A'),
         'expectation.bind_score_function': ('expectation', 'A'),
         'attention.candidate_departure': ('attention', 'A'),
-        'reconstruction.thought_score_function': ('chooser', 'A'),
+        'output.thought_score_function': ('chooser', 'A'),
         'compose.choice': ('grammar', 'R'), 'generate.choice': ('grammar', 'A'),
         'penalty': ('reg', 'R'),
     }
@@ -115,6 +115,7 @@ def test_generate_credit_uses_proposal_correction_and_ties_have_no_graph():
     assert not generate_credit(language, audit, tops, features).requires_grad
 
 
+@pytest.mark.large_memory
 def test_model_xml_default_projects_one_native_batch_and_steps_once(monkeypatch, eager_reading):
     from test_mm_xor import _fresh_model
     from SentenceTraining import gradient_receipt

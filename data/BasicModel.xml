@@ -208,6 +208,7 @@
     <nInput>8192</nInput>
     <nInputDim>512</nInputDim>
     <nVectors>32768</nVectors>
+    <basicPerceptCapacity>32768</basicPerceptCapacity>
     <!-- Fixed physical reserve. Recurrence activates rows without replacing
          the parameter or its optimizer state; exhaustion names nVectors. -->
     <nDim>104</nDim>

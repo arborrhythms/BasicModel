@@ -45,7 +45,7 @@ def test_completed_native_forest_has_exact_leaves_and_live_source_pullback(monke
                 frames[fold]=torch.cat((a,b,parent))
                 frames[unary]=torch.cat((parent,parent,root))
                 numbers=leaves.new_ones(len(actions),2);numbers[fold]=numbers.new_tensor(counts)
-                program=SimpleNamespace(actions=torch.tensor(actions),operation_values=torch.stack(frames),
+                program=SimpleNamespace(tree=None,actions=torch.tensor(actions),operation_values=torch.stack(frames),
                     operand_counts=numbers,form_wholes=None)
                 layer=SimpleNamespace(ops=(surface,),unary_ops=(absorb,))
                 language=SimpleNamespace(_tree_layer=lambda _:layer,

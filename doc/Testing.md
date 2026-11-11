@@ -96,6 +96,11 @@ prediction control, shuffled order, renamed vocabulary and determiner control
 across seeds 0/1/2 remain pending the million-sentence checkpoint and are not
 claimed. No inspected checkpoint meets that exposure prerequisite.
 
+Item 2.0's common-decoder, field-gradient, output and timed-memory certificates
+are the 36 cases in `test/test_item20_round6_*.py`; the completed sweep,
+producer repairs and full-file reruns are recorded separately in
+[the §20 return](plans/2026-11-03-gradient-projection.md#20-third-repair-of-round-5-and-the-round-6-continuation-2026-11-10).
+
 Run affected files or individual cases during development:
 
 ```sh
@@ -410,26 +415,30 @@ The exact landing commit and its one full sweep are recorded in the
 
 - One full receipt per user across worktrees, enforced by a nonblocking file
   lock. Selected-file, `-k`, and marker runs may proceed concurrently.
-- Up to `cpu−4` concurrent, one-thread fresh workers by default: **10** on
-  this 14-core machine, leaving four cores for SSH and interactive work. Each
-  receives at most 256 selected cases from 16 files; a new process releases
-  its model and compiler allocations at a boundary. `--workers` can lower the
-  pool for diagnosis.
-- The aggregate default is physical RAM minus **8 GiB**: **28 GiB** on this
-  36 GiB machine. Each worker retains an **8 GiB** `taskpolicy -m ... -P kill`
-  ceiling; the supervisor samples every active worker tree and stops the
-  largest worker if their aggregate physical footprint crosses 28 GiB. This
-  supports legitimate 4.8 GiB cases without allowing the pool to consume the
-  8 GiB reserved for the machine. `--memory-gib` may lower the aggregate
-  budget, but cannot leave less than 8 GiB for the machine.
-- A worker finishes its current test and recycles when it reaches 80% of its
-  deadline or the soft memory boundary. Its reservation is the smaller of its
-  process limit and the aggregate budget divided by the configured pool size.
-  The soft boundary is the earlier of 80% of that reservation and the
-  reservation minus 64 MiB, with a floor of half the reservation. With ten
-  workers and 28 GiB it is 2.24 GiB. A running test may use the full 8 GiB
-  process allowance. A fresh worker takes the remaining cases, preserving one
-  reported completion per selector.
+- One result records two memory phases. Ordinary cases use
+  `max(1, min(cpu−4, aggregate_bytes // (9 GiB)))` one-thread workers:
+  **3** on this 14-core, 36 GiB machine. Each reservation is
+  `min(12 GiB, aggregate // workers)`: **9.33 GiB** here. A worker receives
+  at most 256 selected cases from 16 files. `--workers` may lower this pool;
+  its cap follows the same formula. User `-m` selection is applied before
+  partitioning, so every selected case belongs to exactly one phase.
+- A case whose measured solo footprint exceeds the ordinary half-cap
+  allowance is marked `large_memory`. The second phase runs **one case per
+  fresh worker**, under a **12 GiB** cap, with `aggregate // cap` workers:
+  **2** here. If the aggregate itself is below 12 GiB, it is the ceiling and
+  only one large worker fits. In both phases workers times cap is at most
+  the aggregate. Collection runs alone within the same aggregate.
+- The aggregate stays physical RAM minus **8 GiB**: **28 GiB** here, with
+  the sampled aggregate guard as a backstop and a `taskpolicy -m ... -P kill`
+  ceiling per worker. `--memory-gib` can lower the aggregate and cannot take
+  the machine's reserve. An unmarked case that exceeds its reservation
+  stops with `memory` and its case name; neighbouring cases cannot consume
+  its reservation. The inherited sentence word bound remains 256.
+- A worker finishes its current case and recycles at **half its reservation**
+  (**4.67 GiB** in the default ordinary phase), or 80% of its deadline.
+  A fresh worker takes the remaining cases, preserving one reported
+  completion per selector. Each receipt records the case's starting,
+  finishing and sampled peak physical footprint for subsequent measurement.
 - An ordinary pytest assertion, setup or teardown failure does **not** cancel
   the remaining workers. The receipt keeps its `test_failure` outcome and
   runs every selected case so a diagnostic full run reports all failures.
@@ -455,10 +464,11 @@ The exact landing commit and its one full sweep are recorded in the
   failure. Reducing batch size does not omit any selected cases.
 
 Tests that read one trained model use a module-scoped fixture and
-`@pytest.mark.shared_training("name")`. The bounded runner keeps the selected
-members of that group in one worker, including the weekly run at batch size
-one. Recycling waits until the group's final selected test; the memory and
-time ceilings remain unchanged. Selecting one test alone does not add its
+`@pytest.mark.shared_training("name")`. In the ordinary phase the bounded runner
+keeps the selected members of that group in one worker, including the weekly
+run at batch size one. Recycling waits until the group's final selected test;
+the memory and time ceilings remain unchanged. A `large_memory` case instead
+gets its own fresh worker in phase two. Selecting one test alone does not add its
 partners. `TestXorGrammarLearnsXor` and `TestXorGrammarReconstruction` use this
 contract: ten unseeded trainings report both unchanged bars and joint success,
 and the first training supplies both rows of the named XOR table.
@@ -484,7 +494,7 @@ device selection. The same aggregate memory, thread and deadline limits apply.
 
 macOS accounting uses `proc_pid_rusage` physical footprint, including compressed
 memory. RSS alone can become misleading during compression. Each macOS worker
-has an 8 GiB kernel limit through `taskpolicy -m ... -P kill`, while the
+has a 12 GiB kernel limit through `taskpolicy -m ... -P kill`, while the
 supervisor samples all active process groups and enforces the 28 GiB aggregate
 reservation. Linux accounting uses RSS plus swap. The monitor samples each
 process group and known children, including compiler subprocesses; sampling can
@@ -552,17 +562,17 @@ switches retain their original gating behavior; the common marker now exposes
 them to selection. CUDA-only cases keep their availability skips.
 
 This machine's weekly target uses the suite's CPU fixture contract; the three
-MPS-specific tests explicitly switch to MPS. Ordinary cases have an **8 GiB
+MPS-specific tests explicitly switch to MPS. Weekly ordinary cases retain an **8 GiB
 per-worker ceiling**. The production objective measurement in
 `test_objective_conflicts_slow.py`, at its unchanged batch of 28, has a
 **24 GiB per-worker ceiling**. The October 2 ownership contract replaces the
 former two-arm test with one ownership measurement; historical weekly records
 retain the original arms. Both tiers run one worker at a time under a
 **24 GiB aggregate reservation** and the existing **30-minute worker deadline**.
-The ordinary full sweep's 8 GiB worker ceiling is unchanged.
+The ordinary full sweep uses the same 12 GiB worker ceiling.
 
 The same weekly target also runs `python bin/Legacy.py` and the three
-`bin/etc` inline unittest suites once, under the ordinary 8 GiB worker ceiling.
+`bin/etc` inline unittest suites once, under the weekly ordinary 8 GiB worker ceiling.
 Their individual test counts and failures join the weekly record. The Makefile's
 `SigmaPi`, `SymPercept` and `SPNN` demonstration targets pass `--demo`.
 
@@ -682,3 +692,5 @@ Round 2's continuation adds twelve direct cases in [test_item20_round2_generatio
 Item 2.0 merged round 3/4 uses direct projection/routing, proposal-credit, action re-read/rate, output-typing and clamp-velocity cases, the named targeted files, one fresh XOR reconstruction gate and one unfiltered default freeze sweep; [§15](plans/2026-11-03-gradient-projection.md) records exact ports and receipts.
 
 Item 2.0 round 3/4 repair adds an unseeded packed-sentence graph scan and an optional chooser-owner certificate; eight consecutive native solo runs precede one frozen, unfiltered sweep (see [spec §16](plans/2026-11-03-gradient-projection.md)).
+
+Round 5 (2026-11-09): [the return and receipts](plans/2026-11-03-gradient-projection.md#17-round-5-memory-basic-percepts-and-shared-strata) record reference-path, state-error, shared-strata, seat-authority and basic-percept certificates, all test ports, targeted checks and the single full sweep on the frozen source.

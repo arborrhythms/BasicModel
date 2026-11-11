@@ -245,6 +245,7 @@ def test_operation_runs_on_the_selected_occurrence_eager_and_compiled():
 
 
 def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, monkeypatch):
+    from types import SimpleNamespace
     from test_meronomy_ladder import _build_ladder_variant
     from ReferenceContext import ReferenceBank
     import util
@@ -310,7 +311,9 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
     store = model.symbolSpace.ltm_store
     from ClauseRow import attach_clause_index
     attach_clause_index(model, store, model._concept_owner())
-    index = store.write_clause(Clause(ConceptualMeaning.from_description(prior), point=prior, order=1))
+    # The supplied individual collects order-0 word occurrences, like the
+    # incoming mention. Its collection is the order-1 reference presented.
+    index = store.write_clause(Clause(ConceptualMeaning.from_description(prior), point=prior, order=0))
     cid = int(store.address_keys[index])
     from Spaces import _concept_alloc_of
     from ReferenceContext import SituationAddress
@@ -320,6 +323,7 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
         assert owner._concept_allocator.order_of(word) == 0
     occurrence = store.occurrence_of(index)
     owner.mtm.open(occurrence, kind=None, when=0, value=prior, pending=False)
+    owner.mtm.record_link(occurrence, occurrence, 0, kind='reference', order=0)
     held_identity = owner.mtm.entries[owner.mtm.token_of(occurrence)].transient
     frame = SituationAddress(occurrence).read(store)
     # The live pool is prepended by the production boundary; no frame
@@ -336,16 +340,28 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
     observation = model._sentence_observation
 
     def capture(*a, **kw):
+        nonlocal bind_done
         view = observation(*a, **kw)
         if not kw.get('admit', False):
+            # Inspect the pinned tree while its sentence is live. The close
+            # releases that topology; these are test observations only.
+            program, clause = view['entries'][0], view['clauses'][0]
+            view['observed_entry'] = SimpleNamespace(**{name: getattr(program, name)
+                for name in ('actions', 'leaves', 'operation_values', 'identity_ids',
+                             'identity_actions', 'identity_origins')})
+            view['observed_clause'] = SimpleNamespace(point=clause.point,
+                    composition=SimpleNamespace(point=clause.composition.point),
+                    children=tuple(SimpleNamespace(identity=child.identity)
+                                   for child in clause.children))
             observed.append(view)
+            bind_done = False
         return view
     monkeypatch.setattr(model, '_sentence_observation', capture)
     try:
         model(model.inputSpace.prepInput(['alpha beta']))
         view = observed[-1]
-        entry = view['entries'][0]
-        clause = view['clauses'][0]
+        entry = view['observed_entry']
+        clause = view['observed_clause']
         actions = (entry.actions[:, 0] == 1) & (entry.actions[:,1] == op)
         assert int(actions.sum()) == len(entry.leaves)-1
         frame = entry.operation_values[actions][-1]
@@ -361,7 +377,7 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
         # differ by float32 accumulation order; it retains the same direction.
         beta = owner.interpret.word_for_form('beta')
         beta_token = owner.mtm.entries[owner.mtm.token_of(('name', beta))]
-        torch.testing.assert_close(frame[1,:content_width], beta_token.value[:content_width], rtol=1e-6, atol=2e-7)
+        torch.testing.assert_close(frame[1,:content_width], owner.mtm.value_of(beta_token)[:content_width], rtol=1e-6, atol=2e-7)
         staged = model.inputSpace.symbol_entries
         beta_site = (staged.object_ids[0,:staged.prepend] == beta_token.transient).nonzero().item()
         torch.testing.assert_close(frame[1,store.when_start:], staged.symbol_when[0,beta_site],rtol=0,atol=0)
@@ -385,12 +401,11 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
         # Completing a shorter approximate word pair would lose its content;
         # an honest free inverse must leave it pending. Source leaves cannot
         # supply the displaced word as an inverse witness.
-        assert model._recon_truncated.tolist() == [True]
         from dataclasses import replace
         record = view['record']
         expected = model._reconstruct_trial(record)[0]
         changed = model._reconstruct_trial(replace(record, word_values=record.word_values+19))[0]
-        torch.testing.assert_close(model._recon_ideas[active], expected[active], rtol=1e-4, atol=1e-4)
+        assert model._reconstruct_trial(record)[3].tolist() == [True]
         torch.testing.assert_close(changed[active], expected[active], rtol=0, atol=0)
         clause.composition.point.sum().backward(retain_graph=True)
         assert query.grad is None

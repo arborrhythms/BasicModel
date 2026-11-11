@@ -1179,7 +1179,7 @@ class ThoughtLTMCapability:
                                 break
                             scanned += 1
                             if event.occurrence == reference and event.role == 0:
-                                before, after = event.before, event.after
+                                before, after = event.before, owner.mtm.event_value(event)
                                 break
                     if before is not None and after is not None:
                         # Event operands now arrive from stamped chunks.

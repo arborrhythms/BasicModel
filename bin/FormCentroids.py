@@ -8,6 +8,12 @@ from typing import NamedTuple
 import torch
 
 
+def _code_columns(codes, weights):
+    """Broadcast a shared or per-stream, fixed-capacity code bank."""
+    shape = (*codes.shape[:-2], *((1,) * (weights.ndim-codes.ndim+1)), codes.shape[-1])
+    return (code.reshape(shape) for code in codes.unbind(-2))
+
+
 # AOT can trace this pure tensor operation with its explicit forward-mode rule.
 @torch.compiler.allow_in_graph
 class _WholeMean(torch.autograd.Function):
@@ -19,7 +25,7 @@ class _WholeMean(torch.autograd.Function):
     def forward(weights, codes):
         mean = codes.new_zeros(*weights.shape[:-1], codes.shape[-1])
         total = weights.new_zeros(*weights.shape[:-1], 1)
-        for index, code in enumerate(codes.unbind()):
+        for index, code in enumerate(_code_columns(codes, weights)):
             mass = weights[..., index:index+1]
             total = total + mass
             fraction = mass / torch.where(total > 0, total, 1.)
@@ -38,11 +44,12 @@ class _WholeMean(torch.autograd.Function):
         total = weights.sum(-1, keepdim=True)
         divisor = torch.where(total > 0, total, 1.)
         tangent = torch.zeros_like(mean)
-        for index, code in enumerate(codes.unbind()):
+        tangents = None if code_tangent is None else tuple(_code_columns(code_tangent, weights))
+        for index, code in enumerate(_code_columns(codes, weights)):
             if weight_tangent is not None:
                 tangent = tangent + (code - mean) * weight_tangent[..., index:index+1] / divisor
             if code_tangent is not None:
-                tangent = tangent + (weights[..., index:index+1] / divisor) * code_tangent[index]
+                tangent = tangent + (weights[..., index:index+1] / divisor) * tangents[index]
         return tangent
 
     @staticmethod
@@ -55,20 +62,32 @@ class _WholeMean(torch.autograd.Function):
         # For an entirely empty whole, the zero forward and unit divisor
         # retain the existing local convention for a first membership.
         weight_grad = torch.zeros_like(weights)
-        if codes.shape[0]:
-            numerators = [((code - mean) * gradient).sum(-1) for code in codes.unbind()]
+        if codes.shape[-2]:
+            numerators = [((code - mean) * gradient).sum(-1) for code in _code_columns(codes, weights)]
             weight_grad = torch.stack(numerators, dim=-1) / divisor
-        code_grad = torch.einsum('...r,...d->rd', weights / divisor, gradient)
+        if codes.ndim == weights.ndim + 1:
+            code_grad = (weights / divisor)[..., None] * gradient.unsqueeze(-2)
+        elif codes.ndim == 2:
+            code_grad = torch.einsum('...r,...d->rd', weights / divisor, gradient)
+        else:
+            code_grad = torch.einsum('bnr,bnd->brd',
+                (weights / divisor).reshape(codes.shape[0], -1, codes.shape[-2]),
+                gradient.reshape(codes.shape[0], -1, codes.shape[-1]))
         return weight_grad, code_grad
+
+
+def convex_mean(weights, codes):
+    """Evidence-weighted interpolation preserving common input endpoints."""
+    torch._assert_async((torch.isfinite(weights) & (weights >= 0)).all(),
+                        'whole centroid weights must be finite and nonnegative')
+    return _WholeMean.apply(weights, codes), weights.sum(-1, keepdim=True)
 
 
 def weighted_mean(weights, codes):
     """Average native property codes; common cube rails remain exact."""
     from Layers import assert_cube
     assert_cube(codes)
-    torch._assert_async((torch.isfinite(weights) & (weights >= 0)).all(),
-                        'whole centroid weights must be finite and nonnegative')
-    return _WholeMean.apply(weights, codes), weights.sum(-1, keepdim=True)
+    return convex_mean(weights, codes)
 
 
 class WholeRead(NamedTuple):
@@ -89,7 +108,12 @@ def presence_read(weights, codes):
     mean, _ = weighted_mean(weights.detach(), codes.detach())
     total = weights.sum(-1, keepdim=True)
     divisor = torch.where(total >= 1, total, torch.ones_like(total))
-    carrier = (weights / divisor) @ codes
+    carrier = (((weights / divisor)[..., None] * codes).sum(-2)
+        if codes.ndim == weights.ndim + 1 else
+        (weights / divisor) @ codes if codes.ndim == 2 else
+        torch.einsum('bnr,brd->bnd',
+            (weights / divisor).reshape(codes.shape[0], -1, codes.shape[-2]), codes)
+        .reshape(*weights.shape[:-1], codes.shape[-1]))
     return WholeRead(mean, total, carrier)
 
 
@@ -114,6 +138,9 @@ class SpanWholes(NamedTuple):
     properties: torch.Tensor
     codes: torch.Tensor
 
+    def for_stream(self, stream):
+        return self._replace(prefix=self.prefix[stream:stream+1])
+
     def _weights(self, spans):
         lo, hi = spans.unbind(-1)
         width = self.prefix.shape[-1]
@@ -127,6 +154,32 @@ class SpanWholes(NamedTuple):
 
     def read(self, spans):
         """Read the mean of properties active over a half-open input span."""
+        return weighted_mean(self._weights(spans), self.codes)
+
+    def read_presence(self, spans):
+        return presence_read(self._weights(spans), self.codes)
+
+
+class BasicSpanWholes(NamedTuple):
+    prefix: torch.Tensor
+    codes: torch.Tensor
+
+    def for_stream(self, stream):
+        return self._replace(prefix=self.prefix[stream:stream+1],
+                             codes=self.codes[stream:stream+1])
+
+    def _weights(self, spans):
+        if (self.codes.ndim != 3 or self.codes.shape[0] != self.prefix.shape[0]
+                or self.codes.shape[-2] != self.prefix.shape[-1]):
+            raise ValueError('basic span prefix and codes must select the same streams and words')
+        lo, hi = spans.unbind(-1)
+        width = self.prefix.shape[-1]
+        lo, hi = lo.clamp(0, self.prefix.shape[1]-1), hi.clamp(0, self.prefix.shape[1]-1)
+        weights = (self.prefix.gather(1, hi[..., None].expand(*hi.shape, width))
+                   - self.prefix.gather(1, lo[..., None].expand(*lo.shape, width)))
+        return weights.clamp_min(0) * ((spans[..., 0] >= 0) & (hi > lo))[..., None]
+
+    def read(self, spans):
         return weighted_mean(self._weights(spans), self.codes)
 
     def read_presence(self, spans):
@@ -181,6 +234,39 @@ class CandidateWholes(NamedTuple):
                              valid=self.valid[stream:stream+1])
 
 
+class BasicCandidateWholes(NamedTuple):
+    forms: torch.Tensor
+    weights: torch.Tensor
+    valid: torch.Tensor
+    codes: torch.Tensor
+
+    def _selected(self, *parts):
+        weights, codes, available = [], [], []
+        for value in parts:
+            shape = value.shape[:-1]
+            form = value[..., :self.forms.shape[-1]].reshape(value.shape[0], -1, self.forms.shape[-1])
+            error = (form.square().sum(-1, keepdim=True) + self.forms.square().sum(-1)[:, None]
+                     - 2 * form @ self.forms.transpose(-1, -2)).clamp_min(0)
+            best, index = error.masked_fill(~self.valid[:, None], torch.inf).min(-1)
+            tolerance = 8 * torch.finfo(form.dtype).eps * form.square().sum(-1).clamp_min(1)
+            available.append((best <= tolerance).reshape(shape))
+            weights.append(self.weights.gather(1, index).reshape(shape))
+            codes.append(self.codes.gather(1, index[..., None].expand(*index.shape, self.codes.shape[-1]))
+                         .reshape(*shape, self.codes.shape[-1]))
+        return (torch.stack(weights, -1) * torch.stack(available).all(0)[..., None],
+                torch.stack(codes, -2))
+
+    def read(self, *parts):
+        return weighted_mean(*self._selected(*parts))
+
+    def read_presence(self, *parts):
+        return presence_read(*self._selected(*parts))
+
+    def for_stream(self, stream):
+        return self._replace(forms=self.forms[stream:stream+1], weights=self.weights[stream:stream+1],
+                             valid=self.valid[stream:stream+1], codes=self.codes[stream:stream+1])
+
+
 class PreparedCandidateWholes:
     """An eager inverse walk's invariant, detached dictionary-whole read."""
     def __init__(self, bank, dictionary):
@@ -211,7 +297,7 @@ def prepare_inverse(bank):
     return PreparedCandidateWholes(bank, bank.read_presence(bank.forms))
 
 
-def candidates(whole_space, bank):
+def candidates(whole_space, bank, *, owner=None):
     """Snapshot the same native properties for the free dictionary search."""
     basis = getattr(getattr(whole_space, 'subspace', None), 'what', None)
     properties = getattr(basis, 'primitive_properties', None)
@@ -221,11 +307,18 @@ def candidates(whole_space, bank):
     if support is None:
         from WordSurfaces import primitive_support
         support = primitive_support(bank.bytes, bank.byte_valid)
+    if owner is not None:
+        basic = owner.basic_percepts
+        rows = bank.rows.new_tensor([[basic.words.get(owner.concept_id_at_row(int(row)), -1)
+            for row in stream] for stream in bank.rows.cpu().tolist()])
+        weights, codes = basic.word_weights(support.to(bank.codes), rows)
+        return BasicCandidateWholes(bank.codes[..., :bank.meaning_start].detach(),
+            weights.detach(), bank.terminal_valid, codes.detach())
     return CandidateWholes(bank.codes[..., :bank.meaning_start].detach(), support,
         bank.terminal_valid, properties.coefficients().detach(), basis.getW().detach())
 
 
-def stage(whole_space):
+def stage(whole_space, *, basic=None, word_rows=None):
     """Read the existing WholeSpace table once outside the compose loop."""
     counts = getattr(whole_space, '_staged_word_primitive_counts', None)
     basis = getattr(getattr(whole_space, 'subspace', None), 'what', None)
@@ -233,6 +326,11 @@ def stage(whole_space):
     if not torch.is_tensor(counts) or properties is None or whole_space.held_at_zero:
         return None
     counts = counts.sum(-2)
+    if basic is not None:
+        weights, codes = basic.word_weights(counts, word_rows)
+        weights = torch.diag_embed(weights)
+        prefix = torch.cat((weights.new_zeros(weights.shape[0], 1, weights.shape[-1]), weights.cumsum(1)), 1)
+        return BasicSpanWholes(prefix, codes)
     prefix = torch.cat((counts.new_zeros(counts.shape[0], 1, counts.shape[-1]), counts.cumsum(1)), 1)
     return SpanWholes(prefix, properties.coefficients(), basis.getW())
 
@@ -298,7 +396,7 @@ def capture(program, bank, batch, positions, language):
         spans.append(span)
         counts.append(pair)
         active.append(order == 0)
-    local = SpanWholes(bank.prefix[batch:batch+1], bank.properties, bank.codes)
+    local = bank.for_stream(batch)
     values, number, carrier = local.read_presence(program.actions.new_tensor(spans)[None])
     return replace(program, operand_counts=program.leaves.new_tensor(counts),
                    form_wholes=values[0], form_whole_counts=number[0] *

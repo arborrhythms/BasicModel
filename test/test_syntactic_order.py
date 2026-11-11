@@ -51,6 +51,12 @@ def test_syntactic_order_defaults_zero_and_reads_config():
     # Default (no knob) is 0 = unbounded; an explicit value is read.
     m = _build("XOR_grammar.xml")
     assert int(getattr(m, "syntacticOrder", 0)) == 0
+    m.End()
+    from Layers import GrammarLayer
+    GrammarLayer.set_chart_authority(None)
+    del m
+    import gc
+    gc.collect()
 
     # A temp config that sets the knob is honoured.
     src = open(os.path.join(_DATA, "XOR_grammar.xml")).read()

@@ -77,14 +77,13 @@ def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, 
         readings.append(model.reconstruct_grammar_sentence(state, sid, active))
         return commit(state, sid, active, *rest)
     monkeypatch.setattr(model, '_commit_sentence', observed_commit)
-    word_cost = model._byte_word_cost
-    def observed_cost(idea, word, bank_n, bank_bytes, bank_valid,
-                      target_bytes, target_valid, ready, *, priming=None):
-        if ready:
-            targets.append(target_bytes.detach().clone())
-        return word_cost(idea, word, bank_n, bank_bytes, bank_valid,
-                         target_bytes, target_valid, ready, priming=priming)
-    monkeypatch.setattr(model, '_byte_word_cost', observed_cost)
+    import SentenceField
+    native_target = SentenceField.native_target
+    def observed_target(owner, field):
+        value = native_target(owner, field)
+        targets.append((field.where.detach().clone(), value.detach().clone()))
+        return value
+    monkeypatch.setattr(SentenceField, 'native_target', observed_target)
     try:
         texts = ['hello world', 'hello there', 'loving world', 'loving there']
         if trailing:
@@ -102,9 +101,16 @@ def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, 
         assert targets
         for b in range(4):
             assert bytes(isp._ar_target_word_bytes[b, 1][isp._ar_target_word_mask[b, 1]].tolist()) == b' '
-            expected=isp._ar_target_word_bytes[b, isp._ar_grammar_leaf_mask[b]]
-            torch.testing.assert_close(targets[-1][b,:len(expected)],expected,rtol=0,atol=0)
-            assert not bool(targets[-1][b,len(expected):].any())
+            brackets, native = targets[-1]
+            extents = brackets[b][brackets[b, :, 1] > brackets[b, :, 0]]
+            source = texts[b].encode()
+            assert [source[int(lo):int(hi)] for lo, hi in extents] == source.split()
+            # A separator remains perceived, but the native reconstruction
+            # target owns only the admitted word brackets.
+            native_spans = model.perceptualSpace._forward_input['native_part_spans'][b]
+            separator = torch.tensor([source[int(lo):int(hi)].isspace()
+                                      for lo, hi in native_spans])
+            assert not native[b, separator].any()
         assert [p for p, _ in pushes] == list(range(4 if trailing else 3))
         expected = [[True]*4, [False]*4, [True]*4] + ([[False]*4] if trailing else [])
         assert [gate.reshape(-1).tolist() for _, gate in pushes] == expected

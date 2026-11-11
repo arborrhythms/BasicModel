@@ -168,7 +168,7 @@ def apply_thought_effect(model, result, *, row, work, effect_round=None):
     carrier = getattr(space, 'subspace', None)
     if carrier is None:
         return
-    seeds = []
+    seeds, ideas = [], []
     if kind == 'reference':
         reference = result.evidence.get('reference')
         if reference is not None:
@@ -178,115 +178,31 @@ def apply_thought_effect(model, result, *, row, work, effect_round=None):
         for member in members:
             meaning = member.get('meaning')
             if meaning is not None:
-                seeds.extend(ref for ref in meaning.role_refs if ref and ref[0] == 'sym')
+                ideas.append(meaning)
+                continue
             reference = member.get('reference')
             if reference is not None:
                 seeds.append(reference)
-    if not seeds:
+    if not seeds and not ideas:
         return
-    effect_round.claim(S.KNOWING)
-    effect_round.claim(S.SYMBOLIC)
-    spaces = list(getattr(model, 'conceptualSpaces', ()) or ())
-    owner = getattr(carrier, '_concept_code_owner', None)
-    if owner is not None and 0 <= owner < len(spaces):
-        # The cutover field and its definitions use the same dictionary,
-        # even when the terminal carrier belongs to a later tower stage.
-        space = spaces[owner]
-    elif spaces:
-        owner = next(i for i, candidate in enumerate(spaces) if candidate is space)
-    basis = _basis(space)
-    existing = getattr(carrier, '_concept_activations', None)
-    batch = max(row + 1, int(existing.shape[1]) if torch.is_tensor(existing) else 1)
-    sparse = callable(getattr(space, '_sparse_active', None)) and space._sparse_active()
-    count = (len(existing) if torch.is_tensor(existing) else
-             sum(space._field_caps()) if sparse else len(basis))
-    location = getattr(carrier, '_thought_occurrence', None)
-    previous_locations = int(existing.shape[2]) if torch.is_tensor(existing) else 0
-    if location is None or location >= previous_locations:
-        location = previous_locations
-    field = basis.new_zeros(count, batch, max(previous_locations, location + 1), 2)
-    if torch.is_tensor(existing):
-        n = min(len(field), len(existing))
-        field[:n, :existing.shape[1], :previous_locations] = existing[:n].detach()
-    object.__setattr__(carrier, '_thought_occurrence', location)
-    # An inferred reading has one field bracket and interval. It does not
-    # manufacture a concept-by-position carrier or an external observation.
-    for coordinate in ('where', 'when'):
-        intervals = getattr(carrier, '_concept_' + coordinate, None)
-        if torch.is_tensor(intervals) and intervals.shape[1] < field.shape[2]:
-            added = field.shape[2] - intervals.shape[1]
-            intervals = torch.cat((intervals, intervals.new_full(
-                (intervals.shape[0], added, 2), -1)), dim=1)
-            object.__setattr__(carrier, '_concept_' + coordinate, intervals)
-    addresses = getattr(carrier, '_concept_inventory_rows', None)
-    addresses = (torch.arange(count, device=basis.device) if addresses is None
-                 else addresses.to(basis.device).clone())
-    ids = getattr(carrier, '_concept_ids', None)
-    ids = (torch.tensor([space.concept_id_at_row(int(r)) or -1 for r in addresses], device=basis.device)
-           if ids is None else ids.to(basis.device).clone())
-    query = field.new_zeros(field.shape)
-    for reference in seeds:
-        try:
-            index = reference[1] if reference[0] == 'row' else _existing_row(space, reference)
-        except ValueError:
-            continue
-        if sparse:
-            cid = space.concept_id_at_row(index)
-            bound_ids = ids[:, row] if ids.ndim == 2 else ids
-            bound_rows = addresses[:, row] if addresses.ndim == 2 else addresses
-            slots = (bound_ids == cid).nonzero().flatten() if cid is not None else (bound_rows == index).nonzero().flatten()
-            if not len(slots):
-                # This selects a physical pool, not a concept's order record.
-                # An unknown concept (or a raw row) uses the base pool here.
-                order = max(0, space._concept_source_order(cid)) if cid is not None else 0
-                start, end = space.order_slice(order)
-                slots = (bound_rows[start:end] < 0).nonzero().flatten() + start
-                if len(slots):
-                    bound_rows[slots[0]] = index
-                    bound_ids[slots[0]] = -1 if cid is None else cid
-            index = int(slots[0]) if len(slots) else -1
-        if 0 <= index < len(query):
-            query[index, row, location, 0] = 1.
-    # A new imagined extent has no observed field. Existing extents select
-    # only cases supported in the current attentive field.
-    observed = field if location < previous_locations else None
-    inferred = space.cs_reverse_presence(query, observed=observed,
-                                         inventory_rows=addresses) if sparse else query
-    if sparse:
-        # The paired sparse attribution follows the definition. Include inferred
-        # literals even when no separate relation record names the edge.
-        roots = (query[:, row].amax(dim=(1, 2)) > 0).nonzero().flatten().tolist()
-        supported = (inferred[:, row].amax(dim=(1, 2)) > 0).nonzero().flatten().tolist()
-        for index in roots + [i for i in supported if i not in roots]:
-            if not work.consume('effect_node'):
-                break
-            previous, added = field[index, row], inferred[index, row]
-            field[index, row] = torch.maximum(previous, added)
-    pending, seen = ([] if sparse else list(seeds)), set()
-    while pending:
-        reference = pending.pop()
-        if reference in seen:
-            continue
-        seen.add(reference)
+    effect_round.claim(S.SERIAL)
+    from Meaning import ConceptualMeaning
+    from dataclasses import replace
+    from ThoughtChunks import put
+    owner = model._concept_owner()
+    # Retrieved frames already carry the idea. Their occurrence references
+    # are LTM addresses, not conceptual dictionary identifiers.
+    for meaning in ideas:
         if not work.consume('effect_node'):
             break
-        if reference[0] == 'row':
-            index, cid = reference[1], space.concept_id_at_row(reference[1])
-        else:
-            cid = reference[1]
-            try:
-                index = _existing_row(space, reference)
-            except ValueError:
-                continue
-        if 0 <= index < len(field):
-            field[index, row, location, 0] = 1.
-        if cid is not None:
-            pending.extend(part for part in space.concept_parts(cid)
-                           if isinstance(part, tuple) and part[0] == 'sym')
-    object.__setattr__(carrier, '_concept_activations', field.detach())
-    object.__setattr__(carrier, '_concept_codes',
-                       space._field_codes(basis, addresses).detach() if sparse else basis[:count].detach())
-    object.__setattr__(carrier, '_concept_ids', ids.detach())
-    object.__setattr__(carrier, '_concept_inventory_rows', addresses.detach())
-    if owner is not None:
-        object.__setattr__(carrier, '_concept_code_owner', owner)
+        put(model.conceptualSpace.stm, meaning, row=row)
+    for reference in dict.fromkeys(seeds):
+        if not work.consume('effect_node'):
+            break
+        index = reference[1] if reference[0] == 'row' else _existing_row(owner, reference)
+        value = owner.similarity_codebook.lookup_rows(
+            torch.tensor(index, device=owner.similarity_codebook.W.device))
+        cid = owner.concept_id_at_row(index)
+        meaning = replace(ConceptualMeaning.from_description(value),
+                          role_refs=(('sym', cid), None, None))
+        put(model.conceptualSpace.stm, meaning, row=row)

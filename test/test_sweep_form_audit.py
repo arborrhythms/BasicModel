@@ -9,7 +9,7 @@ def test_form_audit_reports_cpu_double_without_moving_forms(device):
     from test_review13_subspaces import fixture, word
     cs, cb, _, _ = fixture()
     rows = [word(cs, [(4, 1.)]), word(cs, [(4, 1.), (7, 1.)]), word(cs, [(8, 1.)])]
-    cpu = dict(zip(rows, values))
+    cpu = {row: values[i % len(values)] for i, row in enumerate(cs.basic_percepts.index.values())}
     expected = cb.mereology.containment_audit(before=cpu, after=cpu)
     forms = {row: value.to(device) for row, value in cpu.items()}
     actual = cb.mereology.containment_audit(before=forms, after=forms)

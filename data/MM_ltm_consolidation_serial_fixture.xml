@@ -59,6 +59,7 @@
     <nOutput>8</nOutput>
     <nDim>14</nDim>
     <nVectors>256</nVectors>
+    <basicPerceptCapacity>256</basicPerceptCapacity>
     <invertible>true</invertible>
   </PartSpace>
 

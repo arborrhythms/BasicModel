@@ -27,7 +27,8 @@ import uuid
 
 MIB, GIB = 1024**2, 1024**3
 RESERVED_MACHINE_BYTES = 8 * GIB
-DEFAULT_WORKER_MEMORY_BYTES = 8 * GIB
+DEFAULT_WORKER_MEMORY_BYTES = 12 * GIB
+WORKER_SHARE_BYTES = 9 * GIB
 HERE = Path(__file__).resolve().parent
 LOCK = Path.home() / ".cache" / "basicmodel" / "tests.lock"
 
@@ -288,7 +289,7 @@ class GuardedProcess:
         self.cwd, self.env, self.log_path = cwd, env, Path(log_path)
         self.memory_bytes, self.timeout = memory_bytes, timeout
         reservation = memory_bytes if memory_share is None else min(memory_bytes, memory_share)
-        self.recycle_memory = max(reservation * .5, min(reservation * .8, reservation - 64 * MIB))
+        self.recycle_memory = reservation / 2
         self.terminate_grace, self.recycle_file = terminate_grace, recycle_file
         self.result = dict(command=self.command, pid=None, exit_code=125, reason="launch_error",
                            peak_memory_bytes=0, elapsed_seconds=0, log=str(self.log_path))
@@ -546,16 +547,26 @@ def render_report(path, result):
         + "".join(rows) + "</table></body></html>")
 
 
+def phase_reservations(memory_bytes, workers, worker_memory_bytes=None):
+    """Reserve every possible worker before dispatching either memory phase."""
+    ceiling = min(memory_bytes, DEFAULT_WORKER_MEMORY_BYTES if worker_memory_bytes is None
+                  else worker_memory_bytes)
+    return (dict(name='ordinary', workers=workers,
+                 per_worker_memory_bytes=min(ceiling, memory_bytes // workers)),
+            dict(name='large_memory', workers=max(1, memory_bytes // ceiling),
+                 per_worker_memory_bytes=ceiling))
+
+
 def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_timeout=10800,
               batch_size=256, max_files=16, workers=1, worker_memory_bytes=None,
               keyword=None, marker=None, lock_path=LOCK):
     """Collect once, then run fresh workers under one aggregate memory reservation.
 
     ``memory_bytes`` is the total suite reservation. Each worker has an
-    independently enforced ceiling (8 GiB by default), while the supervisor
-    samples all active process trees and fails before their aggregate crosses
-    the reservation. A single accelerator worker is admitted at a time because
-    MPS/CUDA use shared device memory.
+    reservation whose sum cannot exceed the aggregate. Ordinary cases share
+    workers recycled at half their cap. Marked large cases run one per fresh
+    worker in the second phase. A single accelerator worker is admitted at a
+    time because MPS/CUDA use shared device memory.
     """
     if type(workers) is not int or workers < 1:
         raise ValueError("workers must be a positive integer")
@@ -568,6 +579,9 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
     positive(worker_memory_bytes, "per_worker_memory_bytes")
     if worker_memory_bytes > memory_bytes:
         raise ValueError("per-worker memory cap cannot exceed the aggregate reservation")
+    phases = phase_reservations(memory_bytes, workers, worker_memory_bytes)
+    for phase in phases:
+        positive(phase['per_worker_memory_bytes'], 'phase per-worker memory')
     root, run_dir = Path(root).resolve(), Path(run_dir).resolve()
     env = worker_environment(root)
     split_devices = not os.environ.get("BASICMODEL_DEVICE")
@@ -575,9 +589,10 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
     run_dir.mkdir(parents=True, exist_ok=False)  # Never reuse a stale success receipt.
     started, frozen, frozen_registry = time.monotonic(), None, None
     result = dict(torch_version=version("torch"), exit_code=125, reason="incomplete", selected=[], completed=[], workers=[],
-                  compile_cache_retries=[],
+                  compile_cache_retries=[], phases=[dict(phase, selected=[], completed=[], reason='pending')
+                                                    for phase in phases],
                   limits=dict(memory_bytes=memory_bytes, aggregate_memory_bytes=memory_bytes,
-                              per_worker_memory_bytes=worker_memory_bytes, workers=workers,
+                              per_worker_memory_bytes=phases[0]['per_worker_memory_bytes'], workers=workers,
                               worker_seconds=timeout, suite_seconds=suite_timeout,
                               batch_size=batch_size, max_files=max_files), root=str(root),
                   run_dir=str(run_dir), elapsed_seconds=0,
@@ -613,7 +628,7 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
             result.pop("active_workers", None)
         save()
 
-    def launch_worker(name, request, cap):
+    def launch_worker(name, request, cap, phase='collection'):
         remaining = suite_timeout - (time.monotonic() - started)
         if remaining <= 0:
             raise TimeoutError("Suite deadline reached")
@@ -637,16 +652,31 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
             [sys.executable, str(HERE / "pytest_worker.py"), str(request_file), str(response_file)],
             cwd=root, env=worker_env, log_path=run_dir / f"{name}.log",
             memory_bytes=cap, timeout=min(timeout, remaining), recycle_file=recycle_file,
-            memory_share=max(1, memory_bytes // workers))
+            memory_share=cap)
         guarded.start()
         return dict(name=name, request=request, response_file=response_file,
-                    guarded=guarded, device=worker_env["BASICMODEL_DEVICE"])
+                    guarded=guarded, device=worker_env["BASICMODEL_DEVICE"], phase=phase,
+                    case_memory={})
+
+    def observe_case(handle):
+        path = handle['response_file'].with_suffix('.active.json')
+        if not path.exists():
+            return
+        status = json.loads(path.read_text())
+        node = status['active']
+        if node is not None:
+            samples = handle['case_memory']
+            samples[node] = max(samples.get(node, 0), handle['guarded'].current_memory_bytes)
 
     def settle(handle):
         receipt = handle["guarded"].result
         if handle["response_file"].exists():
             receipt["pytest"] = json.loads(handle["response_file"].read_text())
             receipt["device"] = receipt["pytest"].get("device")
+            for node, memory in receipt['pytest'].get('case_memory', {}).items():
+                memory['peak_memory_bytes'] = max(memory['peak_memory_bytes'],
+                    handle['case_memory'].get(node, 0))
+        receipt['phase'] = handle['phase']
         print(f"[{handle['name']}] {receipt['reason']} {receipt['exit_code']}; "
               f"{receipt['elapsed_seconds']:.1f}s; peak {receipt['peak_memory_bytes']/GIB:.2f} GiB", flush=True)
         return receipt
@@ -668,7 +698,7 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
                        reports=data.get("reports", []), recycled=data.get("recycled", False),
                        initial_random_stream=data.get("initial_random_stream"),
                        failed_random_streams=data.get("failed_random_streams", {}),
-                       active_case=data.get("active"))
+                       active_case=data.get("active"), case_memory=data.get('case_memory', {}))
         result["workers"].append(receipt)
         result["completed"].extend(receipt["completed"])
         test_failure = any(report["outcome"] == "failed"
@@ -763,6 +793,10 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
             result["selected"] = collect.get("pytest", {}).get("selected", [])
             result['phase_certificates'] = collect.get('pytest', {}).get('phase_certificates', {})
             result['trained_tests'] = collect.get('pytest', {}).get('trained_tests', {})
+            large = set(collect.get('pytest', {}).get('large_memory', ()))
+            for phase in result['phases']:
+                phase['selected'] = [node for node in result['selected']
+                    if (node in large) == (phase['name'] == 'large_memory')]
             if collect["exit_code"] != 0:
                 result.update(exit_code=collect["exit_code"], reason="collection_" + collect["reason"])
             elif not result["selected"]:
@@ -773,57 +807,77 @@ def run_suite(*, root, selectors, run_dir, memory_bytes, timeout=1800, suite_tim
                 devices = {node: requested.get(node, "cpu") if split_devices
                            else env["BASICMODEL_DEVICE"] for node in result["selected"]}
                 shared = collect.get("pytest", {}).get("shared_training", {})
-                batches = deque(make_batches(result["selected"], batch_size, max_files, devices, shared))
                 index = 0
-                while batches or active:
-                    remaining = suite_timeout - (time.monotonic() - started)
-                    if remaining <= 0:
-                        raise TimeoutError("Suite deadline reached")
-                    while len(active) < workers and batches:
-                        accelerator_live = any(uses_accelerator(handle["device"])
-                                               for handle in active.values())
-                        candidate = next(
-                            (position for position, nodes in enumerate(batches)
-                             if not (uses_accelerator(devices[nodes[0]]) and accelerator_live)),
-                            None)
-                        if candidate is None:
-                            break
-                        nodes = batches[candidate]
-                        del batches[candidate]
-                        name = f"worker-{index:03d}"
-                        index += 1
-                        active[name] = launch_worker(name, dict(selectors=nodes, collect=False),
-                                                     worker_memory_bytes)
-                        publish_active()
-                    finished = []
-                    for name, handle in list(active.items()):
-                        if handle["guarded"].poll() is not None:
+                for phase in result['phases']:
+                    phase['reason'] = 'running'
+                    phase_start = time.monotonic()
+                    batches = deque(([node] for node in phase['selected'])
+                        if phase['name'] == 'large_memory' else
+                        make_batches(phase['selected'], batch_size, max_files, devices, shared))
+                    while batches or active:
+                        remaining = suite_timeout - (time.monotonic() - started)
+                        if remaining <= 0:
+                            raise TimeoutError("Suite deadline reached")
+                        while len(active) < phase['workers'] and batches:
+                            accelerator_live = any(uses_accelerator(handle["device"])
+                                                   for handle in active.values())
+                            candidate = next(
+                                (position for position, nodes in enumerate(batches)
+                                 if not (uses_accelerator(devices[nodes[0]]) and accelerator_live)),
+                                None)
+                            if candidate is None:
+                                break
+                            nodes = batches[candidate]
+                            del batches[candidate]
+                            name = f"worker-{index:03d}"
+                            index += 1
+                            active[name] = launch_worker(name, dict(selectors=nodes, collect=False),
+                                                         phase['per_worker_memory_bytes'], phase['name'])
+                            publish_active()
+                        finished = []
+                        for name, handle in list(active.items()):
+                            outcome = handle["guarded"].poll()
+                            observe_case(handle)
+                            if outcome is not None:
+                                finished.append((name, handle))
+                        active_memory = sum(handle["guarded"].current_memory_bytes
+                                            for handle in active.values()
+                                            if not handle["guarded"].finished)
+                        phase['peak_aggregate_memory_bytes'] = max(
+                            phase.get('peak_aggregate_memory_bytes', 0), active_memory)
+                        result["peak_aggregate_memory_bytes"] = max(
+                            result.get("peak_aggregate_memory_bytes", 0), active_memory)
+                        if active_memory > memory_bytes:
+                            name, handle = max(
+                                ((name, handle) for name, handle in active.items()
+                                 if not handle["guarded"].finished),
+                                key=lambda item: item[1]["guarded"].current_memory_bytes)
+                            handle["guarded"].stop(exit_code=137, reason="aggregate_memory")
                             finished.append((name, handle))
-                    active_memory = sum(handle["guarded"].current_memory_bytes
-                                        for handle in active.values()
-                                        if not handle["guarded"].finished)
-                    result["peak_aggregate_memory_bytes"] = max(
-                        result.get("peak_aggregate_memory_bytes", 0), active_memory)
-                    if active_memory > memory_bytes:
-                        name, handle = max(
-                            ((name, handle) for name, handle in active.items()
-                             if not handle["guarded"].finished),
-                            key=lambda item: item[1]["guarded"].current_memory_bytes)
-                        handle["guarded"].stop(exit_code=137, reason="aggregate_memory")
-                        finished.append((name, handle))
-                    if not finished:
-                        time.sleep(.05)
-                        continue
-                    stop_dispatch = False
-                    for name, handle in finished:
-                        active.pop(name, None)
-                        receipt = settle(handle)
-                        if not account(handle["request"]["selectors"], receipt):
-                            abort_active("aborted")
-                            stop_dispatch = True
+                        if not finished:
+                            time.sleep(.05)
+                            continue
+                        stop_dispatch = False
+                        for name, handle in finished:
+                            active.pop(name, None)
+                            receipt = settle(handle)
+                            if not account(handle["request"]["selectors"], receipt):
+                                abort_active("aborted")
+                                stop_dispatch = True
+                                break
+                            publish_active()
+                        if stop_dispatch:
                             break
-                        publish_active()
-                    if stop_dispatch:
+                    phase['elapsed_seconds'] = time.monotonic() - phase_start
+                    phase['completed'] = [node for node in result['completed'] if node in phase['selected']]
+                    phase_workers = [worker for worker in result['workers'] if worker['phase'] == phase['name']]
+                    if Counter(phase['completed']) == Counter(phase['selected']):
+                        phase['reason'] = ('test_failure' if any(report['outcome'] == 'failed'
+                            for worker in phase_workers for report in worker['reports']) else 'passed')
+                    else:
+                        phase['reason'] = result['reason']
+                    save()
+                    if result['reason'] not in ('running', 'test_failure'):
                         break
                 if result["reason"] in ("running", "test_failure"):
                     if Counter(result["completed"]) == Counter(result["selected"]):
@@ -866,8 +920,9 @@ def default_test_memory_bytes():
 
 
 def default_worker_count():
-    """Use all but four CPU slots so SSH and interactive work stay responsive."""
-    return max(1, (os.cpu_count() or 1) - 4)
+    """Reserve four CPU slots and at least 9 GiB per default worker."""
+    return max(1, min((os.cpu_count() or 1) - 4,
+                      default_test_memory_bytes() // WORKER_SHARE_BYTES))
 
 
 def main(argv=None):
@@ -896,7 +951,7 @@ def main(argv=None):
         result = run_suite(root=root, selectors=args.selectors, run_dir=run_dir,
                            memory_bytes=memory_bytes, timeout=args.timeout,
                            suite_timeout=args.suite_timeout, batch_size=args.batch_size,
-                           max_files=args.max_files, workers=args.workers,
+                           max_files=args.max_files, workers=min(args.workers, default_worker_count()),
                            keyword=args.keyword, marker=args.marker)
     except (ValueError, OSError, RuntimeError) as exc:
         parser.error(str(exc))

@@ -183,10 +183,13 @@ class Probe:
             assert old['owner'] == row['owner']
             old['writers'] = sorted(set(old['writers']) | set(row['writers']))
             old['elements'] = row['elements']
-            assert not old['writers'] or old['writers'] == [old['owner']]
+            if report['mode'] == 'separate':
+                assert not old['writers'] or old['writers'] == [old['owner']]
+            else:
+                assert set(old['writers']) <= {'R', 'A'}
         self.ownership_steps += 1
         rows = list(self.ownership.values())
-        write('ownership.json', dict(parameters=rows, conflicts=0,
+        write('ownership.json', dict(mode=report['mode'], parameters=rows, conflicts=0,
             active=sum(bool(row['writers']) for row in rows),
             inactive=sum(not row['writers'] for row in rows),
             backward_steps=self.ownership_steps, scope='all training backwards; endpoint excluded'))

@@ -601,6 +601,7 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
             from Memory import STMChunks
             newest = (active.long().sum(-1)-1).clamp_min(0)[:,None]
             mention = window.gather(1,newest[...,None].expand(B,1,D))
+            mention_order = orders.gather(1,newest)
             own = identities.gather(1,newest)
             own_relative = flags.gather(1,newest).bitwise_and(1) != 0
             points, ids, chunks, available = STMChunks.bind_menu(chunk_state,mention,
@@ -620,12 +621,13 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
                 # when the dummy returns it unchanged. Field identities on
                 # the right carry working points, not relative addresses.
                 brels.append(torch.stack((own_relative,torch.zeros_like(own_relative)),-1))
-                # A dummy retains the mention's order; a real field bind
-                # takes the selected chunk's order. Neither may publish an
-                # unknown order as a closed reference.
-                result_order = (orders.gather(1,newest) if column == 0 else
+                # A known mention order constrains its reference. Otherwise
+                # the chosen referent supplies the order; an unknown dummy
+                # cannot close. The kept close retains this trial's choice.
+                result_order = (mention_order if column == 0 else
                                 chunk_state[STMChunks.ORDERS][:,column-1:column])
-                bvalid.append(available[:,:,column] & active.any(-1)[:,None] & (result_order >= 0))
+                bvalid.append(available[:,:,column] & active.any(-1)[:,None]
+                    & (result_order >= 0) & ((mention_order < 0) | (result_order == mention_order)))
                 case_weights.append(window.new_zeros(B,N-1,case_count,2))
             continue
         left_options = propose(window[:, :-1], identities[:, :-1], flags[:, :-1], positions[:, :-1],

@@ -613,3 +613,7 @@ relative operators recognized by `_relative_start_categories`
 (`_RELATIVE_OP_NAMES`). Its identity vector lives in the `WholeSpace`
 operator codebook and participates in the same soft superposition as the
 other operators.
+
+## Basic-percept premises (item 2.0 round 5, 2026-11-09)
+
+Mereological bounds now belong to perception. `BasicPercepts.subspace_bounds` takes the identity join of parts and property meet of wholes. `FormContainment.audit` checks those basic rows and their boundaries; symbolic order-0 feature weights do not supply the containment premises. `MereologicalCodes` reads the resulting basic codes and learned conceptual context, with no direct two-tower symbolic form derivation. The conceptual field reads live basic evidence, including its complementary pole, so property memberships retain their gradient. The compose-time weighted presence rule is unchanged. Full reverse through basic percepts is carried to round 6.

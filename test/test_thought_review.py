@@ -115,6 +115,15 @@ def test_policy_selects_nested_what_part_and_receives_actual_episode_credit(dept
     from ThoughtReferences import has_open_slots, open_slots
     import ThoughtStream
     model, registry, store, goal, menu = credit_chain_world(monkeypatch)
+    # The neutral final head learns from explicit, unsaturated candidate
+    # features; a random hidden layer is not the subject of this certificate.
+    with torch.no_grad():
+        chooser = model.shared_grammar.chooser
+        first = chooser.mlp[0]
+        first.weight.zero_(); first.bias.fill_(1.)
+        width = model.shared_grammar.d_model
+        first.weight[:, width:2*width].copy_(torch.eye(first.out_features, width))
+        chooser.mlp[-1].weight.zero_(); chooser.mlp[-1].bias.zero_()
     base_menu = ThoughtStream.candidates
     outer = goal
     for _ in range(depth): outer = registry.form('ask', outer)

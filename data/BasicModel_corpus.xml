@@ -79,6 +79,7 @@
     <nInput>8192</nInput>
     <nInputDim>512</nInputDim>
     <nVectors>262144</nVectors>
+    <basicPerceptCapacity>262144</basicPerceptCapacity>
     <nDim>104</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>104</nOutputDim>

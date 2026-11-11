@@ -71,20 +71,17 @@ def measure_layout(model, rows, *, packed):
 
     from reading_fixtures import capture_readings
     records = {}
-    reconstruct = model._reconstruct_sentences
+    import SentenceField
+    reconstruct = SentenceField.reconstruct
     captured = {}
 
-    def capture(S, reference, roots, depths=None, end=None, end_depth=None, sentence_slot=None, **kwargs):
-        # Reconstruction is scored once per sentence. A later sentence can
-        # be absent from a shorter batch row, so it cannot overwrite that
-        # row's last live sentence with its own empty end-state slot.
-        captured[int(sentence_slot)] = dict(
-            roots=roots.detach().clone(), end=end.detach().clone(),
-            depth=depths.detach().clone(), end_depth=end_depth.detach().clone())
-        return reconstruct(S, reference, roots, depths, end, end_depth, sentence_slot, **kwargs)
+    def capture(owner, record, errors, active):
+        captured[int(record.sentence)] = dict(
+            roots=record.roots.detach().clone(), end=record.end_slots.detach().clone(),
+            depth=record.depths.detach().clone(), end_depth=record.end_depth.detach().clone())
+        return reconstruct(owner, record, errors, active)
 
-    model.__dict__.pop("_reconstruct_compiled", None)
-    model._reconstruct_sentences = capture
+    SentenceField.reconstruct = capture
     steps = [rows] if packed else [
         [row[i] + (" " if i < len(row) - 1 else "") if i < len(row) else ""
          for row in rows] for i in range(max(map(len, rows)))]
@@ -122,6 +119,11 @@ def measure_layout(model, rows, *, packed):
                     torch.testing.assert_close(root[0,start:start+8],stamp,rtol=0,atol=0)
                     content = root.clone()
                     content[:,start:start+8] = 0
+                    recovered = model._recon_ideas[b, mask].detach().clone()
+                    percept = model.perceptualSpace.subspace
+                    # Native readback now includes its own placement/time
+                    # bands, which differ between the two presentations.
+                    recovered[:, percept.nWhat:percept.nWhat + percept.nWhere + percept.nWhen] = 0
                     records[b, sentence] = {
                         "root": root.clone(),
                         "content_root": content,
@@ -129,14 +131,13 @@ def measure_layout(model, rows, *, packed):
                         "program_root": program.end_state.detach().clone(),
                         "actions": program.actions.detach().clone(),
                         "reference": model._tensor_pushed_ideas[b, mask].detach().clone(),
-                        "recovered": model._recon_ideas[b, mask].detach().clone(),
+                        "recovered": recovered,
                         "byte_cost": model._recon_sentence_costs[b, slot].detach().clone(),
                         "truncated": model._recon_truncated[b].detach().clone(),
                     }
             reset(model, packed=packed, final=step == len(steps) - 1, batch=len(rows))
     finally:
-        model._reconstruct_sentences = reconstruct
-        model.__dict__.pop("_reconstruct_compiled", None)
+        SentenceField.reconstruct = reconstruct
     return records
 
 

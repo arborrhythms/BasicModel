@@ -241,7 +241,7 @@ def test_disabled_sentence_prediction_leaves_adam_momentum_unused():
         sentence_prediction_cost=lambda *a, **k:
         (predictor.square().reshape(1), None))
     observation = dict(observed_depths=[1], observed=[root],
-        mask=torch.tensor([True]), layout='stm', roles=None, meanings=[None])
+        mask=torch.tensor([True]), layout='stm', roles=None, meanings=[None], reference_plans=[])
     model = SimpleNamespace(reconstruct_in_loop=False, inter_loss_weight=0.,
         expectation_gain=0., symbolSpace=SimpleNamespace(expectation=disc),
         _publish_sentence_scratch=lambda state: None,

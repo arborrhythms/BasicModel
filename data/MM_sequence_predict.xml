@@ -48,6 +48,7 @@
   <PartSpace>
     <nInput>1024</nInput>
     <nVectors>4096</nVectors>
+    <basicPerceptCapacity>4096</basicPerceptCapacity>
     <nDim>10</nDim>
     <nOutput>1024</nOutput>
     <synthesis>meronomy</synthesis>

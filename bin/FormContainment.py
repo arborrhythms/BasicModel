@@ -37,70 +37,28 @@ def _containers(parts):
 
 
 @torch.no_grad()
-def audit(derived, *, before=None, after=None):
-    from Spaces import _concept_alloc_of
-    owner, width = derived.owner, derived.percept_width
-    rows = sorted(row for row in _concept_alloc_of(owner).layer()._tensor_row_keys
-                  if owner._order0_inventory_row(row))
-    definitions = derived._definitions(rows)
-    parts = {row: {pid for tower, pid, net in edges if tower == 0 and net > 0}
-             for row, edges in definitions.items()}
-    wholes = {row: {pid: min(1., net) for tower, pid, net in edges if tower == 1 and net > 0}
-              for row, edges in definitions.items()}
-    values = dict(zip(rows, derived.derive(rows)[..., :width]))
-    candidates = [(a, b) for a, b in _containers(parts) if wholes[b].keys() <= wholes[a].keys()]
-    # A soft meet is monotone in the evidence as well as in the selected
-    # types. Matching positive supports alone do not imply an order.
-    pairs = [(a, b) for a, b in candidates
-             if not derived.property_width or all(wholes[a][pid] >= net for pid, net in wholes[b].items())]
-    model = getattr(owner, '_model', None)
-    ps = getattr(model, 'perceptualSpace', None)
-    identity = getattr(getattr(ps, 'percept_store', None), 'identity', None)
-    ws = getattr(getattr(getattr(model, 'wholeSpace', None), 'subspace', None), 'what', None)
-    properties = getattr(ws, 'primitive_properties', None)
-
-    tower0_pairs, distances = [], {}
-    if identity is not None:
-        basis = ps.subspace.what
-        word_forms = {raw: basis.lookup_rows(row)[:derived.identity_width]
-                      for raw, row in identity.word_rows.items()}
-        atoms = {raw: identity.part_atoms(raw) for raw in identity.words}
-        for raw, form in word_forms.items():
-            for atom in atoms[raw]:
-                tower0_pairs.append((basis.lookup_rows(identity.atoms[atom])[:derived.identity_width], form, False))
-            for part, _lo, _hi in identity.nested.get(raw, ()):
-                tower0_pairs.append((word_forms[part], form, False))
-            distances[raw.hex()] = float((1-form.detach().cpu().double()).norm())
-        tower0_pairs.extend((word_forms[a], word_forms[b], False) for a, b in _containers(atoms))
-    tower0 = _report(tower0_pairs)
-    tower0['distance_to_ones'] = distances
-
-    tower1_pairs, support_only = [], 0
-    if properties is not None and derived.property_width:
-        coefficients = properties.coefficients().detach().cpu()
-        observed = properties.observed.detach().cpu()
-        active = (observed.any(-1) | coefficients.ne(0).any(-1)).nonzero().flatten().tolist()
-        codes = properties.codes().detach().cpu()
-        for a in active:
-            for b in active:
-                if a != b:
-                    if bool((coefficients[a] <= coefficients[b]).all()):
-                        tower1_pairs.append((codes[a], codes[b], False))
-                    elif bool(((coefficients[a] > 0) <= (coefficients[b] > 0)).all()):
-                        support_only += 1
-    tower1 = _report(tower1_pairs)
-    tower1['support_pairs_without_weight_order'] = support_only
-
+def audit(basic, *, before=None, after=None):
+    """Containment belongs to the basic percept's identity/property boundaries."""
+    rows = tuple(basic.index.values())
+    parts = {row: set(basic.occurrences[row][0]) for row in rows}
+    wholes = {row: set(basic.occurrences[row][1]) for row in rows}
+    values = {row: basic.code(row) for row in rows}
+    pairs = [(a, b) for a, b in _containers(parts) if wholes[b] <= wholes[a]]
+    native, identity_width = basic.native._basis, basic.identity_width
+    part_comparisons = []
+    whole_comparisons = []
+    for row in rows:
+        for part in parts[row]:
+            part_comparisons.append((native.lookup_rows(part)[:identity_width], values[row][:identity_width], False))
+        for whole in wholes[row]:
+            whole_comparisons.append((values[row][identity_width:],
+                basic.whole.lookup_rows(whole)[identity_width:basic.width], False))
     def reports(snapshot):
         snapshot = values if snapshot is None else snapshot
-        order0 = _report(((snapshot[a][:width], snapshot[b][:width],
-                           parts[a] != parts[b] or wholes[a] != wholes[b])
-                          for a, b in pairs), ties=True)
-        # Alec, 2026-10-27: parts and types need not be comparable. Keep
-        # the report key for callers, with no cross-level inequality claim.
-        cross = dict(_report(()), applicable=False)
-        return dict(tower0=tower0, tower1=tower1, cross=cross, order0=order0)
-
+        return dict(tower0=_report(part_comparisons), tower1=_report(whole_comparisons),
+            cross=dict(_report(()), applicable=False),
+            order0=_report(((snapshot[a], snapshot[b], parts[a] != parts[b] or wholes[a] != wholes[b])
+                           for a, b in pairs), ties=True))
     previous, current = reports(before), reports(after)
     return dict(**current, before=previous, after=current, rows=len(rows), self_pairs=False,
-                support_pairs_without_weight_order=len(candidates)-len(pairs))
+                support_pairs_without_weight_order=0, premises='basic_percepts')

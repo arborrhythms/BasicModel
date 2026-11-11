@@ -166,7 +166,7 @@ def test_ten_epochs_ground_the_same_names_in_one_fixed_document():
         occurrence = store.occurrence_of(row)
         token = owner.mtm.open(occurrence, kind=None, value=points[0], when=epoch, reading=word)
         identity = promote_identity(owner, token, word=word)
-        assert ('part', ('occ',occurrence[-1])) in alloc.store_of(identity).constituents(identity)
+        assert store.parts.find((OCCURRENCE, occurrence[-1]), (SYMBOL, identity)) is not None
         assert owner.interpret.denotations(word) == (identity,)
         # This occurrence grounds the word's native reading, the object that
         # names it and the cover under which this one-document history occurred.
@@ -246,6 +246,19 @@ def test_native_train_keeps_last_grounding_and_recognizes_it_across_ten_epochs(t
             for tag,cid in ltm.parts.references(row):
                 if tag == SYMBOL and cid in found:
                     found[cid].append(ltm.occurrence_of(('sym',row)))
+        # An uninterpreted word is grounded by its basic-percept occurrence,
+        # even when the grammar keeps no conceptual reference to that word.
+        # Follow the stored member reference through the loaded store's owner.
+        space = ltm._concept_owner()
+        words = {percept: word for word, percept in space.basic_percepts.words.items()
+                 if word in found}
+        for entry in space.mtm.entries.values():
+            if entry.refinement.get('member_kind') != 'percept':
+                continue
+            for address, concept in entry.refinement.get('members', ()):
+                if concept[:1] == ('bp',) and concept[1] in words:
+                    assert ltm.location(address) is not None
+                    found[words[concept[1]]].append(address)
         assert all(found.values()), found
         return found
 
@@ -278,7 +291,7 @@ def test_native_train_keeps_last_grounding_and_recognizes_it_across_ten_epochs(t
         assert pool.entries.keys() == owner.mtm.entries.keys()
         for key,entry in owner.mtm.entries.items():
             assert pool.entries[key].occurrences == entry.occurrences
-            torch.testing.assert_close(pool.entries[key].value, entry.value)
+            torch.testing.assert_close(pool.value_of(key), owner.mtm.value_of(key))
 
         for name,value in store.parts.state_dict().items():
             assert torch.equal(value,loaded.parts.state_dict()[name])

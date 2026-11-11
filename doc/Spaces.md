@@ -1159,11 +1159,12 @@ forward path.)
 **Owned definitions and carrier.** The conceptual inventory owns sparse
 feature references, order-0 conjunctive and disjunctive edges, and higher-order
 disjunctive edges. The clean-stack STM retains the incoming event and its
-reconstruction witness. Conceptual presence is computed separately from
-native memberships; a distributed code is used for retrieval and tied
-reconstruction. Reverse conceptual demand descends through cases and then
-attributes their percept memberships, using observed evidence when present
-and a case choice when imagining.
+short-lived tree. Conceptual presence is computed from native memberships;
+a distributed code is used for retrieval and composition. Input reconstruction
+starts from the live parallel order-zero field, independently of that tree.
+Reverse conceptual demand descends through higher rows, then attributes basic
+percepts at the field brackets. Observed order-zero evidence stays unchanged
+at the conceptual step; no input perception spans enter the native decoder.
 
 **The symbolic phase.** With `symbolicOrder > 0` and `serial=false`,
 `BasicModel._forward_body` runs the continuous perceptual pump and then
@@ -1496,3 +1497,33 @@ invertible in general.
 ### Shared conceptual hierarchy (Alec, 2026-11-08)
 
 `ConceptualSpace` owns one native hierarchy for word meanings, classes and classes of classes. Member centroids provide bottom-up direction; `ConceptHierarchy.condition` supplies higher-order context to member meanings at kept closes. Formal grammar arguments are ordinary concepts prebuilt one order above words and use this same learning path. Groups over arguments lie one further order up. `PartsOfSpeech` owns the declaration mapping and grammar reads, not another conceptual space or category codebook. The fixed declaration reservation is included at initial model construction; codebooks and trust columns do not resize during use. Form and meaning retain their separate coordinates and learning paths. See [Architecture](Architecture.md#hierarchical-conceptual-context-alec-2026-11-08).
+
+## One basic-percept basis (item 2.0 round 5, 2026-11-09)
+
+`BasicPercepts` is perception's fixed-capacity table. Its rows name complete basic-level occurrences with part and whole boundaries. MTM references those occurrences; native parts and properties alone are not its perceptual members. Recurrence writes a durable basic row, and supplied training forms are declared at admission. Order-0 concepts use only basic-percept literals, with column `2*bp + pole`; their sigma/pi read and fixed order-zero working extent stay intact. Compose whole reads and typed word slots use this same basis. STM0/LTM0 share idea storage and reads, and STM1/LTM1 share ordered tagged-pair storage and reads; the short-lived stores differ in retention.
+
+
+## Common order-zero reverse (item 2.0 round 6, 2026-11-10)
+
+`ConceptualField` carries concept IDs, paired evidence, where and when; its
+perception member is `None` on the decoder path. `SentenceField` retains the
+live input field across compose trials, publishes the serial knowing carrier,
+and obtains a separate descended view after understanding. The parallel path
+keeps the symbolic carrier for higher-order readers while taking the same
+descended view for reconstruction.
+
+`FieldReverse.NativeActivity` holds selected native rows, strengths and continuous
+percepts at the covered positions. `NativeDecode` uses preallocated spelling,
+length and position buffers, and vectorized traversal. Basic percepts place their
+own parts at the field brackets; the reverse reads neither a stored surface nor
+perception spans. `PartSpace.reverse` and `InputSpace.reverse` carry both the
+byte report and differentiable percept face. A missing aligned field or a failing
+reverse stage raises to the caller.
+
+Output's `generate` is separate from this reverse. Its occurrence writer selects
+terminal rows, preserves both activation poles and supplies output coordinates.
+The same decoder then realizes the answer. Conceptual and perceptual synthesis
+layers are retired; numeric heads use their forward head. Thought ideas live in
+STM with their `.when`, and knowing is updated at existing field brackets, without
+extra thought-occurrence columns. `ConceptSpread` learns only from a detached
+post-thought order-zero view.

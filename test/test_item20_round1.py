@@ -86,7 +86,9 @@ def test_reading_nonoperation_has_empty_rows_and_no_row_zero_gradient(kind):
         _choice_log_probabilities=torch.tensor([[-.3, -.7]]),
         _case_state=(None, None, None, torch.full((1, 2, 8), .7), torch.ones(1, 2, dtype=torch.bool)))
     owner = SimpleNamespace(symbolSpace=SimpleNamespace(), _reconstruction_stack=lambda: journal,
-                            _concept_owner=lambda: None)
+                            _concept_owner=lambda: None, languageSpace=SimpleNamespace(),
+                            conceptualSpace=SimpleNamespace(stm=SimpleNamespace(
+                                strata=SimpleNamespace(capture=lambda *args: None))))
     program = (torch.tensor([[0, 1]]), torch.tensor([[[kind, -1, 0], [2, 0, -1], [0, -1, 1]]]),
                torch.tensor([[0]]), torch.tensor([[-1, 0, -1]]))
     entry, = BasicModel._program_entries(owner, program, torch.ones(1, 2, 8),

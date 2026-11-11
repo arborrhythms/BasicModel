@@ -13,7 +13,7 @@
   <architecture>
     <bindingDepth>3</bindingDepth>
     <conceptLayers>1</conceptLayers>
-    <answerSynthesis>true</answerSynthesis>
+    <answerSynthesis>false</answerSynthesis>
     <whatThinkingDetach>episode</whatThinkingDetach>
     <whatThinkingIterations>8</whatThinkingIterations>
     <whatThinkingPressure>linear</whatThinkingPressure>
@@ -49,6 +49,7 @@
     <nInput>32</nInput>
     <nInputDim>14</nInputDim>
     <nVectors>200</nVectors>
+    <basicPerceptCapacity>200</basicPerceptCapacity>
     <nDim>14</nDim>
     <nOutput>32</nOutput>
     <nOutputDim>14</nOutputDim>

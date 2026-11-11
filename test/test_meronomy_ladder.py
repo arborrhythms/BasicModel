@@ -152,6 +152,8 @@ def trained_ladder():
     with pytest.MonkeyPatch.context() as patch:
         use_eager_reading(patch)
         m = _build_ladder()
+        # Numeric labels retain the forward head (loop D4).
+        m.answer_synthesis = False
         optimizer = m.getOptimizer(lr=1e-3)
         with redirect_stdout(output):
             m.runEpoch(optimizer=optimizer, batchSize=1, split="train", max_batches=2)

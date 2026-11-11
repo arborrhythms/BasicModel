@@ -43,7 +43,8 @@
   <InputSpace><nOutput>128</nOutput><nVectors>256</nVectors><nDim>104</nDim></InputSpace>
   <PartSpace>
     <nInput>128</nInput><nInputDim>104</nInputDim>
-    <nVectors>4096</nVectors><nDim>104</nDim>
+    <nVectors>4096</nVectors>
+    <basicPerceptCapacity>4096</basicPerceptCapacity><nDim>104</nDim>
     <nOutput>8</nOutput><nOutputDim>104</nOutputDim>
     <synthesis>meronomy</synthesis><invertible>true</invertible>
   </PartSpace>

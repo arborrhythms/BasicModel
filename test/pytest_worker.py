@@ -52,6 +52,15 @@ class ResultCollector:
         self.initial_random_stream = None
         self.case_random_stream = None
         self.failed_random_streams = {}
+        self.large_memory = []
+        self.case_memory = {}
+        from bounded_tests import ProcessTree
+        self.memory_tree = ProcessTree(os.getpid())
+
+    def publish_active(self):
+        if self.result_path is not None:
+            from bounded_tests import write_json
+            write_json(self.result_path.with_suffix('.active.json'), dict(active=self.active))
 
     def publish(self, exit_code=125):
         """Persist completed cases even while a later test is still running."""
@@ -66,7 +75,8 @@ class ResultCollector:
             phase_certificates=self.phase_certificates, trained_tests=self.trained_tests,
             reports=self.reports, recycled=self.recycled, active=self.active,
             device=self.device, initial_random_stream=self.initial_random_stream,
-            failed_random_streams=self.failed_random_streams), indent=2) + "\n")
+            failed_random_streams=self.failed_random_streams, large_memory=self.large_memory,
+            case_memory=self.case_memory), indent=2) + "\n")
         temporary.replace(self.result_path)
 
     def pytest_collection_finish(self, session):
@@ -75,6 +85,8 @@ class ResultCollector:
                               if item.get_closest_marker("slow") is not None
                               and item.get_closest_marker('phase') is None]
         for item in session.items:
+            if item.get_closest_marker('large_memory') is not None:
+                self.large_memory.append(item.nodeid)
             from phase_artifacts import trained_phase
             trained = trained_phase(item)
             if trained is not None:
@@ -100,6 +112,9 @@ class ResultCollector:
 
     def pytest_runtest_logstart(self, nodeid, location):
         self.active = nodeid
+        used = self.memory_tree.sample()
+        self.case_memory[nodeid] = dict(start_memory_bytes=used, peak_memory_bytes=used)
+        self.publish_active()
         self.publish()
 
     @pytest.hookimpl(tryfirst=True)
@@ -109,7 +124,12 @@ class ResultCollector:
 
     def pytest_runtest_logfinish(self, nodeid, location):
         self.completed.append(nodeid)
+        used = self.memory_tree.sample()
+        self.case_memory[nodeid]['finish_memory_bytes'] = used
+        self.case_memory[nodeid]['peak_memory_bytes'] = max(
+            self.case_memory[nodeid]['peak_memory_bytes'], used)
         self.active = None
+        self.publish_active()
         self.publish()
         if (self.recycle_file is not None and self.recycle_file.exists()
                 and len(self.completed) < len(self.selected)

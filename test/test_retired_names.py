@@ -164,26 +164,35 @@ def test_retired_names_remain_absent():
     assert hasattr(Layers.Ops, 'eval_chart') and hasattr(Layers.Ops, 'eval_chart_inv')
     assert hasattr(Language.SymbolSpace, 'forward_concept_to_symbol')
 
-    factories, models = _models(), {}
-    try:
-        for key, path, names in MODEL_ATTRIBUTES:
-            if key not in models:
-                # Reproduce pytest's former per-case singleton reset.
-                Language.TheGrammar._configured = False
-                TheXMLConfig._requirements.clear()
-                models[key] = factories[key]()
-            values = [models[key]]
-            for field in filter(None, path.split('.')):
-                values = ([item for value in values for item in value] if field == '*'
-                          else [getattr(value, field) for value in values])
-            for value in values:
-                for name in names:
-                    assert not hasattr(value, name), (key, path, name)
-        assert callable(getattr(models['enum'], 'reverseReconstruct', None))
-        assert not isinstance(vars(models['enum']).get('reconstruct'), str)
-    finally:
-        for model in models.values():
+    import gc
+    factories = _models()
+    for key in dict.fromkeys(key for key, _, _ in MODEL_ATTRIBUTES):
+        # Reproduce pytest's former per-case singleton reset. Each model's
+        # attribute claims finish before the next independent model exists.
+        Language.TheGrammar._configured = False
+        TheXMLConfig._requirements.clear()
+        model = factories[key]()
+        values = []
+        value = None
+        try:
+            for row_key, path, names in MODEL_ATTRIBUTES:
+                if row_key != key:
+                    continue
+                values = [model]
+                for field in filter(None, path.split('.')):
+                    values = ([item for value in values for item in value] if field == '*'
+                              else [getattr(value, field) for value in values])
+                for value in values:
+                    for name in names:
+                        assert not hasattr(value, name), (key, path, name)
+            if key == 'enum':
+                assert callable(getattr(model, 'reverseReconstruct', None))
+                assert not isinstance(vars(model).get('reconstruct'), str)
+        finally:
             model.End()
+            Layers.GrammarLayer.set_chart_authority(None)
+            del model, values, value
+            gc.collect()
 
     cfg = Models.BaseModel.load_config(str(ROOT / 'data/model.xml'))
     for name in ARCHITECTURE_KEYS:

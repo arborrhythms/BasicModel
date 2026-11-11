@@ -31,7 +31,8 @@ def test_membership_read_keeps_both_until_symbol_readout():
     cs = _cs()
     native, extents = binary_features(cs, torch.tensor([[49, 48]]))
     read = cs.cs_read_memberships(native, extents)
-    torch.testing.assert_close(cs._percept_field.events[cs._percept_field.keys.index(('ws', 0)), 0, 0, :2],
+    torch.testing.assert_close(cs._percept_field.event_evidence([
+        ('bp', bp) for bp in cs.basic_percepts.carrying('ws', 0)]).amax(0)[0, 0, :2],
                                torch.tensor([[1., 0.], [0., 1.]]))
     torch.testing.assert_close(read[0, 0], torch.ones(1, 2))
     torch.testing.assert_close(symbols(read)[0, 0], torch.ones(2))
@@ -81,7 +82,10 @@ def test_reverse_keeps_counterevidence_and_its_occurrence():
     cs.add_concept_edge(row, 1, 1., conjunctive=True, negated=True)
     query = torch.zeros(sum(cs._order_caps()), 1, 2, 2)
     query[row, 0, 1, 0] = .81
-    result = cs.cs_reverse_presence(query)
+    matrix = cs._concept_allocator.layer(0).conjunctive
+    adjoint = matrix.attribute_presence(query[..., 0].flatten(1), conjunctive=True)
+    size = len(query)
+    result = torch.stack((adjoint[:size], adjoint[matrix.nOutput+1:matrix.nOutput+1+size]), -1).reshape_as(query)
     torch.testing.assert_close(result[0, 0, 1], torch.tensor([.81, 0.]))
     torch.testing.assert_close(result[1, 0, 1], torch.tensor([0., .81]))
     assert result[:, :, 0].count_nonzero() == 0
@@ -147,7 +151,7 @@ def test_candidate_alternatives_merge_sparse_support_before_discovery():
         key = observe_candidate(cs, 1, support)
         _close(cs)
         entry = cs.mtm.entries[key]
-        torch.testing.assert_close(entry.value, centroid(cs, entry.support))
+        torch.testing.assert_close(cs.mtm.value_of(key), centroid(cs, entry.support))
     assert entry.count == 4 and set(entry.support) == set(support)
     assert entry.symbol is None
 
@@ -243,7 +247,7 @@ def test_restored_knowing_reads_symbols_without_a_percept_carrier():
     assert leg.event.shape == (1, 2 * sum(cs._order_caps()), 8)
 
 
-def test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence():
+def test_thought_keeps_negated_definition_in_a_timed_stm_idea():
     from types import SimpleNamespace
     from AccessibleMind import apply_thought_effect
     from QueryWork import QueryWorkBudget
@@ -258,12 +262,19 @@ def test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence():
     cs.subspace._concept_where = torch.tensor([[[0, 2]]])
     cs.subspace._concept_when = torch.tensor([[[5, 6]]])
     result = SimpleNamespace(semantic_id='ask', evidence={'frames': ({'reference': ('row', row)},)})
-    apply_thought_effect(SimpleNamespace(conceptualSpace=cs), result,
+    apply_thought_effect(SimpleNamespace(conceptualSpace=cs, _concept_owner=lambda: cs), result,
                          row=0, work=QueryWorkBudget(32))
-    after = cs.subspace._concept_activations
-    torch.testing.assert_close(after[:, :, :1], before)
-    torch.testing.assert_close(after[1, 0, 1], torch.tensor([0., 1.]), atol=1e-6, rtol=0)
-    torch.testing.assert_close(symbols(after)[1, 0], torch.ones(2), atol=1e-6, rtol=0)
-    assert cs.subspace._concept_where.tolist() == [[[0, 2], [-1, -1]]]
-    assert cs.subspace._concept_when.tolist() == [[[5, 6], [-1, -1]]]
-    assert not hasattr(cs.subspace, "_concept_position_evidence")
+    from ThoughtChunks import held
+    stamp, idea = held(cs.stm, 0)[0]
+    assert idea.role_refs[0] == ('sym', 101)
+    torch.testing.assert_close(cs.subspace._concept_activations, before)
+    assert cs.subspace._concept_where.tolist() == [[[0, 2]]]
+    assert cs.subspace._concept_when.tolist() == [[[5, 6]]]
+    assert not hasattr(cs.subspace, '_thought_occurrence')
+    demand = torch.zeros_like(before)
+    demand[row, 0, 0, 0] = 1.
+    matrix = cs._concept_allocator.layer(0).conjunctive
+    adjoint = matrix.attribute_presence(demand[..., 0].flatten(1), conjunctive=True)
+    size = len(demand)
+    descended = torch.stack((adjoint[:size], adjoint[matrix.nOutput+1:matrix.nOutput+1+size]), -1).reshape_as(demand)
+    torch.testing.assert_close(descended[1, 0, 0], torch.tensor([0., 1.]))

@@ -1,5 +1,6 @@
 """§12 mechanism certificates. No learned grammar or identity gate is claimed."""
 from dataclasses import fields
+import gc
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -11,6 +12,8 @@ CLOCKS = (0, 25, 50, 100, 200, 400, 777, 1500, 3000)
 
 
 def _serial_read(tmp_path, clock=0, offset=0):
+    # Collect the preceding completed read before allocating another model.
+    gc.collect()
     from test_ltm_consolidation import _make_model, _SERIAL_CONFIG
     from reading_fixtures import capture_readings
     from What import What
@@ -97,6 +100,8 @@ def _serial_read(tmp_path, clock=0, offset=0):
     finally:
         model.End()
         model.symbolSpace.soft_reset()
+        from Layers import GrammarLayer
+        GrammarLayer.set_chart_authority(None)
 
 
 def _stream_code_banks(tmp_path,monkeypatch):
@@ -514,11 +519,18 @@ def _native_step_comparison(tmp_path, monkeypatch):
             def capture(*a,**k):
                 result = observe(*a,**k)
                 pool = model._concept_owner().mtm
-                result['reading_tokens'] = {word: (token.pending, token.symbol, token.value.clone())
+                result['reading_tokens'] = {word: (token.pending, token.symbol, pool.value_of(key).clone())
                     for program in result['entries'] if program is not None
                     for word in program.word_ids.tolist()
                     if word > 0 and (key := pool.token_of(('name',word))) is not None
                     for token in (pool.entries[key],)}
+                # A test observation is taken before the kept close expires
+                # STM's tree. It is never fed back into the production model.
+                from dataclasses import replace
+                result['observed_entries'] = tuple(
+                    None if program is None else replace(program, tree=None,
+                        actions=program.actions, leaves=program.leaves)
+                    for program in result['entries'])
                 observed.append(result)
                 return result
             patch.setattr(model,'_sentence_observation',capture)
@@ -529,7 +541,7 @@ def _native_step_comparison(tmp_path, monkeypatch):
                     batchSize=batch,batch_override=(inputs,torch.empty(batch,0)),
                     document_keys=('cost',) if paired else ('question','declarative','control'))
                 if not paired:
-                    programs=observed[0]['entries']
+                    programs=observed[0]['observed_entries']
                     assert int((programs[0].actions[:,0]==3).sum())==2
                     torch.testing.assert_close(programs[0].end_state,programs[1].end_state,rtol=0,atol=0)
                     assert not torch.equal(programs[0].end_state,programs[2].end_state)
@@ -564,12 +576,14 @@ def _native_step_comparison(tmp_path, monkeypatch):
                 audit = model._last_sentence_credit
                 # Compare the two totals in their own chart. Subtracting
                 # two rounded sentence costs loses bits of the 0.01 step.
-                expected_cost = audit['keep_costs'][:, 0] + model.WHAT_STEP_COST
-                next_cost = torch.nextafter(expected_cost, torch.full_like(expected_cost, torch.inf))
-                assert ((audit['keep_costs'][:, 1] - expected_cost).abs() <= next_cost - expected_cost).all()
-                trials = model._last_sentence_field['trials']
-                assert trials[1]['cost']['compose_steps'].item() == trials[0]['cost']['compose_steps'].item()+1
-                programs = [entry['entries'][0] for entry in observed[:2]]
+                # Round 6 retires the iterations surcharge. The changed
+                # order-zero face now supplies reconstruction cost directly.
+                assert "reconstruction.iterations" not in model._sentence_cost_registry._terms
+                observations = observed[:2]
+                programs = [entry['observed_entries'][0] for entry in observations]
+                steps = [(program.actions[:, 0] > 0).sum() for program in programs]
+                assert (steps[1] - steps[0]).item() == 1
+                programs = [entry['observed_entries'][0] for entry in observed[:2]]
                 assert int((programs[1].actions[:,0] == (3 if extra=='transpose' else 2)).sum()) == 1
                 for program in programs:
                     reference_requests(language, program.actions,leaf_orders=program.leaf_orders)

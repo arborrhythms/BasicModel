@@ -69,6 +69,7 @@
     <nInput>128</nInput>
     <nInputDim>64</nInputDim>
     <nVectors>256</nVectors>
+    <basicPerceptCapacity>256</basicPerceptCapacity>
     <nDim>64</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>64</nOutputDim>

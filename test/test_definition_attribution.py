@@ -1,4 +1,5 @@
 """Descent selects witnessed cases instead of inventing a sigma inverse."""
+from basic_fixtures import feature as basic_feature
 import torch
 
 from test_cs_sparse_weights import _cs, _mint_row
@@ -48,15 +49,15 @@ def test_descent_keeps_the_source_pole_and_scope():
 
 def test_percept_attribution_follows_signed_definitions_without_complements():
     cs = _cs()
-    cs.add_concept_feature(0, 'ps', 65, 1.)
-    cs.add_concept_feature(0, 'ws', 3, -1.)
+    basic_feature(cs, 0, 'ps', 65, 1.)
+    basic_feature(cs, 0, 'ws', 3, -1., parts=(65,))
     query = torch.zeros(sum(cs._order_caps()), 1, 1, 2)
     query[0, 0, 0] = torch.tensor([.8, .6])
     columns, values, spans = cs.cs_percept_attribution(query)
-    # Both requested poles descend independently. An unlocated inverse
-    # returns both native poles; no subtraction creates an absence claim.
-    assert columns.tolist() == [4 * 65, 4 * 65 + 1, 4 * 3 + 2, 4 * 3 + 3]
-    torch.testing.assert_close(values[:, 0, 0, 0], torch.tensor([.8, .6, .6, .8]))
+    # A concept's demand is divided over its written alternatives by weight.
+    # The attributed total equals the demand, preserving each signed pole.
+    assert columns.tolist() == [0, 1, 2, 3]
+    torch.testing.assert_close(values[:, 0, 0, 0], torch.tensor([.4, .3, .3, .4]))
     assert spans is None
 
 

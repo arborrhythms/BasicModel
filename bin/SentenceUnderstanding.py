@@ -136,6 +136,7 @@ class SentenceUnderstanding:
     constituent_valid: torch.Tensor | None = None
     constituent_families: torch.Tensor | None = None
     percept_expected: torch.Tensor | None = None
+    open_field: object | None = None
 
     def reader_features(self, *, attention=None, live=False):
         """Fixed linear summaries with the selected training boundary.
@@ -157,13 +158,16 @@ class SentenceUnderstanding:
         return value if live else fixed_input(value, attention)
 
     def detached(self):
-        return type(self)(**{f.name: getattr(self, f.name).detach()
-                            if torch.is_tensor(getattr(self, f.name)) else getattr(self, f.name)
-                            for f in fields(self)})
+        from SentenceBoundary import detached
+        return type(self)(**{f.name: detached(getattr(self, f.name))
+                            if f.name == 'open_field' or torch.is_tensor(getattr(self, f.name))
+                            else getattr(self, f.name) for f in fields(self)})
 
     @classmethod
     def select(cls, greedy, explore, wins, *, live=False, replay=None):
         """Keep a complete record. A live mixed record comes from one replay."""
+        if greedy.open_field is not explore.open_field:
+            raise RuntimeError('sentence trials must share their open conceptual field')
         if greedy.primed is not explore.primed:
             raise RuntimeError('sentence trials must share their priming snapshot')
         if bool(wins.all()) or not bool(wins.any()):

@@ -193,7 +193,7 @@ def test_cover_is_an_ordinary_recent_candidate_with_no_lexical_name():
                             work=QueryWorkBudget(20))
     frame = SituationAddress(cover).read(store)
     symbol = store.raw_meaning_of(store.location(cover)).role_refs[0][1]
-    records = resolver.individuals(resolver.accessible(chunk_context(resolver, (frame,))))
+    records = resolver.individuals(resolver.accessible(chunk_context(resolver, (frame,)), stream=0))
     assert symbol in records
     assert owner.definitions.words(symbol) == ()
     clause = mention(frame.point, mode='bind')

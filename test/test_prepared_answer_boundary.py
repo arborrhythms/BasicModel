@@ -7,14 +7,20 @@ from test_output_path_supervised import _native_answer_model
 from test_output_walk import _capture_program_probe, _stop
 
 
-def _with_identity_bank(understanding, codes):
+def _with_identity_bank(model, understanding, codes):
     """Supply the lexical support of an explicit concluded working idea."""
     from dataclasses import replace
 
     record = understanding.sentence_records[-1]
     bank = record.primed
     batch, count = codes.shape[:2]
-    bank = replace(bank, codes=codes, rows=torch.arange(count)[None].expand(batch, -1),
+    from Corpus import admit_training_forms
+    forms = ['fixture' + chr(97 + index) for index in range(count)]
+    admitted = dict(admit_training_forms(model, forms))
+    owner = model._concept_owner()
+    rows = codes.new_tensor([owner._csw_row_of(admitted[form.encode()])
+                            for form in forms], dtype=torch.long)[None].expand(batch, -1)
+    bank = replace(bank, codes=codes, rows=rows,
                    weights=codes.new_ones(batch, count),
                    own=torch.ones(batch, count, dtype=torch.bool),
                    bytes=bank.bytes[:, :1].expand(-1, count, -1),
@@ -101,7 +107,7 @@ def test_prepared_answer_generates_more_words_than_the_captured_input(tmp_path, 
             policy.bias[-1] = 0
             policy.bias[choice] = 1
             codes = torch.cat((leaves, halves))[None].expand(2, -1, -1)
-            understanding = _with_identity_bank(understanding, codes)
+            understanding = _with_identity_bank(model, understanding, codes)
             construction = model.reverseOutput(understanding, held)
             lengths = (construction.concepts.abs().amax(-1) > 0).sum(-1)
         input_lengths = model.inputSpace._word_active_mask.sum(-1).tolist()
@@ -153,7 +159,7 @@ def test_prepared_concept_handoff_cuts_answer_state_gradient(tmp_path, monkeypat
         # The gradient boundary consumes a given answer. An untrained input
         # derivation can erase its root, so supply a readable concluded idea.
         source = torch.full_like(resolved.conceptual_answer, .2).requires_grad_()
-        understanding = _with_identity_bank(understanding, source[:, :1].detach())
+        understanding = _with_identity_bank(model, understanding, source[:, :1].detach())
         held = replace(resolved, conceptual_answer=source)
         construction = model.reverseOutput(understanding, held)
         loss = construction.percepts.square().mean()
@@ -169,7 +175,7 @@ def test_prepared_concept_handoff_cuts_answer_state_gradient(tmp_path, monkeypat
         torch._dynamo.reset()
 
 
-def test_percept_answer_keeps_meaning_inverse_and_state_out_of_credit(tmp_path, monkeypatch, eager_reading):
+def test_percept_answer_keeps_live_meaning_and_respects_owned_credit(tmp_path, monkeypatch, eager_reading):
     from dataclasses import replace
 
     model = _native_answer_model(tmp_path, True)
@@ -195,7 +201,7 @@ def test_percept_answer_keeps_meaning_inverse_and_state_out_of_credit(tmp_path, 
             # marker and content, not an invented balanced split, are recovered.
             torch.testing.assert_close(children[0], marker, rtol=0, atol=0)
             torch.testing.assert_close(children[1], leaf, rtol=0, atol=0)
-            understanding = _with_identity_bank(understanding, torch.stack((marker, leaf), 1))
+            understanding = _with_identity_bank(model, understanding, torch.stack((marker, leaf), 1))
             threshold = ((parent-.5).norm(dim=-1).min()
                          + torch.stack([(child-.5).norm(dim=-1).max() for child in children]).max()) / 2
             assert all(bool(((child-.5).norm(dim=-1) < threshold).all()) for child in children)
@@ -222,10 +228,10 @@ def test_percept_answer_keeps_meaning_inverse_and_state_out_of_credit(tmp_path, 
         owned = {id(p) for p in owners['reconstruction']}
         assert parameters and all(id(p) in owned for p in parameters)
         gradients = torch.autograd.grad(loss, (state, *parameters), allow_unused=True, retain_graph=True)
-        assert gradients[0] is None or not bool(gradients[0].abs().any())
-        assert all(g is None or not bool(g.abs().any()) for g in gradients[1:])
-        # Meaning inverses remain reconstruction-owned. With fixed selected
-        # forms, a percept-only loss has no path through the meaning block.
+        assert gradients[0] is not None, 'the common decoder retains the answer amplitude'
+        assert any(g is not None and bool(g.abs().any()) for g in gradients[1:])
+        # The common decoder reads live amplitude through the shared inverse.
+        # Separate ownership still limits the explicit output pullback.
         from ObjectiveOwnership import backward_owned
         backward_owned({'output': loss}, owners)
         assert all(p.grad is None for p in parameters)

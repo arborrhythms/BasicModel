@@ -280,51 +280,32 @@ def test_real_runbatch_steps_sentence_trials_then_batch_only_objectives(monkeypa
 
 
 def test_answer_path_operators_are_independently_owned_and_keep_learning(monkeypatch, tmp_path):
-    """Dedicated output parameters learn from their own branch. Shared
-    operator diagnostics exclude these independent heads."""
-    import Models
-    from data import TheData
-    from util import init_config
-    from What import What
+    from test_native_attention_field import _model
+    from Generative import WALK_FEATURE_WIDTH
+    from WalkTrials import generate_credit
+    model = _model(tmp_path, monkeypatch)
+    try:
+        optimizer = model.getOptimizer(lr=.001)
+        policy = model.languageSpace.generate_policy
+        groups = model.objective_parameter_groups(optimizer)
+        ids = {id(p) for p in policy.parameters()}
+        assert ids <= {id(p) for p in groups['output']}
+        assert not ids & {id(p) for p in groups['reconstruction']}
+        size, width = policy.out_features, model.languageSpace._generate_policy_width
+        tops = torch.ones(2, 1, width)
+        features = torch.ones(2, 1, size, WALK_FEATURE_WIDTH)
+        audit = dict(departure=torch.zeros(2, dtype=torch.long),
+            greedy=torch.zeros(2, 1, dtype=torch.long), explore=torch.ones(2, 1, dtype=torch.long),
+            eligible=torch.ones(2, 1, dtype=torch.bool), costs=torch.tensor([[0., 1.], [0., 1.]]))
+        before = [p.detach().clone() for p in policy.parameters()]
+        credit = generate_credit(model.languageSpace, audit, tops, features)
+        from ObjectiveOwnership import backward_owned
+        backward_owned({'output': credit.mean()}, groups)
+        optimizer.step()
+        assert any(not torch.equal(p, old) for p, old in zip(policy.parameters(), before))
+    finally:
+        model.End(); model.symbolSpace.soft_reset()
 
-    monkeypatch.setenv("MODEL_COMPILE", "none")
-    project = os.path.dirname(os.path.dirname(__file__))
-    src = open(os.path.join(project, "data", "MM_xor.xml")).read()
-    assert src.count("<architecture>") == 1
-    config = tmp_path / "MM_xor_synthesis_ownership.xml"
-    config.write_text(src.replace(
-        "<architecture>", "<architecture>\n    <answerSynthesis>true</answerSynthesis>", 1))
-    init_config(path=str(config), defaults_path=os.path.join(project, "data", "model.xml"))
-    TheData.load("xor")
-    torch.manual_seed(0)
-    model, _ = Models.BaseModel.from_config(str(config), data=TheData)
-    loader = model.inputSpace.data.data_loader(split="train", num_streams=2)
-    inputs, outputs = next(iter(loader))
-    batch = (model.inputSpace.prepInput(inputs), model.outputSpace.prepOutput(outputs))
-    model.eval()
-    with torch.no_grad():
-        model.ask((What.supervised(0), What.supervised(1)), batch[0])   # builds the answer path
-    model.train()
-    optimizer = model.getOptimizer(lr=1e-2)
-    enlisted = list(model.synthesis_parameters())
-    groups = model.objective_parameter_groups(optimizer)
-    output_ids = {id(p) for p in groups['output']}
-    answer_only = [p for p in enlisted if id(p) in output_ids]
-    # The generate chooser is enlisted by synthesis but has one writer:
-    # reconstruction. Output only chooses between already-costed walks.
-    reconstruction_ids = {id(p) for p in groups['reconstruction']}
-    assert {id(p) for p in model.languageSpace.generate_policy.parameters()} <= reconstruction_ids
-    assert answer_only
-    before = [p.detach().clone() for p in answer_only]
-    result, _ = model.runBatch(train=True, batchSize=2, split="train",
-                               optimizer=optimizer, batch_override=batch)
-    assert result is not None
-    shared = {p.data_ptr() for p in model.objective_parameter_groups(optimizer)['reconstruction']}
-    assert shared                                            # shared forward parameters
-    assert not shared & {p.data_ptr() for p in answer_only}  # answer path exempt
-    owned = {p.data_ptr() for g in optimizer.param_groups for p in g["params"]}
-    assert {p.data_ptr() for p in answer_only} <= owned          # handed to the optimizer
-    assert any(not torch.equal(a, b) for a, b in zip(before, answer_only))
 
 
 def test_real_intermediate_and_final_ends_have_same_canonical_roles(tmp_path, eager_reading):

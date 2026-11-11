@@ -1,4 +1,5 @@
 """Independent signed witnesses teach sparse sigma, never the codebook."""
+from basic_fixtures import feature as basic_feature
 from types import SimpleNamespace
 import torch
 from test_familiar_tier import placed_fixture
@@ -53,7 +54,7 @@ def test_named_and_unnamed_classes_share_the_teacher_and_opposite_edges_keep_ada
     alloc.symbol_types[word]={'word'}
     alloc.reference_orders[word]=0
     word_row=cs._csw_concept_row(0,word)
-    cs.add_concept_feature(word_row, "ps", 4, 1.)
+    basic_feature(cs, word_row, "ps", 4, 1.)
     from definition_fixtures import agreeing_views
     agreeing_views(cs, word, cid)
     owner=SimpleNamespace(_optimizer=optimizer)

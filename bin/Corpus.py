@@ -39,12 +39,24 @@ def admit_training_forms(model, texts, answers=(), *, split='train'):
         forms.update(raw[start:end] for start,end in percept_spans(raw) if end>start)
     admitted=[]
     for raw in sorted(forms):
+        # Native targets and the common reverse share one event per byte.
+        # Admit these constituents with the supplied form, before generation.
+        for byte in sorted(set(raw)):
+            identity.store.spell_out(bytes([byte]))
         parts=identity.admit(raw)
         if not is_lexical_form(raw):
             continue
-        word=owner.interpret.lookup_word(parts,(),form=raw,word_reading=False)
+        wholes=model.wholeSpace.property_rows_for_bytes(raw)
+        identity.basic.bind(model.wholeSpace.subspace.what)
+        word=owner.interpret.lookup_word(parts,wholes,form=raw,word_reading=False)
         if word is None:
             raise RuntimeError(f'training form admission failed: {raw!r}')
+        basic = identity.basic
+        basic.bind(model.wholeSpace.subspace.what)
+        descriptor = owner.definitions.description(word) or owner.interpret._pending.get(word)
+        wholes = () if descriptor is None else descriptor['wholes']
+        row = basic.reserve(parts, wholes, word=word)
+        basic.promote(row, declared=True)
         admitted.append((raw,word))
     model._supplied_training_forms = tuple(sorted(supplied))
     return tuple(admitted)

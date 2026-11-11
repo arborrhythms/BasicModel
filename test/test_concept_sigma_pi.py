@@ -67,7 +67,12 @@ def test_attribution_selects_a_case_and_demands_all_conjunctive_parts():
     y[p, :, :, 0] = .81
     y[u, :, :, 0] = .84
     restored = cs.cs_reverse_presence(y)
-    torch.testing.assert_close(restored[:4, 0, 0, 0], torch.tensor([.81, .81, .84, 0.]), atol=1e-6, rtol=0)
+    # Native conjunction's adjoint remains available as an operator report;
+    # the symbolic descent itself only unfolds higher-order concepts.
+    matrix = cs._concept_allocator.layer(0).conjunctive
+    native = matrix.attribute_presence(y[..., 0].flatten(1), conjunctive=True)
+    torch.testing.assert_close(native[:2, 0], torch.tensor([.81, .81]), atol=1e-6, rtol=0)
+    torch.testing.assert_close(restored[:4, 0, 0, 0], torch.tensor([0., 0., .84, 0.]), atol=1e-6, rtol=0)
 
 
 def test_weak_disjuncts_do_not_accumulate():

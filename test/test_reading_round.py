@@ -220,7 +220,8 @@ def test_epoch_keeps_a_promoted_names_witnessed_order_after_deleting_its_occurre
         cs.mtm.bind(token, occurrence, kind=None, when=0, value=value, reading=word)
         assert promote_identity(cs, token, word=word) == obj
         assert cs.interpret.reading(word) == before
-        assert ('part', ('occ', occurrence[-1])) in alloc.store_of(obj).constituents(obj)
+        from Memory import OCCURRENCE, SYMBOL
+        assert store.parts.find((OCCURRENCE, occurrence[-1]), (SYMBOL, obj)) is not None
 
 
 
@@ -342,14 +343,15 @@ def test_reading_event_cases_accept_native_part_rows_and_filter_open_questions(m
     assert f.store.location(occurrence) == occurrence
     assert f.store.row(occurrence)['kind'] == ('question' if pending else 'observation')
     f.cs.mtm.event(token, occurrence, verb=verb, role=0, when=2,
-                   before=event.before, after=event.after)
+                   before=event.before)
     code = f.cs.similarity_codebook.W[f.cs._csw_row_of(verb)].clone()
     bank = CaseBank(torch.tensor([verb]), code[None, None], code.new_zeros(1, 1, 2),
         code.new_zeros(1, 1, 2), torch.ones(1, 1, dtype=torch.bool))
     before = copy.deepcopy(f.cs.mtm.state())
     staged = stage_event_cases(bank, f.cs.components.reference_close, [(frame,)], limit=4)
     assert staged.codes.shape == (1, 4, 8)
-    for actual, expected in zip(staged.codes[0, 1:], (event.before, code, event.after)):
+    selected = event if pending else f.cs.mtm.entries[token].events[-1]
+    for actual, expected in zip(staged.codes[0, 1:], (event.before, code, f.cs.mtm.event_value(selected))):
         torch.testing.assert_close(actual, expected)
     expected = (.8, .2) if pending else (.6, .4)
     torch.testing.assert_close(staged.cases[0, 0, 1:], code.new_tensor([expected]).expand(3, -1))
@@ -419,8 +421,10 @@ def test_kept_word_mention_retains_its_pending_referent():
     identity, row, order = cs.interpret.reading(word)
     reading = SimpleNamespace(word_ids=torch.tensor([word]),
         leaves=cs.similarity_codebook.lookup_rows([row]), symbol_where=None)
-    occurrence = commit_read_words(cs, reading, batch=0, document='first', position=0)[0]
     store = cs._closed_clause_store()
+    root = store.append_idea(reading.leaves[0], document_key='first', sentence_index=0)
+    occurrence = commit_read_words(cs, reading, batch=0, document='first', position=0,
+        written={'root_occurrence': store.occurrence_of(root)})[0]
     index = store.location(occurrence)
     assert cs.mtm.entries[cs.mtm.token_of(occurrence)].pending
     assert store.kind_of(index) == 'question'
@@ -444,7 +448,9 @@ def test_thought_part_persists_a_named_token_through_its_native_reference(monkey
     _, row, _ = cs.interpret.reading(word)
     reading = SimpleNamespace(word_ids=torch.tensor([word]),
         leaves=cs.similarity_codebook.lookup_rows([row]), symbol_where=None)
-    occurrence = commit_read_words(cs, reading, batch=0, document='first', position=0)[0]
+    root = store.append_idea(reading.leaves[0], document_key='first', sentence_index=0)
+    occurrence = commit_read_words(cs, reading, batch=0, document='first', position=0,
+        written={'root_occurrence': store.occurrence_of(root)})[0]
     key = cs.mtm.token_of(('name', word))
     if promoted:
         cs.mtm.promote(key, a[1])

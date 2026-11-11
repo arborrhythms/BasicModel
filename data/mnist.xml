@@ -34,6 +34,7 @@
   <PartSpace>
     <nOutput>8</nOutput>
     <nVectors>16</nVectors>
+    <basicPerceptCapacity>16</basicPerceptCapacity>
   </PartSpace>
 
   <ConceptualSpace>

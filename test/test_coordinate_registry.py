@@ -2,7 +2,7 @@ import pytest
 
 import torch
 
-from Layers import RadixLayer
+from Layers import GrammarLayer, RadixLayer
 
 from Spaces import Codebook, Embedding
 
@@ -20,9 +20,17 @@ def test_where_ranges_are_fixed_and_owned_by_the_model(tmp_path):
     assert first.symbolSpace.subspace.what.where_offset == symbols[0]
     first.perceptualSpace.percept_store.ensure_atomic_bytes([b'x', b'y'])
     assert first.where_registry is layout
+    first.End()
+    first.symbolSpace.soft_reset()
+    GrammarLayer.set_chart_authority(None)
+    del first
+    import gc
+    gc.collect()
     second, _ = grounded_model(tmp_path)
     assert second.where_registry.slices == layout.slices
     assert second.where_registry is not layout
+    second.End()
+    second.symbolSpace.soft_reset()
 
 
 def test_input_occurrences_and_thought_symbols_use_their_own_ranges():

@@ -1,8 +1,8 @@
 """What spec Steps 3-4: the separate ``Model.reverseOutput()`` path.
 
 Section 11 "Reconstruction and answer paths": a generated answer starts at
-the resolved symbol and traverses conceptual synthesis, perceptual synthesis
-and ``OutputSpace``; reconstruction does not consume an answer carrier and
+the resolved symbol and traverses generate, owned occurrences and the shared
+order-zero reverse; reconstruction does not consume an answer carrier and
 output synthesis does not consume a reconstruction carrier; either path can
 run first with identical results; the compatibility path is byte-identical
 while ``<answerSynthesis>`` is off.
@@ -56,7 +56,7 @@ def synth_config(tmp_path_factory):
     assert src.count("<architecture>") == 1
     patched = src.replace(
         "<architecture>",
-        "<architecture>\n    <answerSynthesis>true</answerSynthesis>", 1)
+        "<architecture>\n    <answerSynthesis>false</answerSynthesis>", 1)
     path = tmp_path_factory.mktemp("cfg") / "MM_xor_synth.xml"
     path.write_text(patched)
     return path
@@ -70,7 +70,7 @@ def synth_discourse_config(tmp_path_factory):
     assert "<prediction>" not in src and "<sentenceExpectation>" not in src
     patched = src.replace(
         "<architecture>",
-        "<architecture>\n    <answerSynthesis>true</answerSynthesis>"
+        "<architecture>\n    <answerSynthesis>false</answerSynthesis>"
         , 1)
     patched = patched.replace(
         "</training>",
@@ -79,6 +79,35 @@ def synth_discourse_config(tmp_path_factory):
     path.write_text(patched)
     return path
 
+
+
+@pytest.fixture
+def loop_model(tmp_path, monkeypatch):
+    from test_native_attention_field import _model
+    import Models
+    loader = Models.BaseModel.load_weights
+    model = _model(tmp_path, monkeypatch)
+    monkeypatch.setattr(Models.BaseModel, 'load_weights', loader)
+    data = model.inputSpace.data
+    data.has_supervised_outputs = True
+    data.text_answers = {'train': ['alpha', 'beta']}
+    yield model
+    model.End()
+    model.symbolSpace.soft_reset()
+
+
+def _loop_batch(model):
+    return model.inputSpace.prepInput(['alpha beta', 'beta alpha']), torch.empty(2, 0)
+
+
+def _loop_understanding(model):
+    with torch.no_grad():
+        return model.understand(_loop_batch(model)[0])
+
+
+def _loop_answer(model, understanding):
+    return model.reverseOutput(understanding, model.resolveAnswer(understanding,
+        (What.supervised(0), What.supervised(1))))
 
 def test_gate_off_keeps_the_projected_head_and_state_dict(model_off=None):
     m = _build(_DATA / "MM_xor.xml")
@@ -92,150 +121,83 @@ def test_gate_off_keeps_the_projected_head_and_state_dict(model_off=None):
                    for k in m.state_dict())
 
 
-def test_output_traverses_symbol_concepts_percepts_output(synth_config):
-    m = _build(synth_config)
-    assert m.answer_synthesis
-    x, _ = _batch(m)
+def test_output_traverses_symbol_concepts_percepts_output(loop_model):
+    m = loop_model
+    u = _loop_understanding(m)
     with torch.no_grad():
-        u = m.understand(x)
-        construction = m.reverseOutput(u, m.resolveAnswer(u, What.supervised(0)))
+        construction = _loop_answer(m, u)
     assert isinstance(construction, AnswerConstruction)
-    assert isinstance(construction.derivation, AnswerDerivation)
-    assert torch.equal(construction.derivation.answer_symbol, u.symbolic_state)
-    B = x.shape[0]
-    assert construction.concepts.dim() == 3 and construction.concepts.shape[0] == B
-    assert construction.percepts.dim() == 3 and construction.percepts.shape[0] == B
-    assert tuple(construction.actual.shape) == (
-        B, int(m.outputSpace.outputShape[0]), int(m.outputSpace.outputShape[1]))
-    ops = [item["operation"] for item in construction.trace]
-    assert ops == ["resolve:identity", "synthesize:conceptual",
-                   "synthesize:perceptual", "output:from_percepts"]
-    # The adapter now exists and is registered (checkpointable).
-    assert any("percept_adapter" in k for k in m.state_dict())
+    assert construction.concepts.shape[0] == construction.percepts.shape[0] == 2
+    assert construction.actual is construction.surface
+    assert [item['operation'] for item in construction.trace[-3:]] == [
+        'generate:grammar', 'generate:occurrences', 'reverse:order_zero']
+    assert not any('synthesis_layer' in key or 'percept_adapter' in key for key in m.state_dict())
 
 
-def test_what_reaches_output_not_the_legacy_head(synth_config):
-    m = _build(synth_config)
-    x, _ = _batch(m)
+
+def test_what_reaches_output_not_the_legacy_head(loop_model):
+    m = loop_model
     with torch.no_grad():
-        answer = m.ask(What.supervised(0), input_data=x)
-    head = answer.execution[2]
+        answer = m.ask(What.supervised(0), input_data=_loop_batch(m)[0])
     assert answer.what is m._last_answer_construction.actual
-    assert answer.what is not head
-    assert tuple(answer.what.shape) == tuple(head.shape)
+    assert answer.what is not answer.execution[2]
 
 
-def test_reconstruction_and_output_are_order_independent(synth_config, monkeypatch):
-    m = _build(synth_config)
-    x, _ = _batch(m)
-    q = What.supervised(0)
-    # Two readings must use the same percept dictionary for the order check.
-    # Meronomy otherwise admits new chunks on repeated presentations, so
-    # the two understandings legitimately differ before either consumer runs.
+
+def test_reconstruction_and_output_are_order_independent(loop_model):
+    m = loop_model
+    u = _loop_understanding(m)
     with torch.no_grad():
-        m.understand(x)
-    for space in m.modules():
-        if hasattr(space, '_online_learning_frozen') or isinstance(space, __import__('Spaces').Space):
-            monkeypatch.setattr(space, '_online_learning_frozen', True, raising=False)
-    with torch.no_grad():
-        u = m.understand(x)
-        rev_first, _ = m.reverseReconstruct(u)
-        out_after = m.reverseOutput(u, m.resolveAnswer(u, q)).actual
-        rev_again, _ = m.reverseReconstruct(u)
-    with torch.no_grad():
-        u2 = m.understand(x)
-        out_first = m.reverseOutput(u2, m.resolveAnswer(u2, q)).actual
-        rev_after, _ = m.reverseReconstruct(u2)
-        out_again = m.reverseOutput(u2, m.resolveAnswer(u2, q)).actual
-    assert torch.equal(rev_first, rev_again)        # output did not disturb reconstruction
-    assert torch.equal(out_first, out_again)        # reconstruction did not disturb output
-    assert torch.allclose(rev_first, rev_after)     # same understanding, either order
-    assert torch.allclose(out_first, out_after)
+        first, _ = m.reverseReconstruct(u)
+        out1 = _loop_answer(m, u).actual
+        second, _ = m.reverseReconstruct(u)
+        out2 = _loop_answer(m, u).actual
+    torch.testing.assert_close(first, second, rtol=0, atol=0)
+    torch.testing.assert_close(out1, out2, rtol=0, atol=0)
 
 
-def test_output_does_not_consume_reconstruction_carriers(synth_config):
-    m = _build(synth_config)
-    x, _ = _batch(m)
-    q = What.supervised(0)
+
+def test_output_does_not_consume_reconstruction_carriers(loop_model):
+    from dataclasses import replace
+    m = loop_model
+    u = _loop_understanding(m)
     with torch.no_grad():
-        u = m.understand(x)
-        baseline = m.reverseOutput(u, m.resolveAnswer(u, q)).actual
-        # Strip every reconstruction-only carrier from the understanding and
-        # the live stages; the answer must not change.
-        stripped = Understanding(
-            perceptual_context=u.perceptual_context,
-            conceptual_state=u.conceptual_state,
-            symbolic_state=u.symbolic_state,
-            reconstruction_carriers={"ir_mask_positions": None,
-                                     "terminal_idea": None,
-                                     "combine_last_cs_sub": None,
-                                     "merge_diffs": None},
-            execution=u.execution)
-        for stage in m.body_stages:
-            if "merge" in stage:
-                stage["merge"]._merge_diff = None
-        object.__setattr__(m, "_combine_carriers", None)
-        again = m.reverseOutput(stripped, m.resolveAnswer(stripped, q)).actual
+        baseline = _loop_answer(m, u).actual
+        again = _loop_answer(m, replace(u, reconstruction_carriers={})).actual
     assert torch.equal(baseline, again)
 
 
-def test_training_step_scores_the_constructed_answer(synth_config):
-    m = _build(synth_config)
-    opt = m.getOptimizer(lr=1e-3)
-    batch = _batch(m)
-    result, _ = m.runBatch(train=True, batchSize=2, split="train",
-                           optimizer=opt, batch_override=batch)
-    construction = m._last_answer_construction
-    assert construction is not None
-    assert result.outputPred is construction.actual
-    costs = m.primary_costs()
-    assert torch.isfinite(costs["answer_construction"])
-    adapter = m.outputSpace.percept_adapter
-    grads = [p.grad for p in adapter.parameters() if p.grad is not None]
-    assert grads and any(torch.count_nonzero(g) > 0 for g in grads)
+
+def test_training_step_scores_the_constructed_answer(loop_model):
+    m = loop_model
+    result, _ = m.runBatch(train=True, optimizer=m.getOptimizer(lr=.001),
+        batchSize=2, batch_override=_loop_batch(m))
+    assert result.outputPred is m._last_answer_construction.actual
+    assert torch.isfinite(m.primary_costs()['answer_construction'])
+    assert m._last_answer_construction.percepts is not None
 
 
-def test_think_constructs_the_root_answer_through_output(synth_config):
-    # Step 8: the final root response is built by the same reverseOutput path.
-    m = _build(synth_config)
-    x, _ = _batch(m)
+
+def test_think_constructs_the_root_answer_through_output(loop_model):
+    m = loop_model
     with torch.no_grad():
-        result = m.think(What.supervised(0, prompt="what is your name?"), x,
-                         max_iterations=3)
-    construction = m._last_answer_construction
-    assert construction is not None
+        result = m.think(What.supervised(0), _loop_batch(m)[0], max_iterations=3)
     assert result.answer.available
-    assert result.answer.what is construction.actual
-    assert construction.trace[-1]["operation"] == "output:from_percepts"
+    assert result.answer.what is m._last_answer_construction.actual
+    assert m._last_answer_construction.trace[-1]['operation'] == 'reverse:order_zero'
 
 
-def test_branch_gradient_diagnostics_read_without_update(synth_config):
-    # Step 6: norms and cosine at the branch points, computed from the two
-    # primary costs before backward, and the optimizer step is unchanged.
-    m = _build(synth_config)
-    m.branch_diagnostics_every = 1
-    opt = m.getOptimizer(lr=1e-3)
-    batch = _batch(m)
-    before = {k: v.detach().clone() for k, v in m.named_parameters()}
-    m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
-               batch_override=batch)
-    report = m._last_ownership_audit
-    assert report['conflicts'] == 0
-    assert report['parameters']
-    assert all(not entry['writers'] or entry['writers'] == [entry['owner']]
-               for entry in report['parameters'])
-    # Diagnostics are a read: a second model without sampling takes the same
-    # step from the same state.
-    m2 = _build(synth_config)
-    m2.branch_diagnostics_every = 0
-    opt2 = m2.getOptimizer(lr=1e-3)
-    m2.runBatch(train=True, batchSize=2, split="train", optimizer=opt2,
-                batch_override=_batch(m2))
-    after = dict(m.named_parameters())
-    after2 = dict(m2.named_parameters())
-    for k in after:
-        if k in after2:
-            assert torch.allclose(after[k], after2[k]), k
+
+def test_branch_gradient_diagnostics_read_without_update(loop_model):
+    m = loop_model
+    optimizer = m.getOptimizer(lr=.001)
+    m.runBatch(train=True, optimizer=optimizer, batchSize=2, batch_override=_loop_batch(m))
+    before = [p.detach().clone() for p in m.parameters()]
+    report = m.ownership_gradient_diagnostics(optimizer)
+    assert report['conflicts'] == 0 and report['parameters']
+    assert all(set(row['writers']) <= {'R', 'A'} for row in report['parameters'])
+    assert all(torch.equal(p, old) for p, old in zip(m.parameters(), before))
+
 
 
 def _prime_discourse(m, batch, sentences=2):
@@ -326,58 +288,39 @@ def test_cold_memory_resolution_is_flagged_unresolved(synth_config):
     assert not d.resolved and d.source == "identity:cold-memory"
 
 
-def test_dedicated_synthesis_operators_start_at_identity_and_are_answer_only(synth_config):
-    # Alec 2026-09-09: reverseOutput() has its own weights.  They start at
-    # identity (so the answer path begins exactly at the shared inverse) and
-    # reconstruction never sees them.
-    m = _build(synth_config)
-    x, _ = _batch(m)
-    q = What.supervised(0)
-    with torch.no_grad():
-        u = m.understand(x)
-        first = m.reverseOutput(u, m.resolveAnswer(u, q))
-    cs_layer = m.conceptualSpace.synthesis_layer
-    ps_layer = m.perceptualSpace.synthesis_layer
-    for layer in (cs_layer, ps_layer):
-        eye = torch.eye(layer.nInput)
-        probe = torch.randn(3, layer.nInput)
-        assert torch.allclose(layer.forward(probe), probe, atol=1e-6)   # identity at init
-        assert torch.allclose(layer.compute_W().detach(), eye, atol=1e-6)
-    with torch.no_grad():
-        rev_before, _ = m.reverseReconstruct(u)
-        for layer in (cs_layer, ps_layer):
-            layer.raw_L.add_(0.3)
-            layer.d.mul_(1.7)
-        out_after = m.reverseOutput(u, m.resolveAnswer(u, q)).actual
-        rev_after, _ = m.reverseReconstruct(u)
-    assert not torch.allclose(first.actual, out_after)        # answer path moved
-    assert torch.equal(rev_before, rev_after)                  # reconstruction untouched
-    assert all(any(p is q2 for q2 in m.synthesis_parameters())
-               for layer in (cs_layer, ps_layer) for p in layer.parameters())
+def test_retired_synthesis_operators_are_absent_and_checkpoint_keys_are_reported(loop_model):
+    m = loop_model
+    assert not hasattr(m.conceptualSpace, 'synthesis_layer')
+    assert not hasattr(m.perceptualSpace, 'synthesis_layer')
+    for space in (m.conceptualSpace, m.perceptualSpace):
+        for name in ('synthesis_operator', '_apply_synthesis_operator', 'synthesize', 'synthesize_idea'):
+            assert not hasattr(space, name)
+    state = dict(m.state_dict())
+    retired = ('conceptualSpace.synthesis_layer.raw_L', 'perceptualSpace.synthesis_layer.d')
+    for key in retired:
+        state[key] = torch.ones(2, 2)
+    with pytest.warns(UserWarning, match='retired answer synthesis checkpoint keys') as warnings:
+        m._materialize_answer_path_from_checkpoint(state)
+    assert all(key not in state for key in retired)
+    assert set(m._retired_answer_checkpoint_keys) == set(retired)
+    assert set(retired) <= m._pending_thought_policy_reset
+    assert all(key in str(warnings[0].message) for key in retired)
+    m.load_state_dict(state, strict=True)
 
 
-def test_answer_path_modules_join_the_live_optimizer_and_move(synth_config):
-    m = _build(synth_config)
-    opt = m.getOptimizer(lr=1e-2)
-    batch = _batch(m)
-    # First step builds the modules and registers them; second step moves them.
-    m.begin_presentation()
-    m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
-               batch_override=batch)
-    ids = {id(p) for g in opt.param_groups for p in g["params"]}
-    synth = m.synthesis_parameters()
-    assert synth and all(id(p) in ids for p in synth)
-    before = [p.detach().clone() for p in synth]
-    m.begin_presentation()
-    m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
-               batch_override=batch)
-    assert any(not torch.equal(p.detach(), b) for p, b in zip(synth, before))
-    # Registration happens once: no duplicate groups on later steps.
-    n_groups = len(opt.param_groups)
-    m.begin_presentation()
-    m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
-               batch_override=batch)
-    assert len(opt.param_groups) == n_groups
+
+def test_answer_path_modules_join_the_live_optimizer_and_move(loop_model):
+    m = loop_model
+    optimizer = m.getOptimizer(lr=.001)
+    m.runBatch(train=True, optimizer=optimizer, batchSize=2, batch_override=_loop_batch(m))
+    ids = [id(p) for group in optimizer.param_groups for p in group['params']]
+    policy = tuple(m.languageSpace.generate_policy.parameters())
+    assert all(ids.count(id(p)) == 1 for p in policy)
+    groups = m.objective_parameter_groups(optimizer)
+    assert {id(p) for p in policy} <= {id(p) for p in groups['output']}
+    m.to(dtype=torch.float64)
+    assert all(p.dtype == torch.float64 for p in policy)
+
 
 
 # -- named perceptual bindings (spec 5.3 / section 11) ----------------------
@@ -387,54 +330,23 @@ def synth_bindings_config(tmp_path_factory):
     src = (_DATA / "MM_xor.xml").read_text()
     patched = src.replace(
         "<architecture>",
-        "<architecture>\n    <answerSynthesis>true</answerSynthesis>"
+        "<architecture>\n    <answerSynthesis>false</answerSynthesis>"
         "\n    <synthesisBindings>2</synthesisBindings>", 1)
     path = tmp_path_factory.mktemp("cfg") / "MM_xor_synth_bind.xml"
     path.write_text(patched)
     return path
 
 
-def test_perceptual_context_reaches_output_only_through_named_bindings(synth_bindings_config):
-    m = _build(synth_bindings_config)
-    x, _ = _batch(m)
-    q = What.supervised(0)
+def test_perceptual_context_is_not_an_operand_of_the_common_decoder(loop_model):
+    from dataclasses import replace
+    m = loop_model
+    u = _loop_understanding(m)
     with torch.no_grad():
-        u = m.understand(x)
-        construction = m.reverseOutput(u, m.resolveAnswer(u, q))
-    refs = construction.derivation.synthesis_references
-    assert len(refs) == 2 and refs == tuple(sorted(refs))
-    assert construction.trace[0]["bindings"] == refs
-    assert construction.derivation.bindings["perceptual_slots"] == refs
-    N = u.perceptual_context.shape[1]
-    unbound = next(i for i in range(N) if i not in refs)
-    bound = refs[0]
+        baseline = _loop_answer(m, u).actual
+        altered = replace(u, perceptual_context=torch.zeros_like(u.perceptual_context))
+        again = _loop_answer(m, altered).actual
+    assert torch.equal(baseline, again)
 
-    def realized_with(field):
-        alt = Understanding(
-            perceptual_context=field, conceptual_state=u.conceptual_state,
-            symbolic_state=u.symbolic_state,
-            reconstruction_carriers=dict(u.reconstruction_carriers),
-            execution=u.execution)
-        with torch.no_grad():
-            return m.reverseOutput(alt, m.resolveAnswer(alt, q)).percepts
-
-    base = construction.percepts
-    # Perturb WITHOUT changing which slots are the most salient (the named
-    # selection must stay fixed): shrink the unbound slot, scale the bound one.
-    changed_unbound = u.perceptual_context.clone()
-    changed_unbound[:, unbound] *= 0.5
-    changed_bound = u.perceptual_context.clone()
-    changed_bound[:, bound] *= 3.0
-    with torch.no_grad():
-        alt_refs = m._select_perceptual_bindings(Understanding(
-            perceptual_context=changed_unbound, symbolic_state=u.symbolic_state))
-        alt_refs_b = m._select_perceptual_bindings(Understanding(
-            perceptual_context=changed_bound, symbolic_state=u.symbolic_state))
-    assert alt_refs == refs and alt_refs_b == refs
-    # Changing unrelated live activation cannot reach the answer ...
-    assert torch.equal(realized_with(changed_unbound), base)
-    # ... changing a NAMED binding can.
-    assert not torch.equal(realized_with(changed_bound), base)
 
 
 def test_no_bindings_by_default_keeps_context_out_of_the_answer(synth_config):
@@ -482,80 +394,51 @@ def test_exact_identity_reconstruction_is_flagged_not_counted(synth_config):
     assert m._reconstruction_identity_flag is True
 
 
-def test_what_report_separates_families_and_thinking(synth_config):
-    m = _build(synth_config)
-    opt = m.getOptimizer(lr=1e-3)
-    batch = _batch(m)
-    m.begin_presentation()
-    m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
-               batch_override=batch)
-    m.begin_presentation()
-    m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
-               batch_override=batch, trial_mode="predict")
+def test_what_report_separates_families_and_thinking(loop_model):
+    m = loop_model
+    optimizer = m.getOptimizer(lr=.001)
+    m.runBatch(train=True, optimizer=optimizer, batchSize=2, batch_override=_loop_batch(m))
     with torch.no_grad():
-        m.think(What.supervised(0, prompt="what is your name?"), batch[0],
-                max_iterations=2)
+        m.think(What.supervised(0), _loop_batch(m)[0], max_iterations=2)
     report = m.what_report()
-    assert {"supervised", "future"} <= set(report["families"])
-    for fam in report["families"].values():
-        assert set(fam) == {"batches", "answer_construction",
-                            "input_reconstruction"}
-    assert report["thinking"]["episodes"] == 1
-    assert report["thinking"]["mean_iterations"] >= 1
-    assert 0.0 <= report["thinking"]["forced_closure_rate"] <= 1.0
-    assert report["throughput"]["batches"] == 2
-    assert report["throughput"]["sentences"] == 4
+    assert 'supervised' in report['families']
+    for family in report['families'].values():
+        assert set(family) == {'batches', 'answer_construction', 'input_reconstruction'}
+    assert report['thinking']['episodes'] == 1
+    assert report['thinking']['mean_iterations'] >= 1
+    assert 0 <= report['thinking']['forced_closure_rate'] <= 1
+    assert report['throughput']['batches'] == 1
+    assert report['throughput']['sentences'] == 2
+
 
 
 # -- Codex review 2026-09-09: checkpoint reload, per-row resolution, recall ---
 
-def test_synthesized_answer_checkpoint_reloads_into_a_fresh_model(synth_config, tmp_path):
-    m = _build(synth_config)
-    opt = m.getOptimizer(lr=1e-2)
-    batch = _batch(m)
-    for _ in range(2):                          # builds + trains the answer path
-        m.begin_presentation()
-        m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
-                   batch_override=batch)
-    assert m.synthesis_parameters()
-    with torch.no_grad():
-        u = m.understand(batch[0])
-        before = m.reverseOutput(u, m.resolveAnswer(u, What.supervised(0))).actual.clone()
-    path = tmp_path / "synth.ckpt"
+def test_synthesized_answer_checkpoint_reloads_into_a_fresh_model(loop_model, tmp_path, monkeypatch):
+    from test_native_attention_field import _model
+    import Models
+    m = loop_model
+    m.runBatch(train=True, optimizer=m.getOptimizer(lr=.001), batchSize=2, batch_override=_loop_batch(m))
+    path = tmp_path / 'common-reverse.ckpt'
     m.save_weights(str(path))
-    fresh = _build(synth_config)
-    assert fresh.load_weights(str(path), require_match=True)
-    saved = m.state_dict()
-    loaded = fresh.state_dict()
-    assert set(saved) == set(loaded)
-    for k in saved:
-        assert torch.equal(saved[k], loaded[k]), k
-    assert fresh.synthesis_parameters()
-    for a, b in zip(m.synthesis_parameters(), fresh.synthesis_parameters()):
-        assert torch.equal(a.detach(), b.detach())
-    # Two cold models loading the same checkpoint answer identically (the
-    # trained model itself also carries runtime STM/ring state, so it is not
-    # the comparison point).
-    twin = _build(synth_config)
-    assert twin.load_weights(str(path), require_match=True)
-    with torch.no_grad():
-        u2 = fresh.understand(batch[0])
-        a = fresh.reverseOutput(u2, fresh.resolveAnswer(u2, What.supervised(0))).actual
-        u3 = twin.understand(batch[0])
-        b = twin.reverseOutput(u3, twin.resolveAnswer(u3, What.supervised(0))).actual
-    assert torch.equal(a, b)
-    assert not torch.equal(a, torch.zeros_like(a))
-    # A fresh model with the gate on already carries the width-known modules,
-    # so its optimizer includes them from the start and no duplicate group is
-    # added later.
-    opt2 = fresh.getOptimizer(lr=1e-2)
-    n_groups = len(opt2.param_groups)
-    fresh.begin_presentation()
-    fresh.runBatch(train=True, batchSize=2, split="train", optimizer=opt2,
-                   batch_override=_batch(fresh))
-    ids = {id(p) for g in opt2.param_groups for p in g["params"]}
-    assert all(id(p) in ids for p in fresh.synthesis_parameters())
-    assert len(opt2.param_groups) <= n_groups + 1
+    expected = {key: value.detach().clone() for key, value in m.languageSpace.generate_policy.state_dict().items()}
+    loader = Models.BaseModel.load_weights
+    fresh = _model(tmp_path, monkeypatch)
+    monkeypatch.setattr(Models.BaseModel, 'load_weights', loader)
+    try:
+        assert fresh.load_weights(str(path), require_match=True)
+        for key, value in fresh.languageSpace.generate_policy.state_dict().items():
+            torch.testing.assert_close(value, expected[key], rtol=0, atol=0)
+        assert not hasattr(fresh.conceptualSpace, 'synthesis_layer')
+        assert not hasattr(fresh.perceptualSpace, 'synthesis_layer')
+        with torch.no_grad():
+            u = fresh.understand(_loop_batch(fresh)[0])
+            a = _loop_answer(fresh, u).actual
+            b = _loop_answer(fresh, u).actual
+        assert torch.equal(a, b)
+    finally:
+        fresh.End(); fresh.symbolSpace.soft_reset()
+
 
 
 def test_batched_questions_resolve_per_row(synth_discourse_config):
@@ -650,26 +533,22 @@ def _live_state_fingerprint(m):
     return out
 
 
-def test_reverse_output_is_carrier_pure_without_the_guard(synth_config, monkeypatch):
-    """Step 1 residue closed: the answer path writes only into its own fresh
-    carriers. With the synthesis guard disabled, reverseOutput() leaves every
-    live Space subspace, basis, by-product stash, merge carrier and grammar
-    cursor exactly as it found them."""
+def test_reverse_output_is_carrier_pure_without_the_guard(loop_model, monkeypatch):
     from contextlib import nullcontext
-    m = _build(synth_config)
-    x, _ = _batch(m)
+    m = loop_model
+    u = _loop_understanding(m)
     with torch.no_grad():
-        u = m.understand(x)
-        m.reverseOutput(u, m.resolveAnswer(u, What.supervised(0)))       # builds answer-path modules
-    monkeypatch.setattr(m, "_synthesis_guard", lambda: nullcontext(), raising=True)
+        _loop_answer(m, u)
+    monkeypatch.setattr(m, '_synthesis_guard', lambda: nullcontext())
     before = _live_state_fingerprint(m)
     with torch.no_grad():
-        m.reverseOutput(u, m.resolveAnswer(u, What.supervised(0)))
-        m.reverseOutput(u, m.resolveAnswer(u, What.past(1, -1)))
+        _loop_answer(m, u)
+        _loop_answer(m, u)
     after = _live_state_fingerprint(m)
-    changed = {k: (before.get(k), after.get(k)) for k in set(before) | set(after)
-               if before.get(k) != after.get(k)}
+    changed = {key: (before.get(key), after.get(key)) for key in set(before) | set(after)
+               if before.get(key) != after.get(key)}
     assert not changed, changed
+
 
 
 def test_model_trains_with_teacher_detached(synth_config):

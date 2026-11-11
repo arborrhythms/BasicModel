@@ -1,4 +1,5 @@
 """Native concept identity, learned output, and its independent ordered inverse."""
+from basic_fixtures import feature as basic_feature
 from order_fixtures import force_order
 from pathlib import Path
 from types import SimpleNamespace
@@ -54,18 +55,18 @@ def test_reconstruction_without_owned_evidence_cannot_read_the_latest_field(monk
 
     for cs in model.conceptualSpaces:
         monkeypatch.setattr(cs, 'unbind', forbidden)
-    recovered = model._reverse_body(carrier)
-    torch.testing.assert_close(recovered.materialize(), expected)
+    with pytest.raises(ValueError, match='field'):
+        model._reverse_body(carrier)
     model.End()
 
 
 def test_native_understanding_retains_field_and_native_percept_evidence():
     model, _, _, _ = _build_model(str(ROOT / 'data/XOR_exact.xml'))
     understanding = model.understand(_bytes(['01']))
-    assert set(understanding.reconstruction_carriers) == {'field', 'ir_mask_positions'}
+    assert set(understanding.reconstruction_carriers) == {'field', 'order_zero_field', 'ir_mask_positions'}
     field = understanding.reconstruction_carriers['field']
     assert field.concept_ids.dtype == torch.long
-    assert field.percepts.events.shape[-1] == 2
+    assert field.percepts is None
     assert not hasattr(field, 'event')
     model.End()
 
@@ -124,7 +125,7 @@ def test_native_cli_curriculum_learns_output_and_keeps_located_inverse(trial, mo
                for r, c in store.conjunctive._index)
     assert not any(r == output for r, _ in store.conjunctive._index)
     assert not hasattr(store.conjunctive, "locations")
-    assert all(any(r == row and (col // 2) % 2 == 0 for r, col in store.features._index) for row in cases)
+    assert all(any(r == row for r, col in store.features._index) for row in cases)
     x = _bytes(['00', '01', '10', '11'])
     target = torch.tensor([0., 1., 1., 0.])
     optimizer = torch.optim.Adam([store.values], lr=.03)
@@ -152,9 +153,22 @@ def test_native_cli_curriculum_learns_output_and_keeps_located_inverse(trial, mo
     # Zero forward evidence cannot recover bytes from perceptual context or
     # the execution adapter. Those products remain present in this record.
     blank = replace(field, evidence=torch.zeros_like(field.evidence))
-    unknown = replace(understanding, reconstruction_carriers={'field': blank})
+    unknown = replace(understanding, reconstruction_carriers={
+        **understanding.reconstruction_carriers, 'field': blank, 'order_zero_field': blank})
     absent, _ = model.reverseReconstruct(unknown)
     assert absent.count_nonzero() == 0
+    # Durable basic percepts and definitions suffice at the next open.
+    # Empty both short-term structures before reading the same input again.
+    model.End()
+    for owner in model.conceptualSpaces:
+        owner.stm.clear()
+        for key in tuple(owner.mtm.entries): owner.mtm._detach(key)
+    reopened = model.understand(x)
+    without_memory, _ = model.reverseReconstruct(reopened)
+    torch.testing.assert_close(without_memory, reverse, rtol=0, atol=0)
+    from test_item20_round5_memory import receipt
+    receipt(f'input-without-memory-{trial}', dict(sentences=4, identical=True,
+        cleared_before_open=['STM', 'MTM'], promoted_basic_percepts_persist=True))
     # A later perception cannot replace the captured understanding's inverse.
     model.End()
     model.forward(_bytes(['AAAA', 'Z', '222222', '!!!']))
@@ -191,7 +205,7 @@ def test_contained_ordered_group_reconstructs_at_its_extent():
         force_order(cs, 30000 + index, 0)
         row = cs._csw_concept_row(0, 30000 + index)
         group = tuple(radix.get_id(bytes([value])) for value in text.encode())
-        cs.add_concept_feature(row, 'ps', group, 1.)
+        basic_feature(cs, row, 'ps', group, 1.)
         assert radix.get_id(text.encode()) is None
     understanding = model.understand(_bytes(texts))
     # Isolate PartSpace attribution. Its group spans the word extent even
@@ -199,7 +213,7 @@ def test_contained_ordered_group_reconstructs_at_its_extent():
     features = cs._concept_allocator.layer(0).features
     with torch.no_grad():
         for (_, column), index in features._index.items():
-            if (column // 2) % 2:
+            if cs.basic_percepts.occurrences[column // 2][1]:
                 features.values[index] = 0
     reverse, _ = model.reverseReconstruct(understanding)
     assert model._decode_reconstructed_inputs(reverse, []) == texts

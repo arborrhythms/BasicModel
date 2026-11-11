@@ -52,6 +52,9 @@ class SentenceFixture:
             forward_binary_step=lambda a, b, op, _: operation(self.binary[int(op[0])]).compose(
                 a[:, None], b[:, None]).reshape_as(a),
             forward_unary_step=lambda a, op, _: operation(self.unary[int(op[0])]).compose(a).reshape_as(a))
+        self.language._tree_layer = lambda arity: SimpleNamespace(
+            ops=tuple(operation(rule) for rule in self.binary),
+            unary_ops=tuple(operation(rule) if rule.method_name else None for rule in self.unary))
         self.words = {}
         from PartsOfSpeech import PartsOfSpeech, formal_arguments
         self.language.parts_of_speech = PartsOfSpeech(formal_arguments((*self.binary, *self.unary)))
@@ -190,7 +193,7 @@ def test_02_part_uses_object_concepts_and_reassertion_joins_evidence(monkeypatch
     assert f.store.row(row)['refs'].tolist() == [f.noun('cats'), f.noun('animals')]
     count = len(f.store.parts)
     assert f.store.write_clause(clause, trust=.8) == row and len(f.store.parts) == count
-    assert f.store.row(row)['evidence'] == pytest.approx((.8, 0.))
+    assert stored_pair(f.store, row) == pytest.approx((.8, 0.))
     assert f.noun('animals') in [ref for _, ref, _ in f.store.consequents_by_row(f.noun('cats'))]
 
 
@@ -234,7 +237,7 @@ def test_07_equality_is_one_membership_in_a_singleton(monkeypatch):
     assert 'equality' in f.store.row(first)['readings']
     assert f.store.parts.find(b, a) is None
     f.store.set_evidence(first, .2, .4)
-    assert f.store.row(first)['evidence'] == pytest.approx((.49, .4))
+    assert stored_pair(f.store, first) == pytest.approx((.49, .4))
 
 
 def test_08_direct_bare_np_rewitnesses_its_address(monkeypatch):
@@ -254,7 +257,7 @@ def test_09_attribution_cannot_assert_its_child_and_negation_is_content(monkeypa
     edge = ('sym', f.store.parts.find(f.noun('cats'), f.noun('animals')))
     assert f.store.row(edge)['evidence'] == (0., 0.)
     f.store.write_clause(f.clause(('not', inner)), trust=.6, evidence=(0., .6))
-    assert f.store.row(edge)['evidence'] == pytest.approx((0., .36))
+    assert stored_pair(f.store, edge) == pytest.approx((0., .36))
 
 
 def test_end_clause_survives_a_later_head_projection(monkeypatch):

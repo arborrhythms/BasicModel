@@ -1,5 +1,7 @@
 # Architecture
 
+> - **Dual process and the order-zero loop:** decided 2026-11-03, 2026-11-04 and 2026-11-09; built in rounds 5 and 6. Round 5 supplies memory, shared strata and basic percepts; round 6 supplies the unified loop and reverse.
+
 > **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
 > - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23, [step 2 §71](plans/2026-10-21-step2-one-ltm.md); recorded 2026-10-30):** an LTM1 row is two tagged references with its kind read from the referents, not three. As built at `3718d9d0dc`, `LTM0` still carries `c_plus`/`c_minus`, `source_trust`, `order`, `row_ids`, `origin`, `record_kind`, `polarity` and `witness_count` columns; only `refs`, `grammatical_mode` and the index columns are retired (audit 2026-10-30; decided 2026-11-01, Alec: the unused columns are removed and the row brought to this layout, [thinking spec §32.2](plans/2026-10-27-item2-5-thinking.md) item 17).
@@ -982,9 +984,10 @@ consecutive unary rewrites. Binary rewrites and pushes reset both affected
 slots, and STOP resets the vacated slot. A top with no legal move stays pending.
 The step budget, stack capacity and inverse-menu cache are unchanged.
 Detached policy inputs accompany the action trace. A winning exploration
-teaches its departure through `reconstruction.walk_credit`, beside the recorded
-tree's `reconstruction.walk_policy`; the reconstruction owner remains the sole
-writer of the generate policy, including credit from output comparisons.
+teaches its departure through `output.walk_credit`, owner output, side A.
+The compose-tree walk-policy teacher is retired; reconstruction uses the
+common order-zero reverse directly for System 1 and after a generate walk and
+occurrence writer for System 2 (Alec, 2026-11-10; loop spec §9).
 
 **Presentation and epoch boundaries (item 2.7, Alec, 2026-10-28).**
 `BaseModel.begin_presentation` retains the live-sentence guard and starts the
@@ -2393,9 +2396,10 @@ an unavailable inverse remains unavailable. The numeric, nonsymbolic path keeps
 its own domain. The 144-step lesson budget, stack and unary bound are unchanged.
 Only a drained walk with every chosen step exact is certified; paired selection
 prefers certification, then total cost. The unresolved frontier and each chosen
-step contribute to `reconstruction.walk_residual`. Detached menu features teach
-the sole reconstruction-owned generate policy alongside its existing teacher
-and winning-departure credit.
+step contribute to `output.walk_residual`, owner output, side A. Detached
+menu features teach the output-owned generate policy through the departure
+credit. Reconstruction restores the same walk's three residual lanes and
+departure credit on reconstruction/R; the teacher remains retired (2026-11-10).
 
 `DefinitionFold` reads actual witnessed members and both LTM1 evidence poles,
 with DEF names as provenance. It teaches sigma's independent lanes toward the
@@ -2614,7 +2618,7 @@ Each occurrence holds its slot, model-time band, two truth lanes, access count a
 
 ### Recognition across presentations (2026-11-02)
 
-The mixing word reader retains the admitted word, the physical row of its conceptual operand and the pending token's address in their respective fixed fields. Only located mentions of the introducing word count toward its recurrence. A new document retains presentation experience. At an epoch boundary, the model clears experience and the witnesses of recurrence while retaining the prototype of an already learned consolidation symbol. The same-order angular read can then reuse that symbol. A sparse change direction matching an existing source under the existing novelty threshold uses that source.
+The mixing word reader retains the admitted word, the physical row of its conceptual operand and the pending token's address in their respective fixed fields. Only located mentions of the introducing word count toward its recurrence. A new document retains presentation experience. At an epoch boundary, the model clears experience and the witnesses of recurrence while retaining the prototype of an already learned consolidation symbol. The same-order angular read can then reuse that symbol. Recurrence retains its evidence while any member lacks an order witness; consolidation checks all members before allocating a concept (2026-11-10, item 2.0 §20.28). A sparse change direction matching an existing source under the existing novelty threshold uses that source.
 
 An MTM occurrence keeps its first available word reading when `MediumTermMemory.bind` changes its token or `open` reopens it. The original lexical site can therefore witness its word's recurrence at a later close, even after a different reference uses the occurrence.
 
@@ -2857,3 +2861,135 @@ while original unwritten perception positions remain live. Thus a later sentence
 can credit batch perception without traversing an earlier sentence's operations.
 The [2.0 plan, §§15–16](plans/2026-11-03-gradient-projection.md) records certificates
 and the offered-freeze sweeps.
+
+## Dual process: System 1, knowing and System 2 (2026-11-09)
+
+The following records the design implemented in item 2.0 round 6 (2026-11-10). Validation and the source freeze are returned in [the 2.0 spec §20](plans/2026-11-03-gradient-projection.md#20-third-repair-of-round-5-and-the-round-6-continuation-2026-11-10); implementation does not establish a learning gain.
+
+### The three stages: input, thinking, output
+
+The model has three stages and one loop. **Input** is perception: forms are read into order-0 concepts, through the basic percepts implemented in round 5 (parts and wholes tie at a basic percept; order-0 concepts collect basic percepts as higher concepts collect symbols). The state perception produces is **knowing**: the order-0 concepts and STM's ideas and relations, which can be dense (the subsymbolic activation of the conceptual field) or sparse (symbols). **Thinking** transforms knowing into knowing, order 0 into order $0'$, by the three grammars (compose, think, generate) and by memory (STM, MTM, LTM, the higher orders). **Output** reverses knowing into forms through the one order-0 decoder.
+
+Reconstruction is "input (thinking)* output": the input's knowing is reversed after zero or more thinking steps. With no thinking step it is the **input reconstruction**, which involves no symbol and no grammar. After understanding it is the **order-zero reconstruction**: the grammar inverse unfolds the sentence's untransformed end slots, the occurrence writer locates the emitted terminals at new brackets, and the same decoder reverses that generated order-zero field; symbols take part, and are charged only when their alteration loses the input. Output differs from reconstruction only in that knowing was changed in between. The decoder is shared by construction, so every reconstruction step trains the decoder that output uses, and generation is the dual of comprehension without a second decoder. The loop closes without thinking, which is why thinking is optional.
+
+In code names (the loop spec, §§3.1–3.5): the parallel conceptual field `a_0` that `FamiliarTier.open_sentence` computes by `cs_read_memberships`, once per sentence before either compose trial, packaged as `Understanding.ConceptualField(concept_ids, evidence, where, when)`, is the input's knowing. `BasicModel.reverse(x, field=...)` is the decoder: `_reverse_body` to `_reverse_field`, `_reverse_perceptual`, `inputSpace.reverse`, running through basic percepts to bytes and reading no perception spans. The symbolic step leaves `reverse`: the generate walk becomes `BasicModel.generate`, whose occurrence writer turns each emitted terminal into an order-$0'$ occurrence by the `readback_scores` argmax over the terminal bank, so thought's last step lands on the codebook; thought-written higher rows descend to order 0 by `cs_reverse_presence` over rows at or above `n0`. Output is `generate`, the occurrence writer, then `reverse` on the order-$0'$ field in output order. The terms: `reconstruction_reverse.what/where/when` is the input reconstruction; `reconstruction_order_zero.what/where/when` replaces `reconstruction.content` (D1); `reconstruction.reference` becomes memory's `memory.link_coverage` (D2); `reconstruction.field`, `.iterations` and `.forward_discard` remain retired with the compose-forest inverse. Under the corrected loop spec §9, `reconstruction.walk_residual.{form,for,against}` and `reconstruction.walk_credit` return on reconstruction/R beside the generated order-zero loss; the output bookings remain output/A.
+
+Two acceptance checks define the loop: (1) the input's own order 0 fed through `reverse` as if it were thought's output equals the reconstruction byte for byte; (2) with STM and MTM emptied before the open, the input reconstruction is unchanged.
+
+Output is a sequence of order-0 points, one decode per item; the word order comes from thinking, from the generate grammar, which output therefore still needs ("the generative grammar is still necessary for output").
+
+### Dual process theory as a design consideration
+
+The architecture is a dual-process model, and the distinction is structural, not a label on speeds. It is the design's account of what separates animal from human cognition.
+
+**System 1** is everything the loop needs to close without thinking: perception (parts, wholes, basic percepts), the order-0 concepts and their order-0 symbols ("order zero symbols, which are like percepts in that they still have a spatial interpretation, are a part of system 1"), the order-0 decoder, `intuit()` within a step (the one-pass order-zero calculus, `ThoughtFaces.intuit` to `Intuition.execute`, writing into knowing by `write_knowing`), expectation across steps (`ConceptSpread.open_prediction` with `ActivationPredictor`, the prediction of the next input's order 0), and memory's linking of occurrences into collections: MTM's behavioral chains at order 0 and its identities at order 1, promoted by recurrence (§3). "Animals have that": a mind with System 1 alone perceives, knows order-0 concepts, expects, tracks things and courses of events as extended nouns and extended events, and learns all of it without grammar. The loop with no thinking step is that mind.
+
+**System 2** is grammar: the three grammars compose, think and generate with their choosers (`OperationSelectionLayer`, `GeneratePolicy`, the selected-thought chooser), symbols and the higher orders, definitions and LTM recall, the derivation and its inverse, and STM's sparse face, its ideas and relations as symbols. "Compose is thought in the sense that it is symbolic understanding ... compose, think, and generate grammars all operate as system 2, on top of system 1." Human cognition is the same loop with thinking steps between input and output.
+
+**Where they meet.** System 2 reads knowing and writes back into it: thought's deposits go into knowing, as an order-0 concept's evidence at the input's brackets or as an STM idea with its `.when` (D5; no column is appended to the field), and the deposit carries gradient (D6). System 1 learns from System 2 "mainly by system 2's activation of the conceptual space. That will train the expectation (which should still be separate from intuit())": expectation's target is the detached order-0 slice of the carrier after thought (D3), so System 1 learns to predict what System 2 made of the last input, and `intuit()` and expectation stay two operations, one within a step and one across steps. Judgement follows the stages: on a sentence with no supplied answer, System 2 is judged by expectation against the next input's order 0, and reconstruction by the current input; with a supplied answer, output's cost judges System 2.
+
+**Gradient.** Under the loop the shared row is perception, the field's parameters (definition exponents, `PrimitiveProperties.members`, the percept codebook) and the decoder; System 2 is trained by output and, for the untransformed understanding, by the order-zero reconstruction through compose and the grammar inverse; its restored walk residual and departure credit also use reconstruction/R. Output's gradient is projected against reconstruction's on every shared unit and never alters reconstruction's ([item 2.0 §1](plans/2026-11-03-gradient-projection.md)); each cost term carries an owner (which parameters receive it under `separateChooser` true) and a side (R or A under the default), which is how the two systems share a tree without one overwriting the other's learning.
+
+### Memory as the development stage of conceptual space
+
+**Origin.** MTM is Kahneman, Treisman and Gibbs's object file: a file opened for an occurrence and kept while later occurrences prove to be the same thing, by continuity of place and time and by likeness. That is its origin story at every level it operates on, including the perceptual level: tracking a thing through occlusion and motion is the object file, and the same linking by continuity is what MTM does on basic-level percepts (2026-11-05). What a file stores grew with the design: it holds references, Heim's file cards and Kamp's discourse referents, and a state of affairs (below). Storing references does not change what a file is. The grounding stands as written in Philosophy ("Object Files, File Cards and Dharmakīrti's Particulars", 2026-10-23); the remark in item 2.0 §8 that the grounding is revised is withdrawn (Alec, 2026-11-09).
+
+**One link, every level, one use.** MTM links occurrences into collections by one `link` function with no branch on order (memory spec): basic-level percept occurrences (a percept with parts and wholes), order-0 states into chains, order-1 mentions into identities. A collection is a connected path: a time window and likeness enforced, place and continuity scored. Joining states makes an extended event, joining mentions an extended noun; identities at different orders are never joined. Its contents are not strictly conceptual, since basic percepts are perceptual, but its use is one thing at every level: a development stage for conceptual space. A collection that recurs (`concept_mint_count` times within `horizon`) promotes one order up by the one promotion rule: a recurring basic-level collection to a `BasicPercepts` row, which replaces admission as the writer of basic percepts; a recurring chain to a chained event concept; an identity to a noun concept, with the path written as membership and successor rows into LTM0 and LTM1. "It serves to develop candidates for next-order concepts always ... it has no use except as a development stage for conceptual space." A thing that persists through a chain of events is a noun candidate, which is how event identity helps create nouns.
+
+**MTM and the stages.** The input reconstruction reads no MTM state: acceptance check 2 empties STM and MTM before the open, and promoted rows persist in their tables, so MTM's effect on perception is at promotion time, never at inference. Thinking and output read MTM: reading is interpretation, interpretation is grammar; words resolve to pending tokens, and prepended symbols present a token's value computed from its references to the next sentence (with the re-read, so that a later answer credits the verb that produced the value). This is the sense of "MTM is involved in thought and action only": not that the percept level never has files, but that the reconstruction of the input does not depend on them.
+
+**The state of affairs.** MTM holds, per identity, its static concepts at order 0 and the verbs that change them, with more than one state per identity: an actual timeline and alternative timelines. A verb is the difference between two states of one identity over time; a modal is the difference between two states that cannot both be actual, at equal time. Both states are readings of input, so training over MTM compares a verb with the world as read, not with the model's own choices: the verb action is trained to map an identity's earlier order-0 state to its later one, the modifier action to map the actual state to the alternative, and the group assigner's residuals on the recorded verb-phrase meaning assign a verb to its basis. "The verb and modal teachers are MTM": their training is memory's function.
+
+### Status, for the architecture's markings
+
+| Statement | Status |
+|---|---|
+| Order-0 concepts, order-0 symbols, the conceptual field `a_0` | built |
+| MTM events with recorded forward operands, reference-derived actual and alternative states; the assigner; the re-read | built (modal timelines 2026-10-24; item 2.0 round 3/4) |
+| One memory file; thought ideas stamped and found by `.when` | built (round 1) |
+| Owners and sides; the projection; choice rewards whole on the output side | built (round 3/4) |
+| `intuit()` writing into knowing (`write_knowing`); expectation's predictor | implemented in round 6, including the serial path, live deposits and detached post-thought targets (D3, D5, D6) |
+| MTM's one `link` over percepts, states and mentions; promotion; verbs and modals over the state of affairs; basic percepts | implemented in round 5; freeze and validation in 2.0 spec §20.1–§20.5 |
+| Reconstruction from the parallel field; `reverse` as the one decoder; `generate` and the occurrence writer; the two loop acceptance checks; D1 (D2's link judge is round 5) | implemented and directly certified in round 6 |
+| The free decoder and compose-forest inverse; the former output decoders | inverse tools remain explicit System 2 reports; reconstruction and output use the common order-zero reverse; the separate output decoders are retired |
+
+### Round 5: references, shared strata and operator authority (2026-11-09)
+
+`ConceptualSpace.link` is the kept-close boundary for reference sites, event members, basic-level percept occurrences and eligible order-0 states. MTM stores an idea address and the concept within it, never a second working value. A word reads its denotation; a description without a word reads its own idea. A collection has one kind and one member order, admits containment in either direction, and remains a candidate only within `mtmHorizon` kept closes. Pool entries and retained STM members share the menu. Its twelve policy features retain the eight reference features and add tail-place overlap, close gap, first difference and STM presence; the four new weights start at zero. Merge orders the members by close clock. Re-entry records the current close and joins an already open individual.
+
+The round-5 compose-time bind menu and kept-close reference menu apply the same collection-order constraint before selection. A prepended transient carries its collection's recorded member order; refreshing a resident chunk updates that order and its native-row reference with the working value. The written alias retains the selected reference, including a pending name without a permanent concept ID, while its value remains its own idea. A selected LTM address does not enter the occurrence's content key. Within one close, an alias retains its introduction's own mention address even when a later semantic projection rewrites the temporary result as a relation. The close transaction keeps both addresses without adding a permanent memory field. The common link boundary resolves a pending word's old path before a kept word or unnamed use re-enters its newly learned concept one order above. Promotion still presents the promoted concept at its own higher order.
+
+Recurrence promotes one order above the members through the common membership writer. Membership and successor rows carry the member's bands and are epoch witnesses: the boundary withdraws those rows while retaining the concept and its order. Idea members use `OCCURRENCE`; events already represented by native relations retain `RELATION`, with no duplicate idea row. Both are read back by the same visited-set path traversal. A recurring basic collection writes a durable `BasicPercepts` row. Consecutive state links give their stable participants ordinary mention witnesses, so nouns use the same threshold. A name for a member does not automatically name the higher-order collection formed from its repeated uses.
+
+`STM0` subclasses `LTM0`, and `STM1` subclasses `LTM1`; their storage and reads are shared and their retention differs. A pinned sentence stores word and operator-concept occurrences in STM0 and ordered pairs in STM1: `pair(pair(operator,left),right)` or `pair(operator,argument)`. The recent buffer remains `stmCapacity` (eight by default). At close it retains the compacted idea and semantic relations; the pinned applications expire. `Reading` and `Composition` expose views, and thought chunks retain views of the same stores. Reconstruction, conditioning and memory therefore read the shared structure. A generative realization from a retained idea requires no input derivation.
+
+An epoch boundary expires the recent, pinned and thought stores when it withdraws the historical occurrences and relations. Trial rollback within an epoch restores the already admitted shared context without importing it as a new durable checkpoint; durable imports still validate external references.
+
+The binary-only bound in memory-plan §10.6 does not cover the configured unary operations or transpositions. The pinned banks instead use the existing execution bound, `3*n + 2*stmCapacity` operator occurrences for a sentence of at most `n` words: `n` word rows plus that many operator rows in STM0, at most twice that many branches in STM1, and one relation sentinel. These capacities are constructed once, separately for the three coexisting trial views; no bank resizes. Live autograd values use functional replacement at that fixed shape. With two words and eight recent chunks the bounds are 22 operations, 24 STM0 rows and 44 branches (45 physical relation rows).
+
+Alec's November 9 direction adds an increasing cost for repeated unary work at the same operand: the first application pays zero, then subsequent applications pay 1, 4, 9, … logit units. The count follows the operand through shifts and swaps and resets when binary composition creates a new span; it adds no cap on unary count. The existing immediate-inverse mask and fixed execution budget remain. This is provisional learning guidance. The test-development feedback in [todo](../todo.md) proposes single-transformation games, such as producing a sentence's negation, with synthetic examples and transfer checks; their evidence should guide relaxing arbitrary repetition restrictions.
+
+Each configured primitive has one concept seat, declared at construction with its identity and native execution interfaces. It has no surface spelling. Direction, confidence and formal-argument participations are learned. A relation's effective truth is its witnessed truth scaled by the minimum of the endpoint trusts, the operator-seat trust (`positive_length`) and the named/operation gate cap. `operation_seat` replaces the catalog index `grammar_operation`. An operator word already present as an endpoint has no duplicate reference; a nonendpoint operator retains `operator_reference`. Primitive evidence and gate reopening remain. Checkpoint migration reports both changes.
+
+### Round 5: basic percepts and the two spaces (2026-11-09)
+
+This amends both “Two spaces, one index” passages and the order-alternation account above. Parts and wholes meet in perception's `BasicPercepts`; a row's code is the identity join of its parts and the property meet of its wholes. The live basic-percept read takes the cross-tower minimum and carries gradient to `PrimitiveProperties.members`. The no-gradient word property fill and the lexical gate in concept membership retire. Order-0 definitions contain only columns `2*bp + pole`; non-word concepts collect the basic percepts carrying their native property or part. Sigma/pi composition and `working[:n0]` retain their contract. Symbols have no direct two-tower mereological read.
+
+Compose-time whole centroids and per-word typed slots use basic percepts with the existing presence-weighted derivative. The default table has 262144 preallocated rows; lesson files may use smaller fixed capacities. A reserved occurrence reads its own parts and wholes until recurrence promotes its durable row. Supplied training forms are declared at admission. Round 6 implements full reverse through this basis for reconstruction and output: admitted forms and ordered native parts expand to their constituent byte events at their recorded offsets.
+
+When native perception fuses an ordered run, the basic-percept read follows the new row's recorded part ancestry, preserving order, multiplicity and the parts' event extents. It does not reconstruct a second tiling from bytes or rewrite concept columns. Native field lessons declare their supplied forms before fitting feature weights, and retain the existing sparse optimizer migration when another word supplies a new feature. The field's recurrent literal cases collect basic percepts under the existing FamiliarTier mechanism; the new collection-link path itself creates no order-0 concept.
+
+The three new memory errors have owner `reconstruction`, side `R`: `memory.link_coverage`, `memory.verb_state`, and `memory.modal_state`. Coverage is judged on every link. Its trial comparison is detached; the kept-close registry carries its live reader derivative. A kept close applies its lexical word-trust observations after its selected links have been written, so these observations preserve a word's radius between a link choice and that choice's containment check. Each observed word view is then learned once. The two state errors are training-only relative errors, with the no-change prediction as baseline and later reference values detached. They train the verb/modifier action parameters, while the assigner and re-read remain as landed. `reconstruction.reference`, its module and its separate weight retire.
+
+
+### Item 2.0 round 6: one native decoder (2026-11-10)
+
+`SentenceField.open_field` publishes the live `a_0` returned by the native
+membership read. Both compose trials hold the same field object. Their
+untransformed sentence end slots produce a second field through the shared
+generate walk and occurrence writer. The writer determines word order and
+brackets; it copies no input brackets. This generated field is also the
+order-zero layer published after understanding. `after_understanding` is retired.
+The parallel path without serial sentence composition (`word_brackets=False`)
+books only the observed-field reconstruction. The input reconstruction never reads STM or MTM. Each
+stream keeps the input result of its selected trial before the sentence boundary
+detaches it, together with the generated-walk traces and comparisons. The
+batch's perception graph remains live for later sentences. The synthesis guard
+keeps the immutable batch reference slabs themselves rather than introducing
+sentence-local clones of their graph.
+
+`BasicModel.generate` owns the symbolic walk and `OutputOccurrences` writes
+its emitted terminals at new output brackets. Form similarity determines the
+lexical row; contextual priming breaks exact identity ties and cannot rename
+an already emitted terminal. The leaf supplies independent positive and negative
+activation lanes. A logical inverse retains an already compatible candidate's
+own pole in an empty intersection of disjoint codes; an empty parent alone
+does not establish that both operands were absent. The two poles remain
+independent. `BasicModel.reverse(*, field)` then follows basic percepts
+to native parts, the vectorized radix decode and InputSpace. It produces detached
+bytes and a continuous percept face for training. No saved input spans or
+compose forest enter that decode, and aligned calls without a field raise.
+The activity representation and fixed spelling buffers avoid a dense
+`[batch, 8192, native_inventory]` allocation.
+
+Input reconstruction and order-zero reconstruction each have what, where and
+when losses against the same detached native input. The event loss compares
+the full extent of both sequences, with zero events beyond each sequence's
+end, so missing or extra events cannot disappear by matching only a prefix.
+Output's residual and
+walk credit now have owner output and side A; compose and reconstruction-category
+thought rewards have owner chooser and side A, preserving the option's chooser
+parameter set. The reconstruction walk's three residual lanes and departure
+credit are restored on reconstruction/R. Reconstruction field, iteration,
+discard, decomposition, content and walk-policy terms stay retired.
+`reconstruct_grammar_sentence` reports generate → occurrences → reverse;
+`reconstruct_field_sentence` retains the observed-field report. Only the
+grammar reading gates all four word multisets; the field count is an audit.
+Byte identity and coverage are value-only audits.
+
+Thought adds no field columns. STM thought ideas use the thought step's `.when`
+and empty `.where`; knowing deposits retain a path to the selected intuition
+weights. Expectation learns the detached post-thought order-zero field, including
+on the serial path. Numeric heads keep the forward head with `answerSynthesis=false`.
+The conceptual/perceptual synthesis layers and second answer-surface decoder are
+removed; checkpoint loading reports their dropped keys.

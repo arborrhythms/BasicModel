@@ -119,14 +119,14 @@ def _config(tmp_path_factory, name, extra_arch):
 @pytest.fixture(scope="module")
 def memory_config(tmp_path_factory):
     return _config(tmp_path_factory, "MM_xor_what_memory.xml",
-                   "    <answerSynthesis>true</answerSynthesis>\n"
+                   "    <answerSynthesis>false</answerSynthesis>\n"
                    "    <whatThinkingDetach>episode</whatThinkingDetach>")
 
 
 @pytest.fixture(scope="module")
 def plain_config(tmp_path_factory):
     return _config(tmp_path_factory, "MM_xor_plain.xml",
-                   "    <answerSynthesis>true</answerSynthesis>")
+                   "    <answerSynthesis>false</answerSynthesis>")
 
 
 def test_default_has_one_memory_and_think_is_single_step(plain_config):

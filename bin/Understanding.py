@@ -84,6 +84,15 @@ class Reading:
     form_wholes: Any = None
     form_whole_counts: Any = None
     form_whole_presence: Any = None
+    tree: Any = field(default=None, repr=False)
+
+    def __getattribute__(self, name):
+        if name in ('actions', 'leaves'):
+            tree = object.__getattribute__(self, 'tree')
+            if tree is not None:
+                return getattr(tree, name)()
+        return object.__getattribute__(self, name)
+
     @property
     def _tensor_fields(self):
         core = ("rows", "word_rows", "activations", "leaves", "actions",
@@ -217,6 +226,7 @@ class Reading:
         values = {name: (None if getattr(self, name) is None else
                          getattr(self, name).detach().to("cpu"))
                   for name in self._tensor_fields}
+        values["tree"] = self.tree
         values["lexical_forms"] = self.lexical_forms
         values['binding_choices'] = self.binding_choices
         values['close_references'] = self.close_references
@@ -237,9 +247,10 @@ class InputReconstruction:
     byte_cost: Any
     truncated: Any
     sentence_costs: Any
+    percepts: Any = None
 
     def __post_init__(self) -> None:
-        for name in ("ideas", "event", "idea_cost", "byte_cost", "truncated", "sentence_costs"):
+        for name in ("ideas", "event", "idea_cost", "byte_cost", "truncated", "sentence_costs", "percepts"):
             value = getattr(self, name)
             object.__setattr__(self, name, value.clone() if value is not None else None)
 
@@ -319,7 +330,8 @@ class ConceptualField:
 
     def __post_init__(self) -> None:
         for name in self.__dataclass_fields__:
-            object.__setattr__(self, name, getattr(self, name).clone())
+            value = getattr(self, name)
+            object.__setattr__(self, name, None if value is None else value.clone())
 
 
 @dataclass(frozen=True)

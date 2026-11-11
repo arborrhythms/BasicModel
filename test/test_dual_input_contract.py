@@ -362,7 +362,7 @@ def test_model_reverse_threads_concepts_branch():
         "the property path has no independently snapped word reconstruction")
     with torch.no_grad():
         m.forward(x)  # re-bind (the first reverse consumed the state)
-        recon = m.reverse(m._combine_last_cs_sub)
+        recon = m.reverse(m._combine_last_cs_sub, field=None)
         ev = recon.materialize() if recon is not None else None
     assert ev is not None and torch.isfinite(ev).all(), (
         "the two-branch painting reverse must stay finite end-to-end")

@@ -1,4 +1,5 @@
 """Idempotent membership folds preserve evidence when a witness repeats."""
+from basic_fixtures import feature as basic_feature
 import torch
 
 from ConceptEvidence import corners, union
@@ -63,12 +64,12 @@ def test_seam_never_invents_counterevidence_from_an_absent_property():
     primitive = PrimitiveProperties(2)
     primitive.teach(0, [48, 49], [0., 1.])
     primitive.teach(1, [48, 49], [1., 0.])
-    cs.add_concept_feature(0, 'ws', 0, 1.)
+    basic_feature(cs, 0, 'ws', 0, 1., parts=(48, 49))
     spans = torch.tensor([[[0, 1]]])
     raw = torch.tensor([[65]])
     read = cs.cs_read_memberships((raw, spans, primitive, raw, spans), spans)
     assert read.count_nonzero() == 0
-    cs.add_concept_feature(0, 'ws', 1, -1.)
+    basic_feature(cs, 0, 'ws', 1, -1., parts=(48, 49))
     raw = torch.tensor([[48]])
     read = cs.cs_read_memberships((raw, spans, primitive, raw, spans), spans)
     torch.testing.assert_close(read[0, 0, 0], torch.tensor([0., 1.]))
@@ -150,7 +151,7 @@ def test_native_ordered_case_supplies_the_bracket_conjunction():
     row = _mint_row(cs, 0, 101)
     # Section 4c moves exact ordered conjunctions to native perception.
     # Preserve the original 10-only truth table after retiring locations.
-    cs.add_concept_feature(0, 'ps', (49, 48), 1.)
+    basic_feature(cs, 0, 'ps', (49, 48), 1.)
     cs.add_concept_edge(row, 0, 1., conjunctive=True)
     raw = torch.tensor([[48, 48], [48, 49], [49, 48], [49, 49]])
     positions = torch.tensor([[[0, 1], [1, 2]]]).expand(4, -1, -1)

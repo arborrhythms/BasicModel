@@ -88,6 +88,7 @@ def test_checked_executor_is_masked_throughout_each_sentence_path(monkeypatch, p
         monkeypatch.setattr(model, "_reverse_event_loss", injected_query)
         call = lambda: model.reverseReconstruct(understanding, target=value)
     else:
+        model.answer_synthesis = True
         monkeypatch.setattr(model, "_materialize_answer_idea", injected_query)
         call = lambda: model.reverseOutput(
             understanding, AnswerDerivation(None, sentence_states=understanding.sentence_states)
@@ -278,11 +279,10 @@ def test_reconstruction_completion_keeps_query_executors_masked(monkeypatch):
     context = _context(
         model.conceptualSpace, model=model,
         boundary=model._assert_query_boundary)
-    monkeypatch.setattr(
-        model,
-        "_reverse_input_surface",
-        lambda *args: signature.invoke(context, torch.ones(8), torch.ones(8)),
-    )
+    import SentenceField
+    model.word_brackets = True
+    monkeypatch.setattr(SentenceField, "completed",
+        lambda *args: signature.invoke(context, torch.ones(8), torch.ones(8)))
     with pytest.raises(RuntimeError, match="sentence|query|queries"):
         model._complete_input_reconstruction()
     assert calls == []

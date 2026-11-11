@@ -30,6 +30,7 @@
   <PartSpace>
     <nOutput>4</nOutput>
     <nVectors>256</nVectors>
+    <basicPerceptCapacity>256</basicPerceptCapacity>
   </PartSpace>
 
   <!-- ConceptualSpace: VQ codebook (nVectors=16 > nOutput=4) — codebook=quantize. -->

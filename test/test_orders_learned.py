@@ -93,9 +93,8 @@ def test_only_distinct_published_identities_raise(same_token, same_value, raises
     # Distinct occurrence addresses need distinct source keys even when their
     # published values agree. The second event has a separate native entry.
     if same_value:
-        first_key = store.occurrence_of(store.index_of_row(first))
-        second_key = store.occurrence_of(store.index_of_row(second))
-        cs.mtm.entries[second_key] = cs.mtm.entries[second_key].with_actual(value=cs.mtm.entries[first_key].value)
+        with torch.no_grad():
+            store.slots[store.index_of_row(second)].copy_(store.slots[store.index_of_row(first)])
     if same_token:
         cs.mtm.bind(store.occurrence_of(store.index_of_row(first)), store.occurrence_of(store.index_of_row(second)),
                     kind=17, when=2)

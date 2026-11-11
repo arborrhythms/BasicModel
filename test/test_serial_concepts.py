@@ -1,4 +1,5 @@
 """The serial open pass reads every present bracket before composition."""
+from basic_fixtures import feature as basic_feature
 from types import SimpleNamespace
 
 import torch
@@ -12,11 +13,12 @@ def fixture():
     cs, rows = _fixture()
     cs._serial = True
     for index, (_cid, row) in enumerate(rows[:3]):
-        cs.add_concept_feature(row, 'ps', index, 1.)
+        basic_feature(cs, row, 'ps', index, 1.)
     # Two packed sentences, each with one alternative and the common context.
     spans = torch.tensor([[[0, 1], [2, 3], [4, 5], [6, 7]]])
     native = dict(indices=torch.tensor([[0, 2, 1, 2]]), part_spans=spans)
     model = SimpleNamespace(training=True, _concept_owner=lambda: cs,
+        conceptualSpace=cs, conceptualSpaces=[cs], _sentence_open_fields={},
         inputSpace=SimpleNamespace(_packed_sentence_ids=torch.tensor([[0, 0, 1, 1]]),
                                   _word_active_mask=torch.ones(1, 4, dtype=torch.bool)),
         perceptualSpace=SimpleNamespace(_forward_input=native),

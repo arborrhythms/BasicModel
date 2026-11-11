@@ -11,7 +11,7 @@ def test_trial_and_batch_answer_leave_the_decoder_to_reconstruction(monkeypatch,
     from Output import AnswerDerivation
     from Understanding import Understanding, SentenceEndState
     from What import What
-    from test_output_walk import _model
+    from test_output_walk import _model, _capture_program_probe, _stop
     monkeypatch.setattr(util, 'TheCompileBackend', 'eager' if compiled else 'none')
     def eager_while(condition, body, values):
         while bool(condition(*values)):
@@ -20,9 +20,12 @@ def test_trial_and_batch_answer_leave_the_decoder_to_reconstruction(monkeypatch,
     if not compiled:
         monkeypatch.setattr(torch, 'while_loop', eager_while)
     model = _model()
+    with torch.no_grad():
+        understanding = _capture_program_probe(model, ['9'])
+    _stop(model)
     model.train()
     width = model.conceptualSpace.stm.concept_dim
-    point = torch.rand(1, width, requires_grad=True)
+    point = understanding.sentence_records[-1].word_values[:, 0].detach().clone().requires_grad_()
     meanings = tuple(ConceptualMeaning.from_description(row) for row in point)
     fields = tuple(SentenceEndState(meaning) for meaning in meanings)
     idea = torch.stack([meaning.roles for meaning in meanings])
@@ -30,7 +33,8 @@ def test_trial_and_batch_answer_leave_the_decoder_to_reconstruction(monkeypatch,
     held = AnswerDerivation(answer_symbol=None, sentence_states=fields,
         conceptual_answer=idea, questions=questions,
         answer_meanings=tuple((meaning,) for meaning in meanings))
-    understanding = Understanding(conceptual_state=idea, sentence_states=fields)
+    from dataclasses import replace
+    understanding = replace(understanding, conceptual_state=idea, sentence_states=fields)
     model._sentence_training = True
     model._sentence_trial = trial
     model._output_policy_cost = None
@@ -38,21 +42,21 @@ def test_trial_and_batch_answer_leave_the_decoder_to_reconstruction(monkeypatch,
         result = model.reverseOutput(understanding, held)
         assert model._output_policy_cost is None
         params = tuple(model.languageSpace.generate_policy.parameters())
-        gradients = torch.autograd.grad(result.actual.square().mean(), (point,),
+        gradients = torch.autograd.grad(result.percepts.square().mean(), (point,),
                                         allow_unused=True, retain_graph=True)
         assert gradients[0] is not None, 'the default shares the answer trunk'
         from ObjectiveOwnership import backward_owned
         optimizer = model.getOptimizer(lr=.01)
         owners = model.objective_parameter_groups(optimizer)
-        assert {id(p) for p in params} <= {id(p) for p in owners['reconstruction']}
-        backward_owned({'output': result.actual.square().mean()}, owners)
+        assert {id(p) for p in params} <= {id(p) for p in owners['output']}
+        backward_owned({'output': result.percepts.square().mean()}, owners)
         assert all(p.grad is None for p in params)
         assert any(p.grad is not None and p.grad.norm() > 0 for p in owners['output'])
         model._sentence_trial = None
         optimizer.zero_grad(set_to_none=True)
         result = model.reverseOutput(understanding, held)
         assert model._output_policy_cost is None
-        backward_owned({'output': result.actual.square().mean()}, owners)
+        backward_owned({'output': result.percepts.square().mean()}, owners)
         assert all(p.grad is None for p in params)
         assert any(p.grad is not None and p.grad.norm() > 0 for p in owners['output'])
     finally:

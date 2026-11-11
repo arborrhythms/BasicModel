@@ -8,7 +8,8 @@ import torch
 from checkpoint_migrations import checkpoint_schema, migrate_wholespace_checkpoint
 
 
-@pytest.mark.parametrize('configuration', ['model.xml', 'BasicModel.xml', 'MM_xor_fixture.xml'])
+@pytest.mark.parametrize('configuration', ['model.xml',
+    pytest.param('BasicModel.xml', marks=pytest.mark.large_memory), 'MM_xor_fixture.xml'])
 def test_one_whole_inventory_on_every_configuration(configuration):
     from test_conceptual_recurrence import _build
     from Spaces import WholeSpace
@@ -195,4 +196,4 @@ def test_rejecting_commit_captures_value_pool_and_source_then_reraises(tmp_path,
     assert packet['document'] == 'capture' and packet['position'] == 1
     assert torch.isnan(packet['working_value']).all()
     assert packet['token'] is not None and packet['members']
-    assert packet['pool']['version'] == 11 and packet['pool']['entries']
+    assert packet['pool']['version'] == 12 and packet['pool']['entries']

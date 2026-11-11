@@ -4459,9 +4459,9 @@ def luminosity_op(x_a, x_b, sigma=None):
 
 
 def isa_part_op(child, parent, sigma=None):
-    """One-step kernel overlap ``K(child, parent) ∈ (0, 1]`` per the
+    """One-step kernel overlap ``K(child, parent) ∈ [0, 1]`` per the
     plan's "is the child contained in the parent at this conceptual
-    order" semantics.
+    order" semantics. Floating-point underflow can produce zero.
     """
     if sigma is None:
         sigma = _DEFAULT_SUBSYMBOLIC_SIGMA
@@ -7177,16 +7177,19 @@ class OperationSelectionLayer(nn.Module):
             binary_scores = binary_scores.masked_fill(stranded[:, None, None] & (~swaps & ~binds)[None, None], -torch.inf)
         # Transpose acts only on the newest pair and cannot meet a deletion deadline.
         swap_legal = (positions[:, :-1] == depth[:,None]-2) & ~deadline[:,None]
+        import UnaryHistory
         if previous_unary is not None:
-            swap_legal &= ~((previous_unary[:,:-1] == -2) & (previous_unary[:,1:] == -2))
+            previous_rule = UnaryHistory.last(previous_unary)
+            swap_legal &= ~((previous_rule[:,:-1] == -2) & (previous_rule[:,1:] == -2))
         binary_scores = binary_scores.masked_fill(swaps[None,None] & ~swap_legal[...,None], -torch.inf)
         unary_scores = unary_scores.masked_fill(~live[..., None] | deadline[:, None, None], -torch.inf)
         if previous_unary is not None and self.r_apply:
             inverse = torch.tensor(self._unary_inverse_pairs, device=x.device, dtype=torch.bool)
-            excluded = inverse[previous_unary.clamp(0, self.r_apply - 1)]
-            excluded = excluded & (previous_unary >= 0)[..., None]
+            excluded = inverse[previous_rule.clamp(0, self.r_apply - 1)]
+            excluded = excluded & (previous_rule >= 0)[..., None]
             excluded = excluded.index_select(-1, ui)
             unary_scores = unary_scores.masked_fill(excluded, -torch.inf)
+            unary_scores = unary_scores - UnaryHistory.penalty(previous_unary, unary_scores)[..., None]
         stop = (stop_scores.squeeze(-1) * live).sum(-1) / depth.clamp_min(1)
         limit = torch.as_tensor(slots, device=x.device)
         # In a small STM a relative row can fit while the next-word slot is
@@ -7212,14 +7215,18 @@ class OperationSelectionLayer(nn.Module):
             bias = self.prime_bias(candidates, prime)
             logits = logits + bias
         if reference_data is not None:
-            # The dummy is a fixed zero, including after expectation bias.
+            # The dummy has no learned score, including expectation bias.
+            # Its repeated unary work still pays the ordinary location cost.
             # Preserve every eligibility/deadline decision already applied.
             dummy = torch.tensor(reference_data.get('unary_bind_dummy',()), device=x.device,
                                  dtype=torch.bool).expand(N, -1).reshape(-1)
             binary_dummy = torch.tensor(reference_data.get('binary_bind_dummy',(False,)*r_reduce),
                 device=x.device,dtype=torch.bool).expand(N-1,-1).reshape(-1)
             fixed = torch.cat((binary_dummy, dummy, dummy.new_zeros(1)))[None]
-            logits = torch.where(fixed & torch.isfinite(logits), 0., logits)
+            fixed_score = torch.zeros_like(logits)
+            if previous_unary is not None and r_apply:
+                fixed_score[:, nb:nb+nu] = -UnaryHistory.penalty(previous_unary, logits)[..., None].expand(B, N, r_apply).reshape(B, nu)
+            logits = torch.where(fixed & torch.isfinite(logits), fixed_score, logits)
         greedy = structural_argmax(logits, flags)
         reference = (greedy if masked_action is None else
                      torch.where(masked_action >= 0, masked_action, greedy))
@@ -7274,8 +7281,12 @@ class OperationSelectionLayer(nn.Module):
         history = (torch.full((B, N), -1, device=x.device, dtype=torch.long)
                    if previous_unary is None else previous_unary)
         history = history.gather(1, source.clamp_max(N - 1))
-        history = torch.where(selected, torch.where(is_unary, local_op, -1)[:, None], history)
-        swap_history = torch.where((positions == position[:,None]) | (positions == position[:,None]+1), -2, history)
+        prior_history = history
+        history = torch.where(selected, torch.where(is_unary[:, None],
+            UnaryHistory.applied(history, local_op[:, None]), -1), history)
+        swapped_history = prior_history.gather(1, swap_source)
+        swap_history = torch.where((positions == position[:,None]) | (positions == position[:,None]+1),
+            UnaryHistory.transposed(swapped_history), history)
         history = torch.where(is_transpose[:,None], swap_history, history)
         routing['previous_unary'] = torch.where(positions < next_depth[:, None], history, -1)
         routing['alternatives'] = active & departure_eligible.any(-1)
@@ -12958,6 +12969,7 @@ class LanguageSpace(nn.Module):
     @staticmethod
     def update_unary_history(history, choice):
         """A binary result has no last unary; an untouched slot keeps its own."""
+        import UnaryHistory
         binary = choice.applied & (choice.kind == 1)
         if choice.stack_arity is not None:
             binary &= choice.stack_arity == 2
@@ -12965,11 +12977,13 @@ class LanguageSpace(nn.Module):
                             torch.full_like(history[:, :1], -1)), 1)[:, :history.shape[1]]
         history = torch.where(binary[:, None], folded, history)
         transpose = choice.applied & (choice.kind == 3)
-        history = torch.where(transpose[:,None] & (torch.arange(history.shape[1], device=history.device)[None] < 2), -2, history)
+        swapped = torch.cat((history[:, :2].flip(1), history[:, 2:]), 1)
+        history = torch.where(transpose[:,None] & (torch.arange(history.shape[1], device=history.device)[None] < 2),
+            UnaryHistory.transposed(swapped), history)
         unary = choice.applied & (choice.kind == 2)
         position = torch.arange(history.shape[1], device=history.device)[None]
         return torch.where(unary[:, None] & (position == choice.position[:, None]),
-                           choice.local_op[:, None], history)
+                           UnaryHistory.applied(history, choice.local_op[:, None]), history)
 
 
     @torch.compiler.disable
@@ -14552,7 +14566,7 @@ class SymbolSpace(Space):
             self._compose_eager(snap)
 
     def reverse(self, snap):
-        """Grammar GENERATE over the STM snapshot (populates generate_rules)."""
+        """Explicit legacy grammar report; absent from the live reverse chain."""
         if snap is None:
             return
         if getattr(self, '_grammar_is_default_only', True):

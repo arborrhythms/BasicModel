@@ -50,9 +50,13 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         # A word keeps its name when another occurrence supplies its object.
         # Pending and arriving references must use the same lexical key,
         # independently of the current word-to-object interpretation.
-        if program.word_ids is not None and int(program.word_ids[leaf]) >= 0:
+        if program.word_ids is not None and int(program.word_ids[leaf]) > 0:
             return int(program.word_ids[leaf])
-        return int(program.concept_ids[leaf])
+        concept = int(program.concept_ids[leaf])
+        return concept if concept > 0 else None
+    def forward_fields(leaf):
+        name = forward_name(leaf)
+        return {} if name is None else {'forward_identity': name}
     values = list(program.leaves.unbind())
     frames = program.operation_values
     if frames is None:
@@ -108,7 +112,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             if stack[-1]['order'] == 1 or named or addressed:
                 stack[-1]['close_request'] = dict(mode='bind', leaves=(word,),
                     cue=values[word], content=values[word],
-                    forward_identity=forward_name(word), leaf=True)
+                    **forward_fields(word), leaf=True)
                 if addressed:
                     stack[-1]['close_request']['addressed_introduction'] = True
             if program.identity_leaves is not None:
@@ -180,7 +184,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     selected['ref'] = -1
                     selected['open_reference'] = True
                     operand['open_reference'] = True
-                    selected['forward_identity'] = forward_name(selected['leaves'][0])
+                    selected.update(forward_fields(selected['leaves'][0]))
                     request = selected.get('close_request', {})
                     if request.get('leaf') and not request.get('addressed_introduction'):
                         # A selected open formation already owns the role.
@@ -229,7 +233,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     # looking up its head must not flatten the whole field.
                     operand['has_point'] = (operand['has_point']
                         and reference_has_point(reference, True))
-        parent = dict(value=frames[action, 2], composed_value=frames[action, 2], local=local, ref=-1,
+        parent = dict(action=action, value=frames[action, 2], composed_value=frames[action, 2], local=local, ref=-1,
                           order=denoted_order(catalog[local], tuple(child['order'] for child in operands),
                               tuple(OrderReference(child['ref'], child.get('timeline', False)) for child in operands), None),
                           rule=catalog[local], children=operands,
@@ -265,7 +269,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 parent['order'] = owner._concept_source_order(parent['ref'])
                 if owner.interpret.no_object(parent['ref']):
                     parent['close_request'] = dict(mode='bind', interpret_leaf=True, leaf=True,
-                        forward_identity=forward_name(parent['leaves'][0]), leaves=parent['leaves'],
+                        **forward_fields(parent['leaves'][0]), leaves=parent['leaves'],
                         cue=parent['value'], content=parent['value'])
         if catalog[local].method_name == 'sign':
             leaf, = operands
@@ -448,6 +452,10 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     getattr(rule, 'method_name', None) == 'interpret' else -1,
                 formal_name=None if rule is None else operation_name(rule),
                 interpretation=current.get('interpretation'))
+            if program.tree is not None:
+                composition_cache[key] = program.tree.install_composition(composition_cache[key],
+                    action=current.get('action'),
+                    word=current['leaves'][0] if rule is None else None)
         return composition_cache[id(node)]
 
     def bands(node):
@@ -878,10 +886,11 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             described = with_slots(described, opened, pair=evidence['evidence'])
             from ThoughtReferences import bindings
             data = bindings(described)
-            data['_forward_references'] = tuple((role,
+            data['_forward_references'] = tuple((role, name) for role, name in ((role,
                 head(role_nodes[role]).get('forward_identity',
                     forward_name(head(role_nodes[role])['leaves'][0])))
                 for kind, role in opened if kind == 'referent' and role_nodes[role] is not None)
+                if name is not None)
             sites = dict(data.get('_reference_sites', ()))
             for kind, role in opened:
                 if kind != 'referent' or role_nodes[role] is None:

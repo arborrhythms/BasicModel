@@ -89,6 +89,8 @@ def learn_grounded_xor(tmp_path, pool, *, separate_chooser=None, reconstruction_
         assert before > .1 and after < 1e-12
     force_order(cs, 10001, 0)
     assert cs._csw_concept_row(0, 10001) == 0
+    from ConceptLessons import admit_native_forms
+    admit_native_forms(model, ('0', '1', 'A'))
     cs.add_concept_feature(0, 'ws', 9, 1.)
     for negative in (False, True):
         cs.add_concept_feature(0, 'ws', 10, 0., negated=negative)
@@ -96,13 +98,19 @@ def learn_grounded_xor(tmp_path, pool, *, separate_chooser=None, reconstruction_
     native[:, 0, 0] = torch.tensor([48, 49, 65])
     store = Spaces._concept_alloc_of(cs).layer()
     optimizer = torch.optim.Adam([store.features.values], lr=.03)
+    store.features._optimizer = optimizer
     # Name single primitive occurrences. The two-position truth table must
     # subsequently arise from extent readout, never from these targets.
     named = torch.tensor([[0., 1.], [1., 0.], [0., 0.]])
     for _ in range(32):
         optimizer.zero_grad()
         model.forward(native)
-        loss = (model._combine_last_cs_sub._concept_activations[0, :, 0] - named).square().mean()
+        carrier = model._combine_last_cs_sub
+        ids = carrier._concept_ids
+        if ids.ndim == 1:
+            ids = ids[:, None]
+        observed = (carrier._concept_activations[:, :, 0] * (ids == 10001)[..., None]).amax(0)
+        loss = (observed - named).square().mean()
         if backward is None:
             loss.backward()
         else:
@@ -110,13 +118,15 @@ def learn_grounded_xor(tmp_path, pool, *, separate_chooser=None, reconstruction_
         optimizer.step()
         store.project_parts()
         model.End()
+    store.features._optimizer = None
     model.forward(x)
     expected = torch.tensor([[0., 1.], [1., 1.], [1., 1.], [1., 0.]])
     torch.testing.assert_close(cs._cs_last_a0[0, :, 0], expected, atol=1e-6, rtol=0)
     torch.testing.assert_close(cs._cs_field_where, torch.tensor([[[0, 2]]]).expand(4, -1, -1))
     # Before conceptual folds, the native property events still discriminate
     # both byte positions. Concepts themselves retain only the bracket pool.
-    events = cs._percept_field.event_evidence([('ws', 9)])[0, :, 0]
+    rows = cs.basic_percepts.carrying('ws', 9)
+    events = cs._percept_field.event_evidence([('bp', row) for row in rows]).amax(0)[:, 0]
     spans = cs._percept_field.spans
     located = []
     for start in (0, 1):
@@ -152,7 +162,7 @@ def learn_grounded_xor(tmp_path, pool, *, separate_chooser=None, reconstruction_
     cs.mtm.promote_candidates(cs)
     assert all(cs.mtm.entries[key].symbol is not None for key in cases)
     rows = [cs._csw_row_of(cs.mtm.entries[key].symbol) for key in cases]
-    assert all(any(r == row and (col // 2) % 2 == 0
+    assert all(any(r == row
                    for r, col in store.features._index) for row in rows)
     assert not hasattr(store.conjunctive, 'locations')
     force_order(cs, 20001, 1)
@@ -200,7 +210,8 @@ def learn_grounded_xor(tmp_path, pool, *, separate_chooser=None, reconstruction_
     assert not torch.equal(initial, store.values)
     learned = [(r, weight) for r, weight in cs.concept_weights(xor) if weight > 0]
     assert len(learned) == 2
-    assert store.features.values[store.features._index[0, 4 * 9 + 2]] > 0
+    assert all(store.features.values[store.features._index[0, 2 * bp]] > 0
+               for bp in cs.basic_percepts.carrying('ws', 9))
     # Pi was performed on retained order-0 positions, before symbolization.
     # The higher-order XOR row contains only sigma edges to those cases.
     assert all(cs._order0_inventory_row(r) and cs._order0_inventory_row(c % (store.nOutput + 1))
@@ -218,7 +229,9 @@ def learn_grounded_xor(tmp_path, pool, *, separate_chooser=None, reconstruction_
         leg = model.symbolSpace.forward_concept_to_symbol(model._combine_last_cs_sub)
         # New lexical rows retain their own native field. The learned cases
         # and XOR still exclude every control, on both evidence lanes.
-        literals = [('ws', 9), ('ws', 10)] + [cs.mtm.entries[key].refinement['literal'] for key in cases]
+        literals = [('bp', bp) for bp in set((*cs.basic_percepts.carrying('ws', 9),
+            *cs.basic_percepts.carrying('ws', 10), *(column // 2
+                for row, column in store.features._index if row in rows)))]
         assert cs._percept_field.event_evidence(literals).count_nonzero() == 0
         bound = leg._concept_inventory_rows
         selected = torch.isin(bound, torch.tensor([0, xor, *rows]))

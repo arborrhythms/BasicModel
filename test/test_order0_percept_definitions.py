@@ -1,4 +1,5 @@
 """Order-zero sigma over pi uses native percepts as its literals."""
+from basic_fixtures import feature as basic_feature
 import pytest
 import torch
 from types import SimpleNamespace
@@ -16,14 +17,14 @@ def test_order0_unions_alternative_percept_conjunctions(conceptual_pi):
     primitive = PrimitiveProperties(4)
     with torch.no_grad():
         primitive.members[:, 65] = torch.tensor([.25, .36, .81, .49])
-    cs.add_concept_feature(0, 'ws', 0, 1.)
-    cs.add_concept_feature(0, 'ws', 1, .5)
-    cs.add_concept_feature(1, 'ws', 2, .5)
-    cs.add_concept_feature(1, 'ws', 3, 1.)
-    cs.add_concept_feature(0, 'ws', 2, 1., negated=True)
-    cs.add_concept_feature(0, 'ws', 3, .5, negated=True)
-    cs.add_concept_feature(1, 'ws', 0, .5, negated=True)
-    cs.add_concept_feature(1, 'ws', 1, 1., negated=True)
+    basic_feature(cs, 0, 'ws', 0, 1., parts=(65,))
+    basic_feature(cs, 0, 'ws', 1, .5, parts=(65,))
+    basic_feature(cs, 1, 'ws', 2, .5, parts=(65,))
+    basic_feature(cs, 1, 'ws', 3, 1., parts=(65,))
+    basic_feature(cs, 0, 'ws', 2, 1., negated=True, parts=(65,))
+    basic_feature(cs, 0, 'ws', 3, .5, negated=True, parts=(65,))
+    basic_feature(cs, 1, 'ws', 0, .5, negated=True, parts=(65,))
+    basic_feature(cs, 1, 'ws', 1, 1., negated=True, parts=(65,))
     cs.add_concept_edge(0, 1, 1.)
     raw = torch.tensor([[65]])
     spans = torch.tensor([[[0, 1]]])
@@ -67,8 +68,8 @@ def test_witnesses_write_alternatives_without_conjoining_their_literals():
     cs.interpret_word([8], [2], key='word')
     [(alternative, weight)] = cs.concept_weights(row)
     assert weight == 1.
-    assert {col for r, col in store.features._index if r == row} == {28, 6}
-    assert {col for r, col in store.features._index if r == alternative} == {32, 10}
+    assert {col for r, col in store.features._index if r == row} == {2 * cs.basic_percepts.index[((7,), (1,))]}
+    assert {col for r, col in store.features._index if r == alternative} == {2 * cs.basic_percepts.index[((8,), (2,))]}
     before = (store.nnz, store.features.nnz, Spaces._concept_alloc_of(cs).next_id)
     cs.interpret_word([8], [2], key='word')
     assert before == (store.nnz, store.features.nnz, Spaces._concept_alloc_of(cs).next_id)
@@ -96,7 +97,8 @@ def test_word_group_becomes_a_recurrent_row_without_changing_its_read(tmp_path):
     fused = identity.word_rows[b'love']
     store = Spaces._concept_alloc_of(cs).layer()
     row = cs._csw_row_of(A)
-    assert store.feature_groups[row, 4 * atom_ids[0]] == atom_ids
+    bp = cs.basic_percepts.words[word]
+    assert cs.basic_percepts.occurrences[bp][0] == atom_ids
     raw = torch.tensor([[108, 111, 118, 101]])
     parts = torch.tensor([[[0, 1], [1, 2], [2, 3], [3, 4]]])
     extent = torch.tensor([[[0, 4]]])

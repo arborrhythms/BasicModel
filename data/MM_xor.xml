@@ -43,6 +43,7 @@
     <nInput>8</nInput>
     <nInputDim>14</nInputDim>
     <nVectors>200</nVectors>
+    <basicPerceptCapacity>200</basicPerceptCapacity>
     <nDim>14</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>14</nOutputDim>

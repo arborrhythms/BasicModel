@@ -80,7 +80,7 @@ def test_committed_centroids_invert_the_operand_each_step_actually_read(paired,d
         operand=field if i else leaf
         value=op.compose_blocks(None,op.content_operand(operand),whole=(mean,count))
         frames.append(torch.cat((operand,torch.zeros_like(operand),value)))
-    program=SimpleNamespace(actions=torch.tensor([[0,-1,0]]+[[2,0,0]]*depth),
+    program=SimpleNamespace(tree=None,actions=torch.tensor([[0,-1,0]]+[[2,0,0]]*depth),
         operation_values=torch.stack(frames),identity_actions=torch.zeros(depth+1,6,dtype=torch.long),
         operand_counts=leaf.new_tensor([[1,0]]*(depth+1)),form_wholes=mean.expand(depth+1,-1),
         form_whole_counts=count.expand(depth+1,-1))
@@ -114,7 +114,7 @@ def test_retained_lower_transports_reread_evidence_in_its_native_chart(paired, d
     read[0, [4, 8]] = .5
     frames = torch.stack([leaf.new_zeros(3, 12)] + [
         torch.cat((x, torch.zeros_like(x), op.compose(x))) for x in (leaf, read)])
-    program = SimpleNamespace(actions=torch.tensor([[0, -1, 0], [2, 0, 0], [2, 0, 0]]),
+    program = SimpleNamespace(tree=None,actions=torch.tensor([[0, -1, 0], [2, 0, 0], [2, 0, 0]]),
                               operation_values=frames, identity_actions=torch.zeros(3, 6))
     for delta in (.0459874057769775, 0.):
         end = read.clone()
@@ -146,7 +146,7 @@ def test_unfinished_forest_trains_from_every_live_stack_root(count):
     tags = torch.zeros(1, count, dtype=torch.long)
     stm = from_stack(values, torch.tensor([count]), tags, tags, torch.full_like(tags, -1), torch.ones_like(tags).float())
     lang = SimpleNamespace()
-    program = SimpleNamespace(actions=torch.tensor([[0, -1, i] for i in range(count)]))
+    program = SimpleNamespace(tree=None,actions=torch.tensor([[0, -1, i] for i in range(count)]))
     record = SimpleNamespace(word_values=torch.full_like(values, .25), word_valid=torch.ones_like(tags, dtype=torch.bool),
                              end_slots=values[:, :3], end_depth=torch.tensor([-1]))
     recovered, missing, defined = reconstruct(lang, record, [program], lambda _: range(count), stm)

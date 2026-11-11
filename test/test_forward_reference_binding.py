@@ -46,8 +46,9 @@ def forward_row(*, event=False, object_name=False):
     pool.promote(occurrence, obj)
     if event:
         verb = identity(owner, atoms[6], order=0)
-        pool.event(occurrence, occurrence, verb=verb, role=0, when=1, before=point)
-        pool.update(occurrence, point + atoms[1], when=1)
+        changed = store.append_idea(point + atoms[1], when=False,
+            document_key='forward-reference-change')
+        pool.event(occurrence, store.occurrence_of(changed), verb=verb, role=0, when=1, before=point)
     entry = pool.entries[occurrence]
     assert entry.kind is None and entry.symbol == obj and not entry.pending
     assert entry.occurrences == (occurrence,)
@@ -161,13 +162,15 @@ def test_finish_thought_bind_does_not_close_a_name_from_its_own_token(departure)
     f = forward_row(event=True)
     frame = SituationFrame.from_row(f.store.row(f.row))
     plan = thought_plan(f, (frame,))
-    assert plan['candidates'] == (f.occurrence,)
+    assert plan['candidates'] == (f.occurrence, f.obj)
     assert plan['base']['binding_occurrence'] == f.occurrence
     # Positive logits choose the candidate greedily; negative logits make it
     # the departure from the zero-logit dummy. Neither licenses self-naming.
-    logits = f.resolver.policy.new_full((1,), -1. if departure else 1.)
+    # The promoted concept is a separate menu entry; this probe selects
+    # the original occurrence to test self-naming in both choice modes.
+    logits = f.resolver.policy.new_tensor([-1. if departure else 1., -torch.inf])
     result = f.resolver.finish_thought_bind(plan, departure=departure, logits=logits)
-    assert plan['decision']['candidates'] == (None, f.occurrence)
+    assert plan['decision']['candidates'] == (None, f.occurrence, f.obj)
     assert plan['decision']['selected'] == 1
     assert plan['decision']['greedy'] == (0 if departure else 1)
     assert plan['decision']['departed'] is departure

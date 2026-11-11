@@ -19,16 +19,15 @@ def towers():
     ws.enable_property_codes(identity_width=3, property_width=256)
     ws.begin_forward()
     cs._model.wholeSpace = SimpleNamespace(subspace=SimpleNamespace(what=ws))
+    cs.basic_percepts.bind(ws)
     return cs, cb, ps, ws, alloc
 
 
 def test_net_evidence_subspaces_and_detached_native_sources():
     cs, cb, ps, ws, alloc = towers()
-    row = word(cs, [(4,.75),(4,-.25),(7,.25)])
-    cs.add_concept_feature(row, 'ws', 0, .5)
-    cs.add_concept_feature(row, 'ws', 0, -.25)
+    row = word(cs, [(4,.75),(4,-.25),(7,.25)], wholes=(0,))
     lower = torch.maximum(ps.W[4, :3], ps.W[7, :3])
-    upper = 1-.25*(1-ws.W[0, 3:])
+    upper = ws.W[0, 3:]
     expected = torch.cat((lower, upper))
     result = cb.lookup_rows(row)
     torch.testing.assert_close(result[:259], expected)
@@ -49,8 +48,7 @@ def test_against_alone_is_not_negative_form_and_no_wholes_means_lower():
 
 def test_retired_room_pass_cannot_move_native_wholes():
     cs, cb, ps, ws, alloc = towers()
-    row = word(cs, [(7,1.)])
-    cs.add_concept_feature(row, 'ws', 1, 1.)
+    row = word(cs, [(7,1.)], wholes=(1,))
     before_ps, before_ws = ps.W.detach().clone(), ws.W.detach().clone()
     cb.mereology.containment_audit()
     assert not hasattr(cb.mereology, 'project_room')
@@ -94,7 +92,7 @@ def test_byte_scorer_bank_is_constant_leaf_is_live():
     assert a.norm()>0 and b is None
 
 
-def test_sentence_path_has_no_native_prototype_or_evidence_gradient(monkeypatch):
+def test_sentence_reverse_reaches_native_prototypes_and_evidence(monkeypatch):
     import Models
     from test_mm_xor import _fresh_model
     model, _, data = _fresh_model('data/XOR_grammar.xml')
@@ -116,7 +114,7 @@ def test_sentence_path_has_no_native_prototype_or_evidence_gradient(monkeypatch)
         raw,target = next(iter(data.data_loader(split='train',num_streams=4)))
         batch = model.inputSpace.prepInput(raw), model.outputSpace.prepOutput(target)
         model.runBatch(train=True,optimizer=optimizer,batchSize=4,split='train',batch_override=batch)
-        assert observations and all(not any(row) for row in observations), observations
+        assert observations and any(any(row) for row in observations), observations
     finally:
         model.End(); model.symbolSpace.soft_reset(); torch._dynamo.reset()
 

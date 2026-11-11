@@ -366,6 +366,8 @@ class ShortTermMemory(MemoryStore, Layer):
         self._live_unary_history_depth = torch.zeros(batch,dtype=torch.long)
         self._thought_contents = tuple((None,) * self._init_capacity for _ in range(batch))
         self._thought_clock = (0,) * self._init_batch
+        from ThoughtStrata import construct
+        object.__setattr__(self, '_thought_stores', construct(batch, self._init_capacity, concept_dim))
 
     @property
     def state(self):
@@ -910,6 +912,12 @@ class ShortTermMemory(MemoryStore, Layer):
         return self.size(b) == 0
 
     def clear(self, b=None, *, hard=True):
+        if hard and hasattr(self, 'strata'):
+            self.strata.clear(b)
+        if hard:
+            for row in range(self._init_batch) if b is None else (b,):
+                for store in self._thought_stores[row]:
+                    store.expire()
         gate = torch.ones(self._active_batch, dtype=torch.bool, device=self._buffer.device) if b is None else (
             torch.arange(self._active_batch, device=self._buffer.device) == int(b))
         state = (STMChunks.clear(self.state, gate[:, None].expand_as(self.state[STMChunks.STACK])) if hard
@@ -933,7 +941,6 @@ class Event:
     before: torch.Tensor | None = None
     basis: torch.Tensor | int | None = None
     taught: bool = False
-    after: torch.Tensor | None = None
     modifiers: tuple = ()
     modal_taught: bool = False
     case_value: torch.Tensor | None = None
@@ -942,7 +949,6 @@ class Event:
 
 class Timeline(NamedTuple):
     events: tuple
-    value: torch.Tensor
 
 
 @dataclass(frozen=True)
@@ -963,27 +969,22 @@ class Token:
     readings: tuple = ()
     refinement: dict = field(default_factory=dict)
 
-    @property
-    def value(self):
-        return self.timelines[0].value
+
 
     @property
     def events(self):
         return self.timelines[0].events
 
-    def with_actual(self, *, value=None, events=None, **metadata):
-        actual = Timeline(self.events if events is None else events,
-                          self.value if value is None else value)
+    def with_actual(self, *, events=None, **metadata):
+        actual = Timeline(self.events if events is None else events)
         return replace(self, timelines=(actual, *self.timelines[1:]), **metadata)
 
 
 class MediumTermMemory(MemoryStore):
-    """Names share an identity read from its references until its first event.
+    """References form a path across kept closes; values are computed on read.
 
-    Mutation belongs to a kept close. The pool ends the sentence's graph;
-    trial-local values live in the shared STM chunks. After an event, each
-    timeline retains its state. Neither read changes the stored layout.
-    Mention membership, used by the settled-join guard, excludes events.
+    The pool owns membership and recorded action operands, never a second
+    copy of an idea's content. Entry addresses survive physical slot reuse.
     """
 
     def __init__(self, capacity=64, horizon=16, *, n_vectors=1,
@@ -1042,10 +1043,17 @@ class MediumTermMemory(MemoryStore):
         owner = None if reference is None else reference()
         if owner is not None:
             owner._priming_edge_revision = None
+            from MemoryPaths import write, member
+            order = entry.refinement.get('member_order')
+            # Re-entering an already known individual does not make that
+            # individual a higher-order class of its own references.
+            reentry = order is not None and owner._concept_source_order(symbol) == order
+            if not reentry:
+                write(owner, entry, int(symbol))
             from FamiliarTier import class_members
             alloc = owner._concept_allocator
             affected = {parent for occurrence in entry.occurrences
-                        for kind, parent in alloc.parts.wholes((OCCURRENCE, occurrence[-1]))
+                        for kind, parent in alloc.parts.wholes(member(owner._closed_clause_store(), occurrence)[0])
                         if kind == SYMBOL and parent in alloc.raised}
             for parent in affected:
                 members = class_members(owner, parent)
@@ -1107,7 +1115,7 @@ class MediumTermMemory(MemoryStore):
             raise ValueError('candidate key must use the pool counter')
         self._room()
         self.candidate_counter += 1
-        self.entries[expected] = Token((), None, 1, int(when), (Timeline((), value),),
+        self.entries[expected] = Token((), None, 1, int(when), (Timeline(()),),
             transient=self._allocate_id(), pending=True, where=self._where(None), order=order,
             support=support, mass=sum(support.values()))
         return expected
@@ -1123,15 +1131,15 @@ class MediumTermMemory(MemoryStore):
         entry = self.entries[key]
         if entry.order is None:
             raise ValueError('candidate update requires a candidate')
-        value, support = self._value(value), self._support(support)
-        if value.shape != entry.value.shape or not support:
-            raise ValueError('candidate update differs from its construction')
+        self._value(value)
+        support = self._support(support)
+        if not support:
+            raise ValueError('candidate update requires support')
         mass = sum(support.values())
         merged = dict(entry.support)
         for row, weight in support.items():
             merged[row] = merged.get(row, 0.) + weight
-        self.entries[key] = entry.with_actual(value=torch.lerp(entry.value.to(value), value,
-            mass / (entry.mass + mass)), count=entry.count+1, when=int(when),
+        self.entries[key] = replace(entry, count=entry.count+1, when=int(when),
             mass=entry.mass+mass, support=self._support(merged))
         return key
 
@@ -1173,76 +1181,102 @@ class MediumTermMemory(MemoryStore):
         name = self.names.get(occurrence)
         return None if name is None else name.reading
 
-    def value_of(self, reference, *, timeline=0, live_candidate=False, references=None):
-        """Read held state after an event, otherwise join the live references.
-
-        The model's meanings are detached at this host boundary, just as the
-        stored MTM state is. Standalone numerical pools have no dictionary or
-        occurrence owner and retain their explicit value API.
-        """
-        token = self.token_of(reference)
-        if token is None:
-            return None
-        entry = self.entries[token]
-        if type(timeline) is not int or not 0 <= timeline < len(entry.timelines):
-            raise ValueError(f'identity {token!r} has no timeline {timeline}')
-        stored = entry.timelines[timeline].value
-        owner_reference = getattr(self, '_owner', None)
-        if owner_reference is None:
-            from Occurrence import AddressIndex
-            held_names = [(address, name.reading) for address, name in self.names.items()
-                          if name.token == token]
-            semantic = any(reading is not None or AddressIndex.key(address) != address or
-                           isinstance(address, tuple) and address[:1] in (('name',), ('stm',), ('sym',))
-                           for address, reading in held_names)
-            if semantic or entry.native is not None or entry.symbol is not None:
-                raise ValueError(f'identity {token!r} holds references without an owner')
-            return stored
-        owner = owner_reference()
+    def read_member(self, address, concept=None, *, live=False):
+        """Read an entry and its denoted concept; MTM owns neither value."""
+        reference = getattr(self, '_owner', None)
+        owner = None if reference is None else reference()
         if owner is None:
-            raise ValueError(f'identity {token!r} has lost its reference owner')
-        if timeline or any(branch.events for branch in entry.timelines):
-            return stored
-        derived = getattr(owner.similarity_codebook, 'mereology', None)
-        start = 0 if derived is None else derived.percept_event_width
-        if getattr(derived, 'meaning_pairs', None) == 0 or start == stored.numel():
-            return stored
+            raise ValueError('MTM reference read requires its STM/LTM owner')
+        from MemberRead import read
+        value = read(owner, address, concept)
+        return value if live else self._value(value)
+
+    def event_value(self, event, *, live=False):
+        return self.read_member(event.occurrence, live=live)
+
+    def member_references(self, reference, *, timeline=0):
+        key = None if isinstance(reference, Token) else self.token_of(reference)
+        if key is None and not isinstance(reference, Token):
+            return ()
+        entry = reference if isinstance(reference, Token) else self.entries[key]
+        if not 0 <= timeline < len(entry.timelines):
+            raise ValueError(f'identity {key!r} has no timeline {timeline}')
+        concepts = entry.refinement.get('member_concepts', {})
+        members = list(entry.refinement.get('members', ()))
+        covered = {address for address, concept in members}
+        members.extend((address, concepts.get(address, self.reading_of(address)))
+                       for address in entry.occurrences if address not in covered)
+        if not members and key is not None and key[:1] == ('name',):
+            members.append((key, key[1]))
+        members.extend((event.occurrence, None) for event in entry.timelines[timeline].events
+                       if event.role == 0 and event.before is not None)
+        members.extend((('sym', cid), cid) for cid in dict.fromkeys(
+            cid for cid in (entry.native, entry.symbol) if cid is not None))
+        return tuple(dict.fromkeys(members))
+
+    def value_of(self, reference, *, timeline=0, live_candidate=False, references=None):
+        """Compute the collection from its member references on every read."""
+        token = None if isinstance(reference, Token) else self.token_of(reference)
+        if token is None and not isinstance(reference, Token):
+            return None
+        entry = reference if isinstance(reference, Token) else self.entries[token]
         if entry.order is not None:
-            # Consolidation candidates have weighted concept support rather
-            # than mention names. Their existing live read remains separate.
+            owner = self._owner()
             from FamiliarTier import centroid
             value = centroid(owner, entry.support)
             return value if live_candidate else self._value(value)
-        if references is None:
-            references = [(address, name.reading) for address, name in self.names.items()
-                          if name.token == token]
-        held = tuple(dict.fromkeys(cid for cid in (entry.native, entry.symbol) if cid is not None))
-        if not references and not held:
-            raise ValueError(f'identity {token!r} has no name or mention references')
-        store, joined = owner._closed_clause_store(), None
-        alloc = owner._concept_allocator
-        for address, reading in (*references, *((('sym', cid), cid) for cid in held)):
-            is_word = reading is not None and 'word' in alloc.symbol_types.get(reading, ())
-            if is_word or address[:1] == ('sym',):
-                concept = owner.interpret.referent(reading) if is_word else reading
-                row = owner._csw_row_of(concept)
-                if row is None:
-                    raise ValueError(f'identity {token!r} reference {address!r} has unavailable reading {reading}, concept {concept}')
-                value = owner.similarity_codebook.lookup_rows([row])[0]
-            else:
-                location = None if store is None else store.location(address)
-                if not isinstance(location, int):
-                    raise ValueError(f'identity {token!r} has unavailable occurrence reference {address!r}')
-                value = store.point_of_row(address[-1])
-            if value is None:
-                raise ValueError(f'identity {token!r} reference {address!r} has no content')
-            if value.shape != stored.shape:
-                raise ValueError(f'identity {token!r} reference {address!r} has a different content width')
-            value = self._value(value).to(stored)
-            joined = value if joined is None else torch.maximum(joined, value)
-        current = self._snapshot_tensor(stored)
-        current[start:] = joined[start:]
-        return current
+        members = self.member_references(entry if token is None else token, timeline=timeline)
+        # A participation witness without forward operands records an event,
+        # but does not replace its participant's state with the whole clause.
+        events = [event for event in entry.timelines[timeline].events
+                  if event.role == 0 and event.before is not None]
+        if events:
+            latest = events[-1]
+            clock = entry.refinement.get('event_links', {}).get(latest.occurrence)
+            later = () if clock is None or timeline != 0 else tuple((address, self.reading_of(address))
+                for address in entry.occurrences
+                if entry.refinement.get('mentions', {}).get(address, (None, -1))[1] > clock[1])
+            members = ((latest.occurrence, None), *later)
+        if references is not None and not events:
+            members = tuple(dict.fromkeys((*references, *members)))
+        if not members:
+            raise ValueError(f'identity {token!r} has no member references')
+        values = [self.read_member(address, concept, live=live_candidate)
+                  for address, concept in members]
+        if any(value.shape != values[0].shape for value in values):
+            raise ValueError(f'identity {token!r} references have different widths')
+        return torch.stack(values).amax(0)
+
+    def record_link(self, reference, occurrence, stream, *, kind=None, order=None):
+        """The member's path clock is the current kept close, not world time."""
+        key = self.token_of(reference)
+        if key is None:
+            raise ValueError('link clock requires a retained collection')
+        entry = self.entries[key]
+        refinement = dict(entry.refinement)
+        mentions = dict(refinement.get('mentions', {}))
+        mentions[occurrence] = (stream, self.closes.get(stream, 0)+1)
+        refinement['mentions'] = mentions
+        if kind is not None:
+            if refinement.get('member_kind', kind) != kind:
+                raise ValueError('a collection cannot mix member kinds')
+            refinement.setdefault('member_kind', kind)
+        if order is not None:
+            if refinement.get('member_order', order) != order:
+                raise ValueError('a collection cannot mix member orders')
+            refinement.setdefault('member_order', order)
+        self.entries[key] = replace(entry, refinement=refinement)
+        self.keep_access(key, stream)
+        return key
+
+    def in_window(self, reference, stream):
+        key = self.token_of(reference)
+        if key is None:
+            return False
+        mentions = self.entries[key].refinement.get('mentions', {})
+        latest = max((clock for member_stream, clock in mentions.values()
+                      if member_stream == stream), default=None)
+        return latest is not None and self.closes.get(stream, 0)+1-latest <= self.horizon
 
     def open(self, occurrence, *, kind, when, value, reading=None, native=None, pending=None, where=None,
              transient=None, retain=()):
@@ -1258,16 +1292,30 @@ class MediumTermMemory(MemoryStore):
         if occurrence in self.entries:
             entry = self.entries[occurrence]
             self.entries[occurrence] = entry.with_actual(count=entry.count + 1,
-                when=when, value=torch.maximum(self.value_of(occurrence).to(value), value),
+                when=when,
                 pending=entry.pending and pending, where=self._where(where, entry.where))
             self.names[occurrence] = Name(occurrence, reading)
             return occurrence
         self._room(retain)
         identity = self._allocate_id(transient)
-        self.entries[occurrence] = Token((occurrence,), kind, 1, when, (Timeline((), value),),
+        self.entries[occurrence] = Token((occurrence,), kind, 1, when, (Timeline(()),),
             native=native, pending=pending, transient=identity, where=self._where(where))
         self.names[occurrence] = Name(occurrence, reading)
         return occurrence
+
+    def append_path(self, key, occurrence, *, kind, when, where, stream, order, concept=None):
+        """Collections may share a member; a name still has one referent."""
+        if key is None:
+            key = ('collection', kind, occurrence, concept)
+            if key not in self.entries:
+                self._room()
+                self.entries[key] = Token((), None, 0, when, (Timeline(()),),
+                    transient=self._allocate_id(), where=self._where(where))
+        entry = self.entries[key]
+        members = entry.occurrences if occurrence in entry.occurrences else (*entry.occurrences, occurrence)
+        self.entries[key] = replace(entry, occurrences=members, count=entry.count+1,
+            when=when, where=self._where(where, entry.where))
+        return self.record_link(key, occurrence, stream, kind=kind, order=order)
 
     def named(self, word, *, value, when=0):
         """Read a name's pending identity; first sight has no kept occurrence."""
@@ -1283,7 +1331,7 @@ class MediumTermMemory(MemoryStore):
         key = ('name', word)
         self._room()
         self.entries[key] = Token((), None, 0, int(when),
-            (Timeline((), self._value(value)),), pending=True,
+            (Timeline(()),), pending=True,
             transient=self._allocate_id(), where=self._where(None))
         self.names[key] = Name(key, word)
         return key
@@ -1304,62 +1352,43 @@ class MediumTermMemory(MemoryStore):
         uses = entry.occurrences
         if occurrence not in uses:
             uses += (occurrence,)
-        current = self.value_of(token)
-        joined = current if value is None else torch.maximum(current.to(value), self._value(value))
+        if value is not None:
+            self._value(value)
         self.entries[token] = entry.with_actual(occurrences=uses,
             kind=kind if entry.kind is None else entry.kind,
             pending=entry.pending and kind in (None, NULL_CONCEPT),
-            count=entry.count + 1, when=when, value=joined, where=self._where(where, entry.where))
+            count=entry.count + 1, when=when, where=self._where(where, entry.where))
         self.names[occurrence] = Name(token, reading)
         return token
 
     def alternative(self, token, *, when, before=None):
-        """Continue the latest branch, opening it from the actual prefix once."""
+        """Continue a reference path from the actual prefix, without a value copy."""
         key = self.token_of(token)
         if key is None:
             raise ValueError('an alternative requires a retained identity')
         entry = self.entries[key]
         if len(entry.timelines) == 1:
-            value = self.value_of(key).clone() if before is None else self._value(before)
-            if value.shape != entry.value.shape:
-                raise ValueError('alternative value has a different width')
             self.entries[key] = replace(entry, when=when,
-                timelines=(*entry.timelines, Timeline(entry.events, value)))
-        return len(self.entries[key].timelines) - 1
+                timelines=(*entry.timelines, Timeline(entry.events)))
+        return len(self.entries[key].timelines)-1
 
-    def update(self, token, value, *, when, timeline=0):
-        key = self.token_of(token)
-        if key is None:
-            raise ValueError('cannot update an unretained identity')
-        entry = self.entries[key]
-        if type(timeline) is not int or not 0 <= timeline < len(entry.timelines):
-            raise ValueError('cannot update an absent timeline')
-        if not any(branch.events for branch in entry.timelines):
-            raise ValueError(f'cannot update identity {key!r} without an event; retain its written reference')
-        value = self._value(value)
-        if value.shape != entry.value.shape:
-            raise ValueError('timeline value has a different width')
-        self.entries[key] = replace(entry, when=when, timelines=tuple(
-            Timeline(item.events, value) if index == timeline else item
-            for index, item in enumerate(entry.timelines)))
+
 
     def event(self, token, occurrence, *, verb, role, when, before=None, basis=None,
-              after=None, modifiers=(), timeline=0, case_value=None, verb_meaning=None):
+              modifiers=(), timeline=0, case_value=None, verb_meaning=None):
         key = self.token_of(token)
-        if key is None or role not in (0, 2) or type(verb) is not int:
+        if key is None or role not in (0, 2) or type(verb) is not int or verb <= 0:
             raise ValueError('an event requires a retained identity, verb and participant role')
         entry = self.entries[key]
         if type(timeline) is not int or not 0 <= timeline < len(entry.timelines):
             raise ValueError('an event requires a retained timeline')
         old = entry.timelines[timeline]
-        current = (self.value_of(key), *(item.value for item in entry.timelines[1:]))
-        if case_value is not None and (self._value(case_value).shape != old.value.shape or
+        if case_value is not None and (self._value(case_value).shape != self.value_of(key).shape or
                                      bool(((case_value < 0) | (case_value > 1)).any())):
             raise ValueError('an event case test requires its native content shape and chart')
         event = Event(occurrence, verb, role, when,
             None if before is None else self._value(before),
             self._value(basis) if torch.is_tensor(basis) else basis,
-            after=None if after is None else self._value(after),
             modifiers=tuple(self._value(value) for value in modifiers),
             case_value=None if case_value is None else self._value(case_value),
             verb_meaning=None if verb_meaning is None else self._value(verb_meaning))
@@ -1370,13 +1399,18 @@ class MediumTermMemory(MemoryStore):
             events = tuple(event if item is previous else item for item in old.events)
         else:
             events = (*old.events, event)
-        self.entries[key] = replace(entry, when=when, timelines=tuple(
-            Timeline(events if index == timeline else item.events, current[index])
+        refinement = dict(entry.refinement)
+        stream = next(reversed(self.accesses.get(key, {})), None)
+        links = dict(refinement.get('event_links', {}))
+        links[occurrence] = (stream, self.closes.get(stream, 0)+1)
+        refinement['event_links'] = links
+        self.entries[key] = replace(entry, when=when, refinement=refinement, timelines=tuple(
+            Timeline(events if index == timeline else item.events)
             for index, item in enumerate(entry.timelines)))
 
     def _detach(self, occurrence):
         """Detach a mention; an event with this address has its own owner."""
-        if occurrence in self.entries and self.entries[occurrence].order is not None:
+        if occurrence in self.entries and (self.entries[occurrence].order is not None or occurrence[:1] == ('collection',)):
             self._release_id(self.entries.pop(occurrence))
             self.accesses.pop(occurrence, None)
             return
@@ -1395,8 +1429,19 @@ class MediumTermMemory(MemoryStore):
         self._detach(occurrence)
         # One event can witness a subject and an object in different identities.
         for token, entry in tuple(self.entries.items()):
-            self.entries[token] = replace(entry, timelines=tuple(
-                Timeline(tuple(event for event in timeline.events if event.occurrence != occurrence), timeline.value)
+            uses = tuple(member for member in entry.occurrences if member != occurrence)
+            if token[:1] == ('collection',) and not uses:
+                self._release_id(entry)
+                self.entries.pop(token)
+                self.accesses.pop(token, None)
+                continue
+            refinement = dict(entry.refinement)
+            refinement['members'] = tuple(member for member in refinement.get('members', ()) if member[0] != occurrence)
+            for name in ('mentions', 'event_links', 'member_concepts'):
+                if name in refinement:
+                    refinement[name] = {key: value for key, value in refinement[name].items() if key != occurrence}
+            self.entries[token] = replace(entry, occurrences=uses, refinement=refinement, timelines=tuple(
+                Timeline(tuple(event for event in timeline.events if event.occurrence != occurrence))
                 for timeline in entry.timelines))
 
     def merge(self, token, into, *, when):
@@ -1407,12 +1452,24 @@ class MediumTermMemory(MemoryStore):
         if source == target:
             return target
         previous, antecedent = self.entries[source], self.entries[target]
+        for field in ('member_kind', 'member_order'):
+            left, right = previous.refinement.get(field), antecedent.refinement.get(field)
+            if left is not None and right is not None and left != right:
+                raise ValueError(f'a merge cannot mix collection kinds or orders: {field} {left!r} != {right!r}')
+        if previous.refinement.get('member_kind') in ('state', 'event', 'percept'):
+            from IdentityRows import meet_ratios
+            left, right = self.value_of(source), self.value_of(target)
+            covered, covers = meet_ratios(left, right)
+            if not bool((covered == 1) | (covers == 1)):
+                raise ValueError('a merge requires containment between its collections')
+        mentions = {**previous.refinement.get('mentions', {}), **antecedent.refinement.get('mentions', {})}
+        members = tuple(dict.fromkeys((*antecedent.occurrences, *previous.occurrences)))
+        members = tuple(sorted(members, key=lambda member: mentions.get(member, (None, -1))[1]))
         self.entries[target] = antecedent.with_actual(
-            occurrences=antecedent.occurrences + previous.occurrences,
+            occurrences=members,
             count=antecedent.count + previous.count, when=when,
             kind=previous.kind if antecedent.kind is None else antecedent.kind,
             pending=antecedent.pending and previous.pending,
-            value=torch.maximum(self.value_of(target), self.value_of(source).to(antecedent.value)),
             events=antecedent.events + tuple(event for event in previous.events
                 if not any((other.occurrence, other.role) == (event.occurrence, event.role)
                            for other in antecedent.events)))
@@ -1424,6 +1481,9 @@ class MediumTermMemory(MemoryStore):
         refinement = dict(self.entries[target].refinement)
         refinement['mentions'] = {**previous.refinement.get('mentions', {}),
                                   **refinement.get('mentions', {})}
+        refinement['members'] = tuple(dict.fromkeys((*previous.refinement.get('members', ()), *refinement.get('members', ()))))
+        for field in ('member_concepts', 'event_links'):
+            refinement[field] = {**previous.refinement.get(field, {}), **refinement.get(field, {})}
         self.entries[target] = replace(self.entries[target], refinement=refinement)
         for stream, clock in self.accesses.pop(source, {}).items():
             retained = self.accesses.setdefault(target, {})
@@ -1485,9 +1545,9 @@ class MediumTermMemory(MemoryStore):
         def event_state(event):
             return (event.occurrence, event.verb, event.role, event.when,
                 snapshot(event.before), snapshot(event.basis), event.taught,
-                snapshot(event.after), tuple(map(snapshot, event.modifiers)), event.modal_taught,
+                tuple(map(snapshot, event.modifiers)), event.modal_taught,
                 snapshot(event.case_value), snapshot(event.verb_meaning))
-        return dict(version=11, candidate_counter=self.candidate_counter, field_width=self.field_width,
+        return dict(version=12, candidate_counter=self.candidate_counter, field_width=self.field_width,
             transient_ids=snapshot(self.transient_ids), transient_used=snapshot(self.transient_used),
             closes=tuple(self.closes.items()),
             accesses=tuple((key, tuple(value.items())) for key, value in self.accesses.items()),
@@ -1496,7 +1556,7 @@ class MediumTermMemory(MemoryStore):
             native=entry.native, pending=entry.pending, symbol=entry.symbol, transient=entry.transient, where=snapshot(entry.where),
             order=entry.order, support=dict(entry.support), mass=entry.mass,
             readings=entry.readings, refinement=copy.deepcopy(entry.refinement),
-            timelines=tuple((tuple(map(event_state, timeline.events)), snapshot(timeline.value))
+            timelines=tuple(tuple(map(event_state, timeline.events))
                             for timeline in entry.timelines)) for key, entry in self.entries.items()),
             names=tuple((mention, name.token, name.reading) for mention, name in self.names.items()))
 
@@ -1508,8 +1568,8 @@ class MediumTermMemory(MemoryStore):
             self.transient_used.zero_()
             self.candidate_counter = 0
             return
-        if not isinstance(state, dict) or state.get('version') not in (8, 9, 10, 11):
-            raise ValueError('MTM checkpoint requires transient pool version 8, 9, 10 or 11')
+        if not isinstance(state, dict) or state.get('version') not in (8, 9, 10, 11, 12):
+            raise ValueError('MTM checkpoint requires transient pool version 8, 9, 10, 11 or 12')
         counter = state.get('candidate_counter', 0)
         if type(counter) is not int or counter < 0 or state.get('field_width', self.field_width) != self.field_width:
             raise ValueError('candidate checkpoint disagrees with construction')
@@ -1539,11 +1599,12 @@ class MediumTermMemory(MemoryStore):
                     'when', 'native', *required)) <= record.keys():
                 raise ValueError('incomplete identity checkpoint entry')
             key, uses = record['key'], tuple(record['occurrences'])
+            collection = isinstance(key, tuple) and len(key) in (3, 4) and key[0] == 'collection' and sentence(key[2])
             candidate = (isinstance(key, tuple) and len(key) == 2 and key[0] == 'candidate'
                          and type(key[1]) is int and 0 <= key[1] < counter)
             if (key in entries or (candidate and uses) or (not candidate and
-                    (not (address(key) or named(key)) or not all(map(address, uses))
-                     or (not named(key) and (not uses or uses[0] != key))
+                    (not (address(key) or named(key) or collection) or not all(map(sentence if collection else address, uses))
+                     or (not named(key) and not collection and key not in uses)
                      or len(set(uses)) != len(uses)))):
                 raise ValueError('invalid identity checkpoint membership')
             order, support = record.get('order'), self._support(record.get('support', {}))
@@ -1563,19 +1624,15 @@ class MediumTermMemory(MemoryStore):
                 raise ValueError('identity checkpoint requires an actual timeline')
             timelines = []
             for timeline in saved:
-                if not isinstance(timeline, (tuple, list)) or len(timeline) != 2:
-                    raise ValueError('invalid identity checkpoint timeline')
-                history, value = timeline
-                value = self._value(value)
-                expected = (timelines[0].value if timelines else
-                            next(iter(entries.values())).value if entries else value)
-                if value.shape != expected.shape:
-                    raise ValueError('identity checkpoint values have different widths')
-                if device is not None:
-                    value = value.to(device)
-                size = 12 if state['version'] >= 11 else 11 if state['version'] >= 7 else 10 if state['version'] >= 5 else 7 if state['version'] == 4 else 4
+                if state['version'] < 12:
+                    if not isinstance(timeline, (tuple, list)) or len(timeline) != 2:
+                        raise ValueError('invalid identity checkpoint timeline')
+                    history, _retired_value = timeline
+                    history = tuple((*event[:7], *event[8:]) for event in history)
+                else:
+                    history = timeline
                 if not isinstance(history, (tuple, list)) or any(
-                        not isinstance(event, (tuple, list)) or len(event) != size for event in history):
+                        not isinstance(event, (tuple, list)) or len(event) not in (10, 11) for event in history):
                     raise ValueError('invalid identity checkpoint event')
                 events = tuple(Event(*event) for event in history)
                 for event in events:
@@ -1586,24 +1643,33 @@ class MediumTermMemory(MemoryStore):
                             or (event.basis is not None and not torch.is_tensor(event.basis)
                                 and (type(event.basis) is not int or event.basis < -1))):
                         raise ValueError('invalid identity event basis or teacher metadata')
-                    for snapshot in (event.before, event.after, event.case_value, event.verb_meaning, *event.modifiers):
-                        if snapshot is not None and self._value(snapshot).shape != value.shape:
-                            raise ValueError('invalid identity event snapshot')
-                    if torch.is_tensor(event.basis) and self._value(event.basis).shape != value.shape:
+                    snapshots = [value for value in (event.before, event.case_value, event.verb_meaning,
+                                 *event.modifiers) if value is not None]
+                    if snapshots and any(self._value(value).shape != snapshots[0].shape for value in snapshots):
                         raise ValueError('invalid identity event snapshot')
+                def move(value):
+                    value = self._value(value)
+                    return value if device is None else value.to(device)
                 events = tuple(replace(event,
-                    before=None if event.before is None else self._value(event.before).to(value),
-                    after=None if event.after is None else self._value(event.after).to(value),
-                    case_value=None if event.case_value is None else self._value(event.case_value).to(value),
-                    verb_meaning=None if event.verb_meaning is None else self._value(event.verb_meaning).to(value),
-                    modifiers=tuple(self._value(item).to(value) for item in event.modifiers),
-                    basis=self._value(event.basis).to(value) if torch.is_tensor(event.basis) else event.basis)
+                    before=None if event.before is None else move(event.before),
+                    case_value=None if event.case_value is None else move(event.case_value),
+                    verb_meaning=None if event.verb_meaning is None else move(event.verb_meaning),
+                    modifiers=tuple(move(item) for item in event.modifiers),
+                    basis=move(event.basis) if torch.is_tensor(event.basis) else event.basis)
                     for event in events)
                 if (any(not sentence(event.occurrence) or event.role not in (0, 2) or
                         type(event.verb) is not int or event.verb <= 0 or type(event.when) is not int
                         for event in events) or len({(event.occurrence, event.role) for event in events}) != len(events)):
                     raise ValueError('invalid identity checkpoint event')
-                timelines.append(Timeline(events, value))
+                timelines.append(Timeline(events))
+            refinement = record.get('refinement', {})
+            if not isinstance(refinement, dict):
+                raise ValueError('invalid identity checkpoint refinement')
+            for member in refinement.get('members', ()):
+                if (not isinstance(member, (tuple, list)) or len(member) != 2 or member[0] not in uses
+                        or not (symbol(member[1]) or isinstance(member[1], tuple) and len(member[1]) == 2
+                            and member[1][0] == 'bp' and type(member[1][1]) is int and member[1][1] >= 0)):
+                    raise ValueError('invalid identity checkpoint member reference')
             entries[key] = Token(uses, record['kind'], record['count'], record['when'],
                                  tuple(timelines), record['native'], pending, record.get('symbol'),
                                  record.get('transient'), self._where(record.get('where')),
@@ -1618,7 +1684,7 @@ class MediumTermMemory(MemoryStore):
                 raise ValueError('invalid identity checkpoint name')
             names[mention] = Name(token, reading)
         if (len(entries) > self.capacity or len(names) != sum(len(entry.occurrences)
-                for entry in entries.values()) + sum(named(mention) for mention in names)):
+                for key, entry in entries.items() if key[:1] != ('collection',)) + sum(named(mention) for mention in names)):
             raise ValueError('identity checkpoint exceeds capacity or omits a name')
         clocks, accesses = {}, {}
         if state['version'] >= 3:
@@ -1633,7 +1699,8 @@ class MediumTermMemory(MemoryStore):
                         type(clock) is not int or not 0 <= clock <= clocks[stream]
                         for stream, clock in value.items()) for key, value in accesses.items())):
                 raise ValueError('invalid identity checkpoint expiry metadata')
-        claimed = [entry.transient for entry in entries.values() if entry.symbol is None]
+        claimed = [entry.transient for entry in entries.values() if entry.symbol is None
+                   and 'promoted_percept' not in entry.refinement]
         if (any(type(identity) is not int or identity not in self.transient_ids.tolist() for identity in claimed)
                 or len(claimed) != len(set(claimed))
                 or any(entry.transient is not None for entry in entries.values() if entry.symbol is not None)
@@ -1643,6 +1710,9 @@ class MediumTermMemory(MemoryStore):
         self.entries, self.names = entries, names
         self.closes, self.accesses = clocks, accesses
         self.candidate_counter = counter
+        self.migration_report = dict(source=state['version'], target=12,
+            dropped_values=sum(len(record['timelines']) for record in state['entries']) if state['version'] < 12 else 0,
+            dropped_event_after=sum(len(timeline[0]) for record in state['entries'] for timeline in record['timelines']) if state['version'] < 12 else 0)
 
 
 class LTM0(OccurrenceRows, ClauseRows, EntryRead, MemoryStore, Layer):
@@ -1660,7 +1730,7 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, MemoryStore, Layer):
     KINDS = ("unverified", "fact", "question", "estimate", "observation", "inference", "cover")
 
     def __init__(self, nDim: int, capacity: int = 1024, content_width=None, *, percept_width=None,
-                 stream_capacity=None, recurrence_capacity=None, relation_capacity=8192):
+                 stream_capacity=None, recurrence_capacity=None, relation_capacity=8192, read_capacity=None):
         super().__init__(nDim, nDim)
         self.nDim = int(nDim)
         self.capacity = int(capacity)
@@ -1680,7 +1750,7 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, MemoryStore, Layer):
         self.when_start = self.percept_width - 4 if self.percept_width >= 8 else None
         self.register_buffer('percept_layout', torch.tensor(self.percept_width, dtype=torch.long))
         self.register_buffer('slots', torch.zeros(capacity, nDim))
-        self.ltm_window = int(TheXMLConfig.get('architecture.ltmWindow', default=1024))
+        self.ltm_window = int(TheXMLConfig.get('architecture.ltmWindow', default=1024) if read_capacity is None else read_capacity)
         if self.ltm_window <= 0:
             raise ValueError('ltmWindow must be a positive integer')
         # Ephemeral cued-read scratch: fixed at construction, never checkpointed.
@@ -1870,11 +1940,18 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, MemoryStore, Layer):
         bindings = dict(self._semantic_rows.get(address, {}).get('bindings', ()))
         ref = bindings.get('_identity')
         if not ref:
+            # An unresolved name's retained witness is the lexical concept.
+            # A later learned denotation cannot change this earlier member's
+            # order. Known readings write their selected concept as _identity.
+            names = tuple(bindings.get('_forward_references', ()))
+            owner = self.__dict__.get('_concept_owner')
+            if len(names) == 1 and names[0][0] == 0 and owner is not None and owner() is not None:
+                return owner()._concept_source_order(names[0][1], seen)
             return 0
         if ref[0] == 'ltm':
             child = self.location(ref)
             return -1 if child is None else self.order_of_row(child, seen)
-        if ref[0] == 'sym':
+        if ref[0] in ('sym', 'name'):
             owner = self.__dict__.get('_concept_owner')
             if owner is not None and owner() is not None:
                 return owner()._concept_source_order(ref[1], seen)
@@ -2133,8 +2210,12 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, MemoryStore, Layer):
             pending.extend(value)
         return tuple(dict.fromkeys(references))
 
-    @staticmethod
-    def _validate_constituent_graph(contexts, namespace):
+    def _external_occurrence_available(self, reference):
+        reader = getattr(self, '_external_memory', None)
+        store = None if reader is None else reader()
+        return store is not None and store is not self and store.location(reference) is not None
+
+    def _validate_constituent_graph(self, contexts, namespace):
         """Validate local semantic links before replacing owner metadata.
 
         All local references must resolve among the proposed records.
@@ -2144,7 +2225,7 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, MemoryStore, Layer):
         """
         for context in contexts.values():
             references = LTM0._context_occurrence_references(context)
-            if any(ref[2] not in contexts
+            if any(ref[2] not in contexts and not self._external_occurrence_available(ref)
                    for ref in references
                    if ref[:2] == ('ltm', namespace)):
                 raise ValueError("semantic context occurrence is unavailable")
@@ -2160,7 +2241,8 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, MemoryStore, Layer):
             return
         identifiers = set(int(identifier) for identifier
                           in self.address_keys[:len(self)].tolist())
-        if any(reference[2] not in identifiers for reference in references):
+        if any(reference[2] not in identifiers and not self._external_occurrence_available(reference)
+               for reference in references):
             raise ValueError("semantic constituent occurrence is unavailable")
 
     def read_structure(self, reference, *, max_nodes=128, max_depth=16,
@@ -3143,7 +3225,7 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, MemoryStore, Layer):
 
 class LTM1(MemoryStore, nn.Module):
     OCCURRENCE, SYMBOL, RELATION = OCCURRENCE, SYMBOL, RELATION
-    columns = ('refs', 'ref_kinds', 'truth_plus', 'truth_minus', 'access_count', 'surprise', 'percept', 'effective_plus', 'effective_minus', 'operator', 'grammar_operation')
+    columns = ('refs', 'ref_kinds', 'truth_plus', 'truth_minus', 'access_count', 'surprise', 'percept', 'effective_plus', 'effective_minus', 'operator_reference', 'operation_seat')
 
     def __init__(self, capacity=8192):
         super().__init__()
@@ -3161,8 +3243,8 @@ class LTM1(MemoryStore, nn.Module):
         self.register_buffer('truth_minus', torch.zeros(self.capacity))
         self.register_buffer('effective_plus', torch.zeros(self.capacity))
         self.register_buffer('effective_minus', torch.zeros(self.capacity))
-        self.register_buffer('operator', torch.full((self.capacity,), -1, dtype=torch.long))
-        self.register_buffer('grammar_operation', torch.full((self.capacity,), -1, dtype=torch.long))
+        self.register_buffer('operator_reference', torch.full((self.capacity,), -1, dtype=torch.long))
+        self.register_buffer('operation_seat', torch.full((self.capacity,), -1, dtype=torch.long))
         self.operation_catalog = ()
         from TrustGates import TrustGates
         self.gates = TrustGates()
@@ -3288,7 +3370,7 @@ class LTM1(MemoryStore, nn.Module):
         """Naming makes a live pair independent of learned-operation authority."""
         if not self.contains(row):
             raise IndexError('unavailable relation')
-        self.grammar_operation[row] = -1
+        self.operation_seat[row] = -1
         self._effective_source = None
 
     def _check_extra_state(self, value):
@@ -3325,7 +3407,7 @@ class LTM1(MemoryStore, nn.Module):
         trust = None if owner is None else owner.similarity_codebook.trust
         occupations = None if self._occupation_owner is None else self._occupation_owner()
         revision = (self._topology_revision, self.truth_plus._version, self.truth_minus._version,
-                    self.operator._version, self.grammar_operation._version,
+                    self.operator_reference._version, self.operation_seat._version,
                     None if occupations is None else occupations.revision,
                     None if trust is None else trust.revision, self.gates.revision)
         if revision == self._effective_source:
@@ -3341,15 +3423,16 @@ class LTM1(MemoryStore, nn.Module):
             return 1.
         def write(row, operation_trust=1.):
             scale = min(endpoint(*ref) for ref in self.references(row))
-            operator = int(self.operator[row])
+            operator = int(self.operator_reference[row])
             if operator != -1:
                 scale = min(scale, concept(operator))
-            scale = min(scale, operation_trust)
+            seat = int(self.operation_seat[row])
+            scale = min(scale, operation_trust, 1. if seat == -1 else concept(seat))
             left, right = self.references(row)
             named = (owner is not None and left[0] == right[0] == SYMBOL
                      and left[1] in owner._concept_allocator.named_identities.get(right[1], ()))
-            operation = int(self.grammar_operation[row])
-            name = None if operation == -1 else self.operation_catalog[operation]
+            operation = int(self.operation_seat[row])
+            name = None if operation == -1 else occupations.seats[operation].name
             scale = min(scale, self.gates.cap(named=named, operation=name))
             self.effective_plus[row] = self.truth_plus[row] * scale
             self.effective_minus[row] = self.truth_minus[row] * scale
@@ -3357,10 +3440,9 @@ class LTM1(MemoryStore, nn.Module):
         # Occupation distributions use denotation to select an order. Native
         # named/membership pairs have no grammar factor: make those independent
         # authorities available before asking the categorizer for its factors.
-        from PartsOfSpeech import FIXED_OPERATIONS
         self._primitive_evidence = {row for row in rows
-            if (int(self.grammar_operation[row]) == -1 or
-                self.operation_catalog[int(self.grammar_operation[row])] in FIXED_OPERATIONS)
+            if (int(self.operation_seat[row]) == -1 or
+                occupations.seats[int(self.operation_seat[row])].fixed)
             and all(kind != RELATION for kind, _ in self.references(row))}
         self._refreshing_effective = True
         try:
@@ -3381,14 +3463,14 @@ class LTM1(MemoryStore, nn.Module):
                             write(row)
             factors = {}
             for row in rows:
-                operation = int(self.grammar_operation[row])
+                operation = int(self.operation_seat[row])
                 if operation != -1 and operation not in factors:
                     if occupations is None:
                         raise ValueError('relation operation has no loaded occupation owner')
-                    factors[operation] = occupations.operation(self.operation_catalog[operation])['trust']
+                    factors[operation] = concept(operation)
             for row in rows:
                 if row not in self._primitive_evidence:
-                    write(row, factors.get(int(self.grammar_operation[row]), 1.))
+                    write(row, factors.get(int(self.operation_seat[row]), 1.))
         finally:
             self._refreshing_effective = False
         self._effective_source = (*revision[:-2], None if trust is None else trust.revision, self.gates.revision)
@@ -3429,7 +3511,7 @@ class LTM1(MemoryStore, nn.Module):
         return tuple(zip(self.ref_kinds[int(row)].tolist(), self.refs[int(row)].tolist()))
 
     def _index(self):
-        version = (id(self.refs), self.refs._version, self.ref_kinds._version, self.operator._version, len(self))
+        version = (id(self.refs), self.refs._version, self.ref_kinds._version, self.operator_reference._version, len(self))
         if self._index_version == version:
             return
         pairs, parts, wholes, refs = {}, {}, {}, {}
@@ -3441,8 +3523,8 @@ class LTM1(MemoryStore, nn.Module):
             parts.setdefault(right, []).append(left)
             wholes.setdefault(left, []).append(right)
             dependencies = {left, right}
-            if int(self.operator[row]) != -1:
-                dependencies.add((SYMBOL, int(self.operator[row])))
+            if int(self.operator_reference[row]) != -1:
+                dependencies.add((SYMBOL, int(self.operator_reference[row])))
             for ref in dependencies:
                 refs.setdefault(ref, []).append(row)
         self._pairs, self._parts, self._wholes, self._references = pairs, parts, wholes, refs
@@ -3484,8 +3566,8 @@ class LTM1(MemoryStore, nn.Module):
             if row in seen:
                 continue
             seen.add(row)
-            if int(self.operator[row]) != -1:
-                references.add((SYMBOL, int(self.operator[row])))
+            if int(self.operator_reference[row]) != -1:
+                references.add((SYMBOL, int(self.operator_reference[row])))
             for reference in self.references(row):
                 references.add(reference)
                 if reference[0] == RELATION:
@@ -3497,7 +3579,7 @@ class LTM1(MemoryStore, nn.Module):
     @torch.no_grad()
     def add(self, part, whole, *, ref_kinds=(SYMBOL, SYMBOL), truth_plus=0., truth_minus=0.,
             when=None, where=None, surprise=-1., witness=True, symbol=None,
-            operator=None, grammar_operation=None):
+            operator=None, operation_seat=None):
         left, right = self.reference(part, ref_kinds[0]), self.reference(whole, ref_kinds[1])
         if (SYMBOL, NULL_CONCEPT) in (left, right):
             raise ValueError('a null-concept cannot be a relation endpoint')
@@ -3505,9 +3587,10 @@ class LTM1(MemoryStore, nn.Module):
             raise ValueError('relation evidence has two independent poles in [0, 1]')
         if operator is not None and (type(operator) is not int or operator == 0 or operator < -1):
             raise ValueError('relation operator must be a word identity or -1')
-        if grammar_operation is not None and (type(grammar_operation) is not int
-                or not -1 <= grammar_operation < len(self.operation_catalog)):
-            raise ValueError('relation operation must index the loaded catalogue or be -1')
+        if operation_seat not in (None, -1):
+            occupations = None if self._occupation_owner is None else self._occupation_owner()
+            if occupations is None or operation_seat not in occupations.seats.by_concept:
+                raise ValueError('relation operation must reference a seated operator concept')
         if not math.isfinite(float(surprise)) or not (surprise == -1. or 0. <= surprise <= 1.):
             raise ValueError('relation surprise must be unknown (-1) or in [0, 1]')
         bands = {}
@@ -3523,7 +3606,7 @@ class LTM1(MemoryStore, nn.Module):
         row = self.find(left, right)
         self._sort()
         new_row = row is None
-        if row is not None and operator is not None and int(self.operator[row]) != operator:
+        if row is not None and operator is not None and int(self.operator_reference[row]) != operator:
             raise ValueError('one tagged relation cannot have different lexical operators')
         # The first composition owns this provenance tag. Later closes merge
         # their poles without replacing that origin (including a cleared tag).
@@ -3556,8 +3639,8 @@ class LTM1(MemoryStore, nn.Module):
             self.relation_order[len(self)] = row
             self.count += 1
             self._order_revision = self._topology_revision
-            self.operator[row] = -1 if operator is None else operator
-            self.grammar_operation[row] = -1 if grammar_operation is None else grammar_operation
+            self.operator_reference[row] = -1 if operator is None or (SYMBOL, operator) in (left, right) else operator
+            self.operation_seat[row] = -1 if operation_seat is None else operation_seat
             if right[0] == SYMBOL and (left[0] == SYMBOL or right[1] in getattr(self, '_class_rows', ())):
                 self._symbol_epoch += 1
         elif symbol is not None and int(symbol) != row:
@@ -3592,7 +3675,7 @@ class LTM1(MemoryStore, nn.Module):
         if bool((erase & self.ref_kinds[:, 1].eq(SYMBOL)).any()):
             self._symbol_epoch += 1
         for name in self.columns:
-            getattr(self, name)[erase] = -1 if name in ('refs', 'surprise', 'operator', 'grammar_operation') else 0
+            getattr(self, name)[erase] = -1 if name in ('refs', 'surprise', 'operator_reference', 'operation_seat') else 0
         self.count.fill_(len(indices))
         self._sort()
         self.refresh_effective()
@@ -3637,6 +3720,23 @@ class LTM1(MemoryStore, nn.Module):
         return tuple(readings)
 
     def _load_from_state_dict(self, state, prefix, *args, **kwargs):
+        if prefix+'grammar_operation' in state:
+            old = state.pop(prefix+'grammar_operation')
+            current = torch.full_like(old, -1)
+            occupations = None if self._occupation_owner is None else self._occupation_owner()
+            for index, name in enumerate(self.operation_catalog):
+                if bool(old.eq(index).any()):
+                    if occupations is None:
+                        raise ValueError('operation migration requires its declared concept seats')
+                    current[old == index] = occupations.seats[name].concept
+            state[prefix+'operation_seat'] = current
+            operator = state.pop(prefix+'operator')
+            kinds, refs = state[prefix+'ref_kinds'], state[prefix+'refs']
+            endpoints = ((kinds == SYMBOL) & (refs == operator[:, None])).any(-1)
+            state[prefix+'operator_reference'] = torch.where(endpoints, -1, operator)
+            self.operation_migration = dict(renamed='grammar_operation -> operation_seat',
+                dropped='operator', redundant_endpoints=int((endpoints & operator.ne(-1)).sum()),
+                retained_nonendpoint_rows=((~endpoints) & operator.ne(-1)).nonzero().flatten().tolist())
         for name in ('layout_version', 'count'):
             value = state.get(prefix + name)
             if value is None or value.shape != () or value.dtype != torch.long:
@@ -3697,13 +3797,13 @@ class LTM1(MemoryStore, nn.Module):
             raise ValueError('invalid restored relation surprise')
         if bool((state[prefix + 'access_count'] < 0).any()):
             raise ValueError('invalid restored relation access count')
-        operators = state[prefix + 'operator']
+        operators = state[prefix + 'operator_reference']
         if bool(((operators < -1) | (operators == 0)).any()):
             raise ValueError('invalid restored relation operator')
-        operations = state.get(prefix + 'grammar_operation')
-        if (operations is None or operations.shape != self.grammar_operation.shape or operations.dtype != torch.long
-                or bool(((operations < -1) | (operations >= len(self.operation_catalog))).any())):
-            raise ValueError('invalid restored grammar operation catalogue index')
+        operations = state.get(prefix + 'operation_seat')
+        if (operations is None or operations.shape != self.operation_seat.shape or operations.dtype != torch.long
+                or bool(((operations < -1) | (operations == 0)).any())):
+            raise ValueError('invalid restored operator concept reference')
         order = state.get(prefix + 'relation_order')
         if order is None or order.shape != self.relation_order.shape or order.dtype != torch.long:
             raise ValueError('relation order differs from construction')
@@ -3722,3 +3822,39 @@ class LTM1(MemoryStore, nn.Module):
         self._index_version = None
         self._symbol_epoch += 1
         self._index()
+
+
+class STM1(LTM1):
+    """Ordered working branches, with LTM1's storage and tagged-reference reads."""
+    def expire(self):
+        self.retain(())
+
+
+class STM0(LTM0):
+    """Live ideas with LTM0's addressing and reads; expiry replaces durability."""
+    def __init__(self, width, capacity, *, percept_width=0, relation_capacity=2):
+        super().__init__(width, capacity, percept_width=percept_width,
+            relation_capacity=relation_capacity, read_capacity=capacity, stream_capacity=1)
+        import weakref
+        object.__setattr__(self, 'parts', STM1(relation_capacity))
+        self.parts._occurrence_store = weakref.ref(self)
+        self.generation = 0
+
+    def append_meaning(self, meaning, **kwargs):
+        # LTM0 owns the layout, address and context writer. Only retention of
+        # the live value differs. Functional replacement protects earlier reads.
+        live = meaning.roles[meaning.role_mask][0]
+        previous = self.slots
+        self.slots = previous.detach().clone()
+        index = super().append_meaning(meaning, **kwargs)
+        source = self.slots.clone()
+        with torch.enable_grad():
+            self.slots = previous.index_copy(0, source.new_tensor([index], dtype=torch.long), live[None])
+        return index
+
+    def expire(self):
+        if len(self):
+            self.slots = self.slots.detach().clone()
+        self.reset()
+        self.parts.expire()
+        self.generation += 1

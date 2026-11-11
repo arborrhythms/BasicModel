@@ -16,8 +16,6 @@ class Prediction:
 
 
 def rule_order(owner, row):
-    if getattr(owner, '_serial_concept_path', False):
-        return ()
     value = owner._expected_knowing[row].detach().amax(-1)
     return tuple(index for index in value.argsort(descending=True, stable=True).tolist()
                  if bool(value[index] > 0))
@@ -27,15 +25,12 @@ def open_prediction(model, present):
     owner = model._concept_owner()
     owner._serial_concept_path = bool(getattr(getattr(model, 'inputSpace', None), '_serial_word_major', False)
                                       or getattr(model, 'word_brackets', False) and getattr(model, 'serial_object_meta', False))
-    owner._concept_prediction_open = not owner._serial_concept_path
-    if owner._serial_concept_path:
-        model._concept_prediction = None
-        owner._expected_knowing.zero_()
-        return
+    owner._concept_prediction_open = True
     B = len(present)
     if B > owner.nStreams:
         raise RuntimeError('concept prediction exceeds constructed streams')
-    rows = torch.tensor(sorted(owner._row_to_concept()), device=present.device, dtype=torch.long)
+    rows = torch.tensor(sorted(row for row in owner._row_to_concept() if owner._row_order(row) == 0),
+                        device=present.device, dtype=torch.long)
     keys = owner.similarity_codebook.lookup_rows(rows).detach()[None].expand(B, -1, -1).clone()
     knowing = owner._observed_knowing[:B, rows].detach().clone()
     from Expectation import ActivationPredictor
@@ -58,7 +53,8 @@ def observe(model, field, addresses, present):
     valid_rows = torch.zeros_like(target[..., 0], dtype=torch.bool)
     for b in range(len(present)):
         rows = addresses[:, b] if addresses.ndim == 2 else addresses
-        valid = rows >= 0
+        valid = torch.tensor([int(index) >= 0 and owner._row_order(int(index)) == 0
+                              for index in rows.tolist()], device=rows.device)
         target[b].scatter_reduce_(0, rows[valid, None].expand(-1, 2),
                                  field[valid, b], reduce='amax', include_self=True)
         valid_rows[b, rows[valid]] = True
@@ -82,3 +78,13 @@ def loss(model):
     mask = prediction.target_rows
     error = (square * mask[..., None]).sum((1, 2)) / (2 * mask.sum(-1)).clamp_min(1)
     return torch.where(prediction.active, error, 0.)
+
+
+def complete(model, present, registry):
+    """Learn once from the kept carrier after its thought episode has ended."""
+    from SentenceField import descended, inventory, knowing
+    field = descended(model, knowing(model))
+    observe(model, field.evidence, inventory(model._concept_owner(), field), present)
+    value = loss(model)
+    if value is not None:
+        registry.error('expectation.concepts', value, 1., mask=present, category='expectation')

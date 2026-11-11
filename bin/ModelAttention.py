@@ -153,7 +153,6 @@ def stage_input(model):
         model._attention_meters=tuple(QueryWorkBudget(model.attention_budget) for _ in range(B))
     # Zero is the ordinary-composition control: no bracket walk or thought
     # read is performed. The stem still supplies every word to the VP path.
-    if model.attention_budget == 0:return
     if W == 0:return
     fi=getattr(model.perceptualSpace,'_forward_input',None) or {}
     texts=fi.get('word_texts') or ()
@@ -199,6 +198,8 @@ def stage_input(model):
     spans=torch.tensor(extents,device=slab.device,dtype=torch.long)
     live=active & (spans[...,1]>spans[...,0])
     spans=torch.where(live[...,None],spans,0)
+    model._attention_spans=spans
+    if model.attention_budget == 0:return
     ids=torch.tensor(identities,device=slab.device,dtype=torch.long)
     known=torch.tensor(known,device=slab.device,dtype=torch.bool)&live
     chooser=model._stm_reducer()
@@ -348,13 +349,15 @@ def forecast_percept(model, active):
             codes = owner.similarity_codebook.lookup_rows(
                 ids[None].expand(len(active),-1), streams=True)[...,:expectation.width]
             yield ids, codes.detach()
-    earlier = getattr(model,'_last_sentence_understanding',None)
-    completed = None
-    if earlier is not None:
-        from Expectation import ActivationPredictor
-        values = earlier.end_slots.detach()[...,:expectation.width]
-        occupied = torch.arange(values.shape[1],device=values.device)[None] < earlier.end_depth[:,None]
-        completed = ActivationPredictor.context_from(values,occupied)
+    from Expectation import ActivationPredictor
+    # The completed order-zero state belongs to stream slots. A previous
+    # batch's carrier has its own batch extent and cannot be threaded here.
+    indices = torch.tensor(sorted(row for row in owner._row_to_concept()
+        if owner._row_order(row) == 0), device=active.device, dtype=torch.long)
+    weights = owner._observed_knowing[:len(active), indices].detach().amax(-1)
+    codes = owner.similarity_codebook.lookup_rows(indices).detach()[..., :expectation.width]
+    values = codes[None] * weights[..., None]
+    completed = ActivationPredictor.context_from(values, weights > 0)
     return expectation.forecast(bank,len(active),completed=completed)
 
 

@@ -72,7 +72,9 @@ def test_program_reads_compact_journal_by_global_address_and_keeps_value_gradien
     trace = SimpleNamespace(_choice_values=frames, _choice_refs=refs,
         _choice_ref_relations=relations, _choice_journal_columns=columns)
     model = SimpleNamespace(_reconstruction_stack=lambda: trace,
-        inputSpace=SimpleNamespace(), symbolSpace=SimpleNamespace())
+        inputSpace=SimpleNamespace(), symbolSpace=SimpleNamespace(), languageSpace=SimpleNamespace(),
+        conceptualSpace=SimpleNamespace(stm=SimpleNamespace(
+            strata=SimpleNamespace(capture=lambda *args: None))))
     program = (torch.tensor([[2, 3]]),
         torch.tensor([[[0, -1, 0], [0, -1, 1], [1, 0, -1]]]),
         torch.tensor([[0, 1, 1]]), torch.tensor([[-1, -1, 12]]))
@@ -224,7 +226,9 @@ def test_program_keeps_the_identity_leaf_stamp_before_reference_resolution():
     model=SimpleNamespace(_reconstruction_stack=lambda:trace,inputSpace=SimpleNamespace(),
         symbolSpace=SimpleNamespace(_word_reference_orders=torch.tensor([[0,2]])),
         languageSpace=SimpleNamespace(resolve_lexical_references=resolve),
-        _concept_owner=lambda:SimpleNamespace(mtm=MediumTermMemory(n_vectors=512)))
+        _concept_owner=lambda:SimpleNamespace(mtm=MediumTermMemory(n_vectors=512)),
+        conceptualSpace=SimpleNamespace(stm=SimpleNamespace(
+            strata=SimpleNamespace(capture=lambda *args: None))))
     program=(torch.tensor([[0,1]]),torch.tensor([[[0,-1,0],[0,-1,1],[1,0,-1]]]),
              torch.tensor([[0,0,0]]),torch.tensor([[0,1,2]]))
     entry,=BasicModel._program_entries(model,program,torch.zeros(1,2,4),
@@ -328,7 +332,9 @@ def test_incomplete_stream_keeps_a_scoring_journal_but_cannot_admit_a_reading():
         _word_symbol_rows=lambda: rows, _word_symbol_concept_ids=lambda: rows,
         _answer_leaf_slab=lambda _: words, _word_lexical_forms=lambda *args: [(), ()],
         _derivation_program=lambda _: program, _reconstruction_stack=lambda: trace,
-        _tensor_sentence_roots_live=torch.ones(B, 1, 3 * D), _tensor_sentence_roots_depth=torch.tensor([[1], [-1]]))
+        _tensor_sentence_roots_live=torch.ones(B, 1, 3 * D), _tensor_sentence_roots_depth=torch.tensor([[1], [-1]]),
+        conceptualSpace=SimpleNamespace(stm=SimpleNamespace(
+            strata=SimpleNamespace(capture=lambda *args: None))))
     host._program_entries = MethodType(BasicModel._program_entries, host)
     _, scored = BasicModel._capture_reading_programs(host, sentence_slot=0, admit=False)
     assert all(entry is not None for entry in scored[0])

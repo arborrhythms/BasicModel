@@ -90,8 +90,8 @@ def generate_credit(language, audit, tops, features):
     return credit
 
 
-def stage_generate_credit(model, audit, tops, features=None, *, owner="decoder"):
-    """Keep the decoder's interim R booking separate from output's A credit."""
+def stage_generate_credit(model, audit, tops, features=None, *, owner="output"):
+    """Book the output grammar's departure credit on the output side."""
     held = getattr(model, '_sentence_' + owner + '_walk_credits', None)
     if held is not None and torch.is_grad_enabled():
         # The explored departure is credited even when the greedy walk wins.
@@ -149,7 +149,7 @@ def kept_walk(greedy, trace, explore, other, wins, action_index, replay):
     return result, kept
 
 
-def output_pair(realize,score,*,owner=None):
+def generation_pair(realize,score,*,owner=None,kind='output'):
     """Realize, then cost, both paths before returning either live graph.
 
     The scorer is loss-side only. It never enters the walk. Shared generate
@@ -157,9 +157,9 @@ def output_pair(realize,score,*,owner=None):
     """
     greedy,trace=realize(return_candidates=True)
     first=score(greedy)
-    departure=paired_departure(owner,'output',trace[1])
+    departure=paired_departure(owner,kind,trace[1])
     explore,other=realize(exploit_actions=trace[0],departure=departure,
-        departure_uniform=paired_action_draw(owner,'output',trace[3]))
+        departure_uniform=paired_action_draw(owner,kind,trace[3]))
     second=score(explore)
     residual = torch.stack((trace[3].detach(), other[3].detach()), 1)
     costs = torch.stack((first.detach(), second.detach()), -1) + residual.sum(-1)
@@ -177,9 +177,14 @@ def output_pair(realize,score,*,owner=None):
                  selected_residual=selected_residual,
                  greedy=trace[0].detach(), explore=other[0].detach(),
                  stable=(trace[0] == other[0]).all(-1))
-    result = replace(kept, trace=greedy.trace + (
+    return kept,audit
+
+
+def output_pair(realize,score,*,owner=None):
+    kept,audit=generation_pair(realize,score,owner=owner)
+    result = replace(kept, trace=kept.trace + (
         {'operation': 'generate:owner_comparison', 'owner': 'output',
-         'explore_kept': tuple(wins.tolist())},))
+         'explore_kept': tuple(audit['wins'].tolist())},))
     return result,audit
 
 
@@ -261,10 +266,12 @@ class ThoughtTrialState:
         carrier=getattr(getattr(model,'conceptualSpace',None),'subspace',None)
         if carrier is not None:
             owners.append((carrier,tuple(name for name in vars(carrier)
-                if name.startswith('_concept_'))+('_thought_occurrence',)))
+                if name.startswith('_concept_'))))
         expectation=getattr(getattr(model,'symbolSpace',None),'expectation',None)
         if expectation is not None:owners.append((expectation,('_inter_last_meaning',)))
         copy = _detached if detach else _copy_containers
+        from ThoughtStrata import snapshot
+        self.thought_strata = None if stm is None else (stm, snapshot(stm._thought_stores))
         self.saved=[(owner,{name:copy(getattr(owner,name)) for name in names if hasattr(owner,name)},names)
                     for owner,names in owners if owner is not None]
         for owner, values, names in self.saved:
@@ -272,6 +279,10 @@ class ThoughtTrialState:
                 values['_live_chunk_truth'] = values['_live_chunk_truth'].clone()
 
     def restore(self, *, effects_only=False):
+        if self.thought_strata is not None and not effects_only:
+            from ThoughtStrata import restore
+            stm, snapshot = self.thought_strata
+            restore(stm._thought_stores, snapshot)
         for owner,values,names in self.saved:
             if effects_only and ('_what_slots' in names or '_thought_contents' in names):
                 continue
@@ -284,7 +295,7 @@ class ThoughtTrialState:
                 owner._thought_clock = values['_thought_clock']
                 continue
             # A trial may introduce a knowing carrier for the first time.
-            dynamic=tuple(name for name in vars(owner) if name.startswith('_concept_')) if '_thought_occurrence' in names else ()
+            dynamic=tuple(name for name in vars(owner) if name.startswith('_concept_')) if any(name.startswith('_concept_') for name in names) else ()
             for name in set(names)|set(dynamic):
                 if name in values:object.__setattr__(owner,name,_copy_containers(values[name]))
                 elif name in vars(owner):delattr(owner,name)

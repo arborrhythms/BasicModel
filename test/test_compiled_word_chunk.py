@@ -108,6 +108,7 @@ def _harness(words, gates, *, chunk):
         _ar_part_reference_vectors=torch.zeros(batch, width, 8, dim),
         _ar_whole_reference_vectors=torch.zeros(batch, width, 8, dim),
         _ar_readout_coefficients=torch.ones(batch, width, 9),
+        _ar_basic_percept_ids=part_ids[..., 0].clone(),
         _ar_whole_reference_presence=torch.ones(batch, width, 3, 8),
         # These sentence-wide surfaces must not be sliced by the adapter.
         _ar_concept_lookup_rows=torch.arange(8).view(1, 8).expand(batch, -1),
@@ -940,9 +941,9 @@ def test_no_grad_fallback_retains_eager_stm_depth_semantics(
     closing = [[], []]
     end = BasicModel._clause_end_state
     for model, seen in zip((legacy, chunked), closing):
-        def capture(state, sid, clauses, row_addresses, seen=seen, model=model):
+        def capture(state, sid, clauses, row_addresses, written, seen=seen, model=model):
             seen.append(tuple(value.detach().clone() for value in state[0]))
-            return end(model, state, sid, clauses, row_addresses)
+            return end(model, state, sid, clauses, row_addresses, written)
         monkeypatch.setattr(model, '_clause_end_state', capture)
 
     with torch.no_grad():

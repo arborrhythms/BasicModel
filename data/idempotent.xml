@@ -88,6 +88,7 @@
   <PartSpace>
     <nInput>10</nInput>
     <nVectors>256</nVectors>
+    <basicPerceptCapacity>256</basicPerceptCapacity>
     <nDim>104</nDim>
     <nOutput>10</nOutput>
     <invertible>true</invertible>

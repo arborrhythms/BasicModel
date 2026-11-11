@@ -25,6 +25,7 @@
   <PartSpace>
     <nOutput>784</nOutput>
     <nVectors>784</nVectors>
+    <basicPerceptCapacity>784</basicPerceptCapacity>
   </PartSpace>
 
   <!-- Stage 1.D flat-slab invariant (2026-05-27): the invariant fires

@@ -101,7 +101,9 @@ def test_bound_use_reads_as_its_introduction_without_rewriting_rows(mode):
     groups = resolver.individuals(resolver.accessible(chunk_context(resolver, (frame,))))
     assert set(groups) == {introduction}
     assert pool.entries == before_read
-    assert not resolver.accessible(chunk_context(resolver, ())) and not resolver.individuals({})
+    assert resolver.accessible(chunk_context(resolver, ()))  # D4: the retained pool is accessible too.
+    assert not resolver.accessible(chunk_context(resolver, ()), include_pool=False)
+    assert not resolver.individuals({})
 
 
 def test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token():

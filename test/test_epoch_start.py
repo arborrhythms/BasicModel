@@ -200,7 +200,7 @@ def test_supply_outer_alone_keeps_authority_for_all_closing_nodes(node_kind):
     model=model_for(store._concept_owner(),store)
     begin(model)
     child=replace(part_clause(),evidence=(.5,.1),
-                  **({'identity':1} if node_kind=='identity' else
+                  **({'identity':{'handle': 1, 'event': None}} if node_kind=='identity' else
                      {'reference_request':{'mode':'mint'}} if node_kind=='request' else {}))
     outer=Clause(child.meaning,relation='operator',refs=(4,3,('clause',0)),
                  children=(child,),companions=(child,) if node_kind=='companion' else ())
@@ -583,6 +583,14 @@ def test_unstarted_checkpoint_preserves_setup_until_its_first_epoch_boundary(tmp
 
         checkpoint = tmp_path / 'unstarted.ckpt'
         model.save_weights(str(checkpoint))
+        model.End()
+        model.symbolSpace.soft_reset()
+        from Layers import GrammarLayer
+        GrammarLayer.set_chart_authority(None)
+        model = None
+        del owner, store, extras, allocators
+        import gc
+        gc.collect()
         restored = _make_model(_SERIAL_CONFIG)
         assert restored.load_weights(str(checkpoint), require_match=True)
         owner, store = restored._concept_owner(), restored.symbolSpace.ltm_store

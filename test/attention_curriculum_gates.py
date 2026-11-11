@@ -30,6 +30,13 @@ STAGES = [
       questions=['what is on mat ?','what is on rug ?','what is bigger than y ?','what is bigger than x ?'],answers=['cat','dog','x','y'])]
 
 
+def words_from_field(surface, where, orders):
+    """Render each trial's read order from common-decoder bytes."""
+    values = surface[:, 0].detach().long().cpu().tolist()
+    return [[bytes(values[b][int(where[b, w, 0]):int(where[b, w, 1])]).decode('utf8', 'replace')
+             for w in order] for b, order in enumerate(orders)]
+
+
 def present(model, stage, *, train=False, optimizer=None):
     from What import What
     fields = stage['fields']; B=len(fields)
@@ -54,17 +61,16 @@ def present(model, stage, *, train=False, optimizer=None):
         raw=model._last_sentence_field
         record=model._last_sentence_understanding
         trials=raw['trials'];wins=raw['wins']
-        recon=torch.where(wins[:,None,None],trials[-1]['reconstructed'],trials[0]['reconstructed'])
-        bad=torch.where(wins[:,None],trials[-1]['unavailable'],trials[0]['unavailable'])
-        orders=[];counts=[];compact=torch.zeros_like(recon)
+        owned = model._last_understanding.input_reconstruction
+        orders, counts = [], []
         for b in range(B):
-            selected=trials[-1 if bool(wins[b]) else 0]
-            order=[int(selected['positions'][read['action'][b]]) for read in selected['reads'] if bool(read['admitted'][b].any())]
-            orders.append(order);counts.append(len(order))
-            if order:compact[b,:len(order)]=recon[b,order]
-        readbacks=[' '.join(row) for row in words_from_leaves(compact,torch.tensor(counts),record.primed)]
-        free=model._last_decoder_trace
-        free_text=[' '.join(row) for row in words_from_leaves(*free[:2],record.primed)]
+            selected = trials[-1 if bool(wins[b]) else 0]
+            order = [int(selected['positions'][read['action'][b]]) for read in selected['reads']
+                     if bool(read['admitted'][b].any())]
+            orders.append(order); counts.append(len(order))
+        readbacks = [' '.join(row) for row in words_from_field(owned.event, record.open_field.where, orders)]
+        bad = owned.truncated
+        free_text = model._decode_reconstructed_inputs(owned.event, None)
         result.update(readbacks=readbacks,exact_readbacks=sum(a==b for a,b in zip(readbacks,fields)),
             free_readbacks=free_text,free_exact=sum(a==b for a,b in zip(free_text,fields)),
             inverse_unavailable=serial(bad),orders=orders,
@@ -192,7 +198,7 @@ def main():
         through_stage=args.through_stage,percepts=PERCEPTS,interruption=INTERRUPTION,novel=NOVEL,
         stages=[stage for stage in STAGES if stage['stage']<=args.through_stage],
         selection='Only stage 3 training names and teacher-forces each word; every measurement is a hard free read. Disabled is source order.',
-        reconstruction='Actual derivation with occurrence co-operands; undefined coordinates uncharged and reported. List reconstruction, free decoder and byte identity are separate from the stage 3 reads-and-CE gate.',
+        reconstruction='The common decoder reads the owned parallel field. Native word reconstruction and byte identity remain separate from the stage 3 reads-and-CE gate.',
         answers='Asked parts and supplied answers use the existing output-owned supervised answer path. Targets do not enter the scorer.',
         protocol='Each mode proceeds once through the declared corpus. Failed controls make the corresponding results uninterpretable; asked output gates require sentence reconstruction to pass in both modes.')
     (folder/'plan.json').write_text(json.dumps(plan,indent=2)+'\n')

@@ -1845,6 +1845,12 @@ and the ethical one in [Ethics](../../doc/Ethics.md#witnessing-plants-the-seeds-
 The mapping, with references, is in the
 [identity spec §5](plans/2026-10-23-identity-threading.md#5-grounding-the-psychological-stores-and-dharmakīrti-claude-2026-10-23-at-alecs-request).
 
+### Dual process and the reference file (2026-11-09)
+
+The object file remains MTM's origin at every level, including basic percepts: references describe what the file stores, not a change to its grounding. The file tracks continuity and supplies a candidate for the next-order concept; recurrence promotes that candidate. MTM's perceptual contents do not make its function separate from the development of conceptual space.
+
+In this design, Dharmakīrti's perception, *pratyakṣa*, free of conceptual construction (*kalpanāpoḍha*), corresponds to System 1. Identity across moments, the *santāna*, is attributed by conceptual determination, *adhyavasāya*, corresponding to System 2. Continuity opens the file; determination supplies the identity it becomes. Yogācāra's seventh consciousness, *manas*, imputes persistence: its imputation belongs to System 2, and the tracking on which it works to System 1. The proposed loop without a thinking step is the animal mind in this architectural reading; Kahneman's fast/slow distinction and Evans and Stanovich's autonomous Type 1 versus working-memory Type 2 distinction provide its modern dual-process comparison. Round 5 implements reference memory; the loop closing without grammar remains round 6's work.
+
 ## The Afflicted Mind and the Transformation of the Basis: Two Configurations of MTM (Alec's question, 2026-10-23)
 
 Alec: "Given the relation of MTM to the kliṣṭa-manas, describe how to make

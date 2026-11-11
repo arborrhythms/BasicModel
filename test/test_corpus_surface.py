@@ -103,7 +103,9 @@ def test_native_surface_dispatch_keeps_nested_counts_and_inverts(postposed):
             operation_values.append(values)
             operand_counts.append(counts)
         program = SimpleNamespace(actions=torch.tensor(actions),
-            operation_values=torch.stack(operation_values), operand_counts=torch.tensor(operand_counts))
+            operation_values=torch.stack(operation_values), operand_counts=torch.tensor(operand_counts),
+            leaves=torch.cat(leaves), concept_ids=torch.full((len(leaves),), -1, dtype=torch.long))
+        model.conceptualSpace.stm.strata.capture(program, language, 0)
         record = SimpleNamespace(word_values=torch.stack(leaves, 1), word_valid=torch.ones(1, 4, dtype=torch.bool),
             end_depth=torch.tensor([1]), end_slots=parent[:, None])
         decoded, unavailable, defined = reconstruct(language, record, [program], lambda b: range(4))

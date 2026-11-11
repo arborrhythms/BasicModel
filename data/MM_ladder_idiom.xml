@@ -167,6 +167,7 @@
     <nInput>8192</nInput>
     <nInputDim>136</nInputDim>
     <nVectors>4096</nVectors>
+    <basicPerceptCapacity>4096</basicPerceptCapacity>
     <!-- Allocate only this initial prefix.  Chunk promotion queues new rows
          during a word pass, then grows geometrically at the post-step boundary
          without exceeding this logical ceiling. -->

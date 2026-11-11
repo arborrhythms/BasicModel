@@ -602,3 +602,7 @@ November sweep.
 **Landed (2026-10-27).** BasicModel `a8a09a6acb`, "Land item 2.8: identity
 and property form subspaces", on `555e63e2f521`; the O1 atom-fill
 observation of §11 is carried to the next round that opens `WordIdentity`.
+
+## Dated amendment: basic percepts (2026-11-09)
+
+Item 2.0 round 5 moves the identity/property centroid and the containment premises into `BasicPercepts`. The two form subspaces are unchanged; order-0 concepts now collect basic rows rather than independent part/whole literals. Property membership reads stay live and replace the detached word fill. Compose-time whole and typed-slot reads use the same basic basis and the presence-weighted derivative. The full reverse is round 6's work. See the [basic-percepts design](2026-11-04-item2-0-basic-percepts.md).

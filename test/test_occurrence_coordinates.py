@@ -1,3 +1,4 @@
+from basic_fixtures import feature as basic_feature
 from functools import wraps
 
 import pytest
@@ -9,7 +10,7 @@ def test_reset_clears_only_the_selected_fields_time_band(tmp_path):
     from test_grounded_xor import grounded_model
     model, _ = grounded_model(tmp_path)
     cs = model._concept_owner()
-    cs.add_concept_feature(0, 'ps', 7, 1.)
+    basic_feature(cs, 0, 'ps', 7, 1.)
     spans = torch.tensor([[[0, 1]], [[0, 1]]])
     cs.cs_read_memberships((torch.tensor([[7], [7]]), spans, None,
                            torch.tensor([[65], [65]]), spans), spans)
@@ -67,16 +68,18 @@ def test_percept_group_keeps_each_members_band_and_one_field_time(tmp_path):
     from test_grounded_xor import grounded_model
     model, _ = grounded_model(tmp_path)
     cs = model._concept_owner()
-    cs.add_concept_feature(0, 'ps', 7, 1.)
+    basic_feature(cs, 0, 'ps', 7, 1.)
     spans = torch.tensor([[[0, 1]]])
     cs.cs_read_memberships((torch.tensor([[7]]), spans, None, torch.tensor([[65]]), spans), spans)
     field = cs._percept_field
     assert field.percept_where.shape[-1] == field.when_band.shape[-1] == 4
     for key, bands in zip(field.keys, field.percept_where):
-        role, group = key
-        group = group if isinstance(group, tuple) else (group,)
-        expected = torch.tensor(group) + model.where_registry.slices['parts' if role == 'ps' else 'wholes'][0]
-        torch.testing.assert_close(model.where_encoding.decode_index(bands[:len(group)]), expected)
+        role, bp = key
+        assert role == 'bp'
+        parts, wholes = cs.basic_percepts.occurrences[bp]
+        expected = torch.tensor([*(part + model.where_registry.slices['parts'][0] for part in parts),
+                                 *(whole + model.where_registry.slices['wholes'][0] for whole in wholes)])
+        torch.testing.assert_close(model.where_encoding.decode_index(bands[:len(expected)]), expected)
     torch.testing.assert_close(field.when_band,
         model.when_encoding.encode(1).expand_as(field.when_band))
 

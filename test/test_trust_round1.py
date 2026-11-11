@@ -253,8 +253,11 @@ def test_kept_word_views_use_written_content_and_for_radius_only():
     reading = SimpleNamespace(word_ids=torch.tensor([word]), leaves=content[None], symbol_where=None)
     bank.mereology.place_rows([row], torch.zeros(len(bank.W)), b'word-views')
     lengths = []
+    store = owner._closed_clause_store()
+    roots = [store.append_idea(content, document_key='views', sentence_index=i) for i in range(3)]
     for i in range(3):
-        commit_read_words(owner, reading, batch=0, document='views', position=i)
+        commit_read_words(owner, reading, batch=0, document='views', position=i,
+            written={'root_occurrence': store.occurrence_of(roots[i])})
         lengths.append(bank.lookup_rows(row)[3:7].norm().item())
         assert not bank.lookup_rows(row)[7:].any()
         assert bank.trust.lengths[row,1] == 0.
@@ -262,7 +265,8 @@ def test_kept_word_views_use_written_content_and_for_radius_only():
     torch.testing.assert_close(bank.lookup_rows(row)[:3], content[:3])
     assert bank.trust.views[row] == 3
     assert bank.trust.agreement[row] == pytest.approx(3.)
-    assert len(owner._fixture_occurrences) == len(owner._concept_allocator.parts) == 0
+    assert len(owner._fixture_occurrences) == len(roots)
+    assert len(owner._concept_allocator.parts) == 0
     agreement = bank.trust.agreement.clone()
     bank.W[row,0] = .9
     torch.testing.assert_close(bank.trust.agreement, agreement)
@@ -444,12 +448,12 @@ def test_lexical_operator_is_retained_and_composed_at_the_read():
     clause = Clause(ConceptualMeaning.from_description(atoms[1]),relation='operator',
                    refs=(a,operator,b),evidence=(.8,.2))
     row = store.write_clause(clause)[1]
-    assert int(store.parts.operator[row]) == operator
+    assert int(store.parts.operator_reference[row]) == operator
     assert tuple(map(float,store.parts.evidence(row))) == pytest.approx((.8*-math.expm1(-1/3),.2*-math.expm1(-1/3)))
     assert (2,operator) in store.parts.protected_references([row])
     state={name:value.clone() for name,value in store.parts.state_dict().items()}
     store.parts.load_state_dict(state)
-    assert int(store.parts.operator[row])==operator
+    assert int(store.parts.operator_reference[row])==operator
     observe(owner,operator,atoms[0])
     assert float(store.parts.evidence(row)[0]) == pytest.approx(.8*-math.expm1(-2/3))
     with pytest.raises(ValueError,match='different lexical operators'):

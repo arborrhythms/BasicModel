@@ -102,6 +102,7 @@ def recurrence_groups(store):
 
 def _fold(owner, store, rows, *, order=1, members=None):
     """Evidence-weighted form centroid; bands and meanings are not folded."""
+    from FormCentroids import convex_mean
     cb = owner.similarity_codebook
     derived = getattr(cb, 'mereology', None)
     width = cb.W.shape[-1] if derived is None else derived.percept_width
@@ -111,14 +112,14 @@ def _fold(owner, store, rows, *, order=1, members=None):
         weights = cb.W.new_tensor([members[row] for row in rows])
         codes = cb.lookup_rows(rows)[:, :width]
         value = cb.W.new_zeros(cb.W.shape[-1])
-        value[:width] = (codes * weights[:, None]).sum(0) / weights.sum()
+        value[:width] = convex_mean(weights, codes)[0]
         return value
     weights = store.truth_plus[rows] + store.truth_minus[rows]
     if not bool(weights.any()):
         return None
     value = cb.W.new_zeros(cb.W.shape[-1])
     width = min(width, store.slots.shape[-1])
-    value[:width] = (store.slots[rows, :width] * weights[:, None]).sum(0) / weights.sum()
+    value[:width] = convex_mean(weights, store.slots[rows, :width])[0]
     return value
 
 
@@ -159,6 +160,12 @@ def consolidate(owner, store, *, context=None, key=None, batch=0):
             continue
         if int(store.recurrence_documents[reading]) < 3:
             continue
+        orders = [store.order_of_row(row) for row in rows]
+        # Recurrence witnesses frequency, not the order of an unresolved
+        # reference. Keep its evidence until every member has an order;
+        # allocating first would leave a partially minted, unwitnessed concept.
+        if any(order < 0 for order in orders):
+            continue
         # A retained non-word concept is already minted. Recurrence must not
         # duplicate that seat just because it was reached by another close.
         reference = store._recurrence_identities[reading]
@@ -167,9 +174,9 @@ def consolidate(owner, store, *, context=None, key=None, batch=0):
             if seat is not None and torch.equal(store.slots[rows[0]], owner.similarity_codebook.W[seat]):
                 store.recurrence_symbols[reading] = reference[1]
                 continue
-        value = _fold(owner, store, rows, order=store.order_of_row(rows[0]))
+        value = _fold(owner, store, rows, order=orders[0])
         if value is not None:
-            plans.append((store.order_of_row(rows[0]), value))
+            plans.append((orders[0], value))
             actions.append(('reading', reading))
     if plans:
         _preflight(owner, plans)

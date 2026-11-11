@@ -59,7 +59,7 @@ def test_one_presentation_updates_detached_context_at_the_close():
         derived = model._concept_owner().similarity_codebook.mereology
         assert derived.context_width == 128 and derived.meaning_pairs == 64 and derived.meaning_ones == 3
         context = derived.context_audit()
-        argument_rows = {model._concept_owner()._csw_row_of(cid) for cid in model._concept_owner()._concept_allocator.formal_arguments.values()}
+        argument_rows = {model._concept_owner()._csw_row_of(cid) for cid in model._concept_owner()._concept_allocator.formal_arguments.values()} | {model._concept_owner()._csw_row_of(cid) for cid in model._concept_owner()._concept_allocator.operator_concepts.values()}
         assert len([item for item in context if item["row"] not in argument_rows]) == 4
         for record in context:
             assert record['direction_norm'] == pytest.approx(1.)

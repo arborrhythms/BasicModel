@@ -1,4 +1,5 @@
 """Refinement precedes a raise; geometry belongs to the current field."""
+from basic_fixtures import feature as basic_feature
 from types import SimpleNamespace
 
 import pytest
@@ -126,8 +127,8 @@ def test_extent_containment_does_not_fill_gaps_between_part_witnesses(grouped):
     _mint_row(cs, 0, 100)
     individual = _mint_row(cs, 1, 101)
     cs.add_concept_edge(individual, 0, 1.)
-    cs.add_concept_feature(0, 'ps', (1, 2) if grouped else 1, 1.)
-    cs.add_concept_feature(0, 'ps', (3, 4) if grouped else 2, -1.)
+    basic_feature(cs, 0, 'ps', (1, 2) if grouped else 1, 1.)
+    basic_feature(cs, 0, 'ps', (3, 4) if grouped else 2, -1.)
     ids = torch.tensor([[1, 2, 99, 3, 4] if grouped else [1, 99, 2]])
     starts = torch.arange(ids.shape[1])
     spans = torch.stack((starts, starts + 1), -1)[None]

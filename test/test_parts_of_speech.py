@@ -72,8 +72,11 @@ def test_kept_readings_alone_supply_argument_views(tmp_path, monkeypatch, eager_
         stage()
     monkeypatch.setattr(model,'_stage_reconstruction_teacher',seeded_stage)
     observe, lesson = parts.observe_kept, GrammarLessons.compose_loss
+    from dataclasses import replace
+    def snapshot(program):
+        return replace(program, tree=None, actions=program.actions.clone(), leaves=program.leaves.clone())
     def observation(program, binary, unary):
-        events.append((program, binary, unary))
+        events.append((snapshot(program), binary, unary))
         return observe(program, binary, unary)
     def annotation(*args, **kwargs):
         before = view_counts(parts)
@@ -86,12 +89,14 @@ def test_kept_readings_alone_supply_argument_views(tmp_path, monkeypatch, eager_
     commit = model._commit_sentence
     def committed(state, sid, active, observations, predictions, wins):
         before = len(events)
+        winners = [snapshot(observations[int(bool(wins[b]))]['entries'][b])
+                   if bool(active[b]) else None for b in range(len(active))]
         result = commit(state,sid,active,observations,predictions,wins)
         admitted = events[before:]
         rows = active.nonzero().flatten().tolist()
         assert len(admitted)==len(rows)
         for (program,_,_), b in zip(admitted,rows,strict=True):
-            winner = observations[int(bool(wins[b]))]['entries'][b]
+            winner = winners[b]
             states = lessons[int(bool(wins[b])) * len(active) + b][0].student_states
             torch.testing.assert_close(program.actions,winner.actions,rtol=0,atol=0)
             torch.testing.assert_close(program.word_ids,winner.word_ids,rtol=0,atol=0)

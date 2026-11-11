@@ -188,6 +188,8 @@ def completion_result(meaning, result):
 
     def same(left, right):
         return (left.role_refs == right.role_refs and left.polarity == right.polarity
+                and bindings(left).get('_thought_witnesses', ()) ==
+                    bindings(right).get('_thought_witnesses', ())
                 and open_slots(left) == open_slots(right)
                 and torch.equal(left.role_mask, right.role_mask)
                 and torch.equal(left.roles, right.roles)
@@ -408,6 +410,11 @@ def write(model, meaning, *, row, _active=None, _bound=None):
             evidence=evidence_pair(meaning), stream=row, document_key=turn,
             sentence_index=ordinal)
         ordinals[turn] = ordinal + 1
+        # A kept thought can create the same defining relation as an input
+        # close. Finish its witnesses while that relation is retained;
+        # deferring them to the next sentence crosses epoch withdrawal.
+        from FamiliarTier import finish_definitions
+        finish_definitions(store._concept_owner())
         return result
     if _active is None:
         visited, checking = set(), set()
@@ -470,6 +477,8 @@ def write(model, meaning, *, row, _active=None, _bound=None):
     ordinals = model.__dict__.setdefault('_thought_ordinals', {})
     ordinal = ordinals.get(turn, 0)
     identity, point = None, None
+    owner_ref = store.__dict__.get('_concept_owner')
+    owner = None if owner_ref is None else owner_ref()
     if int(meaning.role_mask.sum()) > 1:
         # A checked binding's result is the value of its filled variable.
         # The other working roles are the request, not durable structure.
@@ -488,7 +497,8 @@ def write(model, meaning, *, row, _active=None, _bound=None):
         data.pop('_forward_references', None)
         data.pop('_chain_view', None)
         if identity is not None:
-            data['_identity'] = identity
+            from MemoryLink import retained_reference
+            data['_identity'] = retained_reference(owner, identity)
         from Meaning import ConceptualMeaning
         meaning = replace(ConceptualMeaning.from_description(point), bindings=data,
             scope=meaning.scope, polarity=meaning.polarity)
@@ -496,18 +506,15 @@ def write(model, meaning, *, row, _active=None, _bound=None):
         stream=row, document_key=turn, sentence_index=ordinal, trust=0.)
     if result is not None and result != -1:
         ordinals[turn] = ordinal+1
-        owner_ref = store.__dict__.get('_concept_owner')
-        owner = None if owner_ref is None else owner_ref()
         mtm = None if owner is None else owner.mtm
         token = None if mtm is None or identity is None else mtm.token_of(identity)
         if token is not None and point is not None:
             from RowTime import encoder
+            from MemoryLink import Occurrence
             when = int(encoder().decode_index(store.entry_when(result)))
-            if any(branch.events for branch in mtm.entries[token].timelines):
-                mtm.update(token, point, when=when)
-            else:
-                mtm.bind(token, store.occurrence_of(result), kind=mtm.entries[token].kind,
-                         value=point, reading=None, when=when)
+            token = owner.link(Occurrence(store.occurrence_of(result),
+                referent=mtm.entries[token].kind, selected=token), {},
+                value=point, where=None, when=when, stream=row)
             mtm.entries[token] = replace(mtm.entries[token], pending=False)
     return result
 

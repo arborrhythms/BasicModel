@@ -116,6 +116,7 @@
     <nOutput>8</nOutput>
     <nDim>20</nDim>
     <nVectors>256</nVectors>
+    <basicPerceptCapacity>256</basicPerceptCapacity>
   </PartSpace>
 
   <ConceptualSpace>

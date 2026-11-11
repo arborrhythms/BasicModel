@@ -23,7 +23,8 @@ def test_native_arrival_without_synthetic_occurrence_joins_its_working_entry(mon
     resolver, store, atoms, words, _ = world(pending_atom=0)
     pending, _ = keep(resolver, described(atoms[0], words['x']))
     token = store.occurrence_of(pending)
-    individual = mint(resolver.components.owner, atoms[0])
+    # A reference collection admits a native individual at the same order.
+    individual = mint(resolver.components.owner, atoms[0], order=0)
     force_named(resolver, monkeypatch, individual)
     frame = SituationFrame(1, torch.stack((atoms[0], atoms[0]*0, atoms[0]*0)),
         torch.tensor([True, False, False]), -1, atoms[0], symbol_ids=(individual,))
@@ -41,7 +42,7 @@ def test_native_arrival_without_synthetic_occurrence_joins_its_working_entry(mon
     unchanged(resolver, before)
     owner = resolver.components.owner.mtm.token_of(token)
     entry = resolver.components.owner.mtm.entries[owner]
-    assert entry.kind == individual and entry.occurrences == (owner, token) and entry.count == 2
+    assert entry.kind == individual and entry.occurrences == (token, owner) and entry.count == 2
     assert any(item.get('refinement') and item['selected'] == individual
                and item['reference'] == owner and item['missing_reason'] is None
                for item in resolver.last_audit)
@@ -62,7 +63,7 @@ def test_arrival_without_a_selection_reports_it_without_reopening_the_token(monk
     assert audit['reference'] == token and audit['missing_reason'] == 'no_selected_candidate'
 
 
-def test_new_document_cannot_refine_a_same_stream_site_outside_its_frames(monkeypatch):
+def test_new_document_can_refine_a_same_stream_site_in_the_live_pool(monkeypatch):
     resolver, store, atoms, words, _ = world(pending_atom=0)
     force_named(resolver, monkeypatch, words['three'])
 
@@ -81,9 +82,11 @@ def test_new_document_cannot_refine_a_same_stream_site_outside_its_frames(monkey
     token = store.occurrence_of(pending)
     pool = resolver.components.owner.mtm
     before = pool.entries[token]
-    # §50/§52: containment permits this refinement; only frame scope blocks it.
+    # D4: containment plus the live same-stream pool permits refinement.
     close(equality(atoms[0], words['x'], words['three'], subject=atoms[0]), 'new-document')
-    assert pool.entries[token] == before
+    retained = pool.entries[pool.token_of(token)]
+    assert token in retained.occurrences and retained.kind == words['three']
+    assert retained.count >= before.count
 
 
 def test_refining_from_a_pooled_candidate_keeps_its_earlier_use_and_full_content(monkeypatch):
@@ -91,7 +94,10 @@ def test_refining_from_a_pooled_candidate_keeps_its_earlier_use_and_full_content
     pending, _ = keep(resolver, described(atoms[0], words['x']))
     token = store.occurrence_of(pending)
     description = atoms[0] + atoms[2]
-    candidate, _ = keep(resolver, mention(description, reference=words['three']), position=1)
+    from dataclasses import replace
+    candidate_site = mention(description, reference=words['three'])
+    candidate_site = replace(candidate_site, reference_request=dict(candidate_site.reference_request, leaves=(0, 1)))
+    candidate, _ = keep(resolver, candidate_site, position=1)
     candidate_token = store.occurrence_of(candidate)
     frame = SituationFrame.from_row(store.row(candidate))
     used, _ = keep(resolver, mention(description, mode='bind'), (frame,), position=2)
@@ -107,7 +113,8 @@ def test_refining_from_a_pooled_candidate_keeps_its_earlier_use_and_full_content
     # Kind alone does not retain the chosen occurrence's distinguishing content.
     torch.testing.assert_close(resolver.token_value(token), description)
     assert pool.token_of(use) == candidate_token
-    assert pool.entries[candidate_token].occurrences[:len(before.occurrences)] == before.occurrences
+    assert tuple(member for member in pool.entries[candidate_token].occurrences
+                 if member in before.occurrences) == before.occurrences  # Merge interleaves the older introduction.
 
 
 def test_arrival_readers_exclude_scoped_rows_before_a_new_stream_column_exists():

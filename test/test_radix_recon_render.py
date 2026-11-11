@@ -88,7 +88,7 @@ def test_reconstruction_seed_is_live_in_parallel_train():
     # And the reverse transmits that gradient end-to-end into lossRev.
     cs = m.conceptualSpace
     cs.subspace.set_event(seed)
-    rev = m.reverse(cs.subspace)
+    rev = m.reverse(cs.subspace, field=None)
     ev = rev.materialize() if rev is not None else None
     assert ev is not None and ev.requires_grad
 
@@ -109,7 +109,7 @@ def test_radix_full_reverse_stages_the_render():
     with torch.no_grad():
         m.forward(x)
         m.reverse(getattr(m, "_combine_last_cs_sub", None)
-                  or m.conceptualSpace.subspace)
+                  or m.conceptualSpace.subspace, field=None)
     out = m.perceptualSpace.reconstruct_to_buffer(buf_size=64)
     assert isinstance(out, list) and len(out) == len(items)
     assert all(isinstance(s, str) for s in out)

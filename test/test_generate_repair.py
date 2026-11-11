@@ -136,8 +136,7 @@ def test_native_walk_below_bound_matches_frozen_103c(monkeypatch, tmp_path):
         model.End()
 
 
-@pytest.mark.parametrize('comparison', ['output', 'decoder'])
-def test_finished_wins_and_matching_pending_compares_cost(comparison,monkeypatch):
+def test_finished_wins_and_matching_pending_compares_cost():
     from Models import BasicModel
     from Output import AnswerConstruction
     from WalkTrials import output_pair
@@ -154,28 +153,8 @@ def test_finished_wins_and_matching_pending_compares_cost(comparison,monkeypatch
         unfinished = pending.gather(1, selected[:, :1])[:, 0]
         return AnswerConstruction(value,None,value,value,None,(),()), (
             selected, alternatives, unfinished, tops.new_zeros(6, 3), ~unfinished,
-            tops.new_zeros(6,2,1,5),tops)
-    if comparison == 'output':
-        _, audit = output_pair(realize, lambda x: x.actual[:, 0])
-    else:
-        def reconstruct(*args, **options):
-            side = int(options.get('decoder_exploit') is not None)
-            selected = options.get('decoder_kept_actions', actions + side)
-            value = costs.gather(1, selected[:, :1])[:, 0]
-            unfinished = pending.gather(1, selected[:, :1])[:, 0]
-            trace = (tops, torch.ones(6,dtype=torch.long), unfinished, tops.new_zeros(6, 3), selected)
-            if options.get('decoder_candidates'):
-                trace = (*trace, alternatives)
-            from generation_fixtures import suffix
-            return (tops, value*0, value, unfinished, value[:, None]), (*trace, *suffix(tops,unfinished))
-        model = SimpleNamespace(_sentence_training=True, _compiled_reconstruct=lambda: reconstruct)
-        from SentenceUnderstanding import SentenceUnderstanding
-        record=SentenceUnderstanding(torch.zeros(6,2),tops,torch.ones(6),tops,torch.ones(6),
-            tops,torch.zeros(6,2,dtype=torch.long),torch.ones(6,2,dtype=torch.bool),None,torch.tensor(0))
-        import Generative
-        monkeypatch.setattr(Generative,'walk_bank',lambda model,root,bank:bank)
-        BasicModel._reconstruct_trial(model, record)
-        audit = model._last_decoder_comparison
+            tops.new_zeros(6,2,1,9),tops)
+    _, audit = output_pair(realize, lambda x: x.actual[:, 0])
     assert audit['wins'].tolist() == [True, False, True, True, False, False]
     assert torch.equal(audit['pending'], pending)
 
@@ -196,17 +175,17 @@ def test_winning_departure_credit_reaches_only_generate_policy_and_its_owner():
         explore=torch.tensor([[0, 1, 2, 0]]*3), costs=torch.tensor([[1.,0.],[0.,1.],[0.,0.]]),
         greedy=torch.tensor([[2,0,1,0]]*3), eligible=torch.ones(3,4,dtype=torch.bool))
     features = torch.ones(3,4,3,9)
-    model = SimpleNamespace(languageSpace=language, _sentence_decoder_walk_credits=[])
+    model = SimpleNamespace(languageSpace=language, _sentence_output_walk_credits=[])
     stage_generate_credit(model, audit, tops, features)
-    credit, = model._sentence_decoder_walk_credits
+    credit, = model._sentence_output_walk_credits
     assert credit[0] < 0 and credit[1] > 0 and credit[2] == 0
     credit.sum().backward()
     assert policy.weight.grad.abs().sum() > 0
     assert all(p.grad is None for p in upstream.parameters())
     optimizer = torch.optim.SGD([*policy.parameters(), *upstream.parameters()], lr=.01)
     groups = BaseModel.objective_parameter_groups(model, optimizer)
-    assert {id(p) for p in policy.parameters()} <= {id(p) for p in groups['reconstruction']}
-    assert not {id(p) for p in policy.parameters()} & {id(p) for p in groups['output']}
+    assert {id(p) for p in policy.parameters()} <= {id(p) for p in groups['output']}
+    assert not {id(p) for p in policy.parameters()} & {id(p) for p in groups['reconstruction']}
     audit['costs'].zero_()
     tied = generate_credit(language, audit, tops, features)
     assert tied.eq(0).all() and not tied.requires_grad
@@ -234,7 +213,8 @@ def test_promoted_order_survives_early_occurrence_forgetting_and_two_epochs():
     owner, store, alloc, key, word, occurrence = identity_fixture()
     cid = promote_identity(owner, key, word=word)
     assert alloc.reference_orders[cid] == 1
-    store.reset()  # The occurrence is already gone before the epoch hook.
+    store.reset()  # Clear both stores when the fixture removes every occurrence.
+    store.parts.retain(())
     assert store.location(occurrence) is None and alloc.order_of(cid) == 1
     for _ in range(2):
         model_boundary(model_for(owner, store), epoch_boundary=True)

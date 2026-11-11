@@ -36,7 +36,7 @@ def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capa
         rows = model.inputSpace._ar_grammar_object_rows
         word_rows = set(rows[rows >= 0].tolist())
         assert len(word_rows) == 4
-        assert set(owner._concept_allocator.layer()._tensor_row_keys) == word_rows | {owner._csw_row_of(cid) for cid in owner._concept_allocator.formal_arguments.values()}
+        assert set(owner._concept_allocator.layer()._tensor_row_keys) == word_rows | {owner._csw_row_of(cid) for cid in (*owner._concept_allocator.formal_arguments.values(), *owner._concept_allocator.operator_concepts.values())}
         admitted.append(word_rows)
     model._stage_reading_word_concepts = observe_admission
     try:
@@ -47,7 +47,7 @@ def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capa
         cb = owner.similarity_codebook
         rows = model.inputSpace._ar_grammar_object_rows
         word_rows = set(rows[rows >= 0].tolist())
-        assert owner.nVectors == capacity + len(owner._concept_allocator.formal_arguments)
+        assert owner.nVectors == capacity + len(owner._concept_allocator.formal_arguments) + len(owner._concept_allocator.operator_concepts)
         assert cb.W.shape[0] == owner.nVectors
         assert len(word_rows) == 4
         assert admitted and admitted[-1] == word_rows
@@ -62,7 +62,13 @@ def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capa
                     store = model.symbolSpace.ltm_store
                     index = store.index_of_row(identity)
                     assert index is not None
-                    assert store.order_of_row(index) + 1 == owner._concept_allocator.order_of(cid)
+                    # A named row can now read a later definition. A retained
+                    # collection keeps the order of its selected members
+                    # (§18.6), independently of that containing row's order.
+                    token = owner.mtm.token_of(store.occurrence_of(index))
+                    order = (store.order_of_row(index) if token is None else
+                             owner.mtm.entries[token].refinement['member_order'])
+                    assert order + 1 == owner._concept_allocator.order_of(cid)
         assert cb.mereology.context_width == 128
     finally:
         model.End()

@@ -55,7 +55,7 @@ def test_inherited_parts_form_partial_order_and_before_after_audit():
     from test_review13_subspaces import fixture, word
     cs, cb, ps, _ = fixture()
     with torch.no_grad():
-        ps.W[4] = torch.tensor([.2, .2, .2])
+        ps.W[4] = torch.tensor([.2, .2, .7])
         ps.W[7] = torch.tensor([.8, .3, .2])
         ps.W[8] = torch.tensor([.3, .8, .2])
     a = word(cs, [(4, 1.)])
@@ -68,9 +68,11 @@ def test_inherited_parts_form_partial_order_and_before_after_audit():
     assert not (codes[ac][:3] <= codes[ab][:3]).all()
     audit = cb.mereology.containment_audit()
     assert audit['before'] == audit['after']
-    assert audit['order0'] == dict(pairs=2, violating_pairs=0, coordinates=0,
+    assert audit['order0'] == dict(pairs=4, violating_pairs=0, coordinates=0,
                                    largest=0., non_strict_pairs=0, equal_set_ties=0)
     assert all(name in audit for name in ('tower0', 'tower1', 'cross', 'order0'))
+    codes = {row: cs.basic_percepts.code(row).detach().clone() for row in cs.basic_percepts.index.values()}
+    a = cs.basic_percepts.index[((4,), ())]
     displaced = {row: code.clone() for row, code in codes.items()}
     displaced[a][0] = 1.
     audit = cb.mereology.containment_audit(before=displaced, after=codes)

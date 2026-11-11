@@ -71,6 +71,7 @@
     <nOutput>16</nOutput>
     <nDim>16</nDim>
     <nVectors>256</nVectors>
+    <basicPerceptCapacity>256</basicPerceptCapacity>
   </PartSpace>
 
   <!-- ConceptualSpace: hierarchical mode computes per-level shapes from

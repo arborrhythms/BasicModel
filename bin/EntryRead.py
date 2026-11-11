@@ -145,7 +145,7 @@ class EntryRead:
         return dict(value=tuple(row for row in found if row['time_distance'] == nearest),
                     records_scanned=scanned, incomplete=tuple(incomplete))
 
-    def recall_identities(self, frames, *, work):
+    def recall_identities(self, frames, *, work, stream=0):
         """Re-enter chain identities in MTM; the returned head is the STM read."""
         owner_ref = getattr(self, '_concept_owner', None)
         if not callable(owner_ref):
@@ -180,15 +180,23 @@ class EntryRead:
                 if owner.mtm.token_of(reference) is None:
                     kind = identity[1] if identity is not None and identity[0] == 'sym' else None
                     where = self.slots[row,self.when_start-4:self.when_start] if self.when_start is not None and self.when_start >= 4 else None
-                    owner.mtm.open(reference, kind=kind, when=tick, where=where,
-                        native=kind if kind in owner.components.individual_ids else None,
-                        value=self.slots[row], reading=kind,
-                        pending=kind is None and bool(data.get('_open_references') or data.get('_forward_references')))
+                    native = kind if kind in owner.components.individual_ids else None
+                    pool = owner.mtm
+                    existing = next((key for key, entry in pool.entries.items()
+                                     if native is not None and entry.native == native), None)
+                    if existing is None:
+                        existing = pool.open(reference, kind=kind, when=tick, where=where,
+                            native=native, value=self.slots[row], reading=kind,
+                            pending=kind is None and bool(data.get('_open_references') or data.get('_forward_references')))
+                    else:
+                        pool.bind(existing, reference, kind=kind, when=tick, where=where,
+                            value=self.slots[row], reading=kind)
+                owner.mtm.record_link(reference, reference, stream, kind='reference', order=self.order_of_row(row))
         return tuple(dict.fromkeys(missing))
 
     def recall_chunks(self, frames, *, work, stream=0):
         """Load returned heads into the same eight chunks, retaining their stamp."""
-        missing = list(self.recall_identities(frames,work=work))
+        missing = list(self.recall_identities(frames,work=work,stream=stream))
         owner_ref = getattr(self,'_concept_owner',None)
         owner = owner_ref() if callable(owner_ref) else None
         stm = getattr(owner,'stm',None)

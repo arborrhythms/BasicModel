@@ -27,54 +27,61 @@ def same(actual, expected):
 
 
 def address(number):
-    return 'ltm', 'timeline-unit', number
+    from Occurrence import ADDRESS_DOMAIN
+    return 'ltm', ADDRESS_DOMAIN, number
 
 
 def pool():
     result = MediumTermMemory()
+    from memory_fixtures import attach, put
+    owner, store = attach(result, 8, 'timeline-unit')
+    result._fixture_owner, result._fixture_store = owner, store
+    for number, level in ((1,.2),(2,.3),(3,.4),(4,.5)):
+        put(store, address(number), torch.full((8,), level))
     result.open(address(1), kind=11, when=1, value=torch.full((8,), .2))
     return result
 
 
 def test_no_modifier_keeps_one_actual_timeline_and_legacy_checkpoints_load():
     p = pool()
-    p.event(address(1), address(2), verb=12, role=0, when=2)
-    p.update(address(1), torch.full((8,), .3), when=2)
+    p.event(address(1), address(2), verb=12, role=0, when=2, before=torch.full((8,), .2))
     entry = p.entries[address(1)]
     assert len(entry.timelines) == 1 and entry.timelines[0].events == entry.events
-    assert entry.timelines[0].value is entry.value
+    assert not hasattr(entry.timelines[0], 'value') and not hasattr(entry, 'value')
     saved = p.state()
     for version in (1, 2, 3, 4):
         legacy = deepcopy(saved)
         legacy['version'] = version
         for row in legacy['entries']:
-            events, value = row.pop('timelines')[0]
-            row.update(events=tuple(event[:7 if version == 4 else 4] for event in events), value=value)
+            events = row.pop('timelines')[0]
+            row.update(events=tuple(event[:7 if version == 4 else 4] for event in events), value=p.value_of(entry))
         restored = MediumTermMemory()
+        restored._owner = p._owner
         with pytest.raises(ValueError,match="version"):
             restored.restore(legacy)
         restored.restore(saved)
         assert len(restored.entries[address(1)].timelines) == 1
-        torch.testing.assert_close(restored.value_of(address(1)), entry.value)
-        assert restored.entries[address(1)].events == entry.events
+        torch.testing.assert_close(restored.value_of(address(1)), p.value_of(entry))
+        for actual, expected in zip(restored.entries[address(1)].events, entry.events, strict=True):
+            assert actual.occurrence == expected.occurrence
+            torch.testing.assert_close({k: v for k, v in vars(actual).items() if k != 'occurrence'},
+                {k: v for k, v in vars(expected).items() if k != 'occurrence'})
 
 
 def test_alternative_continues_one_identity_and_preserves_the_actual_prefix():
     p = pool()
-    p.event(address(1), address(2), verb=12, role=0, when=2)
+    p.event(address(1), address(2), verb=12, role=0, when=2, before=torch.full((8,), .2))
     actual = p.entries[address(1)]
     branch = p.alternative(address(1), when=3)
     assert branch == 1 and p.entries[address(1)].timelines[branch].events == actual.events
-    p.event(address(1), address(3), verb=13, role=0, when=3, timeline=branch)
-    p.update(address(1), torch.full((8,), .4), when=3, timeline=branch)
+    p.event(address(1), address(3), verb=13, role=0, when=3, timeline=branch, before=torch.full((8,), .3))
     assert p.alternative(address(1), when=4) == branch
-    p.event(address(1), address(4), verb=14, role=0, when=4, timeline=branch)
-    p.update(address(1), torch.full((8,), .5), when=4, timeline=branch)
+    p.event(address(1), address(4), verb=14, role=0, when=4, timeline=branch, before=torch.full((8,), .4))
     entry = p.entries[address(1)]
     assert len(p.entries) == 1 and entry.count == actual.count and entry.occurrences == actual.occurrences
     assert entry.events == actual.events and len(entry.timelines[1].events) == 3
-    torch.testing.assert_close(entry.value, actual.value)
-    torch.testing.assert_close(entry.timelines[1].value, torch.full((8,), .5))
+    torch.testing.assert_close(p.value_of(entry), p.value_of(actual))
+    torch.testing.assert_close(p.value_of(entry, timeline=1), torch.full((8,), .5))
     assert p.token_of(address(4)) == address(1)
     p.forget(address(3))
     assert [event.occurrence for event in p.entries[address(1)].timelines[1].events] == [address(2), address(4)]
@@ -86,15 +93,16 @@ def test_timeline_checkpoint_copies_and_validates_the_whole_pool_atomically():
     p = pool()
     branch = p.alternative(address(1), when=2)
     p.event(address(1), address(2), verb=12, role=0, when=2, timeline=branch,
-        before=torch.full((8,), .2), after=torch.full((8,), .3), modifiers=(torch.full((8,), .4),))
+        before=torch.full((8,), .2), modifiers=(torch.full((8,), .4),))
     saved = p.state()
     restored = MediumTermMemory()
+    restored._owner = p._owner
     restored.restore(saved)
     same(restored.state(), saved)
-    saved['entries'][0]['timelines'][1][1].zero_()
-    assert p.entries[address(1)].timelines[1].value.sum() > 0
+    saved['entries'][0]['timelines'][1][0][4].zero_()
+    assert p.value_of(address(1), timeline=1).sum() > 0
     bad = p.state()
-    bad['entries'][0]['timelines'][1][1][0] = float('nan')
+    bad['entries'][0]['timelines'][1][0][4][0] = float('nan')
     before = restored.state()
     with pytest.raises(ValueError):
         restored.restore(bad)
@@ -107,10 +115,13 @@ def test_equal_time_teacher_uses_only_defined_coordinates_once_and_defers_its_gr
     actual = torch.tensor([.2, .3, 0., .4, .2, .3, 0., .4])
     after = torch.tensor([.3, .4, .8, .5, .3, .4, .8, .5])
     modifier = torch.full((8,), .2)
-    p.event(address(1), address(2), verb=12, role=0, when=7, after=actual)
+    from memory_fixtures import put
+    put(p._fixture_store, address(5), actual)
+    put(p._fixture_store, address(6), after)
+    p.event(address(1), address(5), verb=12, role=0, when=7, before=torch.full((8,), .2))
     branch = p.alternative(address(1), when=7)
-    p.event(address(1), address(3), verb=13, role=0, when=7, timeline=branch,
-        after=after, modifiers=(modifier,))
+    p.event(address(1), address(6), verb=13, role=0, when=7, timeline=branch,
+        before=actual, modifiers=(modifier,))
     records, errors = [], Error()
     report = observe(action, p, (address(1),))
     assert len(report) == 1 and report[0]['defined'] == 6 and report[0]['when'] == 7
@@ -125,11 +136,11 @@ def test_equal_time_teacher_uses_only_defined_coordinates_once_and_defers_its_gr
 def test_a_modifier_without_an_equal_time_alternative_teaches_nothing():
     p = pool()
     action = MeaningAction(8, modifier=True)
-    p.event(address(1), address(2), verb=12, role=0, when=7, after=torch.full((8,), .2))
+    p.event(address(1), address(2), verb=12, role=0, when=7, before=torch.full((8,), .2))
     assert observe(action, p, (address(1),)) == []
     branch = p.alternative(address(1), when=8)
     p.event(address(1), address(3), verb=13, role=0, when=8, timeline=branch,
-        after=torch.full((8,), .4), modifiers=(torch.full((8,), .2),))
+        before=torch.full((8,), .2), modifiers=(torch.full((8,), .2),))
     assert observe(action, p, (address(1),)) == []
 
 
@@ -189,7 +200,7 @@ def close(f, program, frames=(), *, position=0, actions=(None,None), question=Fa
     if evidence is not None:
         clause=replace(clause,evidence=evidence)
     resolver=f.cs.components.reference_close
-    plan=resolver.preview(clause,chunk_context(resolver, frames))
+    plan=resolver.preview(clause,chunk_context(resolver, frames), stream=0)
     kept=resolver.prepare(clause,plan)
     written={}
     row=f.store.write_clause(kept,written_rows=written,document_key='timeline',sentence_index=position,stream=0,
@@ -215,11 +226,11 @@ def test_modal_bracketings_write_only_an_idea_and_preserve_the_actual(monkeypatc
     assert not entry.events and len(entry.timelines)==2
     assert len(entry.timelines[1].events)==1
     assert not any(f.store.order_of_row(f.store.location(event.occurrence))==0 for event in entry.timelines[1].events)
-    torch.testing.assert_close(entry.value,torch.full((8,),.2))
+    torch.testing.assert_close(f.cs.mtm.value_of(entry),torch.full((8,),.2))
     subject_value=torch.full((8,),.2)
     expected=(modifier(verb(subject_value,torch.full((8,),.3)),torch.full((8,),.4)) if post else
               verb(subject_value,modifier(torch.full((8,),.3),torch.full((8,),.4))))
-    torch.testing.assert_close(entry.timelines[1].value,expected)
+    torch.testing.assert_close(f.cs.mtm.value_of(entry, timeline=1),expected)
     assert pool.token_of(entry.timelines[1].events[0].occurrence)==token
     assert any(pool.token_of(use)==token for use in entry.occurrences)
 
@@ -231,19 +242,19 @@ def test_second_modal_acts_on_the_open_branch_and_bind_still_reads_actual(monkey
         return ('adverb',('lift',subject,'move'),'shift') if post else ('lift',subject,('adverb','move','shift'))
     _,frame,_,_=close(f,recording(f,tree(('lower_unary','subject'))),actions=(verb,modifier))
     token,entry=next(iter(f.cs.mtm.entries.items()))
-    before=entry.timelines[1].value.clone()
+    before=f.cs.mtm.value_of(entry, timeline=1).clone()
     program=recording(f,tree(('bind','subject')),(frame,))
     bind=next(i for i,(kind,local,_) in enumerate(program.actions.tolist())
               if kind==1 and f.binary[local].method_name=='bind')
     torch.testing.assert_close(program.operation_values[bind,1],before)
     _,_,_,_=close(f,program,(frame,),position=1,actions=(verb,modifier))
     updated=f.cs.mtm.entries[token]
-    assert len(f.cs.mtm.entries)==1 and len(updated.timelines)==2
+    assert sum(entry.refinement.get('member_kind', 'reference') == 'reference' for entry in f.cs.mtm.entries.values())==1 and len(updated.timelines)==2
     assert len(updated.timelines[1].events)==2 and not updated.events
-    torch.testing.assert_close(updated.value,entry.value)
+    torch.testing.assert_close(f.cs.mtm.value_of(updated),f.cs.mtm.value_of(entry))
     expected=(modifier(verb(before,torch.full((8,),.3)),torch.full((8,),.4)) if post else
               verb(before,modifier(torch.full((8,),.3),torch.full((8,),.4))))
-    torch.testing.assert_close(updated.timelines[1].value,expected)
+    torch.testing.assert_close(f.cs.mtm.value_of(updated, timeline=1),expected)
 
 
 @pytest.mark.parametrize('post',(False,True))
@@ -270,8 +281,8 @@ def test_fixed_query_reads_event_order_and_never_asserts_the_question(monkeypatc
         assert found['witnesses']==(f.store.occurrence_of(expected),)
         current=f.cs.mtm.entries[token]
         assert len(current.events)==1 and len(current.timelines[1].events)==2
-        torch.testing.assert_close(current.value,entry.value)
-        torch.testing.assert_close(current.timelines[1].value,entry.timelines[1].value)
+        torch.testing.assert_close(f.cs.mtm.value_of(current),f.cs.mtm.value_of(entry))
+        torch.testing.assert_close(f.cs.mtm.value_of(current, timeline=1),f.cs.mtm.value_of(entry, timeline=1))
     # Equal initial state values do not make different predicates witnesses.
     from dataclasses import replace
     data=bindings(question)
@@ -294,8 +305,8 @@ def test_some_every_include_actual_and_use_both_lanes(monkeypatch):
     # Open an alternative at the same subject value with no event yet.
     branch=f.cs.mtm.alternative(token,when=10)
     from Memory import Timeline
-    f.cs.mtm.entries[token]=replace(f.cs.mtm.entries[token],timelines=(entry.timelines[0],Timeline((),entry.value)))
-    q=replace(ConceptualMeaning.from_description(entry.value),bindings={
+    f.cs.mtm.entries[token]=replace(f.cs.mtm.entries[token],timelines=(entry.timelines[0],Timeline(())))
+    q=replace(ConceptualMeaning.from_description(f.cs.mtm.value_of(entry)),bindings={
         '_query_event':(token,entry.events[0].verb,1)})
     reader=ThoughtLTMCapability(store=lambda:f.store,equal=lambda a,b:1.,tau_id=.9)
     possible=reader.existence_evidence(q,max_records=32,work=QueryWorkBudget(64))
@@ -326,7 +337,7 @@ def test_promotion_folds_only_actual_events_and_document_end_keeps_ideas(monkeyp
     from definition_fixtures import projected_content
     torch.testing.assert_close(f.cs.similarity_codebook.W[f.cs._csw_row_of(entry.symbol)],
                                projected_content(f.cs, entry.symbol, actual_value))
-    assert entry.timelines[1].value.ne(actual_value).any()
+    assert f.cs.mtm.value_of(entry, timeline=1).ne(actual_value).any()
     rows,bank=f.store.slots.clone(),f.cs.similarity_codebook.W.clone()
     consolidate(f.cs,f.store)
     f.cs.mtm.end_document(f.cover,store=f.store)
@@ -383,7 +394,7 @@ def test_post_attachment_preserves_a_later_independent_actual_write(monkeypatch)
     close(f,program,actions=(verb,modifier))
     entry=next(iter(f.cs.mtm.entries.values()))
     assert len(entry.events)==1 and len(entry.timelines[1].events)==1
-    torch.testing.assert_close(entry.value,expected)
+    torch.testing.assert_close(f.cs.mtm.value_of(entry),expected)
 
 
 def test_retained_idea_keeps_its_subject_reference_after_token_expiry(monkeypatch):
@@ -426,7 +437,7 @@ def test_bound_idea_has_both_value_and_retained_identity_reference(monkeypatch,m
     program=recording(f,('lift',('bind','subject'),vp),(frame,))
     bind=next(i for i,(kind,op,_) in enumerate(program.actions.tolist())
               if kind==1 and f.binary[op].method_name=='bind')
-    torch.testing.assert_close(program.operation_values[bind,1],entry.value)
+    torch.testing.assert_close(program.operation_values[bind,1],f.cs.mtm.value_of(entry))
     clause,_,row,_=close(f,program,(frame,),position=1)
     updated=f.cs.mtm.entries[token]
     mention=updated.occurrences[-1]
@@ -447,4 +458,4 @@ def test_modal_object_role_keeps_its_own_state(monkeypatch):
     assert len(objects)==1
     entry=objects[0]
     assert not entry.events and len(entry.timelines)==2
-    torch.testing.assert_close(entry.timelines[1].value,entry.value)
+    torch.testing.assert_close(f.cs.mtm.value_of(entry, timeline=1),f.cs.mtm.value_of(entry))

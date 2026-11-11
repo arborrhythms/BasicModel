@@ -9,6 +9,8 @@ from test_clause_acceptance import SentenceFixture
 def test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes(monkeypatch):
     f = SentenceFixture(monkeypatch)
     clause = f.clause(('part', 'a', 'b'))
+    from definition_fixtures import agreeing_views
+    agreeing_views(f.cs, f.cs._concept_allocator.operator_concepts['part'], count=60)
     before = len(f.cs._concept_allocator.parts)
     location = f.store.write_clause(clause, evidence=(.7, .2))
     assert location[0] == 'sym'

@@ -1,3 +1,4 @@
+from basic_fixtures import feature as basic_feature
 from order_fixtures import force_order
 from types import SimpleNamespace
 
@@ -49,7 +50,7 @@ def test_inventory_checkpoint_preserves_definition_between_modes(tmp_path, sourc
     cid = source.new_concept()
     force_order(source, cid, 0)
     row = source._csw_concept_row(0, cid)
-    source.add_concept_feature(row, "ps", 7, .75)
+    basic_feature(source, row, "ps", 7, .75)
     native, bracket = _one_part()
     before = source.cs_read_memberships(native, bracket)
     slot = (source._cs_field_concept_ids == cid).nonzero().flatten().item()
@@ -92,7 +93,7 @@ def test_one_active_percept_reaches_every_referencing_concept():
         cid = cs.new_concept()
         force_order(cs, cid, 0)
         row = cs._csw_concept_row(0, cid)
-        cs.add_concept_feature(row, "ps", 7, 1.)
+        basic_feature(cs, row, "ps", 7, 1.)
         identities.append(cid)
     native, bracket = _one_part()
     field = cs.cs_read_memberships(native, bracket)
@@ -114,7 +115,7 @@ def test_observed_complement_is_pooled_inside_one_bracket(bracket, expected):
     cs = _cs()
     primitive = PrimitiveProperties(1)
     primitive.teach(0, [48, 49], [0., 1.])
-    cs.add_concept_feature(0, "ws", 0, 1.)
+    basic_feature(cs, 0, "ws", 0, 1., parts=(48, 49))
     raw = torch.tensor([[49, 48]])
     positions = torch.tensor([[[0, 1], [1, 2]]])
     scope = torch.tensor([[bracket]])
@@ -128,7 +129,7 @@ def test_padding_does_not_create_observed_complements():
     cs = _cs()
     primitive = PrimitiveProperties(1)
     primitive.teach(0, [48, 49], [0., 1.])
-    cs.add_concept_feature(0, "ws", 0, 1.)
+    basic_feature(cs, 0, "ws", 0, 1., parts=(48, 49))
     raw = torch.tensor([[0, 0]])
     positions = torch.tensor([[[0, 1], [1, 2]]])
     scope = torch.tensor([[[0, 2]]])
@@ -144,7 +145,7 @@ def test_native_learning_updates_one_definition_for_both_modes(source_serial):
     cid = cs.new_concept()
     force_order(cs, cid, 0)
     row = cs._csw_concept_row(0, cid)
-    cs.add_concept_feature(row, 'ws', 0, 1.)
+    basic_feature(cs, row, 'ws', 0, 1., parts=(7,))
     primitive = PrimitiveProperties(1)
     primitive.teach(0, [65], [.5])
     spans = torch.tensor([[[0, 1]]])
@@ -178,7 +179,7 @@ def test_vector_head_selects_symbols_without_truncating_knowing(tmp_path):
         cid = cs.new_concept()
         force_order(cs, cid, 0)
         row = cs._csw_concept_row(0, cid)
-        cs.add_concept_feature(row, 'ps', pid, 1.)
+        basic_feature(cs, row, 'ps', pid, 1.)
     with torch.no_grad():
         state = model.understand(model.inputSpace.prepInput(['a']))
     field = state.reconstruction_carriers['field']

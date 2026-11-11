@@ -3,6 +3,8 @@ from types import SimpleNamespace
 import torch
 from MeaningKernels import MeaningAction
 from Memory import MediumTermMemory
+from memory_fixtures import attach, put
+from Occurrence import ADDRESS_DOMAIN
 from test_item20_round34_projection import record
 
 
@@ -12,17 +14,17 @@ def seat(*, recorded=True, alternative=False):
     value = torch.linspace(.15, .85, 8, requires_grad=True)
     action, modifier = MeaningAction(8, capacity=2), MeaningAction(8, modifier=True)
     pool = MediumTermMemory()
-    key = ('ltm', 'reread', 1)
+    key = ('ltm', ADDRESS_DOMAIN, 1)
+    owner, store = attach(pool, 8, 'reread')
+    put(store, key, before)
+    put(store, ('ltm', ADDRESS_DOMAIN, 2), value)
     pool.open(key, kind=11, when=1, value=before)
     timeline = pool.alternative(key, when=2) if alternative else 0
-    pool.event(key, ('ltm', 'reread', 2), verb=12, role=0, when=2, timeline=timeline,
+    pool.event(key, ('ltm', ADDRESS_DOMAIN, 2), verb=12, role=0, when=2, timeline=timeline,
         before=before, basis=-1, verb_meaning=phrase if recorded else None,
         modifiers=(phrase,) if alternative else ())
-    pool.update(key, value, when=3, timeline=timeline)
     language = SimpleNamespace(verb_action=lambda:action, modifier_action=lambda:modifier)
-    owner = SimpleNamespace(mtm=pool, similarity_codebook=SimpleNamespace(mereology=None),
-        _model=SimpleNamespace(languageSpace=language))
-    store = SimpleNamespace(location=lambda occurrence:None)
+    owner._model = SimpleNamespace(languageSpace=language)
     return owner, store, key, timeline, action, modifier, (before, phrase, value)
 
 
@@ -55,7 +57,7 @@ def test_missing_recorded_input_stays_detached_and_legacy_event_loads():
     saved = owner.mtm.state()
     saved['version'] = 10
     for row in saved['entries']:
-        row['timelines'] = tuple((tuple(e[:-1] for e in events), value) for events, value in row['timelines'])
+        row['timelines'] = tuple((tuple((*e[:7], value, *e[7:-1]) for e in events), value) for events in row['timelines'])
     copy = MediumTermMemory()
     copy.restore(saved)
     assert copy.entries[key].events[-1].verb_meaning is None
@@ -68,15 +70,19 @@ def test_third_failed_fit_uses_phrase_and_assignment_is_training_only():
     with torch.no_grad():
         action.readout.fill_(.3)
     pool = MediumTermMemory()
-    key = ('ltm', 'assign', 1)
+    key = ('ltm', ADDRESS_DOMAIN, 1)
     before, after, phrase, word = (torch.full((8,), v) for v in (.2, .7, .6, .05))
+    owner, store = attach(pool, 8, 'assign')
+    put(store, key, before)
     pool.open(key, kind=11, when=1, value=before)
     reports = []
     for index in range(3):
-        pool.event(key, ('ltm', 'assign', index+2), verb=12, role=0, when=index+2,
+        put(store, ('ltm', ADDRESS_DOMAIN, index+2), after)
+        pool.event(key, ('ltm', ADDRESS_DOMAIN, index+2), verb=12, role=0, when=index+2,
             before=before, basis=-1, verb_meaning=phrase)
         previous = dict(pool.entries)
-        pool.update(key, after, when=index+3)
+        reading = put(store, ('ltm', ADDRESS_DOMAIN, index+10), after)
+        pool.bind(key, reading, kind=11, when=index+3)
         report = observe(action, pool, previous, {key})[0]
         reports.append(report)
         assert (12 in action.groups.assignments) == (index == 2)
@@ -85,7 +91,8 @@ def test_third_failed_fit_uses_phrase_and_assignment_is_training_only():
         phrase_error = float(action.teacher(before, after, phrase, group=torch.tensor(-1)))
     assert reports[0]['error'] == phrase_error and word_error != phrase_error
     before_groups = action.groups.get_extra_state().clone()
-    pool.event(key, ('ltm', 'assign', 6), verb=13, role=0, when=6,
+    put(store, ('ltm', ADDRESS_DOMAIN, 6), after)
+    pool.event(key, ('ltm', ADDRESS_DOMAIN, 6), verb=13, role=0, when=6,
         before=before, basis=-1, verb_meaning=phrase)
     observe(action, pool, dict(pool.entries), {key}, training=False)
     assert torch.equal(action.groups.get_extra_state(), before_groups)

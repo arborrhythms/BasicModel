@@ -241,9 +241,9 @@ def test_reverse_from_cleared_cache_is_drivable_and_decodable():
         recon, _ = model.reverseReconstruct(model._test_understanding)
     assert recon is not None and torch.is_tensor(recon) and recon.dim() == 3, \
         f"reverse-from-S must return a [B, N, D] surface; got {recon!r}"
-    assert recon.dtype == torch.long and bool(((recon >= 0) & (recon <= 255)).all())
+    assert torch.equal(recon, recon.round()) and bool(((recon >= 0) & (recon <= 255)).all())
     identity = model.perceptualSpace.percept_store.identity
-    words = bytes(recon[0,0].tolist()).rstrip(b'\0').split()
+    words = bytes(recon[0,0].long().tolist()).rstrip(b'\0').split()
     assert words, 'the owned inverse must resolve at least one indexed word'
     assert all(identity.read(identity.form(word)) == word for word in words)
 
@@ -341,7 +341,7 @@ def test_reverse_perceptual_preserves_finiteness_on_finite_seed():
 
 @pytest.mark.xfail(strict=False, reason="Historical .8 per-position top-k reconstruction criterion remains unsettled: recorded runs reached .8 and .5. Same bar on the retained inverse; §16.6 permits XPASS.")
 def test_topk_recovered_words_overlap_input():
-    """Recover each word from the owned inverse after clearing syntactic caches.
+    """Recover each word from the retained inverse report with caches cleared.
 
     Keep the historical top-k overlap bar of 1-atol=.8. The grammar now
     consumes object codes, so compare against those same object rows.
@@ -351,11 +351,9 @@ def test_topk_recovered_words_overlap_input():
     ss = model.symbolSpace
     _clear_word_cache(ss)
     with torch.no_grad():
-        # Consuming the owned inverse after clearing syntactic caches must
-        # preserve the per-word grammar result. Only occurrence positions,
-        # never target leaf values, select its word columns.
-        model.reverseReconstruct(model._test_understanding)
-        ideas = model._test_understanding.input_reconstruction.ideas
+        # The common input decoder now returns native percepts. This historical
+        # concept-space diagnostic explicitly requests the retained free report.
+        ideas = model._reconstruct_trial(model._last_sentence_understanding)[0]
         columns = model._test_word_columns
         recon = ideas.gather(1, columns[..., None].expand(*columns.shape, ideas.shape[-1]))
     # Defensive: if the recon were non-finite the decode would be

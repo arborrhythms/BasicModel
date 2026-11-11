@@ -280,7 +280,7 @@ class MereologicalCodes(nn.Module):
             native.append(None if W is None else (id(W), W._version))
         identity = getattr(getattr(getattr(model, 'perceptualSpace', None), 'percept_store', None), 'identity', None)
         return (id(layer.features.values), None if layer.features.values is None else layer.features.values._version, len(layer.features._index),
-                tuple(native), None if identity is None else identity.revision)
+                tuple(native), self.owner.basic_percepts.revision, None if identity is None else identity.revision)
 
     def _invalidate_forms(self):
         revision = self._form_sources()
@@ -356,50 +356,30 @@ class MereologicalCodes(nn.Module):
 
     @torch.no_grad()
     def _definitions(self, rows):
-        """Net 11b evidence per native part/property, never the both corner."""
+        """Net evidence over basic percepts, the only order-zero literal kind."""
         from Spaces import _concept_alloc_of
         layer = _concept_alloc_of(self.owner).layer()
         definitions = {int(row): {} for row in rows}
         for (row, column), pos in layer.features._index.items():
-            if row not in definitions:
-                continue
-            tower, pole = (column // 2) % 2, column % 2
-            group = layer.feature_groups.get((row, column), (column // 4,))
-            for pid in dict.fromkeys(group):
-                poles = definitions[row].setdefault((tower, pid), [0., 0.])
-                poles[pole] += float(layer.features.values[pos].detach())
-        return {row: [(tower, pid, max(0., poles[0]-poles[1]))
-                       for (tower, pid), poles in sorted(edges.items())]
+            if row in definitions:
+                poles = definitions[row].setdefault(column // 2, [0., 0.])
+                poles[column % 2] += float(layer.features.values[pos].detach())
+        return {row: [(percept, max(0., poles[0]-poles[1])) for percept, poles in sorted(edges.items())]
                 for row, edges in definitions.items()}
 
-    @torch.no_grad()
-    def _subspace_bounds(self, edges):
-        like = self.owner.similarity_codebook.W
-        bounds = []
-        for tower in (0, 1):
-            start, stop = ((0, self.identity_width) if tower == 0 else
-                           (self.identity_width, self.percept_width))
-            selected = [(pid, d) for t, pid, d in edges if t == tower and d > 0]
-            if not selected or start == stop:
-                bounds.append(like.new_full((stop-start,), float(tower)))
-                continue
-            ids = torch.tensor([pid for pid, _ in selected], device=like.device)
-            codes = self._native(tower).lookup_rows(ids).detach()
-            if codes.shape[-1] < self.percept_width:
-                raise RuntimeError('native towers must share the form coordinates')
-            codes = codes[:, start:stop]
-            # Grouped feature records can overlap: summed net evidence may
-            # exceed one, but the soft-meet presence remains a cube weight.
-            d = like.new_tensor([d for _, d in selected]).clamp(0, 1)
-            values = codes if tower == 0 else 1-d[:, None]*(1-codes)
-            bounds.append(values.amax(0) if tower == 0 else values.amin(0))
-        return tuple(bounds)
+    def _percept_centroid(self, edges):
+        selected = [(percept, weight) for percept, weight in edges if weight > 0]
+        if not selected:
+            return self.owner.similarity_codebook.W.new_zeros(self.percept_width)
+        values = torch.stack([self.owner.basic_percepts.code(percept) for percept, _ in selected])
+        weights = values.new_tensor([weight for _, weight in selected])
+        return (values*weights[:, None]).sum(0)/weights.sum()
 
     @torch.no_grad()
     def containment_audit(self, *, before=None, after=None):
         """Observe both subspaces and their native containment, without writes."""
         from FormContainment import audit
-        return audit(self, before=before, after=after)
+        return audit(self.owner.basic_percepts, before=before, after=after)
 
     @torch.no_grad()
     def derive(self, indices, b=0):
@@ -424,7 +404,15 @@ class MereologicalCodes(nn.Module):
         needed = [row for row in unique if row not in retained and not bool(self._form_valid[row])]
         if needed:
             for row, edges in self._definitions(needed).items():
-                self._forms[row].copy_(torch.cat(self._subspace_bounds(edges)))
+                # Positive written definitions own their weighted centroid.
+                # Only an all-zero definition falls back to the word's own
+                # admitted basic percept; an unadmitted row stays zero.
+                word = owner.concept_id_at_row(row)
+                percept = owner.basic_percepts.words.get(word)
+                form = (self._percept_centroid(edges) if any(weight > 0 for _, weight in edges)
+                        else owner.basic_percepts.code(percept) if percept is not None
+                        else self._percept_centroid(edges))
+                self._forms[row].copy_(form)
                 self._form_valid[row] = True
             self.form_rows_derived += len(needed)
         for row in unique:

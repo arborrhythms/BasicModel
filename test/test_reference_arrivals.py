@@ -118,7 +118,7 @@ def test_arrival_bind_refines_and_reads_three_through_the_token(monkeypatch):
     entry = resolver.components.owner.mtm.entries[token]
     assert entry.kind == words['three'] and entry.count == 3
     assert sum(item['token'] == token for item in plan['arrivals']) == 1
-    assert all(item['features'].shape[-1] == 8 for item in plan['arrivals'])
+    assert all(item['features'].shape[-1] == 12 for item in plan['arrivals'])
     assert plan['cost'].requires_grad
     value = store.meaning_of(pending)
     assert not open_slots(value) and not bindings(value).get('_forward_references')
@@ -273,7 +273,9 @@ def test_named_root_can_retain_a_selected_lexical_constituent(monkeypatch):
 def test_named_bind_to_a_native_individual_keeps_an_occurrence_keyed_value(monkeypatch):
     from test_reference_close import known_concept as mint
     resolver, store, a, words, _ = world()
-    native = mint(resolver.components.owner, a[0])
+    # The native candidate has the named member's order; this case checks
+    # occurrence-keyed value storage, not a cross-order interpretation.
+    native = mint(resolver.components.owner, a[0], order=0)
     frame = SituationFrame(1, torch.stack((a[0], a[0]*0, a[0]*0)),
         torch.tensor([True, False, False]), -1, a[0], symbol_ids=(native,))
     monkeypatch.setattr(resolver, 'prime', lambda signature, stream: signature.new_tensor(1.))
@@ -312,7 +314,9 @@ def test_native_arrival_refines_an_existing_anonymous_token(monkeypatch, retaine
     pending, _ = keep(resolver, described(a[0], words['x']))
     token = store.occurrence_of(pending)
     pool = resolver.components.owner.mtm
-    native = mint(resolver.components.owner, a[0])
+    # The anonymous introduction is concrete: the supplied native must match
+    # its member order. Cross-order candidates are illegal under likeness.
+    native = mint(resolver.components.owner, a[0], order=pool.entries[token].refinement['member_order'])
     force_named(resolver, monkeypatch, native)
     if retained_occurrence:
         row = store.write_clause(Clause(ConceptualMeaning.from_description(a[0]),

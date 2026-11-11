@@ -13,6 +13,10 @@ def operation_name(rule):
     return getattr(rule, 'surface_name', None) or getattr(rule, 'method_name', None)
 
 
+def operation_names(rules):
+    return tuple(dict.fromkeys(operation_name(rule) for rule in rules if operation_name(rule)))
+
+
 def formal_arguments(rules):
     arguments = set()
     for rule in rules:
@@ -81,8 +85,14 @@ class PartsOfSpeech(nn.Module):
                 saved = _concept_alloc_of(space).formal_arguments
                 if any(saved.get(name) != cid for name, cid in self.concepts.items()):
                     raise ValueError('argument concepts cannot move between unrelated concept owners')
+        # Reserve the complete declaration before seating either inventory.
+        # Their shared higher-order region must not move halfway through bind.
+        object.__setattr__(space, '_formal_reservation', max(
+            int(getattr(space, '_formal_reservation', 0)), len(self.arguments)+len(self.operations)))
         self.concepts = space.prebuild_formal_arguments(self.arguments)
         self._space = weakref.ref(space)
+        from OperationSeats import OperationSeats
+        self.seats = OperationSeats(space, self.operations)
         self._revision += 1
         self.prepare_values()
 
@@ -172,7 +182,7 @@ class PartsOfSpeech(nn.Module):
             self._measurement_revision = key
         if name in self._measurement_cache:
             return self._measurement_cache[name]
-        fixed = name in FIXED_OPERATIONS
+        fixed = self.seats[name].fixed if self._space is not None else name in FIXED_OPERATIONS
         arguments = tuple(arg for arg in self.arguments if arg.startswith(name+'_argin'))
         if not arguments and not fixed:
             raise ValueError(f'operation has no declared formal arguments: {name}')
@@ -199,8 +209,7 @@ class PartsOfSpeech(nn.Module):
                 definiteness_j=separation*evidence if measurable else None)
         definiteness = tuple(details[arg]['definiteness_j'] for arg in arguments)
         result = dict(uses=self.uses[name], arguments=arguments, definiteness=definiteness,
-                    argument_measurements=details, measurable=measurable,
-                    trust=1. if fixed or not measurable else min(definiteness))
+                    argument_measurements=details, measurable=measurable)
         self._measurement_cache[name] = result
         return result
 
@@ -258,6 +267,7 @@ class PartsOfSpeech(nn.Module):
                 operands = stack[-2:]
             name = operation_name(rule)
             self.observe_use(name, operands)
+            self.observe_seat(name, operands)
             observed.update(word for carried in operands for word in carried if word is not None and word >= 0)
             mask = flow_mask(rule)
             results = operands[::-1] if kind == 3 else [tuple(
@@ -272,6 +282,25 @@ class PartsOfSpeech(nn.Module):
                 stack[-2:] = results
 
         return observed
+
+    @torch.no_grad()
+    def observe_seat(self, name, operands):
+        if self.frozen or self._space is None:
+            return
+        from ConceptTrust import observe
+        from IdentityRows import point
+        values = [point(self.owner, word) for words in operands for word in words if word is not None and word > 0]
+        values = [value for value in values if value is not None]
+        if values:
+            concept = self.seats[name].concept
+            value = torch.stack(values).mean(0)
+            row = self.owner._csw_row_of(concept)
+            self.owner.similarity_codebook.W[row].copy_(value)
+            observe(self.owner, concept, value)
+            for argument in self.arguments:
+                if argument.startswith(name+'_'):
+                    from ConceptHierarchy import observe_member
+                    observe_member(self.owner, concept, self.concepts[argument])
 
     def collapse(self):
         directions = [self._direction(self.concepts[name]) for name in self.arguments]

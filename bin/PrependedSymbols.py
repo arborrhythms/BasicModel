@@ -94,7 +94,7 @@ def symbolize(owner, store, key, token, timeline=0):
     if form is None:
         forms = [store.slots[row, :form_width] for occurrence in token.occurrences
                  if isinstance((row := store.location(occurrence)), int)]
-        form = torch.stack(forms).mean(0) if forms else token.value.new_zeros(form_width)
+        form = torch.stack(forms).mean(0) if forms else owner.similarity_codebook.W.new_zeros(form_width)
     value = owner.mtm.value_of(key, timeline=timeline).detach().clone()
     value[:form_width] = form.detach().to(value)
     value[form_width:width] = 0
@@ -134,6 +134,8 @@ def reconcile(state, pool, store):
                 continue
             key = chunk_token(pool,store,state,b,index)
             entry = pool.entries.get(key)
+            if entry is not None and entry.refinement.get('member_kind', 'reference') != 'reference':
+                entry = None
             identity = -1 if entry is None else entry.symbol if entry.symbol is not None else entry.transient
             result[chunks.IDENTITY][b,index] = identity
             if int(refs[0,0]) in (chunks.SYMBOL,chunks.IDENTITY_REF):
@@ -179,7 +181,9 @@ def stage(model, state, present):
                 raise RuntimeError('a prepended identity has neither a transient id nor a symbol')
             row = owner._csw_row_of(identity) if token.symbol is not None else None
             order = (token.order if token.order is not None else owner._row_order(row) if row is not None
-                     else owner._concept_source_order(key[1]) if key[0] == 'name' else 1)
+                     else token.refinement['member_order'] if 'member_order' in token.refinement
+                     else owner._concept_source_order(owner.interpret.referent(key[1])) if key[0] == 'name'
+                     else owner._concept_source_order(token.occurrences[0][-1]))
             value = symbolize(owner, store, key, token, timeline).to(state[0])
             where = token.where.to(value)
             if store.when_start is not None and token.order is None:
@@ -208,7 +212,9 @@ def stage(model, state, present):
             if bool(match.any()):
                 index = torch.full((len(present),), int(match.long().argmax()), device=state[0].device)
                 result = list(state)
-                for field, member in ((chunks.BUFFER,value), (chunks.WHERE,where), (chunks.WHEN,stamp), (chunks.REFS,refs[b])):
+                for field, member in ((chunks.BUFFER,value), (chunks.WHERE,where), (chunks.WHEN,stamp), (chunks.REFS,refs[b]),
+                        (chunks.ORDERS, state[chunks.ORDERS].new_tensor(order)),
+                        (chunks.ROWS, state[chunks.ROWS].new_tensor(-1 if row is None else row))):
                     result[field] = chunks.write(result[field], index, member.expand(len(present),*member.shape), gate)
                 state = tuple(result)
                 state = chunks.read(state,index,gate)

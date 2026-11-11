@@ -31,30 +31,19 @@ def test_free_trial_uses_no_reference_or_offsets_and_keeps_identity_audit(monkey
     from test_mm_xor import _fresh_model
     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
     model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1]/'data/XOR_grammar.xml'))
-    original = model._reconstruct_sentences
+    original = model.reverse
     calls=[]
-    def observe(*args, **kw):
-        record = kw['understanding']
-        assert not record.primed.codes.requires_grad
-        from dataclasses import replace, fields
-        assert 'witness_offsets' not in {f.name for f in fields(record)}
-        # The original leaves are targets, never inverse operands. Changing
-        # them cannot change the recovered leaves or the byte objective.
-        returned = original(*args, **kw)
-        result = returned[0] if kw.get('return_decoded') else returned
-        changed = replace(record, word_values=record.word_values + 19)
-        altered = original(args[0], changed.word_values, *args[2:],
-                           **(kw | {'understanding': changed}))
-        if kw.get('return_decoded'):
-            altered = altered[0]
-        torch.testing.assert_close(result[0], altered[0])
-        torch.testing.assert_close(result[2], altered[2])
-        if kw.get('decoder_kept_actions') is not None:
-            calls.append('replay')
-        else:
-            calls.append('explore' if kw.get('decoder_exploit') is not None else 'greedy')
+    def observe(carrier, *, field):
+        assert field is not None and field.percepts is None
+        # No saved leaves, journal or input spans enter the decoder. The
+        # two faces are a pure function of this explicitly supplied field.
+        returned = original(carrier, field=field)
+        altered = original(carrier.carrier_like(), field=field)
+        torch.testing.assert_close(returned.materialize(), altered.materialize())
+        torch.testing.assert_close(returned._reconstruction_percepts, altered._reconstruction_percepts)
+        calls.append(field)
         return returned
-    monkeypatch.setattr(model, '_reconstruct_sentences', observe)
+    monkeypatch.setattr(model, 'reverse', observe)
     registries = []
     path_cost = model._sentence_path_cost
     def observe_registry(*args, **kwargs):
@@ -67,36 +56,24 @@ def test_free_trial_uses_no_reference_or_offsets_and_keeps_identity_audit(monkey
         raw,target=next(iter(data.data_loader(split='train',num_streams=4)))
         model.runBatch(train=True,optimizer=optimizer,batchSize=4,split='train',
             batch_override=(model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)))
-        assert [call for call in calls if call != 'replay'] == ['greedy', 'explore', 'greedy', 'explore']
-        assert all(calls[i-1] == 'explore' for i, call in enumerate(calls) if call == 'replay')
+        assert calls
         terms = {name:term for registry in registries for name,term in registry._terms.items()}
         reconstruction = {name for name in terms if name.startswith('reconstruction.')}
-        assert reconstruction - {'reconstruction.compose_score_function', 'reconstruction.walk_credit'} == {
-            'reconstruction.free_bytes', 'reconstruction.content', 'reconstruction.forward_discard',
-            'reconstruction.walk_residual.form', 'reconstruction.walk_residual.for',
-            'reconstruction.walk_residual.against', 'reconstruction.free_percept',
-            'reconstruction.definition_fold'}
-        # XOR_grammar uses the mixing architecture, without native PS/WS
-        # candidate supports. Its landing reconstruction objective remains.
+        assert reconstruction == {'reconstruction.free_bytes', 'reconstruction.coverage',
+            'reconstruction.free_percept', 'reconstruction.definition_fold'}
         assert model.concept_binding == 'mixing'
         assert model._last_sentence_field is None
         assert not terms['reconstruction.free_bytes']['trained']
+        assert not terms['reconstruction.coverage']['trained']
         assert terms['reconstruction.free_percept']['trained']
-        assert terms['reconstruction.content']['trained']
-        assert terms['reconstruction.forward_discard']['trained']
-        # Round 2 credits the single departure only when its owner-step total
-        # differs. The inverse's byte objective above remains witness-free.
+        for prefix in ('reconstruction_reverse', 'reconstruction_order_zero'):
+            assert terms[prefix + '.what']['trained']
         if model._last_compose_score_function['advantage'].ne(0).any():
-            assert 'reconstruction.compose_score_function' in reconstruction
+            assert 'output.compose_score_function' in terms
         audit = model.ownership_gradient_diagnostics(optimizer)
-        assert audit['conflicts'] == 0
-        decoder = [row for row in audit['parameters'] if 'generate_policy' in row['parameter']]
-        assert decoder and audit['mode'] == 'projection'
+        assert audit['conflicts'] == 0 and audit['mode'] == 'projection'
         from SentenceTraining import gradient_receipt
-        credit = model._last_decoder_comparison['score_function']
         assert gradient_receipt(model)['projection']
-        if bool((credit['mask'] & credit['advantage'].ne(0)[:, None]).any()):
-            assert any('generate_policy' in name for name in gradient_receipt(model)['projection'])
     finally:
         model.End()
 

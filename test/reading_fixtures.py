@@ -196,7 +196,9 @@ def capture_readings(model):
     original = model._sentence_observation
     def observe(state, sid, active, **kwargs):
         result = original(state, sid, active, **kwargs)
-        captured[sid] = result['entries']
+        captured[sid] = tuple(None if entry is None else replace(entry, tree=None,
+            actions=entry.actions.detach().clone(), leaves=entry.leaves.detach().clone())
+            for entry in result['entries'])  # Caller-owned audit, before pinned storage expires.
         return result
     model._sentence_observation = observe
     try:
@@ -225,8 +227,12 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
         from Language import LanguageSpace
         from types import MethodType
         language.program_meaning = MethodType(LanguageSpace.program_meaning, language)
+    from SentenceStrata import SentenceStrata
+    from Memory import ShortTermMemory
+    short_term = ShortTermMemory(batch=1, capacity=8, concept_dim=width)
+    short_term.strata = SentenceStrata(1, len(entry.leaves), 8, width)
     owner.conceptualSpace = SimpleNamespace(_ltm_consolidation=store is not None,
-        _incoming_trust_multiplier=lambda: trust)
+        _incoming_trust_multiplier=lambda: trust, stm=short_term)
     owner._concept_owner = lambda: registry.space
     owner.symbolSpace = SimpleNamespace(ltm_store=store, expectation=discourse)
     if discourse is not None:

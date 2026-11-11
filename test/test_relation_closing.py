@@ -21,6 +21,8 @@ def test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent(
     if nested:
         tree = ('part', tree, 'living')
     entry = f.program(tree)
+    from definition_fixtures import agreeing_views
+    agreeing_views(f.cs, f.cs._concept_allocator.operator_concepts['part'], count=60)
     ids = entry.concept_ids.clone()
     ids[list(unknown)] = -1
     words = entry.word_ids.clone()

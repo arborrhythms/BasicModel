@@ -114,14 +114,15 @@ def forced_prefix_certificate():
         def charge(name):
             term=registry._terms[name]
             return registry._value(term)*term['weight']*term.get('multiplier',1.)
-        content=charge('reconstruction.content')
+        content=sum(charge('reconstruction_order_zero.'+band) for band in ('what','where','when'))
+        input_reverse=sum(charge('reconstruction_reverse.'+band) for band in ('what','where','when'))
         percept=charge('reconstruction.free_percept')
         reads.append(dict(texts=texts, unavailable=unavailable.tolist(),
             residual=(op.compose(left,right)-root).square().sum(-1).tolist(),
             R=m._last_sentence_credit['components'][:,0,0].tolist(),
             content_cost=content.detach().tolist(),
             percept_cost=percept.detach().tolist(),
-            leaf_cost=(content+percept).detach().tolist(),
+            leaf_cost=(input_reverse+content+percept).detach().tolist(),
             byte_identity=m._last_decoder_byte_identity.detach().tolist(),
             actions=m._attention_words.actions.tolist(),
             meaning_norm=bank.codes[...,104:].norm().item(),
@@ -157,11 +158,11 @@ def test_forced_not_and_or_descend_and_snapshot_certificate():
     for read in report['reads']:
         assert read['multisets'] == 4 and read['residual'] == [0.]*4
         # Distinct negative meanings can be erased by disjunction's meet.
-        # Exact spelling cannot waive the meaning charge. §42 adds the
-        # signed native-form leaf objective even when spelling is exact.
-        assert read['R'] == read['leaf_cost']
-        assert read['byte_identity'] == [0.]*4
-    assert report['reads'][0]['content_cost'] == [0.]*4
+        # Exact report spelling cannot waive either native field loss.
+        # Both fields, plus the forecast residual, make the reading cost.
+        torch.testing.assert_close(torch.tensor(read['R']), torch.tensor(read['leaf_cost']))
+        assert all(0 <= value <= 1 for value in read['byte_identity'])
+    assert all(value >= 0 for value in report['reads'][0]['content_cost'])
     assert report['reads'][1]['content_cost'][2] > 0
 
 

@@ -44,7 +44,7 @@ def test_bound_identity_joins_both_current_reference_meanings():
     pool = owner.mtm
     pool.bind(key, occurrences[1], kind=None, when=1,
               value=bank.lookup_rows([rows[1]])[0], reading=concepts[1])
-    old = pool.entries[key].value.clone()
+    old = pool.value_of(key).clone()
     _move(bank, rows)
     current = bank.lookup_rows(rows)
     start = bank.mereology.percept_event_width
@@ -55,7 +55,8 @@ def test_bound_identity_joins_both_current_reference_meanings():
     torch.testing.assert_close(actual[start:], expected, rtol=0, atol=0)
     assert not actual.requires_grad
     # Reading the references writes neither a cached value nor a new state.
-    torch.testing.assert_close(pool.entries[key].value, old, rtol=0, atol=0)
+    assert not hasattr(pool.entries[key], 'value')
+    assert pool.entries[key].occurrences == before['entries'][0]['occurrences']
     assert pool.state()['names'] == before['names']
     from PrependedSymbols import symbolize
     torch.testing.assert_close(symbolize(owner, store, key, pool.entries[key])[start:],
@@ -74,28 +75,31 @@ def test_unlabelled_mention_reads_its_current_occurrence():
     torch.testing.assert_close(pool.value_of(key)[start:], expected, rtol=0, atol=0)
 
 
-def test_identity_with_an_event_keeps_its_stored_state():
-    owner, bank, _, rows, concepts, occurrences, key = _references()
+def test_identity_with_an_event_reads_its_retained_idea():
+    owner, bank, store, rows, concepts, occurrences, key = _references()
     pool = owner.mtm
-    pool.event(key, occurrences[0], verb=concepts[1], role=0, when=1)
-    held = pool.entries[key].value.clone()
+    before = pool.value_of(key).clone()
+    held = before.clone()
     start = bank.mereology.percept_event_width
     held[start:] = torch.tensor([.1, .3, .5, .7])
-    pool.update(key, held, when=1)
+    event = store.occurrence_of(store.append_idea(held, when=False))
+    pool.event(key, event, verb=concepts[1], role=0, when=1, before=before)
     _move(bank, rows)
     assert not torch.equal(bank.lookup_rows([rows[0]])[0, start:], held[start:])
     torch.testing.assert_close(pool.value_of(key), held, rtol=0, atol=0)
 
 
-def test_first_event_stores_the_computed_start_state():
-    owner, bank, _, rows, concepts, occurrences, key = _references()
+def test_first_event_keeps_the_computed_forward_operand_only():
+    owner, bank, store, rows, concepts, occurrences, key = _references()
     _move(bank, rows)
+    before = owner.mtm.value_of(key).clone()
     start = bank.mereology.percept_event_width
-    expected = bank.lookup_rows([rows[0]])[0, start:].detach().clone()
-    owner.mtm.event(key, occurrences[0], verb=concepts[1], role=0, when=1)
+    event = store.occurrence_of(store.append_idea(before, when=False))
+    owner.mtm.event(key, event, verb=concepts[1], role=0, when=1, before=before)
     bank.mereology.placement[rows[0]].zero_()
     bank.mereology.placement_dirty[rows[0]] = True
-    torch.testing.assert_close(owner.mtm.value_of(key)[start:], expected, rtol=0, atol=0)
+    torch.testing.assert_close(owner.mtm.entries[key].events[-1].before, before)
+    torch.testing.assert_close(owner.mtm.value_of(key)[start:], before[start:], rtol=0, atol=0)
 
 
 @pytest.mark.parametrize('missing', ['concept', 'occurrence', 'content'])
@@ -110,27 +114,29 @@ def test_missing_identity_reference_fails_loudly(monkeypatch, missing):
             monkeypatch.setattr(store, 'location', lambda reference: None)
         else:
             monkeypatch.setattr(store, 'point_of_row', lambda reference: None)
-    with pytest.raises(ValueError, match='identity .*reference .*unavailable|identity .*unavailable occurrence reference|identity .*reference .*no content'):
+    with pytest.raises(ValueError, match='unavailable memory member'):
         owner.mtm.value_of(key)
 
 
-def test_event_on_alternative_preserves_each_timelines_state():
-    owner, bank, _, rows, concepts, occurrences, key = _references()
+def test_event_on_alternative_reads_each_timelines_own_member():
+    owner, bank, store, rows, concepts, occurrences, key = _references()
     pool = owner.mtm
-    branch = pool.alternative(key, when=1)
     _move(bank, rows)
     expected = pool.value_of(key).clone()
-    pool.event(key, occurrences[0], verb=concepts[1], role=0, when=1, timeline=branch)
+    actual = store.occurrence_of(store.append_idea(expected, when=False))
+    pool.event(key, actual, verb=concepts[1], role=0, when=1, before=expected)
+    branch = pool.alternative(key, when=1)
     alternative = expected.clone()
     alternative[bank.mereology.percept_event_width:] = .9
-    pool.update(key, alternative, when=1, timeline=branch)
+    other = store.occurrence_of(store.append_idea(alternative, when=False))
+    pool.event(key, other, verb=concepts[1], role=0, when=2, timeline=branch, before=expected)
     bank.mereology.placement[rows].zero_()
     bank.mereology.placement_dirty[rows] = True
     torch.testing.assert_close(pool.value_of(key), expected, rtol=0, atol=0)
     torch.testing.assert_close(pool.value_of(key, timeline=branch), alternative, rtol=0, atol=0)
 
 
-def test_consolidation_candidate_keeps_its_live_support_and_event_state():
+def test_consolidation_candidate_keeps_its_live_support():
     from FamiliarTier import centroid
     from PrependedSymbols import symbolize
     owner, bank, store, rows, concepts, occurrences, _ = _references()
@@ -140,11 +146,8 @@ def test_consolidation_candidate_keeps_its_live_support_and_event_state():
     _move(bank, rows)
     expected = centroid(owner, support).detach()
     torch.testing.assert_close(pool.value_of(key), expected, rtol=0, atol=0)
-    assert not pool.value_of(key).requires_grad
-    pool.event(key, occurrences[0], verb=concepts[1], role=0, when=1)
-    held = torch.full_like(expected, .6)
-    pool.update(key, held, when=1)
-    torch.testing.assert_close(symbolize(owner, store, key, pool.entries[key]), held, rtol=0, atol=0)
+    assert not pool.value_of(key).requires_grad and not hasattr(pool, 'update')
+    torch.testing.assert_close(symbolize(owner, store, key, pool.entries[key]), expected, rtol=0, atol=0)
 
 
 def test_second_sentence_composes_the_name_after_kept_close_moves_placement(monkeypatch):
@@ -188,8 +191,8 @@ def test_second_sentence_composes_the_name_after_kept_close_moves_placement(monk
         assert all(key is not None for pair in keys for key in pair), (keys, pool.names, word_rows)
         assert all(not any(branch.events for branch in pool.entries[key].timelines)
                    for pair in keys for key in pair)
-        old = torch.stack([torch.stack([pool.entries[key].value for key in pair]) for pair in keys])
-        assert not torch.equal(old[..., start:], expected[..., start:])
+        old = torch.stack([torch.stack([pool.value_of(key) for key in pair]) for pair in keys])
+        torch.testing.assert_close(old[..., start:], expected[..., start:], rtol=0, atol=0)  # Reads have no stale value cache.
         assert bank.mereology.placement_witnesses[word_rows].gt(0).all()
         observed.clear()
         with torch.no_grad():

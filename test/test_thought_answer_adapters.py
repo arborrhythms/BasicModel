@@ -146,26 +146,19 @@ def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch
     model._select_perceptual_bindings = lambda *_a: ()
     model._condition_answer_on_question = lambda idea, _context, **_kwargs: idea
     model._synthesis_guard = nullcontext
-    model.conceptualSpace.synthesize_idea = lambda idea, **_k: idea
-    object.__setattr__(model, 'perceptualSpace', SimpleNamespace(synthesize=lambda idea, **_k: idea))
+    object.__setattr__(model, 'perceptualSpace', SimpleNamespace())
     object.__setattr__(model, 'outputSpace', SimpleNamespace(from_percepts=lambda idea: idea))
     model.attention_budget = 128
     model.reconstruct_in_loop = False
-    # Numerical generation is an explicit identity stub in this adapter test.
-    import Generative
-    monkeypatch.setattr(Generative,'walk_bank',lambda model,idea,bank:bank)
-    model._walk_operand=lambda value, **kwargs: value
-    def walk(idea, *args, **kwargs):
-        model._adapter_words=idea
-        from generation_fixtures import suffix
-        pending=torch.zeros(len(idea),dtype=torch.bool)
-        return (idea,torch.full((len(idea),),idea.shape[1]),
-                pending,idea.new_zeros(len(idea)),
-                torch.zeros(len(idea),1,dtype=torch.long),*suffix(idea[:,:1],pending))
-    model._compiled_output_walk=lambda: walk
-    model.conceptualSpace.commit_event=lambda value: None
-    model._reverse_body=lambda sub: model._adapter_words
-    model._reverse_perceptual=lambda value: value
+    # Numerical realization is explicit at the new generate/reverse seams.
+    model.answer_synthesis = True
+    def generate(idea, **kwargs):
+        model._adapter_words = idea
+        return SimpleNamespace(words=idea, truncated=torch.zeros(len(idea), dtype=torch.bool),
+            field=idea, texts=lambda surface: ())
+    model.generate = generate
+    model.reverse = lambda carrier, *, field: SimpleNamespace(
+        materialize=lambda: field, _reconstruction_percepts=field)
     from Understanding import SentenceEndState
     from Meaning import ConceptualMeaning
     field = SentenceEndState(ConceptualMeaning.from_description(entry.leaves[0]), query=query)

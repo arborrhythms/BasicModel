@@ -147,7 +147,7 @@ _NATIVE_CONCEPT_WIDTHS = [
 ]
 
 
-def _native_answer_model(tmp_path, output_loop, *, concept_width=488):
+def _native_answer_model(tmp_path, output_loop, *, concept_width=488, answer_synthesis=True):
     """Distinct concept/percept widths; production width is an explicit slow case."""
     from test_meronomy_ladder import _build_ladder_variant
     if concept_width <= 360:
@@ -170,13 +170,15 @@ def _native_answer_model(tmp_path, output_loop, *, concept_width=488):
     native_ws = ws.replace("<nInputDim>136</nInputDim>", f"<nInputDim>{declared_width}</nInputDim>")
     native_output = output.replace("<nInputDim>136</nInputDim>", f"<nInputDim>{declared_width}</nInputDim>")
     replacements = [(cs, native_cs), (ws, native_ws), (output, native_output)]
+    if not answer_synthesis:
+        replacements.append(("<answerSynthesis>true</answerSynthesis>", "<answerSynthesis>false</answerSynthesis>"))
     if output_loop:
         replacements.append(("<training>", "<training>\n      <outputInLoop>true</outputInLoop>"))
     m = _build_ladder_variant(tmp_path, "native_answer", replacements)
     m._tensor_peer_while_eager = True
     m._chart_compose_per_word = lambda: None
     m.synthesis_bindings = 0  # named percepts must not hide a dead answer operand
-    assert m.answer_synthesis and m.output_in_loop is output_loop
+    assert m.answer_synthesis is answer_synthesis and m.output_in_loop is output_loop
     assert m.wholeSpace.subspace.muxedSize == 360
     assert m.conceptualSpace.stm.concept_dim == concept_width
     return m
@@ -412,34 +414,42 @@ def test_available_input_targets_do_not_train_answer_modules_after_adam(output_l
         torch._dynamo.reset()
 
 
-def test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row(eager_reading):
+def test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row(tmp_path, monkeypatch, eager_reading):
     from copy import deepcopy
-    from test_output_walk import _model
-    m = _model()
-    m._tensor_peer_while_eager = True
-    m._chart_compose_per_word = lambda: None
+    import Models
+    m = _native_answer_model(tmp_path, False, answer_synthesis=False)
     data = m.inputSpace.data
-    saved_addresses = deepcopy(data.source_addresses["train"])
-    for address in data.source_addresses["train"]:
-        address["document"] = 0
-        address["sentence"] = address["row"]
-    opt = m.getOptimizer(lr=1e-3)
+    saved_addresses = deepcopy(data.source_addresses['train'])
+    for address in data.source_addresses['train']:
+        address['document'] = 0
+        address['sentence'] = address['row']
+    readouts, gradients = [], []
+    hook = m.answer_record_reader.register_forward_hook(lambda module, args, value: readouts.append(value))
+    original = Models.BasicModel._sentence_reader_error
+    def score(owner, *args, **kwargs):
+        cost = original(owner, *args, **kwargs)
+        if owner is m and cost is not None:
+            gradient, = torch.autograd.grad(cost.sum(), readouts[-1], retain_graph=True)
+            gradients.append(gradient.detach())
+        return cost
+    monkeypatch.setattr(Models.BasicModel, '_sentence_reader_error', score)
+    before = [p.detach().clone() for p in m.answer_record_reader.parameters()]
     try:
-        # Put the automatic text first: it must not select the text modality
-        # and displace the second row's explicitly supplied numeric target.
         questions = (What.future(0), What.supervised(1))
         assert all(data.what(q).available for q in questions)
-        got = _answer_training_probe(m, opt, questions)
-        assert got["mask"] == [False, True]
-        assert got["actual_grad"] is not None
-        assert torch.count_nonzero(got["actual_grad"][0]) == 0
-        assert bool(got["actual_grad"][1].abs().sum() > 0)
-        assert got["changed"][got["active_index"]]
+        m.runBatch(train=True, optimizer=m.getOptimizer(lr=1e-3), batchSize=2,
+            split='train', questions=questions,
+            batch_override=(m.inputSpace.prepInput(['1 plus 2', '3 plus 4']), torch.zeros(2, 1, 1)))
+        assert m._last_answer_mask.tolist() == [False, True]
+        assert gradients
+        assert all(not gradient[0].any() for gradient in gradients)
+        assert sum(gradient[1].abs().sum() for gradient in gradients) > 0
+        assert any(not torch.equal(old, parameter) for old, parameter in
+                   zip(before, m.answer_record_reader.parameters()))
     finally:
-        data.source_addresses["train"] = saved_addresses
-        m.End()
-        m.symbolSpace.soft_reset()
-        torch._dynamo.reset()
+        hook.remove()
+        data.source_addresses['train'] = saved_addresses
+        m.End(); m.symbolSpace.soft_reset(); torch._dynamo.reset()
 
 
 @pytest.mark.slow
@@ -567,6 +577,9 @@ def test_native_checkpoint_restores_active_answer_widths(tmp_path, legacy_only, 
             m.reverseOutput(u, m.resolveAnswer(u, (What.supervised(0), What.supervised(1))))
             m.question_conditioners[str(concept_width)].weight.fill_(0.02)
             m.languageSpace.generate_policy.weight[1, 0] = 0.17
+            # The common decoder no longer constructs this legacy reader.
+            from Spaces import OutputSpace
+            OutputSpace.from_percepts(m.outputSpace, torch.zeros(2, *m.perceptualSpace.outputShape))
             m.outputSpace.percept_adapter.raw_L[32, 3] = -0.11
             if legacy_only:
                 narrow = m._question_conditioner(136, device=torch.device("cpu"), dtype=torch.float32)

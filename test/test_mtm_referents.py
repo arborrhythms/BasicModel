@@ -102,7 +102,7 @@ def test_description_reads_its_own_distinguishing_coordinate():
     point = bank.lookup_rows([rows[1]])[0].detach().clone()
     point[start:] = torch.tensor([.1, .8, .2, .9])
     store.slots[store.location(occurrences[1])] = point
-    key = owner.mtm.open(occurrences[1], kind=concepts[1], reading=concepts[1], when=0, value=point)
+    key = owner.mtm.open(occurrences[1], kind=concepts[1], reading=None, when=0, value=point)
     assert not torch.equal(bank.lookup_rows([rows[1]])[0, start:], point[start:])
     torch.testing.assert_close(owner.mtm.value_of(key)[start:], point[start:], rtol=0, atol=0)
 
@@ -122,23 +122,25 @@ def test_identity_joins_its_explicit_concept_reference(held):
 
 
 def test_chart_without_meaning_band_keeps_its_stored_form_and_location():
-    owner, bank, _, rows, concepts, occurrences = world(meaning_pairs=0)
+    owner, bank, store, rows, concepts, occurrences = world(meaning_pairs=0)
     held = torch.full_like(bank.lookup_rows([rows[0]])[0], .4)
-    key = owner.mtm.open(occurrences[0], kind=None, reading=concepts[0], when=0, value=held)
+    store.slots[store.location(occurrences[0])].copy_(held)
+    key = owner.mtm.open(occurrences[0], kind=None, reading=None, when=0, value=held)
     assert bank.mereology.percept_event_width == held.numel()
     assert not torch.equal(bank.lookup_rows([rows[0]])[0], held)
     torch.testing.assert_close(owner.mtm.value_of(key), held, rtol=0, atol=0)
 
 
-def test_alternative_start_survives_the_first_event():
-    owner, bank, _, rows, concepts, occurrences = world()
+def test_alternative_reads_its_first_event_member():
+    owner, bank, store, rows, concepts, occurrences = world()
     key = owner.mtm.open(occurrences[0], kind=None, reading=concepts[0], when=0,
                          value=bank.lookup_rows([rows[0]])[0])
-    alternative = torch.full_like(owner.mtm.entries[key].value, .6)
+    alternative = torch.full_like(owner.mtm.value_of(key), .6)
     branch = owner.mtm.alternative(key, when=1, before=alternative)
     place(bank, rows[0], (.1, .9))
     actual = owner.mtm.value_of(key).clone()
-    owner.mtm.event(key, occurrences[1], verb=concepts[1], role=0, when=2, timeline=branch)
+    store.slots[store.location(occurrences[1])].copy_(alternative)
+    owner.mtm.event(key, occurrences[1], verb=concepts[1], role=0, when=2, timeline=branch, before=actual)
     torch.testing.assert_close(owner.mtm.value_of(key), actual, rtol=0, atol=0)
     torch.testing.assert_close(owner.mtm.value_of(key, timeline=branch), alternative, rtol=0, atol=0)
 
@@ -167,12 +169,12 @@ def test_kept_thought_adds_its_written_occurrence_reference():
     assert not owner.mtm.entries[key].events
 
 
-def test_update_requires_an_event_on_the_identity():
+def test_update_api_is_retired_and_members_determine_state():
     owner, bank, _, rows, concepts, occurrences = world()
     key = owner.mtm.open(occurrences[0], kind=None, reading=concepts[0], when=0,
                          value=bank.lookup_rows([rows[0]])[0])
-    with pytest.raises(ValueError, match='without an event'):
-        owner.mtm.update(key, owner.mtm.entries[key].value, when=1)
+    assert not hasattr(owner.mtm, 'update')
+    torch.testing.assert_close(owner.mtm.value_of(key), bank.lookup_rows([rows[0]])[0])
 
 
 @pytest.mark.parametrize('kind', ['reading', 'occurrence'])
@@ -185,19 +187,19 @@ def test_ownerless_semantic_reference_fails_loudly(kind, eventful):
     if eventful:
         from Memory import Event, Timeline
         pool.entries[key] = replace(pool.entries[key], timelines=(
-            Timeline((Event(('numeric', 2), 1, 0, 1),), torch.ones(3)),))
-    with pytest.raises(ValueError, match='without an owner'):
+            Timeline((Event(('numeric', 2), 1, 0, 1),)),))
+    with pytest.raises(ValueError, match='requires its STM/LTM owner'):
         pool.value_of(key)
 
 
-def test_ownerless_numerical_pool_keeps_explicit_value_api():
+def test_ownerless_numerical_pool_cannot_retain_a_value_cache():
     from Memory import MediumTermMemory
     pool = MediumTermMemory()
-    pool.open(('numeric', 1), kind=None, when=0, value=torch.tensor([.2, .7]))
-    torch.testing.assert_close(pool.value_of(('numeric', 1)), torch.tensor([.2, .7]), rtol=0, atol=0)
-    pool.event(('numeric', 1), ('numeric', 2), verb=1, role=0, when=1)
-    pool.update(('numeric', 1), torch.tensor([.3, .8]), when=2)
-    torch.testing.assert_close(pool.value_of(('numeric', 1)), torch.tensor([.3, .8]), rtol=0, atol=0)
+    key = ('numeric', 1)
+    pool.open(key, kind=None, when=0, value=torch.tensor([.2, .7]))
+    assert not hasattr(pool.entries[key], 'value') and not hasattr(pool, 'update')
+    with pytest.raises(ValueError, match='requires its STM/LTM owner'):
+        pool.value_of(key)
 
 
 def test_tiny_positive_containment_is_exact_and_empty_content_is_not_evidence():
@@ -264,6 +266,8 @@ def test_accessible_reads_each_identity_once(monkeypatch):
     key = pool.open(uses[0], kind=None, value=atoms[0], when=0)
     for occurrence in uses[1:]:
         pool.bind(key, occurrence, kind=None, value=atoms[0], when=1)
+    for occurrence in uses:
+        pool.record_link(key, occurrence, None, kind='reference', order=0)
     original, calls = pool.value_of, []
     def counted(reference, **kwargs):
         calls.append(reference)

@@ -851,7 +851,6 @@
       <!-- Independent priority of normalized reconstruction terms;
            it does not subtract from the answer's priority. -->
       <xs:element name="reconstructionScale" type="unitInterval" minOccurs="0"/>
-      <xs:element name="reconstructionReferenceWeight" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="actionRateRatio" minOccurs="0" default="1">
         <xs:simpleType><xs:restriction base="xs:double">
           <xs:minExclusive value="0"/><xs:maxInclusive value="1"/>
@@ -1021,6 +1020,7 @@
       <!-- Identity's sparse form is D pair coordinates plus L length bits.
            Text model construction resolves the native form/event width from
            these values; numeric models retain their configured dimensions. -->
+      <xs:element name="basicPerceptCapacity" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="identityPairDim" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="identityOnes" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="identityLengthDim" type="xs:positiveInteger" minOccurs="0"/>

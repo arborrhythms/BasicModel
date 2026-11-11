@@ -70,7 +70,8 @@ def recover_lanes(name, parent, left, right, form_width):
     code support before solving; its current stance is not the stance of
     the parent being decoded.
     Min/max are not injective. Keep a candidate pair's nominal magnitudes
-    when they already reproduce a nonempty lane exactly; otherwise choose
+    when they already reproduce a lane exactly; an empty lane may retain
+    its candidates' own compatible pole values. Otherwise choose
     the least min operands and greatest max operands consistent with it.
     This recovers a reading, not the lost derivation. A mean has the
     two-code nonnegative least-squares read.
@@ -82,7 +83,10 @@ def recover_lanes(name, parent, left, right, form_width):
     a, b = signless(left), signless(right)
     positive, negative = parent[..., form_width:].chunk(2, -1)
 
-    def read(y, rule):
+    left_nominal = left[..., form_width:].chunk(2, -1)
+    right_nominal = right[..., form_width:].chunk(2, -1)
+
+    def read(y, rule, nominal_left, nominal_right):
         def ratio(code):
             nonzero = code > 0
             values = y / torch.where(nonzero, code, 1.)
@@ -94,6 +98,12 @@ def recover_lanes(name, parent, left, right, form_width):
             left, right = a * ratio(a), b * ratio(b)
             folded = torch.minimum(a, b) if rule == 'min' else torch.maximum(a, b)
             exact = (folded == y).all(-1, keepdim=True) & (y > 0).any(-1, keepdim=True)
+            empty_exact = (y == 0).all(-1, keepdim=True) & (folded == y).all(-1, keepdim=True)
+            # A zero intersection does not imply two absent operands. Retain
+            # an already compatible candidate reading in this underdetermined
+            # lane, without importing evidence from the opposite pole.
+            left = torch.where(empty_exact, nominal_left, left)
+            right = torch.where(empty_exact, nominal_right, right)
             return torch.where(exact, a, left), torch.where(exact, b, right)
         aa, ab, bb = (a*a).sum(-1, keepdim=True), (a*b).sum(-1, keepdim=True), (b*b).sum(-1, keepdim=True)
         ay, by = (a*y*2).sum(-1, keepdim=True), (b*y*2).sum(-1, keepdim=True)
@@ -120,8 +130,8 @@ def recover_lanes(name, parent, left, right, form_width):
         rules = 'mean', 'mean'
     else:
         return left, right
-    lp, rp = read(positive, rules[0])
-    ln, rn = read(negative, rules[1])
+    lp, rp = read(positive, rules[0], left_nominal[0], right_nominal[0])
+    ln, rn = read(negative, rules[1], left_nominal[1], right_nominal[1])
     return (torch.cat((left[..., :form_width], lp, ln), -1),
             torch.cat((right[..., :form_width], rp, rn), -1))
 

@@ -83,86 +83,66 @@ def test_no_legal_departure_keeps_greedy(monkeypatch):
     assert not result[5].any()
 
 
-def test_trial_selects_strictly_lower_full_reconstruction_before_backward(monkeypatch):
-    from Models import BasicModel
+def test_trial_selects_strictly_lower_full_output_cost_before_backward(monkeypatch):
+    from WalkTrials import output_pair
+    from Output import AnswerConstruction
     parameter = torch.nn.Parameter(torch.tensor(1.))
     greedy_cost = torch.tensor([4., 2., 1.])
     explore_cost = torch.tensor([1., 2., 4.])
     calls = []
-    from SentenceUnderstanding import SentenceUnderstanding
-    record=SentenceUnderstanding(torch.ones(3,2),torch.ones(3,3,2),torch.ones(3,dtype=torch.long),
-        torch.ones(3,1,6),torch.ones(3,1,dtype=torch.long),torch.ones(3,2,2),
-        torch.zeros(3,2,dtype=torch.long),torch.ones(3,2,dtype=torch.bool),None,torch.tensor(0))
-    import Generative
-    monkeypatch.setattr(Generative,'walk_bank',lambda model,root,bank:bank)
-    def reconstruct(*args, **kwargs):
-        assert parameter.item() == 1.
-        assert parameter.grad is None
-        explore = kwargs.get('decoder_exploit') is not None
-        replay = kwargs.get('decoder_kept_actions')
+    model = SimpleNamespace(_last_output_walk_trace=None)
+    def realize(**kwargs):
+        assert parameter.item() == 1. and parameter.grad is None
+        explore = kwargs.get('exploit_actions') is not None
+        replay = kwargs.get('kept_actions')
         actions = torch.full((3, 4), int(explore)) if replay is None else replay
         calls.append(explore if replay is None else 'replay')
-        take = actions[:, 0].bool()
-        cost = torch.where(take, explore_cost, greedy_cost) * parameter
-        value = take[:, None, None].expand(3, 2, 2) * parameter
-        trace = (value, torch.full((3,), 2), torch.zeros(3, dtype=torch.bool),
-                 torch.zeros(3, 3), actions)
-        if kwargs.get('decoder_candidates'):
-            trace = (*trace, torch.ones(3, 4, dtype=torch.bool))
-        from generation_fixtures import suffix
-        return (value, cost*0, cost, torch.zeros(3, dtype=torch.bool), cost[:, None]), (*trace,
-            *suffix(torch.zeros(3,4,2),torch.zeros(3,dtype=torch.bool)))
-    model = SimpleNamespace(_sentence_training=True, _compiled_reconstruct=lambda: reconstruct)
-    result = BasicModel._reconstruct_trial(model, record)
+        cost = torch.where(actions[:, 0].bool(), explore_cost, greedy_cost) * parameter
+        result = AnswerConstruction(actual=cost, derivation=None)
+        return result, (actions, torch.ones(3, 4, dtype=torch.bool),
+            torch.zeros(3, dtype=torch.bool), torch.zeros(3, 3),
+            torch.ones(3, dtype=torch.bool), torch.zeros(3, 4, 2, 9), torch.zeros(3, 4, 2))
+    result, audit = output_pair(realize, lambda result: result.actual, owner=model)
     assert calls == [False, True, 'replay']
-    assert model._last_decoder_comparison['wins'].tolist() == [True, False, False]
-    torch.testing.assert_close(result[2], torch.tensor([1., 2., 1.]))
-    assert model._last_decoder_trace[4][:, 0].tolist() == [1, 0, 0]
-    result[2].sum().backward()
+    assert audit['wins'].tolist() == [True, False, False]
+    torch.testing.assert_close(result.actual, torch.tensor([1., 2., 1.]))
+    assert model._last_output_walk_trace[0][:, 0].tolist() == [1, 0, 0]
+    result.actual.sum().backward()
     assert parameter.grad.item() == 4.
 
 
-def test_identical_outer_understandings_get_the_same_inner_decoder_cost(monkeypatch):
-    """Captured bind-only trials had identical inputs but different R costs."""
-    from Models import BasicModel
-    from SentenceUnderstanding import SentenceUnderstanding
-    from generation_fixtures import suffix
-    import Generative
-    monkeypatch.setattr(Generative,'walk_bank',lambda model,root,bank:bank)
-    record=SentenceUnderstanding(torch.ones(2,2),torch.ones(2,3,2),torch.ones(2,dtype=torch.long),
-        torch.ones(2,1,6),torch.ones(2,1,dtype=torch.long),torch.ones(2,2,2),
-        torch.zeros(2,2,dtype=torch.long),torch.ones(2,2,dtype=torch.bool),None,torch.tensor(0))
-    draws=[]
-    def uniform(*args,**kwargs):
+def test_identical_outer_understandings_get_the_same_inner_output_cost(monkeypatch):
+    """Paired output walks reuse their departure and action quantiles."""
+    from WalkTrials import output_pair, paired_departure
+    from Output import AnswerConstruction
+    draws = []
+    def uniform(*args, **kwargs):
         draws.append(None)
-        return torch.tensor([.1,.9] if len(draws)==1 else [.9,.1],
+        return torch.tensor([.1, .9] if len(draws) == 1 else [.9, .1],
                             device=kwargs.get('device')).reshape(*args)
-    monkeypatch.setattr(torch,'rand',uniform)
-    def reconstruct(*args,**kwargs):
-        explore=kwargs.get('decoder_exploit') is not None
-        cost=(kwargs['decoder_departure'].float()+1+kwargs['decoder_uniform'][:,0]
-              if explore else torch.full((2,),10.))
-        value=torch.ones(2,2,2)
-        pending=torch.zeros(2,dtype=torch.bool)
-        trace=(value,torch.full((2,),2),pending,torch.zeros(2,3),torch.full((2,4),int(explore)))
-        if kwargs.get('decoder_candidates'):trace=(*trace,torch.ones(2,4,dtype=torch.bool))
-        return (value,cost*0,cost,pending,cost[:,None]),(*trace,*suffix(torch.zeros(2,4,2),pending))
-    model=SimpleNamespace(_sentence_training=True,_compiled_reconstruct=lambda:reconstruct,
-        _sentence_generation_draws={})
-    costs=[];departures=[]
+    monkeypatch.setattr(torch, 'rand', uniform)
+    def realize(**kwargs):
+        explore = kwargs.get('exploit_actions') is not None
+        cost = (kwargs['departure'].float()+1+kwargs['departure_uniform'][:, 0]
+                if explore else torch.full((2,), 10.))
+        actions = torch.full((2, 4), int(explore))
+        return AnswerConstruction(actual=cost, derivation=None), (
+            actions, torch.ones(2, 4, dtype=torch.bool), torch.zeros(2, dtype=torch.bool),
+            torch.zeros(2, 3), torch.ones(2, dtype=torch.bool),
+            torch.zeros(2, 4, 2, 9), torch.zeros(2, 4, 2))
+    model = SimpleNamespace(_sentence_generation_draws={})
+    costs, departures = [], []
     for _ in range(2):
-        model._sentence_generation_cursors={}
-        costs.append(BasicModel._reconstruct_trial(model,record)[2])
-        departures.append(model._last_decoder_comparison['departure'])
-    assert len(draws)==2
-    torch.testing.assert_close(costs[0],costs[1],rtol=0,atol=0)
-    assert departures[0].tolist()==departures[1].tolist()==[0,3]
-    # A changed legal menu uses the same quantile, not an illegal replay.
-    from WalkTrials import paired_departure
-    model._sentence_generation_cursors={}
-    eligible=torch.tensor([[False,True,False,True],[False,True,False,False]])
-    assert paired_departure(model,'decoder',eligible).tolist()==[1,1]
-    assert len(draws)==2
+        model._sentence_generation_cursors = {}
+        result, audit = output_pair(realize, lambda result: result.actual, owner=model)
+        costs.append(result.actual); departures.append(audit['departure'])
+    assert len(draws) == 2
+    torch.testing.assert_close(costs[0], costs[1], rtol=0, atol=0)
+    assert departures[0].tolist() == departures[1].tolist() == [0, 3]
+    model._sentence_generation_cursors = {}
+    eligible = torch.tensor([[False, True, False, True], [False, True, False, False]])
+    assert paired_departure(model, 'output', eligible).tolist() == [1, 1]
+    assert len(draws) == 2
 
 
 def test_paired_output_inverse_reuses_action_quantile_in_the_actual_walk(monkeypatch):

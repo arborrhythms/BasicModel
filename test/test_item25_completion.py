@@ -295,6 +295,12 @@ def test_ambiguous_pointer_identity_across_time_is_empty(tmp_path):
             assert torch.count_nonzero(invariant) == 0
             receipt(tmp_path, 'pointer-across-time', dict(steps=facts, parent=parent,
                 members=sorted(members), member_rows=vectors.tolist(), invariant=invariant.tolist()))
+        # This certificate is about the durable identity across time. Retire
+        # the prior mention collection before the next higher-order reading;
+        # a collection cannot mix its original order-0 members with order 1.
+        key = pool.token_of(('name', word))
+        if key is not None:
+            pool.forget(key)
 
 
 def test_pointer_identity_across_time_keeps_bound_predicate(monkeypatch, tmp_path):
@@ -393,8 +399,11 @@ def test_two_kept_signs_survive_a_full_pool_until_their_definition_is_read(monke
     fixture = SentenceFixture(monkeypatch)
     owner, store = fixture.cs, fixture.store
     pool = owner.mtm = MediumTermMemory(capacity=2, n_vectors=owner.nVectors)
+    import weakref
+    pool._owner = weakref.ref(owner)
     value = torch.zeros(store.nDim)
-    previous = [('ltm', 'old', i) for i in (1, 2)]
+    previous = [store.occurrence_of(store.append_idea(value, when=False,
+        document_key=('old', i))) for i in (1, 2)]
     for address in previous:
         pool.open(address, kind=None, when=0, value=value)
     pool.close(None, stream=0, references=previous)
@@ -476,8 +485,10 @@ def test_sign_question_reads_the_latest_named_token_and_no_concept_for_an_unname
     observed = torch.eye(f.store.nDim)[2]
     def observe(reference, when):
         pool = f.cs.mtm
-        pool.event(reference, reference, verb=verb, role=0, when=when)
-        pool.update(reference, observed, when=when)
+        row = f.store.append_idea(observed, when=False,
+            document_key=('observed-state', reference, when))
+        pool.event(reference, f.store.occurrence_of(row), verb=verb, role=0, when=when,
+            before=pool.value_of(reference))
         assert resolver.coordinates(pool.value_of(reference)).sum() > 0
     observe(occurrence, 1)
     target, = f.cs.interpret.remembered_objects(label)
@@ -576,7 +587,7 @@ def test_serial_concept_expectation_does_not_select_a_concept():
     owner._expected_knowing.fill_(1.)
     model=SimpleNamespace(_concept_owner=lambda:owner,word_brackets=True,serial_object_meta=True)
     open_prediction(model,torch.tensor([True]))
-    assert model._concept_prediction is None and rule_order(owner,0)==()
+    assert model._concept_prediction.rows.numel() == 0 and rule_order(owner,0)==()
     torch.testing.assert_close(owner.relevance_weights(batch=1), (1+owner._desire[:1]).clamp_min(0))
 
 
@@ -685,11 +696,15 @@ def test_kept_event_retains_its_determination_and_shift(monkeypatch):
     prepared, written = close.prepare(clause, plan), {}
     address = f.store.write_clause(prepared, document_key='wrapped determination', written_rows=written)
     close.commit(plan, address, written, document='wrapped determination', position=0, training=False)
+    events = {value for key, value in written.items()
+              if isinstance(key, tuple) and key[0] == 'event_occurrence'}
+    assert len(events) == 1
     roles = {}
     for handle, site in introductions.items():
         occurrence = f.store.occurrence_of(written[id(site['written_node'])])
         token = f.cs.mtm.entries[f.cs.mtm.token_of(occurrence)]
-        roles[handle] = [event.role for event in token.events if event.occurrence == address]
+        roles[handle] = [event.role for event in token.events
+                         if event.occurrence in events]
     assert roles == {1:[0], 2:[2]}
 
 
@@ -807,7 +822,7 @@ def test_no_op_keeps_the_form_then_binds_and_acquires_a_kind(monkeypatch, tmp_pa
     token, = opened
     assert owner.mtm.token_of(occurrence) == token
     assert owner.mtm.entries[token].kind == owner.null_concept_id
-    assert torch.equal(owner.mtm.entries[token].value, form)
+    assert torch.equal(owner.mtm.value_of(token), form)
     assert not owner.mtm.promote_candidates(owner)
     # The no-op has no inverse operation. Read-back is its retained form.
     assert decisions[-1] == 'no_op'
@@ -829,7 +844,8 @@ def test_no_op_keeps_the_form_then_binds_and_acquires_a_kind(monkeypatch, tmp_pa
     clause = Clause(ConceptualMeaning.from_description(predicate), relation='equal',
         refs=(('clause', 0), -1, bark), children=(mention,), evidence=(1., 0.),
         composition=Composition(predicate, (term, complement), operation='equal'))
-    monkeypatch.setattr(resolver, 'select', lambda choices, logits, **kwargs: choices.index(occurrence))
+    monkeypatch.setattr(resolver, 'select', lambda choices, logits, **kwargs:
+        choices.index(occurrence) if occurrence in choices else None)
     plan = resolver.preview(clause, recall(resolver, (SituationFrame.from_row(store.row(store.location(occurrence))),)))
     item, = plan['items']
     assert occurrence in item['candidates'] and item['selected'] == occurrence

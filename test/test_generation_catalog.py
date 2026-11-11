@@ -21,7 +21,7 @@ def test_declared_generation_catalog_shares_one_optimizer_owner(tmp_path, output
         language = model.languageSpace
         names = language._generate_binary_names + language._generate_unary_names
         assert set(names) == {rule.method_name for rule in TheGrammar.rules_downward}
-        assert language.generate_policy is not None  # reconstruction owns it in either output mode
+        assert language.generate_policy is not None  # output owns it in either output mode
         shared = model.symbolSpace.subspace._resolve_rule_layer("CS", "lift")
         assert language.resolve_generation_op("CS", "lift") is shared
         assert shared in language._generate_binary_ops

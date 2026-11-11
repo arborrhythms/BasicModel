@@ -1,3 +1,4 @@
+from basic_fixtures import feature as basic_feature
 from order_fixtures import force_order
 from types import SimpleNamespace
 
@@ -19,8 +20,8 @@ def test_sentence_boundary_writes_present_percepts_at_the_negative_pole():
     force_order(cs, cid, 0)
     row = cs._csw_concept_row(0, cid)
     for part in (7, 8):
-        cs.add_concept_feature(row, 'ps', part, 0.)
-    cs.add_concept_feature(row, 'ws', 0, -1.)
+        basic_feature(cs, row, 'ps', part, 0.)
+    basic_feature(cs, row, 'ws', 0, -1., parts=(7,))
     primitive = PrimitiveProperties(1)
     primitive.teach(0, [48], [1.])
     spans = torch.tensor([[[0, 1]]])
@@ -30,9 +31,11 @@ def test_sentence_boundary_writes_present_percepts_at_the_negative_pole():
     cs.Reset(hard=True)
     features = Spaces._concept_alloc_of(cs).layer().features
     written = {col for (_, col), i in features._index.items() if float(features.values[i]) > 0}
-    assert 4 * 7 + 1 in written
-    assert 4 * 7 not in written
-    assert 4 * 8 not in written and 4 * 8 + 1 not in written
+    present = cs.basic_percepts.index[((7,), ())]
+    absent = cs.basic_percepts.index[((8,), ())]
+    assert 2 * present + 1 in written
+    assert 2 * present not in written
+    assert 2 * absent not in written and 2 * absent + 1 not in written
 
 
 def test_boundary_candidates_keep_bracket_semantics_and_do_not_veto():

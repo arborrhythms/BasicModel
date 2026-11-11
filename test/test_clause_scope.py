@@ -80,8 +80,11 @@ def test_committed_close_keeps_recent_chunks_beside_the_output_field():
     idea, relation = idea_clause(), part_clause()
     from Memory import LTM0
     store = LTM0(4, capacity=16)
-    owner = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store))
-    state = BasicModel._clause_end_state(owner, (stm, tuple(lang), ()), 0, (idea, relation), (10, 11))
+    from SentenceStrata import SentenceStrata
+    owner = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store),
+        conceptualSpace=SimpleNamespace(stm=SimpleNamespace(
+            strata=SentenceStrata(2, buffer.shape[1], buffer.shape[1], buffer.shape[-1]))))
+    state = BasicModel._clause_end_state(owner, (stm, tuple(lang), ()), 0, (idea, relation), (10, 11), ({}, {}))
     assert state[0][1].tolist() == [0, 0]
     assert state[0][chunks.STACK].eq(-1).all()
     assert state[0][chunks.READ][:, 0].gt(0).all()

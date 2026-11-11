@@ -12,6 +12,20 @@ import torch
 from util import TheXMLConfig, ProjectPaths
 
 
+def admit_native_forms(model, forms):
+    """Declare supplied field-lesson percepts in their existing native basis."""
+    cs, ws = model.conceptualSpaces[0], model.wholeSpace
+    native, basic = model.perceptualSpace.percept_store, cs.basic_percepts
+    admitted = []
+    for form in dict.fromkeys(forms):
+        raw = form.encode('utf8') if isinstance(form, str) else bytes(form)
+        parts = tuple(native.spell_out(raw))
+        row = basic.reserve(parts, ws.property_rows_for_bytes(raw))
+        basic.promote(row, declared=True)
+        admitted.append(row)
+    return tuple(admitted)
+
+
 def teach_concept_lessons(model):
     filename = TheXMLConfig.get('architecture.data.conceptLessons', default='')
     if not filename or getattr(model, '_concept_lessons_taught', False):
@@ -28,6 +42,10 @@ def teach_concept_lessons(model):
     alloc = _concept_alloc_of(cs)
     for item in lesson['properties']:
         primitive.teach(item['row'], item['bytes'], item['memberships'])
+    # D2 names collect the basic percepts of the supplied training forms.
+    # Admit those forms before constructing their sparse feature optimizer.
+    forms = [example['text'] for item in lesson['names'] for example in item['examples']]
+    admit_native_forms(model, forms)
     for item in lesson['names']:
         concept = int(item['concept'])
         if not item['features']:
@@ -66,6 +84,7 @@ def teach_concept_lessons(model):
     model.set_sigma(0.)
     # Name targets never enter forward; optimize the existing feature weights.
     optimizer = torch.optim.Adam([store.features.values], lr=float(lesson['learning_rate']))
+    store.features._optimizer = optimizer
     history = []
     for item in lesson['names']:
         examples = item['examples']
@@ -99,9 +118,9 @@ def teach_concept_lessons(model):
                 cs.mtm.promote_candidates(cs)
                 model.End()
     cases = sorted({r for r, col in store.features._index
-                    if (col // 2) % 2 == 0 and cs._order0_inventory_row(r) and cs.concept_id_at_row(r) in alloc.raised})
+                    if cs._order0_inventory_row(r) and cs.concept_id_at_row(r) in alloc.raised})
     # Exclude directly taught names; cases are the recurrent native parts.
-    cases = [r for r in cases if any(target == r and (col // 2) % 2 == 0
+    cases = [r for r in cases if any(target == r
                                    for target, col in store.features._index)]
     if not cases:
         raise ValueError('concept lessons did not witness any located field conjunctions')
@@ -120,5 +139,6 @@ def teach_concept_lessons(model):
     model._concept_lesson_receipt = dict(name_losses=history, cases=cases,
                                         output_concepts=list(model.outputSpace.concept_ids))
     model._concept_lessons_taught = True
+    store.features._optimizer = None
     model.zero_grad(set_to_none=True)
     model.train(was_training)

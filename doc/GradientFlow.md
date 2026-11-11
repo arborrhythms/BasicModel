@@ -101,42 +101,31 @@ owners one (audit 2026-10-30, `3718d9d0dc`).
 
 | Owner | Parameters | Trained by |
 |---|---|---|
-| reconstruction | perception's codebooks (through the perception pullback), the conceptual definitions (sparse sigma and pi values), the grammar operators and their inverses, the compose chooser, the generate policy and the decoder's operators | the derivation's reconstruction losses (`reconstruction.*`), the walk teacher (`reconstruction.walk_policy`; the decomposition teacher retired 2026-11-04), the walk credit (`reconstruction.walk_credit`), the grammar lessons, and the chooser's paired-trial credit |
+| reconstruction | perception codebooks, conceptual definitions, shared grammar operators and the compose chooser | the input and order-zero reconstruction losses and compose lessons; chooser rewards use the same parameters under the separate-chooser option |
 | expectation | one shared `ActivationPredictor` (`SymbolExpectation._inter_predictor`, also read as the word predictor) and the conceptual components (`IndependentComponents`, including the bind resolver `reference_close`); the percept predictor has its own local Adam and is not an owner group | expectation terms whose targets and sources are detached: a predictor never trains what it predicts; as built also `expectation.reference_mentions` and `expectation.bind_score_function` (the audit note below) |
-| output | the reading map: the output space, the answer attention, the answer and comparison readers, the synthesis parameters; in configurations whose output names concepts, also the concept layer's sparse coefficients | the answer and output costs |
+| output | output space, answer attention and readers, generate policy; named output concepts also own their sparse coefficients | supplied-answer costs, output-walk residual and departure credit |
 | attention | the candidate attention | the sentence's reconstruction and answer costs through the admission read (`AttentionCredit`, a cotangent to the candidate attention only), plus `attention.reading_lesson` and `attention.candidate_departure` |
 
-**How the answer reaches the understanding: only by selection.** Each
-sentence is read in two trials, the greedy one and one departure. Their
-costs are compared as reconstruction plus the supplied answer's cost
-(`SentenceCredit.components`; expectation is excluded from the
-comparison; since item 2.5 round A the answer's cost is graded, the kept
-answer idea's content coverage of the supplied word's code plus the text
-cost, so a departure that binds better wins). The cheaper trial is kept, and the chooser is credited for
-the departure by a score function on the detached cost difference
-(`Models._compose_score_function_loss`), booked to the chooser objective alongside the thought score in `ThoughtCredit.register` and the generation-walk credit in `Models._run_sentence_word_bricks`. The answer's gradient never reaches the operators, the
-definitions or perception. A supplied answer teaches which reading to
-choose, not how to bend the weights of the reading that was chosen.
-*Audit 2026-10-30 (`3718d9d0dc`): one exception as built. The bind resolver
-(`IndependentComponents.reference_close`, expectation-owned) is supervised
-directly by a supplied referent (`expectation.reference_mentions`,
-`ReferenceClose.answer_loss`, features and cue detached), and its departure
-credit is booked to expectation (`expectation.bind_score_function`), not
-reconstruction. Whether to keep that is Alec's call.* *Decided (Alec, 2026-11-01): expectation calls no grammar operator and selects active percepts on both paths and active concepts on the parallel pass only; `expectation.reference_mentions` is removed at both sites, bind's departure credit returns to the ordinary departure rule under reconstruction, and the supplied answer's loss belongs to output ([thinking spec §32.2](plans/2026-10-27-item2-5-thinking.md), item 15).*
+**Owners and sides (item 2.0 round 6, 2026-11-10).** The table describes
+parameter ownership for `separateChooser=true`. The default
+`separateChooser=false` takes R and A gradients over the shared trunk and
+projects A against R in each optimizer unit. Compose and thought rewards
+are now `output.compose_score_function` and `output.thought_score_function`,
+owner chooser, side A; the option's chooser parameter set remains the
+reconstruction set. Output walk credit and residual have owner output,
+side A. The reconstruction walk restores residual and departure credit under
+owner reconstruction, side R (Alec, 2026-11-10; loop spec §9). Bind and
+candidate departure rewards retain expectation/A and attention/A.
 
-**Where reconstruction is a loss and where it is an audit.** The
-derivation's reconstruction (the completed understanding inverted back to
-the sentence's leaves) is a loss, owned by reconstruction. The free
-decoder's byte identity (`reconstruction.free_bytes`) is reporting only under
-the field objective and is the decoder's lesson: it decides which decoder
-walk is kept and trains the generate policy. Its percept-residual identity
-(`reconstruction.free_percept`, the decode against the leaves' residual) is a
-trained reconstruction term at `reconstructionScale` with the trial root live
-(corrected 2026-10-30; kept trained by decision of 2026-11-01, Claude's proposal standing unless Alec overrules, [thinking spec §32.2](plans/2026-10-27-item2-5-thinking.md) item 16). Built in item 2.7 (record §38.3): a leaf recovered
-through a certified exact native inverse is detached from the field loss and
-reported as `certified_inside`; the co-operand witness stays live and the
-observed target stays detached; approximate maps keep their reconstruction
-loss.
+**Where reconstruction is a loss and where it is an audit.** The input's
+live parallel field trains `reconstruction_reverse.what/where/when` through
+basic percepts and the common native decoder. The sentence's untransformed end
+slots traverse the generate grammar, the occurrence writer and the same reverse
+to train `reconstruction_order_zero.what/where/when` against the same detached
+native input. Generated word order and brackets come from the writer's cursor. The decoder's byte identity and
+coverage are value-only audits; the compose-forest inverse remains a System 2
+report and tool. `reconstruction.free_percept` keeps its forecast residual,
+with context read from the parallel field rather than the sentence's end slots.
 
 **Expectation and reconstruction (decided 2026-10-29).** Percept
 expectation predicts each arrival from prior context and learns at that
@@ -325,7 +314,7 @@ accompany the sentence comparison.
 
 | Parameter owner | Weights and permitted update |
 |---|---|
-| Reconstruction (R) | Perception (the sole writer of native PS/WS prototypes and 11b evidence), field dictionaries, compose operators and tied inverses, compose chooser, and the shared generate decoder (chooser and parameterized generate faces). Grammar lessons train only their chooser, never an operator. Momentum descent; codes have no EMA refresh or contextual rotation. |
+| Reconstruction (R) | Perception, basic percepts, field dictionaries, compose operators and their shared numerical inverses, and compose chooser. The common order-zero decoder is trained by input and order-zero losses; generate policy belongs to output/A. Grammar lessons train their chooser. Codes have no EMA refresh or contextual rotation. |
 | Expectation (E) | Item 4's shared symbol activation predictor receives local residual gradients. Every source, including the latest one, and every target is detached; the entire gain saturation is detached. Percept moments update from external observations without gradients. Existing independent auxiliary objectives retain their own owners. ARMA and structured contrastive heads are retired. |
 | Answer (A) | Numeric head and affine root/end/echoic-bank reader, plus its independent comparison copy on the sentence path; learned memory retrieval for thought and generation, question conditioners and answer adapters/controllers. Only the presented reader supplies outputs; the comparison copy supplies the chooser's answer cost. The concluded understanding is detached. The generate chooser belongs to reconstruction. |
 
@@ -496,81 +485,48 @@ without a second optimizer owner or checkpoint copy. Grammar lessons cannot
 move those hosts. Catalogue migration still follows rule meaning, preserving
 unchanged chooser weights and optimizer moments.
 
-Reconstruction and output share one **generate decoder**. Starting from the
-root and occupied end slots, its generate chooser infers a binary undo, unary
-undo or STOP from the current top. No recorded compose sequence or numerical
-witness is supplied. Binary undo searches both children over the echoic
-shortlist; unary undo calls the operator's generate face. The shortlist keeps
-the sentence's own words and primed others, snapshotted after the seen write;
-§24.4's proposed pre-write snapshot is withdrawn. Equal-residual pairs retain
-bank order. A missing shortlist cannot manufacture a balanced binary split.
+Reconstruction and output share one **order-zero decoder** (item 2.0
+round 6, 2026-11-10). Its two reconstruction chains are:
 
-Under §11.6, STOP versus a supported binary undo is eligibility. For each top,
-the decoder compares the selected pair's existing squared recomposition residual
-with the best one-code least-squares explanation on the form block.
-Both children must be nonzero valid shortlist forms, neither
-may repeat the parent, and the pair must explain it at least as well as the
-single code. Equal fits prefer the two readable parts, including when the bank
-also holds a code for the larger chunk. If such a pair exists, STOP and unary
-rewrites are masked; the chooser still selects between eligible binary operations.
-Otherwise a unique nearest one-code explanation is singular and emits. A tie
-between identities is not singular. There is no new residual cutoff. Missing
-support or insufficient stack capacity leaves work pending rather than making
-STOP eligible. These residual and progress tests are the implementation of the
-review's readability rule and remain subject to Claude's review.
+```text
+System 1: perception -> live a_0 -> reverse (basic percepts -> native parts) -> reconstruction_reverse
+System 2: untransformed sentence end slots -> generate -> occurrence writer -> the same reverse -> reconstruction_order_zero
+```
 
-This mask replaces the policy-credit proposal in §11.3. No advantage loss,
-learning-rate change or extra training step is added. The audit keeps raw
-STOP-minus-undo logits, their actual backward gradients and fixed-parent update
-deltas, and records the eligibility mask. A positive raw STOP margin no longer
-implies STOP was eligible; a masked STOP logit receives zero choice gradient.
-The gate spells the leaves of this same walk with the same scoring as output.
+Both losses use the detached per-byte native input as target. Both compare the
+full event extent, padding the shorter sequence with zero events; missing and
+extra events remain charged. The second enters
+generate; the common `reverse` itself remains grammar-free and reads no compose
+forest. Configurations without the serial sentence path (`word_brackets=False`)
+book only `reconstruction_reverse`. `reverse(x, *, field)` requires a field
+on aligned configurations and reads no input perception spans. Its sparse
+native activity holds one selected row, strength and continuous percept vector
+per covered position. The native spelling buffers are allocated at construction;
+vectorized decoding never allocates a batch-by-position-by-inventory slab.
 
-The decoder's hard choice determines stack topology. As of the operators
-update round 1, its numerical transition has no straight-through policy path.
-Reconstruction teaches undo, unary and STOP by cross-entropy on detached
-states from the compose derivation. The free byte walk and the answer's
-restricted backward cannot train the policy; selected numerical inverses
-retain their ordinary parameter/operand gradients.
-Compose-only grammars implicitly expose their operators' generate faces, so
-numeric-answer configurations also learn a decoder without a configuration edit.
+Output is `generate -> occurrence writer -> reverse`. Generate infers binary
+undo, unary undo or STOP over its bounded bank. The existing legal-action and
+recomposition tests still determine eligibility. Its emitted terminals select
+the bank's lexical row by unprimed `readback_scores`, using priming only to
+break exact identity ties; their independent for/against
+activations and new output brackets become the field. Input spans and desired
+answers do not choose these rows. The output comparison gives the departure
+its detached cost advantage through score-function credit, owner output/A.
+Its three residual lanes also belong to output/A. The reconstruction walk uses
+the same generate, writer and reverse implementation, and compares its native
+reconstruction loss plus its selected residual. Its `reconstruction.walk_residual`
+lanes and `reconstruction.walk_credit` belong to reconstruction/R. The
+compose-tree policy teacher remains retired. Shared numerical inverse operators retain their ownership;
+`separateChooser=true` still restricts parameter writes by owner.
 
-During reconstruction training the decoder costs both complete walks before
-either can train, and selects the graph with strictly lower free-byte
-relative error. At evaluation it makes one greedy walk. This decoder
-selection is inside each sentence trial; the two outer compose trials still
-take their existing steps after their own comparison.
-
-`reconstruction.free_bytes` scores emitted leaves against input bytes, including
-NUL. Target positions only align scoring after decoding; they never select an
-operation or determine when the walk stops. Missing words and excess emitted
-leaves are scored. Packed sentences retain their own denominator.
-Pair search detaches candidate codes in both the residual and its soft blend.
-The parent stays live, retaining the compose chooser's gradient through the
-root. Residuals are divided by the parent's mean square before the unchanged
-`.01` soft temperature; that quantity is dimensionless. An exactly zero parent
-uses the existing zero-target squared-penalty convention (divisor one), with
-no floor on positive parent scales. Byte scoring detaches the bank codes and
-keeps the recovered leaf live. For recovered leaf `x` and candidate `c`,
-serial derived-code read-back scores `abs(cosine(x_PS,c_PS)) × priming(c)`.
-It reads only native perceptual content; magnitude and occurrence context do
-not determine lexical identity. Absolute cosine preserves the identity of a
-negative-activation leaf without treating that sign as another spelling.
-A zero code scores zero. The generic field-code utility retains its prior
-signed-activation times cosine behavior. At the unchanged temperature,
-the target byte's log probability is `logsumexp(emitting candidate logits,
--log(256)) - logsumexp(all candidate logits, 0)`. The second entry in each
-sum represents the null candidate. Non-emitting candidates contribute only
-to the normalizer. There is no probability clamp, so a wrong sharp winner
-does not erase the true byte's gradient. CPU/CUDA byte scoring accumulates
-float32 inputs in float64 through the log sums, then returns their original
-dtype; MPS uses its supported input precision. This avoids amplified
-reduction-rounding drift between eager and Inductor execution without
-changing the temperature, normalization or tolerances. Candidate codes receive
-no sentence reconstruction gradient; the recovered leaf carries its gradient
-to the compose chooser. The gate
-uses the same free inverse and scoring. Neither score normalizes a code
-parameter or imposes a post-step constraint.
+Thought deposits carry a differentiable order-zero reading, so this same
+native reverse can credit selected intuition weights. Expectation reads a
+detached order-zero target after the kept thought episode, on serial and
+parallel paths. Thoughts in STM are found by their `.when`, with empty `.where`;
+no thought-only column is appended to the field. Numeric heads retain their
+forward readout with `answerSynthesis=false`. Conceptual and perceptual synthesis
+layers and the second answer-surface decoder have retired; checkpoint loads
+report and drop their keys and associated optimizer state.
 
 The antipode objective, its reporting key, its diagnostic helper and its two
 obsolete tests are removed in §14. Byte error is the complete sentence
@@ -663,29 +619,30 @@ A zero-weight term does not require its source registry.
 
 The inventory below gives each active term's definition. “Origin” means the
 detached target mean square over exactly the error's active entries. R is the
-input reading and tied inverse; A is the answer reading map; E is the
-expectation predictor. While `separateChooser` is true (the configured value), every A term
+input and order-zero reconstruction; A is the answer side; E is the
+expectation predictor. While the `separateChooser=true` option is selected, every A term
 stops at the understanding, in a trial and at batch end. With it false, the answer reads
 the understanding live and shares the trunk with R ([gradient projection §1](plans/2026-11-03-gradient-projection.md)).
 Every E term detaches both its source and target. Restricted backward also
 prevents generation or lessons from writing an operator.
 
-*Audit 2026-10-30 (`3718d9d0dc`): this table is the record, not the inventory.
-Trained terms it does not list: `reconstruction.field`, `.content`,
-`.coverage`, `.part`, `.iterations`, `.forward_discard`, `.reference`,
-`.free_percept`, `.walk_residual`, `.decomposition`, `.walk_policy`,
-`.walk_credit`, `.compose_score_function`; `expectation.equal`, `.components`,
-`.bind_score_function`, `.reference_mentions`; `attention.reading_lesson`,
-`.candidate_departure`; `<category>.definition_fold`;
-`<category>.thought_score_function`. The listed `reading_attention` and
-`expectation_policy` have no writer. The current mapping is
-`ObjectiveOwnership.registry_costs`.*
+**Round-6 inventory (2026-11-10).** Owner and R/A side are independent.
+The observed-field chain replaces the compose-forest inverse. The generated
+order-zero chain retains its grammar-walk residual and departure credit.
+The full route is `ObjectiveOwnership.registry_costs`.
 
 | Registered term | Comparison and uninformed baseline | Priority | Owner and gradient |
 |---|---|---|---|
 | `answer.what/where/when` | Numeric output or generated surface band vs supplied target; origin per band | corresponding event-band scale | Trial and batch; A |
-| `reconstruction.free_bytes` | Shared generate walk spelling vs observed bytes including NUL; `log 256` | `reconstructionScale` | Trial; R, including decoder and live root; candidate bank codes detached. Detached chosen report at batch end |
-| `reconstruction.what/where/when`, `reconstruction_reverse.what/where/when` | Grammar-free perceptual/masked or reverse event vs input target; origin per band | reconstruction scale × band scale | Batch; perception and the active input inverse |
+| `reconstruction.free_bytes`, `reconstruction.coverage` | Common reverse bytes vs observed input; identity and missing-position audits | `reconstructionScale` | Value only, `trained=False` |
+| `reconstruction.what/where/when` | Masked percept prediction vs detached arrival; origin per band | reconstruction scale × band scale | reconstruction/R |
+| `reconstruction_reverse.what/where/when` | Live input field reversed against detached native events; origin per band | reconstruction scale × band scale | reconstruction/R; perception, definitions and basic percepts, no grammar |
+| `reconstruction_order_zero.what/where/when` | Untransformed sentence end slots → generate → new occurrences → common reverse against the same native events | reconstruction scale × band scale | reconstruction/R; compose, grammar inverse, selected definitions and native decoder |
+| `reconstruction.free_percept` | Decoded native percepts against the frozen percept forecast residual | `reconstructionScale` | reconstruction/R; field context, detached predictor |
+| `reconstruction.part` | Test lesson's common-reverse percept readback | `reconstructionScale` | reconstruction/R |
+| `output.compose_score_function`, `output.thought_score_function` | Detached completed-trial cost advantage times the selected log probability | whole term | chooser/A for compose and reconstruction-category thought |
+| `output.walk_credit` | Generate departure's score-function credit | whole term | output/A |
+| `expectation.concepts` | Prediction against detached post-thought order-zero knowing | 1 | expectation/R; predictor only |
 | `leaf_distill` | Historical root decoder's predicted exact leaves vs retained leaves; origin | `leafDistillWeight` | Batch; decoder and live input root where enabled |
 | `expectation.activation` | Predicted two-lane bank activation vs the next row's actual activation; bounded MSE | `sentenceExpectationLossWeight` | Trial or batch, once; shared predictor only, sources and targets detached |
 | `expectation.word` | Pre-arrival word activation vs the admitted word's two lanes; bounded MSE | `wordExpectationLossWeight` | Trial or batch; shared predictor at the word read, sources and targets detached |
@@ -693,7 +650,7 @@ Trained terms it does not list: `reconstruction.field`, `.content`,
 | `expectation.components` | Retained observation population plus current fused S; Laplace sparse-coding energy for A and one-sparse innovation energy for B | `independenceWeight` | Trial; E owns columns and relevance; the existing closing comparison credits the global grammar choice |
 | `expectation.intra` | Predict-then-perceive code vs arriving code; origin over active scalar entries | `intraLossWeight` | Trial or batch, once; within-sentence predictor only |
 | `grammar.compose.choice` | Joint compose probability vs annotated operator; `log(choice count)` | `grammarLessonWeight` | Trial; compose chooser; unlabelled waiting sites excluded |
-| `grammar.generate.choice` | Generate action logits vs annotated action; `log(choice count)` | `grammarLessonWeight` | Trial; R generate chooser only |
+| `grammar.generate.choice` | Generate action logits vs annotated action; `log(choice count)` | `grammarLessonWeight` | generate_lesson/A; generate policy only |
 | `grammar.generate.operands` | Generated children vs annotated detached codes; origin | `grammarLessonWeight` | Reporting only (`trained=False`); no operator gradient |
 | `embedding.positive/negative` | Sampled lexical logits vs positive/negative membership; `log 2` separately | `embeddingScale` | Batch; joint perceptual embedding |
 | `conceptual_sbow.positive/negative` | Cosine logits vs context/non-context membership; `log 2` separately | `conceptualSimilarityScale` × existing SBOW strength | Batch; conceptual codes on the enabled parallel path |
@@ -724,22 +681,24 @@ sphere rotation is retired; it is not an additional dictionary optimizer.
 
 *Kept this round by Alec's decision (2026-11-03: "keeping them for this round seems fine"). What to revisit is in [Future work](FutureWork.md), "Terms evaluated on the model's own internals: kept this round", and the plan is [gradient projection §6](plans/2026-11-03-gradient-projection.md).*
 
-Alec ruled (2026-11-03) that a teacher should not reach into the model's internals. The decomposition teacher `reconstruction.decomposition` retired in item 2.5 on 2026-11-04. The remaining planned retirements belong to item 2.0:
-- `reconstruction.walk_policy` (still present in item 2.5);
-- `verb_teacher`;
-- `modal_teacher`.
+The decomposition teacher, compose-tree walk-policy teacher, verb teacher and
+modal teacher are retired. Round 6 also retires `reconstruction.field`,
+`.iterations`, `.forward_discard` and `.content`. The generated order-zero
+reconstruction replaces the content loss. The independent grammar walk restores
+its residual and credit by Alec's 2026-11-10 decision; `reconstruction.decomposition`
+and `reconstruction.walk_policy` remain retired.
 
-Five more trained terms are evaluated on the model's own states rather than on the input or a supplied answer. None of them supplies a target to a choice, so they stay:
-
-| Term | What it constrains | Weight and gradient |
+| Term | What it constrains | Weight, owner and side |
 |---|---|---|
-| `reconstruction.walk_residual.{form,for,against}` | Operator round trip: the selected inverse's children, recomposed, against the walk's own parent, plus the energy left on an unresolved frontier | Weight 1, baseline 1. Fed by the decoder's kept walk and by the answer walk, so today the answer walk's residual is also booked as R |
-| `reconstruction.forward_discard` | Meaning that a forward compose step's output loses at coordinates where the step's inverse is undefined, along the kept derivation | `reconstructionScale`; zero unless the sentence field is on |
-| `<category>.definition_fold` | A class's sigma read covering the members the model itself minted or read as witnessed; a one-sided target $\max(q, \min(a, e))$ of the member's activation $a$ and stored evidence $e$ | Weight 1; category output when `outputSpace.concept_ids` is non-empty, otherwise reconstruction |
-| `reconstruction.reference` | $1 - \mathrm{covered}/\mathrm{mass}$ over the selected non-mint binds, measured against the record of the model's own bind choice | Weight .1. Both sides are detached, so it has no gradient and acts only as a value inside R and the choice credits |
-| `reconstruction.field` | The main reconstruction: a training-only reader follows the committed compose tree back to the model's own codebook atoms of the input words | `reconstructionScale`. While it is on, `reconstruction.free_bytes` is not trained |
+| `reconstruction.walk_residual.{form,for,against}` | Reconstruction walk's selected inverse recomposition and unresolved frontier | Weight 1, baseline 1; reconstruction/R, whole rows |
+| `reconstruction.walk_credit` | Reconstruction departure's proposal-corrected score function on its complete native loss and residual | Weight 1; reconstruction/R, whole rows; exact ties have no graph |
+| `output.walk_residual.{form,for,against}` | Output walk's selected inverse recomposition and unresolved frontier | Weight 1, baseline 1; output/A, whole rows |
+| `<category>.definition_fold` | Witnessed member evidence against the class's sparse definition | Weight 1; existing category owner and side |
+| `memory.link_coverage` | Coverage of the selected retained reference's link | Weight .1; detached value in reconstruction/R and choice comparisons |
 
-Every trained reconstruction writer therefore targets the model's own encodings or its self-consistency, not the raw input.
+The reconstruction targets are native percept events; conceptual activation
+and symbols are intermediate states. Generated bytes remain detached reports,
+while the continuous face carries each native event loss.
 
 <a id="per-operator-agreement"></a>
 
@@ -1137,3 +1096,13 @@ including residuals, and the same proposal-corrected score function as compose.
 Exact ties do not create a gradient. No walk, verb or modal teacher remains.
 A stored MTM value receives only the current action's local straight-through
 pullback from its recorded forward input; earlier sentence graphs stay cut.
+
+## Memory readers and state errors (item 2.0 round 5, 2026-11-09)
+
+| Term | Owner | Side | Live derivative |
+| --- | --- | --- | --- |
+| `memory.link_coverage` | reconstruction | R | What the chosen link's coverage reads; choice discrete |
+| `memory.verb_state` | reconstruction | R | Lift action readout on recorded operands; later reference target detached |
+| `memory.modal_state` | reconstruction | R | Modifier action on equal-time actual/alternative references; targets detached |
+
+`reconstruction.reference` and its weight are retired. Link trial comparison uses a detached coverage value; the kept-close registry carries the live coverage derivative in the single backward. State errors are registered at the kept close only in training, with the no-change squared cube-chart distance as baseline. The actionRateRatio parameter groups, assigner and re-read remain. Parallel-field, compose-centroid and typed-slot property gradients now pass through basic percepts; the presence derivative remains the directly weighted carrier.

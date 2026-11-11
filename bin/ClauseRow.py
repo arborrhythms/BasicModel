@@ -158,12 +158,12 @@ def attach_clause_index(model, store, space):
     language = getattr(model, 'languageSpace', None)
     occupations = getattr(language, 'parts_of_speech', None)
     allocator.parts.configure_operations(occupations)
-    occupations = (None if allocator.parts._occupation_owner is None
-                   else allocator.parts._occupation_owner())
     if occupations is not None:
         # Staged word IDs and kept clauses use this registry's allocator;
         # a terminal stage's local IDs need not name the same concepts.
         occupations.bind(space)
+        occupations.seats.configure(language._compose_binary_rules, language._tree_layer(2).ops)
+        occupations.seats.configure(language._compose_unary_rules, language._tree_layer(1).unary_ops)
     object.__setattr__(store, '_occupation_owner', allocator.parts._occupation_owner)
     object.__setattr__(store, '_part_read_rules', tuple(
         getattr(language, '_compose_binary_rules', ())))
@@ -519,12 +519,14 @@ class ClauseRows:
                 # request still names the phrase's own located occurrence.
                 if record.get('mention') and entry_kind != OCCURRENCE:
                     needed += 1
+                if entry_kind != OCCURRENCE and value.identity is not None and value.identity.get('event') is not None:
+                    needed += 1  # The event's compacted state is an idea member, not a grammar application.
         needed += int(expectation is not None and expectation.estimate is not None and bool(expectation.source_occurrences))
         if len(self) + needed > self.capacity:
             raise ClauseCapacityError(f'LTM0 construction capacity exhausted before close: '
                                       f'{len(self)} occupied + {needed} needed > {self.capacity}')
         closing.when = stamp(self)
-        rows, occurrences, mentions = {}, {}, {}
+        rows, occurrences, mentions, event_occurrences = {}, {}, {}, {}
         context = self.__dict__.get('_write_address')
         root_key = native_content_key(clause.meaning) if context is None else context[2]
         closing.content_key = (context[0], context[1], root_key) if context is not None else ('direct', root_key)
@@ -560,6 +562,14 @@ class ClauseRows:
             row = location(entry)
             rows[id(value)] = row
             occurrences[id(value)] = self.occurrence_of(row)
+            if entry[0] != OCCURRENCE and value.identity is not None and value.identity.get('event') is not None:
+                point = value.identity['result']
+                compacted = replace(ConceptualMeaning.from_description(point),
+                    bindings={'_relations': (entry[1],)})
+                event_row = self.append_meaning(compacted, evidence=pair, order=value.order,
+                    kind='unverified', when=closing.when, stream=stream,
+                    document_key=('event', closing.content_key), sentence_index=position)
+                event_occurrences[id(value)] = self.occurrence_of(event_row)
             if record.get('mention'):
                 mention = entry
                 if entry[0] != OCCURRENCE:
@@ -569,6 +579,7 @@ class ClauseRows:
                             sentence_index=position, content_key=native_content_key(value.meaning)),
                         stream=stream, surprise=-1.)
                 mentions[id(value)] = self.occurrence_of(location(mention))
+                closing._mentions[id(record['value'])] = mention
             if isinstance(row, int) and sentence:
                 if origin is not None or text is not None:
                     self.set_origin(row, self.ORIGIN_CONVERSATION if origin is None else origin,
@@ -594,8 +605,11 @@ class ClauseRows:
             written_rows.update(rows)
             written_rows.update({('occurrence', key): value for key, value in occurrences.items()})
             written_rows.update({('mention', key): value for key, value in mentions.items()})
+            written_rows.update({('event_occurrence', key): value for key, value in event_occurrences.items()})
+            written_rows['relations'] = tuple(closing.edges)
             written_rows['root_occurrence'] = occurrences[id(clause)]
             written_rows['root_mention'] = mentions.get(id(clause))
+            written_rows['root_event_occurrence'] = event_occurrences.get(id(clause))
             if written_rows.get('observe_sides'):
                 term = closing._terms[id(clause)]
                 while len(term.children) == 1:

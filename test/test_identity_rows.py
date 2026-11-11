@@ -175,7 +175,7 @@ def test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_
     migrate_checkpoint(host,state,host.state_dict(),drift,transforms)
     assert not any('nouns' in k or 'cue_policy' in k for k in state)
     assert _unpack_state(state['components.reference_close._extra_state']) == {'version':3}
-    assert state['components.reference_close.policy'].tolist() == [0,0,1,1,0,2,3,4]
+    assert state['components.reference_close.policy'].tolist() == [0,0,1,1,0,2,3,4,0,0,0,0]
     stable={};migrate_checkpoint(host,state,host.state_dict(),stable,{})
     assert not stable
     store.append_idea(a[0])

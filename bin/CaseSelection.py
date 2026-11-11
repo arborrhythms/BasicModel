@@ -232,7 +232,7 @@ def stage_event_cases(bank, resolver, frames, *, limit):
                 targets = tuple(index for index, symbol in heads.items() if symbol == event.verb)
                 key = (b, event.occurrence, event.verb)
                 if (remaining < 3 or not targets or key in seen or event.role != 0
-                        or event.before is None or event.after is None):
+                        or event.before is None):
                     continue
                 change = point(owner, event.verb)
                 row = store.location(event.occurrence)
@@ -243,9 +243,11 @@ def stage_event_cases(bank, resolver, frames, *, limit):
                     continue
                 seen.add(key)
                 for target in targets:
-                    current_values[b, identity, target] = token.value
+                    # The accessible record selected this collection. The
+                    # event row has no token, and its symbol may name several.
+                    current_values[b, identity, target] = owner.mtm.value_of(token)
                 pair = bank.codes.new_tensor(record['evidence'])
-                for value in (event.before, change, event.after):
+                for value in (event.before, change, owner.mtm.event_value(event)):
                     additions.append((b, targets, value, pair))
                 remaining -= 3
     if not additions:

@@ -107,13 +107,13 @@ def test_description_promotion_does_not_define_its_derived_reading(monkeypatch):
     item, = plan['items']
     token = f.cs.mtm.token_of(item['reference'])
     reading = f.cs.mtm.reading_of(token)
-    assert reading is not None
+    assert reading is None  # A description references its own idea, never its derived kind.
     assert 'word' not in f.cs._concept_allocator.symbol_types.get(reading, ())
     before = dict(f.cs._concept_allocator.named_identities)
     identity = promote_identity(f.cs, token)
     assert f.cs.mtm.entries[token].symbol == identity
     assert f.cs._concept_allocator.named_identities == before
-    assert not f.cs.definitions.objects(reading)
+    assert all(identity not in f.cs.definitions.objects(word) for word, kinds in f.cs._concept_allocator.symbol_types.items() if 'word' in kinds)
 
 
 def test_asserted_constraint_still_excludes_a_contained_candidate():

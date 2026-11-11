@@ -52,3 +52,22 @@ def components(store, roots, *, max_records, work, scanned=0):
                                 meaning=store.part_row(reference[1])['meaning'])
         pending.extend(operands)
     return result, scanned, tuple(incomplete)
+
+
+def path(store, concept):
+    """Read a promoted connected path once per member, including cyclic input."""
+    parts = store.parts
+    members = {ref for ref in parts.parts((SYMBOL, concept)) if ref[0] in (OCCURRENCE, RELATION)}
+    successors = {member: tuple(ref for ref in parts.wholes(member) if ref in members)
+                  for member in members}
+    incoming = {child for children in successors.values() for child in children}
+    roots = [*sorted(members-incoming), *sorted(incoming)]
+    pending, visited, result = list(reversed(roots)), set(), []
+    while pending:
+        member = pending.pop()
+        if member in visited:
+            continue
+        visited.add(member)
+        result.append(member)
+        pending.extend(reversed(sorted(successors[member])))
+    return tuple(result)

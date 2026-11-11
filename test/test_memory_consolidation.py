@@ -150,8 +150,9 @@ def test_token_promotes_at_three_sentences_with_the_occurrence_fold_and_keeps_it
     expected = atoms[0] + (2*atoms[1] + atoms[2]) / 3
     torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(entry.symbol)], expected)
     assert resolver._derivation_symbol(token) == entry.symbol
-    pool.event(token, token, verb=verb, role=0, when=50)
-    pool.update(token, atoms[3], when=50)
+    changed = store.append_idea(atoms[3], when=False, document_key='changed-state')
+    pool.event(token, store.occurrence_of(changed), verb=verb, role=0, when=50,
+        before=pool.value_of(token))
     consolidate(owner, store)
     torch.testing.assert_close(pool.value_of(token), atoms[3])
     torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(entry.symbol)], expected)
@@ -319,7 +320,7 @@ def test_pending_alias_and_later_self_arrival_leave_the_same_token_pending():
         (use, None, 0) for use in resolver.components.owner.mtm.entries[token].occurrences))
     before = snapshot(resolver)
     clocks = dict(resolver.components.owner.mtm.closes)
-    later = resolver.preview(site(2), chunk_context(resolver, (frame,)))
+    later = resolver.preview(site(2), chunk_context(resolver, (frame,)), stream=0)
     assert later['items'][0]['selected'] == token
     assert len(later['arrivals']) == 1 and later['arrivals'][0]['selected'] == token
     assert resolver.components.owner.mtm.closes == clocks
@@ -333,6 +334,7 @@ def test_invalid_expiry_or_promotion_checkpoint_keeps_the_existing_pool(corrupti
     pool = resolver.components.owner.mtm
     key = store.occurrence_of(row)
     saved, bad = pool.state(), pool.state()
+    value = pool.value_of(key).clone()
     if corruption == 'clock':
         bad['closes'] = ((0, -1),)
     elif corruption == 'access':
@@ -344,7 +346,7 @@ def test_invalid_expiry_or_promotion_checkpoint_keeps_the_existing_pool(corrupti
     with pytest.raises(ValueError):
         pool.restore(bad)
     assert pool.names == {key: pool.names[key]} and pool.closes == dict(saved['closes'])
-    torch.testing.assert_close(pool.value_of(key), saved['entries'][0]['timelines'][0][1])
+    torch.testing.assert_close(pool.value_of(key), value)
 
 
 def test_kept_closes_with_one_model_tick_do_not_refresh_an_unmentioned_token():
@@ -383,10 +385,14 @@ def test_capacity_eviction_during_close_drops_only_the_evicted_tokens_history(mo
     resolver.commit(plan, row, written, document='capacity-close', position=0, training=False)
     names = [written[('occurrence', id(item['written_node']))] for item in plan['items']]
     assert len(names) == 4 and len(f.cs.mtm.entries) == 2
-    assert all(f.cs.mtm.token_of(name) is None for name in names[:2])
-    assert all(f.cs.mtm.token_of(name) is not None for name in names[2:])
+    # Event collections share this capacity: the final participant and the
+    # final event occupy the two seats, and every evicted history is gone.
+    assert all(f.cs.mtm.token_of(name) is None for name in names[:-1])
+    assert f.cs.mtm.token_of(names[-1]) is not None
+    assert sum(entry.refinement.get('member_kind') == 'event'
+               for entry in f.cs.mtm.entries.values()) == 1
     assert all(store_row is not None for store_row in map(f.store.location, names))
-    assert all(f.cs.mtm.entries[f.cs.mtm.token_of(name)].events for name in names[2:])
+    assert f.cs.mtm.entries[f.cs.mtm.token_of(names[-1])].events
     unchanged(resolver, before)
 
 
@@ -397,14 +403,15 @@ def test_a_kept_bind_refreshes_its_token_even_when_model_time_is_unchanged():
     first, _ = kept(resolver, mention(atoms[0]), position=0)
     token = store.occurrence_of(first)
     frame = SituationFrame.from_row(store.row(first))
-    for position in range(1, 17):
+    for position in range(1, 16):
         kept(resolver, mention(atoms[1]), position=position)
-    bound, _ = kept(resolver, mention(atoms[0], mode='bind'), (frame,), position=17)
+    # The link must arrive within the horizon; mere retention is insufficient.
+    bound, _ = kept(resolver, mention(atoms[0], mode='bind'), (frame,), position=16)
     assert pool.token_of(store.occurrence_of(bound)) == token
-    for position in range(18, 34):
+    for position in range(17, 33):
         kept(resolver, mention(atoms[1]), position=position)
     assert token in pool.entries
-    kept(resolver, mention(atoms[1]), position=34)
+    kept(resolver, mention(atoms[1]), position=33)
     assert token not in pool.entries and store.location(token) is not None
 
 

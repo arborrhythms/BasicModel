@@ -1,4 +1,5 @@
 """11b corrections: recurrent parts and a transient attended concept field."""
+from basic_fixtures import feature as basic_feature
 import torch
 
 import Spaces
@@ -42,7 +43,7 @@ def test_inventory_outlives_the_eight_attended_rows():
         force_order(cs, cid, 0)
         row = cs._csw_concept_row(0, cid)
         assert row is not None, 'a field cap must not cap persistent definitions'
-        cs.add_concept_feature(row, 'ps', 100 + n, 1.)
+        basic_feature(cs, row, 'ps', 100 + n, 1.)
         definitions.append((cid, row))
     extent = torch.tensor([[[0, 1]]])
     for n in (11, 0, 9):
@@ -84,7 +85,7 @@ def test_bound_snapshot_and_checkpoint_keep_concept_ids():
         cid = cs.new_concept()
         force_order(cs, cid, 0)
         row = cs._csw_concept_row(0, cid)
-        cs.add_concept_feature(row, 'ps', 100 + n, 1.)
+        basic_feature(cs, row, 'ps', 100 + n, 1.)
         definitions.append((cid, row))
     extent = torch.tensor([[[0, 1]]])
     def read(n):
@@ -97,7 +98,6 @@ def test_bound_snapshot_and_checkpoint_keep_concept_ids():
                         ('inventory_rows', addresses), ('codes', codes)):
         object.__setattr__(cs.subspace, '_concept_' + name, value)
     object.__setattr__(cs.subspace, '_concept_code_owner', 0)
-    object.__setattr__(cs.subspace, '_thought_occurrence', None)
     read(0)
     assert ids[0] == definitions[11][0] != cs._cs_field_concept_ids[0]
     from AccessibleMind import apply_thought_effect
@@ -175,7 +175,7 @@ def test_batch_members_bind_independently_within_eight_rows():
         cid = cs.new_concept()
         force_order(cs, cid, 0)
         row = cs._csw_concept_row(0, cid)
-        cs.add_concept_feature(row, 'ps', 100 + n, 1.)
+        basic_feature(cs, row, 'ps', 100 + n, 1.)
         cids.append(cid)
     spans = torch.tensor([[[0, 1]]]).expand(12, -1, -1)
     a0 = cs.cs_read_memberships((torch.arange(100, 112)[:, None], spans,
@@ -194,8 +194,8 @@ def test_unattended_concept_is_unknown_and_does_not_veto_observed_evidence():
         force_order(cs, cid, 0)
     ar, br = [cs._csw_concept_row(0, cid) for cid in (a, b)]
     row = cs._csw_concept_row(0, conjunction)
-    cs.add_concept_feature(ar, 'ps', 10, 1.)
-    cs.add_concept_feature(br, 'ps', 11, 1.)
+    basic_feature(cs, ar, 'ps', 10, 1.)
+    basic_feature(cs, br, 'ps', 11, 1.)
     cs.add_concept_edge(row, ar, 1., conjunctive=True)
     cs.add_concept_edge(row, br, 1., conjunctive=True)
     cs.conceptual_pi = True
@@ -217,7 +217,9 @@ def test_location_writer_keeps_an_ordered_group_before_recurrence(tmp_path):
     cs._populate_cs_symbols(torch.tensor([parts]), torch.arange(4)[None],
                             torch.tensor([[[0, 4]]]))
     store = Spaces._concept_alloc_of(cs).layer(0)
-    assert list(store.feature_groups.values()) == [tuple(parts)]
+    # D2: a part-only location is a selector over admitted basic percepts.
+    assert {key[2] for key in cs.basic_percepts.selectors if key[1] == 'ps'} == {(part,) for part in parts}
+    assert not store.feature_groups
     assert ps.percept_store.get_id(b'abba') is None
 
 

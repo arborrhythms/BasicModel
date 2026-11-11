@@ -71,13 +71,13 @@ def context(resolver, frames=()):
     return state
 
 
-def recall(resolver, frames):
+def recall(resolver, frames, *, stream=None):
     """Explicit query-style recall before a fixture reads an unpooled row."""
     from QueryWork import QueryWorkBudget
     rows = [resolver.store.row(resolver.store.location(frame.row_id)) for frame in frames]
     # Each input has at most the fixture's whole fixed store of references.
     work = QueryWorkBudget(max(1,len(rows)*(resolver.store.capacity+resolver.store.parts.capacity)))
-    resolver.store.recall_identities(rows,work=work)
+    resolver.store.recall_identities(rows,work=work,stream=stream)
     return context(resolver,frames)
 
 

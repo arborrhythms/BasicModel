@@ -150,3 +150,14 @@ Alec answered D4 and D6 "Good", asked about D1, D2 and D5, and answered D3 with 
 - **D2** `reconstruction.reference` becomes memory's `memory.link_coverage`, one term for links of both orders: "good, nicely generic".
 - **D5** thoughts as ideas and relations: "when to do the implementation is your decision". Claude's decision: in the loop's own round, in item 2.0's one Codex text. The round rewrites `write_knowing`, `apply_thought_effect` and output's order 0' anyway, and building output on the appended columns only to remove them afterwards would port the same readers twice.
 - D3, D4 and D6 as recorded in §7. Every decision of §5 is now closed; the Codex text joins item 2.0's.
+
+## 9. Corrected (Alec, 2026-11-10): the grammar inverse stays in the order-zero reconstruction
+
+Alec, 2026-11-10, reviewing round 6: "I'm worried we miscommunicated. For system 1 and animal cognition, the inverse happens from order-zero concepts. When symbolic processing is turned on (system 2, human cognition), we run the grammar inverse to determine the order-zero concept layer and then run the system 1 inverse."
+
+§3.2 item 5 and §3.3 misread his statements 1, 2 and 7 of §1. They are replaced as follows; the record of the decisions and the Codex text are 2.0 spec §20.19 and §20.20.
+
+1. `reverse` is the system-1 inverse and stays grammar-free (§3.1 unchanged). The input reconstruction, `reconstruction_reverse`, is `reverse` of the observed order-zero field and is unchanged.
+2. With symbolic processing on, the order-zero reconstruction, `reconstruction_order_zero`, is the output chain of §3.5 on the untransformed understanding: the generate walk on the sentence's end slots, the occurrence writer (`OutputOccurrences.generated`), then `reverse`. The generated field carries the generated order and brackets. The descent by definition alone (`SentenceField.after_understanding`) retires. D1 of §8 stands in this form: symbols take part in the order-zero reconstruction through the grammar inverse.
+3. The free decoder therefore stays in reconstruction (§3.2 item 5 is withdrawn), and in §3.4 the decoder lanes of `reconstruction.walk_residual` and `reconstruction.walk_credit` return beside output's. `reconstruction.decomposition`, `.walk_policy`, `.field`, `.iterations`, `.forward_discard` and `.content` stay as the table has them.
+4. Gate 3 of §4 reads: `reverse` is grammar-free; the order-zero reconstruction on a composing configuration traverses the grammar inverse.

@@ -23,8 +23,10 @@ def finish(model, sub, sym, perception_sub, perception_sym, written, perception_
     for owner, names in ((trace, ('_choice_values', '_choice_action_records',
             '_choice_log_probabilities', '_forward_losses', '_chunk_state', '_case_state')),
         (model, ('_tensor_pushed_ideas', '_tensor_sentence_roots_live', '_packed_sentence_roots',
-            '_attention_words', '_last_decoder_trace', '_compose_sampling_scale',
-            '_sentence_expectation_comparison', '_sentence_gradient_objectives'))):
+            '_attention_words', '_last_decoder_trace', '_last_output_walk_trace',
+            '_last_decoder_comparison', '_compose_sampling_scale',
+            '_sentence_expectation_comparison', '_sentence_gradient_objectives',
+            '_sentence_open_fields', '_input_reconstructions'))):
         for name in names:
             if hasattr(owner, name):
                 setattr(owner, name, detached(getattr(owner, name)))
@@ -35,11 +37,20 @@ def finish(model, sub, sym, perception_sub, perception_sym, written, perception_
             from Memory import STMChunks
             # Include inactive capacity rows: set_state would concatenate
             # their old graph back onto the detached active prefix.
+            if hasattr(stm, 'strata'):
+                for store in (*stm.strata.banks, *stm.strata.recent_stores):
+                    store.slots = store.slots.detach()
             for field in STMChunks.FIELDS:
                 name = '_live_' + field
                 stm._assign_live(stm, name, getattr(stm, name).detach())
+        carrier = space.subspace
+        for name in ('_concept_activations', '_concept_codes'):
+            if hasattr(carrier, name):
+                setattr(carrier, name, detached(getattr(carrier, name)))
         if hasattr(space, '_percept_field'):
             space._percept_field = detached(space._percept_field)
+        if hasattr(space, '_cs_open_field'):
+            space._cs_open_field = detached(space._cs_open_field)
     if model.percept_expectation is not None:
         model.percept_expectation.last_arrival = detached(model.percept_expectation.last_arrival)
     # Publishing the chosen syntax replaces this slab with sentence writes.

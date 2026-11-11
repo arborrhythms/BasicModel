@@ -36,7 +36,7 @@ def reread(owner, token, timeline, value):
     return torch.cat((value[:-predicted.numel()], value[-predicted.numel():] + correction.to(value)))
 
 
-def observe(action, mtm, previous, observed, *, training=True):
+def observe(action, mtm, previous, observed, *, training=True, errors=None, row=None):
     reports = []
     if action is None:
         return reports
@@ -52,7 +52,10 @@ def observe(action, mtm, previous, observed, *, training=True):
         if verb is None:
             continue
         before, verb, context = operands(action, event)
-        after = current.value[-width:].to(action.readout).detach()
+        after = mtm.read_member(current.occurrences[-1], mtm.reading_of(current.occurrences[-1]))[-width:].to(action.readout).detach()
+        if training and errors is not None:
+            from MemoryState import verb as state_error
+            state_error(action, event, after, errors, row=row)
         with torch.no_grad():
             term = action.teacher(before, after, verb, **context)
         report = dict(token=token, occurrence=event.occurrence, verb=event.verb,

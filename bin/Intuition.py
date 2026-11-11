@@ -340,31 +340,30 @@ def replay(proofs):
     return torch.stack(fields).amax(0), torch.stack(pairs).amax(0)
 
 
-@torch.no_grad()
 def write_knowing(model, evidence, row):
-    """Deposit paired containments into the existing order-zero field."""
+    """Re-evaluate the selected proof live and deposit at existing brackets."""
     space = model._concept_owner()
-    carrier = getattr(model.conceptualSpace, 'subspace', None)
+    carrier = model.conceptualSpace.subspace
     existing = getattr(carrier, '_concept_activations', None)
     if existing is None or not evidence.get('knowing'):
         return
-    addresses = getattr(carrier, '_concept_inventory_rows', None)
-    if addresses is None:
-        addresses = space._field_inventory_rows(existing.device)
+    terms = held_terms(evidence['meaning'])
+    if not terms:
+        raise ValueError('intuition knowing requires its selected derivation')
+    live = torch.stack([evaluate(space, term)[0] for term in terms]).amax(0)
+    addresses = carrier._concept_inventory_rows
     addresses = addresses[:, row] if addresses.ndim == 2 else addresses
-    field = existing.detach().clone()
-    location = getattr(carrier, '_thought_occurrence', None)
-    location = 0 if location is None else int(location)
-    if not 0 <= location < field.shape[2]:
-        raise RuntimeError('intuition has no constructed knowing extent')
-    for address, pair in evidence['knowing']:
-        slots = (addresses[:len(field)] == address).nonzero().flatten()
+    locations = carrier._concept_where[row, :, 1] > carrier._concept_where[row, :, 0]
+    additions = torch.zeros_like(existing)
+    for address, _ in evidence['knowing']:
+        slots = (addresses == address).nonzero().flatten()
         if len(slots) > 1:
             raise ValueError('intuition knowing has duplicate inventory addresses')
         if len(slots):
-            index = int(slots[0])
-            field[index, row, location] = torch.maximum(field[index, row, location], field.new_tensor(pair))
-    object.__setattr__(carrier, '_concept_activations', field)
+            code = chart(space, leaf(space, address)).amax(-1)
+            pair = torch.minimum(live, code[:, None]).sum(0) / code.sum().clamp_min(1e-12)
+            additions[int(slots[0]), row] = pair * locations[:, None]
+    carrier._concept_activations = torch.maximum(existing, additions)
 
 
 def operand(rule, slot):

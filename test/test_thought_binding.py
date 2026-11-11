@@ -302,7 +302,8 @@ def test_empty_read_does_not_bind_its_temporary_question_address(producer, incom
             raise ValueError('a point is not a registered relation')
         return SimpleNamespace(operation=SimpleNamespace(
             semantic_id='part' if value.role_refs[1] == ('sym', 99) else producer))
-    registry = SimpleNamespace(signature_for=signature, space=SimpleNamespace())
+    registry = SimpleNamespace(signature_for=signature,
+        space=SimpleNamespace(mtm=SimpleNamespace(entries={})))
     result = integrate_thought(registry, goal, materialized, ())
     assert result.role_refs == goal.role_refs and open_slots(result) == (('referent', 0),)
     torch.testing.assert_close(result.roles, goal.roles, rtol=0, atol=0)
@@ -310,7 +311,8 @@ def test_empty_read_does_not_bind_its_temporary_question_address(producer, incom
     assert bindings(result)['_producing_operation'] == producer
     assert not bindings(result).get('_bound_roles')
     store = SimpleNamespace(_validate_local_references=validate_local_references,
-        write_clause=lambda clause, **kwargs: (clause, kwargs))
+        write_clause=lambda clause, **kwargs: (clause, kwargs),
+        _concept_owner=lambda: registry.space)
     model = SimpleNamespace(grammatical_thoughts=registry, symbolSpace=SimpleNamespace(ltm_store=store))
     clause, metadata = write(model, result, row=0)
     assert metadata['kind'] == 'question'

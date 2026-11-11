@@ -135,9 +135,10 @@ class TestCreateFromConfig(unittest.TestCase):
             self.assertEqual(m.nInput, 2)
             self.assertEqual(m.nPercepts, 4)
             self.assertEqual(m.nConcepts, 3)
-            from PartsOfSpeech import formal_arguments
+            from PartsOfSpeech import formal_arguments, operation_names
             from Language import TheGrammar
-            self.assertEqual(m.nSymbols, 3 + len(formal_arguments(TheGrammar.rules_upward)))
+            self.assertEqual(m.nSymbols, 3 + len(formal_arguments(TheGrammar.rules_upward))
+                             + len(operation_names(TheGrammar.rules_upward)))
             self.assertEqual(m.nOutput, 1)
         finally:
             os.unlink(xml)

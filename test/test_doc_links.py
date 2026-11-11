@@ -54,6 +54,10 @@ def test_relative_links_resolve(path):
     # the original document's home. Audit every target without rewriting
     # historical evidence or excluding the archived documents.
     origins = {
+        **{str(snapshot.relative_to(_ROOT)): str(snapshot.parents[2].relative_to(_ROOT) / snapshot.name)
+           for snapshot in (_ROOT / "doc/benchmarks").glob("*/measurement-freezes/*/measurement-tables.md")},
+        "doc/benchmarks/2026-11-09-item2-0-round-5-repair-3/decision-return/spec-section20.md":
+            "doc/plans/2026-11-03-gradient-projection.md",
         "doc/benchmarks/2026-11-06-item2-3-round-1b/part1-return/README.md":
             "doc/benchmarks/2026-11-06-item2-3-round-1b/README.md",
         "doc/benchmarks/2026-11-06-item2-3-round-1b/part1-return/spec-before-completion.md":

@@ -37,8 +37,12 @@ def test_thought_effect_uses_cached_row_identity(monkeypatch):
     result = ThoughtResult('ask', 'conceptual-subgoal', 'set', 'retrieval', _meaning(),
         MappingProxyType({'frames': ({'reference': ('sym', member)},)}))
     for _ in range(2):
-        apply_thought_effect(SimpleNamespace(conceptualSpace=cs), result, row=0, work=QueryWorkBudget(32))
-    assert cs.subspace._concept_activations[row, 0, 0, 0] == 1
+        apply_thought_effect(SimpleNamespace(conceptualSpace=cs, _concept_owner=lambda: cs), result, row=0, work=QueryWorkBudget(32))
+    from ThoughtChunks import held
+    ideas = held(cs.stm, 0)
+    assert len(ideas) == 2 and ideas[0][0] != ideas[1][0]
+    assert all(idea.role_refs[0] == ('sym', member) for _, idea in ideas)
+    assert not hasattr(cs.subspace, '_thought_occurrence')
 
 
 
@@ -199,10 +203,15 @@ def test_higher_order_retrieval_seeds_discontinuous_members_only():
     held = replace(held, role_refs=(('sym', higher), None, None))
     result = ThoughtResult('ask', 'conceptual-subgoal', 'set', 'retrieval', meaning,
         MappingProxyType({'frames': ({'meaning': held},)}))
-    apply_thought_effect(SimpleNamespace(conceptualSpace=cs), result, row=0, work=QueryWorkBudget(32))
-    field = cs.subspace._concept_activations[:, 0, 0, 0]
-    assert field[rows[0]] == field[rows[2]] == 1 and field[rows[1]] == 0
-    assert not field.requires_grad
+    apply_thought_effect(SimpleNamespace(conceptualSpace=cs, _concept_owner=lambda: cs), result, row=0, work=QueryWorkBudget(32))
+    from ThoughtChunks import held as stored_ideas
+    retained = stored_ideas(cs.stm, 0)
+    assert len(retained) == 1
+    assert retained[0][1].role_refs == held.role_refs
+    torch.testing.assert_close(retained[0][1].roles, held.roles)
+    members_read = cs._concept_allocator.refs(higher, 'part')
+    assert {cid for tag, cid in members_read if tag == 'sym'} == {members[0], members[2]}
+    assert not retained[0][1].roles.requires_grad
 
 
 def test_budget_changes_context_and_forces_closure():

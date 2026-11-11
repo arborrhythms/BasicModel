@@ -91,7 +91,9 @@ def test_argument_views_learn_radius_and_shared_words_do_not_divide_membership()
         speech.observe_use('lift', ((word,), (word,)))
     refresh(cs)
     radius = -math.expm1(-3 / bank.trust.trust_views)
-    assert speech.operation('lift')['trust'] == pytest.approx(radius)
+    from ConceptTrust import positive_length
+    assert 'trust' not in speech.operation('lift')
+    assert positive_length(cs, speech.seats['lift'].concept) == 0.
     assert speech.operation('lift')['definiteness'] == pytest.approx((radius, radius))
     assert speech.members('lift_argin1') == speech.members('lift_argin2') == (word,)
     assert not hasattr(speech, 'counts') and not hasattr(speech, 'distribution')
@@ -143,7 +145,8 @@ def test_empty_argument_views_supply_no_operation_authority_or_gate_readiness(mo
     for _ in range(3):
         speech.observe_use('lift', ((), ()))
     assert speech.operation('lift')['uses'] == 3
-    assert speech.operation('lift')['trust'] == 0.
+    from ConceptTrust import positive_length
+    assert positive_length(cs, speech.seats['lift'].concept) == 0.
     assert TrustGates.measurements(cs, speech)['clause'] == 0.
 
 
@@ -348,18 +351,20 @@ def test_revised_centroid_uses_fit_and_first_members_are_equal():
     assert float(bank.mereology.placement[parent] @ before) > float(torch.tensor([1.,1.,0.,0.]) @ before)/(2**.5)
 
 
-def test_revised_form_only_operation_is_neutral():
+def test_revised_form_only_operation_waits_for_seat_authority():
     from PartsOfSpeech import PartsOfSpeech
     from TrustGates import TrustGates
     cs,bank,_,alloc=fixture(meaning_pairs=0)
     speech=PartsOfSpeech(('lift_argin1','lift_argin2'),cs)
     a,b=[cs.interpret.lookup_word([i],(),form=f'term{i}') for i in (4,7)]
     speech.observe_use('lift',((a,),(b,)))
-    assert speech.operation('lift')['trust']==1.
+    from ConceptTrust import positive_length
+    assert positive_length(cs, speech.seats['lift'].concept) == 0.
     assert TrustGates.measurements(cs,speech)['clause'] is None
     alloc.parts.configure_operations(speech)
-    row=alloc.parts.add(a,b,truth_plus=.8,truth_minus=.3,grammar_operation=speech.operation_index('lift'))
-    torch.testing.assert_close(torch.stack(alloc.parts.evidence(row)),torch.tensor([.8,.3]))
+    row=alloc.parts.add(a,b,truth_plus=.8,truth_minus=.3,operation_seat=speech.seats['lift'].concept)
+    torch.testing.assert_close(torch.stack(alloc.parts.evidence(row)), torch.zeros(2))
+    torch.testing.assert_close(torch.stack((alloc.parts.truth_plus[row], alloc.parts.truth_minus[row])), torch.tensor([.8, .3]))
 
 
 def test_revised_relation_membership_is_enumerated_once():

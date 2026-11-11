@@ -18,10 +18,13 @@ def test_prepend_preserves_content_without_a_separate_meaning_chart():
     pool = MediumTermMemory(2,n_vectors=90)
     key = ('ltm','fixture',1)
     value = torch.arange(1,17,dtype=torch.float32)/17
+    from memory_fixtures import attach, put
+    owner,store = attach(pool,16,'fixture')
+    key = ('ltm',store.address_domain,1)
+    put(store,key,value)
     pool.open(key,kind=None,when=1,value=value,pending=False)
-    owner = SimpleNamespace(mtm=pool,similarity_codebook=SimpleNamespace(
-        mereology=SimpleNamespace(meaning_pairs=0,percept_width=8,percept_event_width=16)))
-    store = SimpleNamespace(location=lambda _:0,slots=torch.zeros(1,16))
+    owner.similarity_codebook.mereology = SimpleNamespace(
+        meaning_pairs=0,percept_width=8,percept_event_width=16)
     actual = symbolize(owner,store,key,pool.entries[key])
     torch.testing.assert_close(actual,value,rtol=0,atol=0)
     assert actual.data_ptr() != value.data_ptr()
@@ -36,10 +39,16 @@ def test_bind_menu_at_each_order_and_kept_mention_commit(monkeypatch,order):
     f = SentenceFixture(monkeypatch)
     keys = []
     for i in (0,1):
-        row = f.store.append_meaning(ConceptualMeaning.from_description(torch.eye(8)[i]),
-            sentence_index=i,document_key='antecedents',order=1)
+        from dataclasses import replace
+        from test_reference_close import known_concept
+        concept = known_concept(f.cs, torch.eye(8)[i], order=order)
+        meaning = replace(ConceptualMeaning.from_description(torch.eye(8)[i]),
+            bindings={'_identity': ('sym', concept)})
+        row = f.store.append_meaning(meaning,
+            sentence_index=i,document_key='antecedents',order=order)
         key = f.store.occurrence_of(row)
         f.cs.mtm.open(key,kind=None,when=i,value=f.store.slots[row],pending=False)
+        f.cs.mtm.record_link(key,key,0,kind='reference',order=order)
         keys.append(key)
     state = prepend(f,(),1)
     # §50: both eligible identities are parts of the mention's meaning.
@@ -129,6 +138,7 @@ def test_unpublished_timeline_cannot_survive_as_a_recent_identity(monkeypatch):
     row = f.store.append_meaning(ConceptualMeaning.from_description(torch.eye(8)[0]),order=1)
     key = f.store.occurrence_of(row)
     f.cs.mtm.open(key,kind=None,when=1,value=f.store.slots[row],pending=False)
+    f.cs.mtm.record_link(key,key,0,kind='reference',order=1)
     identity = f.cs.mtm.entries[key].transient
     state = chunks.empty(1,8,8)
     refs = torch.tensor([[[chunks.IDENTITY_REF,identity],[chunks.OCCURRENCE,key[-1]]]])
@@ -176,6 +186,7 @@ def test_prepend_transients_do_not_prime_or_place_and_promoted_symbol_registers(
     row = store.append_meaning(ConceptualMeaning.from_description(cs.similarity_codebook.W[rows[0]].detach()),order=1)
     key = store.occurrence_of(row)
     cs.mtm.open(key,kind=None,when=1,value=store.slots[row],pending=False)
+    cs.mtm.record_link(key,key,0,kind='reference',order=1)
     state = stage(model,chunks.empty(1,8,store.nDim),torch.tensor([True]))
     identity = cs.mtm.entries[key].transient
     assert cs._csw_row_of(identity) is None
@@ -217,6 +228,7 @@ def test_restaging_reads_live_values_once_without_reading_the_menu(monkeypatch):
     row = f.store.append_meaning(ConceptualMeaning.from_description(torch.eye(8)[0]),order=1)
     key = f.store.occurrence_of(row)
     f.cs.mtm.open(key,kind=None,when=1,value=f.store.slots[row],pending=False)
+    f.cs.mtm.record_link(key,key,0,kind='reference',order=1)
     entries = SymbolEntries(1,1,8,8)
     model = SimpleNamespace(_concept_owner=lambda:f.cs,inputSpace=SimpleNamespace(symbol_entries=entries),
         symbolSpace=SimpleNamespace(ltm_store=f.store),_open_sentence_slot=0)
@@ -247,6 +259,7 @@ def test_prepend_breaks_equal_time_ties_by_admission_and_keeps_event_recency(mon
         row = rows[index]
         key = fixture.store.occurrence_of(row)
         pool.open(key, kind=None, when=7, value=fixture.store.slots[row], pending=False)
+        pool.record_link(key,key,0,kind='reference',order=1)
         admitted.append(key)
     entries = SymbolEntries(1, 1, 8, 8)
     pointers = {name: value.data_ptr() for name, value in entries.named_buffers()}

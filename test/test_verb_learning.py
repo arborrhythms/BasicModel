@@ -59,11 +59,17 @@ def test_observed_state_trains_readout_once_without_concept_gradients():
     before = torch.tensor([.2, .3, 0., .4, .2, .3, 0., .4], requires_grad=True)
     verb = torch.full((8,), .2, requires_grad=True)
     action = MeaningAction(8, capacity=2)
+    from memory_fixtures import attach, put
+    owner, store = attach(mtm, 8, 'verb-state')
+    put(store, token, before)
+    put(store, event, before)
     mtm.open(token, kind=11, value=before, when=1)
     mtm.event(token, event, verb=12, role=0, when=2, before=before, basis=-1, verb_meaning=verb)
     previous = dict(mtm.entries)
     observed = torch.tensor([.3, .4, .8, .45, .3, .4, .8, .45], requires_grad=True)
-    mtm.update(token, observed, when=3)
+    following = ('ltm', store.address_domain, 3)
+    put(store, following, observed)
+    mtm.bind(token, following, kind=11, when=3, value=observed)
     errors = Error()
     report = observe(action, mtm, previous, {token})
     assert len(report) == 1 and report[0]['defined'] == 6
@@ -103,7 +109,7 @@ def test_copular_join_is_kept_and_fires_the_previous_verb_teacher(monkeypatch):
     row = f.store.write_clause(prepared, written_rows=written, document_key='unit', sentence_index=0)
     resolver.commit(plan, row, written, document='unit', position=0, training=True, verb_action=action)
     token = next(key for key, value in f.cs.mtm.entries.items() if any(event.before is not None for event in value.events))
-    prior = f.cs.mtm.entries[token].value.clone()
+    prior = f.cs.mtm.value_of(token).clone()
     # The second sentence is a fixed part operation on the retained subject.
     from chunk_fixtures import Walk,choice,value
     from ChunkJournal import ChunkJournal
@@ -118,7 +124,9 @@ def test_copular_join_is_kept_and_fires_the_previous_verb_teacher(monkeypatch):
     state=walk.apply(state,choice(property_value[None]),torch.stack((prior,property_value))[None],0)
     joined=value(state,512)[0]
     torch.testing.assert_close(joined,torch.maximum(prior,property_value))
-    f.cs.mtm.update(token,joined,when=3)
+    changed = f.store.append_idea(joined, when=False, document_key='copular-observation')
+    f.cs.mtm.bind(token, f.store.occurrence_of(changed), kind=None, when=3, value=joined)
+    f.cs.mtm.record_link(token, f.store.occurrence_of(changed), None)
     errors = Error()
     from IdentityRows import point
     reports = observe(action, f.cs.mtm, previous, {token})

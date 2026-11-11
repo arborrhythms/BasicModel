@@ -15,6 +15,7 @@ class PartClosing:
         self.alloc = _concept_alloc_of(owner)
         self.parts = self.alloc.parts
         self._terms, self._planned, self._entries = {}, {}, {}
+        self._mentions = {}
         self.symbols, self.edges = {}, []
         self.occurrences = set()
         self.relation_dependencies = set()
@@ -253,24 +254,59 @@ class PartClosing:
         words = tuple(child['value'].word_id for child in record['children'])
         self.observe_members(left, right, (left, right), words)
 
-    def _write_occurrence(self, record, *, pair, sentence, kind, metadata, address,
-                          stream, surprise):
-        """Write a mention's own idea without replacing its open chain."""
+    def occurrence_reference(self, record):
+        """The identity a located mention carries, readable before admission."""
         term, children = record['value'], record['children']
-        marks = {} if metadata is None else dict(metadata.bindings)
         reference = record['identity']
         if term.binding is not None:
-            reference = self._entries.get(id(term.binding), reference)
+            # A later semantic projection may rewrite _entries as a relation.
+            # The selected introduction still names its own located mention.
+            reference = self._mentions.get(id(term.binding),
+                self._entries.get(id(term.binding), reference))
         if term.operation in ('lift', 'verb') and children:
             child = children[0 if term.operation == 'lift' else -1]
             reference = child['reference']
             if reference is None or reference[0] != OCCURRENCE:
                 reference = self._entries.get(id(child['value'])) or reference
+        return reference
+
+    def occurrence_bindings(self, record, metadata):
+        """The identity metadata shared by the arrival read and its writer."""
+        term = record['value']
+        marks = {} if metadata is None else dict(metadata.bindings)
+        reference = self.occurrence_reference(record)
         if reference is not None and not (reference[0] == SYMBOL and self.owner.interpret.no_object(reference[1])):
             from ChainRead import envelope
-            marks.setdefault('_identity', envelope(self.store, reference))
-            if reference[0] == RELATION:
-                self.relation_dependencies.add(reference[1])
+            identity = envelope(self.store, reference)
+            if term.binding is not None:
+                # The kept binding selects this reference. Metadata from the
+                # pre-bind meaning must not point the written alias at a
+                # different concept (and therefore a different order).
+                marks['_identity'] = identity
+            else:
+                marks.setdefault('_identity', identity)
+        return marks
+
+    def occurrence_order(self, clause):
+        """Read the native order this prepared occurrence will retain."""
+        marks = self.occurrence_bindings(self.prepare(clause), clause.meaning)
+        identity = marks.get('_identity')
+        if identity:
+            return (self.owner._concept_source_order(identity[-1])
+                    if identity[0] in ('ltm', 'sym', 'name') else 0)
+        names = tuple(marks.get('_forward_references', ()))
+        if len(names) == 1 and names[0][0] == 0:
+            return self.owner._concept_source_order(names[0][1])
+        return 0
+
+    def _write_occurrence(self, record, *, pair, sentence, kind, metadata, address,
+                          stream, surprise):
+        """Write a mention's own idea without replacing its open chain."""
+        term = record['value']
+        marks = self.occurrence_bindings(record, metadata)
+        reference = self.occurrence_reference(record)
+        if reference is not None and reference[0] == RELATION:
+            self.relation_dependencies.add(reference[1])
         content = term.point
         if 'percept_value' in record or term.operation == 'sign':
             content = record.get('percept_value')
@@ -328,14 +364,19 @@ class PartClosing:
             operator = operator if type(operator) is int and operator > 0 else -1
             occupation_owner = getattr(self.store, '_occupation_owner', None)
             occupations = None if occupation_owner is None else occupation_owner()
-            grammar_operation = None
-            if occupations is not None:
-                index = occupations.operation_index(term.formal_name or term.operation)
+            operation_seat = None
+            # A three-slot field can retain a lexical predicate without any
+            # grammar operation having combined its slots. 'operator' names
+            # that relative field kind, not a primitive operation. Its actual
+            # predicate reference above supplies the authority in that case.
+            operation = term.formal_name or (term.operation if term.operation != 'operator' else None)
+            if occupations is not None and operation is not None:
+                index = occupations.operation_index(operation)
                 if index >= 0:
-                    grammar_operation = index
+                    operation_seat = occupations.seats[operation].concept
             row = self.parts.add(left, right, truth_plus=pair[0], truth_minus=pair[1],
                 when=self.when if sentence else None, surprise=surprise, witness=sentence,
-                operator=operator, grammar_operation=grammar_operation)
+                operator=operator, operation_seat=operation_seat)
             self.edges.append(row)
             promoted = False
             if assertion and term.operation in ('equal', 'part', 'assertPart') and pair[0] > 0:

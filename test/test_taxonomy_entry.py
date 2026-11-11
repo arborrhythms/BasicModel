@@ -97,6 +97,7 @@ def test_budget_cutoff_and_missing_identity_are_unknown_with_diagnostics():
     assert "unbound_concept_reference" in result["incomplete"]
 
 
+@pytest.mark.large_memory
 def test_actual_model_entry_and_checkpoint_keep_taxonomy_identity(tmp_path):
     from test_ltm_consolidation import _make_model
     from test_thought_model_fixture import thought_config

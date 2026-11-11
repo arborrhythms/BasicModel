@@ -64,9 +64,7 @@ def test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser(mod
     assert result.iterations == 1 and result.forced_closures == 0
     assert [s.operation for s in result.slots] == [WhatSlotOperation.COMPLETE] * 2
     # The presentation wrapper has no separate parity chooser.
-    trace = model._last_answer_construction.derivation.grammar_trace
-    steps = [e for e in trace if e.get("operation", "").startswith("step:")]
-    assert steps == []
+    assert model._last_answer_construction is None  # D4 uses the numeric forward head.
     assert not hasattr(model, "what_step_chooser")
     # The legacy iteration knob never installs another controller.
     src = (_DATA / "MM_math.xml").read_text()
@@ -79,7 +77,7 @@ def test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser(mod
     with torch.no_grad():
         m_off.ask(What.supervised(0), _batch(m_off, rows=1)[0])
     assert not any(k.startswith("what_step_chooser") for k in m_off.state_dict())
-    assert m_off._last_answer_construction.derivation.step == ()
+    assert m_off._last_answer_construction is None
 
 
 def test_think_never_consults_the_desired_answer(model, monkeypatch):

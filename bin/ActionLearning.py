@@ -41,8 +41,9 @@ def record(model, before):
         change, size = 0., 0.
         for p, indices, old in rows:
             value = p.detach() if indices is None else p.detach()[indices]
-            change += float((value - old).double().square().sum())
-            size += float(old.double().square().sum())
+            # Receipts accumulate in host float64; MPS has no float64 dtype.
+            change += float((value - old).cpu().double().square().sum())
+            size += float(old.cpu().double().square().sum())
         stats = epoch.setdefault(name, dict(delta_square=0., parameter_square=0., steps=0))
         stats['delta_square'] += change
         stats['parameter_square'] += size

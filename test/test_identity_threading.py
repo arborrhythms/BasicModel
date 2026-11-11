@@ -29,6 +29,7 @@ def reference_pool(values, *, readings=None, capacity=64):
     store = SimpleNamespace(location=lambda reference: reference[-1] if reference in values else None,
         point_of_row=lambda row: next((value for reference, value in values.items() if reference[-1] == row), None))
     owner._closed_clause_store = lambda: store
+    owner._test_member_values = values
     pool = MediumTermMemory(capacity)
     pool._owner = weakref.ref(owner)
     return pool, owner
@@ -138,8 +139,8 @@ def test_trial_values_are_isolated_and_only_selected_values_commit(keep_second):
     original_value = working_value(original,512)[0]
     pool, owner = reference_pool({address(1): original_value})
     pool.open(address(1),kind=None,when=1,value=original_value)
-    pool.event(address(1), address(2), verb=202, role=0, when=2)
-    pool.update(address(1),working_value(kept,512)[0],when=2)
+    pool.event(address(1), address(2), verb=202, role=0, when=2, before=original_value)
+    owner._test_member_values[address(2)] = working_value(kept,512)[0].detach().clone()
     torch.testing.assert_close(pool.value_of(address(1)),working_value(second if keep_second else first,512)[0])
     assert not pool.value_of(address(1)).requires_grad
 
@@ -151,16 +152,20 @@ def test_names_events_checkpoint_and_reclamation_have_separate_ownership():
         readings={101: torch.tensor([.5, .1]), 102: torch.tensor([.1, .7])}, capacity=2)
     pool.open(x, kind=None, when=1, reading=101, value=torch.tensor([.5, .1]))
     pool.bind(x, alias, kind=None, when=2, reading=102, value=torch.tensor([.1, .7]))
-    pool.event(x, event_row, verb=201, role=0, when=3)
-    pool.event(x, event_row, verb=201, role=0, when=4)
-    pool.update(x, torch.tensor([.2, .9]), when=4)
+    pool.event(x, event_row, verb=201, role=0, when=3, before=torch.tensor([.5, .7]))
+    pool.event(x, event_row, verb=201, role=0, when=4, before=torch.tensor([.5, .7]))
+    owner._test_member_values[event_row] = torch.tensor([.2, .9])
     assert pool.entries[x].count == 2 and pool.entries[x].occurrences == (x, alias)
     assert len(pool.entries[x].events) == 1
     assert pool.reading_of(x) == 101 and pool.reading_of(alias) == 102
     restored = MediumTermMemory(2)
     restored._owner = pool._owner
     restored.restore(pool.state())
-    assert restored.names == pool.names and restored.entries[x].events == pool.entries[x].events
+    assert restored.names == pool.names
+    for actual, expected in zip(restored.entries[x].events, pool.entries[x].events, strict=True):
+        assert actual.occurrence == expected.occurrence
+        torch.testing.assert_close({k: v for k, v in vars(actual).items() if k != 'occurrence'},
+            {k: v for k, v in vars(expected).items() if k != 'occurrence'})
     torch.testing.assert_close(restored.value_of(alias), torch.tensor([.2, .9]))
     restored.forget(event_row)
     assert restored.token_of(alias) == x and not restored.entries[x].events
@@ -184,17 +189,19 @@ def test_frame_access_does_not_leak_a_native_individuals_other_stream_value():
         stream=index,sentence_index=index,document_key='streams',order=1) for index in (0,1)]
     for index,row in enumerate(rows):
         pool.open(store.occurrence_of(row),kind=native,native=native,when=index,value=atoms[0])
+        pool.record_link(store.occurrence_of(row), store.occurrence_of(row), index, kind='reference', order=1)
     first,second = map(store.occurrence_of,rows)
     assert first != second and pool.token_of(first) != pool.token_of(second)
     # A state change is retained after an event. Before its first event an
     # identity now reads its occurrence, so record this stream's event first.
-    pool.event(first, first, verb=native, role=0, when=20)
-    pool.update(first,atoms[1],when=20)
+    changed = store.append_meaning(ConceptualMeaning.from_description(atoms[1]),
+        stream=0, sentence_index=20, document_key='streams', order=0)
+    pool.event(first, store.occurrence_of(changed), verb=native, role=0, when=20, before=atoms[0])
     for row,expected in zip(rows,(atoms[1],atoms[0])):
         frame = replace(SituationFrame.from_row(store.row(row)),symbol_ids=(native,),
                         activations=((store.occurrence_of(row),native,0),))
         state = chunk_context(resolver,(frame,))
-        records = resolver.accessible(state)
+        records = resolver.accessible(state, stream=rows.index(row))
         points = torch.stack([record['value'] for _,record in records.values()])
         torch.testing.assert_close(points,expected.expand_as(points),rtol=0,atol=0)
     assert not resolver.individuals(resolver.accessible(chunk_context(resolver)))
@@ -269,11 +276,11 @@ def test_compose_menu_uses_the_resolvers_observed_exclusions():
 
 
 
-def recorded_identity_reading(f, tree, *, dummy_binds=()):
+def recorded_identity_reading(f, tree, *, dummy_binds=(), leaf_orders=None):
     """Fixed grammar operations through the production shared chunks/journal."""
     from chunk_fixtures import record
     from dataclasses import replace
-    entry, inputs, handle = record(f,tree,dummy_binds=dummy_binds)
+    entry, inputs, handle = record(f,tree,dummy_binds=dummy_binds,leaf_orders=leaf_orders)
     return replace(entry, leaf_evidence=torch.tensor([[1., 0.]]).expand(len(entry.leaves), 2)), inputs, handle
 
 
@@ -296,7 +303,8 @@ def test_kept_journal_commits_two_verbs_one_identity_and_immutable_occurrences(m
     resolver = f.cs.components.reference_close
     plan = resolver.preview(clause, chunk_context(resolver, ()))
     prepared = resolver.prepare(clause, plan)
-    assert not f.cs.mtm.entries and not plan['decisions']
+    assert not f.cs.mtm.entries
+    assert all(decision['candidates'] == (None,) for decision in plan['decisions'])
     written = {}
     row = f.store.write_clause(prepared, written_rows=written, document_key='identity', sentence_index=0)
     retained = snapshot(resolver)
@@ -310,7 +318,9 @@ def test_kept_journal_commits_two_verbs_one_identity_and_immutable_occurrences(m
     assert f.cs.mtm.entries[token].count == 2
     assert len(f.cs.mtm.entries[token].events) == 2
     torch.testing.assert_close(f.cs.mtm.value_of(token), lifts[1][2][0])
-    f.cs.mtm.update(token, torch.zeros(8), when=20)
+    later = f.store.append_idea(torch.zeros(8), when=False)
+    retained = snapshot(resolver)  # Adding the reference is separate from recording its event.
+    f.cs.mtm.event(token, f.store.occurrence_of(later), verb=f.cs.mtm.entries[token].events[-1].verb, role=0, when=20)
     unchanged(resolver, retained)
 
 
@@ -318,21 +328,22 @@ def test_kept_journal_commits_two_verbs_one_identity_and_immutable_occurrences(m
 def test_invalid_identity_checkpoint_does_not_replace_the_pool(corruption):
     pool, owner = reference_pool({address(1): torch.ones(2)})
     pool.open(address(1), kind=None, when=1, value=torch.ones(2))
+    pool.event(address(1), address(1), verb=5, role=0, when=1, before=torch.ones(2))
+    before_value = pool.value_of(address(1)).clone()
     before = pool.state()
     bad = pool.state()
     if corruption == 'membership':
         bad['entries'][0]['occurrences'] = (address(2),)
     elif corruption == 'value':
-        bad['entries'][0]['timelines'][0][1][0] = float('nan')
+        bad['entries'][0]['timelines'][0][0][4][0] = float('nan')
     elif corruption == 'event':
-        bad['entries'][0]['timelines'] = ((((address(3), 5, 1, 3, None, None, False, None, (), False),),
-                                           bad['entries'][0]['timelines'][0][1]),)
+        bad['entries'][0]['timelines'] = (((address(3), 5, 1, 3, None, None, False, (), False, None, None),),)
     else:
         bad['names'] = ((address(1), address(1), 'bad'),)
     with pytest.raises(ValueError):
         pool.restore(bad)
     assert pool.state()['names'] == before['names']
-    torch.testing.assert_close(pool.value_of(address(1)), before['entries'][0]['timelines'][0][1])
+    torch.testing.assert_close(pool.value_of(address(1)), before_value)
 
 
 def test_binding_an_unresolved_object_does_not_complete_its_verb():
@@ -659,8 +670,8 @@ def test_pending_checkpoint_migration_and_validation_are_atomic():
     legacy = copy.deepcopy(state)
     legacy['version'] = 1
     for entry in legacy['entries']:
-        events, value = entry.pop('timelines')[0]
-        entry.update(events=tuple(event[:4] for event in events), value=value)
+        events = entry.pop('timelines')[0]
+        entry.update(events=tuple(event[:4] for event in events), value=pool.value_of(entry['key']))
         del entry['pending']
     restored = MediumTermMemory()
     restored._owner = pool._owner
@@ -789,7 +800,7 @@ def test_bind_training_never_updates_or_creates_a_concept_region(monkeypatch, ph
 @pytest.mark.parametrize('dummy', (False, True))
 def test_relative_determination_keeps_its_introduction_and_later_bind(monkeypatch, readmit, dummy):
     from ClauseJournal import finish_clause
-    from ReferenceReconstruction import cost
+    from MemoryLink import preview_cost as cost
     from test_clause_acceptance import SentenceFixture
     from test_medium_term_memory import snapshot, unchanged
     f = SentenceFixture(monkeypatch)
@@ -800,7 +811,10 @@ def test_relative_determination_keeps_its_introduction_and_later_bind(monkeypatc
     if dummy:
         relative = ('bind', relative)
     tree = ('sum', ('equal', ('equal', relative, 'changed'), 'latest'), ('bind', 'alias'))
-    entry, inputs, handle = recorded_identity_reading(f, tree, dummy_binds=(0,) if dummy else ())
+    # The forced alias denotes the order-2 relative object. The remaining
+    # four leaf orders are the helper's existing determiner/equality witnesses.
+    entry, inputs, handle = recorded_identity_reading(f, tree, dummy_binds=(0,) if dummy else (),
+        leaf_orders=(2, 2, 0, 0, 2))
     clause = finish_clause(f.language, entry, registry=f.registry)
     resolver = f.cs.components.reference_close
     plan = resolver.preview(clause, chunk_context(resolver, ()))
@@ -871,7 +885,7 @@ def test_missing_determined_event_introduction_fails_loudly():
     plan = dict(items=[], prepared_root=node)
     written = {('occurrence', id(node)): store.occurrence_of(row)}
     with pytest.raises(RuntimeError, match='lost its determined introduction'):
-        resolver._commit_events(plan, written, when=1)
+        resolver.link_events(plan, written, when=1)
     assert not resolver.components.owner.mtm.entries
 
 

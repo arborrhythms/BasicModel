@@ -660,9 +660,11 @@ class TestRuntimeUserIngestion(unittest.TestCase):
         self.assertAlmostEqual(float(bank.truth_plus[index]), .9)
         self.assertEqual(float(bank.truth_minus[index]), 0.)
         if bank is store.parts:
-            operation = bank.operation_catalog[int(bank.grammar_operation[index])]
+            speech = m.languageSpace.parts_of_speech
+            operation = speech.seats[int(bank.operation_seat[index])].name
             self.assertEqual(operation,'union')
-            measured = m.languageSpace.parts_of_speech.operation(operation)['trust']
+            from ConceptTrust import positive_length
+            measured = positive_length(m._concept_owner(), speech.seats[operation].concept)
             self.assertAlmostEqual(retained['evidence'][0], .9*measured,places=6)
             self.assertEqual(retained['evidence'][1],0.)
         users = store.rows_of_origin(T.ORIGIN_USER).tolist()

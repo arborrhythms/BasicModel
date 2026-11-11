@@ -1,5 +1,6 @@
 """The exported prediction uses its staged tensor and the ordinary head."""
 import copy
+import gc
 
 import torch
 
@@ -13,9 +14,15 @@ def test_exported_prediction_matches_both_staged_arguments():
         changed = staged.clone()
         changed[:, 0, 0] += .5
         reference = copy.deepcopy(model)
-        other_reference = copy.deepcopy(model)
         expected = forward_core(reference, staged).clone()
+        reference.End()
+        del reference
+        gc.collect()
+        other_reference = copy.deepcopy(model)
         different = forward_core(other_reference, changed).clone()
+        other_reference.End()
+        del other_reference
+        gc.collect()
         exported = _run_torch_export(model, staged).module()
         actual = exported(staged)
         other = exported(changed)

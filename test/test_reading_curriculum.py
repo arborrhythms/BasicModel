@@ -57,7 +57,7 @@ def test_derivation_inverse_recovers_composed_children_and_depends_on_the_root()
     frames[6] = torch.stack((first[0],second[0],root.detach()[0]))
     record = SimpleNamespace(word_values=leaves,word_valid=torch.ones(1,4,dtype=torch.bool),
         end_depth=torch.tensor([1]),end_slots=root[:,None],primed=SimpleNamespace(case_bank=None))
-    program = SimpleNamespace(actions=actions,operation_values=frames)
+    program = SimpleNamespace(tree=None,actions=actions,operation_values=frames)
     recovered,bad,defined = reconstruct(Language(),record,[program],lambda b:torch.arange(4))
     torch.testing.assert_close(recovered,leaves)
     assert not bad.any()
@@ -85,12 +85,9 @@ def test_native_lesson_teaches_scorer_and_keeps_one_word_per_read(tmp_path,monke
         assert field['iterations'].tolist() == [2,2]
         assert field['trials'][0]['lesson_cross_entropy'].gt(0).all()
         assert all(read['admitted'].sum(-1).eq(1).all() for read in field['trials'][0]['reads'])
-        for trial in field['trials']:
-            for read in trial['reads']:
-                live=read['admitted'].any(-1)
-                undefined=live[:,None] & ~read['defined_coordinates']
-                torch.testing.assert_close(read['unrecovered_coordinates'],undefined.sum(-1))
-                torch.testing.assert_close(read['unrecovered_words'],undefined.any(-1).long())
+        owned = model._last_understanding.input_reconstruction
+        assert torch.isfinite(owned.percepts).all()
+        assert not owned.truncated.any()
         assert not torch.equal(model.candidate_attention.readout.weight,before)
         owners = model.ownership_gradient_diagnostics(optimizer)['parameters']
         assert all(row['writers']==['R'] for row in owners if row['owner']=='attention')
@@ -108,7 +105,7 @@ def test_lossy_derivation_has_no_inverse_or_search_and_reports_every_coordinate(
     words = torch.tensor([[[1., 2.], [3., 4.]]])
     record = SimpleNamespace(word_values=words, word_valid=torch.ones(1,2,dtype=torch.bool),
         end_depth=torch.tensor([1]), end_slots=torch.ones(1,1,2))
-    program = SimpleNamespace(actions=torch.tensor([[0,-1,0],[0,-1,1],[1,0,-1]]),
+    program = SimpleNamespace(tree=None,actions=torch.tensor([[0,-1,0],[0,-1,1],[1,0,-1]]),
         operation_values=torch.stack((torch.zeros(3,2),torch.zeros(3,2),
             torch.stack((words[0,0],words[0,1],torch.ones(2))))))
     recovered, missing, defined = reconstruct(Language(),record,[program],lambda b:torch.arange(2))
@@ -130,7 +127,7 @@ def test_partial_product_inverse_keeps_defined_coordinates_and_root_gradient():
     record = SimpleNamespace(word_values=words,word_valid=torch.ones(1,2,dtype=torch.bool),
         end_depth=torch.tensor([1]),end_slots=root,primed=SimpleNamespace(case_bank=None))
     frames=torch.zeros(3,3,2);frames[2,:2]=words[0]
-    program=SimpleNamespace(actions=torch.tensor([[0,-1,0],[0,-1,1],[1,0,-1]]),operation_values=frames)
+    program=SimpleNamespace(tree=None,actions=torch.tensor([[0,-1,0],[0,-1,1],[1,0,-1]]),operation_values=frames)
     recovered,missing,defined=reconstruct(Language(),record,[program],lambda b:torch.arange(2))
     assert defined.tolist()==[[[True,False],[True,True]]]
     assert missing.tolist()==[[True,False]]
@@ -152,14 +149,17 @@ def test_native_four_word_inverse_follows_composed_children_without_free_decoder
             from test_definition_rows import admit
             for form in texts[0].split():
                 assert admit(model, form) is not None
-        with torch.no_grad():
+        from reading_fixtures import capture_readings
+        with capture_readings(model) as programs, torch.no_grad():
             model.runBatch(train=False,batchSize=2,batch_override=(model.inputSpace.prepInput(texts),torch.empty(2,0)))
-        trial=model._last_sentence_field['trials'][0]
         record=model._last_sentence_understanding
-        recovered=trial['reconstructed'][:,:4]
+        # The derivation inverse is now an explicit audit, outside reconstruction.
+        recovered, unavailable, defined = reconstruct(model.languageSpace, record, programs[0],
+            lambda b: model._sentence_leaf_positions(record, b))
+        recovered = recovered[:, :4]
         result=[' '.join(row) for row in words_from_leaves(recovered,torch.tensor([4,4]),record.primed)]
         assert result==texts
-        assert not trial['unavailable'].any()
+        assert not unavailable.any()
         ops = model.languageSpace._tree_layer(2).ops
         kernel = next(getattr(op, 'gl', op) for op in ops
                       if getattr(getattr(op, 'gl', op), 'percept_band', None) is not None)
@@ -221,8 +221,8 @@ def test_order_lesson_gate_reports_list_inverse_separately(tmp_path,monkeypatch)
     model=_model(tmp_path,monkeypatch)
     model.candidate_attention=None
     # Corrupt only the reported list decoder, not the native reads or cost.
-    monkeypatch.setattr(curriculum,'words_from_leaves',
-        lambda leaves,counts,bank:[['<unrecovered>']*int(n) for n in counts])
+    monkeypatch.setattr(curriculum,'words_from_field',
+        lambda surface,where,orders:[['<unrecovered>']*len(order) for order in orders])
     try:
         result=curriculum.present(model,dict(fields=['red blue','blue red'],lesson=True))
         assert result['orders']==[[0,1],[0,1]]

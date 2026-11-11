@@ -287,7 +287,7 @@ def test_forced_ordinary_answer_fills_committed_question_without_its_own_episode
 
 
 def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp_path, monkeypatch, eager_reading):
-    """g on the authorized forced c/e grammars; both explore suffixes stay live."""
+    """g is a structural query/conclude exercise on the forced c/e grammars."""
     import json
     import ThoughtStream
     from forced_math_grammar import ForcedGrammar
@@ -302,8 +302,27 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
     for word in ('x', 'what', 'y', 'is', 'plus', 'two'):
         _, obj = admit(model, word)
         force_order(owner, obj, 1 if word in ('x', 'what') else 0)
+    from dataclasses import replace
+    from Queries import ThoughtLTMCapability
+    best_match = ThoughtLTMCapability.best_match
+    empty_scopes = []
+    def empty_query_scope(capability, pattern, **options):
+        # This exercise supplies an empty eligible scope, including the
+        # vocabulary's real definition rows. The ordinary retrieval still
+        # scans and charges its work; only the request's scope is supplied.
+        store = model.symbolSpace.ltm_store
+        excluded = tuple(store.occurrence_of(index) for index in range(len(store)))
+        excluded += tuple(('sym', index) for index in store.relations().tolist())
+        data = dict(bindings(pattern), _query_exclude=excluded)
+        data.pop('_query_event', None)
+        result = best_match(capability, replace(pattern, bindings=data), **options)
+        assert not result['witnesses']
+        empty_scopes.append(dict(excluded=len(excluded), records_scanned=result['records_scanned']))
+        return result
+    monkeypatch.setattr(ThoughtLTMCapability, 'best_match', empty_query_scope)
     chooser = model._selected_thought_chooser(None)
     logits = chooser.thought_logits
+    offered = []
     def query_then_conclude(active, requests):
         value = logits(active, requests)
         def operation(request):
@@ -311,9 +330,15 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
                 return 'conclude'
             signature = model.grammatical_thoughts.signature_for(request, verify_reference=False)
             return None if signature is None else signature.operation.semantic_id
-        bonus = value.new_tensor([10. if candidate is None else
-            5. if operation(candidate) == 'query' else 0. for candidate in requests])
-        return value + bonus
+        offered.append(tuple(operation(candidate) for candidate in requests))
+        # The fixture supplies an operation, not a logit preference that a
+        # sampled departure can replace. Conclude becomes available only
+        # after the real search rule permits it; all closing assertions stay.
+        chosen = 'conclude' if None in requests else 'query'
+        allowed = torch.tensor([operation(candidate) == chosen for candidate in requests],
+                               device=value.device)
+        assert allowed.any()
+        return value.masked_fill(~allowed, -torch.inf)
     monkeypatch.setattr(chooser, 'thought_logits', query_then_conclude)
     commits = []
     commit = ThoughtStream.commit
@@ -325,6 +350,7 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
     examples = []
     def episode(original, model, meaning, **kwargs):
         before_commits = len(commits)
+        before_offered = len(offered)
         result = original(model, meaning, **kwargs)
         if not result.records:
             # The native compose comparison can keep an already closed
@@ -339,7 +365,7 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
         operations = [record.operation for record in result.records if record.kind == 'thought']
         examples.append(dict(already_closed=False, source_pair=bindings(meaning).get('_source_evidence'),
             occurrence=bindings(meaning).get('_query_occurrence'), committed=commits[-1],
-            operations=operations, work=result.work.spent, allowance=model.attention_budget,
+            operations=operations, offered_operations=sorted({op for menu in offered[before_offered:] for op in menu if op is not None}), work=result.work.spent, allowance=model.attention_budget,
             history=[record.kind for record in result.records],
             before=open_slots(meaning), after=open_slots(result.meaning),
             minted=any(bindings(child).get('_formation_reason') == 'search_exhausted'
@@ -351,7 +377,8 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
         with ForcedGrammar(model, open_names=('what','x')) as forced:
             rows = train_documents(model, documents, tmp_path, episode=episode)
         (tmp_path/'certificate.json').write_text(json.dumps(dict(forced=True,
-            forcing='c/e operation and binding choices, including query/conclude logit preference; live masked departures',
+            forcing='c/e operation and binding choices; structural query then conclude with empty eligible query scope',
+            empty_query_scopes=empty_scopes,
             examples=examples, rows=rows, choices=forced.records),indent=2)+'\n')
         assert len(examples) == 2
         store = model.symbolSpace.ltm_store
@@ -359,9 +386,9 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
             if item['already_closed']:
                 assert not item['before'] and not item['after'] and not item['history']
                 continue
-            # The forced query preference does not suppress live departures.
-            # The retained walk must search and close within its real budget;
-            # the source-authority and minting assertions below are invariant.
+            # This structural exercise selects query before conclude; a
+            # sampled preference alone cannot guarantee an empty search.
+            assert 'query' in item['offered_operations']
             assert 'query' in item['operations']
             assert item['history'][-1] == 'finish'
             assert item['work'] <= item['allowance']

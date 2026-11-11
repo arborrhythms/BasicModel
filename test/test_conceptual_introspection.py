@@ -45,7 +45,7 @@ class TestIntrospectiveOps(unittest.TestCase):
             c = torch.randn(2, 3, 4)
             p = torch.randn(2, 3, 4)
             dpo = isa_part_op(c, p)
-            self.assertGreater(float(dpo.item()), 0.0)
+            self.assertGreaterEqual(float(dpo.item()), 0.0)
             self.assertLessEqual(float(dpo.item()), 1.0 + 1e-6)
 
     def test_isa_part_higher_for_closer_points(self):

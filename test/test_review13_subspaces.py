@@ -18,6 +18,11 @@ def fixture(*, meaning_pairs=1, batch_size=1, property_width=0, capacity=32):
     object.__setattr__(cs, '_model', SimpleNamespace(perceptualSpace=SimpleNamespace(
         subspace=SimpleNamespace(what=ps), nDim=width),
         wholeSpace=SimpleNamespace(subspace=SimpleNamespace(what=None))))
+    from BasicPercepts import BasicPercepts
+    basic = BasicPercepts(SimpleNamespace(_basis=ps), 3, property_width, 64)
+    object.__setattr__(cs, '_basic_percepts', basic)
+    for part in range(16):
+        basic.reserve((part,), ())
     cb = Codebook()
     cb.W = nn.Parameter(torch.zeros(capacity, width+2*meaning_pairs))
     cs.similarity_codebook = cb
@@ -32,12 +37,18 @@ def fixture(*, meaning_pairs=1, batch_size=1, property_width=0, capacity=32):
     return cs, cb, ps, _concept_alloc_of(cs)
 
 
-def word(cs, parts):
+def word(cs, parts, wholes=()):
     cid = cs.new_concept()
     force_order(cs, cid, 0)
     row = cs._csw_concept_row(0, cid)
-    for part, weight in parts:
-        cs.add_concept_feature(row, 'ps', part, weight)
+    for positive in (True, False):
+        selected = [(part, weight) for part, weight in parts if (weight > 0) == positive]
+        if not selected:
+            continue
+        atoms = tuple(dict.fromkeys(atom for part, _ in selected
+            for atom in (part if isinstance(part, tuple) else (part,))))
+        bp = cs.basic_percepts.reserve(atoms, wholes, word=cid if positive else None)
+        cs.add_concept_feature(row, 'bp', bp, max(abs(weight) for _, weight in selected), negated=not positive)
     return row
 
 

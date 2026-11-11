@@ -3892,9 +3892,9 @@ def luminosity_op(x_a, x_b, sigma=None):
 
 
 def isa_part_op(child, parent, sigma=None):
-    """One-step kernel overlap ``K(child, parent)`` in (0, 1] per the
+    """One-step kernel overlap ``K(child, parent)`` in [0, 1] per the
     plan's "is the child contained in the parent at this conceptual
-    order" semantics.
+    order" semantics. Floating-point underflow can produce zero.
     """
     if sigma is None:
         sigma = _DEFAULT_SUBSYMBOLIC_SIGMA
@@ -5428,6 +5428,17 @@ class SparseLayer(Layer):
         if not len(rows):
             return result
         request = y.index_select(0, rows)
+        # Undo the selected definition's exponent before attributing its
+        # evidence to a part. The case remains discrete; its live exponent
+        # qualifies the selected support, just as it does in fold_presence.
+        eps = torch.finfo(request.dtype).eps
+        bounded = request.clamp(0, 1)
+        rail = bounded if conjunctive else 1 - bounded
+        safe = rail + (rail.clamp_min(eps) - rail).detach()
+        powered = (safe.log() / weights[:, None].clamp_min(eps)).exp()
+        exact = torch.where(rail == 0, torch.zeros_like(powered), powered)
+        powered = powered + (exact - powered).detach()
+        request = powered if conjunctive else 1 - powered
         if observed is not None:
             contribution = torch.minimum(request, observed.index_select(0, cols))
         elif conjunctive:
@@ -5814,6 +5825,7 @@ class ConceptAllocator:
         self.identity = {}               # cid -> (part, whole) 1:1 ties
         self.relate_idx = {}             # (part, whole) / ("raise", fs) -> cid
         self.word_forms = {}             # surface -> set of persistent concept ids
+        self.operator_concepts = {}
         self.formal_arguments = {}       # declared argument -> ordinary higher-order concept
         self.reference_orders = {}       # grammar-resolved object order
         self.testimony_seen = {}         # object id -> first two distinct occurrences
@@ -7285,7 +7297,8 @@ def _gaussian_kernel_overlap(X, Y, sigma_x, sigma_y, eps=1e-8):
         sigma_y: scalar or ``[M]`` per-row sigma for Y.
 
     Returns:
-        ``[N, M]`` overlap matrix with values in ``(0, 1]``.
+        ``[N, M]`` overlap matrix with values in ``[0, 1]``; zero includes
+        floating-point underflow of the positive mathematical kernel.
     """
     d2 = torch.cdist(X.unsqueeze(0), Y.unsqueeze(0)).squeeze(0) ** 2  # [N, M]
     if torch.is_tensor(sigma_x):
@@ -11405,27 +11418,19 @@ class RadixLayer(Layer):
         return self.lookup_with_id(chunks)
 
     def decode_activity(self, activity):
-        """Realize native row activity at byte offsets, with no code matching.
-
-        A maximum chooses among ambiguous rows. Empty activity emits nothing;
-        a chosen multi-byte row occupies its span before the next selection.
-        """
-        if activity.ndim != 3 or activity.shape[-1] != len(self):
-            raise ValueError('radix decode requires [batch, position, active row]')
-        if not bool(torch.isfinite(activity).all()):
-            raise RuntimeError('radix activity contains NaN/Inf')
-        result = torch.zeros(activity.shape[:2], device=activity.device, dtype=torch.long)
-        strength, rows = activity.detach().max(-1)
-        for b in range(len(result)):
-            position = 0
-            while position < result.shape[1]:
-                raw = self.bytes_for(int(rows[b, position])) if strength[b, position] > 0 else b''
-                count = min(len(raw), result.shape[1] - position)
-                if count:
-                    result[b, position:position + count] = torch.tensor(
-                        list(raw[:count]), device=result.device)
-                position += max(1, count)
-        return result
+        """Vectorized native realization through the fixed decoder storage."""
+        from FieldReverse import NativeActivity
+        if isinstance(activity, NativeActivity):
+            rows, strength = activity.rows, activity.strength.detach()
+        else:
+            if activity.ndim != 3 or activity.shape[-1] != len(self):
+                raise ValueError('radix decode requires [batch, position, active row]')
+            strength, rows = activity.detach().max(-1)
+        self.activity_decoder.sync(self.inverse_table)
+        decoded = self.activity_decoder(rows, strength)
+        if isinstance(activity, NativeActivity) and activity.separators is not None:
+            decoded = torch.where(activity.separators, 32, decoded)
+        return decoded
 
     def reverse(self, vec, *, symbolic_space=None):
         """Decode native concept candidates through their word-owned inverse.
@@ -14227,10 +14232,17 @@ class Error:
     active count and ownership. Row registries produce selection costs whose
     active-row mean is the same relative objective used for training.
     Summation stays chunked to respect Metal's kernel argument bound.
+
+    Sentence reconstruction books the system-1 ``reconstruction_reverse``
+    bands and the grammar-generated ``reconstruction_order_zero`` bands.
+    The grammar inverse also owns ``reconstruction.walk_residual``'s three
+    lanes and ``reconstruction.walk_credit`` on reconstruction/R; output's
+    corresponding walk terms remain output/A. The retired compose-forest
+    losses, decomposition and walk_policy are not registered.
     """
 
     _CATEGORIES = (
-        "reconstruction", "prediction", "symbol",
+        "reconstruction", "output", "prediction", "symbol",
         "truth", "expectation", "embedding", "other", "expectation",
         "grammar", "policy", "reg", "count", "intra", "inter",
     )
