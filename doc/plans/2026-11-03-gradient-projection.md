@@ -4361,6 +4361,8 @@ the next build text, they are steps 1 to 3 of round 7's text (§21.1). Item
 2.0 does not end at that landing: round 7 (§21) follows.
 
 
+Landed as 16a6a79b81fb1cc21d116d71f1f6eea389553703, 2026-11-10
+
 ## 21. Round 7: episodic memory from the open attention pass (scheduled, Alec 2026-11-10)
 
 Alec, 2026-11-10: "lets schedule episodic memory as a round inside 2.0".
