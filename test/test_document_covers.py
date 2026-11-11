@@ -60,7 +60,7 @@ def test_cover_never_certifies_a_proposition():
     found = store.cued_rows(query, references=(cover,), max_candidates=20,
                            work=QueryWorkBudget(20))
     assert found['value'] == ()
-    with pytest.raises(ValueError, match='cover cannot certify'):
+    with pytest.raises(ValueError, match='cover or episode cannot certify'):
         store.accept_fact(store.location(cover))
 
 

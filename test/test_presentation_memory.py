@@ -59,10 +59,13 @@ def test_document_driver_clears_once_per_epoch_and_keeps_evaluation_memory(monke
 
 
 def model_for(owner, store):
+    from clock_fixtures import install
     model = SimpleNamespace(conceptualSpace=owner, conceptualSpaces=[owner],
         symbolSpace=SimpleNamespace(ltm_store=store),
         _what_recall_sentence_history={0: ['old occurrence']})
+    install(model)
     from Models import BasicModel
+    model.present = lambda: BasicModel.present(model)
     model._clear_recall_history = lambda: BasicModel._clear_recall_history(model)
     return model
 
@@ -186,7 +189,9 @@ def test_cover_survives_empty_memory_checkpoint_and_reuses_symbol_without_rng():
     second = open_cover(owner, restored, stream=2, document='book')
     assert first == second and len(restored) == 1
     assert restored.raw_meaning_of(0).role_refs[0] == ('sym', symbol)
-    assert not torch.equal(restored.entry_when(0), when)
+    # The epoch restores model time as well as rows: the same first
+    # presentation occupies the same tick (Alec, 2026-11-10).
+    assert torch.equal(restored.entry_when(0), when)
     assert restored.access_count[0] == 1 and restored.stream_rows(2).tolist() == [0]
     torch.testing.assert_close(restored.cover_rng_state, rng, rtol=0, atol=0)
     open_cover(owner, restored, stream=2, document='other book')

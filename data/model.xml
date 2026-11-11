@@ -352,6 +352,7 @@
          used for inter-sentence prediction).  Separate from
          <truthMaxEntries>.  Default 1024. -->
     <ltmCapacity>1024</ltmCapacity>
+    <episodicPercepts>4</episodicPercepts>
     <relationCapacity>8192</relationCapacity>
     <equalityWitnessCapacity>8192</equalityWitnessCapacity>
 

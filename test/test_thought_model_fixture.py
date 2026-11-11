@@ -56,6 +56,9 @@ def model_for(cs, store=None):
     model.eval()
     model.reasoning_iterations = model.attention_budget = 128
     object.__setattr__(model, 'conceptualSpace', cs)
+    from clock_fixtures import install
+    install(model)
+    object.__setattr__(cs, '_model', model)
     object.__setattr__(model, 'grammatical_thoughts', registry)
     object.__setattr__(model, 'symbolSpace', SimpleNamespace(
         grammatical_thoughts=registry, ltm_store=store,

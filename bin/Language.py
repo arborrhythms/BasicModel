@@ -9492,6 +9492,7 @@ class SymbolSubSpace(SubSpace):
         # form event owns the clock band before the conceptual complement.
         _paired = getattr(getattr(conceptualSpace, 'similarity_codebook', None), 'mereology', None)
         self.ltm_store = LTM0(muxed, capacity=_ltm_cap, content_width=symbol_dim,
+            episodic_percepts=int(TheXMLConfig.space('SymbolSpace', 'episodicPercepts', 4)),
             relation_capacity=int(TheXMLConfig.space("SymbolSpace","relationCapacity",8192)),
             percept_width=getattr(_paired, 'percept_event_width', muxed),
             # Reading summaries are bounded by the concept inventory, not by
@@ -12752,7 +12753,12 @@ class LanguageSpace(nn.Module):
                          form_spans=None, case_state=None, closing=False):
         """The shared compose layer reads the two newest stack chunks."""
         from Memory import STMChunks
-        chunks = state
+        original = state
+        # The source band is retained in STM. Grammar reads its age in this
+        # presentation, so shifting the whole clock cannot choose a rule.
+        model = self._symbol_space.conceptualSpace._model
+        from RowTime import relative_idea
+        chunks = (relative_idea(model, state[0]), *state[1:])
         state = STMChunks.stack_view(chunks)
         buffer, depth = state[:2]
         B, K, D = buffer.shape
@@ -12802,6 +12808,9 @@ class LanguageSpace(nn.Module):
         references = None
         if reference_scope is not None:
             from ReferenceContext import prepare_operands
+            reference_bank = self._reference_bank._replace(
+                values=relative_idea(model, self._reference_bank.values),
+                query=relative_idea(model, self._reference_bank.query))
             scopes = reference_scope[:,:,:2].gather(1, source[..., None].expand(B, n, 2))
             positions = depth[:, None] - 1 - source
             live_positions = depth[:, None] - 1 - torch.arange(K, device=buffer.device)[None]
@@ -12822,7 +12831,7 @@ class LanguageSpace(nn.Module):
             references = prepare_operands(window, scopes[..., 1], scopes[..., 0], positions,
                                           orders=orders.gather(1, source),
                                           rules=self._compose_binary_rules, unary_rules=self._compose_unary_rules,
-                                          bank=self._reference_bank,
+                                          bank=reference_bank,
                                           chunk_state=chunks, source=source, signable=signable,
                                           interpretable=interpretable,
                                           meaning_blocks=any(getattr(getattr(op, 'gl', op), 'meaning_layout', None) is not None
@@ -12948,6 +12957,17 @@ class LanguageSpace(nn.Module):
         bheads, uheads = rule_heads(self._compose_binary_rules), rule_heads(self._compose_unary_rules)
         choice = choice._replace(head_role=torch.where(choice.kind == 1,
             bheads[choice.local_op.clamp(0,len(bheads)-1)], uheads[choice.local_op.clamp(0,len(uheads)-1)]))
+        start = model.symbolSpace.ltm_store.when_start
+        if start is not None:
+            newest, older = STMChunks.at(original, 0), STMChunks.at(original, 1)
+            chosen = STMChunks.at(original, choice.position)
+            binary = (choice.kind == 1) & (choice.stack_arity == 2)
+            target = torch.where(binary, torch.where(choice.head_role == 2, newest, older),
+                torch.where((choice.kind == 1) & (choice.stack_arity == 1), newest, chosen))
+            band = STMChunks.gather(original[STMChunks.WHEN], target.clamp_min(0)[:, None])[:, 0]
+            candidate = torch.cat((choice.candidate[..., :start], band,
+                                   choice.candidate[..., start+4:]), -1)
+            choice = choice._replace(candidate=candidate)
         if structural_context is not None and structural_context.action_context is not None:
             # Keep the exact context consumed by the selected forward face.
             # A later identity refresh or group assignment cannot replace it.

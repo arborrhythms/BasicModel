@@ -175,7 +175,7 @@ class ActivationPredictor(nn.Module):
         hidden = int(hidden)
         if hidden < 1:
             raise ValueError('activation predictor hidden width must be positive')
-        # Mean + recent STM (2D), two field lanes (2D), and RowTime now (4).
+        # Mean + recent STM (2D), two field lanes (2D), and recent age (4).
         # The final four coordinates have a fixed position at construction.
         self.now_start = 4 * self.width
         self.register_buffer('_empty_now', torch.zeros(1, 4), persistent=False)
@@ -197,7 +197,7 @@ class ActivationPredictor(nn.Module):
         field = field / activation.sum(1).clamp_min(1.)[..., None]
         now = self._empty_now.to(context).expand(keys.shape[0], -1) if now is None else now.detach().to(context)
         if now.shape != (keys.shape[0], 4):
-            raise ValueError('activation predictor now requires four RowTime coordinates per stream')
+            raise ValueError('activation predictor age requires four RowTime coordinates per stream')
         query = self.context(torch.cat((context, field.flatten(1), now), -1)).reshape(keys.shape[0], 2, self.width)
         scores = []
         for start in range(0, keys.shape[1], 1024):

@@ -530,6 +530,8 @@ class PrimedSymbolReader(nn.Module):
           * ``where`` -- ``[B, M, 2]`` or ``[M, 2]`` normalized brackets;
           * ``boosts``-- ``[M]`` per-row intent boosts (codebook only) or None;
           * ``valid`` -- ``[B, M]`` / ``[M]`` bool mask of real candidates.
+          * ``score_keys`` -- optional age-relative view of located keys;
+                         the read still returns their original content.
 
         Returns ``None`` when no space has candidates, else a dict:
           ``space_id`` ``[B]``, ``where`` ``[B, 2]``, ``content`` ``[B, Dc]``
@@ -571,12 +573,13 @@ class PrimedSymbolReader(nn.Module):
             [], [], [], [], [])
         for s in usable:
             keys = s["keys"].detach()[..., :Dc]
+            score_keys = s.get('score_keys', s['keys']).detach()[..., :Dc]
             shared = (keys.dim() == 2)
             M = int(keys.shape[0] if shared else keys.shape[1])
             sid = int(s["id"])
             zeros_bm = torch.zeros(B, M, dtype=dtype, device=dev)
-            cos_c = self._cos_keys(cq, keys, shared)
-            cos_s = self._cos_keys(sq, keys, shared)
+            cos_c = self._cos_keys(cq, score_keys, shared)
+            cos_s = self._cos_keys(sq, score_keys, shared)
             cos_c = zeros_bm if cos_c is None else cos_c.to(dtype)
             cos_s = zeros_bm if cos_s is None else cos_s.to(dtype)
             boosts = s.get("boosts")

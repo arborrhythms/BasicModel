@@ -163,6 +163,8 @@ def test_recalled_chunk_addresses_depend_only_on_their_own_stream(tmp_path):
     from Memory import STMChunks as chunks
     def recall(batch):
         stm = ShortTermMemory(batch=batch, concept_dim=8)
+        from clock_fixtures import for_stm
+        model = for_stm(stm)
         value = with_slots(replace(meaning((1., 0.)), role_refs=(('sym', 1), None, None)), (), pair=(.8, .1))
         focus = bindings(put(stm, value, row=0, pin=True))['_chunk_when']
         if batch > 1:
@@ -186,7 +188,11 @@ def test_recalled_chunk_addresses_depend_only_on_their_own_stream(tmp_path):
         assert all(torch.equal(old, current[1:]) for old, current in zip(before, stm.state))
         return recalled
     single, batch = recall(1), recall(2)
-    assert single == batch
+    from RowTime import encoder
+    # The other stream's additional thought advances the one shared clock.
+    # Its unrelated read tick still cannot supply a thought address.
+    assert torch.equal(encoder().decode_index(torch.tensor(batch)),
+                       encoder().decode_index(torch.tensor(single)) + 1)
     receipt(tmp_path, 'stream-local-recall-addresses', dict(single=single, batch=batch,
         other_stream_read_tick=1000, other_stream_unchanged=True, shapes_unchanged=True, truth_storage_unchanged=True))
 

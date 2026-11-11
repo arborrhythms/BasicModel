@@ -107,7 +107,7 @@ def read(store, description, *, max_records, work, fallback):
                     actual_events.add(marker)
                 row = cache[marker]
                 if (row is not None and event.role == 0 and event.verb == verb
-                        and event.occurrence not in excluded and row['kind'] not in ('estimate', 'question', 'cover')):
+                        and event.occurrence not in excluded and row['kind'] not in ('estimate', 'question', 'cover', 'episode')):
                     if phase is not None:
                         coverage = case_coverage(owner, phase, event.case_value)
                         evidence = tuple(value*weight for value, weight in zip(row['evidence'], coverage))

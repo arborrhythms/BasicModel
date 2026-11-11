@@ -41,6 +41,9 @@ def world():
     object.__setattr__(model, 'grammatical_thoughts', registry)
     object.__setattr__(model, 'symbolSpace', SimpleNamespace(ltm_store=store,
         what_memory=memory, grammatical_thoughts=registry))
+    from clock_fixtures import install
+    install(model)
+    object.__setattr__(cs, '_model', model)
     model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
     object.__setattr__(model, 'languageSpace', SimpleNamespace(
         language_layer=SimpleNamespace(operation_layer=model.shared_grammar)))

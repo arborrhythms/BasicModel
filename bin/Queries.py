@@ -1055,7 +1055,7 @@ class ThoughtLTMCapability:
         if meaning is None:
             raise ValueError('ended clause metadata is unavailable')
         positive, negative = retained['evidence']
-        if retained['kind'] in ('estimate', 'cover'):
+        if retained['kind'] in ('estimate', 'cover', 'episode'):
             positive = negative = 0.
         return dict(value=meaning, support_true=positive, support_false=negative, meaning=meaning,
                     occurrence=reference, witnesses=(reference,), trust=retained['trust'],
@@ -1120,7 +1120,7 @@ class ThoughtLTMCapability:
                            for source, answer in ((0, 2), (2, 0)))
             return unresolved_operands_match(pattern, meaning) and not any(role in marked for role in free)
         candidates = tuple(row for row in found['value']
-                           if row['match'] >= tau and row['kind'] not in ('estimate', 'cover')
+                           if row['match'] >= tau and row['kind'] not in ('estimate', 'cover', 'episode')
                            and (row['kind'] != 'question' or tuple(row['evidence']) != (0., 0.))
                            and row['occurrence'] not in excluded and can_answer(row))
         best = max(candidates, key=lambda row: row['match']) if candidates else None
@@ -1227,7 +1227,7 @@ class ThoughtLTMCapability:
             scanned += 1
             row = store.row(index)
             meaning = row['meaning']
-            if row['kind'] in ('question','estimate','unverified','cover') or meaning is None:
+            if row['kind'] in ('question','estimate','unverified','cover','episode') or meaning is None:
                 continue
             if int(meaning.role_mask.sum()) != 1:
                 continue
@@ -1373,9 +1373,13 @@ class ThoughtLTMCapability:
         missing = store.recall_chunks(found['value'], work=work,
             stream=object.__getattribute__(self, '_ThoughtLTMCapability__row'))
         frames = found['value']
+        from EpisodicMemory import reinstate
+        reinstate(store, frames, object.__getattribute__(self, '_ThoughtLTMCapability__row'))
         discourse = object.__getattribute__(self, '_ThoughtLTMCapability__discourse')
         if discourse is not None:
             for frame in frames:
+                if frame['kind'] == 'episode':
+                    continue
                 discourse.include_occurrence(object.__getattribute__(self, '_ThoughtLTMCapability__row'), frame['occurrence'])
         return dict(found, frames=frames, result_kind='set', chunks_loaded=True,
             support_true=max((row['evidence'][0] for row in frames), default=0.),

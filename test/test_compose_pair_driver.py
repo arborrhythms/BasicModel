@@ -95,7 +95,10 @@ def test_pair_trains_twice_and_commits_once(monkeypatch):
             m.runBatch(train=True, batchSize=4, optimizer=optimizer, batch_override=batch)
         assert [row[0] for row in observed] == [False, True]
         assert all(torch.isfinite(torch.tensor(row[3])) for row in observed)
-        assert m.present() - clock0 == 1
+        # Both compose trials share one input tick; each produced sentence
+        # takes its own tick on the same model clock (A3).
+        assert m._sentence_ticks == {0: clock0 + 1}
+        assert m.present() - clock0 == 1 + 4
         assert m._training_step_count - steps0 == 1
         assert len(commits) == 1
         chosen = torch.where(m._sentence_winners[0][:, None, None], observed[1][2], observed[0][2])
@@ -144,11 +147,8 @@ def test_evaluation_repeats_the_same_program_without_an_explore_trial(monkeypatc
     def forbidden(*args, **kwargs):
         raise AssertionError('evaluation attempted a backward')
     monkeypatch.setattr(m, '_backward_training_loss', forbidden)
-    # The model normally stamps a new .when value on every public batch.
-    # Identical words at different times are different numerical inputs.
-    # Hold time fixed for this deterministic-choice probe; clock cadence is
-    # checked separately above.
-    monkeypatch.setattr(m, '_advance_when_time', lambda: None)
+    # Let model time advance normally. Composition reads ages, so moving
+    # the clock origin must not change this deterministic-choice probe.
     programs = []
     try:
         for _ in range(2):

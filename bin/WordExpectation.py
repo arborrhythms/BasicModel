@@ -67,7 +67,7 @@ def word_distribution(owner, words, bank, valid, targets, *, gain=1., observed_p
     for index in range(W):
         context = torch.cat((total/count.clamp_min(1), recent), -1)
         if index < forecast_count:
-            logits = owner.word_predictor(bank, context, source)
+            logits = owner.word_predictor(*owner._prediction_inputs((bank, context, source)))
         expected = logits.sigmoid() * valid[..., None]
         target = targets[:, index].clamp(0, C-1)
         observed = ((targets[:, index] >= 0) & (targets[:, index] < C)

@@ -34,7 +34,8 @@ def centroid(owner, support):
 
 
 def _clock(owner, batch):
-    return owner.mtm.closes.get(batch, 0)+1
+    model = owner._model
+    return model._sentence_ticks.get(model._open_sentence_slot, model.present())
 
 
 def witnessed_support(owner, cid):
@@ -302,6 +303,7 @@ def observe_native_cases(owner, batch, support):
 def open_sentence(model, sid, present):
     """Every present word bracket, independent of the grammar's attention."""
     owner, isp = model._concept_owner(), model.inputSpace
+    owner._episode_review_field = None
     owner._field_activated_references = {}
     if not hasattr(model, '_attention_spans'):
         return {}  # Metadata-only callers have no native percept field.
@@ -318,6 +320,8 @@ def open_sentence(model, sid, present):
     field = owner.cs_read_memberships((native.get('native_indices', native['indices']),
         native.get('native_part_spans', native['part_spans']),
         ws.subspace.what.primitive_properties, raw, whole_spans), brackets)
+    from EpisodicMemory import stage
+    stage(model, sid, present)
     from SentenceField import open_field
     open_field(model, sid, field)
     owner._cs_last_a0 = field.detach()

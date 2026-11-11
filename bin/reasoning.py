@@ -221,6 +221,8 @@ class TruthGroundedReasoner:
                 idxs = idxs.tolist() if hasattr(idxs, "tolist") else list(idxs)
                 for i in idxs:
                     row = store.row(int(i))
+                    if row['kind'] == 'episode':
+                        continue
                     s = self.equal(X, row["point"])
                     if best is None or s > best["match"]:
                         best = {"idea": row["point"], "trust": float(row["trust"]),

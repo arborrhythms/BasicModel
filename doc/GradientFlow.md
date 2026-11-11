@@ -504,6 +504,16 @@ native activity holds one selected row, strength and continuous percept vector
 per covered position. The native spelling buffers are allocated at construction;
 vectorized decoding never allocates a batch-by-position-by-inventory slab.
 
+**Episodic entries and time bands (item 2.0 round 7, accepted 2026-11-11;
+added 2026-11-11).** An episodic entry is selected under `torch.no_grad` and
+stored detached (`EpisodicMemory.select`, `write`), and a field reinstated by a
+recall by time books no loss term of its own: the percept side of long-term
+memory is System 1's content and trains nothing. Every learned reader takes a
+`.when` as an age or a difference (`RowTime.age_interval`, `age_band`,
+`relative_idea`, `relative_to`, `difference`), so no learned read depends on
+the clock's phase. See
+[Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11).
+
 Output is `generate -> occurrence writer -> reverse`. Generate infers binary
 undo, unary undo or STOP over its bounded bank. The existing legal-action and
 recomposition tests still determine eligibility. Its emitted terminals select

@@ -15,6 +15,7 @@ def native_store(width=4, capacity=32, points=()):
         symbolDim=width, wordDim=width, outputDim=width, nInput=4, nPercepts=4,
         nConcepts=512, nSymbols=512, nWords=512, nOutput=512, nWhere=0, nWhen=0)
     owner = ConceptualSpace([4, width], [512, width], [512, width])
+    owner._model = None  # This isolated store has no attended model field.
     with torch.no_grad():
         owner.similarity_codebook.W.sigmoid_()
     store = LTM0(width, capacity=capacity)

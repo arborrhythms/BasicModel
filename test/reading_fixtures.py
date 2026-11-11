@@ -235,6 +235,11 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
         _incoming_trust_multiplier=lambda: trust, stm=short_term)
     owner._concept_owner = lambda: registry.space
     owner.symbolSpace = SimpleNamespace(ltm_store=store, expectation=discourse)
+    from clock_fixtures import install
+    if not hasattr(owner, 'when_time'):
+        install(owner)
+    owner._sentence_ticks[sid] = owner._advance_when_time() if active else owner.present()
+    owner.__dict__.setdefault('_sentence_episodes', {})
     if discourse is not None:
         discourse._ltm_store = store
     # These are closing/storage fixtures, with no learned thought policy.

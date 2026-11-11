@@ -468,7 +468,8 @@ def _field_trial(words, returned, *, available=True, meaning_start=None):
         torch.tensor([False]), words.new_zeros(1, 3), torch.tensor([True]),
         words.new_zeros(1, 1, 1, 9), words[:, :1])
     def proposal(model, record, **options):
-        return generated(model, returned, record.end_depth, torch.tensor([False]), bank, trace)
+        return generated(model, returned, record.end_depth, torch.tensor([False]), bank, trace,
+                         when=record.open_field.when[:, :1])
     lang = [None] * 12
     lang[6], lang[10], lang[11] = root[:, None], record.roots, record.depths
     with patch('SentenceField.sentence_generated', proposal):

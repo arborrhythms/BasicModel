@@ -220,6 +220,26 @@ are not part of this proposal.
 
 ## 7. Episodic memory: a few active indices beside each row
 
+**Round 7 implementation (2026-11-11).** Open-attention selection, detached
+LTM0 row entries and reinstatement through the existing time-only query are
+built in the working tree. The continuation adds the decided relation-only
+anchor: one capacity-checked LTM0 row of kind `episode`, containing only its
+sentence's time band and detached entry. Its address is separate from semantic
+roots, a re-witness keeps its first stamp and entry, and row lifecycle operations
+carry it with the other rows. An empty entry or `episodicPercepts=0` allocates
+none. Only time recall and review read anchors; content and identity readers
+exclude them. Input entries cannot be copied to thought rows. The present field
+is cleared at `End`; a review is retained in `_episode_review_field` until the
+next open attention pass. Validation and the diagnosed convergence stop are in
+the [continued return](plans/2026-11-03-gradient-projection.md#23-round-7-continuation-convergence-repair-and-episodic-anchors).
+The dated decisions below remain their historical record.
+
+*Decided (Alec, 2026-11-11, question tool): "An LTM0 anchor row".* A sentence
+whose closing writes only an `LTM1` relation gets one `LTM0` row that holds
+its entry and its stamp, so a time-only recall can review it as it reviews any
+other sentence. Specified, with what the anchor holds and who reads it, in
+[2.0 spec §22.5](plans/2026-11-03-gradient-projection.md#225-codex-text-diagnose-the-stop-repair-finish-round-7-claude-2026-11-11-final-when-given).
+
 **Decided in direction (Alec, 2026-11-10): an episodic entry is the percept
 set of a moment, read by `query()`.** These paragraphs supersede the rest of
 this section where they conflict; the older text is kept as the record.
@@ -337,7 +357,7 @@ is withdrawn.
 | store | concepts | percepts |
 |---|---|---|
 | STM | `STMChunks` (`buffer`, `chunk_refs`) | the current `PerceptField`; a chunk carries only its `chunk_where` and `chunk_when` bands |
-| MTM | the identity collections of `MediumTermMemory` | collections whose `member_kind` is `'percept'`, linked by `FamiliarTier` at order $-1$ (item 2.0 working tree, not landed) |
+| MTM | the identity collections of `MediumTermMemory` | collections whose `member_kind` is `'percept'`, linked by `FamiliarTier` at order $-1$ (item 2.0 round 7, accepted 2026-11-11) |
 | LTM | `LTM0` rows and `LTM1` relations | the episodic store of this entry; today a row carries one percept band, its form point with `.where` and `.when` |
 
 At a close the STM chunk becomes an `LTM0` row; the episodic entry is the
@@ -360,6 +380,40 @@ the present by `ActivationPredictor` (`now`). No computation takes the
 duration between two remembered events as a quantity for another
 computation; episodic entries supply its operands, the same code at two
 stamps with two brackets.
+
+**Where these points stand (Claude, 2026-11-11; from Alec's answers and round
+7 as accepted on 2026-11-11).** The list below is
+kept as it was written on 2026-11-10.
+
+- *The proposal above is the build*, confirmed by Alec's answers
+  ([2.0 spec](plans/2026-11-03-gradient-projection.md) §21): the entry beside
+  the `LTM0` row, `episodicPercepts` 4, review on the recall by time. Three
+  differences: a percept's strength is the maximum over readings of the sum of
+  its two poles; the entry is staged per sentence by `EpisodicMemory.stage` and
+  handed to `write_clause` by `_commit_sentence`, not left with
+  `_last_open_attention`; and a close that writes only a relation takes an
+  anchor row (Alec, 2026-11-11, above).
+- *Point 1, decided and built.* Every stamp is model time on
+  `RowTime.encoder()`'s ladder, one tick per sentence ("One sentence"), the
+  words of a sentence its sub-brackets.
+- *Point 2, built.* Basic percepts only (`('bp', row)`), each with the bracket
+  of its strongest reading and no spans.
+- *Points 3 and 4, built.* An entry follows its row through compaction,
+  forgetting and the epoch reset. Open: whether an entry is detail that goes
+  before its row.
+- *Point 7, built on Claude's reading (2.0 spec §21.1, A2; Alec may override).*
+  A review displaces the present field of the querying stream until the next
+  open attention pass, and a reinstated field keeps its stored stamp, as the
+  reading under "Review is reinstatement" has it. Open: a bound or a decay on a
+  reinstated field, and whether learning or expectation should read one (an
+  entry is detached and trains nothing).
+- *Points 5, 6, 8 and 9.* Open, unchanged.
+- *The table above.* MTM's percept collections landed with rounds 5 and 6
+  (`16a6a79b81`); the LTM percept side is the entry of this section.
+- *In the two systems.* The entry is taken by System 1's open attention pass
+  and reviewed by a System 2 recall; as built, a configuration that composes no
+  sentences keeps none
+  ([Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11)).
 
 **To specify (2026-11-10).**
 
@@ -2692,7 +2746,12 @@ Round 5's reference collections, shared STM/LTM strata, seats and basic percepts
 
 ## `.when` is model time in every store (Alec, 2026-11-10)
 
-**Decided in direction, unscheduled.** Alec: ".when should not be
+**Built in item 2.0 round 7; continuation 2026-11-11.** The one model-time
+ladder, sentence/thought ticks, epoch reset and relative learned reads remain.
+The continuation corrects the conceptual mixer's absolute temporal input to a
+read of elapsed-time differences and keeps document ordinals as addresses.
+Validation is recorded in the [continued return](plans/2026-11-03-gradient-projection.md#23-round-7-continuation-convergence-repair-and-episodic-anchors).
+Alec: ".when should not be
 per-document, it should be model time, even for semantic memory." He asked
 why it had been changed; the record follows.
 
@@ -2840,7 +2899,11 @@ round moves these stamps ("Yes, same round"); one tick per sentence ("One
 sentence"); the thought count and the MTM close count read the one clock,
 each thought step a tick of its own ("One clock"). Points 1 and 4 are
 specified in the round's text ([2.0 spec](plans/2026-11-03-gradient-projection.md)
-§21.1, assumptions A4 and A5).
+§21.1, assumptions A4 and A5). *As built (accepted 2026-11-11):* the epoch remedy is built as read above, both clocks saved with `_epoch_rows` and
+put back at every boundary; and every learned reader, composition and the
+conceptual mixer included, takes an age or a difference, so point 1's
+"composition does not read the stamp" became "composition reads only elapsed
+time".
 
 ## `.when` as a duration: store only the deltas? (Alec, 2026-11-10)
 
@@ -2879,3 +2942,189 @@ whether a re-witness extends an interval instead of keeping the first
 stamp. [Kaufmann and Viera (2026)](https://doi.org/10.1080/00048402.2026.2649411)
 count a duration used as a quantity, informational transfer, among the
 marks of a temporal representation (§7, "Grounding").
+
+## A fragment or a sentence understood in one attentional window, without grammar (Alec, 2026-11-11; to investigate)
+
+Alec: "Would the architecture eventually be capable of processing sentence
+fragments or short sentences grammatically? "The cat" might be one
+attentional window, producing the same conceptual activation as the words
+combined grammatically?" And: "Please add to future work an investigation
+of this possibility, particularly if system 1 might learn to understand
+whole sentences without grammatical operations."
+
+**What exists.**
+
+- *A fragment is grammatical.* The close needs no clause. Where no relation
+  was composed it writes an idea of one slot (`BasicModel._commit_sentence`,
+  `clause.relation is None`), so "The cat" composes to an idea and is stored
+  as one.
+- *The window.* Every sentence opens with an attention pass over the whole
+  input as one bracket, before attention narrows word by word
+  ([2.7 corpus spec §26.2](plans/2026-10-27-item2-7-corpus.md);
+  `FamiliarTier.open_sentence`, `_last_open_attention`). The dynamic stop
+  [above](#the-dynamic-stop-glossing-above-words-descending-at-novelty-item-68-2)
+  would gloss a known unit at its wider bracket.
+- *A phrase becomes one concept.* A phrase that recurs without
+  contradiction is minted as a concept defined by its parts
+  (`FamiliarTier.promote_identity`, `conceptMintCount`, 3 by default), and
+  the open pass can then match it whole.
+- *System 1 learns from System 2.* Expectation is trained on the order-zero
+  contents left after System 2 has acted (`ConceptSpread.complete`;
+  [loop spec](plans/2026-11-04-item2-0-order-zero-loop.md) D3). Alec,
+  2026-11-03: "I think system 1 does learn from system 2, but mainly by
+  system 2's activation of the conceptual space."
+- *One structure for both readings* (item 9b, 2026-09-25): serial concepts
+  exist in the parallel reading through the same structure.
+
+**What is not known.** Nothing requires the two routes to agree. Item 9's
+review records a parity test of the shared inventory across the two
+readings, on words. No certificate is known that compares, for a phrase or
+a sentence, the order-zero contents read in one window with the contents
+the grammar gives.
+
+**The investigation.**
+
+1. *The same activation for a phrase.* For a minted phrase, compare the
+   order-zero field read in one window (the open pass with expectation and
+   no compose) with the field the grammar inverse writes from the composed
+   idea (`OutputOccurrences.generated`). A parity certificate at the level
+   of the phrase, with the distance between the two fields reported as the
+   phrase recurs.
+2. *Whole sentences without grammatical operations.* Whether System 1
+   alone (perception, the order-zero concepts, expectation and `intuit`)
+   comes to produce for a short sentence the order-zero contents that
+   compose and generate produce. Measured with the reading's compose walk
+   withheld at test, on a model trained with it: the distance between the
+   two fields; the reconstruction under omission, as the share of its
+   input the model can do without (the whole-path specification's two
+   omission rates); and the answer cost of questions, whose answer still
+   comes from the thought.
+3. *When attention descends.* Under whole paths the narrowing walk is in
+   the departure draw, so reading a bracket whole or descending into it is
+   credited on $R + A$. Whether the model stops above the word as units
+   become familiar is the dynamic stop's measurement.
+
+**An existence argument, and what it does not give (Alec, 2026-11-11).**
+"I guess if system2 teaches system1 (intuit), and "understanding" means the
+total symbolic activation as a result of processing a sentence, then there
+is a map through s1 intuit() which is equivalent to the s2 grammatical
+processing; the related proof for single-layer MLPs can be used as a
+proof."
+
+The map exists, by two results:
+
+- *The one he names.* A network with one hidden layer approximates any
+  continuous function on a compact set to any accuracy (Cybenko, 1989;
+  Hornik, Stinchcombe and White, 1989; Leshno, Lin, Pinkus and Schocken,
+  1993, for any activation that is not a polynomial). System 2's map has
+  hard choices, so it is continuous only in pieces; the same density holds
+  in $L^p$ (Hornik, 1991), which leaves a small set of inputs near the
+  choice boundaries.
+- *The one that fits `intuit`.* `intuit` is one pass of meets and joins over
+  literals: `Intuition._evaluate` takes the minimum of the known evidence
+  with a term's literals and the maximum over what fires, with a `pi` and a
+  `sigma` weight for each term. That is a disjunctive normal form with
+  graded truth, and every Boolean function of the symbols has one exactly.
+  It gives which symbols are active. On graded evidence a minimum is not
+  System 2's product, so the numbers need not be the same.
+
+What neither result gives:
+
+- *Size.* The number of terms can grow as $2^{n-1}$ in the number $n$ of
+  symbols a sentence combines; parity, of which XOR is the case $n = 2$,
+  needs every one of them. `intuitionCapacity` is 4,096 terms. A deep
+  composition can need an exponentially wide shallow map (Telgarsky, 2016;
+  Eldan and Shamir, 2016).
+- *Learning.* That the map exists does not say System 2's activations teach
+  it.
+- *New combinations.* The grammar extends to a combination it has not seen
+  by construction; a flat map is equivalent only where it was taught.
+- *Inputs.* The map exists only for what is a function of what System 1
+  reads. Where the understanding rests on memory that System 1 does not
+  read, there is none.
+
+So the investigation is of size, learning and coverage, not of existence.
+It predicts where the two readings part first: with the number of symbols
+combined (parity-like combinations before others), with the novelty of a
+combination, and with dependence on memory.
+
+**What it waits for.** The whole-path round
+([specification](plans/2026-11-11-one-pair-per-stage.md)), which gives the
+stages and the omission rates; a corpus on which phrases recur (item 0.5's
+corpora and item 0); and the erosion question of item 9b
+([above](#shared-mode-erosion-measurement-item-9b)), since a reading
+without grammar is the reading Alec expected to erode serial boundaries.
+
+No mechanism is proposed. This entry asks for the measurement first.
+
+## Numeric input as a modality, XOR as a System 1 model, and one model class (Alec, 2026-11-11; to specify)
+
+Alec, 2026-11-11: "Please add a numeric input as future work; xor should
+probably be converted to use they when it exists. Probably xor should be
+converted to a system 1 model. That means just one concepts-to-concepts
+step at order 0 (Which is roughly equivalent to its previous sigma pi, I
+think?) And in fact, we probably want to have only a BasicModel class; I
+forget if we have other models being tested?"
+
+It follows his decision of the same day that a continuous output and a
+continuous input are modalities of the one design
+([whole-path specification](plans/2026-11-11-one-pair-per-stage.md) §1
+decision 10, §3.12): the continuous output is a linear head on the concepts
+with no generate grammar, and the continuous input was named and not
+specified.
+
+**What exists** (checked on round 7's working tree, 2026-11-11).
+
+- *A numeric data type.* `architecture.data.dataType` takes `embedding` or
+  `numeric` (a dense slab). `model.xml`'s default and `mnist.xml` are
+  `numeric`, and `test_basicmodel.py` covers it. Every XOR configuration
+  reads text: `XOR_grammar.xml` (two words), `XOR_exact.xml` and
+  `MM_xor_fixture.xml` (the characters `00`, `01`, `10`, `11`), `MM_xor.xml`,
+  `xor.xml`, `XOR_pos.xml`. Whether a numeric slab reaches the order-zero
+  concept field and the per-word loop was not traced for this entry (word
+  objects depend on `conceptLayers` and the grammar, `_has_word_objects`,
+  not on the data type).
+- *An XOR without grammar.* `XOR_exact.xml` and `test_grounded_xor.py` (on
+  `MM_xor_fixture.xml`; six exact cases, no seed) already learn XOR with no
+  grammar: conjunctions over order-zero memberships (`conceptualPi`), then
+  one learned sigma row whose positive pole is the answer. Their input is
+  characters with taught memberships (`xor_concept_lessons.json`), and
+  their sigma row is a concept of order 1.
+- *The intuitive step.* `Intuition._evaluate` has the same form, the least
+  of a term's literals and the greatest over the terms; its terms are
+  remembered rules.
+- *Model classes.* `bin/Models.py` has `BaseModel` and
+  `BasicModel(BaseModel)`. `ModelFactory` builds `BasicModel` only. Nine
+  test files construct a bare `BaseModel()` as a helper. `MentalModel`, the
+  `MM_*` family, the XOR files and `mnist` are configurations of
+  `BasicModel`, not classes. (`embed.PretrainModel` is the embedding
+  pretrainer.)
+
+**On the equivalence** (Claude's reading). XOR is
+$a \bar{b} \lor \bar{a} b$: conjunctions, then one disjunction. A
+concepts-to-concepts step that holds both is the sigma-pi form, and it is
+one step in the sense of the single-hidden-layer argument of the entry
+[above](#a-fragment-or-a-sentence-understood-in-one-attentional-window-without-grammar-alec-2026-11-11-to-investigate).
+It is not one sigma or one pi alone: neither gives XOR. So "one step at
+order 0" matches the previous sigma pi if the step contains the
+conjunctions and the disjunction, with order-zero concepts in and the
+answer's concept out; today's `XOR_exact.xml` counts that answer concept at
+order 1.
+
+**To specify.**
+
+1. *Numeric input as a modality of the design:* a continuous value entering
+   as evidence of order-zero concepts, beside the words, and what its
+   reconstruction is. The linear head is its counterpart on the output.
+2. *XOR on it, as a System 1 model:* two numeric inputs, one
+   concepts-to-concepts step with no grammar, the linear head. Whether the
+   step is the field's sigma and pi (`XOR_exact.xml`'s) or the intuitive
+   step with learned terms; whether the answer concept is counted at order
+   zero or one; and whether the grammar gate `XOR_grammar.xml` is then
+   retired or kept as the check of compose.
+3. *One class:* `BaseModel` folded into `BasicModel`, with the nine helper
+   constructions ported.
+
+**What it waits for.** The whole-path round, which keeps the grammar XOR
+gate close to its present form and makes it a stopping gate (§3.12 there).
+Nothing here changes that round.

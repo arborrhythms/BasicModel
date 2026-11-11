@@ -1,8 +1,7 @@
 """Serial ideas addressed by their thought-step .when in constructed STM.
 
-Sentence and thought ideas share the owner passed to attach. Thought time uses
-four exact 16-bit digits above the percept unit band, disjoint from model time.
-Each stream advances once per deposited idea; reads and updates keep its stamp.
+Sentence and thought ideas share the model clock and RowTime ladder. A new
+deposit advances it once; reads and updates keep the original address.
 """
 from dataclasses import replace
 import torch
@@ -12,10 +11,11 @@ from ThoughtReferences import bindings, evidence_pair, open_slots, with_slots
 
 
 def _next_when(stm, row):
-    tick = stm._thought_clock[row] + 1
-    if tick >= 2**64:
-        raise OverflowError('thought time exceeds four-coordinate capacity')
-    return tuple(float(2 + ((tick >> shift) & 65535)) for shift in (0, 16, 32, 48))
+    model = stm._time_owner()
+    if model is None:
+        raise RuntimeError('thought time requires its live model clock')
+    tick = model._advance_when_time()
+    return tuple(model.when_encoding.encode(tick).tolist())
 
 
 def attach(memory, stm):
@@ -80,7 +80,10 @@ def put(stm, meaning, when=None, row=0, *, pin=False, existing=False):
         state = chunks.read(tuple(result), index, gate)
     else:
         if when is not None:
-            raise ValueError('a new thought idea takes its .when from the thought clock')
+            raise ValueError('a new thought idea takes its .when from model time')
+        _, available = chunks.allocate_chunk(state, gate)
+        if int(available[row]) < 0:
+            raise OverflowError('thought focus cannot exceed the constructed STM capacity')
         when = _next_when(stm, row)
         if int(chunks.locate(state, when, band=chunks.WHEN)[row]) >= 0:
             raise ValueError('thought .when address is already occupied; use existing=True to update')
@@ -98,10 +101,6 @@ def put(stm, meaning, when=None, row=0, *, pin=False, existing=False):
     rows[row] = tuple(contents)
     stm._thought_contents = tuple(rows)
     stm.set_state(state)
-    if not existing:
-        clocks = list(stm._thought_clock)
-        clocks[row] += 1
-        stm._thought_clock = tuple(clocks)
     return meaning
 
 

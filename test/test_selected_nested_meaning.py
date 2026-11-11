@@ -108,6 +108,8 @@ def test_completed_ask_program_offers_the_same_controller_without_inventing_hole
     from Language import OperationSelectionLayer
     model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
     model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
+    from clock_fixtures import install
+    install(model)
     model.eval()
     from test_thought_model_fixture import force_requested_thought
     force_requested_thought(model)

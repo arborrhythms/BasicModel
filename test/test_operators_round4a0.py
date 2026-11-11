@@ -120,7 +120,7 @@ def test_pre_layout_checkpoint_is_rejected_without_migration():
         torch.testing.assert_close(restored.state_dict()[name], value, rtol=0, atol=0)
 
 
-def test_live_gate_presentation_reuses_covers_and_addresses_with_new_time(monkeypatch):
+def test_live_gate_presentation_reuses_covers_addresses_and_epoch_time(monkeypatch):
     from test_mm_xor import _fresh_model
     import Forgetting
     model, _, data = _fresh_model('data/XOR_grammar.xml')
@@ -162,7 +162,8 @@ def test_live_gate_presentation_reuses_covers_and_addresses_with_new_time(monkey
         assert set(kinds) <= {'cover', 'estimate', 'observation', 'question', 'inference'}
         assert first['covers'] == second['covers'] and len(first['covers']) == 4
         assert torch.equal(first['addresses'], second['addresses'])
-        assert not torch.equal(first['bands'], second['bands'])
+        # Alec, 2026-11-10: each epoch restores the presentation's clock.
+        assert torch.equal(first['bands'], second['bands'])
         assert first['witnesses'] == [1] * len(first['kinds'])
         assert second['witnesses'] == [1] * len(second['kinds'])
     finally:

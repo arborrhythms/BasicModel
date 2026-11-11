@@ -28,7 +28,7 @@ class SymbolField:
         context = ActivationPredictor.context_from(values, occupied)
         source = symbol_activations(keys, values, occupied, self.source_lanes,
             identities=state[4], bank_ids=self.owner._bank_addresses)
-        logits = self.owner._inter_predictor(keys, context, source)
+        logits = self.owner._inter_predictor(*self.owner._prediction_inputs((keys, context, source)))
         self.pending = keys, logits, context, source
         self.before = values.detach().clone(), occupied.detach().clone(), state[4].detach().clone()
 

@@ -88,6 +88,8 @@ def test_checked_executor_is_masked_throughout_each_sentence_path(monkeypatch, p
         monkeypatch.setattr(model, "_reverse_event_loss", injected_query)
         call = lambda: model.reverseReconstruct(understanding, target=value)
     else:
+        from clock_fixtures import install
+        install(model)
         model.answer_synthesis = True
         monkeypatch.setattr(model, "_materialize_answer_idea", injected_query)
         call = lambda: model.reverseOutput(

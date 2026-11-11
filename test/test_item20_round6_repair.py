@@ -119,7 +119,7 @@ def test_occurrence_writer_preserves_the_emitted_terminal_despite_priming():
         cs_reverse_presence=lambda evidence, **kwargs: evidence,
         _concept_allocator=NS(layer=lambda order: NS(nOutput=2, _rows=(), _cols=())))
     result = generated(NS(_concept_owner=lambda: owner), codes[:, :1],
-        torch.tensor([1]), torch.tensor([False]), bank, ())
+        torch.tensor([1]), torch.tensor([False]), bank, (), when=torch.tensor([[[1, 2]]]))
     assert result.field.concept_ids.tolist() == [10]
     torch.testing.assert_close(result.field.evidence.flatten(), torch.tensor([1., 0.]))
 
@@ -365,10 +365,10 @@ def test_arrival_menu_keeps_the_planned_member_instead_of_a_duplicate_occurrence
     owner.link(Occurrence(token,concept=native,selected=None),{},value=a[0],where=None,when=1,stream=0)
     clause=equality(a[0],subject,concept,subject=a[0])
     child=clause.children[0]
-    child=replace(child,composition=replace(child.composition,word_id=word,order=1),subject_word_id=word,order=1)
+    child=replace(child,composition=replace(child.composition,word_id=word,reference=concept,order=1),subject_word_id=word,order=1)
     clause=replace(clause,children=(child,),composition=replace(clause.composition,
         children=(clause.composition.children[0],child.composition)))
-    site=replace(child,reference_request=dict(mode='bind',forward_identity=word,leaves=(1,),
+    site=replace(child,reference_request=dict(mode='bind',leaves=(1,),
         content=a[0],cue=a[0]*0,predicate=a[0]*0,role=0))
     clause=replace(clause,companions=(site,))
     _,candidates=resolver._arrival_constituents(clause)

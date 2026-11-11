@@ -321,3 +321,23 @@ capacity sizing remain separate gates; this mechanism makes no learning claim.
 - Params.md: the elements in §6.
 - FutureWork.md §2: replaced by a pointer to this spec; §3's schedule is
   §4a here.
+
+## 9. Compaction stays (Alec, 2026-11-11)
+
+Alec asked whether forgetting is performant now that round 7 of item 2.0
+adds episodic columns and anchor rows to `LTM0`, and proposed key/value
+slots: a deletion drops its key and leaves an inaccessible row in the
+fixed-width store. Measured by Claude on CPU, with the store of
+`test/test_forgetting.py` scaled up and filled to high water with random
+rows (no semantic records, wording or relations): one pass at 1,024 rows
+took 0.12 s and deleted 206 (0.13 s at four times the row width); at 4,096
+rows, 0.47 s for 820. `LTM0.compact_rows` took 2 to 6 ms of that. A pass
+runs only at a document or epoch boundary and at most once per
+`forgetMinInterval` sentences, about 0.6 ms per new row amortized, less than
+writing the row. Its time is per-row Python, linear in rows: `meaning_of`
+rebuilt for an existence check, an `encoder()` per row in `history_age`, a
+deep copy of each semantic record, two graph validations. Every reference
+already holds a row's stable `address_keys` value, so a deletion already
+drops a key; dead slots would save only the gather and would need a live
+mask in every reader that takes the rows below the count as live. Alec:
+"Compaction is fine."

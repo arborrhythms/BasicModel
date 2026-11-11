@@ -14,7 +14,9 @@ def field_case(raw, patience=2):
     cs = _cs(nS=128, order=2)
     cs._mereology_raise = True
     cs.mereology_refine_patience = patience
-    object.__setattr__(cs, '_model', SimpleNamespace(_training_step_count=0))
+    from clock_fixtures import install
+    object.__setattr__(cs, '_model', install(SimpleNamespace(
+        _training_step_count=0, conceptualSpace=cs), tick=1))
     _mint_row(cs, 0, 100)
     individual = _mint_row(cs, 1, 101)
     cs.add_concept_edge(individual, 0, 1.)
@@ -123,7 +125,9 @@ def test_extent_containment_does_not_fill_gaps_between_part_witnesses(grouped):
     cs = _cs(nS=128, order=2)
     cs._mereology_raise = True
     cs.mereology_refine_patience = 2
-    object.__setattr__(cs, '_model', SimpleNamespace(_training_step_count=0))
+    from clock_fixtures import install
+    object.__setattr__(cs, '_model', install(SimpleNamespace(
+        _training_step_count=0, conceptualSpace=cs), tick=1))
     _mint_row(cs, 0, 100)
     individual = _mint_row(cs, 1, 101)
     cs.add_concept_edge(individual, 0, 1.)

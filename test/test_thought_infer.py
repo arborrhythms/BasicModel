@@ -77,9 +77,10 @@ def test_trial_restore_keeps_active_streams_inside_the_constructed_batch():
     from WalkTrials import ThoughtTrialState
     stm = ShortTermMemory(batch=3, concept_dim=8)
     stm.ensure_batch(1)
+    from clock_fixtures import for_stm
+    model = for_stm(stm)
     value = with_slots(ConceptualMeaning.from_description(torch.ones(8)), (), pair=(.7, .2))
     put(stm, value, row=0, pin=True)
-    model = SimpleNamespace(_what_memory=lambda: None, conceptualSpace=SimpleNamespace(stm=stm))
     before = tuple(t.clone() for t in stm.state)
     pointer = stm._live_chunk_truth.data_ptr()
     trial = ThoughtTrialState(model)
@@ -101,12 +102,12 @@ def test_duplicate_occupied_thought_address_fails_before_mutation():
     when = bindings(value)['_chunk_when']
     before = tuple(t.clone() for t in stm.state)
     contents = stm._thought_contents
-    clock = stm._thought_clock
+    clock = model.when_time.clone()
     # Corrupt the producer clock to offer the already occupied stamp again.
-    stm._thought_clock = (clock[0] - 1,)
+    model.when_time.sub_(1)
     with pytest.raises(ValueError, match='already occupied'):
         put(stm, idea(registry, refs[1]), row=0)
-    stm._thought_clock = clock
+    model.when_time.copy_(clock)
     assert stm._thought_contents is contents
     for original, unchanged in zip(before, stm.state):
         torch.testing.assert_close(original, unchanged)

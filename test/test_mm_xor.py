@@ -133,7 +133,7 @@ class TestMMXorConvergence(unittest.TestCase):
 
     # test_runbatch_losses_stay_finite retired 2026-05-14 (reverse pipeline / <maskedPrediction> retired in IR-only refactor).
 
-    def _fit_xor(self, config_path, epochs, threshold, *, grammar=False):
+    def _fit_xor(self, config_path, epochs, threshold, *, grammar=False, after_fit=None):
         """One initialization and one fixed budget; never select a lucky retry."""
         import torch
         from util import init_device
@@ -175,6 +175,8 @@ class TestMMXorConvergence(unittest.TestCase):
                         break
             self.assertLess(best_loss, threshold,
                             f"XOR loss {best_loss:.6g} after at most {epochs} epochs")
+            if after_fit is not None:
+                after_fit(m, inp, target)
         finally:
             m.End()
             m.symbolSpace.soft_reset()

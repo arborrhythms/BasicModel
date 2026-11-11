@@ -338,7 +338,7 @@ def test_output_ignores_input_derivation_on_conceptual_slots(monkeypatch):
 
 
 def _policy_training_probe(m, opt, questions):
-    """Inspect actual decoder gradients after the restricted owned backward."""
+    """Inspect the shared projection and the unchanged walk-credit owners."""
     # Supply the absolute reading this ownership fixture needs. Derived PS
     # codes may make the untrained relative grammar choose an already-flat
     # readback, which says nothing about which objective owns the decoder.
@@ -348,7 +348,7 @@ def _policy_training_probe(m, opt, questions):
         m._ownership_reading_forced = True
     params=list(m.languageSpace.generate_policy.parameters())
     backward=m._backward_training_loss
-    observed={'reconstruction':[], 'output':[]}
+    observed={'reconstruction':[], 'output':[], 'walk_routes':[], 'late_reconstruction':[]}
     before=[p.detach().clone() for p in params]
     path_cost = m._sentence_path_cost
     def reconstruction_probe(*args, **kwargs):
@@ -359,6 +359,13 @@ def _policy_training_probe(m, opt, questions):
         return value
     m._sentence_path_cost = reconstruction_probe
     def probe(*args,**kwargs):
+        costs = m._single_sentence_objectives
+        if costs is not None:
+            # Restored walk credit is booked after the path-cost probe.
+            value = costs.get('reconstruction')
+            observed['late_reconstruction'].append(torch.autograd.grad(
+                value.sum(), params, allow_unused=True, retain_graph=True)
+                if value is not None and value.requires_grad else (None,) * len(params))
         result=backward(*args,**kwargs)
         owner='output'  # the common sentence step contains both projection sides
         observed[owner].append(tuple(None if p.grad is None else p.grad.detach().clone() for p in params))
@@ -373,6 +380,13 @@ def _policy_training_probe(m, opt, questions):
         # contracts in test_review11_contracts.
         with pytest.MonkeyPatch.context() as patch:
             _walk_control_oracle(patch)
+            from Layers import Error
+            add = Error.add
+            def record_credit(registry, name, value, **kwargs):
+                if name.endswith('.walk_credit'):
+                    observed['walk_routes'].append((name, kwargs['objective'], kwargs['side']))
+                return add(registry, name, value, **kwargs)
+            patch.setattr(Error, 'add', record_credit)
             patch.setattr(m.inputSpace.data, 'text_answers', {'train': ['one', 'three']})
             m.runBatch(train=True,batchSize=2,split='train',optimizer=opt,batch_override=batch,questions=questions)
     finally:
@@ -421,7 +435,17 @@ def test_runbatch_answer_availability_never_reassigns_the_decoder(eager_reading)
         m.answer_synthesis=False
         m.inputSpace.data.has_supervised_outputs=False
         got=_policy_training_probe(m,opt,(What.inference(0, split='train'),What.inference(1, split='train')))
-        assert not any(got['changed'])
+        # Answer availability cannot reassign the decoder. Its restored
+        # reconstruction/R walk credit can still train the shared policy.
+        assert got['mask'] == [False, False] and not got['departure_won']
+        assert got['walk_routes']
+        assert set(got['walk_routes']) == {('reconstruction.walk_credit', 'reconstruction', 'R')}
+        groups = m.objective_parameter_groups(opt)
+        assert not any(any(p is q for q in groups['reconstruction'])
+                       for p in m.languageSpace.generate_policy.parameters())
+        if any(g is not None and bool(g.abs().any()) for row in got['output'] for g in row):
+            assert any(g is not None and bool(g.abs().any())
+                       for row in got['late_reconstruction'] for g in row)
     finally:
         m.End();m.symbolSpace.soft_reset()
 

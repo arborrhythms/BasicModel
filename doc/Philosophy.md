@@ -1204,6 +1204,14 @@ covers memory, the two truths, expectation, testimony and feeling.
   rows and the taxonomy index derived from them provide. The
   [two-truths spec](specs/2026-09-16-two-truths-ideas-and-relations.md)
   makes the split explicit in LTM.
+  *Amended 2026-11-11 (item 2.0 round 7, accepted 2026-11-11).* The
+  episodic side gains its percepts: a sentence keeps a few percepts of its
+  open attention pass beside its idea row, and a recall by time reinstates
+  them as the attended field. A sentence that only states a relation leaves
+  both memories, the relation and an `episode` anchor row for the moment it
+  was read (Alec, 2026-11-11: "An LTM0 anchor row"): the fact, and the dated
+  occasion of learning it, which is the difference Tulving (1972) draws. See
+  [Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11).
 
 - **Gist survives, form fades; meaning is stored fused.** Recognition
   memory for a sentence's wording is lost within a few seconds of hearing
@@ -1845,11 +1853,27 @@ and the ethical one in [Ethics](../../doc/Ethics.md#witnessing-plants-the-seeds-
 The mapping, with references, is in the
 [identity spec §5](plans/2026-10-23-identity-threading.md#5-grounding-the-psychological-stores-and-dharmakīrti-claude-2026-10-23-at-alecs-request).
 
+*Amended 2026-11-11 (Alec, 2026-11-10; item 2.0 round 7, accepted
+2026-11-11).* The percept part of an `LTM0` entry is no longer one band: the row
+keeps the few strongest percepts of its sentence's open attention pass. Alec:
+"This effectively gives all of the Memory structures (LTM, MTM, STM) both
+percepts and concepts." A recall by time reinstates the kept percepts as the
+attended field: "review of episodic memory should be represented as the
+attended field, otherwise we could not reason about as a previously lived
+experience." The statement above still stands, that memory is reconstruction
+and not re-perception: the field is rebuilt from a few stored percepts, it
+carries the stamp it was stored with and not the present one, and reviewing
+it observes nothing new. `.when` is model time in every store, semantic
+memory included (Alec, 2026-11-10). See
+[Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11).
+
 ### Dual process and the reference file (2026-11-09)
 
 The object file remains MTM's origin at every level, including basic percepts: references describe what the file stores, not a change to its grounding. The file tracks continuity and supplies a candidate for the next-order concept; recurrence promotes that candidate. MTM's perceptual contents do not make its function separate from the development of conceptual space.
 
-In this design, Dharmakīrti's perception, *pratyakṣa*, free of conceptual construction (*kalpanāpoḍha*), corresponds to System 1. Identity across moments, the *santāna*, is attributed by conceptual determination, *adhyavasāya*, corresponding to System 2. Continuity opens the file; determination supplies the identity it becomes. Yogācāra's seventh consciousness, *manas*, imputes persistence: its imputation belongs to System 2, and the tracking on which it works to System 1. The proposed loop without a thinking step is the animal mind in this architectural reading; Kahneman's fast/slow distinction and Evans and Stanovich's autonomous Type 1 versus working-memory Type 2 distinction provide its modern dual-process comparison. Round 5 implements reference memory; the loop closing without grammar remains round 6's work.
+In this design, Dharmakīrti's perception, *pratyakṣa*, free of conceptual construction (*kalpanāpoḍha*), corresponds to System 1. Identity across moments, the *santāna*, is attributed by conceptual determination, *adhyavasāya*, corresponding to System 2. Continuity opens the file; determination supplies the identity it becomes. Yogācāra's seventh consciousness, *manas*, imputes persistence: its imputation belongs to System 2, and the tracking on which it works to System 1. The proposed loop without a thinking step is the animal mind in this architectural reading; Kahneman's fast/slow distinction and Evans and Stanovich's autonomous Type 1 versus working-memory Type 2 distinction provide its modern dual-process comparison. Round 5 implements reference memory; the loop closing without grammar remains round 6's work. *Amended 2026-11-11: round 6 built it, and rounds 5 and 6 landed on 2026-11-10 (`16a6a79b81`).*
+
+*Added 2026-11-11.* Alec, 2026-11-10: "For system 1 and animal cognition, the inverse happens from order-zero concepts. When symbolic processing is turned on (system 2, human cognition), we run the grammar inverse to determine the order-zero concept layer and then run the system 1 inverse." Speech therefore passes through perception's own inverse: grammar decides which order-zero concepts are to be shown, and the one decoder shows them. Episodic memory divides between the systems in the same way (item 2.0 round 7, accepted 2026-11-11): the percepts of a moment are kept from System 1's open attention pass, with no grammar, and returning to that moment is an act of thought, a recall by time, which restores System 1's attended field ([Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11)). *Claude's reading:* what is remembered lies on the side of perception and the remembering on the side of determination. As built, a mind without grammar keeps no episodes; whether it should is open.
 
 ## The Afflicted Mind and the Transformation of the Basis: Two Configurations of MTM (Alec's question, 2026-10-23)
 

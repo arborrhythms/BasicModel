@@ -14,6 +14,9 @@ def with_definitions(cs):
     object.__setattr__(cs, '_basic_percepts', basic)
     if not hasattr(cs, '_model'):
         object.__setattr__(cs, '_model', SimpleNamespace())
+    from clock_fixtures import install
+    if not hasattr(cs._model, 'when_time'):
+        install(cs._model)
     store = LTM0(cs.nDim, capacity=1024)
     object.__setattr__(cs, '_fixture_occurrences', store)
     attach_clause_index(SimpleNamespace(), store, cs)

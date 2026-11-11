@@ -104,6 +104,8 @@ def test_lexical_letters_open_nothing_but_nonlexical_located_case_does():
     native = SimpleNamespace(bytes_for=raw.get)
     cs._model = SimpleNamespace(perceptualSpace=SimpleNamespace(percept_store=native, fuse_parts=lambda ids: ids,
         _forward_input=dict(native_indices=torch.tensor([[4,7]]), native_part_spans=torch.tensor([[[0,1],[1,2]]]))))
+    from clock_fixtures import install
+    install(cs._model, tick=1)
     cs._percept_field = SimpleNamespace(where=torch.tensor([[[0,2]]]))
     support = {rows[0][1]: 1., rows[1][1]: 1.}
     observe_native_cases(cs, 0, support)

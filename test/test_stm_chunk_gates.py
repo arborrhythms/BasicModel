@@ -183,6 +183,8 @@ def test_prepend_transients_do_not_prime_or_place_and_promoted_symbol_registers(
         symbolSpace = SimpleNamespace(ltm_store=store)
         def _concept_owner(self):return cs
     model = Model()
+    from clock_fixtures import install
+    install(model)
     row = store.append_meaning(ConceptualMeaning.from_description(cs.similarity_codebook.W[rows[0]].detach()),order=1)
     key = store.occurrence_of(row)
     cs.mtm.open(key,kind=None,when=1,value=store.slots[row],pending=False)
@@ -232,6 +234,8 @@ def test_restaging_reads_live_values_once_without_reading_the_menu(monkeypatch):
     entries = SymbolEntries(1,1,8,8)
     model = SimpleNamespace(_concept_owner=lambda:f.cs,inputSpace=SimpleNamespace(symbol_entries=entries),
         symbolSpace=SimpleNamespace(ltm_store=f.store),_open_sentence_slot=0)
+    from clock_fixtures import install
+    install(model)
     state = stage(model,chunks.empty(1,8,8),torch.tensor([True]))
     index = int((state[chunks.IDENTITY][0] >= 0).nonzero()[0])
     for i in range(1,8):
@@ -266,6 +270,8 @@ def test_prepend_breaks_equal_time_ties_by_admission_and_keeps_event_recency(mon
     model = SimpleNamespace(_concept_owner=lambda: fixture.cs,
         inputSpace=SimpleNamespace(symbol_entries=entries),
         symbolSpace=SimpleNamespace(ltm_store=fixture.store), _open_sentence_slot=0)
+    from clock_fixtures import install
+    install(model)
     state = stage(model, chunks.empty(1, 8, 8), torch.tensor([True]))
     expected = [pool.entries[key].transient for key in admitted]
     assert entries.concept_ids[0, :4].tolist() == expected

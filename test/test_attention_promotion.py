@@ -21,6 +21,10 @@ def _cs(nS=64, order=3, promote=True):
     cs = with_definitions(cs)
     from types import SimpleNamespace
     cs._model.wholeSpace = SimpleNamespace(property_rows_for_bytes=lambda raw: ())
+    cs._model._sentence_ticks = {}
+    cs._model._open_sentence_slot = None
+    cs._model.when_time = 1
+    cs._model.present = lambda: cs._model.when_time
     return cs
 
 
@@ -46,6 +50,7 @@ def _close(cs, batch=0):
     cs.mtm.close(None, stream=batch,
         references=getattr(cs, '_field_activated_references', {}).get(batch, ()))
     cs._field_activated_references = {}
+    cs._model.when_time += 1
 
 
 def _observe(cs, active, *, close=True):

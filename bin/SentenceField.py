@@ -62,7 +62,8 @@ def sentence_generated(model, record, **walk_options):
     bank = walk_bank(model, record.end_slots, record.primed)
     prepared = PreparedGeneration((), slots, bank, None, torch.is_grad_enabled())
     return model.generate(slots, structure=record, occupied=occupied, infix_rows=None,
-                          walk_options=walk_options, prepared=prepared)
+                          walk_options=walk_options, prepared=prepared,
+                          when=record.open_field.when[:, :1])
 
 
 def reconstruct_generation(model, record, target, active):

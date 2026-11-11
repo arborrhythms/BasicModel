@@ -1,7 +1,6 @@
 """Serialized processing counter and explicit standalone coordinate codecs.
 
-The production .when band records sentence positions and never reads the
-processing counter.
+The production .when band uses the one model clock and RowTime ladder.
 """
 import math
 import os
@@ -201,7 +200,7 @@ def test_clock_increments_on_runtime_inference_only():
 # ---------------------------------------------------------------------------
 # Sync: when_time reaches the live encoder used at stamping time
 # ---------------------------------------------------------------------------
-def test_when_time_does_not_stamp_live_position_encoders():
+def test_when_time_stamps_live_position_encoders_on_the_shared_ladder():
     m = _build_xor_model()
     opt = m.getOptimizer(lr=1e-4)
     N = 3
@@ -209,15 +208,15 @@ def test_when_time_does_not_stamp_live_position_encoders():
         m.begin_presentation()
         m.runBatch(train=True, batchSize=2, split="train",
                    optimizer=opt, batch_override=_one_batch(m))
-    # The source stamps document positions explicitly; model time serves
-    # recency alone and cannot advance the live position encoder.
+    # Alec, 2026-11-10: every live and stored stamp uses model time.
     seen_live = False
     for sp in m.spaces:
         sub = getattr(sp, "subspace", None)
         enc = getattr(sub, "whenEncoding", None) if sub is not None else None
         if enc is not None and getattr(enc, "nDim", 0) > 0:
             seen_live = True
-            assert int(getattr(enc, "t", 0)) == 0
+            assert enc is m.when_encoding
+            assert int(enc.t) == m.present()
             assert m.present() == N
     assert seen_live, "expected at least one live when-encoder on the model"
 

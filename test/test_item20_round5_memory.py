@@ -306,6 +306,7 @@ def test_compose_bind_filters_the_same_collection_order_before_choice():
 
 
 def test_staged_pending_names_keep_their_member_order_on_arrival_and_refresh():
+    from RowTime import encoder
     from test_reference_arrivals import world, described
     from test_medium_term_memory import keep
     from order_fixtures import force_order
@@ -322,7 +323,8 @@ def test_staged_pending_names_keep_their_member_order_on_arrival_and_refresh():
         assert entry.pending and entry.refinement['member_order'] == order
         entries = SymbolEntries(1, 1, 8, store.nDim)
         model = NS(_concept_owner=lambda: owner, inputSpace=NS(symbol_entries=entries),
-            symbolSpace=NS(ltm_store=store), _open_sentence_slot=0)
+            symbolSpace=NS(ltm_store=store), _open_sentence_slot=0,
+            when_encoding=encoder(), present=lambda: 1)
         state = stage(model, chunks.empty(1, 8, store.nDim), torch.tensor([True]))
         index = (state[chunks.IDENTITY][0] == entry.transient).nonzero().item()
         assert state[chunks.ORDERS][0, index] == order
@@ -860,6 +862,7 @@ def test_one_ltm_idea_generates_a_meaning_compatible_surface_without_input_stm(p
 
 
 def test_pool_and_unpooled_stm_share_the_menu_and_states_never_prepend():
+    from RowTime import encoder
     from test_reference_close import fixture
     from MemoryLink import Occurrence, menu
     from Memory import STMChunks
@@ -891,7 +894,8 @@ def test_pool_and_unpooled_stm_share_the_menu_and_states_never_prepend():
     assert (carried[STMChunks.REFS][..., 0, 1] == 601).any()
     entries = SymbolEntries(1, 4, 4, 12)
     model = NS(_concept_owner=lambda: owner, inputSpace=NS(symbol_entries=entries),
-        symbolSpace=NS(ltm_store=store), _open_sentence_slot=0)
+        symbolSpace=NS(ltm_store=store), _open_sentence_slot=0,
+        when_encoding=encoder(), present=lambda: 1)
     stage(model, carried, torch.tensor([True]))
     assert entries.concept_ids[:, :entries.prepend].eq(-1).all()
     receipt('pool-stm-menu', dict(pool_candidate=True, unpooled_stm_candidate=True,
@@ -954,7 +958,7 @@ def test_native_kept_close_uses_all_three_link_callers(monkeypatch):
     def commit(plan,row,written,**options):
         clause=plan['prepared_root']
         if isinstance(row,int) and state_eligible(clause) and f.store.kind_of(row) not in ('estimate','question','cover'):
-            plan['state_link']=(Occurrence(f.store.occurrence_of(row),kind='state',order=0),clause.point,clause.where)
+            plan['state_link']=(Occurrence(f.store.occurrence_of(row),kind='state',order=f.store.order_of_row(row)),clause.point,clause.where)
         return native_commit(plan,row,written,**options)
     monkeypatch.setattr(owner,'link',link);monkeypatch.setattr(resolver,'commit',commit)
     frames=[];states=[]

@@ -116,9 +116,19 @@ class PartClosing:
         record['order'] = clause.order
         record['metadata'] = clause.meaning
         record['mention'] = clause.reference_request is not None
+        request = clause.reference_request or {}
+        if (request.get('mode') != 'mint' and request
+                and type(clause.refs[0]) is int and clause.refs[0] not in (-1, 0)):
+            # ReferenceClose has selected this member for the whole phrase.
+            # Its earlier grammar head must not replace that kept selection.
+            record['selected_reference'] = self._reference(
+                Composition(term.point, reference=clause.refs[0]))
+        elif request and term.operation == 'bind' and term.reference not in (-1, 0, None):
+            # A pending selection retains its native address in the grammar
+            # term while the clause's semantic role remains open.
+            record['selected_reference'] = self._reference(term)
         if clause.relation == 'operator':
             record['operator'] = clause.refs[1]
-        request = clause.reference_request or {}
         if request.get('sign_leaf') or request.get('no_op_leaf'):
             record['percept_value'] = request.get('percept')
             record.update(reference=None, identity=None, order=0)
@@ -256,6 +266,8 @@ class PartClosing:
 
     def occurrence_reference(self, record):
         """The identity a located mention carries, readable before admission."""
+        if record.get('selected_reference') is not None:
+            return record['selected_reference']
         term, children = record['value'], record['children']
         reference = record['identity']
         if term.binding is not None:
@@ -278,7 +290,7 @@ class PartClosing:
         if reference is not None and not (reference[0] == SYMBOL and self.owner.interpret.no_object(reference[1])):
             from ChainRead import envelope
             identity = envelope(self.store, reference)
-            if term.binding is not None:
+            if term.binding is not None or record.get('selected_reference') is not None:
                 # The kept binding selects this reference. Metadata from the
                 # pre-bind meaning must not point the written alias at a
                 # different concept (and therefore a different order).
@@ -287,17 +299,59 @@ class PartClosing:
                 marks.setdefault('_identity', identity)
         return marks
 
-    def occurrence_order(self, clause):
+    def occurrence_order(self, clause, *, context=None):
         """Read the native order this prepared occurrence will retain."""
-        marks = self.occurrence_bindings(self.prepare(clause), clause.meaning)
-        identity = marks.get('_identity')
-        if identity:
-            return (self.owner._concept_source_order(identity[-1])
-                    if identity[0] in ('ltm', 'sym', 'name') else 0)
-        names = tuple(marks.get('_forward_references', ()))
-        if len(names) == 1 and names[0][0] == 0:
-            return self.owner._concept_source_order(names[0][1])
-        return 0
+        context = clause if context is None else context
+        nodes, visited = [], set()
+        def prepare(node):
+            if id(node) in visited:
+                return
+            visited.add(id(node))
+            for child in (*node.children, *node.companions):
+                prepare(child)
+            nodes.append(node)
+            self.prepare(node)
+        prepare(context)
+        located = set()
+        for node in nodes:
+            record = self._planned[id(self._terms[id(node)])]
+            term = record['value']
+            assertion = term.operation in self._assertions and len(record['children']) == 2
+            if ((node is context or node in context.companions or node.reference_request is not None
+                    or node.identity is not None)
+                    and (record.get('mention') or term.binding is not None
+                         or (record['resolved'] and not assertion) or not record['children'])):
+                located.add(id(term))
+        def order(record, metadata, active):
+            term = record['value']
+            if id(term) in active:
+                raise ValueError('an occurrence order contains a dependency cycle')
+            active = {*active, id(term)}
+            target = None
+            if record.get('selected_reference') is not None:
+                pass
+            elif term.binding is not None:
+                target = self._planned[id(term.binding)]
+            elif (not dict(metadata.bindings).get('_identity')
+                    and term.operation in ('lift', 'verb') and record['children']):
+                child = record['children'][0 if term.operation == 'lift' else -1]
+                if child['reference'] is None or child['reference'][0] != OCCURRENCE:
+                    target = child
+            if target is not None and id(target['value']) in located:
+                # close writes this child before the parent and then reads
+                # its occurrence, whose metadata can differ from the original
+                # concept reference (notably a lexical witness's denotation).
+                return order(target, target['metadata'], active)
+            marks = self.occurrence_bindings(record, metadata)
+            identity = marks.get('_identity')
+            if identity:
+                return (self.owner._concept_source_order(identity[-1])
+                        if identity[0] in ('ltm', 'sym', 'name') else 0)
+            names = tuple(marks.get('_forward_references', ()))
+            if len(names) == 1 and names[0][0] == 0:
+                return self.owner._concept_source_order(names[0][1])
+            return 0
+        return order(self.prepare(clause), clause.meaning, set())
 
     def _write_occurrence(self, record, *, pair, sentence, kind, metadata, address,
                           stream, surprise):
@@ -329,7 +383,8 @@ class PartClosing:
     def _write(self, record, *, pair=(0., 0.), sentence=False, kind='unverified',
                metadata=None, address=None, stream=-1, surprise=-1., force=False, from_trust=False):
         term = record['value']
-        forced_occurrence = force and (term.binding is not None or record.get('mention'))
+        forced_occurrence = (force or (sentence and record.get('selected_reference') is not None)) and (
+            term.binding is not None or record.get('mention'))
         # A sentence entry owns its kind, address and time even when its
         # projected head was already written as an embedded working mention.
         # An earlier projection can also have written this term as a chain.

@@ -84,6 +84,9 @@ def test_committed_close_keeps_recent_chunks_beside_the_output_field():
     owner = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store),
         conceptualSpace=SimpleNamespace(stm=SimpleNamespace(
             strata=SentenceStrata(2, buffer.shape[1], buffer.shape[1], buffer.shape[-1]))))
+    from clock_fixtures import install
+    install(owner, tick=1)
+    owner._sentence_ticks[0] = 1
     state = BasicModel._clause_end_state(owner, (stm, tuple(lang), ()), 0, (idea, relation), (10, 11), ({}, {}))
     assert state[0][1].tolist() == [0, 0]
     assert state[0][chunks.STACK].eq(-1).all()

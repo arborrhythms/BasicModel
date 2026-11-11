@@ -100,6 +100,10 @@ ideas are pushed, reduced or cleared. The content's codebook address stays
 separate. Closing stores the corresponding one- or three-slot semantic
 content in LTM; a future episodic bank will retain located fields
 ([Future Work §7](FutureWork.md#7-episodic-memory-a-few-active-indices-beside-each-row)).
+*Amended 2026-11-11:* that bank is built in item 2.0 round 7 (accepted
+2026-11-11) as an entry beside the close's `LTM0` row, not as a separate bank: the
+`episodicPercepts` strongest percepts of the sentence's open attention pass
+([Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11)).
 The seven learned output regions are superseded by
 [the support-mask direction (§7.9–§7.10)](plans/2026-10-08-stream-state.md#79-alec-on-the-corrections-2026-10-09).
 
@@ -577,6 +581,17 @@ part, implies or operator. The writer neither needs nor stores a program.
 [Clause admission](../bin/ClauseRow.py),
 [observation writer](../bin/Models.py).
 
+*Added 2026-11-11 (item 2.0 round 7, accepted 2026-11-11).* A sentence's
+row is stamped with its sentence's tick of model time, and beside it sits the
+sentence's episodic entry: up to `episodicPercepts` basic percepts of the open
+attention pass, each with both evidence poles and the `.where` bracket of its
+strongest reading (`LTM0.episodic_percepts`, `episodic_poles`,
+`episodic_where`). A close that writes only an `LTM1` relation takes one `LTM0`
+row of kind `episode` to hold the entry (Alec, 2026-11-11: "An LTM0 anchor
+row"); the anchor has no content, and only recall by time and review read it.
+The row is the close's semantic content and the entry its percept side; see
+[Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11).
+
 Each row retains its native `row_ids` address, three `refs`, relation kind,
 independent positive and negative evidence poles, scalar source trust, order
 stamp, role presence, grammatical
@@ -919,3 +934,10 @@ commits MTM and writes LTM. Thought ideas in this shared STM use exact WHEN
 lookup and empty WHERE, with a per-stream deposit clock in a four-coordinate
 band disjoint from sentence time. Reads do not advance it and trial rollback
 restores it. This amends the older descriptions of thought's synthetic address.
+
+*Superseded in part by item 2.0 round 7 (Alec, 2026-11-10: "One clock"; accepted
+2026-11-11):* a new thought idea takes a tick of the one model clock, so
+its band is no longer disjoint from sentence time; lookup by exact WHEN, the
+empty WHERE and the restore on trial rollback are unchanged
+([Architecture](Architecture.md), "When (final operators update; item 2.0 round
+7, 2026-11-10)").

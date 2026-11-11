@@ -60,7 +60,9 @@ def test_free_trial_uses_no_reference_or_offsets_and_keeps_identity_audit(monkey
         terms = {name:term for registry in registries for name,term in registry._terms.items()}
         reconstruction = {name for name in terms if name.startswith('reconstruction.')}
         assert reconstruction == {'reconstruction.free_bytes', 'reconstruction.coverage',
-            'reconstruction.free_percept', 'reconstruction.definition_fold'}
+            'reconstruction.free_percept', 'reconstruction.definition_fold',
+            'reconstruction.walk_residual.form', 'reconstruction.walk_residual.for',
+            'reconstruction.walk_residual.against'}
         assert model.concept_binding == 'mixing'
         assert model._last_sentence_field is None
         assert not terms['reconstruction.free_bytes']['trained']

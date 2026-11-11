@@ -239,7 +239,7 @@ def stage_event_cases(bank, resolver, frames, *, limit):
                 if change is None or row is None:
                     continue
                 record = store.row(row)
-                if record['kind'] in ('cover', 'estimate', 'question'):
+                if record['kind'] in ('cover', 'episode', 'estimate', 'question'):
                     continue
                 seen.add(key)
                 for target in targets:

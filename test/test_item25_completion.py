@@ -910,6 +910,8 @@ def test_compose_leaf_decisions_match_eager_and_compiled(tmp_path):
         _tree_layer=lambda arity: layer, _compose_binary_rules=(), _compose_unary_rules=rules,
         _structural_context=lambda **kwargs: None, _reference_bank=bank,
         chunk_journal=ChunkJournal((), rules))
+    owner._symbol_space = SimpleNamespace(conceptualSpace=SimpleNamespace(
+        _model=SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(when_start=None)))))
     scope_owner = ClauseScope((), rules)
     marker = scope_owner.unary_interpret
     allocation = dict(shape=list(marker.shape), pointer=marker.data_ptr(),

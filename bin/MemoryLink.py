@@ -121,7 +121,8 @@ def menu(owner, occurrence, candidates, *, value, where, when, stream):
                 entry.refinement.get('member_order', order) != order):
             continue
         candidates.setdefault(key, dict(value=pool.value_of(key, live_candidate=True),
-            token=key, role=0, position=(entry.when, 0)))
+            token=key, role=0, position=(sum(entry.when - other.when > 0
+                for other in pool.entries.values()), 0)))
     legal = {}
     for key, record in candidates.items():
         if not candidate_eligible(owner, key, record, kind=site.kind, order=order, stream=stream):
@@ -300,8 +301,19 @@ def preview(resolver, plan, clause, reading, *, stream, when):
     from ThoughtReferences import has_open_slots
     owner = resolver.components.owner
     proposed = []
-    if state_eligible(clause):
-        proposed.append((('state', 0), clause.point, clause.where, 0))
+    state = clause
+    if clause is not None:
+        _, arrivals = resolver._arrival_constituents(clause)
+        state, _ = resolver._prepare(clause, plan, arrivals, preview=True)
+    if state_eligible(state):
+        # Grammar order describes the operation's result. A retained state
+        # can carry a higher-order referent; use the occurrence writer's
+        # order for both its trial menu and the eventual collection.
+        from PartClosing import PartClosing
+        order = PartClosing(owner, resolver.store).occurrence_order(state)
+        if order < 0:
+            raise ValueError('a state link requires a witnessed occurrence order')
+        proposed.append((('state', 0), state.point, state.where, order))
     pending = [] if clause is None else [clause]
     while pending:
         node = pending.pop()

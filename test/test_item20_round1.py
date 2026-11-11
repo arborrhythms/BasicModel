@@ -14,30 +14,34 @@ def idea():
     return with_slots(ConceptualMeaning.from_description(torch.ones(8)), (), pair=(.7, .2))
 
 
-def test_thought_deposits_advance_when_with_empty_where_and_keep_model_time_disjoint():
+def test_thought_deposits_advance_when_with_empty_where_on_one_model_clock():
     from RowTime import encoder
     stm = ShortTermMemory(concept_dim=8)
+    from clock_fixtures import for_stm
+    model = for_stm(stm, tick=1)
     sentence_when = encoder().encode(1)
     state, sentence = chunks.deposit(stm.state, torch.ones(1, 8), torch.tensor([True]),
         where=(.1,.2,.3,.4), when=sentence_when)
     stm.set_state(state)
     first, second = (put(stm, idea(), row=0) for _ in range(2))
     a, b = (bindings(value)['_chunk_when'] for value in (first, second))
-    assert a != b and stm._thought_clock == (2,)
+    assert a != b and model.present() == 3
     for when in (a, b):
         index = int(chunks.locate(stm.state, when, band=chunks.WHEN)[0])
         assert index >= 0 and index != int(sentence[0])
         assert stm.state[chunks.WHERE][0, index].tolist() == [-1.] * 4
         assert torch.equal(stm.state[chunks.WHEN][0, index], torch.tensor(when))
-        assert min(when) >= 2
+        assert int(encoder().decode_index(torch.tensor(when))) in (2, 3)
         torch.testing.assert_close(read(stm, when, 0).roles, idea().roles)
     assert int(chunks.locate(stm.state, sentence_when, band=chunks.WHEN)[0]) == int(sentence[0])
     put(stm, first, a, 0, existing=True)
-    assert stm._thought_clock == (2,)
+    assert model.present() == 3
 
 
 def test_thought_eviction_is_absent_by_when_for_read_and_release():
     stm = ShortTermMemory(capacity=1, concept_dim=8)
+    from clock_fixtures import for_stm
+    for_stm(stm)
     old = bindings(put(stm, idea(), row=0))['_chunk_when']
     put(stm, idea(), row=0)
     with pytest.raises(ValueError, match=r'absent at its .when'):
@@ -49,17 +53,20 @@ def test_thought_eviction_is_absent_by_when_for_read_and_release():
 def test_thought_clock_restores_with_the_trial_and_advances_only_on_deposit():
     from WalkTrials import ThoughtTrialState
     stm = ShortTermMemory(capacity=1, concept_dim=8)
-    model = SimpleNamespace(_what_memory=lambda: None, conceptualSpace=SimpleNamespace(stm=stm))
+    from clock_fixtures import for_stm
+    model = for_stm(stm)
     trial = ThoughtTrialState(model)
     key = bindings(put(stm, idea(), row=0, pin=True))['_chunk_when']
     with pytest.raises(OverflowError, match='capacity'):
         put(stm, idea(), row=0)
-    assert stm._thought_clock == (1,)
+    assert model.present() == 1
     trial.restore()
-    assert stm._thought_clock == (0,)
+    assert model.present() == 0
     assert bindings(put(stm, idea(), row=0, pin=True))['_chunk_when'] == key
-    stm._thought_clock = (2**64 - 1,)
-    with pytest.raises(OverflowError, match='thought time'):
+    release(SimpleNamespace(_thought_stm=stm), key, 0)
+    from RowTime import HORIZON
+    model.when_time.fill_(HORIZON)
+    with pytest.raises(OverflowError, match='model time'):
         put(stm, idea(), row=0)
 
 

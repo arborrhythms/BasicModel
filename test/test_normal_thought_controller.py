@@ -53,8 +53,12 @@ def _catalog_world():
 
     object.__setattr__(model, "conceptualSpace", cs)
     object.__setattr__(model, "symbolSpace", SimpleNamespace(
-        what_memory=memory, grammatical_thoughts=registry))
+        what_memory=memory, grammatical_thoughts=registry, ltm_store=None))
+    from clock_fixtures import install
+    object.__setattr__(cs, '_model', model)
     object.__setattr__(model, "grammatical_thoughts", registry)
+    from clock_fixtures import install
+    install(model)
     model.what_thinking_detach = "episode"
     model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
     with torch.no_grad():
@@ -285,8 +289,10 @@ def test_completed_compose_program_enters_normal_controller_before_legacy_thinki
     object.__setattr__(model, "languageSpace", language)
     object.__setattr__(model, "symbolSpace", SimpleNamespace(
         languageSpace=language, what_memory=memory,
-        grammatical_thoughts=registry))
+        grammatical_thoughts=registry, ltm_store=None))
     object.__setattr__(model, "grammatical_thoughts", registry)
+    from clock_fixtures import install
+    install(model)
     model.what_thinking_detach = "episode"
     model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
     with torch.no_grad():
@@ -341,8 +347,10 @@ def test_completed_unary_concept_program_enters_the_normal_controller(
     object.__setattr__(model, "languageSpace", language)
     object.__setattr__(model, "symbolSpace", SimpleNamespace(
         languageSpace=language, what_memory=memory,
-        grammatical_thoughts=registry))
+        grammatical_thoughts=registry, ltm_store=None))
     object.__setattr__(model, "grammatical_thoughts", registry)
+    from clock_fixtures import install
+    install(model)
     model.what_thinking_detach = "episode"
     model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
     with torch.no_grad():
@@ -437,8 +445,10 @@ def test_selected_program_resolution_releases_completed_eval_episode(monkeypatch
     object.__setattr__(model, "languageSpace", language)
     object.__setattr__(model, "symbolSpace", SimpleNamespace(
         languageSpace=language, what_memory=memory,
-        grammatical_thoughts=registry))
+        grammatical_thoughts=registry, ltm_store=None))
     object.__setattr__(model, "grammatical_thoughts", registry)
+    from clock_fixtures import install
+    install(model)
     model.what_thinking_detach = "episode"
     model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
     with torch.no_grad():
@@ -491,8 +501,10 @@ def test_normal_boundary_refuses_unproved_semantic_meaning_as_its_answer_seed(mo
     object.__setattr__(model, "languageSpace", language)
     object.__setattr__(model, "symbolSpace", SimpleNamespace(
         languageSpace=language, what_memory=memory,
-        grammatical_thoughts=registry))
+        grammatical_thoughts=registry, ltm_store=None))
     object.__setattr__(model, "grammatical_thoughts", registry)
+    from clock_fixtures import install
+    install(model)
     model.what_thinking_detach = "episode"
     model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
     with torch.no_grad():
@@ -541,8 +553,10 @@ def test_normal_boundary_keeps_selected_prediction_provisional(
     object.__setattr__(model, "languageSpace", language)
     object.__setattr__(model, "symbolSpace", SimpleNamespace(
         languageSpace=language, what_memory=memory,
-        grammatical_thoughts=registry))
+        grammatical_thoughts=registry, ltm_store=None))
     object.__setattr__(model, "grammatical_thoughts", registry)
+    from clock_fixtures import install
+    install(model)
     model.what_thinking_detach = "episode"
     model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
     with torch.no_grad():
@@ -614,8 +628,10 @@ def test_normal_boundary_retains_the_unproved_controller_selected_operation(monk
     object.__setattr__(model, "languageSpace", language)
     object.__setattr__(model, "symbolSpace", SimpleNamespace(
         languageSpace=language, what_memory=memory,
-        grammatical_thoughts=registry))
+        grammatical_thoughts=registry, ltm_store=None))
     object.__setattr__(model, "grammatical_thoughts", registry)
+    from clock_fixtures import install
+    install(model)
     model.what_thinking_detach = "episode"
     model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
     with torch.no_grad():
@@ -672,8 +688,10 @@ def test_selected_program_precedes_the_legacy_surface_reasoner(monkeypatch):
     object.__setattr__(model, "languageSpace", language)
     object.__setattr__(model, "symbolSpace", SimpleNamespace(
         languageSpace=language, what_memory=memory,
-        grammatical_thoughts=registry))
+        grammatical_thoughts=registry, ltm_store=None))
     object.__setattr__(model, "grammatical_thoughts", registry)
+    from clock_fixtures import install
+    install(model)
     model.what_thinking_detach = "episode"
     model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
     with torch.no_grad():
@@ -730,8 +748,10 @@ def test_normal_boundary_never_falls_back_to_the_legacy_surface_reasoner(
     object.__setattr__(model, "languageSpace", language)
     object.__setattr__(model, "symbolSpace", SimpleNamespace(
         languageSpace=language, what_memory=memory,
-        grammatical_thoughts=registry))
+        grammatical_thoughts=registry, ltm_store=None))
     object.__setattr__(model, "grammatical_thoughts", registry)
+    from clock_fixtures import install
+    install(model)
     model.what_thinking_detach = "episode"
     model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
     with torch.no_grad():
@@ -789,8 +809,10 @@ def test_normal_what_uses_the_selected_thought_without_a_legacy_slot(monkeypatch
     object.__setattr__(model, "languageSpace", language)
     object.__setattr__(model, "symbolSpace", SimpleNamespace(
         languageSpace=language, what_memory=memory,
-        grammatical_thoughts=registry))
+        grammatical_thoughts=registry, ltm_store=None))
     object.__setattr__(model, "grammatical_thoughts", registry)
+    from clock_fixtures import install
+    install(model)
     model.what_thinking_detach = "episode"
     model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
     with torch.no_grad():
@@ -845,8 +867,10 @@ def test_selected_row_cannot_open_a_second_controller_for_another_row(monkeypatc
     object.__setattr__(model, "languageSpace", language)
     object.__setattr__(model, "symbolSpace", SimpleNamespace(
         languageSpace=language, what_memory=memory,
-        grammatical_thoughts=registry))
+        grammatical_thoughts=registry, ltm_store=None))
     object.__setattr__(model, "grammatical_thoughts", registry)
+    from clock_fixtures import install
+    install(model)
     model.what_thinking_detach = "episode"
     model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
     with torch.no_grad():

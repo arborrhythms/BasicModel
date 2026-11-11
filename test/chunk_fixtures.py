@@ -90,6 +90,9 @@ def prepend(f, frames, words):
         entries.stage_words(name,torch.full((1,max(1,words)),-1,dtype=torch.long))
     model = SimpleNamespace(_concept_owner=lambda:f.cs,inputSpace=SimpleNamespace(symbol_entries=entries),
                             symbolSpace=SimpleNamespace(ltm_store=f.store),_open_sentence_slot=0)
+    from clock_fixtures import install
+    install(model)
+    model._open_sentence_slot = 0
     return stage(model,state,torch.tensor([True]))
 
 

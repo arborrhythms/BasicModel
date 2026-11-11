@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "coverage": "All named band attributes/getattr readers, literal when/whenEncoding/when_encoding dispatches, and explicitly listed dynamic tail/clock helpers.",
+  "coverage": "Round 7: attribute/getattr inventory plus dynamic paths. Each reader is classified as absolute transport/address, age, or a difference; learned inputs use the latter two.",
   "attributes": [
     "_WHEN_WIDTH",
     "_ar_word_symbol_when",
@@ -24,7 +24,9 @@
       ],
       "role": "attention field read",
       "previous_absolute_time": false,
-      "now": "Live focus uses word subdivisions within the existing sentence interval; stored sentence coordinates remain unchanged."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 96,
+      "reads": "absolute"
     },
     {
       "file": "bin/BasicPercepts.py",
@@ -35,7 +37,9 @@
       ],
       "role": "basic percept read",
       "previous_absolute_time": false,
-      "now": "The grouped basic percept field preserves the native field time and band."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 91,
+      "reads": "absolute"
     },
     {
       "file": "bin/ClauseRow.py",
@@ -45,7 +49,32 @@
       ],
       "role": "clause closing",
       "previous_absolute_time": false,
-      "now": "The stamped closing time is passed to each native occurrence."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 425,
+      "reads": "absolute"
+    },
+    {
+      "file": "bin/EpisodicMemory.py",
+      "function": "_field",
+      "previous_absolute_time": false,
+      "attributes": [
+        "when",
+        "when_band"
+      ],
+      "line": 57,
+      "reads": "absolute",
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
+    },
+    {
+      "file": "bin/EpisodicMemory.py",
+      "function": "reinstate",
+      "previous_absolute_time": false,
+      "attributes": [
+        "when"
+      ],
+      "line": 107,
+      "reads": "absolute",
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
     },
     {
       "file": "bin/FieldReverse.py",
@@ -57,7 +86,9 @@
       ],
       "role": "order-zero loop",
       "previous_absolute_time": false,
-      "now": "Decode the supplied field time into native percept coordinates; never read a saved input span."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 69,
+      "reads": "absolute"
     },
     {
       "file": "bin/Language.py",
@@ -67,7 +98,9 @@
       ],
       "role": "unlocated dictionary writer",
       "previous_absolute_time": true,
-      "now": "Dictionary poles have zero when; located occurrences retain their source bracket."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 14699,
+      "reads": "absolute"
     },
     {
       "file": "bin/Language.py",
@@ -77,7 +110,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 11849,
+      "reads": "absolute"
     },
     {
       "file": "bin/Layers.py",
@@ -87,7 +122,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 14045,
+      "reads": "absolute"
     },
     {
       "file": "bin/Layers.py",
@@ -97,7 +134,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 14071,
+      "reads": "absolute"
     },
     {
       "file": "bin/Layers.py",
@@ -107,7 +146,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 14132,
+      "reads": "absolute"
     },
     {
       "file": "bin/Layers.py",
@@ -117,7 +158,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 14114,
+      "reads": "absolute"
     },
     {
       "file": "bin/Memory.py",
@@ -127,7 +170,9 @@
       ],
       "role": "retention priority",
       "previous_absolute_time": false,
-      "now": "Identities and familiar candidates share oldest-access eviction; the retained token tick breaks equal-access ties."
+      "now": "Only differences or their ranks enter retention and reference comparisons.",
+      "line": 1088,
+      "reads": "difference"
     },
     {
       "file": "bin/Memory.py",
@@ -137,7 +182,9 @@
       ],
       "role": "identity checkpoint model-time provenance",
       "previous_absolute_time": false,
-      "now": "Serializes or restores the retained identity time; no new clock or forward-path timestamp."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 1563,
+      "reads": "absolute"
     },
     {
       "file": "bin/Memory.py",
@@ -147,7 +194,9 @@
       ],
       "role": "identity checkpoint model-time provenance",
       "previous_absolute_time": false,
-      "now": "Serializes or restores the retained identity time; no new clock or forward-path timestamp."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 1541,
+      "reads": "absolute"
     },
     {
       "file": "bin/MemoryLink.py",
@@ -157,7 +206,9 @@
       ],
       "role": "reference menu",
       "previous_absolute_time": false,
-      "now": "The retained entry time supplies the candidate position."
+      "now": "Only differences or their ranks enter retention and reference comparisons.",
+      "line": 109,
+      "reads": "difference"
     },
     {
       "file": "bin/ModalLearning.py",
@@ -167,28 +218,56 @@
       ],
       "role": "owner lifecycle and teacher correspondence",
       "previous_absolute_time": false,
-      "now": "Matches actual and alternative events at equal when for the modal teacher; already landed in iteration 1."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 20,
+      "reads": "absolute"
     },
     {
       "file": "bin/ModelCandidateAttention.py",
       "function": "context",
       "role": "candidate support reader",
       "previous_absolute_time": false,
-      "now": "Uses the sentence-relative occurrence band to stamp and report native candidate support; no learned region or absolute clock.",
+      "now": "Learned inputs use age, computed from the present tick and the observation band or interval.",
       "attributes": [
-        "nWhen",
+        "nWhen"
+      ],
+      "line": 92,
+      "reads": "age"
+    },
+    {
+      "file": "bin/Models.py",
+      "function": "BasicModel._advance_when_time",
+      "previous_absolute_time": false,
+      "attributes": [
         "when_encoding"
-      ]
+      ],
+      "line": 13784,
+      "reads": "absolute",
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
+    },
+    {
+      "file": "bin/Models.py",
+      "function": "BasicModel._answer_attention_step",
+      "previous_absolute_time": false,
+      "attributes": [
+        "nWhen"
+      ],
+      "line": 23657,
+      "reads": "age",
+      "now": "Learned inputs use age, computed from the present tick and the observation band or interval."
     },
     {
       "file": "bin/Models.py",
       "function": "BasicModel._clause_end_state",
       "attributes": [
-        "when"
+        "when",
+        "when_encoding"
       ],
       "role": "shared chunk provenance",
       "previous_absolute_time": false,
-      "now": "Keeps the written sentence reference and time stamp in its recent off-stack chunk."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 20528,
+      "reads": "absolute"
     },
     {
       "file": "bin/Models.py",
@@ -199,7 +278,9 @@
       ],
       "role": "binding/closing reader",
       "previous_absolute_time": true,
-      "now": "The selected closing writes the source unit bracket; timestamp alone receives model time."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 20596,
+      "reads": "absolute"
     },
     {
       "file": "bin/Models.py",
@@ -209,7 +290,9 @@
       ],
       "role": "loss/layout reader",
       "previous_absolute_time": true,
-      "now": "Sentence reconstruction excludes the shared when tail; general event comparison may score relative brackets. The scoring rule is unchanged."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 24110,
+      "reads": "absolute"
     },
     {
       "file": "bin/Models.py",
@@ -219,7 +302,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 7423,
+      "reads": "absolute"
     },
     {
       "file": "bin/Models.py",
@@ -229,7 +314,9 @@
       ],
       "role": "binding/closing reader",
       "previous_absolute_time": true,
-      "now": "Location matching and concept/percept binding read the relative interval."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 11353,
+      "reads": "absolute"
     },
     {
       "file": "bin/Models.py",
@@ -239,38 +326,56 @@
       ],
       "role": "loss/layout reader",
       "previous_absolute_time": true,
-      "now": "Sentence reconstruction excludes the shared when tail; general event comparison may score relative brackets. The scoring rule is unchanged."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 7370,
+      "reads": "absolute"
     },
     {
       "file": "bin/Models.py",
       "function": "BasicModel._stage_serial_concept_rows",
       "attributes": [
-        "_ar_word_symbol_when",
         "when_encoding"
       ],
       "role": "binding/closing reader",
       "previous_absolute_time": true,
-      "now": "Each word is stamped at its containing source sentence position."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 11382,
+      "reads": "absolute"
+    },
+    {
+      "file": "bin/Occurrence.py",
+      "function": "stage_position",
+      "previous_absolute_time": false,
+      "attributes": [
+        "when_encoding"
+      ],
+      "line": 197,
+      "reads": "absolute",
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
     },
     {
       "file": "bin/PartClosing.py",
       "function": "PartClosing._write",
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Reads or transports a working percept time band; LTM storage is versioned and sentence-only.",
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
       "attributes": [
         "when"
-      ]
+      ],
+      "line": 329,
+      "reads": "absolute"
     },
     {
       "file": "bin/PartClosing.py",
       "function": "PartClosing._write_occurrence",
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "The existing occurrence writer extracted in item 2.5 section 52: a sentence carries the close's model-time band; an embedded mention remains untimed.",
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
       "attributes": [
         "when"
-      ]
+      ],
+      "line": 302,
+      "reads": "absolute"
     },
     {
       "file": "bin/PerceptField.py",
@@ -281,17 +386,44 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 30,
+      "reads": "absolute"
     },
     {
       "file": "bin/PrependedSymbols.py",
       "function": "stage",
       "attributes": [
-        "when"
+        "when",
+        "when_encoding"
       ],
       "role": "shared chunk provenance",
       "previous_absolute_time": false,
-      "now": "Stamps the prepended identity at the present RowTime while retaining its last mention location."
+      "now": "Reads current model time for a new STM stamp; candidate recency compares event-minus-present differences, never absolute phases.",
+      "line": 150,
+      "reads": "difference"
+    },
+    {
+      "file": "bin/PresentationMemory.py",
+      "function": "_capture_clock",
+      "previous_absolute_time": false,
+      "attributes": [
+        "when_encoding"
+      ],
+      "line": 53,
+      "reads": "absolute",
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
+    },
+    {
+      "file": "bin/PresentationMemory.py",
+      "function": "epoch",
+      "previous_absolute_time": false,
+      "attributes": [
+        "when_encoding"
+      ],
+      "line": 516,
+      "reads": "absolute",
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
     },
     {
       "file": "bin/ReferenceClose.py",
@@ -301,27 +433,43 @@
       ],
       "role": "working identity history",
       "previous_absolute_time": false,
-      "now": "Orders the retained MTM mention and event histories of identities reached through the shared chunks."
+      "now": "Only differences or their ranks enter retention and reference comparisons.",
+      "line": 228,
+      "reads": "difference"
     },
     {
       "file": "bin/ReferenceContext.py",
       "function": "SituationFrame.detached",
       "previous_absolute_time": false,
-      "now": "Copy the row model-time column as provenance; it is never part of a concept or compose operand.",
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
       "attributes": [
         "when"
-      ]
+      ],
+      "line": 68,
+      "reads": "absolute"
+    },
+    {
+      "file": "bin/RowTime.py",
+      "function": "age_band",
+      "previous_absolute_time": false,
+      "attributes": [
+        "when_encoding"
+      ],
+      "line": 47,
+      "reads": "age",
+      "now": "Learned inputs use age, computed from the present tick and the observation band or interval."
     },
     {
       "file": "bin/SentenceAttention.py",
       "function": "SentenceField.__init__",
       "attributes": [
-        "_ar_word_symbol_when",
         "when_encoding"
       ],
       "role": "attention field read",
       "previous_absolute_time": false,
-      "now": "Live focus uses word subdivisions within the existing sentence interval; stored sentence coordinates remain unchanged."
+      "now": "Retains exact absolute word brackets for reports; scorer keys receive age bands and structural input receives within-sentence differences.",
+      "line": 7,
+      "reads": "age"
     },
     {
       "file": "bin/SentenceAttention.py",
@@ -331,27 +479,21 @@
       ],
       "role": "attention field read",
       "previous_absolute_time": false,
-      "now": "Live focus uses word subdivisions within the existing sentence interval; stored sentence coordinates remain unchanged."
+      "now": "Retains exact absolute word brackets for reports; scorer keys receive age bands and structural input receives within-sentence differences.",
+      "line": 122,
+      "reads": "difference"
     },
     {
       "file": "bin/SentenceAttention.py",
       "function": "SentenceField.placements",
       "role": "candidate support reader",
       "previous_absolute_time": false,
-      "now": "Uses the sentence-relative occurrence band to stamp and report native candidate support; no learned region or absolute clock.",
-      "attributes": [
-        "when"
-      ]
-    },
-    {
-      "file": "bin/SentenceField.py",
-      "function": "after_understanding",
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
       "attributes": [
         "when"
       ],
-      "role": "order-zero loop",
-      "previous_absolute_time": false,
-      "now": "The order-zero face retains its open field occurrence times."
+      "line": 105,
+      "reads": "absolute"
     },
     {
       "file": "bin/SentenceField.py",
@@ -361,7 +503,9 @@
       ],
       "role": "order-zero loop",
       "previous_absolute_time": false,
-      "now": "Higher-order descent keeps the supplied field times unchanged."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 25,
+      "reads": "absolute"
     },
     {
       "file": "bin/SentenceField.py",
@@ -371,7 +515,9 @@
       ],
       "role": "order-zero loop",
       "previous_absolute_time": false,
-      "now": "Capture the live sentence-open field time for both composition trials."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 43,
+      "reads": "absolute"
     },
     {
       "file": "bin/SentenceField.py",
@@ -381,7 +527,43 @@
       ],
       "role": "order-zero loop",
       "previous_absolute_time": false,
-      "now": "Publish the same parallel field time to the conceptual carrier."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 14,
+      "reads": "absolute"
+    },
+    {
+      "file": "bin/SentenceField.py",
+      "function": "selected_field",
+      "previous_absolute_time": false,
+      "attributes": [
+        "when"
+      ],
+      "line": 98,
+      "reads": "absolute",
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
+    },
+    {
+      "file": "bin/SentenceField.py",
+      "function": "sentence_generated",
+      "previous_absolute_time": false,
+      "attributes": [
+        "when"
+      ],
+      "line": 53,
+      "reads": "absolute",
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "ConceptualSpace._bind_read",
+      "attributes": [
+        "nWhen",
+        "whenEncoding"
+      ],
+      "role": "composition input",
+      "previous_absolute_time": true,
+      "reads": "difference",
+      "now": "The mixer reads the elapsed-time ladder relative to its zero-age band; the stored percept stamp is unchanged."
     },
     {
       "file": "bin/Spaces.py",
@@ -392,7 +574,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 13586,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -402,18 +586,32 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 13920,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
       "function": "ConceptualSpace.cs_read_memberships",
       "attributes": [
-        "when",
         "when_encoding"
       ],
       "role": "binding/closing reader",
       "previous_absolute_time": true,
-      "now": "Percept fields carry the current sentence unit interval for located binding."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 14952,
+      "reads": "absolute"
+    },
+    {
+      "file": "bin/Spaces.py",
+      "function": "ConceptualSpace.cs_read_percept_field",
+      "previous_absolute_time": false,
+      "attributes": [
+        "when"
+      ],
+      "line": 14972,
+      "reads": "absolute",
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
     },
     {
       "file": "bin/Spaces.py",
@@ -423,7 +621,9 @@
       ],
       "role": "order-zero loop",
       "previous_absolute_time": false,
-      "now": "Retain the parallel pump field time beside its order-zero evidence."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 15767,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -433,7 +633,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 17492,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -443,7 +645,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 17341,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -453,7 +657,9 @@
       ],
       "role": "binding/closing reader",
       "previous_absolute_time": true,
-      "now": "Returns encoded address bands with recovered lexical metadata, without interpreting absolute time."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 5337,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -463,7 +669,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 1180,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -473,7 +681,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 1223,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -485,7 +695,9 @@
       ],
       "role": "writer",
       "previous_absolute_time": true,
-      "now": "Stamps source-relative sentence positions; no model-clock input."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 10184,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -495,7 +707,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 12361,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -507,7 +721,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 12404,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -518,7 +734,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 12458,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -528,7 +746,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 10407,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -539,7 +759,9 @@
       ],
       "role": "writer",
       "previous_absolute_time": true,
-      "now": "Stamps source-relative sentence positions; no model-clock input."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 11434,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -550,7 +772,9 @@
       ],
       "role": "writer",
       "previous_absolute_time": true,
-      "now": "Stamps source-relative sentence positions; no model-clock input."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 10907,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -560,7 +784,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 11977,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -570,7 +796,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 8463,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -580,7 +808,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 8623,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -590,7 +820,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 6385,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -600,7 +832,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 6359,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -611,7 +845,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 5824,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -621,7 +857,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 6288,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -631,7 +869,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 6259,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -642,7 +882,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 6051,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -653,7 +895,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 7602,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -663,7 +907,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 6515,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -674,7 +920,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 7590,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -686,7 +934,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 7066,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -696,7 +946,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 6945,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -706,7 +958,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 7612,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -716,7 +970,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 7340,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -727,7 +983,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 7282,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -737,7 +995,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 6635,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -747,7 +1007,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 6238,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -757,7 +1019,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 6504,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -767,7 +1031,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 7619,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -777,7 +1043,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 6019,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -787,7 +1055,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 20312,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -797,7 +1067,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 20196,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -807,7 +1079,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 20237,
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
@@ -817,7 +1091,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 20266,
+      "reads": "absolute"
     },
     {
       "file": "bin/Teacher.py",
@@ -827,7 +1103,9 @@
       ],
       "role": "separate objective-address API",
       "previous_absolute_time": false,
-      "now": "Teacher.when is corpus/source metadata, not the event band; unchanged."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 316,
+      "reads": "absolute"
     },
     {
       "file": "bin/Teacher.py",
@@ -837,7 +1115,20 @@
       ],
       "role": "separate objective-address API",
       "previous_absolute_time": false,
-      "now": "Teacher.when is corpus/source metadata, not the event band; unchanged."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 347,
+      "reads": "absolute"
+    },
+    {
+      "file": "bin/ThoughtChunks.py",
+      "function": "_next_when",
+      "previous_absolute_time": false,
+      "attributes": [
+        "when_encoding"
+      ],
+      "line": 13,
+      "reads": "absolute",
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
     },
     {
       "file": "bin/Understanding.py",
@@ -847,7 +1138,20 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 309,
+      "reads": "absolute"
+    },
+    {
+      "file": "bin/WalkTrials.py",
+      "function": "ThoughtTrialState.restore",
+      "previous_absolute_time": false,
+      "attributes": [
+        "when_encoding"
+      ],
+      "line": 291,
+      "reads": "absolute",
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
     },
     {
       "file": "bin/WhereRegistry.py",
@@ -858,7 +1162,9 @@
       ],
       "role": "encoder owner",
       "previous_absolute_time": false,
-      "now": "Selects a fixed coarse/fine period above both LTM capacity and the loaded document bound."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 48,
+      "reads": "absolute"
     },
     {
       "file": "bin/corpus_capacity.py",
@@ -868,7 +1174,9 @@
       ],
       "role": "construction measurement",
       "previous_absolute_time": false,
-      "now": "Reports the constructed clock dimensions without reading a timestamp or advancing the clock."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 155,
+      "reads": "absolute"
     },
     {
       "file": "bin/corpus_capacity.py",
@@ -878,7 +1186,9 @@
       ],
       "role": "capacity exit measurement",
       "previous_absolute_time": false,
-      "now": "Reports the existing when ladder periods and RowTime horizon; neither supplies a semantic feature nor changes either clock."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 298,
+      "reads": "absolute"
     },
     {
       "file": "bin/pipeline.py",
@@ -888,7 +1198,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 856,
+      "reads": "absolute"
     },
     {
       "file": "bin/pipeline.py",
@@ -898,7 +1210,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 660,
+      "reads": "absolute"
     },
     {
       "file": "bin/pipeline.py",
@@ -909,7 +1223,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 684,
+      "reads": "absolute"
     },
     {
       "file": "bin/pipeline.py",
@@ -919,7 +1235,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 408,
+      "reads": "absolute"
     },
     {
       "file": "bin/pipeline.py",
@@ -929,7 +1247,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 415,
+      "reads": "absolute"
     },
     {
       "file": "bin/pipeline.py",
@@ -939,7 +1259,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 611,
+      "reads": "absolute"
     },
     {
       "file": "bin/pipeline.py",
@@ -949,7 +1271,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 780,
+      "reads": "absolute"
     },
     {
       "file": "bin/pipeline.py",
@@ -959,7 +1283,9 @@
       ],
       "role": "carrier",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
+      "line": 794,
+      "reads": "absolute"
     }
   ],
   "dynamic_readers": [
@@ -967,175 +1293,290 @@
       "file": "bin/Language.py",
       "function": "_event_split",
       "previous_absolute_time": true,
-      "now": "Separates when tail; its value is now relative."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
       "function": "DocumentWhenEncoding",
       "previous_absolute_time": true,
-      "now": "Encodes/decodes [i,i+1] with two endpoint-sum rungs; shift_time is a relative rotation."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
       "function": "WhenRangeEncoding / WhenStartDurationEncoding",
       "previous_absolute_time": true,
-      "now": "Legacy standalone codecs retained for explicit old encodings; the model uses DocumentWhenEncoding."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/AccessibleMind.py",
       "function": "apply_thought_effect",
       "previous_absolute_time": false,
-      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/ClauseRow.py",
       "function": "ClauseRows.write_clause",
       "previous_absolute_time": false,
-      "now": "Copies the completed clause band and writes its address; external input closings supply the document-relative bracket."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/Language.py",
       "function": "LanguageLayer.reduce",
       "previous_absolute_time": false,
-      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/Language.py",
       "function": "SymbolSpace.forward_concept_to_symbol",
       "previous_absolute_time": false,
-      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/Memory.py",
       "function": "LTM0.__init__",
       "previous_absolute_time": false,
-      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/Memory.py",
       "function": "LTM0._load_from_state_dict",
       "previous_absolute_time": false,
-      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/Memory.py",
       "function": "LTM0.clear_origin",
       "previous_absolute_time": false,
-      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/Models.py",
       "function": "BaseModel._collect_structural_extras",
       "previous_absolute_time": false,
-      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/Models.py",
       "function": "BaseModel._restore_structural_extras",
       "previous_absolute_time": false,
-      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/Models.py",
       "function": "BaseModel.load_weights",
       "previous_absolute_time": false,
-      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/Models.py",
       "function": "BasicModel._synthesis_state_objects",
       "previous_absolute_time": false,
-      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/Models.py",
       "function": "BasicModel._forward_body",
       "previous_absolute_time": false,
-      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/PerceptField.py",
       "function": "PerceptField.clone",
       "previous_absolute_time": false,
-      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
       "function": "SubSpace.normalize",
       "previous_absolute_time": false,
-      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
       "function": "SubSpace._apply_normalization",
       "previous_absolute_time": false,
-      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
       "function": "SubSpace._apply_reverse_normalization",
       "previous_absolute_time": false,
-      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
       "function": "SubSpace.denormalize",
       "previous_absolute_time": false,
-      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
       "function": "Space.__init__",
       "previous_absolute_time": false,
-      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
       "function": "Space._adopt_subspace_modules",
       "previous_absolute_time": false,
-      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/Spaces.py",
       "function": "ConceptualSpace.forward",
       "previous_absolute_time": false,
-      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/Understanding.py",
       "function": "SentenceEndState.__post_init__",
       "previous_absolute_time": false,
-      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/space_carrier.py",
       "function": "SpaceCarrierMixin._carrier_basis",
       "previous_absolute_time": false,
-      "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/RowTime.py",
       "function": "read_stamp / write_stamp",
       "previous_absolute_time": false,
-      "now": "Reads or writes the four clock coordinates in an idea percept or a chain percept."
+      "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
+      "reads": "absolute"
     },
     {
       "file": "bin/EntryRead.py",
       "function": "recall_time",
       "previous_absolute_time": false,
-      "now": "Finds sentence stamps nearest the supplied time within the window and shared work budget."
+      "now": "Compares elapsed model time or differences between RowTime stamps.",
+      "reads": "difference"
     },
     {
       "file": "bin/Forgetting.py",
       "function": "history_age",
       "previous_absolute_time": false,
-      "now": "Derives age from the containing sentence percept stamp."
+      "now": "Compares elapsed model time or differences between RowTime stamps.",
+      "reads": "age"
     },
     {
       "file": "bin/Occurrence.py",
       "function": "OccurrenceRows.recency_weights",
       "previous_absolute_time": false,
-      "now": "Derives recency from percept time, not stream position."
+      "now": "Compares elapsed model time or differences between RowTime stamps.",
+      "reads": "age"
+    },
+    {
+      "file": "bin/Language.py",
+      "function": "LanguageSpace.choose_operation",
+      "previous_absolute_time": true,
+      "reads": "age",
+      "now": "STM and reference operand views are relative to the present tick; the result regains its source stamp."
+    },
+    {
+      "file": "bin/Layers.py",
+      "function": "SymbolExpectation._prediction_inputs",
+      "previous_absolute_time": true,
+      "reads": "age",
+      "now": "Keys, context and recent-observation time enter the predictor as elapsed time."
+    },
+    {
+      "file": "bin/SymbolField.py",
+      "function": "SymbolField.anticipate",
+      "previous_absolute_time": true,
+      "reads": "age",
+      "now": "Uses the same relative predictor input boundary."
+    },
+    {
+      "file": "bin/Models.py",
+      "function": "BasicModel.generate",
+      "previous_absolute_time": true,
+      "reads": "age",
+      "now": "The grammar inverse reads the relative operand; the occurrence writer stamps its own supplied tick."
+    },
+    {
+      "file": "bin/Models.py",
+      "function": "BasicModel._choose_selected_thought_action",
+      "previous_absolute_time": true,
+      "reads": "age",
+      "now": "The active and offered thought roles are relative views."
+    },
+    {
+      "file": "bin/ThoughtFeatures.py",
+      "function": "semantic_metadata",
+      "previous_absolute_time": true,
+      "reads": "absolute",
+      "now": "Excludes the exact _chunk_when address from learned metadata; typed references remain alpha-renamed."
+    },
+    {
+      "file": "bin/RowTime.py",
+      "function": "relative_to / relative_idea / age_interval",
+      "previous_absolute_time": true,
+      "reads": "age",
+      "now": "Shared clock-to-observation difference conversion."
+    },
+    {
+      "file": "bin/ThoughtChunks.py",
+      "function": "_index / read / held",
+      "previous_absolute_time": true,
+      "reads": "absolute",
+      "now": "Exact thought address lookup only; no scorer reads the address."
+    },
+    {
+      "file": "bin/ThoughtStrata.py",
+      "function": "write",
+      "previous_absolute_time": true,
+      "reads": "absolute",
+      "now": "Hexadecimal components preserve the exact address in a stable source key."
+    },
+    {
+      "file": "bin/EntryRead.py",
+      "function": "recall_identities / recall_chunks",
+      "previous_absolute_time": true,
+      "reads": "absolute",
+      "now": "Carries the recalled row stamp to STM without advancing the clock."
+    },
+    {
+      "file": "bin/WordExpectation.py",
+      "function": "word_distribution",
+      "role": "causal word expectation",
+      "previous_absolute_time": true,
+      "reads": "age",
+      "now": "The shared _prediction_inputs conversion gives the predictor ages for its bank, context and recent-time feature; returned content retains original stamps."
+    },
+    {
+      "file": "bin/RowTime.py",
+      "function": "difference",
+      "role": "composition time difference",
+      "previous_absolute_time": true,
+      "reads": "difference",
+      "now": "Decode a shared-ladder stamp, subtract it from the present tick, and subtract the zero-age band before learned composition."
     }
   ],
   "layout_removed_readers": [
@@ -1297,6 +1738,18 @@
       "role": "carrier",
       "previous_absolute_time": false,
       "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    }
+  ],
+  "round7_removed_readers": [
+    {
+      "file": "bin/SentenceField.py",
+      "function": "after_understanding",
+      "attributes": [
+        "when"
+      ],
+      "role": "order-zero loop",
+      "previous_absolute_time": false,
+      "now": "The order-zero face retains its open field occurrence times."
     }
   ]
 }

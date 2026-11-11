@@ -112,7 +112,9 @@ def test_native_packing_after_training_with_selected_backward(tmp_path,monkeypat
             torch.testing.assert_close(actual['program_root'],actual['root'],rtol=0,atol=0)
         receipt(tmp_path,f'packing-{separate}-{jitter}',dict(separate_chooser=separate,
             reconstruction_jitter=jitter,sentences=len(packed),packing_parity=True,
-            initialization='one ambient checkpoint after one training step',seed=None))
+            initialization='one ambient checkpoint after one training step',seed=None,
+            event_costs={str(key):dict(packed=float(value['event_cost']),
+                single=float(single[key]['event_cost'])) for key,value in packed.items()}))
     finally:
         for model in models:model.End();model.symbolSpace.soft_reset()
         torch._dynamo.reset()

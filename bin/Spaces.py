@@ -689,7 +689,7 @@ class WhereEncoding(QuadratureEncoding):
 
 
 # Historical standalone codecs (2026-06-16 and v2).
-# Live event bands use DocumentWhenEncoding below: relative [i, i+1].
+# Live event bands use DocumentWhenEncoding below: model-time [t, t+1].
 # These legacy codecs retain explicit caller-owned t; the model no longer
 # propagates when_time into any event encoder.
 _WHEN_PERIOD = 65536
@@ -952,11 +952,10 @@ def event_when_encoding(n_when):
 # from the event tail: duration was write-only there (decode_span had zero
 # callers) and the exact clock owns absolute time (Option-C hybrid).
 class DocumentWhenEncoding(WhenStartDurationEncoding):
-    """Document-relative unit bracket [sentence, sentence + 1], in two rungs.
+    """Unit bracket [tick, tick + 1] on the model's two-rung time ladder.
 
-    The endpoint sum uses the spatial ladder's frequencies and scale. ``t``
-    is a relative position supplied by the source, never the model clock.
-    Historical onset encoders remain available to decode old standalone data.
+    The class name preserves checkpoint compatibility. Live models use the
+    RowTime horizon; historical codecs remain available for standalone data.
     """
     def encode(self, start, end=None):
         start = torch.as_tensor(start, device=TheDevice.get()) if not torch.is_tensor(start) else start
@@ -13630,9 +13629,11 @@ class ConceptualSpace(Space):
 
     def End(self):
         super().End()
-        # The native fold stacks carry autograd history. Do not retain the
-        # previous batch's graph merely because its symbolic carrier survived.
+        # The next pass owns its native observation. A review survives in
+        # _episode_review_field until that pass replaces it.
         self._clear_percept_field()
+        self._cs_field_where = None
+        self._cs_field_when = None
 
     # -- category utility and chunk admission (fold-ladder plan, contract 4 / 7)
 
@@ -14895,7 +14896,7 @@ class ConceptualSpace(Space):
         return view
 
     @torch.no_grad()
-    def _bind_attended_concepts(self, required, matrix, part_ids):
+    def _bind_attended_concepts(self, required, matrix):
         """Gather every definition reachable from active native percept poles."""
         store = _concept_alloc_of(self).layer()
         active = (required.amax((2, 3)) > 0 if required.shape[2] else
@@ -14960,18 +14961,25 @@ class ConceptualSpace(Space):
         model = self._model
         from Occurrence import event_positions
         positions = event_positions(self, extents.shape[:2], device=extents.device)
-        when = torch.stack((positions, positions + 1), -1).to(extents)
+        when = torch.stack((positions, positions + 1), -1)
         perception = self.basic_percepts.read(percepts, extents, [key[1] for key in keys],
             dtype=self.similarity_codebook.W.dtype, when=when,
             registry=getattr(model, 'where_registry', None),
             when_encoding=getattr(model, 'when_encoding', None))
+        return self.cs_read_percept_field(perception)
+
+    def cs_read_percept_field(self, perception):
+        """Read memberships from either open attention or a recalled episode."""
+        store = _concept_alloc_of(self).layer(0)
+        matrix = store.features
+        keys = [('bp', col // 2) for col in matrix._cols]
         object.__setattr__(self, '_percept_field', perception)
         object.__setattr__(self, '_cs_field_where', perception.where)
         object.__setattr__(self, '_cs_field_when', perception.when)
         membership = perception.values.index_select(0, perception.selected(keys))
         columns = torch.tensor(matrix._cols, device=membership.device, dtype=torch.long)
         required = torch.where((columns % 2)[:, None, None, None].bool(), membership.flip(-1), membership)
-        self._bind_attended_concepts(required, matrix, percepts[0])
+        self._bind_attended_concepts(required, matrix)
         fields, raw_fields = [], []
         B, E = membership.shape[1:3]
         n0 = self._field_caps()[0]
@@ -17174,6 +17182,18 @@ class ConceptualSpace(Space):
         return ev[..., :cdim], ev[..., cdim:], ev
 
     @staticmethod
+    def _bind_read(sub, content_dim):
+        """Read a stream for composition, keeping its stored stamp intact."""
+        content, band, event = ConceptualSpace._bind_demux(sub, content_dim)
+        if event is not None and sub.nWhen == 4:
+            start = sub.nWhat + sub.nWhere
+            if content.shape[-1] > start:
+                from RowTime import difference
+                relative = difference(sub.whenEncoding, event[..., start:start+4])
+                content = torch.cat((event[..., :start], relative, event[..., start+4:]), -1)[..., :content.shape[-1]]
+        return content, band, event
+
+    @staticmethod
     def _bind_fit(content, D, like):
         """Fit a content slab to the bind width ``D``.
 
@@ -18155,11 +18175,11 @@ class ConceptualSpace(Space):
         if combine is None:
             return None
         D = int(combine.content_dim)
-        cs_content, cs_band, cs_event = self._bind_demux(CS_sub, D)
+        cs_content, cs_band, cs_event = self._bind_read(CS_sub, D)
         if cs_event is None:
             return None
         nv = int(combine.n_vectors)
-        ps_content, _, _ = self._bind_demux(PS_sub, D)
+        ps_content, _, _ = self._bind_read(PS_sub, D)
         # Regroup a wide leg (e.g. the t>0 symbolic-iteration WS emit
         # [B, 1020, 8]) into the deep n_vectors slots the combine binds,
         # BEFORE _bind_fit (which pads the last dim). No-op when already deep.
@@ -18170,7 +18190,7 @@ class ConceptualSpace(Space):
             # factored. Dark by default; the 2N mixing matrix below is
             # untouched either way -- the knob governs what crosses it.
             PS_t = self._factor_crossing(PS_t)
-        ws_content, _, _ = self._bind_demux(WS_sub, D)
+        ws_content, _, _ = self._bind_read(WS_sub, D)
         ws_content = self._bind_regroup(ws_content, nv)
         WS_t = self._bind_fit(ws_content, D, cs_content)
         # Slice B: the THIRD (symbol) peer leg -- present whenever the combine
@@ -18191,7 +18211,7 @@ class ConceptualSpace(Space):
             # pointer is RETIRED. ``SS_sub is None`` -> ``_bind_fit`` zero leg.
             ss_content = None
             if SS_sub is not None:
-                ss_content, _, _ = self._bind_demux(SS_sub, D)
+                ss_content, _, _ = self._bind_read(SS_sub, D)
                 if ss_content is not None:
                     ss_content = self._bind_regroup(ss_content, nv)
             SS_t = self._bind_fit(ss_content, D, cs_content)

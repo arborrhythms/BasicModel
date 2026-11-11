@@ -1175,6 +1175,14 @@ hold the truths read in from the user. It is **declarative** memory, written
 in one shot. (What is learned slowly — the codebook, the operators, the
 taxonomy — is not LTM in this sense; see 2.7.5.)
 
+*Amended 2026-11-11.* The percept half of "a few indices beside each row"
+(2.7.1) and the reinstatement of 2.7.4 are built in item 2.0 round 7 (accepted
+2026-11-11): an entry of `episodicPercepts` percepts from the sentence's
+open attention pass beside its `LTM0` row, reinstated as the attended field by
+a recall by time. The concept half is open. Current record:
+[FutureWork §7](../FutureWork.md#7-episodic-memory-a-few-active-indices-beside-each-row)
+and [Architecture](../Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11).
+
 #### 2.7.1 What a row holds, and how several things are held at once
 
 **LTM holds serial form only.** A row holds, per role, **one idea** — the

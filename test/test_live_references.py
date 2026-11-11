@@ -217,6 +217,8 @@ def test_operation_runs_on_the_selected_occurrence_eager_and_compiled():
                             _compose_unary_rules=(), _structural_context=lambda **kw: None,
                             _reference_bank=ReferenceBank(torch.tensor([[5]]), prior[None, None], torch.tensor([[True]]),
                                                           torch.tensor([[False]]), query[None], torch.tensor([True])))
+    owner._symbol_space = SimpleNamespace(conceptualSpace=SimpleNamespace(
+        _model=SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(when_start=None)))))
     from Memory import STMChunks as chunks
     state=chunks.empty(1,8,4)
     state,_=chunks.deposit(state,prior[None],torch.tensor([True]),identity=5)
@@ -380,7 +382,12 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
         torch.testing.assert_close(frame[1,:content_width], owner.mtm.value_of(beta_token)[:content_width], rtol=1e-6, atol=2e-7)
         staged = model.inputSpace.symbol_entries
         beta_site = (staged.object_ids[0,:staged.prepend] == beta_token.transient).nonzero().item()
-        torch.testing.assert_close(frame[1,store.when_start:], staged.symbol_when[0,beta_site],rtol=0,atol=0)
+        # The staged occurrence retains its stamp; the composition sees
+        # its age at this sentence, before subsequent thought/output ticks.
+        tick = model._sentence_ticks[0]
+        age = tick - model.when_encoding.decode_index(staged.symbol_when[0,beta_site])
+        torch.testing.assert_close(frame[1,store.when_start:],
+            model.when_encoding.encode(age).to(frame),rtol=0,atol=0)
         handle = int((entry.identity_ids == held_identity).nonzero().item()) + 1
         assert entry.identity_actions[actions][-1, 1].item() == handle
         assert clause.children[0].identity['handle'] == handle

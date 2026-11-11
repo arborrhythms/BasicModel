@@ -275,7 +275,7 @@ def test_expectation_off_keeps_every_packed_closing_in_ltm(tmp_path, monkeypatch
         assert len(set(sources)) == 2  # Both packed source positions reached the writer.
         assert all(row['kind'] in ('observation', 'unverified', 'question') for row in closings)
         rows.extend(row for address, row in zip(roots, closings) if isinstance(address, tuple))
-        assert all(row['kind'] in ('observation', 'unverified', 'question', 'inference', 'cover') for row in rows)
+        assert all(row['kind'] in ('observation', 'unverified', 'question', 'inference', 'cover', 'episode') for row in rows)
         assert sum(row['kind'] == 'cover' for row in rows) == 1
         assert not any(row['kind'] == 'estimate' for row in rows)
         assert all(int(store.meaning_of(i).role_mask.sum()) == 1 for i in range(before, len(store)))

@@ -26,7 +26,7 @@ def realize(model, generation):
         return model.reverse(model.conceptualSpace.subspace.carrier_like(), field=generation.field)
 
 
-def generated(model, words, counts, truncated, bank, trace):
+def generated(model, words, counts, truncated, bank, trace, *, when=None):
     from SentenceUnderstanding import readback_scores
     owner = model._concept_owner()
     B, W, D = words.shape
@@ -74,9 +74,10 @@ def generated(model, words, counts, truncated, bank, trace):
                 raise ValueError('a generated terminal has no owned native surface')
             where[b, w] = where.new_tensor((cursor, cursor + len(raw)))
             cursor += len(raw) + 1
-    from Occurrence import event_positions
-    positions = event_positions(owner, (B, W), device=words.device)
-    when = torch.stack((positions, positions + 1), -1)
+    if when is None:
+        tick = model.present()
+        when = selected.new_tensor((tick, tick + 1))[None, None]
+    when = when.to(device=words.device).expand(B, W, 2)
     evidence = owner.cs_reverse_presence(evidence, inventory_rows=rows)
     base = rows.new_tensor([row >= 0 and owner._row_order(row) == 0 for row in addresses], dtype=torch.bool)
     evidence = evidence * base[:, None, None, None]

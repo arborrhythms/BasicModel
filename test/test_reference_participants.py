@@ -190,13 +190,14 @@ def test_a_pending_lexical_site_cannot_bind_to_its_enclosing_introduction(monkey
     def select(choices, logits, *, forward_identity=None, individuals=None):
         if forward_identity != word:
             return None
-        return choices.index(('new', 0)) if ('new', 0) in choices else 0
+        return choices.index(('new', 1)) if ('new', 1) in choices else 0
 
     monkeypatch.setattr(resolver, 'select', select)
     _, plan = keep(resolver, clause, (frame,), position=1)
-    intro, site = plan['items']
-    assert intro['own_object'] and intro['selected'] == ('new', 0)
-    assert site['lexical'] and ('new', 0) not in site['candidates']
+    # Operand preparation now precedes its enclosing introduction.
+    site, intro = plan['items']
+    assert intro['own_object'] and intro['selected'] == ('new', 1)
+    assert site['lexical'] and ('new', 1) not in site['candidates']
     assert site['selected'] in site['candidates']
     assert resolver.components.owner.mtm.token_of(site['reference']) == (
         resolver.components.owner.mtm.token_of(store.occurrence_of(earlier)))

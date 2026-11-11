@@ -17,11 +17,13 @@ class SentenceField(FieldTraversal):
         native = [entry[2] for entry in cache]
         self.parts = torch.stack([entry[0][:, -1] for entry in native]).sum(0)
         self.wholes = torch.stack([entry[1][:, -1] for entry in native]).sum(0)
-        bands = model.inputSpace._ar_word_symbol_when
+        from PrependedSymbols import word_view
+        bands = word_view(model.inputSpace, 'symbol_when')
         onset = model.when_encoding.decode_index(bands.index_select(1, self.positions))
         rank = valid.long().cumsum(-1) - 1
         count = valid.sum(-1).clamp_min(1)[:, None]
-        when = torch.stack((onset + rank / count, onset + (rank + 1) / count), -1)
+        from RowTime import subintervals, relative_idea
+        when = subintervals(onset, rank, count)
         addresses, features, masks, spans, keys, identities = [], [], [], [], [], []
         reading = getattr(model, '_attention_words', None)
         for column, (index, payload, entry) in enumerate(cache):
@@ -51,10 +53,10 @@ class SentenceField(FieldTraversal):
             keys.append(payload[0].mean(1))
         self.addresses = torch.stack(addresses, 1)
         self.masks = torch.stack(masks, 1)
-        self.keys = torch.stack(keys, 1)
+        self.keys = relative_idea(model, torch.stack(keys, 1))
         self.identities = torch.stack(identities, 1)
         support = torch.stack(features, 1)
-        super().__init__(support, torch.stack(spans, 1).to(support), when.to(support),
+        super().__init__(support, torch.stack(spans, 1).to(support), when,
                          valid, allowance, tolerance=model.het_tolerance)
         self.support_window = support.new_zeros(B, model.conceptualSpace.stm.capacity, W)
         self._closing = torch.zeros(B, dtype=torch.bool, device=active.device)
@@ -110,9 +112,10 @@ class SentenceField(FieldTraversal):
         occupied = live.any(-1)
         result = {}
         for name, bands in (('where', self.where), ('when', self.when)):
-            low = torch.where(live, bands[:, None, :, 0], torch.inf).amin(-1)
-            high = torch.where(live, bands[:, None, :, 1], -torch.inf).amax(-1)
-            result[name] = torch.where(occupied[..., None], torch.stack((low, high), -1), 0.)
+            mask = live.to(bands.device)
+            low = torch.where(mask, bands[:, None, :, 0], torch.inf).amin(-1)
+            high = torch.where(mask, bands[:, None, :, 1], -torch.inf).amax(-1)
+            result[name] = torch.where(occupied[..., None].to(bands.device), torch.stack((low, high), -1), 0.)
         result['lanes'] = torch.einsum('bkw,bwf->bkf', self.support_window, self.support.sum(-2))
         return result
 
@@ -136,13 +139,14 @@ class SentenceField(FieldTraversal):
         # fraction of a sentence by the entire timestamp range buried this
         # input below the content keys. This is a coordinate chart, not a
         # preferred direction or a selection rule.
-        onset = torch.where(self.valid, self.when[..., 0], torch.inf).amin(-1, keepdim=True)
-        end = torch.where(self.valid, self.when[..., 1], -torch.inf).amax(-1, keepdim=True)
-        onset = torch.where(self.valid.any(-1, keepdim=True), onset, 0.)
-        duration = torch.where(self.valid.any(-1, keepdim=True), end-onset, 1.).clamp_min(1e-6)
+        located = self.valid.to(self.when.device)
+        onset = torch.where(located, self.when[..., 0], torch.inf).amin(-1, keepdim=True)
+        end = torch.where(located, self.when[..., 1], -torch.inf).amax(-1, keepdim=True)
+        onset = torch.where(located.any(-1, keepdim=True), onset, 0.)
+        duration = torch.where(located.any(-1, keepdim=True), end-onset, 1.).clamp_min(1e-6)
         relative_when = (self.when-onset[..., None]) / duration[..., None]
         structure = torch.cat((self.where / self.model.where_registry.capacity,
-            relative_when,
+            relative_when.to(self.keys),
             self.support.sum(-2), self.remaining[..., None].to(self.keys),
             salience[..., None]), -1)
         return layer(inputs, torch.cat((self.keys, structure), -1))

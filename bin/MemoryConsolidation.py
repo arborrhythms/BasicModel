@@ -43,7 +43,7 @@ def recurrence_groups(store):
                 learned_orders[seat] = alloc.order_of(symbol)
     learned = store.recurrence_symbols.gt(0)
     for row in range(len(store)):
-        if store.kind_of(row) in ('estimate', 'question', 'cover'):
+        if store.kind_of(row) in ('estimate', 'question', 'cover', 'episode'):
             continue
         pool = None if owner is None else owner.mtm
         token = None if pool is None else pool.token_of(store.occurrence_of(row))

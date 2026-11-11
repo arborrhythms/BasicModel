@@ -181,7 +181,7 @@ def _open_reference_mask(meaning, registry, clause=None):
 
 
 def _append_observed_meaning(store, clause, *, trust=0.0, expectation=None, stream=-1,
-                             written_rows=None):
+                             written_rows=None, episode=None):
     """Write the completed field with caller-owned provenance."""
     from ThoughtReferences import bindings, with_slots
     # Native/child addresses are installed by write_clause. Before then the
@@ -194,7 +194,7 @@ def _append_observed_meaning(store, clause, *, trust=0.0, expectation=None, stre
               (clause.relation is not None and any(ref in (-1, 0) for ref in clause.refs)))
     kind = ('question' if opened else 'unverified' if tuple(clause.evidence) == (0., 0.) else 'observation')
     result = store.write_clause(clause, trust=trust, kind=kind, stream=stream,
-        evidence=clause.evidence, expectation=expectation, written_rows=written_rows)
+        evidence=clause.evidence, expectation=expectation, written_rows=written_rows, episode=episode)
     if written_rows is not None:
         written_rows[id(source_clause)] = result
         for name in ('symbol', 'symbols', 'activations', 'occurrence'):
@@ -4486,7 +4486,8 @@ class BaseModel(Mereology, nn.Module):
                 raise ValueError(f"checkpoint truth store {name!r} is not present")
             store.load_semantic_extras(saved)
             store._epoch_rows = _checkpoint_host_copy((extras.get("epoch_rows") or {}).get(name))
-            from PresentationMemory import import_checkpoint_observations
+            from PresentationMemory import import_checkpoint_observations, import_episode_state
+            import_episode_state(self, store)
             import_checkpoint_observations(store, envelope_version=version)
 
         for cs in conceptual_spaces:
@@ -6022,9 +6023,13 @@ class BasicModel(BaseModel):
                   if image is not None and image.image.shape == active.roles.shape else active)
         walk = getattr(self, '_thought_walk', None)
         policy_grad = walk is None or len(walk['actions']) == walk.get('departure', -1)
+        from RowTime import relative_idea
+        requests = tuple(None if a is None else replace(a.request,
+            roles=relative_idea(self, a.request.roles)) for a in actions)
+        viewed = replace(viewed, roles=relative_idea(self, viewed.roles))
         with torch.set_grad_enabled(torch.is_grad_enabled() and policy_grad), \
                 torch.autograd.graph.saved_tensors_hooks(lambda tensor: tensor.clone(), lambda tensor: tensor):
-            logits = chooser.thought_logits(viewed, tuple(None if a is None else a.request for a in actions))
+            logits = chooser.thought_logits(viewed, requests)
         replay = masked = None
         if walk is not None:
             step = len(walk['actions'])
@@ -6038,7 +6043,7 @@ class BasicModel(BaseModel):
                 elif step == walk['departure']:
                     masked = torch.tensor([walk['exploit'][step]], device=logits.device)
         # The alternative sees the whole raw observation and no expected prime.
-        free_logits = chooser.thought_logits(active, tuple(None if a is None else a.request for a in actions))
+        free_logits = chooser.thought_logits(replace(active, roles=relative_idea(self, active.roles)), requests)
         chosen, probability, valid, proposal_inverse = chooser.select_logits(logits,
             structural=(True,)*len(actions), masked_action=masked, replay_action=replay,
             departure_eligible=torch.isfinite(logits), alternative_logits=free_logits, return_proposal=True)
@@ -8496,7 +8501,10 @@ class BasicModel(BaseModel):
             source = getattr(inputData, '_sentence_source', None)
             split, prepared = source if source is not None else ('train', None)
             stage_sources(self, split, prepared, inputData)
-            self._advance_when_time()
+            if not self._composes_sentences():
+                self._advance_when_time()
+                from Occurrence import stage_position
+                stage_position(self, 0, len(inputData), device=inputData.device)
         self._snapshot_sentence_codes()
         own_context = self.word_brackets and not getattr(self, '_sentence_run_active', False)
         context = self._sentence_run(training=False) if own_context else nullcontext()
@@ -9648,7 +9656,7 @@ class BasicModel(BaseModel):
                     params.extend(module.parameters())
         return list({id(p): p for p in params}.values())
 
-    def generate(self, idea, *, structure, occupied, infix_rows, walk_options, prepared):
+    def generate(self, idea, *, structure, occupied, infix_rows, walk_options, prepared, when=None):
         """System 2 emits terminals; the occurrence writer supplies order zero."""
         if prepared is not None:
             object.__setattr__(self, '_answer_attention_obs', prepared.attention)
@@ -9661,6 +9669,8 @@ class BasicModel(BaseModel):
         else:
             idea = self._generation_read(idea, record=structure,
                 charge=walk_options is None)
+        from RowTime import relative_idea
+        idea = relative_idea(self, idea)
         # A prepared answer may be trained after a no-grad capture,
         # without entering forward/runBatch's anchor setup first.
         _ensure_grad_anchors(idea.device, (idea.dtype,))
@@ -9700,9 +9710,16 @@ class BasicModel(BaseModel):
             words = words[:, :kept]
         object.__setattr__(self, "_output_truncated", output_truncated)
         from OutputOccurrences import generated
+        if when is None:
+            tick = self.__dict__.get('_produced_when')
+            if tick is None:
+                tick = self._advance_when_time()
+            when = words.new_tensor((tick, tick + 1), dtype=torch.long)[None, None]
         return generated(self, words, n_emitted, output_truncated, bank,
-                         self._last_output_walk_trace)
+                         self._last_output_walk_trace, when=when)
 
+    from RowTime import produced as _produced_sentence
+    @_produced_sentence
     @_sentence_query_mask
     def reverseOutput(self, understanding, derivation, *, score=None, _walk_options=None):
         """Realize a prepared AnswerDerivation without running resolution.
@@ -13761,13 +13778,22 @@ class BasicModel(BaseModel):
         return disc.consume_inter_loss()
 
     def present(self) -> int:
-        """Serialized processing time, stamped in a new occurrence's column."""
+        """The one sentence/thought clock carried in each idea's .when band."""
         return int(self.when_time)
 
     def _advance_when_time(self):
-        """Advance the processing counter once per batch."""
+        """Advance the one clock for a sentence or newly deposited thought."""
+        from RowTime import HORIZON
+        if self.present() >= HORIZON:
+            raise OverflowError('model time exceeds the declared row-time ladder horizon')
         # In-place so the registered buffer (and its device) is preserved.
         self.when_time += 1
+        self.when_encoding.t = self.present()
+        return self.present()
+
+    def _composes_sentences(self):
+        language = getattr(getattr(self, 'symbolSpace', None), 'languageLayer', None)
+        return self.word_brackets and getattr(language, 'operation_layer', None) is not None
 
     def _curriculum_questions(self, step, *, split, batch_size, sentence_index,
                               source_rows=None, training=True):
@@ -14092,6 +14118,7 @@ class BasicModel(BaseModel):
         self._sentence_fields = {}
         self._sentence_understandings = {}
         self._sentence_open_fields = {}
+        self._sentence_episodes = {}
         self._input_reconstructions = {}
         self._last_sentence_understanding = None
         self._sentence_primed_bank = None
@@ -14281,15 +14308,13 @@ class BasicModel(BaseModel):
         )
         self._sentence_answer_questions = what_questions
 
-        # Advance the serialized model clock once per PROCESSED batch (this
-        # point is past the no-batch early raise, so it ticks exactly once on
-        # BOTH the train and inference paths regardless of which return fires
-        # below). New occurrence rows stamp this processing time in their
-        # separate .when column; source addresses are staged independently.
-        # The mode schedule's internal context read does not consume an
-        # external batch. Compose's sentence trials run inside this one tick.
-        if not exploration_trial:
+        # Without composition each input row is a sentence. Composing paths
+        # advance before each present sentence slot's word perception instead;
+        # both trials of that sentence share its tick and source addresses.
+        if not exploration_trial and not self._composes_sentences():
             self._advance_when_time()
+            from Occurrence import stage_position
+            stage_position(self, 0, len(inputTensor), device=inputTensor.device)
 
         # Pre-allocate per-batch state OUTSIDE the compiled forward.
         # ``SymbolSpace.ensure_microbatch`` allocates completion state /
@@ -16256,11 +16281,10 @@ class BasicModel(BaseModel):
         # It intentionally does not ride in state_dict: no carrier or replica
         # survives a model rebuild/checkpoint load.
         self._parameter_epoch = 0
-        # Serialized model clock (doc/plans/2026-06-07-model-time-when-
-        # encoding.md): a 0-initialized ``long`` that increments once per
-        # processed batch (train AND inference) in ``runBatch`` and rides
-        # ``state_dict()`` through save/load. It is the AUTHORITATIVE absolute
-        # steps for bookkeeping; event .when bands carry source positions.
+        # One serialized sentence/thought clock. Sentence slots advance it
+        # before perception, new thoughts and produced sentences take their
+        # own ticks, and epoch reset restores the presentation's baseline.
+        # Live event bands and stored ideas use the same RowTime ladder.
         # Guarded so a re-entrant build does not re-register the buffer.
         if "when_time" not in self._buffers:
             self.register_buffer(
@@ -20089,10 +20113,10 @@ class BasicModel(BaseModel):
                     layout=layout, roles=roles, clauses=clauses, symbol_ids=handles, reference_plans=())
         if getattr(self, '_component_reading', False):
             resolver = self._concept_owner().components.reference_close
-            from Occurrence import source_at
+            from Occurrence import address_at
             plans = []
             for b, clause in enumerate(clauses):
-                document, position = source_at(self, b, int(sid))
+                document, position = address_at(self, b, int(sid))
                 draw = getattr(self, '_sentence_departure', None)
                 departure = (-1 if admit or self._sentence_trial != 'explore' or draw is None
                              else int(draw['bind_round'][b]))
@@ -20535,6 +20559,8 @@ class BasicModel(BaseModel):
                     point[b] = store.slots[location].detach().to(point)
             elif clause.when is not None:
                 stamps[b] = clause.when.to(stamps)
+            else:
+                stamps[b] = self.when_encoding.encode(self._sentence_ticks[int(sid)]).to(stamps)
             if store is not None and store.when_start is not None:
                 point[b,store.when_start:store.when_start+4] = stamps[b]
                 if top >= 0 and store.when_start >= 4:
@@ -20684,8 +20710,8 @@ class BasicModel(BaseModel):
                 if payload is None:
                     continue
                 comparison = (disc.last_expectation_comparison(b) if retain else None)
-                from Occurrence import source_at, sentence_key, native_content_key
-                document, position = source_at(self, b, sid)
+                from Occurrence import address_at, sentence_key, native_content_key
+                document, position = address_at(self, b, sid)
                 # The scored reading owns the resolved word identities. The
                 # legacy WORD lane may be empty on the mixing grammar path;
                 # hashing it would give every sentence the empty content key.
@@ -20720,12 +20746,14 @@ class BasicModel(BaseModel):
                     view.get('clauses', [None]*len(view['meanings']))[b] = clause
                 encoding = getattr(self, 'when_encoding', None)
                 if encoding is not None:
-                    clause = replace(clause, when=encoding.encode(position).to(clause.meaning.roles))
+                    clause = replace(clause, when=encoding.encode(self._sentence_ticks[int(sid)]).to(clause.meaning.roles))
                     view.get('clauses', [None]*len(view['meanings']))[b] = clause
+                episode = self._sentence_episodes.get(int(sid))
                 with store.at_address(document, position, content):
                     row = _append_observed_meaning(store, clause,
                         trust=self.conceptualSpace._incoming_trust_multiplier(),
-                        expectation=comparison, stream=b, written_rows=written_clauses[b])
+                        expectation=comparison, stream=b, written_rows=written_clauses[b],
+                        episode=None if episode is None else tuple(value[b] for value in episode))
                 from FamiliarTier import commit_read_words
                 commit_read_words(self._concept_owner(), entries[b], batch=b,
                     document=document, position=position, clause=clause, written=written_clauses[b],
@@ -20734,9 +20762,9 @@ class BasicModel(BaseModel):
                     row_addresses[b] = int(store.row(row)['row_id'])
                     if getattr(self, '_component_reading', False):
                         from MemoryLink import Occurrence as LinkOccurrence, state_eligible
-                        if isinstance(row, int) and state_eligible(clause) and store.kind_of(row) not in ('estimate', 'question', 'cover'):
+                        if isinstance(row, int) and state_eligible(clause) and store.kind_of(row) not in ('estimate', 'question', 'cover', 'episode'):
                             reference_plan['state_link'] = (
-                                LinkOccurrence(store.occurrence_of(row), kind='state', order=0,
+                                LinkOccurrence(store.occurrence_of(row), kind='state', order=store.order_of_row(row),
                                     selected=reference_plan.get('link_choices', {}).get(('state', 0), Ellipsis)), clause.point, clause.where)
                         resolver.commit(reference_plan, row, written_clauses[b],
                             document=document, position=position,
@@ -20989,8 +21017,8 @@ class BasicModel(BaseModel):
                     orders[b, i] = order
             if store is not None:
                 from ReferenceContext import exclude_replaced_occurrences
-                from Occurrence import source_at
-                document, position = source_at(self, b, self._open_sentence_slot)
+                from Occurrence import address_at
+                document, position = address_at(self, b, self._open_sentence_slot)
                 valid[b] = exclude_replaced_occurrences(store, ids[b], valid[b], document, position)
                 values[b] = torch.where(valid[b, :, None], values[b], 0.)
                 ids[b] = torch.where(valid[b], ids[b], -1)
@@ -21055,6 +21083,7 @@ class BasicModel(BaseModel):
             present = slots[:, sid].to(torch.bool)
             if not bool(present.any()):
                 continue
+            self._sentence_ticks[int(sid)] = self._advance_when_time()
             from Occurrence import stage_position
             stage_position(self, sid, B, device=words.device)
             disc = getattr(self.symbolSpace, 'expectation', None)
@@ -23572,7 +23601,8 @@ class BasicModel(BaseModel):
                 estimate_kind = ltm.KINDS.index("estimate")
                 kind_codes = ltm.kind_codes(torch.arange(cnt, device=ltm.count.device))
                 eligible = ((kind_codes != estimate_kind)
-                            & (kind_codes != ltm.KINDS.index('cover')))
+                            & (kind_codes != ltm.KINDS.index('cover'))
+                            & (kind_codes != ltm.KINDS.index('episode')))
                 if bool(eligible.any()):
                     rows = ltm.slots[:cnt][eligible].detach()  # [M, D]
                     spaces.append({"id": GA.SPACE_LTM, "keys": rows})
@@ -23644,6 +23674,15 @@ class BasicModel(BaseModel):
         if torch.is_tensor(column):concept_q=column.detach().mean(1)
         stm=getattr(self.conceptualSpace,'stm',None)
         symbol_q=BracketKeys._pool(stm.snapshot(detach=True) if stm is not None else None)
+        from RowTime import relative_idea, age_band
+        concept_q = None if concept_q is None else relative_idea(self, concept_q)
+        symbol_q = None if symbol_q is None else relative_idea(self, symbol_q)
+        for space in spaces:
+            key = space['keys']
+            if space['id'] in (ga.SPACE_STM, ga.SPACE_LTM):
+                space['score_keys'] = relative_idea(self, key)
+            elif space['id'] == ga.SPACE_INPUT and self.perceptualSpace.subspace.nWhen:
+                space['score_keys'] = torch.cat((key[..., :-4], age_band(self, key[..., -4:])), -1)
         work=getattr(self,'_attention_meters',()) or None
         if work is not None and not charge:
             from copy import copy

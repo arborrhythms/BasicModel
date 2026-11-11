@@ -41,11 +41,13 @@ class EntryRead:
         for ref in cue.role_refs:
             if ref is not None and ref[0] == 'sym' and type(ref[1]) is int and ref[1] > 0:
                 explicit.extend(('sym', row) for row in self.parts.rows_referencing(SYMBOL, ref[1]))
-        candidates = list(dict.fromkeys(row for row in explicit if row is not None))
+        candidates = list(dict.fromkeys(row for row in explicit if row is not None
+            and (not isinstance(row, int) or self.kind_of(row) != 'episode')))
         present = set(candidates)
         # LTM0 compaction preserves physical row order; re-witnessing keeps
         # the original stamp. Appends occupy the next seat after survivors.
-        candidates.extend(row for row in reversed(range(len(self))) if row not in present)
+        candidates.extend(row for row in reversed(range(len(self)))
+                          if row not in present and self.kind_of(row) != 'episode')
         relations = self.parts.indices()
         if len(relations):
             # Relation handles can reuse freed seats, so their stamps, not
@@ -70,6 +72,7 @@ class EntryRead:
             kinds = self.kind_codes(rows)
             available[occurrence_slots] = ((kinds != self.KINDS.index('estimate')) &
                 (kinds != self.KINDS.index('cover')) &
+                (kinds != self.KINDS.index('episode')) &
                 ((kinds != self.KINDS.index('question')) | self.truth_plus[rows].ne(0) | self.truth_minus[rows].ne(0)))
         records = []
         for slot, index in enumerate(candidates):
@@ -77,7 +80,7 @@ class EntryRead:
             records.append(record)
             meaning = record['meaning']
             if isinstance(index, tuple):
-                available[slot] = (record['kind'] not in ('estimate', 'cover') and
+                available[slot] = (record['kind'] not in ('estimate', 'cover', 'episode') and
                     (record['kind'] != 'question' or any(record['evidence'])))
             if meaning is None:
                 if bool(available[slot]):
@@ -156,6 +159,8 @@ class EntryRead:
         from RowTime import encoder
         missing = []
         for frame in frames:
+            if frame['kind'] == 'episode':
+                continue
             pending, seen = [frame['occurrence']], set()
             tick = int(encoder().decode_index(frame['when']))
             while pending:
@@ -209,6 +214,8 @@ class EntryRead:
             raise ValueError('query stream exceeds the constructed STM batch')
         gate = torch.arange(state[0].shape[0],device=state[0].device) == stream
         for frame in frames:
+            if frame['kind'] == 'episode':
+                continue
             occurrence = frame['occurrence']
             location = self.location(occurrence)
             relation = isinstance(location,tuple)

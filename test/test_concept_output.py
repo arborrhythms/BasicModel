@@ -63,7 +63,9 @@ def test_reconstruction_without_owned_evidence_cannot_read_the_latest_field(monk
 def test_native_understanding_retains_field_and_native_percept_evidence():
     model, _, _, _ = _build_model(str(ROOT / 'data/XOR_exact.xml'))
     understanding = model.understand(_bytes(['01']))
-    assert set(understanding.reconstruction_carriers) == {'field', 'order_zero_field', 'ir_mask_positions'}
+    # A configuration without sentence composition has the system-1 field only.
+    assert not model._composes_sentences()
+    assert set(understanding.reconstruction_carriers) == {'field', 'ir_mask_positions'}
     field = understanding.reconstruction_carriers['field']
     assert field.concept_ids.dtype == torch.long
     assert field.percepts is None

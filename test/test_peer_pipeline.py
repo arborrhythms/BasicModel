@@ -55,7 +55,9 @@ def test_language_chooses_and_conceptual_space_alone_applies_stm_update(monkeypa
         layer.stop_anchor.zero_()
     owner = SimpleNamespace(operation_layer=layer, _binary_rule_ids={'CS': (0,)},
                             _unary_rule_ids={'CS': (1,)})
-    language = LanguageSpace(SimpleNamespace(subspace=SimpleNamespace(languageLayer=owner)))
+    model = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(when_start=None)))
+    language = LanguageSpace(SimpleNamespace(subspace=SimpleNamespace(languageLayer=owner),
+        conceptualSpace=SimpleNamespace(_model=model)))
     state = (torch.tensor([[[1., 2.], [3., 4.], [5., 6.]],
                            [[10., 20.], [30., 40.], [50., 60.]]]),
              torch.tensor([3, 1]), torch.tensor([[2, 1, 0], [5, -1, -1]]),

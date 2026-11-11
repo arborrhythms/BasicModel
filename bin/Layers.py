@@ -9397,7 +9397,22 @@ class SymbolExpectation(Layer):
         self._inter_last_meaning[b] = None
 
     def _prediction_inputs(self, inputs):
-        return tuple(value.detach() for value in inputs)
+        from RowTime import encoder, relative_to
+        keys, context, activation = (value.detach() for value in inputs[:3])
+        store = self._ltm_store
+        start = None if store is None else store.when_start
+        if start is None:
+            return keys, context, activation
+        present = getattr(store, '_model_present', None)
+        now = (inputs[3].detach() if len(inputs) == 4 else
+               encoder().encode(int(store.model_clock) if present is None else int(present()))
+               .to(context).expand(len(context), -1))
+        def relative(value):
+            return torch.cat((value[..., :start],
+                relative_to(value[..., start:start+4], now), value[..., start+4:]), -1)
+        recent_age = relative_to(context[..., self.concept_dim+start:self.concept_dim+start+4], now)
+        context = relative(context.reshape(len(context), 2, self.concept_dim)).flatten(1)
+        return relative(keys), context, activation, recent_age
 
     def _bank_inputs(self, chain, lanes=None, identities=None):
         from Expectation import ActivationPredictor, symbol_activations
@@ -9804,7 +9819,9 @@ class SymbolExpectation(Layer):
             if int(b) < 0 or (n is not None and int(n) <= 0):
                 return []
             indices = store.stream_rows(b)
-            indices = indices[store.kind_codes(indices) != store.KINDS.index('estimate')]
+            kinds = store.kind_codes(indices)
+            indices = indices[(kinds != store.KINDS.index('estimate')) &
+                              (kinds != store.KINDS.index('episode'))]
             if n is not None:
                 indices = indices[-int(n):]
             result = []

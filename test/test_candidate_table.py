@@ -87,7 +87,9 @@ def test_candidate_from_closed_chain_retains_its_declared_hole_at_the_part_write
     def store_clause(clause, **kwargs):
         written.append((clause, kwargs))
         return 0
-    store = SimpleNamespace(_validate_local_references=validate_local_references, write_clause=store_clause)
+    owner.mtm = SimpleNamespace(entries={})
+    store = SimpleNamespace(_validate_local_references=validate_local_references,
+        write_clause=store_clause, _concept_owner=lambda: owner)
     model = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store),
         grammatical_thoughts=SimpleNamespace(signature_for=signature))
     assert write(model, formed, row=0) == 0

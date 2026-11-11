@@ -150,13 +150,12 @@ def reconcile(state, pool, store):
 def stage(model, state, present):
     """Host boundary: prepend live identities, then deposit them off stack."""
     from Memory import STMChunks as chunks
-    from RowTime import encoder
     owner, isp = model._concept_owner(), model.inputSpace
     entries = isp.symbol_entries
     store, pool = model.symbolSpace.ltm_store, owner.mtm
     state = reconcile(state,pool,store)
     resolver = owner.components.reference_close
-    stamp = encoder().encode(int(store.model_clock)).to(state[0])
+    stamp = model.when_encoding.encode(model.present()).to(state[0])
     for field in (*WORD_FIELDS, *LOOKUP_FIELDS):
         value = getattr(entries, field)
         value[:, :entries.prepend].fill_(0 if value.is_floating_point() else -1)
@@ -171,8 +170,11 @@ def stage(model, state, present):
                     and (not pool.accesses.get(key) or b in pool.accesses[key]))
         # Equal-time arrivals retain admission order. Sorting the set itself
         # would make bind-menu positions and training depend on Python's hash.
-        keys = sorted((key for key in pool.entries if key in keys), key=lambda key: (max((event.when for timeline in pool.entries[key].timelines
-            for event in timeline.events), default=pool.entries[key].when), pool.entries[key].when), reverse=True)
+        now = model.present()
+        keys = sorted((key for key in pool.entries if key in keys), key=lambda key: (
+            max((event.when - now for timeline in pool.entries[key].timelines
+                 for event in timeline.events), default=pool.entries[key].when - now),
+            pool.entries[key].when - now), reverse=True)
         choices = [(key, timeline) for key in keys for timeline in range(len(pool.entries[key].timelines))]
         for column, (key, timeline) in enumerate(choices[:entries.prepend]):
             token = pool.entries[key]

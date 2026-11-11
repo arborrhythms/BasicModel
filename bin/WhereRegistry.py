@@ -93,13 +93,24 @@ def install_where_registry(model):
         object.__setattr__(space, 'where_registry', registry)
     # One owner; compatibility carriers refer to the same ladders even when
     # their content-only layout has no muxed tail. Their nWhere/nWhen stays 0.
-    from Spaces import Space, SubSpace, WhenEncoding
+    from Spaces import Space, SubSpace
     model.where_encoding = registry.encoding
     ltm_capacity = int(TheXMLConfig.space('SymbolSpace', 'ltmCapacity', default=1024) or 1024)
     addresses = getattr(getattr(model.inputSpace, 'data', None), 'source_addresses', {})
     document_bound = max((int(row.get('sentence', 0)) + 2 for rows in addresses.values()
                           for row in rows), default=1)
-    model.when_encoding = WhenEncoding(n_when=4).set_capacity(max(ltm_capacity, document_bound))
+    # The attention scale is a fixed spatial/history bound, not the clock's
+    # representable horizon. All stored and live times use RowTime's ladder.
+    model.when_age_scale = max(ltm_capacity, document_bound)
+    from RowTime import encoder
+    model.when_encoding = encoder()
+    model._sentence_ticks = {}
+    model._open_sentence_slot = None
+    model._episode_counts = dict(written=0, anchors=0, relation_only_closings=0,
+                                time_only_recalls=0, reinstatements=0)
+    for space in model.conceptualSpaces:
+        object.__setattr__(space.stm, '_time_owner', weakref.ref(model))
+        space._episode_review_field = None
     store = getattr(model.symbolSpace, 'ltm_store', None)
     if store is not None:
         object.__setattr__(store, '_address_encoding', model.when_encoding)

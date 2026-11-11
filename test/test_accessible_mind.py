@@ -36,8 +36,10 @@ def test_thought_effect_uses_cached_row_identity(monkeypatch):
     monkeypatch.setattr(type(cs), "_csw_rows", property(forbidden))
     result = ThoughtResult('ask', 'conceptual-subgoal', 'set', 'retrieval', _meaning(),
         MappingProxyType({'frames': ({'reference': ('sym', member)},)}))
+    from clock_fixtures import install
+    model = install(SimpleNamespace(conceptualSpace=cs, _concept_owner=lambda: cs))
     for _ in range(2):
-        apply_thought_effect(SimpleNamespace(conceptualSpace=cs, _concept_owner=lambda: cs), result, row=0, work=QueryWorkBudget(32))
+        apply_thought_effect(model, result, row=0, work=QueryWorkBudget(32))
     from ThoughtChunks import held
     ideas = held(cs.stm, 0)
     assert len(ideas) == 2 and ideas[0][0] != ideas[1][0]
@@ -203,7 +205,9 @@ def test_higher_order_retrieval_seeds_discontinuous_members_only():
     held = replace(held, role_refs=(('sym', higher), None, None))
     result = ThoughtResult('ask', 'conceptual-subgoal', 'set', 'retrieval', meaning,
         MappingProxyType({'frames': ({'meaning': held},)}))
-    apply_thought_effect(SimpleNamespace(conceptualSpace=cs, _concept_owner=lambda: cs), result, row=0, work=QueryWorkBudget(32))
+    from clock_fixtures import install
+    model = install(SimpleNamespace(conceptualSpace=cs, _concept_owner=lambda: cs))
+    apply_thought_effect(model, result, row=0, work=QueryWorkBudget(32))
     from ThoughtChunks import held as stored_ideas
     retained = stored_ideas(cs.stm, 0)
     assert len(retained) == 1

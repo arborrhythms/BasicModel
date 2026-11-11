@@ -744,7 +744,9 @@ def test_recorded_compose_step_keeps_the_same_structural_context_contract():
     binary = SimpleNamespace(ops=[_BinaryGrammarOpAdapter(capture)])
     language = LanguageSpace.__new__(LanguageSpace)
     nn.Module.__init__(language)
-    object.__setattr__(language, "_symbol_space", SimpleNamespace(subspace=owner))
+    model = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(when_start=None)))
+    object.__setattr__(language, "_symbol_space", SimpleNamespace(subspace=owner,
+        conceptualSpace=SimpleNamespace(_model=model)))
     object.__setattr__(
         language, "_language_layer_ref", SimpleNamespace(operation_layer=binary))
 
@@ -788,7 +790,9 @@ def test_live_tree_choice_keeps_the_same_structural_context_contract():
         d_model=4, ops=[_BinaryGrammarOpAdapter(capture)],)
     language = LanguageSpace.__new__(LanguageSpace)
     nn.Module.__init__(language)
-    object.__setattr__(language, "_symbol_space", SimpleNamespace(subspace=owner))
+    model = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(when_start=None)))
+    object.__setattr__(language, "_symbol_space", SimpleNamespace(subspace=owner,
+        conceptualSpace=SimpleNamespace(_model=model)))
     object.__setattr__(
         language, "_language_layer_ref", SimpleNamespace(operation_layer=reducer))
     language._compose_binary_rules = (SimpleNamespace(head_role=1),)
@@ -845,6 +849,8 @@ def test_canonical_thought_executors_use_only_their_named_capability_views():
     from ThoughtChunks import put
     from ThoughtReferences import bindings, with_slots
     stm = ShortTermMemory(concept_dim=4)
+    from clock_fixtures import for_stm
+    for_stm(stm)
     premise = with_slots(replace(meaning, role_refs=(('sym', 1), None, None)), (), pair=(.6, .2))
     rule = ConceptualMeaning(torch.ones(3, 4), torch.ones(3, dtype=torch.bool),
         role_refs=(('sym', 1), ('sym', 3), ('sym', 2)), bindings={
@@ -1060,8 +1066,10 @@ def test_normal_boundary_execution_uses_the_thought_registry_and_common_context(
     object.__setattr__(model, "conceptualSpace", space)
     object.__setattr__(model, "symbolSpace", SimpleNamespace(
         what_memory=memory, taxonomy=None, discourse=None,
-        grammatical_thoughts=registry))
+        grammatical_thoughts=registry, ltm_store=None))
     object.__setattr__(model, "grammatical_thoughts", registry)
+    from clock_fixtures import install
+    install(model)
     model.what_thinking_detach = "episode"
     from Language import OperationSelectionLayer
     model.shared_grammar = OperationSelectionLayer(d_model=space.outputShape[-1], chooser='mlp')

@@ -84,7 +84,8 @@ def _needs(model, batch, width, like, opened=None):
     if opened is None:
         opened = getattr(bank, 'query', None)
     gist = getattr(model, '_last_gist', None)
-    return torch.cat([_fit(value, batch, count, width, like).flatten(1)
+    from RowTime import relative_idea
+    return torch.cat([relative_idea(model, _fit(value, batch, count, width, like)).flatten(1)
                       for value, count in ((opened, 1), (gist, 1))], -1)
 
 
@@ -113,14 +114,16 @@ def context(model, values, addresses, valid, *, when=None, parts=None, wholes=No
         when = torch.stack((onset, onset + 1), -1)
     if when.shape != (*values.shape[:2], 2):
         raise ValueError('attention time coordinates must align with the native activation')
-    time = when.to(values) / float(model.when_encoding.maxVal)
+    from RowTime import age_interval, age_band
+    time = age_interval(model, when).to(values) / float(model.when_age_scale)
     observed = eligible & values.ne(0).any(-1)
     index = indices.clamp(0, count - 1)
-    first = values.new_ones(B, count).scatter_reduce(1, index,
-        torch.where(observed, time[..., 0], 1.), reduce='amin', include_self=True)
-    last = values.new_zeros(B, count).scatter_reduce(1, index,
-        torch.where(observed, time[..., 1], 0.), reduce='amax', include_self=True)
-    time = torch.stack((torch.where(last > 0, first, 0.), last), -1)
+    first = values.new_full((B, count), torch.inf).scatter_reduce(1, index,
+        torch.where(observed, time[..., 0], torch.inf), reduce='amin', include_self=True)
+    last = values.new_full((B, count), -torch.inf).scatter_reduce(1, index,
+        torch.where(observed, time[..., 1], -torch.inf), reduce='amax', include_self=True)
+    seen_time = torch.isfinite(first)
+    time = torch.where(seen_time[..., None], torch.stack((first, last), -1), 0.)
     whole_heat, seen = [], set()
     for space in [model.wholeSpace]:
         basis = space.subspace.what
@@ -135,10 +138,13 @@ def context(model, values, addresses, valid, *, when=None, parts=None, wholes=No
     spread = activation * heat[..., None]
     supplied = (parts, wholes)
     keys = []
-    for shape, value in zip(geometry, supplied):
+    for space, shape, value in zip((model.perceptualSpace, model.wholeSpace), geometry, supplied):
         # A serial carrier can hold a whole sentence's unprocessed words.
         # Only the explicit native working field belongs to this read.
-        keys.append(_fit(value, B, *shape, values).flatten(1))
+        key = _fit(value, B, *shape, values)
+        if space.subspace.nWhen:
+            key = torch.cat((key[..., :-4], age_band(model, key[..., -4:])), -1)
+        keys.append(key.flatten(1))
     cs = model.conceptualSpace
     if stm is None:
         memory = cs.stm
@@ -153,16 +159,19 @@ def context(model, values, addresses, valid, *, when=None, parts=None, wholes=No
         buffer, depth, _, _, reference_rows, _ = stm[:6]
     K, D = int(cs.stm.capacity), int(cs.stm.concept_dim)
     occupied = buffer.ne(0).any(-1)
-    contents = _fit(buffer, B, K, D, values) * occupied[..., None]
+    from RowTime import relative_idea
+    contents = relative_idea(model, _fit(buffer, B, K, D, values)) * occupied[..., None]
     shared = cs.stm.state if stm is None else stm
     spatial = shared[11].to(values)
-    temporal = shared[12].to(values)
+    temporal = age_band(model, shared[12]).to(values)
     symbolic_heat = heat[:, sum(sizes[:2]):]
     salience = symbolic_heat.gather(1, reference_rows.clamp(0, sizes[2] - 1))
     salience = torch.where(occupied & (reference_rows >= 0), salience, 0.)
     stamps = (values.new_zeros(B, K, 6) if placements is None else torch.cat((
         placements['where'] / registry.capacity,
-        placements['when'] / float(model.when_encoding.maxVal), placements['lanes']), -1))
+        torch.where(occupied[..., None].to(placements['when'].device),
+                    age_interval(model, placements['when']), 0.).to(values)
+            / float(model.when_age_scale), placements['lanes']), -1))
     conceptual = torch.cat((contents, spatial, temporal,
                             occupied[..., None].to(values), salience[..., None], stamps), -1)
     prime = values.new_zeros(B, count, 2)
@@ -181,6 +190,9 @@ def context(model, values, addresses, valid, *, when=None, parts=None, wholes=No
     native = _fit(parts, B, *geometry[0], values)
     z = (torch.zeros_like(native) if expectation_free else
          model.percept_expectation.attention_residual(native) * model.percept_expectation_gain)
+    if model.perceptualSpace.subspace.nWhen:
+        # The forecast's content residual is useful; phase error is not an age.
+        z = torch.cat((z[..., :-4], torch.zeros_like(z[..., -4:])), -1)
     needs = _needs(model, B, D, values, need)
     inputs = torch.cat((spread.flatten(1), heat, time.flatten(1), prime.flatten(1), z.flatten(1), *keys, conceptual.flatten(1),
                         needs), -1).detach()

@@ -1,13 +1,14 @@
 # Architecture
 
-> - **Dual process and the order-zero loop:** decided 2026-11-03, 2026-11-04 and 2026-11-09; built in rounds 5 and 6. Round 5 supplies memory, shared strata and basic percepts; round 6 supplies the unified loop and reverse.
+> - **Dual process and the order-zero loop:** decided 2026-11-03, 2026-11-04 and 2026-11-09, and corrected 2026-11-10 (with symbols on, the grammar inverse determines the order-zero layer and the System 1 inverse follows); built in rounds 5 and 6 of item 2.0 and landed 2026-11-10 as `16a6a79b81`. Round 5 supplies memory, shared strata and basic percepts; round 6 supplies the unified loop and reverse. See [Dual process](#dual-process-system-1-knowing-and-system-2-2026-11-09).
+> - **Episodic memory on model time** (Alec, 2026-11-10 and 2026-11-11): every stamp is model time on one ladder, with one tick per sentence and per new thought idea, put back at each epoch reset; each sentence keeps the `episodicPercepts` strongest percepts of its open attention pass beside its `LTM0` row, or on an `episode` anchor row when its close writes only an `LTM1` relation; a recall by time alone reinstates them as the attended field. Built in round 7 of item 2.0, accepted on 2026-11-11. See "When (final operators update; item 2.0 round 7, 2026-11-10)" under [One where, one when, many whats](#one-where-one-when-many-whats-the-field-attention-and-the-two-modes-item-9b-september-25) and [Episodic and semantic memory in the two systems](#episodic-and-semantic-memory-in-the-two-systems-2026-11-11).
 
 > **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
 > - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23, [step 2 §71](plans/2026-10-21-step2-one-ltm.md); recorded 2026-10-30):** an LTM1 row is two tagged references with its kind read from the referents, not three. As built at `3718d9d0dc`, `LTM0` still carries `c_plus`/`c_minus`, `source_trust`, `order`, `row_ids`, `origin`, `record_kind`, `polarity` and `witness_count` columns; only `refs`, `grammatical_mode` and the index columns are retired (audit 2026-10-30; decided 2026-11-01, Alec: the unused columns are removed and the row brought to this layout, [thinking spec §32.2](plans/2026-10-27-item2-5-thinking.md) item 17).
 > - Parthood, subsumption and kind statements ("cats are animals") are **folds** in the meronomy and the taxonomy over symbols, not rows; equality is membership in a singleton; no `REL_PARTOF` row exists.
 > - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
-> - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded, never read by composition but read by recall (Alec, 2026-10-23: a query with only its `.when` filled returns the entries at that time; item 3, [layout spec](plans/2026-10-23-layout-and-removal.md)); the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded.
+> - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded, never read by composition but read by recall (Alec, 2026-10-23: a query with only its `.when` filled returns the entries at that time; item 3, [layout spec](plans/2026-10-23-layout-and-removal.md)); the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded. *Amended in item 2.0 round 7 (Alec, 2026-11-10; accepted 2026-11-11): the stamps of a sentence as it is read are model time too, and a learned reader (the choosers, attention, composition, the conceptual mixer) takes a stamp only as an age or as a difference between stamps; recall by time still reads the stored band.*
 > - STM is the open sentence's three concept-width working slots plus an **index** of the most recent rows (about eight addresses) and the symbol activation field; the intersection `bind` needs is computed on read, never stored. **MTM** (`ConceptualSpace.mtm`, default capacity 64) retains token membership as introduction/use addresses, kind, access count and last model time, independently of LTM. *Amended 2026-10-22 (Alec): MTM stores working content: each identity's current value, the state after its latest verb, with names mapped to identities ([step-2 spec §35](plans/2026-10-21-step2-one-ltm.md#35-decided-alec-2026-10-22-mtm-stores-working-content)).* In focus means the STM frames; familiar means the pool; known means a minted concept. Kept closes alone add bindings; revision computes working groups on read. Each noun site adds an object to the pool without a price. Before the sentence closes, its trial-local own-object record keeps the site’s content for later mentions; only the kept close writes it to MTM. A reference site is a participant in the kept derivation at stamped order one: the reading supplies a leaf’s order and a determiner supplies its result order. Site, marker and reference-mode decisions read grammatical positions and occupations, never lexical definitions. Noun candidates follow those participant positions and declared heads; surface markers and predicate heads, including their lexical copies, are excluded. Bind chooses an accessible antecedent only if it beats a zero-logit dummy; an unlinked named site keeps an anonymous token, and an arrival may refine it while its occurrence still owns that token. Joined sites are left intact; observed incompatibility excludes an antecedent for a new mention, and no incompatibility is recognized at initialization. A merge adopts the joined kind only when the antecedent has none. Bind choices receive the sentence or thought episode's R + A credit through the ordinary departure rule. Closing reconstruction adds `reconstruction.reference`: the bound mention’s uncovered description share, with independent weight 0.1, read from the preview’s selected record; first mentions, own objects, mints, gaps, arrivals and thought episodes add zero. Eviction loses the link and leaves the rows intact. Candidates still come from the frames; content access beyond that window and recurrence promotion are later steps ([bind plan §10.3](plans/2026-10-19-bind-thought-operation.md#103-decided-alec-2026-10-21-mtm-a-medium-term-identity-pool-on-conceptualspace)).
 > - **Identity threading (2026-10-23, reviewed source `65ab7fbe9`):** `bind.forward` is a compose-grammar operation, with one action per frame-accessible or trial-local location plus the zero-logit dummy in the ordinary chooser. Determiners keep their folds without reference variants. MTM retains each identity’s current value, mention readings and verb/role event histories; VP results replace the value and description mentions join it. Each trial owns a numerical overlay, so a later clause reads an earlier VP’s result through identity before the sentence closes. Only the kept close publishes detached values. Pathwise derivatives reach the live value and VP; the discrete choice keeps ordinary R + A credit. Role evidence lasts with the token. Reference reconstruction uses the record captured at the bind. A word cannot be another word’s definition object. This amends the earlier thought-only bind and membership-only pool descriptions above. The LTM0 idea/LTM1 binary-chain layout and eight shared STM chunks are implemented; STM, MTM, LTM0 and LTM1 are owned by `bin/Memory.py`, with the kept close as their shared commit boundary. [Identity specification and source receipt](plans/2026-10-23-identity-threading.md).
 > - **2c consolidation (2026-10-23, frozen `fcaff2d19`, awaiting review):** a reading recurring across three source documents becomes a concept; a token recurring across three source sentences gains a concept containing the union fold of its mention occurrences, preserving its current state and introducing address. MTM expires after sixteen intervening kept closes without reference in its stream; it persists across documents within an epoch and is cleared at the epoch boundary (`end_document` ends only the cover; corrected 2026-10-30). Today's embedded addresses keep their format; consolidation checkpoints the originating source sentence beside its reading cache. Definitions remain derived from retained Part edges. These changes precede item 3's layout and STM work. [2c receipt](benchmarks/2026-10-23-item3-5-step2c/README.md).
@@ -604,11 +605,12 @@ address can be decoded when needed.
 Codebook identity remains the row index within its owning codebook. The
 registry adds a distinct location range for each owner; it does not replace
 that identity. An LTM sentence is addressed by a 64-bit hash of its source
-document key, sentence index and content key. `.when` carries the relative
-unit bracket `[i, i+1]`; `.where` retains the input/percept location. The
-model's absolute `when_time` is written only to the row's `timestamp`, which
-recency reads. Re-reading the same address updates its committed vectors,
-timestamp and per-pole maximum evidence in place. A full store raises.
+document key, sentence index and content key. `.when` carries the model-time
+unit bracket `[t, t+1]`; `.where` retains the input/percept location. Time
+recall reads the stored band, and learned readers use its age or a difference.
+Re-reading the same address keeps its first stamp and episodic entry, while
+updating the existing evidence according to the row's write contract. A full
+store raises.
 The [4a-0 receipt](benchmarks/2026-10-07-operators-round4a0/) inventories every
 reader and records storage use against capacity.
 
@@ -643,6 +645,11 @@ cognition.
   *sparse-symbolic vs dense-perceptual* axis onto hippocampus-vs-cortex — NOT
   the ramsified *orders* (abstraction is a separate, graded
   anterior-temporal / prefrontal axis).
+  *Amended 2026-11-11.* The individuated episodes of this account now have
+  their own place in the store: a sentence's row keeps a few percepts of its
+  open attention pass, and a recall by time reinstates them as the attended
+  field (item 2.0 round 7, working tree;
+  [Episodic and semantic memory in the two systems](#episodic-and-semantic-memory-in-the-two-systems-2026-11-11)).
 
 - **Dual-process cognition** (Sloman 1996; Kahneman). A fast, parallel,
   similarity-driven associative system and a slow, serial, rule-based symbolic
@@ -651,6 +658,10 @@ cognition.
   capacity-limit are the *same fact*: a sparse composer has low fan-in per
   concept, the computational shadow of working-memory span (Miller's $7 \pm 2$;
   the STM depth $\approx 8$ the model already carries).
+  *Amended 2026-11-09.* The two systems are divided at grammar, not at
+  symbols: order-0 symbols, `intuit`, expectation and memory's linking belong
+  to System 1, and System 2 is the three grammars
+  ([Dual process](#dual-process-system-1-knowing-and-system-2-2026-11-09)).
 
 - **The neuro-symbolic interface / systematicity** (Fodor & Pylyshyn 1988). The
   architecture is a concrete stance on the oldest fight in cognitive science:
@@ -1032,7 +1043,7 @@ Evidence belongs to the source that produced it, and lasts as long as that sourc
   - The epoch's start, intentional setup included, is not part of the history it re-presents. The learned weights, the optimizer's state and the minted concepts are not memory of the history, and they stay.
 - **After the last epoch** nothing resets, so a trained model follows only the first two rules.
 
-The epoch boundary is not a psychological event but the re-presentation of one history to the weights. Its psychological counterpart is amnesia with semantic memory intact (McClelland, McNaughton and O'Reilly 1995): what one was told survives, and what one concluded from the lost episode does not. The alternative, belief persistence at the boundary, is in [Future work](FutureWork.md#belief-across-the-epoch-boundary-perseverance-and-testimony-alec-2026-11-04-revisit-if-necessary), to revisit if necessary. It is implemented in item 2.5's completion round ([thinking spec §44](plans/2026-10-27-item2-5-thinking.md)).
+The epoch boundary is not a psychological event but the re-presentation of one history to the weights. Its psychological counterpart is amnesia with semantic memory intact (McClelland, McNaughton and O'Reilly 1995): what one was told survives, and what one concluded from the lost episode does not. The alternative, belief persistence at the boundary, is in [Future work](FutureWork.md#belief-across-the-epoch-boundary-perseverance-and-testimony-alec-2026-11-04-revisit-if-necessary), to revisit if necessary. It is implemented in item 2.5's completion round ([thinking spec §44](plans/2026-10-27-item2-5-thinking.md)). *Round 7 of item 2.0 (accepted 2026-11-11) adds:* the boundary also puts both clocks back, so a re-presented history receives the same stamps, and an episodic entry or anchor stays or goes with its row; the lost episode is lost with its percepts.
 
 **Supply withdrawal and epoch restoration (item 2.5 §47, 2026-11-04).** A supply's checkpointed provenance identifies its outer occurrence or relation, its explicit pair, and the structural rows its closing wrote. Only the outer row receives that source's authority; companions, identity-bearing nodes and reference requests enter the retained copy at zero unless independently asserted. Releasing a source removes its contribution from both memories' retained copies, including a relation-only supply. The epoch boundary resolves dependencies across LTM0 and LTM1 before restoring either memory. A supplied raw `('sym', h)` reference retains the named relation at zero evidence; seats and relation-index keys retain only the existing reservation. Sharing a source document does not make a historical row an assertion. Access and surprise roll back only at the epoch boundary; ordinary withdrawal and stateless load preserve their live values. The post-load pruning flag is set on its actual SymbolSubSpace owner, so structural provenance is restored before pruning. Older checkpoint envelopes import explicitly saved supplied pairs and stamp missing creation observations once from their loaded values; later accesses cannot change that compatibility baseline, and no live evidence pair is inferred. The constructed banks and their tensor shapes are unchanged. [Source lifetime certificates](../test/test_epoch_start.py)
 
@@ -1399,13 +1410,49 @@ is the reading that prompts the division. Attribution still reaches
 their events carry the brackets, so the refine-before-raise run count
 moves to perception's side.
 
-**When (final operators update).** Each event carries the index of its sentence within
-its source document as the endpoint-sum bracket `[i, i+1]`. Both rungs use
-the spatial encoding's scale; the long period exceeds the document bound
-and the fine rung resolves adjacent positions. Re-reading yields the same
-band. Absolute model time is separate and appears only in the LTM timestamp
-column. The situation code in content, and learned before/after operators,
-remain item 5.5 work.
+**When (final operators update; item 2.0 round 7, 2026-11-10).** Every store
+uses `RowTime.encoder()` and its fixed horizon. The model advances one tick
+before perceiving each present sentence slot; all streams in that slot share
+the tick. A new thought idea and a produced sentence each take another tick.
+A configuration without sentence composition advances once per input batch.
+Words retain their order as subdivisions of the sentence's `[t, t+1]` bracket.
+Order-zero reconstruction carries the input sentence's tick, while output
+carries its own. Document identities and sentence ordinals remain provenance
+addresses, separate from time.
+
+Learned chooser, attention and composition readers receive ages or differences,
+never the phase of the absolute stamp. Attention uses the reversed age bracket
+and its existing history scale; an observation at age zero remains observed.
+Presentation memory saves both `when_time` and `LTM0.model_clock` beside its
+initial rows, restores them at each epoch, and checkpoints that baseline. A
+repeated presentation order therefore receives the same sentence stamps.
+
+Each input sentence can retain `episodicPercepts` basic percepts from its
+open attention pass (default four). Selection ranks the maximum, over readings,
+of the sum of both poles; ties prefer the lower percept index. Each entry keeps
+both poles and the strongest reading's spatial bracket, detached from training.
+The input close explicitly supplies the entry to its own LTM0 row; a thought
+written during that close receives none. A relation-only closing with a nonempty
+entry reserves one LTM0 anchor before writing anything (Alec, 2026-11-11).
+Its kind is `episode`, appended without changing existing kind indices; its
+only content is the sentence's `.when` band. Its distinct address cannot become
+a later sentence's semantic root. Zero capacity or an empty entry allocates no
+anchor. Re-witnessing preserves the first anchor, stamp and entry; the fixed row
+columns follow compaction, forgetting, checkpoints and epoch restoration.
+
+Time-only recall of an entry in the querying stream rebuilds a percept field,
+runs the same membership read as native perception, and publishes it as attended
+content. Anchors participate in this time read and review, and are excluded from
+content retrieval, STM/MTM identity loading, prediction history and consolidation.
+Rows without entries leave attention unchanged. `End` releases the present
+percept field and its coordinates; `_episode_review_field` retains a review until
+the next open attention pass. Document-cover continuity and both thought-writing
+branches use document ordinals, independently of presentation time.
+
+The conceptual mixer's temporal input is the elapsed-time ladder minus its
+zero-age band. This is a read of a time difference; the absolute stored stamp is
+unchanged and a current observation adds no constant temporal content to the
+mixer. See the [continued round-7 return](plans/2026-11-03-gradient-projection.md#23-round-7-continuation-convergence-repair-and-episodic-anchors).
 
 **Updated (Alec, 2026-10-22, step-2 spec §16):** LTM rows retain `.when`;
 input location stays with the percepts. The LTM0 `where` column, its row
@@ -2758,6 +2805,8 @@ duplicate occupied stamps and absent chunks fail loud. Trial restore includes
 the clock. `ThoughtRecord.address` keeps its checkpoint field name and now
 points to the thought `.when`; no synthetic `.where` producer remains.
 
+*Superseded in part by item 2.0 round 7 (Alec, 2026-11-10: "One clock"; accepted 2026-11-11).* A new thought idea takes a tick of the one model clock, and its stamp is on `RowTime.encoder()`'s ladder; the per-stream thought clock and the 16-bit digit band retire. The stamp remains a unique, exact address in its stream, and trial restore puts the model clock back. See "When (final operators update; item 2.0 round 7, 2026-11-10)" above.
+
 Reading journals stay aligned to action positions. A SHIFT or transpose has
 journal column -1 and empty sentinels (zero values, false relation/selection
 flags and -1 references), and no table lookup is made for it. Only fold/rewrite
@@ -2864,7 +2913,7 @@ and the offered-freeze sweeps.
 
 ## Dual process: System 1, knowing and System 2 (2026-11-09)
 
-The following records the design implemented in item 2.0 round 6 (2026-11-10). Validation and the source freeze are returned in [the 2.0 spec §20](plans/2026-11-03-gradient-projection.md#20-third-repair-of-round-5-and-the-round-6-continuation-2026-11-10); implementation does not establish a learning gain.
+The following records the design implemented in item 2.0 round 6 (2026-11-10). Validation and the source freeze are returned in [the 2.0 spec §20](plans/2026-11-03-gradient-projection.md#20-third-repair-of-round-5-and-the-round-6-continuation-2026-11-10); implementation does not establish a learning gain. Rounds 5 and 6 landed on 2026-11-10 as `16a6a79b81`.
 
 ### The three stages: input, thinking, output
 
@@ -2886,6 +2935,8 @@ The architecture is a dual-process model, and the distinction is structural, not
 
 **System 2** is grammar: the three grammars compose, think and generate with their choosers (`OperationSelectionLayer`, `GeneratePolicy`, the selected-thought chooser), symbols and the higher orders, definitions and LTM recall, the derivation and its inverse, and STM's sparse face, its ideas and relations as symbols. "Compose is thought in the sense that it is symbolic understanding ... compose, think, and generate grammars all operate as system 2, on top of system 1." Human cognition is the same loop with thinking steps between input and output.
 
+**The two inverses (Alec, 2026-11-10).** "For system 1 and animal cognition, the inverse happens from order-zero concepts. When symbolic processing is turned on (system 2, human cognition), we run the grammar inverse to determine the order-zero concept layer and then run the system 1 inverse." In code names: `BasicModel.reverse` is the System 1 inverse and reads no grammar (`reconstruction_reverse`); with symbols on, `SentenceField.sentence_generated` runs the generate walk on the sentence's own end slots, `OutputOccurrences.generated` places the emitted terminals, and the same `reverse` follows (`reconstruction_order_zero`). Record: [loop spec §9](plans/2026-11-04-item2-0-order-zero-loop.md#9-corrected-alec-2026-11-10-the-grammar-inverse-stays-in-the-order-zero-reconstruction).
+
 **Where they meet.** System 2 reads knowing and writes back into it: thought's deposits go into knowing, as an order-0 concept's evidence at the input's brackets or as an STM idea with its `.when` (D5; no column is appended to the field), and the deposit carries gradient (D6). System 1 learns from System 2 "mainly by system 2's activation of the conceptual space. That will train the expectation (which should still be separate from intuit())": expectation's target is the detached order-0 slice of the carrier after thought (D3), so System 1 learns to predict what System 2 made of the last input, and `intuit()` and expectation stay two operations, one within a step and one across steps. Judgement follows the stages: on a sentence with no supplied answer, System 2 is judged by expectation against the next input's order 0, and reconstruction by the current input; with a supplied answer, output's cost judges System 2.
 
 **Gradient.** Under the loop the shared row is perception, the field's parameters (definition exponents, `PrimitiveProperties.members`, the percept codebook) and the decoder; System 2 is trained by output and, for the untransformed understanding, by the order-zero reconstruction through compose and the grammar inverse; its restored walk residual and departure credit also use reconstruction/R. Output's gradient is projected against reconstruction's on every shared unit and never alters reconstruction's ([item 2.0 §1](plans/2026-11-03-gradient-projection.md)); each cost term carries an owner (which parameters receive it under `separateChooser` true) and a side (R or A under the default), which is how the two systems share a tree without one overwriting the other's learning.
@@ -2900,6 +2951,32 @@ The architecture is a dual-process model, and the distinction is structural, not
 
 **The state of affairs.** MTM holds, per identity, its static concepts at order 0 and the verbs that change them, with more than one state per identity: an actual timeline and alternative timelines. A verb is the difference between two states of one identity over time; a modal is the difference between two states that cannot both be actual, at equal time. Both states are readings of input, so training over MTM compares a verb with the world as read, not with the model's own choices: the verb action is trained to map an identity's earlier order-0 state to its later one, the modifier action to map the actual state to the alternative, and the group assigner's residuals on the recorded verb-phrase meaning assign a verb to its basis. "The verb and modal teachers are MTM": their training is memory's function.
 
+### Episodic and semantic memory in the two systems (2026-11-11)
+
+Built in item 2.0 round 7, accepted on 2026-11-11 ([2.0 spec §21 to §23](plans/2026-11-03-gradient-projection.md#21-round-7-episodic-memory-from-the-open-attention-pass-scheduled-alec-2026-11-10)). The mechanism is recorded under "When (final operators update; item 2.0 round 7, 2026-11-10)" in [One where, one when, many whats](#one-where-one-when-many-whats-the-field-attention-and-the-two-modes-item-9b-september-25); this subsection places it in the two systems.
+
+**Two sides of every store.** By Alec's reading of 2026-10-23 ([Philosophy](Philosophy.md), the stores section of that date), every entry has two parts: the percept part, located by its `.where` and `.when`, is episodic in Tulving's sense, and the concept part is semantic; the concept index with `LTM1`'s edges is the semantic store proper, and promotion by recurrence is consolidation. Alec, 2026-11-10, on episodic memory in LTM: it is "the set of active percepts located by the .where of attention", stored "with the existing .when (so that it becomes a set of percept codes for that moment)", and "This effectively gives all of the Memory structures (LTM, MTM, STM) both percepts and concepts."
+
+| store | concept side | percept side |
+|---|---|---|
+| STM | the ideas and relations of `STMChunks` | the attended `PerceptField` (`ConceptualSpace._percept_field`) |
+| MTM | identity collections and their timelines | collections of basic percepts (`member_kind` `'percept'`, order $-1$) |
+| LTM | `LTM0` ideas, `LTM1` relations and the minted concepts | the entry beside a sentence's `LTM0` row (`episodic_percepts`, `episodic_poles`, `episodic_where`), or on its `episode` anchor |
+
+**Which system writes and which reads.**
+
+- *System 1 takes the entry.* `EpisodicMemory.stage` selects it from the field of the open attention pass (`FamiliarTier.open_sentence`), which reads every present word's bracket at once and reads no grammar. That field is the input's knowing ("The three stages", above), so an entry is a few percepts of knowing, kept.
+- *System 2's boundary keeps it.* `BasicModel._commit_sentence` hands the entry to `ClauseRows.write_clause` with the row its kept close writes; a thought written during that close gets none. A close that writes only an `LTM1` relation, with a nonempty entry, takes one `LTM0` row of kind `episode` to hold it (Alec, 2026-11-11: "An LTM0 anchor row"). Reading a relation therefore leaves both kinds of memory: the relation, which is semantic, and the moment it was read, which no content read sees.
+- *System 2 returns to it, and what returns is System 1's state.* A recall by time alone in the thought loop (`ThoughtLTMCapability.query` with only `when`) calls `EpisodicMemory.reinstate`: the kept percepts are rebuilt as a `PerceptField` with their stored stamp, read by the membership read that perception uses (`ConceptualSpace.cs_read_percept_field`) and published as the attended field of the querying stream, until the next open attention pass. Alec, 2026-11-10: "review of episodic memory should be represented as the attended field, otherwise we could not reason about as a previously lived experience."
+- *Semantic memory is read by content and by reference* (the thought grammar's recall, `infer` over `LTM1`, the taxonomy, the minted concepts). A recall by time reaches it too, since ideas and relations carry model-time stamps (Alec, 2026-11-10: ".when should not be per-document, it should be model time, even for semantic memory"); only an entry comes back as a field.
+- *No learning rides on an entry.* It is stored detached, and a review books no loss of its own.
+
+**Stated gaps (Claude's readings; nothing here is decided).**
+
+1. An entry is taken only where the open attention pass runs and is written only at a sentence's close, so a configuration that composes no sentences keeps none, and review needs the thought loop. As built, the loop with no thinking step has no episodic memory. Whether a mind with System 1 alone should keep and re-enter episodes is open.
+2. An episode is reached by its time only. A cue by content, a `.where` bracket on the recall and a duration between two episodes are open ([FutureWork §7](FutureWork.md#7-episodic-memory-a-few-active-indices-beside-each-row), points 5, 6 and 8).
+3. Consolidation does not read the kept percepts: promotion by recurrence works over MTM's collections and the rows, as before.
+
 ### Status, for the architecture's markings
 
 | Statement | Status |
@@ -2912,6 +2989,8 @@ The architecture is a dual-process model, and the distinction is structural, not
 | MTM's one `link` over percepts, states and mentions; promotion; verbs and modals over the state of affairs; basic percepts | implemented in round 5; freeze and validation in 2.0 spec §20.1–§20.5 |
 | Reconstruction from the parallel field; `reverse` as the one decoder; `generate` and the occurrence writer; the two loop acceptance checks; D1 (D2's link judge is round 5) | implemented and directly certified in round 6 |
 | The free decoder and compose-forest inverse; the former output decoders | inverse tools remain explicit System 2 reports; reconstruction and output use the common order-zero reverse; the separate output decoders are retired |
+| One model clock for sentences, thought ideas and the MTM pool; ages for learned readers; both clocks put back at the epoch reset | built in round 7 (accepted 2026-11-11) |
+| Episodic entries from the open attention pass; `episode` anchors; review by a recall by time | built in round 7 (accepted 2026-11-11) |
 
 ### Round 5: references, shared strata and operator authority (2026-11-09)
 

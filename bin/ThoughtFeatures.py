@@ -62,7 +62,7 @@ def semantic_metadata(meanings):
         [meaning.polarity]),
         field(tuple(item for item in meaning.bindings if not (
             isinstance(item, tuple) and len(item) == 2 and item[0] in
-            ('_evidence_pair', '_open_references', '_thought_witnesses',
+            ('_evidence_pair', '_open_references', '_thought_witnesses', '_chunk_when',
              '_producing_operation', '_query_relation', '_query_exclude',
              '_formation_records', '_formation_reason', '_reference_mentions',
              '_reference_sites', '_unresolved_operands', '_intuition_terms',

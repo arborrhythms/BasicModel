@@ -253,6 +253,10 @@ class ThoughtTrialState:
     """
     def __init__(self,model, *, detach=False):
         memory=model._what_memory()
+        self.model = model
+        self.clock = model.when_time.detach().clone()
+        store = getattr(getattr(model, 'symbolSpace', None), 'ltm_store', None)
+        self.store_clock = None if store is None else (store, store.model_clock.detach().clone())
         from Memory import STMChunks
         stm = getattr(getattr(model, 'conceptualSpace', None), 'stm', None)
         owners=[(memory,('_what_slots','_what_closure_pressure','_episode_live','_thought_next_id','_address_sources')),
@@ -262,7 +266,13 @@ class ThoughtTrialState:
                         '_sentence_answer_raw_cost'))]
         if stm is not None:
             owners.append((stm, tuple('_live_' + name for name in STMChunks.FIELDS) +
-                           ('_thought_contents', '_thought_clock', '_active_batch', '_max_depth_host')))
+                           ('_thought_contents', '_active_batch', '_max_depth_host')))
+        conceptual = (model._concept_owner() if hasattr(model, '_concept_owner') else
+                      getattr(model, 'conceptualSpace', None))
+        self.field_owner = conceptual
+        if conceptual is not None:
+            owners.append((conceptual, ('_percept_field', '_cs_field_where', '_cs_field_when',
+                                       '_episode_review_field')))
         carrier=getattr(getattr(model,'conceptualSpace',None),'subspace',None)
         if carrier is not None:
             owners.append((carrier,tuple(name for name in vars(carrier)
@@ -279,12 +289,19 @@ class ThoughtTrialState:
                 values['_live_chunk_truth'] = values['_live_chunk_truth'].clone()
 
     def restore(self, *, effects_only=False):
+        if not effects_only:
+            self.model.when_time.copy_(self.clock)
+            self.model.when_encoding.t = self.model.present()
+            if self.store_clock is not None:
+                store, clock = self.store_clock
+                store.model_clock.copy_(clock)
         if self.thought_strata is not None and not effects_only:
             from ThoughtStrata import restore
             stm, snapshot = self.thought_strata
             restore(stm._thought_stores, snapshot)
         for owner,values,names in self.saved:
-            if effects_only and ('_what_slots' in names or '_thought_contents' in names):
+            if effects_only and ('_what_slots' in names or '_thought_contents' in names
+                                 or '_episode_review_field' in names):
                 continue
             if '_thought_contents' in names:
                 from Memory import STMChunks
@@ -292,13 +309,17 @@ class ThoughtTrialState:
                 owner.ensure_batch(values['_active_batch'])
                 owner._max_depth_host = values['_max_depth_host']
                 owner._thought_contents = values['_thought_contents']
-                owner._thought_clock = values['_thought_clock']
                 continue
             # A trial may introduce a knowing carrier for the first time.
             dynamic=tuple(name for name in vars(owner) if name.startswith('_concept_')) if any(name.startswith('_concept_') for name in names) else ()
             for name in set(names)|set(dynamic):
                 if name in values:object.__setattr__(owner,name,_copy_containers(values[name]))
                 elif name in vars(owner):delattr(owner,name)
+        if effects_only:
+            review = getattr(self.field_owner, '_episode_review_field', None)
+            if review is not None:
+                from SentenceField import publish
+                publish(self.model, review)
 
 
 

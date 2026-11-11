@@ -262,8 +262,9 @@ def test_thought_keeps_negated_definition_in_a_timed_stm_idea():
     cs.subspace._concept_where = torch.tensor([[[0, 2]]])
     cs.subspace._concept_when = torch.tensor([[[5, 6]]])
     result = SimpleNamespace(semantic_id='ask', evidence={'frames': ({'reference': ('row', row)},)})
-    apply_thought_effect(SimpleNamespace(conceptualSpace=cs, _concept_owner=lambda: cs), result,
-                         row=0, work=QueryWorkBudget(32))
+    from clock_fixtures import install
+    model = install(SimpleNamespace(conceptualSpace=cs, _concept_owner=lambda: cs))
+    apply_thought_effect(model, result, row=0, work=QueryWorkBudget(32))
     from ThoughtChunks import held
     stamp, idea = held(cs.stm, 0)[0]
     assert idea.role_refs[0] == ('sym', 101)

@@ -154,7 +154,8 @@ def test_order_zero_decode_reaches_the_grammar_inverse_and_selected_definition(m
     model.reverse = lambda carrier, *, field: reverse(model, NS(carrier_like=NS), field)
     left, right = language.reverse_binary_step(parent, torch.tensor([0]), torch.tensor([True]),
         ops=(op,), basis=codes, basis_valid=bank.valid)
-    proposal = generated(model, torch.stack((left, right), 1), torch.tensor([2]), torch.tensor([False]), bank, ())
+    proposal = generated(model, torch.stack((left, right), 1), torch.tensor([2]),
+        torch.tensor([False]), bank, (), when=torch.tensor([[[1, 2]]]))
     decoded = realize(model, proposal)._radix_activity.percepts
     field = ConceptualField(torch.tensor([101, 102]),
         torch.stack((torch.eye(2), torch.zeros(2, 2)), -1)[:, None],

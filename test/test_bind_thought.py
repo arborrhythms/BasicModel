@@ -28,6 +28,9 @@ def native(monkeypatch):
     f = SentenceFixture(monkeypatch, native_cube=True)
     model, _, _, _ = world()
     object.__setattr__(model, 'conceptualSpace', f.cs)
+    from clock_fixtures import install
+    install(model)
+    object.__setattr__(f.cs, '_model', model)
     object.__setattr__(model, 'grammatical_thoughts', f.registry)
     frames = []
     model.symbolSpace.ltm_store = f.store

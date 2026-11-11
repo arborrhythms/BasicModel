@@ -14,6 +14,8 @@ def placed_fixture():
     from ClauseRow import attach_clause_index
     from Memory import LTM0
     cs, cb, ps, alloc = fixture(meaning_pairs=2)
+    from clock_fixtures import install
+    install(cs._model)
     store = LTM0(cb.W.shape[-1], capacity=32)
     attach_clause_index(SimpleNamespace(), store, cs)
     a, b, base = word(cs, [(4,1.)]), word(cs, [(7,1.)]), word(cs, [(4,1.)])
@@ -288,6 +290,9 @@ def test_prepend_carries_candidates_with_live_gradient_and_rejects_recycled_tran
     entries = SymbolEntries(1,1,cs.mtm.capacity,8)
     model = SimpleNamespace(_concept_owner=lambda:cs, inputSpace=SimpleNamespace(symbol_entries=entries),
         symbolSpace=SimpleNamespace(ltm_store=store), _open_sentence_slot=0)
+    from clock_fixtures import install
+    install(model)
+    model._open_sentence_slot = 0
     state = chunks.empty(1,8,8,device='cpu',dtype=torch.float32)
     pointers = {name:buffer.data_ptr() for name,buffer in entries.named_buffers()}
     state = stage(model,state,torch.tensor([True]))

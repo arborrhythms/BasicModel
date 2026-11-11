@@ -46,6 +46,11 @@ def _serial_read(tmp_path, clock=0, offset=0):
         addresses = {int(value): index for index,value in enumerate(store.address_keys[:len(store)])}
         omissions = tuple(i for i in range(len(store))
                           if '_omitted_symbol' in dict(store.raw_meaning_of(i).bindings))
+        def time_address(band):
+            # A thought's exact address advances on the sentence clock.
+            # Preserve its relative tick when comparing shifted origins.
+            from RowTime import encoder
+            return ('relative-time', int(encoder().decode_index(torch.tensor(band))) - clock)
         def canonical(value):
             if type(value) is int and value in addresses:
                 return ('row', addresses[value])
@@ -53,6 +58,14 @@ def _serial_read(tmp_path, clock=0, offset=0):
                 return {key:(('time-aware-logits',len(item)) if key == 'presence_logits'
                              else canonical(item)) for key,item in value.items()}
             if isinstance(value,(tuple,list)):
+                if len(value) == 2 and value[0] == '_chunk_when':
+                    return value[0], time_address(value[1])
+                if len(value) == 2 and value[0] == '_intuition_terms':
+                    # pack_term's seventh field is the premise's thought
+                    # address; rule, meaning and reference fields stay exact.
+                    return value[0], tuple((*map(canonical, term[:6]),
+                        time_address(term[6]), *map(canonical, term[7:]))
+                        for term in value[1])
                 if len(value) == 2 and value[0] == '_reference_sites':
                     # Exempt exactly the four physical clock coordinates
                     # inside reference-site content, cue and predicate. Each
@@ -320,7 +333,7 @@ def test_stream_chain(tmp_path,monkeypatch):
                 assert observations.numel()==2
                 if documents==('a','b'):
                     from RowTime import encoder
-                    assert encoder().decode_index(torch.stack([live.entry_when(int(row)) for row in observations])).tolist() == [model.present()]*2
+                    assert encoder().decode_index(torch.stack([live.entry_when(int(row)) for row in observations])).tolist() == [model._sentence_ticks[0]]*2
                     before={key:getattr(live,key)[observations].clone()
                             for key in ('address_keys','sentence_index')}
                     before_time=torch.stack([live.entry_when(int(row)) for row in observations])

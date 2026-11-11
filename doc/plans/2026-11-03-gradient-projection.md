@@ -4497,3 +4497,952 @@ Assumptions (Claude's readings; Alec may override any): A1, item 7's selection r
 
 Testing: fast checks only until the implementation is finished: each item's direct certificates; test/test_model_time_when.py, the thought and time-recall files, the FamiliarTier and MTM files, the presentation-memory and epoch files, the candidate-attention files, test/test_item20_round6_*.py, test/test_explicit_dimensions.py and test/test_bounded_test_runner.py. Then the repeated runs and the one sweep of item 9. Rules as in every round: no language named in code, fixtures or tests; no seed selected to pass; preallocate, never resize; no fixture capacity changed to pass; nothing retired without its record; fail loud.
 ~~~
+
+## 22. Round 7: episodic memory on model time
+
+### 22.1 Landing and implementation record (stopped, 2026-11-11)
+
+Rounds 5 and 6 landed on main as `16a6a79b81fb1cc21d116d71f1f6eea389553703`;
+the landing record is `3c9399199d9b8b004af4be70e3dfe2e7314c7af4`. Main was pushed
+once and the tree was clean before round 7. The accepted source fingerprint
+was exactly `eb81e90f4d7f182142942f9abc8e5cd73ec8578297f0fb2e98534ec52ef995dd`.
+The required document-link check passed 1,007 cases. No extra landing sweep
+was run. Round 7 remains uncommitted.
+
+The working receipt is `doc/benchmarks/2026-11-10-item2-0-round-7/`.
+The round stopped at the convergence prerequisite of its direct clock
+certificate (§22.3). This is not a completed round or a green validation
+claim. The final measurements and sweep have not started.
+
+### 22.2 Clock, readers and episodic field (working record)
+
+The old batch increment now occurs only on configurations without sentence
+composition. Composing paths increment before each present sentence slot's
+perception, shared across streams. New thought deposits use that clock; the
+separate `ShortTermMemory._thought_clock` is retired. Output trials share
+their produced sentence's tick, while reconstruction uses the input tick.
+Stable document/content addresses remain independent of time.
+
+`RowTime.encoder()` supplies the one fixed ladder. Epoch snapshots now carry
+both clock values, including checkpoint import and restore. Word ordering uses
+float64 subdivisions of a tick, with the small coordinate table kept on the
+host on Metal. Ages are formed before transfer to the scorer's dtype/device.
+This retains every one of 256 word positions through `RowTime.HORIZON`.
+The nine untrained clock-offset replays preserve the chosen derivations.
+
+The reader inventory records 104 attribute-reading functions and 40 dynamic
+paths, distinguishing stored/address transport from ages and differences.
+Chooser operands, candidate keys and context, generation parents, thought
+policy roles, answer-attention scoring keys and expectation inputs receive
+relative time. Stored values retain their absolute bands. The attention
+observation mask follows evidence and eligibility, including an age of zero.
+
+`episodicPercepts` defaults to four and reserves three LTM0 row columns.
+Selection keeps separate poles, deterministic lower-index ties and the
+strongest reading's spatial bracket. Entries are detached, follow compaction
+and epoch restoration, and retain their first witness. Schema 14 checkpoints
+import empty entries into schema 15 and report that migration. Basic percept
+identities currently have no live withdrawal API: reserve appends identities
+and promote retains them. Concept forgetting does not withdraw basic percepts.
+
+The existing time-only query rebuilds the querying stream's percept field,
+shares `ConceptualSpace.cs_read_percept_field` with native perception, and
+publishes the membership result. Other streams retain their fields. Kept
+thought effects preserve the review; the next open attention pass replaces it.
+No new recall caller is introduced. Passive per-arm counters are prepared for
+the measurements.
+
+**Storage boundary awaiting Alec.** `ClauseRows.write_clause` can close a
+sentence with only an LTM1 relation; the accepted contract explicitly permits
+that without allocating an LTM0 row. The current episode writer attaches to
+existing LTM0 sentence rows. A relation-only closing therefore has no entry.
+Whether to allocate an additional LTM0 episode anchor for those closings was
+asked separately; no answer has been assumed and no extra row is allocated.
+
+`Data.refresh_math_chain` reshuffles premises through `ChainCorpus.problem`
+and document order through `ChainCorpus.presentation`. Its only direct caller
+in the current `bin/` tree is `loadMathChain`; an epoch driver must request a
+refresh. `loadMath` shuffles generated surfaces/split order at construction;
+`Data.shuffle` permutes complete input/output pairs without rewriting premises.
+No corpus ordering policy was changed.
+
+The 132-case clock, attention, episode, presentation and loop check passed on
+the working source, including the native Metal sub-bracket certificate.
+An earlier broad targeted selection accidentally started the trained grammar
+gate; it was interrupted before a result to preserve the fast-check rule.
+That interruption is recorded and does not satisfy the final gate.
+
+### 22.3 Convergence stop and source for review (2026-11-11)
+
+The final required fast selection completed **264 passed, 6 expected skips**
+after the preceding **132 passed** selection. The two results are
+`output/tests/20261110-235528-d75dc4/result.json` and
+`output/tests/20261110-235209-3753e3/result.json`. The complete commands,
+earlier failures and fixture ports are retained in the receipt; none is
+reclassified as a passing final sweep.
+
+The first trained numeric clock certificate found a maximum answer change of
+**0.00609135627746582** between its first two clock settings. A diagnostic
+control alternated ticks 0 and 25 and returned exactly to the original
+answers at tick 0, with unchanged parameters. The causal word-expectation
+path called `word_predictor` directly and bypassed the new shared age
+conversion. `WordExpectation.word_distribution` now routes that read through
+`SymbolExpectation._prediction_inputs`.
+
+The subsequent direct certificate failed **before its clock comparisons**:
+its ordinary, unseeded native fit reached best MSE **0.24557973444461823**
+after **200 epochs**, against **< 0.20**. Its selector was
+`test_item20_round7_time.py::test_trained_numeric_answers_do_not_move_at_nine_clock_offsets`;
+the failure was in `TestMMXorConvergence._fit_xor`. That is the same
+configuration, implementation, budget and bar used by `test_convergence`.
+The exact `test_convergence` selector was not run. I treated this failed
+prerequisite as the requested convergence stop and made no retry to obtain
+a passing draw. The traceback and native random-stream receipt are at
+`output/tests/20261111-001002-915f3b/`; `stop.json` records the distinction.
+The different draws do not establish that the word-reader repair caused the
+convergence failure. Clock invariance after that repair remains unverified.
+
+The stopped source has fingerprint
+`6bf63e0922cefa1b47bd936357c2f02f38282a81aa617c51d490ba0167f55752`
+over **1,047 files**, using §20.33's compact sorted-JSON method. It is held
+for review, with no round-7 commit or push. `frozen-source.json` identifies
+it explicitly as a stopped source, not a completed round-7 freeze.
+
+Still outstanding: the relation-only episode decision of §22.2; validation
+of the word-expectation repair and the trained clock certificate; the eight
+XOR fits and four lesson arms with episodic counters; and the complete
+sweep with its required gates. The accepted round-6 measurements remain
+unchanged. No new learning comparison or sweep result is claimed.
+
+### 22.4 Review of the stopped round-7 return on `6bf63e0922ce` (Claude, 2026-11-11): the landing is exact, the stop stands
+
+*Landing.* Rounds 5 and 6 landed as `16a6a79b81fb` (270 files: 240
+modified, 29 added, 1 deleted; nothing under `doc/benchmarks/`), recorded by
+`3c9399199d9b`, which is origin/main after one push. An export of
+`3c9399199d9b` (`git archive`) hashes by §20.33's method to the accepted
+`eb81e90f4d7f` less one file, `data/corpus/assembly-01/manifest.json`: a
+corpus manifest of 2026-10-27 under the `/data/corpus/` ignore rule, already
+in round 6's before-source, so not round 5's or 6's to commit. The record
+line ends §20.35 and the todo line follows the last item 2.0 update, as
+§21.1 step 3 asks.
+
+*Source.* The live tree hashes to
+`6bf63e0922cefa1b47bd936357c2f02f38282a81aa617c51d490ba0167f55752` (1,047
+files), the stopped source of §22.3; round 7 is uncommitted.
+
+*Rerun here* (Codex's two commands as `commands.json` records them,
+`test/test_report.py --workers 2`, CPU, eager): 132 of 132 passed; then 264
+passed and 6 expected skips, the trained XOR-grammar case among the skips
+under `RUN_TRAINED`. The hash is the same after both runs. Of the gate
+files, `test/test_mm_xor.py` changed only by an `after_fit` hook on
+`_fit_xor`, through which the clock certificate inspects the fitted model;
+initialization, budget and bar are as before. The three ported assertions
+follow Alec's decisions of 2026-11-10: a live encoder is the model's
+`when_encoding` at `present()` (`test_model_time_when.py`), and an epoch
+restores the presentation's clock, so two epochs give equal bands
+(`test_operators_round4a0.py`, `test_presentation_memory.py`).
+
+*Built as §21.1 asks, checked in code.* Item 4: one `_advance_when_time`
+per present sentence slot in `_run_sentence_word_bricks`, before
+perception, and once per batch where `_composes_sentences` is false; a new
+thought deposit takes its own tick in `ThoughtChunks._next_when`, and
+`_thought_clock` is gone; `FamiliarTier._clock` reads `_sentence_ticks`;
+`RowTime.produced` gives the trials of `reverseOutput` one tick. Item 5:
+`_capture_clock` beside the first `_epoch_rows`, restored by every
+`PresentationMemory.epoch` and imported for older checkpoints by
+`import_episode_state`; `ThoughtTrialState.restore` also puts the clock back
+after a trial. Item 6: `when_encoding` is `RowTime.encoder()` and
+`when_age_scale` keeps the old divisor; ages (`age_interval`, `age_band`,
+`relative_idea`, `relative_to`) reach the chooser, generation, the
+candidate-attention context, the answer-attention score keys, compose and
+its reference operands, and symbol and word expectation;
+`ModelCandidateAttention.context` takes the age bracket and tests
+observation by `isfinite`; word order is a float64 sub-bracket of the tick
+(`RowTime.subintervals`). Item 7: `EpisodicMemory.select` takes strength as
+the maximum over readings of the pole sum, keeps both poles and the
+strongest reading's where, and its stable sort leaves ties to the lower
+index; three preallocated `LTM0.row_columns`; compaction; schema 14 to 15
+with empty entries and a warning. Item 8: `cs_read_percept_field` is split
+out of `cs_read_memberships`, and `_bind_attended_concepts` no longer takes
+the native input, so §21.1's stop for item 8 did not arise;
+`EpisodicMemory.reinstate` follows `recall_chunks` in the time-only branch
+and replaces only the querying stream's field.
+
+*Accepted beyond the text:* the expectation residual's four `.when`
+coordinates are zeroed in attention's input (A4); a composed idea stores
+its head operand's absolute band (A5); `ThoughtChunks.put` fails loud,
+before the clock advances, when every chunk is on the stack; the MTM
+eviction key, the bind menu's position and the prepended-symbol order read
+differences or ranks of stamps, in the same order as before; thought
+document keys use the exact float of the stamp. No live withdrawal of a
+basic percept identity exists, so the conditional slot-clearing
+certificate has no case; `Data.refresh_math_chain` reorders premises only
+when an epoch driver asks.
+
+*The stop stands.* The certificate's fit is `test_convergence`'s
+(`_fit_xor`, `data/MM_xor.xml`, 200 epochs, bar .20, targets 0, 1, 1, 0).
+Its best MSE, .2456, is within .005 of .25, the error of answering one half
+everywhere: that draw did not learn XOR at all. Codex's reading of the stop
+rule and its refusal to redraw are right. The cause is open: the earlier
+draw on round-7 source, before the word-expectation repair, converged, and
+the rate on the landed main is unmeasured. Its diagnosis is Codex's (next
+text).
+
+*Findings, by reading, not run:*
+
+1. Thought rows copy the sentence's entry. `_commit_sentence` closes its
+   thoughts (`ThoughtClosing.close`, then `ThoughtStream.write`, then
+   `write_clause`) while `_open_sentence_slot` is the sentence's slot, and
+   `EpisodicMemory.write` checks only that the row is new and an entry is
+   staged. Each new thought row so written receives the sentence's percepts
+   under the thought's own, later tick, and counts in `written`. §21.1 item
+   7 writes the entry "on the sentence's row"; a thought has no open
+   attention pass; after a review, the copied percepts are not those
+   attended at the thought's tick.
+2. `ConceptualSpace.End` now keeps a detached `_percept_field` across the
+   per-batch teardown (`runBatch` calls `End` every batch), on every
+   configuration. A2 asks that a review's field last until the next open
+   attention pass; it does not ask the present field to outlive the
+   teardown. Readers that may now see the previous batch's field before an
+   open pass, or where none runs: `_passback_scope_ps`,
+   `_witness_concept_poles`, `refine_over_collected`,
+   `FamiliarTier.observe_native_cases` and `unbind`.
+3. `ThoughtStream.write` keys one thought turn two ways: its branch at line
+   405 still calls `source_at`, which now returns the sentence's tick, and
+   its branch at line 473 calls `address_at`. `DocumentCover` (line 102)
+   compares the tick where it compared the document position. §22.2 says
+   addresses stay independent of time.
+
+*Open for Alec:* where the entry of a sentence that closes with only an
+`LTM1` relation goes (§22.2). Checked for that question: `LTM1` rows carry
+a stamp (`RowTime.read_stamp` reads `parts.percept[:, 4:8]`), and
+`EntryRead.recall_time` already scans them as `('sym', row)`, so a time-only
+recall reaches such a sentence and today reinstates nothing.
+
+*Decided (Alec, 2026-11-11, question tool):* "An LTM0 anchor row". A
+sentence whose closing writes only an `LTM1` relation gets one `LTM0` row
+to hold its entry. Offered with it, and not chosen: the entry beside the
+`LTM1` relation row (Claude's recommendation), and no entry until the
+measurements count such closings. What the anchor holds and who reads it
+are Claude's readings A6 and A7 in §22.5.
+
+### 22.5 Codex text: diagnose the stop, repair, finish round 7 (Claude, 2026-11-11; final when given)
+
+~~~
+Item 2.0 round 7, continued: diagnose the convergence stop, make §22.4's repairs and Alec's relation-only decision, then finish the round. Your return (2.0 spec doc/plans/2026-11-03-gradient-projection.md §22) is reviewed in §22.4: the landing of rounds 5 and 6 is exact, source 6bf63e0922ce and its two fast runs reproduce, the build follows §21.1, and the stop stands. Start from that live source and confirm its hash by §20.33's method first. §21.1's items 6 and 9, its documents, its rules and assumptions A1 to A5 stand; this text adds to them. Any red case or stop this text does not name is yours to diagnose to its producer. No commit or push of round 7.
+
+1. The stop. The draw recorded at output/tests/20261111-001002-915f3b (best MSE .2456 after 200 epochs; answering one half everywhere scores .25) did not learn XOR. Find whether round 7 caused it, with the fit as test_convergence runs it (TestMMXorConvergence._fit_xor, data/MM_xor.xml, 200 epochs, bar .20).
+ a. Replay that draw's recorded initial random stream on the stopped source and on an export of the landed main 3c9399199d (git archive into a directory outside the tree; no worktree, stash or checkout in the live tree). Return both best MSEs and whether the two start from identical parameters; if they do not, why.
+ b. Run test/test_mm_xor.py::TestMMXorConvergence::test_convergence 8 times unseeded on each source and return each best MSE.
+ c. If the stopped source fails where the landed main converges (a), or fails more often (b), bisect round 7's change set at that stream to the producer, reverting one change at a time; the fixed stream serves the comparison only, never an assertion. Candidates to try first, none established: whether MM_xor composes sentences (_composes_sentences) and so where its clock ticks; when_encoding.t now following the clock; the RowTime ladder in place of the old capacity in the bands the fit's inputs carry; ConceptualSpace.End keeping the attended field (item 2b); the ages in symbol and word expectation, the word-expectation repair of §22.3 included. Repair at the producer, rerun its whole file, and repeat a and b once.
+ d. If both sources fail alike, the failure is not round 7's: record the replay and the tallies, and continue.
+
+2. §22.4's findings.
+ a. An entry is written only for the input sentence's own closing: the row _commit_sentence writes for the sentence, or its anchor (item 3), never a row that ThoughtStream.write adds during that close. Certificate: a sentence whose close keeps a thought has its entry on its own row only, the thought's row holds none, and written counts sentences only.
+ b. ConceptualSpace.End: list the readers of _percept_field, _cs_field_where and _cs_field_when that run between End and the next open attention pass, with the configurations on which they run. A2 asks only that a review last until the next open attention pass. If no listed reader needs it, restore End's clearing of the present field and keep a review in _episode_review_field alone. Record which you did.
+ c. ThoughtStream.write keys a thought turn by address_at in both branches (its branch near line 405 still calls source_at, which now returns the tick). DocumentCover (near line 102) compares the document position again, unless cover continuity is meant to follow presentation time; record which.
+
+3. Relation-only closings (Alec, 2026-11-11: "An LTM0 anchor row"). When the input sentence's closing writes no LTM0 row of its own (write_clause reserves its root as RELATION) and its staged entry holds at least one percept, write_clause allocates one LTM0 row for the sentence to hold the entry. The row is counted in the close's capacity check before anything is written (ClauseCapacityError as for any row), stamped with the sentence's tick, its stream set in LTM0.stream, and the entry written in the three episodic columns. A re-witness of the same sentence allocates no second anchor and keeps the first entry; an anchor never becomes the root occurrence of a later closing. Being a row, it follows compaction, forgetting and the epoch reset. With episodicPercepts 0, or an empty entry, nothing is allocated. Two readings of Claude's, stated as assumptions: A6, the anchor has no content: its slots are zero outside its .when band. A7, it is a new kind, 'episode', appended to LTM0.KINDS (existing indices unchanged; schema 15 covers it) and derived in kind_of as a cover is; it is excluded wherever a cover is excluded from idea reads (CaseSelection, EntryRead's content reads, MemoryConsolidation, Queries, TimelineRead and the two reads in Models.py) and read by EntryRead.recall_time and EpisodicMemory.reinstate; every other reader that scans LTM0 rows is audited and recorded. Certificates: a relation-only sentence with active percepts gets exactly one anchor, with its entry and its tick; a time-only recall at that tick reinstates those percepts; with the anchor's allocation switched off inside the certificate, the same sentences give the same answers, content recalls, consolidations, mints and MTM candidates. A test whose row count changes by the anchors is ported as a contract change by Alec's decision of 2026-11-11 and recorded in ports.json; a fixture whose LTM0 capacity the anchors exhaust is reported, never enlarged.
+
+4. Then finish as §21.1 says: item 6's trained clock certificate at the nine settings, after items 1 and 2; item 9's eight XOR fits and four lesson arms, reporting per arm the sentence entries, the anchors, the relation-only closings, the time-only recalls and the reinstatements; then the freeze, its hash, and one complete sweep (env -u RUN_TRAINED -u RUN_SLOW make test, nothing deselected, offered-documents.json recorded first). Item 9's stop rule stands.
+
+Documents, by exact replacement or dated append: the anchor in Architecture's episodic paragraph and in doc/FutureWork.md §7, and todo.md's item 2.0 block. Return as §23 of the 2.0 spec, through Alec for Claude's review.
+
+Assumptions (Claude's readings; Alec may override either): A6, an anchor has no content of its own. A7, an anchor is the kind 'episode', read only by time-only recall and by review.
+
+Testing: fast checks only until the implementation is finished, as in §21.1, adding item 2's and item 3's certificates and, for item 1, test/test_mm_xor.py's convergence class; then item 4. Rules as in every round: no language named in code, fixtures or tests; no seed selected to pass; preallocate, never resize; no fixture capacity changed to pass; nothing retired without its record; fail loud.
+~~~
+
+
+## 23. Round 7 continuation: convergence repair and episodic anchors
+
+### 23.1 Entry source and comparison protocol (2026-11-11)
+
+Continuation of §22.5, from live source
+`6bf63e0922cefa1b47bd936357c2f02f38282a81aa617c51d490ba0167f55752`.
+The §20.33 compact sorted-JSON SHA-256 calculation reproduced that hash over
+1,047 files before any source edit. No round-7 commit or push is authorized.
+Receipts are local under
+`doc/benchmarks/2026-11-11-item2-0-round-7-repair/`.
+
+The comparison main is a `git archive` export of landed commit
+`3c9399199d9b8b004af4be70e3dfe2e7314c7af4` outside the live tree. The stopped
+source is a separate export with its exact snapshot overlaid. No live checkout,
+stash or worktree was used. The landed archive has no ignored assembly-corpus
+manifest; this accounts for its difference from the earlier source snapshot,
+and does not enter this fit. Both fixed-stream fits start from identical
+parameters, SHA-256
+`f6f4aaf07543785223730a4241a3a78bc18031fe6b9625851b89e6d0230372c6`.
+The recorded stream is a comparison instrument only, never an assertion or a
+selected seed for validation.
+
+### 23.2 Convergence diagnosis
+
+The recorded draw reaches **0.1773494482** on landed main and reproduces
+**0.2455797344** on the stopped source, at the requested 200-epoch / <0.20
+contract. The eight unseeded native fits on main reach
+`[0.17501700, 0.18548435, 0.17906429, 0.18354911, 0.18869382, 0.15743949,
+0.19373365, 0.19393681]`; the stopped source reaches
+`[0.19459517, 0.16117395, 0.18696263, 0.19131307, 0.17342004, 0.18895635,
+0.17258266, 0.16793200]`. Each cohort is **8/8 below the bar**. The first
+comparison observer incorrectly treated the fit's reused `_` local as an epoch
+counter at function return. This affected early exit reports after the MSEs
+were captured; the raw logs and correction remain in the receipt, and none of
+those draws was replaced. The post-repair comparison uses the corrected
+observer and the unchanged native assertions.
+
+Single-change exports at that stream isolate the live ladder. Reverting encoder
+`t` synchronization, `End` retention, word prediction's age conversion, or
+symbol prediction's age conversion individually leaves **0.2455797344**.
+Restoring only the old live ladder capacity reaches **0.1855116487**.
+`MM_xor` has `word_brackets=False` and `_composes_sentences=False`: both sources
+advance once per input batch, so sentence-dispatch timing is not the difference.
+
+The full-width conceptual mixer still admitted the percept's absolute time
+band. The producer repair is `ConceptualSpace._bind_read`, shared by its input
+legs: read the elapsed-time ladder minus its zero-age band before mixing, with
+the stored band untouched. A preliminary age-band-only probe reached
+**0.2180880010** on the comparison stream and **0.2165389955** on its one fresh
+clock-certificate fit; those failed probes remain recorded. Subtracting the
+zero-age band represents temporal change without injecting the present band's
+constant coordinates into content. The repaired comparison reaches
+**0.1773629636** with the same initial parameters. A fresh trained clock
+certificate passes all nine settings with identical answers. The live targeted
+run also passes that certificate, derivation invariance at all nine settings,
+and the native convergence class. The post-repair paired native runs are **8/8 passed on each source**, with every assertion intact. The best MSEs are:
+
+| Draw | Landed main | Repaired round 7 |
+|---|---:|---:|
+| 1 | 0.1891649067 | 0.1892607808 |
+| 2 | 0.1898745000 | 0.1765600294 |
+| 3 | 0.1664434969 | 0.1891542673 |
+| 4 | 0.1981596053 | 0.1841720045 |
+| 5 | 0.1998984218 | 0.1844103187 |
+| 6 | 0.1522546709 | 0.1853434145 |
+| 7 | 0.1874198914 | 0.1967725307 |
+| 8 | 0.1943375468 | 0.1963963807 |
+
+The final-source replay again gives **0.1773494482** on main and **0.1773629636** on the repair, with the same initial parameter hash above. The eight-draw cohorts show no failure-rate difference; the original fixed stream isolates the round-7 regression and its repair. These are native 200-epoch convergence checks, separate from the eight 400-epoch end-of-item fits.
+
+### 23.3 Input entries, lifetime and addresses
+
+`_commit_sentence` passes only its own staged stream entry through
+`_append_observed_meaning` to `write_clause`. The low-level episode writer no
+longer infers an entry from `_open_sentence_slot`. Thoughts written inside that
+close receive no input entry; `written` counts new sentence entries only.
+`ThoughtStream.write` now uses `address_at` in both branches. Document-cover
+continuity also uses the document ordinal, independently of model time.
+
+The field-reader audit restores `ConceptualSpace.End` clearing of the present
+percept field, `_cs_field_where` and `_cs_field_when`. The review is retained
+only in `_episode_review_field` across teardown. No content reader requires the
+previous batch's native field between teardown and its next open attention
+pass. Reset-side witness/refinement paths may run after `End`, but must not
+invent another observation from that stale field. The full reader/configuration
+inventory is in `field-lifetime-audit.json`.
+
+### 23.4 Relation-only anchors
+
+A nonempty input entry whose root is reserved as `RELATION` reserves one
+additional LTM0 row in the close's preflight. Capacity failure is a
+`ClauseCapacityError` before any close writes. A6 and A7 are implemented:
+`episode` is appended as kind index 7, derived from the anchor's metadata;
+existing kind indices and schema 15 are unchanged. The row has zero content
+outside `.when`, the sentence's tick, the stream witness and the three detached
+episode columns. Its address namespace is separate from the root address.
+Re-witnessing keeps the first row, stamp and entry. Empty entries and zero
+capacity allocate none. Compaction, forgetting and epoch snapshots carry the
+ordinary row columns and metadata.
+
+Time-only recall reads anchors and reinstates their percepts. Content retrieval,
+STM/MTM identity loading, prediction histories and consolidation exclude them;
+anchors do not consume the content-read window. The new direct file checks
+input-only ownership, allocation/preflight, first-entry retention, root-address
+separation, disabled/empty entries, native review, lifecycle, and unchanged
+answers/content recalls/consolidation/mints/MTM candidates with anchor allocation
+switched off. A native partial-batch certificate exposed a reinstatement defect:
+its field builder used STM's constructed stream count instead of the live
+field's batch count. The builder now takes the present field's batch dimension.
+
+### 23.5 Validation in progress
+
+The first targeted run completed 542 selected cases: 532 passed, 8 skipped and
+2 failed. Both failures are maintenance ports: the reader inventory gains
+`ConceptualSpace._bind_read`, and the cover-certification message gains the
+`episode` kind. The whole-file rerun passes **52/52** cases. The remaining
+round-6 measurement certificates and document links pass **1,018/1,018**.
+The trained and derivation clock certificates pass at all nine settings;
+maximum trained answer change is **0**, with parameters unchanged.
+Implementation source **`7f26c4043fc8aa114b3caa5a37a630e4ded6574a32938b616d05bb77dc605d75`**
+has 1,048 files. The four final-source lesson arms and eight 400-epoch fits
+are running on it; no full-sweep result is claimed yet.
+
+### 23.6 Interim review of the continuation on `7f26c4043fc8` (Claude, 2026-11-11): accepted so far, one red lesson arm open
+
+*Source.* The live tree hashes to
+`7f26c4043fc8aa114b3caa5a37a630e4ded6574a32938b616d05bb77dc605d75` (1,048
+files), the implementation source of §23.5; no file in it changed after
+06:16. Round 7 is uncommitted. Codex stopped at 06:15 inside its replay of
+the red lesson arm below; nothing was running at 06:27.
+
+*Convergence.* The receipts agree with §23.2: the fixed stream starts both
+sources from the same parameters (`f6f4aaf07543`) and ends at .1773494 on
+the landed main and .1773630 on the repair; the post-repair cohorts are 8 of
+8 on each side; the trained and derivation clock certificates pass at the
+nine settings, with a maximum answer change of 0. The producer was the
+conceptual mixer reading the percept's absolute band, whose coordinates
+changed with the `RowTime` ladder. `ConceptualSpace._bind_read` now gives
+its four input legs `RowTime.difference`: the encoded age minus the encoded
+zero age, and zero for an empty band. The current tick reads as zero, a
+change of the clock's origin cannot reach content (A4), and the stored band
+is untouched. Accepted.
+
+*§22.4's findings, repaired as §22.5 item 2 asks.* `_commit_sentence` passes
+its stream's staged entry through `_append_observed_meaning` to
+`write_clause`, and `EpisodicMemory.write` takes that entry explicitly, so a
+thought written during the close gets none. `ConceptualSpace.End` clears the
+present field and also `_cs_field_where` and `_cs_field_when`, which landed
+main left in place; `field-lifetime-audit.json` places every reader of the
+three before `End` or after the next read, and a review lives on in
+`_episode_review_field` alone. `ThoughtStream.write` and `DocumentCover` use
+`address_at`; `source_at` remains only in `Occurrence`'s staged position.
+
+*Anchors, as §22.5 item 3 asks, with A6 and A7.* `EpisodicMemory.plan_anchor`
+reserves the row in the close's preflight under an `episode` address
+namespace, so an anchor never answers a root-address lookup; `anchor` writes
+a zero meaning bound `_episode`, kind `episode` (index 7; schema 15
+unchanged), the sentence's stamp and stream, and the entry only when the row
+is new. Every cover exclusion §22.5 names excludes `episode` too, as do
+EntryRead's read window, the kind masks in `Layers.py` and `Models.py`, and
+`reasoning.py`; `recall_time` still skips only covers and estimates, so it
+reaches anchors, and `reinstate` reads them. The partial-batch reinstatement
+defect Codex found (the stream count taken from STM's constructed slab) is
+repaired. The four entries of `ports.json` are a same-round test's setup, an
+error message that now names `episode`, the reader inventory and two new
+counters.
+
+*Rerun here* (Codex's targeted command of 37 files as `commands.json`
+records it, `test/test_report.py --workers 2`, CPU, eager): 534 passed and 8
+skipped of 542, the two maintenance ports of §23.5 among the passes; then
+`TestMMXorConvergence::test_convergence` once, unseeded: passed. The hash
+is the same after both runs.
+
+*Open.* One red case: the single-0.0 lesson arm stopped at epoch 2, batch 12
+("Here is Ciao."), with `ValueError('recorded concept order disagrees with
+its parts')` from `alloc.settle` (`bin/Layers.py`) in
+`FamiliarTier.promote_identity`, under `_commit_sentence`'s
+`owner.mtm.promote_candidates`. The same arm completed its 160 sentences on
+`eb81e90f4d7f`, and the check is unchanged since the landed main; round 7's
+only changes in `FamiliarTier` are `_clock` (now the sentence's tick) and the
+entry staging. Codex's replay from the arm's recorded stream
+(`state-order-before`) was cut off at the start of epoch 2, before the
+failing batch, and the separate-0.0 arm has no result. Not yet run: the
+other lesson arms, the eight 400-epoch fits, the freeze and the sweep. The
+diagnosis is Codex's (§23.7).
+
+### 23.7 Codex text: resume round 7 (Claude, 2026-11-11; final when given)
+
+~~~
+Item 2.0 round 7: resume from §23.5. Claude's interim review (2.0 spec doc/plans/2026-11-03-gradient-projection.md §23.6) accepts, on source 7f26c4043fc8, the convergence diagnosis and its repair (ConceptualSpace._bind_read through RowTime.difference), the three repairs of §22.4 and the anchors of §22.5 item 3; none of that is to redo unless the item below lands in it. §22.5 and §21.1 stand. Confirm the source hash by §20.33's method first. No commit or push of round 7.
+
+1. The red lesson arm. measurements/finished-episode-repair-single-0.0-float32 stopped at epoch 2, batch 12 ("Here is Ciao.") with ValueError('recorded concept order disagrees with its parts') from alloc.settle (bin/Layers.py), in FamiliarTier.promote_identity, called through owner.mtm.promote_candidates in BasicModel._commit_sentence. The same arm completed its 160 sentences on eb81e90f4d7f, and the check is unchanged since the landed main. Your replay from its recorded stream (state-order-before) was cut off at the start of epoch 2, before the failing batch, and the separate-0.0 arm has no result. Replay that stream to the failure on this source and on the landed main export (3c9399199d); if the main passes where round 7 fails, bisect round 7 to the producer and repair it there, its whole file rerun. Round 7 changes what an epoch boundary does (both clocks restored, so ticks repeat across epochs; FamiliarTier._clock is now the sentence's tick; entries and anchors ride in the epoch rows): candidates to try first, none established. If both fail alike, the defect is older than round 7: diagnose it to its producer all the same and record it.
+
+2. Then §22.5 item 4 as written, on the final source: the four lesson arms and the eight 400-epoch fits, the freeze, its hash, and the one complete sweep.
+
+Return continues as §23.8 of the 2.0 spec, through Alec for Claude's review.
+~~~
+
+### 23.8 Resumed after the restart (2026-11-11)
+
+The first check reproduces **`7f26c4043fc8aa114b3caa5a37a630e4ded6574a32938b616d05bb77dc605d75`**
+by §20.33's method: 1,048 source files, unchanged from §23.6. The accepted
+convergence repair, input-only entry ownership, field lifetime, ordinal
+addresses and episodic anchors remain in place. Main is unchanged and no
+round-7 commit or push is made.
+
+The restart left the separate-0.0 measurement at its last recorded sentence
+62 without a process result, and interrupted `state-order-before` at the
+start of epoch 2. Neither is counted as a completed run. The single-0.0
+failure is retained at 28 completed training sentences, failing during
+sentence 29. Its recorded construction stream and process hash are reused
+for a comparison through sentence 29 on both reviewed round 7 and a fresh
+`git archive 3c9399199d` export. No live checkout, stash or worktree is used.
+The receipt-only replay adapter permits the older source to have no episodic
+counters; model decisions and native guards are unchanged.
+
+The paired replay and producer diagnosis are recorded in §23.9. All four
+lesson arms and all eight 400-epoch fits remain required on the final source,
+followed by its freeze and full sweep.
+
+### 23.9 Lesson failure isolated to the state-link order contract
+
+The resumed stream reproduces the same failure at sentence **29** on
+`7f26c4043fc8`; landed main completes **29/29**. Both start from exactly the
+recorded Torch, NumPy and Python construction states and identical parameters,
+SHA-256 `44a1d900401121ab12899dbf1bf6bd8f6d41bef3968f412338095ef3242d84f6`.
+The two one-change exports retain that same initialization:
+
+| Source / single diagnostic change | Completed training sentences | Result |
+|---|---:|---|
+| Reviewed round 7 | 28/29 | Order mismatch during sentence 29 |
+| Landed main | 29/29 | Complete |
+| Round 7, `_clock` reads the former close counter | 29/29 | Complete |
+| Round 7, omit only epoch clock restoration | 28/29 | Same order mismatch |
+
+The `_clock` change exposes the bad state-order assumption. It is retained as
+Alec requires. The first offending occurrence already resolves to **order 1**
+when it enters the state collection; this is not a later order change caused
+by repeated epoch ticks. The next two members also have order 1. All three
+are ordinary observation rows, not episodic anchors. The trial and commit
+both hard-coded **member order 0**, so promotion recorded a new concept at
+order **1** while its actual parts require **2**. `alloc.settle` correctly
+raised; its guard remains unchanged.
+
+The producer repair uses the same prepared occurrence as the writer when
+scoring the state menu, then `store.order_of_row(row)` for the committed state
+link. It changes no clock, field-lifetime or anchor rule. The direct case
+changes from trial/written orders **0/1** to **1/1**, reuses one collection
+across three mentions and promotes it at **2**. The order-zero case is also
+certified. The existing direct-clause adapter now supplies the retained row's
+order, with its assertions unchanged. Whole-file checks and the repaired
+original-stream replay precede the new final measurement panel.
+
+
+### 23.10 Producer validation and final panel (2026-11-11, in progress)
+
+The targeted run covers 278 cases in 17 whole files: **270 passed, 6 expected
+skips, 2 fixture setup failures**. Both failures are the isolated
+`PrependedSymbols.stage` owners in `test_item20_round5_memory.py` lacking the
+model clock that staging now reads. They now supply the shared encoder and a
+present tick; no assertion or capacity changed. That whole file then passes
+**34/34**, giving **272 passed / 6 expected skips** over the original selection.
+Both new state-order certificates (member orders 0 and 1), the nine-clock
+certificates and the retained anchor certificates pass.
+
+The source for the repaired recorded-stream replay is
+`fb0fa54acb97ba76bd4a0c64cc47080eecf437fea9d561328b27ba18e0527f03`
+(1,048 files). All prior failed and interrupted attempts remain in the
+receipt. The final cohort is `finished-episode-state-repair`: four lesson
+arms, eight independent 400-epoch fits, with the same commands and the native
+sentence-82 capture active. Its measurements and the full sweep are pending.
+
+The repaired original stream completes **29/29**, including the formerly
+failing close, with unchanged source and the same initial parameter hash as
+both earlier replays. Its three state members are read as order **1**, and
+the collection promotes at **2**. The sentence-29 guard is unchanged. This
+recorded draw is diagnostic only; it supplies no seed or assertion for the
+new unseeded measurement panel. See `state-order-resumed-after/`,
+`state-order-producer-diagnosis.json` and `state-order-fast-checks.json` in the
+continuation receipt.
+
+
+### 23.11 A second lesson failure in the thought writer (in progress)
+
+On `fb0fa54acb97b`, the new separate-chooser arm completes **101/160**
+sentences and raises during **102**, in relations epoch 2, batch 13. The
+native guard is `ValueError('a link cannot mix collection kinds or orders')`
+in `MemoryLink.link`, reached from `ThoughtStream.write` after the input
+close. The selected reference collection records member order **1**. The
+passive producer capture is retained; an isolated recorded-stream replay is
+inspecting the actual written row and selected member before any repair.
+The active default arm is allowed to finish on unchanged source; this
+cohort starts neither the second lesson pair nor the eight fits after the
+failure. All four lesson arms will be repeated on the repaired source.
+
+Before this failure the arm records **102** sentence entries, **81** anchors,
+**81** relation-only closings, **1** natural time-only recall and **1**
+reinstatement. These are partial-run observations, not completed-arm
+measurements. The largest observed optimizer gradient is **3508.8518**, with
+no recorded nonfinite parameter gradient. The mixed-order guard remains
+unchanged. No freeze or full sweep has yet been offered for this cohort.
+
+The active default arm then completes **160/160** on unchanged `fb0fa54…`:
+**160** sentence entries, **133** anchors / relation-only closings, **0**
+time-only recalls and **0** reinstatements. Its optimizer-gradient peak is
+**98.3708**. Reduction of both arms records **zero** events at or above
+`1e8` in every collected category. This completed default arm is retained
+as a superseded-source measurement; it will be repeated with the other
+three arms after the thought-link repair.
+
+
+### 23.12 The checked thought exposes an introduction-order mismatch
+
+The isolated replay reproduces sentence **102** on unchanged `fb0fa54…`.
+Its failed thought is a new row of **order 0**, with `_identity` naming the
+selected collection's first occurrence. All **three** retained members also
+have **order 0**. The collection nevertheless records **member order 1**
+and has promoted symbol **263**, order **2**. This is an earlier introduction
+error; neither the thought writer nor the mixed-order guard is changed.
+
+`ReferenceClose.introduction_order` returned the current denotation's order
+before examining the lexical witness that the close actually retains. The
+direct case supplies a lexical concept of order **0** with a current
+denotation of order **1**. Before the repair its trial / written / collection
+orders are **1 / 0 / 1**; afterwards they are **0 / 0 / 0**. The introduction
+now uses `PartClosing.occurrence_order` on the same prepared value, including
+the forward-name metadata and own-object reference rule. The obsolete
+`read_order` argument and both internal uses are removed. A later checked
+thought joins the collection at **0**, and promotion is at **1**.
+
+Whole-file validation covers **253** cases in **14** files. The first run
+has **247 passed / 4 expected skips / 2 setup failures**: the new thought
+fixture lacked its captured `_chain_view` marker, and the existing
+higher-order-alias certificate supplied only a word label, leaving its
+own-object composition without the higher-order reference its assertion
+claims. The marker and native reference are supplied; no assertion or
+capacity changes. Both files then pass **16/16**, giving **249 passed / 4
+expected skips** across the selection. Before/after text is retained in
+`ports.json` and `introduction-order-producer-repair.json`.
+
+The implementation source is now
+`db99681d2e32504c2022046c5db0fb504d65681947458a98943b9b8a2ada7684`
+(1,048 files). Its recorded-stream replay through sentence 102 is running.
+The four-arm/eight-fit final panel and the full sweep remain pending; no
+commit or push is made.
+
+
+### 23.13 Repeated epoch time exposed expired thought views (2026-11-11, in progress)
+
+The recorded-stream replay on `db99681d2e32` completed 64 of the requested
+102 sentences and stopped at sentence 65, the first relation sentence
+(`Felix is a cat.`), with `ValueError('thought member reference has expired')`.
+This was an earlier failure than the original order mismatch; it is retained
+as `thought-link-after/`, not counted as a successful replay. The source stayed
+unchanged during the run.
+
+`ShortTermMemory.clear(hard=True)` expired every selected thought store but
+left its corresponding `_thought_contents` views in place. Because an epoch
+restores model time, a new chunk can reuse an old view's stamp in a different
+seat. `ThoughtChunks.held` then located that new stamp and attempted to read
+the expired old view. Clearing the view records alongside their stores fixes
+the lifetime at its owner; it does not change the epoch clock or weaken the
+expired-reference check. A direct two-case certificate repeats a stamp after
+both a whole-STM reset and a single-stream reset, checks the new content, keeps
+the other stream intact, and checks that old external views still raise. Both
+cases reproduced the expired-reference error before the repair. The stores
+retain their constructed identity and capacity.
+
+The implementation source is now `62e0bca2768cf74a50a2f73ea7b1b181ee0832883921652c9108117dd2e60e37`.
+The whole targeted files are running before the recorded-stream replay and
+all four fresh lesson arms and eight fits. Evidence is in
+`thought-clear-producer-repair.json` and the command ledger. The first attempt
+to invoke `bounded_tests.py` directly ran no tests (it exports `main`); its
+zero exit is explicitly excluded from validation, and `test_report.py` is the
+corrected runner invocation. No commit or push.
+
+The targeted run completed all 191 selected cases: 190 passed, 1 skipped. The recorded stream is now replaying through sentence 102 on this same source. `source.patch` was applied to a separately reconstructed `6bf63e0922ce` export and reproduced the current hash exactly (`patch-replay.json`).
+
+
+### 23.14 Dependent introductions must read the prepared child (2026-11-11, in progress)
+
+The replay on `62e0bca2768c` passed the expired-view point at sentence 65,
+then completed 85/102 sentences before an order guard stopped promotion at
+sentence 86 (`Is Felix a cat?`). The collection recorded member order 1;
+its first retained occurrence required order 0, so `settle` correctly rejected
+recorded order 2 against structural order 1. The source remained unchanged.
+The failed attempt is `thought-link-clear-after/`.
+
+A diagnostic replay of the same stream, with the optional attribution observers
+disabled and a stop at the first reference-link disagreement, localized the
+first mismatch to sentence 70: occurrence `-5457002416161012121`, row 44,
+claimed order 1, written order 0, retained identity `('sym', 198)`.
+Its composite own-object introduction was planned before a later synthetic
+lexical child. Closing prepared that child and substituted its retained
+reference into the parent, while the parent's trial had read the earlier
+concept reference. This diagnostic is not a completed measurement arm.
+A separate nested-clause probe reproduced predicted `[1, 0]` versus written
+`[0, 0]` before the repair.
+
+`ReferenceClose.sites` now orders dependent sites before their wrappers while
+preserving the order of independent actions and shared-term uses. The
+introduction preview calls the existing read-only `_prepare` with prior child
+choices. `PartClosing.occurrence_order` reads the prepared context and accounts
+for a child occurrence that closing writes before its parent, including its
+own identity metadata. It does not allocate a row or change a stored order.
+The same probe now predicts and writes `[0, 0]`; two direct certificates cover
+the two parent operations. The mixed-order and allocator guards remain intact.
+
+The current implementation source is
+`fc1a0769b36f4f4195de034f5c6e832e56f229410b4b717081d03d844266ebbd`.
+Whole targeted files are running. The first command named a nonexistent
+`test_reference_binding_order.py`, so collection stopped with zero tests run;
+the corrected invocation names `test_lexical_reference_orders.py`. Both
+commands remain in the ledger. Evidence: `nested-order-producer-repair.json`,
+`link-order-first-after/`, and `nested-order-direct-after.log`. No commit or push.
+
+The corrected targeted run completed 226/226 selected cases: 217 passed, 9 skipped. No test assertion or fixture capacity was changed. The recorded-stream replay through sentence 102 is now running with native observers and a passive order check at every reference link.
+
+The observer-disabled localization and the preceding native-observer replay have exactly the same 897 recorded trial observations through sentence 69, including choices and costs. This comparison is retained in `nested-order-producer-repair.json`; disabling the optional observers did not change that prefix.
+
+
+### 23.15 A selected phrase reference must survive its earlier grammar head (2026-11-11, in progress)
+
+The native-observer replay on `fc1a0769b36f` passed sentence 70, then the added
+reference-order diagnostic stopped at sentence 82 after 81 completed sentences.
+This was the diagnostic guard, before an invalid alias was linked, rather than
+an allocator exception. The selected member
+`('ltm', 'address-v1', -2027188441817544144)` had order 0; the phrase's written
+row 135 (`-4666966473076742416`) instead carried `('sym', 206)`, order 1.
+`ReferenceClose.prepare` had correctly put the chosen address in the phrase's
+reference. `PartClosing.occurrence_reference` then replaced it with the earlier
+grammar head for the parent operation. The source stayed unchanged throughout.
+
+The temporary closing record now retains an explicitly prepared phrase
+reference, and both the writer and its order preview give that selection
+precedence over the earlier head. The operation itself remains intact. This is
+transient closing bookkeeping, with no new stored field, row or capacity.
+Two composed-alias certificates reproduce the incorrect head identity before
+the repair and require the selected address and its order afterward.
+Evidence: `selected-order-producer-repair.json`,
+`nested-order-after/first-order-disagreement.json`, and
+`selected-order-direct-before.log`. The targeted whole files are running on
+`a8166fb09e108471be4c3945bf757d1ca10e46ad19a049fb4fca8036a92022cb`. No commit or push.
+
+The targeted whole-file run completed 228/228 selected cases: 219 passed, 9 skipped. No assertion or fixture capacity was changed. The recorded stream is replaying through sentence 102 on this source, retaining the native observers and the reference-order audit.
+
+
+### 23.16 A pending selected phrase retains its own occurrence (2026-11-11, in progress)
+
+The replay on `a8166fb09e10` passed sentence 82 and completed 82/102
+sentences before the reference-order diagnostic stopped at sentence 83.
+The selected address `5120077062533562897` had order 0. The written row
+143, address `1021206254877422674`, instead retained `('sym', 160)`,
+order 1. The source remained unchanged. This was a diagnostic stop before
+the inconsistent alias could enter MTM, not an allocator exception.
+
+The selected member was pending. Its address remained in the bind term,
+while its clause role stayed open. Closing therefore projected the unresolved
+unary shell onto its resolved child and returned the child's occurrence.
+The repair retains the explicit selection from the bind term as well as from
+an already resolved clause role, and gives a selected sentence its own
+occurrence. The capacity preflight reserves the same occurrence. A selected
+reference replaces earlier identity metadata; pending semantic slots remain
+open. No stored field, capacity, order guard or threshold changes.
+
+A new direct certificate reproduces the order-one head replacing the chosen
+order-zero occurrence before the repair, then passes with the selected address
+and order retained. Its first setup attempt incorrectly declared an open
+reference a fact; the corrected setup uses the existing unverified kind.
+That setup failure is retained separately and is not producer evidence.
+Evidence: `pending-selected-order-producer-repair.json`,
+`pending-selected-order-before-valid-fixture.log`, and
+`pending-selected-order-after.log`. The implementation source is
+`da78077358c5d5ce3b5d27266831d7577dcd8652f4c5bea21fa7fa2fffd1e6ae`.
+Affected whole files are running, followed by the recorded-stream replay.
+No commit or push.
+
+The affected whole-file run completed 99/99 selected cases: 95 passed and 4 skipped. Assertions and fixture capacities remain unchanged. The same recorded stream is now replaying through sentence 102, with native observers and the reference-order diagnostic.
+
+The recorded-stream replay completed 102/102 sentences with exit 0 and an unchanged source. It crossed every recorded failure point, including the original thought link at sentence 102; the order diagnostic found no disagreement. Counts: 102 sentence entries, 67 anchors, 67 relation-only closings, 2 time-only recalls and 1 reinstatement. The final four lesson arms and eight 400-epoch fits now run on this source as cohort `finished-episode-introduction-repair`; prior completed and failed arms remain separately recorded.
+
+
+### 23.17 Final-source measurements (2026-11-11, in progress)
+
+Cohort `finished-episode-introduction-repair` runs on
+`da78077358c5d5ce3b5d27266831d7577dcd8652f4c5bea21fa7fa2fffd1e6ae`.
+All four lesson arms and eight 400-epoch fits are fresh unseeded runs, with
+the accepted commands and configurations. The completed earlier attempt on
+`fb0fa54acb97` is retained separately. No source file has changed during this
+panel. The invalid-working-value capture rule remains active in each lesson
+arm; a capture is written only if its rejection recurs.
+
+The first wave completed both 160-sentence, 80-question arms with exit 0 and
+an unchanged source. `separate-0.0-float32`: 160 entries, 46 anchors,
+46 relation-only closings, 1 time-only recall, 0 reinstatements; optimizer
+peak 1376.6324428310832. `single-0.0-float32`: 160 entries, 116 anchors,
+116 relation-only closings, 0 time-only recalls, 0 reinstatements; optimizer
+peak 1095.4754449188404. Each arm has zero events at or above `1e8` in all
+six monitored categories and zero nonfinite parameter gradients. Each has
+0/80 bound-correct and exact-text answers, as in the accepted baseline.
+These are measured counts, not a learning improvement claim. The two
+`single-0.5` arms and all eight XOR fits remain in progress or queued.
+
+The `single-0.5-float64` arm also completed 160/160 sentences and 80 questions with exit 0 and an unchanged source: written=160, anchors=0, relation_only_closings=0, time_only_recalls=23, reinstatements=8. Its optimizer peak is 1.390708995777535; all six large-event counts and nonfinite parameter counts are zero, with 0/80 bound-correct and exact-text answers. The float32 peer is still running.
+
+The final `single-0.5-float32` arm completed 160/160 sentences and 80 questions with exit 0 and an unchanged source: written=160, anchors=85, relation_only_closings=85, time_only_recalls=0, reinstatements=0. Its optimizer peak is 7068.567899300978. All six large-event counts and nonfinite parameter counts are zero; bound-correct and exact-text answers are 0/80. All four lesson arms are complete; the eight 400-epoch XOR fits are now running.
+
+
+### 23.18 Completed measurements and freeze (2026-11-11)
+
+The final panel completed all eight independent, unseeded 400-epoch fits and all four 160-sentence, 80-question lesson arms on `da78077358c5d5ce3b5d27266831d7577dcd8652f4c5bea21fa7fa2fffd1e6ae`. Each fit constructed one model; no source file changed in any run. Numeric classification passed 8/8; every fit recovered all four grammar word multisets. The field reading, recorded without an assertion, also recovered 4/4 in every fit. The accepted `eb81e90f4d7f` runs are retained; the rows below are independent draws, not paired initializations.
+
+| Draw | Accepted rounds 5/6 MSE | Round 7 MSE | Numeric | Grammar | Field audit |
+| --- | ---: | ---: | --- | ---: | ---: |
+| 1 | 0.0001421983179 | 6.656006235e-07 | pass | 4/4 | 4/4 |
+| 2 | 0.0001300368021 | 8.901712363e-07 | pass | 4/4 | 4/4 |
+| 3 | 2.528650178e-09 | 0.0002847163414 | pass | 4/4 | 4/4 |
+| 4 | 0.0002163727622 | 1.605394147e-07 | pass | 4/4 | 4/4 |
+| 5 | 4.742872761e-10 | 2.133324051e-05 | pass | 4/4 | 4/4 |
+| 6 | 3.459472708e-10 | 6.3287942e-08 | pass | 4/4 | 4/4 |
+| 7 | 5.621514365e-10 | 2.105964268e-05 | pass | 4/4 | 4/4 |
+| 8 | 7.684992306e-05 | 2.302386726e-08 | pass | 4/4 | 4/4 |
+
+The largest individual optimizer-parameter gradient recorded across the eight fits was 5.145886341849369. All four lesson arms had zero nonfinite parameter gradients and zero events at or above `1e8` in each of the six recorded event categories. Each arm returned 0/80 bound-correct and exact-text answers, as did its accepted-source arm. There is no lesson-learning improvement claim. Held-out cost remains deferred to item 0.
+
+| Lesson arm | Accepted optimizer peak | Round 7 optimizer peak | Entries | Anchors / relation-only closes | Time-only recalls | Reinstatements |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| separate-0.0 float32 | 203.1190706 | 1376.632443 | 160 | 46 / 46 | 1 | 0 |
+| single-0.0 float32 | 413.3731671 | 1095.475445 | 160 | 116 / 116 | 0 | 0 |
+| single-0.5 float32 | 4.259567672 | 7068.567899 | 160 | 85 / 85 | 0 | 0 |
+| single-0.5 float64 | 1.516303167 | 1.390708996 | 160 | 0 / 0 | 23 | 8 |
+
+The sentence-82 invalid-value capture rule stayed enabled throughout; it was not triggered. Recalls and reinstatements were observed without adding a caller or forcing a query. The total is 640 sentence entries, 247 anchors, 247 relation-only closings, 24 time-only recalls and 8 reinstatements.
+
+The receipt retains `final-measurement-panel.json`, `measurement-comparison.json`, and [the full metric tables](../benchmarks/2026-11-11-item2-0-round-7-repair/measurement-tables.md), including per-epoch costs, objective gradients, reader and chooser diagnostics, projection tails, acquisition, primitive inflow and velocity. The superseded partial panel on `fb0fa54acb97` and all failed diagnostic prefixes remain in their own directories.
+
+The freeze uses §20.33: `test/bounded_tests.source_snapshot(Path('.'))`, SHA-256 of compact sorted JSON, 1,048 files. `frozen-source.json` and `offered-documents.json` are sealed before `env -u RUN_TRAINED -u RUN_SLOW make test`, with nothing deselected. The full sweep follows on exactly this source. Claude's concurrent handwritten-document edits are preserved. No round-7 commit or push.
+
+
+### 23.19 Frozen full sweep and repair coverage (2026-11-11)
+
+The one complete `env -u RUN_TRAINED -u RUN_SLOW make test` ran outside the sandbox on exactly `da78077358c5d5ce3b5d27266831d7577dcd8652f4c5bea21fa7fa2fffd1e6ae`, with nothing deselected and both manifests sealed before it. It completed 8,058/8,058 cases: **7,656 passed, 324 skipped, 77 failed, 1 xpassed**. The ordinary phase completed all 8,051 cases; the large-memory phase completed all seven. No memory guard stopped either phase. Peak aggregate footprint was 16.5713 GiB; the existing aggregate, reserve, worker caps, markers and fixture capacities were unchanged. The command ran from 19:36:10 to 20:16:27 UTC.
+
+The native convergence gate passed; its class had six passes and one expected skip. The shared-concept gate passed. The grammar reconstruction gate recovered all four word multisets and passed. The forced pending-premise pair passed in both orders. The two live pending-premise cases retained their existing skip because the producing phase artifact is absent. All 30 round-7 direct cases passed. `test_sparse_concept_e2e.py::test_interpreted_object_keeps_the_native_features_in_one_row` remains the named item-1.5 carry.
+
+`sweep-result.json` retains every original failed node and traceback, both phases and the frozen source proof; `gate-coverage.json` gives each named gate's actual result. The completed sweep is retained unchanged. Following §22.5/§21.1, post-sweep repairs are validated by their whole files and the files directly importing a changed module, rather than another complete sweep.
+
+The first repair set updates 31 test/fixture files, with full before-and-after text and the applicable decisions in `ports.json`. It supplies explicit model-clock and episodic owners to synthetic fixtures, ports the input/output clock cadence and the episode exclusion message, and updates transient introduction handles after dependency ordering. The restored reconstruction-walk lanes remain in the registry. The packing helper now distinguishes its actual byte-readback error from the combined native event loss, which includes the generated field's independent location; both event-loss numbers remain recorded. No tolerance or fixture capacity was increased. Three remaining diagnostic comparisons (clock metadata, a recorded word's time band, and output-policy updates after an earlier optimizer step) are being examined before their final ports.
+
+The sweep also found a producer defect in fullgraph execution: the Python integer `when_encoding.t` was guarded at its first value, so the next tick raised a recompilation error. `RowTime.encoder()` now supplies an in-place, nonpersistent tensor view of the same current clock. `BasicModel.when_time` remains the saved clock; no checkpoint key or durable memory field is added. The direct certificate checks exact agreement with the preceding arithmetic across changing ticks and a single compiled graph. This repair and its importer checks are in progress; the completed measurement and sweep hash above is not relabeled as the post-sweep source. No commit or push.
+
+
+### 23.20 Post-sweep repairs and whole-file validation (2026-11-11)
+
+All 76 actionable failures of §23.19 now pass. The remaining original failure,
+`test_sparse_concept_e2e.py::test_interpreted_object_keeps_the_native_features_in_one_row`,
+is the agreed item-1.5 carry. This is a reconciliation of the original full
+sweep and the authorized whole-file follow-ups, not a second full sweep.
+`failure-resolution.json` retains each of the 77 original nodes and tracebacks,
+its diagnosis, its after-result and the source that produced that result.
+
+| Original failing cases | Before | After |
+| --- | ---: | ---: |
+| Fullgraph idempotent forward | 0/1 | 1/1 |
+| Planned arrival member and its order | 0/2 | 2/2 |
+| Nine-clock metadata comparison | 0/1 | 1/1 |
+| Selected reference's operation-frame age | 0/1 | 1/1 |
+| Answer availability and decoder ownership | 0/1 | 1/1 |
+| Packing's byte-readback comparisons | 0/3 | 3/3 |
+| Native input event's sentence tick | 0/1 | 1/1 |
+| Other fixture and previously decided contract ports | 0/66 | 66/66 |
+| Sparse-concept item-1.5 carry | failed | carried, unchanged |
+
+The only production change after the measured freeze is `bin/RowTime.py`.
+Its encoder's current-clock view is now an in-place, nonpersistent integer
+tensor instead of a Python integer guarded by Dynamo. The fullgraph forward
+passes. The new direct certificate
+`test_compiled_clock_difference_reuses_one_graph_and_keeps_exact_arithmetic`
+checks the preceding arithmetic exactly at ticks 1, 25, 777 and 3000, one
+compiled graph, one buffer address and no added checkpoint key. The saved
+model clock and the arithmetic of age are unchanged. All 31 current round-7
+direct cases pass in the follow-up, including the trained answer and derivation
+certificates at all nine requested clock settings; answer change is exactly 0.
+
+The remaining changes are recorded in `ports.json`, with complete before and
+after text: 43 post-sweep port records across 32 distinct test/fixture files,
+including corrections to the first port attempts. The clock comparison now
+normalizes the explicitly stored `_chunk_when` and `Intuition.Term.premise`
+addresses by the probe's origin; their relative ticks, every program and the
+remaining content/reference metadata stay exact. The reference-fusion probe
+compares an operation's age band with the staged occurrence's age at the input
+sentence tick, while the staged occurrence retains its absolute stamp.
+The output-policy probe observes the late `reconstruction.walk_credit` booking:
+with output disabled it remains reconstruction/R, and the default shared
+projection can train the policy without changing its separate-owner assignment.
+These implement Alec's existing model-time and restored-walk-credit decisions.
+
+The arrival fixture now requests the unnamed introduction of the order-1
+concept it claims. Its prior forward-name request wrote the lexical name's
+order 0; the planned-member, duplicate-exclusion, candidate-admission and
+retained-order assertions are unchanged. Narrow numerical chooser fixtures
+explicitly declare a store without a time band (`when_start=None`). The native
+input-event test observes the actual per-word event writer after the sentence
+tick advances: the provisional pre-loop slab had tick 1, while all five native
+word-event calls had the correct sentence tick 2. The test no longer mistakes
+that provisional slab for the sentence's perceived events. The packing probes
+retain byte/content/program comparisons and their original tolerances;
+the independently positioned generated field's combined event loss is recorded
+separately from byte-readback error. No fixture capacity, threshold, guard,
+reserve or marker was changed.
+
+The 100 whole changed/red/importing files completed 1,591/1,591 cases on
+`3747003dee889e96c227498774ab1a7611355caf394e4819711f099d7e850fe4`:
+1,516 passed, 60 skipped, 15 failed. Those 15 exposed the incomplete synthetic
+store, introduction and observation-point ports described above. After those
+fixture corrections, all nine affected whole files completed 160/160 cases,
+all passed, on `fde035b1464d97b49bdd15251bbb65135e0d72cea7f03ae4aff754b6844b485b`.
+The latest evidence across the 1,591 distinct cases is therefore **1,531 passed,
+60 skipped, zero failed**. Both raw runs and their intermediate failures remain
+recorded. The production module is byte-identical across these two runs; its
+whole-file and direct-importer coverage is retained in
+`post-sweep-file-selection.json` and `final-audit.json`.
+
+### 23.21 Returned source and receipt (2026-11-11)
+
+The returned code is frozen for review at
+`fde035b1464d97b49bdd15251bbb65135e0d72cea7f03ae4aff754b6844b485b`,
+1,048 files by §20.33's method. `final-source.json` records it. The measured and
+fully swept source remains
+`da78077358c5d5ce3b5d27266831d7577dcd8652f4c5bea21fa7fa2fffd1e6ae`;
+its original `frozen-source.json`, `offered-documents.json`, raw sweep and
+patches remain unchanged. The four lesson arms and eight 400-epoch fits were
+not relabeled or repeated after the arithmetic-equivalent clock representation
+repair and fixture ports. Their side-by-side numbers remain in §23.18.
+
+All eight fits passed numeric classification and the four-of-four grammar
+word-multiset gate. All four lesson arms completed 160 sentences; all six
+`1e8` event counts and nonfinite-gradient counts are zero. Their answer result
+is still 0/320, with no learning improvement claim. There were 640 sentence
+entries, 247 anchors, 247 relation-only closings, 24 time-only recalls and
+8 reinstatements. The sentence-82 capture rule stayed active and did not fire.
+The native convergence, shared-concept, grammar and forced pending-premise
+gates passed inside the full sweep; the live pending-premise pair retained its
+existing missing-artifact skip. The shared-concept case passed again in each
+whole-file follow-up that selected it.
+
+Receipt: `doc/benchmarks/2026-11-11-item2-0-round-7-repair/`.
+`commands.json`, `before-source.json`, `resume-source.json`, the replay and
+producer diagnoses, `ports.json`, both source manifests, the sealed offered
+documents, `sweep-result.json`, `gate-coverage.json`, the measurements,
+`failure-resolution.json`, `post-sweep-validation.json` and `final-audit.json`
+are retained there. `source.patch` is the complete continuation from
+`6bf63e0922ce`; `resume-source.patch` starts from the reviewed `7f26c4043fc8`;
+`round-source.patch` covers the whole round against the landed-main export.
+The continuation patch was applied outside the live tree and reproduced the
+returned hash exactly. Frozen-source versions of the patches remain alongside
+these final patches.
+
+Claude's concurrent documentation and future compiler/whole-path plans are
+preserved. Those plans are not implemented by this return. Main remains
+`3c9399199d9b8b004af4be70e3dfe2e7314c7af4`; no round-7 commit or push.
+This completes the §23.8 continuation, through Alec for Claude's review.
+
+Final documentation check: `test/test_doc_links.py` completed with 1,011 passed. `git diff --check` is clean for code, data, tests and the return/todo edits. The two commands interrupted before the restart retain an unknown exit status and their partial artifacts; `interrupted-command-records.json` points to the resumed evidence without inferring success.
+
+
+### 23.22 Review of the round-7 return on `fde035b1464d` (Claude, 2026-11-11): accepted; the landing is folded into the next text
+
+**Verified on the returned tree.**
+
+- *Source.* `fde035b1464d97b49bdd15251bbb65135e0d72cea7f03ae4aff754b6844b485b` by §20.33's method, 1,048 files, and unchanged by this review's document edits.
+- *Since the interim review* (`7f26c4043fc8`): 43 files, seven of them production (`ClauseRow`, `Memory`, `MemoryLink`, `Models`, `PartClosing`, `ReferenceClose`, `RowTime`; 155 lines added and 53 removed, read in `resume-source.patch`). They are the six producer repairs of §23.9 to §23.16 and the clock view of §23.20. Each repair makes a trial read the order or the reference that the occurrence writer then writes. No guard, threshold or capacity changed.
+- *After the measured freeze* (`da78077358c5`): `bin/RowTime.py` and 33 files under `test/`, by the two manifests. The clock view changes nothing on the lesson path: 20 seeded lesson sentences, across the first epoch reset, give identical digests of every parameter and of the cost components after each batch on the returned tree and on the same tree with that one change reverted. §23.18's measurements therefore stand for the returned source.
+- *Fast checks run here:* 49 passed, 1 skipped (the trained `mm_xor_grammar` case). They are `TestMMXorConvergence` (the native convergence gate), the shared-concept case, `test_grammar_reconstruction_gate.py`, the three round-7 files, `test_grounded_xor.py`, and the two cases that were red on the landed main, `test_output_walk.py::test_runbatch_answer_availability_never_reassigns_the_decoder` and `test_concept_output.py::test_native_understanding_retains_field_and_native_percept_evidence`. Both are ported to decided contracts: the restored walk credit of §20.19, and no order-zero field without sentence composition. `test_doc_links.py`: 1,011 passed.
+
+**Reported by Codex and not run again.** Eight 400-epoch fits, 8 of 8 numeric and four of four grammar words. Four lesson arms of 160 sentences with no event at or above $10^8$ and answers 0 of 320. The one sweep, on `da78077358c5`: 7,656 passed, 324 skipped, 77 failed, 1 xpassed; its 76 actionable failures resolved in whole-file follow-ups (1,531 passed, 60 skipped and none failed over 1,591 cases).
+
+**XOR.** The eight grammar fits pass (Codex); the native convergence gate and the grounded XOR proof pass here.
+
+**Accepted** under §13.2: the convergence and shared-concept gates pass, and "Reviews accept with recorded warts unless a gate fails". The warts:
+
+1. The largest optimizer gradient rose in three lesson arms against the accepted source: 203 to 1,377, 413 to 1,095 and 4.26 to 7,069. No event reached $10^8$. The return does not name the parameter or the sentence. It is carried into the next text as a reading of the existing receipt.
+2. The two `single-0.5` arms differ in kind: float32 has 85 relation-only closings and no recall by time, float64 none and 23. They are single unseeded draws, so nothing is attributed.
+3. The swept source is not the returned one. The identity check above and the follow-ups cover the difference, and the next round's sweep is the first on these ports.
+4. As before: lesson answers 0 of 320 and no learning claim; held-out cost at item 0; the sparse-concept case at item 1.5; the live pending-premise pair without its artifact.
+5. `bin/RowTime.py` now imports `Spaces` when it is itself imported, where it did so inside `encoder`. Harmless today.
+
+The six order repairs are what the texts asked for: each failure taken to its producer on a recorded stream, repaired there, certified before and after, with the guards untouched.
+
+**Documents.** The 19 statements that the documentation pass of this day marked "working tree, not landed" (Architecture, GradientFlow, FutureWork, STM, Philosophy, Reasoning, the accessible-mind specification) now read "accepted 2026-11-11".
+
+**The landing is folded into the next build text** (§13.2). That text is the whole-path round's: [specification](2026-11-11-one-pair-per-stage.md) §8, whose steps 1 to 3 land round 7.

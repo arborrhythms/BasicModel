@@ -59,6 +59,7 @@ def test_local_alias_refuses_the_order_the_commit_would_reject():
     high=known_concept(owner,atoms[0],order=1)
     first=replace(mention(atoms[0],reference=low),subject_word_id=low)
     alias=replace(mention(atoms[0],mode='bind'),subject_word_id=high)
+    alias=replace(alias,composition=replace(alias.composition,reference=high))
     root=Clause(ConceptualMeaning.from_description(atoms[0]),point=atoms[0],
         children=(first,alias),refs=(('clause',0),-1,('clause',1)))
     plan=resolver.preview(root,context(resolver,()))

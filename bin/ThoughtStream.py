@@ -400,9 +400,9 @@ def write(model, meaning, *, row, _active=None, _bound=None):
             active.remove(id(value))
             clauses[id(value)] = result
             return result
-        from Occurrence import source_at
+        from Occurrence import address_at
         slot = int(getattr(model, '_open_sentence_slot', 0) or 0)
-        document, sentence = source_at(model, row, slot)
+        document, sentence = address_at(model, row, slot)
         turn = ('thought', document, sentence)
         ordinals = model.__dict__.setdefault('_thought_ordinals', {})
         ordinal = ordinals.get(turn, 0)
@@ -470,9 +470,9 @@ def write(model, meaning, *, row, _active=None, _bound=None):
     else:
         active.remove(id(meaning))
     kind = 'question' if has_open_slots(meaning) else 'unverified' if evidence_pair(meaning) == (0., 0.) else 'inference'
-    from Occurrence import source_at
+    from Occurrence import address_at
     slot = int(getattr(model, '_open_sentence_slot', 0) or 0)
-    document, sentence = source_at(model, row, slot)
+    document, sentence = address_at(model, row, slot)
     turn = ('thought', document, sentence)
     ordinals = model.__dict__.setdefault('_thought_ordinals', {})
     ordinal = ordinals.get(turn, 0)

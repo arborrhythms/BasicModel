@@ -26,6 +26,8 @@ def test_online_deadline_uses_full_depth_behind_the_two_slot_window():
     owner = SimpleNamespace(language_layer=SimpleNamespace(operation_layer=step),
                             _compose_binary_rules=(), _compose_unary_rules=(),
                             _structural_context=lambda **kwargs: None)
+    owner._symbol_space = SimpleNamespace(conceptualSpace=SimpleNamespace(
+        _model=SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(when_start=None)))))
     # Before the word arrives there are K-1 terms. After its deposit, d=K.
     state = (torch.ones(1, 8, 1), torch.tensor([8]),
              torch.zeros(1, 8, dtype=torch.long), torch.zeros(1, 8, dtype=torch.long),

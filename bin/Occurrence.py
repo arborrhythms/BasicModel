@@ -1,4 +1,4 @@
-"""Content identities and source addresses. No clock, random state or parameters."""
+"""Stable source addresses and the separate staging of model-time coordinates."""
 from contextlib import contextmanager
 import hashlib
 import json
@@ -160,6 +160,7 @@ def stage_sources(model, split, source_rows, inputs, document_keys=None):
             row.append((document, 1))
         result.append(tuple(row))
     model._sentence_sources = tuple(result)
+    model._sentence_ticks = {}
     stage_position(model, 0, batch, device=inputs.device if torch.is_tensor(inputs) else 'cpu')
     memory = getattr(getattr(model, 'symbolSpace', None), 'what_memory', None)
     if memory is not None:
@@ -167,7 +168,8 @@ def stage_sources(model, split, source_rows, inputs, document_keys=None):
                                    for b, row in enumerate(result) if row}
 
 
-def source_at(model, batch, slot):
+def address_at(model, batch, slot):
+    """Stable document identity; it is not an experience's model-time stamp."""
     rows = getattr(model, '_sentence_sources', ())
     if batch < len(rows) and rows[batch]:
         row = rows[batch]
@@ -176,6 +178,11 @@ def source_at(model, batch, slot):
         # A single supplied document may contain several parsed sentences.
         return row[0][0], row[0][1] + slot
     return ('direct-model', batch), slot + 1
+
+
+def source_at(model, batch, slot):
+    """Document and the model tick of its current sentence presentation."""
+    return address_at(model, batch, slot)[0], model._sentence_ticks.get(int(slot), model.present())
 
 
 def relative_positions(model, sentence_ids):
@@ -188,7 +195,7 @@ def relative_positions(model, sentence_ids):
 
 
 def stage_position(model, slot, batch, *, device):
-    """Eager source staging; compiled percept operations only broadcast tensors."""
+    """Stage the current sentence tick before its word perception begins."""
     position = torch.tensor([source_at(model, b, slot)[1] for b in range(batch)],
                             dtype=torch.long, device=device)
     for space in (getattr(model, 'inputSpace', None), getattr(model, 'perceptualSpace', None),
@@ -196,10 +203,19 @@ def stage_position(model, slot, batch, *, device):
                   *getattr(model, 'conceptualSpaces', ())):
         if space is not None:
             object.__setattr__(space, '_document_position', position)
+    # The words were admitted together before the sentence loop. Stamp the
+    # current sentence only now: preceding thoughts may have advanced time.
+    isp = getattr(model, 'inputSpace', None)
+    from PrependedSymbols import word_view
+    bands = word_view(isp, 'symbol_when')
+    if slot in model._sentence_ticks and torch.is_tensor(bands):
+        selected = (isp._packed_sentence_ids == slot) & (word_view(isp, 'concept_rows') >= 0)
+        stamp = model.when_encoding.encode(position)[:, None].to(bands)
+        isp._ar_word_symbol_when = torch.where(selected[..., None], stamp, bands)
 
 
 def event_positions(space, shape, *, device):
-    """Relative positions for generic carriers, before word-specific stamping."""
+    """Sentence model time for generic carriers and native event writers."""
     positions = getattr(space, '_document_position', None)
     if positions is None or positions.shape[0] != shape[0]:
         positions = torch.ones(shape[0], dtype=torch.long, device=device)

@@ -110,6 +110,19 @@ addressed evidence throughout the transaction.
 
 ## Intuition, understanding and thought (Alec, 2026-10-30; item 2.5 round B's design, not yet built)
 
+*Status and placement (2026-11-11).* The heading's "not yet built" is
+superseded: round B's work was accepted as implemented on 2026-11-01
+([thinking spec §32.2](plans/2026-10-27-item2-5-thinking.md)), and `intuit`
+writes into knowing since item 2.0 round 6
+([Architecture](Architecture.md#status-for-the-architectures-markings)). In the
+dual-process terms of 2026-11-09, expectation and `intuit` are System 1, and
+`infer`'s selection in the serial workspace, with `query`'s recall, is System 2
+([Architecture](Architecture.md#dual-process-theory-as-a-design-consideration)).
+A `query` by time alone also reinstates the percepts kept for that moment
+(item 2.0 round 7, accepted 2026-11-11), so thought can reason over a
+past sentence as an attended field
+([Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11)).
+
 Alec: "Intuition is beyond understanding, it is conditioned by desired
 output, and thoughts are a distillation of intuition."
 

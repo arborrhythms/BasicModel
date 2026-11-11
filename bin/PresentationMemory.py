@@ -50,6 +50,41 @@ def _rows(store, indices):
                 document_sources=dict(extras['document_sources']))
 
 
+def _capture_clock(model, store):
+    """Keep setup rows strictly before the first presentation's clock."""
+    model.when_time.fill_(max(model.present(), int(store.model_clock)))
+    model.when_encoding.t = model.present()
+    return dict(when_time=model.present(), model_clock=int(store.model_clock))
+
+
+def import_episode_state(model, store):
+    """Import absent episode columns and epoch clocks from older checkpoints."""
+    start = getattr(store, '_epoch_rows', None)
+    if start is None:
+        return
+    imported = []
+    def columns(state):
+        if 'columns' in state:
+            count = len(state['columns']['address_keys'])
+            for name in ('episodic_percepts', 'episodic_poles', 'episodic_where'):
+                if name not in state['columns']:
+                    template = getattr(store, name)[:count].detach().cpu()
+                    state['columns'][name] = torch.full_like(template, -1 if name == 'episodic_percepts' else 0)
+                    imported.append(name)
+        for key in ('_base',):
+            if key in state:
+                columns(state[key])
+        for child in state.get('supplied_rows', {}).values():
+            columns(child)
+    columns(start)
+    if 'clock' not in start:
+        start['clock'] = _capture_clock(model, store)
+        imported.append('epoch clock from loaded model time')
+    if imported:
+        import warnings
+        warnings.warn('Round 7 epoch migration: ' + ', '.join(dict.fromkeys(imported)))
+
+
 def initial_observation(store, index):
     """Access and surprise belong to the initial row, not this history's reads."""
     start = getattr(store, '_epoch_rows', None)
@@ -292,6 +327,8 @@ def refresh_supplies(store, *, first=False):
                                           float(relation_start['surprise'][row]))
     updated = _join_rows(store, rows)
     updated['_base'] = base
+    if 'clock' in start:
+        updated['clock'] = dict(start['clock'])
     updated['initial_observations'] = observations
     store._epoch_rows = updated
     relations['count'].fill_(int(relations['ref_kinds'][:,0].ne(0).sum()))
@@ -409,6 +446,8 @@ def _begin_rows(store, required):
     store.rebuild_addresses()
     restored = _rows(store, range(count))
     restored['_base'] = start.get('_base', copy.deepcopy(restored))
+    if 'clock' in start:
+        restored['clock'] = dict(start['clock'])
     store._epoch_rows = restored
     return before - set(store.address_keys[:len(store)].tolist())
 
@@ -456,6 +495,7 @@ def capture_start(model):
     first = store is not None and getattr(store, '_epoch_rows', None) is None
     if first:
         store._epoch_rows = _rows(store, range(len(store)))
+        store._epoch_rows['clock'] = _capture_clock(model, store)
     for item in _owners(model):
         alloc = getattr(item, '_concept_allocator', None)
         if alloc is None:
@@ -506,6 +546,9 @@ def epoch(model):
     if percept is not None:
         percept.clear_context()
     for item in owners:
+        item._episode_review_field = None
+        if hasattr(item, '_clear_percept_field'):
+            item._clear_percept_field()
         if not hasattr(item, '_epoch_mtm'):
             item._epoch_mtm = item.mtm.state()
     removed, removed_parts = set(), set()
@@ -516,6 +559,7 @@ def epoch(model):
         first = getattr(store, '_epoch_rows', None) is None
         if first:
             store._epoch_rows = _rows(store, range(len(store)))
+            store._epoch_rows['clock'] = _capture_clock(model, store)
         if store.parts.epoch_start is None:
             store.parts.begin_epoch()
         # A forgotten supply cannot regain authority merely because its
@@ -532,6 +576,10 @@ def epoch(model):
         bank = store.parts
         required = set(bank.refs[bank.ref_kinds == bank.OCCURRENCE].tolist())
         removed = _begin_rows(store, required)
+        clock = store._epoch_rows['clock']
+        model.when_time.fill_(clock['when_time'])
+        model.when_encoding.t = model.present()
+        store.model_clock.fill_(clock['model_clock'])
         for name in ('forget_passes', 'forget_sentences', 'forget_last_sentence',
                      'forget_cutoff', 'forget_pending'):
             getattr(store, name).zero_()

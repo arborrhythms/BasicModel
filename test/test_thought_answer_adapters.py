@@ -142,6 +142,8 @@ def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch
         generation_scope=nullcontext))
     from Memory import ShortTermMemory
     object.__setattr__(model.conceptualSpace, 'stm', ShortTermMemory(concept_dim=8))
+    from clock_fixtures import for_stm
+    for_stm(model.conceptualSpace.stm, model=model)
     model._what_grammar_context = lambda *_a, **_k: (torch.zeros(1, 8), None)
     model._select_perceptual_bindings = lambda *_a: ()
     model._condition_answer_on_question = lambda idea, _context, **_kwargs: idea

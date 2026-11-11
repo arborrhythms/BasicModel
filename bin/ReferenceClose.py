@@ -283,7 +283,8 @@ class ReferenceClose(nn.Module):
             value = pool.value_of(key, references=names.get(key, ()))
             for use,(occurrence,location) in enumerate(uses):
                 following = times[use+1] if use+1 < len(times) else float('inf')
-                events = [event for event in entry.events if times[use] <= event.when < following]
+                events = [event for event in entry.events
+                          if 0 <= event.when - times[use] < following - times[use]]
                 event = events[-1] if events else None
                 records[occurrence[-1]] = location, dict(role=0 if event is None else event.role,
                     position=(position,use), identity=entry.native or key,token=key,
@@ -524,43 +525,24 @@ class ReferenceClose(nn.Module):
                     role=candidate['role'], position=candidate['position'], occurrences=()))
         return result
 
-    def introduction_order(self, node, read_order, *, keep_reference):
-        """Read the same named concept or occurrence identity as the close."""
+    def introduction_order(self, site, *, keep_reference, clause, items):
+        """Read the occurrence the close writes, including a lexical witness."""
+        node = site['node']
         request = node.reference_request or {}
         if request.get('sign_leaf') or request.get('no_op_leaf'):
             # PartClosing writes this surface-only leaf as a concrete
             # occurrence; its spelling's denotation is not being read.
             return 0
-        if read_order is not None:
-            return read_order
         from PartClosing import PartClosing
-        from ClauseRow import Composition
-        from dataclasses import fields
-        from Memory import SYMBOL
-        from MemoryLink import Occurrence, member_order
-        from ChainRead import envelope
-        owner = self.components.owner
-        closing = PartClosing(owner, self.store)
-        term = closing.clause_term(node)
-        # Match prepare's new introduction: no selected alias, and only an
-        # own-object request preserves its existing root reference.
-        term = Composition(**dict({field.name:getattr(term, field.name) for field in fields(Composition)},
-            reference=term.reference if keep_reference else -1, order=node.order, binding=None))
-        record = closing._plan_term(term)
-        reference = closing.occurrence_reference(record)
-        marks = dict(node.meaning.bindings)
-        if reference is not None and not (reference[0] == SYMBOL and owner.interpret.no_object(reference[1])):
-            marks.setdefault('_identity', envelope(self.store, reference))
-        identity = marks.get('_identity')
-        if identity and identity[0] in ('ltm', 'sym', 'name'):
-            return member_order(owner, Occurrence(identity,
-                concept=identity[1] if identity[0] in ('sym', 'name') else None))
-        names = tuple(marks.get('_forward_references', ()))
-        if len(names) == 1 and names[0][0] == 0:
-            return member_order(owner, Occurrence((), concept=names[0][1]))
-        # LTM0.order_of_row reads a newly written idea without a native
-        # identity or lexical witness as a concrete order-zero occurrence.
-        return 0
+        closing = PartClosing(self.components.owner, self.store)
+        introduction = dict(site, selected=('new', len(items)), mode=request['mode'],
+            role=request.get('role', 0), leaves=request['leaves'], own_object=keep_reference,
+            anonymous=keep_reference and request.get('forward_identity') is not None)
+        # Earlier child choices must be present in this read-only preparation,
+        # just as they are when the kept close writes the parent's occurrence.
+        prepared, (target,) = self._prepare(clause, dict(items=[*items, introduction]),
+            (site.get('source_node', node),), preview=True)
+        return closing.occurrence_order(target, context=prepared)
 
     def score(self, content, predicate, cue, role, individuals, *, stream=None, asserted=(), where=None, when=None, coordinate_read=None, member_order=None):
         """Meet content and form, native expectation, then recency and roles."""
@@ -908,7 +890,32 @@ class ReferenceClose(nn.Module):
         # precede their uses even when a later wrapper is the reading's root.
         result.sort(key=lambda site: (site['node'].identity or {}).get('action')
                     if (site['node'].identity or {}).get('action') is not None else -1)
-        return result
+        # Synthetic lexical sites can be discovered after their wrapper.
+        # Prepare operands before that wrapper's introduction, preserving the
+        # action order between independent sites and between shared-term uses.
+        dependencies = {}
+        for site in result:
+            term = site['node'].composition
+            pending = [] if term is None else [*term.children, term.binding]
+            seen_terms = set()
+            while pending:
+                child = pending.pop()
+                if child is None or id(child) in seen_terms:
+                    continue
+                seen_terms.add(id(child))
+                pending.extend((*child.children, child.binding))
+            dependencies[id(site)] = {id(other) for other in result if other is not site
+                and other['node'].composition is not term
+                and id(other['node'].composition) in seen_terms}
+        ordered, pending = [], list(result)
+        while pending:
+            remaining = {id(site) for site in pending}
+            index = next((i for i, site in enumerate(pending)
+                          if not dependencies[id(site)] & remaining), None)
+            if index is None:
+                raise ValueError('reference sites contain a dependency cycle')
+            ordered.append(pending.pop(index))
+        return ordered
 
     def pending_names(self, clause, individuals, stream):
         """Names whose chosen token is in this close's accessible frames."""
@@ -977,7 +984,8 @@ class ReferenceClose(nn.Module):
                 latest = max((other['position'] for other in individuals.values()), default=(-1, -1))
                 individuals[selected] = dict(content=signature, role=role,
                     position=(latest[0]+1, len(items)),
-                    member_order=self.introduction_order(node, order, keep_reference=False))
+                    member_order=self.introduction_order(site, keep_reference=False,
+                        clause=clause, items=items))
                 # A redundant mint has a cost; contradictory content does
                 # not. This credits the operation chooser without assigning
                 # a determiner word to either operation.
@@ -1022,7 +1030,8 @@ class ReferenceClose(nn.Module):
                 latest = max((other['position'] for other in individuals.values()), default=(-1, -1))
                 individuals[selected] = dict(content=content, value=content,
                     role=role, position=(latest[0]+1, len(items)),
-                    member_order=self.introduction_order(node, order, keep_reference=True))
+                    member_order=self.introduction_order(site, keep_reference=True,
+                        clause=clause, items=items))
             if node.identity is not None and node.identity['handle'] > 0:
                 handles.setdefault(node.identity['handle'], selected)
             if selected in introductions and selected not in menu:

@@ -147,16 +147,30 @@ def test_input_symbols_keep_their_word_starts_even_when_the_word_repeats(model):
 
 
 @pytest.mark.usefixtures('eager_reading')
-def test_input_event_position_is_independent_of_the_subjective_clock(model):
+def test_input_event_position_uses_its_sentence_tick(model, monkeypatch):
     model._advance_when_time()
     before = model.when_time.clone()
+    events = []
+    native_events = model.perceptualSpace._radix_part_events
+    @wraps(native_events)
+    def observe(*args, **kwargs):
+        value = native_events(*args, **kwargs)
+        # Observe native word perception after the sentence clock advances,
+        # rather than the provisional slab made before the sentence loop.
+        if 0 in model._sentence_ticks and model._open_sentence_slot is None:
+            events.append(value.detach().clone())
+        return value
+    monkeypatch.setattr(model.perceptualSpace, '_radix_part_events', observe)
     with torch.no_grad():
         model.runBatch(train=False, split='validation', batchSize=1,
             batch_override=(model.inputSpace.prepInput(['cat cat sat']), torch.empty(1, 0)))
-    torch.testing.assert_close(model.when_time, before + 1)
-    events = model.inputSpace._ar_embedded[:, :5]
-    torch.testing.assert_close(events[..., -4:],
-        model.when_encoding.encode(1).expand_as(events[..., -4:]))
+    tick = model._sentence_ticks[0]
+    assert tick == int(before) + 1
+    assert model.present() >= tick  # Subsequent thoughts and output have their own ticks.
+    assert events
+    for value in events:
+        torch.testing.assert_close(value[..., -4:],
+            model.when_encoding.encode(tick).expand_as(value[..., -4:]))
 
 
 def test_event_inverse_scores_content_and_position_without_repeated_time_credit():

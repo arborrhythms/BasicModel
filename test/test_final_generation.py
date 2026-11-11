@@ -237,7 +237,12 @@ def test_training_output_keeps_lexical_text_and_output_gradients(monkeypatch):
             sentence_states=(SimpleNamespace(meaning=meaning),))
         understood=Understanding()
         model.eval()
+        tick = model.present()
         evaluated=model.reverseOutput(understood,held)
+        # Compare train/eval on the same produced-sentence tick as well as
+        # the same idea; clock-shift invariance has its separate certificate.
+        model.when_time.fill_(tick)
+        model.when_encoding.t = tick
         model.train()
         trained=model.reverseOutput(understood,held)
         assert trained.texts == evaluated.texts == ('alpha',)

@@ -32,6 +32,8 @@ def test_native_compose_reads_dimmed_content_and_preserves_raw_candidates(gain,m
     layer._symbol_expectation_read=SymbolRead(keys,torch.tensor([1.,0.]).expand(1,4,2),gain,1e-6,'clip', identities=torch.arange(4))
     host=SimpleNamespace(language_layer=SimpleNamespace(operation_layer=layer),
         _structural_context=lambda **kw:None,_compose_binary_rules=(),_compose_unary_rules=())
+    host._symbol_space = SimpleNamespace(conceptualSpace=SimpleNamespace(
+        _model=SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(when_start=None)))))
     values=keys[:,:2].clone()
     state=(values,torch.tensor([2]),torch.tensor([[1,0]]),torch.zeros(1,2,dtype=torch.long),
            torch.tensor([[-1,1]]),torch.tensor([[0.,.7]]))
@@ -77,6 +79,8 @@ def test_norm_and_leaf_coefficients_receive_one_explicit_gain_in_compose_view():
     layer._symbol_expectation_read = SymbolRead(keys, torch.tensor([1.,0.]).expand(1,4,2), .5, 1e-6, 'clip', identities=torch.arange(4))
     host = SimpleNamespace(language_layer=SimpleNamespace(operation_layer=layer),
         _structural_context=lambda **kw: None, _compose_binary_rules=(), _compose_unary_rules=())
+    host._symbol_space = SimpleNamespace(conceptualSpace=SimpleNamespace(
+        _model=SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(when_start=None)))))
     state = (keys[:,:2].clone(), torch.tensor([2]), torch.tensor([[1,0]]), torch.zeros(1,2,dtype=torch.long),
              torch.tensor([[-1,1]]), torch.tensor([[0.,.7]]))
     from chunk_fixtures import from_stack

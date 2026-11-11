@@ -89,7 +89,7 @@ def open_cover(owner, store, *, stream, document):
 
 def begin_sentence(model, slot, present):
     """Cursor boundary before the paired trials; never called by preview."""
-    from Occurrence import source_at
+    from Occurrence import address_at
     owner = model._concept_owner()
     store = owner._closed_clause_store()
     if store is None:
@@ -99,7 +99,7 @@ def begin_sentence(model, slot, present):
     for batch, active in enumerate(present.tolist()):
         if not active:
             continue
-        document, position = source_at(model, batch, slot)
+        document, position = address_at(model, batch, slot)
         previous = cursor.get(batch)
         if (previous is None or previous[0] != document or position <= previous[1]
                 or store.location(previous[2]) is None):
@@ -153,12 +153,14 @@ def read(store, description, *, references=(), max_records, work, role_mask=None
     for row, covers in segments(store).items():
         if not covers.intersection(selected) or store.occurrence_of(row) in selected:
             continue
+        if store.kind_of(row) == 'episode':
+            continue  # An anchor cannot displace a content read from its budget.
         if scanned >= max_records or not work.consume('record'):
             incomplete.append('cover_read_limit')
             break
         scanned += 1
         record = store.row(row)
-        if record['kind'] in ('cover', 'estimate', 'question'):
+        if record['kind'] in ('cover', 'episode', 'estimate', 'question'):
             continue
         meaning = record['meaning']
         constraints = {key: value for key, value in description.bindings if not key.startswith('_')}

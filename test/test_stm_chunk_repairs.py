@@ -77,9 +77,14 @@ def test_same_chunks_supply_current_time_and_untimed_estimate(tmp_path):
     finally:
         handle.remove()
     assert len(contexts)==2 and contexts[0].shape==(1,4*width+4)
-    torch.testing.assert_close(contexts[0][:,:4*width],contexts[1][:,:4*width],rtol=0,atol=0)
+    # Model-time contract (2026-11-10): learned inputs carry elapsed time.
+    unchanged = torch.ones(4*width, dtype=torch.bool)
+    unchanged[8:12] = False
+    unchanged[width+8:width+12] = False
+    torch.testing.assert_close(contexts[0][:,:4*width][:,unchanged],
+                               contexts[1][:,:4*width][:,unchanged],rtol=0,atol=0)
     for context,tick in zip(contexts,(7,19)):
-        torch.testing.assert_close(context[0,4*width:],encoder().encode(tick),rtol=0,atol=0)
+        torch.testing.assert_close(context[0,4*width:],encoder().encode(tick-2),rtol=0,atol=0)
     assert not torch.equal(contexts[0],contexts[1])
     assert all(torch.equal(old,new) for old,new in zip(before,state))
     # Persistence happens at a later close. The forecast consumes no tick;

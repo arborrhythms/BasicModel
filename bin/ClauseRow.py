@@ -424,7 +424,7 @@ class ClauseRows:
     @torch.no_grad()
     def write_clause(self, clause, *, trust=None, origin=None, stream=-1, kind='observation',
                     evidence=None, text=None, expectation=None, document_key=None,
-                    sentence_index=0, content_key=None, written_rows=None):
+                    sentence_index=0, content_key=None, written_rows=None, episode=None):
         """Compress resolved semantic journal compositions, retaining only open chains."""
         import math
         from PartClosing import PartClosing
@@ -437,7 +437,8 @@ class ClauseRows:
         if document_key is not None:
             with self.at_address(document_key, sentence_index, content_key or native_content_key(clause.meaning)):
                 return self.write_clause(clause, trust=trust, origin=origin, stream=stream, kind=kind,
-                    evidence=evidence, text=text, expectation=expectation, written_rows=written_rows)
+                    evidence=evidence, text=text, expectation=expectation, written_rows=written_rows,
+                    episode=episode)
         authority = self.__dict__.get('_clause_assertion')
         if authority is not None:
             if (bindings(clause.meaning).get('_open_references') or
@@ -486,7 +487,8 @@ class ClauseRows:
         def reserve(record, sentence=False, force=False):
             nonlocal needed
             term = record['value']
-            forced_occurrence = force and (term.binding is not None or record.get('mention'))
+            forced_occurrence = (force or (sentence and record.get('selected_reference') is not None)) and (
+                term.binding is not None or record.get('mention'))
             previous = reserved.get(id(term))
             if (previous is not None and not sentence
                     and not (forced_occurrence and previous != OCCURRENCE)):
@@ -515,17 +517,27 @@ class ClauseRows:
                 record = closing._planned[id(closing._terms[id(value)])]
                 force = not sentence
                 entry_kind = reserve(record, sentence, force)
+                if sentence:
+                    root_kind = entry_kind
                 # An unresolved sentence keeps its chain, while its reference
                 # request still names the phrase's own located occurrence.
                 if record.get('mention') and entry_kind != OCCURRENCE:
                     needed += 1
                 if entry_kind != OCCURRENCE and value.identity is not None and value.identity.get('event') is not None:
                     needed += 1  # The event's compacted state is an idea member, not a grammar application.
+        from EpisodicMemory import plan_anchor
+        episode_anchor = plan_anchor(self, clause, episode, stream) if root_kind == RELATION else None
+        needed += int(episode_anchor is not None and episode_anchor[1] is None)
         needed += int(expectation is not None and expectation.estimate is not None and bool(expectation.source_occurrences))
         if len(self) + needed > self.capacity:
             raise ClauseCapacityError(f'LTM0 construction capacity exhausted before close: '
                                       f'{len(self)} occupied + {needed} needed > {self.capacity}')
         closing.when = stamp(self)
+        if clause.when is not None:
+            # Thinking and output may have advanced the clock since opening.
+            # The input occurrence retains the tick of its own attention pass.
+            closing.when = clause.when.to(closing.when)
+        before_rows = len(self)
         rows, occurrences, mentions, event_occurrences = {}, {}, {}, {}
         context = self.__dict__.get('_write_address')
         root_key = native_content_key(clause.meaning) if context is None else context[2]
@@ -601,6 +613,14 @@ class ClauseRows:
                 rows[id(value)] = location(entry)
                 occurrences[id(value)] = self.occurrence_of(rows[id(value)])
         result = rows[id(clause)]
+        from EpisodicMemory import write, anchor, count
+        write(self, result, episode, new=isinstance(result, int) and result >= before_rows)
+        if episode is not None and root_kind == RELATION:
+            count(self, 'relation_only_closings')
+        if episode_anchor is not None:
+            episode_row = anchor(self, episode_anchor, episode, stream=stream, when=closing.when)
+            if written_rows is not None:
+                written_rows['episode'] = self.occurrence_of(episode_row)
         if written_rows is not None:
             written_rows.update(rows)
             written_rows.update({('occurrence', key): value for key, value in occurrences.items()})

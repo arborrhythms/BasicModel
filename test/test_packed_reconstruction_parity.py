@@ -79,7 +79,9 @@ def measure_layout(model, rows, *, packed):
         captured[int(record.sentence)] = dict(
             roots=record.roots.detach().clone(), end=record.end_slots.detach().clone(),
             depth=record.depths.detach().clone(), end_depth=record.end_depth.detach().clone())
-        return reconstruct(owner, record, errors, active)
+        result = reconstruct(owner, record, errors, active)
+        captured[int(record.sentence)]['byte_cost'] = owner._last_decoder_byte_identity.detach().clone()
+        return result
 
     SentenceField.reconstruct = capture
     steps = [rows] if packed else [
@@ -132,7 +134,8 @@ def measure_layout(model, rows, *, packed):
                         "actions": program.actions.detach().clone(),
                         "reference": model._tensor_pushed_ideas[b, mask].detach().clone(),
                         "recovered": recovered,
-                        "byte_cost": model._recon_sentence_costs[b, slot].detach().clone(),
+                        "byte_cost": captured_sentence['byte_cost'][b],
+                        "event_cost": model._recon_sentence_costs[b, slot].detach().clone(),
                         "truncated": model._recon_truncated[b].detach().clone(),
                     }
             reset(model, packed=packed, final=step == len(steps) - 1, batch=len(rows))

@@ -69,7 +69,8 @@ def write(store, meaning, *, key):
     def append(point, bindings):
         value = replace(ConceptualMeaning.from_description(point.detach()), bindings=bindings)
         row = store.append_meaning(value, kind='unverified', when=False,
-            document_key=('thought', tuple(map(int, key))), sentence_index=len(store))
+            document_key=('thought', tuple(float(value).hex() for value in key)),
+            sentence_index=len(store))
         return OCCURRENCE, int(store.address_keys[row])
     def retain(value):
         children = [retain(child) for child in value.constituents]

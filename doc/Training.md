@@ -104,6 +104,13 @@ embeddings continue to evolve during network training.
 
 ## The staged objective curriculum
 
+> *Amended 2026-11-11.* The labels System 1 and System 2 in this section name
+> two learning rules (occurrence and task error) and predate the definition of
+> 2026-11-09, by which System 1 is everything the loop needs to close without
+> thinking and System 2 is the three grammars; both are trained by gradient
+> ([Architecture](Architecture.md#dual-process-system-1-knowing-and-system-2-2026-11-09),
+> [GradientFlow](GradientFlow.md)). The text below is kept as the record.
+
 Network training climbs five objectives, from substrate-building reconstruction
 to deliberate question answering. The order is not arbitrary — it is the
 architecture's **two learning rules** in their natural developmental order:

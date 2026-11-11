@@ -162,7 +162,7 @@ def reverse(model, sub, field):
         stamp = model.where_registry.encode('input', locations)
         code[..., where_indices] = stamp.to(code) * strength[..., None]
     if ps.subspace.nWhen:
-        times = place(field.when[..., 0].to(code))
+        times = place(field.when[..., 0].to(device=code.device, dtype=torch.long))
         code[..., -ps.subspace.nWhen:] = ps.subspace.whenEncoding.encode(times).to(code) * strength[..., None]
     recovered = sub.carrier_like()
     covered = torch.zeros(B, width, device=code.device, dtype=torch.long).scatter_add(
