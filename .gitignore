@@ -12,6 +12,7 @@ output/*
 .DS_Store
 */.DS_Store
 .venv/
+.vscode/
 .worktrees/
 data/fineweb/*
 /data/corpus/
