@@ -1361,3 +1361,5 @@ rather than by a number in Codex's record; and the XOR class certificate
 is no longer run under `RUN_TRAINED=1`, where `test/phase_artifacts.py`
 fails it strictly for the absent `xor_grammar` artifact, but measured by
 its criterion as the round's fits were.
+
+Landed as b35a4bd3167049b9ef3559104d478d89fd869e80, 2026-11-12
