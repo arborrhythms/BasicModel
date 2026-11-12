@@ -15,6 +15,8 @@ def test_mnist_loader_names_an_unfetched_lfs_pointer(tmp_path, monkeypatch):
 
 @pytest.mark.parametrize('ergodic', [False, True])
 def test_real_mnist_subset_trains_one_short_batch(tmp_path, monkeypatch, ergodic):
+    from local_data import require_mnist
+    require_mnist()
     import data, util, Models
     root=Path(__file__).resolve().parents[1]
     # Use rows from the real downloaded files; bound only this test's subset.

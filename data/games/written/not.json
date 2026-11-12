@@ -1,0 +1,227 @@
+{
+  "schema": 1,
+  "game": "not",
+  "fillers": {
+    "name": [
+      {
+        "form": "Rex"
+      },
+      {
+        "form": "Bella"
+      },
+      {
+        "form": "Milo"
+      }
+    ],
+    "verb": [
+      {
+        "base": "walk",
+        "past": "walked"
+      },
+      {
+        "base": "sing",
+        "past": "sang"
+      },
+      {
+        "base": "swim",
+        "past": "swam"
+      }
+    ]
+  },
+  "transfer": {
+    "name": [
+      {
+        "form": "Felix"
+      }
+    ],
+    "verb": [
+      {
+        "base": "sleep",
+        "past": "slept",
+        "lesson": "sleeps"
+      }
+    ]
+  },
+  "variants": {
+    "future": {
+      "slots": {
+        "s": "name",
+        "v": "verb"
+      },
+      "sources": [
+        "{s.form} will {v.base} tomorrow."
+      ],
+      "target": "{s.form} will not {v.base} tomorrow."
+    },
+    "ability": {
+      "slots": {
+        "s": "name",
+        "v": "verb"
+      },
+      "sources": [
+        "{s.form} can {v.base} beside the lake."
+      ],
+      "target": "{s.form} cannot {v.base} beside the lake."
+    },
+    "past": {
+      "slots": {
+        "s": "name",
+        "v": "verb"
+      },
+      "sources": [
+        "Yesterday, {s.form} {v.past}."
+      ],
+      "target": "Yesterday, {s.form} did not {v.base}."
+    },
+    "progressive": {
+      "slots": {
+        "s": "name"
+      },
+      "sources": [
+        "At dusk, {s.form} is waiting by the gate."
+      ],
+      "target": "At dusk, {s.form} is not waiting by the gate."
+    }
+  },
+  "authored_rows": [
+    {
+      "game": "not",
+      "variant": "future",
+      "tier": "written",
+      "key": "not-written-000000",
+      "sources": [
+        "Rex will walk tomorrow."
+      ],
+      "target": "Rex will not walk tomorrow.",
+      "split": "train"
+    },
+    {
+      "game": "not",
+      "variant": "future",
+      "tier": "written",
+      "key": "not-written-000001",
+      "sources": [
+        "Bella will sing tomorrow."
+      ],
+      "target": "Bella will not sing tomorrow.",
+      "split": "train"
+    },
+    {
+      "game": "not",
+      "variant": "future",
+      "tier": "written",
+      "key": "not-written-000002",
+      "sources": [
+        "Felix will sleep tomorrow."
+      ],
+      "target": "Felix will not sleep tomorrow.",
+      "split": "transfer"
+    },
+    {
+      "game": "not",
+      "variant": "ability",
+      "tier": "written",
+      "key": "not-written-000003",
+      "sources": [
+        "Milo can swim beside the lake."
+      ],
+      "target": "Milo cannot swim beside the lake.",
+      "split": "train"
+    },
+    {
+      "game": "not",
+      "variant": "ability",
+      "tier": "written",
+      "key": "not-written-000004",
+      "sources": [
+        "Rex can sing beside the lake."
+      ],
+      "target": "Rex cannot sing beside the lake.",
+      "split": "train"
+    },
+    {
+      "game": "not",
+      "variant": "ability",
+      "tier": "written",
+      "key": "not-written-000005",
+      "sources": [
+        "Felix can walk beside the lake."
+      ],
+      "target": "Felix cannot walk beside the lake.",
+      "split": "transfer"
+    },
+    {
+      "game": "not",
+      "variant": "past",
+      "tier": "written",
+      "key": "not-written-000006",
+      "sources": [
+        "Yesterday, Bella sang."
+      ],
+      "target": "Yesterday, Bella did not sing.",
+      "split": "train"
+    },
+    {
+      "game": "not",
+      "variant": "past",
+      "tier": "written",
+      "key": "not-written-000007",
+      "sources": [
+        "Yesterday, Milo swam."
+      ],
+      "target": "Yesterday, Milo did not swim.",
+      "split": "train"
+    },
+    {
+      "game": "not",
+      "variant": "past",
+      "tier": "written",
+      "key": "not-written-000008",
+      "sources": [
+        "Yesterday, Felix slept."
+      ],
+      "target": "Yesterday, Felix did not sleep.",
+      "split": "transfer"
+    },
+    {
+      "game": "not",
+      "variant": "progressive",
+      "tier": "written",
+      "key": "not-written-000009",
+      "sources": [
+        "At dusk, Rex is waiting by the gate."
+      ],
+      "target": "At dusk, Rex is not waiting by the gate.",
+      "split": "train"
+    },
+    {
+      "game": "not",
+      "variant": "progressive",
+      "tier": "written",
+      "key": "not-written-000010",
+      "sources": [
+        "At dusk, Bella is waiting by the gate."
+      ],
+      "target": "At dusk, Bella is not waiting by the gate.",
+      "split": "train"
+    },
+    {
+      "game": "not",
+      "variant": "progressive",
+      "tier": "written",
+      "key": "not-written-000011",
+      "sources": [
+        "At dusk, Felix is waiting by the gate."
+      ],
+      "target": "At dusk, Felix is not waiting by the gate.",
+      "split": "transfer"
+    }
+  ],
+  "provenance": {
+    "model": "gpt-6",
+    "date": "2026-11-12",
+    "prompt": "Write varied transformation pairs once for not, conjunction, and unary_chain at k=1,2,3. Preserve meaning apart from the stated operation. Use separate in-game and lesson-transfer fillers; include independent slot-frame witnesses for mechanical verification. Keep the original template rows unchanged. Freeze author, date, prompt SHA-256, verify counts, and a deterministic audit sample for Claude. This is corpus authorship, not a learning claim.",
+    "audit_reviewer": "Claude",
+    "audit_status": "pending"
+  }
+}

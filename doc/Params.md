@@ -210,6 +210,8 @@ Training loop and I/O.
 | `autoload` | bool | `true` | Load weights from `weightsPath` at construction. Stale incompatible checkpoints fail fast. |
 | `autosave` | bool | `false` | Save weights after training completes. |
 | `checkpointEveryBatches` | int | `0` | Save mid-training checkpoint every N optimizer steps. `0` disables periodic checkpoints. |
+| `intervalLogEveryBatches` | int | `0` | Log captured losses, retention and inventory every N training batches; run the fixed probe panels in a separate evaluation copy. `0` disables. Each JSON record includes collection time and probe failures. |
+| `intervalLogFile` | string | `output/intervals.jsonl` | Append-only interval JSON records. The reconstruction sample includes its native reconstructed event and byte cost. |
 | `profile` | bool | `false` | cProfile the training loop. |
 | `certainty` | bool | `false` | Per-neuron certainty tracking in ergodic layers. Allows individual neurons to transition exploration $\to$ exploitation at different rates. |
 | `wordExpectation` | bool | `true` | Order-zero reads of the shared two-lane native-symbol activation predictor. |

@@ -19,6 +19,16 @@ DEVELOPER_DIR=/Library/Developer/CommandLineTools .venv/bin/python test/test_rep
 `make test` uses the same runner. `make test_all` additionally enables the existing
 `RUN_SLOW=1` tests. Slow selection never changes the device: cases default to CPU,
 and only an explicit `device` marker or `BASICMODEL_DEVICE` requests another device.
+
+External data is prepared explicitly with `.venv/bin/python bin/prepare_data.py`.
+The tracked manifest `data/external-files.json` records its URLs, byte sizes and
+SHA-256 digests. Missing MNIST or FineWeb inputs skip with that command; pytest
+never downloads them. The developmental assembly is a separate preparation:
+`.venv/bin/python bin/prepare_corpus.py --recipe data/corpus-sources.json --output data/corpus/assembly-01`.
+Its content identity excludes the elapsed `assembly_seconds` field.
+
+Each bounded worker is capped at 8 GiB. The pool reserves eight GiB for the
+machine and four CPU slots; this 24 GiB, eight-core machine admits two workers.
 `make testp` is deliberately a direct `pytest-xdist` iteration command (`TEST_JOBS=auto`
 by default), not a bounded run. `make preflight` and `make preflight_full` use the
 bounded runner. Select affected tests for short development cycles; the complete default
@@ -461,26 +471,26 @@ certificates still require the declared trained artifact.
 - One full receipt per user across worktrees, enforced by a nonblocking file
   lock. Selected-file, `-k`, and marker runs may proceed concurrently.
 - One result records two memory phases. Ordinary cases use
-  `max(1, min(cpu−4, aggregate_bytes // (9 GiB)))` one-thread workers:
-  **3** on this 14-core, 36 GiB machine. Each reservation is
-  `min(12 GiB, aggregate // workers)`: **9.33 GiB** here. A worker receives
+  `max(1, min(cpu−4, aggregate_bytes // (8 GiB)))` one-thread workers:
+  **2** on an eight-core, 24 GiB machine. Each reservation is
+  `min(8 GiB, aggregate // workers)`: **8 GiB** on that machine. A worker receives
   at most 256 selected cases from 16 files. `--workers` may lower this pool;
   its cap follows the same formula. User `-m` selection is applied before
   partitioning, so every selected case belongs to exactly one phase.
 - A case whose measured solo footprint exceeds the ordinary half-cap
   allowance is marked `large_memory`. The second phase runs **one case per
-  fresh worker**, under a **12 GiB** cap, with `aggregate // cap` workers:
-  **2** here. If the aggregate itself is below 12 GiB, it is the ceiling and
+  fresh worker**, under an **8 GiB** cap, with `aggregate // cap` workers:
+  **2** on the 24 GiB machine. If the aggregate itself is below 8 GiB, it is the ceiling and
   only one large worker fits. In both phases workers times cap is at most
   the aggregate. Collection runs alone within the same aggregate.
-- The aggregate stays physical RAM minus **8 GiB**: **28 GiB** here, with
+- The aggregate stays physical RAM minus **8 GiB**: **16 GiB** on that machine, with
   the sampled aggregate guard as a backstop and a `taskpolicy -m ... -P kill`
   ceiling per worker. `--memory-gib` can lower the aggregate and cannot take
   the machine's reserve. An unmarked case that exceeds its reservation
   stops with `memory` and its case name; neighbouring cases cannot consume
   its reservation. The inherited sentence word bound remains 256.
 - A worker finishes its current case and recycles at **half its reservation**
-  (**4.67 GiB** in the default ordinary phase), or 80% of its deadline.
+  (**4 GiB** in this default ordinary phase), or 80% of its deadline.
   A fresh worker takes the remaining cases, preserving one reported
   completion per selector. Each receipt records the case's starting,
   finishing and sampled peak physical footprint for subsequent measurement.
@@ -538,9 +548,9 @@ thread and deadline limits apply.
 
 macOS accounting uses `proc_pid_rusage` physical footprint, including compressed
 memory. RSS alone can become misleading during compression. Each macOS worker
-has a 12 GiB kernel limit through `taskpolicy -m ... -P kill`, while the
-supervisor samples all active process groups and enforces the 28 GiB aggregate
-reservation. Linux accounting uses RSS plus swap. The monitor samples each
+has its reserved worker limit (at most 8 GiB by default) applied through
+`taskpolicy -m ... -P kill`, while the supervisor samples all active process
+groups and enforces the aggregate reservation. Linux accounting uses RSS plus swap. The monitor samples each
 process group and known children, including compiler subprocesses; sampling can
 allow brief overshoot.
 Timeout, memory exhaustion, unavailable accounting or interrupted execution
@@ -628,7 +638,7 @@ per-worker ceiling**. The production objective measurement in
 **24 GiB per-worker ceiling**; it makes one ownership measurement. Both tiers
 run one worker at a time under a **24 GiB aggregate reservation** and the
 existing **30-minute worker deadline**.
-The ordinary full sweep uses the same 12 GiB worker ceiling.
+The ordinary full sweep uses the same 8 GiB worker ceiling.
 
 The same weekly target also runs `python bin/Legacy.py` and the three
 `bin/etc` inline unittest suites once, under the weekly ordinary 8 GiB worker ceiling.

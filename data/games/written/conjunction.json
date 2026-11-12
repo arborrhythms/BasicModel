@@ -1,0 +1,229 @@
+{
+  "schema": 1,
+  "game": "conjunction",
+  "fillers": {
+    "name": [
+      {
+        "form": "Rex"
+      },
+      {
+        "form": "Bella"
+      },
+      {
+        "form": "Milo"
+      },
+      {
+        "form": "Luna"
+      }
+    ]
+  },
+  "transfer": {
+    "name": [
+      {
+        "form": "Felix"
+      },
+      {
+        "form": "Ciao"
+      }
+    ]
+  },
+  "variants": {
+    "weather": {
+      "slots": {
+        "a": "name",
+        "b": "name"
+      },
+      "sources": [
+        "{a.form} waits under the awning.",
+        "{b.form} watches the rain."
+      ],
+      "target": "{a.form} waits under the awning, and {b.form} watches the rain."
+    },
+    "arrival": {
+      "slots": {
+        "a": "name",
+        "b": "name"
+      },
+      "sources": [
+        "Before dawn, {a.form} arrives.",
+        "After dawn, {b.form} leaves."
+      ],
+      "target": "Before dawn, {a.form} arrives, and after dawn, {b.form} leaves."
+    },
+    "objects": {
+      "slots": {
+        "a": "name",
+        "b": "name"
+      },
+      "sources": [
+        "{a.form} carries a lantern.",
+        "{b.form} carries a basket."
+      ],
+      "target": "{a.form} carries a lantern, and {b.form} carries a basket."
+    },
+    "ability": {
+      "slots": {
+        "a": "name",
+        "b": "name"
+      },
+      "sources": [
+        "{a.form} can climb the hill.",
+        "{b.form} can cross the bridge."
+      ],
+      "target": "{a.form} can climb the hill, and {b.form} can cross the bridge."
+    }
+  },
+  "authored_rows": [
+    {
+      "game": "conjunction",
+      "variant": "weather",
+      "tier": "written",
+      "key": "conjunction-written-000000",
+      "sources": [
+        "Rex waits under the awning.",
+        "Bella watches the rain."
+      ],
+      "target": "Rex waits under the awning, and Bella watches the rain.",
+      "split": "train"
+    },
+    {
+      "game": "conjunction",
+      "variant": "weather",
+      "tier": "written",
+      "key": "conjunction-written-000001",
+      "sources": [
+        "Milo waits under the awning.",
+        "Luna watches the rain."
+      ],
+      "target": "Milo waits under the awning, and Luna watches the rain.",
+      "split": "train"
+    },
+    {
+      "game": "conjunction",
+      "variant": "weather",
+      "tier": "written",
+      "key": "conjunction-written-000002",
+      "sources": [
+        "Felix waits under the awning.",
+        "Ciao watches the rain."
+      ],
+      "target": "Felix waits under the awning, and Ciao watches the rain.",
+      "split": "transfer"
+    },
+    {
+      "game": "conjunction",
+      "variant": "arrival",
+      "tier": "written",
+      "key": "conjunction-written-000003",
+      "sources": [
+        "Before dawn, Bella arrives.",
+        "After dawn, Rex leaves."
+      ],
+      "target": "Before dawn, Bella arrives, and after dawn, Rex leaves.",
+      "split": "test"
+    },
+    {
+      "game": "conjunction",
+      "variant": "arrival",
+      "tier": "written",
+      "key": "conjunction-written-000004",
+      "sources": [
+        "Before dawn, Luna arrives.",
+        "After dawn, Milo leaves."
+      ],
+      "target": "Before dawn, Luna arrives, and after dawn, Milo leaves.",
+      "split": "train"
+    },
+    {
+      "game": "conjunction",
+      "variant": "arrival",
+      "tier": "written",
+      "key": "conjunction-written-000005",
+      "sources": [
+        "Before dawn, Ciao arrives.",
+        "After dawn, Felix leaves."
+      ],
+      "target": "Before dawn, Ciao arrives, and after dawn, Felix leaves.",
+      "split": "transfer"
+    },
+    {
+      "game": "conjunction",
+      "variant": "objects",
+      "tier": "written",
+      "key": "conjunction-written-000006",
+      "sources": [
+        "Rex carries a lantern.",
+        "Milo carries a basket."
+      ],
+      "target": "Rex carries a lantern, and Milo carries a basket.",
+      "split": "train"
+    },
+    {
+      "game": "conjunction",
+      "variant": "objects",
+      "tier": "written",
+      "key": "conjunction-written-000007",
+      "sources": [
+        "Bella carries a lantern.",
+        "Luna carries a basket."
+      ],
+      "target": "Bella carries a lantern, and Luna carries a basket.",
+      "split": "train"
+    },
+    {
+      "game": "conjunction",
+      "variant": "objects",
+      "tier": "written",
+      "key": "conjunction-written-000008",
+      "sources": [
+        "Felix carries a lantern.",
+        "Ciao carries a basket."
+      ],
+      "target": "Felix carries a lantern, and Ciao carries a basket.",
+      "split": "transfer"
+    },
+    {
+      "game": "conjunction",
+      "variant": "ability",
+      "tier": "written",
+      "key": "conjunction-written-000009",
+      "sources": [
+        "Milo can climb the hill.",
+        "Rex can cross the bridge."
+      ],
+      "target": "Milo can climb the hill, and Rex can cross the bridge.",
+      "split": "train"
+    },
+    {
+      "game": "conjunction",
+      "variant": "ability",
+      "tier": "written",
+      "key": "conjunction-written-000010",
+      "sources": [
+        "Luna can climb the hill.",
+        "Bella can cross the bridge."
+      ],
+      "target": "Luna can climb the hill, and Bella can cross the bridge.",
+      "split": "test"
+    },
+    {
+      "game": "conjunction",
+      "variant": "ability",
+      "tier": "written",
+      "key": "conjunction-written-000011",
+      "sources": [
+        "Ciao can climb the hill.",
+        "Felix can cross the bridge."
+      ],
+      "target": "Ciao can climb the hill, and Felix can cross the bridge.",
+      "split": "transfer"
+    }
+  ],
+  "provenance": {
+    "model": "gpt-6",
+    "date": "2026-11-12",
+    "prompt": "Write varied transformation pairs once for not, conjunction, and unary_chain at k=1,2,3. Preserve meaning apart from the stated operation. Use separate in-game and lesson-transfer fillers; include independent slot-frame witnesses for mechanical verification. Keep the original template rows unchanged. Freeze author, date, prompt SHA-256, verify counts, and a deterministic audit sample for Claude. This is corpus authorship, not a learning claim.",
+    "audit_reviewer": "Claude",
+    "audit_status": "pending"
+  }
+}

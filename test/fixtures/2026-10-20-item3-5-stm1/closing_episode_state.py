@@ -87,7 +87,7 @@ def observed_difference(model, before, after):
             assert not module._form_valid.requires_grad and isinstance(module.form_rows_derived, int)
             cache_fields.update((name + '.buffer._form_valid', name + '.form_rows_derived'))
         if isinstance(module, ShortTermMemory):
-            assert len(module.state) == 13 and module.capacity == 8
+            assert len(module.state) == len(STMChunks.FIELDS) == 14 and module.capacity == 8
             assert all(value.shape[0] <= module._init_batch for value in module.state)
             assert all(value.shape[1] == 8 for i, value in enumerate(module.state)
                        if i != STMChunks.DEPTH)

@@ -346,7 +346,7 @@ def generate_manifest(args):
     return 0
 
 
-def word_candidate_scores(model, *, choices):
+def word_candidate_scores(model, *, choices, captured=None):
     """Negative log probability of each candidate after the observed prefix.
 
     Every completion of an item uses the same discrete candidate bank. The
@@ -354,13 +354,16 @@ def word_candidate_scores(model, *, choices):
     absent from observed context, and the shared activation head is used.
     """
     import torch
-    staged=getattr(model,'_word_expectation_input',None)
     owner=getattr(model.symbolSpace,'expectation',None)
-    if staged is None or owner is None:
-        raise RuntimeError('model produced no word-level expectation bank')
-    words=staged[0].detach()
-    active=model.inputSpace._word_active_mask
-    accepted=model._attention_words.accepted
+    if captured is None:
+        staged=getattr(model,'_word_expectation_input',None)
+        if staged is None or owner is None:
+            raise RuntimeError('model produced no word-level expectation bank')
+        words=staged[0].detach()
+        active=model.inputSpace._word_active_mask
+        accepted=model._attention_words.accepted
+    else:
+        words, active, accepted = captured
     B,W,D=words.shape
     if B%choices:raise ValueError('candidate rows must form complete choice banks')
     positions=torch.arange(W,device=words.device)[None]
@@ -409,7 +412,7 @@ def frozen_online_learning(model):
 def _seed_from_xml(path):
     root = ET.parse(path).getroot()
     raw = root.findtext("./architecture/training/seed")
-    return int(raw) if raw not in (None, "") else 0
+    return int(raw) if raw not in (None, "") else None
 
 
 def _autoload_from_xml(path):
@@ -451,9 +454,10 @@ def build_eval_model(model_path, checkpoint=None, *, autoload=True):
 
     model_path = Path(model_path).resolve()
     seed = _seed_from_xml(model_path)
-    torch.manual_seed(seed)
-    random.seed(seed)
-    np.random.seed(seed)
+    if seed is not None:
+        torch.manual_seed(seed)
+        random.seed(seed)
+        np.random.seed(seed)
     TheData.processLM({
         "train": {"text": ["placeholder"], "label": []},
         "validation": {"text": ["placeholder"], "label": []},
@@ -507,7 +511,7 @@ def build_eval_model(model_path, checkpoint=None, *, autoload=True):
     return model, TheData
 
 
-def _validate_candidate_reached(model, items, control, choices):
+def _validate_candidate_reached(model, items, control, choices, *, offsets=None):
     """Fail if the outer word cap or raw-constituent staging cuts a candidate."""
     import torch
     word_index = getattr(model.inputSpace, "_word_index_N", None)
@@ -520,7 +524,7 @@ def _validate_candidate_reached(model, items, control, choices):
         final_word_id = len(surface_words(prefix))
         expected.extend([final_word_id] * choices)
     expected_t = torch.tensor(
-        expected, device=word_index.device, dtype=word_index.dtype)
+        expected if offsets is None else offsets, device=word_index.device, dtype=word_index.dtype)
     reached = ((word_index == expected_t.unsqueeze(1)) & active).any(dim=1)
     if not bool(reached.all().item()):
         missing = (~reached).nonzero().reshape(-1).tolist()
@@ -607,16 +611,29 @@ def _score_control_batch(model, data, items, control, choices):
     for item in items:
         prefix = item[prefix_key]
         texts.extend(prefix + candidate for candidate in item["candidates"])
-    _reset_model(model)
-    with torch.no_grad(), data.runtime_batch(texts):
-        input_tensor = model.inputSpace.prepInput(list(data.train_input))
-        # The ordinary stem stages the complete native word readings and
-        # the word-level expectation bank used below. Sentence composition,
-        # output generation and answer retrieval cannot affect that snapshot;
-        # building them here needlessly multiplies memory by the choice count.
-        model._lex_embed_stem(input_tensor)
-        _validate_candidate_reached(model, items, control, choices)
-        result = word_candidate_scores(model, choices=choices)
+    offsets = [len(surface_words(item[prefix_key])) for item in items for _ in item['candidates']]
+    capacity = min(space.stm._init_batch for space in model.conceptualSpaces)
+    captured = []
+    # Stage candidates in the model's existing stream capacity, then score
+    # the complete choice bank together. No fixture or STM is resized.
+    for start in range(0, len(texts), capacity):
+        _reset_model(model)
+        chunk = texts[start:start+capacity]
+        with torch.no_grad(), data.runtime_batch(chunk):
+            input_tensor = model.inputSpace.prepInput(list(data.train_input))
+            model._lex_embed_stem(input_tensor)
+            _validate_candidate_reached(model, (), control, choices,
+                offsets=offsets[start:start+capacity])
+            captured.append((model._word_expectation_input[0].detach().clone(),
+                             model.inputSpace._word_active_mask.detach().clone(),
+                             model._attention_words.accepted.detach().clone()))
+    width = max(words.shape[1] for words, _, _ in captured)
+    from torch.nn.functional import pad
+    words = torch.cat([pad(value, (0, 0, 0, width-value.shape[1])) for value, _, _ in captured])
+    active = torch.cat([pad(value, (0, width-value.shape[1])) for _, value, _ in captured])
+    accepted = torch.cat([pad(value, (0, width-value.shape[1])) for _, _, value in captured])
+    with torch.no_grad():
+        result = word_candidate_scores(model, choices=choices, captured=(words, active, accepted))
     _reset_model(model)
     return result
 

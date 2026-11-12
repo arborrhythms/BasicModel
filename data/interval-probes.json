@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "generic_subjects": [
+    {"text": "cats breathe", "expected": "relative"},
+    {"text": "a cat is an animal", "expected": "relative"},
+    {"text": "this cat breathes", "expected": "absolute"},
+    {"text": "the cat is black", "expected": "absolute"}
+  ],
+  "reconstruction": "Felix is a cat."
+}

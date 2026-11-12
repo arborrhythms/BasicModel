@@ -1,0 +1,3 @@
+{"game":"not","key":"not-written-000006","sources":["Yesterday, Bella sang."],"split":"train","target":"Yesterday, Bella did not sing.","tier":"written","variant":"past"}
+{"game":"not","key":"not-written-000007","sources":["Yesterday, Milo swam."],"split":"train","target":"Yesterday, Milo did not swim.","tier":"written","variant":"past"}
+{"game":"not","key":"not-written-000008","sources":["Yesterday, Felix slept."],"split":"transfer","target":"Yesterday, Felix did not sleep.","tier":"written","variant":"past"}

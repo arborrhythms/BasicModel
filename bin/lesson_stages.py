@@ -12,7 +12,7 @@ import json
 import random
 from pathlib import Path
 
-from game_corpus import _assignments, render
+from game_corpus import _assignments, copy_recipes, render
 
 PHASES = ('words', 'interpret', 'clause', 'ask', 'verb', 'modifiers',
           'determiners', 'adverb', 'prepositions', 'relations')
@@ -67,7 +67,8 @@ def vocabulary(stages):
 def freeze(recipes_dir, out_dir, *, seed):
     """Write parts-of-speech.json and manifest.json; tests never call this."""
     recipes_dir, out_dir = Path(recipes_dir), Path(out_dir)
-    recipes = [json.loads(path.read_text()) for path in sorted(recipes_dir.glob('*.json'))]
+    recipe_paths = copy_recipes(recipes_dir, out_dir)
+    recipes = [json.loads(path.read_text()) for path in recipe_paths]
     if [recipe['phase'] for recipe in recipes] != list(PHASES):
         raise ValueError('the recipes must be the ten phases in lesson order')
     stages = [expand(recipe, seed=seed) for recipe in recipes]
@@ -81,7 +82,7 @@ def freeze(recipes_dir, out_dir, *, seed):
                             f'--recipes data/lessons/recipes --out data/lessons',
                     file=path.name, sha256=hashlib.sha256(text.encode()).hexdigest(),
                     recipes={p.name: hashlib.sha256(p.read_bytes()).hexdigest()
-                             for p in sorted(recipes_dir.glob('*.json'))},
+                             for p in recipe_paths},
                     stages=[dict(name=s['name'], lesson=s['lesson'],
                                  records=sum(len(d['records']) for d in s['documents']),
                                  heldout=sum(len(d['records']) for d in s['heldout'])) for s in stages])

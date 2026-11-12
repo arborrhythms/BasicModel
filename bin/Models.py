@@ -16187,6 +16187,7 @@ class BasicModel(BaseModel):
                         self, "_epoch_batches_seen", 0) or 0) + 1
                     self._checkpoint_batch_size = int(batchSize)
                     self._checkpoint_corpus_cursor = copy.deepcopy(consumed_cursor)
+                    __import__('IntervalLog').observe_interval(self, training=training, split=split)
                     # Save after the outer cursor count advances so a resumed
                     # checkpoint's progress metadata describes the update it
                     # actually contains, not the preceding batch.

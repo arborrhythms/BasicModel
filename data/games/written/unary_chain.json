@@ -1,0 +1,219 @@
+{
+  "schema": 1,
+  "game": "unary_chain",
+  "fillers": {
+    "noun": [
+      {
+        "initial": "Dogs",
+        "inner": "dogs"
+      },
+      {
+        "initial": "Birds",
+        "inner": "birds"
+      },
+      {
+        "initial": "Horses",
+        "inner": "horses"
+      }
+    ],
+    "predicate": [
+      {
+        "form": "wait near the gate"
+      },
+      {
+        "form": "gather at dusk"
+      },
+      {
+        "form": "rest beneath the trees"
+      }
+    ]
+  },
+  "transfer": {
+    "noun": [
+      {
+        "initial": "Cats",
+        "inner": "cats",
+        "lesson": "cat"
+      }
+    ],
+    "predicate": [
+      {
+        "form": "sleep beside the window",
+        "lesson": "sleeps"
+      }
+    ]
+  },
+  "variants": {
+    "k1": {
+      "slots": {
+        "n": "noun",
+        "p": "predicate"
+      },
+      "sources": [
+        "{n.initial} {p.form}."
+      ],
+      "target": "The {n.inner} {p.form}."
+    },
+    "k2": {
+      "slots": {
+        "n": "noun",
+        "p": "predicate"
+      },
+      "sources": [
+        "{n.initial} {p.form}."
+      ],
+      "target": "All the {n.inner} {p.form}."
+    },
+    "k3": {
+      "slots": {
+        "n": "noun",
+        "p": "predicate"
+      },
+      "sources": [
+        "{n.initial} {p.form}."
+      ],
+      "target": "Not all the {n.inner} {p.form}."
+    }
+  },
+  "authored_rows": [
+    {
+      "game": "unary_chain",
+      "variant": "k1",
+      "tier": "written",
+      "key": "unary_chain-written-000000",
+      "sources": [
+        "Dogs wait near the gate."
+      ],
+      "target": "The dogs wait near the gate.",
+      "split": "train"
+    },
+    {
+      "game": "unary_chain",
+      "variant": "k1",
+      "tier": "written",
+      "key": "unary_chain-written-000001",
+      "sources": [
+        "Birds gather at dusk."
+      ],
+      "target": "The birds gather at dusk.",
+      "split": "train"
+    },
+    {
+      "game": "unary_chain",
+      "variant": "k1",
+      "tier": "written",
+      "key": "unary_chain-written-000002",
+      "sources": [
+        "Horses rest beneath the trees."
+      ],
+      "target": "The horses rest beneath the trees.",
+      "split": "train"
+    },
+    {
+      "game": "unary_chain",
+      "variant": "k1",
+      "tier": "written",
+      "key": "unary_chain-written-000003",
+      "sources": [
+        "Cats sleep beside the window."
+      ],
+      "target": "The cats sleep beside the window.",
+      "split": "transfer"
+    },
+    {
+      "game": "unary_chain",
+      "variant": "k2",
+      "tier": "written",
+      "key": "unary_chain-written-000004",
+      "sources": [
+        "Dogs wait near the gate."
+      ],
+      "target": "All the dogs wait near the gate.",
+      "split": "train"
+    },
+    {
+      "game": "unary_chain",
+      "variant": "k2",
+      "tier": "written",
+      "key": "unary_chain-written-000005",
+      "sources": [
+        "Birds gather at dusk."
+      ],
+      "target": "All the birds gather at dusk.",
+      "split": "train"
+    },
+    {
+      "game": "unary_chain",
+      "variant": "k2",
+      "tier": "written",
+      "key": "unary_chain-written-000006",
+      "sources": [
+        "Horses rest beneath the trees."
+      ],
+      "target": "All the horses rest beneath the trees.",
+      "split": "train"
+    },
+    {
+      "game": "unary_chain",
+      "variant": "k2",
+      "tier": "written",
+      "key": "unary_chain-written-000007",
+      "sources": [
+        "Cats sleep beside the window."
+      ],
+      "target": "All the cats sleep beside the window.",
+      "split": "transfer"
+    },
+    {
+      "game": "unary_chain",
+      "variant": "k3",
+      "tier": "written",
+      "key": "unary_chain-written-000008",
+      "sources": [
+        "Dogs wait near the gate."
+      ],
+      "target": "Not all the dogs wait near the gate.",
+      "split": "train"
+    },
+    {
+      "game": "unary_chain",
+      "variant": "k3",
+      "tier": "written",
+      "key": "unary_chain-written-000009",
+      "sources": [
+        "Birds gather at dusk."
+      ],
+      "target": "Not all the birds gather at dusk.",
+      "split": "train"
+    },
+    {
+      "game": "unary_chain",
+      "variant": "k3",
+      "tier": "written",
+      "key": "unary_chain-written-000010",
+      "sources": [
+        "Horses rest beneath the trees."
+      ],
+      "target": "Not all the horses rest beneath the trees.",
+      "split": "train"
+    },
+    {
+      "game": "unary_chain",
+      "variant": "k3",
+      "tier": "written",
+      "key": "unary_chain-written-000011",
+      "sources": [
+        "Cats sleep beside the window."
+      ],
+      "target": "Not all the cats sleep beside the window.",
+      "split": "transfer"
+    }
+  ],
+  "provenance": {
+    "model": "gpt-6",
+    "date": "2026-11-12",
+    "prompt": "Write varied transformation pairs once for not, conjunction, and unary_chain at k=1,2,3. Preserve meaning apart from the stated operation. Use separate in-game and lesson-transfer fillers; include independent slot-frame witnesses for mechanical verification. Keep the original template rows unchanged. Freeze author, date, prompt SHA-256, verify counts, and a deterministic audit sample for Claude. This is corpus authorship, not a learning claim.",
+    "audit_reviewer": "Claude",
+    "audit_status": "pending"
+  }
+}

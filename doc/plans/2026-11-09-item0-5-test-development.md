@@ -622,3 +622,704 @@ record the commit and the source hash (test/bounded_tests.source_snapshot,
 SHA-256 of its compact sorted JSON, and whether
 data/corpus/assembly-01/manifest.json was present); push testing.
 ~~~
+
+## 19. Item 0.5 return (Codex, 2026-11-12)
+
+This section is the review record; measurements below are on item 2.0,
+`9f7923d67f8921ef5c14afdf2fe18c536802018b`. Work began at testing
+`96307818d257ce72a24bd5a1cc81897200cac944`. During the work Alec committed
+`0e34c23775` (machine-specific editor settings), `0f29e41182` (MNIST), and
+`840b5f91d3` (FineWeb) in the same checkout. They are retained in the final
+history. Item 1.8 runs on the other machine; no item 1.8 implementation is
+attempted here. This machine has 24 GiB RAM and eight CPU cores. The environment
+is Python 3.12.13, torch 2.15.0, numpy 2.5.4, pytest 9.2.0, pandas 3.1.1 and
+pyarrow 26.0.1, from the unpinned requirements installed with `make install`.
+
+Alec's later directions override the pasted instructions above:
+
+- Stored papers stay stored; no research PDF is replaced with a link or removed.
+- Probe evaluation may run the model. H5 uses a separate evaluation process so
+  its admissions and RNG draws do not change the learner.
+- The historical H3 count of “26 core” cases is treated as obsolete after Alec's
+  answer “probably obsolete.” Its selector list and receipts were not present
+  in this checkout or recoverable from the tracked plans. No tests are deleted,
+  and execution of that unidentified list is not claimed.
+- Push `testing`, verify synchronization, then update and switch this checkout
+  to `main` for subsequent work. Never push or force-push `main` in this round.
+
+### 19.1 Corpus repairs and frozen written pairs
+
+The pre-build command from §18.2 passed **22 cases in 38.71 s**. The original
+math, template games and lessons were reproduced byte for byte at seed
+**20261112** before any local assembly was built. The builders now create their
+output directory and copy their recipes from an external recipe directory;
+the recipe files remain part of the frozen corpus. No original row changed.
+The final games/lessons/training reproduction compared **39 files**, all
+byte-identical, including the new written tier. Original tracked JSONL rows
+were also compared directly to the starting Git tree: **16 files identical**.
+
+The actual assembly destination is `data/corpus/assembly-01`, rather than the
+parent `data/corpus` shown in the pasted command. Run:
+
+```sh
+.venv/bin/python bin/prepare_corpus.py --recipe data/corpus-sources.json --output data/corpus/assembly-01
+.venv/bin/python bin/game_corpus.py freeze --seed 20261112 --recipes data/games/recipes --out data/games --written data/games/written
+.venv/bin/python bin/lesson_stages.py freeze --seed 20261112 --recipes data/lessons/recipes --out data/lessons
+.venv/bin/python bin/training_corpus.py freeze --root . --local-root .
+```
+
+The assembly verified its source digests and built **57,210 documents /
+3,421,205 sentences in 127.579667667 s**. The old raw B1 manifest digest
+`cafa9a495c1d16ac73eb0ddff1e2e825fdb1b9c76d7cc5c34a048e64f785bd0b`
+differed from this build's raw
+`431d188f9a5379ef9e1ef1cd09b278adb6ed169a4008b36fb405197e02e61303`
+only because of `assembly_seconds`. B1 now hashes compact sorted JSON excluding
+that one field: **`d84a6bb65e59d77480203d00b508ec6cb94b9fbe84a3304634f2f7429c959e40`**.
+The freezer checks that the assembly manifest, SQLite database and first web
+shard exist before writing; missing part B can no longer overwrite the frozen
+identity with nulls. The SQLite connection closes explicitly. B2's `local=true`
+is correct now that the shard is external local data.
+
+After builder repairs, the four corpus files passed **24 cases in 8.65 s**.
+After written pairs and external-data preparation, the four corpus files plus
+`test/test_prepare_data.py` passed **28 cases in 13.95 s**. The held-out-only
+scan has **983 distinct sentences, five assembly matches**, compared with
+953/five before written pairs. The held-out cost validation items did not change.
+
+The written recipes and rows are in `data/games/written/` and the eleven
+`*.written.jsonl` files. They contain **12 not, 12 conjunction and 12 unary-chain
+pairs; 36 accepted, zero rejected**. They were authored and verified once,
+without replacing rejected draws or changing the source-hash split. Provenance:
+model **gpt-6**, date **2026-11-12**, prompt SHA-256
+**`636ab4b01d97e01d7a13338169b14a58bcbb4244e75a82d8bf5da2efa748fbce`**.
+The full prompt and verification frames are tracked data. Claude's audit is
+pending; the fixed sampled keys to read are:
+
+| Game | Audit keys |
+|---|---|
+| not | `not-written-000001`, `not-written-000003`, `not-written-000009`, `not-written-000011` |
+| conjunction | `conjunction-written-000003`, `conjunction-written-000006`, `conjunction-written-000008`, `conjunction-written-000011` |
+| unary_chain | `unary_chain-written-000002`, `unary_chain-written-000003`, `unary_chain-written-000005`, `unary_chain-written-000006` |
+
+Final corpus file SHA-256 values:
+
+| File | SHA-256 |
+|---|---|
+| `data/math/manifest.json` | `d64787a9597ab081c4e16ce246e2b51c2a3a0df05d46aa5801822b742233686b` |
+| `data/games/manifest.json` | `500b2e6972308b99d80977fe39b2d11ad7209551d9860da9586a082c04eb8c1d` |
+| `data/lessons/manifest.json` | `5f777efe11356816724a43e35fd57686486ca1810c26d55e135c4aad94a59818` |
+| `data/training-corpus.json` | `696b06a9d542bea7e8e16df96173397387915dbac8a89fdd81fcae7a2c342b1a` |
+| `data/eval/heldout-cost.json` | `ef9e02ec98487337e211cd56bd801b1056ba4f56afea082bea30092adbdb948f` |
+
+### 19.2 External data and preserved local material
+
+`bin/prepare_data.py` is the single explicit download/verification command:
+`.venv/bin/python bin/prepare_data.py`. `data/external-files.json` records every
+URL, size, digest and archive conversion. Its SHA-256 is
+`f34ee62cb96ade7f1164152127c84b138ca5729ad33fa3cfb896c68c7cd97cfe`.
+All three files were verified in place, and the command was independently run
+into an empty destination: all three downloads reproduced the exact bytes.
+Pytest replaces the FineWeb download entry point with a local-only lookup, and
+MNIST consumers require local files; absence skips with the preparation command.
+The intentional test of an unfetched historical LFS pointer remains.
+
+| Local file | Bytes | SHA-256 |
+|---|---:|---|
+| `data/fineweb/shard_00000.parquet` | 94,511,680 | `6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22` |
+| `data/mnist_train.csv` | 109,640,201 | `06e64b0bf65de89c522348319ce5f63f43fb1cb40e1ce3c2ff43c1d3b8a0e14c` |
+| `data/mnist_test.csv` | 18,303,650 | `c5adfcc9ce29069f8a988a6af1dcdc009bba975d2c98a52233661f79d880292b` |
+
+The Kaggle archive is 15,948,628 bytes, SHA-256
+`b6783c2e65a110a0891e930b4eecd330670eacd7d4730ed01191934fe8876573`.
+Its raw train/test members have digests
+`fb60bc58af4dac3554e394af262b3184479833d3cc540ff8783f274b73492d5d` /
+`51c292478d94ec3a01461bdfa82eb0885d262eb09e615679b2d69dedb6ad09e7`.
+The declared header and CRLF conversion reproduce the original CSVs exactly;
+no example is transformed or dropped. Existing corrupt files fail verification.
+All research papers, `BasicModel.pdf`, and the locally made retained scorer
+weights stay tracked. The seven preexisting planning notes stay in the ignored
+`scratch_preexisting_notes/` directory for Alec's review; none was deleted.
+The starting tracked-tree size was **206,872,716 bytes**, counting the old MNIST
+training LFS pointer as 134 bytes, as `git ls-tree -r -l HEAD` does.
+
+### 19.3 H2: native snapshots and strict mechanism findings
+
+Both arms still measure forced ask/query/descend/return/bind through the real
+training driver at one and two successors. Retirement of the decomposition
+teacher did not retire these thought paths. Both original seeds and budgets
+remain: **4199722147 / 512**, **2428440506 / 768**. The old recorded first hash
+was `dbd7315f8a49f581f5f2bb0f837e0075ef9dbada63cc94cc9db6c0d1ee367d34`;
+only the second prefix `f1d141ab...` survives in tracked prose. Its full digest
+was not recovered and is not invented.
+
+The old parameter-mapping adapter was removed from the fixture recorder.
+Construction now captures the current native parameter names and shapes from
+the original RNG streams; it does not load or remap old weights. The current
+`MM_math_chain.xml` has event width **104**, meaning width **32**, and STM
+capacity **8**. Restoring the historical 256-wide layout would resize this
+fixture, so the present layout is recorded explicitly and unchanged. New
+parameter-content hashes, identical before and after the observer-only port:
+
+| Successors | Native parameter hash |
+|---|---|
+| 1 | `3ac2357a6cdc6791a87a5903e8c50f960f77eda0c3321605a394555e4c64c3ac` |
+| 2 | `728d131deb1ffd76be08a65b24a28a5d0663e5160b1a6c030c4e638c4297dd99` |
+
+Command: `PYTHONPATH=bin:test:test/fixtures/2026-10-25-stm-repair RUN_SLOW=1
+DECOMPOSITION_SNAPSHOT_DIR=<new-local-directory> BASICMODEL_DEVICE=cpu
+.venv/bin/python -m pytest -q -p no:cacheprovider -p recorded_initialization
+test/test_math_chain_decomposition.py`.
+The initial **2 failures / 7.60 s** were the observer's obsolete 13-field STM
+assumption; it now follows the native **14 fields**, including chunk truth,
+with capacity eight unchanged. After that setup port: **2 failures / 12.68 s**.
+The proof assertions are unchanged and the piece stops for Alec:
+
+- One successor changes state outside the strict footprint: `when_time`,
+  `_cs_field_concept_ids`, STM `_thought_contents`, subspace concept activations,
+  codes, IDs and inventory rows, `_thought_stm`, and `_model_tick`.
+- Two successors fails in `ConceptHierarchy.observe_member(parent=64,
+  member=146)` from the kept sentence's parts-of-speech update: the class is
+  not one order above its member.
+
+Recommendation: inspect these producers against item 1.8's contract before
+changing the footprint or class assertion. No second initialization was drawn
+and no shape or assertion was weakened.
+
+### 19.4 H14: next-word scoring dry run
+
+The scorer originally staged all 16 alternatives into a one-stream model.
+It now reads bounded waves within the existing stream capacity, captures their
+word readings, pads only the input sequence dimension, and scores the full
+choice bank together. The absent XML seed no longer silently means seed zero.
+The initial setup failure is retained; no model capacity changed.
+
+Command: `.venv/bin/python bin/eval_nanochat_grammar.py score --model
+data/MM_corpus_lessons.xml --fresh --device cpu --limit 4 --output <local-json>`.
+The scoring run completed in **17.072407667 s**: four items, 16 choices,
+chance 0.0625, intact and shuffled top-1 both **0.25**, both MRR
+**0.4340277777777778**, true NLL **2.7725887298583984**, target variance **0**,
+effective rank **0**, intact-minus-shuffled **0**. These are tied scores from
+an untrained model, not evidence of learning. Initial affected scorer/logger
+checks passed **9 cases / 38.85 s** after allowing the normal compiler cache;
+the earlier sandbox-only cache permission error is not counted as a model result.
+
+### 19.5 H3: named slow cases and setup ports
+
+The eight explicitly named cases completed once under `RUN_SLOW=1
+RUN_SLOW_FRACTION=0.5`, CPU, one worker, 8 GiB, 1,800 s per worker and
+10,800 s overall, with one case/file per worker. Command:
+
+```sh
+RUN_SLOW=1 RUN_SLOW_FRACTION=0.5 BASICMODEL_DEVICE=cpu PYTHONPATH=bin:test .venv/bin/python test/test_report.py test/test_priming_energy.py::test_cs_to_ps_projection_live test/test_priming_energy.py::test_cs_to_ws_projection_live test/test_priming_energy.py::test_projection_bounded_across_epochs test/test_priming_energy.py::test_one_canonical_surface_per_tower test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program test/test_review14_contracts.py::test_review17_measurement_wiring_on_one_ordinary_batch --workers 1 --memory-gib 8 --batch-size 1 --max-files 1 --timeout 1800 --suite-timeout 10800
+```
+
+Initial result: **eight completed, eight failed**, with no cap exceeded. H2's
+two arms are recorded separately above. The four projection cases all stop at
+`Models._reverse_body`: `ps_rec, _ws_rec = rec` receives more than two values.
+This is a producer finding; no runtime repair or weaker assertion is made here.
+
+The three packing cases initially requested `What.present` answers from the
+unrelated `MM_ladder` dataset while supplying their own raw inputs. The runtime
+correctly rejected the misaligned targets. Both vocabulary warm-up and layout
+measurement now explicitly use `What.inference`, which supplies no answer.
+All sentences, model shapes and parity assertions are unchanged. Diagnostic
+replays of the three original recorded random states then **passed 3/3**, in
+**24.018155792 / 21.920409834 / 21.633024250 s** including process startup;
+peak process-tree memory was **2,098,285,040 / 2,097,383,944 / 2,099,333,640 bytes**.
+These are setup-port replays, not replacement fresh draws.
+
+The review17 audit counted four walk menus after the runtime had grown to seven.
+Its observer now counts attention, compose, candidate, bind, reconstruction,
+thought and output, excluding rounds already used. The expected counts are
+computed independently from the eligibility masks; the strict `walk_count`
+assertion is unchanged. Replaying the child probe's original random state then
+reached a different assertion: **zero compose score-function steps, expected
+four** (`test/observer_probe.py:38`). It failed in **11.828133167 s**, peak
+**3,551,072,024 bytes**. The retired-teacher checks before that assertion passed;
+subsequent checks were not reached. This strict finding stops the observer piece
+for Alec rather than silently replacing its expected count. All diagnostic
+replays restored the captured Python/NumPy/torch states and the original
+`PYTHONHASHSEED=2137108569`; no passing initialization was selected.
+
+### 19.6 H6: real continuation certificate, pending producer decision
+
+`test/test_corpus_checkpoint.py` now contains a slow-tier certificate that runs
+real `runBatch` updates using the unchanged `MM_corpus_orders.xml` geometry,
+with sentence packing enabled. Twelve source sentences (four simple clauses
+repeated three times) leave a genuine mid-document checkpoint after the first
+packed batch. The same next batch is run uninterrupted and after native restore.
+The test compares byte fingerprints of both losses, kept-program actions, word
+IDs and case values/selections, and the complete final `state_dict`. Immediately
+after restore it explicitly compares the surprise, access-count, forgetting,
+relevance and placement ledgers. The independent comparison reader is retired
+in 2.0, so the test asserts its absence rather than inventing replacement weights.
+
+Two setup defects were repaired without weakening assertions: program views
+must be copied before commit invalidates them; and four sentences all fitted
+one batch, so the input was extended to twelve, with capacities unchanged.
+The real comparison then **failed in 39.66 s**. The immediate retention-ledger
+restore checks passed. The uninterrupted/resumed reconstruction-loss hashes were
+`dbb4d6b1a053970cfc7c207e50a1f63bcedda8b7791090c2036588611574fb73` /
+`9e9ebb4d20b087c33f1a3d4f06d544703ac8d8e5dab2560f2b7a596a3de25465`.
+Both answer losses were zero, hash
+`df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119`.
+The first, uninterrupted-next and restored-next batches each consumed four
+sentences, in **13.222 / 11.252 / 10.020 s** respectively. The failure is
+retained, not retried for a pass. The kept-program/final-state assertions stay
+strict but were not reached after the loss assertion failed.
+
+Reproduction entry point: `RUN_SLOW=1 BASICMODEL_DEVICE=cpu PYTHONPATH=bin:test
+.venv/bin/python -m pytest -q -p no:cacheprovider
+test/test_corpus_checkpoint.py::test_real_next_batch_matches_checkpoint_losses_and_kept_programs`.
+The retained checkpoint SHA-256 is
+`9e88533fcf892ce000cdec4c11447aff965cd3d424228967c25d75b02c6b9c8c`;
+its exact configuration is
+`081e1b6383183f9f93e24a42e8f081479caba1d1f238f300fd209dd2f1bb272f`,
+manifest `fed2020917227978b59a48c5a9c7766fb46ba4932184c1c39bd151c9f98885b2`,
+and rows `cb6fc2ae07a10c7e4f5d08a94b9e9ae0f7e840cd072f4f695fe30264c9c17172`.
+The direct initial test did not retain its before-construction RNG state;
+the saved checkpoint contains the continuation RNG used for diagnosis.
+
+Under §3's mechanism-defect rule, H6 stops at this finding. The interleaved
+stream extension and the `train.py` resume acceptance command remain pending;
+they are not claimed as certified. Recommendation: repair native continuation
+at its producer before adding a second stream scheduler to that certificate.
+
+### 19.7 H8: proposed declaration for Alec
+
+This is a declaration for review, not authorization to start the item-0
+campaign. The three conditions are answer plus expectation, expectation only,
+and zero attention budget. Frozen grades and existing intermediate-answer
+supervision implement corrections 1 and 2; no objective was added. Credit remains
+reconstruction plus answer. The grade-0 dry runs execute one unseeded attempt per
+condition and do not reset or select a passing start.
+
+| Number | Previous declaration | Proposed campaign | Change |
+|---|---:|---:|---|
+| Epochs per condition | 17 | 17 | unchanged, pending representative timing |
+| Fresh paired starts | 10 | 10 | unchanged; capture each unseeded first draw |
+| Required successful trainings | 9 of 10 | 9 of 10 | unchanged |
+| Attention budget | 32; zero control 0 | 32; zero control 0 | unchanged |
+| LTM capacity | 131,072 | 131,072 | unchanged |
+| Batch size | 8 | 8 | unchanged |
+| Learning rate | 0.001 | 0.001 | unchanged |
+| Epoch wall-time basis | eight hours | not inferred from grade 0 | old basis withdrawn; new basis pending |
+| Worker timeout | 24 hours | not yet redeclared | no timeout increase authorized here |
+| Chain accuracy bar | referenced in the old ignored protocol | retain the original bar once recovered | numeric value unavailable; Alec must supply it |
+| This development check | not the campaign | one epoch, 40 documents, 60 declaratives, nine batches per condition; 1,800 s / 8 GiB guard | new dry-run budget only |
+
+The referenced old protocol's numeric chain bar is absent from the tracked
+plans and standing documents. It is not reconstructed from a result or replaced
+with a new threshold. A grade with no answer targets cannot time question,
+worked-step or deep-chain work or establish an answer gate; those limitations
+prevent using this dry run as a full-campaign runtime projection. Correction 4,
+step-based work accounting, remains outside this item as §7 requires.
+
+The actual grade-0 runs used CPU, one torch thread, compile backend `none`,
+eager peer reading, unchanged `MM_math_chain.xml` shapes and learning rate
+0.001. Command for each condition:
+
+```sh
+.venv/bin/python test/item05_measurements.py math --condition <condition> --output <new-local-directory>
+```
+
+Each completed its sole epoch, 40 documents / 60 declaratives / nine batches.
+The work includes real forward/backward/optimizer steps. Every answer loss was
+zero because this grade has no question targets; reconstruction and expectation
+work executed. These development timings are not warmed throughput or learning
+claims, and compile/recompile phase timings are not claimed.
+
+| Condition | Internal seconds | Guard wall seconds | Peak process-tree bytes | First / last reconstruction loss |
+|---|---:|---:|---:|---|
+| `answer_expectation` | 298.992322333 | 301.698018875 | 4,862,694,248 | 0.00575305474922 / 0.018265908584 |
+| `expectation_only` | 426.288238334 | 429.392807958 | 4,196,274,616 | 0.00582458917052 / 0.0187019258738 |
+| `zero_budget` | 358.115439708 | 364.514282084 | 4,001,976,664 | 0.00604714872316 / 0.0178549475968 |
+
+The harness was unchanged across these runs, but disabled logger/test work was
+still being finished during the first two development epochs. Their source
+snapshots are recorded separately; this is not one frozen paired campaign:
+
+- `answer_expectation`: `77294cecce58abbe8312a99f33b32dcbcf70ff4040d73c2c89776e9a87a77d7b`.
+- `expectation_only`: `63dbb9cbada914079aacb74822b82720c27074ddfa94d0fec003ae2343d8d48a`.
+- `zero_budget`: `d69526500b2bb7553f6f2e9bd77db3ac1bd777c68aec3aa1bf7f95320e2633d7`.
+
+### 19.8 Whole-sentence game signal: null at the declared budget
+
+Command: `.venv/bin/python test/item05_measurements.py game --condition
+<future|supplied> --output <new-local-directory>`. Each signal received one
+fresh unseeded attempt, **16 updates, batch one, learning rate 0.001**, CPU,
+one thread, compile backend `none`, unchanged `MM_corpus_lessons.xml` shapes,
+with the same 1,800 s / 8 GiB guard. The frozen training pair was
+`not-clause-000002`: “Bella runs.” → “Bella does not run.” The future arm uses
+`WhatQuestion.future(0, 1)` with source and target in one document; the supplied
+arm stages the full target through the existing lesson answer path. No parse
+or answer was forced.
+
+| Signal | Internal / guard seconds | Peak bytes | Complete target among observed outputs |
+|---|---|---:|---:|
+| future | 47.782687500 / 50.642138209 | 1,163,626,344 | 0/16 |
+| supplied | 51.898928541 / 54.506942416 | 1,098,581,912 | 0/16 |
+
+The future arm produced an empty string each time, with answer loss zero and
+reconstruction loss 0.010708170943 → 0.0107099786401. The supplied arm produced
+“runs” on update 13 and an empty string on the other 15 updates. Its answer
+loss was 0.000548491138034 initially and 0.000548126641661 on the final update,
+with a 478.653015137 spike on update 13; reconstruction was
+0.00926270894706 → 0.00926536042243. Both source hashes were
+`d69526500b2bb7553f6f2e9bd77db3ac1bd777c68aec3aa1bf7f95320e2633d7`.
+
+These are outputs observed during the 16 updates, not an independent
+post-update or held-out evaluation. Neither signal demonstrated complete
+sentence production within this budget. Under §6.4, games training stops here
+for Alec; neither signal is selected for a larger run. The corpora remain
+frozen. Recommendation: inspect target credit and production at the existing
+producer before authorizing a larger budget or a new objective.
+
+### 19.9 H12: six placement attempts
+
+`test/identity_experiment.py` no longer selects seed 20261010 or inherits seed
+42 from `BasicModel.xml` for these measurements. The harness captures the first
+unseeded state and shares that recorded state across all six placements.
+`test/phase_experiment.py` now copies program values and credit before commit
+invalidates their transient views. Capacities, shapes, assertions and the
+existing paired-update wrapper are unchanged.
+
+Command for each variant, using the same initially absent RNG path:
+
+```sh
+.venv/bin/python test/phase_experiment.py <new-local-directory> --variant <variant> --smoke --initial-rng <shared-first-rng.pt>
+```
+
+The smoke protocol is one epoch over the first two training documents, then
+the first two held-out documents; batch two, learning rate 0.001, CPU, one
+thread, eager peer reading, compile backend `none`, 1,800 s / 8 GiB guard.
+The model's four-stream capacity is unchanged. Five variants completed with
+three paired optimizer updates each and zero disabled batch-end updates.
+
+| Variant | Guard seconds | Peak bytes | Exact answers / selections / reverse (of 2) |
+|---|---:|---:|---|
+| `verb_form` | 16.847331333 | 1,264,830,360 | runtime failure; no evaluation |
+| `separate_leaf` | 27.355718250 | 1,414,858,792 | 0 / 0 / 0 |
+| `noun_form` | 28.426374208 | 1,550,223,520 | 0 / 0 / 0 |
+| `one_leaf_two_selections` | 26.026067708 | 1,396,443,152 | 0 / 0 / 0 |
+| `two_leaves` | 27.051150250 | 1,374,980,112 | 0 / 0 / 0 |
+| `unmarked` | 26.067261375 | 1,181,370,144 | 0 / 2 / 0 |
+
+The `verb_form` first batch failed in `ThoughtChunks.stage → read → _index`
+with “thought chunk is absent at its .when address”; exception cleanup then
+failed in `Thoughts.replay_thoughts` with “thought occurrences must be strictly
+chronological.” Its initial state, batch state and failure state were retained;
+no retry was made. The unmarked arm's two correct selection counts are its
+zero-selection control, not successful answer or reconstruction learning.
+All six source audits were unchanged during their run, based at Git
+`840b5f91d3fe53d1837ddca01a1ab0c94e83a97d`, source snapshot
+`d69526500b2bb7553f6f2e9bd77db3ac1bd777c68aec3aa1bf7f95320e2633d7`.
+Thus all six were attempted once; the harness is not certified as six successful
+executions. The thought-memory producer failure goes to Alec.
+
+### 19.10 H5 and the checkpoint dependency
+
+`bin/IntervalLog.py` adds `intervalLogEveryBatches` (zero disables) and
+`intervalLogFile`, with schema and parameter-table entries. The only change to
+`Models.py` is one call in `BasicModel.runEpoch`, after batch/cursor counters
+advance and before periodic checkpointing. One observer call in
+`Forgetting.model_boundary` records every completed forgetting pass. Neither
+observer writes learner state.
+
+Interval rows capture reconstruction loss, expectation discrepancies, LTM
+occupancy/capacity/forgetting count and report, provisioned-fact luminosity,
+and order-zero inventory. Luminosity folds positive and negative fact poles
+independently using the native formula; user/conversation origins are excluded.
+The fixed probe worker owns a checkpoint copy, CPU evaluation, and its own RNG
+and runtime globals. It reads four XOR plus 68 FineWeb probes, four fixed
+generic-subject probes, word/sentence both rates, and one native reconstruction
+sample. Probe failure or timeout is reported as failure, never as a measurement.
+
+A full probe execution before the restore identity check was added completed
+in **68.748045958 s** including process startup (**67.072013791 s** internally),
+peak **857,998,944 bytes**. It reported XOR CP 0 (within/between 0/0, 2/4 pairs),
+FineWeb CP −0.0565628260374 (within 0.292700588703, between 0.236137762666,
+967/1,311 pairs), generic subjects 3/4, word both 0/90 and sentence both 0/76.
+The reconstruction sample “Felix is a cat.” was available but truncated, byte
+cost 0.0761762037873. **These are descriptive copied-model results only:** the
+following restoration mismatch disqualifies them as learner stop-condition
+readings.
+
+The four descriptive generic-subject observations from that same disqualified
+copy were:
+
+| Probe | Expected | Observed | Correct |
+|---|---|---|---|
+| cats breathe | relative | relative | True |
+| a cat is an animal | relative | absolute | False |
+| this cat breathes | absolute | absolute | True |
+| the cat is black | absolute | absolute | True |
+
+The H6 checkpoint diagnostic compared native loaded tensors before any further
+training. Six state-dictionary names alias one shared 4,229 × 392 float32
+concept matrix: `conceptualSpaces.{0,1,2}.{similarity_codebook.W,layers.2.W}`.
+`load_state_dict` and vocabulary restoration preserved its saved digest
+`7f1e07c0f817b63e683c0cb08752ce3096bbe2234f48169d799c603daefee1a9`.
+`_restore_structural_extras` changed it to
+`86c9a1e42b2a66418371d4144d6b492ae64351ff2e4bdbe72a2062a75027e752`;
+aligned-codebook resynchronization kept that changed digest. **21 values**
+changed, in rows **12, 15, 4183, 4216, 4217**, columns
+**360, 361, 364, 365, 367, 372, 373**, maximum absolute difference
+**2.9802322387695312e-8**. Torch RNG matched the checkpoint before and after
+optimizer construction. This identifies a byte-identity defect in structural
+restoration; it does not prove that these differences alone explain H6's later
+loss mismatch. No checkpoint adapter or tensor overwrite was added.
+
+The logger now checks every restored state tensor byte-for-byte before running
+probes and rejects such a copy. A real diagnostic replayed the checkpoint's
+next batch once to reach a live interval boundary, then compared the parent
+before and after collection: state tensors, vocabulary/structural extras,
+corpus runtime, optimizer state, all three RNG streams and progress counters
+were **unchanged**. The interval at batch two took **4.141079292 s** and
+correctly reported the copy failure. Captured scalar values were reconstruction
+**0.0325614511967**, concept expectation **0.117779292166**, LTM **42/16384**,
+forgetting passes **0**, luminosity **0**, inventory **18/4229**. The guarded
+diagnostic including its one continuation batch took **21.137955333 s**, peak
+**1,979,371,048 bytes**, source
+`3c476a928b5685dcc290415a4e822570b358c00eb9be03fca298e09ff931c076`.
+
+Two preceding diagnostic setup attempts are retained: one used `_optimizer`
+before `runBatch` assigned it; the other requested captured batch costs directly
+after loading, before any batch had populated them. The final diagnostic uses
+the returned optimizer and a real continuation batch; neither setup failure is
+counted as a model result. Recommendation: fix native checkpoint identity under
+H6 before enabling these probe rows as stop conditions. H5 scalar logging and
+parent invariance are measured; valid copied-model probe acceptance remains
+blocked by that producer finding.
+
+### 19.11 Recorded initialization identities
+
+All hashes in this table are SHA-256 of retained first-state files; they
+identify local diagnostic evidence, not seeds selected for a pass. The local
+receipt directory is deliberately not linked.
+
+| Attempt | Initial random-state SHA-256 |
+|---|---|
+| `math-answer_expectation` | `ba1882d7c32ae298b4178852c905abdc0d6a880fa03d731ed74890df6928f491` |
+| `math-expectation_only` | `2b172d20c5ddf119c53467129d66b80940279a851803fd875b8eda187f695b2c` |
+| `math-zero_budget` | `85ce483bfda4768e2a4716432b123098db203c3c3a59fb60c4c1dce8c00c0e0d` |
+| `game-future` | `92fd8438cf1abded11d35162228b64010fdab85f3ba25cc52491a8929a06684a` |
+| `game-supplied` | `217bafcc2d9803624b5c80305869d0199a02c0f61eac8f33e7c88fa6cf040b36` |
+| six placements, shared first draw | `e98e973167ab439dcc8794d20db29ccdd4dd2df826f8501f411f3fd726360c68` |
+| `test/test_priming_energy.py::test_cs_to_ps_projection_live` | `ca4a38cef95a4780f631754d07401d2d60b8756a3b3cf038f16d2455c139fda4` |
+| `test/test_priming_energy.py::test_cs_to_ws_projection_live` | `043d396d8976906483a1d772e60e16c808fdcdcac865e48b1d3810edbc01ece9` |
+| `test/test_priming_energy.py::test_projection_bounded_across_epochs` | `1d8ff4bcde0e5a148e6f5d3e498f3e1fd83058dfe810a2ee01acb9f66536253f` |
+| `test/test_priming_energy.py::test_one_canonical_surface_per_tower` | `8adba8971035767e8a6ee6da533261a6b726d8d55b61ab7594805a3767cf75c3` |
+| `test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[0]` | `022c0830355dbb8855e81f4b2e6e9a15b5774c902f90764348ea48028e4c51f5` |
+| `test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[1]` | `125752577d1f04cfdb4235d1fb6fde33f191423cefdb1c701e11174f41afee7b` |
+| `test/test_packed_reconstruction_parity.py::test_native_packing_preserves_each_sentence_and_owned_program[2]` | `99974fc7024bfa0ce0240e901e48a2c643cd5bc8cbac94086082414a3ad3eed1` |
+| `test/test_review14_contracts.py::test_review17_measurement_wiring_on_one_ordinary_batch` | `8b6a00302251086a8718ae4263fdc78fa0fe1e2077bd0d6efa04b793eccc9cec` |
+| review17 child before model construction | `f5d9a7f877986b984a29358a0f3176d13fff86edf9e5ffc02595fcd0b292ddb1` |
+
+### 19.12 H1 and freeze checks
+
+The inherited runner already batches up to **256 cases / 16 files** and
+recycles workers at resource boundaries. Its constants had drifted to a
+12 GiB worker cap and a 9 GiB scheduling share despite H1's 8 GiB ceiling.
+Both are restored to **8 GiB**. The 8 GiB machine reserve and four-core CPU
+reserve are unchanged, giving this machine **two workers / 16 GiB aggregate**.
+The standing testing guide's worker formulas, recycling threshold and memory
+examples now describe these limits; its separate weekly objective ceiling is
+unchanged.
+No fixture cache was introduced: reusable full models would need a verified
+reset of vocabularies, allocators, runtime journals, optimizer state and global
+construction registries. Such a reset is not established by the current
+fixtures. No construction/reset/compile/forward/backward speedup is claimed.
+
+The final affected-file command selected the complete files below with
+`env -u RUN_TRAINED -u RUN_SLOW make test TEST_ARGS='<files>'` (the receipt used
+the equivalent direct `test/test_report.py` entry point):
+`test_interval_log.py`, `test_nanochat_grammar_eval.py`, `test_forgetting.py`,
+`test_bounded_test_runner.py`, `test_training_device.py`, `test_mnist.py`,
+`test_basicmodel.py`, `test_packed_reconstruction_parity.py`,
+`test_corpus_checkpoint.py`, `test_game_corpus.py`, `test_math_corpus.py`,
+`test_lesson_stages.py`, `test_training_corpus.py`, `test_prepare_data.py` and
+`test_doc_links.py`, all under `test/`. Result: **366/366 completed, 356 passed,
+10 slow cases skipped, zero failures, 196.007174000 s**. There were five
+workers including recycled continuations; the maximum reported worker peak
+was below 5.65 GiB. New logger checks include unchanged parent state, disabled
+logging, failed children, every forgetting pass, the independent luminosity
+formula and rejecting a changed checkpoint copy; the scorer check keeps all
+candidates in one comparison bank across bounded input waves.
+
+The complete default sweep was launched as
+`env -u RUN_TRAINED -u RUN_SLOW make test`, with only `--run-dir` supplied to
+select a fresh local receipt destination. It collected **7,154 cases**, with
+nothing deselected, on source SHA-256
+`3c476a928b5685dcc290415a4e822570b358c00eb9be03fca298e09ff931c076`.
+The assembly manifest was present. Worker limits remained **1,800 s / 8 GiB**;
+overall limit **10,800 s**, aggregate **16 GiB**, two workers. A separate
+read-only monitor watches the durable case reports and interrupts this sweep
+if either of the two §18.2 stop cases fails; it cannot turn a failure into a pass.
+
+Before seeing the default sweep's final result, the H1 comparison is declared
+as a second full coverage run with **64 cases / four files per worker**, on the
+same frozen source, using the same two-worker, 8 GiB per-worker / 16 GiB total,
+1,800 s / 10,800 s limits and no simultaneous workload. This compares smaller
+batches with the retained 256/16 default without reproducing the invalid
+12 GiB cap. It is a batching measurement, not a replacement acceptance run;
+first-sweep failures remain failures. The same hard-stop monitor applies. It
+runs only if the first sweep completes without a required round stop. Shared
+compiler caches and fresh unseeded random draws are limitations of any
+wall-time comparison; no isolated mechanism speedup will be inferred.
+
+### 19.13 Decisions carried to Alec
+
+- H2: retain the strict footprint and class-order assertions; repair the
+  thought-state and kept-sentence producers before recertifying the two arms.
+- H3: repair the reverse-body return contract; decide the review17 audit's
+  compose-credit contract explicitly instead of changing four expected steps
+  to the observed zero. The historical unidentified 26-case list is obsolete
+  per Alec; the three packing setup ports preserve all parity assertions.
+- H6/H5: repair structural restore's byte identity, then establish uninterrupted
+  continuation before extending interleaving or CLI resume and before treating
+  copied-model probes as learner stop conditions. Scalar logging remains usable.
+- H8: provide or explicitly retire the unrecovered numeric chain-accuracy bar
+  and approve a new representative timing basis before the full campaign.
+  No budget increase or campaign launch is inferred from grade zero.
+- H12: investigate the first verb-form thought-chunk failure; carry the five
+  completed nulls at their original budgets.
+- Games: neither existing signal demonstrated the complete target in the
+  declared check. Inspect production/credit before choosing either for training.
+- Written tier: Claude still needs to read the twelve frozen audit keys in
+  §19.1. Verification of 36/36 authored pairs is not that human review.
+
+H4, H18, H20 implementation and round 3 remain outside this round as directed;
+H20's previously completed work is preserved. No learning gate is declared
+passed by a mechanism probe, a skipped test or an incomplete measurement.
+
+### 19.14 Default-sweep failure inventory
+
+The first sweep's failures are retained independently of later setup-port
+checks or the H1 timing comparison. The completed sweep recorded
+the following **23 failures**:
+
+| Case or family | Finding |
+|---|---|
+| `test_compose_pair_driver.py::test_complete_paths_train_in_one_step_and_commit_once` | Observer calls `.detach()` on `_compose_forced_slots=None`. A non-reading departure can reuse the completed composition and legitimately have no new forced slots. A setup port must explicitly verify that branch, keep the existing assertions, and never manufacture a composed departure. |
+| `test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage` | `Thoughts.replay_thoughts` rejects nonchronological occurrences both during `commit_thought` and during `controller_error` cutoff. |
+| `test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row` | The thought-history chronology assertion fails during the actual output path. |
+| `test_output_synthesis.py::test_what_report_separates_families_and_thinking` | The thought-history chronology assertion fails during the public report path. |
+| `test_operators_round4a0.py::test_when_reader_inventory_covers_current_attribute_and_dynamic_readers` | Inventory names `PartSpace._radix_part_events`; the actual time-band access moved into `_radix_code_events`, while the old method remains a wrapper. The inventory assertion itself is unchanged. |
+| `test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully` | `MemoryLink.chunk_candidates → MemberRead.read → ClauseRow.point_of_row` reaches a shared-concept index that is not attached. |
+| `test_sparse_concept_e2e.py::test_interpreted_object_keeps_the_native_features_in_one_row` | Native feature columns are `{0}`, expected `{4, 402}`. The strict feature assertions are retained for a producer/contract decision. |
+| Sixteen `test_whole_presence.py` parametrizations | Missing original `whole-pullback-1.pt`; execution stops before the numerical assertions. |
+
+The missing fixture is the sentence-four whole from the item-2.5 native mean
+receipt, originally at
+`doc/benchmarks/2026-10-31-item2-5-completion/addendum-10/native-mean/whole-pullback-1.pt`.
+Historical commit `1e02cebf5d` describes total membership approximately
+**1.23037e-7**, but does not contain the tensor file or enough values to recover
+it. No matching blob appears in Git history, and a search including ignored
+files under the local project trees found no copy. The sixteen cases are the
+forward/pullback bounds (two dtypes × two masses), tiny-mass JVP/weight gradcheck
+(two × two), and compiled pullback (two backends × two dtypes × two masses).
+The original shapes and assertions cannot be preserved by inventing a different
+whole. Alec has been asked for the original machine/path; these cases are not
+converted to skips or assigned replacement tensors.
+
+The non-missing-input failures' recorded pre-setup RNG identities are:
+
+| Node ID (under `test/`) | Random-state SHA-256 | PYTHONHASHSEED |
+|---|---|---|
+| `test_compose_pair_driver.py::test_complete_paths_train_in_one_step_and_commit_once` | `d2a2922756ee7d2bb323a732efcfb51084c1f794c9c82b74067ebc8953bf6fb6` | 1381815608 |
+| `test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage` | `c98c3d84678deea3ae5e988fb4a6a59b6eea466a5be876f078409baf5267dd6a` | 1381815608 |
+| `test_output_path_supervised.py::test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row` | `48cc51d2db05d3b31f06e142ca2ecc492b18c428ac5b9c64b7e5aeb2a1fcde24` | 1381815608 |
+| `test_output_synthesis.py::test_what_report_separates_families_and_thinking` | `78e816fb6b11f1ebe6635cc71dd5996745a03acd109bbe2a317d56460939b262` | 1381815608 |
+| `test_operators_round4a0.py::test_when_reader_inventory_covers_current_attribute_and_dynamic_readers` | `404e9c21a083e3808d541b65c95a40fd1d95fab160c91931a5e0fef8bc533052` | 1381815608 |
+| `test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully` | `96963dd4e585c792fedd7d7130294fd296d8aabeb9227f838cddb9896269e174` | 1381815608 |
+| `test_sparse_concept_e2e.py::test_interpreted_object_keeps_the_native_features_in_one_row` | `731310802a6ba1b25f4869866f907919068551d0116d989e5b69b44c9f6f1293` | 1381815608 |
+
+The existing non-strict expected-failure case
+`test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input`
+was an unexpected pass. Its marker and assertion were not changed. The two
+required stop cases both passed: shared-concept raising in **0.204194417 s**,
+and `TestMMXorConvergence::test_convergence` in **9.448233541 s**.
+
+The default sweep completed **7,154/7,154 cases** in **4,080.850160500 s**
+(runner time; outer `make` command **4,082.253496875 s**). Unique case outcomes:
+**6,804 passed, 326 skipped, 23 failed, one unexpected pass**. The 173 workers
+include recycled continuations and the seven large-memory workers. Peak
+reported worker process-tree memory was **7,884,118,520 bytes**, below the
+8 GiB cap; neither memory nor time cap was exceeded. Ordinary coverage was
+**7,147/7,147**, large-memory coverage **7/7**. No required whole-round stop
+was triggered. `make` exited **2** because the runner reported test failure.
+`TestOrthogonalFlags::test_flags_match_expected` emits four passing call reports
+for one case; the totals above count its node once. Result JSON SHA-256:
+`4199826398ea8937b00a30f7b1fbc156945281c196f56d1a8b115476bc896a56`.
+
+The final grammar-XOR reconstruction case completed its configured **400
+epochs** and recovered **4/4** word multisets with all inverses available; the
+field-readback audit was also **4/4**. Saved final answers were
+**0.3009, 1.0010, 0.8918, 0.2727**, against **0, 1, 1, 0** (printed precision).
+This is the one unseeded reconstruction run in the default sweep; the separate
+trained-tier classification certificate was skipped and is not claimed.
+
+### 19.15 H1 comparison timeout and required round stop
+
+The predeclared comparison ran as
+`env -u RUN_TRAINED -u RUN_SLOW make test TEST_ARGS='--batch-size 64 --max-files 4'`,
+with an additional fresh `--run-dir` for its local receipts. Both runs selected
+the same **7,154 cases** and validated the same **1,090 source files**, SHA-256
+`3c476a928b5685dcc290415a4e822570b358c00eb9be03fca298e09ff931c076`.
+The assembly manifest was present. No other sweep or model measurement ran
+concurrently. The worker, aggregate and deadline limits were unchanged.
+
+The comparison **did not complete**: **4,253/7,154 cases completed**, comprising
+**4,054 passed, 195 skipped and four failed**. The ordinary phase stopped on
+timeout; the seven large-memory cases were not started. Runner time was
+**3,997.675058291 s**, outer `make` time **3,998.823302416 s**. The runner exited
+**124**, `make` exited **2**, and there were **174 workers** including recycled
+continuations. Maximum reported worker memory was **6,797,859,680 bytes** and
+aggregate memory **12,946,470,184 bytes**, both below their caps. The first
+sweep's aggregate peak was **12,107,985,616 bytes**. Comparison result JSON
+SHA-256: `d55f962a74a3a139c397c33e8914954d643c26f5c500a0e329c3842d3ab4aa75`.
+
+Worker 172 reached its **1,800 s** deadline after **1,801.046661375 s**, while
+running
+`test_percept_expectation_final.py::test_arrival_brick_compiles_and_equals_eager_loop_state_loss_and_gradient`.
+Its peak was **482,018,600 bytes**. Worker 173 was consequently aborted after
+**1,747.489444542 s**, peak **1,443,530,744 bytes**, while running
+`test_perceptual_loopback.py::TestRecurrentCellAndOutputViews::test_full_forward_runs_recurrent_cell`.
+Neither active case produced a completed pytest outcome. Their first-sweep
+passes took **2.577253667 s** and **15.118661541 s** respectively; those passes
+do not erase this timeout, and the timeout's cause is not established by the
+logs. Initial worker RNG hashes were
+`dbcde269f0fefea13074fe76db859bac9bab47a05adc3282de6b05cd4cdeaa3d` and
+`b676b78ed672acb60015072503a44929d4a344607db651dee6fe41261ab0b8f1`.
+
+The four completed failures were:
+
+| Case (under `test/`) | Comparison finding | Pre-setup RNG SHA-256 |
+|---|---|---|
+| `test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage` | Unlike its first-sweep chronology failure, this draw reached line 419: the minted committed meaning still has open slot `('referent', 0)`. | `9b5fd012305f78c266515795d3f183627d4e3f208f55097ee205b50b5369d871` |
+| `test_output_synthesis.py::test_what_report_separates_families_and_thinking` | Thought-history chronology fails again. | `05190bd7faa6eb0ae3d0f2e5a42aadd9da8967d7d86d4cce141a4d67e94ebba6` |
+| `test_operators_round4a0.py::test_when_reader_inventory_covers_current_attribute_and_dynamic_readers` | The same obsolete `_radix_part_events` inventory entry. | `62a984215c531b88db36dec30bad3bd1880336ad5ca2524535214dd5b38206a7` |
+| `test_percept_transitivity.py::test_native_kept_readings_have_transitive_percept_codes` | Additional case fails thought-history chronology during closing and `controller_error` cutoff. | `6b062544a85c39b96c6522cf1059013c7e5c43b98d7847f1c579c7d2e530e2cb` |
+
+The comparison's recorded `PYTHONHASHSEED` was **4241412517**. Both named
+hard-stop cases passed again: shared-concept raising **0.214859458 s**, MM XOR
+convergence **5.605781541 s**. The incomplete sweep itself requires the round
+to stop under [Testing](../Testing.md). **No model run, diagnostic replay,
+fixture port or further test sweep followed the timeout.** No cap was raised,
+and the comparison was not retried. The 256-case/16-file default is retained;
+the incomplete comparison supports no throughput conclusion or speedup claim.
+
+Two setup ports identified from the completed first sweep therefore remain
+unapplied: read the compose path's own `compose_forced_slots` and explicitly
+verify the non-reading branch before representing its empty mask; and point
+the time-reader inventory at `PartSpace._radix_code_events`. Their existing
+assertions and fixture shapes remain unchanged. These await the next authorized
+round, together with investigation of the timeout and the strict producer
+findings. The original whole-presence capture's location remains unanswered;
+its sixteen failures remain visible, with no replacement tensors or skips.
+
+This is a **review handback with open findings**, not a green acceptance or a
+completed H1 batching certificate. The complete default sweep in §19.14 is the
+acceptance record; neither the comparison's passing cases nor the earlier fast
+checks regrade its failures.

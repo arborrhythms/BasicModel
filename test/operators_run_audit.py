@@ -248,10 +248,19 @@ def observe_run():
             owners = sentence_ids.gather(1, narrowing.round_words.clamp_min(0))
             attention &= ((owners == kwargs.get('sentence', 0))
                           & (narrowing.round_words >= 0))
-        menus = [attention, compose]
-        menus += [kwargs[name] for name in ('candidates', 'binds')
-                  if kwargs.get(name) is not None]
-        counts = torch.stack([menu.sum(-1) for menu in menus], -1)
+        menus = dict(attention=attention, compose=compose,
+                     candidate=kwargs.get('candidates'), bind=kwargs.get('binds'),
+                     reconstruction=kwargs.get('reconstruction'),
+                     thought=kwargs.get('thought'), output=kwargs.get('output'))
+        counts = compose.new_zeros((len(compose), len(menus)), dtype=torch.long)
+        for index, (name, menu) in enumerate(menus.items()):
+            if menu is None:
+                continue
+            for row in range(len(compose)):
+                eligible = set(menu[row].nonzero().flatten().tolist())
+                consumed = {int(prior[name + '_round'][row])
+                            for prior in kwargs.get('used', ())}
+                counts[row, index] = len(eligible - consumed)
         counts *= kwargs['active'][:, None]
         value = departure(narrowing, compose, **kwargs)
         torch.testing.assert_close(value['walk_count'], counts.gt(0).sum(-1))

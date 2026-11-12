@@ -27,8 +27,8 @@ import uuid
 
 MIB, GIB = 1024**2, 1024**3
 RESERVED_MACHINE_BYTES = 8 * GIB
-DEFAULT_WORKER_MEMORY_BYTES = 12 * GIB
-WORKER_SHARE_BYTES = 9 * GIB
+DEFAULT_WORKER_MEMORY_BYTES = 8 * GIB
+WORKER_SHARE_BYTES = 8 * GIB
 HERE = Path(__file__).resolve().parent
 LOCK = Path.home() / ".cache" / "basicmodel" / "tests.lock"
 
@@ -920,7 +920,7 @@ def default_test_memory_bytes():
 
 
 def default_worker_count():
-    """Reserve four CPU slots and at least 9 GiB per default worker."""
+    """Reserve four CPU slots and eight GiB per default worker."""
     return max(1, min((os.cpu_count() or 1) - 4,
                       default_test_memory_bytes() // WORKER_SHARE_BYTES))
 

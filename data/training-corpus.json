@@ -38,8 +38,8 @@
   "B3"
  ],
  "part_b_scan": {
-  "held_out_digest": "e42d5a524dce11661598a0eed8d3c15724d74090273c8b674db96407af6ec638",
-  "held_out_sentences": 953,
+  "held_out_digest": "8e40e033b0a24e1052ae7ff9254b2499d3c17d7145b274329be5f0fc151a04dc",
+  "held_out_sentences": 983,
   "occurrences": {
    "hen": 1,
    "hen.": 1,
@@ -71,7 +71,7 @@
     },
     {
      "path": "data/games/manifest.json",
-     "sha256": "d7a77c734a00c835f5dcd4360f12b3501c28cbfcd0397371d97df17c1ca0693d"
+     "sha256": "500b2e6972308b99d80977fe39b2d11ad7209551d9860da9586a082c04eb8c1d"
     }
    ],
    "lessons": [
@@ -97,7 +97,8 @@
   },
   "B1": {
    "local": true,
-   "manifest_sha256": "cafa9a495c1d16ac73eb0ddff1e2e825fdb1b9c76d7cc5c34a048e64f785bd0b",
+   "manifest_hash_rule": "sha256 of compact sorted JSON excluding assembly_seconds",
+   "manifest_sha256": "d84a6bb65e59d77480203d00b508ec6cb94b9fbe84a3304634f2f7429c959e40",
    "name": "developmental text",
    "path": "data/corpus/assembly-01/",
    "recipe": {

@@ -1,0 +1,3 @@
+{"game":"not","key":"not-written-000003","sources":["Milo can swim beside the lake."],"split":"train","target":"Milo cannot swim beside the lake.","tier":"written","variant":"ability"}
+{"game":"not","key":"not-written-000004","sources":["Rex can sing beside the lake."],"split":"train","target":"Rex cannot sing beside the lake.","tier":"written","variant":"ability"}
+{"game":"not","key":"not-written-000005","sources":["Felix can walk beside the lake."],"split":"transfer","target":"Felix cannot walk beside the lake.","tier":"written","variant":"ability"}

@@ -96,7 +96,7 @@ def measure_layout(model, rows, *, packed):
                 model.runBatch(
                     train=False, batchNum=step, batchSize=len(rows), split="validation",
                     batch_override=(raw, torch.empty(len(rows), 0)),
-                    questions=tuple(What.present(b, split="validation") for b in range(len(rows))))
+                    questions=tuple(What.inference(b, split="validation") for b in range(len(rows))))
             isp = model.inputSpace
             end_depth = model._tensor_final_end_depth.abs().clamp(1,3)
             retained_root = model._tensor_final_end_slots[torch.arange(len(rows)),end_depth-1]
@@ -145,11 +145,14 @@ def measure_layout(model, rows, *, packed):
 
 
 def warm_vocabulary(model, rows):
+    from What import What
     surfaces = [s for row in rows for s in row]
     with torch.no_grad():
         model.runBatch(train=False, batchSize=len(surfaces), split="validation",
                        batch_override=(model.inputSpace.prepInput(surfaces),
-                                       torch.empty(len(surfaces), 0)))
+                                       torch.empty(len(surfaces), 0)),
+                       questions=tuple(What.inference(b, split="validation")
+                                       for b in range(len(surfaces))))
     reset(model, packed=False, final=True, batch=len(surfaces))
 
 

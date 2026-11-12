@@ -85,9 +85,11 @@ pytest reports an xfail whatever the failure.
 | `make compare` | Side-by-side compare of `XML1` and `XML2`; writes an HTML report |
 | `make SigmaPi` / `SymPercept` / `SPNN` | Run the legacy demos under `bin/etc/` with `--demo` |
 
-The MNIST training file `data/mnist_train.csv` is a Git LFS object. Fetch it
-with `git lfs pull --include=data/mnist_train.csv` before an MNIST run; the
-loader names any MNIST file whose LFS content is not checked out.
+Prepare the MNIST CSVs and first FineWeb shard with
+`.venv/bin/python bin/prepare_data.py` before a run that needs them. The command
+checks the URLs, byte sizes and SHA-256 digests in `data/external-files.json`;
+downloaded data stays local and ignored. Tests skip absent inputs and name this
+command. Stored papers and weights produced by this project remain tracked.
 
 ### Testing and Documentation
 

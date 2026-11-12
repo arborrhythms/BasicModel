@@ -1,0 +1,3 @@
+{"game":"conjunction","key":"conjunction-written-000003","sources":["Before dawn, Bella arrives.","After dawn, Rex leaves."],"split":"test","target":"Before dawn, Bella arrives, and after dawn, Rex leaves.","tier":"written","variant":"arrival"}
+{"game":"conjunction","key":"conjunction-written-000004","sources":["Before dawn, Luna arrives.","After dawn, Milo leaves."],"split":"train","target":"Before dawn, Luna arrives, and after dawn, Milo leaves.","tier":"written","variant":"arrival"}
+{"game":"conjunction","key":"conjunction-written-000005","sources":["Before dawn, Ciao arrives.","After dawn, Felix leaves."],"split":"transfer","target":"Before dawn, Ciao arrives, and after dawn, Felix leaves.","tier":"written","variant":"arrival"}

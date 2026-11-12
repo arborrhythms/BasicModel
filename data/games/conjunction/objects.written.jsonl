@@ -1,0 +1,3 @@
+{"game":"conjunction","key":"conjunction-written-000006","sources":["Rex carries a lantern.","Milo carries a basket."],"split":"train","target":"Rex carries a lantern, and Milo carries a basket.","tier":"written","variant":"objects"}
+{"game":"conjunction","key":"conjunction-written-000007","sources":["Bella carries a lantern.","Luna carries a basket."],"split":"train","target":"Bella carries a lantern, and Luna carries a basket.","tier":"written","variant":"objects"}
+{"game":"conjunction","key":"conjunction-written-000008","sources":["Felix carries a lantern.","Ciao carries a basket."],"split":"transfer","target":"Felix carries a lantern, and Ciao carries a basket.","tier":"written","variant":"objects"}

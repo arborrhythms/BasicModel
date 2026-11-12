@@ -149,3 +149,99 @@ def test_checkpoint_uses_consumed_positions_and_resumes_without_epoch_clear(tmp_
         for model in models:
             model.End()
             model.symbolSpace.soft_reset()
+
+
+@pytest.mark.slow
+def test_real_next_batch_matches_checkpoint_losses_and_kept_programs(tmp_path, monkeypatch, eager_reading):
+    """Compare one uninterrupted update with the same update after native restore."""
+    from data import TheData
+    from Models import BaseModel, BasicModel
+    from CorpusCheckpoint import detached
+    import hashlib
+
+    root = Path(__file__).resolve().parents[1]
+    tree = ET.parse(root/'data/MM_corpus_orders.xml')
+    tree.find('./architecture/training/packSentences').text = 'true'
+    config = tmp_path/'real-resume.xml'
+    tree.write(config)
+    rows = [dict(text=text, split='train', stage=0, document='document', sentence=i)
+            for i, text in enumerate(('A cat sleeps.', 'A bird sings.', 'The cat sleeps.', 'The bird sings.') * 3)]
+    TheData.load('curriculum', dat={'corpusManifest': str(manifest(tmp_path, rows))})
+    models, programs, losses = [], [], []
+    original = BasicModel._commit_sentence
+
+    def fingerprint(value):
+        if torch.is_tensor(value):
+            value = value.detach().cpu().contiguous()
+            return (str(value.dtype), tuple(value.shape), hashlib.sha256(
+                value.reshape(-1).view(torch.uint8).numpy().tobytes()).hexdigest())
+        if isinstance(value, dict):
+            return {key: fingerprint(item) for key, item in value.items()}
+        if isinstance(value, (tuple, list)):
+            return tuple(fingerprint(item) for item in value)
+        return value
+
+    def keep(model, state, sid, active, observations, predictions, wins):
+        selected = []
+        for b in range(len(active)):
+            if bool(active[b]):
+                entry = observations[int(wins[b])]['entries'][b]
+                selected.append(None if entry is None else fingerprint({key: getattr(entry, key)
+                    for key in ('actions', 'word_ids', 'case_values', 'case_selected')}))
+        result = original(model, state, sid, active, observations, predictions, wins)
+        programs.extend(selected)
+        return result
+
+    monkeypatch.setattr(BasicModel, '_commit_sentence', keep)
+
+    def create():
+        import Language
+        Language.TheGrammar._configured = False
+        model = BaseModel.from_config(str(config), data=TheData)[0]
+        models.append(model)
+        run = model.runBatch
+        def observed(*args, **kwargs):
+            result, cursor = run(*args, **kwargs)
+            if result is not None:
+                losses.append(fingerprint((result.lossIn, result.lossOut)))
+            return result, cursor
+        monkeypatch.setattr(model, 'runBatch', observed)
+        return model
+
+    try:
+        first = create()
+        optimizer = first.getOptimizer(lr=.001)
+        first.runEpoch(optimizer=optimizer, batchSize=1, max_batches=1)
+        assert first._checkpoint_corpus_cursor is not None
+        checkpoint = tmp_path/'real.ckpt'
+        first.save_weights(str(checkpoint))
+        saved = detached(first.state_dict())
+        # Assert the concrete retention ledgers, not just a successful load.
+        ledger_names = [name for name in saved if any(part in name for part in
+                       ('surprise', 'access_count', 'forget_', 'relevance', 'placement'))]
+        assert any('surprise' in name for name in ledger_names)
+        assert any('access_count' in name for name in ledger_names)
+        assert any('forget_' in name for name in ledger_names)
+        programs.clear(); losses.clear()
+        first.runEpoch(optimizer=optimizer, batchSize=1, max_batches=1)
+        expected_programs, expected_losses = list(programs), list(losses)
+        assert expected_programs and expected_losses
+        expected_state = fingerprint(first.state_dict())
+
+        resumed = create()
+        assert resumed.load_weights(str(checkpoint), require_match=True)
+        actual = resumed.state_dict()
+        for name in ledger_names:
+            assert fingerprint(saved[name]) == fingerprint(actual[name]), name
+        # Item 2.0 retired the independent answer comparison reader.
+        assert not hasattr(resumed, 'comparison_reader')
+        optimizer = resumed.getOptimizer(lr=.001)
+        programs.clear(); losses.clear()
+        resumed.runEpoch(optimizer=optimizer, batchSize=1, max_batches=1)
+        assert losses == expected_losses
+        assert programs == expected_programs
+        assert fingerprint(resumed.state_dict()) == expected_state
+    finally:
+        for model in models:
+            model.End()
+            model.symbolSpace.soft_reset()

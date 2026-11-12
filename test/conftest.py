@@ -163,3 +163,19 @@ def _restore_process_device():
 
 # Skip expensive checks before fixture/model construction, using the existing switch.
 pytest_plugins = ["slow_tests", "phase_artifacts", "fineweb_artifacts"]
+
+
+@pytest.fixture(autouse=True)
+def _external_corpus_is_offline(monkeypatch):
+    """A test may read prepared shards; only prepare_data may fetch them."""
+    from pathlib import Path
+    import data
+    from prepare_data import require_local
+
+    def local_shard(index, data_dir):
+        try:
+            return str(require_local(Path(data_dir) / data._shard_filename(index)))
+        except FileNotFoundError as error:
+            pytest.skip(str(error))
+
+    monkeypatch.setattr(data, 'download_shard', local_shard)

@@ -107,3 +107,20 @@ def test_the_expander_knows_no_language():
         ('ka zu.', 'ka lo zu.'), ('mi zu.', 'mi lo zu.'), ('po zu.', 'po lo zu.')]
     assert [row['split'] for row in out if row['sources'][0] == 'mi zu.'] == ['transfer']
     assert verify(out, toy)['rejected'] == []
+
+
+def test_written_pairs_preserve_authorship_and_an_audit_sample():
+    found = {}
+    for entry in manifest()['files']:
+        if entry['tier'] != 'written':
+            continue
+        spec = recipe(entry)
+        provenance = entry['provenance']
+        assert provenance['model'] and provenance['date']
+        assert provenance['prompt_sha256'] == hashlib.sha256(spec['provenance']['prompt'].encode()).hexdigest()
+        assert set(provenance['audit_keys']) <= {row['key'] for row in spec['authored_rows']}
+        assert provenance['audit_status'] == 'pending'
+        assert rows(entry) == [row for row in spec['authored_rows'] if row['variant'] == entry['variant']]
+        assert entry['verify'] == dict(accepted=len(rows(entry)), rejected=0)
+        found[entry['game']] = found.get(entry['game'], 0) + len(rows(entry))
+    assert found == {'not': 12, 'conjunction': 12, 'unary_chain': 12}

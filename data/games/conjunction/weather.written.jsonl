@@ -1,0 +1,3 @@
+{"game":"conjunction","key":"conjunction-written-000000","sources":["Rex waits under the awning.","Bella watches the rain."],"split":"train","target":"Rex waits under the awning, and Bella watches the rain.","tier":"written","variant":"weather"}
+{"game":"conjunction","key":"conjunction-written-000001","sources":["Milo waits under the awning.","Luna watches the rain."],"split":"train","target":"Milo waits under the awning, and Luna watches the rain.","tier":"written","variant":"weather"}
+{"game":"conjunction","key":"conjunction-written-000002","sources":["Felix waits under the awning.","Ciao watches the rain."],"split":"transfer","target":"Felix waits under the awning, and Ciao watches the rain.","tier":"written","variant":"weather"}

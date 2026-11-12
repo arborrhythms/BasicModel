@@ -1,5 +1,5 @@
 {
- "command": "python bin/game_corpus.py freeze --seed 20261112 --recipes data/games/recipes --out data/games",
+ "command": "python bin/game_corpus.py freeze --seed 20261112 --recipes data/games/recipes --out data/games --written data/games/written",
  "files": [
   {
    "game": "conjunction",
@@ -131,6 +131,338 @@
    "variant": "k3",
    "verify": {
     "accepted": 48,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "conjunction",
+   "path": "conjunction/ability.written.jsonl",
+   "provenance": {
+    "audit_keys": [
+     "conjunction-written-000003",
+     "conjunction-written-000006",
+     "conjunction-written-000008",
+     "conjunction-written-000011"
+    ],
+    "audit_reviewer": "Claude",
+    "audit_status": "pending",
+    "date": "2026-11-12",
+    "model": "gpt-6",
+    "prompt_sha256": "636ab4b01d97e01d7a13338169b14a58bcbb4244e75a82d8bf5da2efa748fbce"
+   },
+   "recipe": "written/conjunction.json",
+   "recipe_sha256": "7380412a5c846208e4c211c51e4822f0e96356f077aeb90c4f2e280f2711df33",
+   "rows": {
+    "test": 1,
+    "train": 1,
+    "transfer": 1
+   },
+   "sha256": "9a9d10f7a304c441536753a1657bac9443305b6ca64580c14a39abd476be04ad",
+   "tier": "written",
+   "variant": "ability",
+   "verify": {
+    "accepted": 3,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "conjunction",
+   "path": "conjunction/arrival.written.jsonl",
+   "provenance": {
+    "audit_keys": [
+     "conjunction-written-000003",
+     "conjunction-written-000006",
+     "conjunction-written-000008",
+     "conjunction-written-000011"
+    ],
+    "audit_reviewer": "Claude",
+    "audit_status": "pending",
+    "date": "2026-11-12",
+    "model": "gpt-6",
+    "prompt_sha256": "636ab4b01d97e01d7a13338169b14a58bcbb4244e75a82d8bf5da2efa748fbce"
+   },
+   "recipe": "written/conjunction.json",
+   "recipe_sha256": "7380412a5c846208e4c211c51e4822f0e96356f077aeb90c4f2e280f2711df33",
+   "rows": {
+    "test": 1,
+    "train": 1,
+    "transfer": 1
+   },
+   "sha256": "1e8088d776c79d22d8e5ea3b42c16feeeaf14c76b020bc623a94f63c46de462e",
+   "tier": "written",
+   "variant": "arrival",
+   "verify": {
+    "accepted": 3,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "conjunction",
+   "path": "conjunction/objects.written.jsonl",
+   "provenance": {
+    "audit_keys": [
+     "conjunction-written-000003",
+     "conjunction-written-000006",
+     "conjunction-written-000008",
+     "conjunction-written-000011"
+    ],
+    "audit_reviewer": "Claude",
+    "audit_status": "pending",
+    "date": "2026-11-12",
+    "model": "gpt-6",
+    "prompt_sha256": "636ab4b01d97e01d7a13338169b14a58bcbb4244e75a82d8bf5da2efa748fbce"
+   },
+   "recipe": "written/conjunction.json",
+   "recipe_sha256": "7380412a5c846208e4c211c51e4822f0e96356f077aeb90c4f2e280f2711df33",
+   "rows": {
+    "train": 2,
+    "transfer": 1
+   },
+   "sha256": "3da55651d75f7b9142b9758499eff34b4d93f7c139b2e63d77aa5d935b00a47b",
+   "tier": "written",
+   "variant": "objects",
+   "verify": {
+    "accepted": 3,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "conjunction",
+   "path": "conjunction/weather.written.jsonl",
+   "provenance": {
+    "audit_keys": [
+     "conjunction-written-000003",
+     "conjunction-written-000006",
+     "conjunction-written-000008",
+     "conjunction-written-000011"
+    ],
+    "audit_reviewer": "Claude",
+    "audit_status": "pending",
+    "date": "2026-11-12",
+    "model": "gpt-6",
+    "prompt_sha256": "636ab4b01d97e01d7a13338169b14a58bcbb4244e75a82d8bf5da2efa748fbce"
+   },
+   "recipe": "written/conjunction.json",
+   "recipe_sha256": "7380412a5c846208e4c211c51e4822f0e96356f077aeb90c4f2e280f2711df33",
+   "rows": {
+    "train": 2,
+    "transfer": 1
+   },
+   "sha256": "7770845c66cd3d312fbb619983e52e374b01baf1dd44dbe13a311b3e11a24df4",
+   "tier": "written",
+   "variant": "weather",
+   "verify": {
+    "accepted": 3,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "not",
+   "path": "not/ability.written.jsonl",
+   "provenance": {
+    "audit_keys": [
+     "not-written-000001",
+     "not-written-000003",
+     "not-written-000009",
+     "not-written-000011"
+    ],
+    "audit_reviewer": "Claude",
+    "audit_status": "pending",
+    "date": "2026-11-12",
+    "model": "gpt-6",
+    "prompt_sha256": "636ab4b01d97e01d7a13338169b14a58bcbb4244e75a82d8bf5da2efa748fbce"
+   },
+   "recipe": "written/not.json",
+   "recipe_sha256": "4387c26705d406b091b22862e55506107439d1cabc5fc74c0c198fc71fbe2be6",
+   "rows": {
+    "train": 2,
+    "transfer": 1
+   },
+   "sha256": "0bbbb0b768c41e379158455745c0fdad4d31f73f42cced6dc6bfaf9fa5a87138",
+   "tier": "written",
+   "variant": "ability",
+   "verify": {
+    "accepted": 3,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "not",
+   "path": "not/future.written.jsonl",
+   "provenance": {
+    "audit_keys": [
+     "not-written-000001",
+     "not-written-000003",
+     "not-written-000009",
+     "not-written-000011"
+    ],
+    "audit_reviewer": "Claude",
+    "audit_status": "pending",
+    "date": "2026-11-12",
+    "model": "gpt-6",
+    "prompt_sha256": "636ab4b01d97e01d7a13338169b14a58bcbb4244e75a82d8bf5da2efa748fbce"
+   },
+   "recipe": "written/not.json",
+   "recipe_sha256": "4387c26705d406b091b22862e55506107439d1cabc5fc74c0c198fc71fbe2be6",
+   "rows": {
+    "train": 2,
+    "transfer": 1
+   },
+   "sha256": "898ee125463dc583023d834c21020bab08cd2a7fb342c2ae7ac9aab69572bb70",
+   "tier": "written",
+   "variant": "future",
+   "verify": {
+    "accepted": 3,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "not",
+   "path": "not/past.written.jsonl",
+   "provenance": {
+    "audit_keys": [
+     "not-written-000001",
+     "not-written-000003",
+     "not-written-000009",
+     "not-written-000011"
+    ],
+    "audit_reviewer": "Claude",
+    "audit_status": "pending",
+    "date": "2026-11-12",
+    "model": "gpt-6",
+    "prompt_sha256": "636ab4b01d97e01d7a13338169b14a58bcbb4244e75a82d8bf5da2efa748fbce"
+   },
+   "recipe": "written/not.json",
+   "recipe_sha256": "4387c26705d406b091b22862e55506107439d1cabc5fc74c0c198fc71fbe2be6",
+   "rows": {
+    "train": 2,
+    "transfer": 1
+   },
+   "sha256": "6e31ac6975668690a0624e72ef17a1900d7a192743956a64e3188a86ddc8874e",
+   "tier": "written",
+   "variant": "past",
+   "verify": {
+    "accepted": 3,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "not",
+   "path": "not/progressive.written.jsonl",
+   "provenance": {
+    "audit_keys": [
+     "not-written-000001",
+     "not-written-000003",
+     "not-written-000009",
+     "not-written-000011"
+    ],
+    "audit_reviewer": "Claude",
+    "audit_status": "pending",
+    "date": "2026-11-12",
+    "model": "gpt-6",
+    "prompt_sha256": "636ab4b01d97e01d7a13338169b14a58bcbb4244e75a82d8bf5da2efa748fbce"
+   },
+   "recipe": "written/not.json",
+   "recipe_sha256": "4387c26705d406b091b22862e55506107439d1cabc5fc74c0c198fc71fbe2be6",
+   "rows": {
+    "train": 2,
+    "transfer": 1
+   },
+   "sha256": "39d8554e9963728128bf3eaa6c89507149cc7a0597fa9841f967fc23d85e8fd1",
+   "tier": "written",
+   "variant": "progressive",
+   "verify": {
+    "accepted": 3,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "unary_chain",
+   "path": "unary_chain/k1.written.jsonl",
+   "provenance": {
+    "audit_keys": [
+     "unary_chain-written-000002",
+     "unary_chain-written-000003",
+     "unary_chain-written-000005",
+     "unary_chain-written-000006"
+    ],
+    "audit_reviewer": "Claude",
+    "audit_status": "pending",
+    "date": "2026-11-12",
+    "model": "gpt-6",
+    "prompt_sha256": "636ab4b01d97e01d7a13338169b14a58bcbb4244e75a82d8bf5da2efa748fbce"
+   },
+   "recipe": "written/unary_chain.json",
+   "recipe_sha256": "7ddd5e1a299a20f155c74260663af62f4988d51a12252eb1f3f509f1a2b60103",
+   "rows": {
+    "train": 3,
+    "transfer": 1
+   },
+   "sha256": "169649d766d5bd081702ee33aee44d56a996af6ebc15f60c3624f5ad184d95a0",
+   "tier": "written",
+   "variant": "k1",
+   "verify": {
+    "accepted": 4,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "unary_chain",
+   "path": "unary_chain/k2.written.jsonl",
+   "provenance": {
+    "audit_keys": [
+     "unary_chain-written-000002",
+     "unary_chain-written-000003",
+     "unary_chain-written-000005",
+     "unary_chain-written-000006"
+    ],
+    "audit_reviewer": "Claude",
+    "audit_status": "pending",
+    "date": "2026-11-12",
+    "model": "gpt-6",
+    "prompt_sha256": "636ab4b01d97e01d7a13338169b14a58bcbb4244e75a82d8bf5da2efa748fbce"
+   },
+   "recipe": "written/unary_chain.json",
+   "recipe_sha256": "7ddd5e1a299a20f155c74260663af62f4988d51a12252eb1f3f509f1a2b60103",
+   "rows": {
+    "train": 3,
+    "transfer": 1
+   },
+   "sha256": "23e9223b329a04f57fb256b9e7633decdc9061a1253af72a7f5634ac49fe7b8e",
+   "tier": "written",
+   "variant": "k2",
+   "verify": {
+    "accepted": 4,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "unary_chain",
+   "path": "unary_chain/k3.written.jsonl",
+   "provenance": {
+    "audit_keys": [
+     "unary_chain-written-000002",
+     "unary_chain-written-000003",
+     "unary_chain-written-000005",
+     "unary_chain-written-000006"
+    ],
+    "audit_reviewer": "Claude",
+    "audit_status": "pending",
+    "date": "2026-11-12",
+    "model": "gpt-6",
+    "prompt_sha256": "636ab4b01d97e01d7a13338169b14a58bcbb4244e75a82d8bf5da2efa748fbce"
+   },
+   "recipe": "written/unary_chain.json",
+   "recipe_sha256": "7ddd5e1a299a20f155c74260663af62f4988d51a12252eb1f3f509f1a2b60103",
+   "rows": {
+    "train": 3,
+    "transfer": 1
+   },
+   "sha256": "99d8f705b483293218c1e10063620aaa3b0dffd605230213ec551403c639ed14",
+   "tier": "written",
+   "variant": "k3",
+   "verify": {
+    "accepted": 4,
     "rejected": 0
    }
   }

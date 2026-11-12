@@ -9,6 +9,7 @@ import hashlib
 import json
 import re
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 
@@ -22,6 +23,16 @@ def sha256_file(path):
         for block in iter(lambda: stream.read(1 << 20), b''):
             digest.update(block)
     return digest.hexdigest()
+
+
+ASSEMBLY_HASH_RULE = 'sha256 of compact sorted JSON excluding assembly_seconds'
+
+
+def assembly_manifest_sha256(path):
+    """Identify the recipe, implementation, sources and rows independently of build time."""
+    manifest = json.loads(Path(path).read_text())
+    del manifest['assembly_seconds']
+    return hashlib.sha256(json.dumps(manifest, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 
 def units(root):
@@ -72,18 +83,23 @@ def scan_assembly(sqlite_path, sentences):
     """
     wanted = set(sentences)
     counts = {}
-    connection = sqlite3.connect(f'file:{sqlite_path}?mode=ro', uri=True)
     rows = 0
-    for (text,) in connection.execute('select text from sentences'):
-        rows += 1
-        key = normalize(text)
-        if key in wanted:
-            counts[key] = counts.get(key, 0) + 1
+    with closing(sqlite3.connect(f'file:{sqlite_path}?mode=ro', uri=True)) as connection:
+        for (text,) in connection.execute('select text from sentences'):
+            rows += 1
+            key = normalize(text)
+            if key in wanted:
+                counts[key] = counts.get(key, 0) + 1
     return rows, counts
 
 
 def freeze(root, local_root):
     root, local_root = Path(root), Path(local_root)
+    assembly = local_root / 'data/corpus/assembly-01'
+    shard = local_root / 'data/fineweb/shard_00000.parquet'
+    for path in (assembly / 'manifest.json', assembly / 'assembly.sqlite', shard):
+        if not path.is_file():
+            raise FileNotFoundError(f'{path}: prepare part B before freezing its manifest')
     items = units(root)
     def hashed(path):
         return dict(path=str(path), sha256=sha256_file(root / path))
@@ -96,14 +112,10 @@ def freeze(root, local_root):
     (root / 'data/eval').mkdir(parents=True, exist_ok=True)
     (root / 'data/eval/heldout-cost.json').write_text(json.dumps(heldout_cost, indent=1, sort_keys=True) + '\n')
     sentences = held_out_sentences(items)
-    assembly = local_root / 'data/corpus/assembly-01'
-    shard = local_root / 'data/fineweb/shard_00000.parquet'
-    scan = None
-    if (assembly / 'assembly.sqlite').exists():
-        rows, counts = scan_assembly(assembly / 'assembly.sqlite', sentences)
-        scan = dict(sentences_scanned=rows, held_out_sentences=len(sentences),
-                    held_out_digest=hashlib.sha256('\n'.join(sentences).encode()).hexdigest(),
-                    occurrences=dict(sorted(counts.items())))
+    rows, counts = scan_assembly(assembly / 'assembly.sqlite', sentences)
+    scan = dict(sentences_scanned=rows, held_out_sentences=len(sentences),
+                held_out_digest=hashlib.sha256('\n'.join(sentences).encode()).hexdigest(),
+                occurrences=dict(sorted(counts.items())))
     manifest = dict(
         schema=1,
         order=['A1', 'A2', 'A3', 'B1', 'B2', 'B3'],
@@ -117,11 +129,11 @@ def freeze(root, local_root):
             A3=dict(name='math', files=[hashed('data/math/manifest.json')]),
             B1=dict(name='developmental text', local=True, path='data/corpus/assembly-01/',
                     recipe=hashed('data/corpus-sources.json'),
-                    manifest_sha256=(sha256_file(assembly / 'manifest.json')
-                                     if (assembly / 'manifest.json').exists() else None)),
+                    manifest_hash_rule=ASSEMBLY_HASH_RULE,
+                    manifest_sha256=assembly_manifest_sha256(assembly / 'manifest.json')),
             B2=dict(name='NanoChat base corpus', local=True, path='data/fineweb/',
                     shards_on_disk=['shard_00000.parquet'],
-                    shard_sha256=sha256_file(shard) if shard.exists() else None,
+                    shard_sha256=sha256_file(shard),
                     split_rule='document index modulo 10: 0 to 7 train, 8 validation, 9 test '
                                '(Data.loadShards; bin/eval_nanochat_grammar.split_name)'),
             B3=dict(name='chat-stage mixture', prepared=False)),

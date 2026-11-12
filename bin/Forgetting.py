@@ -430,4 +430,5 @@ def model_boundary(model, *, document_boundary=False, epoch_boundary=False):
         truth = getattr(model.symbolSpace, 'truth_layer', None)
         if truth is not None:
             truth.sync_from_ltm()
+        __import__('IntervalLog').observe_forgetting(model, result)
     return result

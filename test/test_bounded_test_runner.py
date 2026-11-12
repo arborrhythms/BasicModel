@@ -160,9 +160,9 @@ def test_fast_pool_reserves_memory_and_four_cpu_slots(runner, monkeypatch):
     monkeypatch.setattr(runner.os, "cpu_count", lambda: 14)
     monkeypatch.setattr(runner, "physical_memory", lambda: 36 * runner.GIB)
     assert runner.default_worker_count() == 3
-    assert runner.DEFAULT_WORKER_MEMORY_BYTES == 12 * runner.GIB
+    assert runner.DEFAULT_WORKER_MEMORY_BYTES == 8 * runner.GIB
     monkeypatch.setattr(runner, "physical_memory", lambda: 80 * runner.GIB)
-    assert runner.default_worker_count() == 8
+    assert runner.default_worker_count() == 9
     monkeypatch.setattr(runner, "physical_memory", lambda: 128 * runner.GIB)
     assert runner.default_worker_count() == 10
 

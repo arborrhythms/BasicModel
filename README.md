@@ -89,13 +89,19 @@ and [Language](doc/Language.md#one-operation-per-round-item-75).
 
 ## Quick Start
 
+External MNIST CSVs and the first FineWeb shard are downloaded and verified by
+`.venv/bin/python bin/prepare_data.py`, using the URLs, sizes and hashes in
+`data/external-files.json`. They remain local and ignored. Tests that need an
+absent file skip with this preparation command; tests do not download data.
+Stored research papers and locally produced weights remain in the repository.
+
 ```bash
 # Set up virtual environment
 make install
 
 # Run a single model
 make xor            # data/MM_xor.xml
-make mnist          # data/mnist.xml (git lfs pull --include=data/mnist_train.csv first)
+make mnist          # data/mnist.xml (prepare the external data above first)
 
 # Compare two models side-by-side (XML1 and XML2 have no defaults)
 make compare XML1=data/ergodic.xml XML2=data/ergodic-only.xml

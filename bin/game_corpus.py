@@ -10,6 +10,7 @@ import itertools
 import json
 import random
 import re
+import shutil
 from pathlib import Path
 
 SPLITS = ('train', 'validation', 'test', 'transfer')
@@ -94,11 +95,63 @@ def verify(rows, recipe):
     return dict(accepted=accepted, rejected=rejected)
 
 
-def freeze(recipes_dir, out_dir, *, seed):
+def copy_recipes(recipes_dir, out_dir):
+    """Keep the hashed recipes beside the frozen rows, including scratch builds."""
+    recipes_dir, out_dir = Path(recipes_dir), Path(out_dir)
+    paths = sorted(recipes_dir.glob('*.json'))
+    if not paths:
+        raise ValueError(f'no recipes in {recipes_dir}')
+    destination = out_dir / 'recipes'
+    destination.mkdir(parents=True, exist_ok=True)
+    for source in paths:
+        target = destination / source.name
+        if source.resolve() != target.resolve():
+            shutil.copyfile(source, target)
+    return [destination / source.name for source in paths]
+
+
+def freeze_written(written_dir, out_dir, *, seed):
+    """Verify and freeze authored pairs; never synthesize their source or target."""
+    files = []
+    rng = random.Random(seed)
+    destination = Path(out_dir) / 'written'
+    destination.mkdir(parents=True, exist_ok=True)
+    for source in sorted(Path(written_dir).glob('*.json')):
+        spec_text = source.read_text()
+        spec = json.loads(spec_text)
+        target = destination / source.name
+        if source.resolve() != target.resolve():
+            shutil.copyfile(source, target)
+        rows = spec['authored_rows']
+        check = verify(rows, spec)
+        if check['rejected']:
+            raise ValueError(f'{source}: rejected authored rows {check["rejected"]}')
+        if len({row['key'] for row in rows}) != len(rows):
+            raise ValueError(f'{source}: duplicate authored keys')
+        provenance = dict(spec['provenance'])
+        prompt = provenance.pop('prompt')
+        provenance['prompt_sha256'] = hashlib.sha256(prompt.encode()).hexdigest()
+        provenance['audit_keys'] = sorted(rng.sample([row['key'] for row in rows], min(4, len(rows))))
+        for variant in sorted(spec['variants']):
+            chosen = [row for row in rows if row['variant'] == variant]
+            path = Path(out_dir) / spec['game'] / f'{variant}.written.jsonl'
+            path.parent.mkdir(parents=True, exist_ok=True)
+            text = ''.join(json.dumps(row, sort_keys=True, separators=(',', ':')) + '\n' for row in chosen)
+            path.write_text(text)
+            counts = {split: sum(row['split'] == split for row in chosen) for split in SPLITS}
+            counts = {split: count for split, count in counts.items() if count}
+            files.append(dict(game=spec['game'], variant=variant, tier='written',
+                path=str(path.relative_to(out_dir)), sha256=hashlib.sha256(text.encode()).hexdigest(),
+                rows=counts, verify=dict(accepted=len(chosen), rejected=0), provenance=provenance,
+                recipe=str(target.relative_to(out_dir)), recipe_sha256=hashlib.sha256(spec_text.encode()).hexdigest()))
+    return files
+
+
+def freeze(recipes_dir, out_dir, *, seed, written_dir=None):
     """Write data/games/<game>/<variant>.jsonl and manifest.json; tests never call this."""
     recipes_dir, out_dir = Path(recipes_dir), Path(out_dir)
     files = []
-    for recipe_path in sorted(recipes_dir.glob('*.json')):
+    for recipe_path in copy_recipes(recipes_dir, out_dir):
         recipe_text = recipe_path.read_text()
         recipe = json.loads(recipe_text)
         rows = expand(recipe, seed=seed)
@@ -120,12 +173,16 @@ def freeze(recipes_dir, out_dir, *, seed):
                               verify=dict(accepted=len(chosen), rejected=0),
                               recipe=str(recipe_path.relative_to(out_dir)),
                               recipe_sha256=hashlib.sha256(recipe_text.encode()).hexdigest()))
+    if written_dir is not None:
+        files.extend(freeze_written(written_dir, out_dir, seed=seed))
     manifest = dict(schema=1, generator='bin/game_corpus.py', seed=int(seed),
                     command=f'python bin/game_corpus.py freeze --seed {int(seed)} '
                             f'--recipes data/games/recipes --out data/games',
                     split_rule=('sha256 of the first source\'s normalized text modulo ten: 0 to 7 train, '
                                 '8 validation, 9 test; a row with a transfer filler is transfer'),
                     files=files)
+    if written_dir is not None:
+        manifest['command'] += ' --written data/games/written'
     (out_dir / 'manifest.json').write_text(json.dumps(manifest, indent=1, sort_keys=True) + '\n')
     return manifest
 
@@ -137,6 +194,7 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, required=True)
     parser.add_argument('--recipes', required=True)
     parser.add_argument('--out', required=True)
+    parser.add_argument('--written')
     args = parser.parse_args()
-    for entry in freeze(args.recipes, args.out, seed=args.seed)['files']:
+    for entry in freeze(args.recipes, args.out, seed=args.seed, written_dir=args.written)['files']:
         print(entry['path'], entry['rows'])
