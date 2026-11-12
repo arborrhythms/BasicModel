@@ -1323,3 +1323,32 @@ This is a **review handback with open findings**, not a green acceptance or a
 completed H1 batching certificate. The complete default sweep in §19.14 is the
 acceptance record; neither the comparison's passing cases nor the earlier fast
 checks regrade its failures.
+
+### 19.16 Freeze and repository handback
+
+Implementation freeze commit on `testing`:
+**`711203ffc8323c06145f214ba5bdd76be7d682c3`**. Its source identity is
+**`3c476a928b5685dcc290415a4e822570b358c00eb9be03fca298e09ff931c076`**,
+SHA-256 of `test/bounded_tests.source_snapshot` serialized with
+`json.dumps(snapshot, sort_keys=True, separators=(',', ':'))`.
+It contains **1,090 source entries**; `data/corpus/assembly-01/manifest.json`
+was **present**, with the raw and normalized identities in §19.1. H18 is
+deliberately deferred, so that ignored manifest still contributes to this hash.
+The subsequent documentation commit records this freeze without changing its
+source identity. No model execution or tests followed the required stop;
+the staged patch passed `git diff --cached --check`.
+
+Summing blob lengths from `git ls-tree -r -l HEAD`, the tracked tree changed
+from **206,872,716 bytes** before this work to **94,184,121 bytes** including
+this final handback. The implementation freeze alone was **94,182,343 bytes**.
+These are tracked-tree sizes, not Git history or materialized LFS sizes.
+The stored papers and retained scorer weights are unchanged. External datasets,
+local receipts and the seven planning notes remain on this machine.
+
+The handback preserves Alec's cleanup commits `0e34c23775`, `0f29e41182` and
+`840b5f91d3`. The final pre-freeze fetch still found `origin/main` at
+`9f7923d67f8921ef5c14afdf2fe18c536802018b`; no newer main change required a merge.
+Publication is to **`testing` only**, for Alec's review and landing. Per his
+later direction, this local checkout returns to the fetched **`main`** after
+the testing push is verified. This handback does not merge testing into main,
+push main, rewrite history, or remove the preserved local material.
