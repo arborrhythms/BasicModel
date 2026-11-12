@@ -31,3 +31,7 @@ scratch_*
 /doc/checkpoints/
 /evidence/
 /receipts/
+
+# Public data is prepared and verified by bin/prepare_data.py.
+/data/mnist_train.csv
+/data/mnist_test.csv
