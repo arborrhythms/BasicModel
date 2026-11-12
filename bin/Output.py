@@ -22,8 +22,8 @@ def thought_answer_meanings(selected):
     """Adapt owned checked results without a reader or another execution.
 
     A set remains an ordered tuple of complete members. Codes are unary
-    concepts; subgoals carry the child's typed result. All effects are detached, including a selected truth meaning and
-    every member of a set. Generation receives a given concluded idea.
+    concepts; subgoals carry the child's typed result. The live path keeps its concluded tensors attached. Stored results already
+    carry their storage boundary; realization adds no new gradient cut.
     """
     from Queries import ThoughtResult
     from Layers import MeaningExpectation
@@ -33,7 +33,7 @@ def thought_answer_meanings(selected):
     if isinstance(meaning, ConceptualMeaning) and '_open_references' in bindings(meaning):
         # The concluded binding is the answer, even when the last operation
         # was only one link in its proof. An exhausted question is unanswered.
-        return () if open_slots(meaning) else (meaning.detached(),)
+        return () if open_slots(meaning) else (meaning,)
     seen = set()
     while isinstance(checked, ThoughtResult) and checked.result_kind == "subgoal":
         if id(checked) in seen or len(seen) >= 64:
@@ -48,7 +48,7 @@ def thought_answer_meanings(selected):
     if checked.result_kind == "truth":
         if not isinstance(meaning, ConceptualMeaning):
             raise TypeError("truth answer requires its complete selected meaning")
-        return (meaning.detached(),)
+        return (meaning,)
     if checked.result_kind == "prediction":
         value = checked.value
         if value is None:
@@ -59,7 +59,7 @@ def thought_answer_meanings(selected):
                 or value.presence_logits.shape != (3,)
                 or not bool(torch.isfinite(value.presence_logits).all())):
             raise ValueError("prediction answer differs from the full role shape")
-        return (ConceptualMeaning(value.roles.detach(),
+        return (ConceptualMeaning(value.roles,
                 torch.ones(3, dtype=torch.bool, device=value.roles.device),
                 bindings=value.bindings, scope=value.scope),)
     if checked.result_kind in ("code", "concept"):
@@ -68,7 +68,7 @@ def thought_answer_meanings(selected):
             return ()
         if not torch.is_tensor(value) or value.shape != (width,):
             raise ValueError("code answer requires one full-width conceptual value")
-        roles = torch.stack((value.detach(), torch.zeros_like(value),
+        roles = torch.stack((value, torch.zeros_like(value),
                              torch.zeros_like(value)))
         return (ConceptualMeaning(
             roles, torch.tensor([True, False, False], device=value.device),
@@ -82,7 +82,7 @@ def thought_answer_meanings(selected):
         if isinstance(stored, ConceptualMeaning):
             if stored.roles.shape != request.roles.shape:
                 raise ValueError("set member differs from the conceptual width")
-            answers.append(stored.detached())
+            answers.append(stored)
             continue
         value, reference = member.get("value"), member.get("reference")
         if not torch.is_tensor(value) or value.shape != (width,) or reference is None:
@@ -92,10 +92,10 @@ def thought_answer_meanings(selected):
             raise ValueError("reference set answer requires one open operand role")
         slot = opened[0]
         roles, mask, refs = request.roles.clone(), request.role_mask.clone(), list(request.role_refs)
-        roles[slot], mask[slot], refs[slot] = value.detach(), True, reference
+        roles[slot], mask[slot], refs[slot] = value, True, reference
         answers.append(ConceptualMeaning(roles, mask,
             polarity=request.polarity, role_refs=tuple(refs),
-            bindings=request.bindings, scope=request.scope).detached())
+            bindings=request.bindings, scope=request.scope))
     return tuple(answers)
 
 

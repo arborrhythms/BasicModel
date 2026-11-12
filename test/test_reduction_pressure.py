@@ -145,6 +145,7 @@ def test_native_packed_unary_preference_still_records_every_sentence(tmp_path, m
         ('<serialWordBuckets>8</serialWordBuckets>', '<serialWordBuckets>16</serialWordBuckets>'),
     ])
     model._tensor_peer_while_eager = True
+    model.inputSpace.data.has_supervised_outputs = False  # Input/storage probe has no answer target.
     model._chart_compose_per_word = lambda: None
     model._install_unit_span_fn()
     # This mechanism measures native admission/recording, without a reverse

@@ -487,7 +487,7 @@ class Probe:
             try:
                 model._sentence_training = True
                 model._sentence_supplied_answers = self.current['outputTensor']
-                evaluation_answer = Models.BasicModel._sentence_answer_error(
+                evaluation_answer = Models.BasicModel._sentence_numeric_error(
                     model, local['state'], local['sid'], active, local['observation'])
             finally:
                 model._sentence_training, model._sentence_supplied_answers, model._sentence_answer_cost = old
@@ -655,17 +655,13 @@ if args.config == 'BasicModel_answers_tied_benchmark':
         '    return\n\n'
         '    if not isinstance(allIn, torch.Tensor) or allIn.numel() == 0:')
 (OUT/'instrumentation.patch').write_text(''.join(patches))
-original_pair=SentenceCompose.sentence_pair
-def paired(cache,compose,score,step,*,active,training=True,before_step=None):
-    def observed_score(*args):
-        result=score(*args)
-        P.after_score(result)
-        return result
-    value=original_pair(cache,compose,observed_score,step,active=active,training=training,before_step=before_step)
-    if training:
-        P.pair(value[1],value[2],active)
+import WholePaths
+original_finish = WholePaths.finish
+def finished(*args, **kwargs):
+    value = original_finish(*args, **kwargs)
+    P.after_score((value.parts[:, 0] + value.parts[:, 2], value.state))
     return value
-SentenceCompose.sentence_pair=paired
+WholePaths.finish = finished
 original_backward = Models.BaseModel._backward_training_loss
 def owned_backward(model, total, amp_scaler=None, *, optimizer=None):
     DECODER_MARGIN.begin_backward()

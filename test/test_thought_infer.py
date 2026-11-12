@@ -327,7 +327,7 @@ def test_question_thought_menu_offers_built_intuit(monkeypatch):
 
 def test_binding_cost_grades_two_incorrect_text_trials_and_credits_better(monkeypatch):
     from BindingAnswers import cost
-    from ThoughtCredit import surrogate
+    from whole_path_fixtures import thought_surrogate as surrogate
     model, registry, store, refs = world()
     owner = model._concept_owner()
     target = refs[2]
@@ -342,13 +342,8 @@ def test_binding_cost_grades_two_incorrect_text_trials_and_credits_better(monkey
     model._sentence_answer_questions = ('question',)
     object.__setattr__(model, 'inputSpace', SimpleNamespace(data=SimpleNamespace(
         what=lambda question: SimpleNamespace(available=True, kind='referent', what='target'))))
-    def text_reader(self, *args, **kwargs):
-        self._sentence_answer_raw_cost = torch.ones(1)
-        self._sentence_answer_predictions = torch.zeros(1)
-        return torch.ones(1)
-    monkeypatch.setattr(BasicModel, '_sentence_reader_error', text_reader)
-    costs = [float(model._sentence_answer_error(None, 0, torch.tensor([True]),
-        {'meanings': [answer(value)]})[0]) for value in (.2, .8)]
+    from whole_path_fixtures import answer as score_answer
+    costs = [float(score_answer(model, [answer(value)], torch.ones(1))[0]) for value in (.2, .8)]
     assert costs == pytest.approx([float(cost(model, answer(value), 'target')) + 1. for value in (.2, .8)])
     assert costs[1] < costs[0]
     parameter = torch.nn.Parameter(torch.tensor([.2, -.1]))
@@ -357,36 +352,6 @@ def test_binding_cost_grades_two_incorrect_text_trials_and_credits_better(monkey
         dict(choices=[dict(probability=probability[1], alternatives=1)]), 0, costs)
     credit.backward()
     assert parameter.grad[1] < 0 < parameter.grad[0]
-    # Run the production paired walk with two derived bindings. The
-    # first branch is a replayed choice, not a random seed or altered score.
-    from Queries import ThoughtOperationCandidate
-    from meaning_fixtures import replay_first_choice
-    requests = []
-    stm = model.conceptualSpace.stm
-    premise = put(stm, idea(registry, refs[2]), row=0)
-    for number, (reference, value) in enumerate(zip(refs[:2], (.2, .8))):
-        with torch.no_grad():
-            owner.similarity_codebook.W[owner._csw_row_of(reference[1])].fill_(value)
-        index = store.append_relation(refs[2][1], reference[1], truth_plus=.9, truth_minus=.1)
-        rule = store.part_row(index[1], reading='part')['meaning']
-        rule = with_slots(replace(rule, bindings={'_rule_row': index, '_rule_kind': 'part'}), (), pair=(.9, .1))
-        rule = put(stm, rule, row=0)
-        requests.append(registry.form('infer', premise, rule))
-    menu = tuple(ThoughtOperationCandidate(registry.operation_spec('infer'), request, ()) for request in requests)
-    monkeypatch.setattr('ThoughtStream.candidates', lambda registry, root, active, current, records, descriptions=():
-        menu if open_slots(current) else ())
-    replay_first_choice(model, monkeypatch, 0)
-    goal = with_slots(replace(idea(registry, refs[0]), role_refs=(None, None, None)), (('referent', 0),))
-    model.train()
-    scored = []
-    def score_trial(result):
-        scored.append((result.meaning.role_refs, result.meaning.roles[0].tolist()))
-        return model._sentence_answer_error(None, 0, torch.tensor([True]), {'meanings': [result.meaning]})[0]
-    selected = run(model, goal, work_budget=64, score=score_trial)
-    assert model._last_thought_comparison['costs'] == pytest.approx(costs), scored
-    assert model._last_thought_comparison['explore_kept']
-    assert selected.meaning.role_refs[0] == refs[1]
-    assert model._last_thought_score_function['surrogate'].requires_grad
 
 
 def test_worked_token_property_line_queries_backward_and_forward_then_replays(monkeypatch):

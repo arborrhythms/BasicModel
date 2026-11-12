@@ -97,7 +97,10 @@ def test_kept_readings_alone_supply_argument_views(tmp_path, monkeypatch, eager_
         assert len(admitted)==len(rows)
         for (program,_,_), b in zip(admitted,rows,strict=True):
             winner = winners[b]
-            states = lessons[int(bool(wins[b])) * len(active) + b][0].student_states
+            # A later-stage winner reuses the exploit reading and therefore
+            # its sole annotation; only a reading departure adds annotations.
+            reading = int(bool(wins[b])) if len(lessons) > len(active) else 0
+            states = lessons[reading * len(active) + b][0].student_states
             torch.testing.assert_close(program.actions,winner.actions,rtol=0,atol=0)
             torch.testing.assert_close(program.word_ids,winner.word_ids,rtol=0,atol=0)
             # Independent host replay compares every kept decision's input
@@ -134,7 +137,7 @@ def test_kept_readings_alone_supply_argument_views(tmp_path, monkeypatch, eager_
             batch_override=(inputs, torch.zeros(2,1)), source_rows=[[0],[1]],
             questions=(What.supervised(0,split='train',prompt='what is red ?'),
                        What.supervised(1,split='train',prompt='what is blue ?')))
-    assert len(events) == 2 and len(lessons) == 4
+    assert len(events) == 2 and len(lessons) in (2, 4)  # Later departures reuse the reading.
     expected_views = Counter(initial_views)
     for program, binary, unary in events:
         stack = []

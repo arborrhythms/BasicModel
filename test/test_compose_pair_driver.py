@@ -60,7 +60,7 @@ def _batch(m):
 
 
 @pytest.mark.usefixtures('eager_reading')
-def test_pair_trains_twice_and_commits_once(monkeypatch):
+def test_complete_paths_train_in_one_step_and_commit_once(monkeypatch):
     m = _build('<separateChooser>true</separateChooser>')
     optimizer = torch.optim.SGD(m.parameters(), lr=0.0)
     batch = _batch(m)
@@ -76,29 +76,36 @@ def test_pair_trains_twice_and_commits_once(monkeypatch):
         commits.append((selected, result[0][0].detach().clone(), result[0][1].clone()))
         return result
     monkeypatch.setattr(m, '_commit_sentence', capture_commit)
+    import WholePaths
+    finish = WholePaths.finish
+    def capture(owner, state, *args, **kwargs):
+        result = finish(owner, state, *args, **kwargs)
+        alternative = kwargs.get('base') is not None
+        observed.append((alternative, state[1][15].detach().clone(),
+                         state[0][0].detach().clone(), float(result.parts.detach().sum())))
+        if alternative:
+            constraints.append((m._compose_fork.taken.clone(),
+                                m._compose_forced_slots.detach().clone()))
+        return result
+    monkeypatch.setattr(WholePaths, 'finish', capture)
     backward = m._backward_training_loss
-    def capture(total, *args, **kwargs):
-        if getattr(m, '_sentence_backward', False):
-            trace = m._reconstruction_stack()
-            alternative = m._sentence_trial == 'explore'
-            observed.append((alternative, trace._choice_actions.detach().clone(),
-                             m.conceptualSpace.stm._buffer.detach().clone(),
-                             float(total.detach())))
-            if alternative:
-                constraints.append((m._compose_fork.taken.clone(),
-                                    m._compose_forced_slots.detach().clone()))
+    updates = []
+    def update(total, *args, **kwargs):
+        updates.append(bool(m._sentence_backward))
         return backward(total, *args, **kwargs)
-    monkeypatch.setattr(m, '_backward_training_loss', capture)
+    monkeypatch.setattr(m, '_backward_training_loss', update)
     try:
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore')
             m.runBatch(train=True, batchSize=4, optimizer=optimizer, batch_override=batch)
         assert [row[0] for row in observed] == [False, True]
+        assert updates == [True]
         assert all(torch.isfinite(torch.tensor(row[3])) for row in observed)
-        # Both compose trials share one input tick; each produced sentence
-        # takes its own tick on the same model clock (A3).
+        # Both complete paths share one input tick. This numeric reader
+        # produces no verbal sentence and no accepted thought deposit.
+        assert not m.answer_synthesis
         assert m._sentence_ticks == {0: clock0 + 1}
-        assert m.present() - clock0 == 1 + 4
+        assert m.present() - clock0 == 1
         assert m._training_step_count - steps0 == 1
         assert len(commits) == 1
         chosen = torch.where(m._sentence_winners[0][:, None, None], observed[1][2], observed[0][2])
@@ -111,18 +118,19 @@ def test_pair_trains_twice_and_commits_once(monkeypatch):
         audit=m._last_sentence_credit
         draw=audit['departure']
         narrowing=draw['narrowing']
-        # Round 2 departs once across both walks. A narrowing alternative
-        # may continue through the same greedy compose structure.
-        assert draw['rounds'].gt(0).all()
-        assert ((draw['attention_round']>=0).long()+
-                (draw['compose_round']>=0).long()).eq(1).all()
+        # One departure across the seven walks; later departures reuse
+        # the already completed reading and its compose prefix.
+        rounds = torch.stack([draw[name + '_round'] for name in
+            ('attention', 'compose', 'candidate', 'bind', 'reconstruction', 'thought', 'output')], -1)
+        assert rounds.ge(0).sum(-1).eq(draw['walk'].ge(0).long()).all()
+        composed = draw['compose_round'] >= 0
         changed_compose=(observed[0][1] != observed[1][1]).any(-1)
-        assert changed_compose[~narrowing].all()
+        assert changed_compose[composed].all()
         a,b=audit['narrowing_actions']
         assert (a[narrowing]!=b[narrowing]).any(-1).all()
         taken, forced = constraints[0]
-        assert torch.equal(forced.any(-1),~narrowing)
-        assert taken[~narrowing].all()
+        assert torch.equal(forced.any(-1), composed)
+        assert taken[composed].all()
         assert (observed[0][1][forced] != observed[1][1][forced]).all()
         assert m._exploration_trial is False
         assert not hasattr(m, '_compose_state_snapshot')

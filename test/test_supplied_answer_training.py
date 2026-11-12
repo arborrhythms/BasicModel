@@ -1,4 +1,4 @@
-"""Supplied answers train each sentence trial; absent answers retain the cut."""
+"""One supplied-answer reader trains the exposed whole paths."""
 from types import MethodType, SimpleNamespace
 
 import pytest
@@ -47,98 +47,55 @@ def test_answer_cost_does_not_include_a_generate_lesson():
     active = torch.ones(2, dtype=torch.bool)
     registry = Error(row_mask=active)
     registry.add('grammar.generate', torch.tensor([7., 9.]), objective='output')
-    answer = BasicModel._sentence_answer_error(model, state, 0, active, {"record": None}, registry=registry)
+    answer = BasicModel._sentence_numeric_error(model, state, 0, active, {"record": None}, registry=registry)
     torch.testing.assert_close(answer, torch.tensor([36., 100.]))
     torch.testing.assert_close(registry.total(), torch.tensor([43., 109.]))
 
 
 
 
-def test_real_supplied_trials_cost_before_updates_and_reach_only_reader(monkeypatch):
-    from pathlib import Path
-    import Models
-    import SentenceCompose
-    import util
+def test_real_supplied_paths_cost_before_updates_and_reach_understanding(monkeypatch):
     from test_mm_xor import _fresh_model
+    import WholePaths
+    import util
     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
-    model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
-    optimizer = model.getOptimizer(lr=.01)
-    score = model._sentence_path_cost
+    model, _, data = _fresh_model('data/XOR_grammar.xml')
+    score = WholePaths.output
     measured, versions = [], []
-    def observed(state, sid, active):
-        value = score(state, sid, active)
-        error = getattr(model, '_sentence_answer_cost', None)
-        assert torch.is_tensor(error) and error.requires_grad
+    def observed(owner, state, observation, sid, active, registry, **kwargs):
+        value = score(owner, state, observation, sid, active, registry, **kwargs)
+        error = value[0]
         params = tuple(model.parameters())
         grads = torch.autograd.grad(error.mean(), params, retain_graph=True, allow_unused=True)
-        names = {id(p): name for name, p in model.named_parameters()}
-        live = [names[id(p)] for p, g in zip(params, grads) if g is not None and bool(g.abs().any())]
-        assert not any(name.startswith('conceptualSpaces.') for name in live), live
-        assert not any('operation_layer.' in name for name in live), live
-        # The answer term in the advantage belongs only to the comparison
-        # reader; the presented map has its own kept-root training cost.
-        readout = {id(p) for p in model.comparison_reader.parameters()}
-        assert not any(id(p) in {id(q) for q in model.outputSpace.parameters()}
-                       and g is not None and bool(g.abs().any()) for p,g in zip(params,grads))
-        assert any(id(p) in readout and g is not None and bool(g.abs().any())
-                   for p, g in zip(params, grads)), live
+        live = {id(p) for p, g in zip(params, grads) if g is not None and bool(g.abs().any())}
+        assert any(id(p) in live for p in model.outputSpace.parameters())
+        roots = torch.autograd.grad(error.mean(), (state[1][6], state[1][10]), retain_graph=True, allow_unused=True)
+        assert any(g is not None and bool(g.abs().any()) for g in roots)
+        assert not hasattr(model, 'comparison_reader')
         measured.append(live)
         versions.append(tuple(p._version for p in params))
         return value
-    monkeypatch.setattr(model, '_sentence_path_cost', observed)
+    monkeypatch.setattr(WholePaths, 'output', observed)
     try:
         batch = next(iter(data.data_loader(split='train', num_streams=4)))
-        raw, target = model.inputSpace.prepInput(batch[0]), model.outputSpace.prepOutput(batch[1])
-        model.runBatch(train=True, optimizer=optimizer, batchSize=4,
-            split='train', batch_override=(raw, target))
-        assert len(measured) == 2
-        assert versions[0] == versions[1]
+        model.runBatch(train=True, optimizer=model.getOptimizer(lr=.01), batchSize=4,
+            batch_override=(model.inputSpace.prepInput(batch[0]), model.outputSpace.prepOutput(batch[1])))
+        assert len(measured) == 2 and versions[0] == versions[1]
     finally:
         model.End()
         model.symbolSpace.soft_reset()
-        torch._dynamo.reset()
 
 
-def test_native_trial_reads_the_completed_point_without_state_credit():
-    from Meaning import ConceptualMeaning
+def test_numeric_path_reads_its_composed_state_with_live_gradient():
     from Models import BasicModel
-    from What import What, WhatAnswer
     model, state, parameters = _sentence(True)
-    root = state[1][6][:, 0]
-    meanings = [ConceptualMeaning(torch.stack((row, row, torch.zeros_like(row))),
-                                  torch.tensor([True, True, False])) for row in root]
-    clauses = [SimpleNamespace(point=row, relation=None, meaning=meaning)
-               for row, meaning in zip(root, meanings)]
-    model.answer_synthesis = True
-    model._sentence_answer_questions = tuple(What.supervised(i) for i in range(2))
-    model.inputSpace.data.what = lambda question: WhatAnswer(question, 0.)
-    model._what_grammar_context = lambda *args, **kwargs: (None, None)
-    model.outputSpace.prepOutput = lambda values: torch.tensor(values)[:, None]
-    seen = []
-    def realize(understanding, derivation, **kwargs):
-        assert [int(field.meaning.role_mask.sum()) for field in derivation.sentence_states] == [1, 1]
-        seen.append(derivation.conceptual_answer)
-        return SimpleNamespace(actual=(derivation.conceptual_answer.detach().flatten(1) @ parameters[-1])[:, None])
-    model.reverseOutput = realize
-    error = BasicModel._sentence_answer_error(model, state, 0, torch.ones(2, dtype=torch.bool),
-                                              dict(meanings=meanings, clauses=clauses, record=None))
-    assert len(seen) == 1
-    torch.testing.assert_close(seen[0][:, 0], root)
+    error = BasicModel._sentence_numeric_error(model, state, 0, torch.ones(2, dtype=torch.bool), {'record': None})
     gradients = torch.autograd.grad(error.sum(), parameters, allow_unused=True)
-    assert gradients[0] is None and gradients[1] is None
-    assert gradients[2] is not None and bool(gradients[2].abs().any())
+    assert all(gradient is not None and bool(gradient.abs().any()) for gradient in gradients)
 
 
-def test_automatic_answers_do_not_start_a_supplied_answer_trial():
-    from Models import BasicModel
-    from What import What
-    model, state, _ = _sentence(True)
-    model.answer_synthesis = True
-    model._sentence_answer_questions = tuple(What.future(i) for i in range(2))
-    model.inputSpace.data.what = lambda question: SimpleNamespace(available=True, what='automatic')
-    def forbidden(*args, **kwargs):
-        raise AssertionError('an automatic answer must not start a supervised generation trial')
-    model.reverseOutput = forbidden
-    model._what_grammar_context = lambda *args, **kwargs: (None, None)
-    assert BasicModel._sentence_answer_error(model, state, 0, torch.ones(2, dtype=torch.bool),
-                                              dict(meanings=[None, None])) is None
+def test_unsupervised_data_does_not_start_an_output_path():
+    from WholePaths import output
+    from Layers import Error
+    model, state, _ = _sentence(False)
+    assert output(model, state, {}, 0, torch.ones(2, dtype=torch.bool), Error()) == (None, None, None)

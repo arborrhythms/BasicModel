@@ -186,7 +186,14 @@ class SentenceUnderstanding:
         if not live:
             return expected
         if replay is None:
-            raise RuntimeError('live mixed sentence records require the selected compose replay')
+            # Whole paths retain all their graphs until the one sentence
+            # update. Selecting their rows needs no new compose execution.
+            values = {}
+            for field in fields(cls):
+                left, right = getattr(greedy, field.name), getattr(explore, field.name)
+                values[field.name] = (torch.where(wins.reshape((-1,) + (1,) * (left.ndim-1)), right, left)
+                    if torch.is_tensor(left) and left.ndim else left)
+            return cls(**values)
         selected = replay()
         if selected.primed is not expected.primed:
             raise RuntimeError('kept sentence replay changed its priming snapshot')

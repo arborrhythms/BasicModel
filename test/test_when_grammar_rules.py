@@ -135,8 +135,11 @@ class TestMentalModelWhenEnabled(unittest.TestCase):
         enabled = []
         for name, mod in carriers:
             we = mod.whenEncoding
-            # 2026-07-04 encoding pass: the v2 start ladder is in use everywhere.
-            self.assertEqual(type(we).__name__, "DocumentWhenEncoding", name)
+            # The model clock uses a tensor-backed subclass of the same ladder.
+            from Spaces import DocumentWhenEncoding
+            from RowTime import encoder
+            self.assertIsInstance(we, DocumentWhenEncoding, name)
+            self.assertEqual(we.maxVal, encoder().maxVal, name)
             self.assertIs(we, model.when_encoding, name)
             self.assertIn(mod.nWhen, (0, we.nDim), name)
             if mod.nWhen == 4:

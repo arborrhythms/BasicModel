@@ -144,15 +144,14 @@ def episode_fixture(monkeypatch, capacity=2):
     from test_clause_acceptance import SentenceFixture
     from clock_fixtures import install
     f = SentenceFixture(monkeypatch, cs=_cs(nS=512, order=5, dim=12), percept_width=12)
-    f.store = LTM0(12, capacity=64, percept_width=12, stream_capacity=1, episodic_percepts=capacity)
+    f.store = LTM0(12, capacity=64, percept_width=12, stream_capacity=1, episodic_concepts=capacity)
     f.model = install(f.model, tick=17)
     f.model.symbolSpace = SimpleNamespace(ltm_store=f.store)
     f.model._open_sentence_slot = 0
     f.model._sentence_ticks[0] = 17
     f.cs._model = f.model
     attach_clause_index(f.model, f.store, f.cs)
-    entry = (torch.tensor([2, 7][:capacity]), torch.tensor([[.2, .8], [.9, .1]][:capacity]),
-             torch.tensor([[1., 4.], [6., 8.]][:capacity]))
+    entry = (torch.tensor([2, 7][:capacity]), torch.tensor([-.6, .8][:capacity]))
     f.model._sentence_episodes = {0: tuple(value[None] for value in entry)}
     return f, entry
 
@@ -168,7 +167,7 @@ def test_relation_only_anchor_keeps_first_entry_and_never_becomes_a_root(monkeyp
     assert f.store.stream[0, 0]
     assert not f.store.slots[0, :f.store.when_start].any()
     assert torch.equal(f.store.entry_when(0), clause.when)
-    assert torch.equal(f.store.episodic_percepts[0], entry[0])
+    assert torch.equal(f.store.episodic_concepts[0], entry[0])
     assert written['root_occurrence'] != written['episode']
     assert f.model._episode_counts['written'] == f.model._episode_counts['anchors'] == 1
     later = tuple(value + 1 for value in entry)
@@ -176,7 +175,7 @@ def test_relation_only_anchor_keeps_first_entry_and_never_becomes_a_root(monkeyp
         document_key='presentation', sentence_index=1, episode=later)
     assert again == root and len(f.store) == 1
     assert torch.equal(f.store.entry_when(0), clause.when)
-    assert torch.equal(f.store.episodic_poles[0], entry[1])
+    assert torch.equal(f.store.episodic_values[0], entry[1])
     assert f.model._episode_counts['written'] == 1
     # A later semantic occurrence at this source address cannot reuse the anchor.
     unary = f.clause('alpha')
@@ -225,9 +224,9 @@ def test_thought_write_during_input_close_does_not_take_the_input_episode(monkey
     monkeypatch.setattr(f.store, 'write_clause', close)
     own = _append_observed_meaning(f.store, clause, stream=0, episode=entry)
     assert thoughts and all(row != own for row in thoughts)
-    assert torch.equal(f.store.episodic_percepts[own], entry[0])
+    assert torch.equal(f.store.episodic_concepts[own], entry[0])
     for row in thoughts:
-        assert (f.store.episodic_percepts[row] == -1).all()
+        assert (f.store.episodic_concepts[row] == -1).all()
     assert f.model._episode_counts['written'] == 1
 
 
@@ -362,22 +361,21 @@ def test_native_relation_anchor_time_recall_reinstates_its_percepts(tmp_path, mo
         assert len(anchors) == 1
         row = anchors[0]
         entry = tuple(value[0] for value in model._sentence_episodes[0])
-        assert torch.equal(store.episodic_percepts[row], entry[0])
+        assert torch.equal(store.episodic_concepts[row], entry[0])
         assert torch.equal(store.entry_when(row), encoder().encode(model._sentence_ticks[0]))
         query = ThoughtLTMCapability(store=weakref.ref(store), equal=lambda *args: 0., tau_id=.9, row=0)
         found = query.query(when=store.entry_when(row), window=0,
                             max_records=store.capacity, work=QueryWorkBudget(2048))
         assert any(frame['index'] == row for frame in found['frames'])
-        field = owner._percept_field
-        actual = {key[1]: field.values[k, 0].sum(0) for k, key in enumerate(field.keys)
-                  if bool(field.values[k, 0].any())}
-        expected = {int(p): entry[1][i] for i, p in enumerate(entry[0]) if int(p) >= 0}
+        field = knowing(model)
+        actual = {int(cid): field.evidence[k, 0].sum(0) for k, cid in enumerate(field.concept_ids)
+                  if bool(field.evidence[k, 0].any())}
+        expected = {int(cid): torch.stack((entry[1][i].clamp_min(0), (-entry[1][i]).clamp_min(0)))
+                    for i, cid in enumerate(entry[0]) if int(cid) >= 0}
         assert actual.keys() == expected.keys()
-        for p in expected:
-            assert torch.equal(actual[p], expected[p])
-        current = knowing(model)
-        folded = owner.cs_read_percept_field(field)
-        torch.testing.assert_close(current.evidence[:len(folded)], folded)
+        for cid in expected:
+            assert torch.equal(actual[cid], expected[cid])
+        assert not owner._percept_field.values[:, 0].any()
         assert owner.mtm.token_of(store.occurrence_of(row)) is None
         model.End()
         assert owner._percept_field is None and owner._cs_field_when is None and owner._cs_field_where is None
@@ -393,15 +391,15 @@ def test_anchor_lifecycle_follows_compaction_forgetting_and_epoch_rows(monkeypat
                                document_key='presentation', episode=entry)
     assert isinstance(root, tuple)
     snapshot = _rows(f.store, [0])
-    assert snapshot['columns']['episodic_percepts'].tolist() == [entry[0].tolist()]
+    assert snapshot['columns']['episodic_concepts'].tolist() == [entry[0].tolist()]
     state = f.store.state_dict()
-    restored = LTM0(12, capacity=64, percept_width=12, stream_capacity=1, episodic_percepts=2)
+    restored = LTM0(12, capacity=64, percept_width=12, stream_capacity=1, episodic_concepts=2)
     restored.load_state_dict(state)
     restored.load_semantic_extras(f.store.semantic_extras())
     assert restored.kind_of(0) == 'episode'
-    assert torch.equal(restored.episodic_percepts[0], entry[0])
+    assert torch.equal(restored.episodic_concepts[0], entry[0])
     f.store.compact_rows([])
-    assert len(f.store) == 0 and (f.store.episodic_percepts == -1).all()
+    assert len(f.store) == 0 and (f.store.episodic_concepts == -1).all()
 
 
 def test_anchors_do_not_change_answers_content_reads_consolidation_mints_or_candidates(tmp_path, monkeypatch):

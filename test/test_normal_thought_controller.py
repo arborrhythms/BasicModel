@@ -380,7 +380,7 @@ def test_completed_unary_concept_program_enters_the_normal_controller(
 
 
 def test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit():
-    from ThoughtCredit import surrogate
+    from whole_path_fixtures import thought_surrogate as surrogate
     model, registry, memory, part, whole = _world()
     question = registry.form('equal', part, whole)
     chooser = model._selected_thought_chooser(question)
@@ -834,9 +834,13 @@ def test_normal_what_uses_the_selected_thought_without_a_legacy_slot(monkeypatch
     produced = torch.zeros(1, 1, 3, dtype=program().leaves.dtype)
     execution = (None, produced, produced)
     monkeypatch.setattr(model, "_capture_understanding", lambda _: understanding)
-    monkeypatch.setattr(
-        model, "reverseOutput", lambda _understanding, _derivation:
-        SimpleNamespace(actual=produced))
+    def rendered(_understanding, derivation, **options):
+        from Output import AnswerConstruction
+        model._last_output_walk_trace = (torch.zeros(1, 1, dtype=torch.long),
+                                        torch.zeros(1, 1, dtype=torch.bool))
+        return AnswerConstruction(actual=produced, derivation=derivation,
+            concepts=produced, percepts=produced, surface=produced, texts=('',), trace=())
+    monkeypatch.setattr(model, "reverseOutput", rendered)
 
     answer = model.ask(WhatQuestion.inference(0), execution=execution)
 

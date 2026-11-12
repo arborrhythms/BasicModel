@@ -10923,7 +10923,8 @@ class PartSpace(Space):
         # numerically and gradient-identical because the clamp is elementwise,
         # but it transforms the whole physical reserve (potentially 1M rows)
         # once per word.  ``lookup_rows`` keeps this O(number of constituents).
-        event = basis.lookup_rows(ids)
+        event = basis.lookup_rows(ids.clamp_min(0))
+        event = event * ids.ge(0)[..., None]
         content_width = int(event.shape[-1])
         muxed_width = (int(self.subspace.nWhat)
                        + int(self.subspace.nWhere)
@@ -14969,7 +14970,7 @@ class ConceptualSpace(Space):
         return self.cs_read_percept_field(perception)
 
     def cs_read_percept_field(self, perception):
-        """Read memberships from either open attention or a recalled episode."""
+        """Read memberships of the current open-attention percept field."""
         store = _concept_alloc_of(self).layer(0)
         matrix = store.features
         keys = [('bp', col // 2) for col in matrix._cols]

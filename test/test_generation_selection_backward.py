@@ -6,26 +6,27 @@ import torch
 
 
 def conditioned_root(dtype, *, form_value=.5, for_value=.5, against_value=0., symbolic=False):
-    from AnswerComparison import AnswerComparison
     from Models import BasicModel
 
     class Reader(torch.nn.Module):
         _question_conditioner = BasicModel._question_conditioner
+        _question_conditioner_modules = BasicModel._question_conditioner_modules
+        _selected_thought_chooser_modules = BasicModel._selected_thought_chooser_modules
+        _collect_fresh_synthesis_modules = BasicModel._collect_fresh_synthesis_modules
 
         def objective_parameter_groups(self, optimizer):
             return {'output': tuple(self.question_conditioners.parameters())}
 
-        def _sentence_reader_error(self, idea, context):
+        def condition(self, idea, context):
             return BasicModel._condition_answer_on_question(
                 self, idea[:, None], context, identity=symbolic)[:, 0]
 
     model = Reader()
     model._question_conditioner(392, device=torch.device('cpu'), dtype=dtype)
-    model.comparison_reader = AnswerComparison()
     idea = torch.full((1, 392), form_value, dtype=dtype, device='cpu')
     idea[:, 328:360], idea[:, 360:] = for_value, against_value
-    root = model.comparison_reader(model, idea, idea.new_ones(1, 29))
-    return model.comparison_reader.weights['question_conditioners/392/weight'], root
+    root = model.condition(idea, idea.new_ones(1, 29))
+    return model.question_conditioners['392'].weight, root
 
 
 @pytest.mark.parametrize('dtype', (torch.float32, torch.float64))
@@ -62,27 +63,24 @@ def test_rejected_inverse_cannot_write_one_conditioner_lane(dtype, monkeypatch):
 
 
 @pytest.mark.parametrize('dtype', (torch.float32, torch.float64))
-def test_losing_walk_residual_cannot_write_one_conditioner_lane(dtype):
-    from Output import AnswerConstruction
-    from WalkTrials import output_pair
+def test_losing_output_residual_has_no_answer_exposure(dtype):
+    from Layers import Error
+    from WholePaths import objectives
     weight, root = conditioned_root(dtype)
-    valid = torch.ones(1, 1, dtype=torch.bool)
-    def realize(**options):
-        is_departure = options.get('exploit_actions') is not None
-        lane = root[:, 360:].sqrt().mean(-1) if is_departure else root[:, 360:].mean(-1)
-        residual = torch.stack((root[:, 0]*0, root[:, 328]*0, lane), -1)
-        actual = root[:, :1] + int(is_departure)
-        actions = torch.full((1, 1), int(is_departure), dtype=torch.long)
-        trace = (actions, valid, ~valid[:, 0], residual, valid[:, 0],
-                 root.new_zeros(1, 1, 2, 5), root[:, None])
-        return AnswerConstruction(actual, None, root, root, None, (), ()), trace
-    answer, audit = output_pair(realize, lambda result: result.actual[:, 0])
-    assert audit['wins'].tolist() == [False]
-    loss = answer.actual.sum() + audit['selected_residual'].sum()
-    assert torch.isfinite(loss)
-    loss.backward()
+    registries = []
+    for departed in (False, True):
+        registry = Error(row_mask=torch.ones(1,dtype=torch.bool))
+        lane = root[:,360:].sqrt().mean(-1) if departed else root[:,360:].mean(-1)
+        registry.add('output.walk_residual.against', lane, objective='reconstruction', side='A')
+        registry.add('answer', root[:,0] + departed, objective='output')
+        registries.append(SimpleNamespace(registry=registry))
+    parts = torch.tensor([[[0.,0.,0.],[0.,0.,1.]]],dtype=dtype)
+    costs, weights = objectives(registries, parts, torch.ones(1,dtype=torch.bool),
+        [dict(compose_round=torch.tensor([-1]))])
+    assert weights.tolist() == [[1.,0.]]
+    sum(costs.values()).backward()
     assert torch.isfinite(weight.grad).all()
-    torch.testing.assert_close(weight.grad[360:], torch.full_like(weight.grad[360:], 1/32))
+    torch.testing.assert_close(weight.grad[360:], torch.full_like(weight.grad[360:],1/32))
 
 
 @pytest.mark.parametrize('dtype', (torch.float32, torch.float64))
@@ -130,28 +128,19 @@ def test_native_sum_inverse_has_finite_pullback_on_nearly_collinear_codes(dtype)
 
 
 @pytest.mark.parametrize('streams', [1, 2])
-def test_costed_thought_output_keeps_only_the_selected_realization(streams):
+def test_report_keeps_only_the_selected_whole_path_realization(streams):
     from Output import AnswerConstruction
-    from WalkTrials import select_output
-
-    values = torch.nn.Parameter(torch.arange(1., streams + 1))
-    discarded = torch.nn.Parameter(torch.zeros(streams))
+    from WholePaths import keep_output
+    values = torch.nn.Parameter(torch.arange(1., streams+1))
     def output(x):
-        return AnswerConstruction(x[:, None], None, x[:, None], x[:, None], None, (), ())
-    # Each trial's losing row has a finite value and an undefined pullback.
-    base = output(torch.cat((discarded[:1].sqrt(), values[1:])))
-    candidate = output(values * 2.) if streams == 1 else output(torch.cat((values[:1] * 2., discarded[1:].sqrt())))
-    base_actions = torch.zeros(streams, 1, dtype=torch.long)
-    candidate_actions = torch.ones_like(base_actions)
-    def replay(actions):
-        assert streams == 2
-        acted = actions[:, 0]
-        assert acted.tolist() == [1, 0]
-        return output(values * (1 + acted)), actions
-    selected = select_output(base, base_actions, {0: (candidate, candidate_actions)}, replay)
-    selected.actual.sum().backward()
-    assert discarded.grad is None
-    torch.testing.assert_close(values.grad, torch.tensor([2., 1.])[:streams])
+        return AnswerConstruction(x[:,None], None, x[:,None], x[:,None], x[:,None], (), tuple(map(str,x.tolist())))
+    paths = [SimpleNamespace(construction=output(values), output_trace=(torch.zeros(streams,1,dtype=torch.long),)),
+             SimpleNamespace(construction=output(values*2), output_trace=(torch.ones(streams,1,dtype=torch.long),))]
+    model = SimpleNamespace()
+    keep_output(model, paths, torch.tensor([1,0])[:streams], 0)
+    torch.testing.assert_close(model._kept_path_output.actual[:,0], torch.tensor([2.,2.])[:streams])
+    assert model._kept_path_output_actions[:,0].tolist() == [1,0][:streams]
+    assert not model._kept_path_output.actual.requires_grad
 
 
 @pytest.mark.parametrize('streams', [1, 2])

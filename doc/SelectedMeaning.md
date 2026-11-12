@@ -130,10 +130,11 @@ answer target or additional learned head. `ThoughtFeatures.context_width`
 owns the input dimension (`18D + 3501`, plus two action flags).
 
 Zero final weights preserve the deterministic execute/conclude baseline.
-Candidate values, checked results and root/active chooser observations detach. Output also cuts state at the concluded idea; shared generation operators remain trainable.
-Credit is compose's paired rule, $K \cdot R \cdot p(a_{dep}) \cdot \Delta C$ on the
-detached cost difference with the other trial as baseline
-(`ThoughtCredit.surrogate`); the EMA baseline is retired. Old thinking-weight
+Candidate values, checked results and root/active chooser observations detach. The whole-path update (2026-11-11) keeps the concluded idea live into output, so its loss can reach the understanding through the thought.
+Credit uses `SentenceCredit.score_function` through `WholePaths.credit`, with
+the complete path's detached reconstruction-plus-answer cost difference and
+the actual walk, round and action proposal correction; the local
+`ThoughtCredit` implementation is retired. The EMA baseline is retired. Old thinking-weight
 aliases select this same objective once. FineWeb has no answer labels, so
 residual credit remains item 2. Old incomplete-context policy weights and
 optimizer moments reset explicitly; current policies restore strictly.

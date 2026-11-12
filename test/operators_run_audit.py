@@ -124,7 +124,7 @@ def observe_run():
     from Models import BasicModel, BaseModel
     from util import TheXMLConfig
     import SentenceCredit
-    result=dict(reader_weights=[],comparison_reader_weights=[],reader_mse=[],
+    result=dict(reader_weights=[],reader_mse=[],
                 reader_training_rows=[],sentence_gradients={},form_containment={})
     commit = BasicModel._commit_sentence
     result['sentence_trials'] = []
@@ -134,28 +134,22 @@ def observe_run():
             result['sentence_trials'].append(dict(epoch=result.get('_active_epoch',0),
                 training=model._sentence_training, **audit))
             if model._sentence_training:
-                reads=audit['readers']
-                if len(reads)==2 and all(r is not None for r in reads):
-                    row=dict(epoch=result.get('_active_epoch',0),sentence=sid,
-                             timing='before either trial update, selected by reconstruction keep')
-                    for reader in ('presented','comparison'):
-                        first,second=reads[0][reader],reads[1][reader]
-                        selected=torch.where(audit['wins'],second['mse'],first['mse'])
-                        gate=audit['wins'].reshape((-1,)+(1,)*(first['predictions'].ndim-1))
-                        prediction=torch.where(gate,second['predictions'],first['predictions'])
-                        row[reader]=dict(mse=float(selected[active].mean()),rows=selected.detach().tolist(),
-                                         predictions=prediction.detach().tolist())
-                    result['reader_mse'].append(row)
+                winner = audit['winner']
+                rows = torch.arange(len(winner), device=winner.device)
+                selected = audit['components'][rows, winner, 2]
+                result['reader_mse'].append(dict(epoch=result.get('_active_epoch',0),sentence=sid,
+                    timing='before the sentence update, selected by whole R + A',
+                    reader=dict(mse=float(selected[active].mean()), rows=selected.tolist())))
                 from derivation_probe import compose_derivations
                 final=[]
                 for row in compose_derivations(model,state,sid,active):
-                    b=row['batch_row']; kept=int(audit['wins'][b])
+                    b=row['batch_row']; kept=int(audit['winner'][b])
                     row.update(epoch=result.get('_active_epoch',0),
                         trial='explore' if kept else 'greedy',
                         cost_components=dict(zip(('reconstruction','expectation','answer'),
                             audit['components'][b,kept].tolist())),
                         trial_components=audit['components'][b].tolist(),
-                        selected_cost=float(audit['keep_costs'][b,kept]), credit_total=float(audit['costs'][b,kept]), decision=audit['keep_decision'][b], advantage_sign=float(audit['advantage_sign'][b]), answer_against_keep=bool(audit['answer_against_keep'][b]))
+                        selected_cost=float(audit['keep_costs'][b,kept]), credit_total=float(audit['costs'][b,kept]), decision=audit['keep_decision'][b], advantage_sign=audit['advantage_sign'][b].tolist(), answer_against_keep=bool(audit['answer_against_keep'][b]))
                     final.append(row)
                 result['final_committed_training_operators']=final
         value=commit(model,state,sid,active,*args)
@@ -195,18 +189,16 @@ def observe_run():
         if kwargs.get('optimizer') is not None:
             named={id(p):name for name,p in model.named_parameters()}
             params=model.objective_parameter_groups(kwargs['optimizer'])['output']
-            comparison={id(p) for p in model.comparison_reader.parameters()} if model.comparison_reader is not None else set()
-            for judge,key in ((False,'reader_weights'),(True,'comparison_reader_weights')):
-                selected=[p for p in params if (id(p) in comparison)==judge]
-                weights={named[id(p)]:float(p.detach().norm()) for p in selected if p.ndim>=2}
-                stepped={named[id(p)] for p in selected if p in kwargs['optimizer'].state
-                         and 'step' in kwargs['optimizer'].state[p]}
-                result[key].append(dict(epoch=len(result[key])+1,
-                    norm=sum(n*n for n in weights.values())**.5,parameters=weights,
-                    active_norm=sum(n*n for name,n in weights.items() if name in stepped)**.5,
-                    reader_updates=(model._sentence_comparison_reader_updates if judge else model._sentence_reader_updates),
-                    optimizer_steps={named[id(p)]:float(kwargs['optimizer'].state[p]['step']) for p in selected
-                        if p in kwargs['optimizer'].state and 'step' in kwargs['optimizer'].state[p]}))
+            selected = list(params)
+            weights={named[id(p)]:float(p.detach().norm()) for p in selected if p.ndim>=2}
+            stepped={named[id(p)] for p in selected if p in kwargs['optimizer'].state
+                     and 'step' in kwargs['optimizer'].state[p]}
+            result['reader_weights'].append(dict(epoch=len(result['reader_weights'])+1,
+                norm=sum(n*n for n in weights.values())**.5, parameters=weights,
+                active_norm=sum(n*n for name,n in weights.items() if name in stepped)**.5,
+                reader_updates=model._sentence_reader_updates,
+                optimizer_steps={named[id(p)]:float(kwargs['optimizer'].state[p]['step']) for p in selected
+                    if p in kwargs['optimizer'].state and 'step' in kwargs['optimizer'].state[p]}))
         return value
     def observed_projection(model,*args,**kwargs):
         value=project(model,*args,**kwargs)
@@ -217,10 +209,9 @@ def observe_run():
         return value
     def observed_backward(model,total,*args,**kwargs):
         if getattr(model,'_sentence_backward',False):
-            if model._sentence_reader_costs:
-                result['reader_training_rows'].append(dict(epoch=result.get('_active_epoch',0), trial=model._sentence_trial,
-                    rows=model._sentence_reader_rows.detach().tolist(), weights=model._sentence_reader_weights.detach().tolist(),
-                    comparison_weights=model._sentence_comparison_reader_weights.detach().tolist()))
+            if model._single_sentence_objectives is not None:
+                result['reader_training_rows'].append(dict(epoch=result.get('_active_epoch',0),
+                    weights=model._sentence_reader_weights.detach().tolist()))
             named=native_parameters(model)
             pullback=getattr(model,'_sentence_pullback',None)
             parameters=[p for _,p in named]

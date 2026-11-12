@@ -9492,7 +9492,7 @@ class SymbolSubSpace(SubSpace):
         # form event owns the clock band before the conceptual complement.
         _paired = getattr(getattr(conceptualSpace, 'similarity_codebook', None), 'mereology', None)
         self.ltm_store = LTM0(muxed, capacity=_ltm_cap, content_width=symbol_dim,
-            episodic_percepts=int(TheXMLConfig.space('SymbolSpace', 'episodicPercepts', 4)),
+            episodic_concepts=int(TheXMLConfig.space('SymbolSpace', 'episodicConcepts', 4)),
             relation_capacity=int(TheXMLConfig.space("SymbolSpace","relationCapacity",8192)),
             percept_width=getattr(_paired, 'percept_event_width', muxed),
             # Reading summaries are bounded by the concept inventory, not by

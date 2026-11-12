@@ -95,7 +95,7 @@ def test_retired_projection_configuration_is_rejected(tmp_path, name, value):
             ("<training>", f"<training><{name}>{value}</{name}>")])
 
 
-def test_policy_observation_and_checked_truth_effect_are_detached():
+def test_policy_observation_is_detached_and_checked_answer_is_live():
     from dataclasses import replace
     from types import SimpleNamespace, MappingProxyType
     from Output import thought_answer_meanings
@@ -115,7 +115,9 @@ def test_policy_observation_and_checked_truth_effect_are_detached():
     from ThoughtReferences import with_slots
     bound = with_slots(request, (), pair=(1.,0.))
     answer = thought_answer_meanings(SimpleNamespace(meaning=bound, result=checked))
-    assert answer and not answer[0].roles.requires_grad
+    assert answer and answer[0].roles.requires_grad
+    gradient, = torch.autograd.grad(answer[0].roles.sum(), state)
+    assert bool(gradient.abs().any())
 
 
 def test_normal_batch_logs_owned_optimizer_gradients(tmp_path, monkeypatch, capsys, eager_reading):

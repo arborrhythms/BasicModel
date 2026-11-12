@@ -59,7 +59,7 @@ def test_free_trial_uses_no_reference_or_offsets_and_keeps_identity_audit(monkey
         assert calls
         terms = {name:term for registry in registries for name,term in registry._terms.items()}
         reconstruction = {name for name in terms if name.startswith('reconstruction.')}
-        assert reconstruction == {'reconstruction.free_bytes', 'reconstruction.coverage',
+        assert reconstruction - {'reconstruction.walk_credit'} == {'reconstruction.free_bytes', 'reconstruction.coverage',
             'reconstruction.free_percept', 'reconstruction.definition_fold',
             'reconstruction.walk_residual.form', 'reconstruction.walk_residual.for',
             'reconstruction.walk_residual.against'}
@@ -70,7 +70,8 @@ def test_free_trial_uses_no_reference_or_offsets_and_keeps_identity_audit(monkey
         assert terms['reconstruction.free_percept']['trained']
         for prefix in ('reconstruction_reverse', 'reconstruction_order_zero'):
             assert terms[prefix + '.what']['trained']
-        if model._last_compose_score_function['advantage'].ne(0).any():
+        credit = getattr(model, '_last_compose_score_function', None)
+        if credit is not None and credit['advantage'].ne(0).any():
             assert 'output.compose_score_function' in terms
         audit = model.ownership_gradient_diagnostics(optimizer)
         assert audit['conflicts'] == 0 and audit['mode'] == 'projection'

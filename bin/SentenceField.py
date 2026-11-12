@@ -67,52 +67,48 @@ def sentence_generated(model, record, **walk_options):
 
 
 def reconstruct_generation(model, record, target, active):
-    """Keep one complete grammar inverse and its residual and departure credit."""
-    from Layers import Error
+    """One grammar inverse; only the whole path chooses or credits a departure."""
     from OutputOccurrences import realize
-    from WalkTrials import generation_pair, observe_comparison, stage_generate_credit
-    def decode(**options):
-        generation = sentence_generated(model, record, **options)
-        return (generation, realize(model, generation)), generation.trace
-    def score(value):
-        errors = Error(row_mask=active)
-        model._reverse_event_loss(value[1]._reconstruction_percepts, target,
-            registry=errors, name='reconstruction_order_zero', weight=model.loss.reconstruction_scale)
-        return errors.total()
-    if model._sentence_training and torch.is_grad_enabled():
-        value, audit = generation_pair(decode, score, owner=model, kind='decoder')
-        trace = model._last_output_walk_trace
-        stage_generate_credit(model, audit, trace[-1], trace[-2], owner='decoder')
-        residual = audit['selected_residual']
-        model._last_decoder_comparison = audit
-        observe_comparison(model, 'generate.decoder', audit,
-            sentence=int(record.sentence), active=active)
-    else:
-        value, trace = decode()
-        residual = trace[3]
-        model._last_decoder_comparison = None
-    model._sentence_walk_residuals.append(residual)
-    return value
+    options = getattr(model, '_path_reconstruction_options', None)
+    generation = sentence_generated(model, record, **dict(options or {}, return_candidates=True))
+    reverse = realize(model, generation)
+    model._sentence_generation = generation
+    model._sentence_walk_residuals.append(generation.trace[3])
+    model._last_decoder_comparison = None
+    return generation, reverse
 
 
 def selected_field(first, second, wins):
     """Publish each stream's kept generated field, with one union of its rows."""
-    ids = sorted(set(first.concept_ids.tolist()) | set(second.concept_ids.tolist()))
-    def align(field):
-        lookup = {cid: row for row, cid in enumerate(field.concept_ids.tolist())}
-        indices = field.concept_ids.new_tensor([lookup.get(cid, len(lookup)) for cid in ids])
-        evidence = torch.cat((field.evidence, torch.zeros_like(field.evidence[:1])), 0)
-        return evidence[indices]
-    evidence = torch.where(wins[None, :, None, None], align(second), align(first))
-    return ConceptualField(first.concept_ids.new_tensor(ids), evidence,
-        torch.where(wins[:, None, None], second.where, first.where),
-        torch.where(wins[:, None, None], second.when, first.when), None)
+    return select_fields((first, second), wins.long())
+
+
+def select_fields(fields, winners):
+    """Select streams by concept identity, including differently sized reviews."""
+    picked = [fields[int(index)] for index in winners]
+    ids = sorted({int(cid) for b, field in enumerate(picked) for cid in
+        (field.concept_ids if field.concept_ids.ndim == 1 else field.concept_ids[:, b])})
+    width = max(field.evidence.shape[2] for field in picked)
+    evidence, where, when = [], [], []
+    for b, field in enumerate(picked):
+        column = field.concept_ids if field.concept_ids.ndim == 1 else field.concept_ids[:, b]
+        lookup = {int(cid): i for i, cid in enumerate(column)}
+        zero = field.evidence.new_zeros(1, field.evidence.shape[2], 2)
+        values = torch.cat((field.evidence[:, b], zero), 0)
+        indices = column.new_tensor([lookup.get(cid, len(column)) for cid in ids])
+        evidence.append(F.pad(values[indices], (0, 0, 0, width - values.shape[1])))
+        where.append(F.pad(field.where[b], (0, 0, 0, width - field.where.shape[1])))
+        when.append(F.pad(field.when[b], (0, 0, 0, width - field.when.shape[1])))
+    return ConceptualField(fields[0].concept_ids.new_tensor(ids), torch.stack(evidence, 1),
+                           torch.stack(where), torch.stack(when), None)
 
 
 def native_target(model, field):
     """Observed per-byte native events are targets, never decoder inputs."""
     ps = model.perceptualSpace
-    native = ps._forward_input
+    from Omission import target as omission_target
+    targets = omission_target(model)
+    native = ps._forward_input if targets is None else targets['native']
     ids, spans = native['native_indices'], native['native_part_spans']
     # A promoted native part can span several bytes on the parallel path.
     # The target still has the same per-byte layout as the common decoder.
@@ -150,12 +146,18 @@ def word_percepts(reverse, field, width):
     return F.pad(result, (0, width - result.shape[-1])) if result.shape[-1] < width else result[..., :width]
 
 
-def reconstruct(model, record, errors, active):
+def reconstruct(model, record, errors, active, *, previous=None):
     """Input and order-zero reconstructions share exactly one reverse chain."""
     field = record.open_field
-    first = model.reverse(model.conceptualSpace.subspace.carrier_like(), field=field)
-    target = native_target(model, field)
-    model._reverse_event_loss(first._reconstruction_percepts, target,
+    if previous is None:
+        first = model.reverse(model.conceptualSpace.subspace.carrier_like(), field=field)
+        target = native_target(model, field)
+    else:
+        first, target = previous
+    model._sentence_reverse = (first, target)
+    from Omission import visible_events
+    visible, observed = visible_events(model, first._reconstruction_percepts, target)
+    model._reverse_event_loss(visible, observed,
         registry=errors, name='reconstruction_reverse', weight=model.loss.reconstruction_scale)
     generation, second = reconstruct_generation(model, record, target, active)
     model._sentence_order_zero_field = generation.field
@@ -168,7 +170,9 @@ def reconstruct(model, record, errors, active):
                    for name, term in errors._terms.items() if name.startswith(prefix + '.'))
     input_cost, zero_cost = rows('reconstruction_reverse'), rows('reconstruction_order_zero')
     ideas = word_percepts(first, field, D)
-    raw = model._staged_concepts_in[:, 0]
+    from Omission import target as omission_target
+    targets = omission_target(model)
+    raw = (model._staged_concepts_in if targets is None else targets['raw'])[:, 0]
     decoded = first.materialize()[:, 0]
     length = min(raw.shape[-1], decoded.shape[-1])
     positions = torch.arange(length, device=raw.device)
@@ -197,6 +201,7 @@ def reconstruct(model, record, errors, active):
         errors.error('reconstruction.free_percept', residual, 1., mask=active,
             weight=model.loss.reconstruction_scale, category='reconstruction')
     truncated = missing > 0
+    model._sentence_order_zero_reverse = second
     trace = generation.trace
     model._last_decoder_trace = (generation.words, generation.counts, generation.truncated,
         trace[3], trace[0], trace[4], trace[-2], trace[-1])

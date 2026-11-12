@@ -79,11 +79,15 @@ def test_stationary_pending_walk_keeps_the_full_budget_result_and_pullback(compi
     decode = torch.compile(walk, fullgraph=True, backend='eager') if compiled else walk
     actual = decode(event)
     actual_gradient, = torch.autograd.grad(actual[0].sum(), event)
-    for a, b in zip(actual[:-1], expected[:-1]):
-        torch.testing.assert_close(a, b, rtol=0, atol=0)
+    for index, (a, b) in enumerate(zip(actual[:-1], expected[:-1])):
+        if index != 6:  # The new prefix journal records executed rounds only.
+            torch.testing.assert_close(a, b, rtol=0, atol=0)
     # The diagnostic full-budget loop also visits the stationary suffix;
     # only actual decisions supply a policy-credit input.
     decisions = actual[4] >= 0
+    for a, b in zip(actual[6][:5], expected[6][:5], strict=True):
+        torch.testing.assert_close(a[:, :decisions.shape[1]][decisions],
+                                   b[:, :decisions.shape[1]][decisions], rtol=0, atol=0)
     torch.testing.assert_close(actual[-1][decisions], expected[-1][decisions], rtol=0, atol=0)
     assert not actual[-1].requires_grad
     torch.testing.assert_close(actual_gradient, expected_gradient, rtol=0, atol=0)

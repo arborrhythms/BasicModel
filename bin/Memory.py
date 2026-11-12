@@ -1736,16 +1736,15 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, MemoryStore, Layer):
 
     def __init__(self, nDim: int, capacity: int = 1024, content_width=None, *, percept_width=None,
                  stream_capacity=None, recurrence_capacity=None, relation_capacity=8192, read_capacity=None,
-                 episodic_percepts=0):
+                 episodic_concepts=0):
         super().__init__(nDim, nDim)
         self.nDim = int(nDim)
         self.capacity = int(capacity)
-        self.episodic_capacity = int(episodic_percepts)
+        self.episodic_capacity = int(episodic_concepts)
         if self.episodic_capacity < 0:
-            raise ValueError('episodicPercepts must be nonnegative')
-        self.register_buffer('episodic_percepts', torch.full((capacity, self.episodic_capacity), -1, dtype=torch.long))
-        self.register_buffer('episodic_poles', torch.zeros(capacity, self.episodic_capacity, 2))
-        self.register_buffer('episodic_where', torch.zeros(capacity, self.episodic_capacity, 2))
+            raise ValueError('episodicConcepts must be nonnegative')
+        self.register_buffer('episodic_concepts', torch.full((capacity, self.episodic_capacity), -1, dtype=torch.long))
+        self.register_buffer('episodic_values', torch.zeros(capacity, self.episodic_capacity))
         # Cover initialization has its own checkpointed stream. Creating
         # a document must not change the chooser's global random draws.
         self._cover_generator = torch.Generator(device='cpu').manual_seed(0)
@@ -1808,7 +1807,7 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, MemoryStore, Layer):
         self._observation_revision = None
         self._observation_count = 0
         self.register_buffer('model_clock', torch.tensor(0, dtype=torch.long))
-        self.register_buffer('truth_schema', torch.tensor(15, dtype=torch.long))
+        self.register_buffer('truth_schema', torch.tensor(16, dtype=torch.long))
         self.register_buffer('surprise', torch.full((capacity,), -1.))
         self.register_buffer('count', torch.tensor(0, dtype=torch.long))
         # Per-row writer provenance (ORIGIN_*); default 0 = conversation so
@@ -2431,22 +2430,31 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, MemoryStore, Layer):
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
+        version = int(state_dict.get(prefix + 'truth_schema', -1))
+        legacy = [prefix + name for name in ('episodic_percepts', 'episodic_poles', 'episodic_where')
+                  if prefix + name in state_dict]
+        if version in (14, 15) or version == 16 and legacy:
+            if version == 14 and prefix + 'episodic_percepts' in legacy:
+                raise ValueError('schema 14 cannot carry episodic_percepts')
+            if version == 15 and prefix + 'episodic_percepts' not in legacy:
+                raise ValueError('schema 15 omits episodic_percepts')
+            for key in legacy:
+                state_dict.pop(key)
+            for name in ('episodic_concepts', 'episodic_values'):
+                state_dict[prefix + name] = torch.full_like(getattr(self, name),
+                    -1 if name == 'episodic_concepts' else 0)
+            state_dict[prefix + 'truth_schema'] = self.truth_schema.clone()
+            self.episode_migration = dict(source=version, target=16, entries='empty',
+                dropped=legacy)
+            import warnings
+            warnings.warn(f'LTM0 schema {version} -> 16: empty episodic concept entries; '
+                          f'dropped {self.episode_migration["dropped"]}')
         unknown = [key[len(prefix):] for key in state_dict if key.startswith(prefix)
                    and '.' not in key[len(prefix):] and key[len(prefix):] not in self._buffers
                    and key[len(prefix):] not in self.addressing._buffers]
         if unknown:
             raise ValueError(f'retired or unsupported LTM0 checkpoint column: {unknown[0]}')
-        if int(state_dict.get(prefix + 'truth_schema', -1)) == 14:
-            columns = ('episodic_percepts', 'episodic_poles', 'episodic_where')
-            if any(prefix + name in state_dict for name in columns):
-                raise ValueError('legacy LTM0 checkpoint has partial episodic columns')
-            for name in columns:
-                state_dict[prefix + name] = torch.full_like(getattr(self, name), -1 if name == 'episodic_percepts' else 0)
-            state_dict[prefix + 'truth_schema'] = self.truth_schema.clone()
-            self.episode_migration = dict(source=14, target=15, entries='empty')
-            import warnings
-            warnings.warn('LTM0 schema 14 -> 15: imported empty episodic percept entries')
-        if int(state_dict.get(prefix + 'truth_schema', -1)) != 15:
+        if int(state_dict.get(prefix + 'truth_schema', -1)) != 16:
             raise ValueError('unsupported LTM0 layout checkpoint version; regenerate pre-layout memories')
         if int(state_dict.get(prefix + 'recurrence_version', -1)) != 2:
             raise ValueError('unsupported item 3.0 recurrenceCapacity checkpoint version')
@@ -3176,7 +3184,7 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, MemoryStore, Layer):
     row_columns = ('slots', 'surprise', 'address_keys', 'document_keys',
                    'sentence_content_keys', 'sentence_index', 'access_count',
                    'metadata_required', 'semantic_fingerprint', 'truth_plus', 'truth_minus',
-                   'stream', 'recurrence_readings', 'episodic_percepts', 'episodic_poles', 'episodic_where')
+                   'stream', 'recurrence_readings', 'episodic_concepts', 'episodic_values')
 
     @torch.no_grad()
     def compact_rows(self, keep):
@@ -3199,7 +3207,7 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, MemoryStore, Layer):
                     owner.mtm.forget(self.occurrence_of(index))
         self._ensure_texts(count)
         texts = [self._texts[i] for i in rows]
-        minus_one = {'surprise', 'address_keys', 'sentence_index', 'recurrence_readings', 'episodic_percepts'}
+        minus_one = {'surprise', 'address_keys', 'sentence_index', 'recurrence_readings', 'episodic_concepts'}
         for name in self.row_columns:
             values = getattr(self, name)
             values[:size] = values[keep]
@@ -3222,9 +3230,8 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, MemoryStore, Layer):
         """Clear the store (idempotent)."""
         self._supplies = {}
         self.slots.zero_()
-        self.episodic_percepts.fill_(-1)
-        self.episodic_poles.zero_()
-        self.episodic_where.zero_()
+        self.episodic_concepts.fill_(-1)
+        self.episodic_values.zero_()
         self.stream.zero_()
         self.surprise.fill_(-1.)
         self.count.zero_()

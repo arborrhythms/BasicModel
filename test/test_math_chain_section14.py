@@ -129,16 +129,13 @@ def test_binding_answer_cost_scores_filled_referent_while_relation_is_open():
     assert not matches(model,value,'five')  # the frozen committed-row verifier is stricter
 
 
-def test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge(monkeypatch):
+def test_episode_work_is_reported_without_a_local_thought_judge(monkeypatch):
     from test_item6_2_thinking import credit_chain_world, run
     model, registry, store, goal, menu = credit_chain_world(monkeypatch)
-    run(model, goal, work_budget=64)
-    audit = model._last_thought_comparison
-    assert audit['components'] == ((0.,0.),(0.,0.))
-    assert audit['work_spent'][0] != audit['work_spent'][1]
-    assert audit['costs'] == (0.,0.)
-    assert audit['keep_costs'] == (0.,0.) and not audit['explore_kept']
-    assert model._last_thought_score_function['surrogate'] is None
+    result = run(model, goal, work_budget=64)
+    assert 0 < result.work.spent <= 64
+    assert result.records[-1].kind == 'finish'
+    assert model._last_thought_comparison is None
 
 
 def test_region_query_ignores_free_variable_code_and_preserves_a_pending_match():
@@ -340,14 +337,24 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
         assert allowed.any()
         return value.masked_fill(~allowed, -torch.inf)
     monkeypatch.setattr(chooser, 'thought_logits', query_then_conclude)
-    commits = []
+    commits, trials, examples = [], {}, []
     commit = ThoughtStream.commit
     def committed_episode(*args, **kwargs):
         index = commit(*args, **kwargs)
         commits.append(index)
+        result = args[1]
+        trial = trials.get(id(result.records))
+        if trial is not None:
+            trial.update(committed=index, occurrence=bindings(result.meaning).get('_query_occurrence'))
         return index
     monkeypatch.setattr(ThoughtStream, 'commit', committed_episode)
-    examples = []
+    native_close = model._commit_sentence
+    def kept_close(*args, **kwargs):
+        value = native_close(*args, **kwargs)
+        for row, result in model._last_closing_thoughts:
+            examples.append(trials[id(result.records)])
+        return value
+    monkeypatch.setattr(model, '_commit_sentence', kept_close)
     def episode(original, model, meaning, **kwargs):
         before_commits = len(commits)
         before_offered = len(offered)
@@ -357,19 +364,19 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
             # field. Conclude at that opening creates no episode or commit.
             assert not open_slots(meaning) and result.meaning is meaning
             assert len(commits) == before_commits and result.work.spent == 0
-            examples.append(dict(already_closed=True, before=(), after=(),
+            trials[id(result.records)] = dict(already_closed=True, before=(), after=(),
                 source_pair=bindings(meaning).get('_source_evidence'),
-                operations=(), history=(), work=result.work.spent))
+                operations=(), history=(), work=result.work.spent)
             return result
-        assert len(commits) == before_commits + 1
+        assert len(commits) == before_commits  # Every trial ends before the kept write.
         operations = [record.operation for record in result.records if record.kind == 'thought']
-        examples.append(dict(already_closed=False, source_pair=bindings(meaning).get('_source_evidence'),
-            occurrence=bindings(meaning).get('_query_occurrence'), committed=commits[-1],
+        trials[id(result.records)] = dict(already_closed=False, source_pair=bindings(meaning).get('_source_evidence'),
+            occurrence=None, committed=None,
             operations=operations, offered_operations=sorted({op for menu in offered[before_offered:] for op in menu if op is not None}), work=result.work.spent, allowance=model.attention_budget,
             history=[record.kind for record in result.records],
             before=open_slots(meaning), after=open_slots(result.meaning),
             minted=any(bindings(child).get('_formation_reason') == 'search_exhausted'
-                       for child in result.meaning.constituents)))
+                       for child in result.meaning.constituents))
         return result
     try:
         documents = [ChainDocument('declarative', ('y is x plus two.',)),

@@ -231,7 +231,7 @@ def test_normal_supervised_output_respects_gradient_contract(tmp_path, monkeypat
         sentence = getattr(model, '_sentence_backward', False)
         if sentence:
             assert 'output' not in recorded
-            reader = model._sentence_reader_costs
+            reader = model._single_sentence_objectives
             if not reader:
                 return backward(total, amp_scaler, **kwargs)
             loss = reader['output']

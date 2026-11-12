@@ -21,55 +21,8 @@ def test_cached_perception_keeps_original_values_across_parameter_updates():
         torch.testing.assert_close(parameter.grad, 2 * x.detach().square() * torch.tensor([2., 3.]))
 
 
-def test_sentence_winners_are_row_local_and_precede_the_next_perception():
-    from SentenceCompose import sentence_pair
-    parameter = torch.nn.Parameter(torch.tensor(0.))
-    optimizer = torch.optim.SGD([parameter], lr=.1)
-    context = torch.zeros(3)
-    perceptions, updates, observations = [], [], []
-    for sid in range(2):
-        # This is the input to perception, before either compose trial.
-        perceptions.append(context.clone())
-        cache = context.clone()
-        def compose(cached, prior):
-            updates.append(float(parameter.detach()))
-            assert cached is cache
-            return cached + (1 if prior is None else 10)
-        def score(path, alternative):
-            # Opposite winners in rows 0/1, exact tie in row 2.
-            base = torch.tensor([1., 3., 2.] if alternative else [3., 1., 2.])
-            return base - (parameter - parameter.detach()), path
-        def step(loss):
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-        chosen, costs, wins = sentence_pair(cache, compose, score, step,
-                                            active=torch.ones(3, dtype=torch.bool))
-        context = chosen
-        observations.append(chosen.clone())
-        assert wins.tolist() == [True, False, False]
-        assert costs.shape == (3, 2)
-    assert perceptions[0].tolist() == [0, 0, 0]
-    assert perceptions[1].tolist() == [10, 1, 1]
-    assert observations[-1].tolist() == [20, 2, 2]
-    assert updates[1] == updates[0] and updates[3] == updates[2]
-    assert updates[2] > updates[1]
 
 
-def test_evaluation_has_one_trial_and_no_step():
-    from SentenceCompose import sentence_pair
-    calls = []
-    def compose(cache, prior):
-        calls.append(prior)
-        return cache
-    def forbidden(*args):
-        raise AssertionError('evaluation requested training')
-    chosen, costs, wins = sentence_pair(torch.tensor([2., 3.]), compose,
-        lambda path, _: (path, path), forbidden,
-        active=torch.tensor([True, False]), training=False)
-    assert calls == [None]
-    assert chosen.tolist() == [2., 3.]
-    assert not wins.any()
 
 
 @pytest.mark.parametrize('compiled', [False, pytest.param(True, marks=pytest.mark.slow)])
@@ -83,6 +36,13 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
     # Completion is a fixture for this causal mechanism test. Both winners
     # must leave a real predecessor, regardless of the untrained chooser.
     _select_completed_binary_path(model)
+    # This certificate compares two readings. The whole-path menu can also
+    # depart later; restrict this fixture's draw to its reading walks.
+    import SentenceCredit
+    draw = SentenceCredit.departure
+    def reading_departure(*args, **kwargs):
+        return draw(*args, **dict(kwargs, reconstruction=None, thought=None, output=None))
+    monkeypatch.setattr(SentenceCredit, 'departure', reading_departure)
     model.inputSpace.data.has_supervised_outputs = False
     optimizer = model.getOptimizer(lr=1e-4)
     import util

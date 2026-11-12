@@ -499,6 +499,13 @@ This preserves the tetralemma without logical explosion.
 > *reading* of the stored trust sign (next subsection) is the current
 > stand-in for a feeling channel.
 
+*2026-11-11 (Alec), on the scalar that item 1.8 places beside the words:* "so
+feelings are continuous, concepts are discrete, and we have a better model of
+nonconceptual knowing: continuity." The scalar is "the continuous "feeling"
+that corresponds to the discrete boundaries established by symbolic
+discrimination" ([specification](plans/2026-11-11-item1-8-last-architecture-round.md)
+decisions 13 and 15).
+
 ### Trust-sign as hedonic tone --- luminosity as joy
 
 The same $\pm$1 scalar the Truth Lattice reads epistemically (*asti* / *nasti*)
@@ -1335,6 +1342,10 @@ are not discrepancies on inspection.
    acquire beliefs it was never given. Under `human` comprehension asserts
    at the source's provenance trust, and unbelieving is a later,
    effortful revision.
+   *2026-11-11 (Alec):* "Trust of percepts is 1, seeing is believing.
+   After word-concepts are turned into object-concepts, though, trust is
+   uncertain (0) to start with." The profile switch is not built; this is
+   the rule of todo item 1.8.
 
 2. **Verbatim retention (revised September 28).** People lose wording
    within seconds (Sachs 1967). The model keeps no derivation after reading,
@@ -1395,6 +1406,9 @@ are not discrepancies on inspection.
    reconstruction teaches nothing. The trace-dropping schedule is in
    FutureWork.md; Architecture.md's note that brains approximate rather
    than invert then applies to the model too.
+   *2026-11-11 (Claude):* this entry predates the revision of entry 2
+   (2026-09-28): no derivation is kept after reading, so there is no trace
+   to drop. It is kept as the record.
 
 10. **Silencing without sharpening (open).** In people expectation both
     reduces the response to what was predicted and sharpens its

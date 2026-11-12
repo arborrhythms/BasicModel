@@ -101,16 +101,9 @@ def test_binding_judge_scores_referent_while_surface_readers_keep_their_training
     model = SimpleNamespace(inputSpace=SimpleNamespace(data=data), _concept_owner=lambda: owner,
         symbolSpace=SimpleNamespace(ltm_store=None), _sentence_answer_questions=questions)
     surface = torch.tensor([2., 0., .1, .2], requires_grad=True)
-    def reader(model, *args, registry=None, asked_only=False):
-        assert asked_only
-        model._sentence_answer_raw_cost = surface
-        model._sentence_answer_predictions = surface[:, None]
-        registry.add('surface', surface, objective='output')
-        return surface
-    monkeypatch.setattr(BasicModel, '_sentence_reader_error', reader)
+    from whole_path_fixtures import answer as score_answer
     registry = Error(row_mask=torch.ones(4, dtype=torch.bool))
-    result = BasicModel._sentence_answer_error(model, None, 0,
-        torch.ones(4, dtype=torch.bool), dict(meanings=[correct, wrong, base, base]), registry=registry)
+    result = score_answer(model, [correct, wrong, base, base], surface, registry=registry)
     # D8 adds text to the graded binding cost. The two named candidates
     # have identical content here; an unbound referent still costs one.
     assert result.tolist() == pytest.approx([2., 0., 1.1, .2])
@@ -124,7 +117,7 @@ def test_thought_judge_uses_the_supplied_answer_kind(monkeypatch, kind):
     from What import What, WhatAnswer, ReferentTarget
     from Meaning import ConceptualMeaning
     from meaning_fixtures import unsupported as question
-    from ThoughtAnswer import scorer
+    from whole_path_fixtures import answer as score_answer
     import BindingAnswers
     meaning = question(ConceptualMeaning.from_description(torch.ones(4)), (('referent', 0),))
     prompt = What.supervised(0)
@@ -132,11 +125,10 @@ def test_thought_judge_uses_the_supplied_answer_kind(monkeypatch, kind):
     model = SimpleNamespace(_sentence_answer_questions=(prompt,),
         parameters=lambda: (), buffers=lambda: (),
         inputSpace=SimpleNamespace(data=SimpleNamespace(what=lambda _: answer)),
-        _sentence_reader_error=lambda *args, **kwargs: torch.tensor([.75]))
+        _output_target_cost=lambda *args, **kwargs: torch.tensor([.75]))
     monkeypatch.setattr(BindingAnswers, 'cost', lambda *args, **kwargs: torch.tensor(.125))
-    score, _ = scorer(model, None, dict(meanings=[meaning]), 0)
     # An unresolved referent cannot contribute an accepted binding pair.
-    assert float(score(0, SimpleNamespace(meaning=meaning))) == (1.75 if kind == 'referent' else .75)
+    assert float(score_answer(model, [meaning], torch.tensor([.75]))[0]) == (1.75 if kind == 'referent' else .75)
 
 
 def test_open_region_with_only_negation_offers_conclude(monkeypatch):

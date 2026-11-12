@@ -154,14 +154,8 @@ def test_separate_closing_fork_waits_for_the_closing_visit():
 
 @pytest.mark.parametrize('explore_loss, expected', [(1., True), (2., False), (3., False)])
 def test_only_a_strictly_lower_loss_commits_the_alternative(explore_loss, expected):
-    from SentenceCompose import sentence_pair
-    counter = []
-    def compose(cache, prior):
-        return torch.tensor([1. if prior is None else 10.])
-    def score(path, alternative):
-        return torch.tensor([explore_loss if alternative else 2.]), path
-    state, costs, wins = sentence_pair(None, compose, score, lambda loss: counter.append(loss),
-        active=torch.tensor([True]))
-    assert len(counter) == 2
-    assert wins.item() is expected
-    assert state.item() == (10 if expected else 1)
+    from SentenceCredit import comparison
+    parts = torch.tensor([[[2., 0., 0.], [explore_loss, 0., 0.]]])
+    audit = comparison(parts, torch.tensor([True]))
+    assert audit['wins'].item() is expected
+    assert audit['winner'].item() == int(expected)

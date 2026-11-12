@@ -234,7 +234,8 @@ def test_training_output_keeps_lexical_text_and_output_gradients(monkeypatch):
         leaf = word[0].detach().requires_grad_()
         meaning=ConceptualMeaning.from_description(leaf)
         held=AnswerDerivation(answer_symbol=None,conceptual_answer=meaning.roles[None],
-            sentence_states=(SimpleNamespace(meaning=meaning),))
+            sentence_states=(SimpleNamespace(meaning=meaning),),
+            answer_meanings=((meaning,),))
         understood=Understanding()
         model.eval()
         tick = model.present()

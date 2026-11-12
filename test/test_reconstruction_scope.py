@@ -53,6 +53,7 @@ def test_packed_reconstruction_report_zeros_missing_targets_without_diluting_the
     from test_packed_reconstruction_parity import build_model
     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
     model = build_model(tmp_path, word_capacity=8)
+    model.inputSpace.data.has_supervised_outputs = False  # Input/storage probe has no answer target.
     stage = model._stage_snapshot_bytes
     def without_second_sentence():
         stage()

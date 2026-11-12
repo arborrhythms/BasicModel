@@ -56,12 +56,8 @@ def test_margin_and_ownership_observe_the_same_actual_steps():
     assert thought_steps == 1
     assert set(run_audit['reader_weights'][0]['optimizer_steps'].values()) == {1. + thought_steps}
     assert len(run_audit['reader_training_rows']) == 1
-    assert len(run_audit['comparison_reader_weights']) == 1
-    assert run_audit['comparison_reader_weights'][0]['reader_updates'] == 1
-    assert set(run_audit['comparison_reader_weights'][0]['optimizer_steps'].values()) == {1. + thought_steps}
     assert len(run_audit['reader_mse']) == 1
-    assert all(sum(w)==1 and set(w)<={0.,1.} for w in run_audit['reader_training_rows'][0]['weights'])
-    assert all(all(row['rows']) for row in run_audit['reader_training_rows'])
+    assert all(sum(w)==1 and set(w)<={0.,.5,1.} for w in run_audit['reader_training_rows'][0]['weights'])
     assert run_audit['pole_consumers']['_attention_sentence_payload'] > 0
     assert run_audit['pole_consumers']['commit_word_reference_slab:per_word'] > 0
     assert all(band['largest']==0 for phase in ('start','end')

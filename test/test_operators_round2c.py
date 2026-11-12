@@ -133,11 +133,8 @@ def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch,eag
             departed=model._sentence_departure['compose_round']>=0
             expected=torch.where(departed[:,None],torch.tensor([.5,.5]),
                                  torch.stack((~audit['wins'],audit['wins']),-1).float())
-            torch.testing.assert_close(model._sentence_comparison_reader_weights,expected,rtol=0,atol=0)
-        kept=torch.stack((~audit['wins'],audit['wins']),-1).to(model._sentence_reader_weights)
-        torch.testing.assert_close(model._sentence_reader_weights,kept)
+            torch.testing.assert_close(model._sentence_reader_weights,expected,rtol=0,atol=0)
         assert model._sentence_reader_updates==1
-        assert model._sentence_comparison_reader_updates==1
         states=[optimizer.state[p]['step'] for p in model.objective_parameter_groups(optimizer)['output']
                 if p in optimizer.state and 'step' in optimizer.state[p]]
         # The closing thought's exposure trains in the same sentence step.

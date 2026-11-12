@@ -394,8 +394,10 @@ def _policy_training_probe(m, opt, questions):
         m._sentence_path_cost=path_cost
     observed['changed']=[not torch.equal(p,old) for p,old in zip(params,before)]
     observed['mask']=m._last_answer_mask.tolist()
-    observed['departure_won'] = any(bool(audit['wins'].any()) for audit in
-        (m._last_output_comparison,) if audit is not None)
+    audit = m._last_sentence_credit
+    observed['departure_won'] = any(bool(((audit['winner'] == index) &
+        (draw['output_round'] >= 0)).any())
+        for index, draw in enumerate(audit['departures'], 1))
     assert not hasattr(m,'_output_policy_cost')
     assert all(g is None or not bool(g.abs().any()) for row in observed['reconstruction'] for g in row)
     return observed
@@ -438,8 +440,10 @@ def test_runbatch_answer_availability_never_reassigns_the_decoder(eager_reading)
         # Answer availability cannot reassign the decoder. Its restored
         # reconstruction/R walk credit can still train the shared policy.
         assert got['mask'] == [False, False] and not got['departure_won']
-        assert got['walk_routes']
-        assert set(got['walk_routes']) == {('reconstruction.walk_credit', 'reconstruction', 'R')}
+        assert set(got['walk_routes']) <= {('reconstruction.walk_credit', 'reconstruction', 'R')}
+        if any(bool((draw['reconstruction_round'] >= 0).any())
+               for draw in m._last_sentence_credit['departures']):
+            assert got['walk_routes']
         groups = m.objective_parameter_groups(opt)
         assert not any(any(p is q for q in groups['reconstruction'])
                        for p in m.languageSpace.generate_policy.parameters())

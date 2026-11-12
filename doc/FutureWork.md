@@ -90,6 +90,14 @@ The profile is a switch over documented behaviours, never a hidden
 heuristic; each behaviour has its own test under both settings. Params.md
 gains the element when the first profile-dependent behaviour lands.
 
+*2026-11-11 (Alec).* Asked which belief default the main run should take,
+he gave the rule itself: "Trust of percepts is 1, seeing is believing.
+After word-concepts are turned into object-concepts, though, trust is
+uncertain (0) to start with." That is the default belief of todo item 1.8
+(point 4) and matches what is built: content embedded in a supply enters
+with both lanes at zero. The `<operation>` element is still not built, in
+`model.xml` or in code, and nothing in item 1.8 needs it.
+
 ## 2. Forgetting and consolidation
 
 The [Item 5 implementation candidate](specs/2026-09-16-forgetting.md) owns
@@ -233,6 +241,22 @@ is cleared at `End`; a review is retained in `_episode_review_field` until the
 next open attention pass. Validation and the diagnosed convergence stop are in
 the [continued return](plans/2026-11-03-gradient-projection.md#23-round-7-continuation-convergence-repair-and-episodic-anchors).
 The dated decisions below remain their historical record.
+
+**Concepts, not percepts (Alec, 2026-11-11).** "it will clarify the
+architecture to store concepts instead of percepts. That will allow us to do
+animal cognition (system 1 reconstruction) without calling compose and
+generate." The entry is to hold up to `episodicConcepts` order-zero concepts
+of the open attention pass in place of `episodicPercepts` basic percepts, and
+a review is to publish them as a field directly. It is item 16 of the
+whole-path round's Codex text, added while that round was under way
+([specification](plans/2026-11-11-one-pair-per-stage.md) §3.13; the evidence
+in the [baseline](plans/2026-11-11-item1-baseline.md) §8.19). Everything
+below that says percepts describes round 7 as landed.
+*Amended the same day:* the entry holds references in reading order, each with
+one signed value, and no place ("We should be storing order-0 concepts, not
+"brackets"").
+
+**Implementation update, 2026-11-11, including the second amendment.** Item 16 is built in the whole-path tree: the entry holds reading-ordered concept references and one signed value per reading, with no stored pole pair or place. Review rebuilds the two poles from the sign and lays out the concepts by their owned surfaces; it clears only the querying stream's percept readings. Final validation is recorded in [the whole-path return](plans/2026-11-11-one-pair-per-stage.md#9-return).
 
 *Decided (Alec, 2026-11-11, question tool): "An LTM0 anchor row".* A sentence
 whose closing writes only an `LTM1` relation gets one `LTM0` row that holds
@@ -1758,6 +1782,12 @@ sparse presences stay a perception item.
 
 ## `intuit`: a learned thought operation as the completeness fallback (future work, Alec, 2026-10-21; unscheduled)
 
+*2026-11-11 (Alec).* "An intuition is just as we discussed; it can do both
+output and reconstruction". Scheduled in todo item 1.8 (point 3). The
+heading's "unscheduled" is of 2026-10-21: the operation was since built in
+part in item 2.5 (`bin/Intuition.py`), where its evidence is not accepted
+as an answer (`ThoughtAnswer.accepted`) and its terms are remembered rules.
+
 Alec, 2026-10-21: the top-down path from the conceptual space to the
 answer is a reasoner that uses tools, or not, to produce the next
 conceptual state; unfolding that state over words is near-deterministic.
@@ -2024,6 +2054,16 @@ the pass.
 
 ## Concepts as regions, certainty from evidence, no sphere (Alec, 2026-10-24)
 
+*2026-11-11 (Alec), of the scalar that item 1.8 places beside the words:*
+"can the model learn the word for a number (where that word is a concept
+with part and whole bounds that are hyperrectangles)?" Proposed there
+([specification](plans/2026-11-11-item1-8-last-architecture-round.md)
+section 3.10; section 5.2 a): a word's concept over the scalar is a
+box whose bounds are the least and the greatest of the values heard with
+the word, and a value belongs to it by the two coverages of
+`IdentityRows.meet_ratios`. On one dimension that is an interval; the rule
+is the same on several.
+
 Alec: "The field of concepts would be richer if it represented regions
 rather than projections, so I worry about using concept length as a
 certainty measure and projecting on the sphere rather than the unit ball."
@@ -2119,6 +2159,23 @@ entry point on a minimal input without access to the test tree, local
 evidence or cached development state.
 
 ## Image modality: amplitude, measure and Kosko's cube (Alec, 2026-10-25)
+
+*2026-11-11 (Alec), while placing a scalar beside the words in item 1.8:*
+"percepts could probably operate on the value directly, and parts/wholes
+just becomes a less-than discrimination on the number line."; "so it would
+work for XR, but could generalize to images fairly easily."; ".where would
+become 2D, and wholes and parts become hyperrectangles in the unit
+hypercube."; and the scope: "the image processing can be future word, and
+the ND stuff also, but the scalar case can be the continuous "feeling"
+that corresponds to the discrete boundaries established by symbolic
+discrimination." The scalar case is in the item 1.8
+[specification](plans/2026-11-11-item1-8-last-architecture-round.md)
+(decisions 13 and 14, sections 3.9 and 3.10); signals of several dimensions and images stay
+here. Claude's reading, recorded there: a percept's code is the far corner
+of a box from the origin and `Ops.partOf` is the containment of such
+boxes. A value as a percept's presence is the "amplitude is presence"
+proposal below, which the entry after this one set aside for images; which
+stands when images come is Alec's to say.
 
 Alec: "That's a flaw in my model; it's missing a magnitude in subsymbolic
 computation, since we have only parts and wholes. But letters are a
@@ -3059,6 +3116,13 @@ No mechanism is proposed. This entry asks for the measurement first.
 
 ## Numeric input as a modality, XOR as a System 1 model, and one model class (Alec, 2026-11-11; to specify)
 
+*Scheduled the same day.* Numeric input and output as linear layers on
+concepts, and every XOR proof on them, are in item 1.8
+([specification](plans/2026-11-11-item1-8-last-architecture-round.md)
+decision 9, section 3.9): "Numeric input can just be a linear layer onto
+concepts, the opposite of numeric output, so let's do it." One model class
+stays housekeeping.
+
 Alec, 2026-11-11: "Please add a numeric input as future work; xor should
 probably be converted to use they when it exists. Probably xor should be
 converted to a system 1 model. That means just one concepts-to-concepts
@@ -3128,3 +3192,81 @@ order 1.
 **What it waits for.** The whole-path round, which keeps the grammar XOR
 gate close to its present form and makes it a stopping gate (§3.12 there).
 Nothing here changes that round.
+
+### Episodic payload implementation update (whole-path round, 2026-11-11)
+
+The [whole-path specification](plans/2026-11-11-one-pair-per-stage.md) item 16 implements the immediate change recorded in §7: order-zero concepts replace percepts in the episodic entry. Time-only review publishes the kept concepts directly, clears only the querying stream's percept readings, and skips stale IDs with a counter. A direct `reverse` reconstructs that memory without compose or generate. The capacity parameter is now `episodicConcepts`. Following Alec's second mid-round amendment, the payload is ordered concept references with one signed value per reading, without stored places or pole pairs. Recall derives extents from owned surfaces; missing surfaces are counted. Schema 16 names and drops old percept, pole and place columns. This changes the entry payload, leaving the round-7 clock, anchor, epoch and forgetting contracts intact. Validation is reported in the round's §9 return.
+
+## The certainty of a word's mapping to its object, from a second modality (Alec, 2026-11-11; future work)
+
+*Later the same day (Alec):* "Im actually leaning toward making numeric
+input/output a part of 1.8, so that interpret can have objects that it can
+perceive directly (e.g. interpret("one") = 1.0). it would be a toy example
+of multimodal for a 1-D (or N-D) numeric signal." Proposed as a toy in the
+item 1.8
+[specification](plans/2026-11-11-item1-8-last-architecture-round.md)
+(decisions 13 and 18, section 3.10), where the trust of a definition whose
+object is the scalar is counted. What is below stays future work beyond
+that scalar.
+
+Alec, asked what trust `interpret` should give a new definition:
+"Conceptual trust is just the certainty of the concept (its length), so
+interpret should somehow reflect the certainty of the mapping from the
+signifier to its signified. We might not be able to do that without direct
+evidence of the signified coming from a different modality; we might be
+able, therefore, to do it for the math training corpus; "one" is a symbol
+for the continuous value 1.0 . But multiple modality is definite future
+work."
+
+**What exists.** A concept's trust is its length (`ConceptTrust`: agreement
+over views, growing with views). `InterpretLayer.define`, the one writer of
+a word's definition row, writes the pair $(1, 0)$; the row's effective
+evidence is that pair under the least of the word's length, the object's
+length and the gate's cap (`LTM1.refresh_effective`). So the mapping's
+certainty is stood in for by the certainty of its two ends: nothing
+measures the mapping itself. After item 1.8 a file can read numbers through
+a linear layer onto concepts
+([specification](plans/2026-11-11-item1-8-last-architecture-round.md)
+§3.9), but only a file that reads numbers alone.
+
+**To specify.** A moment that holds two modalities at once, a word and the
+value it names; the evidence that the object named by the word is the
+concept the other modality gave, counted as views of the definition row as
+a concept's views are counted now; and the definition's trust as that
+agreement. The math corpus is the first case: "one" beside 1.0.
+
+**What it waits for.** Item 1.8's numeric input, and a decision on how two
+modalities share a moment.
+
+## Operations on continuous values: sum and product on the feeling (Alec, 2026-11-11; to settle)
+
+*Settled for now, the same day (Alec):* "Maybe part, max, and min, so that
+we don't have to invent overflow rules. That will at least give us a fuzzy
+ordering and norm/t-norm." Item 1.8 has those three and builds no sum or
+product on values. What follows is kept as the record of the question.
+
+Alec, having placed a scalar beside the words in item 1.8: "so feelings are
+continuous, concepts are discrete, and we have a better model of
+nonconceptual knowing: continuity. We might also want some actual
+mathematical operations in this space: less than, multiplication,
+addition, min, max that can operate on the values directly rather than
+operating on the codes as proxies offerred by the codebook."
+
+**What item 1.8 already gives** ([specification](plans/2026-11-11-item1-8-last-architecture-round.md)
+sections 3.9 and 3.10). On a percept whose presence is the value, less-than is the
+part-of test (`Ops.partOf`), and the least and the greatest of two readings
+are the field's `intersection` and `union`.
+
+**What would be new.** A product and a sum of values. Today `ProductLayer`
+and `SumLayer` act on two concepts' codes (a coordinatewise product, marked
+exploratory; a mean), and `conjunction` multiplies activations.
+
+**To settle.** A sum of two values leaves the unit interval: bounded at 1,
+the mean, or $a + b - ab$. And the rule of 2026-10-07, "the math cannot be
+'direct'": once a numeral is grounded in the scalar, an addition on values
+answers "one plus one" with no chain of successors. Claude's reading of
+how both hold: that rule is about words; these are operations on the
+feeling, as animals and infants compare and roughly add magnitudes without
+symbols (cited from memory, not checked: Dehaene 1997; Cantlon and Brannon
+2007); and they stay out of what a word's arithmetic can call. In floating
+point the feeling's sum is exact unless something makes it approximate.

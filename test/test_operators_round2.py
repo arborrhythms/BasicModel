@@ -18,7 +18,7 @@ def test_reconstruction_keeps_total_credits_and_supplied_answer_only():
     explore=trial([1.,2.,.5],[0.,0.,0.],[0.,0.,3.])
     audit=comparison(torch.stack((greedy,explore),1),active)
     assert audit['wins'].tolist()==[True,False,False]
-    assert audit['keep_decision']==['explore','tie:greedy','greedy']
+    assert audit['keep_decision']==['explore','greedy','greedy']
     assert audit['advantage_sign'].tolist()==[-1.,0.,1.]
     assert audit['policy_against_keep'].tolist()==[False,False,False]
     assert audit['answer_against_keep'].tolist()==[False,False,False]
@@ -41,7 +41,7 @@ def test_walk_first_departure_counts_and_gradient(walk,monkeypatch):
     monkeypatch.setattr(WalkTrials,'departure_at',choose)
     draw=departure(attention,torch.tensor([[False,True,True,True]]),
                    active=torch.tensor([True]), compose_round=torch.tensor([1]))
-    assert seen[0].tolist()==[[True,True]]
+    assert seen[0].tolist()==[[True,True,False,False,False,False,False]]
     assert seen[1].tolist()==[[True,False,True]]
     assert draw['rounds'].item()==5
     assert draw['walk_count'].item()==2
@@ -192,17 +192,17 @@ def test_not_handoff_changes_pole_and_meaning_but_never_form(monkeypatch):
 
 def test_presented_answer_uses_committed_root_and_keeps_reader_cut():
     from Models import BasicModel
-    from SentenceCompose import sentence_pair
+    from SentenceCompose import select_rows
+    from SentenceCredit import comparison
     from test_supplied_answer_training import _sentence
     model,state,_=_sentence(True)
     root=state[1][6][:,0]
     greedy=(root,torch.cat((root[:,None],torch.zeros(2,2,2)),1),torch.ones(2,dtype=torch.long))
     explore=(root+7,torch.cat(((root+7)[:,None],torch.zeros(2,2,2)),1),greedy[2])
     active=torch.ones(2,dtype=torch.bool)
-    def score(path,alternative):
-        return torch.tensor([0.,1.] if alternative else [1.,0.]),path
-    kept,_,wins=sentence_pair(None,lambda _,prior:greedy if prior is None else explore,
-        score,lambda _:None,active=active)
+    parts = torch.tensor([[[1.,0.,0.],[0.,0.,0.]], [[0.,0.,0.],[1.,0.,0.]]])
+    wins = comparison(parts, active)['wins']
+    kept = select_rows(greedy, explore, wins)
     answer=BasicModel._forward_head(model,None,sentence_state=kept).materialize()
     expected=torch.stack((explore[0][0].sum(),greedy[0][1].sum()))[:,None]
     torch.testing.assert_close(answer,expected)

@@ -50,7 +50,7 @@ def test_recovery_control_has_equal_budgets_and_held_out_factor_combinations():
     assert len(pairs)==4 and all(len(v)==1 for v in pairs.values())
 
 
-def test_warmup_restore_keeps_the_lazy_comparison_bank_and_all_saved_tensors(tmp_path):
+def test_warmup_restore_keeps_the_single_reader_and_all_saved_tensors(tmp_path):
     import pytest
     import Models
     from identity_experiment import make_model, model_hashes
@@ -61,10 +61,7 @@ def test_warmup_restore_keeps_the_lazy_comparison_bank_and_all_saved_tensors(tmp
         model=make_model(folder,patch)
         try:
             assert model._concept_owner().components._ready().meaning_pairs>0
-            model.comparison_reader.sync(model)
-            assert model.comparison_reader.weights
-            with torch.no_grad():
-                for parameter in model.comparison_reader.parameters():parameter.add_(.25)
+            assert not hasattr(model, 'comparison_reader')
             model.save_weights(str(checkpoint))
             expected=model_hashes(model)
         finally:model.End()
@@ -72,8 +69,8 @@ def test_warmup_restore_keeps_the_lazy_comparison_bank_and_all_saved_tensors(tmp
         folder=tmp_path/'restored';folder.mkdir()
         model=make_model(folder,patch)
         try:
-            assert not model.comparison_reader.weights
+            assert not hasattr(model, 'comparison_reader')
             restore_warmup(model,checkpoint,native_restore)
-            assert model.comparison_reader.weights
+            assert not hasattr(model, 'comparison_reader')
             assert model_hashes(model)==expected
         finally:model.End()

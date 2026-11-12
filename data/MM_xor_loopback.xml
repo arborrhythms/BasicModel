@@ -5,6 +5,7 @@
        scalar-codebook loopback on the XOR dataset. This is the surviving
        scalar replacement for the retired bivector smoke config. -->
   <architecture>
+    <omissionTarget>1</omissionTarget>
     <data>
       <dataType>embedding</dataType>
     </data>

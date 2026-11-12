@@ -2,6 +2,7 @@
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
   <architecture>
+    <omissionTarget>1</omissionTarget>
     <data>
       <dataType>embedding</dataType>
     </data>

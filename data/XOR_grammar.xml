@@ -13,6 +13,7 @@
        tier-scoped defaults; the rules in <compose> below add the
        3-rule Boolean grammar at the symbolic tier. -->
   <architecture>
+    <omissionTarget>1</omissionTarget>
     <bindingDepth>2</bindingDepth>
     <!-- Native passes preserve width: every conceptual level keeps the
          same nVectors width (4+4+4 at order 2). Wide enough at each

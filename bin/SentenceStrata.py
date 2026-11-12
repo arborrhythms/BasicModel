@@ -175,7 +175,7 @@ def replace_composition(value, **changes):
 
 
 class SentenceStrata(nn.Module):
-    def __init__(self, streams, words, recent, width, percept_width=0, relation_capacity=8192):
+    def __init__(self, streams, words, recent, width, percept_width=0, relation_capacity=8192, *, paths=2):
         super().__init__()
         self.words, self.streams, self.recent = int(words), int(streams), int(recent)
         if self.words < 1: raise ValueError('sentence strata require a positive word bound')
@@ -183,19 +183,22 @@ class SentenceStrata(nn.Module):
         # drain of two STM capacities. Unary steps and transpositions do not
         # consume a word, so n-1 is not an operation bound.
         self.operators = 3*self.words + 2*self.recent
-        # Greedy, exploratory and admitted views coexist until the close.
+        # Every configured path and the admitted view coexist until the close.
+        self.trials = int(paths) + 1
+        if self.trials < 2:
+            raise ValueError('sentence strata require an exploit and admission bank')
         self.banks = nn.ModuleList(STM0(width, self.words+self.operators, percept_width=percept_width,
-            relation_capacity=2*self.operators+1) for _ in range(3*self.streams))
+            relation_capacity=2*self.operators+1) for _ in range(self.trials*self.streams))
         self.recent_stores = nn.ModuleList(STM0(width, self.recent, percept_width=percept_width,
             relation_capacity=relation_capacity) for _ in range(self.streams))
         self._leases = [None] * len(self.banks)
         self._clock = 0
 
     def capture(self, program, language, stream):
-        indices = range(3*stream, 3*stream+3)
+        indices = range(self.trials*stream, self.trials*(stream+1))
         index = next((i for i in indices if self._leases[i] is None or self._leases[i]() is None), None)
         if index is None:
-            raise OverflowError('all three pinned sentence trials are still retained')
+            raise OverflowError('all constructed pinned sentence trials are still retained')
         store = self.banks[index]
         store.expire()
         # Device follows the value, without ever changing a construction size.
@@ -281,14 +284,14 @@ class SentenceStrata(nn.Module):
                     truth_minus=float(source.truth_minus[relation]), where=source.percept[relation, :4],
                     when=source.percept[relation, 4:], operator=int(source.operator_reference[relation]),
                     operation_seat=int(source.operation_seat[relation]))
-        for index in range(3*stream, 3*stream+3):
+        for index in range(self.trials*stream, self.trials*(stream+1)):
             self.banks[index].expire(); self._leases[index] = None
         return store.occurrence_of(row)
 
     def clear(self, stream=None):
         for b in range(self.streams) if stream is None else (stream,):
             self.recent_stores[b].expire()
-            for index in range(3*b, 3*b+3):
+            for index in range(self.trials*b, self.trials*(b+1)):
                 self.banks[index].expire(); self._leases[index] = None
 
     def read(self, address):

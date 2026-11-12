@@ -102,16 +102,17 @@ def closing_question(meaning, clause, parsed=None, program=None, *, store=None, 
     return result
 
 
-def absence(model, row, observed, image=None):
+def absence(model, row, observed, image=None, *, pending=None):
     """Conceive the strongest missing symbol from omission, never from content."""
     from ThoughtStream import write
-    discourse = getattr(getattr(model, 'symbolSpace', None), 'expectation', None)
-    if discourse is None or image is None or image.omission is None:
+    if image is None or image.omission is None:
         return None
-    comparison = discourse.last_expectation_comparison(row)
-    prior = None if comparison is None else comparison.estimate
-    if prior is None or prior.symbol_keys is None:
-        return None
+    if pending is None:
+        raise ValueError('absence requires the closing image\'s pending expectation')
+    prior = pending.prediction
+    if (image.omission.shape[0] != len(prior.symbol_keys)
+            or not torch.equal(image.identities, prior.symbol_ids)):
+        raise ValueError('absence image and pending expectation have different symbol banks')
     # The evidence against a symbol and the omission of positive evidence are
     # different axes. Only the latter licenses this conceived absence.
     omission = image.omission[:, 0]
@@ -125,24 +126,29 @@ def absence(model, row, observed, image=None):
     meaning = with_slots(meaning, (), pair=(0., float(confidence)))
     data = bindings(meaning)
     data['_producing_operation'] = 'not'
-    data['_thought_witnesses'] = tuple(comparison.source_occurrences)
+    data['_thought_witnesses'] = tuple(pending.source_occurrences)
     data['_omitted_symbol'] = int(prior.symbol_ids[index])
-    return write(model, replace(meaning, bindings=data), row=row)
+    value = replace(meaning, bindings=data)
+    path = getattr(model, '_path_thinking', None)
+    if path is not None:
+        path.absences.setdefault(row, []).append(value)
+        return None
+    return write(model, value, row=row)
 
 
-def close(model, fields, *, sentence, ready, score=None, images=None):
+def close(model, fields, *, sentence, ready, images=None, pending=None):
     """Offer one root episode at every close, then retain its presented binding."""
     results = []
     for row in ready:
         field = fields[row]
         if not has_open_slots(field.query if field.query is not None else field.meaning):
-            absence(model, row, field.meaning, None if images is None else images.get(row))
+            absence(model, row, field.meaning, None if images is None else images.get(row),
+                    pending=None if pending is None else pending[row])
         previous = getattr(model, '_thought_image', None)
         model._thought_image = None if images is None else images.get(row)
         try:
             result = model.run_selected_thought(field.query if field.query is not None else field.meaning, row=row,
-                work_budget=getattr(model, 'attention_budget', 32),
-                score=None if score is None else lambda result,row=row:score(row,result))
+                work_budget=getattr(model, 'attention_budget', 32))
         finally:
             if previous is None:
                 del model._thought_image

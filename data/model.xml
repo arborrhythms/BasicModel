@@ -17,6 +17,10 @@
   <architecture>
     <separateChooser>false</separateChooser>
     <reconstructionJitter>0</reconstructionJitter>
+    <explorePaths>1</explorePaths>
+    <omissionTarget>0.9</omissionTarget>
+    <omissionLimit>0.5</omissionLimit>
+    <omissionHorizon>1024</omissionHorizon>
     <!-- Fixed trips per free output or sentence-decoder walk. -->
     <generateBudget>32</generateBudget>
     <!-- Raw bytes in one word; lexical tables reserve EOS separately. -->
@@ -352,7 +356,7 @@
          used for inter-sentence prediction).  Separate from
          <truthMaxEntries>.  Default 1024. -->
     <ltmCapacity>1024</ltmCapacity>
-    <episodicPercepts>4</episodicPercepts>
+    <episodicConcepts>4</episodicConcepts>
     <relationCapacity>8192</relationCapacity>
     <equalityWitnessCapacity>8192</equalityWitnessCapacity>
 

@@ -17,15 +17,8 @@ def strength(model, like):
 
 
 def current_costs(model, registry, *, sentence):
-    readers = getattr(model, '_sentence_reader_costs', None) if sentence else None
-    rows = getattr(model, '_sentence_reader_rows', None) if sentence else None
-    result = registry_costs(registry,
-        reader_rows=torch.zeros_like(registry.row_mask) if readers is not None else rows,
-        expectation_rows=torch.zeros_like(registry.row_mask) if readers is not None else None,
+    return registry_costs(registry,
         definition_rows=getattr(model, '_sentence_definition_rows', None) if sentence else None)
-    if readers is not None:
-        combine(result, readers)
-    return result
 
 
 def combine(destination, costs):

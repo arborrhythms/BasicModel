@@ -14,6 +14,7 @@ def test_every_entry_writes_once_with_one_trial_and_no_optimizer(tmp_path, monke
         ('<serialWordCapacity>8</serialWordCapacity>', '<serialWordCapacity>16</serialWordCapacity>'),
         ('<serialWordBuckets>8</serialWordBuckets>', '<serialWordBuckets>16</serialWordBuckets>')])
     model._tensor_peer_while_eager = True
+    model.inputSpace.data.has_supervised_outputs = False  # Input/storage probe has no answer target.
     model._chart_compose_per_word = lambda: None
     model._install_unit_span_fn()
     model.reconstruct_in_loop = False

@@ -35,11 +35,11 @@ class Observer:
     def __enter__(self):
         from Models import BasicModel
         from ThoughtReferences import open_slots
-        import ThoughtCredit
+        import WholePaths
         import EqualityLearning
         self.stack = ExitStack()
         run = BasicModel.run_selected_thought
-        register = ThoughtCredit.register
+        credit = WholePaths.credit
         equality_cost = EqualityLearning.cost
 
         def equality(language, programs, active, like):
@@ -91,10 +91,23 @@ class Observer:
             self.credits['nonzero_chooser_gradients'] += gradient_norm > 0.
             if len(self.credit_sample) < 100:
                 self.credit_sample.append(dict(self.context, **item))
-            return register(model, value, costs=costs, source=source, row=row, category=category)
+
+        def path_credited(model, first, path, active):
+            result = credit(model, first, path, active)
+            term = path.registry._terms.get('output.thought_score_function')
+            if term is not None:
+                values = path.registry._value(term)
+                costs = torch.stack((first.parts[:, 0] + first.parts[:, 2],
+                                     path.parts[:, 0] + path.parts[:, 2]), -1)
+                for row, at in enumerate(path.draw['thought_round'].tolist()):
+                    if at >= 0:
+                        credited(model, values[row], costs=costs[row].tolist(),
+                            source='reconstruction_and_answer', row=row,
+                            category=path.thinking.traces[row]['choices'][at].get('category', 'reconstruction'))
+            return result
 
         self.stack.enter_context(patch.object(BasicModel, 'run_selected_thought', observed))
-        self.stack.enter_context(patch.object(ThoughtCredit, 'register', credited))
+        self.stack.enter_context(patch.object(WholePaths, 'credit', path_credited))
         self.stack.enter_context(patch.object(EqualityLearning, 'cost', equality))
         return self
 

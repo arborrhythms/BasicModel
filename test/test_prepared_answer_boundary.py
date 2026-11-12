@@ -50,16 +50,24 @@ def test_realization_uses_a_held_derivation_without_running_resolution(
             def rescan(*args, **kwargs):
                 raise AssertionError("a held answer must reuse its bounded lexical read")
 
+            resolve = model._resolve_answer
             monkeypatch.setattr(model, "_resolve_answer", forbidden)
             monkeypatch.setattr(model, "_resolve_step", forbidden, raising=False)
             monkeypatch.setattr(model, "answer_query", forbidden)
             import Generative
             with monkeypatch.context() as prepared:
                 prepared.setattr(Generative, "lexical_candidates", rescan)
+                tick = model.present()
                 first = model.reverseOutput(understanding, held)
-            _capture_program_probe(model, ["5 plus 6", "7 plus 8"])
+            with monkeypatch.context() as next_sentence:
+                next_sentence.setattr(model, "_resolve_answer", resolve)
+                _capture_program_probe(model, ["5 plus 6", "7 plus 8"])
             with monkeypatch.context() as prepared:
                 prepared.setattr(Generative, "lexical_candidates", rescan)
+                # Compare the held reading at the same output tick; its
+                # absolute stamp otherwise changes by the model-time contract.
+                model.when_time.fill_(tick)
+                model.when_encoding.t = tick
                 second = model.reverseOutput(understanding, held)
         assert first.derivation is held and second.derivation is held
         torch.testing.assert_close(second.actual, first.actual, rtol=0, atol=0)

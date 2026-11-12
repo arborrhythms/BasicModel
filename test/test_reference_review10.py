@@ -217,8 +217,8 @@ def test_thought_bind_is_credited_only_by_episode_advantage(monkeypatch, tmp_pat
     from math_chain_observer import Observer
     with Observer(tmp_path) as observer:
         run(f.model, meaning, work_budget=128, score=score)
-    assert observer.credit_sample[-1]['category'] == 'expectation'
-    audit = f.model._last_thought_comparison
+    assert f.model._fixture_path_credit['category'] == 'expectation'
+    audit = f.model._fixture_path_audit
     assert audit['costs'] == pytest.approx(measured)
     assert audit['keep_costs'] == audit['costs']
     assert audit['explore_kept'] == (measured[1] < measured[0])
@@ -234,12 +234,12 @@ def test_thought_bind_is_credited_only_by_episode_advantage(monkeypatch, tmp_pat
         torch.testing.assert_close(value, before[name], rtol=0, atol=0)
     loss = f.model.errors.total(objective='expectation')
     if answer_weight == 0:
-        assert measured == [0., 0.] and loss is None
-        assert f.model._last_thought_score_function['surrogate'] is None
+        assert measured == [0., 0.] and not loss.requires_grad and loss == 0
+        assert f.model._fixture_path_credit['surrogate'] is None
     else:
         assert measured == [0., 1.]
         assert loss is not None and loss.requires_grad
-        assert f.model._last_thought_score_function['category'] == 'expectation'
+        assert f.model._fixture_path_credit['category'] == 'expectation'
         loss.backward()
         assert f.resolver.policy.grad.abs().sum() > 0
         assert f.resolver.policy.grad[4].abs() > 0

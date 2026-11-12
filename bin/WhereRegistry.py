@@ -107,7 +107,7 @@ def install_where_registry(model):
     model._sentence_ticks = {}
     model._open_sentence_slot = None
     model._episode_counts = dict(written=0, anchors=0, relation_only_closings=0,
-                                time_only_recalls=0, reinstatements=0)
+                                time_only_recalls=0, reinstatements=0, ids_skipped=0, surfaces_missing=0)
     for space in model.conceptualSpaces:
         object.__setattr__(space.stm, '_time_owner', weakref.ref(model))
         space._episode_review_field = None

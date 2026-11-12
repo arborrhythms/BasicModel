@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "coverage": "Round 7: attribute/getattr inventory plus dynamic paths. Each reader is classified as absolute transport/address, age, or a difference; learned inputs use the latter two.",
+  "coverage": "Whole-path round: complete attribute/getattr inventory plus dynamic paths; the new readers transport stamps and do not feed absolute time to a learned scorer.",
   "attributes": [
     "_WHEN_WIDTH",
     "_ar_word_symbol_when",
@@ -55,24 +55,13 @@
     },
     {
       "file": "bin/EpisodicMemory.py",
-      "function": "_field",
+      "function": "reinstate",
       "previous_absolute_time": false,
       "attributes": [
         "when",
         "when_band"
       ],
-      "line": 57,
-      "reads": "absolute",
-      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
-    },
-    {
-      "file": "bin/EpisodicMemory.py",
-      "function": "reinstate",
-      "previous_absolute_time": false,
-      "attributes": [
-        "when"
-      ],
-      "line": 107,
+      "line": 92,
       "reads": "absolute",
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
     },
@@ -123,7 +112,7 @@
       "role": "carrier",
       "previous_absolute_time": false,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 14045,
+      "line": 14047,
       "reads": "absolute"
     },
     {
@@ -135,7 +124,7 @@
       "role": "carrier",
       "previous_absolute_time": false,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 14071,
+      "line": 14073,
       "reads": "absolute"
     },
     {
@@ -147,7 +136,7 @@
       "role": "carrier",
       "previous_absolute_time": false,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 14132,
+      "line": 14134,
       "reads": "absolute"
     },
     {
@@ -159,7 +148,7 @@
       "role": "carrier",
       "previous_absolute_time": false,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 14114,
+      "line": 14116,
       "reads": "absolute"
     },
     {
@@ -171,7 +160,7 @@
       "role": "retention priority",
       "previous_absolute_time": false,
       "now": "Only differences or their ranks enter retention and reference comparisons.",
-      "line": 1088,
+      "line": 1093,
       "reads": "difference"
     },
     {
@@ -183,7 +172,7 @@
       "role": "identity checkpoint model-time provenance",
       "previous_absolute_time": false,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 1563,
+      "line": 1568,
       "reads": "absolute"
     },
     {
@@ -195,7 +184,7 @@
       "role": "identity checkpoint model-time provenance",
       "previous_absolute_time": false,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 1541,
+      "line": 1546,
       "reads": "absolute"
     },
     {
@@ -241,7 +230,7 @@
       "attributes": [
         "when_encoding"
       ],
-      "line": 13784,
+      "line": 13806,
       "reads": "absolute",
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
     },
@@ -252,7 +241,7 @@
       "attributes": [
         "nWhen"
       ],
-      "line": 23657,
+      "line": 23560,
       "reads": "age",
       "now": "Learned inputs use age, computed from the present tick and the observation band or interval."
     },
@@ -266,7 +255,7 @@
       "role": "shared chunk provenance",
       "previous_absolute_time": false,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 20528,
+      "line": 20444,
       "reads": "absolute"
     },
     {
@@ -279,7 +268,7 @@
       "role": "binding/closing reader",
       "previous_absolute_time": true,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 20596,
+      "line": 20554,
       "reads": "absolute"
     },
     {
@@ -291,7 +280,7 @@
       "role": "loss/layout reader",
       "previous_absolute_time": true,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 24110,
+      "line": 24013,
       "reads": "absolute"
     },
     {
@@ -303,7 +292,7 @@
       "role": "carrier",
       "previous_absolute_time": false,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 7423,
+      "line": 7437,
       "reads": "absolute"
     },
     {
@@ -315,7 +304,7 @@
       "role": "binding/closing reader",
       "previous_absolute_time": true,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 11353,
+      "line": 11321,
       "reads": "absolute"
     },
     {
@@ -327,7 +316,7 @@
       "role": "loss/layout reader",
       "previous_absolute_time": true,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 7370,
+      "line": 7384,
       "reads": "absolute"
     },
     {
@@ -339,7 +328,7 @@
       "role": "binding/closing reader",
       "previous_absolute_time": true,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 11382,
+      "line": 11350,
       "reads": "absolute"
     },
     {
@@ -362,7 +351,7 @@
       "attributes": [
         "when"
       ],
-      "line": 329,
+      "line": 383,
       "reads": "absolute"
     },
     {
@@ -374,7 +363,7 @@
       "attributes": [
         "when"
       ],
-      "line": 302,
+      "line": 356,
       "reads": "absolute"
     },
     {
@@ -421,7 +410,7 @@
       "attributes": [
         "when_encoding"
       ],
-      "line": 516,
+      "line": 524,
       "reads": "absolute",
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
     },
@@ -455,7 +444,7 @@
       "attributes": [
         "when_encoding"
       ],
-      "line": 47,
+      "line": 70,
       "reads": "age",
       "now": "Learned inputs use age, computed from the present tick and the observation band or interval."
     },
@@ -533,14 +522,14 @@
     },
     {
       "file": "bin/SentenceField.py",
-      "function": "selected_field",
+      "function": "select_fields",
       "previous_absolute_time": false,
+      "reads": "absolute",
+      "now": "Selects fields by concept identity and transports the chosen stream's stamp.",
+      "line": 86,
       "attributes": [
         "when"
-      ],
-      "line": 98,
-      "reads": "absolute",
-      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
+      ]
     },
     {
       "file": "bin/SentenceField.py",
@@ -563,7 +552,8 @@
       "role": "composition input",
       "previous_absolute_time": true,
       "reads": "difference",
-      "now": "The mixer reads the elapsed-time ladder relative to its zero-age band; the stored percept stamp is unchanged."
+      "now": "The mixer reads the elapsed-time ladder relative to its zero-age band; the stored percept stamp is unchanged.",
+      "line": 17186
     },
     {
       "file": "bin/Spaces.py",
@@ -575,7 +565,7 @@
       "role": "carrier",
       "previous_absolute_time": false,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 13586,
+      "line": 13587,
       "reads": "absolute"
     },
     {
@@ -634,7 +624,7 @@
       "role": "carrier",
       "previous_absolute_time": false,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 17492,
+      "line": 17504,
       "reads": "absolute"
     },
     {
@@ -646,7 +636,7 @@
       "role": "carrier",
       "previous_absolute_time": false,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 17341,
+      "line": 17353,
       "reads": "absolute"
     },
     {
@@ -708,7 +698,7 @@
       "role": "carrier",
       "previous_absolute_time": false,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 12361,
+      "line": 12362,
       "reads": "absolute"
     },
     {
@@ -722,7 +712,7 @@
       "role": "carrier",
       "previous_absolute_time": false,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 12404,
+      "line": 12405,
       "reads": "absolute"
     },
     {
@@ -735,7 +725,7 @@
       "role": "carrier",
       "previous_absolute_time": false,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 12458,
+      "line": 12459,
       "reads": "absolute"
     },
     {
@@ -760,7 +750,7 @@
       "role": "writer",
       "previous_absolute_time": true,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 11434,
+      "line": 11435,
       "reads": "absolute"
     },
     {
@@ -785,7 +775,7 @@
       "role": "carrier",
       "previous_absolute_time": false,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 11977,
+      "line": 11978,
       "reads": "absolute"
     },
     {
@@ -1056,7 +1046,7 @@
       "role": "carrier",
       "previous_absolute_time": false,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 20312,
+      "line": 20324,
       "reads": "absolute"
     },
     {
@@ -1068,7 +1058,7 @@
       "role": "carrier",
       "previous_absolute_time": false,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 20196,
+      "line": 20208,
       "reads": "absolute"
     },
     {
@@ -1080,7 +1070,7 @@
       "role": "carrier",
       "previous_absolute_time": false,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 20237,
+      "line": 20249,
       "reads": "absolute"
     },
     {
@@ -1092,7 +1082,7 @@
       "role": "carrier",
       "previous_absolute_time": false,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 20266,
+      "line": 20278,
       "reads": "absolute"
     },
     {
@@ -1144,12 +1134,24 @@
     },
     {
       "file": "bin/WalkTrials.py",
+      "function": "ThoughtTrialState.keep",
+      "previous_absolute_time": false,
+      "reads": "absolute",
+      "now": "Selects each stream's retained field and transports its original stamp.",
+      "line": 187,
+      "attributes": [
+        "when",
+        "when_band"
+      ]
+    },
+    {
+      "file": "bin/WalkTrials.py",
       "function": "ThoughtTrialState.restore",
       "previous_absolute_time": false,
       "attributes": [
         "when_encoding"
       ],
-      "line": 291,
+      "line": 153,
       "reads": "absolute",
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
     },
@@ -1165,6 +1167,17 @@
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
       "line": 48,
       "reads": "absolute"
+    },
+    {
+      "file": "bin/WholePaths.py",
+      "function": "fields",
+      "previous_absolute_time": false,
+      "reads": "absolute",
+      "now": "Stamps a temporary thought operand with its sentence tick; no learned absolute read.",
+      "line": 55,
+      "attributes": [
+        "when_encoding"
+      ]
     },
     {
       "file": "bin/corpus_capacity.py",

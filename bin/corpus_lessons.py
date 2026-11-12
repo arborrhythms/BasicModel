@@ -356,6 +356,7 @@ def measure(config, lessons, output, *, eager=False, presentations=None, curricu
                 if gradient_report:
                     from SentenceTraining import gradient_receipt
                     row['gradient_report'] = gradient_receipt(model, clear=True)
+                row['omission'] = model.omission.report()
                 records.append(row)
                 with (output / 'epochs.jsonl').open('a') as target:
                     target.write(json.dumps(row) + '\n')

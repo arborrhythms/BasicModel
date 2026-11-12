@@ -36,11 +36,11 @@ def case(row_gain, document_gain, *, omitted=False, relation=False):
         host.expectation_gain = row_gain
         host.reconstruct_in_loop = False
         captured = []
-        close = ThoughtClosing.close
-        def capture(*args, **kwargs):
-            captured.append(kwargs['images'])
-            return close(*args, **kwargs)
-        patch.setattr(ThoughtClosing, 'close', capture)
+        commit = BasicModel._commit_sentence
+        def capture(owner, state, sid, active, observations, predictions, *args, **kwargs):
+            captured.append(owner._sentence_closing_images(observations[0], active, predictions[0]))
+            return commit(owner, state, sid, active, observations, predictions, *args, **kwargs)
+        patch.setattr(BasicModel, '_commit_sentence', capture)
         observation = BasicModel._sentence_observation
         row_prior = ()
         def observe(*args, **kwargs):

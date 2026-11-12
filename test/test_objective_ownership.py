@@ -85,19 +85,19 @@ def test_trial_consumers_share_one_record_and_answer_cannot_write_it(monkeypatch
     reconstructed, answered = [], []
     import SentenceField
     reconstruct = SentenceField.reconstruct
-    answer = Models.BasicModel._sentence_answer_error
-    def read(owner, record, errors, active):
+    answer = Models.BasicModel._sentence_numeric_error
+    def read(owner, record, errors, active, **kwargs):
         reconstructed.append(record)
-        return reconstruct(owner, record, errors, active)
+        return reconstruct(owner, record, errors, active, **kwargs)
     def score(self, state, sid, active, observation, **kwargs):
         record = observation['record']
         answered.append(record)
         cost = answer(self, state, sid, active, observation, **kwargs)
-        gradient = torch.autograd.grad(cost.sum(), record.root, retain_graph=True, allow_unused=True)[0]
-        assert gradient is not None and not bool(gradient.abs().any())
+        gradients = torch.autograd.grad(cost.sum(), (state[1][6], state[1][10]), retain_graph=True, allow_unused=True)
+        assert any(g is not None and bool(g.abs().any()) for g in gradients)
         return cost
     monkeypatch.setattr(SentenceField, 'reconstruct', read)
-    monkeypatch.setattr(Models.BasicModel, '_sentence_answer_error', score)
+    monkeypatch.setattr(Models.BasicModel, '_sentence_numeric_error', score)
     optimizer = model.getOptimizer(lr=.01)
     try:
         raw, target = next(iter(data.data_loader(split='train', num_streams=4)))

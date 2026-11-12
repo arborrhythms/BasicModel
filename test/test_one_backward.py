@@ -263,7 +263,7 @@ def test_numeric_sentence_target_matches_data_authority_before_the_update(width)
     warnings=[]
     model._warn_zeroed_channel=lambda *args:warnings.append(args)
     registry=Error(row_mask=torch.ones(2,dtype=torch.bool))
-    cost=BasicModel._sentence_reader_error(model,state,0,torch.ones(2,dtype=torch.bool),
+    cost=BasicModel._sentence_numeric_error(model,state,0,torch.ones(2,dtype=torch.bool),
         dict(record=None),registry=registry)
     torch.testing.assert_close(model._sentence_answer_raw_cost,torch.tensor([25.,64.]))
     assert cost is not None and cost.requires_grad

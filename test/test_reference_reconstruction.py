@@ -40,7 +40,8 @@ def sentence_cost(resolver, plans, *, active=None, enabled=True):
         _tensor_pushed_ideas=root[:, None],
         _last_decoder_byte_identity=root[:,0],
         _input_reconstructions={0: None},
-        _sentence_order_zero_field=None,
+        _sentence_order_zero_field=None, _sentence_generation=None,
+        _sentence_reverse=None, _sentence_order_zero_reverse=None,
         _sentence_observation=lambda *args: observation,
         _reconstruct_trial=lambda *args: (root[:, None], root[:, 0], root[:, 0],
                                          active, root[:, 0]))

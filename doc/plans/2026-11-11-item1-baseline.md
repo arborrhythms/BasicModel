@@ -1019,3 +1019,79 @@ finding 14). What a continuous head reads where a thought does conclude,
 and continuous input, are not decided
 ([specification](2026-11-11-one-pair-per-stage.md) §1 decision 10, §3.12
 and §6).
+
+### 8.19 The episodic entry holds concepts, not percepts (Alec, 2026-11-11)
+
+Alec: "So does reconstruction really need to go through compose() and
+generate()? Only if the ideas stored in LTM are the post-compose ideas.
+That way it can talk about its memories. But if the memories are just
+zero-order concepts, it can do direct reconstruction. This is how animal
+cognition works, but presumably multiple concepts are stored per time step.
+So perhaps animals should store concepts instead of percepts, or are the
+former sufficient? Is there psychological evidence?"
+
+*From the code* (round 7's working tree). The two reconstructions are
+separate costs: `reconstruction_reverse` from the order-zero open field
+with no grammar, and `reconstruction_order_zero` through compose and
+generate. A sentence stores two things: the composed idea in its LTM0 row
+and, beside it, up to four basic percepts of the open attention pass. The
+grammar route trains generate to invert compose, so that a stored idea can
+be said; a recalled order-zero memory can also be talked about, by being
+understood again. And `EpisodicMemory.reinstate` already turns the kept
+percepts into an order-zero concept field before anything reads them.
+
+*From the literature* (Claude, from memory; not fetched again for this
+entry).
+
+- The store is an index over high-level codes, not raw percepts:
+  hippocampal indexing (Teyler and DiScenna 1986; Teyler and Rudy 2007);
+  its input is object-level, perirhinal cortex coding objects as
+  conjunctions of features (Murray and Bussey 1999; Bussey and Saksida
+  2002); reactivating the index cells recalls the memory in mice (Liu et
+  al. 2012).
+- Several items are kept for a moment, bound with place and time: scrub
+  jays (Clayton and Dickinson 1998); rats remember many items in context
+  and replay their order (Panoz-Brown et al. 2016, 2018); about four
+  objects are held at once (Luck and Vogel 1997; Cowan 2001).
+- Percept detail is reinstated through the concept and fades before the
+  gist: remembering reactivates sensory cortex (Wheeler, Petersen and
+  Buckner 2000); surface form is lost while meaning stays (Sachs 1967);
+  detailed visual memory rests on conceptual distinctiveness (Konkle,
+  Brady, Alvarez and Oliva 2010).
+- Percepts alone are not nothing: pigeons and baboons memorise thousands of
+  pictures (Vaughan and Greene 1984; Fagot and Cook 2006). That gives
+  recognition of the same view; inference over stored relations needs the
+  hippocampus in rats (Dusek and Eichenbaum 1997), and prior schemas speed
+  new learning (Tse et al. 2007).
+
+So: concepts as the key, percepts reached through them. Alec: "This is
+actually current work: it will clarify the architecture to store concepts
+instead of percepts. That will allow us to do animal cognition (system 1
+reconstruction) without calling compose and generate." And: "So that would
+be an immediate change."
+
+Specified as [specification](2026-11-11-one-pair-per-stage.md) §1 decision
+11 and §3.13, certificates 13 and 14, and item 16 of its Codex text, given to
+Codex as a mid-round update (its §8.1; round 7 had landed as `a39cbfdef8`
+and the build had begun): `EpisodicMemory.stage` keeps up to
+`episodicConcepts` (4) order-zero concepts of the open pass with their
+poles and brackets; `reinstate` publishes them as a field directly;
+`BasicModel.reverse` of that field is the recalled moment's reconstruction
+with no compose and no generate. Three consequences are recorded there: a
+percept with no concept leaves no memory; the entry is the reading of its
+moment; the exact witness is not kept. A configuration that runs with no
+compose and no generate at all is not built in the round
+([FutureWork](../FutureWork.md#numeric-input-as-a-modality-xor-as-a-system-1-model-and-one-model-class-alec-2026-11-11-to-specify)).
+
+*Amended the same day (Alec).* Codex built the entry with each concept's
+pole pair and bracket. Alec: "We should be storing order-0 concepts, not
+"brackets": what even are brackets?"; "I think .when and .where were useful
+when LTM stored percepts, but if we are not storing percepts, we have no
+need of those fields."; "a single signed value can be kept, as an
+approximation of the pair; dharmakirti says that contradiction is not a
+valid mental object, so presumably contradiction is a working-memory only."
+The entry is now references in reading order, each with one signed value;
+a review lays its readings out from their order
+([specification](2026-11-11-one-pair-per-stage.md) §3.13 as amended and
+§8.2). The signed value is for these stored references only (Claude's
+reading); elsewhere the pair of two-truths §1.1 stands.

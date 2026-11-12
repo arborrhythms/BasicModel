@@ -5,6 +5,7 @@
        Based on MM_1B architecture (iterative [Percept,Symbol]->Concept->Symbol)
        but scaled to XOR-sized dims. -->
   <architecture>
+    <omissionTarget>1</omissionTarget>
     <bindingDepth>3</bindingDepth>
     <data>
       <dataType>embedding</dataType>

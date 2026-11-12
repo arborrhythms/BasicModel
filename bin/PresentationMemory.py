@@ -9,7 +9,7 @@ import torch
 _EMPTY_DICTS = (
     '_document_covers', '_sentence_fields', '_sentence_understandings',
     '_what_pending', '_what_root_symbols', '_what_referents',
-    '_reference_close_audit', '_costed_thought_outputs', '_thought_ordinals',
+    '_reference_close_audit', '_thought_ordinals',
 )
 _EMPTY_LISTS = (
     '_what_policy_records', '_what_episode_steps', '_sentence_credit_audits', '_sentence_trial_costs',
@@ -27,7 +27,7 @@ _ABSENT = (
     '_answer_attention_obs', '_thought_walk', '_compose_fork',
     '_sentence_answer_cost', '_sentence_answer_predictions', '_sentence_answer_raw_cost',
     '_last_compose_score_function', '_sentence_journal_columns', '_query_ready_rows',
-    '_sentence_supplied_answers', '_sentence_comparison_registry',
+    '_sentence_supplied_answers',
     '_sentence_reader_observation', '_last_sentence_credit', '_last_what_thinking',
     '_recall_brackets',
 )
@@ -66,10 +66,18 @@ def import_episode_state(model, store):
     def columns(state):
         if 'columns' in state:
             count = len(state['columns']['address_keys'])
-            for name in ('episodic_percepts', 'episodic_poles', 'episodic_where'):
+            legacy = [name for name in ('episodic_percepts', 'episodic_poles', 'episodic_where')
+                      if name in state['columns']]
+            if legacy:
+                for name in legacy:
+                    state['columns'].pop(name)
+                state['columns'].pop('episodic_concepts', None)
+                state['columns'].pop('episodic_values', None)
+                imported.append('dropped ' + ', '.join(legacy) + '; empty concept entries')
+            for name in ('episodic_concepts', 'episodic_values'):
                 if name not in state['columns']:
                     template = getattr(store, name)[:count].detach().cpu()
-                    state['columns'][name] = torch.full_like(template, -1 if name == 'episodic_percepts' else 0)
+                    state['columns'][name] = torch.full_like(template, -1 if name == 'episodic_concepts' else 0)
                     imported.append(name)
         for key in ('_base',):
             if key in state:

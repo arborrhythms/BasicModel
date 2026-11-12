@@ -15,6 +15,7 @@
        test/test_radix_layer_reverse.py. Do not consume this from
        production code. -->
   <architecture>
+    <omissionTarget>1</omissionTarget>
     <bindingDepth>3</bindingDepth>
     <data>
       <dataType>embedding</dataType>

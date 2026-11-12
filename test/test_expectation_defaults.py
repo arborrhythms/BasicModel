@@ -113,6 +113,7 @@ def test_native_runtime_reports_pairs_without_accumulating_or_updating(tmp_path,
         ("<sentenceExpectationLossWeight>0.0</sentenceExpectationLossWeight>", "<sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>"),
     ])
     model._tensor_peer_while_eager = True
+    model.inputSpace.data.has_supervised_outputs = False  # Input/storage probe has no answer target.
     model._chart_compose_per_word = lambda: None
     model._install_unit_span_fn()
     model.train()  # the runtime call must apply its own declared training gate
@@ -242,6 +243,7 @@ def test_expectation_off_keeps_every_packed_closing_in_ltm(tmp_path, monkeypatch
         ("<serialWordBuckets>8</serialWordBuckets>", "<serialWordBuckets>16</serialWordBuckets>"),
     ])
     model._tensor_peer_while_eager = True
+    model.inputSpace.data.has_supervised_outputs = False  # Input/storage probe has no answer target.
     model._chart_compose_per_word = lambda: None
     model._install_unit_span_fn()
     assert not model.symbolSpace.expectation.expectation_enabled

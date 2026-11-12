@@ -245,6 +245,8 @@ class SentenceField(FieldTraversal):
     def report(self):
         result = super().report()
         result['positions'], result['identities'] = self.positions.detach(), self.identities.detach()
+        lesson = self.lesson_cost()
+        result['lesson_cross_entropy'] = None if lesson is None else lesson.detach()
         result['slot_support'] = self.support_window.detach()
         result['slot_stamps'] = {key: value.detach() for key, value in self.placements().items()}
         return result

@@ -136,33 +136,12 @@ def test_native_walk_below_bound_matches_frozen_103c(monkeypatch, tmp_path):
         model.End()
 
 
-def test_finished_wins_and_matching_pending_compares_cost():
-    from Models import BasicModel
-    from Output import AnswerConstruction
-    from WalkTrials import output_pair
-    costs = torch.tensor([[1., 9.], [9., 1.], [2., 1.], [2., 1.], [1., 1.], [1., 2.]])
-    pending = torch.tensor([[True, False], [False, True], [True, True],
-                            [False, False], [False, False], [True, True]])
-    actions = torch.zeros(6, 2, dtype=torch.long)
-    alternatives = torch.ones_like(actions, dtype=torch.bool)
-    tops = torch.zeros(6, 2, 2)
-    def realize(**options):
-        side = int(options.get('exploit_actions') is not None)
-        selected = options.get('kept_actions', actions + side)
-        value = costs.gather(1, selected[:, :1])
-        unfinished = pending.gather(1, selected[:, :1])[:, 0]
-        return AnswerConstruction(value,None,value,value,None,(),()), (
-            selected, alternatives, unfinished, tops.new_zeros(6, 3), ~unfinished,
-            tops.new_zeros(6,2,1,9),tops)
-    _, audit = output_pair(realize, lambda x: x.actual[:, 0])
-    assert audit['wins'].tolist() == [True, False, True, True, False, False]
-    assert torch.equal(audit['pending'], pending)
 
 
 def test_winning_departure_credit_reaches_only_generate_policy_and_its_owner():
     from Language import LanguageSpace
     from Models import BaseModel
-    from WalkTrials import generate_credit, stage_generate_credit
+    from WalkTrials import generate_credit
     from Language import GeneratePolicy
     policy = GeneratePolicy(2, 3)
     upstream = torch.nn.Linear(2, 2)
@@ -176,8 +155,7 @@ def test_winning_departure_credit_reaches_only_generate_policy_and_its_owner():
         greedy=torch.tensor([[2,0,1,0]]*3), eligible=torch.ones(3,4,dtype=torch.bool))
     features = torch.ones(3,4,3,9)
     model = SimpleNamespace(languageSpace=language, _sentence_output_walk_credits=[])
-    stage_generate_credit(model, audit, tops, features)
-    credit, = model._sentence_output_walk_credits
+    credit = generate_credit(language, audit, tops, features)
     assert credit[0] < 0 and credit[1] > 0 and credit[2] == 0
     credit.sum().backward()
     assert policy.weight.grad.abs().sum() > 0

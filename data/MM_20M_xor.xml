@@ -17,6 +17,7 @@
        features and settles at the data mean (~0.5), the documented MM_20M
        mean-collapse. -->
   <architecture>
+    <omissionTarget>1</omissionTarget>
     <!-- symbolicOrder=0: the sO=0 CONTROL for the XOR experiments. The
          symbolic wave phase is disabled (no snap, no AttentionLayer); the
          head trains on the purely subsymbolic pipeline. The sO>=1 sibling

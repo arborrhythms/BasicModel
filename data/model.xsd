@@ -47,6 +47,10 @@
     <xs:all>
       <xs:element name="separateChooser" type="xs:boolean" minOccurs="0"/>
       <xs:element name="reconstructionJitter" type="unitInterval" minOccurs="0"/>
+      <xs:element name="explorePaths" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="omissionTarget" type="unitInterval" minOccurs="0"/>
+      <xs:element name="omissionLimit" type="unitInterval" minOccurs="0"/>
+      <xs:element name="omissionHorizon" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="generateBudget" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="wordSurfaceCapacity" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="ltmWindow" type="xs:positiveInteger" minOccurs="0"/>
@@ -1448,7 +1452,7 @@
            Separate from <truthMaxEntries> (TruthLayer's SS-codebook
            capacity). Default 1024. -->
       <xs:element name="ltmCapacity" type="xs:positiveInteger" minOccurs="0"/>
-      <xs:element name="episodicPercepts" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="episodicConcepts" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="relationCapacity" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="equalityWitnessCapacity" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Stage 3 cleanup (2026-05-27): parserBackend, routerKind,

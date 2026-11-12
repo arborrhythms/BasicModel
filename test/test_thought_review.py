@@ -140,10 +140,10 @@ def test_policy_selects_nested_what_part_and_receives_actual_episode_credit(dept
     assert max(record.level for record in selected.records) == depth
     assert sum(record.kind == 'descend' for record in selected.records) == depth
     assert selected.support_true == 1.
-    assert model._last_thought_comparison['explore_kept']
+    assert model._fixture_path_audit['explore_kept']
     before = model.shared_grammar.chooser.mlp[-1].weight.detach().clone()
     optimizer = torch.optim.SGD(model.shared_grammar.parameters(), lr=.1)
-    optimizer.zero_grad();model._last_thought_score_function['surrogate'].backward();optimizer.step()
+    optimizer.zero_grad();model._fixture_path_credit['surrogate'].backward();optimizer.step()
     assert not torch.equal(before, model.shared_grammar.chooser.mlp[-1].weight)
     memory = model._what_memory()
     for record in selected.records:

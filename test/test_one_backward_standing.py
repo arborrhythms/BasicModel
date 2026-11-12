@@ -55,8 +55,8 @@ def test_native_packing_after_training_with_selected_backward(tmp_path,monkeypat
     try:
         first.candidate_attention=None  # retained source-order control
         first._install_unit_span_fn()
+        first.answer_synthesis = False  # Warming and training use the same numeric modality.
         warm_vocabulary(first,rows)
-        first.answer_synthesis = False  # This fixture's supplied labels use the numeric forward head.
         first.begin_presentation()
         optimizer=first.getOptimizer(lr=.001)
         # Training owns its actual sampled departure. The forced operation is
@@ -91,6 +91,7 @@ def test_native_packing_after_training_with_selected_backward(tmp_path,monkeypat
             # Both layouts begin at the same restored training boundary,
             # including caches rebuilt by checkpoint admission.
             model=build_model(tmp_path,separate_chooser=separate,reconstruction_jitter=jitter)
+            model.answer_synthesis = False  # Same numeric modality as the trained source.
             models.append(model)
             model.candidate_attention=None
             assert model.load_weights(checkpoint,require_match=True)

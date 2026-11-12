@@ -426,7 +426,8 @@ def test_exhausted_search_keeps_a_checked_intuition_conclusions_pair():
 def test_answer_adapter_reads_live_reference_plan_and_credits_fired_weights_and_chooser(monkeypatch):
     from Intuition import seed
     from QueryWork import QueryWorkBudget
-    from ThoughtAnswer import scorer, train_readers
+    from ThoughtAnswer import bound_view
+    from Intuition import live_meaning
     from SentenceUnderstanding import SentenceUnderstanding, PrimedSymbols
     from Layers import Error
     model, registry, store, refs = setup()
@@ -455,10 +456,9 @@ def test_answer_adapter_reads_live_reference_plan_and_credits_fired_weights_and_
         cost=(prediction-.8).square()
         registry.add('answer',cost,category='prediction',objective='output')
         return cost
-    monkeypatch.setattr(model,'_sentence_reader_error',read)
-    score,trials=scorer(model,((),tuple(language),()),observation,0)
-    value=score(0,SimpleNamespace(meaning=conclusion))
-    train_readers(model,trials)
+    live = live_meaning(model, conclusion)
+    _, view = bound_view(((), tuple(language), ()), observation, 0, 0, live)
+    value = read(None, 0, torch.tensor([True]), view, model.errors)[0]
     request=registry.form('intuit',idea(registry,refs[0]))
     logits=model.shared_grammar.thought_logits(conclusion,(None,request))
     policy=-logits.log_softmax(-1)[0,1]*value.detach()

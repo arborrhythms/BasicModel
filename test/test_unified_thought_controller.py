@@ -135,18 +135,17 @@ def test_policy_records_work_but_departure_uses_reconstruction_and_answer(monkey
     # Work is bounded and reported, but cannot change the R+A judge.
     monkeypatch.setattr(model, 'WHAT_STEP_COST', 1000.)
     result = run(model, goal, work_budget=64)
-    audit = model._last_thought_comparison
     assert result.work.spent > 0
-    assert audit['costs']==(0.,0.)
-    assert all(spent > 0 for spent in audit['work_spent'])
-    assert model._last_thought_score_function['surrogate'] is None
+    assert model._last_thought_comparison is None
+    assert model.errors.total(objective='chooser') is None
 
 
 def test_runbatch_credits_each_controller_row_from_its_own_answer(monkeypatch, eager_reading):
     from dataclasses import replace
     from test_output_walk import _model, _capture_program_probe
     from What import What
-    import ThoughtCredit
+    import WholePaths
+    import SentenceCredit
     import ThoughtClosing
     # The explicit questions below own this fixture. A random surface
     # reading must not introduce a third, unrelated controller episode.
@@ -165,21 +164,29 @@ def test_runbatch_credits_each_controller_row_from_its_own_answer(monkeypatch, e
         force_order(owner, ref[1], 0)
         owner._csw_concept_row(0, ref[1])
         query = registry.form('equal', ref, ref)
-        capture = model._capture_understanding
+        fields = WholePaths.fields
         def supplied(*args, **kwargs):
-            value = capture(*args, **kwargs)
-            return replace(value, sentence_states=tuple(replace(field, query=query)
-                for field in value.sentence_states))
-        monkeypatch.setattr(model, '_capture_understanding', supplied)
+            return [replace(field, query=query) if field is not None else None
+                    for field in fields(*args, **kwargs)]
+        monkeypatch.setattr(WholePaths, 'fields', supplied)
+        departure = SentenceCredit.departure
+        def thought_departure(narrowing, compose, **options):
+            # This certificate supplies the thought stage's fork; other
+            # stages have their own complete-path departure certificates.
+            options.update(candidates=None, binds=None, reconstruction=None, output=None)
+            return departure(None, torch.zeros_like(compose), **options)
+        monkeypatch.setattr(SentenceCredit, 'departure', thought_departure)
         model.attention_budget = 32
         observed = []
-        original = ThoughtCredit.complete
-        def credit(owner, trace, other, departure, costs, row):
+        original = WholePaths.credit
+        def credit(owner, first, path, active):
             assert owner is model
-            assert len(costs) == 2 and all(torch.isfinite(torch.tensor(costs)))
-            observed.append(row)
-            return original(owner, trace, other, departure, costs, row)
-        monkeypatch.setattr(ThoughtCredit, 'complete', credit)
+            costs = torch.stack((first.parts[:, 0] + first.parts[:, 2],
+                                 path.parts[:, 0] + path.parts[:, 2]), -1)
+            assert costs.shape == (2, 2) and torch.isfinite(costs).all()
+            observed.extend(row for row, at in enumerate(path.draw['thought_round']) if at >= 0)
+            return original(owner, first, path, active)
+        monkeypatch.setattr(WholePaths, 'credit', credit)
         optimizer = model.getOptimizer(lr=.001)
         batch = (model.inputSpace.prepInput(['12 plus 1', '3 plus 4']), torch.zeros(2,1,1))
         model.runBatch(train=True, batchSize=2, optimizer=optimizer, batch_override=batch,

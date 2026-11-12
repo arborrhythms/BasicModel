@@ -149,6 +149,7 @@ def test_input_symbols_keep_their_word_starts_even_when_the_word_repeats(model):
 @pytest.mark.usefixtures('eager_reading')
 def test_input_event_position_uses_its_sentence_tick(model, monkeypatch):
     model._advance_when_time()
+    model.inputSpace.data.has_supervised_outputs = False  # Input/storage probe has no answer target.
     before = model.when_time.clone()
     events = []
     native_events = model.perceptualSpace._radix_part_events

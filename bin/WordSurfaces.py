@@ -11,6 +11,9 @@ def is_lexical_form(value):
     """
     from Definitions import form_key
     value = form_key(value)
+    if isinstance(value, str) and '\0' in value:
+        # Zero content is the out-of-band omission, never an admitted word.
+        return False
     return not isinstance(value, str) or any(
         not c.isspace() and not unicodedata.category(c).startswith('P') for c in value)
 

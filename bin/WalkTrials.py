@@ -16,44 +16,6 @@ def departure_at(eligible, *, uniform=None):
     return torch.where(eligible.any(-1),selected.long().argmax(-1),-1)
 
 
-def paired_departure(owner, kind, eligible):
-    """Common fresh randomness for corresponding walks of a sentence pair.
-
-    Each menu still gets a uniform legal departure. Sharing its quantile
-    prevents unchanged understandings from winning an outer comparison just
-    because the inner decoder happened to explore a better path. No RNG
-    state is restored and no random seed is supplied.
-    """
-    draws=getattr(owner,'_sentence_generation_draws',None)
-    if draws is None:
-        return departure_at(eligible)
-    cursors=owner._sentence_generation_cursors
-    index=cursors.get(kind,0);cursors[kind]=index+1
-    key=kind,index
-    if key not in draws:
-        draws[key]=torch.rand(eligible.shape[0],device=eligible.device)
-    return departure_at(eligible,uniform=draws[key])
-
-
-def paired_action_draw(owner, kind, like):
-    """Share the alternate-action quantile across corresponding outer trials.
-
-    A shared departure alone still lets two identical decoder inputs take
-    different exploratory inverses. Each menu maps this fresh quantile through
-    its own eligible distribution; no action is forced across different menus.
-    """
-    draws=getattr(owner,'_sentence_generation_draws',None)
-    if draws is None:
-        return torch.rand(like.shape[0],1,device=like.device,dtype=like.dtype)
-    cursors=owner._sentence_generation_cursors
-    kind=kind+'.action'
-    index=cursors.get(kind,0);cursors[kind]=index+1
-    key=kind,index
-    if key not in draws:
-        draws[key]=torch.rand(like.shape[0],1,device=like.device,dtype=like.dtype)
-    return draws[key]
-
-
 def finished_wins(costs, pending, *, certified=None):
     """Certified completion takes precedence; otherwise compare full costs."""
     finished=~pending if certified is None else certified
@@ -82,110 +44,13 @@ def generate_credit(language, audit, tops, features):
     action = audit['explore'][ar, step].clamp_min(0)[:, None]
     probability = logits.softmax(-1).gather(1, action)
     q_action = proposal.gather(1, action)
-    rounds = audit['eligible'].sum(-1, keepdim=True)
+    rounds = (audit['proposal_rounds'][:, None] if 'proposal_rounds' in audit else
+              audit['eligible'].sum(-1, keepdim=True))
     mask = departure.ge(0)[:, None]
     correction = torch.where(mask, rounds / q_action.clamp_min(torch.finfo(q_action.dtype).tiny), 0.)
     credit, details = score_function(probability, correction.detach(), mask, audit['costs'])
     audit['score_function'] = dict(details, proposal=q_action.detach(), eligible_rounds=rounds.detach())
     return credit
-
-
-def stage_generate_credit(model, audit, tops, features=None, *, owner="output"):
-    """Book the output grammar's departure credit on the output side."""
-    held = getattr(model, '_sentence_' + owner + '_walk_credits', None)
-    if held is not None and torch.is_grad_enabled():
-        # The explored departure is credited even when the greedy walk wins.
-        tops = audit.pop('credit_tops', tops)
-        features = audit.pop('credit_features', features)
-        credit = generate_credit(model.languageSpace, audit, tops, features)
-        held.append(credit)
-        audit['credit'] = credit.detach()
-    else:
-        audit.pop('credit_tops', None)
-        audit.pop('credit_features', None)
-        audit['credit'] = audit['costs'].new_zeros(audit['costs'].shape[0])
-
-
-def select_output(base, actions, costed, replay):
-    """Realize the already chosen per-stream actions on the final derivation."""
-    fields = ('actual', 'concepts', 'percepts', 'surface')
-    if actions.shape[0] == 1:
-        chosen, _ = costed[0]
-        return replace(base, **{name: getattr(chosen, name) for name in fields}, texts=chosen.texts)
-    selected = actions.detach().clone()
-    for row, (_, candidate_actions) in costed.items():
-        if candidate_actions.shape != actions.shape:
-            raise ValueError('costed output actions require the same bounded realization shape')
-        selected[row] = candidate_actions[row]
-    result, actual_actions = replay(selected)
-    torch._assert_async((actual_actions == selected).all(), 'costed output did not replay its chosen actions')
-    # The cached trials are evidence for the replay. Their discarded graphs
-    # cannot contribute a zero cotangent to a singular inverse.
-    with torch.no_grad():
-        for row in range(len(actions)):
-            expected = costed[row][0] if row in costed else base
-            for name in fields:
-                actual, saved = getattr(result, name), getattr(expected, name)
-                if actual is None and saved is None:
-                    continue
-                if actual is None or saved is None or actual.shape != saved.shape:
-                    raise ValueError(f'costed output disagrees on the {name} carrier')
-                torch._assert_async((actual[row] == saved[row]).all(), f'costed output changed its {name} value')
-            if result.texts[row:row+1] != expected.texts[row:row+1]:
-                raise ValueError('costed output changed its selected text')
-    return result
-
-
-def kept_walk(greedy, trace, explore, other, wins, action_index, replay):
-    """Return only the selected graph, replaying fixed actions for mixed streams."""
-    if bool(wins.all()):
-        return explore, other
-    if not bool(wins.any()):
-        return greedy, trace
-    actions = torch.where(wins[:, None], other[action_index], trace[action_index]).detach()
-    result, kept = replay(actions)
-    torch._assert_async((kept[action_index] == actions).all(),
-                        'the selected walk did not replay its actions')
-    return result, kept
-
-
-def generation_pair(realize,score,*,owner=None,kind='output'):
-    """Realize, then cost, both paths before returning either live graph.
-
-    The scorer is loss-side only. It never enters the walk. Shared generate
-    parameters still require the caller's reconstruction ownership boundary.
-    """
-    greedy,trace=realize(return_candidates=True)
-    first=score(greedy)
-    departure=paired_departure(owner,kind,trace[1])
-    explore,other=realize(exploit_actions=trace[0],departure=departure,
-        departure_uniform=paired_action_draw(owner,kind,trace[3]))
-    second=score(explore)
-    residual = torch.stack((trace[3].detach(), other[3].detach()), 1)
-    costs = torch.stack((first.detach(), second.detach()), -1) + residual.sum(-1)
-    pending=torch.stack((trace[2],other[2]),-1).detach()
-    certified=torch.stack((trace[4],other[4]),-1).detach()
-    wins=trace[1].any(-1)&finished_wins(costs,pending,certified=certified)
-    kept, kept_trace = kept_walk(greedy, trace, explore, other, wins, 0,
-                                 lambda actions: realize(kept_actions=actions))
-    if owner is not None and hasattr(owner, '_last_output_walk_trace'):
-        owner._last_output_walk_trace = kept_trace
-    selected_residual = kept_trace[3]
-    audit = dict(costs=costs, wins=wins, departure=departure, eligible=trace[1].detach(),
-                 credit_tops=other[-1], credit_features=other[-2],
-                 pending=pending, certified=certified, residual=residual,
-                 selected_residual=selected_residual,
-                 greedy=trace[0].detach(), explore=other[0].detach(),
-                 stable=(trace[0] == other[0]).all(-1))
-    return kept,audit
-
-
-def output_pair(realize,score,*,owner=None):
-    kept,audit=generation_pair(realize,score,owner=owner)
-    result = replace(kept, trace=kept.trace + (
-        {'operation': 'generate:owner_comparison', 'owner': 'output',
-         'explore_kept': tuple(audit['wins'].tolist())},))
-    return result,audit
 
 
 def _copy_containers(value):
@@ -217,16 +82,13 @@ def capture_thought_fork(model, trace, meter, **continuation):
     """Replace the episode reservoir with probability 1/k, before execution."""
     if not trace['eligible'][-1]:
         return
-    count = sum(trace['eligible'])
-    device = trace['choices'][-1]['probability'].device
-    if float(torch.rand((), device=device)) >= 1. / count:
-        return
     from copy import copy
     work = copy(meter)
     work._counts = meter._counts.copy()
-    trace['fork'] = dict(_detached(continuation),
-        state=ThoughtTrialState(model, detach=True), work=work,
-        departure=len(trace['actions'])-1, excluded=trace['actions'][-1])
+    step = len(trace['actions']) - 1
+    trace.setdefault('forks', {})[step] = dict(_copy_containers(continuation),
+        state=ThoughtTrialState(model), work=work,
+        departure=step, excluded=trace['actions'][-1])
 
 
 def record_thought_bind(trace, plan):
@@ -272,7 +134,7 @@ class ThoughtTrialState:
         self.field_owner = conceptual
         if conceptual is not None:
             owners.append((conceptual, ('_percept_field', '_cs_field_where', '_cs_field_when',
-                                       '_episode_review_field')))
+                                       '_cs_field_concept_ids', '_episode_review_field')))
         carrier=getattr(getattr(model,'conceptualSpace',None),'subspace',None)
         if carrier is not None:
             owners.append((carrier,tuple(name for name in vars(carrier)
@@ -321,90 +183,106 @@ class ThoughtTrialState:
                 from SentenceField import publish
                 publish(self.model, review)
 
+    @classmethod
+    def keep(cls, states, winners):
+        """Restore the selected stream's effects without executing its episode."""
+        if bool((winners == winners[0]).all()):
+            states[int(winners[0])].restore()
+            return
+        from copy import copy
+        chosen = copy(states[0])
+        batch = len(winners)
+        indices = winners.tolist()
+        def rows(values, name=None):
+            first = values[0]
+            if name == '_cs_field_concept_ids' and torch.is_tensor(first):
+                return first.new_tensor(sorted({int(cid)
+                    for row, index in enumerate(indices)
+                    for cid in (values[index] if values[index].ndim == 1 else values[index][:, row])}))
+            if name in ('_cs_field_where', '_cs_field_when') and torch.is_tensor(first):
+                width = max(value.shape[1] for value in values)
+                return torch.stack([torch.nn.functional.pad(values[index][row],
+                    (0, 0, 0, width - values[index].shape[1]))
+                    for row, index in enumerate(indices)])
+            if name == '_percept_field' and first is not None:
+                keys = tuple(sorted(set().union(*(value.keys for value in values))))
+                R, E = max(v.values.shape[2] for v in values), max(v.events.shape[3] for v in values)
+                lookup = {key: i for i, key in enumerate(keys)}
+                data = first.values.new_zeros(len(keys), batch, R, 2)
+                events = first.events.new_zeros(len(keys), batch, R, E, 2)
+                where, when = first.where.new_zeros(batch, R, 2), first.when.new_zeros(batch, R, 2)
+                spans = first.spans.new_zeros(batch, E, 2)
+                bands = None if first.when_band is None else first.when_band.new_zeros(batch, R, 4)
+                for row, index in enumerate(indices):
+                    value = values[index]
+                    r, e = value.values.shape[2], value.events.shape[3]
+                    for old, key in enumerate(value.keys):
+                        data[lookup[key], row, :r] = value.values[old, row]
+                        events[lookup[key], row, :r, :e] = value.events[old, row]
+                    where[row, :r], when[row, :r] = value.where[row], value.when[row]
+                    spans[row, :e] = value.spans[row]
+                    if bands is not None:
+                        bands[row, :r] = value.when_band[row]
+                return replace(first, keys=keys, values=data, events=events, where=where,
+                               when=when, spans=spans, when_band=bands)
+            if name == '_sentence_answer_predictions' and torch.is_tensor(first) and first.ndim == 3:
+                # Realized text has a path-dependent byte extent. Keep each
+                # selected stream, with zero padding just as at public output.
+                width = max(value.shape[-1] for value in values)
+                return torch.stack([torch.nn.functional.pad(values[index][row],
+                    (0, width - values[index].shape[-1]))
+                    for row, index in enumerate(indices)])
+            if torch.is_tensor(first) and first.ndim and first.shape[0] == batch:
+                return torch.stack([values[index][row] for row, index in enumerate(indices)])
+            if isinstance(first, (list, tuple)) and len(first) == batch:
+                return type(first)(values[index][row] for row, index in enumerate(indices))
+            if isinstance(first, dict):
+                keys = set().union(*(value.keys() for value in values))
+                if all(type(key) is int and 0 <= key < batch for key in keys):
+                    return {key: values[indices[key]][key] for key in keys if key in values[indices[key]]}
+            return first
+        chosen.clock = torch.stack([states[index].clock for index in set(indices)]).amax(0)
+        if chosen.store_clock is not None:
+            chosen.store_clock = (chosen.store_clock[0],
+                torch.stack([states[index].store_clock[1] for index in set(indices)]).amax(0))
+        chosen.saved = []
+        for position, (owner, values, names) in enumerate(states[0].saved):
+            alternatives = [state.saved[position][1] for state in states]
+            # Concept axes and reading axes may differ after a review or a
+            # generated field. Select the field by identity below, then let
+            # publish rebuild its codes and inventory addresses together.
+            field_carrier = '_concept_activations' in values
+            chosen.saved.append((owner, {name: rows([item[name] for item in alternatives], name)
+                for name in values if not (field_carrier and name.startswith('_concept_'))
+                and all(name in item for item in alternatives)}, names))
+        if chosen.thought_strata is not None:
+            chosen.thought_strata = (chosen.thought_strata[0],
+                tuple(states[indices[row] if row < batch else 0].thought_strata[1][row]
+                      for row in range(len(chosen.thought_strata[1]))))
+        chosen.restore()
+        from Understanding import ConceptualField
+        from SentenceField import select_fields, publish
+        for position, (owner, values, names) in enumerate(states[0].saved):
+            if '_concept_activations' not in values:
+                continue
+            fields = [ConceptualField(saved[position][1]['_concept_ids'],
+                saved[position][1]['_concept_activations'], saved[position][1]['_concept_where'],
+                saved[position][1]['_concept_when'], None) for saved in (state.saved for state in states)]
+            publish(chosen.model, select_fields(fields, winners))
+        if chosen.field_owner is not None:
+            position = next((i for i, (owner, _, _) in enumerate(states[0].saved)
+                             if owner is chosen.field_owner), None)
+            if position is not None:
+                reviewed = any(states[index].saved[position][1].get('_episode_review_field') is not None
+                               for index in indices)
+                from SentenceField import knowing
+                chosen.field_owner._episode_review_field = knowing(chosen.model) if reviewed else None
 
 
 
 
 
 
-
-def thought_pair(model,meaning,*,row,work_budget,registry,work,score):
-    """One detached episode fork; the same R + A judge keeps and credits."""
-    from copy import copy
-    from QueryWork import QueryWorkBudget
-    base = ThoughtTrialState(model)
-    initial = QueryWorkBudget(work_budget) if work is None else work
-    old = getattr(model, '_thought_walk', None)
-
-    def run(trace, meter, fork=None):
-        model._thought_walk = trace
-        result = model._run_selected_thought_once(meaning, row=row, work_budget=work_budget,
-                                                  registry=registry, work=meter, fork=fork)
-        error = 0. if score is None else score(result)
-        # A standalone scorer may provide both owned terms. The ordinary
-        # closing has a fixed compose reconstruction and a binding answer.
-        if isinstance(error, dict):
-            reconstruction, answer = error['reconstruction'], error['answer']
-        else:
-            reconstruction, answer = 0., error
-        def number(value):
-            return float(value.detach() if torch.is_tensor(value) else value)
-        return result, (number(reconstruction), number(answer)), ThoughtTrialState(model)
-
-    try:
-        meter = copy(initial)
-        meter._counts = initial._counts.copy()
-        trace = dict(actions=[], eligible=[], choices=[], collect_fork=True)
-        greedy, first, state = run(trace, meter)
-        fork = trace.pop('fork', None)
-        departure = -1 if fork is None else fork['departure']
-        if fork is None:
-            explore, second, other_state = greedy, first, state
-            other = dict(actions=list(trace['actions']), eligible=list(trace['eligible']),
-                         choices=[], reader_weight=0., comparison_weight=0.)
-        else:
-            fork['state'].restore()
-            other = dict(actions=list(trace['actions'][:departure]),
-                eligible=list(trace['eligible'][:departure]),
-                choices=_detached(trace['choices'][:departure]),
-                departure=departure, excluded=fork['excluded'])
-            explore, second, other_state = run(other, fork['work'], fork=fork)
-        costs = (sum(first), sum(second))
-        wins = departure >= 0 and costs[1] < costs[0]
-        trace['reader_weight'], other['reader_weight'] = float(not wins), float(wins)
-        trace['comparison_weight'] = .5 if departure >= 0 else 1.
-        other['comparison_weight'] = .5 if departure >= 0 else 0.
-        result = explore if wins else greedy
-        (other_state if wins else state).restore()
-        # Local knowing/gain/prediction effects end with the episode. History
-        # is the credit trail; its chosen result is committed by the caller.
-        base.restore(effects_only=True)
-        if work is not None:
-            work._spent, work._counts = result.work.spent, result.work._counts.copy()
-            result = replace(result, work=work)
-        # Work remains bounded and reported. Alec's R+A judge is identical
-        # for keeping the episode, policy credit and the departure audit.
-        model._last_thought_comparison = dict(costs=costs, keep_costs=costs,
-            components=(first,second), work_spent=(greedy.work.spent,explore.work.spent),
-            explore_kept=wins, departure=departure,
-            greedy=tuple(trace['actions']), explore=tuple(other['actions']),
-            stable=trace['actions'] == other['actions'])
-        model._last_thought_comparison['bind_choices'] = tuple(tuple(
-            dict(step=step, **choice['bind']) for step, choice in enumerate(walk['choices'])
-            if 'bind' in choice) for walk in (trace, other))
-        from ThoughtCredit import complete
-        complete(model,trace,other,departure,costs,row)
-        width = max(len(trace['actions']),len(other['actions']))
-        audit = dict(model._last_thought_comparison,
-            greedy=tuple(trace['actions'])+(-1,)*(width-len(trace['actions'])),
-            explore=tuple(other['actions'])+(-1,)*(width-len(other['actions'])))
-        observe_comparison(model,'think',audit,row=row)
-        return result
-    except BaseException:
-        base.restore()
-        raise
-    finally:
-        model._thought_walk = old
 
 
 def observe_comparison(model,kind,audit,*,sentence=None,row=None,active=None):

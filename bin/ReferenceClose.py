@@ -1242,8 +1242,8 @@ class ReferenceClose(nn.Module):
                 probabilities=decision['probabilities']))
 
     @torch.no_grad()
-    def prepare(self, clause, plan):
-        """Attach decisions to the temporary derivation, before any admission."""
+    def prepare(self, clause, plan, *, preview=False):
+        """Read scored decisions, or attach them to the kept derivation."""
         from ClauseRow import Clause, Composition
         from Meaning import ConceptualMeaning
         from ThoughtReferences import bindings, with_slots
@@ -1253,7 +1253,7 @@ class ReferenceClose(nn.Module):
         _, arrival_nodes = self._arrival_constituents(clause)
         if len(arrival_nodes) != plan.get('arrival_count', len(arrival_nodes)):
             raise RuntimeError('admission changed arrival constituents')
-        return self._prepare(clause, plan, arrival_nodes)[0]
+        return self._prepare(clause, plan, arrival_nodes, preview=preview)[0]
 
     @torch.no_grad()
     def _prepare(self, clause, plan, arrival_nodes, *, preview=False):

@@ -213,13 +213,6 @@ def restore_warmup(model, path, restore):
         # The two retained 4e checkpoints use this archived complete grammar.
         # This is a one-way storage migration, never a runnable old path.
         catalog=json.loads((ROOT/'test/fixtures/grammar-catalog-63ece2e1.json').read_text())
-    # BaseModel's preflight runs before this lazy child's own load hook.
-    # Materialize its saved bank through that hook, retaining strict key
-    # checking and every learned weight. This presents no training example.
-    prefix='comparison_reader.'
-    comparison={key[len(prefix):]:value for key,value in saved.items() if key.startswith(prefix)}
-    if comparison:
-        model.comparison_reader.load_state_dict(comparison,strict=True)
     if not restore(model,str(path),require_match=True,grammar_catalog=catalog):
         raise RuntimeError('warm-up checkpoint restore failed')
     from GrammarCheckpoint import align

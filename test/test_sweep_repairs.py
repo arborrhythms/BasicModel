@@ -111,6 +111,7 @@ def test_reconstruction_benchmark_respects_stream_capacity_and_keeps_batch_budge
     epoch = BasicModel.runEpoch
     def bounded(self, *args, **kwargs):
         if kwargs.get('split') == 'test':
+            self.inputSpace.data.has_supervised_outputs = False  # This is an input reconstruction benchmark.
             n = len(self.inputSpace.getTestData()[0])
             cap = self._concept_owner().nStreams
             assert n > cap  # Reproduce the former oversized decode batch.

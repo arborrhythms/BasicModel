@@ -187,6 +187,7 @@ def test_native_sentence_carries_paired_identification_to_its_row(tmp_path, monk
     model = _build_ladder_variant(tmp_path, 'row_schema', [
         ('<architecture>', '<architecture><ltmConsolidation>true</ltmConsolidation>')])
     model._tensor_peer_while_eager = True
+    model.inputSpace.data.has_supervised_outputs = False  # Input/storage probe has no answer target.
     model._chart_compose_per_word = lambda: None
     model._install_unit_span_fn()
     model.reconstruct_in_loop = False

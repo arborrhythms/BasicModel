@@ -28,7 +28,7 @@ class SentenceFork:
     word and round. Before joining, a row performs no composition or deposit.
     Other rows may already be completing their suffix in the same batch.
     """
-    def __init__(self, active, *, live=False):
+    def __init__(self, active, *, live=False, capacity=1):
         self.live = bool(live)
         self.count = torch.zeros_like(active, dtype=torch.long)
         self.word = torch.full_like(self.count, -1)
@@ -42,6 +42,7 @@ class SentenceFork:
         self.taken = torch.zeros_like(active)
         self.current_rows = active.clone()
         self.phase = None
+        self.reservoir = [None] * max(1, int(capacity))
 
     def record(self, choice, slot, state, *, word, latches):
         if self.explore:
@@ -52,20 +53,50 @@ class SentenceFork:
         if not bool(eligible.any()):
             return
         self.count += eligible.long()
-        take = eligible & (torch.rand_like(self.count, dtype=torch.float32)
-                           < self.count.clamp_min(1).reciprocal())
+        # Algorithm R retains K distinct rounds. A later whole-path draw can
+        # choose any remaining member uniformly without replaying a prefix.
+        rank = (torch.rand_like(self.count, dtype=torch.float32) * self.count).long()
+        rank = torch.where(self.count <= len(self.reservoir), self.count - 1, rank)
+        take = eligible & (rank < len(self.reservoir))
         if not bool(take.any()):
             return
         state, latches = snapshot(state, live=self.live), snapshot(tuple(latches), live=self.live)
-        self.state = state if self.state is None else select_rows(self.state, state, take)
-        self.latches = latches if self.latches is None else select_rows(self.latches, latches, take)
-        if self.inverse_candidates is not None:
-            prefix=self.inverse_candidates.snapshot()
-            self.inverse_prefix=(prefix if self.inverse_prefix is None else
-                                 select_rows(self.inverse_prefix,prefix,take))
-        self.word = torch.where(take, word, self.word)
-        self.slot = torch.where(take, slot, self.slot)
-        self.action = torch.where(take, choice.action, self.action)
+        prefix = None if self.inverse_candidates is None else self.inverse_candidates.snapshot()
+        for i, prior in enumerate(self.reservoir):
+            selected = take & (rank == i)
+            if not bool(selected.any()):
+                continue
+            saved = dict(state=state, latches=latches, inverse_prefix=prefix,
+                word=torch.zeros_like(self.word) + word,
+                slot=torch.zeros_like(self.slot) + slot, action=choice.action,
+                valid=selected)
+            if prior is not None:
+                saved = {key: (None if value is None else select_rows(prior[key], value, selected))
+                         for key, value in saved.items()}
+                saved['valid'] = prior['valid'] | selected
+            self.reservoir[i] = saved
+        self.choose(())
+
+    def choose(self, used):
+        """Select an unused saved round; its marginal proposal is uniform."""
+        from WalkTrials import departure_at
+        eligible = torch.stack([torch.zeros_like(self.selected) if item is None else item['valid']
+                                for item in self.reservoir], -1)
+        for previous in used:
+            for i, item in enumerate(self.reservoir):
+                if item is not None:
+                    eligible[:, i] &= item['slot'] != previous['compose_round']
+        chosen = departure_at(eligible)
+        self.slot.fill_(-1)
+        for i, item in enumerate(self.reservoir):
+            if item is None:
+                continue
+            rows = chosen == i
+            for key in ('state', 'latches', 'inverse_prefix', 'word', 'slot', 'action'):
+                value, old = item[key], getattr(self, key)
+                if value is not None:
+                    setattr(self, key, value if old is None else select_rows(old, value, rows))
+        return self.slot
 
     def start(self, draw):
         self.explore = True

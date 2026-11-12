@@ -50,7 +50,7 @@ def test_packed_sentences_tick_before_perception_on_one_ladder(tmp_path, monkeyp
             assert (field.when[..., 0] == tick).all()
         store = model.symbolSpace.ltm_store
         stamped = store.when[:len(store)]
-        for index in (store.episodic_percepts[:len(store)] >= 0).any(-1).nonzero().flatten():
+        for index in (store.episodic_concepts[:len(store)] >= 0).any(-1).nonzero().flatten():
             assert int(encoder().decode_index(stamped[index])) in dict(entries).values()
     finally:
         model.End()

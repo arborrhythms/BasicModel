@@ -125,9 +125,9 @@ def test_small_width_false_membership_certificate_matches_literal_all_pairs():
     assert errors['disjunction']>0 and errors['not_against']>0
 
 
-def test_predictor_trains_once_on_kept_rows_only_with_detached_targets():
+def test_predictor_trains_once_on_both_paths_with_detached_targets():
     from Layers import Error
-    from SentenceCredit import reader_weights, expectation_costs
+    from WholePaths import objectives
     from ObjectiveOwnership import backward_owned
     parameter=torch.nn.Parameter(torch.tensor(1.))
     targets=[torch.tensor([2.,3.,4.],requires_grad=True),torch.tensor([8.,9.,10.],requires_grad=True)]
@@ -137,10 +137,10 @@ def test_predictor_trains_once_on_kept_rows_only_with_detached_targets():
         registry.error('expectation.roles',(parameter-target.detach()).square(),1.,category='expectation')
         registries.append(registry)
     parts=torch.zeros(3,2,3);parts[1,0,0]=1.
-    weights=reader_weights(parts,torch.tensor([True,True,False]),None)
-    costs=expectation_costs(registries,weights)
+    costs, weights=objectives([SimpleNamespace(registry=r) for r in registries],
+        parts,torch.tensor([True,True,False]),[dict(compose_round=torch.full((3,),-1))])
     backward_owned(costs,{'expectation':(parameter,)})
-    torch.testing.assert_close(parameter.grad,torch.tensor(-9.)) # targets 2 and 9, never 8 or 3
+    torch.testing.assert_close(parameter.grad,torch.tensor(-18.)) # targets 2, 3 and 8, 9; inactive row excluded
     assert all(t.grad is None for t in targets)
     optimizer=torch.optim.Adam([parameter],lr=.01);optimizer.step()
     assert optimizer.state[parameter]['step']==1
@@ -164,7 +164,7 @@ def test_static_certificate_on_each_configured_gate_vocabulary(configuration):
 
 
 
-def test_live_trial_predictor_has_one_kept_target_step(monkeypatch):
+def test_live_path_predictor_has_one_step_over_both_targets(monkeypatch):
     from test_mm_xor import _fresh_model
     model,_,_=_fresh_model('data/XOR_grammar.xml')
     parameter=torch.nn.Parameter(torch.tensor(1.))
@@ -175,23 +175,26 @@ def test_live_trial_predictor_has_one_kept_target_step(monkeypatch):
         result['expectation']=(*result['expectation'],parameter)
         return result
     monkeypatch.setattr(model,'objective_parameter_groups',owned)
-    score=model._sentence_path_cost
+    from dataclasses import replace
+    from Layers import Error
+    import WholePaths
+    finish = WholePaths.finish
     targets=[]
     def cost(*args,**kwargs):
-        result=score(*args,**kwargs)
+        result=finish(*args,**kwargs)
         target=parameter.new_tensor([2.,3.,4.,5.] if not targets else [8.,9.,10.,11.])
         targets.append(target)
-        model._sentence_cost_registry.error('expectation.kept_probe',
+        registry = Error(row_mask=result.registry.row_mask)
+        registry._terms = dict(result.registry._terms)
+        registry.error('expectation.path_probe',
             (parameter-target).square(),1.,category='expectation')
-        return result
-    monkeypatch.setattr(model,'_sentence_path_cost',cost)
+        return replace(result, registry=registry)
+    monkeypatch.setattr(WholePaths,'finish',cost)
     try:
-        optimizer=model.getOptimizer(lr=.01)
+        optimizer=torch.optim.Adam([parameter],lr=.01)
         model.runEpoch(optimizer=optimizer,batchSize=4,split='train')
         assert len(targets)==2
-        weights=model._sentence_reader_weights
-        kept=targets[0]*weights[:,0]+targets[1]*weights[:,1]
-        expected=2*(1-kept).mean()
+        expected=sum(2*(1-target).mean() for target in targets)
         # Adam's first moment encodes the exact single owned gradient.
         beta=next(g for g in optimizer.param_groups if any(p is parameter for p in g['params']))['betas'][0]
         torch.testing.assert_close(optimizer.state[parameter]['exp_avg'],expected*(1-beta))

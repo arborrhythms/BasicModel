@@ -321,9 +321,9 @@ def open_sentence(model, sid, present):
         native.get('native_part_spans', native['part_spans']),
         ws.subspace.what.primitive_properties, raw, whole_spans), brackets)
     from EpisodicMemory import stage
-    stage(model, sid, present)
     from SentenceField import open_field
-    open_field(model, sid, field)
+    opened = open_field(model, sid, field)
+    stage(model, sid, present, opened)
     owner._cs_last_a0 = field.detach()
     _, acts = owner.cs_forward_content(field, None)
     model._definition_fold_field = acts.detach()

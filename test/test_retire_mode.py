@@ -231,32 +231,33 @@ def test_public_open_field_uses_the_same_controller(monkeypatch):
     assert memory.thought_state().finished and not memory.in_episode(0)
 
 
-def test_opening_fork_can_keep_zero_work_without_history(monkeypatch):
-    import ThoughtStream, WalkTrials
+def test_whole_path_opening_fork_can_keep_zero_work_without_history(monkeypatch):
+    import ThoughtStream
+    from WholePaths import Thinking
+    from WalkTrials import ThoughtTrialState
     from test_normal_thought_controller import _catalog_world
     from meaning_fixtures import replay_thought_plan
     model, registry, memory, part, whole = _catalog_world()
     value = registry.form('isPart', part, whole)
     candidates = ThoughtStream.candidates
-    def one_operation(*args, **kwargs):
-        return tuple(a for a in candidates(*args, **kwargs) if a.semantic_id == 'isPart')[:1]
-    monkeypatch.setattr(ThoughtStream, 'candidates', one_operation)
-    capture = WalkTrials.capture_thought_fork
-    def opening_only(model, trace, meter, **kwargs):
-        if len(trace['actions']) == 1:
-            capture(model, trace, meter, **kwargs)
-    monkeypatch.setattr(WalkTrials, 'capture_thought_fork', opening_only)
+    monkeypatch.setattr(ThoughtStream, 'candidates', lambda *a, **k:
+        tuple(item for item in candidates(*a, **k) if item.semantic_id == 'isPart')[:1])
     replay_thought_plan(model, monkeypatch, lambda root, active, actions, **kwargs:
         actions[0] if memory.thought_state() is None else None)
     model.train()
+    before = ThoughtTrialState(model)
+    first = Thinking()
+    model._path_thinking = first
     with model._query_boundary_scope((0,)):
-        result = model.run_selected_thought(value, work_budget=16,
-            score=lambda result: float(bool(result.records)))
-    comparison = model._last_thought_comparison
-    assert comparison['departure'] == 0 and comparison['explore_kept']
-    assert comparison['work_spent'][0] > 0 and comparison['work_spent'][1] == 0
-    assert result.records == () and result.work.spent == 0
+        greedy = model.run_selected_thought(value, work_budget=16)
+    assert greedy.records and first.traces[0]['eligible'][0]
+    before.restore()
+    model._path_thinking = Thinking(first, torch.tensor([0]))
+    with model._query_boundary_scope((0,)):
+        other = model.run_selected_thought(value, work_budget=16)
+    assert other.records == () and other.work.spent == 0
     assert memory.thought_history() == [] and not memory.in_episode(0)
+    assert model._path_thinking.traces[0]['actions'][0] != first.traces[0]['actions'][0]
 
 
 @pytest.mark.parametrize('operation', ['query', 'exist'])
@@ -293,36 +294,24 @@ def test_chooser_opened_read_reuses_unchanged_chain_and_stamp(monkeypatch, budge
 @pytest.mark.parametrize('target', [0., 2.])
 def test_thought_reader_exposure_keeps_priority_and_baselines(exposures, target):
     from Layers import Error
-    from ThoughtAnswer import train_readers
+    from ObjectiveOwnership import registry_costs
     count = len(exposures)
     predicted = torch.arange(1, count+1, dtype=torch.float32, requires_grad=True)
     expected = torch.full_like(predicted, target)
-    trials = []
+    registries = []
+    actual = predicted.new_zeros(())
     for row, exposure in enumerate(exposures):
-        active = torch.arange(count) == row
-        comparison = Error(row_mask=active)
-        comparison.squared('answer.what', predicted, expected, weight=.7)
-        trials.append((Error(row_mask=active), comparison,
-                       dict(reader_weight=0., comparison_weight=exposure)))
-    model = SimpleNamespace(errors=Error())
-    train_readers(model, trials)
-    term = model.errors._terms['thought_comparison.answer.what']
-    assert term['weight'] == .7
+        registry = Error(row_mask=torch.arange(count) == row)
+        registry.squared('answer.what', predicted, expected, weight=.7, objective='output')
+        actual = actual + registry_costs(registry)['output'] * exposure / count
+        registries.append(registry)
     denominator = count * (target**2 if target else 1.)
-    weighted = (predicted-expected).square() * predicted.new_tensor(exposures)
-    wanted = .7 * weighted.sum() / denominator
-    actual = model.errors.total()
+    wanted = .7 * ((predicted-expected).square() * predicted.new_tensor(exposures)).sum() / denominator
     torch.testing.assert_close(actual, wanted)
     gradient, = torch.autograd.grad(actual, predicted, retain_graph=True)
-    wanted_gradient, = torch.autograd.grad(wanted, predicted)
-    torch.testing.assert_close(gradient, wanted_gradient)
-    assert all(comparison._terms['answer.what']['weight'] == .7
-               for _, comparison, _ in trials)
-    if len(set(exposures)) == 1:
-        previous = Error()
-        for _, comparison, _ in trials:
-            previous.merge(comparison, prefix='thought_comparison.', weight=exposures[0])
-        torch.testing.assert_close(actual, previous.total())
+    expected_gradient, = torch.autograd.grad(wanted, predicted)
+    torch.testing.assert_close(gradient, expected_gradient)
+    assert all(registry._terms['answer.what']['weight'] == .7 for registry in registries)
 
 
 def test_silent_premise_keeps_full_trial_and_still_trains_output():
@@ -352,7 +341,7 @@ def test_silent_premise_keeps_full_trial_and_still_trains_output():
     registries, parts, raw, answers = [], [], [], []
     for state in (full, lossy):
         registry = Error(row_mask=active)
-        answer = BasicModel._sentence_answer_error(model, state, 0, active,
+        answer = BasicModel._sentence_numeric_error(model, state, 0, active,
                                                    {'record': None}, registry=registry)
         raw.append(registry.total(objective='output'))
         answers.append(answer)
@@ -360,22 +349,22 @@ def test_silent_premise_keeps_full_trial_and_still_trains_output():
         registry.error('reconstruction', torch.ones(2), 1., objective='reconstruction')
         parts.append(components(registry, None, torch.zeros(2), answer=answer))
         registries.append(registry)
-        assert answer[0] == 0 and answer[1] == raw[-1][1]
+        torch.testing.assert_close(answer, raw[-1])
         assert model._answer_silence_mask.data_ptr() == held
     assert raw[0][0] > raw[1][0] > 0  # The full reading speaks; the lossy one is quieter.
     values = torch.stack(parts, 1)
     kept = comparison(values, active)
-    assert kept['keep_decision'][0] == 'tie:greedy' and not kept['wins'][0]
-    assert values[0, :, 2].tolist() == [0., 0.]
+    assert kept['keep_decision'][0] == 'explore' and kept['wins'][0]
+    assert values[0,0,2] > values[0,1,2] > 0
     assert not kept['answer_against_keep'][0]
-    weights = reader_weights(values, active, None)
-    assert weights[0].tolist() == [1., 0.]
+    weights = reader_weights(values, active, dict(compose_round=torch.tensor([-1,-1])))
+    assert weights[0].tolist() == [0., 1.]
     assert all(term['trained'] for term in registries[0]._terms.values()
                if term['objective'] == 'output')
     # The ordinary output-owner path still receives the kept silence error.
     training = reader_costs(registries, weights)
     assert sum(value.sum() for value in training.values()) > 0
-    ordinary = BasicModel._sentence_reader_error(model, full, 0, active, {'record': None})
+    ordinary = BasicModel._sentence_numeric_error(model, full, 0, active, {'record': None})
     assert ordinary[0] == raw[0][0]  # The thought scorer's shared reader is unchanged.
     asked_gradient, = torch.autograd.grad(answers[0][1], parameters[-1], retain_graph=True)
     assert bool(asked_gradient.abs().any())

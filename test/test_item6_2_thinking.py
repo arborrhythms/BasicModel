@@ -51,7 +51,11 @@ def world():
 
 
 def run(model, q, **kwargs):
+    score = kwargs.pop("score", None)
     with model._query_boundary_scope((0,)):
+        if score is not None:
+            from whole_path_fixtures import thoughts
+            return thoughts(model, q, score, **kwargs)
         return model.run_selected_thought(q, **kwargs)
 
 
@@ -123,15 +127,15 @@ def test_thought_uses_existing_compose_scorer_and_owner_credit():
                score=lambda result:float(has_open_slots(result.meaning)))
     assert model._selected_thought_chooser(result.meaning) is model.shared_grammar
     assert not hasattr(model,'selected_thought_choosers')
-    assert model._last_thought_comparison is not None
-    value=model._last_thought_score_function['surrogate']
+    assert model._fixture_path_audit is not None
+    value=model._fixture_path_credit['surrogate']
     if value is not None:
         value.backward()
         assert any(p.grad is not None for p in model.shared_grammar.chooser.parameters())
 
 
 def test_credit_sign_and_exact_tie():
-    from ThoughtCredit import surrogate
+    from whole_path_fixtures import thought_surrogate as surrogate
     parameter=torch.nn.Parameter(torch.tensor([.2,-.1]))
     probability=parameter.softmax(0)
     trace=dict(eligible=[True,True])
@@ -139,7 +143,8 @@ def test_credit_sign_and_exact_tie():
     value=surrogate(trace,other,0,(2.,.1))
     value.backward()
     assert parameter.grad[1]<0 and parameter.grad[0]>0
-    assert surrogate(trace,other,0,(1.,1.)) is None
+    tie = surrogate(trace,other,0,(1.,1.))
+    assert tie == 0 and not tie.requires_grad
 
 
 def test_not_exchanges_both_poles_and_preserves_content():
@@ -194,8 +199,8 @@ def test_omission_lane_concludes_absence_without_negative_content(monkeypatch):
     model,registry,store,(a,b,c)=world()
     predicted=registry.form('part',a,b)
     keys=predicted.roles.clone()
-    logits=torch.full((3,2),-60.);logits[0,0]=60.
-    prior=MeaningExpectation(keys,torch.tensor([60.,-60.,-60.]),
+    logits=torch.full((3,2),-60.);logits[2,0]=60.
+    prior=MeaningExpectation(keys,torch.tensor([-60.,-60.,60.]),
         symbol_keys=keys,symbol_logits=logits,symbol_ids=torch.arange(3),symbol_orders=torch.zeros(3,dtype=torch.long))
     observed=replace(predicted,roles=torch.zeros_like(keys))
     image=ClosingImage.form(observed.roles,keys,prior.confidence,
@@ -203,13 +208,17 @@ def test_omission_lane_concludes_absence_without_negative_content(monkeypatch):
     assert not image.conceived.any()
     source=store.append_meaning(ConceptualMeaning.from_description(predicted.roles[0]),kind='observation',evidence=(1.,0.))
     witness=store.occurrence_of(source)
-    model.symbolSpace.expectation=SimpleNamespace(last_expectation_comparison=lambda row:SimpleNamespace(estimate=prior,source_occurrences=(witness,)))
-    index=absence(model,0,observed,image)
+    # Before commit, the discourse comparison is still the preceding sentence.
+    stale = SimpleNamespace(symbol_keys=keys[:1], roles=keys)
+    model.symbolSpace.expectation=SimpleNamespace(last_expectation_comparison=lambda row:SimpleNamespace(estimate=stale,source_occurrences=()))
+    pending = SimpleNamespace(prediction=prior, source_occurrences=(witness,))
+    index=absence(model,0,observed,image,pending=pending)
     assert index==1 and store.row(index)['kind']=='inference'
     assert store.row(index)['evidence']==pytest.approx((0.,1.))
     assert bindings(store.meaning_of(index))['_thought_witnesses']==(witness,)
+    assert bindings(store.meaning_of(index))['_omitted_symbol']==2
     complete=ClosingImage.form(keys,keys,prior.confidence,prediction=prior,gain=1.)
-    assert absence(model,0,predicted,complete) is None
+    assert absence(model,0,predicted,complete,pending=pending) is None
 
 
 def test_modus_ponens_requires_premise_and_implication_witnesses(monkeypatch):
@@ -235,15 +244,14 @@ def test_modus_ponens_requires_premise_and_implication_witnesses(monkeypatch):
 
 
 def test_expectation_only_credit_does_not_enter_departure_comparison():
-    from ThoughtCredit import complete
+    from whole_path_fixtures import thought_surrogate
     model,registry,store,(a,b,c)=world()
     parameter=torch.nn.Parameter(torch.tensor([.2,-.1]))
     probability=parameter.softmax(0)
     trace=dict(eligible=[True,True])
     other=dict(choices=[dict(probability=probability[1],alternatives=1)])
-    complete(model,trace,other,0,(0.,0.),0)
-    assert model._last_thought_score_function['costs']==(0.,0.)
-    assert model._last_thought_score_function['surrogate'] is None
+    value = thought_surrogate(trace,other,0,(0.,0.))
+    assert value == 0 and not value.requires_grad
     assert parameter.grad is None
     assert not hasattr(model,'_pending_thought_credit')
 
@@ -291,11 +299,11 @@ def test_answer_credit_moves_shared_chooser_toward_the_completed_chain(monkeypat
     before=chooser.thought_logits(goal,menu).softmax(-1)[0,1].detach()
     result=run(model,goal,work_budget=64,
             score=lambda result:float(has_open_slots(result.meaning)))
-    assert model._last_thought_comparison['explore_kept']
-    assert tuple(item[1] for item in model._last_thought_comparison['components'])==(1.,0.)
-    assert model._last_thought_comparison['costs'][0] > model._last_thought_comparison['costs'][1]
+    assert model._fixture_path_audit['explore_kept']
+    assert tuple(item[1] for item in model._fixture_path_audit['components'])==(1.,0.)
+    assert model._fixture_path_audit['costs'][0] > model._fixture_path_audit['costs'][1]
     assert not has_open_slots(result.meaning)
-    value=model._last_thought_score_function['surrogate']
+    value=model._fixture_path_credit['surrogate']
     assert value is not None
     optimizer=torch.optim.SGD(chooser.parameters(),lr=.1)
     optimizer.zero_grad();value.backward();optimizer.step()
@@ -320,8 +328,8 @@ def test_expectation_trains_predictor_without_moving_departure_chooser(monkeypat
     expose(discourse,goal.roles*.25)
     before=model.shared_grammar.thought_logits(goal,menu).detach().clone()
     run(model,goal,work_budget=64)
-    assert model._last_thought_score_function['costs']==(0.,0.)
-    assert model._last_thought_score_function['surrogate'] is None
+    assert model._last_thought_comparison is None
+    assert model.errors.total(objective='chooser') is None
     assert not hasattr(model,'_pending_thought_credit')
     expose(discourse,goal.roles)
     assert discourse._inter_loss_count > 0
@@ -395,14 +403,12 @@ def test_open_closing_and_later_binding_are_reference_driven(surface):
 
 
 def test_answer_credit_is_complete_before_document_end():
-    from ThoughtCredit import complete
+    from whole_path_fixtures import thought_surrogate
     model,registry,store,(a,b,c)=world()
     parameter=torch.nn.Parameter(torch.zeros(2))
     probability=parameter.softmax(-1)[1]
-    complete(model,dict(eligible=[True]),
-        dict(choices=[dict(probability=probability,alternatives=1)]),0,(1.,.5),0)
-    value=model._last_thought_score_function['surrogate']
-    assert model._last_thought_score_function['row']==0
+    value = thought_surrogate(dict(eligible=[True]),
+        dict(choices=[dict(probability=probability,alternatives=1)]),0,(1.,.5))
     assert not hasattr(model,'_pending_thought_credit')
     value.backward()
     assert parameter.grad[1]<0

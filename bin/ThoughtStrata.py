@@ -50,8 +50,43 @@ class View:
 def construct(batch, chunks, width):
     # A thought can retain one bounded set of constituent ideas. The recent
     # chunk count remains unchanged; these are its content and pair seats.
-    return tuple(tuple(STM0(width, 4*chunks, percept_width=0,
+    stores = tuple(tuple(STM0(width, 4*chunks, percept_width=0,
         relation_capacity=4*chunks) for _ in range(chunks)) for _ in range(batch))
+    for row in stores:
+        for store in row:
+            store._thought_capacity_bound = store.capacity
+    return stores
+
+
+def bound_to_sentence(stores, words, operators):
+    """One head and at most three roles per possible input meaning.
+
+    Focus chunks bound simultaneous ideas, not the structure inside one idea.
+    Keep their small initial buffers; a model may grow them only up to the
+    input's already declared leaf and operation bounds.
+    """
+    bound = 4 * (int(words) + int(operators))
+    for row in stores:
+        for store in row:
+            if len(store) or bound < store.capacity:
+                raise ValueError('thought structure bound must be set before use and cover the initial store')
+            store._thought_capacity_bound = bound
+
+
+def _resize(store, capacity):
+    """Reconstruct transient buffers, keeping their owner and view generation."""
+    bound = store._thought_capacity_bound
+    if not 0 < capacity <= bound:
+        raise OverflowError('thought structure exceeds the declared sentence bound')
+    width, device, dtype = store.nDim, store.slots.device, store.slots.dtype
+    external = getattr(store, '_external_memory', None)
+    generation = store.generation
+    STM0.__init__(store, width, capacity, percept_width=0, relation_capacity=capacity)
+    store.to(device=device, dtype=dtype)
+    store._thought_capacity_bound = bound
+    store.generation = generation
+    if external is not None:
+        store._external_memory = external
 
 
 def write(store, meaning, *, key):
@@ -62,8 +97,10 @@ def write(store, meaning, *, key):
     visit(meaning)
     count = sum(1+int(value.role_mask.sum()) for value in nodes)
     branches = count-1
+    if count > store._thought_capacity_bound:
+        raise OverflowError('thought structure exceeds the declared sentence bound')
     if count > store.capacity or branches >= store.parts.capacity:
-        raise OverflowError('thought structure exceeds the constructed STM strata')
+        _resize(store, count)
     store.expire()
     store.to(device=meaning.roles.device, dtype=meaning.roles.dtype)
     def append(point, bindings):
@@ -110,6 +147,9 @@ def restore(stores, saved):
                 if len(store): store.expire()
                 continue
             tensors, parts, metadata, generation = state
+            capacity = int(tensors['slots'].shape[0])
+            if store.capacity != capacity:
+                _resize(store, capacity)
             store.load_state_dict(tensors)
             store.parts.load_state_dict(parts)
             # This is a rollback of already admitted working content, not a

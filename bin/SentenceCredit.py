@@ -48,47 +48,40 @@ def forward_discard(language, programs, meaning_start, like, *, case_bank=None):
 
 
 
+WALKS = ('attention', 'compose', 'candidate', 'bind', 'reconstruction', 'thought', 'output')
+
+
 def departure(narrowing, compose, *, active, sentence_ids=None, sentence=0,
-              compose_round=None, candidates=None, binds=None):
-    """Uniform walk, then uniform eligible round; the chooser draws the action."""
+              compose_round=None, candidates=None, binds=None, reconstruction=None,
+              thought=None, output=None, used=()):
+    """Draw a distinct walk/round, uniformly at each level of the remaining menu."""
     from WalkTrials import departure_at
-    if narrowing is None:
-        attention = compose.new_zeros(compose.shape[0], 0)
-    else:
-        attention = narrowing.alternatives.clone()
-        if sentence_ids is not None:
-            owners = sentence_ids.gather(1, narrowing.round_words.clamp_min(0))
-            attention &= (owners == sentence) & (narrowing.round_words >= 0)
-    groups = [attention.sum(-1), compose.sum(-1)]
-    if candidates is not None or binds is not None:
-        groups.append(compose.new_zeros(compose.shape[0]) if candidates is None else candidates.sum(-1))
-    if binds is not None:
-        groups.append(binds.sum(-1))
-    counts = torch.stack(groups, -1) * active[:, None]
-    available = counts > 0
-    walk = departure_at(available)
-    walk_count = available.sum(-1)
-    walk_rounds = torch.where(walk >= 0,
-        counts.gather(1, walk.clamp_min(0)[:, None]).squeeze(1), 0)
-    width = attention.shape[1]
-    attention_round = (departure_at(attention) if width else torch.full_like(walk, -1))
-    if compose_round is None:
-        if bool(compose.any()):
-            raise ValueError('compose departure requires its reservoir snapshot round')
-        compose_round = torch.full_like(walk, -1)
-    chosen = torch.where(walk == 0, attention_round,
-                         torch.where(walk == 1, width + compose_round, -1))
-    at_attention, at_compose = walk == 0, walk == 1
-    candidate_round = (departure_at(candidates) if candidates is not None and candidates.shape[1]
-                       else torch.full_like(walk, -1))
-    bind_round = (departure_at(binds) if binds is not None and binds.shape[1]
-                  else torch.full_like(walk, -1))
-    return dict(round=chosen, rounds=counts.sum(-1), walk=walk,
-        walk_count=walk_count, walk_rounds=walk_rounds, narrowing=at_attention,
-        attention_round=torch.where(at_attention, chosen, -1),
-        compose_round=torch.where(at_compose, chosen-width, -1),
-        candidate_round=torch.where(walk == 2, candidate_round, -1),
-        bind_round=torch.where(walk == 3, bind_round, -1))
+    empty = compose.new_zeros(compose.shape[0], 0)
+    attention = empty if narrowing is None else narrowing.alternatives.clone()
+    if narrowing is not None and sentence_ids is not None:
+        owners = sentence_ids.gather(1, narrowing.round_words.clamp_min(0))
+        attention &= (owners == sentence) & (narrowing.round_words >= 0)
+    menus = [attention, compose, candidates, binds, reconstruction, thought, output]
+    menus = [empty if menu is None else menu.clone().bool() for menu in menus]
+    for prior in used:
+        for name, menu in zip(WALKS, menus):
+            if menu.shape[1]:
+                at = prior[name + '_round']
+                menu &= torch.arange(menu.shape[1], device=menu.device)[None] != at[:, None]
+    counts = torch.stack([menu.sum(-1) for menu in menus], -1) * active[:, None]
+    walk = departure_at(counts > 0)
+    result = dict(walk=walk, rounds=counts.sum(-1), walk_count=(counts > 0).sum(-1),
+        walk_rounds=torch.where(walk >= 0, counts.gather(1, walk.clamp_min(0)[:, None]).squeeze(1), 0),
+        narrowing=walk == 0)
+    for i, (name, menu) in enumerate(zip(WALKS, menus)):
+        if name == 'compose' and compose_round is not None:
+            at = compose_round
+        else:
+            at = departure_at(menu) if menu.shape[1] else torch.full_like(walk, -1)
+        result[name + '_round'] = torch.where(walk == i, at, -1)
+    result['round'] = torch.where(walk == 0, result['attention_round'],
+        torch.where(walk == 1, attention.shape[1] + result['compose_round'], -1))
+    return result
 
 
 def components(registry, expectation, like, *, answer=None):
@@ -100,28 +93,25 @@ def components(registry, expectation, like, *, answer=None):
 
 
 def comparison(parts, active):
-    """R + A both keeps the completed derivation and credits its departure."""
+    """Keep the cheapest complete R + A path per row; the exploit wins ties."""
     costs = (parts[..., 0] + parts[..., 2]).detach()
-    delta = parts[:, 1] - parts[:, 0]
-    keep_costs = costs
-    wins = active & (keep_costs[:, 1] < keep_costs[:, 0])
-    direction = torch.sign(costs[:, 1]-costs[:, 0])
-    supports = delta * direction[:, None] > 0
-    supports[:, 1] = False  # E trains predictors, never the departure.
+    winner = torch.where(active, costs.argmin(-1), 0)
+    delta = parts[:, 1:] - parts[:, :1]
+    advantage = costs[:, 1:] - costs[:, :1]
+    direction = advantage.sign()
+    supports = delta * direction[..., None] > 0
+    supports[..., 1] = False
     names = ('reconstruction', 'expectation', 'answer')
     deciding = [('+'.join(name for name, yes in zip(names, row) if yes)
                  if sign else 'tie:greedy') for row, sign in
-                zip(supports.tolist(), direction.tolist())]
-    keep_decision = [('explore' if d < 0 else 'greedy' if d > 0 else 'tie:greedy')
-                     for d in (costs[:, 1]-costs[:, 0]).tolist()]
-    # Negative advantage rewards explore. A positive advantage rewards greedy.
-    against_keep = active & direction.ne(0) & ((direction < 0) != wins)
-    without_answer = torch.sign(delta[:, 0])
-    answer_against_keep = against_keep & (without_answer != direction) & delta[:, 2].ne(0)
-    return dict(costs=costs, keep_costs=keep_costs, components=parts.detach(), delta=delta.detach(),
-                wins=wins, deciding=deciding, keep_decision=keep_decision,
-                advantage=(costs[:, 1]-costs[:, 0]), advantage_sign=direction,
-                policy_against_keep=against_keep, answer_against_keep=answer_against_keep)
+                zip(supports.reshape(-1, 3).tolist(), direction.reshape(-1).tolist())]
+    pair = costs.shape[1] == 2
+    return dict(costs=costs, keep_costs=costs, components=parts.detach(), winner=winner,
+        wins=winner.ne(0), delta=delta[:, 0].detach() if pair else delta.detach(),
+        deciding=deciding, keep_decision=['greedy' if i == 0 else 'explore' for i in winner.tolist()],
+        advantage=advantage[:, 0] if pair else advantage,
+        advantage_sign=direction[:, 0] if pair else direction,
+        policy_against_keep=torch.zeros_like(active), answer_against_keep=torch.zeros_like(active))
 
 
 def score_function(probabilities, scale, mask, costs):
@@ -146,12 +136,19 @@ def score_function(probabilities, scale, mask, costs):
 
 
 def reader_weights(parts, active, draw):
-    """Comparison exposure with a draw; presented kept-only exposure without one."""
-    wins = active & ((parts[:, 1, 0]+parts[:, 1, 2]) < (parts[:, 0, 0]+parts[:, 0, 2]))
-    compose = (torch.zeros_like(active) if draw is None else
-               active & (draw['compose_round'] >= 0))
-    explore = torch.where(compose, .5, wins.to(parts.dtype)) * active
-    return torch.stack((active.to(parts.dtype) - explore, explore), -1)
+    """One answer exposure, shared with every compose departure and its exploit."""
+    if draw is None:
+        raise ValueError('answer exposure requires the whole-path departure draw')
+    draws = (draw,) if isinstance(draw, dict) else tuple(draw)
+    if len(draws) != parts.shape[1] - 1:
+        raise ValueError('one departure draw is required for every explore path')
+    winner = comparison(parts, active)['winner']
+    exposure = torch.nn.functional.one_hot(winner, parts.shape[1]).bool()
+    compose = torch.stack([item['compose_round'] >= 0 for item in draws], -1) if draws else active[:, None][:, :0]
+    exposure[:, 1:] |= compose
+    exposure[:, 0] |= compose.any(-1)
+    exposure &= active[:, None]
+    return exposure.to(parts) / exposure.sum(-1, keepdim=True).clamp_min(1)
 
 
 def reader_costs(registries, weights):

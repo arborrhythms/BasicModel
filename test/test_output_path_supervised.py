@@ -425,14 +425,14 @@ def test_mixed_supplied_numeric_and_automatic_text_trains_only_supplied_row(tmp_
         address['sentence'] = address['row']
     readouts, gradients = [], []
     hook = m.answer_record_reader.register_forward_hook(lambda module, args, value: readouts.append(value))
-    original = Models.BasicModel._sentence_reader_error
+    original = Models.BasicModel._sentence_numeric_error
     def score(owner, *args, **kwargs):
         cost = original(owner, *args, **kwargs)
         if owner is m and cost is not None:
             gradient, = torch.autograd.grad(cost.sum(), readouts[-1], retain_graph=True)
             gradients.append(gradient.detach())
         return cost
-    monkeypatch.setattr(Models.BasicModel, '_sentence_reader_error', score)
+    monkeypatch.setattr(Models.BasicModel, '_sentence_numeric_error', score)
     before = [p.detach().clone() for p in m.answer_record_reader.parameters()]
     try:
         questions = (What.future(0), What.supervised(1))

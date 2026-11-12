@@ -920,6 +920,22 @@ generation is expected at this stage and is recorded, not tuned away.
    is carried into the next text. Three Claude texts remain after round 2's
    return: land 2 and build 3/4; land 3/4 and build 5; land 5 and build 6
    with the measurements.
+   **Whole-path return, 2026-11-11:** round 7 landed as `984a75b20e` and
+   `a39cbfdef8`. The next round builds one complete-path comparison, one
+   reader, adaptive omission, and ordered episodic concept references with
+   signed values. Source `58f7881c9dbd` completes all three 160-sentence
+   lesson arms and passes the unchanged XOR class gate in **5/10** fits;
+   all ten grammar readings recover **4/4** word multisets. The lazy
+   conditioner's optimizer-adoption cut is repaired and its native updates
+   recorded. Omission never activates in these lesson draws; no acquisition
+   or answer improvement is claimed. The full sweep completed all 8,069
+   cases; its 125 actionable failures are repaired and the item 1.5 case
+   stays carried. Returned source `26dd5a0bda60` finishes with 471 passed
+   and ten expected skips in the final affected-file/importer runs. Alec's
+   authorized thought-store growth uses the existing sentence structure
+   bound: the original 44-row thought now fits, with initial allocation
+   unchanged. The measured freeze and returned repairs retain separate
+   receipts. This round is uncommitted. See the [return](doc/plans/2026-11-11-one-pair-per-stage.md#9-return-2026-11-11).
 - **2. Housekeeping.** *Moved to item 0.5 on 2026-11-09 (Alec): bounded-test
    batching, D5, the deferred slow marks, the weekly sweep, the per-interval
    logger, the resume certificate and two stale test entries.*
@@ -997,6 +1013,204 @@ generation is expected at this stage and is recorded, not tuned away.
    retirement; and the tied-reconstruction fixture's tense, morphology and
    aspect planning comment (`data/tied_reconstruction_output_benchmark.grammar`
    lines 149–151) goes with the `chunk` and `lookup` comments.
+- **1.8. The last architecture round** (Alec, 2026-11-11; decided the same
+   day, "It sounds decided as item 1.8"; specified the same evening and
+   consolidated on his word,
+   [specification](doc/plans/2026-11-11-item1-8-last-architecture-round.md);
+   its Codex text follows the whole-path round's landing. The notes below
+   are
+   the record of the discussion; the specification is the statement).
+   "all should go into the last architecture round (which
+   should happen before optimization and final housekeeping)": after item
+   2.0's whole-path round, before items 1.5 and 1 and the housekeeping of
+   item 0.5. Its contents as they stand, each with Alec's words:
+   1. *A cheaper forgetting pass.* "Good". `Forgetting.retention_values`
+      compares every row with every row; `BasicModel_corpus.xml` holds
+      1,048,576 rows
+      ([FutureWork](doc/FutureWork.md#a-cheaper-forgetting-pass-running-luminosity-on-ltm-alec-2026-10-24)).
+   2. *System 1 as a grammar file.* "System 1/2 is the grammar Vs no grammar
+      distinction, which can be broken down even more finely; if we allow
+      the interpret operator, we end up with symbols. Otherwise we end up
+      with (e.g.) the intersection/union/negation grammar that defines
+      animal cognition. So maybe "no grammar" models should just look like
+      a grammar file with three operators instead of a hardcoded
+      sigma-pi-negation over all three?" Open: Claude's answer of the same
+      day (as field operators applied in parallel with no chooser).
+      *Alec's reply (2026-11-11, later; "this would be a big change, let's
+      discuss"):* "Sigma and pi as grammar operations are serial only
+      because they operate on a single concept, but both generalize to
+      multiple concepts. My feeling is that, just as the concept of table
+      implies the concepts of legs, we probably need to treat serial mode
+      as 'all of the conceptual parts and wholes of the given concept'. So
+      serial does mean one concept, it means one coherent anchor in the
+      conceptual hierarchy. That allows for a much richer single concept
+      than a single vector, and it fits pretty well with the existing
+      architecture." And: "this would allow single operators that act on a
+      field, where serial mode means conceptual part/whole isolation (which
+      would happen in virtue of symbolic activation automatically). This
+      would mean moving from a point in a conceptual space to a projection
+      onto known concepts, but it would unify serial and parallel
+      operations nicely." Not decided. Claude's reading of the second
+      sentence of the first quotation: serial does *not* mean one concept.
+      *Alec, the same evening:* "As an argument against the single vector
+      processing as opposed to the field; it's basically a grandmother
+      neuron. But being able to use a single vector to stimulate its
+      conceptual entailments; reasonable." Claude's reading, given to him:
+      the vector stays as the key that addresses and stimulates; the field
+      is what operators work on. Open with him: whether a key stimulates
+      its entailments through stored references or by inverting the
+      operator that made it, as the generate walk does today.
+      *Alec, later:* ""One anchor and all concepts entailed by it", since
+      part and whole are kind or mereological terms. But whole entails part
+      and part does not entail whole, so they are similar mechanism (at
+      least at order zero). These entailments are just the existing
+      conceptual order." On Claude's point that a projection onto known
+      concepts cannot hold what is new: "I think your point about novelty
+      might justify it; memory stores known things, not novel things." And
+      his question: "does it mean that grammatical operators also have to
+      become field operators, not vector operators? That means that verbs
+      will operate as matrices over concepts themselves, not matrices over
+      conceptual space, which is a very big change." Claude's answer, for
+      discussion: no. The entailment operators (sigma, pi, negation) are
+      already structures over concepts, the stored definitions. A verb
+      stays an operator on conceptual space (`LiftLayer`: log eigenvalue
+      gains on an invertible `SigmaLayer`) and acts on concepts through
+      the codebook, $M = R\,V\,C$ with $C$ the codes and $R$ the read-back,
+      of rank at most the space's width; a free matrix over $N$ concepts
+      would cost $N^2$ entries for each verb and give a new concept no row.
+      What changes for a verb is that its result is projected onto known
+      concepts after each step. `CompoundLayer` already works so ("Select
+      the right head's native sigma cases with the left modifier"). One
+      precision from the code on entailment: a conjunction entails its
+      parts (down the ladder) and a member entails its class (up it), while
+      a class's cases are alternatives that a descent chooses among
+      (`cs_reverse_presence`), not entailments.
+      *Alec's summary (2026-11-11, later still; the working statement):* "we
+      can keep doing what we are doing with "unique" conceptual vectors
+      (using operators on vectors to create points in conceptual space),
+      but then the understanding of those will involve their projection
+      onto the entire conceptual field. So in that way, parallel reduces to
+      serial at the grammar layer, and then projects back. But animal
+      cognition always involves [the] complete conceptual field and the
+      three operators that can be applied to that whole field (the fuzzy
+      tetralemma logic)." Claude confirmed it, with what it leaves to the
+      round: (a) the three operators then exist on both sides, on two
+      points in the grammar and over the whole field, and what unifies
+      them is that the projection $P$ carries one to the other,
+      $P(a \wedge b) = P(a) \cap P(b)$, $P(a \vee b) = P(a) \cup P(b)$,
+      $P(\neg a) = \neg P(a)$, which a toy can measure and one side can
+      teach the other; (b) "projects back" is done today by the
+      reconstruction walk (the generate inverse, whose words become the
+      order-zero field), and the projection through the codebook and the
+      stored definitions is a second way, so which of the two
+      reconstruction costs is to be decided.
+      *Alec's conclusion (2026-11-11):* "Ok. So we can distinguish serial
+      and parallel learning by the grammar file, and three of those
+      operators are field operators, the rest being vector operators."
+      Claude's reading: intersection, union and negation take and return
+      fields, over the whole field in System 1 and over the projections of
+      chosen operands when the grammar applies them; every other operator
+      takes and returns points; a file with only the three is animal
+      cognition, and enabling operators in the file is the gating of point
+      5. With the three on the field only, (a) above no longer needs two
+      forms of them to agree; what remains of it is the crossing, a point
+      to its field by projection and a field to its key.
+   3. *An intuition may answer and reconstruct.* "An intuition is just as we
+      discussed; it can do both output and reconstruction". Decided. Today
+      `ThoughtAnswer.accepted` rejects evidence of kind `intuition` and an
+      intuition's terms are remembered rules.
+   4. *Trust.* "Trust of percepts is 1, seeing is believing. After
+      word-concepts are turned into object-concepts, though, trust is
+      uncertain (0) to start with." Decided; it replaces Claude's question
+      about a belief default. The record already has content embedded in a
+      supply entering with both lanes at zero
+      ([Architecture](doc/Architecture.md), "Evidence belongs to its
+      source"); the `<operation>` switch of 2026-09-16 is not built.
+   5. *Learning gated by operators.* "We sort of short-circuited
+      corpus-gated learning by operator-gated learning. Since that can be
+      written into the grammar file, we can just add/enable operations one
+      at a time (hopefully without altering the graph?)". Today: two
+      authority gates (`interpret`, `clause`) cap trust until measured
+      ready and switch no operator off; `GrammarCheckpoint.align` carries a
+      checkpoint to a grown grammar by operator name, rebuilding the graph;
+      no rule has an enable.
+   6. *A query on concepts, and no external `.when` or `.where`.* "the
+      query() on concepts needs to be there also. So that means that .when
+      does not seem necessary at this point: we store episodic concepts
+      (probably by reference) and a single semantic concept (by content),
+      and while order is important (and there is a .when baked into the
+      semantic concept and possibly the episodic concepts), but there is no
+      external .when or .where (it is not perceptual memory)." Today: an
+      idea row's stamp is already inside its vector (`RowTime`, "never a
+      separate durable time column"); external are the entry's
+      `episodic_where` brackets and the relation rows' where and when
+      column; an entry is reached only by time (`EntryRead.recall_time`).
+      *Alec's reply (2026-11-11, later):* "Ok, keep .when as an external
+      model time. But we shouldn't be using it; LTM is content addressable,
+      and especially as we are storing concepts, they will have a .when
+      muxed into them when they are pulled out of the conceptual
+      codebook." And: "I think .when and .where were useful when LTM stored
+      percepts, but if we are not storing percepts, we have no need of
+      those fields. Do animals need perceptual memory, or is invertible
+      concepts enough? I think for now it's enough." Claude's reading: the
+      clock stays; no store is addressed by it; the relation rows' where
+      and when column goes in this round and the time-only recall gives
+      way to the query on concepts. The entry's brackets and pole pair went
+      at once (whole-path specification §3.13 as amended, §8.2).
+   7. *The loop as an examination phase.* Alec, 2026-11-11: "So serial
+      learning is enabled by interpret() and the loop that allows paying
+      attention to a sentence multiple times (in order to do serial
+      processing). Should we allow the loop in animal cognition, allowing
+      animals to pay attention to different aspects of the image even
+      though they do not have the ability to symbolically represent those
+      attentions? In which case, the loop is best seen as an examination
+      phase instead of a symbolic loop." Claude's answer, for discussion:
+      yes. Today attention's loop already chooses among six actions that
+      the grammar file declares as field rules: three moves (`divide`,
+      `descend`, `gloss`: `BracketOperation` actions 0 to 2) and the three
+      field operators (`and`, `or`, `not`: actions 3 to 5), which
+      `Attention.field_reduce` computes on the two lanes (and: the least
+      evidence for with the greatest against; or: the dual; not: the lanes
+      exchanged). The open attention pass is the glance before it. What is
+      missing: the loop runs only where a configuration has word objects
+      (`_has_word_objects`), and its readings go only to compose. So the
+      grammar file has three groups (examination; field logic; `interpret`
+      and the vector operators), and an animal file is the first two. The
+      three field operators exist in several places today (the fold over
+      the stored definitions, `field_reduce` over an attended field's
+      readings, the binary `intersection` and `union`); the round makes
+      them one.
+   8. *A linear layer on concepts as the continuous output (proposed).*
+      Alec, 2026-11-11: "would it involve a lot to add the linear layer on
+      concepts to the XOR as modality with that work, so that we can have
+      at least two modalities and keep xor tests without special casing
+      them?" Claude's sizing, for his word. Three numeric read-outs exist
+      today: a named concept's positive pole (`OutputSpace.read_concepts`
+      under `conceptIds`; `XOR_exact.xml`), a linear map on the flattened
+      symbolic vectors (`OutputSpace.forward`; the whole-slab XOR files),
+      and `_forward_head` on the composed sentence state
+      (`XOR_grammar.xml`). One linear map over the bound field's concept
+      evidence, both lanes, a weight for each concept row at the
+      inventory's fixed capacity, is small, and the named concept is its
+      one-hot case. The cost is in the tests moved onto it: moderate for
+      the XOR tests that already run on the field or the sentence driver
+      (`XOR_grammar`, `XOR_exact`, the grounded test); large for the
+      whole-slab XOR proofs (`xor.xml`, `MM_xor.xml`, `XOR_pos.xml`,
+      `MM_20M_xor.xml`), which run the older pipeline with no loop and
+      include the standing convergence gate. Not sized without a trace:
+      what in the field stands for a pair of different concepts in the
+      grammar XOR fixture.
+   *Still to be settled in the specification* (Claude's defaults, each to
+   be flagged for Alec there): the three field operators take the least
+   and the greatest on the two lanes everywhere, as `field_reduce` does,
+   and not the product and probabilistic sum of today's vector forms; a
+   combination of different concepts is held in the field by a concept
+   formed on recurrence, a working row before that; operators are enabled
+   by named stages in the grammar file that a run selects, over a mask;
+   an intuition's conclusion may be said and reversed while its terms stay
+   remembered rules; modifier plus noun stays a vector operator; what
+   `interpret` gives a new object-concept as its first trust is to be
+   traced.
 - **1.5. Lookups as one matmul, whole/part folds as scatters, the percept
    pass per sentence** (Alec, 2026-10-30;
    [plan](doc/plans/2026-10-30-item1-5-lookups-and-folds.md)). Before item 1, so the
@@ -1807,3 +2021,37 @@ Landed as b7d0914ab33987ce8f786f400298bc4bc6ee2075, 2026-11-09
 - 2026-11-11 (Alec: "Please add a numeric input as future work; xor should probably be converted to use they when it exists. Probably xor should be converted to a system 1 model. That means just one concepts-to-concepts step at order 0 (Which is roughly equivalent to its previous sigma pi, I think?) And in fact, we probably want to have only a BasicModel class; I forget if we have other models being tested?"): [FutureWork](doc/FutureWork.md#numeric-input-as-a-modality-xor-as-a-system-1-model-and-one-model-class-alec-2026-11-11-to-specify), a new entry with what exists: a `numeric` data type (dense slab; `model.xml`, `mnist.xml`) that no XOR configuration uses; an XOR without grammar already in `XOR_exact.xml` and `test_grounded_xor.py` (conjunctions over order-zero memberships, then one learned sigma row of order 1; character input); two classes only, `BaseModel` and `BasicModel`, the factory building `BasicModel` and nine test files constructing a bare `BaseModel()`. To specify: numeric input as a modality, XOR on it as one concepts-to-concepts step with the linear head, one class. The whole-path round is not changed.
 
 Landed as 984a75b20e88d5b052011adb31ccd90d28234519, 2026-11-11
+- 2026-11-11 (Alec: "This is actually current work: it will clarify the architecture to store concepts instead of percepts. That will allow us to do animal cognition (system 1 reconstruction) without calling compose and generate."; "So that would be an immediate change."): the episodic entry is to hold order-zero concepts of the open attention pass, not basic percepts. [Specification](doc/plans/2026-11-11-one-pair-per-stage.md) §1 decision 11, §3.13, certificates 13 and 14, and item 16 of its Codex text (built first after round 7 lands): `EpisodicMemory.stage` selects from the open pass's concept evidence; `SymbolSpace.episodicConcepts` (default 4) and column `episodic_concepts` replace `episodicPercepts` and `episodic_percepts` with no alias; `EpisodicMemory.reinstate` publishes the kept concepts as a field directly (`_field` and the read through `cs_read_percept_field` go); `BasicModel.reverse` of that field is the recalled moment's reconstruction with no compose and no generate. Traced first: round 7's review already ends in an order-zero concept field. The question that led to it and the evidence are in the [baseline](doc/plans/2026-11-11-item1-baseline.md) §8.19. Claude's readings, flagged there: the default stays 4; a review empties the querying stream's present percept readings. The Codex text (specification §8) is final with sixteen items.
+- 2026-11-11 (Alec: "It is midway on work, but I'm happy to update midway through it's work."): Codex landed round 7 as `984a75b20e` and `a39cbfdef8` and is building the whole-path round; the text it landed already has the final XOR item, so the only update is item 16 (the episodic entry holds concepts). The update text is [specification](doc/plans/2026-11-11-one-pair-per-stage.md) §8.1; "built first" in the line above is superseded by "at the next clean point". Checked: the scratch copy used for the XOR measurements of §8.18 equals `a39cbfdef8`'s `bin` file for file.
+
+- 2026-11-11 (whole-path implementation): one greedy path plus `explorePaths` distinct departures, one R + A keep per stream, one reader and one sentence update; pre-commit thought with kept effects, recorded-output reporting (Alec's choice), adaptive input omission, and `episodicConcepts` with direct field review. Fast certificates and the required measurements/sweep are tracked in [the whole-path return](doc/plans/2026-11-11-one-pair-per-stage.md#9-return); this round is not committed or pushed.
+- 2026-11-11 (Alec, on what belongs before the main run: "Let's discuss first, but also, all should go into the last architecture round (which should happen before optimization and final housekeeping)."): countdown item 1.8 added above with six contents and his words for each (a cheaper forgetting pass; System 1 as a grammar file of intersection, union and negation; an intuition may answer and reconstruct; trust 1 for percepts and 0 for new object-concepts; learning gated by operators in the grammar file; a query on concepts with no external `.when` or `.where`). Under discussion and not specified; the number 1.8 is Claude's. The whole-path round is not changed by it.
+- 2026-11-11 (Alec, continuing the discussion of item 1.8): points 1, 3 and 4 "Good"; point 5 "fits well if we can decide on 2"; point 2 is now his proposal that a serial operand be one anchor in the conceptual hierarchy with all its conceptual parts and wholes, so that single operators act on a field (recorded under item 1.8, not decided: "a big change, let's discuss"). On the episodic entry he corrected item 16 of the whole-path round, which Codex had already built with pole pairs and brackets: "We should be storing order-0 concepts, not "brackets": what even are brackets?"; "a single signed value can be kept, as an approximation of the pair; dharmakirti says that contradiction is not a valid mental object, so presumably contradiction is a working-memory only." [Specification](doc/plans/2026-11-11-one-pair-per-stage.md) §3.13 rule items 1 to 3, certificates 13 and 14 and item 16 amended; the second mid-round update for Codex is its §8.2. Claude's readings, flagged to Alec: the signed value is for the entry's stored references only (rows' `truth_plus` and `truth_minus` stay a pair, two-truths §1.1); a review lays its readings out from their order. Codex's §9 progress note records one decision Alec gave it directly (recorded-output replay for the batch-end report).
+
+- 2026-11-11 (whole-path §8.2 amendment): episodic entries now keep reading-ordered concept references and one signed value each; stored pole pairs and places are retired, with named checkpoint migration. Recall lays out owned surfaces; missing surfaces and stale references are counted. Fields and semantic truth rows retain both poles.
+- 2026-11-11 (Alec: "It sounds decided as item 1.8"): the last architecture round is decided in its seven contents (a cheaper forgetting pass; three field operators and the rest vector operators, told apart by the grammar file; an intuition may answer and reconstruct; trust 1 for percepts and 0 for new object-concepts; learning gated by enabling operators; a query on concepts with no store addressed by time or place; the loop as an examination phase that an animal file keeps). Not yet specified. Carried into its specification as Claude's defaults, each to be flagged there: the vector forms `conjunction` and `disjunction` give way to the field's and/or; the reconstruction walk stays costed as decided on 2026-11-10 and the projection onto the field is added beside it; operators are enabled by a mask over a grammar declared whole, so the graph does not change; the time-only recall gives way to the query on concepts. Checked the same hour on the live tree: Codex has applied the second mid-round update (`episodic_concepts` and `episodic_values`), and its return (whole-path specification §9) is still in progress.
+- 2026-11-11 (Alec: "Let's write the 1.8 spec while waiting for codex. Let's not worry about who does 1.5 , 1, 0.5; we just want to work in parallel, with you doing most of the spec work."): the item 1.8 [specification](doc/plans/2026-11-11-item1-8-last-architecture-round.md) is written: eleven decisions in his words, the code as landed in round 7 read by three readers and spot-checked, ten rules, thirteen certificates, one measurement, and ten points open for him (its section 5). His corrections of the same message are in it: "Conjunction/disjunction stay symbolic, we generalize union/intersection to multiple-concept operations"; "Reconstruction is verbal from the conceptual field, or numeric from the conceptual field; these are now integrated"; "Numeric input can just be a linear layer onto concepts, the opposite of numeric output, so let's do it"; operators enabled by their stored trust under one file and the full grammar, their order inferred "from priority in a syntactic tree"; modifier plus noun as "an actual selection operator over all concepts in the extension of the count noun"; "Interpret trust is ... TBA"; "Linear layer might as well operate over all xor tests, as long as we have verbal tests that cover what they were doing symbolically". Two findings from the reading: the conjunctive definitions over concepts have a fold and no writer (`add_concept_edge` is never called with `conjunctive=True`), and `XOR_exact.xml`'s cases are promoted percept wholes. A toy run first (local receipt `doc/benchmarks/2026-11-11-item1-8-numeric-xor-toy/`): a clipped numeric input layer started at random solves XOR alone in 17 of 40 runs, never when started at the lane map $(x, 1 - x)$; conjunctions made by rule settle in 40 of 40. No Codex text yet.
+- 2026-11-11 (Alec, on what trust `interpret` gives a definition: "Conceptual trust is just the certainty of the concept (its length), so interpret should somehow reflect the certainty of the mapping from the signifier to its signified. We might not be able to do that without direct evidence of the signified coming from a different modality; we might be able, therefore, to do it for the math training corpus; "one" is a symbol for the continuous value 1.0 . But multiple modality is definite future work."): open point 4 of the item 1.8 [specification](doc/plans/2026-11-11-item1-8-last-architecture-round.md) is answered and nothing changes in that round; [FutureWork](doc/FutureWork.md#the-certainty-of-a-words-mapping-to-its-object-from-a-second-modality-alec-2026-11-11-future-work) has the new entry. Still on Claude's defaults there: who writes the intersection of several concepts, whether a composed point's field goes through the grammar's inverse, the order of operators from the syntactic tree, the verbal cover of the XOR proofs, and the standing convergence gate's move.
+- 2026-11-11 (Alec, on the open points of the item 1.8 [specification](doc/plans/2026-11-11-item1-8-last-architecture-round.md): "1 promotion on recurrence"; "The rest of the defaults are fine."): all ten points are answered and its section 5 now records them: intersections of several concepts are written by promotion on recurrence; a composed point's field goes through the grammar's inverse and reconstruction stays costed on it; operators are ordered from the syntactic tree by the rule of its section 3.7; the standing convergence gate moves to the numeric XOR file at the same bar; recall by time is removed. The specification has no open point. Its Codex text is written with the review of the whole-path round's return, on that round's code.
+- 2026-11-11 (Alec: "Im actually leaning toward making numeric input/output a part of 1.8, so that interpret can have objects that it can perceive directly (e.g. interpret("one") = 1.0). it would be a toy example of multimodal for a 1-D (or N-D) numeric signal."): proposed in the item 1.8 [specification](doc/plans/2026-11-11-item1-8-last-architecture-round.md) as decision 13 (leaning, not decided), section 3.11 and certificate 14, with five points to settle in its section 5.1: a sentence may carry a row of numbers; the concept the numeric layer writes is a candidate object for a word of the same moment (`InterpretLayer.define` already takes evidence); the definition's trust is counted by views and agreement; under omission each modality restores the other; values in $[0, 1]$, one concept for each dimension, no arithmetic on the numbers, one lesson file.
+- 2026-11-11 (Alec, on how the number enters: "percepts could probably operate on the value directly, and parts/wholes just becomes a less-than discrimination on the number line."; "so it would work for XR, but could generalize to images fairly easily."): the proposal in the item 1.8 [specification](doc/plans/2026-11-11-item1-8-last-architecture-round.md) section 3.11 now has a number as a basic percept whose presence is the value, part and whole between two as less-than (`Ops.partOf`), concepts read from it by the membership read with no learned input layer, and the XOR proofs getting their cases from percept wholes as `XOR_exact.xml` does. Two more points in its section 5.1: this is "amplitude is presence", which the decision of 2026-10-25 set aside for images ("Intensity is a code"); and whether the percept replaces section 3.9's learned input layer for the whole round. Not decided.
+- 2026-11-11 (Alec: ".where would become 2D, and wholes and parts become hyperrectangles in the unit hypercube."; then the scope: "the image processing can be future word, and the ND stuff also, but the scalar case can be the continuous "feeling" that corresponds to the discrete boundaries established by symbolic discrimination."): the scalar case is in item 1.8 and images and signals of several dimensions are future work. The item 1.8 [specification](doc/plans/2026-11-11-item1-8-last-architecture-round.md) decision 13 and section 3.11 now say so: one number may accompany a sentence; it is a basic percept whose presence is the value; a word that names it has the concept read from it as its object and adds the boundary; the XOR proofs read two readings of the scalar at two places. The image notes are at the head of FutureWork's image-modality entry. Six points of its section 5.1 still stand on Claude's defaults.
+- 2026-11-11 (Alec: "so feelings are continuous, concepts are discrete, and we have a better model of nonconceptual knowing: continuity. We might also want some actual mathematical operations in this space: less than, multiplication, addition, min, max that can operate on the values directly rather than operating on the codes as proxies offerred by the codebook."): recorded in the item 1.8 [specification](doc/plans/2026-11-11-item1-8-last-architecture-round.md) (decision 13, section 3.11), in [Philosophy](doc/Philosophy.md) under feelings, and as a new [FutureWork](doc/FutureWork.md#operations-on-continuous-values-sum-and-product-on-the-feeling-alec-2026-11-11-to-settle) entry. Less-than, least and greatest come with the scalar (`Ops.partOf`, `intersection`, `union`) and are in certificate 14. A product and a sum on values are not in the round by default; open with Alec: which sum, and how they stand with the rule of 2026-10-07 that the math cannot be direct.
+- 2026-11-11 (Alec: "Maybe part, max, and min, so that we don't have to invent overflow rules. That will at least give us a fuzzy ordering and norm/t-norm."): the operations on the scalar's value in item 1.8 are part, max and min, which come with the scalar (`Ops.partOf`, the field's `union` and `intersection`); no sum and no product on values is built, and the rule of 2026-10-07 on arithmetic is untouched ([specification](doc/plans/2026-11-11-item1-8-last-architecture-round.md) decision 13, section 3.11, section 5.1 item 8). Still on Claude's defaults there: section 5.1 items 2 to 7.
+- 2026-11-11 (Alec: "Your defaults are fine for this. But lets imagine tying this set of percepts to the existing text. If we provide both perceptual spaces to a single conceptual space for its integration, then we can ask questions like which is more or less, and have interpret() result in bindings to the other modality. That means that we can do things like teach number recognition just like large AIs do object recognition in photos."): the scalar's six remaining defaults are accepted and recorded as answered (item 1.8 [specification](doc/plans/2026-11-11-item1-8-last-architecture-round.md) section 5.1). His picture is in decision 13 and section 3.11: two perceptual spaces give one conceptual space its evidence (it already reads two sources, the part tower and the whole tower); recognition is the definition read from the object to its word and said by the output path; comparison is the part test on two readings, its question's words learned from the answers. One point open (section 5.1 item 9, Claude's proposal): recognition on the trained values is in the certificate; recognition of untrained values and comparison are measured and reported.
+- 2026-11-11 (Alec: "although we can represent 1,000,000 numerically, and we might not know what 1M amount of a feeling would feel like."): recorded in the item 1.8 [specification](doc/plans/2026-11-11-item1-8-last-architecture-round.md) as where the scalar's grounding stops (decision 13; section 3.11): it grounds only the words whose values can be felt, within a bounded range; every other numeral is known through other words, by the successor and by thinking, so the rule of 2026-10-07 stays.
+- 2026-11-11 (Alec: "so the mapping of feeling to words is not linear."): recorded in the item 1.8 [specification](doc/plans/2026-11-11-item1-8-last-architecture-round.md) (decision 13; section 3.11). Nothing there assumes a linear mapping: a word's concept reads the scalar through its own learned exponent in `SparseLayer.fold_presence`, and the measurement on untrained values shows the shape.
+- 2026-11-11 (Alec: "does this in fact give us enough for a primitive example of object recognition?"; "or symbolization? can the model learn the word for a number (where that word is a concept with part and whole bounds that are hyperrectangles)?"): answered in the item 1.8 [specification](doc/plans/2026-11-11-item1-8-last-architecture-round.md) section 3.11 as a proposal (its section 5.1 item 10): a word's concept over the scalar is a box whose lower and upper bounds are the least and the greatest of the values heard with the word (`intersection` and `union` over the definition's views), with membership by the two coverages of `meet_ratios`; only part, min and max are used and nothing is trained by gradient. A trace made for the answer revises an accepted default (section 5.1 item 2): `InterpretLayer.lexical_form` spells an object only where exactly one word names it, so "one" and "zero" are two concepts and not two lanes of one. Not traced: what makes the perceived concept the thing that is said.
+- 2026-11-11 (Alec: "No, percepts do not need two lanes, that is just for concepts."): the second pole that Claude had put on the scalar's percept (carrying $1 - v$; accepted with the other defaults) is withdrawn, and so is Claude's reading of a concept's two lanes as a box's bounds. It is Philosophy's "Perception carries no negation". What follows is written into the item 1.8 [specification](doc/plans/2026-11-11-item1-8-last-architecture-round.md) section 3.11 as Claude's proposal (section 5.1 item 11): with one lane a value of 0 is no feeling at all, so a word for it names an absence, inferred on a concept's against-lane and never perceived; the toy's two words become "half" at .5 and "one" at 1.0, both felt; the XOR proofs' two symbols become the levels .5 and 1.0, as `XOR_exact.xml`'s are two letters; "zero" is a third lesson, measured.
+- 2026-11-11 (Alec: "XOR is traditionally done in 2d, so 0 and 1 would be fine for the input values."): the XOR proofs of item 1.8 read an input of two dimensions with the values 0 and 1 ([specification](doc/plans/2026-11-11-item1-8-last-architecture-round.md) section 3.11; section 5.1 item 11). Claude's proposal of two felt levels for them is withdrawn, with its worry: no absence has to be inferred, since the numeric output is linear with signed weights and XOR is $x_1 + x_2 - 2\,(x_1 \wedge x_2)$; the one concept needed is the intersection of the two inputs, written by promotion when they recur together, and without it the file stays at $\tfrac14$. Checked by a small computation: weights 1, 1 and -2 exactly; the control's error .25; a linear output from random starts settles in 40 of 40 runs. The old read-out's "two positive edges" assertion is to be ported with a record.
+- 2026-11-11 (Alec: "Please write the 1.8 spec , I will let you know when codex finishes the next 2.0 round"): the item 1.8 [specification](doc/plans/2026-11-11-item1-8-last-architecture-round.md) is consolidated into one text. Nineteen decisions in his words; the code as landed in round 7; eleven rules (3.9 is numbers in and out, with a number as a one-lane percept, part, max and min on values, a linear output on concepts, and the XOR proofs on two inputs of 0 and 1; 3.10 is the scalar beside the words; 3.11 the forgetting pass); fourteen certificates and one measurement; and its section 5 with what was answered, three defaults he has not spoken to (the box as how a word's concept over the scalar is learned; recognition required while untrained values, comparison and "zero" are measured; the toy's words "half" and "one") and one link not traced (what makes the perceived concept the thing said). Section numbers in the lines above of this date refer to the first writing, a copy of which is in Claude's scratch directory and not in the repository. No Codex text yet: it is written with the review of the whole-path round's return.
+- 2026-11-11 (Alec: "We might as well allow numeric values in 0 to 1 range, but map that to "zero" to "infinity", so that we can represent all numbers, and let the scale sort itself out with some sort of spacing algorithm (so its an ordinal dim that becomes approximately real with increased ordinates)."): decision 20 of the item 1.8 [specification](doc/plans/2026-11-11-item1-8-last-architecture-round.md). A number $n$ is felt as $f(n)$ in $[0, 1]$, increasing, zero at zero and one at infinity; part, max and min are unchanged by any such $f$; a word's box is kept on numbers and read through $f$; the toy's words become "one", "two" and "three". Open (its section 5.2 e): $f$ fixed (for instance $n/(1+n)$) or the running rank of $n$ among the numbers met, Claude's recommendation.
+- 2026-11-11 (Alec: "Codex is ready for review."): the whole-path round's return is reviewed and accepted ([specification](doc/plans/2026-11-11-one-pair-per-stage.md) §10). The live tree hashes to the returned `26dd5a0bda60`; Claude re-ran the stopping gates on it (seven production files changed after the frozen sweep): convergence, the shared-concept case, the grammar reconstruction gate and the round's 26 new certificates, 29 passed. The XOR gate passed five of ten, exactly the bar. Two readers checked the code against the rules; five defects were confirmed in the code and are repaired first in the next text, none touching this return's measurements: omission leaks into the percept store, the document address and `reconstruction.free_percept`; the batch end keeps the last sentence slot for every row of a packed batch; a thought departure restores every stream's state; with two or more explore paths each compose credit reads the last path's state and the lessons are unscaled. One reader's claim (the output residual weighted twice) was checked and is not so. Warts: the lessons say nothing (4, 0 and 1 nonempty answers of 80), omission never engaged, the thought store grows at run time (for item 1). The landing opens item 1.8's Codex text, which waits for 1.8 section 5.2 d (recognition: a binding to a perceived concept as an answer) and e (the spacing of the scale).
+- 2026-11-12 (Alec, on item 1.8's two open points; spacing: "Running rank (Recommended)"; recognition: "You seem to be asking about identity. I had theorized that order-0 events could not be nouns, because generalizing over events could yield only a general event. But that serves in MTM as an order-0 identity, and is used by order 0 as a promotion criteria."): the item 1.8 [specification](doc/plans/2026-11-11-item1-8-last-architecture-round.md) has decision 21 and the spacing rule (the running rank of a number among the numbers met, a bounded sorted record updated over a horizon). Claude's reading of the recognition answer, for his word (its section 5.2 d): "this" points at the present event at order zero, held in MTM as its order-zero identity; the question asks for the class whose member the event is, an identity of order one or more such as the word's concept over the scalar; `bind_site` adds the individuals whose evidence in the moment's field contains the reading, and such a binding is accepted as perception. The 1.8 Codex text waits only for that confirmation.
+- 2026-11-12 (Alec: "My understanding of "running rank" is a linear interpolation over recognized concepts, from 0-1."): item 1.8's spacing rule rewritten ([specification](doc/plans/2026-11-11-item1-8-last-architecture-round.md) section 3.10, section 5.2 e): the recognized concepts over the scalar, by their numbers, are spaced evenly over the unit interval with zero at 0 and infinity at 1, and $f$ is linear between neighbours; Claude's description (the rank among all numbers met, over a horizon) is replaced. Claude's, for the end his rule leaves open: above the largest recognized number $f$ is linear in $1/n$, so that it reaches 1 at infinity. With recognized numbers 1 to $N$ the scale is linear over that range; with the numbers a language names often it is close to logarithmic.
+- 2026-11-12 (Alec: "Also, for the numeric modality, please confirm if we can use the values as the numerical codebook codes directly, rather than creating arbitrary codes, it would seem to be more efficient."): confirmed, and written into the item 1.8 [specification](doc/plans/2026-11-11-item1-8-last-architecture-round.md) as decision 22 and section 3.9: a numeric dimension has one atom whose basis row is a fixed axis of its own band, and a reading's code is $f(n)$ on that axis; no row per value, no drawn pattern, no collision rule. It is what makes part, max and min the code operations themselves (`Ops.partOf` is elementwise less-or-equal; join and meet are max and min). One consequence recorded: every value of a dimension has the same direction, so readers that identify by cosine see one identity, the dimension; values are told apart only by order and containment.
+- 2026-11-12 (Alec: "If that is the case, then we should do something like a logarithmic mapping from 0..INF to 0..1"): item 1.8's spacing is a fixed logarithmic map ([specification](doc/plans/2026-11-11-item1-8-last-architecture-round.md) decision 20, section 3.10, section 5.2 e), replacing the interpolation over recognized concepts: $f(n) = g/(1+g)$ with $g = \ln(1+n)$, Claude's form for "something like" (the logarithm alone has no upper end). One is .409, ten .706, a million .933; single precision still tells $n$ from $2n$ at $10^{100}$ (where $n/(1+n)$ stops near $10^8$). It has no state and nothing moves when a concept is recognized. The XOR proofs read 1 as .409; the linear output takes the scale.
+- 2026-11-12 (Alec: "Confirming also that order-zero events are suitable for order-zero identity. I thing we already decided that MTM is ramsified, so this would be a necessary consequence"): item 1.8's recognition rule is settled ([specification](doc/plans/2026-11-11-item1-8-last-architecture-round.md) decision 21, section 5.2 d): "this" binds to the present event's order-zero identity in MTM, the question's open reference binds to the class whose member the event is, and the binding is accepted as perception. It amends the constraint of 2026-11-03 that no order-zero identity is opened ([behavioral-chains plan](doc/plans/2026-11-03-item2-0-behavioral-chains.md) item 5, amended by date); Claude's reconciliation: succession makes a sequence, the same reading met again makes an order-zero identity. The specification's two references to `LanguageLayer.set_stage_menu` are corrected to `OperationSelectionLayer`.
+- 2026-11-12: item 1.8's Codex text is written, final ([specification](doc/plans/2026-11-11-item1-8-last-architecture-round.md) section 7, return as its section 8): steps 1 to 3 land the whole-path round (returned source `26dd5a0bda60`), item 4 repairs the five defects of the whole-path review, items 5 to 16 build item 1.8, item 17 is the certificates and the one measurement. Checked before handing it over: every code name it cites exists in the returned source; certificate 13 and the scalar's measured probes were brought in line with the scale of decision 20 (words for one, two and three; untrained numbers .5 to 3.5 and 10).
+- 2026-11-12 (Alec, when the item 1.8 text was handed over: "Now? We have not completed and pushed 2.0"): item 2.0 is completed by its own Codex text ([whole-path specification](doc/plans/2026-11-11-one-pair-per-stage.md) section 11, return as its section 12): land the accepted whole-path round and push, then repair the five defects of its section 10.3, with the stopping gates, the XOR class certificate once (reported) and one make test, and no measurement campaign. Item 1.8's text (its specification's section 7) is held: it now opens by landing those repairs, whose hash is filled in at their review (whole-path section 13), and its item 4 moved to the completion text.
+- 2026-11-12 (Alec: "You need to review."): nothing new from Codex (no landing, no return; the source is still `26dd5a0bda60`), so Claude reviewed its own item 2.0 completion text ([whole-path specification](doc/plans/2026-11-11-one-pair-per-stage.md) section 11), which it had handed over unchecked. Three corrections, recorded under the text: the list of documents changed since the return; the omission certificate's edit named by content; and the XOR class certificate measured by its criterion rather than run under `RUN_TRAINED=1`, where it fails for its absent phase artifact. The text is final again.

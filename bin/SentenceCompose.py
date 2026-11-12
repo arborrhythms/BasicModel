@@ -23,8 +23,8 @@ class _SavedValue:
 def saved_sentence_values(parameters=(), buffers=()):
     """Keep one immutable saved value per tensor view and parameter version.
 
-    Both derivations are scored before either optimizer update. Their
-    backwards and shared perception must read the original parameters and buffers. A shared weight may be
+    Packed sentences share a perception forward across their optimizer steps.
+    Their backwards must read its original parameters and buffers. A shared weight may be
     saved hundreds of times by the word/operator rounds; copying every save
     would multiply dictionary memory by the number of uses.
     """
@@ -145,44 +145,3 @@ def kept_reading_plan(wins, paths, attention, fields, width):
             b = right[turn]['action'] if turn < len(right) else exhausted
             reads.append(torch.where(wins, b, a))
     return dict(actions=actions, attention=reading, field=reads)
-
-
-def sentence_pair(cache, compose, score, step, *, active, training=True, before_step=None):
-    """Compare reconstruction at one parameter state, then train both paths.
-
-    ``cache`` is the sentence's one perception. ``compose`` gets the exploit
-    path on its second call so it can fork a saved state and exclude one choice.
-    ``score`` returns a cost per row and the candidate's scratch commit value.
-    Selection costs contain reconstruction only; strict improvement keeps
-    explore and ties keep greedy. ``before_step`` receives all active rows:
-    reconstruction and expectation train on both trials, each with its original
-    forward parameter values. The caller combines the detached reader losses
-    into its single update after the departure walk and keep are known.
-    The caller publishes the returned state before perceiving the next sentence.
-    """
-    exploit = compose(cache, None)
-    cost_a, state_a = score(exploit, False)
-    if cost_a.shape != active.shape:
-        raise ValueError('sentence comparison requires one cost per row')
-    saved_a = cost_a.detach().clone()
-    if not training:
-        return state_a, saved_a[:, None], torch.zeros_like(active)
-    explore = compose(cache, exploit)
-    cost_b, state_b = score(explore, True)
-    if cost_b.shape != active.shape:
-        raise ValueError('sentence comparison requires one cost per row')
-    saved_b = cost_b.detach().clone()
-    wins = active & (saved_b < saved_a)
-    if before_step is not None:
-        before_step(active)
-    step((cost_a * active.to(cost_a)).sum() / active.sum().clamp_min(1))
-    if before_step is not None:
-        before_step(active)
-    step((cost_b * active.to(cost_b)).sum() / active.sum().clamp_min(1))
-    if bool(wins.all()):
-        kept = state_b
-    elif not bool(wins.any()):
-        kept = state_a
-    else:
-        kept = select_rows(state_a, state_b, wins)
-    return kept, torch.stack((saved_a, saved_b), -1), wins

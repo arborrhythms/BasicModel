@@ -6,6 +6,7 @@
        is best effort from the forward evidence, with no stored input event
        or stack. Parallel field operators run here; grammar lift/lower do not. -->
   <architecture>
+    <omissionTarget>1</omissionTarget>
 
     <bindingDepth>2</bindingDepth>
     <conceptLayers>2</conceptLayers>

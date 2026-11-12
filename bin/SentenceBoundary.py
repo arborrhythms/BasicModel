@@ -1,5 +1,6 @@
 """Cut completed sentence writes while preserving the batch perception graph."""
 from dataclasses import fields, is_dataclass, replace
+from types import MappingProxyType
 import torch
 
 
@@ -8,6 +9,8 @@ def detached(value):
         return value.detach()
     if isinstance(value, dict):
         return {key: detached(item) for key, item in value.items()}
+    if isinstance(value, MappingProxyType):
+        return MappingProxyType({key: detached(item) for key, item in value.items()})
     if isinstance(value, tuple) and hasattr(value, '_fields'):
         return type(value)(*(detached(item) for item in value))
     if isinstance(value, (tuple, list)):
@@ -26,10 +29,23 @@ def finish(model, sub, sym, perception_sub, perception_sym, written, perception_
             '_attention_words', '_last_decoder_trace', '_last_output_walk_trace',
             '_last_decoder_comparison', '_compose_sampling_scale',
             '_sentence_expectation_comparison', '_sentence_gradient_objectives',
-            '_sentence_open_fields', '_input_reconstructions'))):
+            '_sentence_open_fields', '_input_reconstructions', '_sentence_generation',
+            '_sentence_reverse', '_sentence_order_zero_reverse', '_last_sentence_credit',
+            '_sentence_credit_audits', '_sentence_walk_residuals', '_sentence_decoder_walk_credits',
+            '_sentence_output_walk_credits', '_sentence_order_zero_field', '_last_answer_construction'))):
         for name in names:
             if hasattr(owner, name):
                 setattr(owner, name, detached(getattr(owner, name)))
+
+    # Reverse carriers are modules, so recursive value detachment does not
+    # traverse their transient native activity. These are sentence writes.
+    direct = getattr(model, '_sentence_reverse', None)
+    for carrier in (None if direct is None else direct[0],
+                    getattr(model, '_sentence_order_zero_reverse', None)):
+        if carrier is not None:
+            for name in ('_radix_activity', '_reconstruction_percepts'):
+                if hasattr(carrier, name):
+                    setattr(carrier, name, detached(getattr(carrier, name)))
 
     for space in model.conceptualSpaces:
         stm = getattr(space, 'stm', None)

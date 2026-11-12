@@ -119,7 +119,7 @@ def test_order_zero_decode_reaches_the_grammar_inverse_and_selected_definition(m
     from Layers import Error
     from Models import BasicModel
     from Generative import selected_residual
-    from WalkTrials import stage_generate_credit
+    from WalkTrials import generate_credit
     from util import TheXMLConfig
     cs = _cs(dim=12)
     rows = [_mint_row(cs, 0, cid) for cid in (101, 102)]
@@ -184,11 +184,10 @@ def test_order_zero_decode_reaches_the_grammar_inverse_and_selected_definition(m
     for i, band in enumerate(('form', 'for', 'against')):
         errors.add('reconstruction.walk_residual.' + band, residual[:, i], category='reconstruction', objective='reconstruction', side='R')
     assert any(g is not None and bool(g.abs().any()) for g in gradient('reconstruction.walk_residual.', inverse))
-    model._sentence_decoder_walk_credits = []
     audit = dict(departure=torch.tensor([0]), greedy=torch.tensor([[0]]), explore=torch.tensor([[1]]),
         eligible=torch.tensor([[True]]), costs=torch.tensor([[.5, 1.5]]))
-    stage_generate_credit(model, audit, parent[:, None], torch.ones(1, 1, 2, 9), owner='decoder')
-    errors.add('reconstruction.walk_credit', model._sentence_decoder_walk_credits[0], category='reconstruction', objective='reconstruction', side='R')
+    credit = generate_credit(model.languageSpace, audit, parent[:, None], torch.ones(1, 1, 2, 9))
+    errors.add('reconstruction.walk_credit', credit, category='reconstruction', objective='reconstruction', side='R')
     assert any(g is not None and bool(g.abs().any()) for g in gradient('reconstruction.walk_credit', tuple(policy.parameters())))
     assert proposal.field.where[0].tolist() == [[0, 1], [2, 3]]
 
