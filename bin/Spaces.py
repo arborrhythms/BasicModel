@@ -10925,6 +10925,10 @@ class PartSpace(Space):
         # once per word.  ``lookup_rows`` keeps this O(number of constituents).
         event = basis.lookup_rows(ids.clamp_min(0))
         event = event * ids.ge(0)[..., None]
+        return self._radix_code_events(event, part_offsets)
+
+    def _radix_code_events(self, event, part_offsets=None):
+        """Attach occurrence coordinates to native codes, including loss targets."""
         content_width = int(event.shape[-1])
         muxed_width = (int(self.subspace.nWhat)
                        + int(self.subspace.nWhere)
@@ -11257,10 +11261,6 @@ class PartSpace(Space):
         host_tokens = getattr(upstream_vspace, "_host_tokens", None)
         if host_tokens is None:
             host_tokens = upstream_vspace.whatEncoding.decode_tokens(what_buf)
-        self._ensure_radix_atomic_bytes(host_tokens)
-        null_pid = ps.get_id(b"\x00")
-        if null_pid is None:
-            null_pid = ps.insert(b"\x00")
         # No unit is cut here: every atom of a unit is presented (the
         # ``[B, W, P]`` width is batch-dynamic in the eager stem, exactly as
         # the radix stem's was), and the compiled loop's fixed-capacity
@@ -11308,15 +11308,34 @@ class PartSpace(Space):
                     complete.append((cursor, len(raw)))
                 spans = complete
             units.append((raw,spans))
+        prepare = getattr(self, '_omission_prepare', None)
+        omission = None if prepare is None else prepare(units)
+        hiding = omission is not None and bool(omission['draw'].forms.any())
+        changed = omission['draw'].forms.any(-1).detach().cpu().tolist() if hiding else None
+        hidden_rows = omission['bytes'].detach().cpu().tolist() if hiding else None
+        visible_rows = []
+        for b, (raw, _) in enumerate(units):
+            hidden = None if hidden_rows is None else hidden_rows[b]
+            visible_rows.append(raw if hidden is None else
+                bytes(value if not hidden[i] else 0 for i, value in enumerate(raw)))
+        host_tokens = [[raw] for raw in visible_rows]
+        upstream_vspace._host_tokens = host_tokens
+        self._ensure_radix_atomic_bytes(host_tokens)
+        null_pid = ps.get_id(b"\x00")
+        if null_pid is None:
+            null_pid = ps.insert(b"\x00")
         # Finish vocabulary observations before materializing any word's
         # parts: a later word can expose a nested whole in an earlier word.
         if identity is not None and admit:
-            for raw,spans in units:
-                for start,end in spans[:word_capacity]:
-                    identity.observe_nested(raw[start:end])
+            for b, (raw,spans) in enumerate(units):
+                for w, (start,end) in enumerate(spans[:word_capacity]):
+                    if changed is None or not changed[b][w]:
+                        identity.observe_nested(raw[start:end])
         for b,(raw,spans) in enumerate(units):
-            word_texts_rows.append([raw[s0:e0].decode("latin1") for s0, e0 in spans])
-            native_rows.append([int(ps.get_id(bytes([value]))) for value in raw])
+            visible = visible_rows[b]
+            word_texts_rows.append([visible[s0:e0].decode("latin1") for s0, e0 in spans])
+            native_rows.append([(-1 if hidden_rows is not None and hidden_rows[b][i]
+                                 else int(ps.get_id(bytes([value])))) for i, value in enumerate(visible)])
             native_spans.append([(i, i+1) for i in range(len(raw))])
             staged_words = []
             for word_index in range(word_capacity):
@@ -11324,16 +11343,27 @@ class PartSpace(Space):
                     start, end = spans[word_index]
                     truncated = False
                     stop = end
-                    pids = [int(ps.get_id(bytes([raw[i]]))) for i in range(start, stop)]
+                    hidden = changed is not None and changed[b][word_index]
+                    pids = [(-1 if hidden_rows is not None and hidden_rows[b][i]
+                             else int(ps.get_id(bytes([raw[i]])))) for i in range(start, stop)]
                     unit = raw[start:stop]
                     nested = ()
                     if identity is not None:
-                        nested = tuple((identity.word_rows[part],lo,hi)
-                            for part,lo,hi in identity.nested.get(unit,()))
-                        pids = list(identity.admit(unit))
+                        if hidden:
+                            plan = omission['plans'][b][word_index]
+                            omitted = omission['draw'].forms[b, word_index]
+                            pids = [-1 if bool(omitted[i]) else identity._atom(atom)
+                                    for i, atom in enumerate(plan['atoms'])]
+                            nested = tuple((identity.word_rows[part],lo,hi) for part,lo,hi in plan['nested'])
+                            pids.extend(-1 if bool(omitted[len(plan['atoms'])+i]) else pid
+                                        for i, (pid, _, _) in enumerate(nested))
+                        else:
+                            nested = tuple((identity.word_rows[part],lo,hi)
+                                for part,lo,hi in identity.nested.get(unit,()))
+                            pids = list(identity.admit(unit))
                         atom_count = len(pids) - len(nested)
                     part_capacity = max(part_capacity, len(pids))
-                    if (identity is None and admit and len(unit) >= 2 and not truncated
+                    if (identity is None and admit and not hidden and len(unit) >= 2 and not truncated
                             and ps.get_id(unit) is None
                             and unit not in getattr(ps, "_pending_promotions", {})):
                         hits[unit] = hits.get(unit, 0) + 1

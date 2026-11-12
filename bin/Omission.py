@@ -80,84 +80,128 @@ class Omission(nn.Module):
             form_visible=float(self.accuracies[1, 0]), form_omitted=float(self.accuracies[1, 1]))
 
 
+def prepare(model, units):
+    """Draw from the lexical layout before any unit or byte is admitted."""
+    from WordIdentity import base_atoms
+    ps, isp = model.perceptualSpace, model.inputSpace
+    identity = getattr(ps.percept_store, 'identity', None)
+    width = int(ps._serial_word_capacity)
+    plans, capacity = [], 3
+    for raw, spans in units:
+        row = []
+        for lo, hi in spans[:width]:
+            word = raw[lo:hi]
+            atoms = (tuple(identity.words.get(word, base_atoms(word))) if identity is not None else ())
+            nested = () if identity is None else tuple(identity.nested.get(word, ()))
+            parts = ([(lo, hi)] * len(atoms) + [(lo+a, lo+z) for _, a, z in nested]
+                     if identity is not None else [(i, i+1) for i in range(lo, hi)])
+            row.append(dict(atoms=atoms, nested=nested, spans=parts))
+            capacity = max(capacity, len(parts))
+        plans.append(row)
+    device = model._staged_concepts_in.device
+    valid = torch.zeros(len(units), width, capacity, dtype=torch.bool, device=device)
+    for b, row in enumerate(plans):
+        for w, plan in enumerate(row):
+            valid[b, w, :len(plan['spans'])] = True
+    active = valid.any(-1)
+    isp._finalize_sentence_word_layout(active)
+    sentences = isp._packed_sentence_ids
+    forms, words, protected = torch.zeros_like(valid), torch.zeros_like(active), {}
+    for sid in range(isp._packed_sentence_slot_mask.shape[1]):
+        draw = model.omission.draw(valid & (sentences == sid)[..., None], training=model.training)
+        forms |= draw.forms
+        words |= draw.words
+        protected[sid] = draw.protected
+    raw_target = model._staged_concepts_in.detach().clone()
+    hidden = torch.zeros_like(raw_target[:, 0], dtype=torch.bool)
+    for b, w, part in forms.nonzero().tolist():
+        lo, hi = plans[b][w]['spans'][part]
+        hidden[b, lo:hi] = True
+    model._omission_prepared = dict(raw=raw_target, units=units, plans=plans,
+        draw=Draw(words, forms, protected), bytes=hidden,
+        sentences=sentences.detach().clone())
+    return model._omission_prepared
+
+
+def native_values(ps, units):
+    """Loss-only byte codes, without admitting an unseen target to the store.
+
+    Known bytes use their actual code. A new target byte gets the store's
+    normalized Gaussian initializer from a private copy of the random stream;
+    neither the inventory nor the forward random stream observes that target.
+    """
+    store = ps.percept_store
+    generator = torch.Generator(device='cpu')
+    generator.set_state(torch.random.get_rng_state())
+    like = store._basis.W
+    values = like.new_zeros(len(units), max((len(raw) for raw, _ in units), default=0), store.dim)
+    valid = torch.zeros(values.shape[:2], dtype=torch.bool, device=values.device)
+    unknown = {}
+    for b, (raw, _) in enumerate(units):
+        for position, byte in enumerate(raw):
+            pid = store.get_id(bytes([byte]))
+            if pid is not None:
+                value = store._basis.lookup_rows(torch.tensor(pid, device=like.device)).detach()
+            else:
+                if byte not in unknown:
+                    value = torch.randn(store.dim, generator=generator, dtype=like.dtype)
+                    unknown[byte] = (value / value.norm().clamp_min(1e-8)).clamp(0., 1.).to(like)
+                value = unknown[byte]
+            values[b, position] = value
+            valid[b, position] = True
+    return values, valid
+
+
 def stage(model):
-    """Hide native content before identity admission or any attention read."""
-    from SentenceBoundary import detached
+    """Retain detached targets and publish only the already omitted stem."""
     isp, ps = model.inputSpace, model.perceptualSpace
     model._omission_targets = None
     if not model.word_brackets:
         return
+    prepared = model.__dict__.pop('_omission_prepared')
+    draw = prepared['draw']
     valid = isp._ar_word_part_mask
-    if valid is None:
-        raise RuntimeError('sentence omission requires the staged native percept slots')
-    active = isp._word_active_mask
-    isp._finalize_sentence_word_layout(active)
-    sentences = isp._packed_sentence_ids
-    forms = torch.zeros_like(valid)
-    words = torch.zeros_like(active)
-    protected = {}
-    for sid in range(isp._packed_sentence_slot_mask.shape[1]):
-        here = active & (sentences == sid)
-        draw = model.omission.draw(valid & here[..., None], training=model.training)
-        forms |= draw.forms
-        words |= draw.words
-        protected[sid] = draw.protected
-    # Keep the original targets even before the first omission, so accuracy
-    # can raise the rate. No consumer on the forward path receives this dict.
-    original = model._staged_concepts_in.detach().clone()
+    width = valid.shape[-1]
+    forms = torch.nn.functional.pad(draw.forms, (0, max(0, width-draw.forms.shape[-1])))
+    if forms.shape[-1] > width and bool(forms[..., width:].any()):
+        raise ValueError('an omitted percept disappeared from its staged layout')
+    forms = forms[..., :width]
+    prepared['draw'] = Draw(draw.words, forms, draw.protected)
     native = {key: value.detach().clone() if torch.is_tensor(value) else value
               for key, value in ps._forward_input.items()}
-    model._omission_targets = dict(raw=original, native=native,
-        word_values=isp._ar_embedded_N.detach().clone(), valid=valid.detach().clone(),
-        ids=isp._ar_word_part_ids.detach().clone(), offsets=isp._ar_word_part_offsets.detach().clone(),
-        draw=Draw(words, forms, protected), sentences=sentences.detach().clone())
+    word_values = isp._ar_embedded_N.detach().clone()
+    spans = torch.zeros(*valid.shape, 2, dtype=torch.long, device=valid.device)
+    fi_spans = ps._forward_input['part_spans'].reshape(*valid.shape, 2)
+    spans.copy_(fi_spans)
+    prepared.update(native=native, word_values=word_values, valid=valid.detach().clone(),
+                    ids=isp._ar_word_part_ids.detach().clone(), spans=spans,
+                    word_bytes=tuple(tuple(raw[lo:hi] for lo, hi in units)
+                                     for raw, units in prepared['units']))
+    model._omission_targets = prepared
     if not bool(forms.any()):
+        prepared.pop('bytes')
+        prepared.pop('units'); prepared.pop('plans')
         return
-    changed = forms.any(-1)
-    # Keep the original sub-brackets; a zero is neither padding nor a token.
-    byte_mask = torch.zeros_like(original[:, 0], dtype=torch.bool)
-    for row, word, part in forms.nonzero().tolist():
-        part_id = int(isp._ar_word_part_ids[row, word, part])
-        lo = int(isp._ar_word_part_offsets[row, word, part])
-        hi = lo + len(ps.percept_store.bytes_for(part_id))
-        byte_mask[row, lo:hi] = True
-    model._omission_targets['bytes'] = byte_mask
-    model._staged_concepts_in = original.masked_fill(byte_mask[:, None], 0)
+    values, native_valid = native_values(ps, prepared['units'])
+    prepared.update(native_values=values, native_valid=native_valid)
+    identity = getattr(ps.percept_store, 'identity', None)
+    for b, w in forms.any(-1).nonzero().tolist():
+        raw, units = prepared['units'][b]
+        lo, hi = units[w]
+        if identity is not None:
+            form = identity.form(raw[lo:hi]).to(word_values)
+            word_values[b, w, :ps.nWhat] = 0
+            word_values[b, w, :len(form)] = form
+        else:
+            word_values[b, w, :ps.nWhat] = values[b, lo:hi].amax(0)
+    original = prepared['raw']
+    model._staged_concepts_in = original.masked_fill(prepared['bytes'][:, None], 0)
     object.__setattr__(model, '_ws_universe', model._staged_concepts_in)
-    isp._ar_word_part_ids = isp._ar_word_part_ids.masked_fill(forms, -1)
-    ps._serial_word_part_ids = isp._ar_word_part_ids
-    slab = isp._ar_embedded_N
-    width = int(ps.nWhat)
-    # Reconstruct the visible form, preserving the preallocated word layout.
-    visible = ps.synthesize_word_parts(isp._ar_word_part_ids, valid, isp._ar_word_part_offsets)
-    isp._ar_embedded_N = torch.where(changed[..., None], visible.to(slab), slab)
-    ps._embedded_input = isp._ar_embedded_N
-    ps.subspace.set_event(isp._ar_embedded_N)
-    fi = dict(ps._forward_input)
-    for key in ('indices', 'native_indices'):
-        if key not in fi:
-            continue
-        ids = fi[key].clone()
-        spans = fi['native_part_spans' if key == 'native_indices' else 'part_spans']
-        for row in range(len(ids)):
-            for index, (lo, hi) in enumerate(spans[row].tolist()):
-                if hi > lo and bool(byte_mask[row, lo:hi].any()):
-                    ids[row, index] = -1
-        fi[key] = ids
-    if 'seed_event' in fi:
-        seed = fi['seed_event']
-        hidden = fi['indices'] < 0
-        fi['seed_event'] = torch.cat((seed[..., :width].masked_fill(hidden[..., None], 0),
-                                      seed[..., width:]), -1)
-    fi['word_part_indices'] = isp._ar_word_part_ids
-    for key in ('word_texts', 'tokens'):
-        if key in fi:
-            fi[key] = [[('\0' * len(value) if isinstance(value, str) else b'\0' * len(value))
-                        if word < changed.shape[1] and bool(changed[row, word]) else value
-                        for word, value in enumerate(values)] for row, values in enumerate(fi[key])]
-    ps._forward_input = fi
-    # These are alternate references to the same lexical stem, not targets.
-    ps._last_tokens = fi.get('tokens', ())
+    # A direct input names only the document actually presented. Explicit
+    # dataset/conversation provenance remains authoritative.
+    from Occurrence import restage_presented
+    restage_presented(model, model._staged_concepts_in)
+    prepared.pop('units'); prepared.pop('plans')
 
 
 def target(model):
@@ -188,9 +232,7 @@ def observe(model, sid, reverse, *, active=None):
     if active is not None:
         valid = valid & active[:, None, None]
     for row, word, part in valid.nonzero().tolist():
-        pid = int(targets['ids'][row, word, part])
-        lo = int(targets['offsets'][row, word, part])
-        hi = lo + len(model.perceptualSpace.percept_store.bytes_for(pid))
+        lo, hi = targets['spans'][row, word, part].tolist()
         correct[row, word, part] = hi <= decoded.shape[1] and torch.equal(decoded[row, lo:hi], raw[row, lo:hi])
     draw = targets['draw']
     model.omission.observe(correct, valid, Draw(draw.words, draw.forms, draw.protected[sid]))

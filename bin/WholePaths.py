@@ -50,6 +50,8 @@ class Path:
     construction: object = None
     output_trace: object = None
     draw: object = None
+    compose_forced_slots: object = None
+    attention_words: object = None
 
 
 def fields(model, observation, sid):
@@ -179,7 +181,11 @@ def answer_cost(model, construction, thoughts, questions, active, registry, *, s
 def finish(model, state, sid, active, *, base=None, draw=None):
     """Run only the suffix after this path's departure, ending before a write."""
     if base is not None and not bool((draw['walk'] >= 0).any()):
-        return replace(base, draw=draw)
+        from WalkTrials import _copy_containers
+        registry = Error(row_mask=base.registry.row_mask)
+        registry._terms = _copy_containers(base.registry._terms)
+        registry._disabled = set(base.registry._disabled)
+        return replace(base, registry=registry, draw=draw)
     from SentenceField import publish, reconstruct
     from WalkTrials import ThoughtTrialState
     from SentenceCredit import components
@@ -272,8 +278,10 @@ def finish(model, state, sid, active, *, base=None, draw=None):
             cost, construction, output_trace = None, None, None
         effects = ThoughtTrialState(model)
         parts = components(registry, expectation, observation['record'].root.sum(-1)*0, answer=cost)
+        forced = (getattr(model, '_compose_forced_slots', None) if reading else base.compose_forced_slots)
+        attention = (getattr(model, '_attention_words', None) if reading else base.attention_words)
         return Path(state, rebuilt, observation, pending, registry, parts, thinking, effects, before_output,
-                    construction, output_trace, draw)
+                    construction, output_trace, draw, forced, attention)
     finally:
         before.restore()
         model._sentence_fields = original_fields
@@ -334,8 +342,11 @@ def objectives(paths, parts, active, draws):
                     registry._terms[name] = dict(term,
                         multiplier=term.get('multiplier', 1.) * weights[:, index])
         costs = registry_costs(registry, reader_rows=weights[:, index])
-        combine(result, {name: value * (scale if name.split('.')[0] in ('reconstruction', 'expectation')
-                                       and not name.endswith('.A') else 1.)
+        # Every ordinary path cost has the same exposure, including lessons,
+        # attention and regularizers. Answer costs already carry reader rows;
+        # answer-side departure credits occur once at their selected walk.
+        combine(result, {name: value * (1. if name in ('output', 'chooser', 'penalty.output')
+                                       or name.endswith('.A') else scale)
                          for name, value in costs.items()})
     return result, weights
 
@@ -369,6 +380,11 @@ def keep_output(model, paths, selected, sid):
     from SentenceBoundary import detached
     from Output import AnswerConstruction
     rows = [paths[index].construction for index in selected.tolist()]
+    active = (torch.ones_like(selected, dtype=torch.bool) if sid is None else
+              model.inputSpace._packed_sentence_slot_mask[:, int(sid)])
+    previous = getattr(model, '_kept_path_output', None)
+    if previous is not None:
+        rows = [value if bool(active[row]) else previous for row, value in enumerate(rows)]
     if not rows or all(row is None for row in rows):
         model._kept_path_output = None
         return
@@ -400,8 +416,14 @@ def keep_output(model, paths, selected, sid):
         concepts=stack('concepts'), percepts=stack('percepts'), surface=stack('surface'),
         trace=rows[0].trace, texts=tuple(value.texts[row] for row, value in enumerate(rows)))
     model._kept_path_output = detached(result)
-    model._kept_path_output_actions = torch.stack([paths[index].output_trace[0][row]
-                                                  for row, index in enumerate(selected.tolist())]).detach()
+    old_actions = getattr(model, '_kept_path_output_actions', None)
+    actions = [old_actions[row] if previous is not None and not bool(active[row])
+               else paths[index].output_trace[0][row]
+               for row, index in enumerate(selected.tolist())]
+    width = max(value.shape[0] for value in actions)
+    model._kept_path_output_actions = torch.stack([
+        torch.nn.functional.pad(value, (0, width - value.shape[0]), value=-1)
+        for value in actions]).detach()
 
 
 def output_only(model, understanding, questions, *, score=None):

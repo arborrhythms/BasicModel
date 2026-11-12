@@ -935,7 +935,12 @@ generation is expected at this stage and is recorded, not tuned away.
    authorized thought-store growth uses the existing sentence structure
    bound: the original 44-row thought now fits, with initial allocation
    unchanged. The measured freeze and returned repairs retain separate
-   receipts. This round is uncommitted. See the [return](doc/plans/2026-11-11-one-pair-per-stage.md#9-return-2026-11-11).
+   receipts. The accepted round landed as `b35a4bd316` with landing record
+   `d88acd3fab` on 2026-11-12. Its five completion findings are repaired as
+   item 2.0, with 42 targeted tests passing on source `a22afbd67871f`;
+   the repairs are committed and pushed before item 1.8. Alec replaced this
+   repair's sweep with targeted testing and requested the full standard
+   suite after item 1.8, without `RUN_SLOW`. See the [completion return](doc/plans/2026-11-11-one-pair-per-stage.md#12-completion-return-2026-11-12).
 - **2. Housekeeping.** *Moved to item 0.5 on 2026-11-09 (Alec): bounded-test
    batching, D5, the deferred slow marks, the weekly sweep, the per-interval
    logger, the resume certificate and two stale test entries.*
@@ -2057,3 +2062,5 @@ Landed as 984a75b20e88d5b052011adb31ccd90d28234519, 2026-11-11
 - 2026-11-12 (Alec: "You need to review."): nothing new from Codex (no landing, no return; the source is still `26dd5a0bda60`), so Claude reviewed its own item 2.0 completion text ([whole-path specification](doc/plans/2026-11-11-one-pair-per-stage.md) section 11), which it had handed over unchecked. Three corrections, recorded under the text: the list of documents changed since the return; the omission certificate's edit named by content; and the XOR class certificate measured by its criterion rather than run under `RUN_TRAINED=1`, where it fails for its absent phase artifact. The text is final again.
 
 Landed as b35a4bd3167049b9ef3559104d478d89fd869e80, 2026-11-12
+
+- 2026-11-12 (item 2.0 completion): all five whole-path review findings and the shared-registry finding are repaired at their producers, with 42 targeted cases passing on `a22afbd67871f`. Alec authorized committing and pushing these repairs as 2.0 before any 1.8 work, superseding the review hold in whole-path §11. Adequate targeted testing now; the full standard suite after 1.8, with `RUN_SLOW` unset. The [return](doc/plans/2026-11-11-one-pair-per-stage.md#12-completion-return-2026-11-12) records the landing, before/after checks and local receipts; no item 1.8 implementation is included.

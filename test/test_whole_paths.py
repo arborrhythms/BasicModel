@@ -294,6 +294,19 @@ def test_hidden_word_changes_only_loss_targets_through_the_close(tmp_path, monke
         if isinstance(value, (tuple, list)):
             return tuple(snapshot(item) for item in value)
         return value
+    def identical(first, second, label):
+        if torch.is_tensor(first):
+            torch.testing.assert_close(first, second, rtol=0, atol=0, msg=label)
+        elif isinstance(first, Mapping):
+            assert first.keys() == second.keys(), label
+            for key in first:
+                identical(first[key], second[key], label)
+        elif isinstance(first, (tuple, list)):
+            assert len(first) == len(second), label
+            for a, b in zip(first, second, strict=True):
+                identical(a, b, label)
+        else:
+            assert first == second, label
     for text in ('alpha gamma', 'alpha delta'):
         torch.random.set_rng_state(initial)
         model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8', input_width=32,
@@ -320,10 +333,14 @@ def test_hidden_word_changes_only_loss_targets_through_the_close(tmp_path, monke
         with monkeypatch.context() as patch:
             patch.setattr(WholePaths, 'finish', observed)
             model.runBatch(train=True, optimizer=model.getOptimizer(lr=.003), batchSize=1,
-                document_keys=[('omission-comparison', 0)],
                 batch_override=(model.inputSpace.prepInput([text]), torch.empty(1, 0)))
         store = model.symbolSpace.ltm_store
         record['writes'] = store.slots.detach().clone()
+        native = model.perceptualSpace.percept_store
+        record['percept_store'] = snapshot(dict(addresses=native.hash_map,
+            values=native._basis.W, witnesses=native.identity.word_witnesses,
+            words=native.identity.words, size=len(native)))
+        record['occurrences'] = snapshot((model._sentence_sources, store.address_keys))
         record['word_values'] = model.inputSpace._ar_embedded_N.detach().clone()
         owner = model._concept_owner()
         record['expectation'] = snapshot(dict(
@@ -336,8 +353,8 @@ def test_hidden_word_changes_only_loss_targets_through_the_close(tmp_path, monke
         captures.append(record)
         model.End()
         model.symbolSpace.soft_reset()
-    for key in ('root', 'reconstructed', 'writes', 'word_values', 'expectation'):
-        torch.testing.assert_close(captures[0][key], captures[1][key], rtol=0, atol=0, msg=key)
+    for key in ('percept_store', 'occurrences', 'root', 'reconstructed', 'writes', 'word_values', 'expectation'):
+        identical(captures[0][key], captures[1][key], key)
     assert not torch.equal(captures[0]['target'], captures[1]['target'])
 
 

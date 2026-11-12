@@ -136,7 +136,8 @@ def test_report_keeps_only_the_selected_whole_path_realization(streams):
         return AnswerConstruction(x[:,None], None, x[:,None], x[:,None], x[:,None], (), tuple(map(str,x.tolist())))
     paths = [SimpleNamespace(construction=output(values), output_trace=(torch.zeros(streams,1,dtype=torch.long),)),
              SimpleNamespace(construction=output(values*2), output_trace=(torch.ones(streams,1,dtype=torch.long),))]
-    model = SimpleNamespace()
+    model = SimpleNamespace(inputSpace=SimpleNamespace(
+        _packed_sentence_slot_mask=torch.ones(streams, 1, dtype=torch.bool)))
     keep_output(model, paths, torch.tensor([1,0])[:streams], 0)
     torch.testing.assert_close(model._kept_path_output.actual[:,0], torch.tensor([2.,2.])[:streams])
     assert model._kept_path_output_actions[:,0].tolist() == [1,0][:streams]

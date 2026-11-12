@@ -108,6 +108,12 @@ def native_target(model, field):
     ps = model.perceptualSpace
     from Omission import target as omission_target
     targets = omission_target(model)
+    if targets is not None and 'native_values' in targets:
+        values, valid = targets['native_values'], targets['native_valid']
+        positions = torch.arange(values.shape[1], device=values.device).expand(len(values), -1)
+        owned = ((positions[:, :, None] >= field.where[:, None, :, 0]) &
+                 (positions[:, :, None] < field.where[:, None, :, 1])).any(-1)
+        return ps._radix_code_events(values.clone(), positions).detach() * (valid & owned)[..., None]
     native = ps._forward_input if targets is None else targets['native']
     ids, spans = native['native_indices'], native['native_part_spans']
     # A promoted native part can span several bytes on the parallel path.
@@ -197,7 +203,14 @@ def reconstruct(model, record, errors, active, *, previous=None):
             observed=record.word_values[..., :prior.shape[-1]].detach(),
             residual_loss=squared.detach(),
             full_loss=(rebuilt - record.word_values[..., :prior.shape[-1]].detach()).square().detach()),)
-        residual = (squared * record.word_valid[..., None]).sum((1, 2)) / (record.word_valid.sum(-1) * prior.shape[-1]).clamp_min(1)
+        valid = record.word_valid
+        hidden = None if targets is None else targets.get('bytes')
+        if hidden is not None:
+            positions = torch.arange(hidden.shape[1], device=hidden.device)
+            omitted = ((positions[None, None] >= field.where[..., :1]) &
+                       (positions[None, None] < field.where[..., 1:]) & hidden[:, None]).any(-1)
+            valid = valid & ~omitted
+        residual = (squared * valid[..., None]).sum((1, 2)) / (valid.sum(-1) * prior.shape[-1]).clamp_min(1)
         errors.error('reconstruction.free_percept', residual, 1., mask=active,
             weight=model.loss.reconstruction_scale, category='reconstruction')
     truncated = missing > 0

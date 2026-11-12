@@ -1363,3 +1363,135 @@ fails it strictly for the absent `xor_grammar` artifact, but measured by
 its criterion as the round's fits were.
 
 Landed as b35a4bd3167049b9ef3559104d478d89fd869e80, 2026-11-12
+
+## 12. Completion return (2026-11-12)
+
+The accepted whole-path round is landed and pushed. The five §10.3 defects
+and its shared-registry finding are repaired as **item 2.0**. This return
+goes through Alec for Claude's review; it contains no item 1.8 implementation.
+
+### 12.1 Landing and Alec's amendments
+
+The initial source matched
+`26dd5a0bda6089469a04c91d1a11afc8d6ed2d300f3bf9749ac5c03b80afb633`
+exactly (1,051 files). The changed handwritten documents were the six
+named in §11. The one document-link run passed **1,014** cases. The
+accepted implementation landed as
+`b35a4bd3167049b9ef3559104d478d89fd869e80`; its landing record is
+`d88acd3fab28951bb04baee7076b87cf4b5fcf90`. Main was pushed once and the
+tree was clean before these repairs.
+
+Alec subsequently amended §11 in this session:
+
+- “Please do only spot testing for the 2.0 findings,” then “Do adequate
+  testing, and full testing after 1.8,” followed by “But not run_slow
+  tests, just the full suite.” The validation below is targeted. The
+  completion sweep, extra stopping-gate run and one XOR fit in §11 were
+  superseded; no new measurement campaign was run. The standard full
+  suite is due after item 1.8, with `RUN_SLOW` unset.
+- “Repairs should not be uncommitted. If they are a fix for 2.0 issues,
+  they should be included.” This supersedes §11's prohibition on commits
+  and pushes after step 3. These repairs are committed and pushed as 2.0
+  completion, before item 1.8. The exact completion commit and push are
+  recorded in the receipt's `landing.json`.
+
+### 12.2 Five repairs and their before/after certificates
+
+| Finding | Before | After |
+| --- | --- | --- |
+| Omission admission and provenance | Changing only the hidden word changed percept-store keys and the direct-input occurrence address; the old fixture supplied an explicit identity to hide the latter. | The fixture supplies no explicit identity. Percept addresses, basis values, witnesses, words, occurrence addresses, input roots, reconstructed values, durable writes and expectation state are exactly equal; only detached targets differ. |
+| Omission's free-percept loss | Two brackets, one omitted, gave loss **41**. | The visible bracket alone gives **1**, with gradient **[2, 0]** over the two brackets. Partial omission also leaves the hidden atom and complete word identity absent while admitting the retained atoms. |
+| Packed output | After the second slot, row texts were **('', 'last')**. | They are **('first', 'last')**: each row keeps its last present sentence's payload, text and actions, including unequal payload/action widths. |
+| Thought departure | Restoring row 0 also changed row 1's already composed value from **30** back to **3**. | Row 0 reads its fork's value **2**, row 1 keeps **30**, its coordinates stay intact, and the shared clock stays at **11**. |
+| Two explore paths' credit | The first credit read the last path's compose mask: **2 of 152** positions differed from its own saved state. | Both distinct, legal compose departures read their own exact masks and attention state. |
+| All-path exposure | Three paths contributed **3** units to the unscaled lessons, attention and regularizers. | Their total is **2** under `2/(1+K)`; answer and `penalty.output` retain total reader weight **1**. |
+| No-departure registry | An attention lesson added to the exploit appeared in the reused alternative's shared registry. | The alternative has an independent registry container; the late booking is absent and its original reconstruction cost remains **2**. |
+
+**Omission.** `Omission.prepare` draws on the existing lexical layout
+before `PartSpace` admits bytes, word identities or witnesses. A partial
+word admits only its visible form parts. Hidden IDs remain `-1`; the
+loss-side spelling supplies snapshots without consulting an unadmitted ID.
+`Occurrence.restage_presented` recalculates a direct input's provenance
+from its visible bytes; explicit dataset/conversation provenance stays
+authoritative. `SentenceField` masks omitted brackets in both the
+free-percept numerator and denominator.
+
+Original word forms and native events remain detached loss targets.
+Known native bytes use their existing codes. An unseen target byte uses
+the store's existing normalized-Gaussian initializer with a private copy
+of the CPU random state: it creates no inventory row and consumes no
+forward random draw. This supplies the original reconstruction target
+without admitting hidden contents. No persistent capacity changes.
+
+**State and reports.** `WholePaths.keep_output` uses the packed slot mask
+to retain each stream's previous output when that stream is absent.
+`ThoughtTrialState.restore(row=...)` selects only the departing stream's
+state and preserves the latest shared clock. Each `Path` holds its compose
+mask and attention state; the credit driver restores both before scoring
+that path.
+
+**Exposure.** All ordinary costs present on every path receive
+`2/(1+K)`, including compose/generate lessons, attention and regularizers.
+The exceptions are deliberate: output and `penalty.output` already carry
+reader weights; chooser and `.A` departure terms are booked at the chosen
+departure and are not all-path lessons. Output walk residuals retain their
+existing reader multiplier. The exploit's reading lesson is observed once
+and added outside the all-path sum, unscaled. The no-departure registry
+finding is confirmed and repaired using the existing container-copy
+routine, preserving live tensors while isolating later bookings.
+
+### 12.3 Validation and ports
+
+The seven new direct cases are in `test/test_whole_path_repairs.py`; the
+strengthened hidden-word case remains in `test/test_whole_paths.py`.
+Before-repair logs record failing assertions for all five findings and
+the shared registry. The final eight-case direct run passed **8/8**.
+
+The final affected-file run, with both `RUN_TRAINED` and `RUN_SLOW` unset,
+passed **42/42** in **25.93 seconds**:
+
+```
+test/test_whole_path_repairs.py
+test/test_whole_paths.py
+test/test_generation_selection_backward.py
+test/test_sentence_comparison.py
+```
+
+Before Alec narrowed testing, a broader 324-case selection was interrupted
+at his request after 108 cases: **92 passed, 15 skipped, 1 failed**. That
+failure exposed the initial registry-copy repair's assumption that every
+term contains `values`; `Error.error` terms do not. It was repaired at
+`WholePaths.finish` using the existing generic container copier. The
+failing native case and direct registry case then passed, and the entire
+affected file passed in the final run above. The partial run is retained
+as partial evidence, not a completed sweep. Earlier direct and targeted
+runs, including their intermediate failures, remain in `commands.json`.
+
+There are two changed existing test definitions: the hidden-word case is
+strengthened as required, and the selected-output fixture now declares
+its packed sentence mask for both stream parameters, with assertions
+unchanged. `ports.json` contains their complete before/after text and the
+seven new cases. No tests, production facilities or terms are retired;
+no fixture capacity, seed or threshold is changed to pass.
+
+The accepted round's ten XOR fits, lesson measurements and sweep remain
+those of §9/§10. No new learning claim is made. The known sparse-concept
+failure remains carried to item 1.5; this targeted return does not certify
+the full suite.
+
+### 12.4 Frozen source and receipt
+
+The repaired source is
+`a22afbd67871f95acd69e1d0e268251b4c0f7a72c97dd82becd541d47cabc5e2`
+(**1,052 files**), using `test/bounded_tests.source_snapshot(Path('.'))`
+and SHA-256 of its compact sorted JSON. The final targeted run used this
+source. Only the return and documentation were written afterward.
+
+The ignored local receipt is
+`doc/benchmarks/2026-11-12-whole-path-repairs/`: `commands.json`,
+`before-source.json`, `frozen-source.json`, `source.patch` against
+`d88acd3fab`, `ports.json`, `offered-documents.json`,
+`validation-amendment.json`, `spot-results.json`, `final-audit.json`,
+the before/after logs and `landing.json`. Offered documents are sealed
+for this targeted return; no sweep is claimed. Generated evidence stays
+local under the existing ignore rule.

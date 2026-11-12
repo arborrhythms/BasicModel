@@ -6083,7 +6083,7 @@ class BasicModel(BaseModel):
             trace, fork = path.thought_trace(row)
             self._thought_walk = trace
             if fork is not None:
-                fork['state'].restore()
+                fork['state'].restore(row=row)
                 work = fork['work']
         try:
             result = self._run_selected_thought_once(meaning, row=row,
@@ -11762,6 +11762,9 @@ class BasicModel(BaseModel):
                 for w in range(W):
                     if not live[b][w]:
                         continue
+                    if targets is not None:
+                        spellings[b][w] = targets['word_bytes'][b][w]
+                        continue
                     chunks = []
                     for pid, valid in zip(ids[b][w], masks[b][w]):
                         if valid:
@@ -13608,10 +13611,14 @@ class BasicModel(BaseModel):
                 _unit_rows = [[(int(a), int(z)) for (a, z) in row.tolist() if z > a]
                               for row in _spans_full.detach().to("cpu")]
             object.__setattr__(self.perceptualSpace, "_staged_unit_spans", _unit_rows)
+            from Omission import prepare as prepare_omission
+            object.__setattr__(self.perceptualSpace, '_omission_prepare',
+                (lambda units: prepare_omission(self, units)) if self.word_brackets and not target_only else None)
             try:
                 self.perceptualSpace.embed_stem(in_sub)
             finally:
                 object.__setattr__(self.perceptualSpace, "_staged_unit_spans", None)
+                object.__setattr__(self.perceptualSpace, '_omission_prepare', None)
             self.inputSpace.finalize_stem(in_sub, self.perceptualSpace)
             if target_only:
                 return in_sub
@@ -21404,6 +21411,8 @@ class BasicModel(BaseModel):
                         self._sentence_departure = draw
                         self._sentence_cost_registry = candidate.registry
                         self._publish_sentence_scratch(candidate.state)
+                        self._compose_forced_slots = candidate.compose_forced_slots
+                        self._attention_words = candidate.attention_words
                         pair = costs[:, [0, path_index]]
                         if bool(((draw['walk'] >= 0) & (draw['walk'] < 4)).any()):
                             self._compose_score_function_loss(candidate.state, pair)
@@ -21431,10 +21440,14 @@ class BasicModel(BaseModel):
                                 category='other', objective='attention', side='A')
                         path_credit(self, complete_paths[0], candidate, present)
                     taught = field_trials[0].lesson_cost() if field_trials[0] is not None else None
-                    if taught is not None:
-                        complete_paths[0].registry.add('attention.reading_lesson', taught,
-                            category='other', objective='attention')
                     single_costs, weights = path_objectives(complete_paths, parts, present, draws)
+                    if taught is not None:
+                        # The reading lesson is observed once on the exploit,
+                        # outside the costs exposed on every complete path.
+                        lesson = Error(row_mask=present)
+                        lesson.add('attention.reading_lesson', taught,
+                            category='other', objective='attention')
+                        combine(single_costs, current_costs(self, lesson, sentence=True))
                     self._sentence_reader_weights = weights
                     self._sentence_reader_updates += int(any(p.construction is not None or
                         p.registry.total(objective='output') is not None for p in complete_paths))

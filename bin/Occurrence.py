@@ -130,6 +130,7 @@ def prepared_input(space, raw, result):
 
 def stage_sources(model, split, source_rows, inputs, document_keys=None):
     """Source coordinates for each packed sentence, before any learned reading."""
+    model._source_request = (split, source_rows, document_keys)
     data = getattr(getattr(model, 'inputSpace', None), 'data', None)
     addresses = getattr(data, 'source_addresses', {}).get(str(split), ())
     batch = int(inputs.shape[0]) if torch.is_tensor(inputs) else len(inputs)
@@ -166,6 +167,12 @@ def stage_sources(model, split, source_rows, inputs, document_keys=None):
     if memory is not None:
         memory._address_sources = {b: (('thought', row[0][0], row[0][1]), 0)
                                    for b, row in enumerate(result) if row}
+
+
+def restage_presented(model, inputs):
+    """Update direct-input provenance after omission, before any sentence read."""
+    split, rows, documents = model._source_request
+    stage_sources(model, split, rows, inputs, documents)
 
 
 def address_at(model, batch, slot):

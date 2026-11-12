@@ -150,7 +150,25 @@ class ThoughtTrialState:
             if '_live_chunk_truth' in values:
                 values['_live_chunk_truth'] = values['_live_chunk_truth'].clone()
 
-    def restore(self, *, effects_only=False):
+    def restore(self, *, effects_only=False, row=None):
+        if row is not None:
+            if effects_only:
+                raise ValueError('row restoration requires the complete thought state')
+            from copy import copy
+            current = type(self)(self.model)
+            departing = copy(self)
+            # One global clock must not undo another stream's later thought.
+            departing.clock = torch.maximum(self.clock, current.clock)
+            if self.store_clock is not None:
+                departing.store_clock = (self.store_clock[0],
+                    torch.maximum(self.store_clock[1], current.store_clock[1]))
+            batch = len(self.model._what_memory()._what_slots)
+            if not 0 <= int(row) < batch:
+                raise IndexError('thought departure stream is outside the active batch')
+            selected = torch.zeros(batch, dtype=torch.long, device=self.clock.device)
+            selected[int(row)] = 1
+            type(self).keep((current, departing), selected)
+            return
         if not effects_only:
             self.model.when_time.copy_(self.clock)
             self.model.when_encoding.t = self.model.present()
