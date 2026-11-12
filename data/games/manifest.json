@@ -1,0 +1,142 @@
+{
+ "command": "python bin/game_corpus.py freeze --seed 20261112 --recipes data/games/recipes --out data/games",
+ "files": [
+  {
+   "game": "conjunction",
+   "path": "conjunction/predicates.jsonl",
+   "recipe": "recipes/conjunction.json",
+   "recipe_sha256": "da471b3021fd4954087e4b934a0a81a2f76cb22bd605dae6f70ab393c5272630",
+   "rows": {
+    "test": 35,
+    "train": 130,
+    "transfer": 268,
+    "validation": 15
+   },
+   "sha256": "2e78fd595e7e4fddcba61e0895a87c15ccdebc201c09887d0a068e7b373ed522",
+   "tier": "template",
+   "variant": "predicates",
+   "verify": {
+    "accepted": 448,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "conjunction",
+   "path": "conjunction/subjects.jsonl",
+   "recipe": "recipes/conjunction.json",
+   "recipe_sha256": "da471b3021fd4954087e4b934a0a81a2f76cb22bd605dae6f70ab393c5272630",
+   "rows": {
+    "test": 35,
+    "train": 130,
+    "transfer": 268,
+    "validation": 15
+   },
+   "sha256": "c57ceb14c6c7b99eae85ce191f2d4bb9e5f5de93335414f60f2901f68e3bff77",
+   "tier": "template",
+   "variant": "subjects",
+   "verify": {
+    "accepted": 448,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "not",
+   "path": "not/clause.jsonl",
+   "recipe": "recipes/not.json",
+   "recipe_sha256": "ed52f35ca704b1d0efa930439c57bcc436059e8a2379d93019b8be131603e18e",
+   "rows": {
+    "test": 7,
+    "train": 26,
+    "transfer": 28,
+    "validation": 3
+   },
+   "sha256": "13755b0fc2077ee8af84ca733da8dc42f19c32933aaebc49fe6b4b5c94d7bc2f",
+   "tier": "template",
+   "variant": "clause",
+   "verify": {
+    "accepted": 64,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "not",
+   "path": "not/copula.jsonl",
+   "recipe": "recipes/not.json",
+   "recipe_sha256": "ed52f35ca704b1d0efa930439c57bcc436059e8a2379d93019b8be131603e18e",
+   "rows": {
+    "test": 2,
+    "train": 19,
+    "transfer": 16,
+    "validation": 3
+   },
+   "sha256": "93ee0f53fda01ccf4c6f5b6306f5654de54d01edd99695b861c948779b4ee849",
+   "tier": "template",
+   "variant": "copula",
+   "verify": {
+    "accepted": 40,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "unary_chain",
+   "path": "unary_chain/k1.jsonl",
+   "recipe": "recipes/unary_chain.json",
+   "recipe_sha256": "b78bf8d36e8865c8958ef8d2d00a56357c4d6cd13deb9544e543d40a57820b8a",
+   "rows": {
+    "test": 5,
+    "train": 23,
+    "transfer": 18,
+    "validation": 2
+   },
+   "sha256": "6d2131b2b5bfeadbe9f63d0d6c15e5c10b304c0f9a8c32bd115757ca95493cbe",
+   "tier": "template",
+   "variant": "k1",
+   "verify": {
+    "accepted": 48,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "unary_chain",
+   "path": "unary_chain/k2.jsonl",
+   "recipe": "recipes/unary_chain.json",
+   "recipe_sha256": "b78bf8d36e8865c8958ef8d2d00a56357c4d6cd13deb9544e543d40a57820b8a",
+   "rows": {
+    "test": 5,
+    "train": 23,
+    "transfer": 18,
+    "validation": 2
+   },
+   "sha256": "69189f19e197283bdf8cb19172343da5b1cabe4fd25c9466694dff3ef571fc5f",
+   "tier": "template",
+   "variant": "k2",
+   "verify": {
+    "accepted": 48,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "unary_chain",
+   "path": "unary_chain/k3.jsonl",
+   "recipe": "recipes/unary_chain.json",
+   "recipe_sha256": "b78bf8d36e8865c8958ef8d2d00a56357c4d6cd13deb9544e543d40a57820b8a",
+   "rows": {
+    "test": 5,
+    "train": 23,
+    "transfer": 18,
+    "validation": 2
+   },
+   "sha256": "800df2432ca2ab607ca474777ac455427bdf11224c62c3cd6d7ae5825ff17fa0",
+   "tier": "template",
+   "variant": "k3",
+   "verify": {
+    "accepted": 48,
+    "rejected": 0
+   }
+  }
+ ],
+ "generator": "bin/game_corpus.py",
+ "schema": 1,
+ "seed": 20261112,
+ "split_rule": "sha256 of the first source's normalized text modulo ten: 0 to 7 train, 8 validation, 9 test; a row with a transfer filler is transfer"
+}

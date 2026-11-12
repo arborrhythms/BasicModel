@@ -1,0 +1,103 @@
+{
+ "schema": 1,
+ "phase": "verb",
+ "lesson": 4,
+ "criterion": {
+  "measure": "occupant_definiteness_and_answers",
+  "threshold": null,
+  "declared_by": "Alec",
+  "note": "the object argument's class definite, and the answers (lesson 4)"
+ },
+ "measure": [
+  "Bill",
+  "sees",
+  "Felix"
+ ],
+ "fillers": {
+  "name": [
+   {
+    "form": "Felix"
+   },
+   {
+    "form": "Ciao"
+   },
+   {
+    "form": "Bill"
+   },
+   {
+    "form": "Anna"
+   }
+  ],
+  "verb": [
+   {
+    "third": "sees",
+    "base": "see"
+   },
+   {
+    "third": "likes",
+    "base": "like"
+   },
+   {
+    "third": "follows",
+    "base": "follow"
+   },
+   {
+    "third": "hears",
+    "base": "hear"
+   }
+  ]
+ },
+ "heldout": {
+  "name": [
+   {
+    "form": "Nora"
+   }
+  ],
+  "verb": [
+   {
+    "third": "helps",
+    "base": "help"
+   }
+  ]
+ },
+ "variants": {
+  "subject": {
+   "slots": {
+    "a": "name",
+    "t": "verb",
+    "b": "name"
+   },
+   "distinct": [
+    [
+     "a",
+     "b"
+    ]
+   ],
+   "sentences": [
+    "{a.form} {t.third} {b.form}.",
+    "Who {t.third} {b.form}?"
+   ],
+   "question": 1,
+   "answer": "{a.form}"
+  },
+  "object": {
+   "slots": {
+    "a": "name",
+    "t": "verb",
+    "b": "name"
+   },
+   "distinct": [
+    [
+     "a",
+     "b"
+    ]
+   ],
+   "sentences": [
+    "{a.form} {t.third} {b.form}.",
+    "Who does {a.form} {t.base}?"
+   ],
+   "question": 1,
+   "answer": "{b.form}"
+  }
+ }
+}

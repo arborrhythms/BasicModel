@@ -1,0 +1,82 @@
+{
+ "command": "python bin/lesson_stages.py freeze --seed 20261112 --recipes data/lessons/recipes --out data/lessons",
+ "file": "parts-of-speech.json",
+ "generator": "bin/lesson_stages.py",
+ "recipes": {
+  "00-words.json": "fed803ed91213859c09ff3b99fb0c4aa722ce18ee25a42a121d42866ddcdc231",
+  "01-interpret.json": "3ff2a243ab9b7be7fd5bccaf6e9b66b8a7e0f327eefdcb77ab56feeb4e794794",
+  "02-clause.json": "a5d1759dcab66d0fad7024f8cf64f912d26604ef33b93d1e33f6fff6eb9db1cb",
+  "03-ask.json": "e3b6182191922972c7b93f6cb81775ed93ad60b6ddc75c794040c1139867c24c",
+  "04-verb.json": "0683d1eb1601dcb57dbdd488860135daa0f4938f7e25c55bca15f3adfd20d1cb",
+  "05-modifiers.json": "537331bd83a1044c337d791fa342449766c961eba0145b233333305f61fe287f",
+  "06-determiners.json": "e8992c1becd236e37ade42db505b56e21c77c312241fce7d4f02079b461844cf",
+  "07-adverb.json": "530f21ca187bcb0c38afc38117a2abe23a50bd67b927e62da92c91c58b11efaa",
+  "08-prepositions.json": "c2b2dd74374594d272cc778af44d4206e477d7b7a918ec16375900f25f8d40cc",
+  "09-relations.json": "ab56038721f22f576d291404cd9fe1ee1bdb8fdbdb45152422213f4ab2236909"
+ },
+ "schema": 1,
+ "seed": 20261112,
+ "sha256": "4c2345434591b73569273da06cedf70af928d3b37eeb8065c355193abea95a72",
+ "stages": [
+  {
+   "heldout": 3,
+   "lesson": 0,
+   "name": "words",
+   "records": 12
+  },
+  {
+   "heldout": 2,
+   "lesson": 1,
+   "name": "interpret",
+   "records": 8
+  },
+  {
+   "heldout": 7,
+   "lesson": 2,
+   "name": "clause",
+   "records": 28
+  },
+  {
+   "heldout": 4,
+   "lesson": 3,
+   "name": "ask",
+   "records": 16
+  },
+  {
+   "heldout": 24,
+   "lesson": 4,
+   "name": "verb",
+   "records": 96
+  },
+  {
+   "heldout": 12,
+   "lesson": 5,
+   "name": "modifiers",
+   "records": 48
+  },
+  {
+   "heldout": 8,
+   "lesson": 6,
+   "name": "determiners",
+   "records": 32
+  },
+  {
+   "heldout": 12,
+   "lesson": 7,
+   "name": "adverb",
+   "records": 48
+  },
+  {
+   "heldout": 15,
+   "lesson": 8,
+   "name": "prepositions",
+   "records": 60
+  },
+  {
+   "heldout": 12,
+   "lesson": 9,
+   "name": "relations",
+   "records": 48
+  }
+ ]
+}

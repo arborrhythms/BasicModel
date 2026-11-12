@@ -1,0 +1,20 @@
+{
+ "schema": 1,
+ "game": "not",
+ "note": "One operation, negation, on a clause and on a copular predicate. In-game fillers are words no lesson uses; transfer fillers are lesson words.",
+ "fillers": {
+  "name": [{"form": "Rex"}, {"form": "Max"}, {"form": "Bella"}, {"form": "Tom"}, {"form": "Luna"}, {"form": "Milo"}],
+  "verb": [{"third": "runs", "base": "run"}, {"third": "jumps", "base": "jump"}, {"third": "swims", "base": "swim"},
+           {"third": "sits", "base": "sit"}, {"third": "sings", "base": "sing"}, {"third": "walks", "base": "walk"}],
+  "noun": [{"form": "dog"}, {"form": "bird"}, {"form": "horse"}, {"form": "mouse"}]
+ },
+ "transfer": {
+  "name": [{"form": "Felix"}, {"form": "Ciao"}],
+  "verb": [{"third": "sleeps", "base": "sleep"}, {"third": "eats", "base": "eat"}],
+  "noun": [{"form": "cat"}]
+ },
+ "variants": {
+  "clause": {"slots": {"s": "name", "v": "verb"}, "sources": ["{s.form} {v.third}."], "target": "{s.form} does not {v.base}."},
+  "copula": {"slots": {"s": "name", "n": "noun"}, "sources": ["{s.form} is a {n.form}."], "target": "{s.form} is not a {n.form}."}
+ }
+}

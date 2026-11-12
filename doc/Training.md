@@ -1283,3 +1283,19 @@ This is not an accepted stage 2 freeze or a completed timing comparison.
 The architecture learns class direction from member meaning and conditions members from higher-order context through `ConceptHierarchy`. Kept grammar applications supply members to prebuilt formal-argument concepts, using this general mechanism. Each argument starts at zero radius and learns confidence by the ordinary views-and-agreement rule. Part-of-speech learning has no special centroid, count distribution or feedback rule. Directional conditioning changes no perceptual form and no trust radius.
 
 The corpus supplies the teaching progression: word concepts, object concepts through interpretation, early simple clauses and questions, then further operations. Nouns and verbs are learned before the other parts of speech; this is a curriculum requirement, not a grammatical-class prerequisite hard-coded into the learning algorithm. The configured coarse authority gates remain data-driven: empty lift arguments report zero readiness. A kept application can record members while its resulting relation has low authority. The current mechanism is described in [Architecture](Architecture.md#hierarchical-conceptual-context-alec-2026-11-08); demonstrating transfer and stable category distinctions belongs to the lesson evidence.
+
+## The staged training corpus as data (item 0.5, 2026-11-12)
+
+The training corpus of item 0 is named by one manifest,
+`data/training-corpus.json`: part A (words only; simple sentences and
+synthetics; math) as tracked, frozen files, and part B (the developmental
+assembly, which is built locally, and the web shard, which git tracks)
+recorded by hash. Every held-out
+set is listed there: the lesson held-out records, the games' validation,
+test and transfer splits, the math validation, test and beyond splits, the
+next-word gate and the held-out cost set. Part A's files: the ten lesson
+stages in `data/lessons/parts-of-speech.json`, the games under
+`data/games/` and the graded math rows under `data/math/`, each with its
+manifest, generator command and seed. The design is the
+[item 0.5 plan](plans/2026-11-09-item0-5-test-development.md) §6 to §9 and
+§17.

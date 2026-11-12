@@ -1,0 +1,64 @@
+{
+ "schema": 1,
+ "phase": "interpret",
+ "lesson": 1,
+ "criterion": {
+  "measure": "denotation_fraction",
+  "threshold": null,
+  "declared_by": "Alec",
+  "note": "a set fraction of defined words have a denotation (lesson 1)"
+ },
+ "measure": [
+  "Felix",
+  "Ciao",
+  "Bill",
+  "Anna"
+ ],
+ "fillers": {
+  "name": [
+   {
+    "form": "Felix"
+   },
+   {
+    "form": "Ciao"
+   },
+   {
+    "form": "Bill"
+   },
+   {
+    "form": "Anna"
+   }
+  ]
+ },
+ "heldout": {
+  "name": [
+   {
+    "form": "Nora"
+   }
+  ]
+ },
+ "variants": {
+  "this": {
+   "slots": {
+    "n": "name"
+   },
+   "sentences": [
+    "This is {n.form}.",
+    "What is this?"
+   ],
+   "question": 1,
+   "answer": "{n.form}"
+  },
+  "here": {
+   "slots": {
+    "n": "name"
+   },
+   "sentences": [
+    "Here is {n.form}.",
+    "Who is here?"
+   ],
+   "question": 1,
+   "answer": "{n.form}"
+  }
+ }
+}

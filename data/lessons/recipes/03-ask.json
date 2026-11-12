@@ -1,0 +1,76 @@
+{
+ "schema": 1,
+ "phase": "ask",
+ "lesson": 3,
+ "criterion": {
+  "measure": "heldout_answers",
+  "threshold": null,
+  "declared_by": "Alec",
+  "note": "the answers to the held-out questions (lesson 3)"
+ },
+ "measure": [
+  "Felix",
+  "sleeps"
+ ],
+ "fillers": {
+  "name": [
+   {
+    "form": "Felix"
+   },
+   {
+    "form": "Ciao"
+   },
+   {
+    "form": "Bill"
+   },
+   {
+    "form": "Anna"
+   }
+  ],
+  "verb": [
+   {
+    "third": "sleeps",
+    "plural": "sleep"
+   },
+   {
+    "third": "eats",
+    "plural": "eat"
+   },
+   {
+    "third": "moves",
+    "plural": "move"
+   },
+   {
+    "third": "waits",
+    "plural": "wait"
+   }
+  ]
+ },
+ "heldout": {
+  "name": [
+   {
+    "form": "Nora"
+   }
+  ],
+  "verb": [
+   {
+    "third": "rests",
+    "plural": "rest"
+   }
+  ]
+ },
+ "variants": {
+  "who": {
+   "slots": {
+    "n": "name",
+    "v": "verb"
+   },
+   "sentences": [
+    "{n.form} {v.third}.",
+    "Who {v.third}?"
+   ],
+   "question": 1,
+   "answer": "{n.form}"
+  }
+ }
+}

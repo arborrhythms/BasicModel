@@ -1,0 +1,123 @@
+{
+ "gate": "part B starts only on Alec's word after the operator table of A3 (plan section 8)",
+ "heldout": [
+  {
+   "name": "lessons.heldout",
+   "source": "data/lessons/parts-of-speech.json"
+  },
+  {
+   "name": "games.validation, games.test, games.transfer",
+   "source": "data/games/manifest.json"
+  },
+  {
+   "name": "math.validation, math.test, math.beyond",
+   "source": "data/math/manifest.json"
+  },
+  {
+   "name": "next-word gate",
+   "rule": "its documents are test documents of shard_00000 under B2's split rule",
+   "sha256": "a6cc23ec19f55761fe41077b55ca38786b44c2dc312cdeae7830ee1df9ee3a24",
+   "source": "data/eval/nanochat_grammar_gate.json"
+  },
+  {
+   "name": "held-out cost (H11)",
+   "sha256": "18dd7b2a3d03d0fb8d812bdc67cc083948034c869145638fc5911e5e06dd8e29",
+   "source": "data/eval/heldout-cost.json"
+  },
+  {
+   "built": false,
+   "name": "item 8 tasks"
+  }
+ ],
+ "order": [
+  "A1",
+  "A2",
+  "A3",
+  "B1",
+  "B2",
+  "B3"
+ ],
+ "part_b_scan": {
+  "held_out_digest": "e42d5a524dce11661598a0eed8d3c15724d74090273c8b674db96407af6ec638",
+  "held_out_sentences": 953,
+  "occurrences": {
+   "hen": 1,
+   "hen.": 1,
+   "nora.": 2,
+   "rests.": 1
+  },
+  "sentences_scanned": 3421205
+ },
+ "schema": 1,
+ "stages": {
+  "A1": {
+   "files": [
+    {
+     "path": "data/lessons/parts-of-speech.json",
+     "sha256": "4c2345434591b73569273da06cedf70af928d3b37eeb8065c355193abea95a72"
+    }
+   ],
+   "lessons": [
+    "words",
+    "interpret"
+   ],
+   "name": "words only"
+  },
+  "A2": {
+   "files": [
+    {
+     "path": "data/lessons/parts-of-speech.json",
+     "sha256": "4c2345434591b73569273da06cedf70af928d3b37eeb8065c355193abea95a72"
+    },
+    {
+     "path": "data/games/manifest.json",
+     "sha256": "d7a77c734a00c835f5dcd4360f12b3501c28cbfcd0397371d97df17c1ca0693d"
+    }
+   ],
+   "lessons": [
+    "clause",
+    "ask",
+    "verb",
+    "modifiers",
+    "determiners",
+    "adverb",
+    "prepositions",
+    "relations"
+   ],
+   "name": "simple sentences and synthetics"
+  },
+  "A3": {
+   "files": [
+    {
+     "path": "data/math/manifest.json",
+     "sha256": "d64787a9597ab081c4e16ce246e2b51c2a3a0df05d46aa5801822b742233686b"
+    }
+   ],
+   "name": "math"
+  },
+  "B1": {
+   "local": true,
+   "manifest_sha256": "cafa9a495c1d16ac73eb0ddff1e2e825fdb1b9c76d7cc5c34a048e64f785bd0b",
+   "name": "developmental text",
+   "path": "data/corpus/assembly-01/",
+   "recipe": {
+    "path": "data/corpus-sources.json",
+    "sha256": "a1fa6c9b5f4edcebfe2cb66fa80b7a41eb9be335c838f64c62fab5b3a5820b7d"
+   }
+  },
+  "B2": {
+   "local": true,
+   "name": "NanoChat base corpus",
+   "path": "data/fineweb/",
+   "shard_sha256": "6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22",
+   "shards_on_disk": [
+    "shard_00000.parquet"
+   ],
+   "split_rule": "document index modulo 10: 0 to 7 train, 8 validation, 9 test (Data.loadShards; bin/eval_nanochat_grammar.split_name)"
+  },
+  "B3": {
+   "name": "chat-stage mixture",
+   "prepared": false
+  }
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "schema": 1,
+ "game": "unary_chain",
+ "note": "The unary-chain game of plan section 6.7: k = 1, 2, 3 unary operations at one operand, a negated, determined noun phrase (intended: definite_unary, lower_unary, not). The name is the plan's; the rules are read by A_read, never named to the learner.",
+ "fillers": {
+  "noun": [{"initial": "Dogs", "inner": "dogs"}, {"initial": "Birds", "inner": "birds"}, {"initial": "Horses", "inner": "horses"},
+           {"initial": "Mice", "inner": "mice"}, {"initial": "Foxes", "inner": "foxes"}],
+  "verb": [{"plural": "run"}, {"plural": "jump"}, {"plural": "swim"}, {"plural": "sit"}, {"plural": "sing"}, {"plural": "walk"}]
+ },
+ "transfer": {
+  "noun": [{"initial": "Cats", "inner": "cats", "lesson": "cat"}],
+  "verb": [{"plural": "sleep", "lesson": "sleeps"}, {"plural": "eat", "lesson": "eats"}]
+ },
+ "variants": {
+  "k1": {"slots": {"n": "noun", "v": "verb"}, "sources": ["{n.initial} {v.plural}."], "target": "The {n.inner} {v.plural}."},
+  "k2": {"slots": {"n": "noun", "v": "verb"}, "sources": ["{n.initial} {v.plural}."], "target": "All the {n.inner} {v.plural}."},
+  "k3": {"slots": {"n": "noun", "v": "verb"}, "sources": ["{n.initial} {v.plural}."], "target": "Not all the {n.inner} {v.plural}."}
+ }
+}

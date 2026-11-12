@@ -1,0 +1,6854 @@
+{
+ "source": "item 0.5, plan section 9",
+ "stages": [
+  {
+   "criterion": {
+    "declared_by": "Alec",
+    "measure": "definition_trust_fraction",
+    "note": "a set fraction of admitted forms have length at least definitionTrust (parts of speech 5b, lesson 0)",
+    "threshold": null
+   },
+   "documents": [
+    {
+     "document": 0,
+     "key": "words-name-train-0000",
+     "records": [
+      {
+       "key": "words-name-train-0000",
+       "sentences": [
+        "Anna."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 1,
+     "key": "words-name-train-0001",
+     "records": [
+      {
+       "key": "words-name-train-0001",
+       "sentences": [
+        "Bill."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 2,
+     "key": "words-name-train-0002",
+     "records": [
+      {
+       "key": "words-name-train-0002",
+       "sentences": [
+        "Ciao."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 3,
+     "key": "words-name-train-0003",
+     "records": [
+      {
+       "key": "words-name-train-0003",
+       "sentences": [
+        "Felix."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 4,
+     "key": "words-noun-train-0000",
+     "records": [
+      {
+       "key": "words-noun-train-0000",
+       "sentences": [
+        "bee."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 5,
+     "key": "words-noun-train-0001",
+     "records": [
+      {
+       "key": "words-noun-train-0001",
+       "sentences": [
+        "cat."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 6,
+     "key": "words-noun-train-0002",
+     "records": [
+      {
+       "key": "words-noun-train-0002",
+       "sentences": [
+        "cow."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 7,
+     "key": "words-noun-train-0003",
+     "records": [
+      {
+       "key": "words-noun-train-0003",
+       "sentences": [
+        "owl."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 8,
+     "key": "words-verb-train-0000",
+     "records": [
+      {
+       "key": "words-verb-train-0000",
+       "sentences": [
+        "eats."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 9,
+     "key": "words-verb-train-0001",
+     "records": [
+      {
+       "key": "words-verb-train-0001",
+       "sentences": [
+        "moves."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 10,
+     "key": "words-verb-train-0002",
+     "records": [
+      {
+       "key": "words-verb-train-0002",
+       "sentences": [
+        "sleeps."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 11,
+     "key": "words-verb-train-0003",
+     "records": [
+      {
+       "key": "words-verb-train-0003",
+       "sentences": [
+        "waits."
+       ]
+      }
+     ]
+    }
+   ],
+   "heldout": [
+    {
+     "document": 0,
+     "key": "words-name-heldout-0000",
+     "records": [
+      {
+       "key": "words-name-heldout-0000",
+       "sentences": [
+        "Nora."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 1,
+     "key": "words-noun-heldout-0000",
+     "records": [
+      {
+       "key": "words-noun-heldout-0000",
+       "sentences": [
+        "hen."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 2,
+     "key": "words-verb-heldout-0000",
+     "records": [
+      {
+       "key": "words-verb-heldout-0000",
+       "sentences": [
+        "rests."
+       ]
+      }
+     ]
+    }
+   ],
+   "lesson": 0,
+   "measure": [
+    "Felix",
+    "Ciao",
+    "cat"
+   ],
+   "name": "words"
+  },
+  {
+   "criterion": {
+    "declared_by": "Alec",
+    "measure": "denotation_fraction",
+    "note": "a set fraction of defined words have a denotation (lesson 1)",
+    "threshold": null
+   },
+   "documents": [
+    {
+     "document": 0,
+     "key": "interpret-here-train-0000",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "interpret-here-train-0000",
+       "question": 1,
+       "sentences": [
+        "Here is Anna.",
+        "Who is here?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 1,
+     "key": "interpret-here-train-0001",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "interpret-here-train-0001",
+       "question": 1,
+       "sentences": [
+        "Here is Bill.",
+        "Who is here?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 2,
+     "key": "interpret-here-train-0002",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "interpret-here-train-0002",
+       "question": 1,
+       "sentences": [
+        "Here is Ciao.",
+        "Who is here?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 3,
+     "key": "interpret-here-train-0003",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "interpret-here-train-0003",
+       "question": 1,
+       "sentences": [
+        "Here is Felix.",
+        "Who is here?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 4,
+     "key": "interpret-this-train-0000",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "interpret-this-train-0000",
+       "question": 1,
+       "sentences": [
+        "This is Anna.",
+        "What is this?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 5,
+     "key": "interpret-this-train-0001",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "interpret-this-train-0001",
+       "question": 1,
+       "sentences": [
+        "This is Bill.",
+        "What is this?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 6,
+     "key": "interpret-this-train-0002",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "interpret-this-train-0002",
+       "question": 1,
+       "sentences": [
+        "This is Ciao.",
+        "What is this?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 7,
+     "key": "interpret-this-train-0003",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "interpret-this-train-0003",
+       "question": 1,
+       "sentences": [
+        "This is Felix.",
+        "What is this?"
+       ]
+      }
+     ]
+    }
+   ],
+   "heldout": [
+    {
+     "document": 0,
+     "key": "interpret-here-heldout-0000",
+     "records": [
+      {
+       "answer": "Nora",
+       "key": "interpret-here-heldout-0000",
+       "question": 1,
+       "sentences": [
+        "Here is Nora.",
+        "Who is here?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 1,
+     "key": "interpret-this-heldout-0000",
+     "records": [
+      {
+       "answer": "Nora",
+       "key": "interpret-this-heldout-0000",
+       "question": 1,
+       "sentences": [
+        "This is Nora.",
+        "What is this?"
+       ]
+      }
+     ]
+    }
+   ],
+   "lesson": 1,
+   "measure": [
+    "Felix",
+    "Ciao",
+    "Bill",
+    "Anna"
+   ],
+   "name": "interpret"
+  },
+  {
+   "criterion": {
+    "declared_by": "Alec",
+    "measure": "occupant_definiteness",
+    "note": "the subject and VP occupant classes are definite (lesson 2)",
+    "threshold": null
+   },
+   "documents": [
+    {
+     "document": 0,
+     "key": "clause-name-train-0000",
+     "records": [
+      {
+       "key": "clause-name-train-0000",
+       "sentences": [
+        "Anna eats."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 1,
+     "key": "clause-name-train-0001",
+     "records": [
+      {
+       "key": "clause-name-train-0001",
+       "sentences": [
+        "Anna moves."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 2,
+     "key": "clause-name-train-0002",
+     "records": [
+      {
+       "key": "clause-name-train-0002",
+       "sentences": [
+        "Anna sleeps."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 3,
+     "key": "clause-name-train-0003",
+     "records": [
+      {
+       "key": "clause-name-train-0003",
+       "sentences": [
+        "Anna waits."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 4,
+     "key": "clause-name-train-0004",
+     "records": [
+      {
+       "key": "clause-name-train-0004",
+       "sentences": [
+        "Bill eats."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 5,
+     "key": "clause-name-train-0005",
+     "records": [
+      {
+       "key": "clause-name-train-0005",
+       "sentences": [
+        "Bill moves."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 6,
+     "key": "clause-name-train-0006",
+     "records": [
+      {
+       "key": "clause-name-train-0006",
+       "sentences": [
+        "Bill sleeps."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 7,
+     "key": "clause-name-train-0007",
+     "records": [
+      {
+       "key": "clause-name-train-0007",
+       "sentences": [
+        "Bill waits."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 8,
+     "key": "clause-name-train-0008",
+     "records": [
+      {
+       "key": "clause-name-train-0008",
+       "sentences": [
+        "Ciao eats."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 9,
+     "key": "clause-name-train-0009",
+     "records": [
+      {
+       "key": "clause-name-train-0009",
+       "sentences": [
+        "Ciao moves."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 10,
+     "key": "clause-name-train-0010",
+     "records": [
+      {
+       "key": "clause-name-train-0010",
+       "sentences": [
+        "Ciao sleeps."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 11,
+     "key": "clause-name-train-0011",
+     "records": [
+      {
+       "key": "clause-name-train-0011",
+       "sentences": [
+        "Ciao waits."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 12,
+     "key": "clause-name-train-0012",
+     "records": [
+      {
+       "key": "clause-name-train-0012",
+       "sentences": [
+        "Felix eats."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 13,
+     "key": "clause-name-train-0013",
+     "records": [
+      {
+       "key": "clause-name-train-0013",
+       "sentences": [
+        "Felix moves."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 14,
+     "key": "clause-name-train-0014",
+     "records": [
+      {
+       "key": "clause-name-train-0014",
+       "sentences": [
+        "Felix sleeps."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 15,
+     "key": "clause-name-train-0015",
+     "records": [
+      {
+       "key": "clause-name-train-0015",
+       "sentences": [
+        "Felix waits."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 16,
+     "key": "clause-plural-train-0000",
+     "records": [
+      {
+       "key": "clause-plural-train-0000",
+       "sentences": [
+        "Bees eat."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 17,
+     "key": "clause-plural-train-0001",
+     "records": [
+      {
+       "key": "clause-plural-train-0001",
+       "sentences": [
+        "Bees move."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 18,
+     "key": "clause-plural-train-0002",
+     "records": [
+      {
+       "key": "clause-plural-train-0002",
+       "sentences": [
+        "Bees sleep."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 19,
+     "key": "clause-plural-train-0003",
+     "records": [
+      {
+       "key": "clause-plural-train-0003",
+       "sentences": [
+        "Bees wait."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 20,
+     "key": "clause-plural-train-0004",
+     "records": [
+      {
+       "key": "clause-plural-train-0004",
+       "sentences": [
+        "Cows eat."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 21,
+     "key": "clause-plural-train-0005",
+     "records": [
+      {
+       "key": "clause-plural-train-0005",
+       "sentences": [
+        "Cows move."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 22,
+     "key": "clause-plural-train-0006",
+     "records": [
+      {
+       "key": "clause-plural-train-0006",
+       "sentences": [
+        "Cows sleep."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 23,
+     "key": "clause-plural-train-0007",
+     "records": [
+      {
+       "key": "clause-plural-train-0007",
+       "sentences": [
+        "Cows wait."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 24,
+     "key": "clause-plural-train-0008",
+     "records": [
+      {
+       "key": "clause-plural-train-0008",
+       "sentences": [
+        "Owls eat."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 25,
+     "key": "clause-plural-train-0009",
+     "records": [
+      {
+       "key": "clause-plural-train-0009",
+       "sentences": [
+        "Owls move."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 26,
+     "key": "clause-plural-train-0010",
+     "records": [
+      {
+       "key": "clause-plural-train-0010",
+       "sentences": [
+        "Owls sleep."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 27,
+     "key": "clause-plural-train-0011",
+     "records": [
+      {
+       "key": "clause-plural-train-0011",
+       "sentences": [
+        "Owls wait."
+       ]
+      }
+     ]
+    }
+   ],
+   "heldout": [
+    {
+     "document": 0,
+     "key": "clause-name-heldout-0000",
+     "records": [
+      {
+       "key": "clause-name-heldout-0000",
+       "sentences": [
+        "Felix rests."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 1,
+     "key": "clause-name-heldout-0001",
+     "records": [
+      {
+       "key": "clause-name-heldout-0001",
+       "sentences": [
+        "Nora moves."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 2,
+     "key": "clause-name-heldout-0002",
+     "records": [
+      {
+       "key": "clause-name-heldout-0002",
+       "sentences": [
+        "Nora sleeps."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 3,
+     "key": "clause-name-heldout-0003",
+     "records": [
+      {
+       "key": "clause-name-heldout-0003",
+       "sentences": [
+        "Nora waits."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 4,
+     "key": "clause-plural-heldout-0000",
+     "records": [
+      {
+       "key": "clause-plural-heldout-0000",
+       "sentences": [
+        "Bees rest."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 5,
+     "key": "clause-plural-heldout-0001",
+     "records": [
+      {
+       "key": "clause-plural-heldout-0001",
+       "sentences": [
+        "Hens move."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 6,
+     "key": "clause-plural-heldout-0002",
+     "records": [
+      {
+       "key": "clause-plural-heldout-0002",
+       "sentences": [
+        "Hens rest."
+       ]
+      }
+     ]
+    }
+   ],
+   "lesson": 2,
+   "measure": [
+    "Felix",
+    "sleeps",
+    "cows"
+   ],
+   "name": "clause"
+  },
+  {
+   "criterion": {
+    "declared_by": "Alec",
+    "measure": "heldout_answers",
+    "note": "the answers to the held-out questions (lesson 3)",
+    "threshold": null
+   },
+   "documents": [
+    {
+     "document": 0,
+     "key": "ask-who-train-0000",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "ask-who-train-0000",
+       "question": 1,
+       "sentences": [
+        "Anna eats.",
+        "Who eats?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 1,
+     "key": "ask-who-train-0001",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "ask-who-train-0001",
+       "question": 1,
+       "sentences": [
+        "Anna moves.",
+        "Who moves?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 2,
+     "key": "ask-who-train-0002",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "ask-who-train-0002",
+       "question": 1,
+       "sentences": [
+        "Anna sleeps.",
+        "Who sleeps?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 3,
+     "key": "ask-who-train-0003",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "ask-who-train-0003",
+       "question": 1,
+       "sentences": [
+        "Anna waits.",
+        "Who waits?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 4,
+     "key": "ask-who-train-0004",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "ask-who-train-0004",
+       "question": 1,
+       "sentences": [
+        "Bill eats.",
+        "Who eats?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 5,
+     "key": "ask-who-train-0005",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "ask-who-train-0005",
+       "question": 1,
+       "sentences": [
+        "Bill moves.",
+        "Who moves?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 6,
+     "key": "ask-who-train-0006",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "ask-who-train-0006",
+       "question": 1,
+       "sentences": [
+        "Bill sleeps.",
+        "Who sleeps?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 7,
+     "key": "ask-who-train-0007",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "ask-who-train-0007",
+       "question": 1,
+       "sentences": [
+        "Bill waits.",
+        "Who waits?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 8,
+     "key": "ask-who-train-0008",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "ask-who-train-0008",
+       "question": 1,
+       "sentences": [
+        "Ciao eats.",
+        "Who eats?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 9,
+     "key": "ask-who-train-0009",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "ask-who-train-0009",
+       "question": 1,
+       "sentences": [
+        "Ciao moves.",
+        "Who moves?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 10,
+     "key": "ask-who-train-0010",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "ask-who-train-0010",
+       "question": 1,
+       "sentences": [
+        "Ciao sleeps.",
+        "Who sleeps?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 11,
+     "key": "ask-who-train-0011",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "ask-who-train-0011",
+       "question": 1,
+       "sentences": [
+        "Ciao waits.",
+        "Who waits?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 12,
+     "key": "ask-who-train-0012",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "ask-who-train-0012",
+       "question": 1,
+       "sentences": [
+        "Felix eats.",
+        "Who eats?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 13,
+     "key": "ask-who-train-0013",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "ask-who-train-0013",
+       "question": 1,
+       "sentences": [
+        "Felix moves.",
+        "Who moves?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 14,
+     "key": "ask-who-train-0014",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "ask-who-train-0014",
+       "question": 1,
+       "sentences": [
+        "Felix sleeps.",
+        "Who sleeps?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 15,
+     "key": "ask-who-train-0015",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "ask-who-train-0015",
+       "question": 1,
+       "sentences": [
+        "Felix waits.",
+        "Who waits?"
+       ]
+      }
+     ]
+    }
+   ],
+   "heldout": [
+    {
+     "document": 0,
+     "key": "ask-who-heldout-0000",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "ask-who-heldout-0000",
+       "question": 1,
+       "sentences": [
+        "Felix rests.",
+        "Who rests?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 1,
+     "key": "ask-who-heldout-0001",
+     "records": [
+      {
+       "answer": "Nora",
+       "key": "ask-who-heldout-0001",
+       "question": 1,
+       "sentences": [
+        "Nora moves.",
+        "Who moves?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 2,
+     "key": "ask-who-heldout-0002",
+     "records": [
+      {
+       "answer": "Nora",
+       "key": "ask-who-heldout-0002",
+       "question": 1,
+       "sentences": [
+        "Nora sleeps.",
+        "Who sleeps?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 3,
+     "key": "ask-who-heldout-0003",
+     "records": [
+      {
+       "answer": "Nora",
+       "key": "ask-who-heldout-0003",
+       "question": 1,
+       "sentences": [
+        "Nora waits.",
+        "Who waits?"
+       ]
+      }
+     ]
+    }
+   ],
+   "lesson": 3,
+   "measure": [
+    "Felix",
+    "sleeps"
+   ],
+   "name": "ask"
+  },
+  {
+   "criterion": {
+    "declared_by": "Alec",
+    "measure": "occupant_definiteness_and_answers",
+    "note": "the object argument's class definite, and the answers (lesson 4)",
+    "threshold": null
+   },
+   "documents": [
+    {
+     "document": 0,
+     "key": "verb-object-train-0000",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-object-train-0000",
+       "question": 1,
+       "sentences": [
+        "Bill follows Anna.",
+        "Who does Bill follow?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 1,
+     "key": "verb-object-train-0001",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-object-train-0001",
+       "question": 1,
+       "sentences": [
+        "Bill hears Anna.",
+        "Who does Bill hear?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 2,
+     "key": "verb-object-train-0002",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-object-train-0002",
+       "question": 1,
+       "sentences": [
+        "Bill likes Anna.",
+        "Who does Bill like?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 3,
+     "key": "verb-object-train-0003",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-object-train-0003",
+       "question": 1,
+       "sentences": [
+        "Bill sees Anna.",
+        "Who does Bill see?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 4,
+     "key": "verb-object-train-0004",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-object-train-0004",
+       "question": 1,
+       "sentences": [
+        "Ciao follows Anna.",
+        "Who does Ciao follow?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 5,
+     "key": "verb-object-train-0005",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-object-train-0005",
+       "question": 1,
+       "sentences": [
+        "Ciao hears Anna.",
+        "Who does Ciao hear?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 6,
+     "key": "verb-object-train-0006",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-object-train-0006",
+       "question": 1,
+       "sentences": [
+        "Ciao likes Anna.",
+        "Who does Ciao like?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 7,
+     "key": "verb-object-train-0007",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-object-train-0007",
+       "question": 1,
+       "sentences": [
+        "Ciao sees Anna.",
+        "Who does Ciao see?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 8,
+     "key": "verb-object-train-0008",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-object-train-0008",
+       "question": 1,
+       "sentences": [
+        "Felix follows Anna.",
+        "Who does Felix follow?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 9,
+     "key": "verb-object-train-0009",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-object-train-0009",
+       "question": 1,
+       "sentences": [
+        "Felix hears Anna.",
+        "Who does Felix hear?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 10,
+     "key": "verb-object-train-0010",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-object-train-0010",
+       "question": 1,
+       "sentences": [
+        "Felix likes Anna.",
+        "Who does Felix like?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 11,
+     "key": "verb-object-train-0011",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-object-train-0011",
+       "question": 1,
+       "sentences": [
+        "Felix sees Anna.",
+        "Who does Felix see?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 12,
+     "key": "verb-object-train-0012",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-object-train-0012",
+       "question": 1,
+       "sentences": [
+        "Anna follows Bill.",
+        "Who does Anna follow?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 13,
+     "key": "verb-object-train-0013",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-object-train-0013",
+       "question": 1,
+       "sentences": [
+        "Anna hears Bill.",
+        "Who does Anna hear?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 14,
+     "key": "verb-object-train-0014",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-object-train-0014",
+       "question": 1,
+       "sentences": [
+        "Anna likes Bill.",
+        "Who does Anna like?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 15,
+     "key": "verb-object-train-0015",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-object-train-0015",
+       "question": 1,
+       "sentences": [
+        "Anna sees Bill.",
+        "Who does Anna see?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 16,
+     "key": "verb-object-train-0016",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-object-train-0016",
+       "question": 1,
+       "sentences": [
+        "Ciao follows Bill.",
+        "Who does Ciao follow?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 17,
+     "key": "verb-object-train-0017",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-object-train-0017",
+       "question": 1,
+       "sentences": [
+        "Ciao hears Bill.",
+        "Who does Ciao hear?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 18,
+     "key": "verb-object-train-0018",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-object-train-0018",
+       "question": 1,
+       "sentences": [
+        "Ciao likes Bill.",
+        "Who does Ciao like?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 19,
+     "key": "verb-object-train-0019",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-object-train-0019",
+       "question": 1,
+       "sentences": [
+        "Ciao sees Bill.",
+        "Who does Ciao see?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 20,
+     "key": "verb-object-train-0020",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-object-train-0020",
+       "question": 1,
+       "sentences": [
+        "Felix follows Bill.",
+        "Who does Felix follow?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 21,
+     "key": "verb-object-train-0021",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-object-train-0021",
+       "question": 1,
+       "sentences": [
+        "Felix hears Bill.",
+        "Who does Felix hear?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 22,
+     "key": "verb-object-train-0022",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-object-train-0022",
+       "question": 1,
+       "sentences": [
+        "Felix likes Bill.",
+        "Who does Felix like?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 23,
+     "key": "verb-object-train-0023",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-object-train-0023",
+       "question": 1,
+       "sentences": [
+        "Felix sees Bill.",
+        "Who does Felix see?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 24,
+     "key": "verb-object-train-0024",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-object-train-0024",
+       "question": 1,
+       "sentences": [
+        "Anna follows Ciao.",
+        "Who does Anna follow?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 25,
+     "key": "verb-object-train-0025",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-object-train-0025",
+       "question": 1,
+       "sentences": [
+        "Anna hears Ciao.",
+        "Who does Anna hear?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 26,
+     "key": "verb-object-train-0026",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-object-train-0026",
+       "question": 1,
+       "sentences": [
+        "Anna likes Ciao.",
+        "Who does Anna like?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 27,
+     "key": "verb-object-train-0027",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-object-train-0027",
+       "question": 1,
+       "sentences": [
+        "Anna sees Ciao.",
+        "Who does Anna see?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 28,
+     "key": "verb-object-train-0028",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-object-train-0028",
+       "question": 1,
+       "sentences": [
+        "Bill follows Ciao.",
+        "Who does Bill follow?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 29,
+     "key": "verb-object-train-0029",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-object-train-0029",
+       "question": 1,
+       "sentences": [
+        "Bill hears Ciao.",
+        "Who does Bill hear?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 30,
+     "key": "verb-object-train-0030",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-object-train-0030",
+       "question": 1,
+       "sentences": [
+        "Bill likes Ciao.",
+        "Who does Bill like?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 31,
+     "key": "verb-object-train-0031",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-object-train-0031",
+       "question": 1,
+       "sentences": [
+        "Bill sees Ciao.",
+        "Who does Bill see?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 32,
+     "key": "verb-object-train-0032",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-object-train-0032",
+       "question": 1,
+       "sentences": [
+        "Felix follows Ciao.",
+        "Who does Felix follow?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 33,
+     "key": "verb-object-train-0033",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-object-train-0033",
+       "question": 1,
+       "sentences": [
+        "Felix hears Ciao.",
+        "Who does Felix hear?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 34,
+     "key": "verb-object-train-0034",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-object-train-0034",
+       "question": 1,
+       "sentences": [
+        "Felix likes Ciao.",
+        "Who does Felix like?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 35,
+     "key": "verb-object-train-0035",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-object-train-0035",
+       "question": 1,
+       "sentences": [
+        "Felix sees Ciao.",
+        "Who does Felix see?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 36,
+     "key": "verb-object-train-0036",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-object-train-0036",
+       "question": 1,
+       "sentences": [
+        "Anna follows Felix.",
+        "Who does Anna follow?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 37,
+     "key": "verb-object-train-0037",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-object-train-0037",
+       "question": 1,
+       "sentences": [
+        "Anna hears Felix.",
+        "Who does Anna hear?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 38,
+     "key": "verb-object-train-0038",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-object-train-0038",
+       "question": 1,
+       "sentences": [
+        "Anna likes Felix.",
+        "Who does Anna like?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 39,
+     "key": "verb-object-train-0039",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-object-train-0039",
+       "question": 1,
+       "sentences": [
+        "Anna sees Felix.",
+        "Who does Anna see?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 40,
+     "key": "verb-object-train-0040",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-object-train-0040",
+       "question": 1,
+       "sentences": [
+        "Bill follows Felix.",
+        "Who does Bill follow?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 41,
+     "key": "verb-object-train-0041",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-object-train-0041",
+       "question": 1,
+       "sentences": [
+        "Bill hears Felix.",
+        "Who does Bill hear?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 42,
+     "key": "verb-object-train-0042",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-object-train-0042",
+       "question": 1,
+       "sentences": [
+        "Bill likes Felix.",
+        "Who does Bill like?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 43,
+     "key": "verb-object-train-0043",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-object-train-0043",
+       "question": 1,
+       "sentences": [
+        "Bill sees Felix.",
+        "Who does Bill see?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 44,
+     "key": "verb-object-train-0044",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-object-train-0044",
+       "question": 1,
+       "sentences": [
+        "Ciao follows Felix.",
+        "Who does Ciao follow?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 45,
+     "key": "verb-object-train-0045",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-object-train-0045",
+       "question": 1,
+       "sentences": [
+        "Ciao hears Felix.",
+        "Who does Ciao hear?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 46,
+     "key": "verb-object-train-0046",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-object-train-0046",
+       "question": 1,
+       "sentences": [
+        "Ciao likes Felix.",
+        "Who does Ciao like?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 47,
+     "key": "verb-object-train-0047",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-object-train-0047",
+       "question": 1,
+       "sentences": [
+        "Ciao sees Felix.",
+        "Who does Ciao see?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 48,
+     "key": "verb-subject-train-0000",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-subject-train-0000",
+       "question": 1,
+       "sentences": [
+        "Anna follows Bill.",
+        "Who follows Bill?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 49,
+     "key": "verb-subject-train-0001",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-subject-train-0001",
+       "question": 1,
+       "sentences": [
+        "Anna follows Ciao.",
+        "Who follows Ciao?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 50,
+     "key": "verb-subject-train-0002",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-subject-train-0002",
+       "question": 1,
+       "sentences": [
+        "Anna follows Felix.",
+        "Who follows Felix?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 51,
+     "key": "verb-subject-train-0003",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-subject-train-0003",
+       "question": 1,
+       "sentences": [
+        "Anna hears Bill.",
+        "Who hears Bill?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 52,
+     "key": "verb-subject-train-0004",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-subject-train-0004",
+       "question": 1,
+       "sentences": [
+        "Anna hears Ciao.",
+        "Who hears Ciao?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 53,
+     "key": "verb-subject-train-0005",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-subject-train-0005",
+       "question": 1,
+       "sentences": [
+        "Anna hears Felix.",
+        "Who hears Felix?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 54,
+     "key": "verb-subject-train-0006",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-subject-train-0006",
+       "question": 1,
+       "sentences": [
+        "Anna likes Bill.",
+        "Who likes Bill?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 55,
+     "key": "verb-subject-train-0007",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-subject-train-0007",
+       "question": 1,
+       "sentences": [
+        "Anna likes Ciao.",
+        "Who likes Ciao?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 56,
+     "key": "verb-subject-train-0008",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-subject-train-0008",
+       "question": 1,
+       "sentences": [
+        "Anna likes Felix.",
+        "Who likes Felix?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 57,
+     "key": "verb-subject-train-0009",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-subject-train-0009",
+       "question": 1,
+       "sentences": [
+        "Anna sees Bill.",
+        "Who sees Bill?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 58,
+     "key": "verb-subject-train-0010",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-subject-train-0010",
+       "question": 1,
+       "sentences": [
+        "Anna sees Ciao.",
+        "Who sees Ciao?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 59,
+     "key": "verb-subject-train-0011",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-subject-train-0011",
+       "question": 1,
+       "sentences": [
+        "Anna sees Felix.",
+        "Who sees Felix?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 60,
+     "key": "verb-subject-train-0012",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-subject-train-0012",
+       "question": 1,
+       "sentences": [
+        "Bill follows Anna.",
+        "Who follows Anna?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 61,
+     "key": "verb-subject-train-0013",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-subject-train-0013",
+       "question": 1,
+       "sentences": [
+        "Bill follows Ciao.",
+        "Who follows Ciao?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 62,
+     "key": "verb-subject-train-0014",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-subject-train-0014",
+       "question": 1,
+       "sentences": [
+        "Bill follows Felix.",
+        "Who follows Felix?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 63,
+     "key": "verb-subject-train-0015",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-subject-train-0015",
+       "question": 1,
+       "sentences": [
+        "Bill hears Anna.",
+        "Who hears Anna?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 64,
+     "key": "verb-subject-train-0016",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-subject-train-0016",
+       "question": 1,
+       "sentences": [
+        "Bill hears Ciao.",
+        "Who hears Ciao?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 65,
+     "key": "verb-subject-train-0017",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-subject-train-0017",
+       "question": 1,
+       "sentences": [
+        "Bill hears Felix.",
+        "Who hears Felix?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 66,
+     "key": "verb-subject-train-0018",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-subject-train-0018",
+       "question": 1,
+       "sentences": [
+        "Bill likes Anna.",
+        "Who likes Anna?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 67,
+     "key": "verb-subject-train-0019",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-subject-train-0019",
+       "question": 1,
+       "sentences": [
+        "Bill likes Ciao.",
+        "Who likes Ciao?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 68,
+     "key": "verb-subject-train-0020",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-subject-train-0020",
+       "question": 1,
+       "sentences": [
+        "Bill likes Felix.",
+        "Who likes Felix?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 69,
+     "key": "verb-subject-train-0021",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-subject-train-0021",
+       "question": 1,
+       "sentences": [
+        "Bill sees Anna.",
+        "Who sees Anna?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 70,
+     "key": "verb-subject-train-0022",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-subject-train-0022",
+       "question": 1,
+       "sentences": [
+        "Bill sees Ciao.",
+        "Who sees Ciao?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 71,
+     "key": "verb-subject-train-0023",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-subject-train-0023",
+       "question": 1,
+       "sentences": [
+        "Bill sees Felix.",
+        "Who sees Felix?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 72,
+     "key": "verb-subject-train-0024",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-subject-train-0024",
+       "question": 1,
+       "sentences": [
+        "Ciao follows Anna.",
+        "Who follows Anna?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 73,
+     "key": "verb-subject-train-0025",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-subject-train-0025",
+       "question": 1,
+       "sentences": [
+        "Ciao follows Bill.",
+        "Who follows Bill?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 74,
+     "key": "verb-subject-train-0026",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-subject-train-0026",
+       "question": 1,
+       "sentences": [
+        "Ciao follows Felix.",
+        "Who follows Felix?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 75,
+     "key": "verb-subject-train-0027",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-subject-train-0027",
+       "question": 1,
+       "sentences": [
+        "Ciao hears Anna.",
+        "Who hears Anna?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 76,
+     "key": "verb-subject-train-0028",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-subject-train-0028",
+       "question": 1,
+       "sentences": [
+        "Ciao hears Bill.",
+        "Who hears Bill?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 77,
+     "key": "verb-subject-train-0029",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-subject-train-0029",
+       "question": 1,
+       "sentences": [
+        "Ciao hears Felix.",
+        "Who hears Felix?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 78,
+     "key": "verb-subject-train-0030",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-subject-train-0030",
+       "question": 1,
+       "sentences": [
+        "Ciao likes Anna.",
+        "Who likes Anna?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 79,
+     "key": "verb-subject-train-0031",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-subject-train-0031",
+       "question": 1,
+       "sentences": [
+        "Ciao likes Bill.",
+        "Who likes Bill?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 80,
+     "key": "verb-subject-train-0032",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-subject-train-0032",
+       "question": 1,
+       "sentences": [
+        "Ciao likes Felix.",
+        "Who likes Felix?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 81,
+     "key": "verb-subject-train-0033",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-subject-train-0033",
+       "question": 1,
+       "sentences": [
+        "Ciao sees Anna.",
+        "Who sees Anna?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 82,
+     "key": "verb-subject-train-0034",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-subject-train-0034",
+       "question": 1,
+       "sentences": [
+        "Ciao sees Bill.",
+        "Who sees Bill?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 83,
+     "key": "verb-subject-train-0035",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-subject-train-0035",
+       "question": 1,
+       "sentences": [
+        "Ciao sees Felix.",
+        "Who sees Felix?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 84,
+     "key": "verb-subject-train-0036",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-subject-train-0036",
+       "question": 1,
+       "sentences": [
+        "Felix follows Anna.",
+        "Who follows Anna?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 85,
+     "key": "verb-subject-train-0037",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-subject-train-0037",
+       "question": 1,
+       "sentences": [
+        "Felix follows Bill.",
+        "Who follows Bill?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 86,
+     "key": "verb-subject-train-0038",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-subject-train-0038",
+       "question": 1,
+       "sentences": [
+        "Felix follows Ciao.",
+        "Who follows Ciao?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 87,
+     "key": "verb-subject-train-0039",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-subject-train-0039",
+       "question": 1,
+       "sentences": [
+        "Felix hears Anna.",
+        "Who hears Anna?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 88,
+     "key": "verb-subject-train-0040",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-subject-train-0040",
+       "question": 1,
+       "sentences": [
+        "Felix hears Bill.",
+        "Who hears Bill?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 89,
+     "key": "verb-subject-train-0041",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-subject-train-0041",
+       "question": 1,
+       "sentences": [
+        "Felix hears Ciao.",
+        "Who hears Ciao?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 90,
+     "key": "verb-subject-train-0042",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-subject-train-0042",
+       "question": 1,
+       "sentences": [
+        "Felix likes Anna.",
+        "Who likes Anna?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 91,
+     "key": "verb-subject-train-0043",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-subject-train-0043",
+       "question": 1,
+       "sentences": [
+        "Felix likes Bill.",
+        "Who likes Bill?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 92,
+     "key": "verb-subject-train-0044",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-subject-train-0044",
+       "question": 1,
+       "sentences": [
+        "Felix likes Ciao.",
+        "Who likes Ciao?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 93,
+     "key": "verb-subject-train-0045",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-subject-train-0045",
+       "question": 1,
+       "sentences": [
+        "Felix sees Anna.",
+        "Who sees Anna?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 94,
+     "key": "verb-subject-train-0046",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-subject-train-0046",
+       "question": 1,
+       "sentences": [
+        "Felix sees Bill.",
+        "Who sees Bill?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 95,
+     "key": "verb-subject-train-0047",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-subject-train-0047",
+       "question": 1,
+       "sentences": [
+        "Felix sees Ciao.",
+        "Who sees Ciao?"
+       ]
+      }
+     ]
+    }
+   ],
+   "heldout": [
+    {
+     "document": 0,
+     "key": "verb-object-heldout-0000",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-object-heldout-0000",
+       "question": 1,
+       "sentences": [
+        "Nora sees Anna.",
+        "Who does Nora see?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 1,
+     "key": "verb-object-heldout-0001",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-object-heldout-0001",
+       "question": 1,
+       "sentences": [
+        "Nora helps Bill.",
+        "Who does Nora help?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 2,
+     "key": "verb-object-heldout-0002",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-object-heldout-0002",
+       "question": 1,
+       "sentences": [
+        "Nora sees Bill.",
+        "Who does Nora see?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 3,
+     "key": "verb-object-heldout-0003",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-object-heldout-0003",
+       "question": 1,
+       "sentences": [
+        "Nora likes Ciao.",
+        "Who does Nora like?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 4,
+     "key": "verb-object-heldout-0004",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-object-heldout-0004",
+       "question": 1,
+       "sentences": [
+        "Anna helps Felix.",
+        "Who does Anna help?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 5,
+     "key": "verb-object-heldout-0005",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-object-heldout-0005",
+       "question": 1,
+       "sentences": [
+        "Nora follows Felix.",
+        "Who does Nora follow?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 6,
+     "key": "verb-object-heldout-0006",
+     "records": [
+      {
+       "answer": "Nora",
+       "key": "verb-object-heldout-0006",
+       "question": 1,
+       "sentences": [
+        "Anna follows Nora.",
+        "Who does Anna follow?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 7,
+     "key": "verb-object-heldout-0007",
+     "records": [
+      {
+       "answer": "Nora",
+       "key": "verb-object-heldout-0007",
+       "question": 1,
+       "sentences": [
+        "Bill hears Nora.",
+        "Who does Bill hear?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 8,
+     "key": "verb-object-heldout-0008",
+     "records": [
+      {
+       "answer": "Nora",
+       "key": "verb-object-heldout-0008",
+       "question": 1,
+       "sentences": [
+        "Ciao likes Nora.",
+        "Who does Ciao like?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 9,
+     "key": "verb-object-heldout-0009",
+     "records": [
+      {
+       "answer": "Nora",
+       "key": "verb-object-heldout-0009",
+       "question": 1,
+       "sentences": [
+        "Ciao sees Nora.",
+        "Who does Ciao see?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 10,
+     "key": "verb-object-heldout-0010",
+     "records": [
+      {
+       "answer": "Nora",
+       "key": "verb-object-heldout-0010",
+       "question": 1,
+       "sentences": [
+        "Felix likes Nora.",
+        "Who does Felix like?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 11,
+     "key": "verb-object-heldout-0011",
+     "records": [
+      {
+       "answer": "Nora",
+       "key": "verb-object-heldout-0011",
+       "question": 1,
+       "sentences": [
+        "Felix sees Nora.",
+        "Who does Felix see?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 12,
+     "key": "verb-subject-heldout-0000",
+     "records": [
+      {
+       "answer": "Anna",
+       "key": "verb-subject-heldout-0000",
+       "question": 1,
+       "sentences": [
+        "Anna hears Nora.",
+        "Who hears Nora?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 13,
+     "key": "verb-subject-heldout-0001",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-subject-heldout-0001",
+       "question": 1,
+       "sentences": [
+        "Bill helps Ciao.",
+        "Who helps Ciao?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 14,
+     "key": "verb-subject-heldout-0002",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-subject-heldout-0002",
+       "question": 1,
+       "sentences": [
+        "Bill helps Nora.",
+        "Who helps Nora?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 15,
+     "key": "verb-subject-heldout-0003",
+     "records": [
+      {
+       "answer": "Bill",
+       "key": "verb-subject-heldout-0003",
+       "question": 1,
+       "sentences": [
+        "Bill likes Nora.",
+        "Who likes Nora?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 16,
+     "key": "verb-subject-heldout-0004",
+     "records": [
+      {
+       "answer": "Ciao",
+       "key": "verb-subject-heldout-0004",
+       "question": 1,
+       "sentences": [
+        "Ciao helps Bill.",
+        "Who helps Bill?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 17,
+     "key": "verb-subject-heldout-0005",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-subject-heldout-0005",
+       "question": 1,
+       "sentences": [
+        "Felix helps Bill.",
+        "Who helps Bill?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 18,
+     "key": "verb-subject-heldout-0006",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-subject-heldout-0006",
+       "question": 1,
+       "sentences": [
+        "Felix likes Nora.",
+        "Who likes Nora?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 19,
+     "key": "verb-subject-heldout-0007",
+     "records": [
+      {
+       "answer": "Felix",
+       "key": "verb-subject-heldout-0007",
+       "question": 1,
+       "sentences": [
+        "Felix sees Nora.",
+        "Who sees Nora?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 20,
+     "key": "verb-subject-heldout-0008",
+     "records": [
+      {
+       "answer": "Nora",
+       "key": "verb-subject-heldout-0008",
+       "question": 1,
+       "sentences": [
+        "Nora follows Bill.",
+        "Who follows Bill?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 21,
+     "key": "verb-subject-heldout-0009",
+     "records": [
+      {
+       "answer": "Nora",
+       "key": "verb-subject-heldout-0009",
+       "question": 1,
+       "sentences": [
+        "Nora follows Ciao.",
+        "Who follows Ciao?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 22,
+     "key": "verb-subject-heldout-0010",
+     "records": [
+      {
+       "answer": "Nora",
+       "key": "verb-subject-heldout-0010",
+       "question": 1,
+       "sentences": [
+        "Nora likes Anna.",
+        "Who likes Anna?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 23,
+     "key": "verb-subject-heldout-0011",
+     "records": [
+      {
+       "answer": "Nora",
+       "key": "verb-subject-heldout-0011",
+       "question": 1,
+       "sentences": [
+        "Nora sees Ciao.",
+        "Who sees Ciao?"
+       ]
+      }
+     ]
+    }
+   ],
+   "lesson": 4,
+   "measure": [
+    "Bill",
+    "sees",
+    "Felix"
+   ],
+   "name": "verb"
+  },
+  {
+   "criterion": {
+    "declared_by": "Alec",
+    "measure": "occupant_definiteness",
+    "note": "the modifier argument's class definite (lesson 5)",
+    "threshold": null
+   },
+   "documents": [
+    {
+     "document": 0,
+     "key": "modifiers-pair-train-0000",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0000",
+       "sentences": [
+        "Big bees eat."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 1,
+     "key": "modifiers-pair-train-0001",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0001",
+       "sentences": [
+        "Big bees move."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 2,
+     "key": "modifiers-pair-train-0002",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0002",
+       "sentences": [
+        "Big bees sleep."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 3,
+     "key": "modifiers-pair-train-0003",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0003",
+       "sentences": [
+        "Big bees wait."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 4,
+     "key": "modifiers-pair-train-0004",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0004",
+       "sentences": [
+        "Big cows eat."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 5,
+     "key": "modifiers-pair-train-0005",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0005",
+       "sentences": [
+        "Big cows move."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 6,
+     "key": "modifiers-pair-train-0006",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0006",
+       "sentences": [
+        "Big cows sleep."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 7,
+     "key": "modifiers-pair-train-0007",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0007",
+       "sentences": [
+        "Big cows wait."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 8,
+     "key": "modifiers-pair-train-0008",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0008",
+       "sentences": [
+        "Big owls eat."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 9,
+     "key": "modifiers-pair-train-0009",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0009",
+       "sentences": [
+        "Big owls move."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 10,
+     "key": "modifiers-pair-train-0010",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0010",
+       "sentences": [
+        "Big owls sleep."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 11,
+     "key": "modifiers-pair-train-0011",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0011",
+       "sentences": [
+        "Big owls wait."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 12,
+     "key": "modifiers-pair-train-0012",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0012",
+       "sentences": [
+        "Old bees eat."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 13,
+     "key": "modifiers-pair-train-0013",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0013",
+       "sentences": [
+        "Old bees move."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 14,
+     "key": "modifiers-pair-train-0014",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0014",
+       "sentences": [
+        "Old bees sleep."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 15,
+     "key": "modifiers-pair-train-0015",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0015",
+       "sentences": [
+        "Old bees wait."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 16,
+     "key": "modifiers-pair-train-0016",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0016",
+       "sentences": [
+        "Old cows eat."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 17,
+     "key": "modifiers-pair-train-0017",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0017",
+       "sentences": [
+        "Old cows move."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 18,
+     "key": "modifiers-pair-train-0018",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0018",
+       "sentences": [
+        "Old cows sleep."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 19,
+     "key": "modifiers-pair-train-0019",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0019",
+       "sentences": [
+        "Old cows wait."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 20,
+     "key": "modifiers-pair-train-0020",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0020",
+       "sentences": [
+        "Old owls eat."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 21,
+     "key": "modifiers-pair-train-0021",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0021",
+       "sentences": [
+        "Old owls move."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 22,
+     "key": "modifiers-pair-train-0022",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0022",
+       "sentences": [
+        "Old owls sleep."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 23,
+     "key": "modifiers-pair-train-0023",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0023",
+       "sentences": [
+        "Old owls wait."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 24,
+     "key": "modifiers-pair-train-0024",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0024",
+       "sentences": [
+        "Red bees eat."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 25,
+     "key": "modifiers-pair-train-0025",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0025",
+       "sentences": [
+        "Red bees move."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 26,
+     "key": "modifiers-pair-train-0026",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0026",
+       "sentences": [
+        "Red bees sleep."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 27,
+     "key": "modifiers-pair-train-0027",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0027",
+       "sentences": [
+        "Red bees wait."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 28,
+     "key": "modifiers-pair-train-0028",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0028",
+       "sentences": [
+        "Red cows eat."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 29,
+     "key": "modifiers-pair-train-0029",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0029",
+       "sentences": [
+        "Red cows move."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 30,
+     "key": "modifiers-pair-train-0030",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0030",
+       "sentences": [
+        "Red cows sleep."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 31,
+     "key": "modifiers-pair-train-0031",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0031",
+       "sentences": [
+        "Red cows wait."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 32,
+     "key": "modifiers-pair-train-0032",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0032",
+       "sentences": [
+        "Red owls eat."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 33,
+     "key": "modifiers-pair-train-0033",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0033",
+       "sentences": [
+        "Red owls move."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 34,
+     "key": "modifiers-pair-train-0034",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0034",
+       "sentences": [
+        "Red owls sleep."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 35,
+     "key": "modifiers-pair-train-0035",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0035",
+       "sentences": [
+        "Red owls wait."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 36,
+     "key": "modifiers-pair-train-0036",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0036",
+       "sentences": [
+        "Small bees eat."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 37,
+     "key": "modifiers-pair-train-0037",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0037",
+       "sentences": [
+        "Small bees move."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 38,
+     "key": "modifiers-pair-train-0038",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0038",
+       "sentences": [
+        "Small bees sleep."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 39,
+     "key": "modifiers-pair-train-0039",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0039",
+       "sentences": [
+        "Small bees wait."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 40,
+     "key": "modifiers-pair-train-0040",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0040",
+       "sentences": [
+        "Small cows eat."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 41,
+     "key": "modifiers-pair-train-0041",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0041",
+       "sentences": [
+        "Small cows move."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 42,
+     "key": "modifiers-pair-train-0042",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0042",
+       "sentences": [
+        "Small cows sleep."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 43,
+     "key": "modifiers-pair-train-0043",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0043",
+       "sentences": [
+        "Small cows wait."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 44,
+     "key": "modifiers-pair-train-0044",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0044",
+       "sentences": [
+        "Small owls eat."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 45,
+     "key": "modifiers-pair-train-0045",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0045",
+       "sentences": [
+        "Small owls move."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 46,
+     "key": "modifiers-pair-train-0046",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0046",
+       "sentences": [
+        "Small owls sleep."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 47,
+     "key": "modifiers-pair-train-0047",
+     "records": [
+      {
+       "key": "modifiers-pair-train-0047",
+       "sentences": [
+        "Small owls wait."
+       ]
+      }
+     ]
+    }
+   ],
+   "heldout": [
+    {
+     "document": 0,
+     "key": "modifiers-pair-heldout-0000",
+     "records": [
+      {
+       "key": "modifiers-pair-heldout-0000",
+       "sentences": [
+        "Big owls rest."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 1,
+     "key": "modifiers-pair-heldout-0001",
+     "records": [
+      {
+       "key": "modifiers-pair-heldout-0001",
+       "sentences": [
+        "Old hens sleep."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 2,
+     "key": "modifiers-pair-heldout-0002",
+     "records": [
+      {
+       "key": "modifiers-pair-heldout-0002",
+       "sentences": [
+        "Old owls rest."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 3,
+     "key": "modifiers-pair-heldout-0003",
+     "records": [
+      {
+       "key": "modifiers-pair-heldout-0003",
+       "sentences": [
+        "Red hens wait."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 4,
+     "key": "modifiers-pair-heldout-0004",
+     "records": [
+      {
+       "key": "modifiers-pair-heldout-0004",
+       "sentences": [
+        "Small bees rest."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 5,
+     "key": "modifiers-pair-heldout-0005",
+     "records": [
+      {
+       "key": "modifiers-pair-heldout-0005",
+       "sentences": [
+        "Small hens move."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 6,
+     "key": "modifiers-pair-heldout-0006",
+     "records": [
+      {
+       "key": "modifiers-pair-heldout-0006",
+       "sentences": [
+        "Tall bees eat."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 7,
+     "key": "modifiers-pair-heldout-0007",
+     "records": [
+      {
+       "key": "modifiers-pair-heldout-0007",
+       "sentences": [
+        "Tall cows move."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 8,
+     "key": "modifiers-pair-heldout-0008",
+     "records": [
+      {
+       "key": "modifiers-pair-heldout-0008",
+       "sentences": [
+        "Tall hens sleep."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 9,
+     "key": "modifiers-pair-heldout-0009",
+     "records": [
+      {
+       "key": "modifiers-pair-heldout-0009",
+       "sentences": [
+        "Tall hens wait."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 10,
+     "key": "modifiers-pair-heldout-0010",
+     "records": [
+      {
+       "key": "modifiers-pair-heldout-0010",
+       "sentences": [
+        "Tall owls sleep."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 11,
+     "key": "modifiers-pair-heldout-0011",
+     "records": [
+      {
+       "key": "modifiers-pair-heldout-0011",
+       "sentences": [
+        "Tall owls wait."
+       ]
+      }
+     ]
+    }
+   ],
+   "lesson": 5,
+   "measure": [
+    "red",
+    "cows"
+   ],
+   "name": "modifiers"
+  },
+  {
+   "criterion": {
+    "declared_by": "Alec",
+    "measure": "occupant_definiteness",
+    "note": "the determiner argument's class definite (lesson 6)",
+    "threshold": null
+   },
+   "documents": [
+    {
+     "document": 0,
+     "key": "determiners-definite-train-0000",
+     "records": [
+      {
+       "key": "determiners-definite-train-0000",
+       "sentences": [
+        "The bee eats."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 1,
+     "key": "determiners-definite-train-0001",
+     "records": [
+      {
+       "key": "determiners-definite-train-0001",
+       "sentences": [
+        "The bee moves."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 2,
+     "key": "determiners-definite-train-0002",
+     "records": [
+      {
+       "key": "determiners-definite-train-0002",
+       "sentences": [
+        "The bee sleeps."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 3,
+     "key": "determiners-definite-train-0003",
+     "records": [
+      {
+       "key": "determiners-definite-train-0003",
+       "sentences": [
+        "The bee waits."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 4,
+     "key": "determiners-definite-train-0004",
+     "records": [
+      {
+       "key": "determiners-definite-train-0004",
+       "sentences": [
+        "The cat eats."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 5,
+     "key": "determiners-definite-train-0005",
+     "records": [
+      {
+       "key": "determiners-definite-train-0005",
+       "sentences": [
+        "The cat moves."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 6,
+     "key": "determiners-definite-train-0006",
+     "records": [
+      {
+       "key": "determiners-definite-train-0006",
+       "sentences": [
+        "The cat sleeps."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 7,
+     "key": "determiners-definite-train-0007",
+     "records": [
+      {
+       "key": "determiners-definite-train-0007",
+       "sentences": [
+        "The cat waits."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 8,
+     "key": "determiners-definite-train-0008",
+     "records": [
+      {
+       "key": "determiners-definite-train-0008",
+       "sentences": [
+        "The cow eats."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 9,
+     "key": "determiners-definite-train-0009",
+     "records": [
+      {
+       "key": "determiners-definite-train-0009",
+       "sentences": [
+        "The cow moves."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 10,
+     "key": "determiners-definite-train-0010",
+     "records": [
+      {
+       "key": "determiners-definite-train-0010",
+       "sentences": [
+        "The cow sleeps."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 11,
+     "key": "determiners-definite-train-0011",
+     "records": [
+      {
+       "key": "determiners-definite-train-0011",
+       "sentences": [
+        "The cow waits."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 12,
+     "key": "determiners-definite-train-0012",
+     "records": [
+      {
+       "key": "determiners-definite-train-0012",
+       "sentences": [
+        "The owl eats."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 13,
+     "key": "determiners-definite-train-0013",
+     "records": [
+      {
+       "key": "determiners-definite-train-0013",
+       "sentences": [
+        "The owl moves."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 14,
+     "key": "determiners-definite-train-0014",
+     "records": [
+      {
+       "key": "determiners-definite-train-0014",
+       "sentences": [
+        "The owl sleeps."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 15,
+     "key": "determiners-definite-train-0015",
+     "records": [
+      {
+       "key": "determiners-definite-train-0015",
+       "sentences": [
+        "The owl waits."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 16,
+     "key": "determiners-indefinite-train-0000",
+     "records": [
+      {
+       "key": "determiners-indefinite-train-0000",
+       "sentences": [
+        "A bee eats."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 17,
+     "key": "determiners-indefinite-train-0001",
+     "records": [
+      {
+       "key": "determiners-indefinite-train-0001",
+       "sentences": [
+        "A bee moves."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 18,
+     "key": "determiners-indefinite-train-0002",
+     "records": [
+      {
+       "key": "determiners-indefinite-train-0002",
+       "sentences": [
+        "A bee sleeps."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 19,
+     "key": "determiners-indefinite-train-0003",
+     "records": [
+      {
+       "key": "determiners-indefinite-train-0003",
+       "sentences": [
+        "A bee waits."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 20,
+     "key": "determiners-indefinite-train-0004",
+     "records": [
+      {
+       "key": "determiners-indefinite-train-0004",
+       "sentences": [
+        "A cat eats."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 21,
+     "key": "determiners-indefinite-train-0005",
+     "records": [
+      {
+       "key": "determiners-indefinite-train-0005",
+       "sentences": [
+        "A cat moves."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 22,
+     "key": "determiners-indefinite-train-0006",
+     "records": [
+      {
+       "key": "determiners-indefinite-train-0006",
+       "sentences": [
+        "A cat sleeps."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 23,
+     "key": "determiners-indefinite-train-0007",
+     "records": [
+      {
+       "key": "determiners-indefinite-train-0007",
+       "sentences": [
+        "A cat waits."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 24,
+     "key": "determiners-indefinite-train-0008",
+     "records": [
+      {
+       "key": "determiners-indefinite-train-0008",
+       "sentences": [
+        "A cow eats."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 25,
+     "key": "determiners-indefinite-train-0009",
+     "records": [
+      {
+       "key": "determiners-indefinite-train-0009",
+       "sentences": [
+        "A cow moves."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 26,
+     "key": "determiners-indefinite-train-0010",
+     "records": [
+      {
+       "key": "determiners-indefinite-train-0010",
+       "sentences": [
+        "A cow sleeps."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 27,
+     "key": "determiners-indefinite-train-0011",
+     "records": [
+      {
+       "key": "determiners-indefinite-train-0011",
+       "sentences": [
+        "A cow waits."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 28,
+     "key": "determiners-indefinite-train-0012",
+     "records": [
+      {
+       "key": "determiners-indefinite-train-0012",
+       "sentences": [
+        "A owl eats."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 29,
+     "key": "determiners-indefinite-train-0013",
+     "records": [
+      {
+       "key": "determiners-indefinite-train-0013",
+       "sentences": [
+        "A owl moves."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 30,
+     "key": "determiners-indefinite-train-0014",
+     "records": [
+      {
+       "key": "determiners-indefinite-train-0014",
+       "sentences": [
+        "A owl sleeps."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 31,
+     "key": "determiners-indefinite-train-0015",
+     "records": [
+      {
+       "key": "determiners-indefinite-train-0015",
+       "sentences": [
+        "A owl waits."
+       ]
+      }
+     ]
+    }
+   ],
+   "heldout": [
+    {
+     "document": 0,
+     "key": "determiners-definite-heldout-0000",
+     "records": [
+      {
+       "key": "determiners-definite-heldout-0000",
+       "sentences": [
+        "The hen eats."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 1,
+     "key": "determiners-definite-heldout-0001",
+     "records": [
+      {
+       "key": "determiners-definite-heldout-0001",
+       "sentences": [
+        "The hen rests."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 2,
+     "key": "determiners-definite-heldout-0002",
+     "records": [
+      {
+       "key": "determiners-definite-heldout-0002",
+       "sentences": [
+        "The hen waits."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 3,
+     "key": "determiners-definite-heldout-0003",
+     "records": [
+      {
+       "key": "determiners-definite-heldout-0003",
+       "sentences": [
+        "The owl rests."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 4,
+     "key": "determiners-indefinite-heldout-0000",
+     "records": [
+      {
+       "key": "determiners-indefinite-heldout-0000",
+       "sentences": [
+        "A cat rests."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 5,
+     "key": "determiners-indefinite-heldout-0001",
+     "records": [
+      {
+       "key": "determiners-indefinite-heldout-0001",
+       "sentences": [
+        "A hen eats."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 6,
+     "key": "determiners-indefinite-heldout-0002",
+     "records": [
+      {
+       "key": "determiners-indefinite-heldout-0002",
+       "sentences": [
+        "A hen sleeps."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 7,
+     "key": "determiners-indefinite-heldout-0003",
+     "records": [
+      {
+       "key": "determiners-indefinite-heldout-0003",
+       "sentences": [
+        "A hen waits."
+       ]
+      }
+     ]
+    }
+   ],
+   "lesson": 6,
+   "measure": [
+    "the",
+    "cat"
+   ],
+   "name": "determiners"
+  },
+  {
+   "criterion": {
+    "declared_by": "Alec",
+    "measure": "occupant_definiteness",
+    "note": "the adverb argument's class definite (lesson 7)",
+    "threshold": null
+   },
+   "documents": [
+    {
+     "document": 0,
+     "key": "adverb-manner-train-0000",
+     "records": [
+      {
+       "key": "adverb-manner-train-0000",
+       "sentences": [
+        "Anna eats gladly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 1,
+     "key": "adverb-manner-train-0001",
+     "records": [
+      {
+       "key": "adverb-manner-train-0001",
+       "sentences": [
+        "Anna eats quietly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 2,
+     "key": "adverb-manner-train-0002",
+     "records": [
+      {
+       "key": "adverb-manner-train-0002",
+       "sentences": [
+        "Anna eats slowly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 3,
+     "key": "adverb-manner-train-0003",
+     "records": [
+      {
+       "key": "adverb-manner-train-0003",
+       "sentences": [
+        "Anna moves gladly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 4,
+     "key": "adverb-manner-train-0004",
+     "records": [
+      {
+       "key": "adverb-manner-train-0004",
+       "sentences": [
+        "Anna moves quietly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 5,
+     "key": "adverb-manner-train-0005",
+     "records": [
+      {
+       "key": "adverb-manner-train-0005",
+       "sentences": [
+        "Anna moves slowly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 6,
+     "key": "adverb-manner-train-0006",
+     "records": [
+      {
+       "key": "adverb-manner-train-0006",
+       "sentences": [
+        "Anna sleeps gladly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 7,
+     "key": "adverb-manner-train-0007",
+     "records": [
+      {
+       "key": "adverb-manner-train-0007",
+       "sentences": [
+        "Anna sleeps quietly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 8,
+     "key": "adverb-manner-train-0008",
+     "records": [
+      {
+       "key": "adverb-manner-train-0008",
+       "sentences": [
+        "Anna sleeps slowly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 9,
+     "key": "adverb-manner-train-0009",
+     "records": [
+      {
+       "key": "adverb-manner-train-0009",
+       "sentences": [
+        "Anna waits gladly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 10,
+     "key": "adverb-manner-train-0010",
+     "records": [
+      {
+       "key": "adverb-manner-train-0010",
+       "sentences": [
+        "Anna waits quietly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 11,
+     "key": "adverb-manner-train-0011",
+     "records": [
+      {
+       "key": "adverb-manner-train-0011",
+       "sentences": [
+        "Anna waits slowly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 12,
+     "key": "adverb-manner-train-0012",
+     "records": [
+      {
+       "key": "adverb-manner-train-0012",
+       "sentences": [
+        "Bill eats gladly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 13,
+     "key": "adverb-manner-train-0013",
+     "records": [
+      {
+       "key": "adverb-manner-train-0013",
+       "sentences": [
+        "Bill eats quietly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 14,
+     "key": "adverb-manner-train-0014",
+     "records": [
+      {
+       "key": "adverb-manner-train-0014",
+       "sentences": [
+        "Bill eats slowly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 15,
+     "key": "adverb-manner-train-0015",
+     "records": [
+      {
+       "key": "adverb-manner-train-0015",
+       "sentences": [
+        "Bill moves gladly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 16,
+     "key": "adverb-manner-train-0016",
+     "records": [
+      {
+       "key": "adverb-manner-train-0016",
+       "sentences": [
+        "Bill moves quietly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 17,
+     "key": "adverb-manner-train-0017",
+     "records": [
+      {
+       "key": "adverb-manner-train-0017",
+       "sentences": [
+        "Bill moves slowly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 18,
+     "key": "adverb-manner-train-0018",
+     "records": [
+      {
+       "key": "adverb-manner-train-0018",
+       "sentences": [
+        "Bill sleeps gladly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 19,
+     "key": "adverb-manner-train-0019",
+     "records": [
+      {
+       "key": "adverb-manner-train-0019",
+       "sentences": [
+        "Bill sleeps quietly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 20,
+     "key": "adverb-manner-train-0020",
+     "records": [
+      {
+       "key": "adverb-manner-train-0020",
+       "sentences": [
+        "Bill sleeps slowly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 21,
+     "key": "adverb-manner-train-0021",
+     "records": [
+      {
+       "key": "adverb-manner-train-0021",
+       "sentences": [
+        "Bill waits gladly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 22,
+     "key": "adverb-manner-train-0022",
+     "records": [
+      {
+       "key": "adverb-manner-train-0022",
+       "sentences": [
+        "Bill waits quietly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 23,
+     "key": "adverb-manner-train-0023",
+     "records": [
+      {
+       "key": "adverb-manner-train-0023",
+       "sentences": [
+        "Bill waits slowly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 24,
+     "key": "adverb-manner-train-0024",
+     "records": [
+      {
+       "key": "adverb-manner-train-0024",
+       "sentences": [
+        "Ciao eats gladly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 25,
+     "key": "adverb-manner-train-0025",
+     "records": [
+      {
+       "key": "adverb-manner-train-0025",
+       "sentences": [
+        "Ciao eats quietly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 26,
+     "key": "adverb-manner-train-0026",
+     "records": [
+      {
+       "key": "adverb-manner-train-0026",
+       "sentences": [
+        "Ciao eats slowly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 27,
+     "key": "adverb-manner-train-0027",
+     "records": [
+      {
+       "key": "adverb-manner-train-0027",
+       "sentences": [
+        "Ciao moves gladly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 28,
+     "key": "adverb-manner-train-0028",
+     "records": [
+      {
+       "key": "adverb-manner-train-0028",
+       "sentences": [
+        "Ciao moves quietly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 29,
+     "key": "adverb-manner-train-0029",
+     "records": [
+      {
+       "key": "adverb-manner-train-0029",
+       "sentences": [
+        "Ciao moves slowly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 30,
+     "key": "adverb-manner-train-0030",
+     "records": [
+      {
+       "key": "adverb-manner-train-0030",
+       "sentences": [
+        "Ciao sleeps gladly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 31,
+     "key": "adverb-manner-train-0031",
+     "records": [
+      {
+       "key": "adverb-manner-train-0031",
+       "sentences": [
+        "Ciao sleeps quietly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 32,
+     "key": "adverb-manner-train-0032",
+     "records": [
+      {
+       "key": "adverb-manner-train-0032",
+       "sentences": [
+        "Ciao sleeps slowly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 33,
+     "key": "adverb-manner-train-0033",
+     "records": [
+      {
+       "key": "adverb-manner-train-0033",
+       "sentences": [
+        "Ciao waits gladly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 34,
+     "key": "adverb-manner-train-0034",
+     "records": [
+      {
+       "key": "adverb-manner-train-0034",
+       "sentences": [
+        "Ciao waits quietly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 35,
+     "key": "adverb-manner-train-0035",
+     "records": [
+      {
+       "key": "adverb-manner-train-0035",
+       "sentences": [
+        "Ciao waits slowly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 36,
+     "key": "adverb-manner-train-0036",
+     "records": [
+      {
+       "key": "adverb-manner-train-0036",
+       "sentences": [
+        "Felix eats gladly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 37,
+     "key": "adverb-manner-train-0037",
+     "records": [
+      {
+       "key": "adverb-manner-train-0037",
+       "sentences": [
+        "Felix eats quietly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 38,
+     "key": "adverb-manner-train-0038",
+     "records": [
+      {
+       "key": "adverb-manner-train-0038",
+       "sentences": [
+        "Felix eats slowly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 39,
+     "key": "adverb-manner-train-0039",
+     "records": [
+      {
+       "key": "adverb-manner-train-0039",
+       "sentences": [
+        "Felix moves gladly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 40,
+     "key": "adverb-manner-train-0040",
+     "records": [
+      {
+       "key": "adverb-manner-train-0040",
+       "sentences": [
+        "Felix moves quietly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 41,
+     "key": "adverb-manner-train-0041",
+     "records": [
+      {
+       "key": "adverb-manner-train-0041",
+       "sentences": [
+        "Felix moves slowly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 42,
+     "key": "adverb-manner-train-0042",
+     "records": [
+      {
+       "key": "adverb-manner-train-0042",
+       "sentences": [
+        "Felix sleeps gladly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 43,
+     "key": "adverb-manner-train-0043",
+     "records": [
+      {
+       "key": "adverb-manner-train-0043",
+       "sentences": [
+        "Felix sleeps quietly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 44,
+     "key": "adverb-manner-train-0044",
+     "records": [
+      {
+       "key": "adverb-manner-train-0044",
+       "sentences": [
+        "Felix sleeps slowly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 45,
+     "key": "adverb-manner-train-0045",
+     "records": [
+      {
+       "key": "adverb-manner-train-0045",
+       "sentences": [
+        "Felix waits gladly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 46,
+     "key": "adverb-manner-train-0046",
+     "records": [
+      {
+       "key": "adverb-manner-train-0046",
+       "sentences": [
+        "Felix waits quietly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 47,
+     "key": "adverb-manner-train-0047",
+     "records": [
+      {
+       "key": "adverb-manner-train-0047",
+       "sentences": [
+        "Felix waits slowly."
+       ]
+      }
+     ]
+    }
+   ],
+   "heldout": [
+    {
+     "document": 0,
+     "key": "adverb-manner-heldout-0000",
+     "records": [
+      {
+       "key": "adverb-manner-heldout-0000",
+       "sentences": [
+        "Anna waits loudly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 1,
+     "key": "adverb-manner-heldout-0001",
+     "records": [
+      {
+       "key": "adverb-manner-heldout-0001",
+       "sentences": [
+        "Bill rests slowly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 2,
+     "key": "adverb-manner-heldout-0002",
+     "records": [
+      {
+       "key": "adverb-manner-heldout-0002",
+       "sentences": [
+        "Bill waits loudly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 3,
+     "key": "adverb-manner-heldout-0003",
+     "records": [
+      {
+       "key": "adverb-manner-heldout-0003",
+       "sentences": [
+        "Ciao sleeps loudly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 4,
+     "key": "adverb-manner-heldout-0004",
+     "records": [
+      {
+       "key": "adverb-manner-heldout-0004",
+       "sentences": [
+        "Felix eats loudly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 5,
+     "key": "adverb-manner-heldout-0005",
+     "records": [
+      {
+       "key": "adverb-manner-heldout-0005",
+       "sentences": [
+        "Felix rests loudly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 6,
+     "key": "adverb-manner-heldout-0006",
+     "records": [
+      {
+       "key": "adverb-manner-heldout-0006",
+       "sentences": [
+        "Nora eats gladly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 7,
+     "key": "adverb-manner-heldout-0007",
+     "records": [
+      {
+       "key": "adverb-manner-heldout-0007",
+       "sentences": [
+        "Nora moves quietly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 8,
+     "key": "adverb-manner-heldout-0008",
+     "records": [
+      {
+       "key": "adverb-manner-heldout-0008",
+       "sentences": [
+        "Nora sleeps loudly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 9,
+     "key": "adverb-manner-heldout-0009",
+     "records": [
+      {
+       "key": "adverb-manner-heldout-0009",
+       "sentences": [
+        "Nora sleeps quietly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 10,
+     "key": "adverb-manner-heldout-0010",
+     "records": [
+      {
+       "key": "adverb-manner-heldout-0010",
+       "sentences": [
+        "Nora waits quietly."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 11,
+     "key": "adverb-manner-heldout-0011",
+     "records": [
+      {
+       "key": "adverb-manner-heldout-0011",
+       "sentences": [
+        "Nora waits slowly."
+       ]
+      }
+     ]
+    }
+   ],
+   "lesson": 7,
+   "measure": [
+    "quietly",
+    "Felix"
+   ],
+   "name": "adverb"
+  },
+  {
+   "criterion": {
+    "declared_by": "Alec",
+    "measure": "occupant_definiteness",
+    "note": "the preposition argument's class definite (lesson 8)",
+    "threshold": null
+   },
+   "documents": [
+    {
+     "document": 0,
+     "key": "prepositions-place-train-0000",
+     "records": [
+      {
+       "key": "prepositions-place-train-0000",
+       "sentences": [
+        "Anna eats in the tree."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 1,
+     "key": "prepositions-place-train-0001",
+     "records": [
+      {
+       "key": "prepositions-place-train-0001",
+       "sentences": [
+        "Anna eats on the bed."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 2,
+     "key": "prepositions-place-train-0002",
+     "records": [
+      {
+       "key": "prepositions-place-train-0002",
+       "sentences": [
+        "Anna eats on the tree."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 3,
+     "key": "prepositions-place-train-0003",
+     "records": [
+      {
+       "key": "prepositions-place-train-0003",
+       "sentences": [
+        "Anna moves in the bed."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 4,
+     "key": "prepositions-place-train-0004",
+     "records": [
+      {
+       "key": "prepositions-place-train-0004",
+       "sentences": [
+        "Anna moves in the tree."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 5,
+     "key": "prepositions-place-train-0005",
+     "records": [
+      {
+       "key": "prepositions-place-train-0005",
+       "sentences": [
+        "Anna moves near the box."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 6,
+     "key": "prepositions-place-train-0006",
+     "records": [
+      {
+       "key": "prepositions-place-train-0006",
+       "sentences": [
+        "Anna moves on the bed."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 7,
+     "key": "prepositions-place-train-0007",
+     "records": [
+      {
+       "key": "prepositions-place-train-0007",
+       "sentences": [
+        "Anna sleeps near the bed."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 8,
+     "key": "prepositions-place-train-0008",
+     "records": [
+      {
+       "key": "prepositions-place-train-0008",
+       "sentences": [
+        "Anna sleeps on the bed."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 9,
+     "key": "prepositions-place-train-0009",
+     "records": [
+      {
+       "key": "prepositions-place-train-0009",
+       "sentences": [
+        "Anna sleeps on the box."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 10,
+     "key": "prepositions-place-train-0010",
+     "records": [
+      {
+       "key": "prepositions-place-train-0010",
+       "sentences": [
+        "Anna waits in the tree."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 11,
+     "key": "prepositions-place-train-0011",
+     "records": [
+      {
+       "key": "prepositions-place-train-0011",
+       "sentences": [
+        "Anna waits near the box."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 12,
+     "key": "prepositions-place-train-0012",
+     "records": [
+      {
+       "key": "prepositions-place-train-0012",
+       "sentences": [
+        "Anna waits on the bed."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 13,
+     "key": "prepositions-place-train-0013",
+     "records": [
+      {
+       "key": "prepositions-place-train-0013",
+       "sentences": [
+        "Anna waits on the tree."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 14,
+     "key": "prepositions-place-train-0014",
+     "records": [
+      {
+       "key": "prepositions-place-train-0014",
+       "sentences": [
+        "Bill eats in the box."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 15,
+     "key": "prepositions-place-train-0015",
+     "records": [
+      {
+       "key": "prepositions-place-train-0015",
+       "sentences": [
+        "Bill eats in the tree."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 16,
+     "key": "prepositions-place-train-0016",
+     "records": [
+      {
+       "key": "prepositions-place-train-0016",
+       "sentences": [
+        "Bill eats near the tree."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 17,
+     "key": "prepositions-place-train-0017",
+     "records": [
+      {
+       "key": "prepositions-place-train-0017",
+       "sentences": [
+        "Bill eats on the box."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 18,
+     "key": "prepositions-place-train-0018",
+     "records": [
+      {
+       "key": "prepositions-place-train-0018",
+       "sentences": [
+        "Bill moves in the bed."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 19,
+     "key": "prepositions-place-train-0019",
+     "records": [
+      {
+       "key": "prepositions-place-train-0019",
+       "sentences": [
+        "Bill moves near the bed."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 20,
+     "key": "prepositions-place-train-0020",
+     "records": [
+      {
+       "key": "prepositions-place-train-0020",
+       "sentences": [
+        "Bill moves on the box."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 21,
+     "key": "prepositions-place-train-0021",
+     "records": [
+      {
+       "key": "prepositions-place-train-0021",
+       "sentences": [
+        "Bill moves on the tree."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 22,
+     "key": "prepositions-place-train-0022",
+     "records": [
+      {
+       "key": "prepositions-place-train-0022",
+       "sentences": [
+        "Bill sleeps in the box."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 23,
+     "key": "prepositions-place-train-0023",
+     "records": [
+      {
+       "key": "prepositions-place-train-0023",
+       "sentences": [
+        "Bill sleeps near the tree."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 24,
+     "key": "prepositions-place-train-0024",
+     "records": [
+      {
+       "key": "prepositions-place-train-0024",
+       "sentences": [
+        "Bill sleeps on the tree."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 25,
+     "key": "prepositions-place-train-0025",
+     "records": [
+      {
+       "key": "prepositions-place-train-0025",
+       "sentences": [
+        "Bill waits in the bed."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 26,
+     "key": "prepositions-place-train-0026",
+     "records": [
+      {
+       "key": "prepositions-place-train-0026",
+       "sentences": [
+        "Bill waits near the bed."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 27,
+     "key": "prepositions-place-train-0027",
+     "records": [
+      {
+       "key": "prepositions-place-train-0027",
+       "sentences": [
+        "Bill waits near the box."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 28,
+     "key": "prepositions-place-train-0028",
+     "records": [
+      {
+       "key": "prepositions-place-train-0028",
+       "sentences": [
+        "Bill waits on the bed."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 29,
+     "key": "prepositions-place-train-0029",
+     "records": [
+      {
+       "key": "prepositions-place-train-0029",
+       "sentences": [
+        "Bill waits on the tree."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 30,
+     "key": "prepositions-place-train-0030",
+     "records": [
+      {
+       "key": "prepositions-place-train-0030",
+       "sentences": [
+        "Ciao eats near the box."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 31,
+     "key": "prepositions-place-train-0031",
+     "records": [
+      {
+       "key": "prepositions-place-train-0031",
+       "sentences": [
+        "Ciao eats on the box."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 32,
+     "key": "prepositions-place-train-0032",
+     "records": [
+      {
+       "key": "prepositions-place-train-0032",
+       "sentences": [
+        "Ciao eats on the tree."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 33,
+     "key": "prepositions-place-train-0033",
+     "records": [
+      {
+       "key": "prepositions-place-train-0033",
+       "sentences": [
+        "Ciao moves near the bed."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 34,
+     "key": "prepositions-place-train-0034",
+     "records": [
+      {
+       "key": "prepositions-place-train-0034",
+       "sentences": [
+        "Ciao moves near the box."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 35,
+     "key": "prepositions-place-train-0035",
+     "records": [
+      {
+       "key": "prepositions-place-train-0035",
+       "sentences": [
+        "Ciao moves on the box."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 36,
+     "key": "prepositions-place-train-0036",
+     "records": [
+      {
+       "key": "prepositions-place-train-0036",
+       "sentences": [
+        "Ciao sleeps in the bed."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 37,
+     "key": "prepositions-place-train-0037",
+     "records": [
+      {
+       "key": "prepositions-place-train-0037",
+       "sentences": [
+        "Ciao sleeps in the tree."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 38,
+     "key": "prepositions-place-train-0038",
+     "records": [
+      {
+       "key": "prepositions-place-train-0038",
+       "sentences": [
+        "Ciao sleeps near the bed."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 39,
+     "key": "prepositions-place-train-0039",
+     "records": [
+      {
+       "key": "prepositions-place-train-0039",
+       "sentences": [
+        "Ciao sleeps near the tree."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 40,
+     "key": "prepositions-place-train-0040",
+     "records": [
+      {
+       "key": "prepositions-place-train-0040",
+       "sentences": [
+        "Ciao sleeps on the box."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 41,
+     "key": "prepositions-place-train-0041",
+     "records": [
+      {
+       "key": "prepositions-place-train-0041",
+       "sentences": [
+        "Ciao sleeps on the tree."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 42,
+     "key": "prepositions-place-train-0042",
+     "records": [
+      {
+       "key": "prepositions-place-train-0042",
+       "sentences": [
+        "Ciao waits in the tree."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 43,
+     "key": "prepositions-place-train-0043",
+     "records": [
+      {
+       "key": "prepositions-place-train-0043",
+       "sentences": [
+        "Ciao waits near the box."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 44,
+     "key": "prepositions-place-train-0044",
+     "records": [
+      {
+       "key": "prepositions-place-train-0044",
+       "sentences": [
+        "Ciao waits on the box."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 45,
+     "key": "prepositions-place-train-0045",
+     "records": [
+      {
+       "key": "prepositions-place-train-0045",
+       "sentences": [
+        "Ciao waits on the tree."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 46,
+     "key": "prepositions-place-train-0046",
+     "records": [
+      {
+       "key": "prepositions-place-train-0046",
+       "sentences": [
+        "Felix eats in the tree."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 47,
+     "key": "prepositions-place-train-0047",
+     "records": [
+      {
+       "key": "prepositions-place-train-0047",
+       "sentences": [
+        "Felix eats near the bed."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 48,
+     "key": "prepositions-place-train-0048",
+     "records": [
+      {
+       "key": "prepositions-place-train-0048",
+       "sentences": [
+        "Felix eats on the box."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 49,
+     "key": "prepositions-place-train-0049",
+     "records": [
+      {
+       "key": "prepositions-place-train-0049",
+       "sentences": [
+        "Felix moves near the bed."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 50,
+     "key": "prepositions-place-train-0050",
+     "records": [
+      {
+       "key": "prepositions-place-train-0050",
+       "sentences": [
+        "Felix moves near the box."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 51,
+     "key": "prepositions-place-train-0051",
+     "records": [
+      {
+       "key": "prepositions-place-train-0051",
+       "sentences": [
+        "Felix moves near the tree."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 52,
+     "key": "prepositions-place-train-0052",
+     "records": [
+      {
+       "key": "prepositions-place-train-0052",
+       "sentences": [
+        "Felix sleeps in the bed."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 53,
+     "key": "prepositions-place-train-0053",
+     "records": [
+      {
+       "key": "prepositions-place-train-0053",
+       "sentences": [
+        "Felix sleeps in the box."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 54,
+     "key": "prepositions-place-train-0054",
+     "records": [
+      {
+       "key": "prepositions-place-train-0054",
+       "sentences": [
+        "Felix sleeps near the bed."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 55,
+     "key": "prepositions-place-train-0055",
+     "records": [
+      {
+       "key": "prepositions-place-train-0055",
+       "sentences": [
+        "Felix waits in the box."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 56,
+     "key": "prepositions-place-train-0056",
+     "records": [
+      {
+       "key": "prepositions-place-train-0056",
+       "sentences": [
+        "Felix waits near the bed."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 57,
+     "key": "prepositions-place-train-0057",
+     "records": [
+      {
+       "key": "prepositions-place-train-0057",
+       "sentences": [
+        "Felix waits on the bed."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 58,
+     "key": "prepositions-place-train-0058",
+     "records": [
+      {
+       "key": "prepositions-place-train-0058",
+       "sentences": [
+        "Felix waits on the box."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 59,
+     "key": "prepositions-place-train-0059",
+     "records": [
+      {
+       "key": "prepositions-place-train-0059",
+       "sentences": [
+        "Felix waits on the tree."
+       ]
+      }
+     ]
+    }
+   ],
+   "heldout": [
+    {
+     "document": 0,
+     "key": "prepositions-place-heldout-0000",
+     "records": [
+      {
+       "key": "prepositions-place-heldout-0000",
+       "sentences": [
+        "Anna eats near the car."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 1,
+     "key": "prepositions-place-heldout-0001",
+     "records": [
+      {
+       "key": "prepositions-place-heldout-0001",
+       "sentences": [
+        "Anna rests near the tree."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 2,
+     "key": "prepositions-place-heldout-0002",
+     "records": [
+      {
+       "key": "prepositions-place-heldout-0002",
+       "sentences": [
+        "Anna sleeps under the bed."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 3,
+     "key": "prepositions-place-heldout-0003",
+     "records": [
+      {
+       "key": "prepositions-place-heldout-0003",
+       "sentences": [
+        "Bill moves under the box."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 4,
+     "key": "prepositions-place-heldout-0004",
+     "records": [
+      {
+       "key": "prepositions-place-heldout-0004",
+       "sentences": [
+        "Bill rests near the box."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 5,
+     "key": "prepositions-place-heldout-0005",
+     "records": [
+      {
+       "key": "prepositions-place-heldout-0005",
+       "sentences": [
+        "Bill rests on the bed."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 6,
+     "key": "prepositions-place-heldout-0006",
+     "records": [
+      {
+       "key": "prepositions-place-heldout-0006",
+       "sentences": [
+        "Bill rests under the tree."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 7,
+     "key": "prepositions-place-heldout-0007",
+     "records": [
+      {
+       "key": "prepositions-place-heldout-0007",
+       "sentences": [
+        "Ciao rests on the car."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 8,
+     "key": "prepositions-place-heldout-0008",
+     "records": [
+      {
+       "key": "prepositions-place-heldout-0008",
+       "sentences": [
+        "Ciao sleeps under the car."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 9,
+     "key": "prepositions-place-heldout-0009",
+     "records": [
+      {
+       "key": "prepositions-place-heldout-0009",
+       "sentences": [
+        "Felix moves under the box."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 10,
+     "key": "prepositions-place-heldout-0010",
+     "records": [
+      {
+       "key": "prepositions-place-heldout-0010",
+       "sentences": [
+        "Felix moves under the car."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 11,
+     "key": "prepositions-place-heldout-0011",
+     "records": [
+      {
+       "key": "prepositions-place-heldout-0011",
+       "sentences": [
+        "Nora rests on the tree."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 12,
+     "key": "prepositions-place-heldout-0012",
+     "records": [
+      {
+       "key": "prepositions-place-heldout-0012",
+       "sentences": [
+        "Nora sleeps on the car."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 13,
+     "key": "prepositions-place-heldout-0013",
+     "records": [
+      {
+       "key": "prepositions-place-heldout-0013",
+       "sentences": [
+        "Nora waits in the box."
+       ]
+      }
+     ]
+    },
+    {
+     "document": 14,
+     "key": "prepositions-place-heldout-0014",
+     "records": [
+      {
+       "key": "prepositions-place-heldout-0014",
+       "sentences": [
+        "Nora waits in the tree."
+       ]
+      }
+     ]
+    }
+   ],
+   "lesson": 8,
+   "measure": [
+    "in",
+    "box"
+   ],
+   "name": "prepositions"
+  },
+  {
+   "criterion": {
+    "declared_by": "Alec",
+    "measure": "relation_groups",
+    "note": "item 2.3 section 6.3, groups 4 and 5 (lesson 9)",
+    "threshold": null
+   },
+   "documents": [
+    {
+     "document": 0,
+     "key": "relations-infer-train-0000",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-infer-train-0000",
+       "question": 2,
+       "sentences": [
+        "Anna is a bee.",
+        "A bee is an animal.",
+        "Is Anna an animal?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 1,
+     "key": "relations-infer-train-0001",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-infer-train-0001",
+       "question": 2,
+       "sentences": [
+        "Anna is a cat.",
+        "A cat is an animal.",
+        "Is Anna an animal?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 2,
+     "key": "relations-infer-train-0002",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-infer-train-0002",
+       "question": 2,
+       "sentences": [
+        "Anna is a cow.",
+        "A cow is an animal.",
+        "Is Anna an animal?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 3,
+     "key": "relations-infer-train-0003",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-infer-train-0003",
+       "question": 2,
+       "sentences": [
+        "Anna is a owl.",
+        "A owl is an animal.",
+        "Is Anna an animal?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 4,
+     "key": "relations-infer-train-0004",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-infer-train-0004",
+       "question": 2,
+       "sentences": [
+        "Bill is a bee.",
+        "A bee is an animal.",
+        "Is Bill an animal?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 5,
+     "key": "relations-infer-train-0005",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-infer-train-0005",
+       "question": 2,
+       "sentences": [
+        "Bill is a cat.",
+        "A cat is an animal.",
+        "Is Bill an animal?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 6,
+     "key": "relations-infer-train-0006",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-infer-train-0006",
+       "question": 2,
+       "sentences": [
+        "Bill is a cow.",
+        "A cow is an animal.",
+        "Is Bill an animal?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 7,
+     "key": "relations-infer-train-0007",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-infer-train-0007",
+       "question": 2,
+       "sentences": [
+        "Bill is a owl.",
+        "A owl is an animal.",
+        "Is Bill an animal?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 8,
+     "key": "relations-infer-train-0008",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-infer-train-0008",
+       "question": 2,
+       "sentences": [
+        "Ciao is a bee.",
+        "A bee is an animal.",
+        "Is Ciao an animal?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 9,
+     "key": "relations-infer-train-0009",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-infer-train-0009",
+       "question": 2,
+       "sentences": [
+        "Ciao is a cat.",
+        "A cat is an animal.",
+        "Is Ciao an animal?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 10,
+     "key": "relations-infer-train-0010",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-infer-train-0010",
+       "question": 2,
+       "sentences": [
+        "Ciao is a cow.",
+        "A cow is an animal.",
+        "Is Ciao an animal?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 11,
+     "key": "relations-infer-train-0011",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-infer-train-0011",
+       "question": 2,
+       "sentences": [
+        "Ciao is a owl.",
+        "A owl is an animal.",
+        "Is Ciao an animal?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 12,
+     "key": "relations-infer-train-0012",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-infer-train-0012",
+       "question": 2,
+       "sentences": [
+        "Felix is a bee.",
+        "A bee is an animal.",
+        "Is Felix an animal?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 13,
+     "key": "relations-infer-train-0013",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-infer-train-0013",
+       "question": 2,
+       "sentences": [
+        "Felix is a cat.",
+        "A cat is an animal.",
+        "Is Felix an animal?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 14,
+     "key": "relations-infer-train-0014",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-infer-train-0014",
+       "question": 2,
+       "sentences": [
+        "Felix is a cow.",
+        "A cow is an animal.",
+        "Is Felix an animal?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 15,
+     "key": "relations-infer-train-0015",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-infer-train-0015",
+       "question": 2,
+       "sentences": [
+        "Felix is a owl.",
+        "A owl is an animal.",
+        "Is Felix an animal?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 16,
+     "key": "relations-is-train-0000",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-is-train-0000",
+       "question": 1,
+       "sentences": [
+        "Anna is a bee.",
+        "Is Anna a bee?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 17,
+     "key": "relations-is-train-0001",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-is-train-0001",
+       "question": 1,
+       "sentences": [
+        "Anna is a cat.",
+        "Is Anna a cat?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 18,
+     "key": "relations-is-train-0002",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-is-train-0002",
+       "question": 1,
+       "sentences": [
+        "Anna is a cow.",
+        "Is Anna a cow?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 19,
+     "key": "relations-is-train-0003",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-is-train-0003",
+       "question": 1,
+       "sentences": [
+        "Anna is a owl.",
+        "Is Anna a owl?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 20,
+     "key": "relations-is-train-0004",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-is-train-0004",
+       "question": 1,
+       "sentences": [
+        "Bill is a bee.",
+        "Is Bill a bee?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 21,
+     "key": "relations-is-train-0005",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-is-train-0005",
+       "question": 1,
+       "sentences": [
+        "Bill is a cat.",
+        "Is Bill a cat?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 22,
+     "key": "relations-is-train-0006",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-is-train-0006",
+       "question": 1,
+       "sentences": [
+        "Bill is a cow.",
+        "Is Bill a cow?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 23,
+     "key": "relations-is-train-0007",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-is-train-0007",
+       "question": 1,
+       "sentences": [
+        "Bill is a owl.",
+        "Is Bill a owl?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 24,
+     "key": "relations-is-train-0008",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-is-train-0008",
+       "question": 1,
+       "sentences": [
+        "Ciao is a bee.",
+        "Is Ciao a bee?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 25,
+     "key": "relations-is-train-0009",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-is-train-0009",
+       "question": 1,
+       "sentences": [
+        "Ciao is a cat.",
+        "Is Ciao a cat?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 26,
+     "key": "relations-is-train-0010",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-is-train-0010",
+       "question": 1,
+       "sentences": [
+        "Ciao is a cow.",
+        "Is Ciao a cow?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 27,
+     "key": "relations-is-train-0011",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-is-train-0011",
+       "question": 1,
+       "sentences": [
+        "Ciao is a owl.",
+        "Is Ciao a owl?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 28,
+     "key": "relations-is-train-0012",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-is-train-0012",
+       "question": 1,
+       "sentences": [
+        "Felix is a bee.",
+        "Is Felix a bee?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 29,
+     "key": "relations-is-train-0013",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-is-train-0013",
+       "question": 1,
+       "sentences": [
+        "Felix is a cat.",
+        "Is Felix a cat?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 30,
+     "key": "relations-is-train-0014",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-is-train-0014",
+       "question": 1,
+       "sentences": [
+        "Felix is a cow.",
+        "Is Felix a cow?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 31,
+     "key": "relations-is-train-0015",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-is-train-0015",
+       "question": 1,
+       "sentences": [
+        "Felix is a owl.",
+        "Is Felix a owl?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 32,
+     "key": "relations-what-train-0000",
+     "records": [
+      {
+       "answer": "bee",
+       "key": "relations-what-train-0000",
+       "question": 1,
+       "sentences": [
+        "Anna is a bee.",
+        "What is Anna?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 33,
+     "key": "relations-what-train-0001",
+     "records": [
+      {
+       "answer": "bee",
+       "key": "relations-what-train-0001",
+       "question": 1,
+       "sentences": [
+        "Bill is a bee.",
+        "What is Bill?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 34,
+     "key": "relations-what-train-0002",
+     "records": [
+      {
+       "answer": "bee",
+       "key": "relations-what-train-0002",
+       "question": 1,
+       "sentences": [
+        "Ciao is a bee.",
+        "What is Ciao?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 35,
+     "key": "relations-what-train-0003",
+     "records": [
+      {
+       "answer": "bee",
+       "key": "relations-what-train-0003",
+       "question": 1,
+       "sentences": [
+        "Felix is a bee.",
+        "What is Felix?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 36,
+     "key": "relations-what-train-0004",
+     "records": [
+      {
+       "answer": "cat",
+       "key": "relations-what-train-0004",
+       "question": 1,
+       "sentences": [
+        "Anna is a cat.",
+        "What is Anna?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 37,
+     "key": "relations-what-train-0005",
+     "records": [
+      {
+       "answer": "cat",
+       "key": "relations-what-train-0005",
+       "question": 1,
+       "sentences": [
+        "Bill is a cat.",
+        "What is Bill?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 38,
+     "key": "relations-what-train-0006",
+     "records": [
+      {
+       "answer": "cat",
+       "key": "relations-what-train-0006",
+       "question": 1,
+       "sentences": [
+        "Ciao is a cat.",
+        "What is Ciao?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 39,
+     "key": "relations-what-train-0007",
+     "records": [
+      {
+       "answer": "cat",
+       "key": "relations-what-train-0007",
+       "question": 1,
+       "sentences": [
+        "Felix is a cat.",
+        "What is Felix?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 40,
+     "key": "relations-what-train-0008",
+     "records": [
+      {
+       "answer": "cow",
+       "key": "relations-what-train-0008",
+       "question": 1,
+       "sentences": [
+        "Anna is a cow.",
+        "What is Anna?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 41,
+     "key": "relations-what-train-0009",
+     "records": [
+      {
+       "answer": "cow",
+       "key": "relations-what-train-0009",
+       "question": 1,
+       "sentences": [
+        "Bill is a cow.",
+        "What is Bill?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 42,
+     "key": "relations-what-train-0010",
+     "records": [
+      {
+       "answer": "cow",
+       "key": "relations-what-train-0010",
+       "question": 1,
+       "sentences": [
+        "Ciao is a cow.",
+        "What is Ciao?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 43,
+     "key": "relations-what-train-0011",
+     "records": [
+      {
+       "answer": "cow",
+       "key": "relations-what-train-0011",
+       "question": 1,
+       "sentences": [
+        "Felix is a cow.",
+        "What is Felix?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 44,
+     "key": "relations-what-train-0012",
+     "records": [
+      {
+       "answer": "owl",
+       "key": "relations-what-train-0012",
+       "question": 1,
+       "sentences": [
+        "Anna is a owl.",
+        "What is Anna?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 45,
+     "key": "relations-what-train-0013",
+     "records": [
+      {
+       "answer": "owl",
+       "key": "relations-what-train-0013",
+       "question": 1,
+       "sentences": [
+        "Bill is a owl.",
+        "What is Bill?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 46,
+     "key": "relations-what-train-0014",
+     "records": [
+      {
+       "answer": "owl",
+       "key": "relations-what-train-0014",
+       "question": 1,
+       "sentences": [
+        "Ciao is a owl.",
+        "What is Ciao?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 47,
+     "key": "relations-what-train-0015",
+     "records": [
+      {
+       "answer": "owl",
+       "key": "relations-what-train-0015",
+       "question": 1,
+       "sentences": [
+        "Felix is a owl.",
+        "What is Felix?"
+       ]
+      }
+     ]
+    }
+   ],
+   "heldout": [
+    {
+     "document": 0,
+     "key": "relations-infer-heldout-0000",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-infer-heldout-0000",
+       "question": 2,
+       "sentences": [
+        "Felix is a hen.",
+        "A hen is an animal.",
+        "Is Felix an animal?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 1,
+     "key": "relations-infer-heldout-0001",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-infer-heldout-0001",
+       "question": 2,
+       "sentences": [
+        "Nora is a cat.",
+        "A cat is an animal.",
+        "Is Nora an animal?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 2,
+     "key": "relations-infer-heldout-0002",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-infer-heldout-0002",
+       "question": 2,
+       "sentences": [
+        "Nora is a hen.",
+        "A hen is an animal.",
+        "Is Nora an animal?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 3,
+     "key": "relations-infer-heldout-0003",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-infer-heldout-0003",
+       "question": 2,
+       "sentences": [
+        "Nora is a owl.",
+        "A owl is an animal.",
+        "Is Nora an animal?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 4,
+     "key": "relations-is-heldout-0000",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-is-heldout-0000",
+       "question": 1,
+       "sentences": [
+        "Bill is a hen.",
+        "Is Bill a hen?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 5,
+     "key": "relations-is-heldout-0001",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-is-heldout-0001",
+       "question": 1,
+       "sentences": [
+        "Felix is a hen.",
+        "Is Felix a hen?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 6,
+     "key": "relations-is-heldout-0002",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-is-heldout-0002",
+       "question": 1,
+       "sentences": [
+        "Nora is a cow.",
+        "Is Nora a cow?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 7,
+     "key": "relations-is-heldout-0003",
+     "records": [
+      {
+       "answer": "yes",
+       "key": "relations-is-heldout-0003",
+       "question": 1,
+       "sentences": [
+        "Nora is a hen.",
+        "Is Nora a hen?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 8,
+     "key": "relations-what-heldout-0000",
+     "records": [
+      {
+       "answer": "cat",
+       "key": "relations-what-heldout-0000",
+       "question": 1,
+       "sentences": [
+        "Nora is a cat.",
+        "What is Nora?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 9,
+     "key": "relations-what-heldout-0001",
+     "records": [
+      {
+       "answer": "hen",
+       "key": "relations-what-heldout-0001",
+       "question": 1,
+       "sentences": [
+        "Anna is a hen.",
+        "What is Anna?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 10,
+     "key": "relations-what-heldout-0002",
+     "records": [
+      {
+       "answer": "hen",
+       "key": "relations-what-heldout-0002",
+       "question": 1,
+       "sentences": [
+        "Ciao is a hen.",
+        "What is Ciao?"
+       ]
+      }
+     ]
+    },
+    {
+     "document": 11,
+     "key": "relations-what-heldout-0003",
+     "records": [
+      {
+       "answer": "hen",
+       "key": "relations-what-heldout-0003",
+       "question": 1,
+       "sentences": [
+        "Felix is a hen.",
+        "What is Felix?"
+       ]
+      }
+     ]
+    }
+   ],
+   "lesson": 9,
+   "measure": [
+    "Felix",
+    "cat",
+    "animal"
+   ],
+   "name": "relations"
+  }
+ ],
+ "version": 2,
+ "vocabulary": [
+  "A",
+  "Anna",
+  "Bees",
+  "Big",
+  "Bill",
+  "Ciao",
+  "Cows",
+  "Felix",
+  "Hens",
+  "Here",
+  "Is",
+  "Nora",
+  "Old",
+  "Owls",
+  "Red",
+  "Small",
+  "Tall",
+  "The",
+  "This",
+  "What",
+  "Who",
+  "a",
+  "an",
+  "animal",
+  "bed",
+  "bee",
+  "bees",
+  "box",
+  "car",
+  "cat",
+  "cow",
+  "cows",
+  "does",
+  "eat",
+  "eats",
+  "follow",
+  "follows",
+  "gladly",
+  "hear",
+  "hears",
+  "help",
+  "helps",
+  "hen",
+  "hens",
+  "here",
+  "in",
+  "is",
+  "like",
+  "likes",
+  "loudly",
+  "move",
+  "moves",
+  "near",
+  "on",
+  "owl",
+  "owls",
+  "quietly",
+  "rest",
+  "rests",
+  "see",
+  "sees",
+  "sleep",
+  "sleeps",
+  "slowly",
+  "the",
+  "this",
+  "tree",
+  "under",
+  "wait",
+  "waits"
+ ]
+}

@@ -332,3 +332,251 @@ Assumption 10 was put to him as three arrangements: (1) rehearse the three stage
 > the full-size model (on this machine) should only be used for the large dataset training; it is overkill for the small synthetic experiments (although it may be necessary for the mathematical corpus).
 
 Recorded in §9.2: the experiments, the operator table, the saved models and their tests are the small model's; the full-size model is for the large training, which opens with the three stages; the math stage may take a larger model. How the larger model is reached (a second model taken through A1 and A2 first) is Claude's filling-out.
+
+## 16. Reconciled with items 2.0 and 1.8 (Claude, 2026-11-12)
+
+Alec, 2026-11-11: "Let's not worry about who does 1.5 , 1, 0.5; we just
+want to work in parallel, with you doing most of the spec work." Asked
+whether Claude could start item 1.5, 1 or 0.5 while Codex completes item
+2.0 and builds item 1.8, and told that 1.5 and 1 optimize and compile the
+code 1.8 rewrites while rounds 1 and 2 here do not depend on the runtime:
+"Wait for the 2.0 push." Codex pushed the whole-path landing
+(`b35a4bd316`, recorded as `d88acd3fab`). Claude builds rounds 1 and 2 in
+a second worktree, `basicmodel-item0-5`, detached at `d88acd3fab` with no
+branch (D1), and leaves the work uncommitted for Alec.
+
+What changed since this plan was written, and what follows here:
+
+1. *The runtime moves under 1.8.* Item 1.8
+   ([specification](2026-11-11-item1-8-last-architecture-round.md))
+   changes the memory columns and recall, the sentence loop's operators,
+   the output read and the numeric input. The harness items that run the
+   model are therefore built after 1.8 lands, so that each is run once on
+   the code item 0 will use: H2, H3, H5 (its call site is in
+   `bin/Models.py`, which 1.8 edits), H6, H12 and H14's scoring dry run.
+   Round 1 now: H1, H7, H11, H14's disjointness half and H18 below; H4
+   stays the joint exit.
+2. *H2.* The decomposition teacher was retired in item 2.5 (decision (a),
+   2026-11-04). H2's own first check stands: what each arm still measures
+   is read before anything is regenerated, and an arm with nothing left
+   to measure goes to Alec.
+3. *H18, new: the source hash counts a git-ignored file.* The receipts'
+   method (`test/bounded_tests.source_snapshot`) includes the local
+   `data/corpus/assembly-01/manifest.json`, which git ignores, so a clean
+   checkout of a landed commit cannot reproduce its receipt's hash: the
+   whole-path round returned `26dd5a0bda60` over 1,051 files and its
+   landing hashes to `ad3efc4a71b7` over 1,050, differing only in that
+   file. Two fixes: leave git-ignored files out of the snapshot, or track
+   that manifest. Either changes the method, so it takes effect at a
+   clean point (after 1.8's landing), never inside a round in flight.
+   Claude's default, for Alec: leave ignored files out.
+4. *Games.* 1.8 renames the field rules and makes `not` a field operator;
+   `conjunction` stays a vector operator. The first three games keep their
+   rule names (`not`, `conjunction`, and the unary chain), which exist
+   before and after 1.8. Their recipes, rows and manifest are built now;
+   §6.4's check of which training signal teaches a whole-sentence target
+   runs the model and waits for 1.8. The written tier was to be written by
+   Codex (D3); with Claude building, Claude writes it and Codex, or Alec,
+   reads the audit list.
+5. *Math.* Unchanged. "Math is never direct" stands beside 1.8's scalar,
+   whose grounding of number words is a lesson of its own (1.8 §3.10); the
+   rows here stay sentences.
+6. *Lessons.* The stage data of the ten lessons is built now. Their
+   criteria are read by `bin/corpus_lessons.py`, a runtime path, and their
+   runs belong to round 3, after 1.5.
+7. *The two tiny artifacts of §9* (`xor_grammar`, `mm_xor_grammar`) wait:
+   1.8 moves every XOR learning certificate to numbers (1.8 §3.9).
+8. *Review.* D2 had Codex review Claude's compiler rounds; the same method
+   (hash, patch, certificates) is proposed for these rounds, through Alec.
+
+## 17. Rounds 1 and 2 as built (Claude, 2026-11-12; on the branch `testing`, §18)
+
+*Round 2, the corpora.* Each is data under a tracked manifest with its
+generator command and seed (the seed is the corpus's identity, §4 rule 6),
+and a fast certificate that reads only the frozen files (§4 rule 5).
+
+- *Math* (§7): `bin/math_chain_corpus.py freeze --seed 20261112`, nine
+  grades in `data/math/grade-00.jsonl` to `grade-08.jsonl` (828 rows),
+  in correction 1's order: counting, identity, alias, plus zero, plus one,
+  plus two to ten, the same with two distractors, depth two, depth three
+  (test only, deeper than any trained chain). Held-out pairs only in
+  validation and test, beyond pairs only in `beyond`, the other grades
+  split by `exact.split_by_surface`'s rule. Correction 2 is data: each
+  worked step is a question whose answer is supplied
+  (`ChainDocument.questions`, read by `ChainDocument.target`), so the
+  existing answer supervision scores it and no objective term is added.
+  Certificate: `test/test_math_corpus.py`, which checks every answer and
+  intermediate answer with its own evaluator.
+- *Games* (§6): `bin/game_corpus.py` (`expand`, `verify`, `content_split`),
+  with no word of any language in it; recipes for `not` (clause, copula),
+  `conjunction` (subjects, predicates) and `unary_chain` (k = 1, 2, 3: the
+  plan's own example, a negated, determined noun phrase, intended through
+  `definite_unary`, `lower_unary` and `not`). Template tier only; the
+  written tier is not built. In-game fillers are words no lesson uses;
+  transfer fillers are lesson words. Certificate: `test/test_game_corpus.py`.
+- *Lessons* (§9): the ten phases' stage data in
+  `data/lessons/parts-of-speech.json` (`bin/lesson_stages.py`, reusing the
+  games' expander), in the lesson driver's format, so `stage_documents`
+  reads each stage; held-out records apart, at most a quarter of a
+  variant's training records. Each stage's criterion names its
+  measurement from parts of speech §5b with the threshold left null for
+  Alec. `data/corpus-lessons.json` is unchanged, because item 1.8's
+  measurement reuses its arm; §8's A1 and A2 read the new file.
+  Certificate: `test/test_lesson_stages.py`.
+- *The manifest* (§8): `data/training-corpus.json` (`bin/training_corpus.py
+  freeze`), stages A1 to B3 in order with hashes, the held-out list, and
+  the one scan of the developmental assembly for sentences that occur only
+  in held-out items: 953 such sentences, 5 occurrences in 3,421,205
+  sentences, all from lesson 0's held-out single words; recorded, not
+  required to be zero, since part B is read after the gate.
+  Certificate: `test/test_training_corpus.py`.
+
+*Round 1, the harness.* Built: H7 (the deleted test's entry removed from
+`DEFAULT_CERTIFICATES`; no test asserts the 7.5 report any more, recorded
+in FutureWork), H11 (`data/eval/heldout-cost.json`, the union of part A's
+validation splits, 191 items, hashed in the manifest; the metric itself is
+item 0's to declare) and H14's disjointness half (every next-word gate item
+is a test document under the shard's split rule). Not built, with the
+reason: H1 is measured only by full sweeps, which cannot share the machine
+with Codex's; H2, H3, H5, H6, H12 and H14's dry run run the model and
+follow item 1.8 (§16 item 1); H4 is the joint exit.
+
+*Findings, for Alec* (H20 is of the same kind as H18: a clean checkout
+is not the measured one):
+
+- *H19, withdrawn (Claude, later on 2026-11-12).* It was recorded as a
+  test downloading the web shard into the fresh worktree. That was a
+  misreading: `data/fineweb/shard_00000.parquet` (94,511,680 bytes) has
+  been tracked in git since `b917793f37`, the worktree's copy carries the
+  checkout's time to the second, and `test/test_math_chain.py` does not
+  touch it. The `local` flag of stage B2 in `data/training-corpus.json` is
+  therefore half right (that shard is tracked; later shards would be
+  fetched); it stays until the manifest is next built.
+- *H20.* `test/test_doc_links.py` fails 58 cases in a clean checkout,
+  because the documents link to local, git-ignored material: receipts
+  under `doc/benchmarks/`, old results under `output/tests/` and one
+  checkpoint folder. Proposed: the test resolves only tracked targets and
+  reports links into ignored paths as local, not as broken.
+
+## 18. A second machine (Alec, 2026-11-12)
+
+### 18.1 Decided
+
+Alec, 2026-11-12: "I will actually use codex on the other machine to do
+the 0.5 work. You can remain supervisor. (For both 1.8 and 0.5)". Then,
+by question tool:
+
+- *Where the work goes.* "Give me text to paste. It will have to pull 2.0
+  from GitHub and work on its own branch", and for Claude's rounds 1 and
+  2: "Push, but on branch 'testing'". Rounds 1 and 2 are one commit on top
+  of `9f7923d67f` on the branch `testing`; Codex continues there and
+  returns there; Alec lands it.
+- *The model as it is in 2.0.* Asked whether the items that run the model
+  wait for 1.8: "You can run the model as it exists in 2.0, can't you?",
+  then "Yes, run them on 2.0 now". This replaces §16 item 1: H2, H3, H5,
+  H6, H12, H14's dry run and §6.4's check run on 2.0's code, and after 1.8
+  lands only the numbers item 0 reads are measured again. H8's dry run
+  (§7) is of the same kind and joins them (Claude's reading).
+- *H20.* "doc links to [git-ignored] receipts should have the relevant
+  portions of those receipts inlined immediately. That can happen here,
+  now, and be pushed on main." Claude does it on the first machine, and
+  `testing` takes it by merging `main`. A return follows the same rule: it
+  carries its numbers inline and links no ignored path.
+- *H18* waits for 1.8's landing, since it changes how every receipt's
+  hash is computed (Claude's reading; Alec's answer addressed H20).
+- *The written tier.* With Codex building, D3 stands as decided: Codex
+  writes and verifies the pairs, Claude reads the audit list. §16 item 4's
+  reading is withdrawn.
+
+### 18.2 Codex text (Claude, 2026-11-12; for Alec to paste on the second machine)
+
+~~~
+Item 0.5, the test development pass, continues on this machine (Alec,
+2026-11-12). Claude wrote this text and reviews your return; Alec decides
+and lands. Codex on another machine is building item 1.8 on main at the
+same time: never push main, and never force-push.
+
+Get the code. Work on the branch testing: main at 9f7923d67f (item 2.0
+complete) plus one commit with Claude's rounds 1 and 2 of this item. In a
+BasicModel checkout that exists, run git fetch origin, then
+git checkout -b testing origin/testing; otherwise
+git clone -b testing https://github.com/arborrhythms/BasicModel basicmodel.
+Have git-lfs installed first, so that data/mnist_train.csv is the real
+file (as a pointer, its case skips). Run make install (Python 3.12; .venv from the unpinned requirements.txt).
+When origin/main moves (the receipt inlining of §18.1 lands there first),
+merge it into testing.
+
+Read first, in doc/plans/2026-11-09-item0-5-test-development.md: §4 (the
+rules), §5 (the H items), §16 and §17 (what was reconciled and built), and
+§18.1 (Alec's decisions of today, which override §16 where they differ).
+
+Check the copy before building any local data. This passes 22 cases:
+env -u RUN_TRAINED -u RUN_SLOW .venv/bin/python -m pytest -q -p no:cacheprovider test/test_math_corpus.py test/test_game_corpus.py test/test_lesson_stages.py test/test_training_corpus.py
+Each manifest's command, run with its output in a scratch directory,
+reproduces the frozen files byte for byte. The games and lessons builders
+need their recipes copied inside the output directory first, and the
+lessons builder does not create that directory; rebuild the training
+manifest with --root at a copy of the data it reads and --local-root .,
+then compare data/training-corpus.json and data/eval/heldout-cost.json.
+Then build the developmental assembly once:
+.venv/bin/python bin/prepare_corpus.py --recipe data/corpus-sources.json --output data/corpus
+(1.5 GiB; it checks every source against its recorded digest). The web
+shard data/fineweb/shard_00000.parquet is tracked. Never run
+bin/training_corpus.py freeze --root . without the assembly in place: it
+writes B1's manifest_sha256 and part_b_scan as null.
+
+The round, one return:
+1. Review rounds 1 and 2 as built (§17) against the plan and §4; repair
+   what you find and record each repair. Known warts: the two builder
+   limits named above; stage B2's local flag (§17, H19 withdrawn); and
+   test_training_corpus.py's local part B case, which fails once the
+   assembly is built here, because the assembly's manifest records
+   assembly_seconds, a wall-clock time, so the manifest_sha256 recorded
+   for B1 cannot match another build (B1 needs an identity that leaves the
+   timing out). A repair that touches a frozen corpus freezes it again
+   with the same seed, and its rows must come out identical.
+2. H1 (§5): the bounded-test batching, measured with complete sweeps on
+   this machine, which runs no other sweeps.
+3. The games' written tier (§6.3, D3): you write and verify the varied
+   pairs once and freeze them with the model identifier, the date, the
+   prompt's sha256, the counts verify accepted and rejected, and the keys
+   of a sampled audit list for Claude to read.
+4. On 2.0's model (§18.1): H2, starting with its first check (what each
+   decomposition arm still measures, before anything is regenerated; an
+   arm with nothing left to measure goes to Alec); H3, once under
+   RUN_SLOW; H5 with test/test_interval_log.py, its hook in bin/Models.py
+   kept to one call because item 1.8 edits that file; H6; H8, the
+   declaration of §7 written for Alec's word with every changed number
+   marked, and one dry run on grade 0; H12; H14's scoring dry run; and
+   §6.4's check of which training signal teaches a whole-sentence target
+   (if neither does, the games' training stops at that finding, which
+   goes to Alec). Record each number as measured on 2.0.
+5. Not in this round: H18 (after 1.8 lands), H20 (done on main, §18.1),
+   H4 (the joint exit with item 1), and round 3 (§11).
+
+Rules: §4 of the plan. No seed is chosen so that an assertion passes; a
+fixture's capacities and shapes are never resized; legacy paths are
+deleted, not kept; comments state technique. Find causes yourself and
+repair them where they arise; a mechanism added only to pass a gate is
+not a repair. A setup defect in a test of this round is fixed without
+stopping, its assertions unchanged. Continue without stopping and record
+each decision you take for Alec; stop only for a design question, written
+for Alec with your recommendation. A failed
+test/test_mm_xor.py::TestMMXorConvergence::test_convergence or
+test/test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class
+stops the round.
+
+Testing: fast checks while you build; one default sweep when you freeze,
+env -u RUN_TRAINED -u RUN_SLOW make test, nothing deselected. Until the
+inlining reaches testing, test/test_doc_links.py fails on links to
+ignored receipts; name those cases in the return and leave them.
+
+Return as §19 of the plan: what changed and why, each item's certificate
+and numbers, the sweep's result, findings, and decisions for Alec.
+Receipts stay local under doc/benchmarks/ on this machine, where Claude
+cannot read them, so §19 carries inline every number, command and hash
+the review needs, and links no ignored path. Freeze: commit on testing;
+record the commit and the source hash (test/bounded_tests.source_snapshot,
+SHA-256 of its compact sorted JSON, and whether
+data/corpus/assembly-01/manifest.json was present); push testing.
+~~~

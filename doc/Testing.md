@@ -694,3 +694,15 @@ Item 2.0 merged round 3/4 uses direct projection/routing, proposal-credit, actio
 Item 2.0 round 3/4 repair adds an unseeded packed-sentence graph scan and an optional chooser-owner certificate; eight consecutive native solo runs precede one frozen, unfiltered sweep (see [spec §16](plans/2026-11-03-gradient-projection.md)).
 
 Round 5 (2026-11-09): [the return and receipts](plans/2026-11-03-gradient-projection.md#17-round-5-memory-basic-percepts-and-shared-strata) record reference-path, state-error, shared-strata, seat-authority and basic-percept certificates, all test ports, targeted checks and the single full sweep on the frozen source.
+
+### Data certificates of the training corpus (item 0.5, 2026-11-12)
+
+Four fast certificates read the frozen corpora and never regenerate them:
+`test/test_math_corpus.py` (hashes, grade order, every answer and
+intermediate answer, held-out and beyond pairs), `test/test_game_corpus.py`
+(hashes, `verify` on every row, splits, transfer words kept out of the
+games), `test/test_lesson_stages.py` (hashes, phases in lesson order,
+answers, held-out words, the lesson driver reads every stage) and
+`test/test_training_corpus.py` (stage hashes, part A disjointness, the
+held-out cost set, the next-word gate's documents, the recorded part B
+scan). Local part B data is checked by hash only where present.

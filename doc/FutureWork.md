@@ -1262,7 +1262,8 @@ path: a nonzero **training temperature** for the compose trials and a
 spec, with evaluation deterministic; and the shared-operator report
 assertion to restate around closing contributions or forced parametric
 selection — probably moot since 6.9 gave every parameter one owner, to be
-verified at housekeeping. The `exploration_trial` rename is todo item 2.
+verified at housekeeping. *Verified 2026-11-12 (item 0.5, H7): no test asserts
+that report any more; nothing is left to restate.* The `exploration_trial` rename is todo item 2.
 The depth-three campaign's red is recorded in the receipt and in
 [Testing](Testing.md); it is evidence, not work.
 

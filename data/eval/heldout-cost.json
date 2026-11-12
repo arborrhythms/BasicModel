@@ -1,0 +1,1835 @@
+{
+ "items": [
+  {
+   "key": "words-name-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Nora."
+   ],
+   "sha256": "329aa6c5db95633102b4845a93d2a65a98fc9dadfba20a9bc7f41d89a836e383"
+  },
+  {
+   "key": "words-noun-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "hen."
+   ],
+   "sha256": "855aa0916f4790883a0558a70c53c19124d8f8d1f02fc7c82daf36d59bab17ae"
+  },
+  {
+   "key": "words-verb-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "rests."
+   ],
+   "sha256": "9b1f3333d574e9e5c5bee7ed3db3d93a00a95beceaf275aeb9de881f302aa4c9"
+  },
+  {
+   "key": "interpret-here-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Here is Nora.",
+    "Who is here?",
+    "Nora"
+   ],
+   "sha256": "7762a9138ff3fc579562951ed613a1abe79a9ff66d0829720b72c21fd8a94577"
+  },
+  {
+   "key": "interpret-this-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "This is Nora.",
+    "What is this?",
+    "Nora"
+   ],
+   "sha256": "a24dea08c69ed4e351437eadc70a83a382fbac38d39566f926b333f22dab3d68"
+  },
+  {
+   "key": "clause-name-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Felix rests."
+   ],
+   "sha256": "09f7a0f9ea6cf8778646bf8d0cc4df02e8d32b2681c97130c5044faefb95d870"
+  },
+  {
+   "key": "clause-name-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "Nora moves."
+   ],
+   "sha256": "16e614c6383c1f1181784213f5d7b058d397b5f126ab1b7cf5848484c48320b8"
+  },
+  {
+   "key": "clause-name-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "Nora sleeps."
+   ],
+   "sha256": "3398667f9d2e9e31127a4f0a6570a15424ecc490023a2f89819cf91c4317bedd"
+  },
+  {
+   "key": "clause-name-heldout-0003",
+   "kind": "lessons",
+   "sentences": [
+    "Nora waits."
+   ],
+   "sha256": "ca26096f95a9f0fccd70b06a8bf4e567c98c47a11d7850346b4f8cbf24e01733"
+  },
+  {
+   "key": "clause-plural-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Bees rest."
+   ],
+   "sha256": "d4252c225ae262ede8374e8185dd6e3e9aa0032ce6f04fb8ed9835ce779008f7"
+  },
+  {
+   "key": "clause-plural-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "Hens move."
+   ],
+   "sha256": "02da7cc8f4623557747971cfabf145321d8e321f52c15f3368ccaa07bd6177a1"
+  },
+  {
+   "key": "clause-plural-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "Hens rest."
+   ],
+   "sha256": "3afc47acba4880da2e12a95362c8fa8b2bfb4b2c56c3c99bab59f58771a21903"
+  },
+  {
+   "key": "ask-who-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Felix rests.",
+    "Who rests?",
+    "Felix"
+   ],
+   "sha256": "e78d5b150a98abe3f7d0b91ebf9130ee0d118c204fb01b08383be4b00224ffb1"
+  },
+  {
+   "key": "ask-who-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "Nora moves.",
+    "Who moves?",
+    "Nora"
+   ],
+   "sha256": "aa4ddd85162f53d1469d54bbe58ed743093031cdf72732dae5afb11552b9c10e"
+  },
+  {
+   "key": "ask-who-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "Nora sleeps.",
+    "Who sleeps?",
+    "Nora"
+   ],
+   "sha256": "4b38d87571f14f706e1708a6bb3a5062509bd2c83b1e5afc49fa9a1d191b89be"
+  },
+  {
+   "key": "ask-who-heldout-0003",
+   "kind": "lessons",
+   "sentences": [
+    "Nora waits.",
+    "Who waits?",
+    "Nora"
+   ],
+   "sha256": "cac95a6e31977c16a1bfad894716f7da44f3a580027945a8527f371ec0a383f0"
+  },
+  {
+   "key": "verb-object-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Nora sees Anna.",
+    "Who does Nora see?",
+    "Anna"
+   ],
+   "sha256": "fe4bcb2df78d61e85236b1a0e79b702bfd6edefa6f5509d451200cce25cec225"
+  },
+  {
+   "key": "verb-object-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "Nora helps Bill.",
+    "Who does Nora help?",
+    "Bill"
+   ],
+   "sha256": "b1ef217ac5b6cc3f5418eb01657727f173aef379426f0809daac0a71f8085892"
+  },
+  {
+   "key": "verb-object-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "Nora sees Bill.",
+    "Who does Nora see?",
+    "Bill"
+   ],
+   "sha256": "80abff9d6a5de899431927940c7a13beb3b67db5e9714f7a98c4ce507c1e9216"
+  },
+  {
+   "key": "verb-object-heldout-0003",
+   "kind": "lessons",
+   "sentences": [
+    "Nora likes Ciao.",
+    "Who does Nora like?",
+    "Ciao"
+   ],
+   "sha256": "0d0c725afbfd72f04ca7386b23b07472043a556c831c3b63e57a2b8cf03c29e9"
+  },
+  {
+   "key": "verb-object-heldout-0004",
+   "kind": "lessons",
+   "sentences": [
+    "Anna helps Felix.",
+    "Who does Anna help?",
+    "Felix"
+   ],
+   "sha256": "1837e8c1ee438ec69856be33d76814388e4615bfba2471b6011209c07a7bab7b"
+  },
+  {
+   "key": "verb-object-heldout-0005",
+   "kind": "lessons",
+   "sentences": [
+    "Nora follows Felix.",
+    "Who does Nora follow?",
+    "Felix"
+   ],
+   "sha256": "c4f70f844999281ffdd45dec31c94e3b986cd3d418d3f53fbd87aaf8d925a519"
+  },
+  {
+   "key": "verb-object-heldout-0006",
+   "kind": "lessons",
+   "sentences": [
+    "Anna follows Nora.",
+    "Who does Anna follow?",
+    "Nora"
+   ],
+   "sha256": "db2e1168130484a30e4b3a83fa175dd42cf682cc3aab217bad3a8553c38303af"
+  },
+  {
+   "key": "verb-object-heldout-0007",
+   "kind": "lessons",
+   "sentences": [
+    "Bill hears Nora.",
+    "Who does Bill hear?",
+    "Nora"
+   ],
+   "sha256": "ce98994488fe4f3615e3195d5aeb32cfc0f559dc4995ee35113428ca8db95093"
+  },
+  {
+   "key": "verb-object-heldout-0008",
+   "kind": "lessons",
+   "sentences": [
+    "Ciao likes Nora.",
+    "Who does Ciao like?",
+    "Nora"
+   ],
+   "sha256": "9282ad92ac17e390a8735e68e6f44180a56f9c61ee947383a92aeb8f27a119a1"
+  },
+  {
+   "key": "verb-object-heldout-0009",
+   "kind": "lessons",
+   "sentences": [
+    "Ciao sees Nora.",
+    "Who does Ciao see?",
+    "Nora"
+   ],
+   "sha256": "5362a89242e8376492229ace71fe9cb1a48d8c18f4690cd9270d1f5c98e10ab5"
+  },
+  {
+   "key": "verb-object-heldout-0010",
+   "kind": "lessons",
+   "sentences": [
+    "Felix likes Nora.",
+    "Who does Felix like?",
+    "Nora"
+   ],
+   "sha256": "169bb25a2980e19a222672ea9a27e4b368691f4fa6bb718fb8fb0d534036c9d3"
+  },
+  {
+   "key": "verb-object-heldout-0011",
+   "kind": "lessons",
+   "sentences": [
+    "Felix sees Nora.",
+    "Who does Felix see?",
+    "Nora"
+   ],
+   "sha256": "96e642c47358374a0d98873edb855b4e1b722955e1fec2bd20e1710fbe590403"
+  },
+  {
+   "key": "verb-subject-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Anna hears Nora.",
+    "Who hears Nora?",
+    "Anna"
+   ],
+   "sha256": "302a5aeb796620b4992897e79a80c08caf842b8286b8721d5cdda96f49a351d6"
+  },
+  {
+   "key": "verb-subject-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "Bill helps Ciao.",
+    "Who helps Ciao?",
+    "Bill"
+   ],
+   "sha256": "00e95734dd0c473e6cbfbc96bf9b67e8af75a3643907b7c8de1255bda8a4061d"
+  },
+  {
+   "key": "verb-subject-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "Bill helps Nora.",
+    "Who helps Nora?",
+    "Bill"
+   ],
+   "sha256": "b64b3c69c687b3840d1f02885a7bbe0de84fdfe8482ae65ca1cc8ab8bc1ee84d"
+  },
+  {
+   "key": "verb-subject-heldout-0003",
+   "kind": "lessons",
+   "sentences": [
+    "Bill likes Nora.",
+    "Who likes Nora?",
+    "Bill"
+   ],
+   "sha256": "28b2d1a06ac2fba849f989e171c904c0ca35515d1e2599e0f72db4e51c8a384d"
+  },
+  {
+   "key": "verb-subject-heldout-0004",
+   "kind": "lessons",
+   "sentences": [
+    "Ciao helps Bill.",
+    "Who helps Bill?",
+    "Ciao"
+   ],
+   "sha256": "9218da85719197119f0ae4fe0f91a7278c1af2f8f85aa87b297878ad5f87477f"
+  },
+  {
+   "key": "verb-subject-heldout-0005",
+   "kind": "lessons",
+   "sentences": [
+    "Felix helps Bill.",
+    "Who helps Bill?",
+    "Felix"
+   ],
+   "sha256": "f5338d78b31cf192e618bf23569855a888394ee2b9be306597307a94e49fe0ec"
+  },
+  {
+   "key": "verb-subject-heldout-0006",
+   "kind": "lessons",
+   "sentences": [
+    "Felix likes Nora.",
+    "Who likes Nora?",
+    "Felix"
+   ],
+   "sha256": "624f020083d7eff22169fe87068b35b4ea7dd769d4696974546062cc0d9dac8e"
+  },
+  {
+   "key": "verb-subject-heldout-0007",
+   "kind": "lessons",
+   "sentences": [
+    "Felix sees Nora.",
+    "Who sees Nora?",
+    "Felix"
+   ],
+   "sha256": "2ef798db0d06afb1a2df133d1c8c773445894f03552fcc5395eadf3bd4a40e4f"
+  },
+  {
+   "key": "verb-subject-heldout-0008",
+   "kind": "lessons",
+   "sentences": [
+    "Nora follows Bill.",
+    "Who follows Bill?",
+    "Nora"
+   ],
+   "sha256": "102df673aef944fcc53cdda291e189deba4ed562fa5fc3ec400fd467467bef57"
+  },
+  {
+   "key": "verb-subject-heldout-0009",
+   "kind": "lessons",
+   "sentences": [
+    "Nora follows Ciao.",
+    "Who follows Ciao?",
+    "Nora"
+   ],
+   "sha256": "bfbac9da473deda80019e011d1faf7a95109655023d4315857636e8d570a0455"
+  },
+  {
+   "key": "verb-subject-heldout-0010",
+   "kind": "lessons",
+   "sentences": [
+    "Nora likes Anna.",
+    "Who likes Anna?",
+    "Nora"
+   ],
+   "sha256": "0a9113e127f1191b04b4edd88d41d28a5688db6919b32a491d8881744c524523"
+  },
+  {
+   "key": "verb-subject-heldout-0011",
+   "kind": "lessons",
+   "sentences": [
+    "Nora sees Ciao.",
+    "Who sees Ciao?",
+    "Nora"
+   ],
+   "sha256": "b813161f8e54b1fdfe105622a945381c0ef4d7692dd4cc936a8d3896b3ae3d52"
+  },
+  {
+   "key": "modifiers-pair-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Big owls rest."
+   ],
+   "sha256": "51f43b26fd08b18f6ae16c6ce3fb255e4dd70aeb4f2ef4d1baa3d7ce22fce84b"
+  },
+  {
+   "key": "modifiers-pair-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "Old hens sleep."
+   ],
+   "sha256": "04fc31f2ef791c8bc214698f59dd9f6094b11cb5dc69209192661f63b2002a2b"
+  },
+  {
+   "key": "modifiers-pair-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "Old owls rest."
+   ],
+   "sha256": "c7a80caf10dd5862772c404515a298156e8bafb4ed3b7cdac4439dd184375e1c"
+  },
+  {
+   "key": "modifiers-pair-heldout-0003",
+   "kind": "lessons",
+   "sentences": [
+    "Red hens wait."
+   ],
+   "sha256": "b6fd47ff1bfa08a4ba9bcf9636cca5715fbca8682afcc5495d0d4dc2b64a43c0"
+  },
+  {
+   "key": "modifiers-pair-heldout-0004",
+   "kind": "lessons",
+   "sentences": [
+    "Small bees rest."
+   ],
+   "sha256": "d7acb7cb19dc9c0e30ae6fb1c0d43cc377cd403d411d839ddf299962d3497c29"
+  },
+  {
+   "key": "modifiers-pair-heldout-0005",
+   "kind": "lessons",
+   "sentences": [
+    "Small hens move."
+   ],
+   "sha256": "d182b4858e02dc1a78274b85621e48c8321e503fa972c1c880f2616fa7149517"
+  },
+  {
+   "key": "modifiers-pair-heldout-0006",
+   "kind": "lessons",
+   "sentences": [
+    "Tall bees eat."
+   ],
+   "sha256": "f5ac4ff20c43f2500b9918e74ae3e70d8d2cdb9fcee69e9f9c6ea9ea3cbe69d7"
+  },
+  {
+   "key": "modifiers-pair-heldout-0007",
+   "kind": "lessons",
+   "sentences": [
+    "Tall cows move."
+   ],
+   "sha256": "debb42141e9ff273d581b05b5a6771aec020def56e3ab21bac3c18b3ce204309"
+  },
+  {
+   "key": "modifiers-pair-heldout-0008",
+   "kind": "lessons",
+   "sentences": [
+    "Tall hens sleep."
+   ],
+   "sha256": "e15f43ab246fb22f0f2dd35e50cc2e07cc3cb38ee4097d215048b97084b6ccdf"
+  },
+  {
+   "key": "modifiers-pair-heldout-0009",
+   "kind": "lessons",
+   "sentences": [
+    "Tall hens wait."
+   ],
+   "sha256": "7fd0b60de81b4f1e2b70c23e510b4c7398192d367b9facb3480b3f5e44cf1cea"
+  },
+  {
+   "key": "modifiers-pair-heldout-0010",
+   "kind": "lessons",
+   "sentences": [
+    "Tall owls sleep."
+   ],
+   "sha256": "8e8e9e0e29d38bf5fdbac58ed1501bfc592091ea910af359348853a3b3be312f"
+  },
+  {
+   "key": "modifiers-pair-heldout-0011",
+   "kind": "lessons",
+   "sentences": [
+    "Tall owls wait."
+   ],
+   "sha256": "bd4b0b9cf86793471c6c00bcf525ac8410cdbca4463351b91bf52c03400cad12"
+  },
+  {
+   "key": "determiners-definite-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "The hen eats."
+   ],
+   "sha256": "d44c685506560e2095a789059ce829baaf3a0be378a9737582052ea18f03e43f"
+  },
+  {
+   "key": "determiners-definite-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "The hen rests."
+   ],
+   "sha256": "ae5a7f588d6d6f7b5ed8f27c5c4dffde4e91db711c6b6da4d08dea113156cb0a"
+  },
+  {
+   "key": "determiners-definite-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "The hen waits."
+   ],
+   "sha256": "5f37bbf418e85d9bbc5cba9852a5c3a3ce0a37a86ce33bbfa36358fcaa9c5afb"
+  },
+  {
+   "key": "determiners-definite-heldout-0003",
+   "kind": "lessons",
+   "sentences": [
+    "The owl rests."
+   ],
+   "sha256": "f8a478fb0b29fd3efe8090e2c8743a6ac9a08fa74318bc1f134d1f9aeb3ffaa0"
+  },
+  {
+   "key": "determiners-indefinite-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "A cat rests."
+   ],
+   "sha256": "275c1251593588a01ee47051f5420a9ee8648c818c436c55bf7192e81ed986b9"
+  },
+  {
+   "key": "determiners-indefinite-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "A hen eats."
+   ],
+   "sha256": "5f881129ed6b31b8a8315a2e90a09be08a0a8c627c2bca3a8cc7813066f37cf9"
+  },
+  {
+   "key": "determiners-indefinite-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "A hen sleeps."
+   ],
+   "sha256": "7e0ec880e4f94b7372f9a95ac100406567b3f202fa52de0855109632434bac60"
+  },
+  {
+   "key": "determiners-indefinite-heldout-0003",
+   "kind": "lessons",
+   "sentences": [
+    "A hen waits."
+   ],
+   "sha256": "5184944fd276afbb2030e73964a57764c705fa369cfacc6bf72207db8a40c07e"
+  },
+  {
+   "key": "adverb-manner-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Anna waits loudly."
+   ],
+   "sha256": "e5f8fe6cfaee0f02d1080231663af5d29dd7429544ea8fbb708f30e2e1654e40"
+  },
+  {
+   "key": "adverb-manner-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "Bill rests slowly."
+   ],
+   "sha256": "8007e4944ca11f76f26a79738a9783018861e71f3f711954c9ac12698f6b28c1"
+  },
+  {
+   "key": "adverb-manner-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "Bill waits loudly."
+   ],
+   "sha256": "70e20a6a4b7e92ebc28291c468d9bbe4969f5017d349d104b9f4c51a19186ee2"
+  },
+  {
+   "key": "adverb-manner-heldout-0003",
+   "kind": "lessons",
+   "sentences": [
+    "Ciao sleeps loudly."
+   ],
+   "sha256": "4f1c003f17142cbaf8781a750ffd2a4dd429676d2d195d1ea74d64746ccea3d2"
+  },
+  {
+   "key": "adverb-manner-heldout-0004",
+   "kind": "lessons",
+   "sentences": [
+    "Felix eats loudly."
+   ],
+   "sha256": "de403c2498a0926270376c74f5f172c915f026dd4cf082a5f3e651df07b8e863"
+  },
+  {
+   "key": "adverb-manner-heldout-0005",
+   "kind": "lessons",
+   "sentences": [
+    "Felix rests loudly."
+   ],
+   "sha256": "ab1e09f9232c87915d12cc93c6339da96e05d9eb938d9d10725dd67fe24f99a5"
+  },
+  {
+   "key": "adverb-manner-heldout-0006",
+   "kind": "lessons",
+   "sentences": [
+    "Nora eats gladly."
+   ],
+   "sha256": "6ebe4ea5a54575e8b2b15f1fc9dab974090e5da35900bc9ac341f984aa3ad961"
+  },
+  {
+   "key": "adverb-manner-heldout-0007",
+   "kind": "lessons",
+   "sentences": [
+    "Nora moves quietly."
+   ],
+   "sha256": "7016b848c2fba288efd92c29e17a131ee6630b4ac94fd5b795fd484690bb9c5e"
+  },
+  {
+   "key": "adverb-manner-heldout-0008",
+   "kind": "lessons",
+   "sentences": [
+    "Nora sleeps loudly."
+   ],
+   "sha256": "54b3a919487f3e10711070c9a5bf3175f38d3725f13431f7c578735fdbb52a3c"
+  },
+  {
+   "key": "adverb-manner-heldout-0009",
+   "kind": "lessons",
+   "sentences": [
+    "Nora sleeps quietly."
+   ],
+   "sha256": "c1d0423b278f0c5938fd43e508b91785fd48b2eddd23effdb540a164e39505e5"
+  },
+  {
+   "key": "adverb-manner-heldout-0010",
+   "kind": "lessons",
+   "sentences": [
+    "Nora waits quietly."
+   ],
+   "sha256": "7d9f81b3564b5833d052543d01472ebe26efd4e1ca71f7888465837434dc6abf"
+  },
+  {
+   "key": "adverb-manner-heldout-0011",
+   "kind": "lessons",
+   "sentences": [
+    "Nora waits slowly."
+   ],
+   "sha256": "0b1fa83315f2e982a22465b7b42fb7a97a662174aefe979503ebcd04c25e1266"
+  },
+  {
+   "key": "prepositions-place-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Anna eats near the car."
+   ],
+   "sha256": "2b64b3179085fefcf5e122d9f5f674b33aceeef86158b3aadeb246e9f04d24cd"
+  },
+  {
+   "key": "prepositions-place-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "Anna rests near the tree."
+   ],
+   "sha256": "5935166bed4ce97812df52b2fc6198f13828d6ce6f6cf223c5d96fd5c4869830"
+  },
+  {
+   "key": "prepositions-place-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "Anna sleeps under the bed."
+   ],
+   "sha256": "17097ad5ee35831a5888c5d69c68735992959a099ac20035ced470101f1a09fd"
+  },
+  {
+   "key": "prepositions-place-heldout-0003",
+   "kind": "lessons",
+   "sentences": [
+    "Bill moves under the box."
+   ],
+   "sha256": "4801f7de84b5a92913a41a9669f86a92ecd0d9f4a11c6d99cd63cac4e71032d3"
+  },
+  {
+   "key": "prepositions-place-heldout-0004",
+   "kind": "lessons",
+   "sentences": [
+    "Bill rests near the box."
+   ],
+   "sha256": "06eb1532f1ea3a5f8c969e10788d2f6098852902897e807217f7cd9df115eff8"
+  },
+  {
+   "key": "prepositions-place-heldout-0005",
+   "kind": "lessons",
+   "sentences": [
+    "Bill rests on the bed."
+   ],
+   "sha256": "bee0c611e0d3edb7e9be167c77bbf2bd5080d819dae5cc9ac75648084b4d6f04"
+  },
+  {
+   "key": "prepositions-place-heldout-0006",
+   "kind": "lessons",
+   "sentences": [
+    "Bill rests under the tree."
+   ],
+   "sha256": "ee4213153a286588ab785c2f8070cff6ee6f26525d6d0ffa42fd4b73cba0661a"
+  },
+  {
+   "key": "prepositions-place-heldout-0007",
+   "kind": "lessons",
+   "sentences": [
+    "Ciao rests on the car."
+   ],
+   "sha256": "067704d0dc92997c29f3c032f0437523326d24c1c8fc730ec35fb97985a971d2"
+  },
+  {
+   "key": "prepositions-place-heldout-0008",
+   "kind": "lessons",
+   "sentences": [
+    "Ciao sleeps under the car."
+   ],
+   "sha256": "47c721278239876230a56249bc72262fc9a8ccc3502b037912c09a1f1a0fc69b"
+  },
+  {
+   "key": "prepositions-place-heldout-0009",
+   "kind": "lessons",
+   "sentences": [
+    "Felix moves under the box."
+   ],
+   "sha256": "c147eba1dd7b1bb24d6b06c006b7463598556240c87e5c714717c93956c63188"
+  },
+  {
+   "key": "prepositions-place-heldout-0010",
+   "kind": "lessons",
+   "sentences": [
+    "Felix moves under the car."
+   ],
+   "sha256": "4f5bed497eb45883f660f25aa73914816459285ddeddba3f32923ca11567cd1c"
+  },
+  {
+   "key": "prepositions-place-heldout-0011",
+   "kind": "lessons",
+   "sentences": [
+    "Nora rests on the tree."
+   ],
+   "sha256": "049cf016ed80c8312a4c9091b614fbfc15555c0acf3049f6fde47766aba9b333"
+  },
+  {
+   "key": "prepositions-place-heldout-0012",
+   "kind": "lessons",
+   "sentences": [
+    "Nora sleeps on the car."
+   ],
+   "sha256": "de68a60e6bebe6e25f705e6cd4e121ef0e1d9c6baadcb7ccc4bd796b23c2abe9"
+  },
+  {
+   "key": "prepositions-place-heldout-0013",
+   "kind": "lessons",
+   "sentences": [
+    "Nora waits in the box."
+   ],
+   "sha256": "375bfcde819970ab00253f3559954a13457dad3bc4f42ce914fb4db03853ad7a"
+  },
+  {
+   "key": "prepositions-place-heldout-0014",
+   "kind": "lessons",
+   "sentences": [
+    "Nora waits in the tree."
+   ],
+   "sha256": "9dc425fe85d94d95bdb9282088b0371d2cc582e67ec5689bc2a05b17d0dc88ba"
+  },
+  {
+   "key": "relations-infer-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Felix is a hen.",
+    "A hen is an animal.",
+    "Is Felix an animal?",
+    "yes"
+   ],
+   "sha256": "e2fce1e634e91d3f2fe0b2e0d16fdb64c2f56c3ac9da044edd37e222da4201d2"
+  },
+  {
+   "key": "relations-infer-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "Nora is a cat.",
+    "A cat is an animal.",
+    "Is Nora an animal?",
+    "yes"
+   ],
+   "sha256": "f7e48f32ec0441dba56406a32a5263bbb823d7ce3be87d788de220da5052935d"
+  },
+  {
+   "key": "relations-infer-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "Nora is a hen.",
+    "A hen is an animal.",
+    "Is Nora an animal?",
+    "yes"
+   ],
+   "sha256": "20928b767a93adcc1d61528bff863b63c9cbc3e038cc933844ce8e6ae2c58d38"
+  },
+  {
+   "key": "relations-infer-heldout-0003",
+   "kind": "lessons",
+   "sentences": [
+    "Nora is a owl.",
+    "A owl is an animal.",
+    "Is Nora an animal?",
+    "yes"
+   ],
+   "sha256": "de2b8d67674f7bf3f293beb93a7d3a6d36c262f530619ae2109466f3e5b7e8d5"
+  },
+  {
+   "key": "relations-is-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Bill is a hen.",
+    "Is Bill a hen?",
+    "yes"
+   ],
+   "sha256": "be99c3a2b6fdbe9236f9cf8f7d1c817c67efd186003c3e31c1461643b4a9d6c5"
+  },
+  {
+   "key": "relations-is-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "Felix is a hen.",
+    "Is Felix a hen?",
+    "yes"
+   ],
+   "sha256": "f7a7c60fd713e4dad0269d738e69beb16bb0f0836c6198b78e01167616ba590c"
+  },
+  {
+   "key": "relations-is-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "Nora is a cow.",
+    "Is Nora a cow?",
+    "yes"
+   ],
+   "sha256": "34eefb052a2b3ecb779f14b0df08ebff4947cfb41553bc041ce09d18a3ce20b8"
+  },
+  {
+   "key": "relations-is-heldout-0003",
+   "kind": "lessons",
+   "sentences": [
+    "Nora is a hen.",
+    "Is Nora a hen?",
+    "yes"
+   ],
+   "sha256": "d075f94ff4fe8dc54bdc6423d2a96f5f8eccff6833c522c69d30c752cdbfd19c"
+  },
+  {
+   "key": "relations-what-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Nora is a cat.",
+    "What is Nora?",
+    "cat"
+   ],
+   "sha256": "5fd6785cce09b60184495a8b180d1ca16d03fb64a835b1ef8f56696c1f3f09d7"
+  },
+  {
+   "key": "relations-what-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "Anna is a hen.",
+    "What is Anna?",
+    "hen"
+   ],
+   "sha256": "f90202775a19081f7fb85745a48e0a15978116a902945aabb84347cc9b6259e8"
+  },
+  {
+   "key": "relations-what-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "Ciao is a hen.",
+    "What is Ciao?",
+    "hen"
+   ],
+   "sha256": "fe1d4f5c1fa7663cb6d74dd27ae644d4733c8a81bd5f81d3b35a9cc398995e50"
+  },
+  {
+   "key": "relations-what-heldout-0003",
+   "kind": "lessons",
+   "sentences": [
+    "Felix is a hen.",
+    "What is Felix?",
+    "hen"
+   ],
+   "sha256": "916d17b1c4d2adf212f02a049ab35fe10b14a1172338dae1773940d60c706620"
+  },
+  {
+   "key": "conjunction-predicates-000232",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Max runs.",
+    "Max jumps and runs."
+   ],
+   "sha256": "cc738a3798233af8ad79377841fc5b9325e998baee00a4aedf677981405b8db6"
+  },
+  {
+   "key": "conjunction-predicates-000233",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Max sings.",
+    "Max jumps and sings."
+   ],
+   "sha256": "159a92b35f386cd2d97b271cbe66427d7205eafbe234f6a51eaf116fc87e0511"
+  },
+  {
+   "key": "conjunction-predicates-000234",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Max sits.",
+    "Max jumps and sits."
+   ],
+   "sha256": "d4fe1117075b5b33d636bc83a690e4bf7bdf35a0f3620d1ab437fb7a2ee4579a"
+  },
+  {
+   "key": "conjunction-predicates-000236",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Max swims.",
+    "Max jumps and swims."
+   ],
+   "sha256": "c8d43c600bba61e0516fc0eb7f839e5d9cc2e3ae8b238fb0673f02d651edcf0c"
+  },
+  {
+   "key": "conjunction-predicates-000237",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Max walks.",
+    "Max jumps and walks."
+   ],
+   "sha256": "ba116ff2422c49750dd30cb7269d0f1e602ef49d5a1ac10210bc2e206087a6f7"
+  },
+  {
+   "key": "conjunction-predicates-000302",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Milo jumps.",
+    "Milo sings and jumps."
+   ],
+   "sha256": "9649ac6861f65e22bda34dbb0e37f161dc435b41e832f259d9039299eadbd24b"
+  },
+  {
+   "key": "conjunction-predicates-000303",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Milo runs.",
+    "Milo sings and runs."
+   ],
+   "sha256": "27709e1128ea3dfc86f1ab46e2c53d49b64d83bcba5b080a1d96a4b7efda74a7"
+  },
+  {
+   "key": "conjunction-predicates-000304",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Milo sits.",
+    "Milo sings and sits."
+   ],
+   "sha256": "3b071e511a8b30acbfb42c99147140262b875ff99f9f494d738173dc46ff68da"
+  },
+  {
+   "key": "conjunction-predicates-000306",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Milo swims.",
+    "Milo sings and swims."
+   ],
+   "sha256": "1ec2b2f277f433a20cf7be6fcdb8e390fb0e71f87fd6ceb17aa0e46ceb03a996"
+  },
+  {
+   "key": "conjunction-predicates-000307",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Milo walks.",
+    "Milo sings and walks."
+   ],
+   "sha256": "9f040a9da8c90ca6f07b6b304229f8ff3a2310cc7fa059383c7c9f190526f89b"
+  },
+  {
+   "key": "conjunction-predicates-000330",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Milo jumps.",
+    "Milo walks and jumps."
+   ],
+   "sha256": "fe4e943cac70cdb925c956ad51ec22440d6be24fa78b96a71c63f276ece0d1df"
+  },
+  {
+   "key": "conjunction-predicates-000331",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Milo runs.",
+    "Milo walks and runs."
+   ],
+   "sha256": "0cb8b32c829224494a1f56143f8067f7747f81729ba3cffaa49f6170a363f0ce"
+  },
+  {
+   "key": "conjunction-predicates-000332",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Milo sings.",
+    "Milo walks and sings."
+   ],
+   "sha256": "b1548cf73328073aa7da564b469221bb26c80cc71e2614f64316ff31f88acb70"
+  },
+  {
+   "key": "conjunction-predicates-000333",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Milo sits.",
+    "Milo walks and sits."
+   ],
+   "sha256": "96cfaeb47ee9a9b72b97dd5e17dd7ecae6be3075f3e93f4e520fbf2b02bd7a2e"
+  },
+  {
+   "key": "conjunction-predicates-000335",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Milo swims.",
+    "Milo walks and swims."
+   ],
+   "sha256": "fe3c317f2577798f6b6b4066681bd0e082270c6071d016816ae4ea5775e12abd"
+  },
+  {
+   "key": "conjunction-subjects-000231",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Bella jumps.",
+    "Max and Bella jump."
+   ],
+   "sha256": "28f0dcc7bbc85e69012681ec6c14c829ec2ba4ba5e3191bf02a38e691ca51929"
+  },
+  {
+   "key": "conjunction-subjects-000234",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Luna jumps.",
+    "Max and Luna jump."
+   ],
+   "sha256": "f2b5e0896e2143b0067965b2518e746f159f0476c42b22958217f6d8c8d6d04a"
+  },
+  {
+   "key": "conjunction-subjects-000235",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Milo jumps.",
+    "Max and Milo jump."
+   ],
+   "sha256": "75bca0940a82ada9cd678ac6bf67efd8f6b0809c001e9b31ed73d14c03749aba"
+  },
+  {
+   "key": "conjunction-subjects-000236",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Rex jumps.",
+    "Max and Rex jump."
+   ],
+   "sha256": "8e9c5aea97e3318d6645d443c01bd0939021028913fb1fcffe1ec9a1b49de60b"
+  },
+  {
+   "key": "conjunction-subjects-000237",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Tom jumps.",
+    "Max and Tom jump."
+   ],
+   "sha256": "4089bcf78e7ffe59e4dd6f7ca1d2624cacf21eb57b8e9d28b1334d53a54b7903"
+  },
+  {
+   "key": "conjunction-subjects-000301",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Bella sings.",
+    "Milo and Bella sing."
+   ],
+   "sha256": "cc8a5196949d76e3fc75444e61b15ea64a55674e38fb64ae62989de5cc45e25d"
+  },
+  {
+   "key": "conjunction-subjects-000304",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Luna sings.",
+    "Milo and Luna sing."
+   ],
+   "sha256": "b61f4668c73c9b1be6e609e4912557d506cb2203e6797a376b0081ea4435cbd4"
+  },
+  {
+   "key": "conjunction-subjects-000305",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Max sings.",
+    "Milo and Max sing."
+   ],
+   "sha256": "b6c34436af9eb48f912977f79f9d40b956b126da4d8173d1af4b8cb7f6a9852b"
+  },
+  {
+   "key": "conjunction-subjects-000306",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Rex sings.",
+    "Milo and Rex sing."
+   ],
+   "sha256": "f99c7c178615b79a9db536f5d52f42a1be05fded327a8c7a0fe3bb2eb7038e04"
+  },
+  {
+   "key": "conjunction-subjects-000307",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Tom sings.",
+    "Milo and Tom sing."
+   ],
+   "sha256": "1c13f6d7930ec402fc7e667db34aa8168d3e64fad1e0e35187cd1137bcf9a239"
+  },
+  {
+   "key": "conjunction-subjects-000329",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Bella walks.",
+    "Milo and Bella walk."
+   ],
+   "sha256": "01295e50abb7cc47ade8c6e2ced5f762a161d134eec4df68255a524b90b62e85"
+  },
+  {
+   "key": "conjunction-subjects-000332",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Luna walks.",
+    "Milo and Luna walk."
+   ],
+   "sha256": "cbcd5e748ab1f23065c759f37ed4838f784368481654d17cda1bafab6eb16c3a"
+  },
+  {
+   "key": "conjunction-subjects-000333",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Max walks.",
+    "Milo and Max walk."
+   ],
+   "sha256": "3701bd5e81e3eec84cfeb14362e8d82098896d555687d856307cd096cdecec7e"
+  },
+  {
+   "key": "conjunction-subjects-000334",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Rex walks.",
+    "Milo and Rex walk."
+   ],
+   "sha256": "20777df07f21e615654de9098b8c67e740cadeff09dfe998764ac6875e8d6b67"
+  },
+  {
+   "key": "conjunction-subjects-000335",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Tom walks.",
+    "Milo and Tom walk."
+   ],
+   "sha256": "58ccb7e25745d63c5f5b8ac2e5ac489b5b0d728ac288fcfe327110ad6eadfb84"
+  },
+  {
+   "key": "not-clause-000033",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Max does not jump."
+   ],
+   "sha256": "0a5de7c4d87716760db22af9ca5ea5165281b04630256f426b67e799357c3161"
+  },
+  {
+   "key": "not-clause-000043",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Milo does not sing."
+   ],
+   "sha256": "336b8b346e5be21eef215f0f37e349bc0b95a64d2a3a6e120770a442ff8d9822"
+  },
+  {
+   "key": "not-clause-000047",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Milo does not walk."
+   ],
+   "sha256": "8780d50b950fdcbf4b5e99fe85d11fc8c234ad43d3c418e42de7d7dd60814f79"
+  },
+  {
+   "key": "not-copula-000015",
+   "kind": "games",
+   "sentences": [
+    "Luna is a bird.",
+    "Luna is not a bird."
+   ],
+   "sha256": "0b2b36a29fc4bd4cf519a72e37730e52a53f302a2b6a97831b026957bba378be"
+  },
+  {
+   "key": "not-copula-000025",
+   "kind": "games",
+   "sentences": [
+    "Milo is a bird.",
+    "Milo is not a bird."
+   ],
+   "sha256": "8240a4ed63cb71a4ba86b229deb23b0d14801a06c4630b4d8729417d3eb67079"
+  },
+  {
+   "key": "not-copula-000035",
+   "kind": "games",
+   "sentences": [
+    "Tom is a bird.",
+    "Tom is not a bird."
+   ],
+   "sha256": "ea170601ff4791343ac2ea61793f0ec771178550ada9f4da921b379639d5180e"
+  },
+  {
+   "key": "unary_chain-k1-000004",
+   "kind": "games",
+   "sentences": [
+    "Birds sit.",
+    "The birds sit."
+   ],
+   "sha256": "c215b84da15e856c64cb4f11cfc5b4c28cad0b3a28c1f4ffc9eecf9fd527ddf8"
+  },
+  {
+   "key": "unary_chain-k1-000025",
+   "kind": "games",
+   "sentences": [
+    "Foxes jump.",
+    "The foxes jump."
+   ],
+   "sha256": "6659fa288e7c24848f630ad1232dde3e5ae936ee20cd5328b71cc383e9cd087d"
+  },
+  {
+   "key": "unary_chain-k2-000004",
+   "kind": "games",
+   "sentences": [
+    "Birds sit.",
+    "All the birds sit."
+   ],
+   "sha256": "e51a1e3b311d896a9a5bb202eb8864b49c31f604a5cd9d51028bb10ff8d8bd50"
+  },
+  {
+   "key": "unary_chain-k2-000025",
+   "kind": "games",
+   "sentences": [
+    "Foxes jump.",
+    "All the foxes jump."
+   ],
+   "sha256": "4978aae54ca131131bf26a8493cea5a9ba0f2b4af25d5459dd6e01a218400097"
+  },
+  {
+   "key": "unary_chain-k3-000004",
+   "kind": "games",
+   "sentences": [
+    "Birds sit.",
+    "Not all the birds sit."
+   ],
+   "sha256": "e49291dc0e1cb77465eec7d1d50107862976d59c7b930f4aed5ecf545b1a8951"
+  },
+  {
+   "key": "unary_chain-k3-000025",
+   "kind": "games",
+   "sentences": [
+    "Foxes jump.",
+    "Not all the foxes jump."
+   ],
+   "sha256": "e3cb2c43e30deece9db47166433cc2933819d93d298ab1d62f904fe42c4948e8"
+  },
+  {
+   "key": "identity:validation:5",
+   "kind": "math",
+   "sentences": [
+    "x is five.",
+    "what is x ?"
+   ],
+   "sha256": "5e5a5b8e6a49294bd015110f19ef526bc1e007155d78eefb60e2f7d76990dff4"
+  },
+  {
+   "key": "alias:validation:17:is",
+   "kind": "math",
+   "sentences": [
+    "y is x.",
+    "x is seventeen.",
+    "what is y ?"
+   ],
+   "sha256": "21e799c2667a9189c5af6de75f6788f90c220272dd7697887bbd85d60c6d6ae8"
+  },
+  {
+   "key": "plus_zero:validation:15:0",
+   "kind": "math",
+   "sentences": [
+    "y is x plus zero.",
+    "x is fifteen.",
+    "what is y ?"
+   ],
+   "sha256": "321d750ed3ad5ebf0ee2dc438060aa988ca508ec54eaa175cab2d2ff5bfd0299"
+  },
+  {
+   "key": "plus_one:validation:0:1",
+   "kind": "math",
+   "sentences": [
+    "y is x plus one.",
+    "x is zero.",
+    "what is y ?"
+   ],
+   "sha256": "629c5b4ad92d5f0c626d7a2c514747432e6ecee65144b4b9e1f46d330c27ca8b"
+  },
+  {
+   "key": "plus_one:validation:6:1",
+   "kind": "math",
+   "sentences": [
+    "x is six.",
+    "y is x plus one.",
+    "what is y ?"
+   ],
+   "sha256": "98733fca768adbd0ea84386ebbd57fea195b94f736a1095138d052fec92c6761"
+  },
+  {
+   "key": "plus_one:validation:8:1",
+   "kind": "math",
+   "sentences": [
+    "y is x plus one.",
+    "x is eight.",
+    "what is y ?"
+   ],
+   "sha256": "0b7d1cb3c70957f11b65e9786765c64bd9412c1b81e6ffd6ac1c011fae136303"
+  },
+  {
+   "key": "plus_one:validation:14:1",
+   "kind": "math",
+   "sentences": [
+    "x is fourteen.",
+    "y is x plus one.",
+    "what is y ?"
+   ],
+   "sha256": "9e4bd78408db2290d77f33566b20d22148ee686fec8c578f6ec67f71507bd7d7"
+  },
+  {
+   "key": "plus_one:validation:15:1",
+   "kind": "math",
+   "sentences": [
+    "y is x plus one.",
+    "x is fifteen.",
+    "what is y ?"
+   ],
+   "sha256": "041de2b3d037bada86358ce7c3bd410aa4bab816fb14ee27cdacdb6bbe7d26e5"
+  },
+  {
+   "key": "plus_one:validation:16:1",
+   "kind": "math",
+   "sentences": [
+    "x is sixteen.",
+    "y is x plus one.",
+    "what is y ?"
+   ],
+   "sha256": "2d2ecacd9d3d0c5fd3ce47d02208bd52171bbc174be80acea5ba600b33429214"
+  },
+  {
+   "key": "plus_k:validation:2:7",
+   "kind": "math",
+   "sentences": [
+    "x is two.",
+    "y is x plus seven.",
+    "what is y ?"
+   ],
+   "sha256": "20d02580f14b02d98b0cad931424e5865100fe5fffe0cd2c58cc966171f92314"
+  },
+  {
+   "key": "plus_k:validation:4:8",
+   "kind": "math",
+   "sentences": [
+    "x is four.",
+    "y is x plus eight.",
+    "what is y ?"
+   ],
+   "sha256": "8c61a1503032684ff6953a55b3bd4008b2ff23c500550cbaa982647c0edc418c"
+  },
+  {
+   "key": "plus_k:validation:7:3",
+   "kind": "math",
+   "sentences": [
+    "x is seven.",
+    "y is x plus three.",
+    "what is y ?"
+   ],
+   "sha256": "bb2d1510be0275c735a4d19f11e64ce5aa51b9b26ba8a063ec53102b34fc571f"
+  },
+  {
+   "key": "plus_k:validation:9:6",
+   "kind": "math",
+   "sentences": [
+    "y is x plus six.",
+    "x is nine.",
+    "what is y ?"
+   ],
+   "sha256": "343a8c467edf2a1c2214cbe6b104156016f89e64b8326bb256d8c11a17c3ffba"
+  },
+  {
+   "key": "distractors:validation:2:7",
+   "kind": "math",
+   "sentences": [
+    "y is x plus seven.",
+    "u is twenty.",
+    "v is nine.",
+    "x is two.",
+    "what is y ?"
+   ],
+   "sha256": "3989d8802d602a6d447621c38e03b5d151ed56992c6738a9a8b98f6ffcc99cef"
+  },
+  {
+   "key": "distractors:validation:4:8",
+   "kind": "math",
+   "sentences": [
+    "x is four.",
+    "v is seventeen.",
+    "u is eighteen.",
+    "y is x plus eight.",
+    "what is y ?"
+   ],
+   "sha256": "963c9d5395c1b22821363233dc39c613a5f4623e70ee10c583569911f1f9dd28"
+  },
+  {
+   "key": "distractors:validation:7:3",
+   "kind": "math",
+   "sentences": [
+    "y is x plus three.",
+    "v is eleven.",
+    "x is seven.",
+    "u is fourteen.",
+    "what is y ?"
+   ],
+   "sha256": "551be686f9ddc4e3750bfc38e4ac97058a50d6f9d724f4a4ea2f01404ecb6c23"
+  },
+  {
+   "key": "distractors:validation:9:6",
+   "kind": "math",
+   "sentences": [
+    "y is x plus six.",
+    "u is eleven.",
+    "x is nine.",
+    "v is five.",
+    "what is y ?"
+   ],
+   "sha256": "7337b3db6a029feb385fe36849e98d442a52b3042a51b58498d1989018ef15c1"
+  },
+  {
+   "key": "depth_two:validation:0:1:3",
+   "kind": "math",
+   "sentences": [
+    "x is zero.",
+    "y is x plus one.",
+    "z is y plus three.",
+    "what is z ?"
+   ],
+   "sha256": "02080a7a77e4b6f9c7b5af5376bf510aa6e8a33406f4fe7720ca6cb8dd4c456a"
+  },
+  {
+   "key": "depth_two:validation:0:2:3",
+   "kind": "math",
+   "sentences": [
+    "z is y plus three.",
+    "y is x plus two.",
+    "x is zero.",
+    "what is z ?"
+   ],
+   "sha256": "58c5592563b4d95723fc8cf743e19cf6011964595c99c1719bf2cadf47df74fc"
+  },
+  {
+   "key": "depth_two:validation:0:2:4",
+   "kind": "math",
+   "sentences": [
+    "z is y plus four.",
+    "y is x plus two.",
+    "x is zero.",
+    "what is z ?"
+   ],
+   "sha256": "29d620e6e1d48dc184d79d887e9f0680830b667980315b3b8669e83ee7b6c04d"
+  },
+  {
+   "key": "depth_two:validation:1:2:1",
+   "kind": "math",
+   "sentences": [
+    "z is y plus one.",
+    "x is one.",
+    "y is x plus two.",
+    "what is z ?"
+   ],
+   "sha256": "cf71a93c45d64b04973b18f08289313e48fe684abb7f8da83693c78bac774aba"
+  },
+  {
+   "key": "depth_two:validation:1:5:5",
+   "kind": "math",
+   "sentences": [
+    "x is one.",
+    "z is y plus five.",
+    "y is x plus five.",
+    "what is z ?"
+   ],
+   "sha256": "823cc5fb96ef5ce0c696d6cde02616144feae0584ceab52b80d8a53e0757b09f"
+  },
+  {
+   "key": "depth_two:validation:2:3:3",
+   "kind": "math",
+   "sentences": [
+    "x is two.",
+    "z is y plus three.",
+    "y is x plus three.",
+    "what is z ?"
+   ],
+   "sha256": "1b98ea7fc4ad0c85f962d106ab38cb476bdc4752208912823498866cb903afd3"
+  },
+  {
+   "key": "depth_two:validation:2:4:1",
+   "kind": "math",
+   "sentences": [
+    "y is x plus four.",
+    "z is y plus one.",
+    "x is two.",
+    "what is z ?"
+   ],
+   "sha256": "c3f46671e98a6c2f3690cb38ee6dd2cea267ae7c65c060364aec2f1ef83b7f6d"
+  },
+  {
+   "key": "depth_two:validation:3:2:3",
+   "kind": "math",
+   "sentences": [
+    "y is x plus two.",
+    "z is y plus three.",
+    "x is three.",
+    "what is z ?"
+   ],
+   "sha256": "67cd955f75cd181cb9d0f676cdffc067d79d54218ab6ea28137edc4fb3e4da46"
+  },
+  {
+   "key": "depth_two:validation:3:3:3",
+   "kind": "math",
+   "sentences": [
+    "x is three.",
+    "z is y plus three.",
+    "y is x plus three.",
+    "what is z ?"
+   ],
+   "sha256": "38b93a858e14a97ffacafb561d8d65cce876257cefbab0ba47683ac218bbc8b9"
+  },
+  {
+   "key": "depth_two:validation:3:4:1",
+   "kind": "math",
+   "sentences": [
+    "z is y plus one.",
+    "x is three.",
+    "y is x plus four.",
+    "what is z ?"
+   ],
+   "sha256": "aa771f220443901d3f0f4bf9616794472f8943f811e47b8a790ac1c6b151aeff"
+  },
+  {
+   "key": "depth_two:validation:3:4:3",
+   "kind": "math",
+   "sentences": [
+    "z is y plus three.",
+    "x is three.",
+    "y is x plus four.",
+    "what is z ?"
+   ],
+   "sha256": "31b31660fe35a57e4b18fcceef2d0df38a149008fd7cd0b32965c83727fc5a03"
+  },
+  {
+   "key": "depth_two:validation:4:2:4",
+   "kind": "math",
+   "sentences": [
+    "x is four.",
+    "y is x plus two.",
+    "z is y plus four.",
+    "what is z ?"
+   ],
+   "sha256": "8c11cc332d9d58ab63d27056eeaed43f7b764a592894973dd512b7550f19bb6b"
+  },
+  {
+   "key": "depth_two:validation:4:3:5",
+   "kind": "math",
+   "sentences": [
+    "z is y plus five.",
+    "x is four.",
+    "y is x plus three.",
+    "what is z ?"
+   ],
+   "sha256": "21a2a7912efcf6808c7735de92ec9eaaaf5d8c03437fee2fb215ad04e2c907b7"
+  },
+  {
+   "key": "depth_two:validation:4:5:2",
+   "kind": "math",
+   "sentences": [
+    "y is x plus five.",
+    "x is four.",
+    "z is y plus two.",
+    "what is z ?"
+   ],
+   "sha256": "4148afc4b204f4809f954a0c77fb6a4853a0d14b78ed6582aedd5336906a26a0"
+  },
+  {
+   "key": "depth_two:validation:5:1:1",
+   "kind": "math",
+   "sentences": [
+    "y is x plus one.",
+    "x is five.",
+    "z is y plus one.",
+    "what is z ?"
+   ],
+   "sha256": "53dd473a13d2e0e59cef57747b944bf46a92106463aab02068a2107db2d5a388"
+  },
+  {
+   "key": "depth_two:validation:5:1:2",
+   "kind": "math",
+   "sentences": [
+    "x is five.",
+    "y is x plus one.",
+    "z is y plus two.",
+    "what is z ?"
+   ],
+   "sha256": "d336d8f29e36450c273acd41c8b3fd40211179c1a9ccc3125db143420a647c1d"
+  },
+  {
+   "key": "depth_two:validation:5:2:2",
+   "kind": "math",
+   "sentences": [
+    "x is five.",
+    "z is y plus two.",
+    "y is x plus two.",
+    "what is z ?"
+   ],
+   "sha256": "1ea73249afa8d22d5a6f866516b5ad93fa19a09b1c6834cadfd1e309b5acad7d"
+  },
+  {
+   "key": "depth_two:validation:5:4:3",
+   "kind": "math",
+   "sentences": [
+    "x is five.",
+    "z is y plus three.",
+    "y is x plus four.",
+    "what is z ?"
+   ],
+   "sha256": "07a1d0f898fed855aee0b1aba6e374daf855de1c8052ef1dbd27fd6f703f5fc8"
+  },
+  {
+   "key": "depth_two:validation:6:1:3",
+   "kind": "math",
+   "sentences": [
+    "z is y plus three.",
+    "x is six.",
+    "y is x plus one.",
+    "what is z ?"
+   ],
+   "sha256": "862e8edb87ef829859013af16467408ca1e373cfa5f302b9b4b2dab0ff5e4a46"
+  },
+  {
+   "key": "depth_two:validation:6:3:1",
+   "kind": "math",
+   "sentences": [
+    "y is x plus three.",
+    "x is six.",
+    "z is y plus one.",
+    "what is z ?"
+   ],
+   "sha256": "88c7fa55c29727e424a3f777899a9346dffd5eda6c6f7bf77bcb9f5fb34cb7d2"
+  },
+  {
+   "key": "depth_two:validation:6:5:3",
+   "kind": "math",
+   "sentences": [
+    "z is y plus three.",
+    "y is x plus five.",
+    "x is six.",
+    "what is z ?"
+   ],
+   "sha256": "0e4c9085a44494963422b8a3d4324d6d996ca98e936cf0fac703e7e03f35f153"
+  },
+  {
+   "key": "depth_two:validation:7:1:2",
+   "kind": "math",
+   "sentences": [
+    "x is seven.",
+    "y is x plus one.",
+    "z is y plus two.",
+    "what is z ?"
+   ],
+   "sha256": "6828263f5b11c757cd8000196eae9b92ea1e226891faf096e410cf716dac73e8"
+  },
+  {
+   "key": "depth_two:validation:7:1:3",
+   "kind": "math",
+   "sentences": [
+    "z is y plus three.",
+    "x is seven.",
+    "y is x plus one.",
+    "what is z ?"
+   ],
+   "sha256": "3806dfb38fae8bcea851aa973f4c26ceda9110b04e6d3bd48c4f4c8b2f4443a6"
+  },
+  {
+   "key": "depth_two:validation:7:2:3",
+   "kind": "math",
+   "sentences": [
+    "y is x plus two.",
+    "z is y plus three.",
+    "x is seven.",
+    "what is z ?"
+   ],
+   "sha256": "114489156e1e044a50812ec7d004bdd23e0eeeba673e50ad98c13e6f39220880"
+  },
+  {
+   "key": "depth_two:validation:7:4:5",
+   "kind": "math",
+   "sentences": [
+    "z is y plus five.",
+    "x is seven.",
+    "y is x plus four.",
+    "what is z ?"
+   ],
+   "sha256": "8ac33aa6c259e909716e07275469cce3018cea95351e96c4bba54c99097f7ecc"
+  },
+  {
+   "key": "depth_two:validation:8:2:1",
+   "kind": "math",
+   "sentences": [
+    "x is eight.",
+    "z is y plus one.",
+    "y is x plus two.",
+    "what is z ?"
+   ],
+   "sha256": "de906cc5f872d34866eae1ee72d153991e07767e5275a88b4ee7a8d7aaf65d36"
+  },
+  {
+   "key": "depth_two:validation:8:4:2",
+   "kind": "math",
+   "sentences": [
+    "x is eight.",
+    "z is y plus two.",
+    "y is x plus four.",
+    "what is z ?"
+   ],
+   "sha256": "1de1386433aa7e5206cea244958c45de36b6033cfb53ced48b8efd6a54e91714"
+  },
+  {
+   "key": "depth_two:validation:8:4:5",
+   "kind": "math",
+   "sentences": [
+    "y is x plus four.",
+    "x is eight.",
+    "z is y plus five.",
+    "what is z ?"
+   ],
+   "sha256": "51d444c85852f6921eaf2091e932dc621ecfe399b8b157208ac2d6ee733c9016"
+  },
+  {
+   "key": "depth_two:validation:8:5:1",
+   "kind": "math",
+   "sentences": [
+    "z is y plus one.",
+    "y is x plus five.",
+    "x is eight.",
+    "what is z ?"
+   ],
+   "sha256": "8dbd1ece1702f23e8c1e0bbe31414a47490182559e55d82312593eec09711171"
+  },
+  {
+   "key": "depth_two:validation:8:5:3",
+   "kind": "math",
+   "sentences": [
+    "z is y plus three.",
+    "x is eight.",
+    "y is x plus five.",
+    "what is z ?"
+   ],
+   "sha256": "f7079d06fdece14554a1dbd8f9b99c122a1ded8bef6e1393bd1ac52a9efcc1b6"
+  },
+  {
+   "key": "depth_two:validation:9:2:1",
+   "kind": "math",
+   "sentences": [
+    "x is nine.",
+    "z is y plus one.",
+    "y is x plus two.",
+    "what is z ?"
+   ],
+   "sha256": "25c9ae4d53513a98d07cf1a744acfd4cfdcdc78fcaf811e1c911f7f08d87c965"
+  },
+  {
+   "key": "depth_two:validation:9:5:2",
+   "kind": "math",
+   "sentences": [
+    "x is nine.",
+    "y is x plus five.",
+    "z is y plus two.",
+    "what is z ?"
+   ],
+   "sha256": "90b8bfc49eda802bb49143578878f3dfe7c4134927fb3369d7cd912cac941dc0"
+  },
+  {
+   "key": "depth_two:validation:10:2:3",
+   "kind": "math",
+   "sentences": [
+    "y is x plus two.",
+    "z is y plus three.",
+    "x is ten.",
+    "what is z ?"
+   ],
+   "sha256": "288cb7200554461060f9a928eb4ebbe096ac7106d104000cdcc4ac172135ed22"
+  }
+ ],
+ "schema": 1,
+ "sha256": "18dd7b2a3d03d0fb8d812bdc67cc083948034c869145638fc5911e5e06dd8e29",
+ "source": "the union of part A validation splits (plan sections 8, 9.1, H11)"
+}

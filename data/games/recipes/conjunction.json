@@ -1,0 +1,20 @@
+{
+ "schema": 1,
+ "game": "conjunction",
+ "note": "Two clauses joined into one: two subjects of one verb, or two verbs of one subject.",
+ "fillers": {
+  "name": [{"form": "Rex"}, {"form": "Max"}, {"form": "Bella"}, {"form": "Tom"}, {"form": "Luna"}, {"form": "Milo"}],
+  "verb": [{"third": "runs", "plural": "run"}, {"third": "jumps", "plural": "jump"}, {"third": "swims", "plural": "swim"},
+           {"third": "sits", "plural": "sit"}, {"third": "sings", "plural": "sing"}, {"third": "walks", "plural": "walk"}]
+ },
+ "transfer": {
+  "name": [{"form": "Felix"}, {"form": "Ciao"}],
+  "verb": [{"third": "sleeps", "plural": "sleep"}, {"third": "eats", "plural": "eat"}]
+ },
+ "variants": {
+  "subjects": {"slots": {"a": "name", "b": "name", "v": "verb"}, "distinct": [["a", "b"]],
+               "sources": ["{a.form} {v.third}.", "{b.form} {v.third}."], "target": "{a.form} and {b.form} {v.plural}."},
+  "predicates": {"slots": {"a": "name", "v": "verb", "w": "verb"}, "distinct": [["v", "w"]],
+                 "sources": ["{a.form} {v.third}.", "{a.form} {w.third}."], "target": "{a.form} {v.third} and {w.third}."}
+ }
+}
