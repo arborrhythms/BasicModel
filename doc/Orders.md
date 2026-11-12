@@ -3,10 +3,10 @@
 > **Latest argument-concept rule (Alec, 2026-11-08).** Formal arguments are native concepts one order above word concepts; classes over arguments are one order above them. Their directions and members participate in the general bidirectional conceptual hierarchy. Native numbering is word 0, argument 1, group 2. This supersedes the older order-free category representation below; it does not assign a word's denotation the argument concept's order. See [the current rule](#formal-arguments-and-shared-hierarchical-context-alec-2026-11-08).
 
 
-> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
+> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record.
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
 > - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
-> - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded.
+> - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; a stream is the batch row that wrote a row, and a document is the cover row that starts it in that stream (reused at every later presentation; a row belongs to the document of the latest cover before it), so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded (2026-10-24).
 > - Parthood, subsumption and kind statements ("cats are animals") are **folds** in the meronomy and the taxonomy over symbols, not rows; equality is membership in a singleton; no `REL_PARTOF` row exists.
 > - **One conceptual space (Alec, 2026-10-22; §10):** §9's per-order spaces and stratified read are reversed; one surface places every concept at every order; strata stay in LTM.
 > - **Orders are learned (Alec, 2026-10-21; [§10](#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3)).** No ordered grammar is written and parts of speech stay order-free. Definitions raise, through equivalence classes; NP + VP lowers, returning to S0 (amended 2026-10-22 and 2026-10-23: the determiner selects and the modal withholds the lowering). Definitions are kept both as LTM1 rows (explicit) and as folds (implicit), which supersedes "folds, not rows" above; the rows train the fold, and their match or mismatch is judged. Built in todo item 3.
@@ -16,9 +16,8 @@
 Technique lives in the code; this document is the framing it points to.
 Earlier statements it extends: [a concept is sigma over pi](Philosophy.md#where-is-context-particulars-universals-and-the-two-axes-2026-09-22),
 [symbolization establishes an order-1 individual](Mereology.md),
-[independent components](specs/2026-09-26-independent-components.md),
-and the item 6 plan [§6](plans/2026-10-10-item-6-stored-idea-generativity.md#6-parts-of-speech-from-operand-participation-alec-2026-10-10)
-and [§12](plans/2026-10-10-item-6-stored-idea-generativity.md#12-orders-sets-and-membership-alec-2026-10-15-dialogue-with-claude).*
+independent components, and parts of speech from operand participation
+(Alec, 2026-10-10).*
 
 ## 1. Orders are sets of symbols
 
@@ -64,7 +63,7 @@ behaviour of each order follows from its evidence, not from set-hood.
 | Order | Collects | Evidence | What follows |
 | --- | --- | --- | --- |
 | 1 | occurrences → an **individual** | continuity (`.where`/`.when` trajectory); witnesses are the degrees | identity and counting begin; persistence and change — verbs, tense, reference (names, pronouns, definites) apply here |
-| 1 | tokens → a **word** | form sameness (exact; typos and variants are the fuzzy fringe) | the symbol table's META rows |
+| 1 | tokens → a **word** | form sameness (exact; typos and variants are the fuzzy fringe) | the word index's DEF rows |
 | 2 | individuals → a **kind** | explanation by the kind's pi | inclusion (cats $\subset$ animals), quantification, generic truth; kinds do not change, their members do |
 | 2 | individuals → a **collection** | adjacency / plurality | location (the sum of members) without an identity criterion beyond membership |
 | 2 | words → a **part of speech** | participation in operand positions | the learned grammar's classes |
@@ -72,6 +71,8 @@ behaviour of each order follows from its evidence, not from set-hood.
 Identity is per order: a generalization over occurrences (an individual,
 which keeps its history) is never identified with a generalization over
 individuals (a kind). Same point, different order stamp $\Rightarrow$ different thing.
+
+Order zero has an identity too (Alec, 2026-11-12), in MTM rather than in the field. MTM is ramsified: order-zero states joined by succession make a sequence, an extended event, while the same order-zero reading met again is an order-zero identity in MTM, the familiar-tier candidate that `FamiliarTier.observe_candidate` opens and whose recurrence promotes it. Recognition binding a present event to that identity is decided and not yet built. Identities at different orders are never joined.
 
 ## 4. What an order increase abstracts
 
@@ -83,14 +84,12 @@ individuals (a kind). Same point, different order stamp $\Rightarrow$ different 
 * individuals → kind abstracts the *index* (which one, where, when) but
   not temporal *content*: a kind of change (a B column) keeps its shape of
   change at any order; "sunset" is a kind defined by temporal structure.
-  [5.5](specs/2026-09-30-occurrence-tense-aspect.md)'s split between the
-  situation stamp and tense/aspect as content is this line.
+  Item 5.5's split between the situation stamp and tense/aspect as
+  content is this line.
 
 Even a kind keeps a statistical trace of situation — cats occur in houses
-— as an expectation ([4.5](specs/2026-10-08-expectation-at-every-level.md)),
-not as identity. The independence term excludes the `.where`/`.when`
-bands ([6.5 §4.8](specs/2026-09-26-independent-components.md)) for this
-reason.
+— as an expectation, not as identity. The independence term excludes the
+`.where`/`.when` bands for this reason.
 
 ## 5. Two ladders, one fold
 
@@ -106,9 +105,9 @@ type (0), an individual (1) or a kind (2). Counting relations as type
 theory does — a relation over order-*n* things is order *n*+1 — a sentence
 about individuals is order 2, a generic sentence and a grammar rule are
 order 3, and a document of generics or a reasoning chain over rules is
-order 4. Nothing in the fold stops at any order; the only ceilings are
-where the grammar stops reading and what the reference table declares
-(today `kind: 2`, to be retired with the operand names, plan §6).
+order 4. Nothing in the fold stops at any order; the only ceiling is where
+the grammar stops reading: its operands are positional, and no table
+declares a maximum order.
 
 Every order has the same two faces — a fuzzy set of symbols one order down,
 and a pi at order 0 — and the orders differ only in the collecting
@@ -117,15 +116,15 @@ participation (word classes), co-occurrence in a row (relations).
 
 ## 6. Distributional for words, semantic for objects
 
-*Amended 2026-11-08: the membership mechanism is now geometric; see [trust §30 and §31](plans/2026-11-05-item2-3-trust.md#31-design-review-of-292-and-30-claude-2026-11-08-written-while-the-argument-concepts-round-is-in-progress-the-representation-reads-grammatical-function-from-meaning-two-mechanism-defects-and-one-order-question-before-a-freeze).*
-
-A part of speech is a kind-of-word: an order-2 set formed by the same fold,
-with participation as the evidence. The class vector in position space
-([plan §6.1](plans/2026-10-10-item-6-stored-idea-generativity.md#61-the-learning-rule-alec-2026-10-10-claudes-reading-of-it))
-*is* the pi of the word-kind, and the softmax share at a position is
-membership by explanation. A kind of thing is an order-2 set formed by the
-same fold with explanation by its pi over meaning coordinates as the
-evidence. Same machinery, two signature spaces.
+A part of speech is a kind-of-word: a class formed by the same fold, with
+participation as the evidence (amended 2026-11-08). Each formal argument is a
+concept one order above the word concepts; its direction is the centroid of
+the meaning directions of the words kept in it, each weighted by its fit, and
+a word's fit is its coverage of the argument's vector (direction times
+radius); see
+[Formal arguments and shared hierarchical context](#formal-arguments-and-shared-hierarchical-context-alec-2026-11-08).
+A kind of thing is formed by the same fold with explanation over meaning
+coordinates as the evidence. Same machinery, one conceptual space.
 
 Two definitions of "noun" caused the trouble in the literature —
 thing-word versus NP-filler. They belong to different ladders: *thing* is
@@ -159,7 +158,7 @@ the name of the quotient. A definite with nothing accessible to bind to
 writes its occurrence and stays **unbound** until a referent appears
 (presupposition accommodation); it never asserts novelty.
 
-*Amended (Alec, 2026-11-01, resolving audit deviation 5 of 2026-10-30):
+*Amended (Alec, 2026-11-01):
 "Water is a count noun with an elided form/shape in some contexts, so it's
 not a good example of a mass noun. Water would be order-1 at lowest, since
 it is an abstraction of an event." So the bare term "water" is not an
@@ -167,7 +166,7 @@ order-0 mass term; it is order 1 at lowest, and "the water" selects a
 shaped portion, an individual at order 1, as the paragraph above and §10's
 2026-10-22 passage already have it. The build, which lowers only from
 order 2 and leaves an order-1 term at order 1, agrees; the deviation was
-the example, not the mechanism ([thinking spec §32.2](plans/2026-10-27-item2-5-thinking.md), item 19).*
+the example, not the mechanism.*
 
 *Worked example (Alec, 2026-10-16): "The water froze. It became ice," ice
 never perceived.* `the water` lowers a mass description to a portion and
@@ -191,17 +190,19 @@ while its kind changes — kinds do not change, members do.
   order-2 question — the pi over individuals' signatures, `.when`
   excluded — measured only once individuals exist. Whether that pi is a
   second dictionary or the taxonomy's computation is open.
-* Parts of speech are learned at order 2 over words by participation
-  (plan §6), never credited to phrase heads (the toy: heads merge pronouns
-  into NP), with the referent's order and family admissible only as extra
-  signature coordinates, weak enough that actual use overrides them.
+* Parts of speech are learned over words by participation: each formal
+  argument is a concept one order above the word concepts, and a kept
+  operation credits the declared head operand's words, a symmetric one every
+  operand's, a clause-forming one none
+  ([Language](Language.md#learned-argument-concepts)).
 
 ## 9. Per-order conceptual spaces, ramsified over one symbol tree; the stratified priming surface (Alec, 2026-10-20; decided)
 
 *Amended 2026-10-22 ([§10](#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3)): the per-order conceptual spaces and
 the stratified read are reversed; the conceptual space is one. The symbol
-tree, the Part edges as the record of membership, membership read by edge
-and the cross-order diffusion stand.*
+tree, the Part edges as the record of membership and membership read by edge
+stand; the cross-order diffusion is retired, and the priming spread is
+`ActivationPredictor`'s predicted next state.*
 
 Alec's summary: the perceptual tree up to the zeroth-order symbol is
 mereological (the word form at the centroid of its letters and wholes in
@@ -215,8 +216,8 @@ conceptual spaces, but keep all symbols in the mereological space."
 
 - *A superseded passage beginning "**Ramsify over conceptual spaces.** A concept at order *n* i" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 - **Keep all symbols in the mereological space.** Every symbol of every
-  order lives in one structure, the symbol index with its Part tree
-  (two truths §1, "LTM2, one relation"): a word form the centroid of its
+  order lives in one structure, the symbol index with its Part tree: a word
+  form the centroid of its
   letters and wholes in the percept cube; a kind tied to its members, an
   individual to its occurrences, a sentence to its constituents, by Part
   edges. One tree, all orders, one relation; two carriers — geometric up
@@ -248,15 +249,13 @@ conceptual spaces, but keep all symbols in the mereological space."
   one shared space would buy only that, at the price of crowding and
   meaningless centroids.
 - *A superseded passage beginning "**The priming surface is the same object, read stratified.**" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
-- **Amended 2026-10-30 (Alec; [thinking spec §22.3](plans/2026-10-27-item2-5-thinking.md)):** at item 2.5
+- **Amended 2026-10-30 (Alec):** at item 2.5
   round B the code-derived channel and the location step give way to
   `ActivationPredictor`'s predicted next state as the spread, read detached;
-  placement keeps the seen ledger; the strata remain LTM's structure. Not built.
-- **Where:** todo item 3, with placement; the stratified surface and the
-  per-order kernel land with the LTM2 store (3.5 step 1b carries the
-  edges; item 3 carries the strata and placement).
+  placement keeps the seen ledger; the strata remain LTM's structure. Built
+  and accepted (Alec, 2026-11-01); the location diffusion is retired.
 
-*Centroids (Alec, 2026-10-24; [context-wholes spec §2b](plans/2026-10-24-context-wholes.md)):*
+*Centroids (Alec, 2026-10-24):*
 an order-0 concept's form is the center of the space of its parts and its
 wholes, each averaged over its count; a higher-order concept has no parts
 and wholes, so its content is the pure centroid of its members' content,
@@ -271,10 +270,7 @@ promotion fold follow this rule, not a max or a min.
 Alec: "we need not create an ordered grammar, because we have the rule
 that raises order." Orders live in the concepts, not in the grammar's
 categories. Parts of speech stay order-free and come only from the
-grammar's positions and occupations
-([reconstruction spec §10](plans/2026-10-21-reconstruction-reads-the-bind.md#10-decided-alec-2026-10-21-later-parts-of-speech-only-from-the-grammar)).
-The full design record, with the verification against the code, is in
-todo item 3.
+grammar's positions and occupations.
 
 ![Orders are learned: definitions raise, NP + VP lowers](diagrams/orders_ladder.svg)
 
@@ -298,8 +294,8 @@ Conditions (Claude's reading, accepted into item 3): "the same side" is
 the symbol the mentions read to; the other sides must be distinct, as
 events at different places or times or as different identities in MTM;
 and the word is given the raised concept as its object. Each definition
-is an LTM1 row; the raise fires when a second distinct member joins the
-singleton an equality already marks.
+is an LTM1 row; the raise fires when `raiseCount` (default 3) pairwise
+distinct members have joined the shared side (§11).
 
 **Three compositions lower, returning to S0.** Alec: "two things lower
 the order: a determiner and the combination of NP and VP", and "vp mp for
@@ -307,8 +303,8 @@ modal". Each lowers one order and stops at 0:
 
 - The **determiner** picks a member out of a class: "the cat".
 - **NP + VP**: a noun phrase names a class, the invariant across its
-  members, and a verb is the step between two of them (the occurrence
-  spec's first difference). The verb holds at some members, not at the
+  members, and a verb is the step between two of them (the first
+  difference). The verb holds at some members, not at the
   class, so the sentence lands among them: "Felix runs" is an occurrence
   of Felix at order 0; "dodos died out" is a change across the kind's
   members, at order 1. A mass noun's instances are already order 0, so
@@ -321,8 +317,7 @@ modal". Each lowers one order and stops at 0:
   it withholds the lowering. A modal clause is the ordinary composition
   kept above order 0, an abstraction of a possible event that extends
   an alternative timeline of the one identity, never an order-0
-  occurrence ([iteration spec §4](plans/2026-10-23-verb-and-modal.md)).
-  Only NP + VP lowers.*
+  occurrence. Only NP + VP lowers.*
 
 IS raises by collecting members, and these three lower by landing among
 them. This supersedes §5's count for predications, under which a
@@ -349,15 +344,15 @@ Credit: "binds should just be adding to the MTM pool, which is input to
 output prediction, so binds should get credit assignment through the
 derivative"; raises carry no price of their own either.
 
-**Modals (Alec, 2026-10-22; for 3.5 step 5).** "Verbs and nouns are both
+**Modals (Alec, 2026-10-22).** "Verbs and nouns are both
 of the same order ... So modals may also be of that order. But MPs are
 differences of VPs just as VPs are differences of NPs (not really
 differences, but diagonals within quadratics). Running and walking are
 both possibilities for Joe's movement. So they should be treated
-analogously to VPs." The step-5 spec builds the modal as the second
-difference in that form: a group over a noun phrase's alternative verb
-phrases, a diagonal per modal in a shared basis, as step 4 builds the verb
-over an identity's occurrences.
+analogously to VPs." The modal is built as the second difference in that
+form: a diagonal per modal in one shared basis (the `adverb` action),
+learned from equal-time events on an identity's alternative timelines
+(`ModalLearning`), as the verb is learned over an identity's occurrences.
 
 **Explicit and implicit definitions, judged together.** Alec: "multiple
 DEF in LTM1 can be used to train the fold being used in the symbolic
@@ -400,37 +395,40 @@ conceptual spaces and the stratified read of the surface. Strata remain
 the structure of LTM: LTM0 occurrences, LTM1 relations, the derived LTM2.
 In conceptual space, one surface places every concept, at every order,
 with the same objective: raise its meet with what the surface activates,
-lower it against negatives. A kind is then placed among the words,
-individuals and events it occurs with, and an abstract concept sits beside
-the concrete ones it is used with. The code already has this shape: one
-`similarity_codebook` holds every order's rows, and `Priming.propagate`
-(`context_similarities` is gone, audit 2026-10-30) compares them in one space. What §9 keeps: all symbols in the one
-mereological tree, the Part edges as the record of membership, membership
-read by edge rather than by distance, and the cross-order diffusion.
-Item 2.9 specifies cross-order diffusion by location in the one space, class
-rows at their members' centroid. What
+lower it against negatives (as built, a class row is placed at its members'
+centroid instead; see the placement paragraph below). A kind is then placed
+among the words, individuals and events it occurs with, and an abstract
+concept sits beside the concrete ones it is used with. The code has this
+shape: one `similarity_codebook` holds every order's rows. What §9 keeps:
+all symbols in the one mereological tree, the Part edges as the record of
+membership, and membership read by edge rather than by distance; the
+cross-order diffusion and `Priming.propagate` are retired, and the priming
+spread is `ActivationPredictor`'s predicted next state. What
 goes: the per-order cubes, the "point in every order's space at once"
 read, and `priming_row_orders` as a read restriction. §9's crowding
 objection is answered by the objective's negatives; the collapse
 diagnostic measures it.
 
-**Every symbol's order.** Each concept has an order: a recorded one
-first, else one above its highest symbolic part, else 0. Item 3 closes
-four gaps: 0 doubles as "unknown"; a recorded order overrides structure
-unchecked; a relation row's handle always reads 0; and a test-only
-formation API keeps an outdated ladder.
+**Placement.** A row with members, a class made by a raise or by promotion, is derived: its place is the normalized centroid of its members' places, each weighted by the net positive evidence of its membership, $\max(0, p - m)$, with definition rows excluded, recomputed with lower orders first (`MereologicalCodes.derive_class_placements`). While any member is unplaced, the class stays unplaced, and a class whose members lie farther than 15 degrees from its centroid (`CLASS_CONTIGUITY_COSINE`) is marked noncontiguous. Every other row, an order-0 concept or an individual whose occurrences supply its contexts, is placed by the context objective at its kept close (`MereologicalCodes.place_rows`, reading the seen ledger), which skips derived rows.
 
-**Learning parts of speech** follows the same order: proper nouns first,
-then mass nouns, then count nouns where the language has them. Until item
-3 lands, 3.5 uses two stand-ins: a determiner always outputs order 1, and
-unit tests force a name's order 1 (Alec: "unit tests can force parts of
-speech").
+**Every symbol's order.** A concept's order is its recorded order, else one above its highest symbolic part, else 0 when a percept row or its own identity record witnesses it, else $-1$, unknown (`ConceptAllocator.order_of`). Unknown is never read as 0: joins and lowering keep it, and a reader that needs a number converts explicitly at its site. A recorded order is checked against the concept's parts when it is settled, and a disagreement raises.
+
+**What each composition denotes** (`ReferenceContext.denoted_order`). Order is read, never added: no layer or grammar rule carries an order offset. A leaf has its concept's order. `lift`, NP + VP, lands one below its subject, floor 0, and keeps the subject's order when the verb phrase carries a modal alternative. `verb` has the verb's order. A determiner (`lower`, `definite`, `universal` and their unary faces) selects: it lowers only a kind, order 2 or more, and otherwise keeps its noun's order. `equal` has its left operand's order; `part`, `whole` and kind relations the whole's; `bind` the identity's; `sign` 0. A headed operation has its head's order; the symmetric joins (`sum`, `product`, `intersection`, `union`, `conjunction`, `disjunction`) take the maximum, unknown if any operand is unknown; a unary operation keeps its operand's. No list of mass, count or event nouns exists: the determiner's occupations condition the words it is used with into their own part of speech.
+
+**Typed operands.** At composition an operand's stamped order decides how it is read (`ReferenceContext.prepare_operands`): at order 0 or at order 2 and above it is resolved to its existing typed concept, value and reference (`resolve_order`); at order 1 it stays the raw mention, and individuals are reached only through an explicit `bind`. A literal keeps its own point.
+
+**The determiner is inline.** A determiner's `lower` contributes no content of its own: without a meaning block it returns its description unchanged, and on a meaning block the description's meaning passes through the lane kernel with the marker as context, the identity at initialization. It changes the order only as `denoted_order` reads it. Its member is a token whose identity is its place in STM while the sentence is open. An individual gets a concept row only by recurrence (`conceptMintCount`) or a kept definition. The chooser's menu never reads concept capacity: masking options by pool state would confound the chooser's credit, so an exhausted inventory raises instead.
+
+**Learning parts of speech** follows the learning sequence above: proper nouns first,
+then mass nouns, then count nouns where the language has them. Unit tests
+may force a word's part of speech or order (Alec: "unit tests can force
+parts of speech").
 
 **Open, decided with item 3.**
 
 - *A determined mass or event noun.* Closed above (2026-10-22): the
   determiner selects, and "the water" is an individual at order 1.
-- *Where a definition is stored.* Step 2 reads a relation's stratum from
+- *Where a definition is stored.* A relation's stratum is read from
   its argument tags, so both "this is Felix" and "Felix is a cat" are
   LTM1 rows. Alec's reading would store each in the stratum of the class
   it builds, putting the second in LTM2. The stratum is derived when read,
@@ -438,7 +436,7 @@ speech").
 
 ## 11. Pointers, identity, and relations across known concepts (Alec, 2026-10-31)
 
-*Decided in conversation on 2026-10-31 ([thinking spec §28.1](plans/2026-10-27-item2-5-thinking.md)).
+*Decided in conversation on 2026-10-31.
 The reading of rows between known concepts is built in item 2.5's
 completion round; pointers and polymorphic words are future work
 ([FutureWork](FutureWork.md), "Polymorphic words, suchness and `point()`").*
@@ -485,10 +483,10 @@ known concepts. It is stored with its pair and read as before by queries,
 thought, `intuit`, pervasion and the raise, but it is a member of neither
 concept, so it derives no order and does not enter either definition.
 Occurrence and relation members define as before, and the order guard
-checks them. The kind is read from the referents (step 2 §71); nothing marks
+checks them. The kind is read from the referents; nothing marks
 the operator or the origin of a row. The store keeps its two-reference LTM1
 rows; how equals() eventually stores a relation is open. This withdraws
-thinking spec §28's "order counts only lower-order members" and the
+the earlier rule that order counts only lower-order members, and the
 testimony column proposed in conversation.
 
 **Relations are immediate; order is evidence over trials (Alec,
@@ -496,10 +494,10 @@ testimony column proposed in conversation.
 will not immediately raise the order; it serves as evidence over many
 trials. This will help us disambiguate synonyms, indexicals, and relations
 of order." The row is written at the sentence close; no single row moves an
-order. The raise reads the accumulated rows: today it fires at the second
-distinct member above the `raiseEvidence` threshold
-(`PartClosing._observe_equality`; default 0, Params.md), and that threshold
-is the one knob on how much evidence a class needs. What the accumulated
+order. The raise reads the accumulated rows: it fires at `raiseCount`
+(default 3) pairwise distinct members witnessed above the `raiseEvidence`
+threshold (`PartClosing._observe_equality`; default 0, Params.md), and the
+two knobs set how much evidence a class needs. What the accumulated
 rows then settle, by reading rather than by marking: two concepts whose
 members coincide are synonyms; a word whose relata share nothing is an
 indexical, a pointer; and which concept sits above which is read from
@@ -518,7 +516,7 @@ with Frege is a good one." On the disambiguation of indexicals: "'this is
 Felix' and 'this is ciao' are actually better read as symmetric, because
 that creates a transitivity that breaks (which is what we want as evidence
 for a polymorphic reference)." Decided; the first two are built in item
-2.5's completion round ([thinking spec §28.2](plans/2026-10-27-item2-5-thinking.md)):
+2.5's completion round:
 
 - **A class is its extension in LTM1.** A row between two known concepts
   at other than one below is evidence and teaches neither side's
@@ -563,7 +561,7 @@ order acquires its class one order up, with those concepts as its members.
 A row's positions are not read for this count, so the shared-LHS gap closes
 with nothing added. No closure is computed and nothing counts breaks: a
 concept joined to several distinct concepts at its order is read off the
-LTM1 rows in the receipts, periodically, by inspection. `point()` is not
+LTM1 rows, periodically, by inspection. `point()` is not
 built. *Claude's reading of the last sentence against lesson 13:* a kept
 definition mints its pending subject, so "this" was minted at its first
 "this is Felix". Under this rule its later equations with distinct names
@@ -574,39 +572,37 @@ recency and expectation decide the bind, and the mention finds only its
 temporary match in MTM. Alec to correct if the intent is instead that an
 indexical is never minted at all.
 
-**One rule at every order, order zero included (Alec, 2026-10-31, after review).** The membership and raise rules above hold at order zero as at every other order. A positive row between two order-zero symbols is a relation: it is found by `parts.find`, it is a member of neither symbol, and it derives no order. The order-zero containment reading in the Architecture.md section of the completion round is withdrawn. Orders §1's containment concerns percepts in the field, not symbols.
+**One rule at every order, order zero included (Alec, 2026-10-31, after review).** The membership and raise rules above hold at order zero as at every other order. A positive row between two order-zero symbols is a relation: it is found by `parts.find`, it is a member of neither symbol, and it derives no order. An earlier order-zero containment reading is withdrawn. Orders §1's containment concerns percepts in the field, not symbols.
 
-**Relations are built first, in STM1 or LTM1 (Alec, 2026-10-31).** Alec: "we build relations in stm1 or ltm1 first, and those will eventually become evidence for raising the order of concepts." STM1 holds relations over STM0 ideas, as the second exchange of 2026-10-27 in the [thought design notes](plans/2026-10-26-thought-design-notes.md) has it. LTM1 is the long-term relation stratum, by the naming at the head of this file (2026-10-21). A relation is built first in one of the two strata, and it becomes evidence for a raise later. This completes "Relations are immediate" above with its two strata. The completion round changes neither where a relation is built nor which rows the raise reads.
-
-**The second-member threshold above is superseded.** "Relations are immediate" says the raise fires at the second distinct member. The count is `raiseCount`, default 3, as the bullet "The raise counts distinct members" and the paragraph "No symmetry handling" above state.
+**Relations are built first, in STM1 or LTM1 (Alec, 2026-10-31).** Alec: "we build relations in stm1 or ltm1 first, and those will eventually become evidence for raising the order of concepts." STM1 holds relations over STM0 ideas (Alec, 2026-10-27). LTM1 is the long-term relation stratum, by the naming at the head of this file (2026-10-21). A relation is built first in one of the two strata, and it becomes evidence for a raise later. This completes "Relations are immediate" above with its two strata.
 
 **Pronouns and indexicals are one class, not noun (Alec, 2026-10-31).** Alec: "Indexicals are like pronouns in that they are generic, but they have perceptual intension... I don't think it makes sense to have two groups, but both are dissimilar enough from nouns in that they have an amorphous identity, so we need some class other than noun." So pronouns and indexicals form one word class, and that class is not noun. Its name is open, and nothing builds it yet. This answer does not correct the reading in the paragraph above that an indexical is minted first and raised to an amorphous class, so that reading stands until Alec says otherwise.
 
 **Minting and raising are different (Alec, 2026-10-31).** Alec: "Minting and raising are different." The two counts stay apart. `raiseCount` governs raising only. The question in the bullet "The raise counts distinct members", whether it should govern minting, is answered: it should not. `conceptMintCount` governs minting only, as Params.md states: it is the recurrence that promotes a familiar candidate or identity, and a kept defining clause promotes its pending subject without a count (`define_pending`). A row is raise evidence wherever it is written, so the minting path still feeds the raise: `define_pending` observes the minted symbol with its original row. That observation counts toward `raiseCount` and is not a mint.
 
-**The clarification, answered no (Alec, 2026-10-31).** The completion round's readings cite "the last clarification in the hand-off" as ground for keeping a row between two order-zero symbols as a structural part. The clarification is the sentence "The conflict is whether a row joining two order-0 symbols makes one a structural part of the other." Alec's answer: "No, it's a part/whole relation if it's below symbols, and a set/superset if it's above symbols." So a row joining two order-zero symbols is not a structural part of either. Below symbols, at order zero, a row is a part/whole relation, the mereology of the field that §1 names; above symbols, at orders one and up, it is a set/superset relation, the sets of §1. The level names the kind of relation. Whether a row is structural is still decided by the one rule above.
+**The clarification, answered no (Alec, 2026-10-31).** An earlier reading kept a row between two order-zero symbols as a structural part, on the question "whether a row joining two order-0 symbols makes one a structural part of the other". Alec's answer: "No, it's a part/whole relation if it's below symbols, and a set/superset if it's above symbols." So a row joining two order-zero symbols is not a structural part of either. Below symbols, at order zero, a row is a part/whole relation, the mereology of the field that §1 names; above symbols, at orders one and up, it is a set/superset relation, the sets of §1. The level names the kind of relation. Whether a row is structural is still decided by the one rule above.
 
 **Indexicals witness, pronouns bind (Alec, 2026-10-31, later).** Alec: "Indexicals are roughly word-concepts that reference percepts; so they are a bit parallel to the interpret() operation, in that they invite the model to witness(). ... Since the model is not currently getting visual input, it can remain an MTM reference, but add it to the future work for multimodal processing." The parallel: `interpret` takes a word to the object it names in LTM. A pronoun takes a word to an identity that a mention has already introduced, so its candidates are MTM's entries and the frames, and `bind` chooses among them by recency, role, location and expectation. An indexical takes a word to a percept, so its candidates are what is present in the field at the mention, order-zero occurrences at the current `.where` and `.when`, which may have no identity yet; witnessing one that has none mints it, as "a" does, and the kept definition joins the name to it. The two differ in where the referent is sought, the discourse or the field, and in what it is, an identity or an occurrence; they agree in everything else, since neither narrows, neither has an object of its own, and both point. Today the field is the text, so "this" can witness nothing but words, and an indexical can only do what a pronoun does: find a temporary match in MTM, or open a fresh occurrence when it finds none. Decided: an indexical remains an MTM reference until the model has perceptual input, and the witness is future work under multimodal processing ([FutureWork](FutureWork.md), "Indexicals under multimodal input").
 
-**The deictic class: name and function (proposed 2026-10-31; accepted in advance by Alec; built in Codex's round, [thinking spec §30.4](plans/2026-10-27-item2-5-thinking.md)).** The class of the paragraph "Pronouns and indexicals are one class" is named **deictic**, the class of pointing words, Bühler's Zeigwörter beside the Nennwörter. His three modes of pointing are the model's three places: ad oculos is the field (indexicals), anaphora is MTM (pronouns), and am Phantasma is thought. Its function is what every word class has here: a kind-of-word at order 2, learned by participation (§6) and forced by tests until learned, which the grammar reads as a role (Language.md, "Parts of speech are roles"). A deictic fills a noun-phrase position bare, with no determiner and no head, and its mention is routed to `bind` as an open referent with no content cue, where a noun's mention goes through the determiner that mints or binds it. It is the one class whose members never acquire an object. A name and a deictic are alike at first sight, two objectless words; the name's first kept definition defines it to the identity it named, and the deictic's never does. A kept definition whose subject is a deictic mention joins the pointed-at occurrence to the other side's identity, so "this is Felix, that is Felix" makes Felix the class of those occurrences, an individual at order 1, as Training.md has it ("Word classes in order"), and no row written at a sentence close has the deictic word as an endpoint. This settles the minting question in the paragraph "No symmetry handling" above: "this" is never minted, and the reading there that it is minted and raised to an amorphous class describes the built behaviour until the class lands. Learning membership, by participation in the bare position or by the broken transitivity read off LTM1, is not built; tests and the lesson-13 harness force it. Nothing here changes `bind`'s read, which no word class enters.
+**The deictic class: name and function (proposed 2026-10-31; accepted in advance by Alec; withdrawn by the next paragraph).** The class of the paragraph "Pronouns and indexicals are one class" is named **deictic**, the class of pointing words, Bühler's Zeigwörter beside the Nennwörter. His three modes of pointing are the model's three places: ad oculos is the field (indexicals), anaphora is MTM (pronouns), and am Phantasma is thought. Its function is what every word class has here: a kind-of-word at order 2, learned by participation (§6) and forced by tests until learned, which the grammar reads as a role (Language.md, "Parts of speech are roles"). A deictic fills a noun-phrase position bare, with no determiner and no head, and its mention is routed to `bind` as an open referent with no content cue, where a noun's mention goes through the determiner that mints or binds it. It is the one class whose members never acquire an object. A name and a deictic are alike at first sight, two objectless words; the name's first kept definition defines it to the identity it named, and the deictic's never does. A kept definition whose subject is a deictic mention joins the pointed-at occurrence to the other side's identity, so "this is Felix, that is Felix" makes Felix the class of those occurrences, an individual at order 1, as Training.md has it ("Word classes in order"), and no row written at a sentence close has the deictic word as an endpoint. This settles the minting question in the paragraph "No symmetry handling" above: "this" is never minted, and the reading there that it is minted and raised to an amorphous class describes the built behaviour until the class lands. Learning membership, by participation in the bare position or by the broken transitivity read off LTM1, is not built; tests and the lesson-13 harness force it. Nothing here changes `bind`'s read, which no word class enters.
 
-**No forcing; the class is the raise's outcome (Alec, 2026-10-31, latest; corrects "The deictic class" above).** Alec: "This is Felix / that is Ciao should not do any forcing. Even 'This is a / this is b' will create two LTM1 relations that both involve 'this', which will cause a raise, but eventually the ambiguity of 'this' will cause its identity to be empty (meaning that it could be a symbol for anything)." This confirms Claude's reading in "No symmetry handling" above and withdraws the mechanism proposed in "The deictic class": nothing marks a word deictic in advance, no membership is forced in tests or in the lesson-13 harness, a pointing word's occurrence does not join the other side's identity, and `define_pending` is unchanged. The mechanism is the built one. A word's first kept definition mints the identity its mention named and defines the word to it; later definitions with distinct relata write rows; at `raiseCount` distinct relata, the third with the default, the identity acquires its class one order up with the relata as its members, and the word is defined to that class (`PartClosing._admit_member`, `ConceptIndex.index_part_row`). The class's content is the evidence-weighted centroid of its members (`cover_members`, `derive_class_placements`; Alec, 2026-10-24, [FutureWork](FutureWork.md), "Intersection or union as the basis of identity"), which prefers none of them, and as the members diversify it carries no differentiating share: the word is then a symbol for anything, its mention constrains nothing, and location, recency and expectation decide the bind. That emptied identity is what "a class other than noun" names. "Deictic" stays as the name of the reading, a word whose identity has emptied; it is read off, never written. Codex's §30.4 items 11 to 13 are withdrawn; [thinking spec §30.5](plans/2026-10-27-item2-5-thinking.md) replaces them with one certificate of the emptying.
+**No forcing; the class is the raise's outcome (Alec, 2026-10-31, latest; corrects "The deictic class" above).** Alec: "This is Felix / that is Ciao should not do any forcing. Even 'This is a / this is b' will create two LTM1 relations that both involve 'this', which will cause a raise, but eventually the ambiguity of 'this' will cause its identity to be empty (meaning that it could be a symbol for anything)." This confirms Claude's reading in "No symmetry handling" above and withdraws the mechanism proposed in "The deictic class": nothing marks a word deictic in advance, no membership is forced in tests or in the lesson-13 harness, a pointing word's occurrence does not join the other side's identity, and `define_pending` is unchanged. The mechanism is the built one. A word's first kept definition mints the identity its mention named and defines the word to it; later definitions with distinct relata write rows; at `raiseCount` distinct relata, the third with the default, the identity acquires its class one order up with the relata as its members, and the word is defined to that class (`PartClosing._admit_member`, `ConceptIndex.index_part_row`). The class's content is the evidence-weighted centroid of its members (`cover_members`, `derive_class_placements`; Alec, 2026-10-24, [FutureWork](FutureWork.md), "Intersection or union as the basis of identity"), which prefers none of them, and as the members diversify it carries no differentiating share: the word is then a symbol for anything, its mention constrains nothing, and location, recency and expectation decide the bind. That emptied identity is what "a class other than noun" names. "Deictic" stays as the name of the reading, a word whose identity has emptied; it is read off, never written. The forcing tests proposed with the deictic class are withdrawn; one certificate of the emptying replaces them.
 
-**The identity that empties is the identity across time, not a centroid (Alec, 2026-10-31, latest still).** Alec: "The symbols and percepts are rooted in their centroids. I am talking about the identities across time, in conceptual space. If 'he' refers to Alec, and he becomes tired, then we have an MTM identity that unites the two, and has the parts and whole belonging to tired(Alec). So that is rooted in conceptual space, with a word line that corresponds to the (nominal) identity." So the centroid of 2026-10-24 stays the content of a symbol or percept, and the emptying in the paragraph above is of something else: the identity an MTM token carries across time, in conceptual space, with its current value after the latest verb (Architecture.md, identity threading, 2026-10-23). "He" and "Alec" are united by one such identity, and after "he becomes tired" its value has the parts and wholes of tired(Alec); the word line, which Claude reads as the word's row in the symbol table, corresponds to that nominal identity. "This" has a word line too, but the things it was, Felix at one time and Ciao at another, are different identities, and nothing persists across them: the identity the word would unite across time is empty, which is why "this" could be a symbol for anything. *Claude's reading, for Alec's yes:* this reads an identity across time by what persists across its occurrences, its invariant, where [FutureWork](FutureWork.md), "Intersection or union as the basis of identity", left the token's basis open; content stays the centroid. The certificate in [thinking spec §30.6](plans/2026-10-27-item2-5-thinking.md) reads the emptiness as the meet across the members' rows, zero when they share nothing, with one identity united across "a cat" and "it" as the control.
+**The identity that empties is the identity across time, not a centroid (Alec, 2026-10-31, latest still).** Alec: "The symbols and percepts are rooted in their centroids. I am talking about the identities across time, in conceptual space. If 'he' refers to Alec, and he becomes tired, then we have an MTM identity that unites the two, and has the parts and whole belonging to tired(Alec). So that is rooted in conceptual space, with a word line that corresponds to the (nominal) identity." So the centroid of 2026-10-24 stays the content of a symbol or percept, and the emptying in the paragraph above is of something else: the identity an MTM token carries across time, in conceptual space, with its current value after the latest verb (Architecture.md, identity threading, 2026-10-23). "He" and "Alec" are united by one such identity, and after "he becomes tired" its value has the parts and wholes of tired(Alec); the word line, which Claude reads as the word's row in the symbol table, corresponds to that nominal identity. "This" has a word line too, but the things it was, Felix at one time and Ciao at another, are different identities, and nothing persists across them: the identity the word would unite across time is empty, which is why "this" could be a symbol for anything. *Claude's reading, for Alec's yes:* this reads an identity across time by what persists across its occurrences, its invariant, where [FutureWork](FutureWork.md), "Intersection or union as the basis of identity", left the token's basis open; content stays the centroid. The certificate reads the emptiness as the meet across the members' rows, zero when they share nothing, with one identity united across "a cat" and "it" as the control.
 
-**Worldline, not word line; witness() and the unknown (Alec, 2026-10-31, latest of all).** Alec: "'Worldline' is not a row, it is a physics term denoting a spatiotemporal occurrent that is the basis for identity." Claude's gloss in the paragraph above, the word's row in the symbol table, is withdrawn: the worldline is the `.where` and `.when` trajectory that §5 gives as the continuity collecting occurrences into an individual, and in [MachineMinds](MachineMinds.md) "the meaning of a symbol is the integral of its worldline". A nominal identity corresponds to a worldline; "this" has none of its own. Alec, on the mechanism: "I think 'this' or 'that' are just words for objects that do not find a match in MTM. We can allow that as witness() as we talked about, an alternative to interpret(), that will find a temporary perceptual reference and not conceptualize it. As I mentioned, though, it can't work until we have an alternate way of cognizing reality like vision; we can use a concept with zero perceptual content and maximal conceptual uncertainty (an unknown)." So beside `interpret`, which takes a word to the object it names, there is `witness`, which takes a word to a temporary perceptual reference and conceptualizes nothing: a pending MTM token that is never promoted. With a field, its reference is the percept witnessed; without one, it is the unknown, a concept with zero perceptual content and both lanes at zero, complete uncertainty (Architecture.md, 11c). Which operation handles a word is the grammar's choice by credit, as every operation is; no word is anchored to either, and nothing is forced. The two paragraphs before this one describe what happens when `interpret` handles a pointing word: it is minted, raised, and its identity across time empties. `witness` reaches the same end at once, an identity that is empty because it was never conceptualized. `witness` is not the withdrawn `point()`: it draws attention to no region and is the perceptual alternative to `interpret`. *Claude's note:* the mechanics of `witness` at a kept definition, the pointed-at occurrence joining the other side's identity with nothing minted for the word, are those of the proposal withdrawn in "No forcing" above, now as an operation the chooser selects rather than a class imposed on the word. Nothing is added to Codex's round; [thinking spec §30.7](plans/2026-10-27-item2-5-thinking.md) holds a draft item for Alec's yes. On Alec's question whether the unknown is suchness from a spiritual perspective, Claude's reading: the unknown is suchness without its content, the shape of a witnessing that has nothing yet to witness; with a field, the witnessed reference is suchness in the model's terms, perceptual presence with no concept applied; and the empty identity across time of "this" is its other face, the emptiness of a fixed nature. Alec's earlier words stand: a very polymorphic word "can only be known as 'this' or 'suchness'".
+**Worldline, not word line; witness() and the unknown (Alec, 2026-10-31, latest of all).** Alec: "'Worldline' is not a row, it is a physics term denoting a spatiotemporal occurrent that is the basis for identity." Claude's gloss in the paragraph above, the word's row in the symbol table, is withdrawn: the worldline is the `.where` and `.when` trajectory that §5 gives as the continuity collecting occurrences into an individual, and in [MachineMinds](MachineMinds.md) "the meaning of a symbol is the integral of its worldline". A nominal identity corresponds to a worldline; "this" has none of its own. Alec, on the mechanism: "I think 'this' or 'that' are just words for objects that do not find a match in MTM. We can allow that as witness() as we talked about, an alternative to interpret(), that will find a temporary perceptual reference and not conceptualize it. As I mentioned, though, it can't work until we have an alternate way of cognizing reality like vision; we can use a concept with zero perceptual content and maximal conceptual uncertainty (an unknown)." So beside `interpret`, which takes a word to the object it names, there is `witness`, which takes a word to a temporary perceptual reference and conceptualizes nothing: a pending MTM token that is never promoted. With a field, its reference is the percept witnessed; without one, it is the unknown, a concept with zero perceptual content and both lanes at zero, complete uncertainty (Architecture.md, 11c). Which operation handles a word is the grammar's choice by credit, as every operation is; no word is anchored to either, and nothing is forced. The two paragraphs before this one describe what happens when `interpret` handles a pointing word: it is minted, raised, and its identity across time empties. `witness` reaches the same end at once, an identity that is empty because it was never conceptualized. `witness` is not the withdrawn `point()`: it draws attention to no region and is the perceptual alternative to `interpret`. *Claude's note:* the mechanics of `witness` at a kept definition, the pointed-at occurrence joining the other side's identity with nothing minted for the word, are those of the proposal withdrawn in "No forcing" above, now as an operation the chooser selects rather than a class imposed on the word. On Alec's question whether the unknown is suchness from a spiritual perspective, Claude's reading: the unknown is suchness without its content, the shape of a witnessing that has nothing yet to witness; with a field, the witnessed reference is suchness in the model's terms, perceptual presence with no concept applied; and the empty identity across time of "this" is its other face, the emptiness of a fixed nature. Alec's earlier words stand: a very polymorphic word "can only be known as 'this' or 'suchness'".
 
-**The stand-in for what is witnessed (Alec, 2026-10-31; specified, pending his choice).** Alec: "'this' is a word that temporarily corresponds to a worldline, that we do not want to conceptualize, or if we do, conceive of it in the maximally generic way. So we can't interpret it by linking it to a known object; it is merely witnessed." The witnessed thing is the MTM token, a point on a worldline, never promoted; the row a definition writes is keyed to that occurrence, which is the hash's behaviour (thinking spec §31) and makes the occurrence a member of the other side by the one rule above. The word's conceptual stand-in, needed because composition fuses only operands with a point, is specified in three candidates in [FutureWork](FutureWork.md), "The stand-in for witnessed suchness", with the reading in [Philosophy](Philosophy.md), "Witnessing Suchness": *neither* and *both* fail, and a concept with its certainty frozen at zero, the top pole `everything` if the word is to have an object, works.
+**The stand-in for what is witnessed (Alec, 2026-10-31; specified, pending his choice).** Alec: "'this' is a word that temporarily corresponds to a worldline, that we do not want to conceptualize, or if we do, conceive of it in the maximally generic way. So we can't interpret it by linking it to a known object; it is merely witnessed." The witnessed thing is the MTM token, a point on a worldline, never promoted; the row a definition writes is keyed to that occurrence, which is the built behaviour and makes the occurrence a member of the other side by the one rule above. The word's conceptual stand-in, needed because composition fuses only operands with a point, is specified in three candidates in [FutureWork](FutureWork.md), "The stand-in for witnessed suchness", with the reading in [Philosophy](Philosophy.md), "Witnessing Suchness": *neither* and *both* fail, and a concept with its certainty frozen at zero, the top pole `everything` if the word is to have an object, works.
 
-**Witnessing gives a perceptual identity a null-concept (Alec, 2026-10-31, night; decided).** Alec: "So witnessing is an alternative to interpreting that gives a perceptual identity a null-concept, a concept that is not limiting because it is unknowing. It must be a frozen concept, and it must be exempt from 'normal' conceptual operations that rely on conceptual definition. But it does give something for MTM to temporarily identify; there is a perceptual referent when Jesus says 'what am I like?', or when the zen master asks of an orange, 'what is this?'." This decides the stand-in of the paragraph above: the frozen concept. The design, as Claude reads it, for Codex when Alec sends it ([thinking spec §30.8](plans/2026-10-27-item2-5-thinking.md)): (1) `witness` is a unary operation beside `interpret`, chosen by credit, with no word anchored to it. (2) It opens an MTM token for the mention, the perceptual identity: a point on a worldline with its `.where`, `.when` and occurrence address, its value the witnessed percept's content, zero until the model has a field. That token is what MTM temporarily identifies: later mentions bind to it, events attach to its timelines, and it expires as any token does. (3) The token's kind is the null-concept: one reserved concept, allocated at construction like the NULL row, with form and both lanes zero and its certainty frozen at zero, which no evidence ever writes. It is exempt from every operation that relies on conceptual definition: the definition index, the definition fold and its reconstruction, the class cover, membership and the raise, the taxonomy and pervasion, the order projection, priming and expectation learning on its row, and forgetting. It has no order and no members, and no row written at a sentence close has it as an endpoint; the rows are at the occurrence, as §31 found on the hash. (4) A kept definition resolves the token as a pending identity is resolved today, and never defines the pointing word: an unbound label on the other side names the token, so "this is Felix" with Felix new promotes the token under the name Felix; a known identity at the token's order absorbs the occurrence as its part; a kind on the other side gives the token that kind, as "a" mints. Recurrence promotion (`promote_candidates`) skips witnessed tokens: a witnessed thing is conceptualized only by being named or kinded in a definition. (5) `interpret` on the same word stays available and the chooser decides per frame; when it is chosen for a pointing word the path on the hash runs, mint and raise, and the emptying of the two paragraphs above follows. The two examples are the test of the design: "what am I like?" and "what is this?" each have a perceptual referent present, a token the question's "this" or "I" binds to, and each asks for a concept; the fitting answer is the token's content, not a name, since its concept is unknowing. Not yet sent to Codex.
+**Witnessing gives a perceptual identity a null-concept (Alec, 2026-10-31, night; decided).** Alec: "So witnessing is an alternative to interpreting that gives a perceptual identity a null-concept, a concept that is not limiting because it is unknowing. It must be a frozen concept, and it must be exempt from 'normal' conceptual operations that rely on conceptual definition. But it does give something for MTM to temporarily identify; there is a perceptual referent when Jesus says 'what am I like?', or when the zen master asks of an orange, 'what is this?'." This decides the stand-in of the paragraph above: the frozen concept. The design, as Claude reads it: (1) `witness` is a unary operation beside `interpret`, chosen by credit, with no word anchored to it. (2) It opens an MTM token for the mention, the perceptual identity: a point on a worldline with its `.where`, `.when` and occurrence address, its value the witnessed percept's content, zero until the model has a field. That token is what MTM temporarily identifies: later mentions bind to it, events attach to its timelines, and it expires as any token does. (3) The token's kind is the null-concept: one reserved concept, allocated at construction like the NULL row, with form and both lanes zero and its certainty frozen at zero, which no evidence ever writes. It is exempt from every operation that relies on conceptual definition: the definition index, the definition fold and its reconstruction, the class cover, membership and the raise, the taxonomy and pervasion, the order projection, priming and expectation learning on its row, and forgetting. It has no order and no members, and no row written at a sentence close has it as an endpoint; the rows are at the occurrence, as built. (4) A kept definition resolves the token as a pending identity is resolved today, and never defines the pointing word: an unbound label on the other side names the token, so "this is Felix" with Felix new promotes the token under the name Felix; a known identity at the token's order absorbs the occurrence as its part; a kind on the other side gives the token that kind, as "a" mints. Recurrence promotion (`promote_candidates`) skips witnessed tokens: a witnessed thing is conceptualized only by being named or kinded in a definition. (5) `interpret` on the same word stays available and the chooser decides per frame; when it is chosen for a pointing word the path on the hash runs, mint and raise, and the emptying of the two paragraphs above follows. The two examples are the test of the design: "what am I like?" and "what is this?" each have a perceptual referent present, a token the question's "this" or "I" binds to, and each asks for a concept; the fitting answer is the token's content, not a name, since its concept is unknowing.
 
 **The finger and the moon (Alec, 2026-10-31, night, closing).** Alec: "So this, as an indexical, takes a temporary definition based on a perceptual centroid, has a null or uncertain concept, and cannot be reasoned about because it has no conceptual content. So it is a temporary finger pointing at the moon, a name that does not exist beyond its use." In the model's terms, each clause lands on one structure. The temporary definition is the token's value, the witnessed percept's centroid, held in MTM for the token's life; before the model has a field it is zero and the token is its `.where`, `.when` and address alone. The null concept is the null-concept of the paragraph above, the token's kind. "Cannot be reasoned about" is the exemption stated from the other side: inference runs over conceptual content, so pervasion, the definition fold's judgment, `intuit`'s rule selection and the symbolic order loop read nothing from a witnessed token; it can be bound again, have events on its timelines, and be named or kinded by a definition, which is how the moon enters LTM, but it cannot be inferred over. And the finger does not outlast its use: the token expires from MTM as any token does, the word keeps no object, and what remains in LTM is the row at the occurrence, which belongs to what was pointed at, Felix or a, not to the pointing. Nothing here changes the design; it is the design read as a sentence.
 
-**Sent to Codex (Alec, 2026-10-31, night: "Everything discussed can go to the current 2.5 implementation").** The design of the two paragraphs above governs as addendum 4 of the completion round ([thinking spec §32](plans/2026-10-27-item2-5-thinking.md)), with three decisions written in by Claude, for Alec to overrule: `witness` is a reference mode on a bare noun-phrase operation chosen by the compose chooser, since `interpret` is the eager word-boundary read and the chooser is the only credit-bearing choice; the null-concept has no order; and "what is this?" after a named witnessing answers with the name, as lesson 13 measures, while an unnamed witnessing answers with no concept. The §31 stop is disposed as Alec accepted: the occurrence-keyed row is the witnessed identity's row.
+**Built (Alec, 2026-10-31, night: "Everything discussed can go to the current 2.5 implementation").** The design of the two paragraphs above governs the build, with three decisions written in by Claude, for Alec to overrule: `witness` is a reference mode on a bare noun-phrase operation chosen by the compose chooser, since `interpret` is the eager word-boundary read and the chooser is the only credit-bearing choice; the null-concept has no order; and "what is this?" after a named witnessing answers with the name, as lesson 13 measures, while an unnamed witnessing answers with no concept. As Alec accepted, the occurrence-keyed row is the witnessed identity's row.
 
-**The choice point, corrected (Alec, 2026-10-31, night).** Alec: "Interpret is a chooser option, not all perceptual content is symbolic. And an alternative to that is Witness. We might also do neither, but for the case of written text (reading mode) we are forcing a few things. Witness is useful because it binds to an uncertain concept, which is otherwise unlikely (we do not want an object-concept that corresponds to the word-concept 'this', which should remain a referent to be filled by perception)." So the first of Claude's three written-in decisions above is overruled: `witness` is not a reference mode on a noun-phrase operation but `interpret`'s sibling at the same site, a unary rule over a leaf declared beside it in the grammar, with the three readings of a percept being interpret, witness and neither. In reading mode the forcing stands: `interpret` is mandatory at the word transaction and neither is excluded; `witness` is the chooser's alternative for a leaf whose interpretation yielded an open handle. With a field, the chooser may do any of the three. [Thinking spec §32.1](plans/2026-10-27-item2-5-thinking.md) carries the revised bullet.
+**The choice point, corrected (Alec, 2026-10-31, night).** Alec: "Interpret is a chooser option, not all perceptual content is symbolic. And an alternative to that is Witness. We might also do neither, but for the case of written text (reading mode) we are forcing a few things. Witness is useful because it binds to an uncertain concept, which is otherwise unlikely (we do not want an object-concept that corresponds to the word-concept 'this', which should remain a referent to be filled by perception)." So the first of Claude's three written-in decisions above is overruled: `witness` is not a reference mode on a noun-phrase operation but `interpret`'s sibling at the same site, a unary rule over a leaf declared beside it in the grammar, with the three readings of a percept being interpret, witness and neither. In reading mode the forcing stands: `interpret` is mandatory at the word transaction and neither is excluded; `witness` is the chooser's alternative for a leaf whose interpretation yielded an open handle. With a field, the chooser may do any of the three.
 
-**The three readings forced: no-op, sign, interpret; `witness` renamed `sign` (Alec, 2026-11-01; refined the same day: interpretation optional and initially forced, its reading a sign or a symbol).** Alec, on Claude's reading that `witness` as built is called on a word's handle and never reaches a percept: "let's force a three way decision of an object (no op, sign(), or interpret() are the icon, sign, and symbol), so that the confusing term witness is replaced with pierces SIGN." And, refining it: "I think the better way to implement this is for interpret() to be optional, and if it happens, then the interpretation may be a sign or a symbol. Again, interpretation can be initially forced since words are so often meaningful beyond themselves." Peirce's three signs are the icon, which signifies by resemblance, the index, which signifies by pointing, and the symbol, which signifies by convention; Alec names the middle reading `sign`, and these documents and the code follow him. The decision, as Claude reads it, is two decisions, one above the other. The first is whether to interpret the percept at all: `interpret` is optional, and a leaf at which it is not applied is the **no-op**, the icon, where the percept stands for itself, its value is its own code, the word-concept the word arrives as, and no operation is applied. The limit of resemblance is the thing itself, so the no-op is the reading of an onomatopoeia, a sound rendered in letters; of a quoted word; of a word heard as a sound with no meaning read from it; of an unknown word kept as its form. The second decision is taken only when the first interprets: the interpretation is a **`sign`**, the index, the operation that [thinking spec §32.1](plans/2026-10-27-item2-5-thinking.md) declared as `witness`, under its new name, where the percept points at something co-present and the operation opens the MTM token for the pointed-at occurrence with the null-concept as its kind and the pointed-at percept as its content, zero in reading mode because nothing is co-present in a text but words; or a **symbol**, the word's conventional object, which is the interpreted leaf left standing as that object and needs no operation of its own. Both decisions are the compose chooser's, by ordinary credit, anchored to no word and forced by no word class, except that the first is initially forced: in reading mode `interpret` stays mandatory at the word transaction, as it was built, because words are so often meaningful beyond themselves, so every word is interpreted and the chooser's decision is the second one, `sign` or the symbol, exactly one at every leaf; `sign` is available at every interpreted leaf and not only at one whose interpretation left an open handle. The eager word transaction remains the admission of the form and the lookup of an existing object, mints nothing, and is not the decision. The no-op is built behind the forcing and has content when the forcing is lifted, since the text is the field and the percept is the word-occurrence: at the kept close a no-op leaf opens its own occurrence's token, as `sign` opens the pointed-at one, with the word-concept code as its content and the null-concept as its kind; a later "that" binds to either token, and a definition names or kinds either, as the paragraph "Witnessing gives a perceptual identity a null-concept" says of the token. Both tokens are occurrences at order zero and never raise; the word type stays at order one by form sameness. Lifting the forcing is a later decision, with a field, where the chooser may already leave a percept alone; in this round it is lifted only inside a certificate. The certificate of the round: "The dog went woof. That was a bark." With the forcing lifted, the no-op at "woof" opens a token whose content is the form of "woof", "that" binds to it, and the definition kinds it bark; nothing is minted for the word. Its generation is the reverse of the no-op, the form itself: a mention is said as it was. In the paragraphs above, "witness" as the name of the operation reads `sign`, and the percept taken as what it is, which they also call witnessing, is the no-op; Alec's quoted words stand as written. "witness" in every other sense, the evidence witnesses of rows, members and spans, is untouched. Sent to Codex as item 22 ([thinking spec §32.3 and §32.4](plans/2026-10-27-item2-5-thinking.md)); the Buddhist reading, with Claude's correction, is the closing paragraph of [Philosophy](Philosophy.md), "Witnessing Suchness".
+**The three readings forced: no-op, sign, interpret; `witness` renamed `sign` (Alec, 2026-11-01; refined the same day: interpretation optional and initially forced, its reading a sign or a symbol).** Alec, on Claude's reading that `witness` as built is called on a word's handle and never reaches a percept: "let's force a three way decision of an object (no op, sign(), or interpret() are the icon, sign, and symbol), so that the confusing term witness is replaced with pierces SIGN." And, refining it: "I think the better way to implement this is for interpret() to be optional, and if it happens, then the interpretation may be a sign or a symbol. Again, interpretation can be initially forced since words are so often meaningful beyond themselves." Peirce's three signs are the icon, which signifies by resemblance, the index, which signifies by pointing, and the symbol, which signifies by convention; Alec names the middle reading `sign`, and these documents and the code follow him. The decision, as Claude reads it, is two decisions, one above the other. The first is whether to interpret the percept at all: `interpret` is optional, and a leaf at which it is not applied is the **no-op**, the icon, where the percept stands for itself, its value is its own code, the word-concept the word arrives as, and no operation is applied. The limit of resemblance is the thing itself, so the no-op is the reading of an onomatopoeia, a sound rendered in letters; of a quoted word; of a word heard as a sound with no meaning read from it; of an unknown word kept as its form. The second decision is taken only when the first interprets: the interpretation is a **`sign`**, the index, the operation first declared as `witness`, under its new name, where the percept points at something co-present and the operation opens the MTM token for the pointed-at occurrence with the null-concept as its kind and the pointed-at percept as its content, zero in reading mode because nothing is co-present in a text but words; or a **symbol**, the word's conventional object, which is the interpreted leaf left standing as that object and needs no operation of its own. Both decisions are the compose chooser's, by ordinary credit, anchored to no word and forced by no word class, except that the first is initially forced: in reading mode `interpret` stays mandatory at the word transaction, as it was built, because words are so often meaningful beyond themselves, so every word is interpreted and the chooser's decision is the second one, `sign` or the symbol, exactly one at every leaf; `sign` is available at every interpreted leaf and not only at one whose interpretation left an open handle. The eager word transaction remains the admission of the form and the lookup of an existing object, mints nothing, and is not the decision. The no-op is built behind the forcing and has content when the forcing is lifted, since the text is the field and the percept is the word-occurrence: at the kept close a no-op leaf opens its own occurrence's token, as `sign` opens the pointed-at one, with the word-concept code as its content and the null-concept as its kind; a later "that" binds to either token, and a definition names or kinds either, as the paragraph "Witnessing gives a perceptual identity a null-concept" says of the token. Both tokens are occurrences at order zero and never raise; the word type stays at order one by form sameness. Lifting the forcing is a later decision, with a field, where the chooser may already leave a percept alone; for now it is lifted only inside a certificate: "The dog went woof. That was a bark." With the forcing lifted, the no-op at "woof" opens a token whose content is the form of "woof", "that" binds to it, and the definition kinds it bark; nothing is minted for the word. Its generation is the reverse of the no-op, the form itself: a mention is said as it was. In the paragraphs above, "witness" as the name of the operation reads `sign`, and the percept taken as what it is, which they also call witnessing, is the no-op; Alec's quoted words stand as written. "witness" in every other sense, the evidence witnesses of rows, members and spans, is untouched. The Buddhist reading, with Claude's correction, is the closing paragraph of [Philosophy](Philosophy.md), "Witnessing Suchness".
 
 ![The readings of a percept: interpret or not; if so, a sign or a symbol](diagrams/percept_readings.svg)
 
@@ -616,11 +612,11 @@ Formal input and output arguments are explicitly constructed concepts one order 
 
 #### Thought over grammatical classes (Alec, 2026-11-08)
 
-`Priming.part_edges` carries argument-class memberships beside the relational ones, so `ThoughtTaxonomyCapability.evidence` may prove `part(word, formal argument)` and may traverse a grammatical class as a whole on its way to another; a relation a text asserts between a thing and a word class is written like any other, so what is said can join the two ladders, and a class of things in the world can then be treated as an instance of a part of speech. This is allowed deliberately. Alec's expectation is that such reasoning produces a samsaric logic for dealing with entities in the world, which are real and not grammatical; the broken rationality that results is to be observed carefully and recorded, as evidence that may help human understanding, not guarded against. No edge is excluded from the taxonomy on this account. The thought history records a membership proof whose path passes through a formal-argument class, so that these inferences can be found; the word-to-object binding itself is identity through the definition index and is not part of the traversal. Recorded from Alec's reply in [item 2.3 §31.3](plans/2026-11-05-item2-3-trust.md#313-alecs-answers-and-the-re-design-claude-2026-11-08-after-alecs-reply-to-31-and-311).
+`Priming.part_edges` carries argument-class memberships beside the relational ones, so `ThoughtTaxonomyCapability.evidence` may prove `part(word, formal argument)` and may traverse a grammatical class as a whole on its way to another; a relation a text asserts between a thing and a word class is written like any other, so what is said can join the two ladders, and a class of things in the world can then be treated as an instance of a part of speech. This is allowed deliberately. Alec's expectation is that such reasoning produces a samsaric logic for dealing with entities in the world, which are real and not grammatical; the broken rationality that results is to be observed carefully and recorded, as evidence that may help human understanding, not guarded against. No edge is excluded from the taxonomy on this account. The thought history records a membership proof whose path passes through a formal-argument class, so that these inferences can be found; the word-to-object binding itself is identity through the definition index and is not part of the traversal. Recorded from Alec's reply.
 
-For the current native numbering, word concepts remain order 0 and formal arguments order 1, independently of the leaf’s referent order. Fit is coverage; definiteness is separability times view evidence (§31.3). Boundary conditioning follows only participating members and their ancestors. The form-order/referent-order separation is recorded in FutureWork.
+For the current native numbering, word concepts remain order 0 and formal arguments order 1, independently of the leaf's referent order. Fit is coverage; definiteness is separability times view evidence. Boundary conditioning follows only participating members and their ancestors. The form-order/referent-order separation is recorded in FutureWork.
 
-## Round 5 amendment to §§1 and 9: the basic level and continuity (2026-11-09)
+## Amendment to §§1 and 9: the basic level and continuity (2026-11-09)
 
 Parts and wholes bound one basic percept in perception. An order-0 concept collects those basic percepts through `2*bp + pole` literals; it no longer reads separate part and whole literal kinds. Higher orders continue to collect concepts. A property-only or part-only concept collects the basic percepts carrying that boundary. This is the common basis of the order alternation.
 

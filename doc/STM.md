@@ -1,14 +1,14 @@
 # Short-Term Memory
 
-> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
+> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record.
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23, [step 2 §71](plans/2026-10-21-step2-one-ltm.md); recorded 2026-10-30):** an LTM1 row is two tagged references with its kind read from the referents, not three. As built at `3718d9d0dc`, `LTM0` still carries `c_plus`/`c_minus`, `source_trust`, `order`, `row_ids`, `origin`, `record_kind`, `polarity` and `witness_count` columns; only `refs`, `grammatical_mode` and the index columns are retired (audit 2026-10-30; decided 2026-11-01, Alec: the unused columns are removed and the row brought to this layout, [thinking spec §32.2](plans/2026-10-27-item2-5-thinking.md) item 17).
+> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23; recorded 2026-10-30):** an LTM1 row is two tagged references (each to an LTM0 occurrence, a symbol or another LTM1 row, its tag saying which) with its kind read from the referents, not three. The unused `LTM0` columns are removed and the row has this layout (Alec, 2026-11-01).
 > - Parthood, subsumption and kind statements ("cats are animals") are **folds** in the meronomy and the taxonomy over symbols, not rows; equality is membership in a singleton; no `REL_PARTOF` row exists.
 > - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
-> - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded.
+> - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; a stream is the batch row that wrote a row, and a document is the cover row that starts it in that stream (reused at every later presentation; a row belongs to the document of the latest cover before it), so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded (2026-10-24).
 > - STM is the open sentence's three concept-width working slots plus an **index** of the most recent rows (about eight addresses) and the symbol activation field; the intersection `bind` needs is computed on read, never stored.
-> - Expectation is a **gain field** `c = m⊙a⊙o` with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
-> - Amended 2026-10-29/30 (Alec; [thinking spec §§16, 22](plans/2026-10-27-item2-5-thinking.md), [2.7 record §42](plans/2026-10-27-item2-7-corpus.md)): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are not built.
+> - Expectation is a **gain field** $c = m \odot a \odot o$ (attention's gain $m$, expectation's gain $a$, the arriving signal $o$) with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
+> - Amended 2026-10-29/30 (Alec): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are built (accepted as implemented, Alec, 2026-11-01).
 
 
 ## Relation to LLMs, Formal Concept Analysis, and DisCoCat
@@ -40,16 +40,9 @@ it from `symbolicOrder > 0`; see
 [Architecture.md](Architecture.md#modes-of-operation)):
 
 ```
-SERIAL    one idea per word; predict the free slot, then perceive (push)
-PARALLEL  one whole-slab pass; predict the slab, then perceive (set all slots)
+SERIAL    one idea per word (push)
+PARALLEL  one whole-slab pass (set all slots)
 ```
-
-Both follow a **predict-then-perceive** discipline: before the freshly
-materialized event is written into the STM, the in-STM predictor reads
-the retained context and stakes a prediction; the just-written event is
-then its supervision target. This is the concept-space analogue of a
-language model's next-token objective, scaled to the in-sentence working
-set.
 
 The trainable target configuration is `MentalModel.xml` (serial,
 `<data><dataType>embedding</dataType>`, `<attention>` unset (resolves to
@@ -71,19 +64,69 @@ tensor-map contract. ConceptualSpace builds one at construction as
 (`DEFAULT_CAPACITY = 8`); the legacy `<wMax>` alias is retired. Eight sits
 inside Miller's $7 \pm 2$ band — the working-set size
 psycholinguistics ascribes to human short-term memory. The capacity is
-the rolling-window length: at steady state the STM holds the last `cap`
-ideas and the general push API drops the oldest when full. Item 7.5 compose
-reserves a free slot through the online reduction deadline before the next
-push. An arrival at a full stack raises an assertion instead of dropping a word.
+the number of chunks, fixed at construction. Item 7.5 compose reserves a free
+slot through the online reduction deadline before the next push, and an
+arrival when every chunk is on the stack raises instead of dropping a word;
+only the physical shifter of the ungated serial path (Section 2) rolls,
+dropping the oldest.
 
-**As built (item 3.0 chunks; recorded 2026-10-30).** The working set is
-`B x stmCapacity` chunks with the fourteen `STMChunks.FIELDS` tensors; the
-stack is metadata over chunks, not a physical shift. An arrival takes a free
-chunk, else the least-recently-read off-stack chunk, and refuses when every
-chunk is stacked; a kept close leaves its top as an off-stack recent entry
-(`keep_close`); `bind_menu` offers the dummy and the off-stack identity
-chunks. The physical shifter `_stm_shift_and_push` described below remains
-only on the ungated serial path.
+**Chunks (item 3.0).** The working set is `B x stmCapacity` chunks held in
+the fourteen `STMChunks.FIELDS` tensors; the stack is metadata over chunks,
+not a physical shift. A chunk holds a vector `[form | meaning]`, as an `LTM0`
+idea does, with its order, grammar order, concept row and activation; two
+tagged references `(tag, value)`, each `SYMBOL`, `IDENTITY_REF` (an MTM
+identity), `ACTION` (a journal column of this reading), `RELATION` (an `LTM1`
+handle) or `OCCURRENCE` (an `LTM0` address); the bound identity and its
+timeline; its stack position ($-1$ off the stack); the tick of its last read;
+its `.where` and `.when` bands; and its two truth lanes. An arrival takes a
+free chunk, else the least recently read off-stack chunk, and refuses when
+every chunk is on the stack. A chunk is read when it is a compose operand,
+when a bind to it is kept, when its value is refreshed into the window and
+when recall returns it; being offered in a menu is not a read, so attention
+chooses what is read and recency what stays. The physical shifter
+`_stm_shift_and_push` described below remains only on the ungated serial
+path.
+
+A reduce writes its result into the head operand's chunk and frees the
+other. When both operands are resolved (a concept symbol, a bound identity
+with a value, or a compressed chunk) the result keeps its value and no
+references; otherwise it keeps `ACTION` references to the operands' journal
+columns, which is where the close finds the chain (Section 10). A composed
+chunk carries the identity of its head: a unary result its operand's, a
+headed binary result its head side's, and a bind its selected token, else its
+head's identity, else a fresh one. A determiner that opens an individual of
+order one also takes a fresh identity, and a clause carries its subject's. A
+headless binary result and a verb phrase carry no identity ($-1$): `refresh`
+reads such a chunk's own value, `bind_menu` never offers it as an
+antecedent, and it never inherits the left operand's identity
+(`ChunkJournal.apply`).
+
+At the kept close the sentence's top chunk stays off the stack as a recent
+entry, with a reference to the entry just written and that entry's stamp
+(`keep_close`); its other stacked chunks are freed. Recall loads a returned
+entry into a chunk with its references, vector, truth pair and stored
+`.when`, and returns its identities to MTM (`EntryRead.recall_chunks`). A
+concept entering STM is stamped now; a recalled entry keeps its stored stamp.
+Each path of a sentence owns its chunks until the paths are compared, and the
+kept path's chunks are what the close writes.
+
+**MTM in the compose window.** MTM's accessible identities and candidates are
+prepended to the symbol array that conceptual space reads, ahead of the
+words, up to `mtmPrepend` entries fixed at construction and ordered by each
+token's latest event, so identities and recalled chains lead the compose
+window at every order (`PrependedSymbols.stage`). An unpromoted token's entry
+carries a transient id from MTM's preallocated pool (`nVectors + i` for pool
+seat $i$, taken when the token opens and released when it expires or is
+promoted) and has no codebook row; a promoted token's entry carries its
+symbol and row. The entry's form is its name's form, or the centroid of its
+mentions' forms, and its meaning is the token's current value. A token with
+an alternative timeline has a second entry carrying that timeline's value,
+and a modal continuation binds to it explicitly. Each entry is deposited as
+an off-stack chunk. `bind` is a binary compose operation (`BindLayer`): its
+left operand is the mention on the stack and its right an off-stack identity
+chunk, offered once per such chunk beside a dummy that keeps the mention's
+own content (`bind_menu`), at any order. It returns the identity's current
+value, and the kept close applies the kept binds to MTM once.
 
 **Buffer.** The data is a single per-batch tensor
 `[B, cap, concept_dim]` plus a `[B]` long depth-pointer vector recording
@@ -97,23 +140,42 @@ has its own range in the model's shared `.where` allocation.
 `ConceptualSpace.where` exposes the slots' sinusoidal indices, using the
 same encoding as the perceptual codebooks. A slot keeps its location when
 ideas are pushed, reduced or cleared. The content's codebook address stays
-separate. Closing stores the corresponding one- or three-slot semantic
-content in LTM; a future episodic bank will retain located fields
-([Future Work §7](FutureWork.md#7-episodic-memory-a-few-active-indices-beside-each-row)).
-*Amended 2026-11-11:* that bank is built in item 2.0 round 7 (accepted
-2026-11-11) as an entry beside the close's `LTM0` row, not as a separate bank: the
-`episodicPercepts` strongest percepts of the sentence's open attention pass
-([Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11)).
-The seven learned output regions are superseded by
-[the support-mask direction (§7.9–§7.10)](plans/2026-10-08-stream-state.md#79-alec-on-the-corrections-2026-10-09).
+separate. The kept close writes the sentence's semantic content to LTM,
+with its episodic entry beside it (Section 10). A read places only its focus;
+the earlier placements stay as the occupied slots with their `.where`/`.when`
+stamps, and the read's mask is its candidate's support (below).
 
-**Candidate support (item 6.1 candidate, 2026-10-09).**
-`CandidateAttention(Layer)` scores each unread supported candidate with an
-ordinary MLP. One hard choice supplies one word read and one grammar step.
+**Candidate support (item 6.1, 2026-10-09).** Attention is a mask, not a
+derivation: an item is admitted or not, and the derivation it feeds is
+committed hard. Structural relations are exact masks that need no learning
+(in this word, sentence or document by the address bands; recency on
+`.when`; distance on `.where`); only relevance is learned. `CandidateAttention`
+is the relevance scorer: one shared MLP (`Linear`, `Tanh` and a
+zero-initialized readout, the additive form of Bahdanau attention) gives one
+score per unread supported candidate, from a detached context that
+`ModelCandidateAttention.context` assembles: the located activation after
+spreading (activation times priming heat) and the heat itself, each item's
+first and last time, the expectation prime and the percept expectation
+residual, the part and whole keys, the occupied STM slots with their places,
+times, salience and read stamps, and the needs (the open reference's query,
+or the part a lesson names, and the gist). One hard choice supplies one word
+read and one grammar step, and no pathwise derivative is fabricated through
+it. The whole-path comparison credits the choice (attention is one of the
+walks a path can depart in), and a part lesson that names the part to read
+trains the scorer by cross-entropy.
+
 The candidate's native paired evidence is its support mask, including
-negative evidence; zero means no evidence. `hetTolerance` acts on these
-lanes, with 1 a no-op. There is no learned region or boundary derivative.
-The existing paired-cost departure learner trains the scorer.
+negative evidence; zero means no evidence, and `hetTolerance` acts on these
+lanes, with 1 a no-op. An attended object appears as the negation of the
+non-object: it has positive and negative evidence over parts and wholes, and
+the parts that are evidence neither way are zeroed. So every concept or
+conceptual candidate already has a mask, where it has no support, and the
+mask is derived, not learned as a boundary. A learned region boundary cannot
+be trained: a straight-through surrogate cannot see the read it did not
+make, so its gradient pushes an admitted item further in and an excluded one
+further out, and learned regions saturate open or collapse to nothing. With
+the support mask the only gradient is the evidence lanes' ordinary gradient,
+and an unsupported part gains support only as a candidate's lanes learn it.
 
 During a sentence, `SentenceField` carries source-support indices beside
 the eight STM slots: pushes move the previous placements, unary operations
@@ -121,146 +183,111 @@ retain their witnesses, and binary operations join their witnesses. The
 indices refer to the sentence's native evidence bank and its original
 `.where`/`.when` stamps. The scorer reads these stamps and all occupied
 slots; it never places the earlier reads again. The field has its own
-allowance and charges one `serial-word-loop` unit per read. The answer and
-memory readers retain their landing paths; retrieval into a slot is later
-work. Learning gates remain under validation in the
-[6.1 receipt](benchmarks/2026-10-09-item6-1/README.md).
+allowance and charges one `serial-word-loop` unit per read.
 
-**`ShortTermMemory` owns its own live buffers (A5).** The idea stack is
-NOT proxied off `SymbolSubSpace`. `_buffer` / `_depth` / `_max_depth_host`
-are properties over plain (non-`nn.Module`-buffer) attributes
-`_live_buffer` / `_live_depth` / `_live_max_depth_host`, set with
-`object.__setattr__` so STM state stays out of the traced graph's inputs.
-Only `capacity` and `concept_dim` still proxy: when `attach_word_subspace`
-has wired an owning `SymbolSubSpace`, they read that subspace's
-`_idea_capacity` / `_stm_payload_dim` (so an externally-grown idea-stack
-capacity sizes the next `begin_forward` correctly); otherwise they fall
-back to the constructor-supplied `_init_capacity` / `_init_concept_dim`.
-This landed with the 2026-05-21 STM-Layer refactor; a later fix (the "A5"
-comment on `ensure_batch`) retired the old `ss is None` branch (a second,
-SymbolSubSpace-attached buffer) entirely — there is now a single live
-store regardless of attachment.
+**`ShortTermMemory` owns its live buffers.** The idea stack is not proxied
+off `SymbolSubSpace`. Each chunk field is a plain (non-`nn.Module`-buffer)
+attribute `_live_<field>`, set with `object.__setattr__` so STM state stays
+out of the traced graph's inputs; `_buffer`, `_depth` and the other fields
+are views of them. `capacity` and `concept_dim` read an attached
+`SymbolSubSpace`'s `_idea_capacity` / `_stm_payload_dim`, which must equal the
+construction (`attach_word_subspace` raises otherwise), and nothing resizes
+after construction. There is a single live store regardless of attachment.
 
-**API.** Idea-stack: `push(b, idea)`, `pop(b)`, `peek(b, n=0)`
+**API.** Idea stack: `push(b, idea)`, `pop(b)`, `peek(b, n=0)`
 (`peek(b, 0)` = most recent), `snapshot(detach=False)`, `size(b)`,
-`is_full(b)`, `is_empty(b)`, `clear(b=None)`, `ensure_batch(batch)`,
-`ensure_capacity(capacity)` (grow-only). Batch push primitives (masked /
-whole-slab writers used by the per-word and parallel forwards):
-`push_step(ideas)`, `push_step_masked(ideas, gate_b_1)`,
-`push_window_batch(ideas)`. Slot-kind provenance (word-bearing-fold
-filtering; `None` = recording off, the default): `kinds_enable(batch,
-depths=None, kind="other")`, `note_push_masked(gate_rows, kind)`,
-`note_push_all(kind)`. STM shift/reduce scorer surface (formerly
-`stm_driver.STMDriver` / `stm_trainer`, now living directly on
-`ShortTermMemory`): `init_scorer(rule_signatures, payload_dim,
-hidden_dim=None)`, `shift(word_subspace, b, payload, *, category, order,
-ref_id)`, `reduce_step(word_subspace, b)`, `reduce_step_soft(word_subspace,
-b)`, `train_scorer_step(word_subspace, input_vectors, target_rule_ids, *,
-snap_fn, optimizer=None)`. The signal router consumes `stm.snapshot()` as
-its slab input.
+`is_full(b)`, `is_empty(b)`, `clear(b=None, hard=True)`,
+`ensure_batch(batch)`, and `ensure_capacity(capacity)`, which refuses any
+capacity beyond the construction. Batch push primitives (masked / whole-slab
+writers used by the per-word and parallel forwards): `push_step(ideas)`,
+`push_step_masked(ideas, gate_b_1)`, `push_window_batch(ideas)`. The
+functional chunk operations (`deposit`, `apply_choice`, `keep_close`,
+`refresh`, `bind_menu`, `locate`) live on `STMChunks`. The signal router
+consumes `stm.snapshot()` as its slab input.
 
-**Lifecycle.** Cleared on hard `Reset` (sentence boundary) — the
-per-batch idea stack drops everything from the just-finished sentence and
-the next sentence starts empty. Soft reset leaves the STM intact (see
-[Spaces.md](Spaces.md#reset-cascade-hard-vs-soft)).
+**Lifecycle.** At a sentence or document reset ConceptualSpace clears STM
+softly: the unfinished sentence's stacked operands go, and recalled
+identities and kept sentence entries stay off the stack until recency evicts
+them (`STMChunks.soft_reset_rows`). The epoch reset clears STM hard, freeing
+every chunk and expiring the thought stores (see "Memory module and thought
+stamps" below and [Spaces.md](Spaces.md#reset-cascade-hard-vs-soft)).
 
 ---
 
 ## 2. Serial sequencing
 
-In SERIAL / GRAMMATICAL mode each word traverses a per-word path: MPHF
-surface lookup $\to$ `PartSpace.forward` (synthesis front end + `self.sigma`)
-$\to$ `ConceptualSpace.forward`, which does the STM
-bookkeeping. The whole pass is **predict-then-perceive per word**,
-implemented in `ConceptualSpace.forward`
-([Spaces.py](../bin/Spaces.py)):
+In SERIAL / GRAMMATICAL mode each word traverses a per-word path: surface
+lookup $\to$ `PartSpace.forward` (the synthesis front end; a word's code is
+the max of its constituents' codes) $\to$ `ConceptualSpace.forward`, which
+does the STM bookkeeping ([Spaces.py](../bin/Spaces.py)):
 
-1. **Snapshot + predict the free (newest) slot.** Before writing the new
-   event, `_stm_predict_then_perceive_serial(idea)`
-   ([Spaces.py](../bin/Spaces.py)) takes `stm.snapshot()` and runs
-   the in-STM predictor from the **retained context** — the snapshot with
-   the oldest slot dropped (`snap[:, :-1]` when depth $\ge 2$; the whole
-   snapshot when depth $= 1$). The prediction is stashed on
-   `self._stm_predicted_idea`. On the first word (empty STM) the
-   prediction degenerates to zeros and **no** loss accumulates (there is
-   no prior context to predict from). The serial predictor folds the
-   context with an order-invariant **sum** over the slot axis, so dropping
-   the oldest (regardless of which physical slot holds it) yields the same
-   prediction.
-2. **Perceive (overwrite via `_stm_shift_and_push`).**
+1. **Perceive (overwrite via `_stm_shift_and_push`).**
    `_stm_shift_and_push(idea)` ([Spaces.py](../bin/Spaces.py)) is
    the perceive step. At capacity, slots $0\ldots(\text{cap}-2)$ shift
    into $1\ldots(\text{cap}-1)$ and the new idea lands in slot $0$ (the
    newest slot); the oldest idea (the last slot $\text{cap}-1$) falls off.
    Below capacity it is a plain push: shift the occupants right and write
-   slot $0$. Under `<serialObjectMeta>` (default off; doc/specs/mereological-
-   order-raising.md "Serial-mode word-at-a-time loop"), `p` indexes the
+   slot $0$. Under `<serialObjectMeta>` (default off), `p` indexes the
    independent sentence-word slab. Inside that iteration PartSpace gathers
-   **all** of word $p$'s radix/chunk constituents and applies the configured
-   sigma set-fold; the batch-padded raw width may exceed the eight-wide PS
-   field. The live PS and WS folds bind strictly by location; the resulting
-   concept records its actual subsymbolic order and full ordered fold support.
-   Its current-word location is selected for
-   `stm.push_step_masked(idea_bd, commit_b_1, orders=..., grammar_orders=...)`.
-   That commits once using
-   the word-active column
+   **all** of word $p$'s radix/chunk constituents and takes the max of their
+   codes (`synthesize_word_parts`); the batch-padded raw width may exceed the
+   eight-wide PS field. The live PS and WS readings bind strictly by
+   location; the resulting concept records its actual subsymbolic order and
+   full ordered support. Its current-word location is selected for
+   `stm.push_step_masked(idea_bd, commit_b_1, orders=..., grammar_orders=...)`,
+   which commits once using the word-active column
    `inputSpace._word_last_slot_mask[:, p:p+1]`
-   (`BasicModel._per_word_body_step`, [Models.py](../bin/Models.py)).  The local
-   Raw staging resets for word $p+1$; it is not an STM or PS-capacity axis.
+   (`BasicModel._per_word_body_step`, [Models.py](../bin/Models.py)). The local
+   raw staging resets for word $p+1$; it is not an STM or PS-capacity axis.
    Flag off (or a legacy input without the word-loop tensors) falls
    back to the original per-slot path.
-3. **Accumulate the intra-loss.** The held prediction is scored against
-   the just-perceived `idea` as $\mathcal{L}_\text{intra} =
-   \mathrm{MSE}(\hat{c}_t, c_t)$ (see [Section 6](DevelopmentHistory.md#6-intrasentencelayer)).
-4. **Language dispatch.** The signal router dispatches grammar ops over
+2. **Language dispatch.** The signal router dispatches grammar ops over
    the STM contents (read-only via CS, write-required via SS).
-5. **One operation per round.** `LanguageSpace.choose_operation` presents
+3. **One operation per round.** `LanguageSpace.choose_operation` presents
    the newest two occupied slots to the shared `OperationSelectionLayer`.
    Binary candidates and unary candidates at both positions compete in one
    softmax. Three fixed rounds follow each word, with early STOP; the sentence
    closing runs up to twice capacity. A binary choice removes one slot, while a
    unary choice changes its selected slot without changing occupancy. STOP is
-   forbidden until the complete STM fits the destination row (one absolute
-   slot or up to three relative slots) and the phase allowance. Online rounds
-   allow `K - 1` occupied slots; endings allow one absolute or three relative slots.
-   A fixed binary-logit prior grows with whole-STM occupancy and required
-   reductions per remaining round. Its `reducePressure` weight defaults to `1`.
-   When remaining rounds equal required reductions, unary and STOP candidates
-   are masked. Unary operations remain available while there is slack.
-   Default budgets therefore reserve the next word's slot and finish each closing.
-   An initially infeasible budget may still leave an incomplete sentence;
-   an attempted push into a full stack is an assertion failure.
-   The trace records the actual operator and position in each round. Both
-   derivations use hard execution with a probability-weighted straight-through
-   gradient from the untempered model softmax. At every sentence closing, each row
-   trains both derivations from cached word vectors, retains the strictly
-   lower sentence loss (ties retain exploit), and commits before the next
-   sentence starts. Batch-end answer loss is outside this comparison.
-   Explore uses the shared
-   `composeTemperature` and forces one alternative round. Evaluation runs
-   exploit alone with deterministic logit argmax.
+   forbidden until the complete STM fits the sentence's allowance (one slot
+   for an absolute sentence, three for a relative one; Section 9) and the
+   phase allowance; online rounds allow `K - 1` occupied slots. A
+   binary-logit prior grows with whole-STM occupancy and with the reductions
+   still required per remaining round, $p = g\,(d/a + r/n)$ for depth $d$,
+   allowance $a$, required reductions $r = \max(d - a, 0)$ and remaining
+   rounds $n$. Its gain $g$ is a learned parameter of the compose chooser
+   (`reduce_pressure`, initialized from `reducePressure`, default 1), trained
+   with the chooser, so a grammar lesson can weaken or strengthen the
+   preference to fold; the formula and the deadline masks are fixed, since a
+   wired preference stronger than anything a lesson can learn would otherwise
+   decide the first folds. When remaining rounds equal required reductions,
+   unary and STOP candidates are masked; unary operations remain available
+   while there is slack. Default budgets therefore reserve the next word's
+   slot and finish each closing. An initially infeasible budget may still
+   leave an incomplete sentence; an attempted push into a full stack is an
+   assertion failure. The trace records the actual operator and position in
+   each round. A sentence is read along whole paths: one greedy path and
+   `explorePaths` alternatives, each departing once, compared once on
+   R + A with one optimizer step (see
+   [Architecture](Architecture.md#whole-paths-and-concept-episodes-2026-11-11)).
+   Evaluation runs the greedy path alone with deterministic logit argmax.
    See [Language](Language.md#one-operation-per-round-item-75).
 
 > **Convention pin — newest-at-slot-0, shift-RIGHT.** The **free / newest**
 > slot is **slot $0$** and the rolling window shifts **right**, dropping
 > the oldest (the last occupied slot, $\text{cap}-1$ at capacity).
 > `peek(n)` counts $n$ back from the newest, so it reads slot $n$
-> directly; `snapshot()` returns the live slab **newest-first**. The
-> "predict the free slot" step predicts slot $0$, and the retained
-> context that conditions it is `snap[:, :-1]` (everything but the
-> soon-to-be-evicted oldest slot). A named primitive
-> `_stm_shift_for_predict` ([Spaces.py](../bin/Spaces.py)) exists
-> for the literal "rotate so the free slot is free" step, but the hot
-> serial path deliberately does **not** call it — `_stm_shift_and_push`
-> already does shift-right-then-write in one pass, and a separate physical
-> shift would double-shift the buffer. The helper is kept off the forward
-> path and exists for independent unit-testing of the named step.
+> directly; `snapshot()` returns the live slab **newest-first**.
+> `_stm_shift_and_push` shifts right and writes in one pass; the named
+> primitive `_stm_shift_for_predict` ([Spaces.py](../bin/Spaces.py)), which
+> only frees slot $0$, stays off the forward path for unit tests, since a
+> separate physical shift would double-shift the buffer.
 >
-> *(History: this convention was flipped from the original newest-at-top /
-> shift-LEFT layout; the flip preserves every semantic — `peek` still
-> returns the most-recent idea, the reduce still collapses to the same
-> root, and the relative end-state still yields the same
-> predicate/idea1/idea2 — only the physical slot order changed.)*
+> A binary fold reads the two newest stack entries as `(left, right)`: left
+> is the older, right the newest, and the recorded operand rows follow that
+> order. A composite entry, the result of a fold, carries concept row $-1$;
+> concept rows live at the leaves, and the structure above them lives in the
+> reading's derivation record, which exists only while the sentence is read.
 
 ---
 
@@ -268,42 +295,17 @@ implemented in `ConceptualSpace.forward`
 
 In PARALLEL mode the per-stage forward sees the whole sentence at once:
 the slab `[B, N, D]` **is** the STM, each of the $N$ positions its own
-slot. The same predict-then-perceive discipline applies whole-slab,
-implemented in `ConceptualSpace.forward` via the `folded.shape[1] > 1`
-branch:
-
-1. **Predict $\hat{C}$ from the previous slab.**
-   `_stm_predict_then_perceive_parallel(folded)`
-   ([Spaces.py](../bin/Spaces.py)) snapshots the previous STM and
-   runs the predictor **per slot** (no cross-slot collapse), producing a
-   `[B, prev_N, D]` slab stashed on `self._stm_predicted_slab`.
-2. **Perceive via `_stm_set_all_slots`.**
-   `_stm_set_all_slots(slab)` ([Spaces.py](../bin/Spaces.py))
-   writes all $N$ positions directly as the slot stack (no shift, no
-   mean-reduction). The slab is position-ordered (position $0$ oldest,
-   $N-1$ newest); under the newest-at-slot-0 convention it is **flipped**
-   along the position axis so the slab's newest lands at slot $0$.
-   Capacity-clip: if $N >$ cap it keeps the last `cap` positions (drop
-   oldest, mirroring the serial rolling window) then flips; if $N <$ cap
-   it zeroes the unfilled (older) tail so a prior pass's state cannot leak
-   through. The matching `_stm_predict_then_perceive_parallel` flips the
-   `folded` target the same way before scoring $\mathcal{L}_\text{intra}$,
-   so the per-slot prediction (computed over the newest-first previous
-   STM) and its target stay slot-aligned — byte-identical to the old
-   oldest-first alignment.
-3. **Loss only when shapes align.** $\mathcal{L}_\text{intra}$
-   accumulates only when the predicted slab shape matches `folded`
-   exactly. On the first pass (empty previous STM) the prediction is
-   zeros and loss is skipped; when the previous slot count differs from
-   $N$ the per-slot prediction does not align with the target and the
-   pinned decision is to skip loss for that pass rather than fabricate an
-   overlap. Loss resumes once the STM steady-state slot count matches the
-   slab width.
-
-The earlier "mean-reduce to a single idea, then shift-push" pattern was a
-bug in parallel mode — it destroyed per-slot identity and made the
-reverse pipeline emit the same recon vector in every slot. The
-slot-preserving `_stm_set_all_slots` is the fix.
+slot. `ConceptualSpace.forward` writes it through the `folded.shape[1] > 1`
+branch: `_stm_set_all_slots(slab)` ([Spaces.py](../bin/Spaces.py)) writes
+all $N$ positions directly as the slot stack (no shift, no mean-reduction).
+The slab is position-ordered (position $0$ oldest, $N-1$ newest); under the
+newest-at-slot-0 convention it is **flipped** along the position axis so the
+slab's newest lands at slot $0$. If $N >$ cap it keeps the last `cap`
+positions (dropping the oldest, as the serial rolling window does) and then
+flips; if $N <$ cap it zeroes the unfilled (older) tail so a prior pass's
+state cannot leak through. Mean-reducing the slab to one idea would destroy
+per-slot identity and make the reverse emit the same reconstruction in every
+slot.
 
 ---
 
@@ -323,9 +325,8 @@ superseded by the `<attention>` element.
 > "attention", default="off")`, [Spaces.py](../bin/Spaces.py)). The
 > trainable target config therefore runs the Gaussian / word-span window
 > below (CS$\to$PS) and the taxonymic mask (CS$\to$SS), but **not** any
-> `<attention>` primer/second-order/low-rank retrieval mode. An earlier
-> draft of this chapter claimed `<attention>primer</attention>` was set;
-> that was wrong. See also [Section 12](DevelopmentHistory.md#12-nanochat-comparison-framing).
+> `<attention>` primer/second-order/low-rank retrieval mode. See also
+> [Section 12](DevelopmentHistory.md#12-nanochat-comparison-framing).
 
 **CS$\to$PS word input.** The word-major radix path and legacy serial inputs use
 different representations.
@@ -335,8 +336,8 @@ different representations.
   `<serialWordCapacity>`. BasicModel stages W=256 but its compiled
   `torch.while_loop` stops at the final live column in the batch. InputSpace
   owns iteration $w$ and presents that word's local state to PartSpace; only
-  then does PartSpace gather its complete discrete ids `[B,P_raw]` and apply
-  its sigma set-fold inside the loop. $P_raw$ is the longest complete spelling
+  then does PartSpace gather its complete discrete ids `[B,P_raw]` and take
+  the max of their codes inside the loop. $P_raw$ is the longest complete spelling
   in the current batch; it is not bounded by `PartSpace.nOutput`. PS and WS
   retain their eight-wide live fields in BasicModel, CS binds all three PS and
   three WS folds by equal location, and one concept carrying its actual order
@@ -401,11 +402,10 @@ swappable seam — the present text-reading variant centres on the current
 word; a future image-reading variant would swap that policy (centre on a
 fixated region) without changing the rest of the pipeline.
 
-**Out of scope.** Learning the mask is out of scope for this work — both
-masks are **hardcoded** (Gaussian centring fixed at the current word;
-taxonymic admissibility read structurally from the codebook's category /
-order metadata). A learned attention policy is a documented future
-direction, not built here.
+**Hardcoded masks.** Both masks are **hardcoded** (Gaussian centring fixed
+at the current word; taxonymic admissibility read structurally from the
+codebook's category / order metadata). The learned part of attention is the
+candidate relevance scorer over supported candidates (Section 1).
 
 ---
 
@@ -449,8 +449,8 @@ The grammar runs through the signal router (`LanguageLayer`,
 > `.reverse` guard) — precisely so the reduction is
 > not double-applied. So in the full-router case the SS-analysis and
 > CS-execution stages are **co-located** inside `LanguageLayer.compose`
-> rather than separated across modules. The audit found this; it is a
-> documented task-5 follow-up, not a finished boundary.
+> rather than separated across modules. This is a documented follow-up, not
+> a finished boundary.
 
 `_grammar_is_default_only` is computed from the configured grammar at
 `SymbolSubSpace.__init__` ([Language.py](../bin/Language.py)) and gates
@@ -530,153 +530,241 @@ exercises this path.
 
 ## 9. Relative vs absolute end-states
 
-The [two-truths contract](specs/2026-09-16-two-truths-ideas-and-relations.md)
-assigns a row to each grammatical S. Its selected derivation decides the
-one-slot or three-slot allowance. An absolute S fuses NP and VP into one
-idea point. A generic subject or an operand that references a relation makes
-the clause relative: its three roles are `[left, predicate, right]`, with
-native row references and no fused point. The committed physical STM stores
-those roles newest-first as `[right, left, predicate]`.
+An absolute sentence ends in one working slot: its verb phrase applied to its
+subject fuses into one idea point. A generic subject or an operand that
+references a relation makes the clause relative: it ends in three slots,
+`[left, predicate, right]`, with native references and no fused point, and
+the stack holds them newest-first as `[right, left, predicate]`
+(`sentence_row_slots`). STOP becomes eligible only when the stack fits this
+allowance; the close then compresses the kept reading into memory (Section
+10). `NP -> S` keeps an embedded absolute point; `NP -> REF(S)` carries a
+relative clause by reference. Each path's clause journal records these
+endings, and its references stay local to the path until the paths are
+compared. The close registers children before the entry that encloses them,
+and registration gives embedded content no assertion authority. An absolute
+enclosing clause can fuse only when all its operands have points.
 
-`NP → S` keeps an embedded absolute point; `NP → REF(S)` carries a relative
-clause reference. The tensor clause journal records these endings during each
-hard path. References remain trial-local until the per-sentence winner is
-known. Its durable transaction registers children before the enclosing row;
-embedded content receives no assertion authority merely from registration.
-An absolute enclosing clause can fuse only when all operands have points.
+Item 7.5 supplies the fixed operation budget and early stop. Every round
+chooses one binary or unary operation, with STOP eligible only when the
+current sequence fits its allowance. Reduction pressure grows with occupancy
+and urgency; at the deadline only the required binary reductions remain
+eligible. `_stm_reduce_to_single_S` runs at most $2K$ closing rounds for STM
+capacity $K$, capped by a positive `syntacticOrder`. The default feasible
+budget completes the reduction. A manually undersized cap can still leave an
+incomplete forest, which is tagged incomplete and cannot publish a program or
+a memory entry.
 
-Item 7.5 still supplies the fixed operation budget and early stop. Every
-round chooses one binary or unary operation, with STOP eligible only when
-the current sequence fits its allowance. Reduction pressure grows with
-occupancy and urgency; at the deadline only the required binary reductions
-remain eligible. `_stm_reduce_to_single_S` runs at most `2K` rounds for STM
-capacity K, capped by a positive `syntacticOrder`. The default feasible
-budget completes the reduction. A manually undersized cap can still leave
-an incomplete forest, which is tagged incomplete and cannot publish a
-program or memory row. The unchanged trained depth-three campaign remains
-an empirical test of the selected grammar, not a guaranteed learned result.
-
-The clause closing is the sole production relation writer. It admits `part`,
-`implies` and `operator` rows into the shared store; there is no catch-all
-relation kind, WholeSpace META insertion, reducible/ineffable routing or
-multiplicative learn-score gate. Independent `(c_plus, c_minus)` poles retain
-both and neither distinctly. They record identification evidence. Source
-provenance supplies a separate scalar `trust` for the event as a whole;
-neither changing that scalar nor withdrawing its authority changes the pair.
-The row also keeps the ended field's `order`, so an abstract field can descend
-through the sigma inverses. Sentence content never selects its own trust.
-Luminosity reads idea rows only. See [Reasoning](Reasoning.md) for row-indexed
-relation readers and the declared `true` thought operator.
+At the close each entry keeps two independent evidence poles, `truth_plus`
+and `truth_minus`, so both and neither stay distinct; they record
+identification evidence. A source's trust
+is not stored: it scales the pair when the entry is written, and sentence
+content never selects its own trust. There is no catch-all relation kind,
+WholeSpace META insertion, reducible/ineffable routing or multiplicative
+learn-score gate. Luminosity reads idea entries only. See
+[Reasoning](Reasoning.md) for the relation readers and the declared `true`
+thought operator.
 
 ---
 
 ## 10. LTM as the chain of STM end-states
 
-`symbolSpace.ltm_store` is the shared `LTM0` for all completed
-clauses. `<ltmConsolidation>` is an ignored compatibility input and selects
-no alternative backing store. Storage alone does not certify that a
-described referent exists. Production observations must provide their owned
-end state. Occupancy determines idea or relation; the REL identity determines
-part, implies or operator. The writer neither needs nor stores a program.
+`symbolSpace.ltm_store` is the one `LTM0` for all completed clauses, and its
+relation stratum `LTM1` is `ltm_store.parts`; there is no alternative backing
+store. Storage alone does not certify that a described referent exists, and
+production observations must provide their owned end state.
 [Clause admission](../bin/ClauseRow.py),
 [observation writer](../bin/Models.py).
 
-*Added 2026-11-11 (item 2.0 round 7, accepted 2026-11-11).* A sentence's
-row is stamped with its sentence's tick of model time, and beside it sits the
-sentence's episodic entry: up to `episodicPercepts` basic percepts of the open
-attention pass, each with both evidence poles and the `.where` bracket of its
-strongest reading (`LTM0.episodic_percepts`, `episodic_poles`,
-`episodic_where`). A close that writes only an `LTM1` relation takes one `LTM0`
-row of kind `episode` to hold the entry (Alec, 2026-11-11: "An LTM0 anchor
-row"); the anchor has no content, and only recall by time and review read it.
-The row is the close's semantic content and the entry its percept side; see
+STM and LTM differ in form and in life: STM is position-addressed, live to the
+gradient and displaced by what arrives next; LTM is content-addressed,
+detached and forgotten by value. In use they are one chain: a recalled entry
+lives in STM while it is active, working memory being the activated part of
+long-term memory, and the kept close is the one writer from STM to LTM. A
+composed idea enters LTM when its sentence ends; what was merely held is not
+stored. Whether an entry stays is decided by its value, its surprise
+included, so encoding is broad, retention selective, and there is no separate
+admission gate (Craik and Lockhart 1972; Cowan 2001).
+
+**Layout.** An `LTM0` entry is one idea: one paired vector `[form | meaning]`
+in `slots[capacity, nDim]`, with its `truth_plus` and `truth_minus` lanes,
+access count and `surprise`. Its form block is its percept part, whose last
+four coordinates hold the model-time stamp; there is no separate `when`
+column, no role table, no stored order and no stored derivation. Semantic
+bindings keep only what is not structure: a question's open slots, bound
+references, scope, source text and expectation provenance. An entry's kind
+(fact, observation, question, estimate, inference, cover, episode or
+unverified) is read from those bindings, its document and its lanes
+(`LTM0.kind_of`), not stored. An `LTM1` row is two tagged references,
+`refs[capacity, 2]` with `ref_kinds[capacity, 2]`: `OCCURRENCE` (an `LTM0`
+address), `SYMBOL` (a concept or word) or `RELATION` (another `LTM1` row); a
+zero tag marks an empty seat. The tags, never the integers' magnitudes,
+decide traversal. A row has its own lanes, access count and surprise, and a
+percept of only the `.where` and `.when` bands. It stores no type and no
+composed value: if-then and temporal chaining, whole-part, definition and
+type-token are told apart by what the references are, their tags and their
+situations (`.when`, `.where`, symbol; `LTM1.readings`). The operator
+reference and operation seat beside a row serve its authority, not its type.
+A row that references a row is read as `LTM2` (`LTM1.stratum`). `LTM1` has no
+polarity column, so trust-derived evidence on a negative statement is written
+with its two poles exchanged.
+
+**Compression at the close** (`ClauseRows.write_clause`). The kept reading is
+walked from its leaves. A composition whose operands are all resolved (a
+concept, a bound identity with a value, or an already compressed child)
+compresses to one `LTM0` idea, its value. A composition with an unresolved
+operand (a pending name, an unknown word standing for itself, an open slot)
+is written as an `LTM1` row over its operands' entries, and the operation's
+own value is stored nowhere. So a sentence whose words are all known concepts
+becomes one idea, its verb phrase applied to its subject, and writes no
+relation; a sentence that cannot compress is a chain whose top row is the
+sentence, a verb and its object composing into a verb, so "he said she said
+x" with x unknown is `(OCC he, REL (SYM said, REL (OCC she, REL (SYM said, OCC x))))`.
+There is no separate sentence row. Parse-only operations (surface markers,
+determiners that only select, order operations) never become rows: a chain
+row's operands are the semantic operands. A directly asserted part, whole,
+implication or equality pair stays an `LTM1` relation even when both sides
+are known. A compressed idea keeps, in its bindings, the identity it was
+composed over, as a chain keeps its occurrence reference. A chain whose
+unknowns later resolve is not rewritten: thought writes the value to MTM and,
+when kept, an inference idea. Reading an entry into words generates from its
+vector and the current grammar; a sentence's structure is reconstructed from
+its vector, inexactly.
+
+References name whole entries, never a part of one, and only entries written
+earlier (or planned earlier in the same close), so the reference graph is
+acyclic: a self or later reference fails, and protection from forgetting is
+transitive. An occurrence handle is an address, not an identity: identity,
+and a mention's reading as a name/value pair, live in MTM. Admission
+preflights clause dependencies and native concept capacity: an insufficient
+store raises before publishing a child prefix, re-witnessing an existing
+address remains possible, and nested readings and expectation pairs reserve
+their complete transaction. Embedded clauses register without assertion.
+External TruthSet admission can assert the outer entry through provenance,
+while a conversation observation, question or estimate cannot certify its own
+referents.
+
+**Time.** The stamp sits at the sentence level only. The entry that is the
+sentence, the idea it compresses to or its chain's top row, carries the
+sentence's tick of model time, as do the idea that holds an event's compacted
+state beside its chain and an episode anchor; inner chain rows, mentions and
+definition rows written by `Interpret.define` carry a zero time band, and
+their time is their sentence's, reached by reference. An identity's event history is ordered by
+its sentences' stamps, and forgetting's age reads the sentence's stamp for
+what the sentence references. A recall by time returns sentence entries
+(`EntryRead.recall_time`, which skips covers and estimates), and their chains
+and mentions follow from them.
+
+**Re-witnessing.** An `LTM0` write is addressed by its document, position and
+content key (`Occurrence._address_for_write`). A second reading of the same
+source within one presentation finds that entry instead of appending: it
+replaces the content, joins each evidence pole with the stored one by maximum
+(the same evidence is not added twice), keeps the original stamp and
+increments the access count, which is definedness growing with exposure.
+Across training epochs this does not arise, because the epoch reset discards
+the epoch's experience. A reasserted relation likewise joins its two poles by
+maximum rather than appending a duplicate claim.
+
+**Retrieval.** There is no word index over memory. Retrieval by a word is
+either a match by content or a lookup of the `LTM1` rows that reference the
+word's symbol (`LTM1.rows_referencing(SYMBOL, word)`). A content read scores
+one bounded window of `ltmWindow` candidates, the explicit references and the
+rows referencing the cue's symbols first and then the newest entries; it
+ranks by match, breaks ties by address, and skips estimates, covers, episode
+anchors and questions without evidence (`EntryRead.cued_rows`).
+
+**Streams.** Each `LTM0` entry records which batch streams witnessed it. A
+stream's history is the entries it witnessed, in the store's own order,
+oldest first (`stream_rows`); the legacy `get_stm_chain` adapter is a read
+view of it that leaves out estimates and episode anchors, not a separate
+writer. Entries written by another stream never become its predecessors, and
+an internal thought or provisioned fact cannot become an external predecessor
+through recency alone. Re-witnessing updates an entry in place and keeps its
+position: an entry does not move to the front because it was read again.
+Sentence expectation consumes its bounded stream and document view, including
+owned references. [Prediction context](../bin/Layers.py),
+[meaning roles](../bin/Meaning.py).
+
+**Episodic entry.** Beside a sentence's entry sits its episodic entry: up to
+`episodicConcepts` order-zero concepts of the sentence's open attention pass,
+in reading order, each with one signed value (for minus against); when more
+are present the largest magnitudes are kept, and zero readings are absent
+(`episodic_concepts`, `episodic_values`). No place or pole pair is stored;
+the entry's stamp supplies time. A close that writes only an `LTM1` relation
+takes one `LTM0` entry of kind `episode` to hold the episodic entry (Alec,
+2026-11-11: "An LTM0 anchor row"); the anchor has no content, and only recall
+by time and review read it. Recall lays out the readings by their concepts'
+owned surface lengths with one separator between; a missing surface gives an
+empty extent and a stale concept id is skipped, each counted. Time-only recall
+publishes the conceptual field directly and empties that stream's present
+percept readings until the next open pass; other streams are unchanged.
+`reverse` reads the episode without compose or generate. See
 [Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11).
 
-Each row retains its native `row_ids` address, three `refs`, relation kind,
-independent positive and negative evidence poles, scalar source trust, order
-stamp, role presence, grammatical
-mode, polarity, evidence kind, writer origin and stable occurrence identity.
-An idea uses one point slot; its cached NP and VP references are taken just
-before fusion. Its numerical NP, V and modifier target exists only during
-reading, for prediction training. A relation uses three infix roles and
-references. Reading a row into words generates from its stored field and the
-grammar; no derivation is retained or replayed. An operand that is itself a relation has no point,
-so its vector slot is null and readers follow the row address.
+**Definitions.** `interpret` writes a new word's definition as one `LTM1` row
+of two `SYMBOL` references, `(object, word)`, with no operation seat
+(`Interpret.define`): a new word costs one inventory row, which becomes the
+object's, and this one row. The definition carries a zero time band, is
+eligible for forgetting, and takes neither provenance nor trust from the
+sentence containing the word.
 
-The September 29 amendment adds `REL_DEF`, a fourth relation kind written
-only by `interpret`: `word DEF object`. The two operands name conceptual
-identities in `refs`, with null operand vectors and a fixed DEF atom in the
-middle slot. A new word costs one inventory row, which becomes the object's,
-and one row of this store. The definition has its own fixed `.when` and a
-position in each witnessing stream, and it is eligible for forgetting. Re-witnessing does not move it. Its
-provenance and scalar trust do not come from the sentence containing the word.
-One derived index supplies form/unit → word, word → objects and object → words;
-load and compaction rebuild it. See
-[the definition contract](specs/2026-09-16-two-truths-ideas-and-relations.md#17-definitions-word-def-object-decided-alec-2026-09-29).
+**Checkpoints.** Tensor columns ride `state_dict`; bindings, scope, source
+text and expectation provenance ride the versioned semantic sidecar
+(`LTM0.semantic_extras`, saved under `truth_semantics`). Restore validates the
+addresses, the semantic fingerprints and the reference graph, and missing
+required metadata makes evidence unavailable rather than silently rebinding
+it. A sidecar carrying a derivation, a retired column, a capacity, stream or
+percept layout other than the construction's, or an older layout schema
+raises, so memories in an older layout are regenerated; schemas 14 and 15
+load with empty episodic entries. [Checkpoint migration](../bin/Memory.py).
 
-The ended field's encoded `.where` and `.when` are stored separately from
-its opaque concept point. They come from the clause's owned leaf field,
-not coordinatewise averaging. `.when` retains the input field timestamp
-under item 9b; the chronological store timestamp is separate. Embedded clauses
-register without assertion. External TruthSet admission can assert the outer
-row through provenance, while a conversation observation, question or estimate
-cannot certify its own referents. Reasserting a relation joins its two evidence
-poles independently rather than appending a duplicate claim.
+**Forgetting.** The forgetting pass (`Forgetting.forget`) runs after backward
+at a document boundary, in training or after a stateful inference request,
+and at the epoch boundary; it never runs inside an open sentence. It starts
+when occupancy reaches `forgetHighWater` (90%) or an earlier pass fell short,
+deletes down to `forgetLowWater` (70%), and runs at most once per
+`forgetMinInterval` (256) sentences; there is no free-standing age decay. An
+entry's retention value is
 
-Sentence expectation consumes its bounded row/document observation view,
-including owned references. A different stream, internal thought or provisioned
-fact cannot become an external predecessor through global recency alone.
-The legacy `get_stm_chain` adapter is a read view of the shared store, not a
-separate writer or configurable persistence path.
-[Prediction context](../bin/Layers.py), [meaning roles](../bin/Meaning.py).
+$$V = w_t T + w_u U + w_l L - w_a A,$$
 
-Tensor columns ride `state_dict`; bindings, semantic scope, constituent
-references and source text ride the versioned `truth_semantics` sidecar.
-Version 4 contains no clause or derivation field. Older derivations are checked
-against their old fingerprint, then dropped with a warning. Restore validates occurrence identities and fingerprints. Missing
-required metadata makes evidence unavailable rather than silently rebinding it.
-Old catch-all conversation rows and their unavailable dependents are dropped
-with a warning; old provisioned rows are re-provisioned from XML. WholeSpace
-META state is retired and the native concept index is rebuilt from its rows
-and bindings. Native word/object META bindings migrate to DEF rows in every
-reading, including the serial aligned path; their META identities and fold
-are retired. [Checkpoint migration](../bin/Memory.py).
+each term in $[0, 1]$ so the weights are comparable (`retention_values`). $T$
+is the larger stored evidence pole, $\max(t^+, t^-)$; there is no separate
+trust column. $U$ is the expectation surprise recorded when the entry was
+observed, an unrecorded surprise counting as 1, so a well-expected sentence,
+deducible from its context, is worth less; no deducibility search runs. $L$ is 0 when a live
+entry of the same order and scope, with cosine above `forgetSimilarity`,
+carries the contrary single pole with more trust, and 1 otherwise; an entry's
+intrinsic both is heterogeneous content, not a disagreement. With
+`forgetCoverage` on, $L$ is instead the entry's leave-one-out contribution to
+positive catuskoti coverage. $A = 1 - e^{-a/h}$, where $a$ is the model-time
+ticks since the entry's stamp (`history_age`; an unstamped entry takes the
+youngest stamp of the sentences that reference it) and $h$ is
+`forgetHalfLife`; a read does not refresh it. Entries go lowest value first,
+ties to the older entry and then the stable address, so the same state always
+deletes the same entries.
 
-Admission preflights clause dependencies and native concept capacity. An
-insufficient store raises before publishing a child prefix; re-witnessing an
-existing address remains possible. Nested readings and expectation pairs
-reserve their complete transaction.
+Protected origins (`forgetProtectOrigins`), live thought and expectation
+roots, the entries that `LTM1` rows reference, and everything those reach
+are kept. Wording goes before structure: under pressure an unprotected entry
+first loses its source text, and each entry advances at most one stage per
+pass. A referenced entry is never deleted: selecting it advances its owners'
+detail and ends the pass. Deleted entries are compacted out of the
+fixed-capacity store rather than left as dead slots behind a live mask
+(`LTM0.compact_rows`): every reference already holds an entry's stable
+`address_keys` value, so compaction gathers the survivors in store order and
+rebuilds the address index, and no reader needs a live mask. Compaction also
+unlinks removed expectation endpoints and retracts taxonomy edges supported
+only by deleted testimony; predictor tensors are unchanged. The relation
+stratum has its own pass (`forget_parts`) at the same boundary with the same
+thresholds: a row is valued by its larger pole, its surprise, the log of its
+access count (weighted by `forgetLuminosityWeight`) and the same age penalty,
+and rows that other relations reference are kept.
 
-The [Item 5 forgetting pass](specs/2026-09-16-forgetting.md) runs after backward
-and reset at a document boundary, or after a stateful inference request.
-Default occupancy thresholds are 90% to trigger and 70% to target, with at
-least 256 completed presentations between passes. Value combines absolute
-`source_trust`, surprise/one-step utility, luminosity contribution and a bounded
-age penalty. Age is model time since the row's `.when` stamp (`history_age`),
-the youngest stamp for a row reached through several parents; it is not time
-since use.
-Both profiles use it under pressure; neither runs free-standing age decay.
-
-Protected origins and live thought/expectation roots retain their semantic
-dependencies. Wording goes before subordinate structure; an idea operand can
-leave its cached point in the parent; a referenced row is never deleted, and
-selecting it advances its owners' detail and ends the pass (there is no
-cascade or coarsening stage). Each row advances at most one detail stage per pass. Compaction
-preserves stable addresses and stream order, rebuilds physical indexes and
-DEF lookup, unlinks removed expectation endpoints, and retracts taxonomy
-edges supported only by deleted testimony. Legacy edges without recorded
-provenance remain conservative native structure. Predictor tensors are unchanged.
-The relation stratum has its own pass (`forget_parts`) at the same boundary with
-the same thresholds, valued by the maximum lane, surprise, the log access count
-and age, protecting rows that relations, expectations or retained structure
-reference.
-
-The pass logs its cut-off, deletions by origin, wording/coarsening/cascade
-counts and whether the target was reached. Its counters and separate source
-trust round-trip with tensor state. Missing old source trust is unknown zero,
-not a reconstruction from the evidence poles. Gradual loss or protected roots
-can prevent reaching the target; a long document can also fill the store before
-its boundary. Both conditions stay visible rather than bypassing protections.
+The pass reports its cut-off, deletions by origin, the wording count and
+whether the target was reached, and its counters round-trip with tensor
+state. Protected roots or gradual detail loss can keep it from reaching the
+target, and a long document can fill the store before its boundary; both stay
+visible rather than bypassing protections.
 
 Concept reclamation is separate: at maximum preallocation, after all streams
 close, erase unreferenced exact redundancies, smallest meaning first,
@@ -699,33 +787,17 @@ See [Existence evidence](ExistenceEvidence.md) and
 ---
 ## 11. Inter-sentence prediction
 
-### Clause endings and shared LTM
-
-The [two-truths contract](specs/2026-09-16-two-truths-ideas-and-relations.md)
-ends every grammatical S. `NP → S` retains the absolute clause's fused
-point; `NP → REF(S)` carries a relative clause by reference. The allowed
-row width is one or three, selected by the derivation. Relativity propagates
-through a compound VP and enclosing S. The 7.5 reduction deadline still
-requires completion within the fixed round budget.
-
-Each derivation owns its clause references until the per-sentence choice.
-Both hard paths train; only the lower-loss path is committed, with exact
-ties going to exploit. Its nested rows register before the enclosing row,
-without granting the embedded content assertion authority. The clause closing
-is the writer of asserted relations; `interpret` owns the separate DEF
-transaction above. The closing retains independent evidence poles, field
-coordinates and the one-slot or three-slot end state. The temporary operation
-record is discarded; generation reads the row without replay. WholeSpace
-taxonomy insertion and the reducible/ineffable routing are retired.
-
-The expectation target reads the NP, V and modifier roles before fusion,
-while the sentence is open. These roles are not a stored derivation. A separate
-kind logit predicts idea versus relation. Its identity candidates are held
-in the bounded situation: live constituents, recent clause frames and frames
-brought into STM by `what`. The predictor carries an imputed identity;
-composition does not search LTM for one. Clearing the situation removes that
-cross-sentence carrier. Word provenance remains the current sentence's own
-reconstruction record when its subject refers to an earlier occurrence.
+The sentence predictor is the shared `ActivationPredictor` of
+`SymbolExpectation`. Before a sentence closes it predicts independent
+for/against activations over the native symbol bank from the stream's recent
+entries and the open situation: live constituents, recent clause frames and
+frames brought into STM by `what`. The close it predicts is its target, and
+the estimate and observation it leaves in `LTM0` are described in
+[Expectation across the architecture](ExpectationRetention.md#one-pair-one-observation).
+The predictor carries an imputed identity; composition does not search LTM
+for one. Clearing the situation removes that cross-sentence carrier. Word
+provenance remains the current sentence's own reconstruction record when its
+subject refers to an earlier occurrence.
 
 
 *Moved to [DevelopmentHistory](DevelopmentHistory.md#structured-production-path) (2026-10-30): "Structured production path".*
@@ -733,9 +805,9 @@ reconstruction record when its subject refers to an earlier occurrence.
 *Moved to [DevelopmentHistory](DevelopmentHistory.md#12-nanochat-comparison-framing) (2026-10-30): "12. nanochat comparison framing".*
 ## 13. Interaction LTM and the What stack
 
-Beside the chain of STM end-states (Section 10), `InterSentenceLayer` keeps
-a per-row chronological sequence of **interaction slots** for the What
-loop ([What spec Section 6](specs/2026-07-27-teaching-modes-and-next-iteration.md#6-ltm-interaction-slots)).
+Beside the chain of STM end-states (Section 10), `WhatInteractionMemory`
+keeps a per-row chronological sequence of **interaction slots** for the What
+loop.
 Each slot (`What.LTMSlot`) has two independently optional halves:
 
 | Slot | Operation | Stack effect |
@@ -774,7 +846,7 @@ Expectation has no interaction-memory copy or delegate API, and the
 `whatThinkingMemory` configuration switch is retired. Provisioning resets the
 What episode at its hard interaction boundary; suspending external expectation
 does not preserve that episode. The **episode credit boundary** remains explicit:
-`begin_what_episode(b)` / `end_what_episode(b, detach=True)`; under
+an episode ends with `end_what_episode(b, detach=True)`; under
 `<whatThinkingDetach>episode` the values appended inside an episode stay
 live on the autograd graph until `end` (called after the optimizer step),
 so a root answer loss can reach states created at earlier iterations;
@@ -786,33 +858,32 @@ newest unanswered input) and `latest_output` for the resolve step.
 
 ## See also
 
-- [Spaces.md](Spaces.md) — ConceptualSpace as STM container; the
+- [Spaces.md](Spaces.md): ConceptualSpace as STM container; the
   `ShortTermMemory` API; Sigma / Pi ownership.
-- [Architecture.md](Architecture.md) — modes of operation (serial /
-  parallel); the per-word operational flow; `InterSentenceLayer` ARMA
-  predictor.
-- [Language.md](Language.md) — the signal router, `compose` / `generate`,
+- [Architecture.md](Architecture.md): modes of operation (serial /
+  parallel); the per-word operational flow; whole paths.
+- [Language.md](Language.md): the signal router, `compose` / `generate`,
   GrammarLayer reductions.
-- [Mereology.md](Mereology.md) — parthood as clipped-cosine projection;
+- [Mereology.md](Mereology.md): parthood as clipped-cosine projection;
   the relations the relative predicates draw on.
-- [Reasoning.md](Reasoning.md), [Logic.md](Logic.md) — the truth surfaces
+- [Reasoning.md](Reasoning.md), [Logic.md](Logic.md): the truth surfaces
   and tetralemma trust.
-- [Params.md](Params.md) — `<stmCapacity>`, `<intraLossWeight>`,
-  `<interLossWeight>`, `<routerWireSerial>` and `<ltmCapacity>`.
-- [What spec](specs/2026-07-27-teaching-modes-and-next-iteration.md) and
-  the [mathematical thinking specification](specs/2026-09-09-mathematical-thinking.md)
-  — the interaction slots' role in thinking (Section 13).
+- [ExpectationRetention.md](ExpectationRetention.md): the sentence
+  predictor and the estimate/observation pair.
+- [Params.md](Params.md): `<stmCapacity>`, `<mtmPrepend>`,
+  `<routerWireSerial>`, `<ltmCapacity>`, `<episodicConcepts>` and the
+  forgetting settings.
 
 ## Slot provenance for the fold ladder (2026-09-10)
 
-Beside the slot kinds, the STM keeps one fixed-shape provenance slab
+Beside its chunks, the STM keeps one fixed-shape provenance slab
 `_wholes` `[B, capacity, 3]` of longs, newest at slot 0 like the buffer:
 per slot the index of the coarser analysis whole (the word) the unit
 belongs to, the unit's loop position and the clause whole's index; `-1`
 means none (a fold across wholes has no whole and is no single unit).
 The slab is CS-owned sentence state exactly like the reference slabs: the
-compiled word loop carries it through `torch.while_loop` beside the six
-STM tensors (fullgraph), and the only mutation paths are the pure
+compiled word loop carries it through `torch.while_loop` beside the STM
+chunk tensors (fullgraph), and the only mutation paths are the pure
 primitives `ShortTermMemory.functional_wholes_push` (masked slot-0 push),
 `functional_wholes_reduce` (a top-2 fold keeps a whole or clause only when
 both operands shared it) and `functional_wholes_reset` (a sentence
@@ -829,9 +900,8 @@ appends a chosen chunk of two units with concept ids to the
 ConceptualSpace's fixed proposal slab (`[B, 32, 3]` plus a count, also
 loop-carried), looks the pair up in the admitted phrase-row table
 (`chunk_row_table`, `[64, 3]`) and, when admitted, references the phrase's
-row at the folded slot (`apply_phrase_rows`).  `ConceptualSpace.Reset`
-drains the proposal slab into the host counts that admit phrases
-(doc/plans/2026-09-10-meronomy-fold-ladder.md, Phase 2b, contract 7).
+row at the folded slot (`apply_phrase_rows`). `ConceptualSpace.Reset`
+drains the proposal slab into the host counts that admit phrases.
 
 Committing live state under the compiler (2026-09-11): every STM
 property setter (`_buffer`, `_depth`, the order and reference slabs,
@@ -854,8 +924,8 @@ Proof sources identify native edges; successful paths cannot append world-fact
 lemmas. The single normal controller records nested questions and typed returns
 on `WhatInteractionMemory`. Its attended context uses row-owned STM/history,
 the recent discourse chain and frames brought into STM by cued `what`, under
-the same work allowance. It never reads a recent slice of the LTM store.
-The closing writer owns the per-role leaf-code index ([AccessibleMind](AccessibleMind.md)).
+the same work allowance. It never reads a recent slice of the LTM store, and
+there is no per-role leaf-code index (Section 10, "Retrieval").
 See [Taxonomy](../bin/Taxonomy.py), [Thoughts](../bin/Thoughts.py),
 [SelectedMeaning](SelectedMeaning.md) and [TaxonomyQueries](TaxonomyQueries.md).
 
@@ -908,45 +978,44 @@ questions and estimates retain their own provenance. The truth view therefore
 does not surface a retained request row as accepted evidence. See
 [nested retention](NestedRetention.md).
 
-## Trust and addressing in the chunks (item 2.5 round A, 2026-10-29)
+## Trust and addressing in the chunks (item 2.5, 2026-10-29)
 
-The chunk state carries one more preallocated field, `chunk_truth [B, C, 2]`,
-the for and against lanes of each chunk's content: a recalled row's pair, the
-registered sentence's own ideas at `(1, 0)`, a derivation's pair, a question
-chunk at `(0, 0)`. Thought operands and results name a chunk by its `.where`
-band through `STMChunks.locate` (exact match, `-1` when absent; a duplicate
-occupied address raises in `ThoughtChunks`), and the episode's focus chunk is
-pinned on the stack while the episode is open. Trial restoration restores the
-active stream count with the fixed buffers. Record and design:
-[thinking spec §§3.1, 3.2, 17-21](plans/2026-10-27-item2-5-thinking.md); [Architecture](Architecture.md),
-"Retained grammatical occurrences".
+The chunk field `chunk_truth [B, C, 2]` holds the for and against lanes of
+each chunk's content: a recalled entry's pair, the registered sentence's own
+ideas at `(1, 0)`, a derivation's pair, a question chunk at `(0, 0)`. Thought
+operands and results name a chunk by its `.when` stamp through
+`STMChunks.locate(..., band=WHEN)` (exact match, $-1$ when absent; a duplicate
+occupied stamp raises in `ThoughtChunks`); a thought chunk has no place, its
+`.where` band being $-1$. The episode's focus chunk is pinned on the stack
+while the episode is open. Trial restoration restores the active stream count
+with the fixed buffers. See [Architecture](Architecture.md), "Retained
+grammatical occurrences".
 
 
 ## Memory module and thought stamps (2026-11-08)
 
-The live `ShortTermMemory` owner and its unchanged shift/reduce scorer now live
-in [Memory.py](../bin/Memory.py), beside the `STMChunks` namespace,
-`MediumTermMemory`, `LTM0` and `LTM1`. Their reference tag values and capacities
-are unchanged; `MemoryStore` shares only tensor snapshot copying. Layers.py
-continues to own the other layers and `Ops`. STMChunks.py, MediumTermMemory.py
-and LTM1.py are removed and all imports use Memory. The kept close retains STM,
-commits MTM and writes LTM. Thought ideas in this shared STM use exact WHEN
-lookup and empty WHERE, with a per-stream deposit clock in a four-coordinate
-band disjoint from sentence time. Reads do not advance it and trial rollback
-restores it. This amends the older descriptions of thought's synthetic address.
+The live `ShortTermMemory` owner lives in [Memory.py](../bin/Memory.py),
+beside the `STMChunks` namespace, `MediumTermMemory`, `LTM0` and `LTM1`;
+`MemoryStore` shares only tensor snapshot copying, and Layers.py owns the
+other layers and `Ops`. The kept close retains STM, commits MTM and writes
+LTM. The short-lived stores reuse the durable layouts: `STM0` is an `LTM0`
+whose values stay live and expire instead of persisting, and `STM1` is an
+`LTM1` whose rows expire. An `STM0` store belongs to one stream. Its owner
+indexes the stores by stream (sentence banks and recent stores) or by stream
+and chunk (thought stores), so each store's stream table is one column wide,
+and a write that names a stream above 0 raises.
 
-*Superseded in part by item 2.0 round 7 (Alec, 2026-11-10: "One clock"; accepted
-2026-11-11):* a new thought idea takes a tick of the one model clock, so
-its band is no longer disjoint from sentence time; lookup by exact WHEN, the
-empty WHERE and the restore on trial rollback are unchanged
-([Architecture](Architecture.md), "When (final operators update; item 2.0 round
-7, 2026-11-10)").
-
-### Episodic concepts supersede percept entries (2026-11-11)
-
-The [whole-path round](plans/2026-11-11-one-pair-per-stage.md) item 16 changes the payload beside a sentence's LTM0 row: `episodicConcepts` order-zero concepts from the open attention pass, in reading order, each with one signed value (for minus against). The largest magnitudes are retained when the capacity is exceeded; zero signed readings are absent. Columns are `episodic_concepts` and `episodic_values`; no place or pole pair is stored. The row's stamp supplies time, and recall lays out readings by their concepts' owned surface lengths with one separator between. A missing surface gives an empty extent and is counted. The field and semantic truth columns retain both poles. Time-only recall publishes the conceptual field directly and empties that stream's present percept readings until the next open pass. Other streams remain unchanged. A stale concept ID is skipped and counted. `reverse` reads the episode without compose or generate. Anchors, re-witnesses, forgetting and epoch reset keep their round-7 contracts. Schema 16 reports removal of older percept, pole and place columns and starts with empty entries. This incorporates Alec's second mid-round amendment (§8.2) after the initial concept-entry implementation.
-
+A new thought idea takes a tick of the one model clock that sentences use
+(Alec, 2026-11-10: "One clock"), on the same ladder; reads and updates keep
+its stamp, and trial rollback puts the clock back. Since thought chunks are
+found by their stamp, the epoch reset matters: a stamp is unique within an
+epoch, but the reset puts the clock back, so stamps repeat. Clearing STM at
+that reset therefore expires each thought store together with its view
+records, so a reused stamp never reads an expired view, and an old external
+view still raises. See
+[Architecture](Architecture.md), "When" under "One where, one when, many
+whats".
 
 ### Thought content growth within the sentence bound (2026-11-11)
 
-Alec authorized principled resizing during the [whole-path return](plans/2026-11-11-one-pair-per-stage.md#99-remaining-thought-structure-capacity-decision). The number of focus chunks stays fixed. A chunk's shared STM0/STM1 content store begins with `4 * stmCapacity` rows and grows only when its full typed meaning needs more. The exact row requirement is the sum of one head plus the occupied roles of each constituent; its pair links need one fewer seat. The maximum, fixed at model construction, is `4 * (W + O)`, using the sentence's existing W leaves and O operator seats. Overflow beyond that ceiling remains an error. Reconstructing these transient buffers preserves the store owner; replacing a thought invalidates its old view, and trial rollback restores the saved owner generation and content size. Standalone stores without a sentence owner retain their original construction bound.
+The number of focus chunks stays fixed. A chunk's shared STM0/STM1 content store begins with `4 * stmCapacity` rows and grows only when its full typed meaning needs more. The exact row requirement is the sum of one head plus the occupied roles of each constituent; its pair links need one fewer seat. The maximum, fixed at model construction, is `4 * (W + O)`, using the sentence's existing W leaves and O operator seats. Overflow beyond that ceiling remains an error. Reconstructing these transient buffers preserves the store owner; replacing a thought invalidates its old view, and trial rollback restores the saved owner generation and content size. Standalone stores without a sentence owner retain their original construction bound.

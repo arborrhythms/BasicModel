@@ -1,54 +1,64 @@
 # Training
 
-> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
+> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record.
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
-> - Expectation is a **gain field** `c = m⊙a⊙o` with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
-> - Amended 2026-10-29/30 (Alec; [thinking spec §§16, 22](plans/2026-10-27-item2-5-thinking.md), [2.7 record §42](plans/2026-10-27-item2-7-corpus.md)): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output. Round B is frozen; the one-backward implementation passed its required test selections but remains unaccepted after a failed lesson comparison. [Current gradient boundaries and normalization review](GradientFlow.md#current-gradient-boundaries-and-loss-normalization) supersede the historical ownership descriptions below where the selected chooser setting differs.
-> - **Accepted as implemented (Alec, 2026-11-01; [thinking spec §32.2](plans/2026-10-27-item2-5-thinking.md), item 14).** D-iii is withdrawn. The one-backward path and round B's work are accepted; the three lesson-13 arms are measurements, not gates; the defaults stay `separateChooser=true` and `reconstructionJitter=0` until Alec changes them; a standing test or certificate that fails on an unresolved deviation is marked a strict xfail naming it, and the stage 2 freeze locks down what works. "Remains unaccepted" in the bullet above is superseded.
+> - Expectation is a **gain field** $c = m \odot a \odot o$ (attention's gain $m$, expectation's gain $a$, the arriving signal $o$) with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
+> - Amended 2026-10-29/30 (Alec): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output. Round B and the one-backward path are built (accepted as implemented, Alec, 2026-11-01). [Current gradient boundaries and normalization review](GradientFlow.md#current-gradient-boundaries-and-loss-normalization) supersede the historical ownership descriptions below where the selected chooser setting differs.
+> - **Accepted as implemented (Alec, 2026-11-01).** The one-backward path and round B's work are accepted; the three lesson-13 arms are measurements, not gates; the defaults stay `separateChooser=true` and `reconstructionJitter=0` until Alec changes them; a standing test or certificate that fails on an unresolved deviation is marked a strict xfail naming it, and the stage 2 freeze locks down what works. "Remains unaccepted" in the bullet above is superseded.
 > - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
-> - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded.
+> - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; a stream is the batch row that wrote a row, and a document is the cover row that starts it in that stream (reused at every later presentation; a row belongs to the document of the latest cover before it), so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded (2026-10-24).
 
 
 The current cross-architecture reference is
 [Gradient flow across the architecture](GradientFlow.md): what each objective
 trains, where gradients stop, and how optimizer ownership is audited.
 
-**Item 2.7 corpus implementation, 2026-10-27 (in progress).** The pinned
-recipe is `data/corpus-sources.json`. Assemble it in a fresh directory:
+**The developmental corpus (2026-10-27).** The pinned recipe is
+`data/corpus-sources.json`. Assemble it in a fresh directory:
 
 ```sh
 .venv/bin/python bin/prepare_corpus.py --recipe data/corpus-sources.json --output data/corpus/assembly-01
 ```
 
-The recipe presents the Wordbank vocabulary prefix, then adult AO-CHILDES
-utterances in age bands, then written FineWeb text. Stage and age metadata
-schedule input; they supply no grammatical classes, object definitions or
-answers. The source tables, SQLite assembly and generated shards are ignored
-artifacts. The immutable manifest records fingerprints, filtering and
-document-disjoint splits.
+The recipe pins its inputs: Wordbank's public response slices and the
+AO-CHILDES transcript tables by immutable git object hashes, the FineWeb shard
+by SHA-256. `bin/prepare_corpus.py` assembles three groups in order. Wordbank
+contributes each word at the earliest month at which at least half of the
+responses report production (`production_threshold` 0.5; a missing response
+counts as negative); questionnaire annotations are removed, slash variants are
+kept, and no lexical category reaches the learner. AO-CHILDES contributes
+adult utterances to children under six years (`max_age_days` 2190) in annual
+bands (`band_days` 365), ordered by age, transcript and utterance, with their
+original wording and with end punctuation taken from each utterance's recorded
+type. Written FineWeb text follows. Stage and age metadata schedule input;
+they supply no grammatical classes, object definitions or answers. Splits are
+document-disjoint, 8/1/1 by document index, and each keeps its chronology.
+Assembly is bounded in memory by SQLite. The source tables, the SQLite
+assembly and the generated shards are ignored artifacts; the manifest records
+every source fingerprint, the filtering counts, the stage sizes and the hashes
+of the recipe and the assembler.
 
 `data/BasicModel_corpus.xml` is the measured million-training-sentence sizing
 candidate. It is **not yet a fitting production configuration**: its full
 constructor exceeded the 24 GiB guard on this 36 GiB host. The loader and
 fixed word-identity inventory can be audited independently with
-`bin/corpus_audit.py` and `bin/corpus_capacity.py`. The run and retained failures
-are recorded in [the item 2.7 plan](plans/2026-10-27-item2-7-corpus.md).
+`bin/corpus_audit.py` and `bin/corpus_capacity.py`.
 Training and evaluation finish each corpus stage across all streams before
 advancing. Packs stop at document boundaries. A mid-presentation checkpoint
 saves consumed stream positions, including with prefetch, plus the priming,
 identity, live STM and expectation continuation state. Replaying a tick count under a
 later learned tiling is not a safe resume method. Native update parity is a
-separate measurement in the plan; cursor equality alone does not establish it.
+separate measurement; cursor equality alone does not establish it.
 
-**Concept dictionary ownership (October 2, 6.9 §20).** Codes are parameters
+**Concept dictionary ownership (October 2).** Codes are parameters
 trained only by reconstruction, without a norm constraint. The canonical
 configurations set `conceptualContextLearningRate=0`; contextual rotation and
 the concept VQ EMA refresh no longer write the dictionary. Admission does
 not replace a reserved code with a normalized feature/part composition.
 Expectation and supplied answers train their own readers with detached
-sources. The leaf is still code times signed activation. The
-[§20.3 catalog](plans/2026-09-29-item-6-9-xor-grammar.md#203-catalog-set-aside-now-to-return-once-reconstruction-and-xor-hold)
-records the deferred distributional pressure and unit-sphere constraint.
+sources. The leaf is still code times signed activation. Distributional pressure on the
+codes is deferred until reconstruction and XOR hold; a unit-sphere constraint
+on the codes is not planned to return.
 
 > For the current ownership of the training lifecycle and the proposed split
 > between launch resolution, corpus cursors, host orchestration, compiled tensor
@@ -65,15 +75,11 @@ records the deferred distributional pressure and unit-sphere constraint.
 >   projection (`Layers.Lexicon.normalize` does ball-project, but is
 >   not on this path). Keeps embedding vectors from drifting out of
 >   the unit cell under `JOINT` / `BACKPROP` modes.
-> - **Seeded retries for MM_xor tests.** `test_learns_xor_signal`
->   and `test_convergence` in `test/test_mm_xor.py` use
->   `for seed in (42, 123, 7): torch.manual_seed(seed); …` (the
->   previously-dead `seed` loop variable in `test_convergence` is now
->   actually consumed). Pass-if-any-attempt-converges semantics.
 > - **Reconstruction is unconditional from concepts.** The `<reconstruct>`
->   element (and `reconstructEnum`) was RETIRED (A1, 2026-06-09); there is
->   no knob to set or override. Whenever reconstruction fires it is always
->   concepts-seeded from the terminal `ConceptualSpace` STM snapshot.
+>   element (and `reconstructEnum`) was RETIRED (2026-06-09); there is no
+>   knob to set or override. Reconstruction is seeded from the understanding:
+>   the open attention pass's field and the sentence's end slots
+>   ([Within-sentence reconstruction objective](#within-sentence-reconstruction-objective)).
 > - **Supervised output loss restored.** `bin/Models.py::runBatch`
 >   computes MSE on labeled datasets. Unlabeled corpora such as FineWeb
 >   train only through reconstruction/prediction objectives.
@@ -126,9 +132,8 @@ architecture's **two learning rules** in their natural developmental order:
   *tested* — directed, credit-assigned, **System 2**.
 
 So "bootstrap with prediction, then answer questions" is just the EMA
-substrate-builder running first and the gradient deliberate-layer on top (the
-§6c sentence protocol's *prime subsymbolically from what you see, then pump
-symbolically*). Reconstruction (stages 1–2) is the **gate**: a question can only
+substrate-builder running first and the gradient deliberate-layer on top
+(*prime subsymbolically from what you see, then pump symbolically*). Reconstruction (stages 1–2) is the **gate**: a question can only
 be *answered* once an idea can be turned back into words, so the grammar-operation
 inverses those stages need are the load-bearing prerequisite for the whole
 curriculum.
@@ -160,23 +165,28 @@ architecture (word order in particular is not universal across languages,
 so reading order is taught, not wired). Each stage is a gate: the enabled
 model against its disabled control, one fresh unseeded run per mode, no
 retries, the corpus generated from a small declared vocabulary. A stage is
-read as a result only when its control passes it. Later stages are the
-decided gates of the plans and specs they cite.
+read as a result only when its control passes it.
+
+*Amended 2026-11-07 (Alec).* What the curriculum orders is the operations
+learned. The order in force is the ten lessons of
+[Concept hierarchy learning and curriculum order](#concept-hierarchy-learning-and-curriculum-order-alec-2026-11-08):
+clauses and questions come before determiners and modifiers, so stage 4b's NP
+lessons follow 4c and 4d. The stages below keep their corpora and gates.
 
 | # | stage | generated corpus | what the lesson names | gate | trains |
 |---|---|---|---|---|---|
-| 1 | **Identity** | one percept whole (a letter run) presented, re-presented, and re-presented after an intervening item | *same* — the second occurrence reconstructs from the first's concept and row | the same percept gets the same concept row (the identity audit: no duplicate rows); the item is recognised again after the intervening one | identity by construction ([operators 3a](plans/2026-10-05-operators-update.md)); the row as the item's persistence. Object permanence *across sentences* is stage 5, not here |
-| 2 | **Identifying words** | one-word fields, known and novel words | the word — its reconstruction, and *which* word (the symbol) | readback 100 % for known words; a novel word is minted once and recognised on its second presentation | the word whole → concept read ([6.8](plans/2026-09-27-item-6-8-one-attention.md)); the support mask of one candidate ([stream-state §7.10](plans/2026-10-08-stream-state.md)) |
-| 3 | **Reading words in order** | fields of two, then more, words; the lesson gives the words in turn | the part whose turn it is — "the first word", then "the second": a cross-entropy on the candidate scorer toward that candidate, reads teacher-forced during the lesson; the order is the lesson's, from the data | every read supports one word in the lesson's order on permuted fields after training; lesson CE falls to near zero within 64 presentations; control = source order; list reconstruction is reported alongside, not used as this gate | the attention scorer's choice of the next read ([stream-state §7.9–§7.12](plans/2026-10-08-stream-state.md)); one read per placement; the eight-space as STM |
-| 4a | **Simple sentences: identities** | `x is three.` `a cat is an animal.` — two words joined by `is`, generated over variables/values and kinds | the sentence; the supplied answer to `what is x ?` | reconstruction 100 %; the question answered 100 % on held-out pairs | the one relation as a verb (`is`; [math not direct](specs/2026-09-09-mathematical-thinking.md)); the `what` question bound from supplied answers only ([answer-path ownership](plans/2026-09-14-answer-path-ownership-and-training.md)); the shortest `NP VP NP` row |
-| 4b | **Simple sentences: NP** | `the red ball`, `a big cat` — determiner, adjective, noun | the phrase; its asked parts ("the middle word", "the noun"); the supplied answer to `what is red ?` | reconstruction of the compound 100 %; asked parts; the property question | composition within a role and its inverses (adjective ∧ noun, sub-typing; [operator catalogue](specs/2026-09-29-operator-catalogue.md)); the determiner as the bind-or-mint cue ([6.5 §2.7](specs/2026-09-26-independent-components.md)); word → operator learned, never anchored |
-| 4c | **Simple sentences: NP + VP** | `the cat sleeps.` `a dog runs.` — subject and intransitive verb | the sentence; the supplied answer to `what sleeps ?` | reconstruction and the question 100 % | the verb as a pattern of change, categorically apart from nouns (`B` against `A`, [6.5 §2.3](specs/2026-09-26-independent-components.md)); the `NP1 VP` row |
-| 4d | **Simple sentences: relations** | `the cat is on the mat.` `x is bigger than y.` `the dog chases the cat.` — two NPs and a relation | the sentence; supplied answers on either role — `what is on the mat ?`, `what chases the cat ?`, `what does the dog chase ?` | reconstruction; both role questions 100 %; `the dog chases the cat` and `the cat chases the dog` answered differently | the two noun roles distinguished by order; relation operators; the full `NP VP NP` row ([two truths](specs/2026-09-16-two-truths-ideas-and-relations.md)) |
-| 4e | **Constituents** (added 2026-10-16, [item 6 plan §15](plans/2026-10-10-item-6-stored-idea-generativity.md#15-identity-without-a-mixing-matrix-alec-2026-10-16)) | the 4b–4d sentences with their brackets: `[the black cat] [runs] .`, `[the dog] [chases [the cat]] .` | the constituents — a cross-entropy on the compose chooser toward the bracketed reading, as stage 3 does for order; the NP operators (mint/bind) applied at each bracketed NP | free reading reproduces the brackets on held-out sentences of the same kinds; every singular NP writes an occurrence | constituency, taught by lesson, never wired; the NP event that mints an anonymous individual |
-| 5 | **Tying sentences together: object permanence by reference** | `the cat sleeps. it is black.` `a dog runs. the dog is brown.` — a pronoun or a definite re-mention referring to an earlier occurrence, with and without an intervening sentence | the referent (which earlier occurrence); the supplied answer to a question about the first sentence asked after the second (`what is black ?` → `the cat`) | the reference resolves to the right occurrence 100 %; the repeated noun reuses its row, `a dog` mints a new one; the question across sentences answered | identity is its occurrences tied by references in slots ([two truths §3.5](specs/2026-09-16-two-truths-ideas-and-relations.md), tests 17–21); the row persists when not being read — object permanence proper; "identity is an expectation" ([4.5](specs/2026-10-08-expectation-at-every-level.md)) |
-| 6 | **Graded composition** | the standing fixtures' vocabulary arranged so each item needs one more round than the last — clauses and embedding after the simple kinds — read in order and shuffled | reconstruction; the surprise at every level | the ordered set beats the shuffled on derivation optimality ([4.5 §5.4, §9](specs/2026-10-08-expectation-at-every-level.md)) | expectation at every level; one departure per sentence |
-| 7 | **Context as content** | several documents in parallel sharing vocabulary; a document split by another; a fact stated in one needed in another; a word whose referent differs between documents | the answer, which only the right context gives | [stream-state §3](plans/2026-10-08-stream-state.md) stages 2–6: batch differentiation; return after interruption (stage 5's permanence at the document level); shared truth; priming as a prior; expectation from the right history | the situation code in content ([5.5](specs/2026-09-30-occurrence-tense-aspect.md)); retrieval as a candidate entertained into a slot |
-| 8 | **Thinking** | one-step problems first (`x is three. what is x plus one ?`), then chains, worked steps scored as intermediate answers | the answer and the worked steps | the deferred protocol's four corrections ([thinking spec §14.10](specs/2026-10-07-thinking.md)); decomposition demonstrated at the closing | the thought loop and its credit ([6.2](specs/2026-10-07-thinking.md)) |
+| 1 | **Identity** | one percept whole (a letter run) presented, re-presented, and re-presented after an intervening item | *same* — the second occurrence reconstructs from the first's concept and row | the same percept gets the same concept row (the identity audit: no duplicate rows); the item is recognised again after the intervening one | identity by construction (fixed codes for a form's boundary-marked letter pairs and its length); the row as the item's persistence. Object permanence *across sentences* is stage 5, not here |
+| 2 | **Identifying words** | one-word fields, known and novel words | the word — its reconstruction, and *which* word (the symbol) | readback 100 % for known words; a novel word is minted once and recognised on its second presentation | the word whole → concept read; the support mask of one candidate |
+| 3 | **Reading words in order** | fields of two, then more, words; the lesson gives the words in turn | the part whose turn it is — "the first word", then "the second": a cross-entropy on the candidate scorer toward that candidate, reads teacher-forced during the lesson; the order is the lesson's, from the data | every read supports one word in the lesson's order on permuted fields after training; lesson CE falls to near zero within 64 presentations; control = source order; list reconstruction is reported alongside, not used as this gate | the attention scorer's choice of the next read; one read per placement; the eight-space as STM |
+| 4a | **Simple sentences: identities** | `x is three.` `a cat is an animal.` — two words joined by `is`, generated over variables/values and kinds | the sentence; the supplied answer to `what is x ?` | reconstruction 100 %; the question answered 100 % on held-out pairs | the one relation as a verb (`is`); the `what` question bound from supplied answers only |
+| 4b | **Simple sentences: NP** | `the red ball`, `a big cat` — determiner, adjective, noun | the phrase; its asked parts ("the middle word", "the noun"); the supplied answer to `what is red ?` | reconstruction of the compound 100 %; asked parts; the property question | composition within a role and its inverses (adjective ∧ noun, sub-typing); the determiner as the bind-or-mint cue; word → operator learned, never anchored |
+| 4c | **Simple sentences: NP + VP** | `the cat sleeps.` `a dog runs.` — subject and intransitive verb | the sentence; the supplied answer to `what sleeps ?` | reconstruction and the question 100 % | the verb as a pattern of change, categorically apart from nouns (a noun names an individual; a verb is one fixed change that maps the individual before to the individual after); the clause's idea, NP and VP fused to one point |
+| 4d | **Simple sentences: relations** | `the cat is on the mat.` `x is bigger than y.` `the dog chases the cat.` — two NPs and a relation | the sentence; supplied answers on either role — `what is on the mat ?`, `what chases the cat ?`, `what does the dog chase ?` | reconstruction; both role questions 100 %; `the dog chases the cat` and `the cat chases the dog` answered differently | the two noun roles distinguished by order; relation operators |
+| 4e | **Constituents** (added 2026-10-16) | the 4b–4d sentences with their brackets: `[the black cat] [runs] .`, `[the dog] [chases [the cat]] .` | the constituents — a cross-entropy on the compose chooser toward the bracketed reading, as stage 3 does for order; the NP operators (mint/bind) applied at each bracketed NP | free reading reproduces the brackets on held-out sentences of the same kinds; every singular NP writes an occurrence | constituency, taught by lesson, never wired; the NP event that mints an anonymous individual |
+| 5 | **Tying sentences together: object permanence by reference** | `the cat sleeps. it is black.` `a dog runs. the dog is brown.` — a pronoun or a definite re-mention referring to an earlier occurrence, with and without an intervening sentence | the referent (which earlier occurrence); the supplied answer to a question about the first sentence asked after the second (`what is black ?` → `the cat`) | the reference resolves to the right occurrence 100 %; the repeated noun reuses its row, `a dog` mints a new one; the question across sentences answered | identity is its occurrences tied by references in slots; the row persists when not being read — object permanence proper; "identity is an expectation" |
+| 6 | **Graded composition** | the standing fixtures' vocabulary arranged so each item needs one more round than the last — clauses and embedding after the simple kinds — read in order and shuffled | reconstruction; the surprise at every level | the ordered set beats the shuffled on derivation optimality (the share of items that end on the optimal derivation) | expectation at every level; one departure per sentence |
+| 7 | **Context as content** | several documents in parallel sharing vocabulary; a document split by another; a fact stated in one needed in another; a word whose referent differs between documents | the answer, which only the right context gives | batch differentiation; return after interruption (stage 5's permanence at the document level); shared truth; priming as a prior; expectation from the right history | the situation code in content; retrieval as a candidate entertained into a slot |
+| 8 | **Thinking** | one-step problems first (`x is three. what is x plus one ?`), then chains, worked steps scored as intermediate answers | the answer and the worked steps | the deferred math-chain measurement under its four corrections (one-step problems first; worked steps scored as intermediate answers; an episode that can bind a found candidate; the budget counted in steps, with each query's record charge bounded separately); decomposition demonstrated at the closing | the thought loop and its credit |
 | 9 | **The age-appropriate corpus** | Wordbank → `interpret` → AO-CHILDES by age band ([FutureWork, gradual training](FutureWork.md)) | text; supplied answers where the corpus has them | the stall diagnostic flat per level | everything above, at scale; item 3's corpus |
 | 10 | **The full train** | the target corpus (item 0) | — | the standing gates unchanged or better | — |
 
@@ -193,7 +203,7 @@ Until it is learned, unit tests force parts of speech (Alec: "they may
 take a while to learn, and we need to test without that").
 
 **Item 6 part 2 amendment (Alec, 2026-10-10).** The
-[identity-from-data lesson design](plans/2026-10-10-item-6-stored-idea-generativity.md#2-identity-from-data-amendment-alec-2026-10-10)
+identity-from-data lesson design
 governs the stage 1 and stage 5 identity lessons: vary object, property and
 verb factors independently; grow support from one to three; counterbalance
 pronoun candidates' recency, role and order; include imperfect determiner cues,
@@ -201,18 +211,23 @@ held-out cue/content conflicts, later distinguishing properties for same-kind
 individuals and document-dependent referents. In stage 5, `a` and `the` are
 evidence for identity choices, not unconditional mint/bind instructions.
 Measure the declared candidate-count/recency/role strata and both controls
-before changing the mechanisms. Rule retirement requires a passing lesson
-without that rule; the amendment and Claude's toy specify the evidence.
+(a follow-up that neither candidate predicts leaves binding at chance; training
+on a recency-biased set and testing on the reversed set exposes a positional
+shortcut) before changing the mechanisms. Pronoun lessons place each
+candidate in each position equally often ("the cat saw the dog. it barked."
+beside "... it purred."), so that only content the follow-up predicts decides.
+Rule retirement requires a passing
+lesson without that rule; a rule whose lesson fails without it stays, with the
+failure reported, and a retired rule is removed, not kept beside its learned
+replacement.
 
-The [first text corpus](../data/identity_from_data/README.md) and
-[measurement receipt](benchmarks/2026-10-10-item6/identity-corpus/README.md)
-implement this lesson inventory before any identity mechanism changes. The
+The [first text corpus](../data/identity_from_data/README.md)
+implements this lesson inventory before any identity mechanism changes. The
 grader keeps missing and colliding candidates in the denominator, separates
 resolved coverage from conditional accuracy, and counts semantic rows rather
 than word rows. Its known-policy controls check the grader; native errors and
 unreached evaluations do not constitute a learned binding or chance result.
-The receipt records the native baseline and the still-required matched
-recency-training comparison. None of the existing rules is retired by this
+None of the existing rules is retired by this
 preparation.
 
 Why this order. Stages 1–3 teach what a word is and how to take one at a time;
@@ -221,18 +236,44 @@ a relation between two atoms, composition within a role, a verb against a
 noun, two roles told apart by order; only then, in 5, are sentences tied to
 one another, because a reference needs sentences to refer to and a row to
 persist. Stage 7's "return after interruption" is stage 5's permanence raised
-to the document. Stages 1–3 absorb item 6.1's attention stages
-([stream-state §7.3](plans/2026-10-08-stream-state.md)); 4b's asked parts are
+to the document. Stages 1–3 absorb item 6.1's attention stages; 4b's asked parts are
 its fourth. Stage 3 is the lesson that failed when reading order was left to
-sparse credit alone (§7.12 there): the scorer learned content, not position.
+sparse credit alone: the scorer learned content, not position.
 Free decoding of compounds — unfolding a composed child against a bank that
 holds only words — is **not** a stage gate: reconstruction in every gate is the
 inversion along the actual derivation, excluding undefined coordinates from
-the inside loss and reporting their unrecovered words/coordinates separately
-(4.5 §3.1). Stage 3 gates on reads and lesson CE instead of list reconstruction
-(Alec, 2026-10-10; stream-state §7.15–§7.16). Free compound decoding is item 6's
+the inside loss and reporting their unrecovered words/coordinates separately.
+Stage 3 gates on reads and lesson CE instead of list reconstruction
+(Alec, 2026-10-10). Free compound decoding is item 6's
 work, whose inverse will clean up against the primed words *and* STM's composed
 wholes.
+
+**One departure, read at the end.** The order also follows from how choices
+are credited. A path departs once from the greedy derivation, completes the
+rest greedily, and its cost $R + A$ is read at the end of the sentence; a chain
+of random choices would be rolling for all sixes. The comparison measures
+$Q(s, a)$, the cost of choice $a$ in state $s$ followed by the greedy
+completion, which is the right credit, $Q(s, a) = V^*(s')$, exactly when that
+completion is already optimal. The last choice is always credited exactly,
+since its completion is empty, and each earlier choice is credited exactly once
+every choice after it is optimal: backward induction, Viterbi's principle of
+optimality. One draw per derivation therefore suffices, on four conditions.
+The completion must be near-optimal, which a graded corpus supplies one step at
+a time: each item needs one more operation than those before it, added at the
+bottom of the derivation (phrases before clauses before sentences; for
+thinking, a question answered by a premise, then one successor step, then
+two). Credit is first-order: a better derivation that differs at two choices
+at once shows no gain to a single departure, so each stage adds one new
+decision. Coverage is about one over the derivation's depth, since the
+departure lands uniformly over the eligible choices. And the signal is the
+outcome, $R + A$, never predictability, with the uniform floor $\varphi$
+keeping every alternative reachable; the temperature and the floor set only
+how far the departure's alternative draw looks, while the exactness comes from
+comparing two derivations of one input that differ in one choice. Without the
+graded order, completions off the greedy path are never learned and early
+departures are credited against untrained suffixes. The stall diagnostic reads
+this per level: an explore-win rate at zero while the level's surprise stays
+high says the data step is too steep there. A shuffled order is the control.
 
 
 ### The generated math suite: what it exercises and what it cannot (2026-10-20)
@@ -247,16 +288,16 @@ and doubles as the compiler test at scale. Its coverage:
 | exercised, often better than anywhere else | consumed by |
 |---|---|
 | identity by name: variables as proper nouns, re-mention, equality as singleton membership, definitions, substitution of equals | 3.5 `bind` step 1 |
-| composition and roles: `NP VP`, `VP → VP NP` twice, nesting, "x minus one" ≠ "one minus x" | the catalogue; 3.5 |
-| the verb as a group element with exact ground truth: plus/minus inverses, plus commutes, times/divided-by a second group; translation along the successor chain of opaque numerals is diagonal in the chain's Fourier basis, so the additive and multiplicative bases are an exact target for joint diagonalization | 3.5 verb groups (occurrence §14.1) |
-| relations and chaining: conditionals, premises in either order, one- and two-step decomposition, sub-questions | thinking spec; item 0's deferred measurement |
+| composition and roles: `NP VP`, `VP → VP NP` twice, nesting, "x minus one" ≠ "one minus x" | the grammar operators ([Language](Language.md)); 3.5 |
+| the verb as a group element with exact ground truth: plus/minus inverses, plus commutes, times/divided-by a second group; translation along the successor chain of opaque numerals is diagonal in the chain's Fourier basis, so the additive and multiplicative bases are an exact target for joint diagonalization | 3.5 verb groups |
+| relations and chaining: conditionals, premises in either order, one- and two-step decomposition, sub-questions | the thought loop ([Reasoning](Reasoning.md)); item 0's deferred measurement |
 | questions, answers, binding: `what` opened and bound, the answer line as supervision, yes/no on the truth lanes | `bind`, `R + A` |
-| modality and counterfactuals: a world differing in one restriction with a computable consequent | the second difference (occurrence §14.3) |
+| modality and counterfactuals: a world differing in one restriction with a computable consequent | the second difference ([Philosophy](Philosophy.md#two-differences-the-verb-across-time-the-modal-across-possibility-alec-2026-10-19)) |
 | ellipsis and coordination: "x is three and y four"; "x and y are three"; "x or y" in the both/neither corners | the elided site; the lanes |
-| generics against particulars; quantifier scope | two truths §1; LTM2 |
+| generics against particulars; quantifier scope | ideas and relations; LTM2 |
 | attribution with conflicting sources and known truth | LTM2 attribution; trust in the lanes |
-| surface variety under one meaning: "equals", "is", "sums to", the marker as word or affix | occurrence §13's carrier gates |
-| perceptual identity of word forms: letters and letter-wholes are percepts (PartSpace, WholeSpace), so nested admission, marker minting and the meet over letter-wholes are exercised; the referent's quantity has no percept, and under textual grounding (parts-of-speech §8) it needs none — object-concepts are minted and learned through the definitions and kind statements the corpus supplies | the identity staircase steps 1–2 |
+| surface variety under one meaning: "equals", "is", "sums to", the marker as word or affix | one operation over any surface carrier |
+| perceptual identity of word forms: letters and letter-wholes are percepts (PartSpace, WholeSpace), so nested admission, marker minting and the meet over letter-wholes are exercised; the referent's quantity has no percept, and under textual grounding it needs none — object-concepts are minted and learned through the definitions and kind statements the corpus supplies | the identity staircase steps 1–2 |
 
 | not reached | why |
 |---|---|
@@ -271,6 +312,18 @@ rather than English, so the graded math corpus is interleaved with the
 age-appropriate natural corpus of item 3 rather than run alone; and since
 numerals are opaque words it tests the mechanisms, never arithmetic
 competence, which is what it is for.
+
+**Mathematics enters only as language** (Alec, 2026-09-09). The runtime has
+no arithmetic primitive, lookup or substitution operation: numerals are
+opaque number words with arbitrary concept addresses, `plus` and `minus` are
+ordinary transitive verbs, and addition is iterated succession. The counting
+grade states the successor, `n plus one`, for every numeral; a larger sum is
+reached by chaining it in thought, each intermediate result an LTM row.
+`bin/exact.py` parses, generates and scores problems for the corpus and for
+evaluation only. Its oracle answers and traces are scoring targets and never
+reach the learner as inputs, answer seeds or a calculator;
+`test_arithmetic_isolation.py` checks that a supervised update cannot reach
+the exact arithmetic or a fallback code.
 
 ### Examples by stage, and the construction each introduces
 
@@ -344,28 +397,18 @@ NP the reading applies the NP operator (mint, or bind for a re-mention)
 and captures the NP's own meaning before the sentence fold. Its occurrence
 row is written at the kept close. The lesson's CE teaches the waits
 as well as the folds; it never replaces the student's kept program.
-Adjective descriptions use `intersection`, per the operator catalogue;
-this corpus contains no noun–noun `compound` and requires no case lesson.
+Adjective descriptions use `intersection`; this corpus contains no
+noun–noun `compound` and requires no case lesson.
 The gate, declared before the fixed-budget run (Alec, 2026-10-17), is free
 reading on held-out sentences of the trained kinds: **≥90% exact brackets**,
-**one occurrence for ≥95% of singular NPs with zero duplicate writes**,
-**one order-1 occurrence at every lowered NP**, and **no occurrence for an
-unlowered description**. The October 17 review corrects the original 2→1
-requirement: mint/bind construct an order-1 member from either an order-0
-type or a raised description; kind constructs order 2. Report the
-description's stamp without requiring it to be 2. Missing NPs still fail.
-Stop at a failed gate. The
-[stage 4e receipt](benchmarks/2026-10-17-stage4e/) records the budget and
-measurement; native identity learning waits for this gate.
-The corrected [intersection/pressure rerun](benchmarks/2026-10-17-stage4e-intersection/)
-has complete teacher traces and moving CE, but still fails free brackets
-and NP occurrences. A green mechanism sweep does not pass this learning gate.
-The [student-state rerun](benchmarks/2026-10-17-stage4e-student-states/README.md)
-also fails (0/32 main brackets, 8/48 matching NP occurrences), despite 40/40
-source-order readings. Its read-only stage-3 diagnostic finds that the saved
-checkpoint passes two-word CE after four-word training; four-word CE remains
-above .01 with live gradients and no saturation. No additional learning budget
-or identity run follows from that diagnostic.
+**one occurrence for ≥95% of singular NPs with zero duplicate writes**, and
+**one order-1 occurrence at every lowered NP**. Mint and bind construct an
+order-1 member from either an order-0 type or a raised description, and kind
+constructs order 2, so the description's stamp is reported, not required to
+be 2. The bare-description control (no occurrence for an unlowered
+description) is reported, not gated (2026-10-18). Missing NPs still fail.
+Stop at a failed gate; native identity learning waits for this gate, and a
+green mechanism sweep does not pass it.
 
     [the black cat] [runs] .
     [the dog] [chases [the cat]] .
@@ -397,7 +440,7 @@ relative clauses, embedding; read in order and shuffled.
     the dog chases the cat that runs .
 
 **7. Context as content** — documents in parallel, interrupted, sharing
-facts (see [stream-state §3](plans/2026-10-08-stream-state.md)).
+facts.
 
     A: x is three .   B: x is seven .      A: what is x ? → three   B: what is x ? → seven
     A₁: the cat sleeps .   B: a dog runs .   A₂: what sleeps ? → the cat
@@ -430,6 +473,11 @@ Produces a static embedding artifact (e.g. `BasicModel.kv`). Output path from
 `<embeddingPath>`. Under `make train` (`bin/train.py`), Phase 1 runs **only**
 when the artifact is absent or `--force-embeddings` is passed (byte-lexer
 configs skip it entirely); Phase 2 always runs.
+
+Phase 1 is a legacy path for word-level lexicons. Under the byte lexer it does
+not run, `model.xml` leaves `embeddingPath` empty, and `MereologicalCodes.derive`
+writes every row's meaning from its placement, so pretrained vectors would not
+survive. Conceptual meaning is learned online, by placement at kept closes.
 
 ### Pipeline
 
@@ -523,56 +571,39 @@ embeddings.
 
 ### Within-sentence reconstruction objective
 
-BasicModel enables `teacherReconstruction` and `reconstructInLoop`
-([BasicModel.xml](../data/BasicModel.xml)). Every retained meronomy reading
-with a grammar uses the tied reconstruction path. The completed input's ended
-state and recorded compose derivation drive one free read-back, with no
-retained operand or witness offsets.
-The free traversal searches both operands over the primed bank and scores
-candidates as signed activation times cosine times priming, identically to
-the gate's read-back. Activation is recovered as `dot(leaf,code)/dot(code,code)`;
-a zero code scores zero. Both true and competing codes remain differentiable.
-Its cross entropy scores each word's bytes through the first NUL terminator (`0`), then
-averages over active words, completed sentences and batch rows. It uses the
-existing 256-byte alphabet and [token-buffer contract](../bin/Spaces.py).
-Thus `a\0` differs from `ab\0`; padding or stale bytes after NUL are ignored.
-At eager staging, each input percept ID expands to its complete stored byte
-spelling for the target. A promoted word or multi-byte prefix therefore keeps
-all its scoring bytes. These targets never supply candidate spellings or
-reconstructed ideas.
-With no admitted candidate spelling in a sentence, that sentence contributes
-no reconstruction term and increments `reconstruction_unavailable_sentences`.
-The dictionary snapshot retains one extra byte beyond the
-input window, preventing a clipped longer spelling from acquiring a false word
-end ([Models.py](../bin/Models.py),
-[Models.py](../bin/Models.py)).
-Training and evaluation consume that same owned cost once; neither adds D3,
-an independent root-to-leaf decoder, or a duplicate event-reconstruction term
+Every sentence read with a grammar reconstructs its input twice, through one
+decoder, `BasicModel.reverse` (`SentenceField.reconstruct`; BasicModel enables
+`teacherReconstruction` and `reconstructInLoop` in
+[BasicModel.xml](../data/BasicModel.xml)). The **input reconstruction**
+reverses the parallel field of the open attention pass, with no grammar,
+against the detached native events of the presented input
+(`reconstruction_reverse.what/where/when`). The **order-zero reconstruction**
+runs the generate walk on the sentence's untransformed end slots, places the
+emitted terminals as new occurrences, and reverses that order-zero field
+through the same decoder against the same events
+(`reconstruction_order_zero.what/where/when`). Both are event errors per band,
+weighted by `reconstructionScale`: the first trains perception, definitions
+and basic percepts; the second trains compose, the grammar inverse and the
+definitions it selects. The decoded bytes' identity and missing positions
+against the input are audits, not trained (`reconstruction.free_bytes`,
+`reconstruction.coverage`). A sentence with no admitted surface candidate
+contributes no reconstruction term and increments
+`reconstruction_unavailable_sentences`. The targets never supply candidate
+spellings or reconstructed ideas. [Architecture](Architecture.md), "The three
+stages: input, thinking, output", gives the loop.
+
+The owned `InputReconstruction` retains the recovered ideas, the realized
+input event, the costs per sentence and truncation. Ownership is established
+during understanding, before later staging can overwrite the carriers.
+`reverseReconstruct` returns that completed event; an explicitly supplied
+target only changes its optional diagnostic event score
 ([Models.py](../bin/Models.py)).
 
-The owned `InputReconstruction` retains recovered ideas, the realized input
-event, byte and idea costs, per-sentence costs and truncation. Ownership is
-established during understanding, before later staging can overwrite the
-carriers. `reverseReconstruct` returns that completed event; an explicitly
-supplied target only changes its optional diagnostic event score
-([Models.py](../bin/Models.py)). Idea MSE and continuous event error
-are fidelity diagnostics. The cosine-based byte objective does not enforce
-equality of continuous concept amplitudes.
-
-The byte loss can train the ended representation and selected shared compose
-transforms and the candidate codes. Observed targets and priming weights are
-detached; dictionary values stay live. There are no operand witnesses.
-Reverse trace indices are constants. The forward
-chooser retains its existing straight-through soft approximation, which can
-receive reconstruction credit through the live completed representation; the
-separately weighted local chooser objective remains optional
-([Language.py](../bin/Language.py),
-[Language.py](../bin/Language.py)). Following a recorded reverse
-index adds no selection gradient of its own. Reconstruction owns no decoder
-parameters. Only reconstruction updates shared operators; answer generation
-may read them without updating them. Compose lessons update only their chooser.
-The parameter ownership and concluded-answer cut are specified in
-[GradientFlow](GradientFlow.md).
+Observed targets are detached. A choice is credited by its whole path: a
+departure's reward is its complete path's change in $R + A$
+([What questions and the two primary costs](#what-questions-and-the-two-primary-costs)).
+Compose lessons update only their chooser. The parameter ownership and
+concluded-answer cut are specified in [GradientFlow](GradientFlow.md).
 
 Separate reconstruction compilation caches its backward and disables donation
 of saved buffers. This permits repeated gradient reads for per-objective
@@ -589,6 +620,25 @@ positions with `NULL_PERCEPT`, retains `_ir_pre_mask_input`, and scores those
 positions. Supplied-answer learning remains a separate objective; reconstruction
 does not manufacture answer labels.
 
+**Adaptive omission.** In training, part of each sentence is hidden before
+identity admission, and reconstruction must restore it (`bin/Omission.py`).
+Two rates are kept, one for whole words and one for percept slots within the
+kept words, and one word per sentence is always kept whole. Omission is out of
+band: a hidden slot keeps its place, bracket and time and has no content,
+rather than a corrupted value, since a good model reproduces the corruption it
+sees. With $v$ the long-term reconstruction accuracy on visible content, $a$
+the accuracy on hidden content and $r$ = `omissionTarget`, each rate is
+$m = \mathrm{clip}\left(\frac{v - r}{v - a}, 0, m_{\max}\right)$, with
+$m_{\max}$ = `omissionLimit` (and $m_{\max}$ once $a \ge r$): nothing is hidden
+until visible accuracy passes the target, and the rule limits itself because
+$a$ falls as more is hidden. The accuracies are running averages over
+`omissionHorizon` sentences, updated once per present sentence from the kept
+reconstruction (`Omission.observe`). The order-zero reconstruction is scored
+against the input before omission at every place; the input reconstruction,
+which has no grammar, is scored only where content was observed. Only
+reconstruction restores hidden content; output stays silent on text that asks
+nothing. `omissionTarget = 1` disables omission and its random draws.
+
 | Knob | Effect |
 |------|--------|
 | `maskRate` | Bernoulli mask probability at the subsymbolic (PS) (BERT default 0.15) |
@@ -596,7 +646,7 @@ does not manufacture answer labels.
 | `reconstructInLoop` | Historical fixture opt-in; retained meronomy grammar readings always reconstruct their understanding. Training/evaluation use the owned byte objective once. |
 | `reconstructionBasisLimit` | Positive count, default 16: the sentence bank adds up to this many most-primed other symbols to its own rows. It also bounds free-inverse candidates per side (at most its square in pairs). Independent of word, STM and field capacity. Missing candidates/inverses report incompleteness. |
 | `grammarLessonWeight` | Priority for explicit compose/generate lessons; each lesson updates only its own chooser. `forwardGrammarWeight` is retired and rejected. |
-| `<reconstruct>` | RETIRED (A1, 2026-06-09; `reconstructEnum` removed).  There is no longer a target space-role knob: reconstruction is unconditionally concepts-seeded from the terminal `ConceptualSpace` STM snapshot, weighted by `reconstructionScale`. |
+| `<reconstruct>` | RETIRED (2026-06-09; `reconstructEnum` removed). There is no target space-role knob: reconstruction is seeded from the understanding and weighted by `reconstructionScale`. |
 
 ### Construction trace and derivation pressure
 
@@ -604,20 +654,23 @@ The serial reading records its concluded root and slots, rule choices,
 operand positions and per-word references. No witness offsets or operation
 frames enter the shared understanding. Sentence-local journals use the loop's static word-capacity bound,
 so changing the sentence length does not create a new capture shape. Each
-trial freezes these fields and the post-seen-write priming snapshot into one
+path freezes these fields and the post-seen-write priming snapshot into one
 `SentenceUnderstanding`. The tied inverse and the detached answer consume the
 same object; the public inverse returns its completed reconstruction rather
 than trying to replay a discarded journal.
 
 The primed bank contains the sentence's own symbols plus the most activated
 other symbols, per batch row. Surface-bearing symbols are reconstruction
-candidates; all valid symbols supply detached answer context. Seen priming
-also diffuses in serial reading, using the concept store's device-side sparse
-edges without a host edge cap. The bank and all record fields are described
-in [GradientFlow](GradientFlow.md).
+candidates; all valid symbols supply detached answer context. The priming of
+the next read is the activation predictor's forecast of the next state
+(`ConceptSpread.open_prediction`), read detached; nothing diffuses along
+concept store edges. The bank and all record fields are described in
+[GradientFlow](GradientFlow.md).
 
-The compose chooser receives reconstruction credit through its
-straight-through surrogate. Explicit grammar lessons, where configured,
+The compose chooser is credited by the whole-path comparison: a score-function
+term, the departure's probability times the detached difference between the
+complete paths' costs (`output.compose_score_function`). Explicit grammar
+lessons, where configured,
 train only the corresponding compose or generate chooser. The former
 `forwardGrammarWeight` structural proxy and detached reverse chooser are
 retired. A current checkpoint containing student keys is migrated by dropping
@@ -707,35 +760,43 @@ $$\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{model}} + \lambda \cdot \mathc
 
 where $\lambda$ is `<embeddingScale>` (default 0.1).
 
-With `separateChooser=true`, reconstruction, expectation and output have
-separately named objectives in Error and disjoint parameter owners. Reconstruction owns perception, trainable
-codes, compose operators and their tied inverses, and the compose chooser.
-Expectation owns predictors; both their source and target are detached. The
-supplied answer owns its readers, and stops at the common understanding record.
-Compose and generate lessons update only their own choosers. Restricted
-backward enforces these boundaries even when a forward operator is shared.
-Under `separateChooser=false`, the implemented one-backward path sums the
-sentence's objectives, and output and compose-choice credit reach the same
-understanding parameters as reconstruction. Expectation and attention retain
-their stopped consumption boundaries; intuit's weights remain output-only.
-`<separateChooser>` defaults to `true`; `<reconstructionJitter>` defaults to zero
-and scales reconstruction by one `U[1-j,1]` draw per sentence. The percept
-predictor's arrival adaptation is now loop state, with its accumulated loss in
-the shared sentence optimizer in both modes. Stage 2 is not frozen because its
-lesson comparison failed. See [GradientFlow](GradientFlow.md#current-gradient-boundaries-and-loss-normalization)
-and [thinking spec §25](plans/2026-10-27-item2-5-thinking.md#25-one-backward-implementation-verified-gates-and-incomplete-measurement-2026-10-30).
+The default, `separateChooser=false`, takes one backward over the sentence's
+objectives in two traversals (`GradientProjection.backward`): the R side
+(reconstruction, scaled by its jitter draw, and every cost not on the answer
+side) and the A side (output, the generate lessons and the choosers' credit).
+In each optimizer unit (a concept row, a definition edge, otherwise a whole
+tensor) and in Adam's second-moment metric, the A gradient loses only its
+component that opposes R, and the two are summed: answer learning never undoes
+reconstruction. With `separateChooser=true`, reconstruction, expectation and
+output instead have separately named objectives in Error and disjoint
+parameter owners: reconstruction owns perception, trainable codes, compose
+operators and their tied inverses, and the compose chooser; the supplied
+answer owns its readers and stops at the common understanding record; and
+restricted backward enforces these boundaries even when a forward operator is
+shared. In both modes expectation owns its predictors with source and target
+detached, attention keeps its stopped consumption boundary, intuit's weights
+remain output-only, and compose and generate lessons update only their own
+choosers. `<separateChooser>` defaults to `false` (the code and
+`data/model.xml`); `<reconstructionJitter>` defaults to zero and scales
+reconstruction by one `U[1-j,1]` draw per sentence. The percept predictor's
+arrival adaptation is loop state, with its accumulated loss in the shared
+sentence optimizer in both modes. Each epoch reports the R and A gradient
+norms reaching the understanding, the projection's cosine and the fraction of
+the answer gradient it removed, the per-operator dissonance and the per-group
+chooser variance; diagnostic work is excluded from the training-step time. See
+[GradientFlow](GradientFlow.md#current-gradient-boundaries-and-loss-normalization).
 `branchDiagnosticsEvery` reports actual objective writers per optimizer parameter.
 See [GradientFlow](GradientFlow.md) for the complete term and record inventory.
 
 Meronomy is the only retained text mode. Every retained serial grammar reading
 reconstructs through its understanding. Grammar-free configurations retain
 perceptual reconstruction. A sentence with no admitted surface candidate has
-no reconstruction term and is counted. Gradient projection and its helpers
-are retired. Reconstruction precedence applies in trial selection: explore
-must have strictly lower reconstruction; ties keep greedy *(superseded 2026-10-19: keep and credit both read `R + A` — expectation spec rev 5 §5.2, §8)*. Keep and credit read
-`R + A`; expectation is excluded and trains only the predictors (corrected
-2026-10-30). The answer reader trains only on kept trial
-rows; a wholly discarded trial supplies no reader step.
+no reconstruction term and is counted. Keep and credit read $R + A$ over whole
+paths: each stream keeps its strictly cheapest complete path, ties keeping the
+greedy one, and expectation is excluded from the comparison and trains only
+the predictors. The answer cost has one exposure per sentence, given to the
+kept path and shared with the paths whose departure is in compose and their
+greedy path.
 
 *A superseded passage beginning "Inter-sentence MSE/contrastive losses are consumed independe" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 
@@ -774,8 +835,7 @@ tested separately.
 There is no second optimization step. Full processed native fold state remains
 separate from this scalar readout and is released at batch/sentence teardown.
 Checkpoint coefficient tensors and the conceptual vocabulary's reference
-manifest must be restored together. See the unified spec, section 5.5, for
-the remaining collective-decoding and benchmark acceptance gates.
+manifest must be restored together.
 
 Data flows through `SentenceStreamDataset` wrapped in `DataLoader`. The
 ordered training list is split into `B = batchSize` contiguous slabs of
@@ -811,48 +871,27 @@ For each B-wide batch:
    self-invokes when not externally started).
 2. `InputSpace.forward()` lexes/embeds once into `[B, N, D]`
    (left-aligned, right-padded to N). No K axis, no cursor unfold.
-3. `create_ir_mask` replaces a `mask_rate` fraction of WHAT positions
-   with `NULL_PERCEPT`; pre-mask event stashed on
-   `_ir_pre_mask_input` and the position mask on
-   `_ir_mask_positions`.
+3. In whole-slab, grammar-free configurations `create_ir_mask` replaces a
+   `mask_rate` fraction of WHAT positions with `NULL_PERCEPT`; the pre-mask
+   event is stashed on `_ir_pre_mask_input` and the position mask on
+   `_ir_mask_positions`. A reading with a grammar uses adaptive omission
+   instead.
 4. `_forward_body` runs T stages on B rows.
 5. `_forward_head` produces `[B, N, predDim]` (a side channel --- IR
    loss is computed at the subsymbolic (PS), not at the head).
-6. `runBatch` reads the trained sum from `Error.total()`. Raw fidelity metrics
-   remain available but do not duplicate the following registered objectives:
-   - `output` (supervised head): MSE between the aligned head
-     prediction and the labels, weight 1.0 when labels exist
-     (zero-weighted otherwise).
-   - `reconstruction`: tied mode scores the completed input's recovered
-     WORD spellings through the existing NUL terminator. Configurations
-     without a grammar retain masked perceptual MSE
-     ([Models.py](../bin/Models.py)).
-   - `reconstruction_reverse` (concepts-seeded): the reverse pass
-     seeded from the terminal `ConceptualSpace` STM snapshot (the
-     `<reconstruct>` enum was retired), weighted by
-     `reconstructionScale`. Tied mode skips this duplicate in training and
-     evaluation; grammar-free paths keep their perceptual inverse ([Models.py](../bin/Models.py)).
-   - `embedding_sbow` (`JOINT` / byte-lexer perceptual SBOW), weighted
-     by `<embeddingScale>`.
-   - `arma` (sentence-level): `InterSentenceLayer.observe(s_t)` MSE
-     between the ARMA(p, q) prediction and the current sentence rep,
-     weighted by `armaScale`.
-   - `intra` / `inter` / `inter_contrastive`: the intra-sentence
-     predict-then-perceive term, the inter-sentence end-state term,
-     and the InfoNCE next-idea contrastive term.
-   - Optional, default-off (weight 0.0 unless configured):
-     `conceptual_sbow`, `definition_sparsity`, `answer`, `thinking`,
-     `predict_next`, `leaf_distill`, `gate_l1` --- plus any auxiliary
-     terms the pipeline Spaces wrote to their shared `Error` instance.
-7. Each sentence's two trials are costed under identical parameters and each
-   takes its own backward and optimizer step; the batch takes one final step.
-   Each backward is restricted to the objective's parameter owners. The
-   batch-end step runs only when a remaining registered term differentiates.
-   Diagnostics observe these updates without adding one. The greedy step
-   writes reconstruction, attention and the lessons; the departure step adds
-   the one output and one expectation update, weighted by the kept rows.
+6. `runBatch` reads the trained sum from `Error.total()`; the registered
+   terms are listed under
+   [Relative errors and their owners](#relative-errors-and-their-owners-item-69-october-2).
+   Raw fidelity metrics remain available but do not duplicate them.
+7. Each sentence runs one greedy path and `explorePaths` alternatives, each
+   reusing the greedy prefix and departing once. All are costed under the same
+   parameters; each stream keeps its strictly cheapest $R + A$ path (ties keep
+   the greedy one), and input and thought effects commit only after the
+   comparison. The sentence then takes one optimizer step, in either ownership
+   mode. The batch-end step runs only when a remaining registered term
+   differentiates. Diagnostics observe these updates without adding one.
    Percept expectation's predictor steps its own local Adam once per word
-   inside the perception loop (item 2.7 record §39).
+   inside the perception loop.
 8. Embedding training (`CBOW`/`SBOW`/`BOTH`) runs once per batch.
 
 ---
@@ -861,16 +900,16 @@ For each B-wide batch:
 
 ### Relative errors and their owners (item 6.9, October 2)
 
-**Current review (2026-10-30).** The general registry rule below remains in the
-code, but generation's local walk residual bypasses it: each step/lane is
-normalized before registration, and its denominator is live. This difference
-is under review after the failed Stage 2 lesson. The user prefers avoiding
-term balancing where possible. Separate owner gradients do not need a scale
-balance to protect one owner from another; the false setting shares
-understanding parameters, and both settings still compare readings by `R + A`.
-Those facts make cost definitions consequential without requiring a particular
-normalization. No normalization policy changed in this documentation update.
-See the [explicit formulas and boundaries](GradientFlow.md#the-normalization-contract-and-the-generation-exception).
+**The walk residual (2026-10-30).** The general registry rule below has one
+exception. Generation's walk residual is three absolute chart errors, form,
+for and against (`reconstruction.walk_residual.*`, `output.walk_residual.*`):
+each sums all chosen steps and the unresolved stack energy, and enters the
+registry with baseline one and the active-stream mask. Exactness is absolute
+MSE `1e-8`; an admissible nonfinite residual raises before menu scoring. Term
+balancing is avoided where possible (Alec): the projection protects
+reconstruction from the answer side without a scale balance, and both
+ownership settings compare paths by $R + A$. See the
+[explicit formulas and boundaries](GradientFlow.md#the-normalization-contract-and-the-generation-exception).
 
 `Layers.Error` stores every constituent's numerator, detached uninformed
 baseline, active count, configured priority and owner. Contributions with
@@ -887,55 +926,46 @@ configuration, including `model.xml`, remain in place. The old
 `(1-r)*answer+r*reconstruction` blend is retired: `r` weights reconstruction
 independently. The [complete term inventory](GradientFlow.md#trained-total-and-diagnostic-objectives)
 specifies each comparison, baseline, weight, placement and gradient reach.
-In registry names, the active terms are:
-
-| Family and terms | Targets and baseline | Weight and placement | Gradient |
-|---|---|---|---|
-| `answer.what/where/when` | Supplied numeric or generated surface band; origin per band | Event-band scales; trial and batch | Answer reading map only; understanding detached |
-| `reconstruction.free_bytes` | Free inverse spelling vs observed bytes including NUL; `log 256` | `reconstructionScale`; trial, detached chosen report at batch end | Understanding, chooser, true and competing codes, operators and tied inverse |
-| `reconstruction.*`, `reconstruction_reverse.*` event bands | Grammar-free masked or reverse perceptual targets; origin per band | Reconstruction × band scales; batch | Active input reconstruction path |
-| `leaf_distill` | Historical decoder vs exact retained leaves; origin | `leafDistillWeight`; batch | Decoder and live input root |
-| `expectation.roles/root/intra/arma` | Arriving detached role/root/code/representation; origin | `interLossWeight`, `intraLossWeight`, `armaScale`; trial or batch once | Corresponding predictor only; source and target detached |
-| `expectation.presence/kind` | Occupied roles and idea/relation bit; `log 2` | `interLossWeight`; trial or batch once | Meaning predictor |
-| `expectation.contrast` | Actual next idea among candidates; `log K` | `interContrastiveWeight`; trial or batch once | Next-idea predictor only |
-| `grammar.compose.choice` | Explicit annotated joint operator; `log K` | `grammarLessonWeight`; trial | Compose chooser |
-| `grammar.generate.choice/operands` | Annotated action/child codes; `log K`/origin | `grammarLessonWeight`; trial | Choice trains generate policy only; operand error is reporting-only |
-| `embedding.positive/negative` | Positive/negative lexical membership; `log 2` separately | `embeddingScale`; batch | Joint lexical embedding |
-| `conceptual_sbow.positive/negative` | Context/non-context membership; `log 2` separately | `conceptualSimilarityScale` × existing SBOW strength; batch | Parallel conceptual codes |
-| `reading_attention` | Next unconsumed span; `log(legal span count)` | 1; batch | Reading attention |
+In registry names, the trained families are: the answer cost (`answer`, side
+A); `reconstruction_reverse.what/where/when`, the input reconstruction through
+the System 1 decoder, scored at observed places;
+`reconstruction_order_zero.what/where/when`, the order-zero reconstruction
+through compose, the generate walk and the same decoder, scored against the
+input before omission; `reconstruction.free_percept`, the decoded percepts
+against the percept forecast's residual; the walk residuals and departure
+credits of reconstruction and output; the expectation predictor's own terms
+(`expectation.*`, source and target detached); and the explicit grammar
+lessons (`grammarLessonWeight`). `reconstruction.free_bytes`, the decoded
+bytes' identity against the input, and `reconstruction.coverage`, the missing
+positions, are audits with `trained=False`.
 
 `definition_sparsity` (soft-L0), `gate_l1` (operator gates), and
 `truth.falsity/balance` have no targets and retain their configured penalty
 strengths without normalization. `concept_readout_l1` records the distinct
 observed concepts' incoming L1 with `l1Lambda`; its sole training owner is
 the proximal operation at each applicable sentence or batch optimizer step.
-A batch without a batch-end backward stages no additional update. `output_policy`, `selected_thought_policy` and
-`expectation_policy` are targetless score-function objectives, with their
-configured policy weights and detached return baselines. They train their
-choosers at batch end; supplied trial generation does not record or train
-the walk policy. These terms, and zero-target squared penalties, are reported
-separately from relative errors. `Error.total()` sums trained terms;
+A batch without a batch-end backward stages no additional update.
+`selected_thought_policy` is a targetless score-function objective with its
+configured policy weight and a detached return baseline. These terms, and
+zero-target squared penalties, are reported separately from relative errors. `Error.total()` sums trained terms;
 `total(kind='relative')`, `total(kind='penalty')` and `breakdown()` expose
 the distinction. Raw fidelity metrics and missing-candidate counts have
 `trained=False`.
 
-A trial is scored from one immutable understanding record, shared by
-reconstruction and the detached answer reader. Its primed symbols are the
-sentence's own rows plus the most activated others, with a separate priming
-surface for each batch row. Both trials use the same post-seen-write snapshot.
-Each objective's backward writes only its owners. Both trials are scored
-before either steps. Explore must improve reconstruction strictly; answer
-and expectation cannot select it. Reconstruction uses momentum SGD (0.9),
-and the readers and expectation predictors use Adam. The configured learning
-rate is unchanged; there is no adaptive normalization of reconstruction
-steps. The audit records code and chooser-anchor displacements against their
-gradients and each sentence’s modal derivation over training epochs. There are no
-additional gradient reads for a supplied-answer projection.
+A path is scored from one immutable understanding record, shared by
+reconstruction and the answer reader. Its primed symbols are the sentence's
+own rows plus the most activated others, with a separate priming surface for
+each batch row. Every path of a sentence is scored before the sentence's one
+optimizer step, and the kept path is the strictly cheapest by $R + A$.
+Reconstruction uses momentum SGD (0.9), and the readers and expectation
+predictors use Adam. The configured learning rate is unchanged; there is no
+adaptive normalization of reconstruction steps. The audit records code and
+chooser-anchor displacements against their gradients and each sentence's
+modal derivation over training epochs.
 [GradientFlow](GradientFlow.md#the-training-step-october-1) lists the record
 encoding and ownership audit, including inactive optimizer parameters.
 
-Since the What spec cutover (basicmodel 195b129 / 077c18d), every
-training batch is a batch of `WhatQuestion`s (`bin/What.py`), not a bare
+Every training batch is a batch of `WhatQuestion`s (`bin/What.py`), not a bare
 input/output tensor pair. `runBatch` derives them from the cursor rows
 (`_questions_for_batch`: supervised when the dataset has outputs, present
 otherwise, future on `predict` trials, inference at runtime) or from the
@@ -945,12 +975,33 @@ independently normalized primary costs recorded before `backward()`:
 | Cost (`primary_costs()`) | Compares | Trains |
 |---|---|---|
 | `input_reconstruction` (+ `input_reconstruction_reverse`, `reverseReconstruct()`'s own cost) | the reconstructed input with the presented (or clean) input | the bottom-up understanding and its input-associated inverse |
-| `answer_construction` | the realized response from `reverseOutput()` against an available, separately supplied `Data.what(What.supervised(...))` answer; automatic temporal targets are evaluation metrics only ([Models.py](../bin/Models.py)) | generate chooser and conditioner, answer-owned synthesis layers and output adapter; shared operators transmit gradients but do not receive an answer update |
+| `answer_construction` | the realized response from `reverseOutput()` against an available, separately supplied `Data.what(What.supervised(...))` answer; automatic temporal targets are evaluation metrics only ([Models.py](../bin/Models.py)) | the generate chooser, the question conditioner and OutputSpace's percept adapter; on shared parameters its gradient is projected against reconstruction's (with `separateChooser=true`, shared operators transmit it without an answer update) |
 
 The desired answer enters loss preparation only after the model response is
-fixed. Both trial and batch answers cut the concluded understanding. Each
-optimizer parameter receives gradients from one objective; the former
-step-5a whole-path answer is retired by the October 2 ownership decision.
+fixed.
+
+**Answers, silence and referents.** Output is never a direct consequence of
+understanding the question; it is the answer that thinking produced. The
+answer is resolved only from a concluded, accepted thought; with no conclusion
+the output role is empty and the model is silent. `Data.what` distinguishes
+three cases. A split that supplies no outputs, or an inference presentation,
+has no desired answer and is masked out, so text that supervises no output
+trains through reconstruction only. A row with a supplied answer is scored
+against it. A row of a supervised split with no supplied answer, or a sentence
+for which no question is supplied, has `WhatAnswer.silence`: an available
+target whose text is the empty surface (the end marker alone, through the same
+embedding as text targets) and whose tensor value is the zero vector.
+Producing words where nothing was asked therefore costs A, and an empty
+construction against silence costs zero, which teaches both answering and not
+talking. A loss-side `_answer_silence_mask`, one flag per stream and sized at
+construction, records which rows carry silence; it never enters model context.
+When the supplied answer names a referent (`ReferentTarget`) rather than a
+sentence, the answer cost adds a binding term to the surface comparison
+(`BindingAnswers.cost`): the exact identity costs 0; an unbound answer, a
+thought not accepted or a target with no concept costs 1; any other binding
+costs one minus the best coverage of its content by the target's concepts. The
+term is chosen by the kind of the supplied answer, never by a configuration
+flag.
 
 ---
 
@@ -1007,6 +1058,19 @@ corpus manifest and batch size; mismatches fail loudly instead of replaying a
 different cursor. `--force-embeddings` remains a deliberate Phase-1 rebuild,
 not a separate model artifact contract.
 
+Every owner's checkpoint state carries a version. Loading an older layout, or
+state in retired coordinates, raises and names the owner; nothing is
+converted lossily or backfilled with defaults. Where old content maps exactly
+onto the new layout, an explicit migration converts it and reports every key
+or column it drops. A lesson artifact that cannot be loaded is regenerated by
+running its producing lesson again; a test treats an artifact as a
+prerequisite and never trains to produce one. Modules built on first
+use, such as the question conditioners, are instantiated from the shapes
+saved in a checkpoint before the strict key audit
+(`_materialize_answer_path_from_checkpoint`), so a fresh model loads them with
+`require_match=True`; a module created after the optimizer exists joins it
+before the first backward that uses it, never twice.
+
 ---
 
 ## Embedding Space Geometry
@@ -1047,13 +1111,20 @@ sudo py-spy record -o profile.svg --pid <PID> --duration 30
 ## Category utility and chunk admission (2026-09-10)
 
 At the training path's sentence boundary `ConceptualSpace` commits the
-presentation's utility observations (one per resolved unit: the concept
-with its constituent rows and property rows as features; a concept counts
-at most once per presentation) and the chunk proposals made by the reduce
-step; a proposal that has recurred `admissionCount` times is admitted as a
-concept over its member concepts. `category_utility` (Corter & Gluck 1992,
-Laplace-smoothed, withheld below `utilityMinCount`) is the estimator of
-the basic level (doc/plans/2026-09-10-meronomy-fold-ladder.md, contract 4).
+presentation's utility observations (one per resolved unit: the concept with
+its constituent rows and property rows as features) and the chunk proposals
+made by the reduce step; nothing is committed while online learning is frozen,
+as in evaluation. The estimator of the basic level is category utility
+(Corter & Gluck 1992),
+$\mathrm{CU}(c) = P(c)\left(\sum_f P(f \mid c)^2 - \sum_f P(f)^2\right)$
+over the concept's features, Laplace-smoothed by `utilitySmoothing` and
+withheld below `utilityMinCount` presentations (`category_utility`); a concept
+and a concept-feature pair count at most once per presentation. A proposal
+that has recurred `admissionCount` times is admitted as a concept over its
+member concepts only if the phrase's utility exceeds the best utility of its
+members. That gain also moves the learned `chunk_prior` logit by
+`utilityPriorRate`, so phrases that predict their parts better than their
+parts do become easier to chunk.
 
 An admitted phrase also gets a row of its own in the concept dictionary,
 initialised from the additive composition of its members; when the
@@ -1062,7 +1133,7 @@ parent's STM reference is set to that row, so later reads and the
 answer path use the phrase's row and the losses train it. The utility
 counts, the phrase hits, admissions, rows and gains, and the acquired
 predicates of split property rows ride the structural extras of the
-checkpoint (doc/plans/2026-09-10-meronomy-fold-ladder.md, contracts 6-7).
+checkpoint.
 
 ## Existence evidence and observation admission (September 16)
 
@@ -1075,6 +1146,14 @@ and provenance, and adds no gradient objective or trainable parameters.
 [Observation adapter](../bin/Models.py),
 [admission](../bin/Layers.py),
 [lookup](../bin/reasoning.py).
+
+A given truth (`<truthSet>`, `store_truths`) is a plain sentence with a trust
+value; nothing out of band says what kind of sentence it is. The grammar
+decides whether it is an idea or a relation, as for any input, and provenance
+supplies only trust, origin and the source text. Provisioning therefore waits
+for training: an untrained chooser cannot be expected to read a given truth in
+the right form, so a test that needs relation rows from provisioned text uses
+a trained checkpoint or forces the derivation and says so.
 
 See [Existence evidence](ExistenceEvidence.md) for complete-description matching,
 fact admission, checkpoint migration and the hard lookup boundary, and
@@ -1183,10 +1262,9 @@ candidate counts/symbols/support/both status, and scored answers. The ideas exit
 requires two order-1 objects; relations requires an order-2 kind containing both.
 The relations phase is the registered producer of `copular_identity`. It writes a
 qualified artifact only on acquisition success; a failed acquisition remains the
-reported result. This round does not implement spec §§9 or 13.
+reported result.
 
-
-**Item 2.7 final-round protocol, 2026-10-29.** `corpus_lessons.py --curriculum
+**The final curriculum (2026-10-29).** `corpus_lessons.py --curriculum
 lesson-13` preserves the original two phases and 160 training sentences.
 `--curriculum final` selects the separately frozen proper, mass, count-kind and
 kind-verb documents in `data/corpus-lessons.json`, four documents and four epochs
@@ -1211,78 +1289,48 @@ refines inventories, relations, witnesses, bridge and recurrence in that order;
 a timeout or non-memory error stops that search as inconclusive or failed. A
 constructor-only result never establishes a fit. The selected full-prefix run
 uses stage admission, ordinary checkpoint continuation and the same guard.
-D5 regeneration, slow cases and the full landing sweep remain deferred to
-November; these instructions do not enable `RUN_SLOW`.
+The B28/W256 capacity search and the selected corpus prefix belong to the
+`RUN_SLOW` run registered in `test/test_corpus_large_slow.py` (Alec,
+2026-10-29); partial capacity measurements do not select a production size.
 
-**Paired decoder comparison repair (2026-10-29).** A pass-through capture found
-identical completed understandings with different decoder residual costs due
-to independent inner departure draws. Corresponding decoder/output calls now
-share one fresh uniform quantile across the outer sentence pair. The legal
-menus, work limits and one-writer objectives are unchanged; each menu still
-gets a uniform departure, and the sentence boundary discards the draws.
+**Percept expectation and residual reconstruction (2026-10-29).** For the
+perceptual layer, the residual rule supersedes the earlier gain-only rule
+(Alec, 2026-10-29/30). `PerceptExpectation` learns at the eager word boundary
+with detached context and observation, using its own Adam state outside the
+main optimizer. The forecast made before arrival is frozen for every path of
+the sentence. The decoded percepts are compared with the detached
+`observed - expected_at_arrival` target (`reconstruction.free_percept`); that
+loss cannot update this local predictor. Forward recombination retains the
+full attended signal and its Jacobian. Every checkpoint preserves the private
+optimizer, including a completed epoch with no corpus cursor; a trained
+checkpoint missing that state fails on load.
 
-**Percept expectation and residual reconstruction (item 2.7, 2026-10-29).**
-For the perceptual layer, §§39 and 42 supersede the earlier gain-only rule.
-`PerceptExpectation` learns at the eager word boundary with detached context
-and observation, using its own Adam state outside the main optimizer. The
-forecast made before arrival is frozen for both sentence trials. The committed
-forest and free decoder compare signed leaf corrections with the detached
-`observed - expected_at_arrival` target; their losses cannot update this local
-predictor. Forward recombination retains the full attended signal and its
-Jacobian. Every checkpoint preserves the private optimizer, including a
-completed epoch with no corpus cursor; a trained checkpoint missing that state
-fails on load. The conceptual residual split remains item 2.5 round B.
-
-
-**Item 2.7 large-file deferral (Alec, 2026-10-29).** The B28/W256 capacity
-search and subsequent selected corpus prefix now belong to the November
-`RUN_SLOW` run, registered in `test/test_corpus_large_slow.py`. Partial capacity
-measurements do not select a production size. The ordinary scoped tests,
-lesson-13 and final noun/kind/kind-verb measurements continue in this round.
-
-
-**Item 2.7 review measurement (2026-10-29; `ccc5e461740f`).** Lesson-13
-completed all 160 sentences. Both named individuals acquired order-1 objects;
-the shared order-2 kind did not form, and supplied answers scored 0/80.
-No acquisition artifact was written. The separate ordered final curriculum
-stopped during the proper-name phase at sentence 15 with an unwritten
-introduction in `ReferenceClose.preview`, so mass/kind/kind-verb results are
-unavailable. See the final-round review receipt; this is not a completed
-production corpus or landing certificate.
-
-**Item 2.5 stage 2 repair (2026-10-30).** The generation reconstruction charge
-is now three absolute chart errors: form, for and against. Each sums all chosen
-steps and unresolved stack energy, then enters the named error registry with
-baseline one and the active-stream mask. Both sentence trials use the same
-terms in R. Exactness is absolute MSE `1e-8`; admissible nonfinite residuals
-raise before menu scoring. This supersedes the parent-energy quotient recorded
-in the earlier normalization review.
-
-Defaults remain `separateChooser=true` and `reconstructionJitter=0`. Per-epoch
-gradient receipts report the R and A norms into understanding alongside the
-existing per-operator dissonance and per-group chooser variance. The actual A
-norm is zero in the default ownership mode. Diagnostic work is excluded from
-mean and median training-step time. The repair protocol runs the certificate,
-thought, unchanged core and ports/finite selections, the native unseeded worked
-document and the four-sentence smoke before the three sequential lesson-13
-arms `(true,0)`, `(false,0)`, `(false,0.5)` on one source identity. Commands,
-environments, full before/after ports, retirement and allocation evidence live
-under `doc/benchmarks/2026-10-30-item2-5-repair/`; thinking §27 records the
-outcome. This protocol enables neither a full sweep nor `RUN_SLOW`.
-
-The 2026-10-30 return is incomplete: source `cb8a159a6792` passes the
-required test selections and unseeded worked document, but lesson-13's
-first arm fails at its second epoch boundary on a recorded-order/Part-
-structure disagreement. Only its first epoch is measured; the other two
-arms did not start. Thinking §27 and the repair review retain the native
-producer characterization and the structural-membership decision for Alec.
-This is not an accepted stage 2 freeze or a completed timing comparison.
-
-### Concept hierarchy learning and curriculum order (Alec, 2026-11-08)
+## Concept hierarchy learning and curriculum order (Alec, 2026-11-08)
 
 The architecture learns class direction from member meaning and conditions members from higher-order context through `ConceptHierarchy`. Kept grammar applications supply members to prebuilt formal-argument concepts, using this general mechanism. Each argument starts at zero radius and learns confidence by the ordinary views-and-agreement rule. Part-of-speech learning has no special centroid, count distribution or feedback rule. Directional conditioning changes no perceptual form and no trust radius.
 
-The corpus supplies the teaching progression: word concepts, object concepts through interpretation, early simple clauses and questions, then further operations. Nouns and verbs are learned before the other parts of speech; this is a curriculum requirement, not a grammatical-class prerequisite hard-coded into the learning algorithm. The configured coarse authority gates remain data-driven: empty lift arguments report zero readiness. A kept application can record members while its resulting relation has low authority. The current mechanism is described in [Architecture](Architecture.md#hierarchical-conceptual-context-alec-2026-11-08); demonstrating transfer and stable category distinctions belongs to the lesson evidence.
+What the curriculum orders is the operations the model learns (Alec, 2026-11-07); the parts of speech follow from the operations, as the occupant classes of their formal arguments. An operation's arguments presuppose what earlier operations produce: an object before a predicate over objects, a clause before a question about it, a predicate before its modifiers. Once word concepts are stable, object concepts are learned through `interpret`; every word then occupies `interpret`'s one input, so all words share one class, and the clause and verb operations' arguments divide them into noun and verb classes. Questions come early, because testing comprehension teaches syntactic category: the answer to "who ran?" is a subject noun. Intransitive comes before transitive, and simple before complex as far as possible. Nouns and verbs are therefore learned first by the curriculum, not by a grammatical-class prerequisite in the learning algorithm. The architecture enforces only the coarse order, words before operations and NP + VP before other operations, through the configured authority gates, which remain data-driven: empty lift arguments report zero readiness. The finer order is the corpus presentation's, which models child development and the Piagetian stages. A kept application can record members while its resulting relation has low authority, and incidental learning from an example met before its lesson is never suppressed. The mechanism is described in [Architecture](Architecture.md#hierarchical-conceptual-context-alec-2026-11-08); demonstrating transfer and stable category distinctions belongs to the lesson evidence.
+
+The ten lessons of `data/lessons/parts-of-speech.json`:
+
+| lesson | operations learned | parts of speech that follow | the lesson ends when |
+|---|---|---|---|
+| 0 words | none | none: forms are kept and gain trust by views | a set fraction of admitted forms have a trust radius at least `definitionTrust` |
+| 1 interpret | `interpret`, with `sign` beside it | one class: every word occupies the same argument | a set fraction of defined words have a denotation |
+| 2 clause | `lift` (intransitive: "Bill ran.") | nouns (subject occupants) and verbs (VP occupants) | the two occupant classes are definite |
+| 3 ask | `ask` with the question words ("who ran?") | interrogatives; the answers test lesson 2's classes | the answers to the held-out questions |
+| 4 verb | `verb` (transitive: "Bill chased Felix.") | object nouns; whether subject and object collapse into one class is read, never declared | the object class is definite, and the answers |
+| 5 modifiers | `intersection`, `product` | adjectives | the modifier class is definite |
+| 6 determiners | `lower`, `definite` | determiners | the determiner class is definite |
+| 7 adverb | `adverb` | adverbs | the adverb class is definite |
+| 8 prepositions | `preposition`, `surface`, `compound` | prepositions and the remaining function words | the class is definite |
+| 9 relations | `equal`, `part`, `whole`, `implies`, `generic`, `query`, `infer`, `isTrue` | none: a clause has no word occupant | the relation groups |
+
+The verb lessons use names and bare plurals as subjects and objects, so that no untaught operation is needed; an article met before its lesson is a form that occupies no argument yet. A class is definite when its members fit it strictly better than the other populated arguments and it has enough views: definiteness is separability times view evidence, and operation trust is the minimum definiteness of an operation's inputs ([Architecture](Architecture.md), "Argument fit, separability and boundary conditioning").
+
+**Readiness is a measurement.** Each lesson ends on a measurement, never on an age or a sentence count, and its threshold is data beside the corpus: the `criterion` of each stage in `data/lessons/parts-of-speech.json`, declared by Alec and not yet set. `ConceptualSpace.trust_measurements()` and `gate_measurements()` supply the values to the lesson runner (`bin/corpus_lessons.py`). Each lesson's budget is declared before it runs, and no lesson extends its budget to pass. A lesson produces an artifact that the next lesson restores as its fixture.
+
+**Gates are behaviors (Alec, 2026-10-18).** "In writing a UG [a universal grammar], we do not demand which operators must be chosen, only which behaviors must be exhibited." No lesson gate names an operator. A lesson's gates are the behaviors its sentences exhibit: the held-out constituents, the answers to its questions, one individual per singular noun phrase with no duplicate or colliding occurrence, and the measurements its manifest declares. The kept operators, order stamps, unexpected occurrences and meaning norms are reported beside the gates, never required; whether a bare description licenses a later reference is measured by a later sentence, not demanded of a reading.
 
 ## The staged training corpus as data (item 0.5, 2026-11-12)
 
@@ -1299,3 +1347,10 @@ stages in `data/lessons/parts-of-speech.json`, the games under
 manifest, generator command and seed. The design is the
 [item 0.5 plan](plans/2026-11-09-item0-5-test-development.md) §6 to §9 and
 §17.
+
+Learning is judged by four measurements, each reported per epoch: the cost
+on the held-out cost set (`data/eval/heldout-cost.json`, the union of part A's
+validation splits); acquisition, by each lesson's criterion; answers, bound and
+exact text, on the held-out questions; and each chooser's departure win rate,
+the fraction of its departures whose complete path is kept over the greedy
+path. Chooser gradient variance is reported, not a criterion.

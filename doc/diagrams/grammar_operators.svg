@@ -2,7 +2,7 @@
   <rect width='2100' height='2232' fill='#fafafa'/>
 <rect x='0' y='0' width='2100' height='2232' fill='#fff' fill-opacity='1.0' rx='0'/>
 <text x='40' y='44' text-anchor='start' font-size='22' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>BasicModel — the three grammars, their operators, their inverses, and what each face may touch</text>
-<text x='40' y='68' text-anchor='start' font-size='13' fill='#444' font-style='italic' font-family='Helvetica, Arial, sans-serif'>Draft for annotation · 2026-11-01 (current as built; decided-not-built marked &gt;) · operators have no return values, only effects: a signature is roles × faces × read (R) / write (W) over the accessible mind</text>
+<text x='40' y='68' text-anchor='start' font-size='13' fill='#444' font-style='italic' font-family='Helvetica, Arial, sans-serif'>Draft for annotation · 2026-11-12 (current as built; decided-not-built marked &gt;) · operators have no return values, only effects: a signature is roles × faces × read (R) / write (W) over the accessible mind</text>
 <text x='40' y='100' text-anchor='start' font-size='16' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>A.  The accessible mind — ten subsystems (dashed = reducible or derived; every access is bounded)</text>
 <rect x='40' y='114' width='194' height='98' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.2'/>
 <text x='48' y='132' text-anchor='start' font-size='12' fill='#666' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>1</text>
@@ -73,10 +73,10 @@
 <text x='50' y='346' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>7.5 ONE operation per round: one softmax over every operator × every location, with</text>
 <text x='50' y='363' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>the field brackets and bind's locations + a zero-logit dummy; a binary fold shortens by one</text>
 <text x='50' y='380' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>STOP is eligible once the stack fits its slots; a fixed round budget, reduction pressure; no DP</text>
-<text x='50' y='397' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>two trials, greedy (argmax, item 8's tie rule) and one sampled departure; both train</text>
+<text x='50' y='397' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>whole paths: an exploit path and explorePaths explore paths, one departure each, compared once on R + A</text>
 <text x='50' y='414' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>the face never reads 6; the chooser takes expectation's detached prime as a logit bias</text>
-<text x='50' y='431' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>chooser credit: score function on the trials' detached R + A difference</text>
-<text x='50' y='448' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>gradient: live through the chosen operator's value; separateChooser=true detaches features</text>
+<text x='50' y='431' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>chooser credit: score function on the paths' detached R + A difference</text>
+<text x='50' y='448' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>gradient: live through the chosen operator's value; the option separateChooser=true detaches features</text>
 <rect x='720' y='268' width='660' height='204' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.4'/>
 <text x='730' y='290' text-anchor='start' font-size='14' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>&lt;thought&gt;  ·  thinking  (per-model allow-list)</text>
 <text x='730' y='312' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>reads: every subsystem but 1; 7 only through bounded readers (query, ask, isTrue,</text>
@@ -103,7 +103,7 @@
 <path d='M712,365.0 L719,370.0 L712,375.0 z' fill='#333' stroke='#333' stroke-width='1'/>
 <line x1='1382' y1='370.0' x2='1393' y2='370.0' stroke='#333' stroke-width='1.5'/>
 <path d='M1392,365.0 L1399,370.0 L1392,375.0 z' fill='#333' stroke='#333' stroke-width='1'/>
-<text x='40' y='486' text-anchor='start' font-size='11' fill='#444' font-style='italic' font-family='Helvetica, Arial, sans-serif'>one vocabulary of operator identities; a compose face alone grants no thought permission; operators are reconstruction-owned (separateChooser=true keeps the answer's gradient out; per-operator dissonance is a read-only diagnostic)   ·   the CLOSING (not an operator) reads 4 and 6, writes 7 and 6 (the rows and expectation's two-lane residual), and keeps the strictly better trial by R + A</text>
+<text x='40' y='486' text-anchor='start' font-size='11' fill='#444' font-style='italic' font-family='Helvetica, Arial, sans-serif'>one vocabulary of operator identities; a compose face alone grants no thought permission; operators are reconstruction-owned (answer gradient projected by default, out under separateChooser=true; per-operator dissonance is a read-only diagnostic)   ·   the CLOSING (not an operator) reads 4 and 6, writes 7 and 6 (the rows and expectation's two-lane residual), and keeps the better path by R + A</text>
 <text x='40' y='514' text-anchor='start' font-size='16' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>C.  Operator signatures — roles × faces × subsystem access</text>
 <rect x='40' y='526' width='2014' height='26' fill='#eee' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='1'/>
 <text x='46' y='543' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>operator</text>

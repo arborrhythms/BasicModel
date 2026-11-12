@@ -1,9 +1,9 @@
 # LLM equivalence: compose, predict, invert, emit
 
-> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
+> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record.
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
-> - Expectation is a **gain field** `c = m⊙a⊙o` with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
-> - Amended 2026-10-29/30 (Alec; [thinking spec §§16, 22](plans/2026-10-27-item2-5-thinking.md), [2.7 record §42](plans/2026-10-27-item2-7-corpus.md)): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are not built.
+> - Expectation is a **gain field** $c = m \odot a \odot o$ (attention's gain $m$, expectation's gain $a$, the arriving signal $o$) with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
+> - Amended 2026-10-29/30 (Alec): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are built (accepted as implemented, Alec, 2026-11-01).
 
 
 **Purpose (Alec, 2026-09-26).** State once, with a proof, the sense in
@@ -54,34 +54,32 @@ it, and where it deliberately does not, is recorded beside each.
    ([Architecture, tied reconstruction](Architecture.md#loop-and-parameter-ownership-tied-reconstruction-2026-09-16)).
    A bijection from discrete sequences to vectors is trivial to state and
    useless without metric structure — small errors in `e` must be small
-   errors in `s` — which is the **generativity** requirement of the
-   accessible-mind spec
-   ([§2.0](specs/2026-09-20-accessible-mind-subsystems.md#20-fields-codes-and-ideas)).
+   errors in `s` — which is the **generativity** requirement: a stored
+   idea, one vector in no codebook, must unfold through the current
+   operators back into its derivation.
 2. **Prediction must be a distribution, not a point.** `g` is a
    conditional distribution over representations. A mean-squared-error
    predictor supplies the conditional *mean*, and `f⁻¹` of a mean is not
    the mode; it is usually not a sentence at all. Under MSE the
    equivalence holds only when the conditional is nearly deterministic —
    the regime of **reading**, where the next sentence is given and the
-   predictor's job is expectation
-   ([production objective §8.1, §8.7](plans/2026-09-15-next-sentence-as-the-production-objective.md#81-objectives-and-phase-boundaries);
-   [expectation §2.6](specs/2026-09-20-accessible-mind-subsystems.md#26-expectation)),
+   predictor's job is expectation,
    and not the regime of generation. Item 9's null on ordered prediction
    is consistent with asking a regressor for a distribution's worth of
    information. Closing the gap in the generative regime means a
    distribution over the next representation: a mixture, a diffusion, or
    the discrete form BasicModel already has, the chooser over candidate
    rows.
-   In 6.8-1 the word level of `BracketExpectation` supplies that discrete
-   distribution over a native candidate bank. The frozen next-word pilot uses
-   its probabilities. This meets the distribution requirement at the word
-   bracket; it does not make the sentence-level regressor a distribution over
-   all sentences or establish the language learning gates.
+   At the word bracket, the shared activation predictor's forecast over a
+   native candidate bank (`WordExpectation.word_distribution`) supplies that
+   discrete distribution, and the frozen next-word gate
+   (`bin/eval_nanochat_grammar.py`) scores candidates by its probabilities.
+   This meets the distribution requirement at the word bracket; it does not
+   make the sentence-level predictor a distribution over all sentences or
+   establish the language learning gates.
 3. **The history must be the same.** A token model conditions on every
    token in its window; the sentence model conditions on what it keeps.
-   With LTM rows as a lossy statistic
-   ([§2.7](specs/2026-09-20-accessible-mind-subsystems.md#27-ltm-semantic-and-episodic-memory);
-   [forgetting](specs/2026-09-16-forgetting.md)), equivalence holds up to
+   With LTM rows as a lossy statistic, equivalence holds up to
    the information retained — a truncated context of a different shape
    from the window.
 4. **Evaluation by perplexity is not available.** The token conditionals
@@ -99,8 +97,10 @@ BasicModel's `f` is not on words but on meanings: compose after
 **quotient**. The theorem then holds on the quotient: the model is a
 language model over meaning classes, and emission chooses a wording within
 the class. Equivalence *modulo paraphrase* is weaker than equivalence, and
-it is the intended weakness — the two truths are built on it
-([ideas and relations](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided)).
+it is the intended weakness — the two truths are built on it: an idea,
+an absolute truth, is one point in conceptual space that its paraphrases
+share, and a relation, a relative truth, holds two references to ideas,
+symbols or other relations.
 The `<compose>`, `<thought>` and `<generate>` catalogs are the three faces
 of `f`, its use, and `f⁻¹`
 ([Language](Language.md#grammar)).

@@ -1,9 +1,9 @@
 # Logic
 
-> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
+> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record.
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
 > - Parthood, subsumption and kind statements ("cats are animals") are **folds** in the meronomy and the taxonomy over symbols, not rows; equality is membership in a singleton; no `REL_PARTOF` row exists.
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23, [step 2 §71](plans/2026-10-21-step2-one-ltm.md); recorded 2026-10-30):** an LTM1 row is two tagged references with its kind read from the referents, not three. As built at `3718d9d0dc`, `LTM0` still carries `c_plus`/`c_minus`, `source_trust`, `order`, `row_ids`, `origin`, `record_kind`, `polarity` and `witness_count` columns; only `refs`, `grammatical_mode` and the index columns are retired (audit 2026-10-30; decided 2026-11-01, Alec: the unused columns are removed and the row brought to this layout, [thinking spec §32.2](plans/2026-10-27-item2-5-thinking.md) item 17).
+> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23; recorded 2026-10-30):** an LTM1 row is two tagged references (each to an LTM0 occurrence, a symbol or another LTM1 row, its tag saying which) with its kind read from the referents, not three. The unused `LTM0` columns are removed and the row has this layout (Alec, 2026-11-01).
 
 
 ## Overview
@@ -47,14 +47,14 @@ Objects: vector sets $(B, N, D)$ interpreted as RBF / luminosity fields.
 
 - **Union**: `Ops.union` --- as built an elementwise `max` (the RadMax lattice
   fold exists only under `kind='radial'`; audit 2026-10-30), NOT concatenation. The additive combine that briefly held
-  the `union` name was renamed `chunk` (2026-07-05) and moved to
-  `<PartSpace>` as a structural op (`ChunkLayer`: `left + right`,
-  residual-bearing).
+  the `union` name is the structural `synthesize` (`SynthesizeLayer`:
+  `left + right`, residual-bearing; its reverse is `analyze`).
 - **Intersection**: Co-supported regions (as built an elementwise `min` where a
   zero coordinate is unspecified and yields the other operand; audit 2026-10-30).
-- **Negation (affirming)**: `neg(x) = -x`. Antipodal opposition on hypersphere.
-- **Non (non-affirming)**: `Ops.non` (the `_non_kernel`; `NonLayer` is the
-  grammar-surface form, which complements the leading bivector poles) ---
+- **Negation (affirming)**: `Ops.negation` (the `_negation_kernel`):
+  `neg(x) = -x` on signed values, antipodal opposition on the hypersphere;
+  on paired poles (monotonic) it exchanges the two poles.
+- **Non (non-affirming)**: `Ops.non` (the `_non_kernel`) ---
   bitonic returns the triangular residual $1 - |\mathrm{clamp}(x, -1, 1)|$
   (completing the partition of unity
   $\mathrm{true} + \mathrm{false} + \mathrm{non} = 1$); monotonic is
@@ -62,7 +62,19 @@ Objects: vector sets $(B, N, D)$ interpreted as RBF / luminosity fields.
   else zero. (`Basis.non` was removed in the 2026-05-01 Step-9 cleanup;
   only the `*Reverse` methods remain on `Basis`.)
 
-> **Meronomy reconciliation (2026-06-11; MeronomySpec §3 wins).** The
+These two are signed subsymbolic kernels, not the grammar operators. The
+grammar's `not` (`NotLayer`) exchanges the evidence poles,
+$(c^+, c^-) \to (c^-, c^+)$, and is its own inverse. The grammar's `non`
+(`NonLayer`) withholds the expressed evidence without asserting its
+opposite: an explicit pole pair goes to $(0, 0)$, on a meaning block the for
+lane goes to zero, and the clause it heads carries the evidence pair
+$(0, 0)$. The operand survives as an explicit witness in the clause journal,
+so reconstruction and expectation can read what was withheld; a withheld
+dimension receives no expected prime and is spared attenuation. `non` is
+lossy and has no inverse
+([Language](Language.md#grammarlayer-forward--reverse-inventory)).
+
+> **Meronomy reconciliation (2026-06-11).** The
 > sign flip `−x` is licensed only at the REFERENCE space-role — downstairs
 > the sign is occupied (form content) or nonexistent (one-sided
 > percepts); only at the reference space-role is it vacant of denotational
@@ -417,7 +429,8 @@ $x \subset y$ iff $|x| < |y|$.
 | **NON** | $1 - |x|$ (triangular residual). Full indeterminacy at $x = 0$, zero at $x = \pm 1$; completes the partition of unity $\mathrm{true} + \mathrm{false} + \mathrm{non} = 1$. Withdraws assertion (vs. NOT which inverts). | input $\to 1 - |\mathrm{input}|$ |
 
 Both RadMin and RadMax are commutative and collapse to zero on sign
-disagreement.
+disagreement. NOT and NON in this table are the signed kernels; the
+grammar's `not` and `non` act on evidence poles (Section 1).
 
 ---
 
@@ -425,7 +438,7 @@ disagreement.
 
 ![Luminosity: Truth Coherence Measure](diagrams/luminosity.svg)
 
-> **Meronomy reconciliation (2026-06-11; MeronomySpec §3 rev b wins).**
+> **Meronomy reconciliation (2026-06-11).**
 > There are TWO measures, split as follows. The **truth-set
 > luminosity** — what `Mereology.Luminosity(truth_layer=…)` /
 > `TruthLayer.luminosity` computes — is now the catuṣkoṭi coverage

@@ -78,22 +78,25 @@ pytest reports an xfail whatever the failure.
 
 | Target | Description |
 |---|---|
-| `make run` | Run `Models.py` with the config in `XML1` |
+| `make run` | Run `Models.py` with the config named by `XML1` |
 | `make xor` | `data/MM_xor.xml` |
-| `make simple` | `data/simple.xml` |
-| `make ergodic` | `data/ergodic.xml` |
-| `make tomatoes` | `data/tomatoes.xml` |
-| `make mnist` | `data/mnist.xml` |
-| `make compare` | Side-by-side compare using `XML1` and `XML2`; writes an HTML report |
-| `make SigmaPi` / `SymPercept` / `SPNN` | Run the legacy demos under `bin/etc/` |
+| `make mnist` | `data/mnist.xml`, the non-text case; needs the MNIST files (below) |
+| `make ergodic` | `data/ergodic.xml`: the MNIST model with `ErgodicLayer` exploration and per-neuron certainty on; `data/ergodic-only.xml`, the same without certainty, is its comparison arm |
+| `make compare` | Side-by-side compare of `XML1` and `XML2`; writes an HTML report |
+| `make SigmaPi` / `SymPercept` / `SPNN` | Run the legacy demos under `bin/etc/` with `--demo` |
+
+The MNIST training file `data/mnist_train.csv` is a Git LFS object. Fetch it
+with `git lfs pull --include=data/mnist_train.csv` before an MNIST run; the
+loader names any MNIST file whose LFS content is not checked out.
 
 ### Testing and Documentation
 
 | Target | Description |
 |---|---|
-| `make test` | Unit tests (forces `BASICMODEL_DEVICE=cpu`); the canonical, deterministic gate |
-| `make testp` | Same suite, parallel via pytest-xdist (`TEST_JOBS`); faster iteration |
+| `make test` | The default suite through the bounded runner (`test/test_report.py`, `BASICMODEL_DEVICE=cpu`); the commit gate |
+| `make testp` | Same suite, parallel via pytest-xdist (`TEST_JOBS`); faster iteration, no bounded run |
 | `make test_all` | Same suite plus slow-gated tests (`RUN_SLOW=1`) |
+| `make test_slow_weekly` | The weekly slow tier on a frozen copy of the source (`test/slow_weekly.py`) |
 | `make bench` | Training benchmarks (baseline) |
 | `make bench_local` | Reconstruction fidelity/timing bench, local (cpu+eager for reproducibility) |
 | `make bench_sync` | rsync the working tree to the ArborStudio remote (excludes venvs, caches, large regenerable data) |
@@ -103,11 +106,13 @@ pytest reports an xfail whatever the failure.
 
 PDF chapters in order: `README.md`, `doc/Installation.md`, `doc/Architecture.md`,
 `doc/Componentization.md`, `doc/BasicModel.md`, `doc/Spaces.md`, `doc/STM.md`,
-`doc/Language.md`, `doc/Mereology.md`, `doc/Logic.md`, `doc/Reasoning.md`,
-`doc/Training.md`, `doc/Ergodic.md`, `doc/MachineMinds.md`, `doc/Params.md`.
+`doc/Language.md`, `doc/Orders.md`, `doc/Mereology.md`, `doc/Logic.md`,
+`doc/Reasoning.md`, `doc/Training.md`, `doc/GradientFlow.md`, `doc/Ergodic.md`,
+`doc/MachineMinds.md`, `doc/Params.md`, `doc/FutureWork.md`,
+`doc/DevelopmentHistory.md`.
 
-`make bench_local` / `bench_remote` use `data/MM_20M_grammar.xml` (a compact
-grammar fixture) rather than the FineWeb default. Bench variables:
+`make bench_local` / `bench_remote` set `MODEL` to `data/MM_ladder.xml` (a
+compact grammar fixture) rather than the FineWeb default. Bench variables:
 
 | Variable | Default | Description |
 |---|---|---|
@@ -130,13 +135,17 @@ grammar fixture) rather than the FineWeb default. Bench variables:
 
 ## Makefile Variables
 
-Override on the command line, e.g. `make run XML1=data/ergodic.xml`.
+Override on the command line, e.g.
+`make compare XML1=data/ergodic.xml XML2=data/ergodic-only.xml`.
 
 | Variable | Default | Description |
 |---|---|---|
-| `MODEL` | `data/BasicModel.xml` | XML config for training |
-| `XML1` | `data/simple.xml` | Primary config for `make run` / `compare` |
-| `XML2` | `data/ergodic-only.xml` | Secondary config for `make compare` |
+| `MODEL` | `data/BasicModel.xml` | XML config for `make train`; `data/MM_ladder.xml` for the bench targets |
+| `XML1` | *(none)* | Config for `make run`, and the first config for `make compare` |
+| `XML2` | *(none)* | Second config for `make compare` |
+| `TRAIN_ARGS` | *(empty)* | Extra `train.py` flags for `make train` |
+| `TRAIN_MEMORY_PERCENT` | `60` | macOS process-tree memory limit for `make train`, as a percentage of physical RAM |
+| `TEST_ARGS` | *(empty)* | Selection and runner flags passed to the test targets |
 
 ---
 
@@ -157,6 +166,7 @@ training).
 | `--batch-size` | *(from XML)* | Override `batchSize`; forwarded as `BASIC_BATCH_SIZE` |
 | `--max-tokens` | *(from XML)* | Override token budget |
 | `--batches` | *(from XML)* | Cap Phase 2 batches |
+| `--max-seconds` | off | Stop training cleanly after this many wall-clock seconds, between completed batches |
 | `--test [N]` | off | Run evaluation passes; optional `N` caps test batches |
 | `--compile-target` | `gpu` | `gpu` runs normal training with accelerator torch.compile defaults; `mlx` exports an ExecuTorch/MLX `.pte` and skips Phase 2 training |
 | `--compile-mode` | *(env/runtime default)* | Forwarded as `MODEL_COMPILE_MODE` |
@@ -190,6 +200,7 @@ training).
 | `BASIC_BATCH_SIZE` | Override `batchSize` |
 | `BASIC_MAX_TOKENS` | Override token budget |
 | `BASIC_MAX_BATCHES` | Cap Phase 2 batches |
+| `BASIC_MAX_SECONDS` | Stop training after this many wall-clock seconds |
 | `BASIC_RANDOM_SHARDS` | Set to `1` to pick random shard indices |
 | `BASIC_RUN_TEST` | Request evaluation passes; optional value caps test batches |
 | `BASICMODEL_DEVICE` | Force device, e.g. `cpu`. Used by `make test` and the `bench_*` targets |
@@ -202,7 +213,9 @@ training).
 | `BASICMODEL_MPS_IOBUF` | MPS inductor fusion cap (`max_fusion_unique_io_buffers`, default 24) — keeps fused Metal kernels under the hardware 31-buffer kernel-arg limit; lower (e.g. 12) for wide configs |
 | `BASICMODEL_MPS_FUSE` | Optional MPS inductor `max_fusion_size` (nodes per fusion); unset leaves the torch default |
 | `PYTHONUNBUFFERED` | Set to `1` by `train.py` for real-time log streaming |
-| `RUN_SLOW` | Set to `1` to also run slow-gated (>30s) tests; used by `make test_all` |
+| `RUN_SLOW` | Set to `1` to also run slow-gated tests; used by `make test_all` |
+| `RUN_SLOW_FRACTION` | Fraction of the repeated work that budgeted slow fixtures run; `0.5` by default under `RUN_SLOW=1` |
+| `RUN_TRAINED` | Set to `1` to run the trained tier, which requires registered phase artifacts ([Testing](Testing.md)) |
 | `TEST_JOBS` | pytest-xdist worker count for `make testp` (e.g. `auto`) |
 
 Additional env vars read directly by `Models.py`/`util.py` (not surfaced as

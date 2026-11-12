@@ -1,12 +1,12 @@
 # Future work
 
-> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
+> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record.
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23, [step 2 §71](plans/2026-10-21-step2-one-ltm.md); recorded 2026-10-30):** an LTM1 row is two tagged references with its kind read from the referents, not three. As built at `3718d9d0dc`, `LTM0` still carries `c_plus`/`c_minus`, `source_trust`, `order`, `row_ids`, `origin`, `record_kind`, `polarity` and `witness_count` columns; only `refs`, `grammatical_mode` and the index columns are retired (audit 2026-10-30; decided 2026-11-01, Alec: the unused columns are removed and the row brought to this layout, [thinking spec §32.2](plans/2026-10-27-item2-5-thinking.md) item 17).
+> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23; recorded 2026-10-30):** an LTM1 row is two tagged references (each to an LTM0 occurrence, a symbol or another LTM1 row, its tag saying which) with its kind read from the referents, not three. The unused `LTM0` columns are removed and the row has this layout (Alec, 2026-11-01).
 > - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
-> - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded.
-> - Expectation is a **gain field** `c = m⊙a⊙o` with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
-> - Amended 2026-10-29/30 (Alec; [thinking spec §§16, 22](plans/2026-10-27-item2-5-thinking.md), [2.7 record §42](plans/2026-10-27-item2-7-corpus.md)): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are not built.
+> - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; a stream is the batch row that wrote a row, and a document is the cover row that starts it in that stream (reused at every later presentation; a row belongs to the document of the latest cover before it), so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded (2026-10-24).
+> - Expectation is a **gain field** $c = m \odot a \odot o$ (attention's gain $m$, expectation's gain $a$, the arriving signal $o$) with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
+> - Amended 2026-10-29/30 (Alec): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are built (accepted as implemented, Alec, 2026-11-01).
 > - Operators are minimal: tense, aspect, the preposition and the modal are one `position` operation (the modal with a world as object; no `MP` rule); the verb is a group element (`verbSpectrum` diagonal, log-ratio teacher); `surface` is absorb and transpose only; no language is named or special-cased in code, configuration, fixtures or tests. Defaults: NP = everything, VP = *occurs* (read for "exists"), MP = all possible worlds.
 > - Item 4 is closed as a mechanism (learning gates at item 0); item 3.5 carries the mechanism residue of items 6 and 5.5, including `bind`, LTM1/LTM3 and the row audit; item 3 carries the invertible-path program.
 
@@ -19,7 +19,9 @@ detail once it exists. Section-local future-work lists elsewhere
 stay where they are; this file indexes the items that span documents.
 Items marked **urgent** block ordinary operation before long.
 
-Item 6.5's accepted mechanism uses gradient sparse coding for individual and change columns.
+Item 6.5's accepted mechanism uses gradient sparse coding for the change columns;
+individuals are native concept rows and receive no sparse-coding pressure
+([Gradient flow](GradientFlow.md#trained-total-and-diagnostic-objectives)).
 SIGReg was considered and not adopted: an isotropic Gaussian is invariant
 under rotation and cannot select identity axes, while a heavy-tailed sparse
 source model can prefer particular axes. The implementation uses unit
@@ -28,12 +30,13 @@ pressure, with gradient-trained relevance scales. It is an amortized
 sparse-coding energy, not a claim of exact marginal likelihood or a separate
 FastICA solve. Learned identity, verb reuse and natural determiner cues remain
 unproven pending the million-sentence prerequisite and all declared seeds.
-See [the decisions and implementation limits](specs/2026-09-26-independent-components.md).
 The detached role view carried beside the native occurrence anchor remains
-transitional and is retired in todo item 2 (spec §10); item 5 owns
+transitional and is retired in todo item 2; item 5 owns
 pruning of learned columns using their relevance scales.
 
-## Placement from the registered priming surface: one metric for SBOW, diffusion and `bind` (Alec, 2026-10-20; proposed, with the objective to decide)
+<a id="placement-from-the-registered-priming-surface-one-metric-for-sbow-diffusion-and-bind-alec-2026-10-20-proposed-with-the-objective-to-decide"></a>
+
+## Placement from the registered priming surface: one metric for SBOW, diffusion and `bind` (Alec, 2026-10-20; built)
 
 **Decided (Alec, 2026-10-22): the objective stands as proposed**, in the
 one conceptual space of [Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3).
@@ -62,15 +65,27 @@ are not taking advantage of."
   the negatives are the brake and the existing collapse diagnostic (the
   mean meet ratio against random codes must not rise while the ratio
   against context rises) is the measurement.
-- **The read points.** Placement reads the surface, one space for every
-  order ([Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3), 2026-10-22; the stratified read of
-  Orders §9 is reversed), after the seen bumps and the edge diffusion and
-  **before** the geometric channel; chooser and attention read the full
-  surface. Codes never read what was computed from codes (Architecture,
+- **The read points.** Placement reads the observed seen surface only
+  (`placement_context`), one space for every order
+  ([Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3), 2026-10-22; the stratified read of
+  Orders §9 is reversed), never a prediction computed from codes (Architecture,
   priming guard).
-- **Where.** Phase 1 pretraining (`embed.py`, SBOW/CBOW) and the online
-  code updates of the codebook; todo item 3 carries it with the corpus,
-  unless Alec places it in 3.5.
+
+**As built** (`MereologicalCodes.place_rows`). At each kept close every row of
+the close takes one meet-ratio subgradient step from its current placement,
+or, the first time, from a fixed sparse identity code drawn from its content
+key: toward the placed codes the surface activates, weighted by their excess
+over neutral, and away from up to `placementNegatives` (5) placed rows it does
+not activate, sampled by a generator seeded from the close's content key; the
+step is `placementRate` (.1), the negatives weigh `placementNegativeWeight`
+(1), and the result is clamped nonnegative and normalized. One frozen context
+serves the whole close, so the result does not depend on row order. Raised
+classes are placed at their members' evidence-weighted centroid
+(`derive_class_placements`). The step is detached index state, not a
+gradient; the placements, their witness counts and a version are saved with
+the checkpoint. The seen surface no longer diffuses, and placement never reads
+the predicted spread, so its context is first-order co-occurrence weighted by
+recency; the second-order context of the first bullet is not used.
 
 ## 1. Operation profile: optimal versus human
 
@@ -100,19 +115,17 @@ with both lanes at zero. The `<operation>` element is still not built, in
 
 ## 2. Forgetting and consolidation
 
-The [Item 5 implementation candidate](specs/2026-09-16-forgetting.md) owns
+The Item 5 forgetting pass owns
 pressure-driven retention, gradual detail loss, safe stable-address compaction
 and conservative concept-capacity recovery. Age uses 5.5's per-stream history
-in both profiles. Review and validation status are in the
-[implementation record](plans/2026-10-19-item5-start.md). Long-run capacity
+in both profiles. Long-run capacity
 sizing and mature-checkpoint learning measurements remain with todo items 3
 and 0. No learned-consolidation claim follows from the mechanism tests.
 
 ## 3. Lossy reconstruction trace; inversion as learning
 
-**Decision revised (Alec, 2026-09-28).** A completed row stores its one-slot
-or three-slot end state, never a derivation, under
-[two truths §11.1](specs/2026-09-16-two-truths-ideas-and-relations.md#111-a-row-holds-structure-never-a-derivation-decided).
+**Decision revised (Alec, 2026-09-28).** A completed row stores its end state, never a
+derivation.
 The operation record serves reconstruction and exploration only while the
 sentence is open, then is discarded. There is no durable trace to decay
 under either profile. Reading back is generation from the stored structure;
@@ -121,7 +134,7 @@ item 6 measures its current weak recovery without assuming exact wording.
 The earlier proposal to drop derivation detail gradually is superseded.
 Experiments that make reconstruction harder while a sentence is open would
 need a separate learning specification. Source-text retention and subordinate
-row coarsening remain in [the forgetting spec](specs/2026-09-16-forgetting.md#4a-detail-before-rows-alec-2026-09-20).
+row coarsening remain with the forgetting pass (§2).
 
 ## 4. Context across documents
 
@@ -131,16 +144,15 @@ document boundary under the `human` profile (the expectation observation
 view, priming heat, the What interaction slots), how a new document's
 first sentences are scored against a carried context without penalising a
 genuine topic change, and whether the boundary becomes a learned soft
-signal rather than a cursor fact. The current per-row document key and
-clause-scoped reset in the integrated plan §8.3 and §11 are the base.
+signal rather than a cursor fact. The document cover of each stream and the
+clause-scoped reset are the base.
 
 *Taken up in direction (Alec, 2026-10-08):* context is content to be
 learned, not state to be managed; the LTM is shared with identifiers that
 separate rows. The learning stages that force it — batch differentiation,
 return after interruption, shared truth across documents (situated versus
 absolute rows decided by credit), priming as a prior, expectation from the
-right history — are todo item 6.1's gates
-([stream-state plan §3](plans/2026-10-08-stream-state.md#3-required-learning-stages-the-replacement-for-explicit-context-management)).
+right history — are todo item 6.1's gates.
 What survives a boundary under the `human` profile is then what those
 stages teach, not a specification here.
 
@@ -149,8 +161,7 @@ stages teach, not a specification here.
 ## 5. Definition rows and interpretation-time discrimination
 
 **Amended (Alec, 2026-09-29).** The earlier n-ary META proposal is replaced
-by `word DEF object` rows in
-[two truths §17](specs/2026-09-16-two-truths-ideas-and-relations.md#17-definitions-word-def-object-decided-alec-2026-09-29).
+by `word DEF object` rows.
 Several definitions express synonymy and polysemy. One derived index returns
 the objects of a word and the words of an object; learning their codes does
 not change these identity links. `interpret` writes the definition and
@@ -174,7 +185,7 @@ bounded mathematics to supply output-training data and reproducible held-out
 evaluation, for example “What is two plus two?” → “Four.” This records a
 curriculum direction, not an implemented English dataset or a new learning
 result. *Taken up (2026-10-07) as item 6.2's thinking corpus*,
-`MM_math_chain` ([thinking spec §10](specs/2026-10-07-thinking.md#10-the-thinking-corpus-arithmetic-with-intermediate-steps-alec-2026-10-07)):
+`MM_math_chain`:
 opaque number words, counting facts in copula and two-sentence forms,
 worked successor steps, and the question whose answer is a chain; the
 math is never direct and no definition rows are written. What stays here
@@ -206,8 +217,7 @@ and the normal vocabulary. During end-to-end Q/A, the desired answer and
 oracle calculation are scoring targets, never an answer seed or a runtime
 calculator. A lesson that supplies an already encoded, on-manifold idea to
 train realization is useful too, but is identified separately from a test of
-answering the question. Follow the concluded-idea gradient boundary and shared
-operator contract in [the integrated plan §8.4](plans/2026-09-15-next-sentence-as-the-production-objective.md).
+answering the question.
 
 Generate separate training and evaluation sets with fixed seeds and partitions
 over mathematical problems before applying wording templates. Keep equivalent
@@ -222,47 +232,45 @@ and the matched-compute comparisons before claiming useful learned reasoning.
 
 Existing [successor-VP probes](../test/test_verb_successor.py) establish local
 operator behavior under their own setup; they do not establish this end-to-end
-English Q/A curriculum. The older [mathematical-thinking specification](specs/2026-09-09-mathematical-thinking.md)
-retains the original motivation, but its retired controller and interpreter
-are not part of this proposal.
+English Q/A curriculum.
 
 ## 7. Episodic memory: a few active indices beside each row
 
-**Round 7 implementation (2026-11-11).** Open-attention selection, detached
-LTM0 row entries and reinstatement through the existing time-only query are
-built in the working tree. The continuation adds the decided relation-only
-anchor: one capacity-checked LTM0 row of kind `episode`, containing only its
-sentence's time band and detached entry. Its address is separate from semantic
-roots, a re-witness keeps its first stamp and entry, and row lifecycle operations
-carry it with the other rows. An empty entry or `episodicPercepts=0` allocates
-none. Only time recall and review read anchors; content and identity readers
-exclude them. Input entries cannot be copied to thought rows. The present field
-is cleared at `End`; a review is retained in `_episode_review_field` until the
-next open attention pass. Validation and the diagnosed convergence stop are in
-the [continued return](plans/2026-11-03-gradient-projection.md#23-round-7-continuation-convergence-repair-and-episodic-anchors).
-The dated decisions below remain their historical record.
+**As built (2026-11-11).** An episodic entry is the order-zero concepts of a
+moment, kept beside the sentence's `LTM0` row (`EpisodicMemory`). Once per
+sentence the open attention pass's field yields up to `episodicConcepts`
+(default 4) order-zero concepts, the strongest by the absolute difference of
+their two poles, kept in reading order as concept references with one signed
+value each and no place or pole pair. They are stored detached in the row's
+`episodic_concepts` and `episodic_values` columns and share the row's
+`RowTime` stamp. A re-witnessed row keeps its first entry as it keeps its
+first stamp, and forgetting, compaction and the epoch reset carry the entry
+with its row. A close that writes only an `LTM1` relation gets one anchor row
+of kind `episode`, holding only its time band and entry; its address is
+separate from semantic roots, and only time recall and review read anchors.
+`episodicConcepts=0` or an empty entry allocates none, and input entries are
+never copied to thought rows. A time-only recall
+(`ThoughtLTMCapability.query(when=...)`) reviews an entry: it rebuilds the two
+poles from the sign, lays the concepts out by their owned surfaces and
+publishes them as the querying stream's field, skipping and counting stale
+references; it clears only that stream's percept readings, and the review is
+held in `_episode_review_field` until the next open attention pass. A direct
+`reverse` reconstructs the remembered moment without compose or generate. An
+entry trains nothing. Older checkpoints drop the percept, pole and place
+columns on load (schema 16). The dated decisions below are the record; where they
+say percepts, they describe round 7's entry before this change.
 
 **Concepts, not percepts (Alec, 2026-11-11).** "it will clarify the
 architecture to store concepts instead of percepts. That will allow us to do
 animal cognition (system 1 reconstruction) without calling compose and
-generate." The entry is to hold up to `episodicConcepts` order-zero concepts
-of the open attention pass in place of `episodicPercepts` basic percepts, and
-a review is to publish them as a field directly. It is item 16 of the
-whole-path round's Codex text, added while that round was under way
-([specification](plans/2026-11-11-one-pair-per-stage.md) §3.13; the evidence
-in the [baseline](plans/2026-11-11-item1-baseline.md) §8.19). Everything
-below that says percepts describes round 7 as landed.
-*Amended the same day:* the entry holds references in reading order, each with
-one signed value, and no place ("We should be storing order-0 concepts, not
-"brackets"").
-
-**Implementation update, 2026-11-11, including the second amendment.** Item 16 is built in the whole-path tree: the entry holds reading-ordered concept references and one signed value per reading, with no stored pole pair or place. Review rebuilds the two poles from the sign and lays out the concepts by their owned surfaces; it clears only the querying stream's percept readings. Final validation is recorded in [the whole-path return](plans/2026-11-11-one-pair-per-stage.md#9-return).
+generate." *Amended the same day:* the entry holds references in reading
+order, each with one signed value, and no place ("We should be storing
+order-0 concepts, not "brackets"").
 
 *Decided (Alec, 2026-11-11, question tool): "An LTM0 anchor row".* A sentence
 whose closing writes only an `LTM1` relation gets one `LTM0` row that holds
 its entry and its stamp, so a time-only recall can review it as it reviews any
-other sentence. Specified, with what the anchor holds and who reads it, in
-[2.0 spec §22.5](plans/2026-11-03-gradient-projection.md#225-codex-text-diagnose-the-stop-repair-finish-round-7-claude-2026-11-11-final-when-given).
+other sentence.
 
 **Decided in direction (Alec, 2026-11-10): an episodic entry is the percept
 set of a moment, read by `query()`.** These paragraphs supersede the rest of
@@ -294,20 +302,19 @@ It should come from the open-attention round." The open attention pass is
 `FamiliarTier.open_sentence`, which `BasicModel._prime_sentence_symbols`
 runs once per sentence before composition: one
 `ConceptualSpace.cs_read_memberships` over every present word's bracket,
-with no grammar and no narrowing
-([item 2.7 record](plans/2026-10-27-item2-7-corpus.md), §26.2). It leaves
+with no grammar and no narrowing. It leaves
 `_last_open_attention` (the sentence, its brackets, the field's rows and
 the rows seen). An entry is therefore read once per sentence from that
 field, not from each serial reading, and keeps only a few percepts. Its
 place (Alec, 2026-11-10, later): "lets schedule episodic memory as a round
-inside 2.0", round 7 of item 2.0 ([2.0 spec](plans/2026-11-03-gradient-projection.md)
-§21; [todo](../todo.md), item 2.0, "Rounds"). Decided for that round (Alec,
+inside 2.0", round 7 of item 2.0 ([todo](../todo.md), item 2.0,
+"Rounds"). Decided for that round (Alec,
 2026-11-10): the entry sits beside the sentence's `LTM0` row ("in
-particular, beside LTM0"), `episodicPercepts` defaults to 4, and review
+particular, beside LTM0"), `episodicPercepts` (now `episodicConcepts`)
+defaults to 4, and review
 rides on the thought loop's time-only recall. Within a sentence the words are
 perceived one at a time first, the open attention pass then reads them all at
-once, and composition then reads them one at a time under the grammar (2.0 spec
-§21).
+once, and composition then reads them one at a time under the grammar.
 
 *The entry in code names.* No new kind of thing is added. The entry is a
 field in the sense of [Architecture](Architecture.md), "Three kinds of
@@ -339,8 +346,8 @@ beside the sentence's own `LTM0` row, as this section's title has it,
 instead of in a store of its own per stream. Three columns added to
 `LTM0.row_columns`, sized at construction to `ltmCapacity` by $K$, hold
 each kept percept's row reference, its two poles and the `.where` bracket
-of the word reading in which it was strongest; $K$ is `episodicPercepts`, a
-`SymbolSpace` parameter beside `ltmCapacity`. The $K$ kept are the field's
+of the word reading in which it was strongest; $K$ is `episodicPercepts`
+(now `episodicConcepts`), a `SymbolSpace` parameter beside `ltmCapacity`. The $K$ kept are the field's
 percepts with the largest sum of the two poles, a ranking that does not net
 them. The open pass leaves them with `_last_open_attention`, and
 `ClauseRows.write_clause` writes them beside the row it stamps. The entry
@@ -372,7 +379,7 @@ events) and thought can reason over it as an experience lived before.
 stored with, and the concepts read from it take that stamp, not now. This
 follows the decisions of 2026-10-23 that a concept pulled from the index
 is stamped now while a recalled entry keeps the percept part it was stored
-with ([layout spec §2](plans/2026-10-23-layout-and-removal.md)). Claude's
+with. Claude's
 earlier reading, that a reviewed field does not replace the present one,
 is withdrawn.
 
@@ -409,9 +416,9 @@ stamps with two brackets.
 7 as accepted on 2026-11-11).** The list below is
 kept as it was written on 2026-11-10.
 
-- *The proposal above is the build*, confirmed by Alec's answers
-  ([2.0 spec](plans/2026-11-03-gradient-projection.md) §21): the entry beside
-  the `LTM0` row, `episodicPercepts` 4, review on the recall by time. Three
+- *The proposal above is the build*, confirmed by Alec's answers: the entry beside
+  the `LTM0` row, four entries per row (`episodicConcepts`, named
+  `episodicPercepts` while the entry held percepts), review on the recall by time. Three
   differences: a percept's strength is the maximum over readings of the sum of
   its two poles; the entry is staged per sentence by `EpisodicMemory.stage` and
   handed to `write_clause` by `_commit_sentence`, not left with
@@ -420,12 +427,13 @@ kept as it was written on 2026-11-10.
 - *Point 1, decided and built.* Every stamp is model time on
   `RowTime.encoder()`'s ladder, one tick per sentence ("One sentence"), the
   words of a sentence its sub-brackets.
-- *Point 2, built.* Basic percepts only (`('bp', row)`), each with the bracket
-  of its strongest reading and no spans.
+- *Point 2, built, then changed.* Round 7 kept basic percepts (`('bp', row)`),
+  each with the bracket of its strongest reading and no spans; the entry now
+  keeps order-zero concepts with one signed value each and no bracket.
 - *Points 3 and 4, built.* An entry follows its row through compaction,
   forgetting and the epoch reset. Open: whether an entry is detail that goes
   before its row.
-- *Point 7, built on Claude's reading (2.0 spec §21.1, A2; Alec may override).*
+- *Point 7, built on Claude's reading (Alec may override).*
   A review displaces the present field of the querying stream until the next
   open attention pass, and a reinstated field keeps its stored stamp, as the
   reading under "Review is reinstatement" has it. Open: a bound or a decay on a
@@ -465,8 +473,7 @@ kept as it was written on 2026-11-10.
    open attention pass over every present word's bracket (above).
 4. *Capacity and eviction.* Decided (Alec, 2026-11-10): only a few
    percepts per entry, their number a model parameter. Proposed above: the
-   entry follows its row's capacity and forgetting. Detail goes first
-   ([forgetting spec §4a](specs/2026-09-16-forgetting.md#4a-detail-before-rows-alec-2026-09-20)).
+   entry follows its row's capacity and forgetting. Detail goes first.
 5. *The cue by content.* A read from a percept code to the stamps at which
    it was active, which needs no grammar. The MTM percept collections are
    the candidate; their `when` is the pool's close count, not `RowTime`.
@@ -494,16 +501,15 @@ provide its support mask, and one read would entertain it in an STM slot.
 A stored semantic row alone is not such a snapshot. Adding the episodic
 bank, its retention policy and its retrieval wiring is future work; item
 6.1 establishes the current field's coordinates and candidate support
-reads. The seven learned region outputs are superseded by the
-[support-mask decision](plans/2026-10-08-stream-state.md#710-the-mask-is-the-concepts-support-alec-2026-10-09-the-solution-to-79s-problem-2);
-the [eight-space addresses](plans/2026-10-08-stream-state.md#63-current-conceptual-space-and-future-episodic-fields-alec-2026-10-09)
-remain unchanged.
+reads. The seven learned region outputs are superseded: a candidate's mask
+is its support, its two evidence lanes over its extent (negative evidence
+counts as support; zero means no evidence either way), so no region or
+boundary is learned; the eight-space addresses remain unchanged.
 
 **Decision (Alec, 2026-09-20).** LTM holds serial form only: a row is one
 idea per role, and several things at once can be stored only by chaining
 NP / VP into a compound sentence, which approximates episodic memory and
-keeps only what was *said*
-([accessible-mind spec §2.7.1](specs/2026-09-20-accessible-mind-subsystems.md)).
+keeps only what was *said*.
 The extension that makes episodic memory proper is small: **room, next to
 each three-slot row, for a few indices of the most highly active percepts or
 concepts** at the moment the row was written. Those are the things that were
@@ -523,8 +529,7 @@ require a massive bandwidth, so we might approximate that with a top-K over
 symbolic indices)." So the top-K is not an approximation of the *vector*; it
 recovers a coordinate the vector cannot carry. Each concept's evidence is a
 pair, which splits exactly into `d = c⁺ − c⁻`, the signed evidence, and
-`m = min(c⁺, c⁻)`, the dissonance
-([accessible mind §2.0](specs/2026-09-20-accessible-mind-subsystems.md)). A
+`m = min(c⁺, c⁻)`, the dissonance. A
 stored resultant carries `d` and is blind to `m` — *both* and *neither* land
 on the same point, and the origin is uncertainty. Semantic memory is the
 `d` of what was composed; episodic memory is the surviving `m`, and the
@@ -539,11 +544,9 @@ contributed; the row itself stores no word list or activation snapshot); whether
 remembering differs from knowing; their use as retrieval cues and as the
 evidence for discriminating a word's senses at interpretation time (§5);
 their remapping when a table is compacted; and their place in forgetting —
-they are detail, so they go first
-([forgetting spec §4a](specs/2026-09-16-forgetting.md#4a-detail-before-rows-alec-2026-09-20)).
+they are detail, so they go first.
 
-The psychological grounding is in the accessible-mind spec §7: the episodic
-trace as an index to the pattern of activity rather than its content (Teyler
+The psychological grounding: the episodic trace as an index to the pattern of activity rather than its content (Teyler
 & DiScenna 1986), reinstated at retrieval (Danker & Anderson 2010); the fast
 system as the binder of what co-occurred (O'Reilly & Rudy 2001); and
 multiple-trace memory, where stored instances keep the senses a single
@@ -552,15 +555,13 @@ reading loses (Hintzman 1986; Jamieson et al. 2018).
 ## 8. Recall as estimate plus residual
 
 **Direction (Alec, 2026-09-20).** Expectation is a negative image: what is
-conceived of a sentence is the composed idea less what was predicted
-([accessible-mind spec §2.6](specs/2026-09-20-accessible-mind-subsystems.md#26-expectation)).
+conceived of a sentence is the composed idea less what was predicted.
 The store already keeps the two terms as a linked `estimate` / `observation`
 pair with the residual derived ([ExpectationRetention](ExpectationRetention.md)),
 and the observation row keeps the full idea. That is the `optimal` layout and
 item 2 builds on it unchanged.
 
-The `human` profile goes one step further, as a stage of
-[forgetting §4a](specs/2026-09-16-forgetting.md#4a-detail-before-rows-alec-2026-09-20):
+The `human` profile goes one step further, as a stage of forgetting:
 the expected part of a row is detail, and detail goes first. A row coarsened
 to its **tag** keeps only the residual and the pointer to its context, and is
 recalled by adding the *current* world-model's estimate back. Recall then
@@ -579,8 +580,7 @@ provenance says that part of what it recalls is reconstruction.
 
 **Direction (Alec, 2026-09-20).** "The object appears to the mind as the
 negation of the non-object", and that negation is non-affirming: it removes
-the non-object and puts nothing in its place
-([accessible-mind spec §2.6.7](specs/2026-09-20-accessible-mind-subsystems.md#267-attention-the-exclusion-of-the-non-object)).
+the non-object and puts nothing in its place.
 So attention needs no prediction in order to focus, and the architecture
 already has it in that form: the reading scope, and the intent channel of the
 priority surface at the concept pyramid's per-order top-K (floor of zero,
@@ -599,20 +599,21 @@ what sets the object of observation at this level (conceptual activation as
 the origin of reading attention,
 [Architecture](Architecture.md#symbolic-weights-reconstruction-parse-time-attention-2026-06-30));
 and the price, which is the reason this waits — selection at the readout can
-change what is composed, so the purity invariant of spec §2.6.3 no longer
-holds by construction. The residual must still be learned from what was
+change what is composed, so the invariant that the estimate never changes
+what is composed no longer holds by construction. The residual must still be learned from what was
 there, not from what was selected (statistical learning needs attention:
 Turk-Browne, Jungé & Scholl 2005), which may mean composing twice. Decide
-after item 2's measurements (spec test 32) show whether role-level sparing is
-enough.
+after item 2's measurements show whether role-level sparing is enough.
 
 ## 10. Fold-ladder tuning questions
 
-The meronomy fold ladder's open questions Q1–Q3 — admission knobs, the
-coverage schedule, and the category-utility floor
-([plan](plans/2026-09-10-meronomy-fold-ladder.md)) — are tuning questions with
-no evidence to settle them until the full training session produces some.
-Moved from the todo on 2026-09-21.
+The meronomy fold ladder's three questions were settled on 2026-09-11. The
+admission radius (`admissionRadius`) and the division threshold
+(`lbgThreshold`) stay two knobs, since one decides identity and the other
+division; the coverage schedule has no knob of its own and shares the thought
+loop's closing pressure; and the cold start runs with the class concepts
+seeded and no byte floor. Their values remain tuning, to be read from the full
+training session.
 
 ## 11. Teacher-to-LTM persistence
 
@@ -633,13 +634,11 @@ Deferred until the NP-VP transition cache exists. Moved from the todo on
 
 ## 12. Objective-address conditioning
 
-A roadmap that follows the clean Teacher throughput gate; the constraints
-belong to the Teacher specification it cites. Moved from the todo on
-2026-09-21.
+A roadmap that follows the clean Teacher throughput gate. Moved from the
+todo on 2026-09-21.
 
-- Follow the [unified Teacher specification](specs/2026-07-27-teaching-modes-and-next-iteration.md)
-  and its gated milestones. The [What and spacetime design](WhatSpacetimeDesign.md)
-  describes the interface ownership and chooser/stack context.
+- The [What and spacetime design](WhatSpacetimeDesign.md) describes the
+  interface ownership and chooser/stack context.
 - Keep corpus/snapshot/document/sentence/span coordinates on the Teacher query
   seam; never reuse or overwrite the model's subjective `.where`/`.when`.
 - Split target observation/event time from source snapshot validity; retain the
@@ -664,15 +663,16 @@ such as surprise and use count. The question behind it: to which of our own
 actions do we have conscious access afterward, since a metacognitive memory
 is what lets later control improve on earlier performance.
 
-**What the row already carries** (`LTM0` columns): `surprise`
-at write time (`-1` when no expectation was staged), `witness_count`
-(re-witnessing of the same address), `trust`, `stream` witnesses, `where`,
-`when`, `order`, `refs`. The stream history in store order is the record of
-what passed through STM. What it does not carry: any content that was
-active but never composed (§7), a count of *reads* (retrievals by the
-thought loop or priming, as opposed to re-witnessing), an effort trace of
-the reading (compose steps, departures taken, keep-cost margin), or an
-outcome mark set later (an answer that failed, a later contradiction).
+**What the row already carries** (`LTM0` columns): `surprise` at write
+time (`-1` when no expectation was staged), the access count, the evidence
+lanes `truth_plus`/`truth_minus`, the writing `stream`, the `.when` stamp in
+its slot's percept band and, since 2026-11-11, the episodic entry of §7
+(`episodic_concepts`, `episodic_values`). The stream history in store order is
+the record of what passed through STM. What it does not carry: a count of
+*reads* (retrievals by the thought loop or priming, as opposed to
+re-witnessing), an effort trace of the reading (compose steps, departures
+taken, keep-cost margin), or an outcome mark set later (an answer that
+failed, a later contradiction).
 
 **Human evidence (summary; citations in the 2026-10-19 discussion, not
 re-verified).** People retain the contents that passed through working
@@ -686,21 +686,16 @@ human-like record is the stream history plus a few summaries per row, not
 the attention path and not the kept program; the surface is regenerated
 from the idea by the generate grammar.
 
-**Proposed shape.** Beside each row: (a) §7's few most active indices with
-activations at the closing, the episodic part, which also recovers the
-dissonance `m` that the stored resultant cannot hold; (b) summaries:
-surprise (exists), witness count (exists), read count, effort (steps or
-departures, keep-cost margin), outcome mark; all a few numbers, detail
-first in forgetting (forgetting spec §4a). Consumers: item 5's value
-function (surprise and counts already feed utility), the chooser's control
-(where to re-read, when to explore), and interpretation-time
-discrimination (§5). Not recorded: the `.where` trajectory of a reading and
-the kept program.
+**Proposed shape.** Beside each row: (a) the episodic part, built as §7's
+entry of the strongest order-zero concepts; (b) summaries: surprise and the
+access count (both exist), a read count, effort (steps or departures,
+keep-cost margin) and an outcome mark; all a few numbers, detail first in
+forgetting. Consumers: item 5's value function (surprise already feeds
+utility), the chooser's control (where to re-read, when to explore), and
+interpretation-time discrimination (§5). Not recorded: the `.where`
+trajectory of a reading and the kept program.
 
-Unscheduled; §7 specifies the episodic part, this section is the umbrella.
-*2026-11-10 (Alec):* §7 now opens with the decided shape of the episodic
-part: the percept set of a moment, kept with its `.when` and read by
-`query()`.
+Unscheduled apart from §7's entry; this section is the umbrella.
 
 ## Four corners as prompts
 
@@ -711,12 +706,14 @@ field first. The 11c review residue implements the refinement/raise route:
 contiguous support stays in field refinement, while discontiguous support
 may be symbolized above order 1 only after local refinement stalls. The
 strict-improvement/patience criterion is recorded for review in
-[Architecture](Architecture.md) and the [receipt](benchmarks/2026-09-24-item10/README.md).
+[Architecture](Architecture.md).
 Choosing new attention targets from a neither reading remains future policy
-work. See [two truths §1.1](specs/2026-09-16-two-truths-ideas-and-relations.md#11-both-is-a-compositional-fact-decided-alec-2026-09-23).
+work. The four corners are the values of a predicate over a thing: true (it
+holds of the thing as a whole), false, both (its parts differ under the
+predicate, a fact about composition and not a contradiction) and neither
+(unknown).
 
-*Handed here by the operators update ([plan §43](plans/2026-10-05-operators-update.md#43-attention-and-the-corners-alec-2026-10-07))
-and the thinking spec (§6.2).* Alec: "heterogeneity is a cue to narrow
+*Handed here by the operators update and item 2.5.* Alec: "heterogeneity is a cue to narrow
 attention, or to learn more" — at two timescales. Within a reading, *both*
 over a bracket cues division until the parts are pure; that is the walk's
 law today (`narrowing_mask`: both permits divide, pure permits gloss,
@@ -732,9 +729,7 @@ question once 6.1 exists.
 
 ### Shared-mode erosion measurement (item 9b)
 
-The three-seed job is retired from the test suite. Its original
-script is [archived](benchmarks/2026-09-25-item9b/erosion/three_seed_job.py)
-with the source and findings; use the archived runtime to reproduce it.
+The three-seed job is retired from the test suite.
 It ran N serial sentences, then parallel processing, then a label read-back.
 The current schedule reverses the first two steps and removes the third.
 **All of the old interleave rows and comparisons involving them are void for
@@ -746,8 +741,7 @@ each of three seeds, with symbols offline and with their owned reverse-pi
 read-back. It uses four XOR probes and 68 word probes from 20 FineWeb launch
 documents, after one pass over four XOR inputs and one complete sentence per
 document. FineWeb categories are native orthographic properties, not semantic
-categories. The [receipt](benchmarks/2026-09-25-item9b/README.md) preserves the
-protocol, inputs, full measurements and every failed prediction.
+categories.
 
 On all three seeds the FineWeb native readings have lower categorical
 separation and higher within-category discrimination after parallel training
@@ -759,19 +753,20 @@ within-category gain. Native XOR separation is zero in all conditions. This
 short measurement does not establish the proposed erosion-and-restoration
 mechanism, and the zero XOR result is separate from the native XOR learning
 tests. No seed, threshold or training duration was adjusted to make an ordering
-pass. More training and semantic probes are future experiments, not evidence
-already supplied by this receipt. Item 4 will log the inexpensive distance
+pass. More training and semantic probes are future experiments. Item 4 will log the inexpensive distance
 reduction from [CategoricalDiscrimination](../bin/CategoricalDiscrimination.py)
 on the [fixed four XOR and 68 FineWeb probes](../data/categorical_discrimination_probes.json).
-It accepts captured readings and returns CP, within-category and between-category
-distances plus pair counts. It does no training or extra label read-back;
+It accepts captured readings and returns the categorical-perception index
+$CP = \bar D_{between} - \bar D_{within}$, the mean L2 distance between the
+readings of probe pairs that straddle a category boundary minus the mean over
+pairs inside one category, each unordered pair counted once, with both means
+and the pair counts. It does no training or extra label read-back;
 unknown/zero readings remain in the metric. The harness must budget the cost of
 collecting probe readings when choosing its logging interval. This is a
 descriptive measurement with no required ordering or threshold.
 
 The motivation remains the qualified human evidence summarized in
-[Philosophy](Philosophy.md#attention-as-one-bracket-both-as-the-fields-report-and-the-sharing-of-the-two-modes-2026-09-25)
-and [plan §2](plans/2026-09-25-item-9b-mode-sharing-and-interpret.md#2-reasons-the-psychological-evidence):
+[Philosophy](Philosophy.md#attention-as-one-bracket-both-as-the-fields-report-and-the-sharing-of-the-two-modes-2026-09-25):
 shared semantic access and label feedback, category effects of verbal
 interference, acquired equivalence and verbal overshadowing, and meditation
 studies of discrimination and category flexibility. Those analogies motivate
@@ -782,7 +777,7 @@ the psychological account.
 
 **Recorded 2026-09-25 (Claude, on Alec's instruction) for item 1, the
 optimization item, once its todo entry is next edited.** The compiled July
-baseline ran at 6.803 sentences/s at B24 ([receipt](benchmarks/2026-07-27-pre-teacher-baseline.md));
+baseline ran at 6.803 sentences/s at B24;
 the September eager, batch-1, expectation-on measurement ran at 0.26. The
 per-word arithmetic is of the same order as a depth-4 NanoChat's per-token
 arithmetic (about 40M parameters touched either way); the gap is scheduling.
@@ -798,8 +793,7 @@ Compare by bytes seen and wall time only
    hint about when to stop synthesizing over bytes and return the word's
    code, add it as an optimization concession under the serial-mode flag,
    beside the concessions already there. The byte ladder then runs in full
-   only for unknown words, which is where `interpret` mints new objects
-   ([item 9b](plans/2026-09-25-item-9b-mode-sharing-and-interpret.md)).
+   only for unknown words, which is where `interpret` mints new objects.
 3. **Subsample reconstruction.** The tied reverse walk with its candidate
    search costs about as much as the forward; run it on every k-th batch or
    a subset of rows through the existing placement knob, with the
@@ -811,36 +805,65 @@ Compare by bytes seen and wall time only
    COO dictionaries of the sparse stores to device CSR tensors so the whole
    word step compiles as one graph. The last such pass, the 2026-07-06
    vectorization of `stage_analysis_spans` / `property_spans`, bought a
-   third of an epoch byte-identically (noted in the
-   [fold-ladder plan](plans/2026-09-10-meronomy-fold-ladder.md)).
+   third of an epoch byte-identically.
    Item 9b adds explicit candidates here: the host dictionary walk that
    gathers a ragged field, event attribution, testimony admission/retirement,
    and context scheduling. Its archived CPU erosion harness used the same native tensor
    recurrence bodies with an eager loop dispatcher to avoid recompilation as
    sentence banks change. Those measurements make no throughput claim.
-5. **One pass each** for `subsymbolicOrder` and `symbolicOrder` in the
-   first session.
+5. **Vectorize the effective-evidence refresh.** `LTM1.refresh_effective`
+   recomputes the effective pair of every live row, in `relation_order`, in
+   Python whenever a radius, a stored pair, an operation measurement or a
+   gate changes. That is adequate at present capacities; it can be vectorized
+   by order level, all rows of one dependency level at once.
 
 Compounded, these put the serial loop in the tens of sentences per second,
 NanoChat's order on the same machine; parity is not claimed.
 
-*The cost reading of 2026-10-30 and the lookups, folds and percept-pass
-work are item 1.5 of the todo, not future work (Alec, 2026-10-30):
-[plan](plans/2026-10-30-item1-5-lookups-and-folds.md). Moved the same day.*
+**Lookups, folds and the percept pass (todo item 1.5; decided 2026-10-30,
+not built).** Scheduled before the compiler work, so that the word step
+compiles under `fullgraph`.
+
+1. The sparse stores (`layer.features`, the membership matrices) get
+   preallocated device CSR views of fixed edge capacity that raise when
+   exhausted and never resize. `MereologicalCodes.derive` becomes one
+   segmented `scatter_reduce` per order (`amax`/`amin` over the subspace
+   bounds, the same $q^{w}$ and $1-(1-q)^{w}$ folds as `fold_presence`) over
+   the rows whose validity bit is clear; an optimizer step clears only the
+   bits of rows whose edge values changed.
+2. A content lookup is one product of a cue against a content matrix, as the
+   `LTM0` cued read (`EntryRead.cued_rows`) already is.
+   `MediumTermMemory.match_candidate` and `FamiliarTier.witnessed_match`
+   become one cosine of the support centroid against the masked codebook
+   rows of the same order, top-1 over `conceptMatchCos`, with support-set
+   equality as a mask and only the literal key matched exactly. `LTM1`'s
+   index is maintained on `add`, not rebuilt.
+3. The percept pass runs once per sentence over $[B, W, P]$ with gradients,
+   with ragged parts (a CSR of part ids per word) in place of the 64-wide
+   padding. A known word reads its identity row's `amax` instead of
+   recomposing its atoms, and the arrival state (a causal prefix mean and a
+   shift) and the forecast are computed for all words at once, with the
+   forecast's inputs and targets detached.
+4. An explore path resumes from `SentenceFork`'s recorded state at its
+   departure word instead of rerunning the shared prefix with masking.
+5. Every rewritten brick traces under `fullgraph=True` with no host read.
+
+Results must equal the current path: the lookups return the same ranked
+candidates and scores at the same work meter. Grammar operations stay
+serial; tokenization and new-type admission stay on the host once per batch,
+cached per word type.
 
 ## `.when` is redundant across the elements of one input (noted 2026-09-26)
 
 The relative `.when` value and stable sentence address were pulled forward
-from item 5.5 into the [accepted operators update](benchmarks/2026-10-07-operators-final-b/)
-(Alec, October 7; plan §45). Each sentence uses its document
-position `[i, i+1]`; absolute model time is retained only in `timestamp`.
-Re-reading re-witnesses one row, and full capacity raises. That correctness
-item is closed in the accepted landing.
+from item 5.5 into the accepted operators update (Alec, October 7): each
+sentence took its document position `[i, i+1]`, re-reading re-witnesses one
+row, and full capacity raises.
 
-*Superseded in direction (Alec, 2026-11-10):* ".when should not be
-per-document, it should be model time, even for semantic memory." The
-document position above is the value that decision retires; stored
-entries have carried model time since 2026-10-26. See
+*Superseded (Alec, 2026-11-10; built in item 2.0 round 7):* ".when should not
+be per-document, it should be model time, even for semantic memory." Stored
+entries have carried model time since 2026-10-26, and the stamps of a sentence
+as it is read since round 7; document ordinals remain addresses. See
 [`.when` is model time in every store](#when-is-model-time-in-every-store-alec-2026-11-10).
 
 The separate carrier simplification remains open: carrying one shared bracket
@@ -852,11 +875,22 @@ learned before/after operators remain in item 5.5.
 
 The two-rung ladder exactly decodes clean registry addresses. Its tolerance
 to noise after learned composition and inversion remains a separate question.
-The [item 9b experiment](plans/2026-09-25-item-9b-mode-sharing-and-interpret.md#4f-the-band-transported-through-the-grammar-reduced-periods-then-rungs-proposed-2026-09-26)
+The item 9b experiment
 refuted reduced periods as a remedy for the September 26 loss jump: the extra
 cost came from scoring a shared timestamp on every word. More rungs or rotary
 transport therefore need their own measured positional-error problem and
 evaluation; the occurrence/time correction does not implement them.
+
+If transport noise proves to matter, the ladder generalizes to $k$ rungs with
+a fixed ratio of 32 between neighbours and byte resolution at the finest;
+decoding resolves branches from the coarsest rung down, so every cell keeps
+the same angular margin over the transport noise. The band grows to $2k$
+dimensions: three rungs cover 262,144 addresses and four cover 8,388,608, and
+the same construction applies to `.when`. If more rungs degrade transported
+accuracy, the remedy is rotary transport: each operator applies position as
+an exact rotation of content, learned maps act only on content, relative
+offsets come from products, and exact decoding reads only untransported
+bands.
 
 ## The dynamic stop: glossing above words, descending at novelty (item 6.8-2)
 
@@ -876,8 +910,7 @@ the logged categorical-discrimination index and both-rate monitor.
 
 Words narrow the domain of discourse along three indices — which thing,
 which stretch of time, which alternative — and individuate along each by
-determiner, tense and modal
-([accessible-mind spec §2.0.1](specs/2026-09-20-accessible-mind-subsystems.md#201-words-are-a-formula-for-narrowing-attention)).
+determiner, tense and modal.
 The first two have machinery: `lower` and the recency buffer for things,
 the symbolic layer's `.when` and the row's address for times. The third has
 none. A modal ranges over alternative courses of events: "might" picks
@@ -891,8 +924,7 @@ concept's code.
 
 *Added (Alec, 2026-09-29).* With the verb phrase as a projection beside
 the noun phrase, modality is "a subsequent projection (so from a 3d NP to a
-4D NP + VP to a 5D NP+VP+MP), where the MP is a modal phrase"
-([operator catalogue §4.4](specs/2026-09-29-operator-catalogue.md#44-the-noun-phrase-and-the-verb-phrase-two-implementations-and-the-candidate)).
+4D NP + VP to a 5D NP+VP+MP), where the MP is a modal phrase".
 The 5D counts phrases, each in a learned subspace of its own, so a
 concept's code stays opaque. Open with it: which modal sentences are a
 modal phrase within the point and which an operator row over another row,
@@ -926,7 +958,7 @@ Smaller items from the same discussion, none of them scheduled:
   every order, so no new parameters are needed, and the result keeps the
   head's order (Alec, 2026-09-28); what is missing is the wiring by which a
   modifier selects among the head's cases before they are folded back
-  (accessible mind §2.0.1). `lexical_gate`, which would give a
+  `lexical_gate`, which would give a
   word's code a slice of the operator, has no callers.
 * **What order measures.** The determiner lowers order and modification
   leaves it alone (Alec, 2026-09-28: "order only drops when the determiner
@@ -942,13 +974,11 @@ Smaller items from the same discussion, none of them scheduled:
   phrase combines by election, and idempotently, "a red red bird is no
   more red than a red bird", "so perhaps a form of intersection". The
   adverb is the other kind: "a very, very, fast runner is faster than a
-  fast runner"
-  ([operator catalogue §4](specs/2026-09-29-operator-catalogue.md#4-noun-adjective-verb-and-adverb)).
+  fast runner".
 * **Generic against universal.** "Cats sleep" tolerates exceptions and
   "every cat sleeps" does not; both write a relation row, and nothing yet
   distinguishes their force. *Since 2026-09-30 both lower, "cats" by an
-  implicit "all" and "every" like "all" in the other number
-  ([5.5 spec §6](specs/2026-09-30-occurrence-tense-aspect.md#6-surface-form-and-markers));
+  implicit "all" and "every" like "all" in the other number;
   where their force differs is still open.*
 * **Privatives.** "Destroy", "kill" and "cancel" remove a property, which a
   positive gain cannot do. Like "fake" and "former", they belong to `non`
@@ -957,10 +987,8 @@ Smaller items from the same discussion, none of them scheduled:
 ## Operator names (future work, Alec, 2026-09-29)
 
 "The operator rename can also be future work." What each operator is to do
-is decided in [the operator catalogue](specs/2026-09-29-operator-catalogue.md)
-and stands. *Most of the renames were pulled forward into item 6.2 (Alec,
-2026-10-07: "sooner rather than later") and landed at `e43638a`
-([thinking spec §2.1](specs/2026-10-07-thinking.md#21-the-renames-alec-2026-10-07-sooner-rather-than-later)):*
+is decided and stands. *Most of the renames were pulled forward into item 6.2 (Alec,
+2026-10-07: "sooner rather than later") and landed at `e43638a`:*
 `chunk` → `synthesize`/`analyze`; `what` (thought) → `ask`, `what`/`lookup`
 (LTM) → `query`; `quantize` and `arma`/`expect` removed (all concepts are
 symbolized; expectation is the global `<sentenceExpectation>` setting);
@@ -970,8 +998,8 @@ here:
 
 | today | the new name | decided about it |
 |---|---|---|
-| — | `symbolize`, with `conceptualize` its reverse | lower-level operators, perhaps of thought only (§3.4); no present operator is renamed to them, they are future operators |
-| `verb`, `adverb`, `preposition`, `tense`, `aspect`, `morphology` | names by what is computed; candidates in §3.9 | the code reads declared properties of a rule and never its name (decided; that part is not deferred) |
+| — | `symbolize`, with `conceptualize` its reverse | lower-level operators, perhaps of thought only; no present operator is renamed to them, they are future operators |
+| `verb`, `adverb`, `preposition`, `tense`, `aspect`, `morphology` | names by what is computed | the code reads declared properties of a rule and never its name (decided; that part is not deferred) |
 
 A rename is made in one pass, in grammar files, code, tests and documents,
 with the old name kept nowhere.
@@ -986,8 +1014,7 @@ after item 6."
   that reading `lift` puts a phrase beside the description in dimensions of
   its own, NP → NP + VP → NP + VP + MP, and `lower` is its reverse face,
   the projection that takes the phrase back out, while the order is raised
-  by the fold and lowered by its inverse, the determiner
-  ([operator catalogue §5.4](specs/2026-09-29-operator-catalogue.md#54-lift-a-phrase-beside-a-phrase)).
+  by the fold and lowered by its inverse, the determiner.
   *Since the final operators update:* `lower` is the determiner (mint, bind
   or kind by the rule's `determiner_mode`; its marker contributes no
   content; `LowerLayer`), and the catalogue's compound selects among a
@@ -998,31 +1025,28 @@ after item 6."
 * **`surface`, with tense, morphology and aspect.** `surface` is "a surface
   transformation of the words, like tense and aspect", so that one lexeme
   and its forms, and a language's freedoms of word order, are one structure
-  and not separate words and syntaxes (catalogue §7). Tense, morphology and
+  and not separate words and syntaxes. Tense, morphology and
   aspect "need more work before they are included in any grammar". None of
-  the four changes a value today (catalogue §9). *Taken up (Alec,
+  the four changes a value today. *Taken up (Alec,
   2026-09-30)* as todo item 5.5, with the preposition and the meaning of
   `.where` and the remaining temporal operators; the relative `.when` value
-  and address write moved to the final operators update
-  ([5.5 spec](specs/2026-09-30-occurrence-tense-aspect.md)); `lift` and
+  and address write moved to the final operators update; `lift` and
   `lower` stay here.
 
 ## Credit to the chooser from a supplied answer (noted 2026-09-29)
 
 *Historical decision (Alec, 2026-10-01), superseded by October 2 ownership below:*
 step 5a trained the whole path for a sentence with a supplied answer,
-including the chooser and the object codes
-([6.9 plan §4 step 5a](plans/2026-09-29-item-6-9-xor-grammar.md#4-the-plan)).
+including the chooser and the object codes.
 Credit by choice alone was measured and does not suffice: 0 of 10 runs met
 XOR_grammar's bar, also with four explore trials; the whole path met it in
-9 of 10 ([§3.13](plans/2026-09-29-item-6-9-xor-grammar.md#313-after-step-5-what-holds-xor-back-measured-2026-09-30-and-10-01)).
+9 of 10.
 The note as written on 2026-09-29 follows.
 
 In item 6.9's configuration the answer's error trains only the map that
 reads the concluded idea. The state is cut at the concluded idea (decided
 2026-09-20), and the chooser is trained by what the sentence's two trials
-cost, which is reconstruction and expectation and not the answer
-([6.9 plan §3.4](plans/2026-09-29-item-6-9-xor-grammar.md#34-what-the-answers-error-trains)).
+cost, which is reconstruction and expectation and not the answer.
 Measured in isolation, XOR is learned without it. A sentence that comes
 with an answer could count the answer's error in the comparison of its two
 trials: credit by choice, which the cut allows, since no gradient passes
@@ -1030,75 +1054,33 @@ through the idea. Whether the grammar's choices should answer to a teacher
 at all, or only to reconstruction and expectation, is Alec's to decide when
 it is taken up.
 
-*Decided since (operators round 2, landed `3de37eef5`; [GradientFlow](DevelopmentHistory.md#the-target-scheme-october-6-decided-scheduled-by-rounds)):*
-the answer does enter the chooser's credit — the trial cost is the
-owner-step total `R + E + A`, read by a comparison reader on both detached
-roots — while only reconstruction decides the keep and the presented
-reader trains on the kept root. The question above is closed; nothing
-remains here.
+*Decided since:* the answer enters both the keep and the chooser's credit:
+complete paths are compared on R + A
+([Gradient flow](GradientFlow.md#whole-path-credit-and-concept-episodes-2026-11-11)).
+The question above is closed; nothing remains here.
 
 <a id="separate-gradient-ownership"></a>
 
 ## Separate gradient ownership for reconstruction, expectation and output (taken up in item 6.9, Alec, 2026-10-02)
 
-**Taken up by [6.9 plan §15](plans/2026-09-29-item-6-9-xor-grammar.md#15-one-writer-for-each-weight-alec-2026-10-02).**
 Alec approved the structural split: reconstruction owns perception, parameterized
 object codes, compose operators/tied inverses and the compose chooser;
 expectation owns only predictors; the supplied answer owns only its readers.
 Both consumers share one understanding record. Expectation detaches sources
 and targets, and the answer detaches that understanding. Backward is restricted
-to the owners. Lessons train choosers without moving operators. The current [§22 decision](plans/2026-09-29-item-6-9-xor-grammar.md#223-witnesses-and-the-optimizer-b-decided)
-selects only by strictly lower reconstruction, ties to greedy, and trains
-the reader on the kept trial alone in that historical decision; operators
-round 2c uses one mean-loss reader step for compose departures and the
-kept root for narrowing departures. Reconstruction uses momentum descent;
-its witnessed inverse is retired. Product and mean replace conjunction
-and disjunction, while min/max remain separate catalogue operators.
-[GradientFlow](GradientFlow.md) records the implementation and its audit;
-[the receipt](benchmarks/2026-10-02-item6-9-ownership/README.md) records measurements.
-The closing ownership candidate reached each primary gate in 1/10 runs.
-Its zero recorded ownership conflicts do not establish improved learning;
-the ownership round was not accepted (§18). The [§20 receipt](benchmarks/2026-10-02-item6-9-reconstruction/README.md)
-measures reconstruction as the sole writer of unconstrained codes, the
-witnessed and free read-back terms, and answer ownership of XOR_exact's
-reader coefficients. Its primary class gate passes **0/10** and reconstruction
-**2/10**, against §14's 8/10 and 3/10; both audits still record zero ownership
-conflicts. Conditional attribution also leaves reconstruction incomplete with
-expectation and answer writers disabled. Its small, unpaired arms do not
-identify a causal improvement; none of the 40 attribution runs meets both
-existing bars. The sweep and moved cases expose remaining ports and failures,
-so this is not an acceptance claim. The
-[§20.3 catalog](plans/2026-09-29-item-6-9-xor-grammar.md#203-catalog-set-aside-now-to-return-once-reconstruction-and-xor-hold)
-records what is set aside: unit-sphere codes, distributional pressure,
-activation geometry and the answer's reach into the understanding. VQ EMA
-is not planned to return, and the contextual rotation is retired.
-The [§21.6 field proposal](plans/2026-09-29-item-6-9-xor-grammar.md#216-witnesses-operators-and-the-field-alec-2026-10-03)
-and the §20.3 alternatives remain catalogued. The
-[§§21–22 receipt](benchmarks/2026-10-03-item6-9-free-readback/README.md)
-adds code/anchor displacement and modal-derivation stability to the ownership
-audit. Its class gate passes 9/10 and reconstruction 5/10, against §14's
-8/10 and 3/10; the sum-only control passes 10/10. The required attribution
-condition is not triggered. In the audited XOR run the codes and chooser
-anchors have zero displacement at float32 precision, so the answer's learning
-does not demonstrate learning in those weights. Saved tensors also show an
-inner negation whose intermediate operand is absent from the raw primed bank:
-free pair search chooses a repeated word instead. These are measured limits
-for review, not permission to restore any catalogued mechanism or alter a
-gradient scale. The audit does not infer stability from a small gradient.
-The closing sweep and moved cases remain red, including unintended effects
-of the shared inverse on answer generation and of the mean kernel on truth
-penalties. The saved moved-case inverse also exposes target probabilities
-below the existing byte clamp. These issues and the incomplete rule-only
-journal scope remain in the receipt; the improved gate counts do not close
-6.9 or authorize reintroducing the catalogued mechanisms.
-
-The [§25 closing receipt](benchmarks/2026-10-03-item6-9-closing/README.md)
-supersedes those historical status statements and closes 6.9 as a measured
-baseline. Reconstruction now owns the single generate decoder and the antipode
-term; output owns only its readers/conditioner. The echoic snapshot stays after
-the seen write: the §24.4 pre-write proposal is withdrawn. The earlier §22
-9/10 class and 5/10 reconstruction counts remain prior measurements, not the
-new candidate's result. The closing receipt records its one shared training.
+to the owners. Lessons train choosers without moving operators.
+Reconstruction uses momentum descent. The split closed item 6.9 as a measured
+baseline and survives as the `separateChooser=true` option; since 2026-11-09
+the default is one projected update in which the answer reaches shared
+parameters less its component that opposes reconstruction
+([Gradient flow](GradientFlow.md#item-20-round-34-default-projected-gradients-2026-11-09)).
+Set aside in item 6.9 and catalogued
+[below](#set-aside-during-item-69-to-return-once-reconstruction-and-xor-hold-alec-2026-10-02):
+unit-sphere codes, distributional pressure, activation geometry, the answer's
+reach into the understanding and the field proposal, a set of activations
+over known concepts stored in conceptual space in place of a vector. The VQ
+EMA refresh and the contextual rotation are retired. The echoic snapshot stays
+after the seen write; a pre-write snapshot was withdrawn.
 
 Forward dependence remains: reconstruction can change the evidence the answer
 or expectation has learned to read. Future work can measure that drift and
@@ -1106,18 +1088,20 @@ compare it with learning speed and read-back. Disjoint writers remove direct
 competition over an optimizer parameter; they do not prove that every block's
 objective decreases together. No new norm-matching rule is implied.
 
-### Earlier optimization proposal (deferred)
+### Earlier optimization proposal (not adopted)
 
-The earlier joint-update proposal is retained below as a secondary direction,
-not an implementation decision. Alec deferred it here in favor of investigating
-structural separation. It changes no 6.9 code, configuration, optimizer,
-threshold or measurement and supplies no implemented guarantee.
+**Not adopted (2026-11-03).** The default projection removes only the
+answer's component that opposes reconstruction, unit by unit; a joint update
+over all objectives is not adopted
+([Gradient flow](GradientFlow.md#item-20-round-34-default-projected-gradients-2026-11-09)).
+The proposal is kept below as the record of the alternative. It changes no
+code, configuration, optimizer, threshold or measurement and supplies no
+implemented guarantee.
 
-The earlier §14 candidate demonstrated that accurate answers and accurate
-read-back could coexist: three of its ten class-gate runs met both bars.
-That historical result says nothing about their simultaneous expectation cost
-or the later ownership candidate. A low reconstruction pass count alone cannot
-diagnose interference.
+An earlier candidate showed that accurate answers and accurate read-back
+could coexist: three of its ten class-gate runs met both bars. That result
+says nothing about their simultaneous expectation cost. A low reconstruction
+pass count alone cannot diagnose interference.
 
 #### Establish where interference occurs
 
@@ -1154,7 +1138,7 @@ displacement closest to the optimizer's proposed displacement subject to those
 conditions on the shared parameters. This is a joint calculation; independently
 correcting pairs can undo an earlier correction.
 
-The chooser uses a straight-through gradient. A local constraint on that
+The chooser then used a straight-through gradient. A local constraint on that
 surrogate does not guarantee what a different hard derivation will do. Record
 fixed-derivation costs and subsequent policy-selected costs separately.
 
@@ -1194,28 +1178,23 @@ inverse learning, or read-back quality remaining poor despite decreasing cost.
 
 ## Expectation by inversion and the reconstruction audit (decided 2026-10-06, unscheduled)
 
-**Superseded in its expectation half (2026-10-29).** Expectation and top-down reconstruction now split by residual: the inverse of the completed understanding learns only what the detached local expectation missed ([item 2.7 record §42](plans/2026-10-27-item2-7-corpus.md)); perceptual layer in item 2.7's final round (built). Amended 2026-10-30: the conceptual layer's local predictor is `ActivationPredictor`, not `intuit`, and the conceptual split waits on the subtraction-or-correction question ("The residual split: a stopped subtraction or the correction", below); not built in item 2.5 round B.
+**Superseded in its expectation half (2026-10-29).** Expectation and top-down reconstruction now split by residual: the inverse of the completed understanding learns only what the detached local expectation missed; perceptual layer in item 2.7's final round (built). Amended 2026-10-30: the conceptual layer's local predictor is `ActivationPredictor`, not `intuit`, and the conceptual split waits on the subtraction-or-correction question ("The residual split: a stopped subtraction or the correction", below); not built in item 2.5 round B.
 
 **Reassigned to Item 3, October 19:** this invertible-path program is independent
-of [Item 4 expectation](specs/2026-10-08-expectation-at-every-level.md). Local
+of Item 4 expectation. Local
 expectation uses detached symbol activations and observed context; it does not
 invert a predicted sentence into operands. The text below records the earlier
 combined proposal, not an Item 4 dependency or implemented behavior.
 
 
 **History:** taken up as todo item 4.5 on 2026-10-08 (Alec: "needs to go
-in sooner rather than later"); the expectation spec was written and, on
+in sooner rather than later"); the expectation design was specified and, on
 2026-10-19, detached from this program, which is now todo item 3's. This
 section is item 3's record.
 
-Decided in the operators update plan
-([§10.3](plans/2026-10-05-operators-update.md#103-the-invertible-forward-path-reconstruction-as-an-audit),
-[§11](plans/2026-10-05-operators-update.md#11-reflections-claude-2026-10-06-alec-asked-for-thoughts) items 2, 6 and 8,
-[§12.2](plans/2026-10-05-operators-update.md#122-two-complete-derivations-subtracted-layer-by-layer),
-[§13](plans/2026-10-05-operators-update.md#13-the-scheme-as-confirmed-alec-2026-10-06) points 2–3)
-and recorded as "rounds 3–4" of the
+Decided in the operators update and recorded as "rounds 3–4" of the
 [target scheme](DevelopmentHistory.md#the-target-scheme-october-6-decided-scheduled-by-rounds);
-the combined step that closed the update (§36–§45) did not include it, so
+the combined step that closed the update did not include it, so
 it is decided and unbuilt. Three parts:
 
 1. **Expectation by inversion.** The row-level prediction, inverted through
@@ -1227,7 +1206,7 @@ it is decided and unbuilt. Three parts:
    than by a predictor of its own (today 6.8-1's word-level expectation has
    its own). Expectation's sources then go live: the 2026-09-20 rule
    detaching them existed against collapse, which an invertible path cannot
-   do. Alec, §13: expectation "propagates across the model … only once the
+   do. Alec: expectation "propagates across the model … only once the
    path is invertible; before that its sources stay detached".
 2. **Reconstruction as an audit.** With injective forms (round 3a's pairs
    and length) and exact unbinding through the bank, reconstruction is a
@@ -1235,27 +1214,34 @@ it is decided and unbuilt. Three parts:
    decomposition chooser becomes a lookup; the trainable surfaces are the
    chooser, the maps, the predictors and the readers, trained by
    expectation and output along one path. Where "mostly invertible" means
-   approximately, the reconstruction term stays as a loss for that part
-   (§13.3). Today identified-word reconstruction is already the $R \equiv 0$ audit
+   approximately, the reconstruction term stays as a loss for that part.
+   Today identified-word reconstruction is already the $R \equiv 0$ audit
    at gate width; the rest of the path keeps the loss.
 3. **The width.** Exact clean-up of `k` bound items against `N` bank
-   entries needs `D ≈ c·k·log N` — thousands at production, far above the
-   gates' 22 — with clean-up through the index, never brute force. Never
-   derived; todo item 3 derives it for the run and reads the audit at that
-   width.
+   entries needs a width that grows as $D \approx c\,k \log N$, with clean-up
+   through the index, never brute force. For an independent Rademacher bank,
+   with a bundle the sum of $k$ selected $\pm 1$ codes and a normalized dot
+   read, a half-unit margin error at one entry has probability at most
+   $e^{-D/(8k)}$, so $P(\text{any error}) \le N e^{-D/(8k)}$ and
+   $D \ge 8k\ln(N/\delta)$ suffices. The built identity is not that ensemble:
+   forms use boundary-pair and length codes, max/min membership and an exact
+   index with collision refinement. The bound therefore neither justifies
+   changing the configured width nor certifies $R \equiv 0$. The
+   finite-vocabulary identity audit is exact at the configured widths; the
+   composed-path $R \equiv 0$ audit remains open, and reconstruction keeps
+   training every part that lacks an exact inverse.
 
-The milestone (§11.8): the audit at zero at production width $\Rightarrow$ item 0
+The milestone: the audit at zero at production width $\Rightarrow$ item 0
 trains by expectation and output through one path. Todo item 0 carries the
 condition; item 4.5 builds parts 1–2 and says what part 3 must be. A
-candidate gate for the spec: the expectation discrepancy and the class bars
+candidate gate, when it is specified: the expectation discrepancy and the class bars
 at the standing XOR fixtures with the inverted targets on, against the
 detached-source baseline, with the collapse diagnostic (the *both* mass on
 the leaf) reported.
 
 ## Compose follow-ups deferred from item 7.5 (2026-09-27)
 
-Non-blocking residue of the item 7.5 landing
-([receipt](benchmarks/2026-09-27-item7-5-landing/README.md)), moved out of
+Non-blocking residue of the item 7.5 landing, moved out of
 the countdown on 2026-10-08 so the numbered list holds only what is on the
 path: a nonzero **training temperature** for the compose trials and a
 **sentence parsimony / work term**, both accepted in direction for a later
@@ -1264,14 +1250,13 @@ assertion to restate around closing contributions or forced parametric
 selection — probably moot since 6.9 gave every parameter one owner, to be
 verified at housekeeping. *Verified 2026-11-12 (item 0.5, H7): no test asserts
 that report any more; nothing is left to restate.* The `exploration_trial` rename is todo item 2.
-The depth-three campaign's red is recorded in the receipt and in
+The depth-three campaign's red is recorded in
 [Testing](Testing.md); it is evidence, not work.
 
 ## One bank: the collision rule for property rows, and a merge rule (decided 2026-10-06, unscheduled)
 
 Alec's one bank over "is X" and "contains X"
-([plan §10.1](plans/2026-10-05-operators-update.md#101-one-bank-two-relations);
-[Architecture](Architecture.md#the-scheme-confirmed-2026-10-06-expectation-and-surprise-through-the-architecture),
+([Architecture](Architecture.md#the-scheme-confirmed-2026-10-06-expectation-and-surprise-through-the-architecture),
 "One bank, two relations") grows only when
 necessary to separate two objects. Round 3a built the collision rule for
 word identities (each word's own positional triple, bits drawn until
@@ -1284,15 +1269,14 @@ separated). Not built:
   new thing coincides with an old one, mint the cheapest distinguishing
   feature, and otherwise nothing. This is the property-space half of the
   rule the 3a mints gave words.
-* **A merge rule** ([§11.5](plans/2026-10-05-operators-update.md#11-reflections-claude-2026-10-06-alec-asked-for-thoughts)).
+* **A merge rule.**
   Collision-minting only separates, and its inventory depends on the order
   in which words are read (inventories differ run to run). Abstraction
   comes from the sigma fold one order up, from co-activation, and from the
-  forgetting spec's value pruning the distinctions that are never used;
+  forgetting pass's value pruning the distinctions that are never used;
   the last is the rule todo item 5 still owes for the concept inventory
   (order-0 definitions, alternatives, feature groups, mints).
-* **Revision conditions formation (Alec, 2026-10-08;
-  [thinking spec §14.6](specs/2026-10-07-thinking.md)).** A mint made on
+* **Revision conditions formation (Alec, 2026-10-08).** A mint made on
   an exhausted search is provisional: identities may be broken or
   associated after the fact, and "that alteration should condition the
   probability with which we formed the identity in the first place" — a
@@ -1304,7 +1288,7 @@ separated). Not built:
 ## A snapshot where a sentence's two trials branch (future work, Alec, 2026-09-30)
 
 Item 6.9 costs a sentence's two derivations under the same parameters
-before the optimizer steps on either ([6.9 plan §4 step 5](plans/2026-09-29-item-6-9-xor-grammar.md#4-the-plan)).
+before the optimizer steps on either.
 The explore derivation repeats the exploit derivation up to the round
 where it is made to differ, so its prefix is computed twice. Alec, of the
 equal comparison: "let's opt for making this efficient; maybe even a
@@ -1320,6 +1304,11 @@ branching round, and keep the snapshot only if it saves significantly.
 
 
 Item 2.3 implements the two coarse authority gates described in [Architecture](Architecture.md#authority-gates-item-23-round-2b-2026-11-08); finer progression and the chooser question remain with the lessons item.
+The interpret gate's fraction is read over however few words have been
+admitted, so one stable word out of one opens it. If the gate is to wait for
+a lexicon rather than a word, a `<minimum>` admitted-word count beside
+`fraction` is one datum and a few lines in `TrustGates`; it belongs with the
+lesson manifest, where the gates are first exercised.
 
 Proposed by Alec, not decided: "We have to wait until a model is trained
 before we can express truth in that model, before LTM is meaningful in a
@@ -1356,8 +1345,7 @@ The first row of the table above, objects waiting for object permanence,
 is superseded by it.
 
 It came up because a truth given to an untrained model is stored with its
-trust and with no evidence of identification, so the truth view is empty
-([two truths §13 G](specs/2026-09-16-two-truths-ideas-and-relations.md#13-review-round-2-claude-2026-09-28-on-the-candidate-after-12)).
+trust and with no evidence of identification, so the truth view is empty.
 That is correct, and a gate would say so in advance instead of leaving an
 inert row.
 
@@ -1431,7 +1419,7 @@ assembly proposed:
 | step | what is learned | from |
 |---|---|---|
 | 1 | words | Wordbank's early vocabulary, in the order in which children acquire it |
-| 2 | the objects the words represent | no corpus: `interpret` over the words of step 1 ([two truths §17](specs/2026-09-16-two-truths-ideas-and-relations.md#17-definitions-word-def-object-decided-alec-2026-09-29)) |
+| 2 | the objects the words represent | no corpus: `interpret` over the words of step 1 |
 | 3 | small sentences | AO-CHILDES, the youngest bands first |
 | 4 | complex sentences | AO-CHILDES at the older bands, then the written parts of BabyLM, then FineWeb |
 
@@ -1443,7 +1431,7 @@ what in this model answers to each:
 
 | Piaget's stage | age | what the child comes to have | what answers to it here |
 |---|---|---|---|
-| sensorimotor | birth to 2 | object permanence | percepts, their parts and wholes; a unit that recurs is kept; identity carried by prediction ([item 6.5](specs/2026-09-26-independent-components.md)) |
+| sensorimotor | birth to 2 | object permanence | percepts, their parts and wholes; a unit that recurs is kept; identity carried by prediction (item 6.5) |
 | preoperational | 2 to 7 (the symbolic function from 2 to 4) | symbols and language | a word is a concept, and `interpret` replaces it by its object |
 | concrete operational | 7 to 11 | conservation, reversibility, class inclusion | operators that have inverses; a set one order above its members, and the part rows between them |
 | formal operational | 12 and after | reasoning from hypotheses | relations between truths (implies, operator rows), modality as [the third index](#modality-as-the-third-index-noted-2026-09-28), the thought grammar |
@@ -1531,12 +1519,10 @@ from randomness today:
 - **Dictionaries.** A codebook with more rows than dimensions cannot start
   at the identity, so exploration there means noise on rows from a structured
   (for example orthogonal) start. Item 6.9 found that random signed codes
-  make XOR readable almost for free
-  ([6.9 plan §3.11 and §3.13](plans/2026-09-29-item-6-9-xor-grammar.md#311-whether-the-bar-can-be-reached-at-all)).
+  make XOR readable almost for free.
   A structured start must not lose that.
 - **Ownership.** The energy sensor should read the gradient of the weight's
-  own objective. With one writer for each weight
-  ([6.9 plan §15](plans/2026-09-29-item-6-9-xor-grammar.md#15-one-writer-for-each-weight-alec-2026-10-02)),
+  own objective. With one writer for each weight,
   it does so by construction.
 - **Run to run.** The noise is sampled on every forward. Runs are compared
   as unseeded measurements, with no seed pinning.
@@ -1615,7 +1601,7 @@ open read's multi-scale field:
 - each bracket's children are already tiled, so `divide` and `descend`
   choose among existing tiles instead of computing cuts;
 - `gloss` settles a region at its coarsest pure whole;
-- 6.8's word whole, a maximal run of letters (6.8 plan §3a), is the second
+- 6.8's word whole, a maximal run of letters, is the second
   kind refined by the first.
 
 **What would show that it works.** At a fixed budget of wholes, compared
@@ -1628,39 +1614,40 @@ with the flat tiling:
 ## Set aside during item 6.9, to return once reconstruction and XOR hold (Alec, 2026-10-02)
 
 Alec: "let's create a catalog of what we want to reintroduce after getting
-things working." The catalog is
-[6.9 plan §20.3](plans/2026-09-29-item-6-9-xor-grammar.md#203-catalog-set-aside-now-to-return-once-reconstruction-and-xor-hold):
-unit-sphere codes (magnitude as certainty under inner product);
-distributional pressure on the codes (co-activation, one mechanism); the
-primed bank as context and candidates; a spatial representation of the
-priming field; and two things recorded as not returning (the VQ EMA refresh)
-or as fallback only (the answer's reach into the understanding). Each entry
-names the condition for its return.
+things working." Where the catalog stands:
 
-The catalog is extended by [§24.5](plans/2026-09-29-item-6-9-xor-grammar.md#245-what-decoding-needs-and-where-each-part-comes-from-alec-and-claude-2026-10-03)
-and [§25](plans/2026-09-29-item-6-9-xor-grammar.md#25-decoding-from-conceptual-space-and-closing-69-alec-2026-10-03).
-The antipode's pull-apart half is implemented inside reconstruction; co-activation
-attraction remains deferred. The operators update is to supply identities from
-conceptual space and the remaining catalogue. Item 6.8 owns the open read and
-MM_xor's word-level XOR proof. Surface markers own operand-order recovery.
-The standing XOR rule is no regression against the [closing record](benchmarks/2026-10-03-item6-9-closing/README.md),
+- *Returned.* Distributional pressure on the meaning codes, as their
+  placement from the registered priming surface
+  ([above](#placement-from-the-registered-priming-surface-one-metric-for-sbow-diffusion-and-bind-alec-2026-10-20-proposed-with-the-objective-to-decide));
+  the primed bank as the inverse's candidates, up to
+  `reconstructionBasisLimit` primed rows beside the sentence's own; and the
+  answer's reach into the understanding, as the default projected update
+  ([Gradient flow](GradientFlow.md#item-20-round-34-default-projected-gradients-2026-11-09)).
+- *Not returning.* A unit-sphere constraint on the codes: a concept's
+  length carries its certainty instead (`ConceptTrust`;
+  [concepts as regions](#concepts-as-regions-certainty-from-evidence-no-sphere-alec-2026-10-24));
+  the VQ EMA refresh; and the antipode term, removed with no repulsion
+  objective in its place.
+- *Still catalogued.* A spatial representation of the priming field,
+  activation geometry and the field proposal.
+
+The standing XOR rule is no regression against the item 6.9 closing,
 including its explicit red gates; this is not a claim that every gate is green.
-The renames, `query` and `ask` ([thought-loop plan §§5–7](plans/2026-10-07-thought-loop.md#5-the-query-rename-claude-for-codex-2026-10-07)) and item 6.2's initial mechanism landed at `e43638a` (accepted October 7). The [6.2 closing](benchmarks/2026-10-09-item6-2-closing/README.md) is accepted under thinking §14.13: mechanism complete, decomposition demonstrated. The `MM_math_chain` campaign is stopped by decision; learning is deferred to item 0's checkpoint under the four recorded protocol corrections. Alec accepted item 6.5's mechanism on October 7; its learning gates remain pending the million-sentence checkpoint. The current sequence is in [todo](../todo.md).
+The renames, `query` and `ask`, and item 6.2's initial mechanism landed at `e43638a` (accepted October 7). The 6.2 closing is accepted: mechanism complete, decomposition demonstrated. The `MM_math_chain` campaign is stopped by decision; learning is deferred to item 0's checkpoint under the four recorded protocol corrections. Alec accepted item 6.5's mechanism on October 7; its learning gates remain pending the million-sentence checkpoint. The current sequence is in [todo](../todo.md).
 
 ## Thought residue carried from item 6.2 (2026-10-09; unscheduled)
 
-The [thought-loop audit §1](plans/2026-10-07-thought-loop.md) findings 6–7
+Findings of the thought-loop audit
 remain outside the completed thinking mechanism: seed open-role `part` sets
 into knowing, specify inverses for the thought faces, and resolve `query`'s
-knowing write, which the accessible-mind spec defers. These require a later
+knowing write, still deferred. These require a later
 specification. Removal of the one-release rename aliases remains in item 2.
 
-## Carried from the 6.8 §13–§15 rounds (2026-10-04)
+<a id="carried-from-the-68-1315-rounds-2026-10-04"></a>
 
-Decided the same day and recorded in the 6.8 plan
-([§13.4](plans/2026-09-27-item-6-8-one-attention.md#134-perceptual-space-is-the-basis-of-zero-order-conceptual-space-alec-2026-10-04),
-[§14](plans/2026-09-27-item-6-8-one-attention.md#14-review-of-the-13-measurement-claude-2026-10-04),
-[§15](plans/2026-09-27-item-6-8-one-attention.md#15-review-of-the-14-measurement-claude-2026-10-04)),
+## Carried from item 6.8 (2026-10-04)
+
+Decided the same day and recorded in
 [Architecture](Architecture.md#two-spaces-one-index-the-symbol-in-perceptual-space-the-concept-in-conceptual-space-decided-alec-2026-10-04)
 and [Philosophy](Philosophy.md#the-sign-in-two-spaces-genera-are-not-located-2026-10-04).
 Not in the 6.8 rounds; each names its home.
@@ -1669,13 +1656,12 @@ Not in the 6.8 rounds; each names its home.
   supersedes the signed Kleene proposal. Conjunction/intersection take
   `(min⁺, max⁻)`, disjunction/union `(max⁺, min⁻)`, and negation exchanges
   poles. Form binding retains round 3a's kernels; inverses remain searches.
-  Catalogue [§3.8](specs/2026-09-29-operator-catalogue.md#38-what-was-decided-earlier-in-the-pass).
 - **The fold composing forms above words** (operators update): the proposed
   located word fold is superseded by round 3a's boundary pairs, exact length
   thermometer and collision mints. A word remains a max over its parts;
   anagrams need no general positional fold. Higher-order forms still use
   the binding kernels; round 4a composes the separate meaning block by the bilattice.
-  *Open, from [plan §7.3 and §7.9](plans/2026-10-05-operators-update.md#73-parts-chunk-up-serially-overlapping-parts-plus-length-would-identify-a-word-without-order):*
+  *Open:*
   the same construction one rung up — adjacent **word** pairs plus the
   sentence's word count as the sentence's parts — would make "dog bites
   man" differ from "man bites dog" by form alone, as "bana"/"banana"
@@ -1690,24 +1676,20 @@ Not in the 6.8 rounds; each names its home.
   evidence lanes are implemented; the semantic certificate is exact at gate
   scale and diagnostic at corpus scale. The adjacent-word centroid and
   degree-normalized membership priming are included in the same landing.
-  The room pass is retired; the containment cap preserves identity. See the
-  [combined receipt](benchmarks/2026-10-07-operators-final/) and
-  [repair receipt](benchmarks/2026-10-07-operators-final-b/). The repair
+  The room pass is retired; the containment cap preserves identity. The repair
   freezes both code blocks before lexical staging, identifies inverse words
   by form, carries independent for/against lanes through the leaf and row,
   bounds retrieval priming and scales the affine reader blocks.
-  The repair's exact source has a green 5,500-case sweep, all thirty standing
-  trainings pass, and R and E are identically zero. Alec accepted the repair
-  under plan §45 on October 7; magnitude as definedness (§44) is included in
-  the subsequently accepted 6.5 mechanism landing.
+  Alec accepted the repair on October 7; magnitude as definedness is included
+  in the subsequently accepted 6.5 mechanism landing. The membership priming
+  has since retired with priming diffusion.
 - **The `not` items — closed across rounds 1–4a:** exclusion clears the
   expressed evidence, conjunction reads explicit poles, and negation exchanges
   the meaning poles while preserving form.
 - **The negative image on the concept face** — mechanism closed in round 2
   (landed `3de37eef5`): gain, presence and role attention gate the concept
   complement; storage retains the observed value and thought reads the
-  conceived value; form is protected
-  ([receipt](benchmarks/2026-10-06-operators-round2e/README.md)). The
+  conceived value; form is protected. The
   complement it reads is populated since the final landing. Its learning
   utility — joint and useful-query learning with the image on — is a
   measurement that waits for the million-sentence checkpoint and sits with
@@ -1715,11 +1697,11 @@ Not in the 6.8 rounds; each names its home.
 - **Sparse percept presences** (perception, when it is trained): dense
   prototypes' joins saturate toward everything (mean cosine between word
   forms ≈ .98 at any scale, XOR term of a unit root .03–.05); presences on
-  ~30% of coordinates give ≈ .83 and .25–.35. The gates' receipts report
-  mean cos(L) so the state is known; nothing is set.
-- **Footprints checked at load** (operators update): catalogue §1 rule 10,
-  each operator's reads and writes over form, meaning and poles, checked
-  against rule 2's declared writes.
+  ~30% of coordinates give ≈ .83 and .25–.35. The gates report mean cos(L)
+  so the state is known; nothing is set.
+- **Footprints checked at load** (operators update): each operator's reads
+  and writes over form, meaning and poles, checked against its declared
+  writes.
 - **The inverse's chooser** (operators update, first item; Alec, 2026-10-05:
   "The inverse should have a chooser also"): a learned score over candidate
   decompositions (operation to undo, pair or word), features the relative
@@ -1730,56 +1712,56 @@ Not in the 6.8 rounds; each names its home.
   × priming`; separate parameters from the forward chooser (shared weights
   would let the inverse's cross-entropy reinforce the forward's choices
   without cost). The walk policy (undo / unary / STOP) trained the same way.
-  (6.8 plan §16.4.) The earlier "one scorer for compose and generate" is
-  withdrawn in its shared-weights form.
+  The earlier "one scorer for compose and generate" is withdrawn in its
+  shared-weights form. *Retired since:* both teachers reached into the
+  model's internals (Alec, 2026-11-03); the pair chooser is the fixed joint
+  residual argmin (2026-11-04), and the walk policy learns from its own
+  departures (item 2.0).
 - **A dense chooser signal, if wanted** (later): the straight-through
   mixture's first-order comparison at every round, entered as a control
   variate for the score-function estimator (REBAR, Tucker et al. 2017; RELAX,
   Grathwohl et al. 2018), which keeps the estimator unbiased; a plain sum of
-  the two is biased again (6.8 plan §16.3).
+  the two is biased again.
 - **The attention chooser's estimator** (operators update; Alec, 2026-10-05):
   the input-attention walk scores its bracket actions with the compose
   chooser's parameters; its straight-through credit was found reaching the
-  shared chooser through the perception pullback (6.8 plan §21.1, §22) and was
+  shared chooser through the perception pullback and was
   detached at the sentence handoff. Round 1 supplied the score-function
   estimator; round 2 makes its sentence mechanism live by handing
   poles to the sentence and sharing the sentence's departure and `R+E+A`
-  comparison with compose. Its owner remains reconstruction. Measurement
-  of actual nonzero advantages is in the round-2 receipt. Its unchanged
+  comparison with compose. Its owner remains reconstruction. Its unchanged
   parallel MM caller still bypasses the sentence owner step; that coverage
   requirement is unresolved.
 - **The decomposition chooser's exact-fit precedence and feature
-  standardization** (operators update; 6.8 plan §23): after cross-entropy on
-  four sentences the chooser's context weights outweighed the fit for one
-  root ("hello there → hello hello", §22 run 10); an exactly recomposing pair
+  standardization** (operators update): after cross-entropy on four
+  sentences the chooser's context weights outweighed the fit for one root
+  ("hello there" read back as "hello hello"); an exactly recomposing pair
   is taken before context has a say, and the activation features (projection
   coefficients, unbounded) are standardized.
 
-**Status, closed 2026-10-07 (operators update [plan §45](plans/2026-10-05-operators-update.md#45-review-of-the-repair-pass-claude-2026-10-07-accepted-as-the-operators-update-landing)).**
-Round 1 landed at `73cd7b71b` (the `not` items, footprints at load, the
-inverse's chooser with exact-fit precedence and standardized features, the
-score-function attention estimator). Round 2 landed at `3de37eef5` as 2e:
-the trial cost as the owner-step total `R+E+A`, one departure over both
-walks drawn walk-first, the narrowed poles handed off with the scope, keep
-by reconstruction alone, a presented reader on the kept root and a
-comparison reader on both roots for the advantage, the image at the
-closing on the concept face; rounds 2, 2b, 2c and 2d were rejected on the
-way for the reasons in plan §15, §17, §19 and §21 and their receipts
-(`benchmarks/2026-10-06-operators-round2*`). Round 3a landed at
-`cce3a4f7b`: identity by construction. The planned round 3 (has-a wholes,
-the narrowing-weighted centroid) and round 4 (Kleene connectives,
-membership as properties) were superseded by the combined step (plan
-§36–§40): meanings as the context mean of containing rows' fixed codes,
+**Status, closed 2026-10-07 (operators update).**
+Round 1 delivered the `not` items, footprints at load, the inverse's chooser
+with exact-fit precedence and standardized features, and the score-function
+attention estimator. Round 2 made the trial cost the owner-step total
+`R+E+A`, with one departure over both walks drawn walk first, the narrowed
+poles handed off with the scope, the keep by reconstruction alone, a
+presented reader on the kept root and a comparison reader on both roots for
+the advantage, and the image at the closing on the concept face; four earlier
+candidates were rejected on the way. Round 3a made identity by construction.
+The planned round 3 (has-a wholes, the narrowing-weighted centroid) and round
+4 (Kleene connectives, membership as properties) were superseded by the
+combined step: meanings as the context mean of containing rows' fixed codes,
 the bipolar bilattice over pole pairs, the adjacent-word centroid
-`c = L + α(U−L)` under the containment cap, bounded membership priming, the
-addressed rows of 4a-0, and the two-lane leaf of §42, landed at `f4a68404e`
-and accepted on October 7. The "round 5 attention filter" was withdrawn
-(attention is the `.where` mask; now todo item 6.1). Not delivered by the
-update and recorded above: expectation by inversion with the
-reconstruction audit at production width, the collision rule for property
-rows and the merge rule, and word pairs at the sentence rung. The dense
-chooser signal is not wanted (the forward stays a tree, plan §12.2);
-sparse presences stay a perception item.
+$c = L + \alpha(U - L)$ under the containment cap, bounded membership priming,
+the addressed rows of round 4a-0 and the two-lane leaf, accepted on October 7.
+The "round 5 attention filter" was withdrawn (attention is the `.where` mask;
+now todo item 6.1). Not delivered by the update and recorded above:
+expectation by inversion with the reconstruction audit at production width,
+the collision rule for property rows and the merge rule, and word pairs at the
+sentence rung. The dense chooser signal is not wanted (the forward stays a
+tree); sparse presences stay a perception item. Since then the keep and the
+credit read whole paths on R + A, and the comparison reader has retired
+([Gradient flow](GradientFlow.md#whole-path-credit-and-concept-episodes-2026-11-11)).
 
 ## `intuit`: a learned thought operation as the completeness fallback (future work, Alec, 2026-10-21; unscheduled)
 
@@ -1859,7 +1841,7 @@ capacity question in the measurement above is that predictor's size.
 `intuit` is its own predictor, not the expectation predictor exposed:
 the retired ARMA(p, q) reintroduced over the STM vectors, deterministic,
 read top-down; expectation stays the bottom-up gain field. Scheduled as
-part of item 3 ([spec](plans/2026-10-21-intuit.md)); the item-0
+part of item 3; the item-0
 measurement above stays here.
 
 **Revised (Alec, 2026-10-21, later).** `intuit` is one layer of order-0
@@ -1867,11 +1849,11 @@ prediction in the parallel calculus (union, intersection, negation as
 lane exchange): a max–min composition of the knowing field with a
 two-lane implication relation held as LTM1 rows and learned by the
 calculus itself, with no parameters; it leaves the knowing set from
-which the answer and output are composed ([spec §5](plans/2026-10-21-intuit.md)).
+which the answer and output are composed.
 The measurement above becomes relation rows and fan-out at matched
 accuracy, not parameter count.
 
-**Revised again (Alec, 2026-10-30; [thinking spec §22.3](plans/2026-10-27-item2-5-thinking.md)).** `intuit` has
+**Revised again (Alec, 2026-10-30).** `intuit` has
 its own learned Sigma-over-Pi weights with negation at the literals, trained
 only by its use in output, because it is not understanding the input but
 doing something with it; so what it knows lives in weights after all, beside
@@ -1881,7 +1863,7 @@ are `ActivationPredictor`'s. Scheduled: item 2.5 round B.
 
 ## Re-identification in MTM (future work, Alec, 2026-10-21)
 
-Alec's §29 aside (2026-10-28): investigate whether a variable's identity by name should outlive the MTM horizon; within the horizon, names share tokens and bind's incompatibility rule can reject an antecedent.
+Alec's aside (2026-10-28): investigate whether a variable's identity by name should outlive the MTM horizon; within the horizon, names share tokens and bind's incompatibility rule can reject an antecedent.
 
 Item 2.7 adds `MediumTermMemory.match_candidate` for familiar-context recognition; later identity re-identification can build from that common cosine and MTM access history.
 
@@ -1891,14 +1873,19 @@ identity, which "doesn't disturb earlier binding, but also misses an
 identification. Re-identifying can be mentioned as future work." Step 1b
 therefore never moves a joined occurrence. Re-identification would
 recognize later that two identities are one, or that a joined site was
-misidentified, and revise. Starting point: bind plan §20's decision
-record (each occurrence's chosen antecedent kept, tokens derived by
+misidentified, and revise. A revision is also credit: the choice that
+formed the identity (bind, mint or open, with the probability the chooser
+gave it, kept in its formation record) receives a delayed cost or reward
+through that provenance, as a conditional's trust follows the fate of its
+conclusions
+([one bank](#one-bank-the-collision-rule-for-property-rows-and-a-merge-rule-decided-2026-10-06-unscheduled),
+"Revision conditions formation"). Starting point: the decision record of
+2026-10-21 (each occurrence's chosen antecedent kept, tokens derived by
 following the links, a revision moving only the site and what chose it,
-direct dependents reconsidered once); precedents in the step-1b receipt
-`benchmarks/2026-10-21-item3-5-bind-choices/README.md` (Haug's revisable
-anaphora, Recanati's mental-file linking and splitting, Lee et al.'s
-higher-order coreference, Doyle's truth maintenance, Tauer et al.'s
-incremental entity resolution). Its first certificate is the four
+direct dependents reconsidered once). Precedents: Haug's revisable anaphora,
+Recanati's mental-file linking and splitting, Lee et al.'s higher-order
+coreference, Doyle's truth maintenance, Tauer et al.'s incremental entity
+resolution. Its first certificate is the four
 partition assertions of `test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding`
 (an earlier ambiguous mention moved to a new group), carried verbatim under
 a FutureWork phase (Alec, 2026-10-21).
@@ -1910,7 +1897,7 @@ in the original four cases still run in step 1b.
 
 ## Root participant positions (review follow-up, 2026-10-21)
 
-Claude's [landing review of step 1b](benchmarks/2026-10-21-item3-5-review11-landing/claude-review.md)
+Claude's landing review of step 1b
 recommends landing `cc3672cfb` and records two nonblocking findings outside
 the gated parse shapes. At a root, `verb(noun, punctuation)` starts outside
 a noun position, so its non-head punctuation can become a participant.
@@ -1921,7 +1908,7 @@ predicate-and-object verb. These remain unresolved for Alec's design
 decision; no new grammar rule, word class or marker mask was adopted in
 the landing. A follow-up needs explicit root-position semantics and
 commit-level coverage of both shapes.
-Claude's recommendation (bind plan §22): decide the root case by the
+Claude's recommendation: decide the root case by the
 non-head's recorded occupations, as the ordinary menus already do (a
 non-head whose occupations are marker positions is an attachment, never a
 participant); extend the standalone exception to any order-1 root
@@ -1931,8 +1918,7 @@ composition, read through its declared head.
 
 *Answered for content (Alec, 2026-10-24): a higher-order concept's content
 is the pure centroid of its members' content weighted by their positive
-and negative evidence, neither union nor intersection ([context-wholes
-spec §2b](plans/2026-10-24-context-wholes.md)). The meet remains binding's
+and negative evidence, neither union nor intersection. The meet remains binding's
 test.*
 
 Alec asked whether successive binds intersect an identity, so that it is
@@ -1960,7 +1946,7 @@ and stays here as future work.
 ## Episodic memory: several LTM0 entries per time (Alec, 2026-10-23)
 
 Alec, while deciding how a sentence's words are found after derivation
-removal (step-2 spec §72): "We might want to store multiple LTM0 per
+removal: "We might want to store multiple LTM0 per
 time, which would allow episodic memory; that can be a future work item."
 An LTM0 entry is one idea with its `.when`; several entries sharing a time
 would be an episode, the co-present ideas of one moment, which recall
@@ -1968,8 +1954,7 @@ could bring back together into STM's chunks. Today each close writes its
 ideas with one `RowTime` stamp per close, so the stamp already groups a
 sentence's ideas; episodic memory would make that grouping a read
 (entries at a time) rather than an accident of the writer. *Decided the
-same day:* recall by `.when` alone is item 3's, in the
-[layout-and-removal spec](plans/2026-10-23-layout-and-removal.md); this
+same day:* recall by `.when` alone is item 3's; this
 entry is its record.
 *2026-11-10 (Alec):* the percept counterpart is decided in direction in
 [§7](#7-episodic-memory-a-few-active-indices-beside-each-row): the percept
@@ -1978,7 +1963,7 @@ the same `query(when=...)` reads both.
 
 ## Identity event histories: review follow-ups (2026-10-23)
 
-The identity line's [source-11 review](benchmarks/2026-10-23-identity-threading/final/source-11/claude-review.md)
+The identity line's source-11 review
 records two nonblocking boundaries for the event/recall contract. Re-closing
 at an occurrence already used as an event can reach `MediumTermMemory.forget`
 through `open`/`bind` and remove that history. Decide and certify event
@@ -1989,22 +1974,21 @@ read for that case. Neither affects the retained G1–G3 shapes. No new
 re-identification policy or stored representation is implied.
 
 
-**2c follow-up (2026-10-23, awaiting review).** The
-[2c receipt](benchmarks/2026-10-23-item3-5-step2c/README.md) certifies both
+**2c follow-up (2026-10-23, awaiting review).** Step 2c
+certifies both
 event-history boundaries above: mention detachment preserves events owned
 by retained tokens, while actual row reclamation removes them; a captured
 unseated lexical verb uses its unique DEF reading for role evidence. No
 re-identification rule is added. The standalone order-1 composite portion
 of the root-position follow-up is implemented through its declared head;
 the root predicate/marker ambiguity remains here. Identity's live value
-now belongs to MTM (identity §34); the promotion fold uses the historical
+now belongs to MTM; the promotion fold uses the historical
 mention union, leaving the intersection-versus-union design question open.
 
 ## Perceptual cover: episodic LTM (Alec, 2026-10-24)
 
 A document's start is marked in its batch's LTM stream by a cover row
-holding an automatically minted per-document concept
-([context-wholes spec §2b](plans/2026-10-24-context-wholes.md)). Alec: the
+holding an automatically minted per-document concept. Alec: the
 cover "can be conceptual or perceptual, but perceptual LTM requires
 episodic memory that we don't have yet, so let's make that future work."
 A perceptual cover is the title page as a percept, saved in LTM so that a
@@ -2028,30 +2012,23 @@ every term at each boundary pass over the whole store: luminosity by a
 pairwise cosine of all fused points in 128-row blocks (`points @ points.T`,
 with the same-order, same-scope and opposite-pole masks), quadratic in the
 store; coverage, when `<forgetCoverage>` is on, by a leave-one-out
-catuṣkoṭi coverage over all idea rows, quadratic again; deducibility by one
-relation-reader step over the other rows for each part and implication
-row; and age by `history_age` over each stream's rows. At a million rows
-(item 3's capacity figure) the pairwise term alone is on the order of
-$10^{12}$ multiply-adds per pass.
+catuṣkoṭi coverage over all idea rows, quadratic again; and age by
+`history_age`, the model time since each row's stamp. Trust (the larger
+evidence pole) and utility (the write-time surprise) are read from columns.
+At a million rows (item 3's capacity figure) the pairwise term alone is on
+the order of $10^{12}$ multiply-adds per pass.
 
 **The proposal.** Keep luminosity as a column, maintained incrementally
 rather than recomputed: when a row is written or re-witnessed, compare it
 only against the rows its content already indexes to (the content
-postings by code, `rows_for_code`, or the priming surface's
-neighbourhood), in the same scope and order, and update the dissonance
+postings by code or the priming surface's neighbourhood), in the same scope and order, and update the dissonance
 flag of the pair's weaker member; when a row is deleted, release the rows
 it alone made dissonant. Coverage, if kept, becomes a running sum of
 per-coordinate pole maxima with a per-row contribution, so leave-one-out
-is a subtraction, not a recount. Deducibility is cached at write (the
-supporting rows are known when the relation is written) and invalidated
-when a support is forgotten. The pass then reads four columns and sorts,
-linear in the store, and the retention order is unchanged because the
-same quantities are maintained. This belongs with item 1's throughput
-work, after the layout round fixes the row shape (one slot, chains), since
-the index the incremental update relies on changes there. Forgetting spec
-§3 defines the terms; the stage barrier of step-2 §42 and §49 and the
-2c performance note (iteration spec §19 note 5) are the other costs of
-the pass.
+is a subtraction, not a recount. The pass then reads its columns and sorts,
+linear in the store, and the retention order is unchanged because the same
+quantities are maintained. This belongs with item 1's throughput work.
+`Forgetting.retention_values` defines the terms.
 
 ## Concepts as regions, certainty from evidence, no sphere (Alec, 2026-10-24)
 
@@ -2081,8 +2058,8 @@ interface law: a percept crosses as content plus evidence as magnitude).
 
 **Where the sphere is used.** `Forgetting.retention_values` normalizes all
 fused points and tests "same region" by cosine above `<forgetSimilarity>`;
-`DocumentCover.read`, `Language` 10229 and the expectation keys
-(`Expectation` 191) match by cosine or normalized dot; the identity
+`DocumentCover.read` and the expectation keys (`Expectation`) match by
+cosine or normalized dot; the identity
 candidate search of `IndependentComponents` normalizes its directions
 and basis. The attention q/k normalizations are attention mechanics, not
 concept reads.
@@ -2091,8 +2068,8 @@ concept reads.
 unit cube [0, 1]^D, not a projection to the sphere; the percept towers'
 `_interval` gives a symbol lower and upper bounds (a box); `IdentityRows.
 meet_ratios` reads coverage as a region overlap (Σmin over mass);
-catuṣkoṭi coverage reads pole maxima. The evidence lanes `c_plus`,
-`c_minus` are stored as columns beside the vector.
+catuṣkoṭi coverage reads pole maxima. The evidence lanes `truth_plus` and
+`truth_minus` are stored as columns beside the vector.
 
 **The proposal.** A concept is a region inside the cube, a box with a
 lower and an upper bound per coordinate (or a center and an extent), as a
@@ -2147,7 +2124,7 @@ Build from an explicit list of required implementation sources, with a
 launcher, dependency versions, essential configuration/grammar/schema
 files and minimal run instructions. Record the source commit and included
 file hashes. Keep tests, test fixtures and experiment drivers, evidence,
-receipts, logs, checkpoints, training corpora, virtual environments and Git
+logs, checkpoints, training corpora, virtual environments and Git
 history out of the bundle. Any required external model or dataset is a
 declared input, not silently copied from the developer's machine.
 
@@ -2219,8 +2196,8 @@ certainty. Claude's reading, under discussion:
   over letters; on graded amplitudes Σmin is a min-sum kernel, or the
   product t-norm keeps a matmul at the cost of a softer meet. Subsethood is
   asymmetric, so the five-relation table Mereology reserves for an
-  asymmetric basis becomes live, and receipts that read the symmetric score
-  need review.
+  asymmetric basis becomes live, and readers of the symmetric score need
+  review.
 - *The join stays max.* Amplitude is degree, not count; summing folds
   belong to the image work below.
 
@@ -2293,7 +2270,7 @@ Follows the image-modality entry above (Alec, 2026-10-25, origin
 
 **The problem found.** The form of a composed node is a centroid
 (`MeaningKernels.centroid` in `GrammarLayer.compose_blocks`, averaged again
-with the span's WholeSpace mean, context-wholes spec §2b), and a mean of
+with the span's WholeSpace mean, the context-wholes rule of 2026-10-24), and a mean of
 parts lies coordinatewise below their join, so a whole no longer dominates
 its parts and the percept codes stop being a mereology. Mereology.md's "The
 Order Lives in the Codes" (every whole dominates its parts) holds for the
@@ -2350,12 +2327,12 @@ reads a symbol's parts from tower 0 and its wholes from tower 1 in the same
 form coordinates, lower bound the max over parts, upper bound the min over
 wholes. The order and its transitivity live there, by construction, with
 no grammatical fold involved. An order-0 *symbol's* form is a different
-thing: a centroid that brings the two towers together (context-wholes §2b,
-the parts' average centered with the wholes' average), a good approximation
+thing: a centroid that brings the two towers together (the context-wholes
+rule: the parts' average centered with the wholes' average), a good approximation
 sitting between the part lower bound and the whole upper bound, and it
 claims no order; a composed node's form at a reduce is likewise a symbol's
-form. So "operations on meaning, centroids on form" (2026-10-23) and §2b
-(2026-10-24) stand as decided, `compose_blocks`, `split_centroid` and the
+form. So "operations on meaning, centroids on form" (2026-10-23) and the
+context-wholes rule (2026-10-24) stand as decided, `compose_blocks`, `split_centroid` and the
 WholeSpace centering are unchanged, and the earlier paragraph proposing
 the join at reduces is withdrawn (Claude's misreading; Alec: "keep it on
 percepts instead of symbols, so you shouldn't have to do anything").
@@ -2384,7 +2361,7 @@ parts and wholes are also sorted wrt one another." The item, in code names:
   :percept_width]`) satisfy `Ops.partOf(form(A), form(B))` with strict
   inequality on at least one coordinate; concepts whose percepts do not
   nest make no claim. Today the form is the centroid approximation
-  (`centroid_forms`, context-wholes §2b), which claims no order and can
+  (`centroid_forms`, the context-wholes rule), which claims no order and can
   invert it, since a mean over more parts can fall.
 - *The presumption, certified first.* Parts and wholes sorted with respect
   to one another is the towers' cross-order of decision 2 above: every
@@ -2398,7 +2375,7 @@ parts and wholes are also sorted wrt one another." The item, in code names:
   the interval, `form = lower + t (upper − lower)` with one `t` for every
   concept (the midpoint at `t = 1/2` being the centroid of the two bounds),
   is therefore sorted whenever the towers are, and strictly where B has a
-  part A lacks. This refines §2b's rule in one respect only: the point
+  part A lacks. This refines the context-wholes rule in one respect only: the point
   between the towers is taken on the interval rather than as the parts'
   average centered with the wholes' average. The free decoder's inverse
   reads the same interval.
@@ -2410,7 +2387,7 @@ parts and wholes are also sorted wrt one another." The item, in code names:
 **Measured (Codex, 2026-10-25; Claude's reading): the towers do not meet
 the cross-tower order, and the first certificate drew its edges from the
 wrong mereology.** The read-only certificate failed 152/152 containment
-edges and found 6/6 definition intervals empty (STM-chunks spec §21). Two
+edges and found 6/6 definition intervals empty. Two
 facts explain the two numbers, and they are different facts.
 
 1. *Within tower 0 the order exists, but over boundary pairs, not bytes.*
@@ -2421,8 +2398,7 @@ facts explain the two numbers, and they are different facts.
    (`WordIdentity.form`). So atom $\le$ word and nested part $\le$ word
    hold by construction and compose transitively, and two words are
    ordered when one's atom set contains the other's, which is the postings
-   containment `SymbolCentroid.place` and `containment_audit` certify (the
-   2026-10-06 receipts record 160 audits with zero violating pairs). A
+   containment `SymbolCentroid.place` and `containment_audit` certified. A
    single byte's percept row is the byte *as a word*, with atoms `#c c#`;
    `c#` is not in `cat`, so a byte row located inside a word's span is not
    that word's part in this mereology, and the 120 within-tower failures
@@ -2513,46 +2489,18 @@ item 3.0.
   context-wholes form assertions.
 
 **Built (item 2.8, 2026-10-27): two form subspaces, one partial order.**
-The implementation and its 18-case certificate are frozen at
-`be4514dedea8d9988e6e97952e33769802d8744bee580016fe9e40ef0595d9da`
-([receipt](benchmarks/2026-10-27-item2-8-subspaces/README.md)). Identity
-keeps the pair/length join; property defaults to 256 exact byte coordinates,
-with type rows derived from weighted membership and fixed part fills
-refreshed on membership revision. Non-retained order-0 forms concatenate
-the identity join and property soft meet; retained rows and centroid
-composition keep their existing writers and inverse. The old interval
-and centroid-form report paths retire with absence certificates.
-
-Alec's clarification in [spec §9](plans/2026-10-27-item2-8-two-subspaces.md#9-alecs-partial-order-clarification-2026-10-27)
-governs the earlier cross-level and strict-sort claims: a part and a type
-need not be comparable, and distinct rows may have equal vectors with
-mutual containment. The audit checks weighted nesting and reports ties
-without requiring strict separation. It preserves the cross report key
-as not applicable. `Ops.partOf` remains the one coordinatewise call.
-The native lesson and allocation certificate pass. Standing scoped
-validation on that hash records one unresolved native worked-document
-thought-persistence failure; item 2.8 is not gate-complete. Priming,
-placement, form ports, packing, XOR and snapshots/budgets have no failures.
-Slow cases remain deferred;
-D5's old-width decomposition snapshots must be regenerated from their
-recorded seeds in the November sweep. This tree is not yet landed.
-
-
-**Repaired and gate-complete (item 2.8, 2026-10-27), `555e63e2f521`.**
-The description-to-operand fold now takes the centroid of the form
-coordinates, preserving the existing event and meaning normalization.
-The thought writer distinguishes an attempted read from an actual
-checked referent binding, so an empty query leaves a canonical
-relation on the semantic-chain path. The malformed-result guard,
-recalled-chain reuse and checked-binding proof writes remain intact.
-The 20-case item certificate and all requested scoped groups pass on
-`555e63e2f521f97bce9e890a811211bd4afd044943f26936729ba5388e63c112`; the core group has 1628 passes and 36 skips.
-Both formerly failing core cases pass. The two failed predecessor
-freezes and the deterministic before/after regression are preserved
-in the [final receipt](benchmarks/2026-10-27-item2-8-subspaces-r3/README.md).
-This supersedes the blocked gate status above. Slow cases and D5's
-snapshot regeneration remain deferred to November. Item 2.8 remains
-uncommitted, for review through Alec; no push or WikiOracle bump.
+Identity keeps the pair/length join; property defaults to 256 exact byte
+coordinates, with type rows derived from weighted membership and fixed part
+fills refreshed on membership revision. Non-retained order-0 forms
+concatenate the identity join and the property soft meet; retained rows and
+centroid composition keep their existing writers and inverse; the
+description-to-operand fold takes the centroid of the form coordinates. The
+old interval and centroid-form report paths are retired, with absence
+certificates. Alec's clarification governs the earlier cross-level and
+strict-sort claims: a part and a type need not be comparable, and distinct
+rows may have equal vectors with mutual containment, so the audit checks
+weighted nesting and reports ties without requiring strict separation.
+`Ops.partOf` remains the one coordinatewise call.
 
 ## Synchronize explicit and implicit meanings (Alec, 2026-10-27)
 
@@ -2563,7 +2511,7 @@ meanings."
 
 Every raised class needs the same initial learning to cover its members,
 whether raised explicitly or implicitly; that requirement belongs to
-[item 2.7](plans/2026-10-27-item2-7-corpus.md#12-initial-learning-for-every-raised-class--alec-2026-10-27).
+item 2.7.
 The future work is to synchronize the meanings learned through those two
 routes. Keep explicit and implicit definitions available for judgement,
 as decided on 2026-10-21: agreement and disagreement retain independent
@@ -2579,12 +2527,13 @@ new problem reuses the name. Today `MediumTermMemory.names` holds the
 name within `mtmHorizon` and bind's incompatibility rule rejects an
 antecedent for a new mention. Whether a name's identity should persist
 beyond the horizon, and what rejects it, is unspecified; see the
-re-identification item above and item 2.7's record §29.
+re-identification item above.
 
 
-**2026-10-29, item 2.7 §§39/42.** The percept expectation/residual interface is
-implemented at arrivals and reconstruction leaves. Conceptual expectation and
-its independent for/against residual targets wait for item 2.5 round B. Measure
+**2026-10-29.** The percept expectation/residual interface is implemented at
+arrivals and reconstruction leaves. The conceptual expectation is
+`ActivationPredictor`; independent for/against residual targets at the
+conceptual layer wait on [the residual split](#the-residual-split-a-stopped-subtraction-or-the-correction-alec-2026-10-29). Measure
 whether an explicit learned residual inverse reduces required capacity before
 claiming that advantage from the native inverse's translated leaf chart. F2
 preserves conflicting explicit/implicit evidence; synchronization of their
@@ -2592,34 +2541,34 @@ meanings remains the previously requested future work.
 
 ## The residual split: a stopped subtraction or the correction (Alec, 2026-10-29)
 
-Asked to confirm D7 (item 2.7 record §44), Alec answered that subtracting
-the expectation is meaningful because the expectation term's gradient is
-stopped, and asked that the consideration be recorded here. Claude's note
-for the record: the stop keeps expectation's parameters out of the
-top-down gradient, the ownership half of item 2.7 record §42, and that is
-kept. Whether the inverse learns something different depends on what its
-output is compared with. In §42's rule as written, `correction =
-inverse(u)` is compared with `stop_gradient(observed - expected)`, so the
-inverse's optimum is $x - e$, a different function from $x$ (what §44
-called D7). In the form built in item 2.7 the detached expectation is
-subtracted from both sides, $(\hat{x} - e) - (x - e) = \hat{x} - x$, so the
-error and its gradient are as before, whatever is stopped. To settle:
-which form each layer builds, and whether the correction form reduces the
-capacity the inverse needs (the measurement the entry above asks for).
-Until then the percept layer keeps the built form, and the conceptual
-split is not built in item 2.5 round B (thinking spec §22).
+Asked to confirm the correction form of the residual split, Alec answered
+that subtracting the expectation is meaningful because the expectation term's
+gradient is stopped, and asked that the consideration be recorded here.
+Claude's note for the record: the stop keeps expectation's parameters out of
+the top-down gradient, the ownership half of the split, and that is kept.
+Whether the inverse learns something different depends on what its output is
+compared with. In the rule as first written, `correction = inverse(u)` is
+compared with `stop_gradient(observed - expected)`, so the inverse's optimum
+is $x - e$, a different function from $x$ (the correction form). In the form
+built in item 2.7 the detached expectation is subtracted from both sides,
+$(\hat{x} - e) - (x - e) = \hat{x} - x$, so the error and its gradient are as
+before, whatever is stopped. To settle: which form each layer builds, and
+whether the correction form reduces the capacity the inverse needs (the
+measurement the entry above asks for). Until then the percept layer keeps the
+built form, and the conceptual split is not built.
 
 ## LTM retrieval bounded by a `.when` bracket (Alec, 2026-10-30)
 
 The cued LTM0 read reaches all of memory through a window of candidates it
-scores at once, returning the top-$K$ by match (default window 1,024 rows,
-thinking spec §26.1). The bound on that memory should be time, not a
+scores at once, returning the top-$K$ by match (`ltmWindow`, default 1,024
+rows).
+The bound on that memory should be time, not a
 count: an LTM `.when` bracket override, a parameter giving an interval in
 model time, replaces the count window as the bound on the candidate rows
 when it is set, and is unset by default. The read then scores the rows
 whose `.when` stamp lies in the bracket, explicit references first, with
-the same filters and the same top-$K$. Not built; the count window lands
-with item 2.5's repair round.
+the same filters and the same top-$K$. Not built; the count window
+is.
 
 ## Polymorphic words, suchness and `point()` (Alec, 2026-10-31)
 
@@ -2668,7 +2617,7 @@ contradicts. The shared concept is the polymorphic reference. With
 differentiating content once that many distinct others have been equated
 with it. This closes the shared-LHS gap noted above: the raise reads the
 shared side in either position. Item 2.5's completion round reports the
-breaks per epoch (thinking spec §28.2, item 6) and raises on none of them;
+breaks per epoch and raises on none of them;
 this section builds the symmetric raise, the promotion and `point()`.
 
 **Closed: no `point()`, no symmetric raise, no break counter (Alec,
@@ -2682,7 +2631,7 @@ in MTM." The raise on `raiseCount` ([Orders §11](Orders.md), closing
 paragraph) is the whole mechanism for this section: a concept joined to
 that many distinct concepts at its order raises, whichever position it
 holds in its rows. What remains is a practice, not work: inspect the LTM1
-rows in the receipts periodically for concepts joined to several distinct
+rows periodically for concepts joined to several distinct
 concepts at their order, the breaks of the paragraph above. Nothing in this
 section is scheduled for the November round.
 
@@ -2690,53 +2639,78 @@ section is scheduled for the November round.
 
 **Indexicals under multimodal input: the witness (Alec, 2026-10-31).** Alec: "Indexicals are roughly word-concepts that reference percepts; so they are a bit parallel to the interpret() operation, in that they invite the model to witness(). ... Since the model is not currently getting visual input, it can remain an MTM reference, but add it to the future work for multimodal processing." The reading is in [Orders §11](Orders.md), "Indexicals witness, pronouns bind". The work, once the model has perceptual input beyond text (the [image modality](#image-modality-amplitude-measure-and-koskos-cube-alec-2026-10-25) above): an indexical mention's `bind` reads the field's current percepts as its candidates, the order-zero occurrences at the mention's `.where` and `.when`, weighted by location as MTM's candidates are today; a witnessed percept with no identity is minted, as "a" mints; and the kept definition joins the name to that identity, so "this is Felix" collects an occurrence the model saw. A pronoun keeps its candidates in MTM and the frames. Until then an indexical is an MTM reference and does what a pronoun does. Not scheduled.
 
-**The deictic class (proposed 2026-10-31; built in Codex's round).** The class of the paragraph before last is named deictic. Its name and function are in [Orders §11](Orders.md), "The deictic class"; its row is in the word-class table of [Language](Language.md), "Parts of speech are roles"; Codex builds it in item 2.5's completion round ([thinking spec §30.4](plans/2026-10-27-item2-5-thinking.md)). This replaces "The class is not named and not built" above. What remains future work is learning membership: by participation in the bare noun-phrase position ([Orders §6](Orders.md)), or by the broken transitivity that Orders §11 reads off LTM1 by inspection; until then tests and the lesson-13 harness force it.
+**The deictic class (proposed 2026-10-31; withdrawn below).** The class of the paragraph before last is named deictic. Its name and function are in [Orders §11](Orders.md), "The deictic class"; its row is in the word-class table of [Language](Language.md), "Parts of speech are roles". This replaced "The class is not named and not built" above. What remains future work is learning membership: by participation in the bare noun-phrase position ([Orders §6](Orders.md)), or by the broken transitivity that Orders §11 reads off LTM1 by inspection; until then tests and the lesson-13 harness force it.
 
 **Corrected (Alec, 2026-10-31, latest): no forcing, no built class.** Alec: "This is Felix / that is Ciao should not do any forcing. Even 'This is a / this is b' will create two LTM1 relations that both involve 'this', which will cause a raise, but eventually the ambiguity of 'this' will cause its identity to be empty (meaning that it could be a symbol for anything)." The paragraph above is withdrawn as far as it builds anything: no membership is written or forced, and nothing is learned apart from the raise. A pointing word is minted at its first definition, raised at `raiseCount` distinct relata, and defined to a class whose content, the centroid of its members, empties of differentiating share as they diversify ([Orders §11](Orders.md), "No forcing; the class is the raise's outcome"). "Deictic" names that reading. The witness under multimodal input, two paragraphs above, stands as future work.
 
 **Identity across time empties; content stays the centroid (Alec, 2026-10-31, latest still).** Alec: "the symbols and percepts are rooted in their centroids. I am talking about the identities across time, in conceptual space." The emptying of "this" in the paragraph above is of the identity an MTM token carries across time, not of a class's content: "he" and "Alec" are united by one identity whose value after "he becomes tired" has the parts and wholes of tired(Alec), while the things "this" was share nothing, so its identity across time is empty ([Orders §11](Orders.md), "The identity that empties is the identity across time"). *Claude's reading, for Alec's yes:* this bears on "Intersection or union as the basis of identity" above: an identity across time is read by what persists across its occurrences, its invariant, while a symbol's content and a class's content stay the centroid.
 
-**Worldline, and witness() before vision (Alec, 2026-10-31, latest of all).** "Word line" in the two paragraphs above is Alec's "worldline", the spatiotemporal occurrent that is the basis for identity, not a row; Claude's gloss is withdrawn ([Orders §11](Orders.md), "Worldline, not word line"). Alec: "'this' or 'that' are just words for objects that do not find a match in MTM. We can allow that as witness() as we talked about, an alternative to interpret(), that will find a temporary perceptual reference and not conceptualize it. ... it can't work until we have an alternate way of cognizing reality like vision; we can use a concept with zero perceptual content and maximal conceptual uncertainty (an unknown)." This amends "Indexicals under multimodal input" above: `witness` can be built before vision, with the unknown as its reference, a pending MTM token never promoted, with zero form content and both lanes at zero; vision later fills that token with the witnessed percept. It is an operation the chooser selects by credit, beside `interpret`, with no word anchored to it. Not scheduled; a draft item is in [thinking spec §30.7](plans/2026-10-27-item2-5-thinking.md) for Alec's yes. On suchness, see Orders §11, same paragraph, and "Polymorphic words, suchness and `point()`" above, whose `point()` is withdrawn and whose "detection by confusion" is the `interpret` path.
+**Worldline, and witness() before vision (Alec, 2026-10-31, latest of all).** "Word line" in the two paragraphs above is Alec's "worldline", the spatiotemporal occurrent that is the basis for identity, not a row; Claude's gloss is withdrawn ([Orders §11](Orders.md), "Worldline, not word line"). Alec: "'this' or 'that' are just words for objects that do not find a match in MTM. We can allow that as witness() as we talked about, an alternative to interpret(), that will find a temporary perceptual reference and not conceptualize it. ... it can't work until we have an alternate way of cognizing reality like vision; we can use a concept with zero perceptual content and maximal conceptual uncertainty (an unknown)." This amends "Indexicals under multimodal input" above: `witness` can be built before vision, with the unknown as its reference, a pending MTM token never promoted, with zero form content and both lanes at zero; vision later fills that token with the witnessed percept. It is an operation the chooser selects by credit, beside `interpret`, with no word anchored to it. Not scheduled; a draft item awaits Alec's yes. On suchness, see Orders §11, same paragraph, and "Polymorphic words, suchness and `point()`" above, whose `point()` is withdrawn and whose "detection by confusion" is the `interpret` path.
 
-**The stand-in for witnessed suchness (Alec, 2026-10-31; specified, for Alec's choice).** Alec: "'this' is a word that temporarily corresponds to a worldline, that we do not want to conceptualize, or if we do, conceive of it in the maximally generic way. ... We need a conceptual stand-in for that, and we have tools like both, neither, which probably won't work (but need to be specified), and the certainty (which I suggested should be frozen at zero)." The three are specified in [Philosophy](Philosophy.md), "Witnessing Suchness". In short: *neither*, `[0, 0]`, contributes nothing to the composition and cannot tell two witnessings apart, and it names not knowing where witnessing knows; *both*, `[1, 1]`, binds to anything but at full certainty and teaches both poles into whatever it is equated with, a contradiction the model suppresses; certainty frozen at zero works: two lanes at zero that evidence never writes, so no row teaches the stand-in, no exclusion is learned for it and no raise applies, with the form part free to carry the witnessed percept's presence once there is a field, zero until then. The maximally generic concept, if the word is to have an object, is the top pole `everything` ([Language](Language.md), "Parts of speech are roles") with its certainty frozen: a symbol for anything. The witnessed thing itself is the MTM token, one per mention, never promoted; the rows are at the occurrence, as the completion round found on the hash (thinking spec §31). This completes the draft item for `witness` in [thinking spec §30.7](plans/2026-10-27-item2-5-thinking.md): its reference is the token, and its stand-in is the frozen concept. Pending Alec's choice.
+**The stand-in for witnessed suchness (Alec, 2026-10-31; specified, for Alec's choice).** Alec: "'this' is a word that temporarily corresponds to a worldline, that we do not want to conceptualize, or if we do, conceive of it in the maximally generic way. ... We need a conceptual stand-in for that, and we have tools like both, neither, which probably won't work (but need to be specified), and the certainty (which I suggested should be frozen at zero)." The three are specified in [Philosophy](Philosophy.md), "Witnessing Suchness". In short: *neither*, `[0, 0]`, contributes nothing to the composition and cannot tell two witnessings apart, and it names not knowing where witnessing knows; *both*, `[1, 1]`, binds to anything but at full certainty and teaches both poles into whatever it is equated with, a contradiction the model suppresses; certainty frozen at zero works: two lanes at zero that evidence never writes, so no row teaches the stand-in, no exclusion is learned for it and no raise applies, with the form part free to carry the witnessed percept's presence once there is a field, zero until then. The maximally generic concept, if the word is to have an object, is the top pole `everything` ([Language](Language.md), "Parts of speech are roles") with its certainty frozen: a symbol for anything. The witnessed thing itself is the MTM token, one per mention, never promoted; the rows are at the occurrence. This completes the draft item for `witness`: its reference is the token, and its stand-in is the frozen concept. Pending Alec's choice.
 
-**Decided: the null-concept (Alec, 2026-10-31, night).** Alec: "witnessing is an alternative to interpreting that gives a perceptual identity a null-concept, a concept that is not limiting because it is unknowing. It must be a frozen concept, and it must be exempt from 'normal' conceptual operations that rely on conceptual definition. But it does give something for MTM to temporarily identify." The stand-in of the paragraph above is the frozen concept, now the null-concept: one reserved concept with form and lanes zero, certainty frozen, exempt from the definition index, fold, cover, raise, taxonomy, order, priming and forgetting; the perceptual referent is the MTM token `witness` opens, which later mentions bind to and a definition may name. Design in [Orders §11](Orders.md), "Witnessing gives a perceptual identity a null-concept"; Codex item drafted in [thinking spec §30.8](plans/2026-10-27-item2-5-thinking.md), not yet sent.
+**Decided: the null-concept (Alec, 2026-10-31, night).** Alec: "witnessing is an alternative to interpreting that gives a perceptual identity a null-concept, a concept that is not limiting because it is unknowing. It must be a frozen concept, and it must be exempt from 'normal' conceptual operations that rely on conceptual definition. But it does give something for MTM to temporarily identify." The stand-in of the paragraph above is the frozen concept, now the null-concept: one reserved concept with form and lanes zero, certainty frozen, exempt from the definition index, fold, cover, raise, taxonomy, order, priming and forgetting; the perceptual referent is the MTM token `witness` opens, which later mentions bind to and a definition may name. Design in [Orders §11](Orders.md), "Witnessing gives a perceptual identity a null-concept"; Codex item drafted, not yet sent.
 
-**Sent (Alec, 2026-10-31, night).** The null-concept and `witness` go to Codex in the current item 2.5 round as addendum 4 ([thinking spec §32](plans/2026-10-27-item2-5-thinking.md)); "not yet sent" above is superseded. What stays future work here is the field itself: with vision, the token's value is the witnessed percept's content and its location the percept's, as "Indexicals under multimodal input" says.
+**Sent (Alec, 2026-10-31, night).** The null-concept and `witness` go to Codex in the current item 2.5 round as addendum 4; "not yet sent" above is superseded. What stays future work here is the field itself: with vision, the token's value is the witnessed percept's content and its location the percept's, as "Indexicals under multimodal input" says.
 
-**Renamed `sign`; the icon is the no-op; interpretation initially forced (Alec, 2026-11-01).** Alec: "let's force a three way decision of an object (no op, sign(), or interpret() are the icon, sign, and symbol), so that the confusing term witness is replaced with pierces SIGN"; and, refining it the same day: "the better way to implement this is for interpret() to be optional, and if it happens, then the interpretation may be a sign or a symbol. Again, interpretation can be initially forced since words are so often meaningful beyond themselves." The operation of the paragraphs above is `sign`, Peirce's index, with the same token and the same null-concept, now one of the two readings an interpretation can have, the other being the symbol, the word's conventional object; the reading in which the percept stands for itself, Peirce's icon, is the no-op, a leaf not interpreted at all, and it has content, the word's own code, since the text is the field ([Orders §11](Orders.md), "The three readings forced"; [thinking spec §32.3 and §32.4](plans/2026-10-27-item2-5-thinking.md), item 22). What is future work is now exact: the forcing. In reading mode `interpret` stays mandatory, so the no-op is built but reached only inside a certificate; the field is where the chooser may leave a percept alone, as "Indexicals under multimodal input" and [thinking spec §32.1](plans/2026-10-27-item2-5-thinking.md) already say, and lifting the forcing for text, by a parameter or by the field's arrival, is a decision for then. With vision, a `sign` token's content is the pointed-at percept, found among the field's occurrences at the mention's `.where` and `.when`, and a no-op token's content is the percept itself, which the built close already gives a native percept. A sound field would make the icon literal: today the model's only sounds are onomatopoeia, sounds rendered in letters, and a bark heard would be a percept read as itself, with no word between.
+**Renamed `sign`; the icon is the no-op; interpretation initially forced (Alec, 2026-11-01).** Alec: "let's force a three way decision of an object (no op, sign(), or interpret() are the icon, sign, and symbol), so that the confusing term witness is replaced with pierces SIGN"; and, refining it the same day: "the better way to implement this is for interpret() to be optional, and if it happens, then the interpretation may be a sign or a symbol. Again, interpretation can be initially forced since words are so often meaningful beyond themselves." The operation of the paragraphs above is `sign`, Peirce's index, with the same token and the same null-concept, now one of the two readings an interpretation can have, the other being the symbol, the word's conventional object; the reading in which the percept stands for itself, Peirce's icon, is the no-op, a leaf not interpreted at all, and it has content, the word's own code, since the text is the field ([Orders §11](Orders.md), "The three readings forced"). What is future work is now exact: the forcing. In reading mode `interpret` stays mandatory, so the no-op is built but reached only inside a certificate; the field is where the chooser may leave a percept alone, as "Indexicals under multimodal input" already says, and lifting the forcing for text, by a parameter or by the field's arrival, is a decision for then. With vision, a `sign` token's content is the pointed-at percept, found among the field's occurrences at the mention's `.where` and `.when`, and a no-op token's content is the percept itself, which the built close already gives a native percept. A sound field would make the icon literal: today the model's only sounds are onomatopoeia, sounds rendered in letters, and a bark heard would be a percept read as itself, with no word between.
 
-## Terms evaluated on the model's own internals: kept this round (Alec, 2026-11-03)
+**Names and pronouns by binding history.** No retained fact separates a name from a pronoun at initialization: both are objectless words in a participant position. A learnable cue is a word's binding history across documents: a name stays with one referent, a pronoun moves among many. Learning the distinction from that history is not built.
 
-*Kept for item 2.5's next round by Alec's decision; to be revisited. Their definitions are in [Gradient flow](GradientFlow.md#terms-on-internals), and the plan is [gradient projection §6](plans/2026-11-03-gradient-projection.md).*
+## Terms evaluated on the model's own internals (Alec, 2026-11-03)
 
-Alec ruled that "the teacher should not be reaching into the internals of the model". The plan therefore retires four teachers:
-- the walk teacher, which forced the generate policy onto the compose tree;
-- the decomposition teacher;
-- the verb teacher;
-- the modal teacher.
+Alec ruled that "the teacher should not be reaching into the internals of the
+model". Under that rule the walk teacher (which forced the generate policy
+onto the compose tree), the decomposition teacher, the verb teacher and the
+modal teacher are retired, and so are the field, iteration, forward-discard,
+content and reference reconstruction terms. The terms still evaluated on the
+model's own states supply no target to a choice and are kept by Alec's
+decision ("keeping them for this round seems fine"): the two walks'
+residuals, the reconstruction walk's departure credit (restored 2026-11-10),
+the definition fold, and memory's link coverage and verb and modal state
+errors. Their definitions, owners and sides are in
+[Gradient flow](GradientFlow.md#terms-on-internals).
 
-*Update (2026-11-04).* The decomposition teacher retired early, in item 2.5, by Alec's decision (a) ([thinking spec §44](plans/2026-10-27-item2-5-thinking.md)); the pair chooser is the fixed joint residual argmin. The walk teacher stays until item 2.0. It trains the generate policy only at roots that recompose exactly. At the read-back that failed XOR_grammar's fit 5, a root no longer recomposed exactly after the final update, and there the policy chose STOP ([thinking spec §46](plans/2026-10-27-item2-5-thinking.md)).
+What remains is future work: revisit each kept term under the same
+principle. Replace it by a target outside the model (the input, a supplied
+answer) or by the term's functional participation, as the verbs and modals
+now learn; otherwise, record why it stays. Not scheduled.
 
-A sweep of every trained term then found five more that are evaluated on the model's own states rather than on the input or a supplied answer. None of them supplies a target to a choice. Alec: "keeping them for this round seems fine". The five:
+**Reconstruction from order zero (Alec, 2026-11-03, evening; built in item
+2.0).** From the conversation "Thinking is Optional": "reconstruction should
+be initiated from order-zero concepts rather than explicit understanding
+(STM0 and STM1). Understanding is a thought process that transforms
+order-zero to a novel order-zero. Output, on that model, can be the same as
+reconstruction (except that it uses a transformed understanding)."
+Perception and the decoder are then free of grammar; MTM, STM and the higher
+orders belong to thought, and MTM is the state of affairs in which static
+concepts are combined with dynamic verbs. As built, the input field
+reconstructs through the grammar-free common reverse, and the sentence's
+untransformed end slots reconstruct through generate, the occurrence writer
+and the same reverse
+([Gradient flow](GradientFlow.md#state-paths-and-shared-parameters)).
 
-- **Walk residual.** Recomposing a decoded parent's children should give the parent back.
-- **Forward discard.** A charge for meaning that a compose step throws away where its inverse cannot recover it.
-- **Definition fold.** A class's definition should cover the members the model itself minted or read.
-- **Reference.** A value, with no gradient, that rewards recovering the referent the model bound.
-- **Field reconstruction.** The main reconstruction, which decodes back along the reading's own tree to the model's codebook atoms of the input words.
-
-What remains is future work:
-
-1. **Revisit each term under the same principle.** Replace it by a target outside the model (the input, a supplied answer) or by the term's functional participation, as the verbs and modals now learn ([gradient projection §5](plans/2026-11-03-gradient-projection.md)). Otherwise, record why it stays.
-2. **Move reconstruction onto the free decoder.** Reconstruct with the free decoder, which chooses its own tree, against the input's bytes and percepts. While the field is on, byte-level reconstruction (`reconstruction.free_bytes`) is not trained, so every trained reconstruction writer today targets the model's own encodings or its self-consistency. This move would remove the last training-only path through the compose tree's internals. Its natural companion is "Expectation by inversion and the reconstruction audit" above.
-3. **Rebook the answer walk's residual.** Book it on the answer side. It is booked as reconstruction today, so under one summed backward, reconstruction's gradient runs down the answer path.
-
-Not scheduled.
-
-**Superseded in part (Alec, 2026-11-03, evening): reconstruction from order zero.** Item 2 above is replaced by a stronger decision from the conversation "Thinking is Optional": "reconstruction should be initiated from order-zero concepts rather than explicit understanding (STM0 and STM1). Understanding is a thought process that transforms order-zero to a novel order-zero. Output, on that model, can be the same as reconstruction (except that it uses a transformed understanding)." Perception and the decoder are then free of grammar; MTM, STM and the higher orders belong to thought, and MTM is the state of affairs in which static concepts are combined with dynamic verbs. Reconstruction from order zero removes the field's path through the compose tree, `forward_discard` and the decoder's walk residual from reconstruction, which closes items 1 and 2 above for those terms. The loop, its acceptance checks and its sequencing are in [gradient projection §8](plans/2026-11-03-gradient-projection.md). It is the next design item, for Alec to place; not this round's work.
-
-**MTM at order zero: behavioral chains (Alec, 2026-11-03, late; decided, before step 0).** Alec: "We might also have MTM operate on order zero concepts as a way of creating behavioral chains? Animals have that, and we might want to store those in MTM before promotion to chained event concepts." And: "Behavioral chains should be implemented before step 0. Just as it identifies across nouns currently, it can also be used to identify 'the same' event (via gestalt properties, etc), which might even help in the creation of nouns." MTM holds sequences of order-0 states beside its identities, kept until recurrence promotes a chain to a chained event concept in the LTM0 idea and LTM1 binary-chain layout; it threads occurrences into one event by their gestalt properties as it threads mentions into one identity, and a thing that persists through a chain of events is a candidate noun. A chain at order 0 is a sequence, not an identity, so this holds together with "the identity store operates only on concepts of order-1 and higher" as long as MTM's order-0 contents are chains only. Scheduled before item 0, the full training session, as part of item 2.0; the design is [item 2.0, behavioral chains](plans/2026-11-03-item2-0-behavioral-chains.md) (summary in [item 2.0 §9](plans/2026-11-03-gradient-projection.md)), with its decisions for Alec in its §5. The behavior-neutral consolidation is implemented in [bin/Memory.py](../bin/Memory.py) (item 2.0 round 1); the linking and basic-percept work remains round 5.
+**MTM at order zero: behavioral chains (Alec, 2026-11-03, late; amended
+2026-11-12).** Alec: "We might also have MTM operate on order zero concepts as
+a way of creating behavioral chains? Animals have that, and we might want to
+store those in MTM before promotion to chained event concepts." And:
+"Behavioral chains should be implemented before step 0. Just as it identifies
+across nouns currently, it can also be used to identify 'the same' event (via
+gestalt properties, etc), which might even help in the creation of nouns."
+MTM threads occurrences into one event by their gestalt properties as it
+threads mentions into one identity, and a thing that persists through a chain
+of events is a candidate noun. Two structures follow (Alec, 2026-11-12): the
+same order-zero reading met again is an order-zero identity in MTM, the
+candidate that `FamiliarTier.observe_candidate` opens for promotion (MTM is
+ramsified, so an order-zero identity is a necessary consequence); and states
+joined in time order form a sequence, kept until recurrence promotes the chain
+to a chained event concept in the LTM0 idea and LTM1 binary-chain layout. This
+replaces the constraint of 2026-11-03 that MTM opens no order-zero identity
+because a chain at order 0 is a sequence. The behavior-neutral consolidation
+is implemented in [bin/Memory.py](../bin/Memory.py); recognizing the present
+event by its order-zero identity is item 1.8's
+([specification](plans/2026-11-11-item1-8-last-architecture-round.md),
+decision 21).
 
 ## Belief across the epoch boundary: perseverance and testimony (Alec, 2026-11-04; revisit if necessary)
 
@@ -2745,62 +2719,44 @@ Decided for now: evidence belongs to its source ([Architecture](Architecture.md)
 - **Perseverance at the boundary.** A row kept for given knowledge would keep the history's belief, in LTM0 and LTM1 alike. People keep beliefs after their grounds are discredited (Ross, Lepper and Hubbard 1975), and after forgetting where they learned them (source amnesia). The cost: the previous epoch's belief becomes a floor for the next. LTM1 merges evidence by the per-lane maximum, so re-reading the history cannot lower it, and the epoch no longer re-presents one history.
 - **Accepting testimony.** Content embedded in a supply would enter with some belief, instead of unverified with both lanes at zero. People tend to accept what they comprehend before evaluating it (Gilbert 1991). The cost: "Bob said X" would raise belief in X by mention alone.
 
-Revisit if a trained model's answers show given knowledge cut off from the beliefs it depends on, or if a psychological measurement calls for it ([thinking spec §44](plans/2026-10-27-item2-5-thinking.md)).
+Revisit if a trained model's answers show given knowledge cut off from the beliefs it depends on, or if a psychological measurement calls for it.
 
 ## Events as mereological neighbours (Alec, 2026-11-05)
 
-Asked how a state is computed from a run of event members ([memory spec §9](plans/2026-11-03-item2-0-behavioral-chains.md)), Alec: "Just as some nouns share an identity, some events are mereological neighbors (in world-space, not .where, although we can infer one from the other for words, if not what they represent). We can defer this to future work." Nouns that share an identity are one identity in MTM; events that are neighbours share a boundary in world-space. For words the two addresses can be inferred from each other, but not for what the words represent. Item 2.0 builds extended events as paths only, with no computed state.
+Asked how a state is computed from a run of event members, Alec: "Just as some nouns share an identity, some events are mereological neighbors (in world-space, not .where, although we can infer one from the other for words, if not what they represent). We can defer this to future work." Nouns that share an identity are one identity in MTM; events that are neighbours share a boundary in world-space. For words the two addresses can be inferred from each other, but not for what the words represent. Item 2.0 builds extended events as paths only, with no computed state.
 
-**Superseded in part (Alec, 2026-11-05, later).** "We might just say that event runs are the mechanism that is currently used to form concepts at any level; it would work the same as for identity, but only order lower." Item 2.0 computes an event run's state from its members as an identity's value is computed from its references, one order lower ([memory spec](plans/2026-11-03-item2-0-behavioral-chains.md)). The world-space neighbour account stays here.
+**Superseded in part (Alec, 2026-11-05, later).** "We might just say that event runs are the mechanism that is currently used to form concepts at any level; it would work the same as for identity, but only order lower." Item 2.0 computes an event run's state from its members as an identity's value is computed from its references, one order lower. The world-space neighbour account stays here.
 
-### Separate word form order from leaf referent order (trust §31.3)
+## Carried from items 2.3 and 2.0 (2026-11-08 to 2026-11-11)
 
-Word concepts should generalize token instances at form order 1, with argument classes at order 2. The reading leaf separately carries its referent’s order. This changes grammar order rules, including bind eligibility and lift lowering, and is deferred until after item 2.3; this round retains native words at 0 and arguments at 1.
+### Separate word form order from leaf referent order
 
-### Grammar XOR optimization that does not settle (trust §33.1 finding 14)
+Word concepts should generalize token instances at form order 1, with argument classes at order 2. The reading leaf separately carries its referent's order. This changes grammar order rules, including bind eligibility and lift lowering, and is deferred until after item 2.3; native words stay at 0 and arguments at 1.
 
-The [2026-11-08 panel](benchmarks/2026-11-08-item2-3-xor-grammar-panel/README.md) observed grammar-XOR non-convergence in about a third of initializations on both the §30 and §32 sources. Failing trajectories oscillated between roughly 0.05 and 0.25 loss through all 400 epochs, with transient lower minima rather than sustained convergence. The mechanism remains open for the lessons item and §5 review. The panel does not identify the argument-fit carrier as the producer; silencing it lost all three runs. Highly trained models at small sizes and with few words may provide inexpensive registered artifacts, including the XOR grammar model, as Alec suggested.
+### Grammar XOR optimization that does not settle
 
-### Trained-tier artifacts from tiny models, and two class measurements (trust §36, 2026-11-08)
+The 2026-11-08 panel observed grammar-XOR non-convergence in about a third of initializations. Failing trajectories oscillated between roughly 0.05 and 0.25 loss through all 400 epochs, with transient lower minima rather than sustained convergence. The mechanism remains open for the lessons item. The panel does not identify the argument-fit carrier as the producer; silencing it lost all three runs. Highly trained models at small sizes and with few words may provide inexpensive registered artifacts, including the XOR grammar model, as Alec suggested.
 
-Alec's observation ([trust §33.1](plans/2026-11-05-item2-3-trust.md#331-the-panel-alecs-decisions-and-finding-14-claude-2026-11-08)): highly trained models at very small sizes, with very few words, may be producible quickly and would serve as the registered artifacts that make trained-tier tests runnable; the eight-word `XOR_grammar.xml` model is one, and the `xor_grammar` and `mm_xor_grammar` phases already name their producers in `test/fixtures/phase-artifacts.json`. For the lessons item, beside the lesson artifacts. The same item reads two measurements before a lesson is said to have taught a part of speech (trust §31 and §36): that a word's class follows its participations rather than its meaning resemblance, and the collapse table of the [parts-of-speech spec](specs/2026-10-18-parts-of-speech.md) §2b read beside the argument radii under the class-contiguity rule.
+### Trained-tier artifacts from tiny models, and two class measurements (2026-11-08)
 
-### Item 2.0 round 2: deferred measurements and property attribution (2026-11-08)
+Alec's observation: highly trained models at very small sizes, with very few words, may be producible quickly and would serve as the registered artifacts that make trained-tier tests runnable; the eight-word `XOR_grammar.xml` model is one, and the `xor_grammar` and `mm_xor_grammar` phases already name their producers in `test/fixtures/phase-artifacts.json`. For the lessons item, beside the lesson artifacts. The same item reads two measurements before a lesson is said to have taught a part of speech: that a word's class follows its participations rather than its meaning resemblance, and the collapse table, the pairwise cosines between the operator arguments' concepts (`PartsOfSpeech.collapse`), read beside the argument radii under the class-contiguity rule.
 
-The measured before, item 60 metrics and item 71 runs remain at the end of item
-2.0 under [§10.2](plans/2026-11-03-gradient-projection.md). No lesson arm or
-large-event panel runs in round 2. The last item 71 records contain no audited
-event at or above `1e8`; that repair item is empty unless the end measurements
-reopen it. The momentum-carried projection and learned pair policy remain
-conditional on those receipts.
+### Unused property attribution
 
-One WholeSpace changes parallel readers to the shared trained memberships.
-The `PerceptProperties.reverse` and `reverse_poles` divisions retain their
-`1e-12` floors; basic percepts replace that read in round 5. The required
-default reverse-file selection passed 33 cases with 28 skips, but invoked
-neither function: zero calls, zero denominators and zero floor hits for each.
-This is an empty observation, not a claim that trained attribution avoids the
-floor. A separate two-row observer control detected 1/2 and 3/4 floor hits.
-FormCentroids keeps its existing compose-time read and presence weighting.
-The [round-2 return, §14](plans/2026-11-03-gradient-projection.md) records the
-completed candidate-context routing and the evidence.
+`PrimitiveProperties.reverse` and `reverse_poles` (`bin/PerceptProperties.py`) keep their `1e-12` normalization floors but have no callers since basic percepts replaced that read; they go with the next change to that file.
 
-The [memory plan §10](plans/2026-11-03-item2-0-behavioral-chains.md#10-shared-stmltm-strata-and-decoding-from-an-idea-alec-2026-11-08) reserves shared STM/LTM strata, operator concept seats, collapse at the end of the pinned sentence and authority onto operator concepts' trust for the memory round; §10.6 keeps `LTM1.operator` and `LTM1.grammar_operation` until that round.
+### Conditions on the projection and the pair policy (2026-11-09)
 
-### Conditions retained after item 2.0 round 3/4 (2026-11-09)
+The instantaneous R/A projection and the primitive clamp velocity repair are built. Projecting the momentum-carried step, rather than the instantaneous gradient, is built only if measurements show reconstruction rising where output was projected. A learned pair policy is built only if answers show errors of pair orientation or near-ties among approximate inverses. It would join the comparison of its walk under the ordinary proposal and score-function credit, keep the joint residual in its score, read no feature from the derivation's operand order, and use a fixed score scale, never a division by the parent's energy. The pair shortlist ranks candidates by form similarity times priming before either meaning lane is read, so meaning arbitrates only among the K form-nearest words on each side. Alec: meaning matters, particularly with large lexicons; the shortlist's dependence on form is revisited with that policy. The lesson owners `compose_lesson` and `generate_lesson` are to be named for the three grammars, compose, think and generate, when that code next changes.
 
-The instantaneous R/A projection and primitive clamp velocity repair are built.
-Projection of momentum-carried gradients remains conditional on the end-of-item
-receipts showing reconstruction rising where output was projected. A learned pair
-policy also remains conditional on those receipts. The decoder's residual and
-walk credit keep their interim R booking; the unified loop moves these bookings
-to output. Memory plan §10, basic percepts and thinking-spec §54 finding 2 remain
-round 5; the loop and end-of-item measurements remain round 6. This round makes
-no claim from repeated fits, lesson arms or item 60 measurements.
+### Open questions of the whole-path design (2026-11-11)
 
-## Item 2.0 memory and loop boundary (2026-11-09)
+1. The question conditioner and the generation read change the state between the thought and the output walk, and no departure explores them; whether they belong to the thought, or go, is open.
+2. A path explores one departure, so an improvement that needs two departures together is never found; paths with more than one departure are not built.
+3. On a statement an accepted conclusion becomes the answer and pays for being said; whether a thought may keep a conclusion without saying it is open.
+4. Omission hides a word's whole form or a percept slot; withholding a concept from a seen form (the unfamiliar word), omitting a constituent, and corruption in place of omission are not built, the last deliberately.
 
-Round 5's reference collections, shared STM/LTM strata, seats and basic percepts are described in the [memory plan](plans/2026-11-03-item2-0-behavioral-chains.md) and the [round-5 return](plans/2026-11-03-gradient-projection.md#17-round-5-memory-basic-percepts-and-shared-strata). Round 6 carries reconstruction from the parallel field, reverse as the one decoder through basic percepts, generate with the occurrence writer, loop D1–D6, memory §10.2's measurements, and decoder bookings moving to output. Events as mereological neighbours and item 1.5's new-feature-layout port remain future work. Momentum-carried projection and a learned pair policy remain conditional on end-of-item receipts.
+Item 1.5 still has to port the new feature layout.
 
 ## `.when` is model time in every store (Alec, 2026-11-10)
 
@@ -2808,36 +2764,31 @@ Round 5's reference collections, shared STM/LTM strata, seats and basic percepts
 ladder, sentence/thought ticks, epoch reset and relative learned reads remain.
 The continuation corrects the conceptual mixer's absolute temporal input to a
 read of elapsed-time differences and keeps document ordinals as addresses.
-Validation is recorded in the [continued return](plans/2026-11-03-gradient-projection.md#23-round-7-continuation-convergence-repair-and-episodic-anchors).
 Alec: ".when should not be
 per-document, it should be model time, even for semantic memory." He asked
 why it had been changed; the record follows.
 
 *How `.when` became a position in a document.*
 
-- 2026-09-30, measured
-  ([occurrence spec §1.1](specs/2026-09-30-occurrence-tense-aspect.md)):
+- 2026-09-30, measured:
   the reading clock's stamp rode inside every idea into the store, the
   chooser read it, and the answers of a trained MM_xor moved with the clock
   (largest error .061 at tick 802, .240 at tick 1802).
-- 2026-10-03, Alec kept the band and changed its value (occurrence spec
-  §0): "I see it as a valuable value when stamped inside concepts, just as
+- 2026-10-03, Alec kept the band and changed its value: "I see it as a valuable value when stamped inside concepts, just as
   .where is currently stamped, so that concepts have information about
-  temporal order that they would not otherwise have access to." The spec
+  temporal order that they would not otherwise have access to." The decision
   put the defect in the value, a global clock that was the same for every
   word of a batch and different for every batch, and made the value the
   sentence's index in its document, the same at every reading.
 - 2026-10-07, built in operators round 4a-0 and landed in `f4a68404ea`
   (`DocumentWhenEncoding`, `Occurrence.stage_position`,
-  `Occurrence.event_positions`); re-reading a sentence re-witnesses one row
-  ([reader inventory](benchmarks/2026-10-07-operators-round4a0/when-readers.md)).
+  `Occurrence.event_positions`); re-reading a sentence re-witnesses one row.
 
 *How stored entries returned to model time.*
 
-- 2026-10-20, Alec's revision as the occurrence spec records it (§0):
-  `.when` is model time, in a column of the row that composition never
+- 2026-10-20, Alec's revision: `.when` is model time, in a column of the row that composition never
   reads.
-- 2026-10-23 ([layout spec §2](plans/2026-10-23-layout-and-removal.md)),
+- 2026-10-23,
   Alec: "A mind should be able to recall mental content by filling in only
   the `.when`, and leaving the rest blank." and "when a concept is written
   to an STM row, it should receive a timestamp, which makes its width
@@ -2893,7 +2844,7 @@ again at its address (document, index and content).
 entry, and `EntryRead.recall_chunks` gives a recalled entry its stored
 stamp. Semantic memory is on model time.
 
-*Still a position in a document.* The staged position
+*A position in a document until round 7.* The staged position
 (`Occurrence.stage_position`, `Occurrence.relative_positions`,
 `Occurrence.source_at`) on `model.when_encoding`, whose capacity
 `WhereRegistry` sets to `max(ltm_capacity, document_bound)`, is read by:
@@ -2916,17 +2867,21 @@ stamp. Semantic memory is on model time.
   generated events, and `FieldReverse`, which re-encodes a field's `when`
   into the percept events it reconstructs.
 
-`test_when_time_does_not_stamp_live_position_encoders` in
-[test_model_time_when.py](../test/test_model_time_when.py) and
-[Architecture](Architecture.md) ("When (final operators update)") still
-state the per-document behaviour, and
-`test/fixtures/when-readers-round4a0.json` lists the readers of round 4a-0.
+Round 7 stamps all of these with the sentence's model tick:
+`Occurrence.source_at` returns the tick of the current presentation, which
+`stage_position` stages and `event_positions` reads, and document ordinals
+remain addresses only. The certificate is
+`test_when_time_stamps_live_position_encoders_on_the_shared_ladder` in
+[test_model_time_when.py](../test/test_model_time_when.py).
 
 *Two other counts.* A thought idea deposited in STM takes its `.when` from
 `ThoughtChunks._next_when`, a per-stream count of thought deposits written
 as four exact 16-bit digits offset by 2 and used as an exact address
 ([Architecture](Architecture.md), thought time), and `FamiliarTier._clock`
-gives an MTM pool entry the pool's close count. Neither is model time.
+gives an MTM pool entry the pool's close count. Neither is model time. *Since
+round 7 both read the one clock:* `_next_when` advances model time by a tick
+of its own for each thought step, and `FamiliarTier._clock` reads the current
+sentence's tick.
 
 *To specify before a round.*
 
@@ -2955,9 +2910,7 @@ gives an MTM pool entry the pool's close count. Neither is model time.
 *Decided for round 7 of item 2.0 (Alec, 2026-11-10, question tool).* The
 round moves these stamps ("Yes, same round"); one tick per sentence ("One
 sentence"); the thought count and the MTM close count read the one clock,
-each thought step a tick of its own ("One clock"). Points 1 and 4 are
-specified in the round's text ([2.0 spec](plans/2026-11-03-gradient-projection.md)
-§21.1, assumptions A4 and A5). *As built (accepted 2026-11-11):* the epoch remedy is built as read above, both clocks saved with `_epoch_rows` and
+each thought step a tick of its own ("One clock"). *As built (accepted 2026-11-11):* the epoch remedy is built as read above, both clocks saved with `_epoch_rows` and
 put back at every boundary; and every learned reader, composition and the
 conceptual mixer included, takes an age or a difference, so point 1's
 "composition does not read the stamp" became "composition reads only elapsed
@@ -3001,6 +2954,18 @@ stamp. [Kaufmann and Viera (2026)](https://doi.org/10.1080/00048402.2026.2649411
 count a duration used as a quantity, informational transfer, among the
 marks of a temporal representation (§7, "Grounding").
 
+*Decided earlier (Alec, 2026-09-30) and not built: a row keeps only its
+start.* A state holds from its row's start until a later row of the same
+content with evidence against begins in the same stream; with none it holds
+on. Memory stays append-only: an ending is a new row, never a value written
+back into an old one, so a feeling that lasts for days is two rows, its onset
+and its end. This is the event calculus's law of inertia (Kowalski and Sergot
+1986), the usual answer to the frame problem, and it replaced an eternal
+flag, a refresh rule and a stored duration. A query "does P hold at t" finds
+P's latest onset at or before t and checks that no complement begins in
+between; no such reader exists yet. Any delta or run-length scheme for
+`.when` should be weighed against this rule.
+
 ## A fragment or a sentence understood in one attentional window, without grammar (Alec, 2026-11-11; to investigate)
 
 Alec: "Would the architecture eventually be capable of processing sentence
@@ -3018,8 +2983,7 @@ whole sentences without grammatical operations."
   as one.
 - *The window.* Every sentence opens with an attention pass over the whole
   input as one bracket, before attention narrows word by word
-  ([2.7 corpus spec §26.2](plans/2026-10-27-item2-7-corpus.md);
-  `FamiliarTier.open_sentence`, `_last_open_attention`). The dynamic stop
+  (`FamiliarTier.open_sentence`, `_last_open_attention`). The dynamic stop
   [above](#the-dynamic-stop-glossing-above-words-descending-at-novelty-item-68-2)
   would gloss a known unit at its wider bracket.
 - *A phrase becomes one concept.* A phrase that recurs without
@@ -3027,8 +2991,7 @@ whole sentences without grammatical operations."
   (`FamiliarTier.promote_identity`, `conceptMintCount`, 3 by default), and
   the open pass can then match it whole.
 - *System 1 learns from System 2.* Expectation is trained on the order-zero
-  contents left after System 2 has acted (`ConceptSpread.complete`;
-  [loop spec](plans/2026-11-04-item2-0-order-zero-loop.md) D3). Alec,
+  contents left after System 2 has acted (`ConceptSpread.complete`). Alec,
   2026-11-03: "I think system 1 does learn from system 2, but mainly by
   system 2's activation of the conceptual space."
 - *One structure for both readings* (item 9b, 2026-09-25): serial concepts
@@ -3054,8 +3017,7 @@ the grammar gives.
    compose and generate produce. Measured with the reading's compose walk
    withheld at test, on a model trained with it: the distance between the
    two fields; the reconstruction under omission, as the share of its
-   input the model can do without (the whole-path specification's two
-   omission rates); and the answer cost of questions, whose answer still
+   input the model can do without (the two omission rates); and the answer cost of questions, whose answer still
    comes from the thought.
 3. *When attention descends.* Under whole paths the narrowing walk is in
    the departure draw, so reading a bracket whole or descending into it is
@@ -3106,12 +3068,11 @@ It predicts where the two readings part first: with the number of symbols
 combined (parity-like combinations before others), with the novelty of a
 combination, and with dependence on memory.
 
-**What it waits for.** The whole-path round
-([specification](plans/2026-11-11-one-pair-per-stage.md)), which gives the
-stages and the omission rates; a corpus on which phrases recur (item 0.5's
-corpora and item 0); and the erosion question of item 9b
+**What it waits for.** A corpus on which phrases recur (item 0.5's corpora
+and item 0) and the erosion question of item 9b
 ([above](#shared-mode-erosion-measurement-item-9b)), since a reading
 without grammar is the reading Alec expected to erode serial boundaries.
+The whole-path round has supplied the stages and the omission rates.
 
 No mechanism is proposed. This entry asks for the measurement first.
 
@@ -3132,9 +3093,7 @@ think?) And in fact, we probably want to have only a BasicModel class; I
 forget if we have other models being tested?"
 
 It follows his decision of the same day that a continuous output and a
-continuous input are modalities of the one design
-([whole-path specification](plans/2026-11-11-one-pair-per-stage.md) §1
-decision 10, §3.12): the continuous output is a linear head on the concepts
+continuous input are modalities of the one design: the continuous output is a linear head on the concepts
 with no generate grammar, and the continuous input was named and not
 specified.
 
@@ -3190,13 +3149,8 @@ order 1.
 3. *One class:* `BaseModel` folded into `BasicModel`, with the nine helper
    constructions ported.
 
-**What it waits for.** The whole-path round, which keeps the grammar XOR
-gate close to its present form and makes it a stopping gate (§3.12 there).
-Nothing here changes that round.
-
-### Episodic payload implementation update (whole-path round, 2026-11-11)
-
-The [whole-path specification](plans/2026-11-11-one-pair-per-stage.md) item 16 implements the immediate change recorded in §7: order-zero concepts replace percepts in the episodic entry. Time-only review publishes the kept concepts directly, clears only the querying stream's percept readings, and skips stale IDs with a counter. A direct `reverse` reconstructs that memory without compose or generate. The capacity parameter is now `episodicConcepts`. Following Alec's second mid-round amendment, the payload is ordered concept references with one signed value per reading, without stored places or pole pairs. Recall derives extents from owned surfaces; missing surfaces are counted. Schema 16 names and drops old percept, pole and place columns. This changes the entry payload, leaving the round-7 clock, anchor, epoch and forgetting contracts intact. Validation is reported in the round's §9 return.
+**What it waits for.** Item 1.8's numeric input. The whole-path round kept
+the grammar XOR gate close to its present form and made it a stopping gate.
 
 ## The certainty of a word's mapping to its object, from a second modality (Alec, 2026-11-11; future work)
 

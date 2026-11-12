@@ -1,12 +1,12 @@
 # Spaces
 
-> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
+> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record.
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
-> - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded.
-> - Expectation is a **gain field** `c = m⊙a⊙o` with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
-> - Amended 2026-10-29/30 (Alec; [thinking spec §§16, 22](plans/2026-10-27-item2-5-thinking.md), [2.7 record §42](plans/2026-10-27-item2-7-corpus.md)): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are not built.
+> - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; a stream is the batch row that wrote a row, and a document is the cover row that starts it in that stream (reused at every later presentation; a row belongs to the document of the latest cover before it), so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded (2026-10-24).
+> - Expectation is a **gain field** $c = m \odot a \odot o$ (attention's gain $m$, expectation's gain $a$, the arriving signal $o$) with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
+> - Amended 2026-10-29/30 (Alec): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are built (accepted as implemented, Alec, 2026-11-01).
 > - STM is the open sentence's three concept-width working slots plus an **index** of the most recent rows (about eight addresses) and the symbol activation field; the intersection `bind` needs is computed on read, never stored.
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23, [step 2 §71](plans/2026-10-21-step2-one-ltm.md); recorded 2026-10-30):** an LTM1 row is two tagged references with its kind read from the referents, not three. As built at `3718d9d0dc`, `LTM0` still carries `c_plus`/`c_minus`, `source_trust`, `order`, `row_ids`, `origin`, `record_kind`, `polarity` and `witness_count` columns; only `refs`, `grammatical_mode` and the index columns are retired (audit 2026-10-30; decided 2026-11-01, Alec: the unused columns are removed and the row brought to this layout, [thinking spec §32.2](plans/2026-10-27-item2-5-thinking.md) item 17).
+> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23; recorded 2026-10-30):** an LTM1 row is two tagged references (each to an LTM0 occurrence, a symbol or another LTM1 row, its tag saying which) with its kind read from the referents, not three. The unused `LTM0` columns are removed and the row has this layout (Alec, 2026-11-01).
 
 
 > **Architecture relation.** The Space/SubSpace split is where BasicModel most
@@ -268,7 +268,7 @@ inside a tower. There is no perceptual layer stack kept beside this route.
 **Composition (per-mode):**
 
 - **SERIAL / GRAMMATICAL** (`<serial>true</serial>`): one
-  iteration per word *(as built, audit 2026-10-30: with a grammar the path is
+  iteration per word *(as built: with a grammar the path is
   `_run_sentence_word_bricks`; the capacity-Binary/Unary transaction below is
   the record)*.
 
@@ -323,35 +323,29 @@ is retired entirely.
 
 ### Lift / Lower in the new ownership
 
-`LiftLayer` and `LowerLayer` are no longer "rule-id annotators over
-shared substrate." They are first-class binary `GrammarLayer`
-subclasses (Stage 4 of the substrate refactor):
+`LiftLayer` and `LowerLayer` are first-class binary `GrammarLayer`
+subclasses, not rule-id annotators over a shared substrate:
 
-- `LiftLayer(GrammarLayer)`: `arity=2`, `rule_name="lift"`, `space_role='CS'`.
-  Owns an internal `self._sigma: SigmaLayer` for the pairwise additive
-  (sigma-style) math. `forward(left, right)` delegates to `_sigma.compose`.
-- `LowerLayer(GrammarLayer)`: `arity=2`, `rule_name="lower"`, `space_role='CS'`.
-  Owns an internal `self._pi: PiLayer` for the pairwise multiplicative
-  (pi-style) log-domain math. `forward(left, right)` delegates to
-  `_pi.compose`.
+- `LiftLayer(GrammarLayer)`: `arity=2`, `rule_name="lift"`, `space_role='CS'`,
+  invertible. Owns an internal `self._sigma: SigmaLayer` for the pairwise
+  additive (sigma-style) math; `forward(left, right)` delegates to
+  `_sigma.compose`, and the reverse goes through the same layer.
+- `LowerLayer(GrammarLayer)`: `arity=2`, `rule_name="lower"`, `space_role='CS'`,
+  a determiner: it selects a member of the description, and its marker
+  contributes no content. Reference proposal selects an earlier address for
+  `bind` or leaves a fresh description for the kept close to mint. It is
+  lossy and not invertible.
 
-Both reverse cleanly via their internal layer's reverse. Both gain
-butterfly mode for free via `GrammarLayer` base inheritance (Stage 5).
-
-Both charts are bounded in the backward on the grammar's fold layers
-(2026-09-12): the internal `SigmaLayer` of `lift` and the internal
-`PiLayer` of `lower` (and their subclasses) carry `_bounded_backward`, so
-their `atanh(x)` and `log((1+x)/(1-x)) = 2 atanh(x)` keep exact forward
-values and clamps while the gradient slope is capped at the tangent at
-`|x| = 0.9` (`Layers.bounded_atanh`, `PiLayer._log_mult`; custom autograd
-Functions saving only the input). Operands at +-1 are ordinary (max-law
-unit codes, `chunk` sums, saturated folds), and the exact derivative
-`1/(1-x^2)` (5e6 at the clamp) compounded through the nested folds of a
-long packed row into NaN parameters
-(doc/benchmarks/2026-09-11-fold-ladder-throughput.md). Space-level and
-readout layers keep the exact chart: the cap under-converged the crisp
-XOR fits (`test_explicit_dimensions.py`), and the compounding needs the
-nesting.
+Lift's chart is bounded in the backward (2026-09-12): its internal
+`SigmaLayer` carries `_bounded_backward`, so `atanh(x)` keeps its exact
+forward value and clamp while the gradient slope is capped at the tangent at
+`|x| = 0.9` (`Layers.bounded_atanh`, a custom autograd Function saving only
+the input). Operands at $\pm 1$ are ordinary (max-law unit codes, `chunk`
+sums, saturated folds), and the exact derivative $1/(1-x^2)$ (about
+$5 \cdot 10^6$ at the clamp) compounded through the nested folds of a long
+packed row into NaN parameters. Space-level and readout layers keep the
+exact chart: the cap under-converged the crisp XOR fits
+(`test_explicit_dimensions.py`), and the compounding needs the nesting.
 
 The signal router dispatches them as binary reduce ops at the CS,
 weighted by `Grammar.rule_probability` (the per-position copy/reduce
@@ -397,7 +391,7 @@ their symbols; see [Testing](DevelopmentHistory.md#item-11c-located-xor-and-nati
 |-------|--------------|----------|
 | InputSpace | Measured tensor features scale to presence; signed text embeddings retain sign | `[0,1]` for presence data; `[-1,1]` for text embeddings |
 | PartSpace | Modal/demuxed what/where/when encoding. Marked radix/meronomy percept stores expose one-sided presence; the orthographic Lexicon remains signed | `[0,1]^d` for percept-store rows; signed projective unit ball for Lexicon rows |
-| ConceptualSpace | One opaque code per concept: no where/when band (`canonical_shape` is `(0, 0)`); a concept has generalised over the where and when modalities and cannot be divided (Architecture, "Concepts are opaque; percepts and symbols are located"). Positive concept atoms are scaled by signed, tanh-bounded activations | positive atom geometry with activation in `[-1,1]` |
+| ConceptualSpace | One opaque code per concept: no where/when band (`canonical_shape` is `(0, 0)`); a concept has generalised over the where and when modalities and cannot be divided (Architecture, "Concepts are opaque; percepts and symbols are located"). The code is `[form \| meaning]`, every coordinate in `[0,1]`; evidence is two lanes, for and against | positive cube; two evidence lanes in `[0,1]` |
 | WholeSpace | Whole-percept property memberships | `[0,1]` presence |
 | SymbolSpace | 0-D references to ConceptualSpace concept ids | reference activation |
 | OutputSpace | Rescaled from activation range to original data range | Data range |
@@ -439,10 +433,17 @@ when perceptual extents are paired with whole/property intents to form concept
 order. DisCoCat enters later, when grammar composes conceptual meanings rather
 than raw percept memberships.
 
-Percepts and concepts therefore use different geometries: percepts use the cube
-for presence, while concepts use a positive atom whose signed scalar activation
-carries polarity and certainty. Keeping the roles distinct avoids treating a
-percept's unused negative half as if it were sensory content.
+Percepts and concepts share the positive cube for content but read it
+differently: a percept's coordinates are presences, while a concept's code
+keeps its form in the percept cube and its meaning in two nonnegative lanes,
+and its polarity and certainty live in evidence lanes rather than in a sign.
+Signed coordinates are rejected permanently in identity and concept content:
+a native concept carrier must lie in $[0, 1]$ (`IdentityRows.carrier` raises
+otherwise), learned maps on the identity path preserve the cube by
+construction (see [Bounded Encodings](#percept-bounded-encodings)), and an
+artifact holding signed legacy identity points is retired rather than clipped
+or converted. Keeping the roles distinct avoids treating a percept's unused
+negative half as if it were sensory content.
 
 ### Presence, Not Signal {#percept-presence}
 
@@ -463,7 +464,8 @@ There is no negative presence. On the percept path:
   anti-aligned row — a "known false" exclusion — is reachable, not clamped
   away); a zero percept yields zero evidence (the dot-product tautology).
 - The meronymic membership folds (`SigmaLayer2` / `PiLayer2` in
-  [`bin/Layers.py`](../bin/Layers.py)) operate on memberships in `[0,1]` through
+  [`bin/Layers.py`](../bin/Layers.py), library classes with no production
+  consumer) operate on memberships in `[0,1]` through
   `log`/`exp`, flooring the bottom element with `EPS_LOG` before `log(0)`.
 - A marked radix/meronomy Codebook (`is_percept_store`) is read through a UNORM
   straight-through clamp, so forward lookup and reverse decode see the same
@@ -497,18 +499,16 @@ Complement on `[0,1]` and negation in centered signed coordinates are the same
 reflection. Let `y = x - 1/2`; then `1-x = 1/2-y`. The operation is shared, but
 the stored carriers and their semantics remain distinct.
 
-**Consequence for expectation and attention (2026-09-20).** The cube has a
-complement but no additive inverse: `x + (1 - e)` leaves `[0,1]`, and nothing
-added to a presence cancels it. Expectation enters the mind as a
-*negative image*, the sign-reversed predicted idea added to what was composed,
-so it cannot be formed over percepts or over the order-0 presence field; it
-is formed over the ended idea, at order 1 and above, where the signed carrier
-exists. Sensation is therefore never subtracted from. What the unsigned
-carrier does support is withdrawal, the non-affirming `non`, and that is how
-attention works here: the reading scope and the priority surface exclude
-the non-object without predicting it. See the
-[accessible-mind spec §2.6.2](specs/2026-09-20-accessible-mind-subsystems.md#262-negation-exists-only-for-concepts-not-percepts-or-symbols)
-and [Philosophy](Philosophy.md#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20).
+**Consequence for expectation and attention.** The cube has a complement but
+no additive inverse: `x + (1 - e)` leaves `[0,1]`, and nothing added to a
+presence cancels it. Expectation therefore never subtracts from content. At
+the concept level it is a gain on the arriving content with the residual in
+two separate lanes; at the percept level the signed residual is computed
+beside the observed signal, which the forward path carries unchanged (see
+[Expectation across the architecture](ExpectationRetention.md)). What the
+unsigned carrier does support is withdrawal, the non-affirming `non`, and
+that is how attention works here: the reading scope and the priority surface
+exclude the non-object without predicting it.
 
 ### Sigma/Pi Membership Lattice {#percept-membership-lattice}
 
@@ -540,17 +540,37 @@ word's presence test. WholeSpace properties are max over allowed primitive
 memberships, then min over every observed position in a run. The 11a priors
 and segmentation are unchanged.
 
+Max and min are the only idempotent t-conorm and t-norm, so a part's code does
+not grow with how often a constituent recurs and a whole's properties do not
+decay with its length. A strict sum (the probabilistic sum
+$1 - \prod_i (1 - m_i)$ or the Einstein sum) would make wholes grow with their
+part count, and a strict t-norm would make long wholes propertyless. A
+whole's max dominates every sub-span's max by construction, so containment
+order holds inside a whole without projection; the cost is that the max
+passes gradient only to the strongest part in each coordinate.
+
+A percept's identity carries no absolute address and is never an unordered
+aggregate alone: a basic percept is keyed by its ordered part literals
+(repeats kept) and its whole boundaries (`BasicPercepts.reserve`), so `12`,
+`21` and `11` are distinct while sharing reusable digit parts. An occurrence
+is that identity plus the ordered `.where` of its constituents; two
+occurrences of one identity at different positions are the same percept
+twice.
+
 ### Percept-to-Concept Seam {#percept-concept-seam}
 
-The order-0 definition addresses PartSpace percept rows and WholeSpace
-property rows. A present feature contributes to the pole selected by its
+The order-0 definition addresses basic-percept literals, one column per basic
+percept and pole ($2\,bp + \mathrm{pole}$); native parts and properties alone
+are not its members (see
+[One basic-percept basis](#one-basic-percept-basis-item-20-round-5-2026-11-09)).
+A present feature contributes to the pole selected by its
 signed conceptual weight. Required evidence is min over nonzero
 contributions on each pole; alternative definitions are max. Missing
 percepts assert neither. No projection onto codes or evidence floor occurs
 at the seam. Pi edges above this membership read intersect order-0 field
 readings inside the common attention bracket.
 
-*Item 9b (reviewed implementation):* each percept row's presence and observed complement are
+*Item 9b:* each percept row's presence and observed complement are
 pooled over the occurrences inside the one convex bracket of attention
 before the definition matrix reads them. Conceptual fields carry no
 per-position tensors or per-concept coordinates. Exact
@@ -594,47 +614,39 @@ The implementation keeps percept and concept/symbol carriers distinct:
 | metric | membership distance; presence MSE for the marked store |
 | magnitude | presence per axis |
 
-| Property | Concepts / symbols |
+| Property | Concepts |
 |---|---|
-| space | signed unit concept atom scaled by a signed activation |
-| coordinate | atom direction plus activation polarity and certainty |
-| opposite | negation `-x` |
-| sides | two-sided sign is semantic content |
-| metric | dot product for concepts; projective lookup for Lexicon rows |
-| magnitude | scalar activation carries certainty |
+| space | code `[form \| meaning]` in the unit cube: the form in the percept cube, the meaning in two nonnegative lanes |
+| coordinate | form presence; meaning as a placement direction scaled by trust |
+| opposite | `not` exchanges the two evidence lanes; no coordinate is negated |
+| sides | polarity is the pair of evidence lanes (for, against), never a sign |
+| metric | meet ratios over the meaning for containment (`IdentityRows.meet_ratios`); cosine for content reads |
+| magnitude | the for lane's radius is the concept's trust |
 
-The parallel conceptual field uses independent `(c⁺, c⁻)` presences and two
-symbols per code, as detailed below. The table above describes the signed
-vector geometry of an individual serial reference, not storage of that pair.
+The parallel conceptual field uses independent $(c^+, c^-)$ presences and two
+symbols per code, as detailed below; the against symbol reads its code
+negated, but the stored code is not signed. The orthographic Lexicon (below)
+keeps a sign, as form content.
 
-In the aligned serial conceptual implementation, the stored `ConceptDim` atom
-is a signed unit direction. Magnitude lives in the scalar activation:
-`concept_code = signed_activation * atom`. The canonical serial dictionary is
-initialized on that sphere and is not an Adam parameter: after a sentence
-completes, its owner takes one detached contextual snapshot, reduces all
-evidence for a row, and applies an exact tangent rotation. Its
-construction-time Parameter is converted into a persistent non-grad buffer.
-Its eager read-only lookup boundary gives compiled consumers a working tensor
-without an autograd edge to the dictionary. A rotation keeps the original unit
-norm, so there is no post-step codebook normalization pass or large-table
-indexed Adam write. The percept input is still *not* normalized; only the
-temporary contextual update direction is normalized.
+An order-zero concept's meaning direction is placed, not optimized: at each
+kept close a placed row takes one meet-ratio subgradient step toward the
+registered priming context, with negatives drawn deterministically from the
+row's content key as a brake against collapse, and is renormalized in the
+positive cube (`MereologicalCodes.place_rows`). A raised class is placed at its
+members' evidence-weighted centroid (`derive_class_placements`).
 
 A symbol is also not a synonym for a concept or a whole. A concept is a
 `ConceptualSpace` relation over percepts; a symbol is a reference to a concept.
-Their epistemic roles remain distinct even when a signed geometry is shared by
-an implementation path.
+Their epistemic roles remain distinct even when an implementation path shares
+their geometry.
 
 ### SBOW Situates Concepts, Not Percepts {#percept-sbow}
 
-The legacy `conceptual_sbow_loss_codes` path in
-[`bin/embed.py`](../bin/embed.py) remains available for non-serial experiments.
-The canonical serial path instead uses a detached, deterministic contextual
-SBOW reducer: leave-one-out sentence context attracts each observed concept
-atom, hashed detached negatives repel it, repeated observations are reduced by
-row, and the codebook owner commits one tangent rotation. This has the same
-angular geometry without making the million-row dictionary optimizer-owned or
-allocating RowLocalAdam state in the recurrent training path.
+The `conceptual_sbow_loss_codes` path in [`bin/embed.py`](../bin/embed.py)
+situates concept codes by substitutability on the non-serial path. The
+canonical serial path places meanings instead (above): sentence context
+attracts each observed concept and deterministic negatives repel it, without
+making the dictionary optimizer-owned.
 
 Percepts are deliberately not SBOW-situated:
 
@@ -663,29 +675,56 @@ percept-to-concept seam does not use tanh/atanh. Over a bounded unit range,
 SNORM16 has a roughly `3e-5` uniform grid and is finer than bf16 across most of
 the interval; SNORM8 is materially coarser.
 
-### The Cube as a Kleene Algebra; Forms as Joins; Room Between the Towers (2026-10-04)
+Learned maps over conceptual codes (the meaning-lane kernels, marker
+translations) keep values in the unit cube by construction. A map acts in the
+cube's centered chart, $x \mapsto \operatorname{atanh}(2x - 1)$ with finite
+rails (`cube_chart`), and its result is mapped back by the inverse chart
+$y \mapsto (\tanh y + 1)/2$ (`cube_unchart`), whose whole real domain lands in
+$(0, 1)$; a translation adds in the chart and is exactly the identity at zero
+(`cube_translate`), and an additive combination is scaled to stay within the
+chart's range. Inputs are asserted to lie in the cube (`assert_cube`), and no
+result is clipped, so a declared inverse holds.
 
-Under the componentwise order the percept cube `[0,1]^D` is a lattice with
+### The Cube as a Lattice; Two Form Subspaces (2026-10-04, 2026-10-26)
+
+Under the componentwise order the percept cube $[0,1]^D$ is a lattice with
 *nothing* at the bottom and *everything* at the top; componentwise `min` and
 `max` are its meet and join (`Ops.intersection` and `union`), and with the
-bipolar reflection `d → −d` (on presences `p → 1 − p`) as its order-reversing
-involution it is a Kleene algebra: De Morgan exact, no sign pooling, the
-unknown (bipolar zero) fixed by negation and by conjunction or disjunction
-with itself. The normalized Hadamard product of signed carriers is VSA
-binding, not a connective, and is interim for composing forms
-([6.8 plan §13.4](plans/2026-09-27-item-6-8-one-attention.md#134-perceptual-space-is-the-basis-of-zero-order-conceptual-space-alec-2026-10-04)).
+complement $p \mapsto 1 - p$ as its order-reversing involution it is a Kleene
+algebra: De Morgan exact, with no sign pooling. Parthood is a partial order on
+it: a part and a type need not be comparable, ties are allowed, and mutual
+containment means equal vectors.
 
-A word's form is the join of its parts at full presence, `L = ∨_{p : d_p > 0}
-c_p`, over the part codes whose net evidence is positive; evidence selects,
-it does not scale. The WS types a word belongs to contain it: `U = ∧` over
-the wholes (evidence-scaled toward everything, `1 − d(1 − c)`), and the room
-rule `L + m ≤ U` is enforced on the wholes only, after the owner's step, as a
-second clamp beside the `[0,1]` projection. Certainty is not a code's
-magnitude but the activation that reads it, the projection coefficient
-`(leaf·c)/(c·c)`. Distinct letter sets give distinct joins; sparse presences
-keep them far apart (dense codes' joins saturate toward everything, mean
-cosine ≈ .98 at any scale; presences on ~30% of coordinates give ≈ .83). The
-address bands are zero in a form: the particular is its occurrence row.
+One percept vector of `percept_width` coordinates serves every tower and the
+concept codebook (Alec, 2026-10-26). At text-model construction it splits
+into an identity subspace `[0, identity_width)`, the `WordIdentity` pair and
+length coordinates (`identityPairDim`, `identityLengthDim`), and a property
+subspace `[identity_width, percept_width)` of `propertyDim` coordinates (256
+with `propertyOnes = 1`: one coordinate per byte, with no hash collisions).
+The `.where`/`.when` band follows `percept_width`. Numeric configurations have
+no property subspace. The split is fixed at construction, and a checkpoint of
+another layout is rejected.
+
+| row | identity coordinates | property coordinates |
+|---|---|---|
+| tower-0 atom or word | its atom code, or the join (coordinatewise max) of its atoms' and nested parts' codes | the soft meet $\min_t \left(1 - p_t (1 - c_t)\right)$ of the types $t$ holding over its own bytes, with presence $p_t$ and code $c_t$ (`PrimitiveProperties.fill`); all ones when none holds |
+| tower-1 type | all ones (the top) | its weighted byte extension: the union over member bytes of each byte's bits, weighted by `PrimitiveProperties.members` |
+| basic percept (order-0 form) | the join of its parts' identity codes | the meet (coordinatewise min) of its wholes' property codes; all ones with no whole |
+
+A part's content lies in the identity subspace and a type's in the property
+subspace; the other subspace holds the bound that lets one coordinatewise
+order read both. Identity sorts by atom containment and property by
+extension, so a subtype's code is at most its supertype's: the type rows are
+derived from byte membership (a buffer through which gradient reaches
+`members`), not free parameters. Location selects which parts and types an
+occurrence has; no `.where`, `.when` or span coordinate enters a code.
+`BasicPercepts.subspace_bounds` computes the identity join and the property
+meet over basic rows, and `FormContainment.audit` certifies weighted nesting
+within each tower and among basic percepts, reporting ties without failing
+them; no content of tower 0 is compared with content of tower 1. Composed
+wholes keep the leaf-weighted centroid of `compose_blocks` and its exact
+inverse `split_centroid`, since a join has no inverse; a description's form
+coordinates are likewise folded by centroid so they stay in the cube.
 
 ### Live Paths and Migration Status {#percept-live-path}
 
@@ -698,11 +737,11 @@ still depends on the input and synthesis mode:
 | text embedding (`input_presence=False`) | retained in `[-1,1]` |
 | radix/meronomy percept store | UNORM `[0,1]`; presence decode |
 | orthographic Lexicon | signed projective unit ball |
-| conceptual atom | signed unit atom; bounded signed concept value |
+| concept code | `[form \| meaning]` in `[0,1]`; evidence in two lanes |
 
-The canonical radix/property path is membership-native throughout: codebook
-read, many-to-one word union, and learned invertible sigma/pi order raises all
-consume and return `[0,1]` directly. The signed truth evaluation chart is not
+The canonical radix/property path is membership-native throughout: the codebook
+read and the many-to-one word union (max) consume and return `[0,1]` directly,
+and there is no learned perceptual fold. The signed truth evaluation chart is not
 used at this seam. The orthographic Lexicon remains a compatibility store and
 is not the canonical `BasicModel.xml` surface path.
 
@@ -723,8 +762,9 @@ The encoding is hybrid.
 
 - Vector-to-token identity uses complement-aware presence MSE on the marked
   percept store and wrapped/projective lookup on the signed Lexicon path.
-- The learned sigma composition determines which whole a part set produces.
-  Radix supplies ordered references through a trie; it is not place-value
+- The max composition gives a part set's code, and the ordered witness (a
+  basic percept's ordered literals) determines which whole it is. Radix
+  supplies ordered references through a trie; it is not place-value
   arithmetic.
 
 Moving percept rows would leave byte structure and configured invertibility
@@ -801,9 +841,8 @@ c_i$ gives the *signed strength of belief that $x$ affirms concept $i$*:
 
 Two consequences:
 
-1. **Codebook must be unit L2-norm.** The canonical concept table is unit at
-   initialization and context-owned updates are exact rotations; compatibility
-   VQ/EMA paths maintain their own unit invariant.
+1. **Codebook must be unit L2-norm** for this read; the VQ/EMA paths that use
+   it maintain their own unit invariant.
 2. **Input must NOT be normalized.** The magnitude *is* the certainty signal.
    Cosine similarity would divide it out.
 
@@ -1058,12 +1097,11 @@ hard-reset signal is the cursor's `hard_eos`.
 *Moved to [DevelopmentHistory](DevelopmentHistory.md#ar-cursor-unfold-retirement-2026-05-13) (2026-10-30): "AR cursor unfold retirement (2026-05-13)".*
 ### Within-sentence AR retirement (2026-05-14)
 
-The serial K-cursor loop itself was retired one day later: the
-benchmark showed `_forward_per_stage_no_unfold` running at ~18
-sent/sec (the K body+head calls dominate) vs the single-shot IR
-fast-path's ~61 sent/sec, and the real AR objective in this
-architecture is **next-sentence** prediction (the discourse layer) ---
-not next-token within a sentence.
+The serial K-cursor loop itself was retired one day later: its K body and
+head calls made `_forward_per_stage_no_unfold` several times slower than the
+single-shot IR pass, and the real AR objective in this architecture is
+**next-sentence** prediction (the discourse layer), not next-token within a
+sentence.
 
 **Within-sentence training is now IR-only.** `InputSpace.forward`
 emits `[B, N, D]` (left-aligned, right-padded to N) and
@@ -1087,17 +1125,15 @@ _ir_pre_mask_input at masked positions)`. The
 integrates all three streams (PS + SS + CS), so reconstruction
 is unconditionally from concepts — the former `concepts|symbols|both`
 selection (target derived by lifting `_ir_pre_mask_input` through
-`sigma_percept`; see Plan Section "Reconstruction-loss target shape"
-Option B) is no longer a knob.
+`sigma_percept`) is no longer a knob.
 
 `<maskedPrediction>` is retired; `<reconstruct>` is
 retired (the `output` mode was the only path that fired the reverse pipeline);
 `<reverseScale>` is renamed to `<reconstructionScale>` (the legacy
 name remains parseable with a one-shot deprecation warning).
 
-Sentence-level AR moves to `InterSentenceLayer` --- see
-`doc/Architecture.md` Section "Sentence-level AR (`InterSentenceLayer`)"
-for the ARMA(p, q) design.
+Sentence-level prediction belongs to the discourse layer's activation
+predictor; see [STM.md](STM.md#11-inter-sentence-prediction).
 
 ---
 
@@ -1144,15 +1180,15 @@ not imply order. The same location rule applies when aligned binding is chosen
 in parallel. `ConceptualCombine` is the separate conditional mixing-matrix
 path and is not part of serial BasicModel.
 
-**Geometry.** A concept code is `signed_activation × softplus(atom)`: the
-dictionary atom is a **strictly-positive** ConceptDim feature signature
-(`F.softplus`), and the **sign / magnitude** live in the signed scalar
-activation — magnitude = certainty, sign = present vs anti-present, low
-magnitude = chosen radially but uncertain. The sign comes from the signed
-sparse **weights** (a negative weight = a feature's presence anti-correlates
-with the concept), not from a stored signed unit direction. (The legacy
-"named unit-norm direction + `argmax` retrieval" view is retired on the
-forward path.)
+**Geometry.** A concept's code is `[form | meaning]` (`MereologicalCodes`):
+the form is the weighted centroid of the percepts of its written definitions,
+or its own basic percept's code when every weight is zero (see
+[Mereology](Mereology.md)), and the meaning holds two nonnegative lanes, the
+for lane being the concept's placement direction scaled by its trust radius.
+Every coordinate lies in $[0, 1]$, and no sign is stored. Polarity and
+certainty are evidence: the two lanes of an occurrence's activation, and a
+symbol's pole (the symbolic phase below reads the against pole as the negated
+code).
 
 ![A concept: sigma over pi, one signed code, two evidence lanes](diagrams/concept_geometry.svg)
 
@@ -1246,7 +1282,6 @@ property memberships move.
 remaining work, including category-codebook updates and recognised words.
 Forcing interpretation does not disable those duties. The word-to-object
 link is an identity-based DEF row; the META fold and its APIs are retired.
-See [the definition contract](specs/2026-09-16-two-truths-ideas-and-relations.md#17-definitions-word-def-object-decided-alec-2026-09-29).
 
 `BASIC_FULLGRAPH=0` relaxes the strict gate to enumerate graph breaks;
 `MODEL_COMPILE=eager` traces without the Inductor C++ backend.
@@ -1262,38 +1297,33 @@ its outputs never enter the STM; see **The symbolic phase**.)
 
 | Property | Default | Configurable via |
 |---|---|---|
-| Capacity | 8 (within Miller's $7 \pm 2$ band) | `<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>` |
-| Storage | `[batch, capacity, concept_dim]` buffer + `[batch]` depth pointers | `persistent=False` (working state, not saved) |
-| Cleared on | Hard `Reset` (sentence boundary) | Soft reset leaves it intact |
+| Capacity | 8 chunks (within Miller's $7 \pm 2$ band) | `<ConceptualSpace><stmCapacity>N</stmCapacity></ConceptualSpace>` |
+| Storage | the fourteen `STMChunks.FIELDS` tensors, `[batch, capacity, ...]`, fixed at construction | working state, not saved |
+| Cleared | softly at a sentence or document reset (the unfinished sentence's operands); hard at the epoch reset | `ConceptualSpace.Reset` (soft), the epoch reset (hard) |
 
 API: `push(b, idea)`, `pop(b)`, `peek(b, n=0)`, `snapshot(detach=False)`,
-`size(b)`, `is_full(b)`, `is_empty(b)`, `clear(b=None)`,
+`size(b)`, `is_full(b)`, `is_empty(b)`, `clear(b=None, hard=True)`,
 `ensure_batch(batch)`.
 
 **STM transition by mode:**
 
-- **SERIAL / GRAMMATICAL**: `_stm_shift_and_push(idea)` — shift slots 0..(cap-2)
-  to take values from slots 1..(cap-1), write new idea to the top slot
-  (default cap = 8, so slots 0..6 take from 1..7 and the new idea lands in
-  slot 7). Per-word cadence: one push per `PS.forward(IS_t)` call.
-- **PARALLEL**: T iterations of `PS.forward(CS)` write to STM slots
-  simultaneously; no shift. T = `<subsymbolicOrder>`.
+- **SERIAL / GRAMMATICAL**: `_stm_shift_and_push(idea)` shifts slots
+  $0 \ldots \text{cap}-2$ right into $1 \ldots \text{cap}-1$ and writes the new
+  idea to slot 0, the newest; at capacity the oldest, slot $\text{cap}-1$,
+  falls off. One push per word.
+- **PARALLEL**: `_stm_set_all_slots(slab)` writes the whole slab as the slot
+  stack, newest at slot 0; no shift.
 
 The signal router (`SymbolSubSpace.languageLayer`) consumes
-`stm.snapshot()` as its slab input for grammar op dispatch.
-
-Both transitions follow a **predict-then-perceive** discipline (the
-in-STM `IntraSentenceLayer` predicts the free slot / slab from the
-retained context before the new event is written). The full STM
-treatment — predict-then-perceive, attentional filtering (serial runs
-WITH attention by design), relative-vs-absolute end-states, and the LTM
-chain of end-states — is in the dedicated [STM.md](STM.md) chapter.
+`stm.snapshot()` as its slab input for grammar op dispatch. The full STM
+treatment (chunks, attentional filtering, where serial runs with attention by
+design, relative-vs-absolute end-states and the LTM chain of end-states) is
+in the dedicated [STM.md](STM.md) chapter.
 
 ### Lift / Lower as binary GrammarLayer subclasses
 
-`LiftLayer` and `LowerLayer` are now first-class **binary GrammarLayer
-subclasses**, each owning its own internal sub-layer for the pairwise
-math:
+`LiftLayer` and `LowerLayer` are first-class **binary GrammarLayer
+subclasses** (see "Lift / Lower in the new ownership" above):
 
 ```python
 class LiftLayer(GrammarLayer):
@@ -1310,26 +1340,19 @@ class LowerLayer(GrammarLayer):
     arity = 2
     rule_name = "lower"
     space_role = 'CS'
-    # Internal substrate: self._pi = PiLayer(...)
-    def forward(self, left, right):
-        return self._pi.compose(left, right)
-    def reverse(self, parent):
-        return self._pi.generate(parent)
+    # A determiner: selects a member; the marker contributes no content.
+    def forward(self, marker, description):
+        ...
 ```
 
 Both register with the signal router (`SymbolSubSpace.languageLayer`) as
-CS reduce ops via the existing host-layer registry path. Both
-inherit `GrammarLayer` butterfly mode (Stage 5) — set
-`butterfly=True, N=N` at construction to enable cross-position cascade.
+CS reduce ops via the existing host-layer registry path.
 
 Cognitive correspondence:
-- **Lift** (sigma-style additive synthesis) — "lifting features onto
-  concepts" / predication: `"the boy runs"`.
-- **Lower** (pi-style multiplicative contraction) — "lowering concepts
-  into specific percept-realizations" / attribution: `"the running boy"`.
-
-The distinction is preserved at the rule-id level (parser records which
-op fired) plus the operational difference in the per-pair math.
+- **Lift** (sigma-style additive synthesis): predication, `"the boy runs"`.
+- **Lower**: determination; a determiner selects a member of its
+  description, `"the boy"`, which the close binds to an earlier referent or
+  mints.
 
 See [Language.md](Language.md#grammar) for the
 GrammarLayer specifics.
@@ -1391,7 +1414,7 @@ registry's whole slice contains one inventory; later symbol and conceptual
 addresses move down by the removed copies' capacity. Persisted location bands
 are translated, while identity and occurrence keys keep their meaning. The
 candidate-attention reader is rebuilt for its new input geometry and the loader
-reports that rebuild. See the round-2 return in the [2.0 plan](plans/2026-11-03-gradient-projection.md).
+reports that rebuild.
 
 See [Philosophy.md](Philosophy.md), [Logic.md](Logic.md),
 [Mereology.md](Mereology.md), and [Language.md](Language.md).
@@ -1502,6 +1525,8 @@ invertible in general.
 
 `BasicPercepts` is perception's fixed-capacity table. Its rows name complete basic-level occurrences with part and whole boundaries. MTM references those occurrences; native parts and properties alone are not its perceptual members. Recurrence writes a durable basic row, and supplied training forms are declared at admission. Order-0 concepts use only basic-percept literals, with column `2*bp + pole`; their sigma/pi read and fixed order-zero working extent stay intact. Compose whole reads and typed word slots use this same basis. STM0/LTM0 share idea storage and reads, and STM1/LTM1 share ordered tagged-pair storage and reads; the short-lived stores differ in retention.
 
+Basic-percept rows are not withdrawn. Reservation appends an identity, promotion retains it, and concept forgetting does not remove it; a full table raises.
+
 
 ## Common order-zero reverse (item 2.0 round 6, 2026-11-10)
 
@@ -1511,6 +1536,14 @@ live input field across compose trials, publishes the serial knowing carrier,
 and obtains a separate descended view after understanding. The parallel path
 keeps the symbolic carrier for higher-order readers while taking the same
 descended view for reconstruction.
+
+Reverse attribution divides a concept's demand over its written basic-percept
+alternatives by weight (`cs_percept_attribution`; Alec, 2026-11-10). With
+nonnegative definition weights $w_{c,p}$, alternative $p$ of concept $c$
+receives $d_c\, w_{c,p} / \sum_{p'} w_{c,p'}$ of the demand $d_c$, so the
+attributed total equals the demand and no alternative is asserted at full
+strength. A precise basic-level concept therefore keeps its own identity
+beside a broader property concept.
 
 `FieldReverse.NativeActivity` holds selected native rows, strengths and continuous
 percepts at the covered positions. `NativeDecode` uses preallocated spelling,

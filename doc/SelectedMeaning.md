@@ -1,10 +1,10 @@
 # Selected linguistic meaning and one controller
 
-> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
+> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record.
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23, [step 2 §71](plans/2026-10-21-step2-one-ltm.md); recorded 2026-10-30):** an LTM1 row is two tagged references with its kind read from the referents, not three. As built at `3718d9d0dc`, `LTM0` still carries `c_plus`/`c_minus`, `source_trust`, `order`, `row_ids`, `origin`, `record_kind`, `polarity` and `witness_count` columns; only `refs`, `grammatical_mode` and the index columns are retired (audit 2026-10-30; decided 2026-11-01, Alec: the unused columns are removed and the row brought to this layout, [thinking spec §32.2](plans/2026-10-27-item2-5-thinking.md) item 17).
+> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23; recorded 2026-10-30):** an LTM1 row is two tagged references (each to an LTM0 occurrence, a symbol or another LTM1 row, its tag saying which) with its kind read from the referents, not three. The unused `LTM0` columns are removed and the row has this layout (Alec, 2026-11-01).
 > - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
-> - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded.
+> - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; a stream is the batch row that wrote a row, and a document is the cover row that starts it in that stream (reused at every later presentation; a row belongs to the document of the latest cover before it), so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded (2026-10-24).
 
 
 **Item 1's working language gate is met on the bounded supervised curriculum**
@@ -12,14 +12,15 @@ described below. This establishes grammar-owned wording in that setting;
 general English and useful learned questioning are not established.
 Structural-preference and routing-share measurements remain design goals.
 The separate codec in `288b56b`
-did not satisfy this architecture; its passing regression receipt never proved
-otherwise. See [Testing](Testing.md) for receipts and
-[KernelRetirement](DevelopmentHistory.md#frame-kernel-test-migration) for the earlier test dispositions.
+did not satisfy this architecture; its passing regression test never proved
+otherwise. See [Testing](Testing.md) and
+[DevelopmentHistory](DevelopmentHistory.md#frame-kernel-test-migration) for the earlier test dispositions.
 
 ## Ownership and execution
 
-`AnswerProgram` owns signed full-width leaves, native identities, WORD rows,
-lexical provenance and the forward's actual compose actions.
+`Reading` (`bin/Understanding.py`) holds one open sentence reading's signed
+full-width leaves, native identities, WORD rows, lexical provenance and the
+forward's actual compose actions.
 `LanguageSpace.program_meaning` only recovers that selected derivation. It has
 no trainable fallback, surface interpreter or separate decoder. Technical
 anchors are grammar provenance; natural words acquire no predefined operator.
@@ -181,9 +182,9 @@ No held-out annotation enters parsing or generation. Metadata recomposition
 checks role identity/order, mode, polarity, bindings and scope. The separate
 wrapper check also preserves the complete role values.
 
-[Testing](DevelopmentHistory.md#working-grammar-wording-gate-september-20) records commands,
-development failures, the normal training smoke, the explicit slow language
-run and the full default receipt. The slow case is retained for reproduction;
+[DevelopmentHistory](DevelopmentHistory.md#working-grammar-wording-gate-september-20)
+records the commands, development failures, the normal training smoke and the
+explicit slow language run. The slow case is retained for reproduction;
 the preference measurements below need not become artificial passing tests.
 
 The item-8 implementation prefers a structural face on an **exact learned-score
@@ -209,12 +210,11 @@ counted as opaque. Copy/stop and padding are not executed grammar operations.
 measurement boundary and reports both sentence and operation opaque shares.
 Missing programs and unknown selected rules are errors, not descriptive zeros.
 
-The [item-8 protocol](benchmarks/2026-09-26-item8/PROTOCOL.md) declares the
+Item 8 declares the
 same-corpus growing-coverage study and held-out direct-answer/equal-compute
 comparisons across seeds 0/1/2, including reconstruction/discrimination and
 renamed-vocabulary controls. A catalog without an opaque candidate can only
 report a descriptive zero; it cannot establish declining use. The existing
 million-sentence FineWeb exposure prerequisite applies to learning quality,
 while correctness and poison checks remain unconditional. The qualified
-comparisons remain item 8 and gate every learned-utility claim. See the
-[review correction receipt](benchmarks/2026-09-26-item8-review/README.md) for measured limits.
+comparisons remain item 8 and gate every learned-utility claim.

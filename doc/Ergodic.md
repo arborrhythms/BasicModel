@@ -119,11 +119,14 @@ Noise is injected into the LDU factors, not into a materialized dense inverse.
 The reverse path uses triangular solves, so the inverse remains exact for the
 effective factors. No SVD path is used.
 
-### `SigmaLayer` and `PiLayer`
+### Derived and composite layers
 
-`SigmaLayer` and `PiLayer` use `LinearLayer` or `InvertibleLinearLayer`
-internally, so they inherit the same ergodic behavior. Composite layers forward
-`set_sigma()` and `paramUpdate()` to their child layers.
+`NonNegativeLinearLayer` derives from `LinearLayer`; `NonNegativeInvertibleLinearLayer`,
+`ContractiveInvertibleLinearLayer` and `MapppingLayer` derive from
+`InvertibleLinearLayer`, and `LDUReadout` from `ErgodicLayer` directly, so all
+inherit the same ergodic behavior. Composite layers forward `set_sigma()`,
+`observe_sigma()`, `sigma_to_ergodic()` and `paramUpdate()` to the child layers
+listed in their `layers`.
 
 ## Current Limits
 

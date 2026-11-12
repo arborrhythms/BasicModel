@@ -1,14 +1,14 @@
 # Mereology
 
-> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
+> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record.
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
 > - Parthood, subsumption and kind statements ("cats are animals") are **folds** in the meronomy and the taxonomy over symbols, not rows; equality is membership in a singleton; no `REL_PARTOF` row exists.
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23, [step 2 §71](plans/2026-10-21-step2-one-ltm.md); recorded 2026-10-30):** an LTM1 row is two tagged references with its kind read from the referents, not three. As built at `3718d9d0dc`, `LTM0` still carries `c_plus`/`c_minus`, `source_trust`, `order`, `row_ids`, `origin`, `record_kind`, `polarity` and `witness_count` columns; only `refs`, `grammatical_mode` and the index columns are retired (audit 2026-10-30; decided 2026-11-01, Alec: the unused columns are removed and the row brought to this layout, [thinking spec §32.2](plans/2026-10-27-item2-5-thinking.md) item 17).
+> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23; recorded 2026-10-30):** an LTM1 row is two tagged references (each to an LTM0 occurrence, a symbol or another LTM1 row, its tag saying which) with its kind read from the referents, not three. The unused `LTM0` columns are removed and the row has this layout (Alec, 2026-11-01).
 
 
-> **As built at `3718d9d0dc` (audit 2026-10-30; read second).** The body below is the
-> record; where it differs, the code is this. Concepts are allocator ids with
-> one row each in `similarity_codebook`; parthood, kind and definition
+> **As built (read second).** The body below is the record; where it differs,
+> the code is this. Concepts are allocator ids with one row each in
+> `similarity_codebook`; parthood, kind and definition
 > statements are LTM1 `Part(member, whole)` rows owned by `ConceptAllocator.parts`,
 > mirrored as sigma edges on the one `ConceptualAttentionLayer` (written by
 > `cover_members`, taught by `DefinitionFold.loss` from the LTM1 lanes) and a
@@ -20,7 +20,9 @@
 > `Ops.union` is an elementwise max and `Ops.intersection` an elementwise min
 > where a zero coordinate is unspecified. `ImpenetrableLayer` is unwired and no
 > `impenetrable*` knob is read. Percept parthood is `.where` span containment
-> (`RunStructureLayer`, `FormContainment`); `Ops.partOf` has no caller. The
+> (`RunStructureLayer`), and `FormContainment.audit` certifies containment
+> among basic percepts' identity and property bounds; `Ops.partOf` is called
+> only by `intuit`'s containment tests (`Intuition.py`). The
 > property split is `record_property_pulls` / `maybe_split_property_row` with
 > fixed thresholds; only `lbgThreshold` is read, for the admission radius.
 > Interrogative mode is a structural `what` wrapper; `QueryLayer` and `queryPart`
@@ -53,28 +55,27 @@ language layer composes these ordered meanings according to typed grammar.
 > the object/reference (sign/symbol) vocabulary, see [Spaces.md](Spaces.md)
 > and [Philosophy.md](Philosophy.md).
 
-> **Meronomy reconciliation (2026-06-11; MeronomySpec wins — plan §2).**
-> Four reframings of this page's claims:
+> **Meronomy reconciliation (2026-06-11).** Four reframings of this page's
+> claims:
 >
 > 1. **`part()` is the graded retrieval surrogate, not *the* parthood
 >    relation.** Exact dominance (`Ops.partOf` — elementwise $\le$
 >    reduced with `all`) is the semantic ground truth; the clipped
 >    cosine below is its retrieval-time score. `part()` stays total
->    and form-level over everything — including symbol codes and
->    binding-table-bound rows — and that totality is its cordon duty
->    (spec §1, §7): geometric relations answer "looks like";
+>    and form-level over everything, symbol codes and binding-table-bound
+>    rows included, and that totality is its cordon duty: geometric
+>    relations answer "looks like";
 >    *asserted* parthood lives in the truth store and the towers'
 >    registration, answers "is", and is a different call. Reading one
 >    relation as the other is the category error.
 > 2. **Fusion = elementwise max stays as the order-theoretic join.**
->    The learned $\sigma$-fold satisfies $\sigma \succeq \max$ (MeronomySpec §10.1) —
->    join versus parametric whole-maker; the whole-maker can only
->    over-cover the join, never under-cover it.
+>    There is no learned perceptual whole-maker beside it: a part's code is
+>    the max of its constituents' codes.
 > 3. **The region partition (incl. exact `equal == 0` underlap) is a
 >    scoring vocabulary only.** No abstraction classifier consumes it
->    (withdrawn, spec §9): no adjacency exists over witness
+>    (withdrawn): no adjacency exists over witness
 >    dimensions, so disconnection is meaningless there.
-> 4. **Contiguity is sequential, never dimensional** (spec §2): it is
+> 4. **Contiguity is sequential, never dimensional**: it is
 >    owned by `Mereology.Contiguous` on the derivational axis; $\sigma$
 >    extents over witness dims are single lumps always.
 
@@ -216,12 +217,11 @@ Gated behind `<mereologyRaise>` (default off $\to$ byte-identical).
 
 *A superseded passage beginning "**Terminology note.** The cross-tower link that ties one par" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 
-The two towers stay **in-kind** — `PartSpace` *composes parts $\to$ parts*,
-`WholeSpace` *analyses wholes $\to$ wholes* — and the **concept (META node) is the
-cross-tower link**, associated with both an overlapping part-percept and
-whole-percept (`insert_meta(ps_pos, ws_pos, fused_vec=None, *, ema=0.1,
-trust=None)`; `ss_pos` is the pre-rename spelling). The native views meet
-through the concept's definition over their memberships. At init PartSpace
+The two towers stay **in-kind**: `PartSpace` *composes parts $\to$ parts*
+and `WholeSpace` *analyses wholes $\to$ wholes*, and the **concept is the
+cross-tower link**: an order-0 concept's literals are basic percepts, each of
+which names an occurrence's ordered parts and its whole boundaries (see
+"Basic-percept premises" below). At init PartSpace
 has primitive parts and WholeSpace has supplied property rows defined over
 primitive input. The attended field binds their location and level;
 object-kind testimony belongs to item 7.
@@ -235,13 +235,12 @@ A large number of constituents is never a reason to raise. Ordinary
 symbolization establishes an order-1 individual; context promotion beyond
 that order uses `ConceptualSpace.maybe_raise_order` and the same convergence
 gate. No WS fold-depth node is minted as a substitute for conceptual order.
-See [Architecture](Architecture.md) and the
-[11c residue receipt](benchmarks/2026-09-24-item10/README.md) for the rule,
-patience parameter and controlled Felix/cat gate.
+See [Architecture](Architecture.md) for the rule and its
+patience parameter.
 
-`delete_meta`, `unlink_child`, and `ps_children_of_whole` still maintain
-native cross-tower bindings. These operations do not by themselves establish
-an object kind; testimony remains item 7's responsibility. Retained brackets
+`ps_children_of_whole` reads the native percept parts reachable through a
+concept's word bindings. Such bindings do not by themselves establish an
+object kind; testimony remains item 7's responsibility. Retained brackets
 belong to the attentive field, never to a permanent conceptual location.
 
 ### Automatic analysis: dividing wholes by LBG splitting {#lbg-division}
@@ -250,8 +249,8 @@ belong to the attentive field, never to a permanent conceptual location.
 
 **On the property inventory (2026-09-11).** The legacy split above is
 gated off under the canonical property basis (its constructor calls the
-eight-class inventory stable). The fold-ladder plan lifted that gate
-with a dedicated pair on WholeSpace, `record_property_pull` and
+eight-class inventory stable). A dedicated pair on WholeSpace lifts that
+gate, `record_property_pull` and
 `maybe_split_property_row`: after the ladder stem, each unit's rung-0
 code (the max over its atoms) pulls on every property row its bytes
 hold, with the unit's bytes recorded beside the pull (the stem records a
@@ -269,7 +268,7 @@ row's members separate in code, the row splits, the new row's predicate
 is the vowel set, and whether "vowel begins" ever bounds anything is the
 utility learner's decision.
 
-**The boundaries themselves (contracts 2-3, landed 2026-09-11).** The
+**The boundaries themselves (2026-09-11).** The
 unit tiling is cut from a bool signature slab over the atomic wholes
 (one column per byte value, the minimal seed of the whole lexicon, as
 the byte rows are of the part lexicon) and the property rows: a
@@ -310,15 +309,14 @@ the other.
   whole-percept code, with self-reference (`('sym', id)` members) so concepts nest
   into the taxonomy. Concepts associate part-percepts and whole-percepts **in virtue
   of a common whole**, and **identity on insertion is keyed to the exact ordered
-  pair** — `WholeSpace.meta_pair_to_idx[(ps_pos, ws_pos)]` for `insert_meta`,
-  `ConceptAllocator.relate_idx[(part, whole)]` (`bin/Layers.py`) for `relate` —
-  **not** same-part-OR-same-whole: a repeat insert of the identical pair
+  pair** (`ConceptAllocator.relate_idx[(part, whole)]`, `bin/Layers.py`, for
+  `relate`), **not** same-part-OR-same-whole: a repeat insert of the identical pair
   reinforces the existing concept, but a new pairing that merely shares a part
   or a whole with an existing concept mints a distinct one. `.where`
   **varies trial-to-trial** and is *not* the identity or trigger key — it keeps
-  only its spatial/meronomy role (extent, containment). The Concept codebook
-  (`taxonomy` / `taxonomy_parent_map` / `meta_pair_to_idx` / `meta_trust` /
-  `part_chain`) is this structure. (This refines the earlier
+  only its spatial/meronomy role (extent, containment). The allocator's
+  relation rows (`ConceptAllocator.parts`, the `LTM1` stratum) are this
+  structure. (This refines the earlier
   `.where`/co-occurrence framing above: the *trigger* to abstract is **many
   constituents under a common concept**, not a shared `.where`.) These
   relations are the INDEX side; the concept's subsymbolic content (the
@@ -455,8 +453,8 @@ For text, parthood is byte-span containment:
 P is-part-of W  iff  span(P) is contained by span(W)
 ```
 
-`record_cross_tower_meronomy` and `RunStructureLayer.contained_mask` read the
-order from `.where` brackets. It is exact and complete for contiguous parts,
+`RunStructureLayer.contained_mask` reads the order from `.where` brackets. It
+is exact and complete for contiguous parts,
 including a cross-boundary part that the local build did not combine:
 
 ```text
@@ -467,6 +465,15 @@ including a cross-boundary part that the local build did not combine:
 Thus a synthesizer may build `abcd` locally as `ab join cd` and still recover
 the global constraint involving `bc`. Non-contiguous selections such as `ac`
 lie outside this poset by design.
+
+A contiguous event takes its actual mereology. A sentence or clause whose
+words form one run of the input is a whole in WholeSpace's sense: a maximal
+run whose parts are the words and whose `.where` is the bracket. Its form is
+the leaf-weighted centroid of its parts' forms (`compose_blocks`), drawn
+toward the mean of the WholeSpace properties that witness the run
+(`FormCentroids`). An event interrupted by another clause has no single run;
+its centroid is then a type over disjoint parts, where the mereology means
+less.
 
 ### Synthesizer: Build, Then Project
 
@@ -523,28 +530,31 @@ the top-down role through the meronymic path.
 ### Convergence and Supported Modes
 
 With `subsymbolicOrder > 0`, synthesis chunks small parts upward and analysis
-splits large wholes downward. Each pass feeds the next until the two meet at an
-operational basic level. The current boundary rule pins that level to words as
-a first approximation; learning the more general Rosch-style basic level is an
-open extension.
+splits large wholes downward, each pass feeding the next. The two towers meet
+at the basic level: the extent at which a part joined from below and a whole
+divided from above coincide and are both attested. That extent is a basic
+percept (`BasicPercepts`), whose row names the occurrence's ordered parts and
+its whole boundaries; recurrence promotes it to a durable row. The level is
+not fixed in advance: it moves with evidence per domain, as Rosch's basic
+level moves toward the subordinate with expertise (see "Basic-percept
+premises" below).
 
-Since 2026-09-10 (doc/plans/2026-09-10-meronomy-fold-ladder.md) `meronomy`
-is the only canonical mode on both sides: PartSpace synthesis is the fold
-ladder (units = the staged wholes, atoms = bytes with an ordered witness,
-rung 0 = the max over atoms, admission of recurring units at the boundary
-flush) and WholeSpace analysis is the descending tiling ladder (the
-four-class unit tiling with the digit singleton until the boundary
-predicates are learned). The analysis side's boundaries are learned predicates over the
-WholeSpace property rows (`boundary_weight`, `singleton_weight`),
-initialised from the four classes or, under `<boundaryTypes>none</boundaryTypes>`,
-from a byte-complete cold start, and moved at each sentence boundary by
-the recurrence and density of the wholes each row's cut would yield (the
-memory-load criterion: whitespace turns on first). The other synthesis
-modes (`radix`, `lexicon`, `bpe`, `mphf`, `byte`) and analysis cuts
-(`byte`, `word`, `raw`, `sentence`, `grammatical`) are legacy front ends
-dispatched by `bin/Legacy.py`. The two towers are not duals: the join is the only OR in
-perception, the meet over positions is the only AND, and negation enters
-first at the conceptual level.
+Since 2026-09-10 `meronomy` is the only canonical mode on both sides:
+PartSpace synthesis is the fold ladder (units = the staged wholes, atoms =
+bytes with an ordered witness, rung 0 = the max over atoms, admission of
+recurring units at the boundary flush) and WholeSpace analysis is the
+descending tiling ladder (the four-class unit tiling with the digit singleton
+until the boundary predicates are learned). The analysis side's boundaries are
+learned predicates over the WholeSpace property rows (`begins_weight`,
+`ends_weight`, `atom_level`), initialised from the four classes or, under
+`<boundaryTypes>none</boundaryTypes>`, from a byte-complete cold start, and
+moved at each sentence boundary by the recurrence and density of the wholes
+each row's cut would yield (the memory-load criterion: whitespace turns on
+first). The other synthesis modes (`radix`, `lexicon`, `bpe`, `mphf`, `byte`)
+and analysis cuts (`byte`, `word`, `raw`, `sentence`, `grammatical`) are
+legacy front ends dispatched by `bin/Legacy.py`. The two towers are not duals:
+the join is the only OR in perception, the meet over positions is the only
+AND, and negation enters first at the conceptual level.
 Rank is mereological level in both towers, and all ranks use the same
 `[0,1]^D` membership cube. Conceptual order counts symbolizations.
 
@@ -564,8 +574,7 @@ trim. It is not the live routing implementation. Its exact byte-replay behavior
 is covered by `test/test_meronomy_utf8.py` and `test/test_meronomy_ladder.py`;
 within-whole division is covered on WholeSpace by
 `test/test_within_whole_division.py`. The live start-only WhereEncoding and its
-`test/test_where_bracket.py` tests remain. The use and coverage audit is in
-[the trim receipt](benchmarks/2026-10-01-stage1-and-suite-trim/suite-trim/precursor-coverage-map.json).
+`test/test_where_bracket.py` tests remain.
 
 The live span bookkeeping and ordered byte witness establish the path and order
 specification. **(2026-06-25, LANDED standalone.)** The hard `join-from-bottom`
@@ -583,8 +592,7 @@ Implementation references:
 
 - poles, membership folds, and character-class regions:
   [`bin/Layers.py`](../bin/Layers.py)
-- `record_cross_tower_meronomy` and `stage_analysis_spans`:
-  [`bin/Spaces.py`](../bin/Spaces.py)
+- `stage_analysis_spans`: [`bin/Spaces.py`](../bin/Spaces.py)
 - `.where` containment edges, the join/meet/isotonic-projection primitives,
   and the mereological synthesizer/analyzer (`where_containment_edges`,
   `join_from_bottom`, `meet_from_top`, `project_monotone`,
@@ -594,7 +602,8 @@ Implementation references:
   it): [`bin/Meronomy.py`](../bin/Meronomy.py)
 - presence and complement geometry:
   [Spaces.md](Spaces.md#percept-geometry-positive-unit-hypercube)
-- conceptual situating: conceptual-similarity-space plan
+- conceptual situating:
+  [SBOW Situates Concepts, Not Percepts](Spaces.md#percept-sbow)
 
 **Same module, different topic.** `bin/Mereology.py` — home to the
 join/meet/projection primitives above — also carries the unrelated
@@ -607,13 +616,34 @@ geometry — the two share a file and a name, not an implementation.
 ### `isPart` as a Grammar Layer
 
 `IsPartLayer` lifts parthood into the role-collapsed grammar as a binary
-operator (arity 2). Under a query model it dispatches to `queryPart`
-(`_dispatch_method_name_for_rule`), so `isPart` and `isEqual` are the
-relative operators recognized by `_relative_start_categories`
-(`_RELATIVE_OP_NAMES`). Its identity vector lives in the `WholeSpace`
-operator codebook and participates in the same soft superposition as the
-other operators.
+operator (arity 2), and remains only for explicit historical grammars and
+checkpoint migration (where `queryPart` survives); production grammars use the
+structural `part` / `whole` family, and an interrogative is a structural
+`what` wrapper around the completed idea. A rule is relative when its
+left-hand side is a declared relative start category or its declared relation
+kind is relative (`_relative_rule_id_set`).
 
-## Basic-percept premises (item 2.0 round 5, 2026-11-09)
+## Basic-percept premises (item 2.0, 2026-11-09)
 
-Mereological bounds now belong to perception. `BasicPercepts.subspace_bounds` takes the identity join of parts and property meet of wholes. `FormContainment.audit` checks those basic rows and their boundaries; symbolic order-0 feature weights do not supply the containment premises. `MereologicalCodes` reads the resulting basic codes and learned conceptual context, with no direct two-tower symbolic form derivation. The conceptual field reads live basic evidence, including its complementary pole, so property memberships retain their gradient. The compose-time weighted presence rule is unchanged. Full reverse through basic percepts is carried to round 6.
+A basic percept is a percept with both parts and a whole, the extent at which
+synthesis and analysis meet (above); the name follows Rosch's basic level, the
+level of categorization at which members share a shape and a configuration of
+parts, which is where part knowledge concentrates (Tversky and Hemenway
+1984). Basic percepts take over the tying of parts to wholes from the first
+symbolic layer, so no symbolic order needs a mereological read.
+
+Mereological bounds belong to perception. `BasicPercepts.subspace_bounds`
+takes the identity join of parts and the property meet of wholes.
+`FormContainment.audit` checks those basic rows and their boundaries; symbolic
+order-0 feature weights do not supply the containment premises.
+`MereologicalCodes` reads the resulting basic codes and learned conceptual
+context, with no direct two-tower symbolic form derivation. A word's form is
+the weighted centroid of the percepts of its written definitions whenever any
+definition weight is positive, including when the word owns an admitted basic
+percept; only when every weight is zero is the form that basic percept's own
+code, and a word with neither keeps the zero form (`MereologicalCodes.derive`;
+Alec, 2026-11-10). The conceptual field reads live basic evidence, including
+its complementary pole, so property memberships retain their gradient, and
+the compose-time weighted presence rule applies. Reverse divides a concept's
+demand over its written basic-percept alternatives by weight
+([Spaces](Spaces.md#common-order-zero-reverse-item-20-round-6-2026-11-10)).

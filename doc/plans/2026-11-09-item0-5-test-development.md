@@ -48,7 +48,7 @@ How two writers share one repository (one checkout or two, and whose sweep runs 
 
 ## 4. Rules that bind this item
 
-1. **Math is never direct.** Numerals are opaque words, successor is the one verb, and the learner has no numeric code or readout. `bin/exact.py` is an oracle for generating and checking rows only ([mathematical thinking](../specs/2026-09-09-mathematical-thinking.md)).
+1. **Math is never direct.** Numerals are opaque words, successor is the one verb, and the learner has no numeric code or readout. `bin/exact.py` is an oracle for generating and checking rows only.
 2. **No language in code.** No language is named or special-cased in code, configuration, fixture names or test names. The words of a corpus are data: recipes and rows hold them, and a generator only substitutes slots.
 3. **No predefined surface.** An operator has no declared surface word. A game's pairs teach its marker; nothing names it to the learner.
 4. **Forcing.** A unit test may force a part of speech; a learning certificate forces nothing. A mechanism probe never satisfies a learning gate.
@@ -65,7 +65,7 @@ The moved todo text is under item 0.5 in [the todo](../../todo.md), unchanged. T
 
 | | Work | From | What item 0.5 does |
 |---|---|---|---|
-| H1 | Bounded-test batching | 2 | Restore safe, faster batching inside the 8 GiB cap without raising a cap or omitting a case; reconsider [fixture reuse](2026-09-17-bounded-fixture-reuse.md). |
+| H1 | Bounded-test batching | 2 | Restore safe, faster batching inside the 8 GiB cap without raising a cap or omitting a case; reconsider fixture reuse: test helpers build a fresh model at every `from_config` call, so one compact preallocated model per compatible fixture family in a bounded worker, with a verified complete reset, could serve the tests that do not need fresh construction; construction, reset, compilation, forward and backward are timed separately before any speedup is claimed. |
 | H2 | D5, the two decomposition snapshots | 2 | Regenerate both from their recorded seeds under the 256-wide layout, keep both old hashes beside the new ones, and run both `test_math_chain_decomposition` arms at budgets 512 and 768 with the original assertions. First check: after item 2.0 retires the decomposition teacher, confirm what each arm still measures. If an arm has nothing left to measure, that piece stops and the strike is Alec's. |
 | H3 | The deferred slow marks | 2 | The 26 core, 4 tower-projection and 3 native-packing cases, both decomposition arms and `test_review17_measurement_wiring_on_one_ordinary_batch`, run once under `RUN_SLOW`. |
 | H4 | The weekly sweep | 2 | `make test_all` green once on one hash, and the default sweep green at the ten-worker 28 GiB ceiling. Taken as the joint exit of items 0.5 and 1 (§12): one run on the hash that holds both, so each of item 1's four runtime groups is repaired in it or excepted by name. |
@@ -138,7 +138,7 @@ Each game runs three arms: enabled; ablated (the rule removed from the configura
 
 ### 6.6 Inventory
 
-Candidates, in the lesson order of [parts of speech §5b](../specs/2026-10-18-parts-of-speech.md), each confirmed against `GRAMMAR_LAYER_CLASSES` and `_OPERATOR_SURFACE_SCHEMAS` before its recipe is written: `not`, `non`; `conjunction`, `disjunction`; `intersection`, `product`; `lower_unary`, `definite_unary`; `adverb`; `transpose`; `part`, `whole`; `implies`; `generic`; and the question and equality rules under the names the code has. The first round builds three: `not`, `conjunction`, and the unary-chain game of §6.7 (D3).
+Candidates, in the order of the ten lessons (`data/lessons/recipes/00-words.json` to `09-relations.json`), each confirmed against `GRAMMAR_LAYER_CLASSES` and `_OPERATOR_SURFACE_SCHEMAS` before its recipe is written: `not`, `non`; `conjunction`, `disjunction`; `intersection`, `product`; `lower_unary`, `definite_unary`; `adverb`; `transpose`; `part`, `whole`; `implies`; `generic`; and the question and equality rules under the names the code has. The first round builds three: `not`, `conjunction`, and the unary-chain game of §6.7 (D3).
 
 ### 6.7 Unary chains
 
@@ -153,7 +153,7 @@ A game enters training as a stage of the lesson manifest: a `source` reference t
 The generator exists (`bin/exact.py`, `bin/math_chain_corpus.py`, `bin/MathChainTraining.py`); the rows are generated at test time and nothing is frozen. Item 0.5 makes the corpus data and prepares its measurement.
 
 - **Frozen rows.** `data/math/grade-<nn>.jsonl`, one serialized `ChainDocument` per row (`key`, `sentences`, `question`, `answer`, `pair`, `steps`, `statement_references`), with `data/math/manifest.json` holding the generator command, the seed as the corpus's identity, the sha256 of each file and the counts. New test: `test/test_math_corpus_frozen.py` (the files match the manifest; the oracle `ExactVerifier` accepts every row).
-- **Grades.** Counting first, then one-step problems, then chains by depth (correction 1 of the 2026-10-08 protocol; the Viterbi order of [thinking §13.9](../specs/2026-10-07-thinking.md)), with distractors as their own grade.
+- **Grades.** Counting first, then one-step problems, then chains by depth (correction 1 of the 2026-10-08 protocol: with one departure per derivation, credit reaches deep derivations only when the problems arrive graded, the last step alone and then the last two, and not when depths are mixed), with distractors as their own grade.
 - **Splits.** Both `split_by_surface` and `split_by_structure`, plus the protocol's held-out pairs and beyond-range pairs.
 - **The four corrections** (`protocol-corrections-14-13.json`, deferred to item 0). Corrections 1 and 2 are this item's: the grade order above, and worked steps presented as intermediate answers. If correction 2 needs a new term in an objective, it is mechanism and goes to Alec. Correction 3 is what the measurement reads (the episode binds a found candidate or concludes with the best match). Correction 4, the budget counted in steps, changes the work meter; it is mechanism, outside this item, and it precedes the measurement.
 - **The declaration.** The measurement is declared again after item 2.0 retires the decomposition teacher and books the choice reward to output: the three conditions, the bar of 9 of 10 trainings and the chain bar of the protocol, with Alec's word on any number that changes. One dry run on the smallest grade shows that it runs.
@@ -168,8 +168,8 @@ One manifest, `data/training-corpus.json`, names every stage of the training cor
 
 | | Stage | What it holds | Source | State today |
 |---|---|---|---|---|
-| A1 | Words only | lessons 0 and 1 of [parts of speech §5b](../specs/2026-10-18-parts-of-speech.md) (`words`, `interpret`): forms kept and trusted, each word given its object-concept, no operation on two words | `data/corpus-lessons.json` | no stage data (§9) |
-| A2 | Simple sentences and synthetics | lessons 2 to 9 of §5b (`clause`, `ask`, `verb`, `modifiers`, `determiners`, `adverb`, `prepositions`, `relations`) and the transformation games | `data/corpus-lessons.json`, `data/games/` | two lesson stages exist; the games are new (§6) |
+| A1 | Words only | lessons 0 and 1 (`words`, `interpret`): forms kept and trusted, each word given its object-concept, no operation on two words | `data/corpus-lessons.json` | no stage data (§9) |
+| A2 | Simple sentences and synthetics | lessons 2 to 9 (`clause`, `ask`, `verb`, `modifiers`, `determiners`, `adverb`, `prepositions`, `relations`) and the transformation games | `data/corpus-lessons.json`, `data/games/` | two lesson stages exist; the games are new (§6) |
 | A3 | Math | the graded math corpus | `data/math/` | generator exists, rows not frozen (§7) |
 
 - **One model, three stages, in order.** The model is saved before A1 and after each stage: $M_0$, $M_{A1}$, $M_{A2}$, $M_{A3}$.
@@ -479,14 +479,39 @@ by question tool:
   (§7) is of the same kind and joins them (Claude's reading).
 - *H20.* "doc links to [git-ignored] receipts should have the relevant
   portions of those receipts inlined immediately. That can happen here,
-  now, and be pushed on main." Claude does it on the first machine, and
-  `testing` takes it by merging `main`. A return follows the same rule: it
-  carries its numbers inline and links no ignored path.
+  now, and be pushed on main." Amended the same day: "Actually, all work
+  on testing, please. Then push.", "I'm suggesting that receipts are
+  irrelevant" and "I do not want to check irrelevant content into
+  GitHub". So on `testing` every receipt reference is removed with
+  nothing inlined, and the plans and specifications are deleted, except
+  this plan and the item 1.8 specification, which go when their rounds
+  land; the standing documents take in what they relied on. A return
+  links no ignored path.
 - *H18* waits for 1.8's landing, since it changes how every receipt's
   hash is computed (Claude's reading; Alec's answer addressed H20).
 - *The written tier.* With Codex building, D3 stands as decided: Codex
   writes and verifies the pairs, Claude reads the audit list. §16 item 4's
   reading is withdrawn.
+
+- *A small repository.* "Please do rewrite main's history to drop the
+  old receipts, we can do that after 1.8 so that we have a downloadable
+  repo after 1.8 of only a few MB (we probably have test files in there
+  also, that can be replaced with downloadable links as a part of the 0.5
+  work). So perhaps we can integrate 1.8 and 0.5, and then we will have
+  the small repo we wanted." The order: item 1.8 lands on main, this item
+  lands from `testing`, then main's history is rewritten to drop
+  `doc/benchmarks/` and every large file no longer in the tree. Measured
+  on 2026-11-12, GitHub holds 2.35 GB, of which 2.06 GB are receipts
+  committed on main before they were ignored; the tracked tree is 203 MB,
+  173 MB of it in twenty files over 1 MB. This round moves the large data,
+  fixture and paper files out of the tree (§18.2 item 5). Then: "30 mb repo is
+  fine. Don't remove important code history!" The rewrite drops only
+  receipts and large data and paper files that come from other sources;
+  every commit and its code stays. And: "Let's just aim for under 100
+  mb." And: "But files tracked in other repos should not be checked in
+  here. Of those are pre-build binaries or weight files, we probably want
+  to keep them." Read as: a file whose source is elsewhere leaves the
+  tree; a binary or weight file made here stays (Claude's reading).
 
 ### 18.2 Codex text (Claude, 2026-11-12; for Alec to paste on the second machine)
 
@@ -497,18 +522,20 @@ and lands. Codex on another machine is building item 1.8 on main at the
 same time: never push main, and never force-push.
 
 Get the code. Work on the branch testing: main at 9f7923d67f (item 2.0
-complete) plus one commit with Claude's rounds 1 and 2 of this item. In a
+complete) plus Claude's commits with rounds 1 and 2 of this item and the
+documentation pass (the plans and specs folded into doc/*.md). In a
 BasicModel checkout that exists, run git fetch origin, then
 git checkout -b testing origin/testing; otherwise
 git clone -b testing https://github.com/arborrhythms/BasicModel basicmodel.
 Have git-lfs installed first, so that data/mnist_train.csv is the real
 file (as a pointer, its case skips). Run make install (Python 3.12; .venv from the unpinned requirements.txt).
-When origin/main moves (the receipt inlining of §18.1 lands there first),
-merge it into testing.
+When origin/main moves, merge it into testing.
 
 Read first, in doc/plans/2026-11-09-item0-5-test-development.md: §4 (the
 rules), §5 (the H items), §16 and §17 (what was reconciled and built), and
 §18.1 (Alec's decisions of today, which override §16 where they differ).
+The other plans and specs are deleted: doc/*.md is the design, and
+doc/Testing.md holds the rules for tests and measurements.
 
 Check the copy before building any local data. This passes 22 cases:
 env -u RUN_TRAINED -u RUN_SLOW .venv/bin/python -m pytest -q -p no:cacheprovider test/test_math_corpus.py test/test_game_corpus.py test/test_lesson_stages.py test/test_training_corpus.py
@@ -551,7 +578,24 @@ The round, one return:
    §6.4's check of which training signal teaches a whole-sentence target
    (if neither does, the games' training stops at that finding, which
    goes to Alec). Record each number as measured on 2.0.
-5. Not in this round: H18 (after 1.8 lands), H20 (done on main, §18.1),
+5. Large files out of the tree (§18.1): move out every tracked file over
+   1 MB whose source is elsewhere, and every paper (Alec: "files tracked
+   in other repos should not be checked in here"); binaries and weight
+   files made here stay.
+   - data/fineweb/shard_00000.parquet (90.1 MB; its source is BASE_URL in
+     bin/data.py), data/mnist_test.csv (17.5 MB) and data/mnist_train.csv
+     (a git-lfs file): fetched from their public sources.
+   - doc/research/*.pdf (25 papers, 55.4 MB): each becomes a link to its
+     public source where the research notes cite it, and none is fetched;
+     a paper with no public source stays, and §19 lists it for Alec.
+   - test/fixtures/2026-10-10-item6/identity-rst/validation/retained-scorer.pt
+     (12.3 MB) is a weight file made here: it stays.
+   A fetched file is named in a tracked manifest with its URL, byte size
+   and sha256; one preparation command downloads and verifies all of them;
+   a test that needs one skips, naming that command, when the file is
+   absent (tests never use the network, §4 rule 5). Record in §19 the
+   tracked tree's size before and after (git ls-tree -r -l HEAD).
+6. Not in this round: H18 (after 1.8 lands), H20 (done on testing, §18.1),
    H4 (the joint exit with item 1), and round 3 (§11).
 
 Rules: §4 of the plan. No seed is chosen so that an assertion passes; a
@@ -567,9 +611,7 @@ test/test_item25_completion.py::test_a_previously_named_shared_concept_denotes_i
 stops the round.
 
 Testing: fast checks while you build; one default sweep when you freeze,
-env -u RUN_TRAINED -u RUN_SLOW make test, nothing deselected. Until the
-inlining reaches testing, test/test_doc_links.py fails on links to
-ignored receipts; name those cases in the return and leave them.
+env -u RUN_TRAINED -u RUN_SLOW make test, nothing deselected.
 
 Return as §19 of the plan: what changed and why, each item's certificate
 and numbers, the sweep's result, findings, and decisions for Alec.

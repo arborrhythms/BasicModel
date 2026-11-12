@@ -43,22 +43,10 @@ reconstruction and prepared-answer gradients are preserved; hard query choice
 still requires the later controller's explicit policy credit. See
 [Gradient flow](GradientFlow.md).
 
-## Evidence and limits
+## Limits
 
-The rebased reviewer probes first failed in
-`output/tests/20260918-010057-1c5b25` (16/16 completed with the expected
-unmasked-execution failures). After the fix, the expanded preserved reviewer
-set passed **23/23** in 166.9 seconds in
-`output/tests/20260918-011031-938ed0`, including real fullgraph forward and
-backward across word counts plus trace/eager-island negatives. The broader
-affected selection passed **280/280** in
-`output/tests/20260918-011401-fd5b1c`; fresh workers bounded allocator state
-at a 1.56 GiB peak.
-
-Per the user-directed no-rerun policy, this item has focused and affected-file
-evidence rather than a new single-snapshot global suite receipt. The earlier
-default-suite composite remains recorded in [Testing](Testing.md).
-
-This guard does not implement normal selected linguistic meaning, the ordinary
-thought controller, nested retention, shared query work, residual policy
-credit, or learned causal utility. Those remain separate integrated-spec gates.
+This guard grants and withdraws permission only. Selected linguistic meaning
+and the thought controller ([SelectedMeaning](SelectedMeaning.md)), nested
+retention ([NestedRetention](NestedRetention.md)) and shared query work
+([QueryWork](QueryWork.md)) are separate mechanisms, and learned causal
+utility is unproven.

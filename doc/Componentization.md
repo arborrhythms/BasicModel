@@ -1,10 +1,10 @@
 # Runtime Architecture and Componentization
 
-> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
+> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record.
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
 > - STM is the open sentence's three concept-width working slots plus an **index** of the most recent rows (about eight addresses) and the symbol activation field; the intersection `bind` needs is computed on read, never stored.
-> - Expectation is a **gain field** `c = m⊙a⊙o` with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
-> - Amended 2026-10-29/30 (Alec; [thinking spec §§16, 22](plans/2026-10-27-item2-5-thinking.md), [2.7 record §42](plans/2026-10-27-item2-7-corpus.md)): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are not built.
+> - Expectation is a **gain field** $c = m \odot a \odot o$ (attention's gain $m$, expectation's gain $a$, the arriving signal $o$) with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
+> - Amended 2026-10-29/30 (Alec): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are built (accepted as implemented, Alec, 2026-11-01).
 
 
 ## Peer-pipelined space execution (2026-07-22)
@@ -32,7 +32,7 @@ grammar-less configurations)*:
 
 ```
 CSSub(w):    IS(w) -> { PS(w), WS(w) } -> CS reduction
-CSSym(w-1):  symbolicOrder x (CS -> SS -> CS)
+CSSym(w-1):  K x (CS -> SS -> CS)
 CSLang(w-2): word-reference deposit
              -> automatic object-reference resolution
              -> LS Binary choice -> CS Binary apply
@@ -46,8 +46,8 @@ staged once per word at the eager lexical boundary; the captured loop reads
 only that word's `[B,N,P]` primitive-property activation and the one owned
 property table, rather than rescanning the padded sentence. Within CSSym,
 `CS -> SS -> CS` is deliberately sequential: SS promotes conceptual order,
-and CS decodes that promotion before the next of the fixed `symbolicOrder`
-iterations. CSLang then deposits the completed word concept in CS STM.
+and CS decodes that promotion before the next of the fixed `K` iterations
+(`K = conceptLayers - 1`; the `symbolicOrder` knob is retired). CSLang then deposits the completed word concept in CS STM.
 Treating that entry as a reference automatically replaces it with the paired
 object concept before `LanguageSpace` builds the object concepts into a syntax
 tree.
@@ -161,9 +161,151 @@ transitions.
 > half of the isolated CSLang stage. Its reconstruction-trace position remains
 > an explicit inactive sentinel; demanded sentence-root ending is unchanged.
 
-The focused ownership and pipeline-parallel contract for sparse, per-execution
-`SubSpace` carriers and Space-owned codebooks is specified in
-[`plans/2026-07-16-sparse-subspace-carrier-design.md`](plans/2026-07-16-sparse-subspace-carrier-design.md).
+The ownership and pipeline-parallel contract for sparse, per-execution
+`SubSpace` carriers and Space-owned codebooks is executable in
+`bin/pipeline.py`: a `Space` owns its layers, encoders, codebooks and
+parameters and makes every structural mutation; a carrier is a frozen value
+for one execution that holds no parameter, codebook or recurrent state,
+reads a codebook only through a read-only reader and keeps a selection as
+indices and activations until a consumer gathers it densely; and a pipeline
+training step reads one parameter version, committing optimizer updates and
+structural mutations only after the pipeline drains.
+
+| Object | Owns | May mutate |
+|---|---|---|
+| `Space` | schema, layers, encoders, codebooks, structural side tables | its own structure through named methods |
+| `SubSpace` carrier | one batch payload, typed pipeline control, emitted effects, reverse trace | nothing after construction |
+| codebook reader | no storage; a read capability over one Space-owned codebook | nothing |
+| stateful layer | STM, discourse state, clocks, recurrent caches | its declared recurrent state |
+| optimizer | parameter update state | parameters discovered under owning modules |
+| training session | epochs, batches, checkpoints, reporting | orchestration state |
+| pipeline executor | stage placement, bounded queues, schedule, barriers, cancellation | execution state, never model state |
+| boundary adapter | representation conversion and device transfer | fresh carrier copies only |
+
+The optimizer is a deliberate second writer to trainable codebook parameters;
+the Space remains the structural owner, and insertion, growth, replacement,
+EMA updates and other no-grad mutations happen only through it or a child it
+names.
+
+**The carrier laws.** A carrier holds exactly one payload form: a dense event
+(`DenseEvent`), factored `what`/`where`/`when` values (`FactoredEvent`), or a
+codebook selection (`SelectedEvent`: a reader, integral indices, the
+activation and only the bands the codebook does not store), never a selection
+together with its dense gather; the payload type, not a flag, names the
+representation. Materialization is a pure read (`reader.lookup(indices)`,
+then the named bands and gates): it caches nothing on the carrier, the reader
+or the owner, and an unsupported mode raises. Pipeline communication travels
+only on typed carrier fields or explicit arguments: no generic metadata
+dictionary and no attribute parked on the model, a Space or a carrier, and
+every field has a named producer, consumer and lifetime. Carriers are frozen
+and slotted; a stage treats its input as read-only and returns a new carrier,
+and in-place writes touch only state the receiving Space owns. A codebook
+reader exposes operations, not storage: `lookup`, differentiable with respect
+to the owner's prototype, and `nearest(values, allowed_rows=...)`, which
+examines only the permitted rows; it never exposes `W`, a raw prototype or
+its owner. Its `CodebookIdentity` names the owner with a `structure_version`
+(insertion, growth, replacement) and a `parameter_version` (optimizer and EMA
+updates); derived caches key on every version that can change their answer,
+and readers are never serialized. `Space.forward` and `Space.reverse` never
+mutate their argument, return a fresh carrier, park nothing on
+`self.subspace`, and return an empty carrier of their own schema for empty
+input, so `Start()`/`End()` become unnecessary and `Reset()` remains only on
+owners of cross-step state (STM, discourse).
+
+**The executor.** Different microbatches may occupy different Spaces at once;
+this is a throughput schedule and removes no dependency within a microbatch,
+so an interleaved schedule must produce the same outputs, losses, state
+transitions and gradients as the serial one. `PipelineExecutor`, not a Space,
+owns the stage list and placement, one bounded queue per stage, microbatch
+splitting and reassembly, the schedule, transfers, version barriers,
+cancellation and telemetry; a Space never reads another stage's queue or keeps
+a carrier after its call. Each carrier has one `PipelineAddress` (execution,
+microbatch, parameter version, stream ids, sequence step), which is control
+identity and never a model feature. The reference training schedule is
+fill/drain: the forward wave, the cognitive `Space.reverse()` wave in reverse
+Space order, autograd backward, drain, the ordered commit of deferred changes,
+one `optimizer.step()` and a version increment. `Space.reverse()`
+(reconstruction) and autograd `backward()` are different contracts and share
+no cache. A `BoundaryAdapter` passes a selection through on the same device,
+materializes it on the owner's device for training (the default, which keeps
+the gather connected to the authoritative parameter), or rebinds its indices
+to an exact read-only replica for inference only; a replica is not a
+parameter, optimizer member or checkpoint owner, and a version mismatch
+raises. No parameter, codebook structure, vocabulary, truth store or recurrent
+state changes while older carriers are in flight: a stage emits a typed
+`DeferredMutation` (a closed union of owner-specific records), committed after
+drain in (execution, sequence step, microbatch) order, or declares an
+exclusive barrier; EMA and VQ updates are classified explicitly as one or the
+other. Recurrent state is partitioned by stream id, one stream's steps commit
+in sequence order, and a globally ordered stage declares its serialization.
+Losses travel as immutable `LossTerm` records emitted only when computed.
+Only owners appear in `state_dict()`, and `optimizer.step()` is illegal while
+carriers of its version are in flight. Compilation is per stage and device;
+capability calls lower to tensor operations, and queues and boundary copies
+stay outside compiled regions. A failure is attributed to one address and
+stage, and its execution commits no deferred change. Telemetry records
+compute, queue wait, transfer, materialization, barrier stalls and activation
+memory per stage; the ideal steady-state speedup is the sum of stage times
+over the largest. `test/test_sparse_pipeline.py` exercises the contract.
+Microbatches A, B and C fill the stages in turn; two stages on one saturated
+device still do not run simultaneously:
+
+```text
+time ->
+
+InputSpace       A  B  C
+PartSpace           A  B  C
+ConceptualSpace        A  B  C
+WholeSpace                A  B  C
+OutputSpace                  A  B  C
+```
+
+**The reverse trace.** Information that exact reversal needs and cannot
+recover from the output travels in the carrier's `ReverseTrace`. An identity
+or analytically invertible stage appends nothing; a nontrivial stage appends
+one typed entry with its stage name, preferring indices, masks, choices,
+spans and seeds to dense copies and never storing a prototype matrix or a
+module reference, so trace storage is
+$O(\text{active selections} + \text{non-invertible local choices})$, not
+proportional to the vocabulary. `reverse` consumes the entry addressed to its
+stage and fails clearly when it is absent; it never consults a cache of the
+most recent forward, so several in-flight microbatches reverse independently.
+
+**Remaining migration.** The live spaces still run on the mutable
+`SubSpace(nn.Module)` of `bin/Spaces.py`; `bin/space_carrier.py` gives each
+Space only its read-only codebook reader and identity, and the executor drives
+no live stage yet. A stage may join it only when it is `pipeline_safe` (its
+forward mutates no durable state a live reader depends on) and, for training,
+`training_safe` (its EMA, recurrent, vocabulary and other durable writes are
+deferred mutations or declared barriers). Still to do: Space methods that
+construct and return fresh carriers (masks, row gates, feedback and effects in
+typed fields); typed trace entries in place of the reverse backchannels
+(`_bind_carrier`, `_stm_single_S`, `_ir_mask_positions`, `_serial_row_gate`,
+`_prev_cs_event_cache`, the staged analysis spans and kinds); exclusive
+mutation barriers within an execution and per-stream recurrent partitioning;
+and finally the removal of `Space.subspace`, of the `nn.Module` inheritance of
+`SubSpace` and of its Basis-slot API, keeping legacy checkpoint reads. The
+migration changes no cognitive order, geometry, grammar, learning rule or row
+identity and keeps byte-identical behavior wherever the existing path is
+deterministic; any behavioral change found on the way is separate work.
+
+**Compiled loops and their gradients.** The compiled loops work around five
+`torch.while_loop` autograd constraints. The loop's autograd marks the
+per-trip checkpoints with the initial carry's `requires_grad`, so a floating
+carry that enters without a gradient (plain zeros) cuts the chain across trips
+and credits body parameters from the last trip only; `_carries_with_grad` adds
+to each such carry a zero scalar leaf that requires grad (a per-device and
+per-dtype anchor created eagerly by `_ensure_grad_anchors` before any compiled
+loop), a no-op under `no_grad`, so the loop's gradients equal a Python loop's
+(`test/test_while_loop_gradients.py`). The loop's backward node keeps its
+stacked per-trip outputs and carries after the brick's backward and optimizer
+step, so `_release_loop_checkpoints` drops them for the previous brick's
+graphs at the next brick's entry. Loop outputs are cloned before the next loop
+reads them. A host integer bound recompiles for every distinct value, so
+bounds are tensors. Attributes set inside a compiled graph escape it silently,
+so every result a caller needs is published as an explicit output. With
+compilation off, `_reconstruction_while_loop` runs the same body as an
+ordinary Python loop.
 
 The conceptual architecture is substantially more modular than its runtime.
 Layers, bases, spaces, grammar operations, and typed `SubSpace` carriers give
@@ -196,14 +338,14 @@ generic framework abstractions.
 
 ## The current ownership problem
 
-`bin/Models.py` is nearly 12,000 lines, but line count is only the symptom.
+`bin/Models.py` is over 25,000 lines, but line count is only the symptom.
 `BasicModel` and `BaseModel` jointly own construction, the training loop,
 compiled execution, forward and reverse routing, checkpoint schema, vocabulary
 migration, corpus progress, reconstruction reports, generation, truth storage,
 and reasoning. The same object also serves as the mutable message bus between
 phases through attributes such as `_staged_in_sub`, `_staged_concepts_in`,
-`_prev_cs_for_ps`, `_prev_cs_for_ss`, `_ir_mask_positions`, `_stm_single_S`,
-and `_current_discourse_s`.
+`_prev_cs_event_cache`, `_ir_mask_positions`, `_stm_single_S`, and
+`_current_discourse_s`.
 
 The result is a system with named domain modules but implicit runtime APIs:
 
@@ -266,6 +408,11 @@ The practical rule is:
 3. Replace parked attributes with an explicit request/result object.
 4. Characterize the boundary with tests.
 5. Extract the owner without changing tensor math.
+
+A replaced mechanism is deleted rather than preserved: no legacy path, gated-off
+(dark) branch, delegate shim or second owner remains in source. Old
+checkpoints are migrated or rejected with their producer named, not served by
+a retained code path.
 
 ## Proposed component boundaries
 
@@ -359,8 +506,8 @@ The forward path needs explicit dataflow objects. A useful split is:
   observations, and optional reconstruction artifacts.
 
 This replaces the model-as-message-bus pattern. In particular, values like
-`_prev_cs_for_ps`, `_prev_cs_for_ss`, `_staged_in_sub`, and `_serial_row_gate`
-should be passed, not discovered on sibling objects. Persistent state should be
+`_prev_cs_event_cache`, `_staged_in_sub`, and `_serial_row_gate` should be
+passed, not discovered on sibling objects. Persistent state should be
 listed and checkpointable; everything else should die with the frame.
 
 Do not attempt this as one rewrite. Start with `runBatch` staging / `_end_step`,
@@ -597,6 +744,18 @@ the following:
 - Its tests assert observable behavior, including negative and resume cases.
 - Removing the old forwarding shim would not require callers to know the new
   component's internals.
+
+Three rules hold for every component. Capacity is preallocated at
+construction and never resized: every bank, journal, store and walk has a
+fixed shape declared by a configuration knob, and exhausting it raises an
+error naming that knob rather than growing, clipping or dropping content (the
+one deliberate exception is a thought store's exact growth within its derived
+$4(W + O)$ bound for $W$ words and $O$ operations). Failures are loud: an
+unavailable operand, a missing witness, an unknown order or a malformed
+checkpoint raises instead of being substituted, backfilled or silently
+skipped. A written evidence pair stays written: later evidence merges into it
+by per-lane maximum, trust and gates scale what is read from it, and nothing
+rewrites a stored pole except forgetting the row or restoring an epoch.
 
 The goal is not a larger class count. It is a runtime whose state transitions
 are as explicit and typed as the cognitive spaces already are.

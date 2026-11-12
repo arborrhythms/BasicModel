@@ -1,12 +1,12 @@
 # XML Configuration Parameters
 
-> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
+> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record.
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
-> - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded.
-> - Expectation is a **gain field** `c = m⊙a⊙o` with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
-> - Amended 2026-10-29/30 (Alec; [thinking spec §§16, 22](plans/2026-10-27-item2-5-thinking.md), [2.7 record §42](plans/2026-10-27-item2-7-corpus.md)): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are not built.
+> - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; a stream is the batch row that wrote a row, and a document is the cover row that starts it in that stream (reused at every later presentation; a row belongs to the document of the latest cover before it), so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded (2026-10-24).
+> - Expectation is a **gain field** $c = m \odot a \odot o$ (attention's gain $m$, expectation's gain $a$, the arriving signal $o$) with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
+> - Amended 2026-10-29/30 (Alec): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are built (accepted as implemented, Alec, 2026-11-01).
 > - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23, [step 2 §71](plans/2026-10-21-step2-one-ltm.md); recorded 2026-10-30):** an LTM1 row is two tagged references with its kind read from the referents, not three. As built at `3718d9d0dc`, `LTM0` still carries `c_plus`/`c_minus`, `source_trust`, `order`, `row_ids`, `origin`, `record_kind`, `polarity` and `witness_count` columns; only `refs`, `grammatical_mode` and the index columns are retired (audit 2026-10-30; decided 2026-11-01, Alec: the unused columns are removed and the row brought to this layout, [thinking spec §32.2](plans/2026-10-27-item2-5-thinking.md) item 17).
+> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23; recorded 2026-10-30):** an LTM1 row is two tagged references (each to an LTM0 occurrence, a symbol or another LTM1 row, its tag saying which) with its kind read from the referents, not three. The unused `LTM0` columns are removed and the row has this layout (Alec, 2026-11-01).
 
 
 Model configuration is specified in XML files (e.g. `data/XOR_exact.xml`).
@@ -16,10 +16,18 @@ model-specific configs. The schema is in `data/model.xsd`.
 This document is the human-facing reference for common knobs and migrations.
 `data/model.xsd` is authoritative for the complete accepted element set.
 
-The §14 lattice derivation uses `ConceptualSpace.latticeMargin` (default `0`)
-for its deterministic room projection. `OutputSpace.unitRootRead` defaults to
-`false`; XOR_grammar sets it to `true` for a fixed unit-root affine reading.
-The sum control retains `false`. Neither setting adds a learned parameter.
+**Sizes (Alec, 2026-11-04).** Every constant set by hand that is a size (a
+capacity, horizon, budget, cap, cadence or width) is a power of two, for example
+`PartSpace.basicPerceptCapacity` $2^{18}$. A width made by adding such constants
+stays a sum: an event is its content plus the fixed eight-coordinate band (four
+`.where`, four `.when`), and the basic-percept row is $64 + 32 + 256$
+(`identityPairDim`, `identityLengthDim`, `propertyDim`). Seeds, versions,
+booleans, 0 and 1, rates, weights and ratios are not sizes; nor are counts that
+the structure fixes (the eight canonical property rows plus the word row,
+MNIST's 784 inputs and 10 classes) or values such as ports and angles. A fixture
+whose tests depend on a value keeps it, with a comment saying why. Some free
+sizes are not yet powers of two, among them `maxDocs` 10000, `verbGroups` 24,
+`placementNegatives` 5 and `identityOnes` 3.
 
 ## Relation to LLMs, Formal Concept Analysis, and DisCoCat
 
@@ -28,8 +36,8 @@ Analysis, and DisCoCat. `dataType=embedding`, sentence prediction, and
 reconstruction cover the LLM-like prediction/generation path.
 `attentionBudget`, `bindingDepth`, `conceptLayers`, `mereologyRaise`, `monotonic`, and the
 codebook settings control the FCA-like concept order and part/whole lattice.
-`learning`, `transformChooser`, `categoryCodebook`, and grammar-layer
-settings control the DisCoCat-like typed composition path.
+`transformChooser` and the grammar-layer settings control the DisCoCat-like
+typed composition path.
 
 Overlay merge order:
 `data/model.xml`  $\to$  `<config>.xml`  $\to$  runtime overrides.
@@ -72,7 +80,7 @@ sub-elements `<training>` and `<data>` (see below).
 | `attentionBudget` | nonnegative int | `32` | One allowance for input bracket operations, symbol recall and thought attention. Grammatical word composition does not spend it. A positive value also sizes the padded bracket table; zero disables the walk and thought work while retaining ordinary word composition for the VP-only control. |
 | `thoughtSearchExhaustion` | positive int | `1` | Consecutive completed region queries with no candidate before conclude is legal despite free variables or missing evidence. At that closing, source-supported forward referents are provisionally minted; regions without source evidence stay question rows. A query cut short by the budget is not a completed empty search. |
 | `bindingDepth` | nonnegative int | `1` | Number of constructed percept/concept binding layers, with live recurrence between them; model capacity, not an attention work allowance. Exactly one WholeSpace is shared by these stages; its property inventory and where slice do not multiply with this depth. |
-| `conceptLayers` | positive int | `1` | Concept inventory depth including order zero. It does not run repeated symbolic promotion passes. **Audit 2026-10-30 (`3718d9d0dc`): the two construction sites default to 2.** |
+| `conceptLayers` | positive int | `1` | Concept inventory depth including order zero. It does not run repeated symbolic promotion passes. **The code reads it with default 2 at two sites (the concept order limit and the serial word-major path) and with default 1 at two others.** |
 | Removed attention controls | — | rejected | `subsymbolicOrder`, `symbolicOrder`, `subsymbolicLoop`, `serial`, `modeSchedule`, `readingAttention`, `globalAttention` and `globalAttentionConsume` are rejected by schema and runtime validation. |
 | `composeTemperature` | finite float ≥ 0 | `0` | Shared hard-choice sampling temperature for exploit and explore. Zero selects the greatest logit, with item 8's structural rule on exact ties. Positive values sample `softmax(logits / temperature)` during training. Evaluation always uses argmax. Straight-through credit always uses the untempered model softmax; this parameter never scales its gradients. |
 | `conceptualPi` | bool | `false` | Open or update located native conjunction candidates in MTM; their order-0 definitions precede higher-order sigma folds. Pi edges above order 0 are rejected. |
@@ -86,8 +94,8 @@ sub-elements `<training>` and `<data>` (see below).
 | `transformChooser` | string | `"anchordot"` | Placement scorer for the structured grammar layers. `anchordot` = stateless cosine-to-anchor (byte-identical default, no new params); `mlp` = learned `MLPTransformChooser` (owns tool-embedding + MLP params $\to$ deliberate fresh-basin cutover). See [Language.md](Language.md). |
 | `transformChooserHidden` | int | `0` | Hidden width of each grammar MLP when `transformChooser=mlp`; `0` derives `max(8, grammar feature width)`. Positive values override it. Canonical BasicModel currently derives 1024. Inert for `anchordot`. |
 | `transformChooserDepth` | int | `1` | Number of hidden Linear/GELU blocks in each grammar MLP, followed by one scalar Linear head; must be positive. Not the number of grammatical reductions or thought iterations. |
-| `whatThinkingHidden` | int | `16` | Positive hidden width of the sole `SelectedThoughtChooser` MLP. Its context includes masked root/active/candidate roles, semantic metadata, attended visible STM/LTM and execution state; see [SelectedMeaning](SelectedMeaning.md). |
-| `whatThinkingDepth` | int | `1` | Positive number of hidden Linear/GELU blocks in the selected-thought MLP, followed by its zero-initialized scalar head. It does not change the shared work allowance or enable policy credit. |
+| `whatThinkingHidden` | int | `16` | Parsed but unread: the model no longer builds the `SelectedThoughtChooser` this width sized (thought is scored by `OperationSelectionLayer.thought_logits`). Its context includes masked root/active/candidate roles, semantic metadata, attended visible STM/LTM and execution state; see [SelectedMeaning](SelectedMeaning.md). |
+| `whatThinkingDepth` | int | `1` | Parsed but unread (see `whatThinkingHidden`). It was the number of hidden Linear/GELU blocks in the selected-thought MLP, followed by its zero-initialized scalar head. It does not change the shared work allowance or enable policy credit. |
 | `intuitionCapacity` | positive int | `4096` | Slots in each preallocated sparse Pi and Sigma bank owned by output. Pi addresses are rule/literal references and Sigma addresses are rules. Unit initial exponents give the exact max-min DNF. Exhaustion raises; storage never grows. |
 | `separateChooser` | bool | `false` | False retains live compose features and projects the answer gradient against reconstruction per optimizer unit before one shared step. True is the optional per-owner backward: each cost trains its declared owner, independently of its R/A side. Thought and generate features remain detached. |
 | `reconstructionJitter` | real in `[0,1]` | `0` | Draw one strength `s ~ U[1-j,1]` per sentence and apply it to reconstruction alone, shared by both compose trials. Zero draws no random number. Output, expectation, attention and chooser credit retain scale 1.0. |
@@ -149,7 +157,7 @@ Data loading and filtering.
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `conceptLessons` | string | (empty) | Optional JSON primitive memberships and single-occurrence name lessons, resolved relative to `data/`. Runs before ordinary supervised training; unlabelled training inputs witness located conjunctions and output sigma weights start at zero. Used by `XOR_exact.xml`. |
-| `dataset` | string | `"xor"` | Dataset key: `xor`, `mnist`, `tomatoes`, `text`, `inline`, `grammar`, `curriculum`. Curriculum reads verified shards in stage order with whole-document stream partitions. Omit for inference-only models. |
+| `dataset` | string | `"xor"` | Dataset key read by `Data.load` in `bin/data.py`: `xor`, `phrases`, `grammar`, `substitution`, `queries`, `sequences`, `mnist`, `text`, `curriculum`, `inline`, `math`, `math_chain`. Curriculum reads verified shards in stage order with whole-document stream partitions. Omit for inference-only models. |
 | `numShards` | int | `1` | Shard count (streaming text datasets). |
 | `maxDocs` | int | `10000` | Per-shard document cap for text. For curriculum, selects a whole-document prefix across the manifest, before sentence admission filters and across all three splits. |
 | `maxSentenceWords` | int | *(unbounded)* | Whole-sentence admission ceiling for text shards. Longer splitter records are excluded intact, never clipped. Set this no higher than `serialWordCapacity` when packed training is enabled. |
@@ -207,7 +215,7 @@ Training loop and I/O.
 | `wordExpectation` | bool | `true` | Order-zero reads of the shared two-lane native-symbol activation predictor. |
 | `wordExpectationLossWeight` | nonnegative float | `0.1` | Local activation MSE weight at accepted word brackets. |
 | `sentenceExpectation` | bool | `true` | Enables symbol/closing/document expectation and residuals. Explicit `false` bypasses this cycle while understanding and the single What memory remain available. |
-| `expectationPrime` | bool | `true` | Enables the selection prime in compose and candidate attention independently of attenuation. Off only in the declared Item 4 §9.1 parity configuration; prediction, residuals and retention stay enabled. |
+| `expectationPrime` | bool | `true` | Enables the selection prime in compose and candidate attention independently of attenuation. Off only in the declared parity configuration (`test/fixtures/item4-parity.json`); prediction, residuals and retention stay enabled. |
 | `perceptExpectationGain` | float in `[0,1]` | `0` | Item 2.7 (2026-10-29): scales the detached signed percept residual feature read by `ModelCandidateAttention`. The forward content is the exact attended observation; this knob does not attenuate it a second time. |
 | `symbolExpectationGain`, `rowExpectationGain`, `documentExpectationGain` | float in `[0,1]` | `0` each | Existing S/R/D attenuation strengths, unchanged by item 2.7. R and D gains compose at closing. |
 | `perceptExpectationRate` | float in `(0,1]` | `0.05` | Moment EMA rate after the first external observation; padding, evaluation and speculative trials do not update it. The context-conditioned percept expectation uses its own Adam state at the existing training `learningRate`, updated once at each eager word boundary; this EMA knob does not set the optimizer rate. |
@@ -216,7 +224,6 @@ Training loop and I/O.
 | `expectationSaturation` | enum | `clip` | `clip` uses `min(1, ratio)`; `smooth` uses `magnitude/(denominator+magnitude)`. The entire gain is detached. |
 | `explorationUniformFraction` | float in `(0,1]` | `0.5` | Uniform mass in the alternative proposal; every eligible non-greedy action has positive probability. |
 | `explorationTemperature` | positive finite float | `1` | Temperature of the policy component of the alternative proposal. Credit uses the actual mixture probability. |
-| `intraLossWeight` | float | `0.1` | Loss weight on the in-STM next-idea term $\mathcal{L}_\text{intra} = \mathrm{MSE}(\hat{c}_t, c_t)$ from `IntraSentenceLayer` (owned by ConceptualSpace), added to the IR-loss path. `0` disables. See [STM.md Section 6](DevelopmentHistory.md#6-intrasentencelayer). **Audit 2026-10-30 (`3718d9d0dc`): no reader in the code.** |
 | `sentenceExpectationLossWeight` | float | `0.1` | Weight on shared symbol/closing/document activation MSE. All source context and targets are detached. E trains the predictor independently of the paired R+A judge; zero disables this objective. See [ExpectationRetention](ExpectationRetention.md). |
 | `independenceWeight` | nonnegative float | `0.1` | Weight of the LTM-population sparse-coding objective, owned by expectation. Applies to grammars declaring individual references. |
 | `independencePriorScale` | positive float | `0.05` | Laplace activation prior and automatic-relevance pressure on unit direction columns; also scales column incoherence. |
@@ -260,7 +267,7 @@ HTTP server settings (used by `serve.py`).
 
 ### LTM forgetting (`<architecture>`)
 
-The [forgetting pass](specs/2026-09-16-forgetting.md) runs after backward at
+The forgetting pass runs after backward at
 closed document boundaries in training, or after stateful inference. It never
 runs inside an open sentence or stateless request. `SymbolSpace.ltmCapacity`
 remains the hard limit; a document that fills the store before its boundary
@@ -275,11 +282,11 @@ are finite and nonnegative.
 | `forgetLowWater` | float | `0.7` | Target occupancy fraction; protected roots and gradual detail loss can prevent reaching it. |
 | `forgetMinInterval` | int | `256` | Minimum completed sentence presentations between passes. |
 | `forgetAtEpoch` | bool | `false` | Also consider retention at a completed training epoch, subject to the interval. |
-| `forgetTrustWeight` | float | `1.0` | Weight of absolute source trust, independent of evidence poles. |
-| `forgetUtilityWeight` | float | `1.0` | Weight of surprise or one-step non-deducibility. |
-| `forgetLuminosityWeight` | float | `1.0` | Weight of the dissonance or coverage contribution. |
-| `forgetAgeWeight` | float | `1.0` | Weight of the bounded age penalty, in both profiles. |
-| `forgetHalfLife` | float | `4096` | Positive exponential scale in rows back in the witnessing stream; shared rows use the youngest position. The retained name is not a literal half-life. |
+| `forgetTrustWeight` | float | `1.0` | Weight of the row's trust, the larger of its two evidence lanes, $\max(t^+, t^-)$. |
+| `forgetUtilityWeight` | float | `1.0` | Weight of the row's stored surprise in $[0, 1]$; a row whose surprise is unknown counts as 1. |
+| `forgetLuminosityWeight` | float | `1.0` | Weight of the luminosity term. For an occurrence row it is 0 when a live row of the same order and scope, within `forgetSimilarity`, carries the contrary pole with more trust, and 1 otherwise (with `forgetCoverage`, the row's leave-one-out coverage instead); for a part or taxonomy row it is $\log(1 + \text{accesses})$. |
+| `forgetAgeWeight` | float | `1.0` | Weight of the bounded age penalty $1 - e^{-a/h}$, for occurrence rows and for part and taxonomy rows alike. |
+| `forgetHalfLife` | float | `4096` | Positive scale $h$ of the age penalty. The age $a$ is the model time since the row's `.when` stamp; a row without a stamp of its own takes the youngest age of a stamped row or part that refers to it. The name is not a literal half-life. |
 | `forgetSimilarity` | float | `0.9` | Cosine threshold in `[0,1]` for opposing idea rows in the same order/scope. |
 | `forgetCoverage` | bool | `false` | Use the more expensive leave-one-out catuṣkoṭi coverage contribution. |
 | `forgetProtectOrigins` | string | `provisioned user` | Space-separated origins that cannot be changed; accepts `conversation`, `provisioned`, `user`. Empty protects no origin. Live references remain protected. |
@@ -343,8 +350,7 @@ Lifts raw data into the model's internal representation.
 | `nVectors` | int | sentinel | Codebook size. Defaults to `nOutput`. |
 | `codebook` | mode | `none` | `none`, `quantize`, or `project`. Legacy `true`/`false` are accepted as `quantize`/`none`. |
 
-> **`<lexer>` moved to `<WholeSpace>`** (Phase 4b of the
-> analysis/synthesis dual-input plan, rev. 2026-06-09): lexing is analytic
+> **`<lexer>` moved to `<WholeSpace>`** (2026-06-09): lexing is analytic
 > CUTTING, owned by the analysis side. An InputSpace-side `<lexer>` now
 > fails schema validation and the runtime reader. InputSpace emits the
 > dual view — `forward(x) -> (percepts_in, concepts_in)`: the atom view
@@ -380,9 +386,19 @@ table while an optimizer owns it.
 | `invertible` | bool | `false` | Space construction flag; native reconstruction uses retained ordered perceptual views and canonical part ids, without an inverse fold. |
 | `hasAttention` | bool | `false` | DEPRECATED and INERT: the legacy boolean no longer constructs a QKV attention pass; it is kept only as a backward-compat alias. Superseded by `<attention>` (off / primer / second-order / low-rank). |
 | `nonlinear` | bool | `true` | Tanh-bound output to $[-1, 1]$. |
-| `synthesis` | string | `"lexicon"` | Bottom-up synthesis strategy (renamed from `<chunking>`, which is rejected loudly). `meronomy` is the only canonical mode: the PartSpace fold ladder (doc/plans/2026-09-10-meronomy-fold-ladder.md; until its Phase 1 lands it is backed by the radix store). `lexicon`, `bpe`, `mphf`, `byte`/`none` and `radix` are legacy front ends selected through `Legacy.py`. `analyse` was removed from PartSpace; top-down cuts live on WholeSpace `<analysis>`. **Audit 2026-10-30 (`3718d9d0dc`): code default `meronomy`; any other value raises.** |
+| `synthesis` | string | `"meronomy"` | Bottom-up synthesis strategy (renamed from `<chunking>`, which is rejected loudly). `meronomy` is the only accepted value: the older front ends (`lexicon`, `bpe`, `mphf`, `byte`/`none`, `radix`) are retired, and any other value raises. `analyse` was removed from PartSpace; top-down cuts live on WholeSpace `<analysis>`. |
 | `butterfly` | bool | — | Deprecated per-space alias for the architecture-level `<sigmaPi>` enum. It does not construct a fold in native PartSpace; grammar lift/lower own their operators. **Audit 2026-10-30 (`3718d9d0dc`): the per-space element has no reader; only `architecture.sigmaPi` is read.** |
 | `wordLearning` | int | `2` | Active lexicon-growth mode. `0` = frozen codebook; `>=1` = on first sight of a new word, insert into the lexicon and tag it on the meronomy. Several trained configs override this to `0` or `1`. |
+
+In an embedding configuration with `identityByParts` (the default),
+`WordIdentity.resolve_identity_layout` rewrites the declared widths before any
+space is built. Every input, percept and whole event is `identityPairDim` + 32
+length bits + `propertyDim` + the eight band coordinates, $64 + 32 + 256 + 8 =
+360$ by default, and the conceptual width is that plus the declared difference
+between the ConceptualSpace and PartSpace `nDim`. The declared `nDim` values of
+such a configuration therefore matter only through that difference; numeric
+configurations, and those with `identityByParts` false, keep their declared
+widths.
 
 The PS `<codebook>` element was retired (the percept prototypes live on the
 `.what` basis; radix's PerceptStore IS the surface codebook). See
@@ -419,6 +435,7 @@ unions symbols at higher orders. Grammatical lift/lower own their chart maps.
 | `verbGroups` | positive int | `24` | Maximum learned intransitive bases on paired meaning configurations. A third distinct failed-fit occurrence joins the best fitting group or opens one; capacity is reported. |
 | `verbBasisReflections` | positive even int | `4` | Householder reflections per object/group basis. Identical initial pairs give the identity. |
 | `verbGroupFit` | nonnegative float | `0.1` | Maximum mean squared chart residual for admitting a verb to an existing basis. |
+| `latticeMargin` | decimal | `0` | **Unparsed**: declared in `data/model.xml` and the schema, read by nothing in `bin/`. |
 
 `training.actionRateRatio` (κ) defaults to `1` and must be finite in `(0, 1]`.
 Inside reconstruction SGD, the lift action uses κ times the configured rate and
@@ -458,10 +475,10 @@ META, taxonomy, or symbol-prototype inventory. See
 | `nOutput` | int | sentinel | Number of simultaneously live whole-percept locations. This is a field width, not a property-inventory or symbol count. |
 | `nDim` | int | `0` | Width of one whole-percept/property vector. `0` inherits the preceding compatible event width. |
 | `nVectors` | int | sentinel | Fixed physical whole-percept/property capacity. BasicModel starts with eight ASCII-class properties; further admission uses unused rows inside the declared nVectors and is independent of both `ConceptualSpace.nVectors` and live `nOutput`. |
-| `propertyBasis` | bool | `false` for legacy configs; `true` in BasicModel | Selects the migrated property-only ownership contract. When true, `subspace.what` is the sole WS codebook, `analysis_store`/`type_subspace` are absent, `activeVectors` does not couple to CS, and `nSymbols` remains a downstream alias of conceptual capacity. The false path exists only for unmigrated fixtures/checkpoints. **Audit 2026-10-30 (`3718d9d0dc`): rejected at load (`util._apply_legacy_renames`); not a live knob.** |
+| `propertyBasis` | bool | `false` for legacy configs; `true` in BasicModel | Selects the migrated property-only ownership contract. When true, `subspace.what` is the sole WS codebook, `analysis_store`/`type_subspace` are absent, `activeVectors` does not couple to CS, and `nSymbols` remains a downstream alias of conceptual capacity. The false path exists only for unmigrated fixtures/checkpoints. **Audit 2026-10-30 (`3718d9d0dc`): rejected at load (`util.XMLConfig._parse_xml`); not a live knob.** |
 | `codebook` | mode | `quantize` | `none`, `quantize`, or `project` for the property-percept basis. It never selects a concept or symbol codebook. |
-| `analysis` | string | `"byte"` | Top-down division over the unity view. `meronomy` is the only canonical mode: the WholeSpace descending ladder (doc/plans/2026-09-10-meronomy-fold-ladder.md; until its Phase 2 lands it is the type-run cut). `byte`, `raw`, `sentence` (no division) and `word`, `grammatical` (the type-run cut) are legacy cuts dispatched through `Legacy.py`. The old `analyse` spelling is not accepted by the schema. **Audit 2026-10-30 (`3718d9d0dc`): code default `meronomy`; any other value raises.** |
-| `lexer` | string | — | DEPRECATED spelling: the reader prefers the newer `<analyzer>` spelling, falling back to `<lexer>`; **both are deprecated in favor of the unified `<analysis>` knob** (its lexer-valued options `raw`/`byte`/`word`/`sentence` set the intake; `grammatical`/`meronomy` leave the lexer at `raw`). Intake granularity InputSpace executes; moved here from `<InputSpace>` (Phase 4b: lexing is analytic cutting — an InputSpace-side `<lexer>` is rejected loudly). |
+| `analysis` | string | `"meronomy"` | Top-down division over the unity view. `meronomy` is the only value a WholeSpace accepts: the older cuts (`byte`, `raw`, `sentence`, `word`, `grammatical`) are retired, and any other value raises. The old `analyse` spelling is not accepted by the schema. |
+| `lexer` | string | — | DEPRECATED spelling: the reader prefers the newer `<analyzer>` spelling, falling back to `<lexer>`; **both are deprecated in favor of the unified `<analysis>` knob** (its lexer-valued options `raw`/`byte`/`word`/`sentence` set the intake; `grammatical`/`meronomy` leave the lexer at `raw`). Intake granularity InputSpace executes; moved here from `<InputSpace>` (lexing is analytic cutting; an InputSpace-side `<lexer>` is rejected loudly). |
 | `nonlinear` | bool | `true` | Tanh-bound the activation. |
 | `sortNetwork` | bool | `false` | Bitonic-sort regularizer on the codebook ordering. **Audit 2026-10-30 (`3718d9d0dc`): no reader in the code.** |
 | `sortPasses` | int | `0` | Sort-network depth. `0` disables. **Audit 2026-10-30 (`3718d9d0dc`): no reader in the code.** |
@@ -509,8 +526,8 @@ Grammar infrastructure (SyntacticLayers, TruthLayer). Lives outside
 |-----------|------|---------|-------------|
 | `syntacticHiddenDim` | int | `64` | SyntacticLayer MLP hidden size. |
 | `truthMaxEntries` | int | `1024` | TruthLayer SS-codebook capacity. |
-| `ltmCapacity` | int | `1024` | Capacity of the shared LTM occurrence store and bounded inter-sentence history. The `.when` ladder uses `RowTime.HORIZON`, independently of this reservation. An explicit value takes precedence over `truthMaxEntries` for LTM; `truthMaxEntries` sizes the truth activation view. The store raises when full. MM_math_chain reserves 131,072 rows for the seventeen graded presentations declared in thinking §14.8, following 4,510 rows observed in the development epoch; later growth and evaluation use the reserve, and exhaustion still raises. See [STM.md Section 10](STM.md#10-ltm-as-the-chain-of-stm-end-states). |
-| `episodicConcepts` | nonnegative int | `4` | Maximum order-zero concept readings kept from the sentence's open attention pass, beside its LTM0 row. Keep the largest nonzero signed magnitudes (for minus against), stored in reading order and then concept-ID order within a reading, as detached `episodic_concepts` and `episodic_values`. No place or pole pair is stored. `0` stores none. Time-only recall publishes a conceptual field directly, laying out references by owned surface length; missing surfaces and stale IDs are counted. Relation-only sentences with an entry use an `episode` anchor counted against `ltmCapacity`. Schema 16 drops and names older percept, pole and place columns and loads empty entries (whole-path §8.2 amendment, 2026-11-11). |
+| `ltmCapacity` | int | `1024` | Capacity of the shared LTM occurrence store and bounded inter-sentence history. The `.when` ladder uses `RowTime.HORIZON`, independently of this reservation. An explicit value takes precedence over `truthMaxEntries` for LTM; `truthMaxEntries` sizes the truth activation view. The store raises when full. MM_math_chain reserves 131,072 rows for its seventeen graded presentations; exhaustion still raises. See [STM.md Section 10](STM.md#10-ltm-as-the-chain-of-stm-end-states). |
+| `episodicConcepts` | nonnegative int | `4` | Maximum order-zero concept readings kept from the sentence's open attention pass, beside its LTM0 row. Keep the largest nonzero signed magnitudes (for minus against), stored in reading order and then concept-ID order within a reading, as detached `episodic_concepts` and `episodic_values`. No place or pole pair is stored. `0` stores none. Time-only recall publishes a conceptual field directly, laying out references by owned surface length; missing surfaces and stale IDs are counted. Relation-only sentences with an entry use an `episode` anchor counted against `ltmCapacity`. Schema 16 drops and names older percept, pole and place columns and loads empty entries (Alec, 2026-11-11). |
 | `relationCapacity` | positive int | `8192` | Fixed `SymbolSpace` shared-ID `LTM1` reservation, wired through both `ConceptAllocator` and `LTM0`. It must cover the highest handle, not only occupied membership records. Construction and strict checkpoint restore check this shape; exhaustion raises before allocation. |
 | `equalityWitnessCapacity` | positive int | `8192` | Fixed `SymbolSpace` first-equality-witness row reservation in `ConceptAllocator.singleton_values`; independent of relation storage. Snapshots use the actual conceptual width. No live resizing. |
 | `parserBackend` | — | — | RETIRED (Stage 3 cleanup, 2026-05-27): the chart backend is gone and the signal router (`LanguageLayer`) is now the sole, fixed parser. The element is rejected — leaving it in an XML config raises a loud `ValueError` at load time (`Language._assert_retired_chart_knobs_absent`). |
@@ -557,7 +574,7 @@ symbol (line anchors drift).
 | `whatCurriculum` | `Models.py` (`_curriculum_questions`) | `none`; BasicModel `full` | `none` \| `present` \| `temporal` \| `full`: a Bresenham fraction (`whatCurriculumRatio`) of training batches asks past/future (`temporal`) or also inference (`full`) questions instead of the default family. `none` is byte-identical. |
 | `whatCurriculumDistance` | `Models.py` (`_curriculum_questions`) | `1` | Presentation offset of the past/future curriculum questions. |
 | `whatCurriculumRatio` | `Models.py` (`_curriculum_questions`) | `0.25` | Fraction of training batches that are curriculum trials. |
-| `whatThinkingDetach` | `Models.py` (`_what_memory` applies it to the slot owner) | `slot` | Episode credit boundary (mathematical thinking spec 8.2): `slot` detaches every interaction value at append (established); `episode` keeps values appended between `begin_what_episode` / `end_what_episode` live until the episode ends. |
+| `whatThinkingDetach` | `Models.py` (`_what_memory` applies it to the slot owner) | `slot` | Episode credit boundary: `slot` detaches every interaction value at append (established); `episode` keeps values appended between `begin_what_episode` / `end_what_episode` live until the episode ends. |
 | `whatThinkingIterations` | `Models.py` (compatibility configuration) | `1` | Retained configuration metadata and optional serving-summary gate; `think()` performs one presentation and the normal controller shares `attentionBudget`. The lexical ANSWER/OPEN parity selector is retired. `whatThinkingPrimitives` remains rejected at load. |
 | `whatThinkingPressure` | `Models.py` (`_thinking_pressure`) | `linear` | Retained numerical schedule utility (`linear`, `quadratic`, `step`). The normal controller derives pressure from shared work; this setting does not change its execution. |
 | `reasoningIterations` | `Models.py` (BaseModel init; public reasoning APIs) | `1` | Shared work allowance for explicit `reason_about` / `answer_query`; `0` disables those APIs. Normal `resolveAnswer` shares `attentionBudget`. A selected completed meaning grants execution; raw prompt words do not. |
@@ -579,7 +596,7 @@ symbol (line anchors drift).
 | `serialObjectMeta` | `Models.py` (BaseModel init) | `false` | Serial word-loop mereology path: InputSpace presents every residual constituent of word $w$, PartSpace sigma-synthesizes it inside iteration $w$, all configured PS/WS folds bind by location in CS, and exactly one actual-order word concept commits to STM. Legacy non-word-major inputs retain the hard same-word-span fallback. |
 | `conceptIndexRead` | `Models.py` (BaseModel init) | `false` | Serial per-word idea reads through the index to the concept's `similarity_codebook` row instead of the computed percept-binding event. |
 | `ideaDecode` | `Models.py` (BaseModel init) | `false` | Chart-free reverse: generate the surface from the idea alone (no `generate_rules` rebuild). **Audit 2026-10-30 (`3718d9d0dc`): no reader in the code.** |
-| `verbSpectrum` | `Language.py` (`LiftLayer` init; forced on by `VerbLayer`; 2026-10-19 the verb's decided mechanism — occurrence spec §14.1) | `false` | Verb eig-spectrum operator on the composed VP (VP parameterization). |
+| `verbSpectrum` | `Language.py` (`LiftLayer` init; forced on by `VerbLayer`; the verb's decided mechanism, 2026-10-19) | `false` | Verb eig-spectrum operator on the composed VP (VP parameterization). |
 | `predictionTrialRatio` | `Models.py` (ModelLoss wiring) | `0.0` | Fraction of training batches run as pure next-idea prediction (recon terms zeroed). |
 | `overlapWhereTiling` | `Models.py` (BaseModel init) | `false` | Experimental overlapping PS/WS `.where` lattice; requires `<mereologyRaise>true</mereologyRaise>` (loud `ValueError` otherwise). **Audit 2026-10-30 (`3718d9d0dc`): no reader in the code.** |
 | `continuityNorm` | `Mereology.py` (contemplative mixin) | `'inf'` | Norm for the continuity measure (`'l2'` available). |
@@ -591,7 +608,7 @@ symbol (line anchors drift).
 
 | Knob | Where read | Default | Purpose |
 |------|-----------|---------|---------|
-| `seed` | `Models.py` (run entry; env `BASIC_SEED` overrides) | unset | RNG pin (torch/python/numpy) for reproducible single-CLI runs; the `XOR_exact` gates rely on it. |
+| `seed` | `Models.py` (run entry; env `BASIC_SEED` overrides) | unset | RNG pin (torch, Python and NumPy) applied before construction, to reproduce a single CLI run. It reproduces a run and is never chosen so that a gate passes ([Testing](Testing.md)). |
 | `answerLossWeight` | `Models.py` (BaseModel init) | `0.0` | Retired; nonzero values are rejected. Use the one `selectedThoughtPolicyWeight` objective. |
 | `predictNextLossWeight` | `Models.py` (BaseModel init) | `0.0` | Retired; nonzero values raise at configuration load. The separate next-idea proposal/scoring route is deleted. |
 | `thinkingLossWeight` | `Models.py` (BaseModel init) | `0.0` | Migration alias for `selectedThoughtPolicyWeight`; the maximum of this, `whatThinkingPolicyWeight` and the selected weight enables one normal controller objective. No trace-cloning head remains. **Audit 2026-10-30 (`3718d9d0dc`): read but never consumed; the selected weight is hard-coded 0.** |
@@ -609,11 +626,24 @@ symbol (line anchors drift).
 | Knob | Default | Purpose |
 |------|---------|---------|
 | `mathStage` | `1` | `0` = direct arithmetic (`a op b` in, its value out, split by unseen pairs); `1` = dependency chains; `2` = simultaneous linear constraints. |
-| `mathOperators` | `add` | Stage-0 operators, comma list of `add` / `sub` / `mul`. |
+| `mathOperators` | `add` | Stage-0 operators, a comma list of `add` / `sub` / `mul`, or `succ` (the successor "n plus one", every fact trained). |
 | `mathRange` | `64` | `R`: answers are one-hot over `[0, R)`; `OutputSpace.nOutput` must equal it. |
 | `mathDepths` / `mathTestDepths` | `1,2,3` / `4,5,6` | Trained / held-out chain depths (stage 1); comma lists (the XML loader evaluates `1-3`). |
 | `mathDistractors` | `2` | Maximum distractor premises. |
 | `mathSeed` / `mathProblems` | `0` / `256` | Generator seed and problem count (use thousands for stage 0). |
+
+`bin/exact.py` generates the `math` dataset on the data side only
+(`Data.loadMath`). Every problem has a unique solution, every equation is
+consistent, and every constant and intermediate value lies in $[0, R)$.
+Variable names and constants are fresh for each problem; distractor premises
+are well-formed equations over variables off the query's dependency chain, and
+the premise order is shuffled. Splits partition problems by `structure`, the
+shape of the dependency graph with names and constants erased, so a test
+problem never shares a structure with a training problem; the held-out depths
+(`mathTestDepths`) occur only in test. Stage 0 holds out unseen operand pairs
+instead, and `succ` trains every fact. The generator records each problem's
+depth, structure and solver order for scoring; none of it enters a
+presentation.
 
 ### Per-space
 
@@ -627,22 +657,22 @@ symbol (line anchors drift).
 | `demuxed` (InputSpace) | `Models.py` (`_make_perceptual_space`) | `false` | Routes what/where/when through the demuxed `ModalSpace` composite instead of the muxed PartSpace. |
 | `lrScale` (OutputSpace) | `Models.py` (`getOptimizer`) | `1.0` | Puts OutputSpace params in their own Adam group at `learningRate * lrScale`. |
 | `definitionFreeSize` (ConceptualSpace) | `Spaces.py` (CS init) | `2` | Symbols a concept's definition may use for free (genus + differentia); the rank-ordered soft-L0 penalizes only surplus ranks. |
-| `lbgThreshold` (WholeSpace) | `Spaces.py` (`record_lbg_pull` / `maybe_split_lbg`) | `0.5` | LBG auto-granularity: a WS row splits along its mean-displacement direction when the max per-coordinate assignment variance of the codes bound to it exceeds this (see Mereology.md, "Automatic analysis: dividing wholes"). Today gated off under `propertyBasis`; the fold-ladder plan lifts the gate. **Audit 2026-10-30 (`3718d9d0dc`): read only for the CS admission radius, `sqrt(lbgThreshold or 0.5)`; the WS split pair is `record_property_pulls` / `maybe_split_property_row`.** |
+| `lbgThreshold` (WholeSpace) | `Spaces.py` (`record_lbg_pull` / `maybe_split_lbg`) | `0.5` | LBG auto-granularity: a WS row splits along its mean-displacement direction when the max per-coordinate assignment variance of the codes bound to it exceeds this (see Mereology.md, "Automatic analysis: dividing wholes"). **Audit 2026-10-30 (`3718d9d0dc`): read only for the CS admission radius, `sqrt(lbgThreshold or 0.5)`; the WS split pair is `record_property_pulls` / `maybe_split_property_row`.** |
 | `lbgMinCount` (WholeSpace) | same | `8` | LBG: minimum hit count before a row may split. **Audit 2026-10-30 (`3718d9d0dc`): not read from XML; the split uses fixed attribute defaults.** |
 | `lbgEpsilon` (WholeSpace) | same | `0.1` | LBG: split displacement magnitude. **Audit 2026-10-30 (`3718d9d0dc`): not read from XML; the split uses fixed attribute defaults.** |
 | `divideWithinWhole` (WholeSpace) | `Spaces.py` (WS init + tiling site) | `true` | Divides unattested type-runs into attested concepts by greedy longest-match tiling; explicit `false` keeps the undivided span. |
 | `digitWholes` (WholeSpace) | `Spaces.py` (WS init + `stage_analysis_spans`) | `false` | Every digit byte is a whole by itself at the analysis cut (`12` -> `1`, `2`, each with its own `.where`), so the multi-digit numeral is a whole over digit parts rather than one type-run. Default off, byte-identical. |
-| `boundaryTypes` (WholeSpace) | `Spaces.py` (WS init; `_build_boundary_predicates`) | `canonical` | Initialisation of the learned boundary weights over the atomic wholes (one column per byte value) and the property rows (fold-ladder plan, contract 3): `canonical` turns on the begins / ends of the whitespace, punctuation and pad rows and, under `digitWholes`, the digit row's atom level; `none` starts every weight off (the cold start is the atomic tiling). The weights are parameters (`begins_weight`, `ends_weight`, `atom_level`, logits thresholded at 0.5 in the cut). |
+| `boundaryTypes` (WholeSpace) | `Spaces.py` (WS init; `_build_boundary_predicates`) | `canonical` | Initialisation of the learned boundary weights over the atomic wholes (one column per byte value) and the property rows: `canonical` turns on the begins / ends of the whitespace, punctuation and pad rows and, under `digitWholes`, the digit row's atom level; `none` starts every weight off (the cold start is the atomic tiling). The weights are parameters (`begins_weight`, `ends_weight`, `atom_level`, logits thresholded at 0.5 in the cut). |
 | `whitespaceUnits` (WholeSpace) | `Spaces.py` (WS init; `_predicate_masks`) | `false` | Present whitespace runs as units whose grammatical operation is `null` (the identity), instead of discarding them as a boundary-only class. |
 | `boundaryLearningRate` (WholeSpace) | `Spaces.py` (`_update_boundary_predicates`) | `0` | Step of the boundary learner's score update at the presentation boundary: a property row's logit moves by the difference between its candidate tiling's score (recurrence of the wholes it yields minus the density penalty) and the current tiling's. `0` freezes the predicates. |
 | `boundaryDensityWeight` (WholeSpace) | same | `0.05` | Weight of the wholes-per-presentation penalty in the boundary learner's score (the working-memory pressure). |
-| `boundaryUpdateEvery` (WholeSpace) | same | `32` | Presentations accumulated before one boundary score update (recurrence is measured over that window, the epoch's counts of contract 4). |
+| `boundaryUpdateEvery` (WholeSpace) | same | `32` | Presentations accumulated before one boundary score update (recurrence is measured over that window). |
 | `boundaryTypeWeight` (WholeSpace) | same | `0.25` | Weight of the distinct-wholes-per-occurrence penalty in the boundary learner's score (the long-term-memory pressure: a tiling that memorises sentences pays here). |
-| `utilitySmoothing` (ConceptualSpace) | `Spaces.py` (CS init; `category_utility`) | `1.0` | Laplace smoothing of the category-utility counts (doc/plans/2026-09-10-meronomy-fold-ladder.md, contract 4). |
+| `utilitySmoothing` (ConceptualSpace) | `Spaces.py` (CS init; `category_utility`) | `1.0` | Laplace smoothing of the category-utility counts. |
 | `utilityMinCount` (ConceptualSpace) | same | `4` | Minimum presentations of a concept before its utility is trusted. |
-| `admissionCount` (ConceptualSpace) | same | `2` | Recurrences of a chunked phrase before it is admitted as a concept of its own (contract 7). |
+| `admissionCount` (ConceptualSpace) | same | `2` | Recurrences of a chunked phrase before it is admitted as a concept of its own. |
 | `admissionRadius` (ConceptualSpace) | `Spaces.py` (CS init) | `sqrt(lbgThreshold)` | Nearest-row identity radius for admission; defined from the LBG variance threshold (the standard deviation along the split axis) so one geometry setting governs identity and division; overridable. |
-| `utilityPriorRate` (ConceptualSpace) | same | `1.0` | Step of the score update that moves the `chunk` structural prior by the admitted phrase's utility gain (contract 7); 0 freezes the prior. |
+| `utilityPriorRate` (ConceptualSpace) | same | `1.0` | Step of the score update that moves the `chunk` structural prior by the admitted phrase's utility gain; 0 freezes the prior. |
 | `gradientMode` (WholeSpace) | `Spaces.py` (WS init) | `"ste"` | Codebook gradient coupling: `snap` \| `ste` \| `rotation` (invalid values raise). **Audit 2026-10-30 (`3718d9d0dc`): no reader in the code.** |
 | `useStackRouter` (WholeSpace) | `Spaces.py` (WS init) | `false` | Gates WS's stack-rewrite LanguageLayer dispatch; `false` keeps the legacy forward path. **Audit 2026-10-30 (`3718d9d0dc`): no reader in the code.** |
 | `initScale` (any space) | `Spaces.py` (`_read_init_scale`) | unset | Per-row seed magnitude for the space's codebooks; small values ($\approx 0.02$) keep the sigma/pi folds in their linear regime. Unset/0 = legacy unit prefill. |
@@ -848,31 +878,34 @@ No semantic feature contains these administrative flags. See
 
 Item 7.5 retires `architecture.learning`, `exploreTemperature`, `stmReduceTau`,
 `SymbolSpace.signal.temperature`, and `training.forwardGrammarWeight`.
-At each sentence closing, training runs two hard compose derivations and two
-optimizer steps, sharing one cached perception. Each row commits the strictly
-lower sentence loss before the next sentence; ties keep exploit. Batch-end
-answer loss has its own backward and stays outside that comparison. The public
-batch clock and training counter advance once. Evaluation runs only exploit,
-without an optimizer. `architecture.composeTemperature` controls both training
-draws; it replaces the 90/10 mixture and never tempers model credit.
-Word-major sentence training uses the tied traversal even when a configuration
-keeps the older continuous event metric (`reconstructInLoop=false`). That event
-metric is then reporting only; it cannot replace the sentence objective with
-zero or add a third reconstruction update. Explicit detached-student and
-numerical compatibility configurations retain their separate objectives.
-See [Language](Language.md#one-operation-per-round-item-75).
+In training, each sentence runs one greedy complete path and `explorePaths`
+alternatives, each departing once from the greedy path and reusing its prefix.
+Each stream keeps its strictly cheapest path on reconstruction plus answer cost
+(R + A), ties keeping the greedy path, and the sentence takes one optimizer
+step (Alec, 2026-11-11). The public batch clock and training counter advance
+once. Evaluation runs only the greedy path, without an optimizer.
+`architecture.composeTemperature` sets the temperature of the training draws;
+it never tempers model credit. Word-major sentence training uses the tied
+traversal even when a configuration keeps the older continuous event metric
+(`reconstructInLoop=false`). That event metric is then reporting only; it
+cannot replace the sentence objective with zero or add another reconstruction
+update. Explicit detached-student and numerical compatibility configurations
+retain their separate objectives. See
+[Architecture](Architecture.md#whole-paths-and-concept-episodes-2026-11-11) and
+[Language](Language.md#one-operation-per-round-item-75).
 
-Decision 7 adds `architecture.reducePressure`, finite and nonnegative, default
-**1.0**. Declared before the correction's measurements: each binary logit gets
-`reducePressure * (d / a + max(0, d - a) / r)`, zero on an empty stack. Here `d`
+`architecture.reducePressure`, finite and nonnegative, default **1.0**,
+initializes the compose chooser's load gain, a compose-policy parameter. Each
+binary logit gets `reducePressure * (d / a + max(0, d - a) / r)`, zero on an
+empty stack. Here `d`
 is the whole STM depth, `a = K - 1` during online rounds, and `a` is one for an
 absolute sentence or three for a relative sentence at the closing. `r` counts the
-current round and the remaining rounds in that phase. This fixed load prior
-clamps divisors to at least one for numerical safety; deadline masking uses
-the actual allowance and remaining-round count. The prior
-enters the model's softmax and straight-through credit, before the sampling
-temperature. It adds no learned parameter and gives every binary operator the
-same bonus. Unary operations remain available while there is slack; when
+current round and the remaining rounds in that phase. The load prior clamps
+divisors to at least one for numerical safety; deadline masking uses the actual
+allowance and remaining-round count. The prior enters the model's softmax and
+straight-through credit, before the sampling temperature, and gives every
+binary operator the same bonus. Unary operations remain available while there
+is slack; when
 `r <= max(0, d - a)`, only binary operations are eligible. STOP additionally
 requires the sentence to fit its row and, online, to leave the next-word slot
 free (relevant when a relative row is wider than a small STM's allowance).
@@ -892,7 +925,7 @@ in that context, as landed. Outside an authority context, an explicit pair is
 scaled by the source trust (for example, .8 evidence times .8 source is .64);
 without an explicit pair the close derives its polarity from signed trust.
 External source trust remains configured truth-set row trust times architecture
-trust (trust spec §5.4; §11 finding 5(i)). Rows also retain their order for sigma-inverse decoding. These are
+trust. Rows also retain their order for sigma-inverse decoding. These are
 schema fields, not new configuration switches. Legacy rows missing evidence
 load as neither; a missing order loads as unknown (`-1`) with a warning and
 cannot be silently decoded as a concrete row.
@@ -907,9 +940,9 @@ the three amendments from todo item 7; they do not grant compose LTM access.
 
 Found by walking every `util.XMLConfig` read (`get`, `training`, `data_param`,
 `space`, `_cfg_knob`, the name tables) in the committed tree `3718d9d0dc` and
-diffing against the tables above. Line numbers are that tree's. Descriptions are
-to be written by whoever next touches each knob; the rows marked in the tables
-above with "no reader" are the converse list.
+diffing against the tables above. Line numbers are that tree's. A knob whose
+note is empty still needs its description; the rows marked "no reader" in the
+tables above are the converse list.
 
 | Knob | Read at | Code default | Note |
 |---|---|---|---|
@@ -921,22 +954,22 @@ above with "no reader" are the converse list.
 | `ConceptualSpace/WholeSpace.retrievalTopKHeat` | `Language.py:5785` | `64` |  |
 | `ConceptualSpace/WholeSpace.retrievalOuterTopK` | `Language.py:5787` | `32` |  |
 | `ConceptualSpace.meaningWidth` | `MereologicalCodes.py:46; Models.py:25323` | `computed (`code_width - percept_event_width`)` | model.xml ships 128; MM_corpus_orders sets 32 |
-| `ConceptualSpace.placementRate` | `MereologicalCodes.py:69` | `0.1` |  |
-| `ConceptualSpace.placementNegatives` | `MereologicalCodes.py:70` | `5` |  |
-| `ConceptualSpace.placementNegativeWeight` | `MereologicalCodes.py:71` | `1.0` |  |
-| `ConceptualSpace.recurrenceAngle` | `MemoryConsolidation.py:25` | `15.0` |  |
-| `ConceptualSpace.recurrenceCapacity` | `Language.py:9475` | `computed, `max(1, CS.nVectors)`` | also the corpus capacity grid axis |
-| `SymbolSpace.ltmStreamCapacity` | `Language.py:9479` | `computed, `max(1, training.batchSize)`` |  |
+| `ConceptualSpace.placementRate` | `MereologicalCodes.py:69` | `0.1` | Step size of the one meet-ratio subgradient step that places a concept's meaning at each kept close. |
+| `ConceptualSpace.placementNegatives` | `MereologicalCodes.py:70` | `5` | Placed rows with zero seen excess drawn as negatives by a generator seeded from the sentence's key; fewer eligible rows give fewer negatives, never repeats. |
+| `ConceptualSpace.placementNegativeWeight` | `MereologicalCodes.py:71` | `1.0` | Weight of the negative term, the brake on collapse. |
+| `ConceptualSpace.recurrenceAngle` | `MemoryConsolidation.py:25` | `15.0` | Degrees: an idea, its time coordinates removed, joins a reading seat whose representative lies strictly within this angle. Must lie in $(0, 180]$. |
+| `ConceptualSpace.recurrenceCapacity` | `Language.py:9475` | `computed, `max(1, CS.nVectors)`` | Fixed number of reading seats; exhaustion raises. Also an axis of the corpus capacity grid. |
+| `SymbolSpace.ltmStreamCapacity` | `Language.py:9479` | `computed, `max(1, training.batchSize)`` | One LTM membership column per concurrent batch stream; a larger runtime batch must declare it at construction. |
 | `ConceptualSpace.raiseEvidence` | `PartClosing.observe_members` | `0.0` | A retained row qualifies when its positive evidence exceeds this value. |
 | `ConceptualSpace.raiseCount` | `ConceptAllocator`, `PartClosing._admit_member` | `3` | Number of pairwise distinct witnesses of the same order required to create the shared side’s class. Integer, at least 2. |
 | `ConceptualSpace.readerBlockNormalization` | `Models.py:6893` | `true` |  |
 | `ConceptualSpace.conceptReadoutL1` | `Spaces.py:13142` | `0.0` |  |
-| `PartSpace.identityByParts` | `Spaces.py:10626; WordIdentity.py:29` | `true` |  |
-| `PartSpace.identityPairDim` | `Spaces.py:10628` | `64` |  |
-| `PartSpace.identityLengthDim` | `Spaces.py:10629` | `32` |  |
-| `PartSpace.identityOnes` | `Spaces.py:10636` | `3` |  |
-| `architecture.attentionFloor` | `ModelCandidateAttention.py:16` | `0.1` |  |
-| `architecture.hetTolerance` | `ModelCandidateAttention.py:17` | `1.0` |  |
+| `PartSpace.identityByParts` | `Spaces.py:10626; WordIdentity.py:29` | `true` | Text forms are an identity pair plus length bits; see the width rule under `<PartSpace>`. |
+| `PartSpace.identityPairDim` | `Spaces.py:10628` | `64` | Width $D$ of a form's identity-pair code. |
+| `PartSpace.identityLengthDim` | `Spaces.py:10629` | `32` | One-hot over word lengths of 1 to 32 bytes; must be 32. |
+| `PartSpace.identityOnes` | `Spaces.py:10636` | `3` | Set bits $s$ in each identity-pair code, $0 < s \le D$. |
+| `architecture.attentionFloor` | `ModelCandidateAttention.py:16` | `0.1` | Weight on the residual of every unread field item in the attention cost, $\mathit{floor} \cdot (1 - \mathit{admission}) \cdot \mathit{residual}$; finite and strictly between 0 and 1. |
+| `architecture.hetTolerance` | `ModelCandidateAttention.py:17` | `1.0` | Tolerance $\tau \in [0, 1]$ for heterogeneity on the two evidence lanes of the candidate support read into attention: $(c^+, c^-) \leftarrow (c^+, c^-) - (1 - \tau)\min(c^+, c^-)$. At $\tau = 1$ nothing changes; at $\tau = 0$ the shared overlap is removed, so both collapses to its net lane while neither survives, leaving three corners (for, against, unknown). No signed scalar appears at any setting. |
 | `training.equalityLossWeight` | `Models.py:16236` | `0.0` | MM_corpus_orders sets 1 |
 | `training.definitionSparsityScale` | `Models.py:2461` | `0.0` |  |
 | `training.teacherReconstruction` | `Models.py:16288` | `false` |  |

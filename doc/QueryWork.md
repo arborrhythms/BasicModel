@@ -1,9 +1,9 @@
 # Shared selected-thought work accounting
 
-> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
+> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record.
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
-> - Expectation is a **gain field** `c = m⊙a⊙o` with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
-> - Amended 2026-10-29/30 (Alec; [thinking spec §§16, 22](plans/2026-10-27-item2-5-thinking.md), [2.7 record §42](plans/2026-10-27-item2-7-corpus.md)): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are not built.
+> - Expectation is a **gain field** $c = m \odot a \odot o$ (attention's gain $m$, expectation's gain $a$, the arriving signal $o$) with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
+> - Amended 2026-10-29/30 (Alec): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are built (accepted as implemented, Alec, 2026-11-01).
 
 
 Implementation reference, September 20.
@@ -15,7 +15,7 @@ or objective. A debit is atomic: an overlarge request fails without partly
 consuming the allowance. ThoughtGrammarContext.work carries the same object
 through preparation, execution, and nested calls.
 [Meter](../bin/QueryWork.py#L15),
-[context](../bin/Queries.py#L19).
+[context](../bin/Queries.py#L117).
 
 | Cost kind | Charged before |
 | --- | --- |
@@ -27,18 +27,21 @@ through preparation, execution, and nested calls.
 | record | Reading an LTM/thought row, taxonomy constituent, or prediction-context record |
 | expansion | Using a captured taxonomy edge in a proof or neighbor result |
 
-Also charged (`QueryWorkBudget.from_brackets`): `context_record`, `unfold`,
-`effect_node`, `space-read`, `serial-word-loop`, `description` and the input's
-`bracket` allowance.
+Also charged: `description` (entering a description resolution),
+`context_record`, `unfold` (an inverse or forward check while unfolding or
+evaluating an idea), `effect_node` (each committed thought effect), `index`,
+`concept`, `edge` and `part` (`intuit`'s rule index, order-zero expansion,
+literals and pervasion parts), `space-read` and `serial-word-loop` (the reading
+field), and `bracket` (the input's bracket work).
 
 These units are explicit bounded work, not time or FLOPs. Local node, record,
 depth, and expansion limits can only tighten the allowance. Taxonomy capture
 reserves a share for proof traversal, so a snapshot cannot always consume the
 entire meter before a direct proof. Capture, traversal, and nested work still
 debit that one object.
-[Capture allocation](../bin/QueryWork.py#L57),
-[taxonomy capture](../bin/Taxonomy.py#L120), and
-[traversal](../bin/Taxonomy.py#L69).
+[Capture allocation](../bin/QueryWork.py#L63),
+[taxonomy capture](../bin/Taxonomy.py#L127), and
+[traversal](../bin/Taxonomy.py#L70).
 
 ## Validate, charge, then read
 
@@ -48,20 +51,21 @@ an executor. The grammatical thought registry also charges selected VP validatio
 native operand preparation. Description-valued operands resolve through their
 existing occurrence owner, so preparation cannot read a full description before
 it shares the allowance.
-[Checked call](../bin/Queries.py#L98),
-[registry dispatch](../bin/Queries.py#L573), and
-[occurrence resolution](../bin/Queries.py#L410).
+[Checked call](../bin/Queries.py#L1779),
+[registry dispatch](../bin/Queries.py#L2659), and
+[occurrence resolution](../bin/Queries.py#L1324).
 
-Exist records actual inspected facts and keeps partial signed evidence when
-work ends. Lookup rows, native vectors, thought occurrences, and taxonomy
-records use the same meter. Quantize does not materialize a basis after
-exhaustion. ARMA reserves all prior-context record cost before predictor
-execution and leaves the pending external estimate unchanged. A nested
-what(Q) callback must receive the original meter rather than start a new
-allowance.
-[Fact evidence](../bin/reasoning.py#L156),
-[quantize](../bin/Queries.py#L289), and
-[ARMA read](../bin/Layers.py#L10369).
+Each complete path of a sentence reads its answer on its own copy of the
+stream's attention meter: before its answer reads, the path reserves on that
+copy the bracket work it has already incurred, and only the kept path's charges
+are transferred to the live meter after the comparison. A path therefore cannot
+spend work its composition already used, and a rejected path spends nothing.
+
+The standalone fact reader records actual inspected facts and keeps partial
+signed evidence when work ends. Lookup rows, native vectors, thought
+occurrences, and taxonomy records use the same meter. A nested `ask`
+continuation receives the original meter rather than start a new allowance.
+[Fact evidence](../bin/reasoning.py#L137).
 
 Exhaustion reports explicit work_budget incompleteness; it neither proves
 falsity nor permits a later uncharged read. Evidence acquired within the
@@ -80,35 +84,12 @@ utility learned. See [Gradient flow](GradientFlow.md).
 
 Standalone audited readers can omit work and retain their explicit local
 limits. The normal selected-meaning controller creates one meter from
-`attentionBudget` (`selectedThoughtBudget` fails at load), debits its own hard choices as `controller`, forwards
-the meter through every selected reader and `what(Q)` callback, and commits
-each actual meter delta to the ordinary record. A child neither gets a new
+`attentionBudget` (`selectedThoughtBudget` fails at load), debits its own hard
+choices as `controller`, forwards the meter through every selected reader and
+nested `ask` continuation, and commits each actual meter delta to the ordinary
+record. A child neither gets a new
 allowance nor begins another optimizer episode. The existing thought owner
 still enforces the cutoff-drain bound; neither the meter nor that accounting
-creates residual policy credit or learned utility. The normal controller's
-one supplied-answer policy uses the completed episode's total actual spend,
-not a count of choices. See [SelectedMeaning](SelectedMeaning.md).
-
-## Evidence and limits
-
-The rebased reviewer run was red before implementation in
-output/tests/20260918-021028-e3efa7: collection failed because QueryWork did
-not exist. After the fix, all 13/13 reviewer cases passed in 20.1 seconds at a
-0.40 GiB peak in output/tests/20260918-021708-e98757. They cover atomic
-overdraw, validation before work, selected VP/payload reads, partial fact
-evidence, occurrence resolution, nested callbacks, prediction reservation,
-quantize, and taxonomy capture/proof sharing.
-
-The broader non-overlapping affected selection passed 372/372 in
-output/tests/20260918-021926-07eb2a, using three fresh bounded workers (189.5
-seconds at 1.05 GiB, 89.6 seconds at 0.50 GiB, and 19.1 seconds at 0.40 GiB).
-It includes checked query/phase, taxonomy, expectation, thought-history,
-retention, LTM, existence, and truth-store regressions.
-
-The normal-controller probe first failed before the controller path existed;
-the focused semantic/controller selection then passed 25/25 in
-`output/tests/20260918-033710-5f144b`, and its non-overlapping chooser
-regression passed 39/39 in `output/tests/20260918-032344-fee2c1`. This closes
-the meter-to-ordinary-history integration only. Expectations, residual policy
-credit, generation ownership and learned utility remain separate gates; the
-separately queued two-truths and forgetting work remains out of scope.
+creates residual policy credit or learned utility. The chooser's credit is the
+whole path's reconstruction and supplied-answer cost; the work an episode spent
+is not part of it. See [SelectedMeaning](SelectedMeaning.md).

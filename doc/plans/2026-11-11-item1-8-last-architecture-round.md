@@ -1,7 +1,7 @@
 # Item 1.8: the last architecture round
 
 2026-11-11. The specification of todo item 1.8, the round after item 2.0's
-whole-path round ([specification](2026-11-11-one-pair-per-stage.md)) and
+whole-path round and
 before the optimization items (1.5, 1) and the final housekeeping. Alec
 decided its contents in one conversation on 2026-11-11 and asked for it to
 be written (decision 19). This text consolidates a first writing that grew
@@ -1084,7 +1084,7 @@ d. *What makes the perceived concept the thing that is said* (traced on the
 
 Alec, when it was first handed over: "Now? We have not completed and
 pushed 2.0". So item 2.0 is completed first by its own text
-([whole-path §11](2026-11-11-one-pair-per-stage.md): land the accepted
+(whole-path §11: land the accepted
 round, push, repair its five defects). This text then opens by landing
 those repairs, whose hash is filled in at their review, and builds item
 1.8. Its item 4 moved to that text; the numbering is kept so that the
