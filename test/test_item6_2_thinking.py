@@ -296,7 +296,16 @@ def credit_chain_world(monkeypatch):
 def test_answer_credit_moves_shared_chooser_toward_the_completed_chain(monkeypatch):
     model,registry,store,goal,menu=credit_chain_world(monkeypatch)
     chooser=model.shared_grammar
-    before=chooser.thought_logits(goal,menu).softmax(-1)[0,1].detach()
+    # The policy sees relative row times and the held observation, rather
+    # than the source goal's absolute time band. Measure the policy at the
+    # actual departure on which its score-function credit was computed.
+    observed = []
+    logits = chooser.thought_logits
+    def capture(active, requests):
+        if len(requests) == len(menu) and all(request is not None for request in requests):
+            observed.append((active.detached(), tuple(request.detached() for request in requests)))
+        return logits(active, requests)
+    monkeypatch.setattr(chooser, 'thought_logits', capture)
     result=run(model,goal,work_budget=64,
             score=lambda result:float(has_open_slots(result.meaning)))
     assert model._fixture_path_audit['explore_kept']
@@ -305,9 +314,11 @@ def test_answer_credit_moves_shared_chooser_toward_the_completed_chain(monkeypat
     assert not has_open_slots(result.meaning)
     value=model._fixture_path_credit['surrogate']
     assert value is not None
+    active, requests = observed[-2]  # selected policy, before its raw proposal
+    before = logits(active, requests).softmax(-1)[0,1].detach()
     optimizer=torch.optim.SGD(chooser.parameters(),lr=.1)
     optimizer.zero_grad();value.backward();optimizer.step()
-    assert chooser.thought_logits(goal,menu).softmax(-1)[0,1]>before
+    assert logits(active, requests).softmax(-1)[0,1]>before
     model.eval()
     model._what_memory().end_what_episode()
     learned=run(model,goal,work_budget=64)
@@ -420,7 +431,12 @@ def event_world(positions):
     model,registry,store,(a,b,_)=world()
     events=[]
     for ref,position in zip((a,b),positions):
-        event=store.parts.add(ref[1],ref[1],truth_plus=.8,truth_minus=.1,when=encoder().encode(position))
+        # Item 1.8 §3.8: a relation reads the stamp of its source sentence.
+        sentence = store.append_idea(registry._payload(ref), trust=1.,
+                                     document_key=('event-time', position))
+        store.slots[sentence, store.when_start:store.when_start+4] = encoder().encode(position)
+        event=store.parts.add(ref[1],ref[1],truth_plus=.8,truth_minus=.1)
+        store.parts.sentence_reference[event] = store.occurrence_of(sentence)[-1]
         owner=model.conceptualSpace
         owner._concept_allocator.symbol_types.setdefault(event,set()).add('situation')
         force_order(owner,event,0)
@@ -459,13 +475,13 @@ def test_event_implication_cannot_invent_an_order_for_unknown_legacy_time():
     from Queries import ThoughtLTMCapability
     from QueryWork import QueryWorkBudget
     _,registry,store,events=event_world((1,2))
-    store.entry_when(events[0]).zero_()
+    store.entry_time(events[0]).zero_()
     reader=ThoughtLTMCapability(store=lambda:store,equal=lambda *_:None,tau_id=.5)
     result=reader.relation_evidence('implies',*events,max_records=16,work=QueryWorkBudget(16))
     assert result['frames'] == ()
     assert (result['support_true'],result['support_false']) == (0.,0.)
     assert result['incomplete'] == ('unknown_event_time',)
-    assert result['records_scanned'] == len(store.parts)+2
+    assert result['records_scanned'] == 3
 
 
 def test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read(monkeypatch):

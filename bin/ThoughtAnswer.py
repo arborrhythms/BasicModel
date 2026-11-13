@@ -6,9 +6,9 @@ import torch
 def accepted(meaning):
     from ThoughtReferences import bindings, open_slots
     data = bindings(meaning)
-    return (not open_slots(meaning) and data.get('_evidence_kind') != 'intuition'
+    return (not open_slots(meaning)
             and (data.get('_producing_operation') in ('infer', 'query', 'isTrue')
-                 or data.get('_evidence_kind') in ('pervasion', 'retrieval', 'truth')))
+                 or data.get('_evidence_kind') in ('pervasion', 'retrieval', 'truth', 'intuition', 'perception')))
 
 
 def bound_view(state, observation, sentence, row, meaning):

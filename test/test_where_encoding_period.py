@@ -20,7 +20,7 @@ import pytest
 import torch
 
 _DATA_DIR = os.path.join(_PROJECT, "data")
-_FIXTURE = os.path.join(_DATA_DIR, "MM_xor_fixture.xml")
+_FIXTURE = os.path.join(_DATA_DIR, "MM_text_fixture.xml")
 _DEFAULTS = os.path.join(_DATA_DIR, "model.xml")
 
 _WHERE_PERIOD_DEFAULT = 8192
@@ -104,6 +104,10 @@ def test_reconstruct_buffer_period_assert_holds():
     with torch.no_grad():
         model.runEpoch(batchSize=4, split="test")
     psp = model.perceptualSpace
+    # The native field decoder returns bytes directly (§3.9); this guard
+    # belongs to the separate token-buffer renderer. Give that renderer
+    # decoded metadata at its own boundary.
+    psp._recovered_input = {'tokens': [[]]}
     over = _where_enc(model).maxVal + 1
     with pytest.raises(AssertionError, match="construction-time input capacity"):
         psp.reconstruct_to_buffer(buf_size=over)

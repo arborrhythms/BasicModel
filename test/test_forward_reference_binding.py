@@ -46,7 +46,7 @@ def forward_row(*, event=False, object_name=False):
     pool.promote(occurrence, obj)
     if event:
         verb = identity(owner, atoms[6], order=0)
-        changed = store.append_idea(point + atoms[1], when=False,
+        changed = store.append_idea(point + atoms[1], time=False,
             document_key='forward-reference-change')
         pool.event(occurrence, store.occurrence_of(changed), verb=verb, role=0, when=1, before=point)
     entry = pool.entries[occurrence]

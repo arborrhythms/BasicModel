@@ -1237,6 +1237,14 @@ class Data():
         XOR labels. Used as the smallest end-to-end smoke test for the
         text pipeline.
         """
+        if str(util.TheXMLConfig.get('architecture.data.dataType', default='embedding')) == 'numeric':
+            inputs = torch.tensor([[0.,0.],[0.,1.],[1.,0.],[1.,1.]])
+            outputs = torch.tensor([[0.],[1.],[1.],[0.]])
+            for split in ('train', 'validation', 'test'):
+                setattr(self, split+'_input', list(inputs.clone()))
+                setattr(self, split+'_output', list(outputs.clone()))
+            self.has_supervised_outputs = True
+            return
         data = {
             "train": {
                 "text": ["hello world", "hello there", "loving world", "loving there" ], # nPercepts = 3

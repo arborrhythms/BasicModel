@@ -301,7 +301,7 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
         force_order(owner, obj, 1 if word in ('x', 'what') else 0)
     from dataclasses import replace
     from Queries import ThoughtLTMCapability
-    best_match = ThoughtLTMCapability.best_match
+    content_query = ThoughtLTMCapability.query
     empty_scopes = []
     def empty_query_scope(capability, pattern, **options):
         # This exercise supplies an empty eligible scope, including the
@@ -312,11 +312,11 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
         excluded += tuple(('sym', index) for index in store.relations().tolist())
         data = dict(bindings(pattern), _query_exclude=excluded)
         data.pop('_query_event', None)
-        result = best_match(capability, replace(pattern, bindings=data), **options)
+        result = content_query(capability, replace(pattern, bindings=data), **options)
         assert not result['witnesses']
         empty_scopes.append(dict(excluded=len(excluded), records_scanned=result['records_scanned']))
         return result
-    monkeypatch.setattr(ThoughtLTMCapability, 'best_match', empty_query_scope)
+    monkeypatch.setattr(ThoughtLTMCapability, 'query', empty_query_scope)
     chooser = model._selected_thought_chooser(None)
     logits = chooser.thought_logits
     offered = []

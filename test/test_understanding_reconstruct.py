@@ -71,7 +71,10 @@ def test_understand_returns_one_explicit_understanding(model):
     assert torch.is_tensor(u.symbolic_state)
     assert u.conceptual_state is None or torch.is_tensor(u.conceptual_state)
     assert u.perceptual_context is None or torch.is_tensor(u.perceptual_context)
-    assert set(u.reconstruction_carriers) >= {"ir_mask_positions", "terminal_idea"}
+    # §3.9's numeric inverse consumes the field; no idea or text mask is
+    # retained beside it.
+    assert set(u.reconstruction_carriers) == {"field"}
+    assert torch.is_tensor(u.reconstruction_carriers["field"].evidence)
     # The established forward tuple rides along as the compatibility adapter.
     assert isinstance(u.execution, tuple) and len(u.execution) == 4
     assert u.execution[1] is u.symbolic_state

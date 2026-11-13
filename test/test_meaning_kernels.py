@@ -128,17 +128,17 @@ def test_meaning_inverse_and_gradient_at_identity(paired):
     a = torch.linspace(.15, .8, 12, dtype=torch.float64)
     b = a.flip(0)
     parent = op.compose_blocks(op.compose, a, b, counts=(2, 1))
-    left, right = op.reverse_blocks(parent, b, counts=(2, 1))
-    torch.testing.assert_close(left, a, atol=1e-12, rtol=0)
-    assert torch.equal(right, b)
+    left, right = op.reverse_blocks(parent, a, counts=(2, 1), reference_right=False)
+    torch.testing.assert_close(right, b, atol=1e-12, rtol=0)
+    assert torch.equal(left, a)
     parent[4:].sum().backward()
     assert op.meaning_kernel.context.grad.abs().sum() > 0
     with torch.no_grad():
         op.meaning_kernel.context.fill_(.01)
         op.meaning_kernel.log_scale.fill_(.05)
     parent = op.compose_blocks(op.compose, a, b, counts=(2, 1))
-    left, _ = op.reverse_blocks(parent, b, counts=(2, 1))
-    torch.testing.assert_close(left, a, atol=1e-12, rtol=0)
+    _, right = op.reverse_blocks(parent, a, counts=(2, 1), reference_right=False)
+    torch.testing.assert_close(right, b, atol=1e-12, rtol=0)
 
 
 def test_given_parent_trains_the_meaning_inverse_without_a_form_kernel(paired):
@@ -147,11 +147,11 @@ def test_given_parent_trains_the_meaning_inverse_without_a_form_kernel(paired):
     a = torch.linspace(.15, .8, 12, dtype=torch.float64)
     b = a.flip(0)
     parent = op.compose_blocks(op.compose, a, b).detach()
-    left, _ = op.reverse_blocks(parent, b)
+    _, right = op.reverse_blocks(parent, a, reference_right=False)
     parameters = tuple(op.meaning_kernel.parameters())
-    gradients = torch.autograd.grad(left[4:].sum(), parameters, allow_unused=True)
+    gradients = torch.autograd.grad(right[4:].sum(), parameters, allow_unused=True)
     assert any(value is not None and bool(value.abs().any()) for value in gradients)
-    torch.testing.assert_close(left[:4], a[:4], rtol=0, atol=1e-15)
+    torch.testing.assert_close(right[:4], b[:4], rtol=0, atol=1e-15)
 
 
 def test_other_catalogue_faces_use_the_same_centroid_contract(paired):

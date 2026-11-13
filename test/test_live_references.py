@@ -401,7 +401,7 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
         recent = state[chunks.REFS][0,:,0,1] == written
         assert recent.sum() == 1 and state[chunks.STACK][0,recent].eq(-1).all()
         torch.testing.assert_close(state[0][0,recent][0,:content_width],clause.point[:content_width],rtol=0,atol=0)
-        torch.testing.assert_close(state[chunks.WHEN][0,recent][0],store.entry_when(store.location(written)),rtol=0,atol=0)
+        torch.testing.assert_close(state[chunks.WHEN][0,recent][0],store.entry_time(store.location(written)),rtol=0,atol=0)
         assert not torch.equal(entry.leaves[0], prior)
         active = model.inputSpace._word_active_mask
         # This held referent has no lexical realization in the primed bank.

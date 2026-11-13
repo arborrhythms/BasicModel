@@ -156,7 +156,9 @@ def stage_input(model):
     if W == 0:return
     fi=getattr(model.perceptualSpace,'_forward_input',None) or {}
     texts=fi.get('word_texts') or ()
-    if not any(row for row in texts):return  # a numeric field has no text brackets
+    if not any(row for row in texts) and not any(
+            value is not None for value in (getattr(isp, '_scalar_values', None) or ())):
+        return  # An absent text/scalar field has no bracket to examine.
     offsets=getattr(isp,'_ar_word_part_offsets',None)
     spans=fi.get('part_spans')
     if torch.is_tensor(offsets) and offsets.shape[:2] == (B,W):
@@ -238,8 +240,14 @@ def stage_input(model):
             accepted=F.pad(result.accepted,(0,W-live_width)),
             descended=F.pad(result.descended,(0,W-live_width)),
             poles=F.pad(result.poles,(0,0,0,W-live_width)),
-            pole_changes=F.pad(result.pole_changes,(0,W-live_width)))
+            pole_changes=F.pad(result.pole_changes,(0,W-live_width)),
+            field_scopes=F.pad(result.field_scopes,(0,W-live_width)))
     model._attention_read=read
+    model._attention_spans=spans
+    model._attention_forms=(forms,ids,keys,live)
+    phases = getattr(model, 'grammar_phases', None)
+    if phases is not None and (not phases.examination or not phases.vector):
+        return
     reading=read()
     model._attention_greedy=reading
     model._attention_words=reading
@@ -283,7 +291,9 @@ def stage_expectation(model):
     """One word expectation per accepted percept, shared by both compose trials."""
     staged=getattr(model,'_attention_forms',None)
     owner=getattr(model.symbolSpace,'expectation',None)
-    if staged is None or owner is None or 'word' not in owner.enabled_levels:return
+    if (staged is None or owner is None or 'word' not in owner.enabled_levels
+            or getattr(model, '_attention_words', None) is None):
+        return
     forms,identities,keys,live=staged
     isp=model.inputSpace
     codes=getattr(isp,'_ar_word_object_atoms',None)

@@ -115,19 +115,24 @@ def query(context, arguments):
     if subject is not None:
         requested = replace(requested, role_refs=(subject, *requested.role_refs[1:]))
     references = tuple(ref for _, ref in context.operand_references if ref and ref[0] == 'ltm')
-    return context.ltm.best_match(requested,
+    result = context.ltm.query(requested,
         max_records=context.max_records, work=context.work, references=references)
+    # An empty read still owns the question it actually read. The controller
+    # can leave that content unanswered without turning this executable
+    # request (operator plus operand) into a purported semantic conclusion.
+    return dict(result, requested_meaning=requested)
 
 
 def ask(context, arguments):
     from ThoughtReferences import has_open_slots
     requested = arguments['argin1']
     if has_open_slots(requested) and callable(context.continuation):
-        return returned_subgoal(context.continuation(requested))
-    references = tuple(ref for _, ref in context.operand_references if ref and ref[0] == 'ltm')
-    found = context.ltm.best_match(requested, max_records=context.max_records,
-                                    work=context.work, references=references)
-    return found
+        found = returned_subgoal(context.continuation(requested))
+    else:
+        references = tuple(ref for _, ref in context.operand_references if ref and ref[0] == 'ltm')
+        found = context.ltm.best_match(requested, max_records=context.max_records,
+                                     work=context.work, references=references)
+    return dict(found, requested_meaning=requested)
 
 
 def returned_subgoal(result):

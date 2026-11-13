@@ -9048,6 +9048,14 @@ class InputSpace(Space):
         
         See class docstring for the operation contract.
         """
+        self._scalar_values = None
+        if isinstance(inputBatch,list) and inputBatch and isinstance(inputBatch[0],dict):
+            if any(set(item)-{'text','scalar'} for item in inputBatch):
+                raise ValueError('a scalar moment accepts text and scalar only')
+            values = [item.get('scalar') for item in inputBatch]
+            result = self.prepInput([item['text'] for item in inputBatch])
+            self._scalar_values = values
+            return result
         from Occurrence import prepared_input
         self._clear_sentence_pack()
         cursor = getattr(self.data, '_address_cursor', None)
@@ -9843,6 +9851,12 @@ class InputSpace(Space):
             active, positions, torch.zeros_like(positions)).amax(
                 dim=1, keepdim=True)
         any_active = active.any(dim=1, keepdim=True)
+        scalar = getattr(self, '_scalar_values', None)
+        if scalar is not None:
+            # A presented scalar is a real moment even when no word is present.
+            any_active = any_active | torch.tensor([value is not None for value in scalar],
+                device=dev, dtype=torch.bool)[:, None]
+
         self._packed_sentence_start_mask = start
         self._packed_sentence_end_mask = end
         self._packed_sentence_intermediate_end_mask = torch.zeros_like(active)
@@ -11459,7 +11473,7 @@ class PartSpace(Space):
         self._forward_input['native_indices'] = torch.tensor(
             [row + [-1]*(native_capacity-len(row)) for row in native_rows], dtype=torch.long, device=dev)
         self._forward_input['native_part_spans'] = torch.tensor(
-            [row + [(0,0)]*(native_capacity-len(row)) for row in native_spans], dtype=torch.long, device=dev)
+            [row + [(0,0)]*(native_capacity-len(row)) for row in native_spans], dtype=torch.long, device=dev).reshape(batch, native_capacity, 2)
         return self.subspace
 
     def _embed_radix(self, upstream_vspace):
@@ -13629,6 +13643,8 @@ class ConceptualSpace(Space):
                 perception.when[int(batch)] = 0
                 if perception.when_band is not None:
                     perception.when_band[int(batch)] = 0
+                if perception.boundaries is not None:
+                    perception.boundaries[:, :, int(batch)] = 0
                 object.__setattr__(self, '_percept_field', perception)
         for name in ('_refinement_field', '_refinement_both', '_refinement_raise_ready'):
             value = getattr(self, name, None)
@@ -14727,10 +14743,14 @@ class ConceptualSpace(Space):
     def _sparse_active(self):
         """Whether this pass runs conceptual sigma/pi over the shared store.
 
-        Definitions are populated in either mode; only the transform is
-        restricted to parallel passes with a positive symbolic order.
+        Declared field operations include the order-zero read. The order
+        budget limits subsequent folds, not whether perception has a field.
         """
-        return (int(getattr(self, "_symbolic_order", 0) or 0) > 0
+        from GrammarPhases import FIELD, SUBSTRATE
+        phases = getattr(getattr(self, '_model', None), 'grammar_phases', None)
+        declared = bool(phases is not None and phases.operators & FIELD
+                        and not phases.operators & SUBSTRATE)
+        return ((declared or int(getattr(self, "_symbolic_order", 0) or 0) > 0)
                 and not bool(getattr(self, "_serial", True)))
 
 
@@ -15010,6 +15030,8 @@ class ConceptualSpace(Space):
         membership = perception.values.index_select(0, perception.selected(keys))
         columns = torch.tensor(matrix._cols, device=membership.device, dtype=torch.long)
         required = torch.where((columns % 2)[:, None, None, None].bool(), membership.flip(-1), membership)
+        from PerceptCollections import read_native
+        collections = read_native(self, perception)
         self._bind_attended_concepts(required, matrix)
         fields, raw_fields = [], []
         B, E = membership.shape[1:3]
@@ -15023,8 +15045,11 @@ class ConceptualSpace(Space):
             prototype = membership.new_zeros(0, E)
             field = torch.stack([
                 bound.fold_presence(prototype, conjunctive=True, start=0, end=n0,
-                    edge_memberships=literals[..., pole], edge_known=literals.any(-1))
+                    dual=bool(pole), edge_memberships=literals[..., pole], edge_known=literals.any(-1))
                 for pole in (0, 1)], -1).unsqueeze(1)
+            if collections:
+                field = torch.stack([collections[int(row)][b:b+1] if int(row) in collections else field[i]
+                                     for i, row in enumerate(rows[:n0])])
             fields.append(self._compose_order0(field, inventory_rows=rows))
             raw_fields.append(self._cs_order0_raw)
         object.__setattr__(self, '_cs_order0_raw', torch.cat(raw_fields, 1))
@@ -20460,7 +20485,7 @@ class OutputSpace(Space):
         )
         return basis
 
-    def __init__(self, inputShape, spaceShape, outputShape, vectors=None):
+    def __init__(self, inputShape, spaceShape, outputShape, vectors=None, *, field_capacity=None):
         """Initialize OutputSpace; allocate state for the class contract.
 
         See class docstring for invariants.
@@ -20468,8 +20493,11 @@ class OutputSpace(Space):
         section = self.config_section
         invertible = TheXMLConfig.space(section, "invertible")
         object.__setattr__(self, "_initial_vectors", vectors)
-        ids = TheXMLConfig.space(section, 'conceptIds', default='')
-        self.concept_ids = tuple(int(cid) for cid in str(ids or '').split())
+        if TheXMLConfig.space(section, 'conceptIds', default=None) is not None:
+            raise ValueError('OutputSpace conceptIds is retired; output reads all concept rows and lanes')
+        from GrammarPhases import GrammarPhases, SUBSTRATE
+        phases = GrammarPhases.configured()
+        use_field = phases.per_word or not (phases.operators & SUBSTRATE)
         self.nonlinear_output = TheXMLConfig.space(section, "nonlinear")
         # Vector regression uses a linear map and learned intercept.
         # Named concept evidence already has the target's [0,1] range.
@@ -20478,11 +20506,12 @@ class OutputSpace(Space):
         self._vocabulary = getattr(self, '_vocabulary', None)
         self.text_mode = isinstance(self._vocabulary, Embedding)
 
-        if self.concept_ids:
-            if len(set(self.concept_ids)) != len(self.concept_ids):
-                raise ValueError('OutputSpace conceptIds must be distinct concept identities')
-            if tuple(self.outputShape) != (len(self.concept_ids), 1):
-                raise ValueError('concept output requires one scalar per configured concept id')
+        self.field_readout = None
+        if use_field:
+            capacity = int(field_capacity if field_capacity is not None else TheXMLConfig.space('ConceptualSpace', 'nVectors'))
+            self.field_readout = nn.Linear(2*capacity, math.prod(self.outputShape))
+            nn.init.zeros_(self.field_readout.weight)
+            nn.init.zeros_(self.field_readout.bias)
             self._regression_head = False
             self._readout_bias = None
             self.params = list(self.parameters())
@@ -20647,8 +20676,8 @@ class OutputSpace(Space):
         vector output applies the configured linear chain. Named concepts
         select evidence directly by persistent identity.
         """
-        if self.concept_ids:
-            return self.read_concepts(subspace)
+        if self.field_readout is not None:
+            raise ValueError('a field output requires read_field with its concept owner')
         if subspace.is_empty():
             return subspace
         self.subspace.copy_context(subspace)
@@ -20700,25 +20729,24 @@ class OutputSpace(Space):
         vspace = self.forwardEnd(output, returnVectors=True)
         return vspace
 
-    def read_concepts(self, subspace):
-        """Read named positive poles, resolving this turn's field by concept id.
-
-        The extent union is already represented by the concept's evidence.
-        Selecting an identity adds no projection, bias, or Boolean corner.
-        """
-        evidence = getattr(subspace, '_concept_activations', None)
-        ids = getattr(subspace, '_concept_ids', None)
-        if not torch.is_tensor(evidence) or not torch.is_tensor(ids):
-            raise ValueError('concept output requires a bound native conceptual field')
+    def read_field(self, field, owner):
+        """One fixed linear weight for every inventory row and evidence lane."""
+        evidence, ids = field.evidence.amax(2), field.concept_ids
         if ids.ndim == 1:
-            ids = ids[:, None].expand(-1, evidence.shape[1])
-        requested = torch.tensor(self.concept_ids, device=ids.device)
-        selected = ids[..., None] == requested
-        positive = evidence[..., 0].amax(2)
-        result = (positive[..., None] * selected.to(positive)).amax(0)[..., None]
-        self.subspace.copy_context(subspace)
-        self.subspace.set_event(result)
-        return self.subspace
+            ids = ids[:,None].expand(-1, evidence.shape[1])
+        rows = torch.tensor([[owner._csw_row_of(int(cid)) if int(cid) > 0 and owner._csw_row_of(int(cid)) is not None else -1 for cid in stream]
+                             for stream in ids.T.tolist()], device=evidence.device)
+        capacity = self.field_readout.in_features//2
+        valid = (rows >= 0) & (rows < capacity)
+        dense = evidence.new_zeros(evidence.shape[1], capacity, 2)
+        dense = dense.scatter_reduce(1, rows.clamp(0,capacity-1)[...,None].expand(-1,-1,2),
+                                     evidence.permute(1,0,2)*valid[...,None], reduce='amax', include_self=True)
+        return self.field_readout(dense.flatten(1).to(self.field_readout.weight.dtype)).reshape(evidence.shape[1], *self.outputShape)
+
+    @torch.no_grad()
+    def retire_field_row(self, row):
+        if self.field_readout is not None:
+            self.field_readout.weight[:,2*row:2*row+2].zero_()
 
     def reverse(self, subspace):
         """Being acted upon: map output back to symbolic space.

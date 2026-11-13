@@ -278,14 +278,14 @@ class TestPerceptStoreIntegration(unittest.TestCase):
     """
 
     def test_radix_config_builds_percept_store(self):
-        """MM_xor.xml selects ``<synthesis>meronomy</synthesis>`` post-Stage-7
+        """MM_text.xml selects ``<synthesis>meronomy</synthesis>`` post-Stage-7
         and the constructed PartSpace must expose a PerceptStore.
         """
         import warnings
         import Models
         import Language
         from util import init_config
-        cfg_path = os.path.join(_PROJECT, "data", "MM_xor.xml")
+        cfg_path = os.path.join(_PROJECT, "data", "MM_text.xml")
         init_config(path=cfg_path, defaults_path=_DEFAULTS)
         Language.TheGrammar._configured = False
         with warnings.catch_warnings():
@@ -293,7 +293,7 @@ class TestPerceptStoreIntegration(unittest.TestCase):
             m, _ = Models.BasicModel.from_config(cfg_path)
         ps_space = m.perceptualSpace
         self.assertEqual(ps_space.synthesis_mode, "meronomy",
-                         "MM_xor.xml should use the retained meronomy reading")
+                         "MM_text.xml should use the retained meronomy reading")
         self.assertIsNotNone(ps_space.percept_store,
                              "radix-mode PartSpace must expose "
                              "self.percept_store")
@@ -325,7 +325,7 @@ class TestPerceptStoreIntegration(unittest.TestCase):
         import Models
         import Language
         from util import init_config
-        cfg_path = os.path.join(_PROJECT, "data", "MM_xor.xml")
+        cfg_path = os.path.join(_PROJECT, "data", "MM_text.xml")
         init_config(path=cfg_path, defaults_path=_DEFAULTS)
         Language.TheGrammar._configured = False
         with warnings.catch_warnings():
@@ -393,7 +393,7 @@ class TestPerceptStoreIntegration(unittest.TestCase):
         import Models
         import Language
         from util import init_config
-        cfg_path = os.path.join(_PROJECT, "data", "MM_xor.xml")
+        cfg_path = os.path.join(_PROJECT, "data", "MM_text.xml")
         init_config(path=cfg_path, defaults_path=_DEFAULTS)
         Language.TheGrammar._configured = False
         with warnings.catch_warnings():

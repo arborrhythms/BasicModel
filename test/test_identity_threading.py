@@ -318,7 +318,7 @@ def test_kept_journal_commits_two_verbs_one_identity_and_immutable_occurrences(m
     assert f.cs.mtm.entries[token].count == 2
     assert len(f.cs.mtm.entries[token].events) == 2
     torch.testing.assert_close(f.cs.mtm.value_of(token), lifts[1][2][0])
-    later = f.store.append_idea(torch.zeros(8), when=False)
+    later = f.store.append_idea(torch.zeros(8), time=False)
     retained = snapshot(resolver)  # Adding the reference is separate from recording its event.
     f.cs.mtm.event(token, f.store.occurrence_of(later), verb=f.cs.mtm.entries[token].events[-1].verb, role=0, when=20)
     unchanged(resolver, retained)

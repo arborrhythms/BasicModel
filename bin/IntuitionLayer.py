@@ -58,11 +58,6 @@ class IntuitionLayer(nn.Module):
 
 
 def power(value, weight, *, sigma=False):
-    """Unit exponents are exactly identity, including the two cube rails."""
-    eps = torch.finfo(value.dtype).eps
-    clipped = value.clamp(eps, 1-eps)
-    smooth = -torch.expm1(weight * torch.log1p(-clipped)) if sigma else clipped.pow(weight)
-    exact = torch.where(value == 0, 0., torch.where(value == 1, 1., smooth))
-    # Identity at construction is bit-exact, without discarding its tangent.
-    exact = torch.where(weight.detach() == 1, value, exact)
-    return smooth + (exact - smooth).detach()
+    """The same weighted membership used by definitions, brackets and cues."""
+    from FieldLogic import power as qualify
+    return qualify(value, weight, conjunctive=not sigma)

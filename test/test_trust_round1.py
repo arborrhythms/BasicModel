@@ -595,7 +595,7 @@ def test_null_kind_named_from_held_signs_reaches_the_definition_threshold(signs)
     # D7's counter through promotion; Q2's sign-close certificates are below.
     for n in range(signs):
         row=store.append_meaning(ConceptualMeaning.from_description(empty),order=0,
-            document_key='held-signs',sentence_index=n,evidence=(1.,0.),when=False)
+            document_key='held-signs',sentence_index=n,evidence=(1.,0.),time=False)
         assert not store.slots[row].any()
         occurrence=store.occurrence_of(row)
         if n == 0:
@@ -642,7 +642,7 @@ def close_named_sign(owner, store, label, number):
     from Memory import OCCURRENCE, SYMBOL
     empty = torch.zeros(owner.nDim)
     row = store.append_meaning(ConceptualMeaning.from_description(empty), order=0,
-        document_key='pending-signs', sentence_index=number, evidence=(1., 0.), when=False)
+        document_key='pending-signs', sentence_index=number, evidence=(1., 0.), time=False)
     occurrence = store.occurrence_of(row)
     key = owner.mtm.open(occurrence, kind=owner.null_concept_id, when=number, value=empty)
     left, right = (OCCURRENCE, occurrence[-1]), (SYMBOL, label)

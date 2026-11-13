@@ -148,7 +148,7 @@ class TestMonotonicCodebookRequirement:
 
     def _cfg(self):
         from util import init_config, TheXMLConfig
-        init_config(path=os.path.join(_PROJECT, "data", "MM_xor.xml"),
+        init_config(path=os.path.join(_PROJECT, "data", "MM_text.xml"),
                     defaults_path=os.path.join(_PROJECT, "data", "model.xml"))
         return TheXMLConfig.data
 
@@ -248,7 +248,7 @@ class TestTaxonomy:
         import Models
         import Language
         from util import init_config
-        cfg = os.path.join(_PROJECT, "data", "MM_xor.xml")
+        cfg = os.path.join(_PROJECT, "data", "MM_text.xml")
         init_config(path=cfg,
                     defaults_path=os.path.join(_PROJECT, "data", "model.xml"))
         Language.TheGrammar._configured = False

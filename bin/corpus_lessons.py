@@ -342,7 +342,7 @@ def measure(config, lessons, output, *, eager=False, presentations=None, curricu
                     answers_scored=answers, observations=observations,
                     ltm1_rows=[dict(row=i, references=alloc.parts.references(i),
                         evidence=[float(alloc.parts.truth_plus[i]), float(alloc.parts.truth_minus[i])],
-                        percept=alloc.parts.percept[i].tolist()) for i in alloc.parts.indices().tolist()],
+                        sentence_reference=int(alloc.parts.sentence_reference[i])) for i in alloc.parts.indices().tolist()],
                     attention=attention, placements=placements, step_seconds=step_times,
                     step_training_seconds=training_times, step_diagnostic_seconds=diagnostic_times,
                     class_both=dict(both=sum(x for x,_ in fold_counts),

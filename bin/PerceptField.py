@@ -21,18 +21,20 @@ class PerceptField:
     when: torch.Tensor         # [batch, reading, 2], one interval per reading
     percept_where: torch.Tensor | None = None  # [feature, member, 4], native percept ladders
     when_band: torch.Tensor | None = None      # [batch, reading, 4], shared field time
+    boundaries: torch.Tensor | None = None     # [part/whole, percept, batch, reading, pole]
 
     def clone(self):
         return type(self)(self.keys, *(None if getattr(self, name) is None else
             getattr(self, name).clone() for name in
-            ('values', 'events', 'spans', 'where', 'when', 'percept_where', 'when_band')))
+            ('values', 'events', 'spans', 'where', 'when', 'percept_where', 'when_band', 'boundaries')))
 
     def select(self, batch, reading):
         b, e = slice(batch, batch + 1), slice(reading, reading + 1)
         return type(self)(self.keys, self.values[:, b, e], self.events[:, b, e],
                           self.spans[b], self.where[b, e], self.when[b, e],
                           self.percept_where,
-                          None if self.when_band is None else self.when_band[b, e])
+                          None if self.when_band is None else self.when_band[b, e],
+                          None if self.boundaries is None else self.boundaries[:, :, b, e])
 
     def selected(self, keys):
         lookup = {key: i for i, key in enumerate(self.keys)}

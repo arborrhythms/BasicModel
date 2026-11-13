@@ -19,7 +19,7 @@ class PartClosing:
         self.symbols, self.edges = {}, []
         self.occurrences = set()
         self.relation_dependencies = set()
-        self.when = None
+        self.time = None
         self.content_key = None
         self.source_trust = 1.
 
@@ -375,7 +375,7 @@ class PartClosing:
                 sentence_index=list(self._planned).index(id(term)), content_key=native_content_key(value))
         row = self.store.append_meaning(value, kind=kind, evidence=pair, order=record.get('order', term.order),
             stream=stream, surprise=surprise,
-            when=self.when if sentence else False, **(address or {}))
+            time=self.time if sentence else False, **(address or {}))
         result = OCCURRENCE, int(self.store.address_keys[row])
         self.occurrences.add(result[1])
         return result
@@ -430,7 +430,7 @@ class PartClosing:
                 if index >= 0:
                     operation_seat = occupations.seats[operation].concept
             row = self.parts.add(left, right, truth_plus=pair[0], truth_minus=pair[1],
-                when=self.when if sentence else None, surprise=surprise, witness=sentence,
+                surprise=surprise, witness=sentence,
                 operator=operator, operation_seat=operation_seat)
             self.edges.append(row)
             promoted = False

@@ -262,14 +262,15 @@ def test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the
     with torch.no_grad():
         u = _capture_program_probe(m, ["one plus two", "three plus four"])
         derivation = m.resolveAnswer(u, What.supervised(0))
-        idea, resolved, sources, targets = m._materialize_answer_idea(u, derivation, What.supervised(0))
+        idea, resolved, sources, references = m._materialize_answer_idea(u, derivation, What.supervised(0))
     D = int(m.conceptualSpace.stm.concept_dim)
     assert tuple(idea.shape) == (2, 3, D) and bool(resolved.all())
     assert all(src.startswith("idea:") for src in sources)
     end = torch.stack([field.end_state for field in u.sentence_states])
     assert torch.allclose(idea, end)                        # zero-initialised conditioning
     T = m._walk_budget()
-    assert targets is None  # generation has no input-reading targets
+    assert references == tuple(tuple(ref for meaning in row for ref in meaning.role_refs)
+                               for row in derivation.answer_meanings)
     # Pin lexical realization with an explicitly representable resolved
     # answer. The fresh compound above tests materialization, not learned
     # compound recovery; truncation cannot satisfy this realization check.
@@ -288,7 +289,7 @@ def test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the
         torch.testing.assert_close(idea, native)
         _stop(m)
         words, n_emitted, truncated, cost = m._output_generate_walk(
-            m._walk_operand(idea), T, False, targets,
+            m._walk_operand(idea), T, False, None,
             basis=bank.codes, basis_valid=bank.valid, terminal_valid=bank.terminal_valid,
             constituents=u.sentence_records[-1].constituents,
             constituent_valid=u.sentence_records[-1].constituent_valid,
@@ -624,13 +625,19 @@ def test_materialised_idea_follows_the_symbol_rows(eager_reading, monkeypatch):
         idea1, _r, _s, targets1 = m._materialize_answer_idea(
             exchanged, new_derivation, (What.supervised(0), What.supervised(1)))
     assert not torch.allclose(idea1, idea0, atol=1e-4)
-    assert targets1 is targets is None  # neither reading supplies generation actions
+    assert targets == tuple(tuple(ref for meaning in row for ref in meaning.role_refs)
+                            for row in derivation.answer_meanings)
+    assert targets1 == tuple(tuple(ref for meaning in row for ref in meaning.role_refs)
+                             for row in new_derivation.answer_meanings)
     m.End(); m.symbolSpace.soft_reset()
 
 
 
 @pytest.mark.usefixtures('eager_reading')
 def test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present(monkeypatch):
+    from dataclasses import replace
+    from Meaning import ConceptualMeaning
+    from Understanding import SentenceEndState
     from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
     from What import What
     _walk_control_oracle(monkeypatch)
@@ -641,8 +648,23 @@ def test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present(monke
     m.reconstruct_in_loop = False
     m.loss.reconstruction_scale = 0.
     try:
+        from reading_fixtures import supply_object, force_absolute_reading
+        _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
+        for word in sorted(m._concept_owner().interpret._pending):
+            supply_object(m._concept_owner(), word)
+        m._staged_in_sub = None
+        force_absolute_reading(m)
         with torch.no_grad():
             u = _capture_program_probe(m, ["12 plus 1", "3 plus 4"])
+            derivation = m.resolveAnswer(u, What.supervised(0))
+            bank = u.sentence_records[-1].primed
+            assert bank.terminal_valid.any(-1).all()
+            chosen = bank.terminal_valid.long().argmax(-1)
+            native = bank.codes[torch.arange(2), chosen]
+            meanings = tuple(ConceptualMeaning.from_description(value) for value in native)
+            derivation = replace(derivation, conceptual_answer=torch.stack([value.roles for value in meanings]),
+                sentence_states=tuple(SentenceEndState(value) for value in meanings),
+                answer_meanings=tuple((value,) for value in meanings))
         # The standalone kernel leaves an unrelated open reading record.
         # Output must ignore it and continue from the held completed field.
         _stage_fullgraph_tensor_peer(m, ["12 plus 1", "3 plus 4"])
@@ -653,11 +675,11 @@ def test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present(monke
             assert bool((targets >= 0).any())
             choices = [t.clone() for t in m._reconstruction_stack().choices()]
             _stop(m)
-            stopped = m.reverseOutput(u, m.resolveAnswer(u, What.supervised(0)))
+            stopped = m.reverseOutput(u, derivation)
             words = stopped.concepts.clone()
             stop_truncated = m._output_truncated.clone()
             _prefer(m, list(m.languageSpace._generate_binary_names).index("lift"))
-            expanded = m.reverseOutput(u, m.resolveAnswer(u, What.supervised(0)))
+            expanded = m.reverseOutput(u, derivation)
         assert not torch.equal(words, expanded.concepts)
         assert not bool(stop_truncated.any())
         assert bool(m._output_truncated.all())

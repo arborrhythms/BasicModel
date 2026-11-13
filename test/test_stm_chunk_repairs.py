@@ -91,27 +91,27 @@ def test_same_chunks_supply_current_time_and_untimed_estimate(tmp_path):
     # the source and arriving observation keep their exact absolute times.
     from Meaning import ConceptualMeaning
     from meaning_fixtures import estimate_meaning
-    from RowTime import read_stamp
+    from RowTime import read_time
     source = store.append_meaning(ConceptualMeaning.from_description(value),
-                                  when=encoder().encode(2), stream=0)
+                                  time=encoder().encode(2), stream=0)
     early = store.append_estimate(estimate_meaning(estimate),
         presence_logits=estimate.presence_logits,
         source_occurrences=(store.occurrence_of(source),), document='early')
     cursor_after_estimate = int(store.model_clock)
     assert cursor_after_estimate == 19
-    assert torch.count_nonzero(read_stamp(store,early)) == 0
+    assert torch.count_nonzero(read_time(store,early)) == 0
     store.model_clock.fill_(31)
     predicted, observed = store.append_expectation_pair(estimate_meaning(estimate),
         ConceptualMeaning.from_description(value*.5),
         presence_logits=estimate.presence_logits,
         source_occurrences=(store.occurrence_of(source),),
         stream=('external', 'clock'), document='clock', index_stream=0)
-    assert torch.count_nonzero(read_stamp(store,predicted)) == 0
-    torch.testing.assert_close(read_stamp(store,source),encoder().encode(2),rtol=0,atol=0)
-    torch.testing.assert_close(read_stamp(store,observed),encoder().encode(31),rtol=0,atol=0)
+    assert torch.count_nonzero(read_time(store,predicted)) == 0
+    torch.testing.assert_close(read_time(store,source),encoder().encode(2),rtol=0,atol=0)
+    torch.testing.assert_close(read_time(store,observed),encoder().encode(31),rtol=0,atol=0)
     assert int(store.model_clock) == 32
     (tmp_path/'certificate.json').write_text(json.dumps(dict(ticks=[7,19],
         contexts=[v.tolist() for v in contexts], estimates=[v.tolist() for v in estimates],
         fixed_now_start=4*width, chunks_unchanged=True, cursor_after_estimate=cursor_after_estimate,
-        stored_stamps={name:read_stamp(store,row).tolist() for name,row in
+        stored_stamps={name:read_time(store,row).tolist() for name,row in
                        (('source',source),('estimate',predicted),('observation',observed))}),indent=2)+'\n')

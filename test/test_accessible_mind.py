@@ -55,9 +55,10 @@ def test_cue_fan_is_charged_and_scope_filters_before_ranking():
     from QueryWork import QueryWorkBudget
     store = LTM0(8, percept_width=0, capacity=32)
     for i in range(12):
-        store.append_meaning(_meaning(scope={"where": (i, i + 1)}), stream=0, sentence_index=len(store))
+        store.append_meaning(_meaning(scope={"region": "selected" if i in (2, 3) else "elsewhere"}), stream=0, sentence_index=len(store))
     work = QueryWorkBudget(5)
-    result = store.cued_rows(_meaning(scope={"where": (2, 4)}),
+    result = store.cued_rows(_meaning(scope={"region": "selected"}),
+        references=tuple(store.occurrence_of(i) for i in range(len(store))),
         max_candidates=20, work=work, stream=0)
     assert [row['index'] for row in result['value']] == [2, 3]
     assert result['records_scanned'] == 12 and work.spent == 2
@@ -99,7 +100,7 @@ def test_part_thought_writes_detached_vector_residual_without_memory_read(monkey
     assert context.work.spent == 1
 
 
-def test_query_retrieves_every_old_cued_frame_without_an_implicit_write():
+def test_query_retrieves_an_addressed_old_frame_without_an_implicit_write():
     from dataclasses import replace
     from test_cs_symbol_table import _cs
     from test_query_vp_boundaries import _context, _signature
@@ -111,7 +112,7 @@ def test_query_retrieves_every_old_cued_frame_without_an_implicit_write():
     newest = store.append_meaning(fact, trust=.3, sentence_index=len(store))
     context = _context(_cs(), store=store)
     cue = replace(fact, role_mask=torch.tensor([True, False, False]),
-                  role_refs=(fact.role_refs[0], None, None))
+                  role_refs=(store.occurrence_of(oldest), None, None))
     found = _signature('query', 'argin1').invoke(context, cue)
     assert len(found['frames']) == 1
     assert {frame['occurrence'] for frame in found['frames']} == {
@@ -154,7 +155,7 @@ def test_thought_retrieval_keeps_history_and_restores_episode_knowing(monkeypatc
     oldest = append_content(store, fact, trust=.7)
     for _ in range(20):
         append_content(store, ConceptualMeaning.from_description(torch.eye(8)[1]), trust=.1)
-    cue = replace(fact)
+    cue = replace(fact, role_refs=(store.occurrence_of(oldest), None, None))
     cue_row = store.append_meaning(cue, kind='question', sentence_index=len(store))
     with model._query_boundary_scope((0,)):
         meter = QueryWorkBudget(256)
@@ -270,10 +271,10 @@ def test_nested_writes_are_shared_across_batch_positions():
     parent = replace(child, role_mask=torch.tensor([True, False, False]),
                      role_refs=(('constituent', 0), None, None), constituents=(child,))
     store = LTM0(8, percept_width=0, capacity=4)
-    store.append_meaning(parent, kind='observation', stream=2, sentence_index=len(store))
+    index = store.append_meaning(parent, kind='observation', stream=2, sentence_index=len(store))
     assert not hasattr(store, 'index_stream')
-    first = store.cued_rows(child, stream=0)['value']
-    moved = store.cued_rows(child, stream=2)['value']
+    first = store.cued_rows(child, references=(store.occurrence_of(index),), stream=0)['value']
+    moved = store.cued_rows(child, references=(store.occurrence_of(index),), stream=2)['value']
     assert first and [row['occurrence'] for row in first] == [row['occurrence'] for row in moved]
 
 

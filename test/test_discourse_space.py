@@ -105,7 +105,7 @@ class TestModelIntegration(_DiscourseTestBase):
     def test_discourse_layer_absent_when_sentenceExpectation_false(self):
         # from_config reloads XML: put the explicit off value in the file,
         # rather than relying on a transient override of the former default.
-        source = (Path(_DATA_DIR) / 'MM_xor.xml').read_text()
+        source = (Path(_DATA_DIR) / 'MM_text.xml').read_text()
         source = source.replace('<training>',
                                 '<training><sentenceExpectation>false</sentenceExpectation>', 1)
         with tempfile.TemporaryDirectory() as directory:

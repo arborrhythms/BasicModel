@@ -145,6 +145,7 @@ class ComposeLessonStates:
             self.rounds[row, key] = dict(payload, row=row,
                 depth=int(kwargs['load_depth'][row]),
                 kind=int(route['kind'][row]), position=int(route['position'][row]), slot=key,
+                stack_arity=1 if bool(route.get('bind', torch.zeros_like(route['valid']))[row]) else 2,
                 observed_probabilities=route['probabilities'][row].detach().clone())
 
     def sentence(self, row, positions, *, width, closing_base, closing_width, attempted):
@@ -160,7 +161,7 @@ class ComposeLessonStates:
             if state['depth'] != len(stack):
                 raise ValueError('constituent lesson provenance differs from the student stack')
             states.append(dict(state, spans=tuple(stack[-2:])))
-            if state['kind'] == 1:
+            if state['kind'] == 1 and state['stack_arity'] == 2:
                 right, left = stack.pop(), stack.pop()
                 stack.append(left + right)
             elif state['kind'] == 3:

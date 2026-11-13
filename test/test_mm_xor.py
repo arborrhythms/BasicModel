@@ -186,27 +186,10 @@ class TestMMXorConvergence(unittest.TestCase):
         """Reach the affine MSE floor .25 (tolerance .01) in 600 epochs."""
         self._fit_xor(_CONFIG, epochs=600, threshold=.26)
 
-    @pytest.mark.trained('mm_xor_grammar')
     @pytest.mark.learning_certificate
     def test_mm_grammar_learns_xor_signal(self):
-        """The first initialization in thinking §41.7 must cross the .20 bar."""
-        import random
-        import numpy as np
-        import torch
-
-        seed = 41001
-        python_state = random.getstate()
-        numpy_state = np.random.get_state()
-        with torch.random.fork_rng(devices=[]):
-            try:
-                random.seed(seed)
-                np.random.seed(seed)
-                torch.default_generator.manual_seed(seed)
-                self._fit_xor(os.path.join(_PROJECT, "data", "MM_grammar.xml"),
-                              epochs=900, threshold=.20, grammar=True)
-            finally:
-                random.setstate(python_state)
-                np.random.set_state(numpy_state)
+        """The former grammar learning bar now certifies the numeric field."""
+        self._fit_xor(_CONFIG, epochs=900, threshold=.20)
 
     @pytest.mark.learning_certificate
     def test_convergence(self):

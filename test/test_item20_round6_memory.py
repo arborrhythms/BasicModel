@@ -14,7 +14,7 @@ def test_expired_pending_path_reenters_a_later_native_definition():
     key = pool.named(word, value=atoms[0], when=0)
     reading = NS(word_ids=torch.tensor([word]), leaves=atoms[0][None], symbol_where=None)
     def close(position):
-        root = store.append_idea(atoms[0], address=501+position, when=False)
+        root = store.append_idea(atoms[0], address=501+position, time=False)
         return commit_read_words(owner, reading, batch=0, document='later-empty',
             position=position, written={'root_occurrence': store.occurrence_of(root)})[0]
     close(0)
@@ -55,7 +55,7 @@ def test_rereading_the_same_position_at_a_new_order_preserves_the_original_membe
     word = owner.interpret.lookup_word([116], (), form='later-order')
     key = pool.named(word, value=atoms[0], when=0)
     reading = NS(word_ids=torch.tensor([word]), leaves=atoms[0][None], symbol_where=None)
-    root = store.append_idea(atoms[0], address=601, when=False)
+    root = store.append_idea(atoms[0], address=601, time=False)
     def close():
         return commit_read_words(owner, reading, batch=0, document='same-position',
             position=0, written={'root_occurrence': store.occurrence_of(root)})[0]

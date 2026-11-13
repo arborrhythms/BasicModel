@@ -14,5 +14,5 @@ def attach(pool, width, namespace, *, capacity=64):
 
 
 def put(store, address, value):
-    store.append_idea(value.detach(), address=address[-1], when=False)
+    store.append_idea(value.detach(), address=address[-1], time=False)
     return address

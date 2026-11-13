@@ -64,7 +64,7 @@ def test_promoted_name_keeps_its_order_when_an_old_mention_reads_the_definition(
     alloc = owner._concept_allocator
     word = owner.interpret.lookup_word([118], (), form='retained-definition')
     key = pool.named(word, value=atoms[0], when=0)
-    row = store.append_idea(atoms[0], address=701, when=False)
+    row = store.append_idea(atoms[0], address=701, time=False)
     reading = NS(word_ids=torch.tensor([word]), leaves=atoms[0][None], symbol_where=None)
     occurrence = commit_read_words(owner, reading, batch=0, document='retained-definition',
         position=0, written={'root_occurrence':store.occurrence_of(row)})[0]
@@ -99,7 +99,7 @@ def test_eventful_identity_keeps_the_checked_thought_as_a_member(named):
     concept = known_concept(owner, atoms[0], order=1)
     initial = replace(ConceptualMeaning.from_description(atoms[0]),
                       role_refs=(('sym', concept), None, None))
-    first = store.occurrence_of(store.append_meaning(initial, order=1, when=False))
+    first = store.occurrence_of(store.append_meaning(initial, order=1, time=False))
     if named:
         word = owner.interpret.lookup_word([119], (), form='thought-member')
         owner.interpret.define(word, concept, trust=.1)
@@ -109,11 +109,11 @@ def test_eventful_identity_keeps_the_checked_thought_as_a_member(named):
     key = owner.link(Occurrence(first, concept=word, referent=concept, order=1, selected=key), {},
         value=atoms[0], where=None, when=1, stream=0)
     event_value = atoms[1]
-    event = store.occurrence_of(store.append_idea(event_value, when=False))
+    event = store.occurrence_of(store.append_idea(event_value, time=False))
     pool.event(key, event, verb=concept, role=0, when=1, before=atoms[0])
     pool.close(store, stream=0, references=(first, event))
     history = pool.entries[key].events
-    answer = store.occurrence_of(store.append_idea(atoms[2], when=False))
+    answer = store.occurrence_of(store.append_idea(atoms[2], time=False))
     identity = ('name', word) if named else key
     meaning = ConceptualMeaning(torch.stack((event_value, torch.zeros_like(event_value), atoms[2])),
         torch.ones(3,dtype=torch.bool),role_refs=(identity,('sym',concept),answer),

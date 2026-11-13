@@ -21,7 +21,7 @@ def test_end_row_has_shared_references_and_field_coordinates():
     assert not hasattr(store, 'refs')
     assert 'refs' not in store.state_dict()
     assert store.slots.shape == (8, 4)
-    assert store.when.shape == (8, 0) and not hasattr(store, 'role_mask')
+    assert store.time.shape == (8, 0) and not hasattr(store, 'role_mask')
 
 
 def test_both_evidence_poles_survive_checkpoint_separately_from_neither():
@@ -38,8 +38,8 @@ def test_both_evidence_poles_survive_checkpoint_separately_from_neither():
 
 def test_relation_has_no_kind_column_or_catch_all():
     from Memory import LTM1
-    assert LTM1.columns == ('refs','ref_kinds','truth_plus','truth_minus','access_count','surprise','percept',
-                           'effective_plus','effective_minus','operator_reference','operation_seat')
+    assert LTM1.columns == ('refs','ref_kinds','truth_plus','truth_minus','access_count','surprise','sentence_reference',
+                           'operator_reference','operation_seat')
     assert not any(name.startswith('REL_') for name in vars(LTM0))
 
 
@@ -98,7 +98,7 @@ def test_compound_idea_stores_only_fused_point_without_factored_target():
     from Occurrence import document_digest
     assert int(store.sentence_index[row]) == 0
     assert bytes(store.document_keys[row].tolist()) == document_digest(('direct', 'observation'))
-    assert not store.entry_when(row).any()  # this fixture declares no percept band
+    assert not store.entry_time(row).any()  # this fixture declares no percept band
 
 
 def test_recursive_absolute_clauses_compress_to_one_sentence_idea():

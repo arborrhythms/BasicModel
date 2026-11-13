@@ -128,7 +128,7 @@ def test_partspace_nvectors_is_the_only_physical_capacity_knob():
     import xml.etree.ElementTree as ET
     import Language
     import Models
-    config = os.path.join(_PROJECT, 'data', 'MM_xor_fixture.xml')
+    config = os.path.join(_PROJECT, 'data', 'MM_text_fixture.xml')
     root = ET.parse(config).getroot()
     assert root.find('PartSpace/maxVectors') is None
     Language.TheGrammar._configured = False
@@ -147,7 +147,7 @@ def test_partspace_byte_fallback_has_one_optimizer_owner():
     import Models
     from util import init_config
 
-    config = os.path.join(_PROJECT, "data", "MM_xor_fixture.xml")
+    config = os.path.join(_PROJECT, "data", "MM_text_fixture.xml")
     defaults = os.path.join(_PROJECT, "data", "model.xml")
     init_config(path=config, defaults_path=defaults)
     Language.TheGrammar._configured = False
@@ -171,7 +171,7 @@ def test_smaller_checkpoint_table_prefix_loads_into_configured_initial_rows():
     import Models
     from util import init_config
 
-    config = os.path.join(_PROJECT, "data", "MM_xor_fixture.xml")
+    config = os.path.join(_PROJECT, "data", "MM_text_fixture.xml")
     defaults = os.path.join(_PROJECT, "data", "model.xml")
     init_config(path=config, defaults_path=defaults)
     Language.TheGrammar._configured = False
@@ -204,7 +204,7 @@ def test_checkpoint_restores_fixed_owner_and_optimizer_by_name(
     from checkpoint_migrations import OPTIMIZER_PARAM_NAMES_KEY
 
     monkeypatch.setenv("BASIC_AUTOLOAD", "0")
-    source = os.path.join(_PROJECT, "data", "MM_xor_fixture.xml")
+    source = os.path.join(_PROJECT, "data", "MM_text_fixture.xml")
     tree = ET.parse(source)
     part = tree.getroot().find("PartSpace")
     assert part is not None

@@ -176,7 +176,7 @@ def test_cover_survives_empty_memory_checkpoint_and_reuses_symbol_without_rng():
     begin(model_for(owner, store))
     first = open_cover(owner, store, stream=0, document='book')
     symbol = store.raw_meaning_of(store.location(first)).role_refs[0][1]
-    when = store.entry_when(store.location(first)).clone()
+    when = store.entry_time(store.location(first)).clone()
     rng = store.cover_rng_state.clone()
     begin(model_for(owner, store))
     assert not len(store) and symbol in protected_concepts(owner, store)
@@ -191,7 +191,7 @@ def test_cover_survives_empty_memory_checkpoint_and_reuses_symbol_without_rng():
     assert restored.raw_meaning_of(0).role_refs[0] == ('sym', symbol)
     # The epoch restores model time as well as rows: the same first
     # presentation occupies the same tick (Alec, 2026-11-10).
-    assert torch.equal(restored.entry_when(0), when)
+    assert torch.equal(restored.entry_time(0), when)
     assert restored.access_count[0] == 1 and restored.stream_rows(2).tolist() == [0]
     torch.testing.assert_close(restored.cover_rng_state, rng, rtol=0, atol=0)
     open_cover(owner, restored, stream=2, document='other book')

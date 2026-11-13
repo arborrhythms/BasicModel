@@ -359,7 +359,7 @@ E.  ``data/*.xml``
         the C->P feedback (CS->PS) is size-preserving (the
         cross-recurrence handoff is dim-aligned).
     E3. Audit table for the configs we update (XML files in scope):
-          MM_xor.xml:   IS.nOutput=8 * nOutputDim=10 = 80;
+          MM_text.xml:   IS.nOutput=8 * nOutputDim=10 = 80;
                         PS.nInput=8 * nInputDim=10 = 80;
                         CS.nOutput=8 * nOutputDim=10 = 80.
                         PASSES the invariant; no edit needed.
@@ -552,7 +552,7 @@ Tests to write (Phase 2, this file):
   Total: ~23 new tests.
 
 XML files to update:
-  MM_xor.xml             -- audit only (no edit expected -- already
+  MM_text.xml             -- audit only (no edit expected -- already
                             satisfies the invariant).
   MM_xor_loopback.xml    -- audit only.
   MM_20M_xor.xml              -- OPEN: needs controller decision on invariant
@@ -901,7 +901,7 @@ class TestExistingConfigsSatisfyFlatSlab(unittest.TestCase):
         return cfg
 
     def test_mm_xor_satisfies_flat_slab(self):
-        self._load_and_validate(os.path.join(_DATA_DIR, "MM_xor.xml"))
+        self._load_and_validate(os.path.join(_DATA_DIR, "MM_text.xml"))
 
     def test_mm_xor_loopback_satisfies_flat_slab(self):
         self._load_and_validate(os.path.join(_DATA_DIR, "MM_xor_loopback.xml"))
@@ -926,7 +926,7 @@ class TestExistingConfigsSatisfyFlatSlab(unittest.TestCase):
 #     references in SS.taxonomy / SS.taxonomy_parent_map.
 # These tests assert the structural shape, in addition to the legacy
 # orth-row-copy assertions which remain valid for the legacy lexicon
-# chunking path (MM_xor_loopback.xml uses the lexicon path; MM_xor.xml
+# chunking path (MM_xor_loopback.xml uses the lexicon path; MM_text.xml
 # uses radix).
 # ==========================================================================
 

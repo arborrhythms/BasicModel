@@ -17,7 +17,7 @@ def test_occurrence_candidates_use_retained_part_participants(monkeypatch, kind,
     assert address == f.store.occurrence_of(target)
     assert not f.cs.components.individual_ids
     before = f.store.parts.refs.clone(), f.store.slots.clone(), f.cs.similarity_codebook.W.clone()
-    records = f.resolver.accessible(chunk_context(f.resolver, f.frames))
+    records = f.resolver.accessible(chunk_context(f.resolver, f.frames), stream=0)
     candidates = f.resolver.individuals(records)
     assert address in candidates and f.identities[distractor] in candidates
     assert f.resolver.prediction(address, f.atoms[4], 0) > 0

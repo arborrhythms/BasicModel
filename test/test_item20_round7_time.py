@@ -49,8 +49,8 @@ def test_packed_sentences_tick_before_perception_on_one_ladder(tmp_path, monkeyp
             field = model._sentence_open_fields[sid]
             assert (field.when[..., 0] == tick).all()
         store = model.symbolSpace.ltm_store
-        stamped = store.when[:len(store)]
-        for index in (store.episodic_concepts[:len(store)] >= 0).any(-1).nonzero().flatten():
+        stamped = store.time[:len(store)]
+        for index in (store.episodic_concepts[:len(store)] >= 0).any((-1, -2)).nonzero().flatten():
             assert int(encoder().decode_index(stamped[index])) in dict(entries).values()
     finally:
         model.End()
@@ -88,7 +88,7 @@ def test_epoch_restores_both_clocks_and_repeats_sentence_stamps(tmp_path, monkey
         value[0] = 1
         row = store.append_meaning(ConceptualMeaning.from_description(value),
             document_key='setup', stream=0)
-        start_stamp = store.entry_when(row).clone()
+        start_stamp = store.entry_time(row).clone()
         capture_start(model)
         baseline = dict(store._epoch_rows['clock'])
         assert int(encoder().decode_index(start_stamp)) < baseline['when_time']
@@ -103,7 +103,7 @@ def test_epoch_restores_both_clocks_and_repeats_sentence_stamps(tmp_path, monkey
                     batch_override=(source, torch.empty(1, 0)))
             stamps.append(dict(model._sentence_ticks))
         assert stamps[0] == stamps[1]
-        assert torch.equal(store.entry_when(0), start_stamp)
+        assert torch.equal(store.entry_time(0), start_stamp)
         saved = tmp_path/'time.ckpt'
         model.save_weights(str(saved))
         bundle = torch.load(saved, map_location='cpu', weights_only=False)

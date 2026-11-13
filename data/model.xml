@@ -409,11 +409,9 @@
              listed; otherwise the per-tier dispatch is a no-op. -->
         <compose>
       <!-- Typed attention candidates; no predefined surface or generate face. -->
-      <rule operands="field">F = divide.forward(F)</rule>
-      <rule operands="field">F = descend.forward(F)</rule>
-      <rule operands="field">F = gloss.forward(F)</rule>
-      <rule operands="field">F = and.forward(F)</rule>
-      <rule operands="field">F = or.forward(F)</rule>
+      <rule operands="field">F = intersection.forward(F)</rule>
+      <rule operands="field">F = union.forward(F)</rule>
+      <rule operands="field">F = not.forward(F)</rule>
 
           <percepts>
             <rule>P = sigma(P)</rule>
@@ -533,8 +531,7 @@
     <definitionTrust>0.5</definitionTrust>
     <gates>
       <closedTrust>0.1</closedTrust>
-      <interpret><start>open</start><fraction>0.5</fraction></interpret>
-      <clause><start>open</start><threshold>0.75</threshold><except>interpret sign bind lift</except></clause>
+      <threshold>0.75</threshold>
     </gates>
     <mtmPrepend>64</mtmPrepend>
     <!-- recurrenceCapacity defaults to this space's resolved nVectors. -->
@@ -598,7 +595,6 @@
 
   <OutputSpace>
     <!-- Space-separated persistent concept ids; each reads its positive pole. -->
-    <conceptIds></conceptIds>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
     <nDim>1</nDim>

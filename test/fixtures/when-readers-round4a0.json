@@ -343,30 +343,6 @@
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
     },
     {
-      "file": "bin/PartClosing.py",
-      "function": "PartClosing._write",
-      "role": "carrier",
-      "previous_absolute_time": false,
-      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "attributes": [
-        "when"
-      ],
-      "line": 383,
-      "reads": "absolute"
-    },
-    {
-      "file": "bin/PartClosing.py",
-      "function": "PartClosing._write_occurrence",
-      "role": "carrier",
-      "previous_absolute_time": false,
-      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "attributes": [
-        "when"
-      ],
-      "line": 356,
-      "reads": "absolute"
-    },
-    {
       "file": "bin/PerceptField.py",
       "function": "PerceptField.select",
       "attributes": [
@@ -425,17 +401,6 @@
       "now": "Only differences or their ranks enter retention and reference comparisons.",
       "line": 228,
       "reads": "difference"
-    },
-    {
-      "file": "bin/ReferenceContext.py",
-      "function": "SituationFrame.detached",
-      "previous_absolute_time": false,
-      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "attributes": [
-        "when"
-      ],
-      "line": 68,
-      "reads": "absolute"
     },
     {
       "file": "bin/RowTime.py",
@@ -1299,6 +1264,13 @@
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
       "line": 794,
       "reads": "absolute"
+    },
+    {
+      "file": "bin/ScalarPercepts.py",
+      "function": "join",
+      "attributes": [
+        "when"
+      ]
     }
   ],
   "dynamic_readers": [
@@ -1479,7 +1451,7 @@
     },
     {
       "file": "bin/RowTime.py",
-      "function": "read_stamp / write_stamp",
+      "function": "read_time / write_time",
       "previous_absolute_time": false,
       "now": "Carries or encodes the common RowTime band; absolute values are provenance or exact addresses, not learned features.",
       "reads": "absolute"

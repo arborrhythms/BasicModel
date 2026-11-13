@@ -14,7 +14,7 @@ def test_numeric_head_does_not_call_learned_retrieval():
     sub = SubSpace.from_tensor(value, inputShape=shape, outputShape=shape,
                               nInputDim=2, nOutputDim=2)
     class Head:
-        concept_ids = ()
+        field_readout = None
         inputShape = shape
         def __call__(self, carrier):
             return carrier

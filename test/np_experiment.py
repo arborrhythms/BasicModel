@@ -235,7 +235,6 @@ def run(args):
             if previous is None:
                 random.seed(SEED);np.random.seed(SEED);torch.manual_seed(SEED)
             parts=model.languageSpace.parts_of_speech
-            model.languageSpace.language_layer.operation_layer.set_stage_menu(MENU)
             identity=model.perceptualSpace.percept_store.identity
             if identity.nested or identity._marker_pattern is not None:
                 raise ValueError('NP stage requires whole words with no marker lesson')

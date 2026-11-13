@@ -49,6 +49,10 @@ def protected_concepts(owner, store, retained=()):
     from Spaces import _concept_alloc_of
     alloc, layer = _concept_alloc_of(owner), _concept_alloc_of(owner).layer()
     protected = set(retained) | set(getattr(owner, '_frozen_concepts', ()))
+    model = getattr(owner, '_model', None)
+    numeric = getattr(model, 'numeric_percepts', None)
+    if numeric is not None:
+        protected.update(owner.concept_id_at_row(row) for row in numeric.rows)
     protected.update(_integers(alloc.word_forms))
     edges = alloc.parts.indices()
     protected.update(edges.tolist())
@@ -281,6 +285,20 @@ def reclaim_concepts(owner, store=None, *, retained=(), model=None):
             alloc.reclaimed_seats += 1
         _clear_code_moments(model, owner.similarity_codebook.W, row)
         owner.similarity_codebook.W[row].zero_()
+        if model is not None:
+            model.outputSpace.retire_field_row(row)
+            reader = model.outputSpace.field_readout
+            if reader is not None:
+                parameter = reader.weight
+                if parameter.grad is not None:
+                    parameter.grad[:,2*row:2*row+2].zero_()
+                for name in ('_optimizer', '_sentence_optimizer'):
+                    optimizer = getattr(model, name, None)
+                    if optimizer is not None:
+                        for leaf in model._optimizer_leaves(optimizer):
+                            for value in leaf.state.get(parameter, {}).values():
+                                if torch.is_tensor(value) and value.shape == parameter.shape:
+                                    value[:,2*row:2*row+2].zero_()
         derived = getattr(owner.similarity_codebook, 'mereology', None)
         if derived is not None:
             derived.placement[row].zero_()

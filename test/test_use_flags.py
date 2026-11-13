@@ -41,7 +41,7 @@ def _load(cfg_name):
 # The configs below all carry such operators at S-space_role (XOR's
 # not/intersection/union, MentalModel's full Boolean grammar, etc.),
 # so the derived value is ``"all"`` for every entry.
-# (MM_xor.xml dropped 2026-06-04: it deliberately sets PartSpace
+# (MM_text.xml dropped 2026-06-04: it deliberately sets PartSpace
 #  <codebook>none</codebook>, which the converged modality architecture
 #  rejects -- PS/SS codebooks are mandatory -- so it no longer instantiates.)
 EXPECTED = {
@@ -59,8 +59,8 @@ class TestOrthogonalFlags(unittest.TestCase):
                 with self.subTest(cfg=cfg):
                     m = _load(cfg)
                     self.assertEqual(
-                        m.useGrammar, expect_gr,
-                        f"{cfg}: useGrammar expected {expect_gr!r}")
+                        m.grammar_phases.vector, expect_gr == "all",
+                        f"{cfg}: vector operators expected {expect_gr!r}")
 
 
 if __name__ == "__main__":

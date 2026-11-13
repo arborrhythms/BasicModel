@@ -157,7 +157,7 @@ def forward_core(model, staged):
         body = model._forward_body(in_sub)
         head = model._forward_head(body)
         out = head.materialize() if head is not None else None
-        if out is not None and not model.outputSpace.concept_ids:
+        if out is not None:
             out = model.normalizer.denormalize(out, which='output')
     finally:
         model.mask_rate = _saved_mask_rate

@@ -111,7 +111,7 @@ def test_recurring_basic_collection_promotes_once_without_an_order_zero_concept(
     collection = None
     for clock in range(3):
         point = basic.code(row)
-        index = store.append_idea(point, address=301+clock, when=False)
+        index = store.append_idea(point, address=301+clock, time=False)
         key = owner.link(Occurrence(store.occurrence_of(index), concept=('bp', row), kind='percept', order=-1), {},
             value=point, where=None, when=clock, stream=0)
         assert collection is None or key == collection

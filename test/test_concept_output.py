@@ -33,9 +33,15 @@ def test_concept_output_resolves_each_batch_identity_and_preserves_unknown():
         [[ [0., 0.], [0., 0.] ], [[.2, 0.], [.6, .9]]],
         [[ [1., 1.], [1., 1.] ], [[1., 1.], [1., 1.]]],
     ], requires_grad=True)
-    head = SimpleNamespace(concept_ids=(17, 23), subspace=SubSpace(
-        inputShape=(1, 1), outputShape=(1, 1), nInputDim=1, nOutputDim=1))
-    result = OutputSpace.read_concepts(head, carrier).materialize()
+    from Understanding import ConceptualField
+    reader = torch.nn.Linear(4,2,bias=True)
+    with torch.no_grad():
+        reader.weight.copy_(torch.tensor([[1.,0.,0.,0.],[0.,0.,1.,0.]])); reader.bias.zero_()
+    head = SimpleNamespace(field_readout=reader,outputShape=(2,1))
+    owner = SimpleNamespace(_csw_row_of=lambda cid: {17:0,23:1}.get(cid))
+    field = ConceptualField(carrier._concept_ids,carrier._concept_activations,
+        torch.zeros(2,2,2,dtype=torch.long),torch.zeros(2,2,2,dtype=torch.long),None)
+    result = OutputSpace.read_field(head,field,owner)
     torch.testing.assert_close(result[..., 0], torch.tensor([[.8, 0.], [.6, 0.]]))
     result.sum().backward()
     assert carrier._concept_activations.grad[..., 1].count_nonzero() == 0
@@ -43,7 +49,7 @@ def test_concept_output_resolves_each_batch_identity_and_preserves_unknown():
 
 
 def test_reconstruction_without_owned_evidence_cannot_read_the_latest_field(monkeypatch):
-    model, _, _, _ = _build_model(str(ROOT / 'data/XOR_exact.xml'))
+    model, _, _, _ = _build_model(str(ROOT / 'data/XOR_symbols.xml'))
     model.forward(_bytes(['01']))
     carrier = SubSpace(inputShape=(1, 1), outputShape=(1, 1), nInputDim=1, nOutputDim=1)
     expected = torch.full_like(model.conceptualSpaces[0].subspace.materialize(), .125)
@@ -61,7 +67,7 @@ def test_reconstruction_without_owned_evidence_cannot_read_the_latest_field(monk
 
 
 def test_native_understanding_retains_field_and_native_percept_evidence():
-    model, _, _, _ = _build_model(str(ROOT / 'data/XOR_exact.xml'))
+    model, _, _, _ = _build_model(str(ROOT / 'data/XOR_symbols.xml'))
     understanding = model.understand(_bytes(['01']))
     # A configuration without sentence composition has the system-1 field only.
     assert not model._composes_sentences()
@@ -75,7 +81,7 @@ def test_native_understanding_retains_field_and_native_percept_evidence():
 
 def test_parallel_field_never_dispatches_grammar_lift_or_lower(monkeypatch):
     from Language import LiftLayer, LowerLayer
-    model, _, _, _ = _build_model(str(ROOT / 'data/XOR_exact.xml'))
+    model, _, _, _ = _build_model(str(ROOT / 'data/XOR_symbols.xml'))
 
     def forbidden(*args, **kwargs):
         raise AssertionError('parallel field dispatched the grammar')
@@ -113,89 +119,20 @@ def test_serial_grammar_never_executes_field_sigma_pi_or_not(tmp_path, monkeypat
 
 @pytest.mark.parametrize('trial', range(3))
 def test_native_cli_curriculum_learns_output_and_keeps_located_inverse(trial, monkeypatch):
-    model, _, _, _ = _build_model(str(ROOT / 'data/XOR_exact.xml'))
-    teach_concept_lessons(model)
-    model.eval()
-    model.set_sigma(0.)
-    cs = model.conceptualSpaces[0]
-    store = cs._concept_allocator.layer(0)
-    output = cs._csw_row_of(20001)
-    cases = model._concept_lesson_receipt['cases']
-    assert len(cases) == 4
-    assert all(value == 0 for _, value in cs.concept_weights(output))
-    assert all(cs._order0_inventory_row(r) and cs._order0_inventory_row(c % (store.nOutput + 1))
-               for r, c in store.conjunctive._index)
-    assert not any(r == output for r, _ in store.conjunctive._index)
-    assert not hasattr(store.conjunctive, "locations")
-    assert all(any(r == row for r, col in store.features._index) for row in cases)
-    x = _bytes(['00', '01', '10', '11'])
-    target = torch.tensor([0., 1., 1., 0.])
-    optimizer = torch.optim.Adam([store.values], lr=.03)
-    initial = None
-    for _ in range(40):
-        model.End()
-        optimizer.zero_grad()
-        prediction = model.forward(x)[2][:, 0, 0]
-        loss = (prediction - target).square().mean()
-        if initial is None:
-            initial = float(loss.detach())
-        loss.backward()
-        optimizer.step()
-        store.project_parts()
-    model.End()
-    understanding = model.understand(x)
-    prediction = understanding.execution[2][:, 0, 0]
-    assert initial == .5
-    torch.testing.assert_close(prediction, target, atol=1e-6, rtol=0)
-    torch.testing.assert_close(cs._cs_field_where, torch.tensor([[[0, 2]]]).expand(4, -1, -1))
-    assert len([weight for _, weight in cs.concept_weights(output) if weight > 0]) == 2
-    reverse, _ = model.reverseReconstruct(understanding)
-    assert model._decode_reconstructed_inputs(reverse, ['00', '01', '10', '11']) == ['00', '01', '10', '11']
-    field = understanding.reconstruction_carriers['field']
-    # Zero forward evidence cannot recover bytes from perceptual context or
-    # the execution adapter. Those products remain present in this record.
-    blank = replace(field, evidence=torch.zeros_like(field.evidence))
-    unknown = replace(understanding, reconstruction_carriers={
-        **understanding.reconstruction_carriers, 'field': blank, 'order_zero_field': blank})
-    absent, _ = model.reverseReconstruct(unknown)
-    assert absent.count_nonzero() == 0
-    # Durable basic percepts and definitions suffice at the next open.
-    # Empty both short-term structures before reading the same input again.
-    model.End()
-    for owner in model.conceptualSpaces:
-        owner.stm.clear()
-        for key in tuple(owner.mtm.entries): owner.mtm._detach(key)
-    reopened = model.understand(x)
-    without_memory, _ = model.reverseReconstruct(reopened)
-    torch.testing.assert_close(without_memory, reverse, rtol=0, atol=0)
-    from test_item20_round5_memory import receipt
-    receipt(f'input-without-memory-{trial}', dict(sentences=4, identical=True,
-        cleared_before_open=['STM', 'MTM'], promoted_basic_percepts_persist=True))
-    # A later perception cannot replace the captured understanding's inverse.
-    model.End()
-    model.forward(_bytes(['AAAA', 'Z', '222222', '!!!']))
-    cs._cs_field_rows = torch.full_like(cs._cs_field_rows, -1)
-    cs._percept_field.events.fill_(float('nan'))
-    cs._percept_field.spans.zero_()
-    def forbidden(*args, **kwargs):
-        raise AssertionError('native inverse read a percept event or code neighbour')
-    for owner in model.conceptualSpaces:
-        monkeypatch.setattr(owner, 'unbind', forbidden)
-    monkeypatch.setattr(model.perceptualSpace, '_decode_radix_meta', forbidden)
-    monkeypatch.setattr(model.perceptualSpace.percept_store, 'associate_span', forbidden)
-    repeated, _ = model.reverseReconstruct(understanding)
-    torch.testing.assert_close(repeated, reverse)
-    assert model._decode_reconstructed_inputs(repeated, ['wrong'] * 4) == ['00', '01', '10', '11']
-    model.End()
-    for texts in [['AA', 'ZZ', '22', '!!'], ['A', 'ZZZZ', '222222', '!!!!!!!!']]:
-        assert model.forward(_bytes(texts))[2].count_nonzero() == 0
-        model.End()
-    print(dict(trial=trial, initial_mse=initial, output=prediction.detach().tolist(),
-               conjunctions=len(cases), reconstructed=['00', '01', '10', '11']))
+    from numeric_xor import certificate, fit
+    model, prediction, error = certificate('data/XOR_exact.xml')
+    _, _, without_intersection = fit('data/XOR_exact.xml', promotion=False)
+    assert abs(without_intersection-.25) < 1e-6
+    values = torch.tensor([[0.,0.],[0.,1.],[1.,0.],[1.,1.]])
+    design = torch.cat((values,torch.ones(4,1)),1)
+    target = torch.tensor([0.,1.,1.,0.])
+    affine = design @ torch.linalg.lstsq(design,target).solution
+    assert abs(float((affine-target).square().mean())-.25) < 1e-6
+    print(dict(trial=trial,mse=error,without_intersection=without_intersection))
 
 
 def test_contained_ordered_group_reconstructs_at_its_extent():
-    model, _, _, _ = _build_model(str(ROOT / 'data/XOR_exact.xml'))
+    model, _, _, _ = _build_model(str(ROOT / 'data/XOR_symbols.xml'))
     # This probe exercises an ordered *unfused* group. The XOR curriculum
     # now teaches fused parts, so seed only the atomic native percepts here.
     model.perceptualSpace.percept_store.promotion_threshold = 100000

@@ -625,3 +625,8 @@ For the current native numbering, word concepts remain order 0 and formal argume
 Parts and wholes bound one basic percept in perception. An order-0 concept collects those basic percepts through `2*bp + pole` literals; it no longer reads separate part and whole literal kinds. Higher orders continue to collect concepts. A property-only or part-only concept collects the basic percepts carrying that boundary. This is the common basis of the order alternation.
 
 Order 1's continuity generalizes to every collection's connected path: one member order and kind, a kept-close horizon and containment, with place and first difference scored. States form extended events and mentions form extended nouns. Promotion retains the time-ordered path as membership and successor witnesses one order above its members. A recurring basic-level collection promotes a percept row, not an order-0 concept. The old field-candidate policy's item-1.5 port is carried separately.
+
+
+## Item 1.8 amendment (2026-11-12)
+
+A present scalar reading is a basic percept held in MTM, with a `bp` reference. Each word heard beside it collects such percepts in its own order-zero concept, with a `sym` reference. Their reference kinds distinguish percept and concept without provenance. The concept generalizes the witnessed perceptual parts and wholes; no separate interval bounds are retained. A bound object's reference travels through the ordinary generate walk and identifies its uniquely naming word. Native “what is this?” recognition is deferred to `compose_extend` in the next item-1.8 round, as the amended specification §3.10 states. Zero creates no positive value percept or scalar collection. The numeric-row convention of §3.9 is unchanged.

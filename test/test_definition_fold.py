@@ -32,8 +32,26 @@ def test_witnessed_lanes_merge_by_max_without_absence_as_a_label():
     assert records[0].names==() and not records[0].activation.requires_grad
     cost=loss(cs,staged)
     cost.sum().backward()
-    assert matrix.values.grad[matrix._index[row,a]]<0
-    assert matrix.values.grad[matrix._index[row,a+matrix.nOutput+1]]<0
+    # The weighted dual fold couples each edge's two lanes. Check its
+    # cotangent with the same held teacher used by this backward.
+    report = cs._last_definition_fold['readings'][0]
+    target = torch.maximum(report['readings'], report['teacher'])
+    mask = report['witnessed']
+    def held_cost():
+        loss(cs,staged)
+        q = cs._last_definition_fold['readings'][0]['readings']
+        return torch.where(mask, (q-target).square(), 0.).sum()/mask.sum().clamp_min(1)
+    index = matrix._index[row,a]
+    with torch.no_grad():
+        matrix.values[index] += 1e-3
+        above = held_cost()
+        matrix.values[index] -= 2e-3
+        below = held_cost()
+        matrix.values[index] += 1e-3
+    torch.testing.assert_close(matrix.values.grad[index], (above-below)/.002, atol=2e-4, rtol=.01)
+    # The dual minimum's observed zero blocks against support. A prospective
+    # edge cannot invent an against witness at that Boolean rail.
+    assert matrix.values.grad[matrix._index[row,a+matrix.nOutput+1]] == 0
     assert field.grad is None and cb.W.grad is None
     assert alloc.parts.truth_plus.grad is None and alloc.parts.truth_minus.grad is None
     report=cs._last_definition_fold['readings'][0]

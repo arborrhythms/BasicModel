@@ -33,7 +33,7 @@ def test_content_query_keeps_all_roles_and_conflicting_fact_sources():
     store.set_origin(first, store.ORIGIN_PROVISIONED, text="teacher", asserted=(float(store.truth_plus[first]), float(store.truth_minus[first])))
     store.set_origin(second, store.ORIGIN_USER, text="witness", asserted=(float(store.truth_plus[second]), float(store.truth_minus[second])))
     result = _signature('query', 'argin1').invoke(
-        _context(cs, store=store), replace(idea))
+        _context(cs, store=store), replace(idea, role_refs=(store.occurrence_of(first), None, None)))
     assert sorted(item['trust'] for item in result['value']) == pytest.approx([.6])
     for item in result['value']:
         torch.testing.assert_close(item['meaning'].roles, idea.roles)

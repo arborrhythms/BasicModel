@@ -54,7 +54,7 @@ def test_captured_replay_matches_eager_within_tolerance():
     from data import TheData
     from Models import BaseModel
 
-    config = str(_project / "data" / "MM_xor.xml")
+    config = str(_project / "data" / "MM_text.xml")
     TheData.load("xor")
 
     model_cap, _ = BaseModel.from_config(config, data=TheData)

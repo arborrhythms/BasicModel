@@ -5322,13 +5322,14 @@ class SparseLayer(Layer):
                       edge_memberships=None, edge_known=None):
         """Reduce weighted memberships by min/max; polarity is a source column.
 
-        A dual pass swaps the two source blocks, retaining the same fold. Empty
+        A dual pass swaps the source blocks and exchanges least with greatest. Empty
         definitions, including all-zero exponents, assert neither polarity.
-        Each pole reduces its nonzero contributions independently; a zero
-        pole supplies no evidence and cannot veto evidence on that pole.
+        Each pole reduces its known contributions independently; a zero
+        pole is an observed zero and vetoes a conjunctive fold on that pole.
         Exponents qualify individual memberships, never count witnesses.
         Finite log floors preserve gradients without moving Boolean rails.
         """
+        conjunctive = bool(conjunctive) != bool(dual)
         end = self.nOutput if end is None else int(end)
         rows, cols = self._indices(u.device)
         select = (rows >= int(start)) & (rows < end)
@@ -5352,22 +5353,11 @@ class SparseLayer(Layer):
                 known = edge_known[select]
             else:
                 known = torch.ones_like(v, dtype=torch.bool)
-            known = known & (v > 0)
             missing = getattr(self, '_missing_sources', None)
             if missing is not None:
                 known = known & ~missing.to(v.device)[select, None]
-            eps = torch.finfo(v.dtype).eps
-            if conjunctive:
-                vp = v + (v.clamp_min(eps) - v).detach()
-                chart = vp.log()
-                hit = v == 0
-            else:
-                vp = v + (v.clamp_max(1 - eps) - v).detach()
-                chart = torch.log1p(-vp)
-                hit = v == 1
-            powered = (w[:, None] * chart).exp() if conjunctive else -torch.expm1(w[:, None] * chart)
-            exact = torch.where(hit & (w[:, None] > 0), 0. if conjunctive else 1., powered)
-            powered = powered + (exact - powered).detach()
+            from FieldLogic import power
+            powered = power(v, w[:, None], conjunctive=conjunctive)
             if conjunctive:
                 # A zero exponent is an unwritten edge, not q**0 evidence.
                 # Straight-through incidence permits inserting and removing

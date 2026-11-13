@@ -19,7 +19,7 @@ sys.path.insert(0, str(_project / "bin"))
 import torch
 import pytest
 
-_CONFIG_PATH = str(_project / "data" / "MM_xor.xml")
+_CONFIG_PATH = str(_project / "data" / "MM_text.xml")
 
 
 def _xor_input():
@@ -57,7 +57,7 @@ def test_sequential_builds_body_stages_and_invertible_path():
     model = _model()
     assert isinstance(model.body_stages, nn_.ModuleList)
     assert model.any_invertible is True, (
-        "MM_xor.xml has invertible spaces; expected any_invertible=True")
+        "MM_text.xml has invertible spaces; expected any_invertible=True")
     assert model.midpoint_cache is None
     assert callable(getattr(model, '_forward_body', None))
     assert callable(getattr(model, 'reverse', None)), (

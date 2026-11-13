@@ -276,11 +276,11 @@ def test_continuity_is_binding_evidence_and_never_a_column_signature():
     identity = columns.individual_ids[0]
     original = columns.column_point(identity).detach().clone()
     frame = SituationFrame(1, torch.zeros(3, 12), torch.tensor([True, False, False]),
-                           91, None, when=torch.tensor([8., 9.]))
+                           91, None, time=torch.tensor([8., 9.]))
     located = columns.column_point(identity)
     torch.testing.assert_close(located, original)
     # Changing only the retained model-time column cannot enter composition.
-    frame = replace(frame, when=torch.tensor([99., 100.]))
+    frame = replace(frame, time=torch.tensor([99., 100.]))
     changed = columns.column_point(identity)
     torch.testing.assert_close(changed, located, rtol=0, atol=0)
     torch.testing.assert_close(columns.column_point(identity), original)

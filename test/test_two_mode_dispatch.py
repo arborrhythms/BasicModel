@@ -14,7 +14,7 @@ def test_old_modes_and_order_budgets_cannot_be_selected(tag,value):
         XMLConfig._apply_legacy_renames({'architecture':{tag:value}},'old-mode.xml')
 
 
-@pytest.mark.parametrize('name,grammatical',[('MM_xor_loopback.xml',True),('MM_xor.xml',False)])
+@pytest.mark.parametrize('name,grammatical',[('MM_xor_loopback.xml',True),('MM_text.xml',True)])
 def test_native_carrier_contract_replaces_traversal_switch(name,grammatical,eager_reading):
     from test_mm_xor import _fresh_model,_PROJECT
     model=_fresh_model(str(Path(_PROJECT)/'data'/name))[0]

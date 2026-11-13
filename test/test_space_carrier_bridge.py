@@ -141,7 +141,7 @@ def test_executor_advances_bound_space_version_and_invalidates_replicas():
 def test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners(tmp_path):
     import recon_bench
 
-    config = recon_bench._resolve_config("data/XOR_exact.xml")
+    config = recon_bench._resolve_config("data/XOR_symbols.xml")
     original, *_ = recon_bench._build_model(config)
     checkpoint = tmp_path / "legacy-ownership.ckpt"
     original.save_weights(checkpoint)

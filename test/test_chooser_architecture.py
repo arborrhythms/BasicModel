@@ -222,7 +222,7 @@ def test_real_model_xml_wires_both_chooser_architectures(monkeypatch, tmp_path):
     # Config loading mutates the shared object; give this test disposable data.
     for name in ("_data", "_sources", "_requirements"):
         monkeypatch.setattr(TheXMLConfig, name, copy.deepcopy(getattr(TheXMLConfig, name)))
-    document = ET.parse(_ROOT / "data/MM_xor.xml")
+    document = ET.parse(_ROOT / "data/MM_text.xml")
     architecture = document.find("architecture")
     for name, value in {
         "transformChooser": "mlp", "transformChooserHidden": 19,

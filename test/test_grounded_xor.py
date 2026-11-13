@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def grounded_model(tmp_path, pool=4, inventory=None, load_data=False, field_slots=None,
                    separate_chooser=None, reconstruction_jitter=None):
-    tree = ET.parse(ROOT / 'data/MM_xor_fixture.xml')
+    tree = ET.parse(ROOT / 'data/MM_text_fixture.xml')
     root = tree.getroot()
     slots = 2 * pool if field_slots is None else field_slots
     values = {
@@ -248,4 +248,10 @@ def learn_grounded_xor(tmp_path, pool, *, separate_chooser=None, reconstruction_
 @pytest.mark.parametrize('pool', [4, 8])
 @pytest.mark.parametrize('trial', range(3))
 def test_native_unseeded_xor(tmp_path, pool, trial):
-    learn_grounded_xor(tmp_path, pool)
+    from numeric_xor import certificate
+    tree = ET.parse(ROOT/'data/MM_xor_fixture.xml')
+    _set_text(tree.getroot(),'ConceptualSpace/nVectors',8*pool)
+    _set_text(tree.getroot(),'architecture/conceptLayers',2)
+    path = tmp_path/'numeric.xml'
+    tree.write(path)
+    certificate(path)

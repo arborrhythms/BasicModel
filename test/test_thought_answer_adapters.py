@@ -94,8 +94,12 @@ def test_subgoal_carries_the_typed_child_result_into_the_answer(monkeypatch):
     assert selected.result.value.semantic_id == "query"
     answers = thought_answer_meanings(selected)
     assert len(answers) == 1
-    assert answers[0].role_mask.tolist() == [True, True, True]
-    torch.testing.assert_close(answers[0].roles, selected.meaning.roles)
+    # A referent question realizes the bound variable; its full relation
+    # remains in the checked child proof (item 1.8 §3.10 / D5).
+    assert selected.meaning.role_mask.tolist() == [True, True, True]
+    assert answers[0].role_mask.tolist() == [True, False, False]
+    assert answers[0].role_refs[0] == selected.meaning.role_refs[0]
+    torch.testing.assert_close(answers[0].roles[0], selected.meaning.roles[0])
     assert answers[0].scope == inner.scope
     stored = ThoughtResult.from_checkpoint(selected.result.checkpoint())
     assert isinstance(stored.value, ThoughtResult)
@@ -157,7 +161,7 @@ def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch
     def generate(idea, **kwargs):
         model._adapter_words = idea
         return SimpleNamespace(words=idea, truncated=torch.zeros(len(idea), dtype=torch.bool),
-            field=idea, texts=lambda surface: ())
+            field=idea, realization_field=None, texts=lambda surface: ())
     model.generate = generate
     model.reverse = lambda carrier, *, field: SimpleNamespace(
         materialize=lambda: field, _reconstruction_percepts=field)

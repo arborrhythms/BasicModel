@@ -29,9 +29,11 @@ def test_closing_audit_survives_bank_changes_and_checkpoint(monkeypatch, relativ
     torch.testing.assert_close(pair['residual'], target-logits.sigmoid())
     assert pair['source_occurrences'] == (f.store.occurrence_of(source),)
     assert pair['surprise'] == pytest.approx(comparison.surprise)
-    # The effective pair, lexical operator and grammar operation columns
-    # are preallocated beside the original tagged references and percept.
-    assert len(f.store.parts.columns) == 11
+    # The effective pair is a rebuilt cache; the retired percept and
+    # store-order columns are absent from the two-table layout.
+    assert f.store.parts.columns == ('refs', 'ref_kinds', 'truth_plus',
+        'truth_minus', 'access_count', 'surprise', 'sentence_reference',
+        'operator_reference', 'operation_seat')
     # The mutable current bank is not the historical target's owner.
     with torch.no_grad():
         f.cs.similarity_codebook.W.fill_(.25)

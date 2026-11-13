@@ -68,7 +68,7 @@ def subintervals(onset, rank, count):
 
 
 def age_band(model, band):
-    """A learned reader sees elapsed time, never the phase of a stamp."""
+    """A learned reader sees elapsed time, never the phase of a stored time."""
     occupied = band.ne(0).any(-1)
     age = model.when_time.to(band.device) - model.when_encoding.decode_index(band)
     return torch.where(occupied[..., None], model.when_encoding.encode(age).to(band), 0.)
@@ -87,7 +87,7 @@ def relative_to(band, now):
 def difference(clock, band):
     """A composition reads elapsed time as a departure from the present.
 
-    Stamps stay on the shared ladder. The learned content mixer receives
+    Times stay on the shared ladder. The learned content mixer receives
     differences from its zero-age band, so the current tick contributes no
     constant content and changing the clock's origin cannot change a read.
     """
@@ -106,7 +106,7 @@ def relative_idea(model, idea):
                       idea[..., start+4:]), -1)
 
 
-def stamp(store):
+def next_time(store):
     source = getattr(store, '_model_present', None)
     tick = int(store.model_clock) if source is None else int(source())
     if not 0 <= tick <= HORIZON:
@@ -115,20 +115,21 @@ def stamp(store):
     return encoder().encode(tick).to(store.slots)
 
 
-def read_stamp(store, index):
+def read_time(store, index):
     if isinstance(index, tuple):
-        return store.parts.percept[int(index[1]), 4:]
+        row = store.index_of_row(int(store.parts.sentence_reference[int(index[1])]))
+        return store.slots.new_zeros(4) if row is None else read_time(store,row)
     if store.when_start is None:
         return store.slots.new_zeros(4)
     return store.slots[int(index), store.when_start:store.when_start+4]
 
 
-def write_stamp(store, index, value):
-    band = read_stamp(store, index)
+def write_time(store, index, value):
+    band = read_time(store, index)
     if value is False or value is None:
         band.zero_()
     else:
         value = torch.as_tensor(value, device=band.device, dtype=band.dtype)
         if value.shape != (4,) or not bool(torch.isfinite(value).all()):
-            raise ValueError('percept time requires four finite coordinates')
+            raise ValueError('entry time requires four finite coordinates')
         band.copy_(value)

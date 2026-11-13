@@ -37,8 +37,8 @@ def test_sigma_reads_same_order_conjunction_and_lower_order_parts():
     positive[:3] = torch.tensor([[1., 1., 0., 0.], [0., 1., 0., 1.], [0., 0., 1., 0.]])
     a0 = _evidence(positive, 1 - positive)
     _, a = _field_forward(cs, a0, torch.randn(64, 8))
-    torch.testing.assert_close(a[p, :, 0, 0], torch.tensor([1., 1., 1., 0.]), atol=3e-6, rtol=0)
-    torch.testing.assert_close(a[u, :, 0, 0], torch.tensor([1., 1., 1., 0.]), atol=3e-6, rtol=0)
+    torch.testing.assert_close(a[p, :, 0, 0], torch.tensor([1., 0., 0., 0.]), atol=3e-6, rtol=0)
+    torch.testing.assert_close(a[u, :, 0, 0], torch.tensor([1., 0., 1., 0.]), atol=3e-6, rtol=0)
 
 
 def test_unwritten_alternative_receives_credit_from_present_witness():

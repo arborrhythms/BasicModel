@@ -6,6 +6,16 @@ import torch
 from test_review13_subspaces import fixture
 
 
+def descendant_measurement(owner, occupations, parent='lift'):
+    """Measure one descendant from the kept parent relation, without a stage gate."""
+    from TrustGates import TrustGates
+    gates = TrustGates.__new__(TrustGates)
+    gates.names = ('surface',)
+    gates.exempt = frozenset()
+    gates.parents = {'surface': {parent}}
+    return gates.measurements(owner, occupations)['surface']
+
+
 def test_formal_arguments_are_prebuilt_zero_radius_concepts_above_words():
     cs, bank, _, alloc = fixture(meaning_pairs=4)
     names = ('lift_argin1', 'lift_argin2', 'lift_argout1')
@@ -147,7 +157,7 @@ def test_empty_argument_views_supply_no_operation_authority_or_gate_readiness(mo
     assert speech.operation('lift')['uses'] == 3
     from ConceptTrust import positive_length
     assert positive_length(cs, speech.seats['lift'].concept) == 0.
-    assert TrustGates.measurements(cs, speech)['clause'] == 0.
+    assert descendant_measurement(cs, speech) == 0.
 
 
 @pytest.mark.parametrize('formal', [False, True])
@@ -281,7 +291,7 @@ def test_revised_separability_evidence_and_contiguous_classes():
         expected=-math.expm1(-view/bank.trust.trust_views)
         assert [v['d_j'] for v in result['argument_measurements'].values()] == [1.,1.]
         assert result['definiteness'] == pytest.approx((expected,expected))
-        assert TrustGates.measurements(cs,speech)['clause'] == pytest.approx(expected)
+        assert descendant_measurement(cs,speech) == pytest.approx(expected)
         assert (expected >= .75) == (view == 5)
     speech.add(a,'verb_argin1');refresh(cs)
     assert speech.operation('lift')['argument_measurements']['lift_argin1']['d_j']==1.
@@ -292,7 +302,7 @@ def test_revised_separability_evidence_and_contiguous_classes():
     speech.add(b,'lift_argin1')
     result=speech.operation('lift')
     assert result['argument_measurements']['lift_argin1']['d_j'] < 1.
-    assert TrustGates.measurements(cs,speech)['clause'] < .75
+    assert descendant_measurement(cs,speech) < .75
 
 
 def test_revised_fit_is_coverage_and_radius_is_commitment():
@@ -360,7 +370,7 @@ def test_revised_form_only_operation_waits_for_seat_authority():
     speech.observe_use('lift',((a,),(b,)))
     from ConceptTrust import positive_length
     assert positive_length(cs, speech.seats['lift'].concept) == 0.
-    assert TrustGates.measurements(cs,speech)['clause'] is None
+    assert descendant_measurement(cs,speech) is None
     alloc.parts.configure_operations(speech)
     row=alloc.parts.add(a,b,truth_plus=.8,truth_minus=.3,operation_seat=speech.seats['lift'].concept)
     torch.testing.assert_close(torch.stack(alloc.parts.evidence(row)), torch.zeros(2))

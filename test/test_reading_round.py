@@ -512,7 +512,6 @@ def symbol_interpretation(monkeypatch):
     configure = OperationSelectionLayer.configure_arguments
     def configured(layer, *args, **kwargs):
         configure(layer, *args, **kwargs)
-        layer.set_stage_menu(('STOP', 'interpret', 'union'))
     monkeypatch.setattr(OperationSelectionLayer, 'configure_arguments', configured)
 
 

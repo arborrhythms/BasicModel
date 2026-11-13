@@ -23,7 +23,7 @@ def test_inputspace_forward_triggers_ensure_microbatch():
     """InputSpace.forward in AR mode calls ensure_microbatch(B, K) on symbolSpace."""
     from data import TheData
     from Models import BaseModel
-    config = str(_PROJECT / "data" / "MM_xor.xml")
+    config = str(_PROJECT / "data" / "MM_text.xml")
     TheData.load("xor")
 
     model, _ = BaseModel.from_config(config, data=TheData)
@@ -85,7 +85,7 @@ def test_ensure_microbatch_method_explicit_BK():
     discourse to B."""
     from data import TheData
     from Models import BaseModel
-    config = str(_PROJECT / "data" / "MM_xor.xml")
+    config = str(_PROJECT / "data" / "MM_text.xml")
     TheData.load("xor")
 
     model, _ = BaseModel.from_config(config, data=TheData)
@@ -114,7 +114,7 @@ def test_sentence_completed_survives_K_change():
     """
     from data import TheData
     from Models import BaseModel
-    config = str(_PROJECT / "data" / "MM_xor.xml")
+    config = str(_PROJECT / "data" / "MM_text.xml")
     TheData.load("xor")
 
     model, _ = BaseModel.from_config(config, data=TheData)

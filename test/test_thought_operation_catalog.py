@@ -826,6 +826,8 @@ def test_canonical_thought_executors_use_only_their_named_capability_views():
         def bind_reference(self, meaning, role, **limits):
             return dict(value=meaning, meaning=meaning, binding_role=role,
                         support_true=0., support_false=0.)
+        def query(self, meaning, **limits):
+            return dict(value=None, frames=(), witnesses=(), support_true=0., support_false=0.)
         def best_match(self, meaning, **limits):
             return dict(value=None, frames=(), witnesses=(), support_true=0., support_false=0.)
         def truth_evidence(self, meaning, **limits):

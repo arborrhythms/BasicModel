@@ -18,7 +18,7 @@ import pytest
 from data import TheData
 from Models import BaseModel
 
-_CONFIG_PATH = str(_project / "data" / "MM_xor.xml")
+_CONFIG_PATH = str(_project / "data" / "MM_text.xml")
 
 
 def _xor_input():
@@ -80,7 +80,14 @@ def test_serial_cache_populated_by_cold_forward():
     m = _build(serial_mode=True)
     ps = m.perceptualSpace
     assert ps.subspace.serial_cache.get(id(ps)) is None
-    m.forward(_xor_input())
+    # The field/vector grammar now owns full-model dispatch (§3.1).
+    # Exercise this perceptual optimization at its own input boundary.
+    m._lex_embed_stem(_xor_input())
+    from Spaces import SubSpace
+    event = m.inputSpace._ar_embedded_N
+    upstream = SubSpace.from_tensor(event, inputShape=event.shape[1:], outputShape=event.shape[1:])
+    upstream.stem_embedded = True
+    ps.forward(upstream)
     # Either cold populated cache, or nothing flowed (would mean the
     # upstream subspace was empty and we never reached the cache write).
     assert ps.subspace.serial_cache.get(id(ps)) is not None, (
@@ -91,7 +98,12 @@ def test_serial_cache_cleared_by_reset():
     """Reset() clears subspace.serial_cache so the next forward is cold."""
     m = _build(serial_mode=True)
     ps = m.perceptualSpace
-    m.forward(_xor_input())
+    m._lex_embed_stem(_xor_input())
+    from Spaces import SubSpace
+    event = m.inputSpace._ar_embedded_N
+    upstream = SubSpace.from_tensor(event, inputShape=event.shape[1:], outputShape=event.shape[1:])
+    upstream.stem_embedded = True
+    ps.forward(upstream)
     assert ps.subspace.serial_cache.get(id(ps)) is not None
     ps.Reset()
     assert ps.subspace.serial_cache.get(id(ps)) is None

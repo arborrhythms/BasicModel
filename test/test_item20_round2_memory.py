@@ -9,7 +9,7 @@ from checkpoint_migrations import checkpoint_schema, migrate_wholespace_checkpoi
 
 
 @pytest.mark.parametrize('configuration', ['model.xml',
-    pytest.param('BasicModel.xml', marks=pytest.mark.large_memory), 'MM_xor_fixture.xml'])
+    pytest.param('BasicModel.xml', marks=pytest.mark.large_memory), 'MM_text_fixture.xml'])
 def test_one_whole_inventory_on_every_configuration(configuration):
     from test_conceptual_recurrence import _build
     from Spaces import WholeSpace

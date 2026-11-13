@@ -582,7 +582,7 @@ part, implies or operator. The writer neither needs nor stores a program.
 [observation writer](../bin/Models.py).
 
 *Added 2026-11-11 (item 2.0 round 7, accepted 2026-11-11).* A sentence's
-row is stamped with its sentence's tick of model time, and beside it sits the
+row is written with its sentence's model time, and beside it sits the
 sentence's episodic entry: up to `episodicPercepts` basic percepts of the open
 attention pass, each with both evidence poles and the `.where` bracket of its
 strongest reading (`LTM0.episodic_percepts`, `episodic_poles`,
@@ -652,8 +652,8 @@ and reset at a document boundary, or after a stateful inference request.
 Default occupancy thresholds are 90% to trigger and 70% to target, with at
 least 256 completed presentations between passes. Value combines absolute
 `source_trust`, surprise/one-step utility, luminosity contribution and a bounded
-age penalty. Age is model time since the row's `.when` stamp (`history_age`),
-the youngest stamp for a row reached through several parents; it is not time
+age penalty. Age is model time since the row's `time` (`history_age`),
+the youngest time for a row reached through several parents; it is not time
 since use.
 Both profiles use it under pressure; neither runs free-standing age decay.
 
@@ -944,9 +944,18 @@ empty WHERE and the restore on trial rollback are unchanged
 
 ### Episodic concepts supersede percept entries (2026-11-11)
 
-The [whole-path round](plans/2026-11-11-one-pair-per-stage.md) item 16 changes the payload beside a sentence's LTM0 row: `episodicConcepts` order-zero concepts from the open attention pass, in reading order, each with one signed value (for minus against). The largest magnitudes are retained when the capacity is exceeded; zero signed readings are absent. Columns are `episodic_concepts` and `episodic_values`; no place or pole pair is stored. The row's stamp supplies time, and recall lays out readings by their concepts' owned surface lengths with one separator between. A missing surface gives an empty extent and is counted. The field and semantic truth columns retain both poles. Time-only recall publishes the conceptual field directly and empties that stream's present percept readings until the next open pass. Other streams remain unchanged. A stale concept ID is skipped and counted. `reverse` reads the episode without compose or generate. Anchors, re-witnesses, forgetting and epoch reset keep their round-7 contracts. Schema 16 reports removal of older percept, pole and place columns and starts with empty entries. This incorporates Alec's second mid-round amendment (§8.2) after the initial concept-entry implementation.
+The [whole-path round](plans/2026-11-11-one-pair-per-stage.md) item 16 changes the payload beside a sentence's LTM0 row: `episodicConcepts` order-zero concepts from the open attention pass, in reading order, each with one signed value (for minus against). The largest magnitudes are retained when the capacity is exceeded; zero signed readings are absent. Columns are `episodic_concepts` and `episodic_values`; no place or pole pair is stored. The row's `time` supplies recall time, and recall lays out readings by their concepts' owned surface lengths with one separator between. A missing surface gives an empty extent and is counted. The field and semantic truth columns retain both poles. Time-only recall publishes the conceptual field directly and empties that stream's present percept readings until the next open pass. Other streams remain unchanged. A stale concept ID is skipped and counted. `reverse` reads the episode without compose or generate. Anchors, re-witnesses, forgetting and epoch reset keep their round-7 contracts. Schema 16 reports removal of older percept, pole and place columns and starts with empty entries. This incorporates Alec's second mid-round amendment (§8.2) after the initial concept-entry implementation.
 
 
 ### Thought content growth within the sentence bound (2026-11-11)
 
 Alec authorized principled resizing during the [whole-path return](plans/2026-11-11-one-pair-per-stage.md#99-remaining-thought-structure-capacity-decision). The number of focus chunks stays fixed. A chunk's shared STM0/STM1 content store begins with `4 * stmCapacity` rows and grows only when its full typed meaning needs more. The exact row requirement is the sum of one head plus the occupied roles of each constituent; its pair links need one fewer seat. The maximum, fixed at model construction, is `4 * (W + O)`, using the sentence's existing W leaves and O operator seats. Overflow beyond that ceiling remains an error. Reconstructing these transient buffers preserves the store owner; replacing a thought invalidates its old view, and trial rollback restores the saved owner generation and content size. Standalone stores without a sentence owner retain their original construction bound.
+
+
+## Item 1.8 amendment (2026-11-12)
+
+LTM0 entries hold signed concept readings at each order declared by the allocator at construction. Each slot carries one lane; contradictory readings do not cancel. Recall gathers the question’s own content at the stored references and computes one window product, lane with lane, independently at each order. FieldLogic intersects the nonempty question orders; relevance ranks positive matches with newer rows first among ties. Only selected or explicitly addressed records enter the subsequent role match. No concept-to-row index or all-relation candidate scan remains. A checkpoint with the old entry shape loads at order zero with a warning.
+
+An LTM0 entry’s write time is `time`, read through `entry_time` and `RowTime.read_time`; `when_start` still locates the percept band. Percept and chunk `.when` are unchanged. Relation ages and conditional ordering read endpoint entry times through `sentence_reference`; relation rows hold no time. The recall time-result is deferred. Each store declares caches and retained auxiliary fields in `Memory.py`. Rebuilt indexes, dependency order and effective evidence are not saved. Promoted recurrence prototypes remain retained state because their original occurrences can be forgotten.
+
+Forgetting maintains indexed contrary similarities, coordinate coverage contributions and semantic dependencies at writes. Deletion releases those contributions and compaction preserves stable keys. The boundary pass reads cached values and sorts, without a row-by-row product. A bounded field candidate's recurrence statistics survive presentation reset until promotion; its old occurrence history does not. This is needed for repeated numeric presentations to promote their intersection.

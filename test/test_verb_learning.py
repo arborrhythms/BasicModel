@@ -124,7 +124,7 @@ def test_copular_join_is_kept_and_fires_the_previous_verb_teacher(monkeypatch):
     state=walk.apply(state,choice(property_value[None]),torch.stack((prior,property_value))[None],0)
     joined=value(state,512)[0]
     torch.testing.assert_close(joined,torch.maximum(prior,property_value))
-    changed = f.store.append_idea(joined, when=False, document_key='copular-observation')
+    changed = f.store.append_idea(joined, time=False, document_key='copular-observation')
     f.cs.mtm.bind(token, f.store.occurrence_of(changed), kind=None, when=3, value=joined)
     f.cs.mtm.record_link(token, f.store.occurrence_of(changed), None)
     errors = Error()

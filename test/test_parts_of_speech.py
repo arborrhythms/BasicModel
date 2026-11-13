@@ -46,14 +46,13 @@ def test_kept_readings_alone_supply_argument_views(tmp_path, monkeypatch, eager_
     import GrammarLessons
     model = _tiny_canonical_model(tmp_path, monkeypatch, batch_size=2, word_buckets='16', concept_meaning_width=8)
     model._tensor_peer_while_eager = True
-    model.languageSpace.language_layer.operation_layer.set_stage_menu(('STOP', 'lower', 'definite', 'intersection'))
     model.inputSpace.data.has_supervised_outputs = True
     model.inputSpace.data.train_input = ['a red cat', 'the blue dog']
     model.inputSpace.data.train_output = [torch.zeros(1),torch.zeros(1)]
     model.inputSpace.data.text_answers = {'train':['cat','dog']}
     monkeypatch.setattr(model.inputSpace.data, 'grammar_lessons', {'train': [
-        dict(text='a red cat', tree=['lower',0,['intersection',1,2]], waits=True),
-        dict(text='the blue dog', tree=['definite',0,['intersection',1,2]], waits=True)]}, raising=False)
+        dict(text='a red cat', tree=['lower',0,['conjunction',1,2]], waits=True),
+        dict(text='the blue dog', tree=['definite',0,['conjunction',1,2]], waits=True)]}, raising=False)
     parts = model.languageSpace.parts_of_speech
     events, lessons, initial = [], [], {}
     initial_views = {}
@@ -115,10 +114,12 @@ def test_kept_readings_alone_supply_argument_views(tmp_path, monkeypatch, eager_
                     node = ((positions[words[position]],), (words[position],))
                     stack.append(node); heads[node[0]]=node[1]
                 elif kind == 1:
-                    right,left=stack.pop(),stack.pop()
                     rule=model.languageSpace._compose_binary_rules[op]
+                    if rule.method_name == 'bind':
+                        continue  # Its second operand is a retained field, off this stack.
+                    right,left=stack.pop(),stack.pop()
                     role=getattr(rule,'head_role',0)
-                    carried = left[1]+right[1] if rule.method_name=='intersection' else (left,right)[role-1][1] if role else ()
+                    carried = left[1]+right[1] if rule.method_name=='conjunction' else (left,right)[role-1][1] if role else ()
                     node=(left[0]+right[0],carried)
                     stack.append(node);heads[node[0]]=node[1]
                 elif kind == 3:
@@ -149,8 +150,9 @@ def test_kept_readings_alone_supply_argument_views(tmp_path, monkeypatch, eager_
                 continue
             operation = (unary if kind == 2 else binary)[local]
             name = operation.surface_name or operation.method_name
-            if kind == 2:
-                at = len(stack)-1-position
+            field_bind = kind == 1 and operation.method_name == 'bind'
+            if kind == 2 or field_bind:
+                at = len(stack)-1-(0 if field_bind else position)
                 operands = [stack[at]]
             else:
                 operands = stack[-2:]
@@ -161,7 +163,7 @@ def test_kept_readings_alone_supply_argument_views(tmp_path, monkeypatch, eager_
                 word for i, carried in enumerate(operands) if mask & (1 << i) for word in carried)]
             for i, carried in enumerate(results):
                 expected_views[f'{name}_argout{i+1}'] += len(carried)
-            if kind == 2:
+            if kind == 2 or field_bind:
                 stack[at] = results[0]
             else:
                 stack[-2:] = results
@@ -309,11 +311,11 @@ def test_chooser_adds_input_similarities_directly_and_carries_words(chooser):
     torch.testing.assert_close(compiled(probabilities),logits,rtol=0,atol=0)
 
 
-def test_stage_menu_masks_every_undeclared_operation(chooser):
+def test_grammar_chooser_has_no_stage_menu(chooser):
     layer, parts = chooser
-    layer.set_stage_menu(('STOP','lower'))
     logits = layer(torch.randn(1,2,4),slots=2,occupation=torch.ones(1,2,len(parts.arguments)))[2]['logits']
-    assert torch.isfinite(logits).tolist() == [[True,False,False,False,True]]
+    assert not hasattr(layer,"stage_menu") and not hasattr(layer,"set_stage_menu")
+    assert torch.isfinite(logits).all()
     from np_corpus import corpus, load, DEST
     rows = corpus()
     assert len(rows)==56 and sum(row[0]=='train' for row in rows)==42

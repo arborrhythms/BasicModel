@@ -385,7 +385,7 @@ def test_execute_superposed_independent_then_weighted_sum():
 # Contract F: grammar identity/location codebook
 # ---------------------------------------------------------------------------
 
-_CONFIG_PATH = str(_project / "data" / "MM_xor.xml")
+_CONFIG_PATH = str(_project / "data" / "MM_text.xml")
 
 
 def test_rule_codebook_class_basics():

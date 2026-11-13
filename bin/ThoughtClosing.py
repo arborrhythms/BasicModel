@@ -76,6 +76,7 @@ def closing_question(meaning, clause, parsed=None, program=None, *, store=None, 
                 refs[role] = None
         data = bindings(source)
         data['_forward_references'] = bindings(clause.meaning).get('_forward_references', ())
+        data['_reference_sites'] = bindings(clause.meaning).get('_reference_sites', ())
         source = replace(source, role_refs=tuple(refs), bindings=data)
     forms = () if program is None else (program.lexical_forms or ())
     lexical = any(isinstance(word, (str, bytes)) and word for word in forms)

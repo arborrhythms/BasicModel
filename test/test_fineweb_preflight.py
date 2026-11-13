@@ -118,13 +118,23 @@ def test_document_splits_do_not_leak_and_controls_reach_shards(
     assert d.has_supervised_outputs is False
 
 
-def test_checkpoint_restores_optimizer_counters_and_rng(tmp_path):
+@pytest.fixture
+def checkpoint_field_configuration():
+    from reading_fixtures import field_text_config
+    # Keep the original parallel field pipeline for this resume contract;
+    # item 1.8 §3.1 now requires its operations to declare that path.
+    with field_text_config(examine=False) as path:
+        yield path
+
+
+def test_checkpoint_restores_optimizer_counters_and_rng(
+        tmp_path, checkpoint_field_configuration):
     import Language
     import Models
     from util import init_config, init_device
 
     init_device("cpu")
-    cfg = PROJECT / "data" / "MM_xor.xml"
+    cfg = checkpoint_field_configuration
     init_config(path=str(cfg), defaults_path=str(PROJECT / "data" / "model.xml"))
     Language.TheGrammar._configured = False
     Models.TheData.load("xor")

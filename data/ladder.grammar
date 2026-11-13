@@ -95,8 +95,8 @@
       <rule operands="field">F = divide.forward(F)</rule>
       <rule operands="field">F = descend.forward(F)</rule>
       <rule operands="field">F = gloss.forward(F)</rule>
-      <rule operands="field">F = and.forward(F)</rule>
-      <rule operands="field">F = or.forward(F)</rule>
+      <rule operands="field">F = intersection.forward(F)</rule>
+      <rule operands="field">F = union.forward(F)</rule>
 
       <!-- Relations R (the relation family): part / whole / equal are
            COMPOSITIONAL operators, i.e. Relation(RI_1, RI_2) over two ideas,

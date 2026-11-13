@@ -3,6 +3,13 @@ import pytest
 import torch
 
 
+def _field_model():
+    from reading_fixtures import field_text_config
+    from test_mm_xor import _fresh_model
+    with field_text_config(examine=True) as config:
+        return _fresh_model(config)
+
+
 def test_word_extent_is_letters_and_numeric_percepts_remain_separate():
     import Meronomy
     raw=b'abc123 cat-dog 01 A1B'
@@ -59,18 +66,18 @@ def test_pinned_masks_known_word_never_descends_and_wide_never_glosses():
     assert mask.tolist() == [[[False,False,True],[True,True,False],[False,True,False],[False,True,False]]]
 
 
-def test_normal_field_answer_reaches_every_binding_and_keeps_first_word():
+def test_normal_field_answer_reaches_final_field_and_keeps_first_word():
     from test_mm_xor import _fresh_model
-    model,_,_= _fresh_model()
+    model,_,_= _field_model()
     model.train()
     value=model.inputSpace.prepInput(['hello world','hello there','loving world','loving there'])
     _,_,output,_=model.forward(value)
-    output.square().sum().backward()
-    for space in model.conceptualSpaces:
-        parameters=list(space.combine.parameters())
-        assert any(p.grad is not None and p.grad.abs().sum()>0 for p in parameters), [(name,p.requires_grad,None if p.grad is None else p.grad.abs().sum().item()) for name,p in space.combine.named_parameters()]
-    carrier=model._combine_last_cs_sub.materialize()
-    assert (carrier[:,0].norm(dim=-1)>0).all()
+    # §3.9 replaces the root-state reader with the final field. Its linear
+    # weights start at zero, so use a nonzero residual at that initialization.
+    (output-1.).square().sum().backward()
+    assert model.outputSpace.field_readout.weight.grad.abs().sum() > 0
+    field=model._sentence_open_fields[0]
+    assert field.evidence[:,:,0].abs().sum((0,2)).gt(0).all()
 
 
 def test_narrowing_uses_the_shared_operation_chooser_and_compiles():
@@ -191,7 +198,7 @@ def test_optional_field_choices_cannot_exhaust_the_word_completion_deadline():
 
 def test_normal_model_opens_narrows_and_scores_word_expectation():
     from test_mm_xor import _fresh_model
-    model,_,_ = _fresh_model()
+    model,_,_ = _field_model()
     model.train()
     value=model.inputSpace.prepInput(['hello world','hello there','loving world','loving there'])
     model.forward(value)
@@ -332,7 +339,7 @@ def test_fixed_word_storage_survives_projection():
 def test_normal_narrowing_reads_native_poles(monkeypatch):
     from test_mm_xor import _fresh_model
     import ModelAttention
-    model, _, _ = _fresh_model()
+    model, _, _ = _field_model()
     model.eval()
     value = model.inputSpace.prepInput(['hello world', 'hello there', 'loving world', 'loving there'])
     with torch.no_grad(): model.forward(value)
@@ -360,7 +367,7 @@ def test_prior_thought_reserves_the_input_allowance():
 def test_normal_input_stages_greedy_and_defers_comparison_to_sentence(monkeypatch):
  from test_mm_xor import _fresh_model
  import ModelAttention
- model,_,_=_fresh_model(); model.train()
+ model,_,_=_fresh_model('data/MM_text.xml'); model.train()
  calls=[]; versions=[]
  original=ModelAttention.narrow_words
  def traced(*args,**kwargs):
@@ -415,7 +422,7 @@ def test_divide_isolates_impure_first_word_and_reaches_pure_neighbors():
 def test_native_pole_read_omits_padding_without_changing_evidence(monkeypatch):
     from test_mm_xor import _fresh_model
     from ModelAttention import native_word_poles
-    model, _, _ = _fresh_model()
+    model, _, _ = _field_model()
     model.eval()
     with torch.no_grad():
         model._lex_embed_stem(model.inputSpace.prepInput(['hello world']))
@@ -472,34 +479,34 @@ def test_inference_reuses_constant_padding_forecast_without_changing_results():
 def test_input_priming_reads_live_word_extent_without_changing_prior(monkeypatch):
     from test_mm_xor import _fresh_model
     from Attention import BracketKeys
-    model, _, _ = _fresh_model()
+    model, _, _ = _field_model()
     model.eval()
     original = BracketKeys._codebook_retrieval_prior
     calls = []
     def bounded(keys, *args):
         calls.append(keys.shape[1])
-        assert keys.shape[1] == 2, 'padding expanded the priming lookup'
+        assert keys.shape[1] == 3, 'padding expanded the priming lookup'
         actual = original(keys, *args)
         reference = original(torch.nn.functional.pad(keys, (0, 0, 0, 7)), *args)
-        torch.testing.assert_close(actual, reference[:, :2], rtol=2e-6, atol=2e-7)  # GEMM reduction width rounding
-        assert not reference[:, 2:].count_nonzero()
+        torch.testing.assert_close(actual, reference[:, :3], rtol=2e-6, atol=2e-7)  # GEMM reduction width rounding
+        assert not reference[:, 3:].count_nonzero()
         return actual
     monkeypatch.setattr(BracketKeys, '_codebook_retrieval_prior', staticmethod(bounded))
     with torch.no_grad():
         model._lex_embed_stem(model.inputSpace.prepInput(['hello world', 'hello']))
-    assert calls == [2]
+    assert calls == [3]
 
 
 def test_normal_narrowing_omits_padding_and_preserves_the_complete_walk(monkeypatch):
     from test_mm_xor import _fresh_model
     import ModelAttention
-    model, _, _ = _fresh_model()
+    model, _, _ = _fresh_model('data/MM_text.xml')
     model.eval()
     original = ModelAttention.narrow_words
     calls = []
     def bounded(chooser, keys, spans, known, **kwargs):
         calls.append(keys.shape[1])
-        assert keys.shape[1] == 2, 'padding multiplied the bracket work'
+        assert keys.shape[1] == 3, 'padding multiplied the bracket work'
         actual = original(chooser, keys, spans, known, **kwargs)
         padded = dict(kwargs)
         for name in ('identities', 'prior', 'poles'):
@@ -514,11 +521,11 @@ def test_normal_narrowing_omits_padding_and_preserves_the_complete_walk(monkeypa
         for before, after in zip(reference.table, actual.table):
             torch.testing.assert_close(after, before)
         torch.testing.assert_close(actual.actions, reference.actions)
-        torch.testing.assert_close(actual.values, reference.values[:, :2])
-        torch.testing.assert_close(actual.accepted, reference.accepted[:, :2])
+        torch.testing.assert_close(actual.values, reference.values[:, :3])
+        torch.testing.assert_close(actual.accepted, reference.accepted[:, :3])
         return actual
     monkeypatch.setattr(ModelAttention, 'narrow_words', bounded)
     with torch.no_grad():
         model._lex_embed_stem(model.inputSpace.prepInput(['hello world', 'hello']))
-    assert calls == [2]
+    assert calls == [3]
     assert model._attention_words.values.shape[:2] == model.inputSpace._word_active_mask.shape

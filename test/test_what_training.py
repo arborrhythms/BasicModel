@@ -190,7 +190,7 @@ def _same_input_two_questions(m):
 
 @pytest.fixture(scope="module")
 def synth_config_path(tmp_path_factory):
-    src = (_DATA / "MM_xor.xml").read_text()
+    src = (_DATA / "MM_text.xml").read_text()
     patched = src.replace(
         "<architecture>",
         "<architecture>\n    <answerSynthesis>true</answerSynthesis>", 1)
@@ -276,7 +276,7 @@ def synth_discourse_config_path(tmp_path_factory):
     # row placed in ONE document so past/future targets are answerable.
     # Prediction observes native bracket closings; the non-bracket observer
     # was retired with Item 4.
-    src = (_DATA / "MM_xor.xml").read_text()
+    src = (_DATA / "MM_text.xml").read_text()
     patched = src.replace(
         "<architecture>",
         "<architecture>\n    <answerSynthesis>true</answerSynthesis>\n"

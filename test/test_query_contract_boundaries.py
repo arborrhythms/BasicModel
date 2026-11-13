@@ -24,9 +24,10 @@ def test_query_limits_native_content_reads_and_reports_incompleteness(monkeypatc
         rows.append(index)
         return original(index)
     monkeypatch.setattr(store, 'row', read)
-    result = _signature('query', 'argin1').invoke(
-        _context(_cs(), store=store, max_records=1), replace(meaning))
-    assert rows == [1, 0]  # newest-first scoring window, independent of returned K
+    context = replace(_context(_cs(), store=store, max_records=1),
+        operand_references=tuple(('argin1', store.occurrence_of(i)) for i in (1, 0)))
+    result = _signature('query', 'argin1').invoke(context, replace(meaning))
+    assert rows == [1, 0]  # Given candidates are scored independently of returned K.
     assert result['value'][0]['trust'] == pytest.approx(0.2)
     assert result['records_scanned'] == 2
     assert len(result['value']) == 1 and not result['incomplete']
@@ -58,7 +59,8 @@ def test_unified_query_returns_complete_record_and_does_not_admit_observation():
     meaning = ConceptualMeaning.from_description(torch.eye(8)[0])
     roles = meaning.roles
     row = store.append_meaning(meaning, kind='observation', trust=0.9, sentence_index=len(store))
-    context = _context(_cs(), store=store)
+    context = replace(_context(_cs(), store=store),
+        operand_references=(('argin1', store.occurrence_of(row)),))
     found = _signature('query', 'argin1').invoke(context, replace(meaning))
     assert found['result_kind'] == 'set'
     assert found['evidence_kind'] == 'retrieval'

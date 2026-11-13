@@ -18,7 +18,10 @@ def kept_close(method):
         try:
             from ConceptTrust import defer_word_views
             with defer_word_views(owner):
-                return method(model, state, sid, active, *args, **kwargs)
+                result = method(model, state, sid, active, *args, **kwargs)
+                from ScalarPercepts import commit
+                commit(model, sid, active)
+                return result
         finally:
             owner._coverage_deferred = previous
             owner._mtm_active_streams = streams
@@ -259,6 +262,21 @@ def observe_field(owner, field=None, *, active_streams=None):
 
 
 @torch.no_grad()
+def observe_intersection(owner, lanes, *, batch=0, examined=False):
+    """Recurrent concept lanes, proposed by the glance or an intersection act."""
+    phases = getattr(owner._model, 'grammar_phases', None)
+    if phases is not None and phases.examination and not examined:
+        return None
+    lanes = tuple(sorted(set((int(row), int(pole)) for row, pole in lanes)))
+    if len(lanes) < 2:
+        return None
+    if any(pole not in (0, 1) or owner._row_order(row) != 0 for row, pole in lanes):
+        raise ValueError('an intersection requires order-zero concept lanes')
+    return observe_candidate(owner, 0, {row: 1. for row, _ in lanes}, batch=batch,
+                             literal=('field', lanes), literal_key=('field', lanes))
+
+
+@torch.no_grad()
 def observe_native_cases(owner, batch, support):
     model = getattr(owner, '_model', None)
     ps = getattr(model, 'perceptualSpace', None)
@@ -383,7 +401,7 @@ def class_members(owner, cid):
 
 
 @torch.no_grad()
-def cover_members(owner, cid, members):
+def cover_members(owner, cid, members, *, conjunctive=False):
     """The same sigma, location and form initialization for every raise."""
     from MemoryConsolidation import _fold
     if cid == NULL_CONCEPT:
@@ -395,7 +413,8 @@ def cover_members(owner, cid, members):
     destination = owner._csw_concept_row(order, cid)
     if destination is None:
         raise RuntimeError('class coverage exceeds the constructed inventory')
-    owner._populate_concept_weights(cid, witness=(members, ()))
+    if not conjunctive:
+        owner._populate_concept_weights(cid, witness=(members, ()))
     derived = getattr(owner.similarity_codebook, 'mereology', None)
     if derived is not None:
         derived.placement_derived[destination] = True
@@ -403,7 +422,8 @@ def cover_members(owner, cid, members):
         owner._priming_edge_revision = None
         if not getattr(owner, '_coverage_deferred', False):
             derived.derive_class_placements()
-    value = _fold(owner, None, list(members), members=members)
+    value = (owner.similarity_codebook.lookup_rows(list(members)).amax(0) if conjunctive
+             else _fold(owner, None, list(members), members=members))
     if value is not None:
         width = len(value) if derived is None else derived.percept_width
         owner.similarity_codebook.W[destination, :width].copy_(value[:width])
@@ -485,7 +505,7 @@ def commit_read_words(owner, reading, *, batch, document, position, clause=None,
             # This is a retained unknown referent, not an asserted answer.
             # Use the existing open-question storage contract and evidence.
             row = store.append_meaning(meaning, kind='question', evidence=(0., 0.),
-                order=order, stream=batch, when=False,
+                order=order, stream=batch, time=False,
                 document_key=('reading', document, word, index), sentence_index=position,
                 content_key=native_content_key(meaning))
         occurrence = store.occurrence_of(row)
@@ -755,7 +775,7 @@ def _resolve_null_token(owner, key, left, right, other_word):
         if (member, (SYMBOL,target)) != (left,right):
             from MemoryPaths import membership
             membership(owner, address, target, evidence=(float(alloc.parts.truth_plus[row]),
-                float(alloc.parts.truth_minus[row])), when=alloc.parts.percept[row,4:])
+                float(alloc.parts.truth_minus[row])))
     alloc.settle(target)
     return True
 
@@ -790,6 +810,9 @@ def promote_candidates(owner):
         return []
     result = _finish_pending_signs(owner)
     for key, entry in tuple(pool.entries.items()):
+        literal = entry.refinement.get('literal')
+        if 'defining_word' in entry.refinement:
+            continue  # The named percept-collection writer counts these views.
         if entry.kind == NULL_CONCEPT:
             continue
         if entry.symbol is not None or 'promoted_percept' in entry.refinement:
@@ -875,7 +898,7 @@ def promote_candidates(owner):
             # A literal conjunction stays in the perceptual order. Its field
             # support is initialization evidence, not a higher-order member.
             alloc.identity[cid] = (None, None)
-            if literal is not None:
+            if literal is not None and literal[0] != 'field':
                 for pid in literal[1]:
                     alloc.add(cid, 'part', pid)
             # Field conjunction members are same-order form witnesses.
@@ -899,11 +922,14 @@ def promote_candidates(owner):
         pool.promote(key, cid)
         alloc.raised.add(cid)
         alloc.relate_idx['part-base', cid] = ('candidate', key[1])
-        cover_members(owner, cid, entry.support)
+        cover_members(owner, cid, entry.support, conjunctive=literal is not None and literal[0] == 'field')
         remember_candidate(owner, cid, entry.support,
             entry.refinement.get('literal_key', literal))
         if literal is not None:
-            if literal[0] == 'ps':
+            if literal[0] == 'field':
+                for member, pole in literal[1]:
+                    owner.add_concept_edge(row, member, 1., conjunctive=True, negated=bool(pole))
+            elif literal[0] == 'ps':
                 # The existing field-case curriculum witnesses an entire
                 # native run. Its parts/wholes become one basic percept at
                 # recurrence; no raw part columns enter its concept row.

@@ -94,7 +94,7 @@ def test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence(monkeypa
     code = _existing_row(cs, ref)
     append_content(store, meaning, kind='fact', trust=0.6)
     append_content(store, meaning, kind='fact', trust=-0.4)
-    # The window is scored first; only returned records charge the shared
+    # Given references are scored first; only returned records charge the shared
     # meter. Query dispatch spends one unit and leaves one returned record.
     read, original = [], store.row
 
@@ -107,7 +107,8 @@ def test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence(monkeypa
     reader = TruthGroundedReasoner(store=store)
     context = replace(_context(cs, store=store, work=meter),
         ltm=ThoughtLTMCapability(store=reader.reasoning_store,
-            equal=reader.equal, tau_id=reader.tau_id, primed=(code,)))
+            equal=reader.equal, tau_id=reader.tau_id, primed=(code,)),
+        operand_references=tuple(('argin1', store.occurrence_of(i)) for i in (1, 0)))
     from test_query_vp_boundaries import _signature
     result = _signature('query', 'argin1').invoke(
         context, replace(meaning))

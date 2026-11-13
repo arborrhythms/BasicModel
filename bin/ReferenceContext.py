@@ -57,7 +57,7 @@ class SituationFrame:
     row_id: int
     point: object
     order: int = 1
-    when: object = None
+    time: object = None
     symbol_ids: tuple = ()
     activations: tuple = ()
 
@@ -68,7 +68,7 @@ class SituationFrame:
     def detached(self):
         return replace(self, roles=self.roles.detach().clone(),
                        point=None if self.point is None else self.point.detach().clone(),
-                       when=None if self.when is None else self.when.detach().clone())
+                       time=None if self.time is None else self.time.detach().clone())
 
     @classmethod
     def from_row(cls, row):
@@ -82,7 +82,7 @@ class SituationFrame:
             roles[0] = point; occupied[0] = True
         return cls(int(occupied.sum()), roles.detach(),
                    occupied, row['row_id'], None if point is None else point.detach().clone(),
-                   order=int(row.get('order', -1)), when=row.get('when'))
+                   order=int(row.get('order', -1)), time=row.get('time'))
 
 
 class OrderReference(NamedTuple):

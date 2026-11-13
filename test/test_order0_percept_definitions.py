@@ -29,11 +29,14 @@ def test_order0_unions_alternative_percept_conjunctions(conceptual_pi):
     raw = torch.tensor([[65]])
     spans = torch.tensor([[[0, 1]]])
     result = cs.cs_read_memberships((raw, spans, primitive, raw, spans), spans)
-    # Each signed definition folds its witnessed memberships independently;
-    # a negative literal contributes to counterevidence, not 1-membership.
-    positive = torch.tensor([min(.25, .36 ** .5), min(.81 ** .5, .49)])
-    negative = torch.tensor([min(.81, .49 ** .5), min(.25 ** .5, .36)])
-    expected = torch.stack((positive.max(), negative.max()))
+    # Negative literals exchange lanes before the conjunctive fold. The
+    # against lane takes the greatest qualified counterevidence; the union
+    # of alternatives then takes the least of their against lanes (§3.2).
+    positive = torch.tensor([min(.25, .36 ** .5, 1-.81, (1-.49) ** .5),
+                             min(.81 ** .5, .49, (1-.25) ** .5, 1-.36)])
+    negative = torch.tensor([max(1-.25, 1-.36 ** .5, .81, 1-(1-.49) ** .5),
+                             max(1-.81 ** .5, 1-.49, 1-(1-.25) ** .5, .36)])
+    expected = torch.stack((positive.max(), negative.min()))
     torch.testing.assert_close(result[0, 0, 0], expected)
     # The alternative is an ordinary concept on the same row inventory.
     torch.testing.assert_close(result[1, 0, 0], torch.stack((positive[1], negative[1])))

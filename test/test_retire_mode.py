@@ -342,7 +342,8 @@ def test_silent_premise_keeps_full_trial_and_still_trains_output():
     for state in (full, lossy):
         registry = Error(row_mask=active)
         answer = BasicModel._sentence_numeric_error(model, state, 0, active,
-                                                   {'record': None}, registry=registry)
+                                                   {'record': None, 'answer_field': replace(model._numeric_field,
+                evidence=state[1][10][:, 0].reshape(2, 3, 2).permute(1, 0, 2)[:, :, None])}, registry=registry)
         raw.append(registry.total(objective='output'))
         answers.append(answer)
         # Both paths reconstruct equally; only their returned content differs.

@@ -167,8 +167,11 @@ def test_optimizer_moments_follow_surviving_edges_and_reused_code_seat_is_clean(
     optimizer.step()
     surviving_moment = optimizer.state[matrix.values]['exp_avg'][matrix._index[strong_row, 0]].clone()
     survivor_code_moment = optimizer.state[code]['exp_avg'][strong_row].clone()
-    model = SimpleNamespace(_optimizer=optimizer, _optimizer_leaves=lambda opt: [opt])
+    retired_output_rows = []
+    model = SimpleNamespace(_optimizer=optimizer, _optimizer_leaves=lambda opt: [opt],
+        outputSpace=SimpleNamespace(retire_field_row=retired_output_rows.append, field_readout=None))
     assert reclaim_concepts(cs, model=model)['retired'] == (weak,)
+    assert retired_output_rows == [weak_row]
     torch.testing.assert_close(optimizer.state[matrix.values]['exp_avg'][0], surviving_moment)
     torch.testing.assert_close(optimizer.state[code]['exp_avg'][strong_row], survivor_code_moment)
     assert not optimizer.state[code]['exp_avg'][weak_row].any()

@@ -45,6 +45,8 @@ def open_field(model, sid, a0):
     field = ConceptualField(owner._cs_field_concept_ids,
         F.pad(a0, (0, 0, 0, 0, 0, 0, 0, sum(owner._field_caps()) - len(a0))),
         owner._cs_field_where, owner._cs_field_when, None)
+    from ScalarPercepts import join
+    field = join(model,sid,field)
     model._sentence_open_fields[int(sid)] = field
     publish(model, field)
     return field
@@ -175,7 +177,8 @@ def reconstruct(model, record, errors, active, *, previous=None):
         return sum(term['weight'] * term.get('multiplier', 1.) * errors._value(term)
                    for name, term in errors._terms.items() if name.startswith(prefix + '.'))
     input_cost, zero_cost = rows('reconstruction_reverse'), rows('reconstruction_order_zero')
-    ideas = word_percepts(first, field, D)
+    # Placeless modalities participate in the field, not in the word ledger.
+    ideas = word_percepts(first, field, D)[:, :W]
     from Omission import target as omission_target
     targets = omission_target(model)
     raw = (model._staged_concepts_in if targets is None else targets['raw'])[:, 0]
@@ -209,7 +212,7 @@ def reconstruct(model, record, errors, active, *, previous=None):
             positions = torch.arange(hidden.shape[1], device=hidden.device)
             omitted = ((positions[None, None] >= field.where[..., :1]) &
                        (positions[None, None] < field.where[..., 1:]) & hidden[:, None]).any(-1)
-            valid = valid & ~omitted
+            valid = valid & ~omitted[:, :W]
         residual = (squared * valid[..., None]).sum((1, 2)) / (valid.sum(-1) * prior.shape[-1]).clamp_min(1)
         errors.error('reconstruction.free_percept', residual, 1., mask=active,
             weight=model.loss.reconstruction_scale, category='reconstruction')

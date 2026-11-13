@@ -7,6 +7,14 @@ from test_output_path_supervised import _native_answer_model
 from test_output_walk import _capture_program_probe, _stop
 
 
+def _given_idea(derivation, codes):
+    """Supply an answer's content and occupancy together, independently of a question."""
+    from dataclasses import replace
+    from Meaning import ConceptualMeaning
+    return replace(derivation, conceptual_answer=codes,
+        answer_meanings=tuple((ConceptualMeaning.from_description(row[0]),) for row in codes))
+
+
 def _with_identity_bank(model, understanding, codes):
     """Supply the lexical support of an explicit concluded working idea."""
     from dataclasses import replace
@@ -20,6 +28,18 @@ def _with_identity_bank(model, understanding, codes):
     owner = model._concept_owner()
     rows = codes.new_tensor([owner._csw_row_of(admitted[form.encode()])
                             for form in forms], dtype=torch.long)[None].expand(batch, -1)
+    # The emitted point now stimulates the complete native inventory (§3.3),
+    # rather than copying just the selected bank row. Give these fixture
+    # identities the same declared codes at both reads.
+    torch.testing.assert_close(codes, codes[:1].expand_as(codes))
+    native_lookup = owner.similarity_codebook.lookup_rows
+    declared = dict(zip(rows[0].tolist(), codes[0].unbind(0)))
+    def lookup(requested, **kwargs):
+        native = native_lookup(requested, **kwargs)
+        return torch.stack([declared.get(int(row), value).to(native)
+                            for row, value in zip(torch.as_tensor(requested).flatten(),
+                                native.reshape(-1, native.shape[-1]))]).reshape_as(native)
+    owner.similarity_codebook.lookup_rows = lookup
     bank = replace(bank, codes=codes, rows=rows,
                    weights=codes.new_ones(batch, count),
                    own=torch.ones(batch, count, dtype=torch.bool),
@@ -109,7 +129,7 @@ def test_prepared_answer_generates_more_words_than_the_captured_input(tmp_path, 
             ideas = torch.zeros_like(held.conceptual_answer)
             ideas[0, 0] = direction
             ideas[1, 0] = leaves[0]
-            held = replace(held, conceptual_answer=ideas)
+            held = _given_idea(held, ideas)
             policy.weight.zero_()
             policy.bias.fill_(-1000)
             policy.bias[-1] = 0
@@ -168,7 +188,7 @@ def test_prepared_concept_handoff_cuts_answer_state_gradient(tmp_path, monkeypat
         # derivation can erase its root, so supply a readable concluded idea.
         source = torch.full_like(resolved.conceptual_answer, .2).requires_grad_()
         understanding = _with_identity_bank(model, understanding, source[:, :1].detach())
-        held = replace(resolved, conceptual_answer=source)
+        held = _given_idea(resolved, source)
         construction = model.reverseOutput(understanding, held)
         loss = construction.percepts.square().mean()
         gradient = torch.autograd.grad(loss, source, allow_unused=True, retain_graph=True)[0]
@@ -227,7 +247,7 @@ def test_percept_answer_keeps_live_meaning_and_respects_owned_credit(tmp_path, m
             return scores
 
         monkeypatch.setattr(language, "generate_policy_logits", one_split)
-        construction = model.reverseOutput(understanding, replace(held, conceptual_answer=state))
+        construction = model.reverseOutput(understanding, _given_idea(held, state))
         assert (construction.concepts.abs().amax(-1) > 0).sum(-1).tolist() == [2, 2]
         loss = construction.percepts.sum()
         parameters = tuple(operator.parameters())

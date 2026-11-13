@@ -72,22 +72,22 @@ class ForgettingConfig:
 
 
 def history_age(store):
-    """Age in model time; unstamped operands inherit their sentence's stamp."""
+    """Age in model time; operands without a time inherit their sentence's time."""
     from RowTime import encoder
     from Memory import OCCURRENCE, RELATION
     now = max(0, int(store.model_clock)-1)
     ages = store.slots.new_zeros(len(store))
     known = set()
     for row in range(len(store)):
-        stamp = store.entry_when(row)
-        if bool(stamp.ne(0).any()):
-            ages[row] = max(0, now-int(encoder().decode_index(stamp)))
+        time = store.entry_time(row)
+        if bool(time.ne(0).any()):
+            ages[row] = max(0, now-int(encoder().decode_index(time)))
             known.add(row)
     for root in store.parts.indices().tolist():
-        stamp = store.parts.percept[root, 4:]
-        if not bool(stamp.ne(0).any()):
+        time = store.entry_time(('sym',root))
+        if not bool(time.ne(0).any()):
             continue
-        age = max(0, now-int(encoder().decode_index(stamp)))
+        age = max(0, now-int(encoder().decode_index(time)))
         for kind, value in store.parts.protected_references((root,)):
             if kind == OCCURRENCE:
                 row = store.index_of_row(value)
@@ -120,16 +120,19 @@ def forget_parts(parts, config, *, retained=(), now=None):
     from RowTime import encoder
     rows = parts.indices().tolist()
     target = math.floor(config.low_water * parts.capacity)
-    ticks = encoder().decode_index(parts.percept[rows, 4:])
-    known = parts.percept[rows, 4:].ne(0).any(-1)
+    reference = getattr(parts, '_occurrence_store', None)
+    store = None if reference is None else reference()
+    times = torch.stack([store.entry_time(('sym',row)) for row in rows]) if store is not None else parts.truth_plus.new_zeros(len(rows),4)
+    ticks = encoder().decode_index(times)
+    known = times.ne(0).any(-1)
     tail = (int(ticks[known].max()) if bool(known.any()) else 0) if now is None else int(now)
-    ages = {row: max(0, tail-int(ticks[i])) if bool(known[i]) else 0 for i, row in enumerate(rows)}
+    ages = {row: max(0, tail-int(ticks[i])) if bool(known[i]) else 0 for i,row in enumerate(rows)}
     from Memory import RELATION
-    stamped = {row for i, row in enumerate(rows) if bool(known[i])}
+    timed = {row for i,row in enumerate(rows) if bool(known[i])}
     inherited = {}
-    for root in stamped:
+    for root in timed:
         for kind, child in parts.protected_references((root,)):
-            if kind == RELATION and child not in stamped:
+            if kind == RELATION and child not in timed:
                 inherited[child] = min(inherited.get(child, ages[root]), ages[root])
     ages.update(inherited)
     protected = {int(ref[1]) for ref in retained if ref[:1] == ('sym',) and parts.contains(ref[1])}
@@ -160,41 +163,13 @@ def retention_values(store, config, *, alive=None):
     alive = set(range(n)) if alive is None else alive
     trust = torch.maximum(store.truth_plus[:n], store.truth_minus[:n])
     utility = torch.where(store.surprise[:n] < 0, 1., store.surprise[:n]).clamp(0, 1)
-    luminosity = torch.ones_like(trust)
-    positive, negative = store.truth_plus[:n], store.truth_minus[:n]
-    # Intrinsic both is heterogeneous content, not two disagreeing sources.
-    signs = (positive.gt(0) & negative.eq(0)).long() - (negative.gt(0) & positive.eq(0)).long()
-    points = F.normalize(store.slots[:n], dim=-1)
-    orders = store.count.new_tensor([store.order_of_row(i) for i in range(n)])
-    scopes = _scope_keys(store)
-    scope_ids = {key: i for i, key in enumerate(dict.fromkeys(scopes))}
-    scope = torch.tensor([scope_ids[key] for key in scopes], device=trust.device)
-    live = torch.tensor([i in alive for i in range(n)], device=trust.device)
-    for start in range(0, n, 128):
-        end = min(n, start + 128)
-        same = points[start:end] @ points.T > config.similarity
-        same &= orders[start:end, None] == orders[None]
-        same &= scope[start:end, None] == scope[None]
-        contrary = signs[start:end, None] * signs[None] == -1
-        weaker = trust[start:end, None] < trust[None]
-        luminosity[start:end] = (~(same & contrary & weaker & live[None]).any(-1)).to(trust)
-    if config.coverage:
-        # Catuskoti coverage over occupied idea coordinates. Opposite poles
-        # stay separate; leave-one-out measures the lost positive coverage.
-        ids = sorted(alive)
-        if ids:
-            codes = store.slots[ids].abs().clamp(0, 1)
-            for_pole = codes * positive[ids, None]
-            against_pole = codes * negative[ids, None]
-            def coverage(p, q):
-                if not len(p):
-                    return codes.new_zeros(())
-                a, b = p.amax(0), q.amax(0)
-                return (a - b - torch.minimum(a, b)).mean()
-            full = coverage(for_pole, against_pole)
-            for local, row in enumerate(ids):
-                keep = torch.arange(len(ids), device=codes.device) != local
-                luminosity[row] = (full - coverage(for_pole[keep], against_pole[keep])).clamp(0, 1)
+    columns = getattr(store, '_retention_columns', None)
+    if columns is None:
+        if n:
+            raise RuntimeError('retention requires maintained write-time columns')
+        luminosity = torch.empty_like(trust)
+    else:
+        luminosity = columns.values(config, alive=alive)
     age = history_age(store)
     penalty = -torch.expm1(-age / config.half_life)
     value = (config.trust_weight * trust + config.utility_weight * utility
@@ -204,7 +179,10 @@ def retention_values(store, config, *, alive=None):
 
 def _references(store, row, context, rows):
     result = set()
-    for ref in store._context_occurrence_references(context):
+    columns = getattr(store, '_retention_columns', None)
+    if columns is None:
+        raise RuntimeError('forgetting requires cached semantic dependencies')
+    for ref in columns.deducibility[int(store.address_keys[row])]:
         if ref[:2] == ('ltm', store.address_domain):
             if ref[2] not in rows:
                 raise ValueError('forgetting found an unavailable semantic occurrence')

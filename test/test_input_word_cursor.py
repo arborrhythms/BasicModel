@@ -191,12 +191,8 @@ def test_nongrammar_config_disables_cursor_and_next_word_is_none():
     m = _build_nongrammar_model()
     isp = m.inputSpace
 
-    assert m.useGrammar == "none", (
-        "model.xml default-only sigma/pi grammar must derive useGrammar"
-        " == 'none'")
-    assert isp._per_word_enabled is False, (
-        "2a wiring: _per_word_enabled = (useGrammar != 'none') => False "
-        "for the non-grammar config")
+    assert not m.grammar_phases.per_word
+    assert isp._per_word_enabled is False
     assert isp._per_word_cursor == 0
 
     for _ in range(3):

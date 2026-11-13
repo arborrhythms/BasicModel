@@ -40,8 +40,8 @@
         <rule operands="field">F = divide.forward(F)</rule>
         <rule operands="field">F = descend.forward(F)</rule>
         <rule operands="field">F = gloss.forward(F)</rule>
-        <rule operands="field">F = and.forward(F)</rule>
-        <rule operands="field">F = or.forward(F)</rule>
+        <rule operands="field">F = intersection.forward(F)</rule>
+        <rule operands="field">F = union.forward(F)</rule>
         <rule>P = sigma(P)</rule>
         <rule>C = pi(C)</rule>
         <rule>S = sigma(S)</rule>

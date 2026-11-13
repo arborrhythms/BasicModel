@@ -19,7 +19,7 @@ def fixture():
     native = dict(indices=torch.tensor([[0, 2, 1, 2]]), part_spans=spans)
     model = SimpleNamespace(training=True, _concept_owner=lambda: cs,
         conceptualSpace=cs, conceptualSpaces=[cs], _sentence_open_fields={},
-        symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(episodic_capacity=4)),
+        symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(episodic_capacity=4, episodic_orders=len(cs._order_caps()))),
         _sentence_episodes={},
         inputSpace=SimpleNamespace(_packed_sentence_ids=torch.tensor([[0, 0, 1, 1]]),
                                   _word_active_mask=torch.ones(1, 4, dtype=torch.bool)),

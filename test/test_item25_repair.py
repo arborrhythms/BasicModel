@@ -30,7 +30,10 @@ def test_small_cued_window_preserves_match_order_filters_and_explicit_references
         return original(a, b)
     monkeypatch.setattr(torch, 'bmm', product)
     work = QueryWorkBudget(32)
-    result = store.cued_rows(cue, references=(store.occurrence_of(5),), max_records=32, work=work)
+    assert [row['index'] for row in store.cued_rows(cue, references=(store.occurrence_of(5),))['value']] == [5]
+    calls.clear()
+    result = store.cued_rows(cue, references=tuple(store.occurrence_of(i) for i in range(len(store))),
+                             max_records=32, work=work)
     # The old scalar cosine reader, with every candidate fitting its cap,
     # returns these ties by ascending physical address after all filters.
     assert [row['index'] for row in result['value']] == [0, 3, 11, 4, 5, 6, 10, 7]
@@ -41,28 +44,29 @@ def test_small_cued_window_preserves_match_order_filters_and_explicit_references
         records_scanned=12, returned=8, meter=work.spent, batched_products=calls))
 
 
-def test_two_thousand_rows_retrieve_the_newest_window_and_charge_only_returns(tmp_path):
+def test_two_thousand_rows_read_only_given_references_and_charge_returns(tmp_path):
     store = LTM0(8, capacity=2000, percept_width=0, stream_capacity=1)
     for index in range(2000):
         store.append_meaning(meaning((1., 0.) if index in (20, 1777) else (0., 1.)), sentence_index=index)
     before = {name: (buffer.data_ptr(), tuple(buffer.shape)) for name, buffer in store.named_buffers()}
     states = {name: value.clone() for name, value in store.state_dict().items()}
     work = QueryWorkBudget(1)
-    result = store.cued_rows(meaning((1., 0.)), max_records=3, work=work)
+    assert not store.cued_rows(meaning((1., 0.)), max_records=3)["value"]
+    result = store.cued_rows(meaning((1., 0.)), references=(store.occurrence_of(1777),), max_records=3, work=work)
     assert [row['index'] for row in result['value']] == [1777]
-    assert result['records_scanned'] == 1024
-    assert set(result['incomplete']) == {'ltm_window', 'work_budget'}
+    assert result['records_scanned'] == 1
+    assert result['incomplete'] == ()
     assert work.spent == 1 and work.counts == {'record': 1}
     assert before == {name: (buffer.data_ptr(), tuple(buffer.shape)) for name, buffer in store.named_buffers()}
     assert all(torch.equal(value, store.state_dict()[name]) for name, value in states.items())
     # A returned-record limit, unlike meter exhaustion, is not work exhaustion.
-    exact = store.cued_rows(meaning((1., 0.)), max_records=1, work=QueryWorkBudget(1))
-    assert exact['incomplete'] == ('ltm_window',)
-    # Explicit references still enter before the recency window.
-    explicit = store.cued_rows(meaning((1., 0.)), references=(store.occurrence_of(20),), max_records=2, work=QueryWorkBudget(2))
+    exact = store.cued_rows(meaning((1., 0.)), references=(store.occurrence_of(1777),), max_records=1, work=QueryWorkBudget(1))
+    assert exact['incomplete'] == ()
+    # Each requested reference is read, including one outside the recall window.
+    explicit = store.cued_rows(meaning((1., 0.)), references=(store.occurrence_of(20), store.occurrence_of(1777)), max_records=2, work=QueryWorkBudget(2))
     assert [row['index'] for row in explicit['value']] == [20, 1777]
     receipt(tmp_path, 'full-memory-window-and-allocation', dict(capacity=2000, window=1024,
-        matched=1777, excluded=20, explicit_override=[20, 1777], records_scanned=1024,
+        matched=1777, excluded=20, explicit_override=[20, 1777], records_scanned=1,
         returned=1, meter=work.spent, incomplete=list(result['incomplete']),
         buffer_storage_unchanged=True, state_dict_equal=True,
         allocations={name: {'shape': list(shape), 'bytes': store.get_buffer(name).numel()*store.get_buffer(name).element_size()}

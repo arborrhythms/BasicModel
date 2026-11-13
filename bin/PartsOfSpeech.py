@@ -239,6 +239,7 @@ class PartsOfSpeech(nn.Module):
         words = ([None] * len(program.leaves) if program.word_ids is None
                  else program.word_ids.detach().cpu().tolist())
         stack = []
+        operators = []
         for kind, local, position in program.actions.detach().cpu().tolist():
             if kind < 0:
                 break
@@ -246,6 +247,7 @@ class PartsOfSpeech(nn.Module):
                 if not 0 <= position < len(words):
                     raise ValueError('occupation journal has an invalid leaf')
                 stack.append(() if words[position] is None else (int(words[position]),))
+                operators.append(set())
                 continue
             if kind not in (1, 2, 3):
                 raise ValueError('occupation journal has an invalid operation kind')
@@ -266,6 +268,10 @@ class PartsOfSpeech(nn.Module):
                     raise ValueError('occupation journal underflows')
                 operands = stack[-2:]
             name = operation_name(rule)
+            descendants = operators[at] if kind == 2 or field_bind else set().union(*operators[-2:])
+            if self._space is not None:
+                self.owner._concept_allocator.parts.gates.observe(name, descendants)
+            current = descendants | {name}
             self.observe_use(name, operands)
             self.observe_seat(name, operands)
             observed.update(word for carried in operands for word in carried if word is not None and word >= 0)
@@ -278,8 +284,10 @@ class PartsOfSpeech(nn.Module):
                     self.add(word, f'{name}_argout{i+1}')
             if kind == 2 or field_bind:
                 stack[at] = results[0]
+                operators[at] = current
             else:
                 stack[-2:] = results
+                operators[-2:] = [set(current) for _ in results]
 
         return observed
 

@@ -1,21 +1,24 @@
 """A legal unary preference must still fit the row by its closing."""
 import torch
 
-from test_subspace_what_stm_contract import _xor_model
-
-
-def test_shared_stack_contract_allows_unary_until_the_deadline(_xor_model, monkeypatch):
+def test_shared_stack_contract_allows_unary_until_the_deadline(tmp_path, monkeypatch):
+    from pathlib import Path
+    import xml.etree.ElementTree as ET
+    from test_mm_xor import _fresh_model
     import test_subspace_what_stm_contract as contract
-    original = contract._shared_compose
-    def mixed_poles(model):
-        state, choice = original(model)
-        # Three forced NOTs leave an intersection nonzero only if the
-        # operands share an occupied pole. Both binary choices remain legal.
-        state[0][:, 1, 1::2] = state[0][:, 1, 0::2]
-        return state, choice
-    monkeypatch.setattr(contract, '_shared_compose', mixed_poles)
+    # NOT became field-only in §3.1. The vector nominal marker preserves
+    # these operands while testing the same unary deadline at the same size.
+    grammar = tmp_path / 'deadline.grammar'
+    grammar.write_text(Path('data/xor.grammar').read_text().replace('not_', 'generic_')
+                       .replace('not.forward', 'generic.forward').replace('not.reverse', 'generic.reverse'))
+    config = ET.parse('data/MM_text.xml')
+    config.getroot().find('SymbolSpace/language/grammar').text = str(grammar)
+    path = tmp_path / 'deadline.xml'
+    config.write(path)
+    model, _, _ = _fresh_model(str(path))
+    assert [rule.method_name for rule in model.languageSpace._compose_unary_rules] == ['generic']
 
-    chooser = _xor_model.languageSpace._tree_layer(2).chooser
+    chooser = model.languageSpace._tree_layer(2).chooser
     score = chooser.score_unary
 
     def prefer_unary(*args, **kwargs):
@@ -23,4 +26,14 @@ def test_shared_stack_contract_allows_unary_until_the_deadline(_xor_model, monke
         return stop, torch.full_like(unary, 1e6)
 
     monkeypatch.setattr(chooser, 'score_unary', prefer_unary)
-    contract.test_shared_operation_writes_the_caller_owned_stack(_xor_model)
+    choose = model.languageSpace.choose_operation
+    choices = []
+    def record(*args, **kwargs):
+        choice = choose(*args, **kwargs)
+        if 'rounds_left' in kwargs:
+            choices.append(choice)
+        return choice
+    monkeypatch.setattr(model.languageSpace, 'choose_operation', record)
+    contract.test_shared_operation_writes_the_caller_owned_stack(model)
+    assert len(choices) == 4
+    assert [int(choice.kind) for choice in choices] == [2, 2, 2, 1], [(choice.kind, choice.applied, choice.stack_arity) for choice in choices]

@@ -135,6 +135,8 @@ def output(model, state, observation, sid, active, registry, *, trace=None, depa
     if not model.inputSpace.data.has_supervised_outputs:
         return None, None, None
     if not model.answer_synthesis:
+        from SentenceField import knowing
+        observation['answer_field'] = knowing(model)
         cost = model._sentence_numeric_error(state, sid, active, observation, registry=registry)
         return cost, None, None
     fields = tuple(observation['thought_fields'])
@@ -293,6 +295,7 @@ def finish(model, state, sid, active, *, base=None, draw=None):
 def credit(model, exploit, path, active):
     """A departure's sole reward is its complete path's change in R + A."""
     from WalkTrials import generate_credit
+    from ObjectiveOwnership import policy_objective
     from SentenceCredit import score_function
     draw = path.draw
     costs = torch.stack((exploit.parts[:, 0] + exploit.parts[:, 2],
@@ -308,7 +311,7 @@ def credit(model, exploit, path, active):
             eligible=first[1], costs=costs, proposal_rounds=draw['walk_count'] * draw['walk_rounds'])
         value = generate_credit(model.languageSpace, audit, other[-1], other[-2])
         path.registry.add(owner + '.walk_credit', value, category=owner,
-            objective='chooser' if owner == 'output' else 'reconstruction', side='A' if owner == 'output' else 'R')
+            objective=policy_objective(model, 'generate', 'chooser' if owner == 'output' else 'reconstruction'), side='A' if owner == 'output' else 'R')
     for row, at in enumerate(draw['thought_round'].tolist()):
         if at < 0:
             continue
@@ -320,7 +323,7 @@ def credit(model, exploit, path, active):
         rows = costs.new_zeros(len(active))
         rows[row] = value[0]
         path.registry.add('output.thought_score_function', rows,
-            category='output', objective='chooser' if category == 'reconstruction' else category, side='A')
+            category='output', objective=policy_objective(model, 'compose', 'chooser') if category == 'reconstruction' else category, side='A')
 
 
 def objectives(paths, parts, active, draws):
@@ -430,6 +433,7 @@ def output_only(model, understanding, questions, *, score=None):
     """A batch without a sentence read uses the same path judge, over output."""
     from SentenceCredit import comparison, departure, reader_weights
     from WalkTrials import ThoughtTrialState, generate_credit
+    from ObjectiveOwnership import policy_objective
     closed = any(field is not None and field.thought_completed
                  for field in understanding.sentence_states)
     if closed:
@@ -481,7 +485,7 @@ def output_only(model, understanding, questions, *, score=None):
                     eligible=traces[0][1], costs=values[:, [0, index]],
                     proposal_rounds=draw['walk_count'] * draw['walk_rounds'])
                 model.errors.add('output.walk_credit', generate_credit(model.languageSpace, audit,
-                    traces[index][-1], traces[index][-2]), category='output', objective='chooser', side='A')
+                    traces[index][-1], traces[index][-2]), category='output', objective=policy_objective(model, 'generate', 'chooser'), side='A')
         from types import SimpleNamespace
         paths = [SimpleNamespace(construction=c, output_trace=t) for c, t in zip(constructions, traces)]
         ThoughtTrialState.keep(effects, winner)

@@ -1248,7 +1248,14 @@ class TestDataTextStorage(unittest.TestCase):
 
     def test_train_input_strings_for_text(self):
         data = Models.Data()
-        data.load("xor")  # XOR uses text examples
+        # The built-in XOR loader now supplies numbers (§3.9). Keep the
+        # original four text examples through the text loader.
+        data.load("inline", dat={
+            "input": [{"use": split, "_": "hello world|hello there|loving world|loving there"}
+                      for split in ("train", "validation", "test")],
+            "output": [{"use": split, "_": "0|1|1|0"}
+                       for split in ("train", "validation", "test")],
+        })
         self.assertIsInstance(data.train_input, list)
         self.assertIsInstance(data.train_input[0], str)
 
@@ -1834,7 +1841,7 @@ class TestReconstructionSymbols(unittest.TestCase):
     """Test that reconstruction symbols split correctly and enable reconstruction."""
 
     def _create_xor_model(self, nSymbols=3, nOutput=1):
-        """Helper: create XOR model from XOR_exact.xml with given symbol/output counts.
+        """Helper: create XOR model from XOR_symbols.xml with given symbol/output counts.
 
         Also patches ConceptualSpace/nVectors to match nSymbols, because
         WholeSpace requires inputShape[0] == nVectors (1:1 concept->symbol mapping).
@@ -1842,7 +1849,7 @@ class TestReconstructionSymbols(unittest.TestCase):
         import tempfile
         import xml.etree.ElementTree as ET
 
-        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
+        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_symbols.xml")
         tree = ET.parse(xml_path)
         root = tree.getroot()
 
@@ -2124,8 +2131,8 @@ class TestTrainingUpdatesWeights(unittest.TestCase):
     def test_xor_weights_change_after_one_epoch(self):
         """XOR model weights must differ after 1 epoch of training."""
 
-        # XOR_exact.xml has autoload=false, autosave=false
-        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
+        # XOR_symbols.xml has autoload=false, autosave=false
+        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_symbols.xml")
         Models.init_config(path=xml_path, defaults_path=os.path.join(os.path.dirname(_BIN), "data", "model.xml"))
         Models.TheData.load("inline", dat=Models.TheXMLConfig.get("architecture.data"))
 
@@ -2179,7 +2186,7 @@ class TestRuntimeDataLoader(unittest.TestCase):
         import tempfile
         import xml.etree.ElementTree as ET
 
-        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
+        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_symbols.xml")
         tree = ET.parse(xml_path)
         root = tree.getroot()
         _tr = root.find("architecture/training")

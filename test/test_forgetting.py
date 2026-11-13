@@ -311,14 +311,17 @@ def test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads(
     # forgetting thresholds: start at eight, retain six.
     settings = dict(forgetHighWater=8/32, forgetLowWater=6/32,
                     forgetMinInterval=256, forgetting=True)
+    # Isolate document turnover from conceived absences. Their separate
+    # certificates exercise the native omission writer and capacity guards.
+    turnover_training = dict(expectationOmissionThreshold=1.)
     model = _tiny_canonical_model(tmp_path, monkeypatch, batch_size=1,
-        word_buckets='16', ltm_capacity=32, architecture_overrides=settings)
+        word_buckets='16', ltm_capacity=32, architecture_overrides=settings,
+        training_overrides=turnover_training)
     assert type(model) is BasicModel
     model._tensor_peer_while_eager = True
     model.stateless = False
     # Single-word documents exercise memory turnover independently of
     # random initial grammar choices. This is a mechanism certificate.
-    model.languageSpace.language_layer.operation_layer.set_stage_menu(('STOP',))
     # These are known words in this memory-turnover fixture. Pending name
     # acquisition has its own certificates and also writes mention records.
     from test_definition_rows import admit
@@ -371,7 +374,8 @@ def test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads(
     fresh = tmp_path/'fresh'
     fresh.mkdir()
     restored = _tiny_canonical_model(fresh, monkeypatch, batch_size=1,
-        word_buckets='16', ltm_capacity=32, architecture_overrides=settings)
+        word_buckets='16', ltm_capacity=32, architecture_overrides=settings,
+        training_overrides=turnover_training)
     try:
         assert restore(restored, str(checkpoint), require_match=True)
         loaded = restored.symbolSpace.ltm_store
@@ -389,7 +393,7 @@ def test_scope_prevents_false_dissonance():
     store.set_evidence(3, 1., 0.)
     store.set_evidence(4, 0., 1.)
     store.set_evidence(4, 0., .5)
-    store._semantic_rows[int(store.address_keys[4])]['scope'] = ('quoted',)
+    store.set_scope(4, ('quoted',))
     assert retention_values(store, config())['luminosity'][4] == 1
 
 

@@ -190,7 +190,7 @@ def test_not_handoff_changes_pole_and_meaning_but_never_form(monkeypatch):
     assert (negative_code-positive_code).square().sum() > 0
 
 
-def test_presented_answer_uses_committed_root_and_keeps_reader_cut():
+def test_presented_answer_uses_kept_field_and_shares_its_gradient():
     from Models import BasicModel
     from SentenceCompose import select_rows
     from SentenceCredit import comparison
@@ -203,7 +203,9 @@ def test_presented_answer_uses_committed_root_and_keeps_reader_cut():
     parts = torch.tensor([[[1.,0.,0.],[0.,0.,0.]], [[0.,0.,0.],[1.,0.,0.]]])
     wins = comparison(parts, active)['wins']
     kept = select_rows(greedy, explore, wins)
-    answer=BasicModel._forward_head(model,None,sentence_state=kept).materialize()
+    from Understanding import ConceptualField
+    field = ConceptualField(torch.arange(3), kept[1].permute(1, 0, 2)[:, :, None], None, None, None)
+    answer=BasicModel._forward_head(model,None,field=field).materialize()
     expected=torch.stack((explore[0][0].sum(),greedy[0][1].sum()))[:,None]
     torch.testing.assert_close(answer,expected)
     assert wins.tolist()==[True,False]

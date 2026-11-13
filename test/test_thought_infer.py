@@ -282,13 +282,13 @@ def test_negated_operand_and_equality_use_the_same_operator():
     assert result.evidence['meaning'].role_refs[0] == refs[1]
 
 
-def test_intuition_requires_selection_and_retired_face_is_absent():
+def test_intuition_may_answer_and_retired_face_is_absent():
     from ThoughtAnswer import accepted
     from Queries import THOUGHT_EXECUTORS
     model, registry, store, refs = setup()
     value = replace(idea(registry, refs[0]), bindings={
         '_evidence_kind': 'intuition', '_producing_operation': 'intuit', '_evidence_pair': (.8, .2)})
-    assert not accepted(value)
+    assert accepted(value)  # Item 1.8 §3.6: intuition may answer.
     _premise, rule, _row = operands(model, registry, store, refs)
     value = put(model.conceptualSpace.stm, value, row=0)
     selected = invoke(model, registry, registry.form('infer', value, rule))
@@ -296,7 +296,7 @@ def test_intuition_requires_selection_and_retired_face_is_absent():
     assert 'intuit' in THOUGHT_EXECUTORS and 'intuit' in registry.executable_operation_ids
     result = invoke(model, registry, registry.form('intuit', value))
     assert result.evidence_kind == 'intuition'
-    assert not accepted(result.evidence['meaning'])
+    assert accepted(result.evidence['meaning'])  # A closed intuition may answer (§3.6).
     retired = 'is' + 'Implied'
     assert retired not in THOUGHT_EXECUTORS
     assert ('is_' + 'implied') not in Path('bin/ThoughtFaces.py').read_text()

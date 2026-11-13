@@ -42,7 +42,7 @@ def storage_snapshot(model):
     n=len(store)
     # Sentence arrivals are timed covers. Thought inference also carries a
     # time stamp, so time alone cannot identify the input sentence rows.
-    stamps = [store.entry_when(row).detach().cpu().tolist() for row in range(n)]
+    stamps = [store.entry_time(row).detach().cpu().tolist() for row in range(n)]
     row_kinds = [store.KINDS[int(k)] for k in store.kind_codes(torch.arange(n, device=store.count.device))]
     sentences=torch.tensor([row for row, stamp in enumerate(stamps) if any(stamp) and row_kinds[row] == 'cover'],
                            dtype=torch.long, device=store.address_keys.device)

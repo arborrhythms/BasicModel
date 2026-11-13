@@ -1,10 +1,9 @@
 """Equality substitution over the rows already read by an episode.
 
 There is no store or vocabulary here. A proof uses positive witnessed
-equalities and the conceptual values admitted by checked identity reads.
+equalities over declared relations.
 """
 from dataclasses import replace
-import torch
 
 from ThoughtReferences import bindings, evidence_pair, fill, open_slots, with_slots
 
@@ -13,17 +12,13 @@ def equality(meaning):
     return bool(bindings(meaning).get('_equality'))
 
 
-def integrate(goal, result, previous, *, isomorphic=None):
+def integrate(goal, result, previous):
     if not equality(goal):
         return None
     frames = result.evidence.get('frames', ())
     if not frames:
         return goal
     edges = {}
-    evaluated, evaluations = {}, {}
-    for item in (*previous, result):
-        evaluated.update(item.evidence.get('evaluation_values', {}))
-        evaluations.update(item.evidence.get('evaluations', {}))
     for item in previous:
         values = item.evidence.get('frames', ())
         returned = item.evidence.get('returned_meaning')
@@ -47,21 +42,10 @@ def integrate(goal, result, previous, *, isomorphic=None):
             return None
         if left == right:
             return (), 1.
-        a, b = evaluated.get(left), evaluated.get(right)
-        if (a is not None and b is not None and a.shape == b.shape
-                and bool(a.ne(0).any()) and torch.allclose(a, b, rtol=1e-6, atol=1e-7)):
-            # These are already evaluated values, with form/time removed by
-            # the checked reader. No hidden component tree is reconstructed.
-            return (), 1.
         key = left, right
         if key in visiting or len(visiting) >= 64:
             return None
         visiting = visiting | {key}
-        a, b = evaluations.get(left), evaluations.get(right)
-        if a is not None and b is not None and isomorphic is not None:
-            found = equivalent(a['identity'], b['identity'], visiting)
-            if found is not None and isomorphic(a, b):
-                return found
         for other, witnesses, support in edges.get(left, ()):
             found = equivalent(other, right, visiting)
             if found is not None:

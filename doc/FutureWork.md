@@ -328,7 +328,7 @@ a band; `percept_where`, the address bands of the codes), and
   nonzero) with their two poles, never netted into one signed value, the
   bracket, and the `.when` stamp;
 - the stamp is the one that the ideas of the same close receive from
-  [`RowTime.stamp`](../bin/RowTime.py), so the ideas and the percepts of a
+  [`RowTime.next_time`](../bin/RowTime.py), so the ideas and the percepts of a
   moment share a time, and several entries may share one stamp;
 - storage is declared at construction (entries per stream, codes per
   entry), preallocated and checkpointed, with no growth on load;
@@ -2865,7 +2865,7 @@ second presentation of a history is stamped later than the first.
 *Claude's reading of the remedy, to confirm:* the boundary records
 `when_time` and `model_clock` with `_epoch_rows` the first time and
 restores both at every later boundary; they move together because
-`RowTime.stamp` stamps with the first and `Forgetting` reads the second as
+`RowTime.next_time` stamps with the first and `Forgetting` reads the second as
 now. The starting rows then keep stamps earlier than the history, with no
 negative age, and a history presented in the same order gets the same
 stamps in every epoch: the property the per-document value bought, on
@@ -2880,10 +2880,10 @@ epoch, `RowTime.HORIZON` could be the declared epoch length, which bears on
 point 4 below.
 
 *On model time today.* `ClauseRows.write_clause` stamps each close with
-`RowTime.stamp`; `LTM0.append_meaning` writes the stamp into the row's
+`RowTime.next_time`; `LTM0.append_meaning` writes the stamp into the row's
 percept band and keeps the first stamp when the same sentence is witnessed
 again at its address (document, index and content).
-`EntryRead.entry_when` reads it for `EntryRead.recall_time`, `Forgetting`
+`EntryRead.entry_time` reads it for `EntryRead.recall_time`, `Forgetting`
 (an age), `DocumentCover`, `ReferenceClose`, `ThoughtStream` and
 `ThoughtLTMCapability.relation_evidence` (an order);
 `SymbolExpectation.expect_next_meaning`, `ActivationPredictor` and
@@ -2938,7 +2938,7 @@ gives an MTM pool entry the pool's close count. Neither is model time.
    not read the stamp (2026-10-23: operations on meaning, centroids on
    form).
 2. *Resolution.* `BasicModel._advance_when_time` advances model time once
-   per batch, and `RowTime.stamp` gives every close of one batch the same
+   per batch, and `RowTime.next_time` gives every close of one batch the same
    stamp. Today the document position orders the sentences of one document
    and `SentenceAttention.SentenceField` the words of one sentence. Model
    time must carry that order (a tick per close or per word), or the order

@@ -9,7 +9,7 @@ from test_cs_sparse_weights import _cs, _mint_row
 
 
 def test_required_parts_keep_support_and_counterevidence_separate():
-    """A true and B false support both poles; negating B aligns them."""
+    """A true and B false refute their intersection; negating B supports it."""
     cs = _cs()
     _, store = cs._sparse_families(0)
     matrix = store.conjunctive
@@ -23,7 +23,7 @@ def test_required_parts_keep_support_and_counterevidence_separate():
     source[offset + 1] = torch.tensor([1., .6, 0.])
     pair = torch.stack((matrix.fold_presence(source, conjunctive=True),
                         matrix.fold_presence(source, conjunctive=True, dual=True)), -1)
-    torch.testing.assert_close(pair[2], torch.tensor([[1., 1.], [.8, .6], [0., 0.]]))
+    torch.testing.assert_close(pair[2], torch.tensor([[0., 1.], [0., .6], [0., 0.]]))
     torch.testing.assert_close(pair[3], torch.tensor([[1., 0.], [.6, 0.], [0., 0.]]))
 
 
@@ -39,11 +39,11 @@ def test_swapped_evidence_combination_is_distinct_from_a_both_pole_test():
     source[0], source[offset] = pair.unbind(-1)
     combined = torch.stack((matrix.fold_presence(source, conjunctive=True),
                             matrix.fold_presence(source, conjunctive=True, dual=True)), -1)
-    torch.testing.assert_close(combined[1], torch.tensor([[1., 1.], [1., 1.], [1., 1.], [0., 0.]]))
+    torch.testing.assert_close(combined[1], torch.tensor([[0., 1.], [0., 1.], [1., 1.], [0., 0.]]))
     torch.testing.assert_close(corners(pair)[:, 2], torch.tensor([0., 0., 1., 0.]))
 
 
-def test_unknown_concept_does_not_refute_or_erase_a_known_conjunct():
+def test_unknown_concept_withholds_conjunctive_support_without_refuting():
     cs = _cs()
     _, store = cs._sparse_families(0)
     for source in (0, 1):
@@ -51,10 +51,11 @@ def test_unknown_concept_does_not_refute_or_erase_a_known_conjunct():
     source = torch.zeros(store.nInput, 1)
     source[0] = .8
     read = store.conjunctive.fold_presence(source, conjunctive=True)
-    torch.testing.assert_close(read[2], torch.tensor([.8]))
+    torch.testing.assert_close(read[2], torch.tensor([0.]))
+    assert not store.conjunctive.fold_presence(source, conjunctive=True, dual=True)[2].any()
     source[store.nOutput + 2] = .6
     torch.testing.assert_close(store.conjunctive.fold_presence(source, conjunctive=True)[2],
-                               torch.tensor([.8]))
+                               torch.tensor([0.]))
     torch.testing.assert_close(store.conjunctive.fold_presence(source, conjunctive=True, dual=True)[2],
                                torch.tensor([.6]))
 

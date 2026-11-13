@@ -152,7 +152,9 @@ def _decode_texts(model):
     # Route (b): only the LAST staged eval batch is renderable, so targets come from that batch's own stashed inputs (1:1 row-aligned).
     decoded = getattr(model, '_benchmark_sentence_readback', None)
     if decoded is None:
-        decoded = model.perceptualSpace.reconstruct_data(text=True)
+        with torch.no_grad():
+            recovered, _ = model.reverseReconstruct(model._last_understanding)
+        decoded = model._decode_reconstructed_inputs(recovered, ())
     targets = [_norm(s) for s in _raw_targets(model)]
     decoded = [_norm(s) for s in decoded]
     # Alignment invariant: a row-count mismatch must never silently truncate.

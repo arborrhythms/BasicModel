@@ -21,7 +21,7 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
 _DATA_DIR = os.path.join(_PROJECT, "data")
-_CONFIG = os.path.join(_DATA_DIR, "MM_xor_fixture.xml")
+_CONFIG = os.path.join(_DATA_DIR, "MM_text_fixture.xml")
 _DEFAULTS = os.path.join(_DATA_DIR, "model.xml")
 
 
@@ -293,8 +293,8 @@ class TestRelativeTrustPersistence(unittest.TestCase):
     def test_evidence_and_unscaled_argument_identity_survive_checkpoint(self):
         st=_store();edge=part(st,_v(1,1),_v(0,0,1),evidence=(.7,.2))
         state=st.parts.state_dict()
-        self.assertEqual(set(state),{'layout_version','ref_kinds','refs','truth_plus','truth_minus','access_count','surprise','percept','count',
-                                    'effective_plus','effective_minus','operator_reference','relation_order','operation_seat','_extra_state'})
+        self.assertEqual(set(state),{'layout_version','ref_kinds','refs','truth_plus','truth_minus','access_count','surprise','sentence_reference','count',
+                                    'operator_reference','operation_seat','_extra_state'})
         fresh=_store();same=part(fresh,_v(1,1),_v(0,0,1),evidence=(0.,0.))
         self.assertEqual(same,edge)
         fresh.parts.load_state_dict(state)

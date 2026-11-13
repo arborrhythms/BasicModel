@@ -49,10 +49,10 @@ def audit(basic, *, before=None, after=None):
     whole_comparisons = []
     for row in rows:
         for part in parts[row]:
-            part_comparisons.append((native.lookup_rows(part)[:identity_width], values[row][:identity_width], False))
+            part_comparisons.append((basic.part_codes([part])[0], values[row][:identity_width], False))
         for whole in wholes[row]:
             whole_comparisons.append((values[row][identity_width:],
-                basic.whole.lookup_rows(whole)[identity_width:basic.width], False))
+                basic.whole_codes([whole])[0], False))
     def reports(snapshot):
         snapshot = values if snapshot is None else snapshot
         return dict(tower0=_report(part_comparisons), tower1=_report(whole_comparisons),

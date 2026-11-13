@@ -53,7 +53,7 @@ def context(resolver, frames=()):
             point = pool.value_of(token)
         identity = -1 if entry is None else entry.symbol if entry.symbol is not None else entry.transient
         state,_ = chunks.deposit(state,point[None],torch.tensor([True]),refs=references,
-            identity=identity,order=frame.order,when=store.entry_when(location))
+            identity=identity,order=frame.order,when=store.entry_time(location))
         # An object participant is not the sentence's subject chunk. Recall
         # it into its own shared seat, as production query/prepend does.
         for reference, _, role in getattr(frame,'activations',()):
@@ -67,7 +67,7 @@ def context(resolver, frames=()):
             refs = torch.tensor([[[chunks.SYMBOL if entry.symbol is not None else chunks.IDENTITY_REF,identity],
                                   [chunks.OCCURRENCE,key[-1]]]])
             state,_ = chunks.deposit(state,pool.value_of(key)[None],torch.tensor([True]),refs=refs,
-                identity=identity,order=1,where=entry.where,when=store.entry_when(location))
+                identity=identity,order=1,where=entry.where,when=store.entry_time(location))
     return state
 
 

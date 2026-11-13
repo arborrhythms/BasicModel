@@ -138,13 +138,18 @@ def test_extent_containment_does_not_fill_gaps_between_part_witnesses(grouped):
     spans = torch.stack((starts, starts + 1), -1)[None]
     extents = torch.tensor([[[0, ids.shape[1]]]])
     read = cs.cs_read_memberships((ids, spans, None, ids, spans), extents)
-    # Both literals are contained by this subject, as before the routing fix.
-    torch.testing.assert_close(read[0, 0, 0], torch.tensor([1., 1.]))
+    # Extent pooling must leave the intervening native event unsupported.
+    gap = 2 if grouped else 1
+    assert not cs._percept_field.events[..., gap, :].any()
+    # Both native literals are contained. A present positive literal and a
+    # present negated literal refute their conjunction (§3.2); they no longer
+    # manufacture a both corner that requests refinement.
+    torch.testing.assert_close(read[0, 0, 0], torch.tensor([0., 1.]))
     _, field = cs.cs_forward_content(read, torch.rand(cs.nVectors, cs.nDim))
     for step in range(3):
         requests = observe(cs, field, step)
-    assert cs._refinement_raise_ready[individual, 0]
-    assert all(r['runs'] == 2 for r in requests)
+    assert not cs._refinement_raise_ready[individual, 0]
+    assert not requests
 
 
 @pytest.mark.parametrize('run', range(3))

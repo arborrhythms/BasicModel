@@ -15,18 +15,12 @@ from definition_fixtures import agreeing_views, learned_operation
 from test_review13_subspaces import fixture as paired_fixture
 
 
-def gate_data(monkeypatch, *, interpret='closed', clause='closed', excluded='interpret sign bind lift'):
-    """Close gates in construction data, never by changing live gate state."""
+def gate_data(monkeypatch):
     from util import TheXMLConfig
-    data = dict(closedTrust=.1, interpret=dict(start=interpret, fraction=.5),
-                clause=dict(start=clause, threshold=.75, **{'except':excluded}))
-    original = TheXMLConfig.space
-    missing = object()
-    def space(name, key, default=missing):
-        if name == 'ConceptualSpace' and key == 'gates':
-            return copy.deepcopy(data)
-        return original(name,key) if default is missing else original(name,key,default)
-    monkeypatch.setattr(TheXMLConfig,'space',space)
+    data=dict(closedTrust=.1,threshold=.75)
+    original=TheXMLConfig.space
+    monkeypatch.setattr(TheXMLConfig,'space',lambda name,key,*args,**kw:
+        data if name=='ConceptualSpace' and key=='gates' else original(name,key,*args,**kw))
     return data
 
 
@@ -35,8 +29,11 @@ def gate_fixture(monkeypatch):
     from ClauseRow import attach_clause_index
     from Memory import LTM0
     from PartsOfSpeech import PartsOfSpeech,formal_arguments
-    owner,bank,_,alloc = paired_fixture(meaning_pairs=4, capacity=160)
     grammar=Language.Grammar();grammar.load_from_grammar_file('complete.grammar')
+    monkeypatch.setattr(Language.TheGrammar,'rules_upward',grammar.rules_upward)
+    monkeypatch.setattr(Language.TheGrammar,'ws_start_patterns',grammar.ws_start_patterns)
+    monkeypatch.setattr(Language.TheGrammar,'_ensure_configured',lambda:None)
+    owner,bank,_,alloc = paired_fixture(meaning_pairs=4, capacity=160)
     binary = tuple(rule for rule in grammar.rules_upward if rule.arity == 2)
     unary = tuple(rule for rule in grammar.rules_upward if rule.arity == 1)
     def operation(rule):
@@ -72,167 +69,67 @@ def composition(fixture, left, right, operation):
     return Clause(ConceptualMeaning.from_description(node.point),composition=node,point=node.point)
 
 
-def named_fixture(monkeypatch):
-    data = gate_data(monkeypatch,clause='open')
-    f = gate_fixture(monkeypatch);owner=f.cs
-    word,second,third = words(f,3)
-    agreeing_views(owner,word)
-    obj = mint(owner,torch.eye(owner.nDim)[3]);agreeing_views(owner,obj,count=2)
-    description = dict(owner.interpret._pending[word],identity_key='gate-form')
-    row = owner.interpret.define(word,obj,evidence=(.9,.4),description=description)
-    return f,data,(word,second,third),obj,row
+def test_fixed_and_declared_root_operations_start_open(monkeypatch):
+    from PartsOfSpeech import FIXED_OPERATIONS
+    gate_data(monkeypatch)
+    f=gate_fixture(monkeypatch)
+    gates=f.store.parts.gates
+    assert all(gates.open[name] == (name in gates.exempt) for name in gates.names)
+    assert 'interpret' in gates.exempt and FIXED_OPERATIONS <= gates.exempt
+    assert any(not value for value in gates.open.values())
 
 
-def test_interpret_gate_caps_only_binding_and_opens_monotonically(monkeypatch):
-    f,data,ids,obj,row = named_fixture(monkeypatch)
-    owner,bank,index=f.cs,f.store.parts,f.cs.definitions
-    word,second,third=ids
-    pair=torch.tensor([.9,.4])
-    scale=min(positive_length(owner,word),positive_length(owner,obj),data['closedTrust'])
-    torch.testing.assert_close(torch.stack(bank.evidence(row)),pair*scale)
-    assert not bank.gates.open['interpret'] and index.objects(word)==()
-    assert index.word(form='token0')==index.word(unit=(4,))==index.word(identity='gate-form')==word
-    assert owner.interpret.remembered_objects(word)==(obj,)
-    count,next_id=len(bank),owner._concept_allocator.next_id
-    agreeing_views(owner,second)
-    assert owner.trust_measurements()['stable_word_fraction']==pytest.approx(2/3)
-    assert index.objects(word)==(obj,) and bank.gates.open['interpret']
-    torch.testing.assert_close(torch.stack(bank.evidence(row)),pair*min(positive_length(owner,word),positive_length(owner,obj)))
-    assert len(bank)==count and owner._concept_allocator.next_id==next_id
-    for identity in words(f,5)[3:]:
-        agreeing_views(owner,identity,count=1)
-    assert owner.trust_measurements()['stable_word_fraction'] < data['interpret']['fraction']
-    assert bank.gates.open['interpret'] and index.objects(word)==(obj,)
-    assert (float(bank.truth_plus[row]),float(bank.truth_minus[row]))==pytest.approx((.9,.4))
-
-
-@pytest.mark.parametrize('except_part',[False,True])
-def test_clause_gate_caps_recorded_operations_and_opens_on_lift_classes(monkeypatch,except_part):
-    excluded='interpret sign bind lift'+(' part' if except_part else '')
-    data=gate_data(monkeypatch,interpret='open',excluded=excluded)
-    f=gate_fixture(monkeypatch);owner,bank,speech=f.cs,f.store.parts,f.language.parts_of_speech
-    a,b,c,d=words(f,4);agreeing_views(owner,a,b,c,d,count=10)
-    learned_operation(speech,'lift',a,b,count=1)
-    learned_operation(speech,'lift',a,b,count=1)
-    learned_operation(speech,'verb',c,d,count=10)
-    addresses=[f.store.write_clause(composition(f,*operands,name),evidence=(.8,.4))
-               for name,operands in [('verb',(c,d)),('lift',(a,b)),('part',(c,a))]]
-    rows=[f.store.location(address)[1] for address in addresses]
-    assert speech.operation('lift')['definiteness']==pytest.approx((-math.expm1(-2/3),)*2)
-    assert not bank.gates.open['clause']
-    stored=torch.tensor([.8,.4])
-    for row,name,operands in zip(rows,('verb','lift','part'),((c,d),(a,b),(c,a))):
-        assert speech.seats[int(bank.operation_seat[row])].name==name
-        scale=min(*(positive_length(owner,x) for x in operands),positive_length(owner, speech.seats[name].concept))
-        if name=='verb' or name=='part' and not except_part:scale=min(scale,data['closedTrust'])
-        torch.testing.assert_close(torch.stack(bank.evidence(row)),stored*scale)
-    before=bank.truth_plus.clone(),bank.truth_minus.clone()
-    learned_operation(speech,'lift',a,b,count=6)
-    measured=speech.operation('lift')
-    definiteness=-math.expm1(-8/3)
-    assert measured['definiteness']==pytest.approx((definiteness,definiteness))
-    assert 'trust' not in measured
-    assert positive_length(owner, speech.seats['lift'].concept) > 0
-    assert sum(measured['definiteness'])/2 >= data['clause']['threshold']
-    for row,name,operands in zip(rows,('verb','lift','part'),((c,d),(a,b),(c,a))):
-        scale=min(*(positive_length(owner,x) for x in operands),positive_length(owner, speech.seats[name].concept))
-        torch.testing.assert_close(torch.stack(bank.evidence(row)),stored*scale)
-    assert bank.gates.open['clause']
-    torch.testing.assert_close(bank.truth_plus,before[0]);torch.testing.assert_close(bank.truth_minus,before[1])
+def test_nonroot_evidence_stays_capped_until_kept_ancestors_are_definite(monkeypatch):
+    data=gate_data(monkeypatch)
+    f=gate_fixture(monkeypatch)
+    gates=f.store.parts.gates
+    parent=next(name for name in gates.names if name in gates.exempt)
+    child=next(name for name in gates.names if name not in gates.exempt)
+    assert gates.cap(named=False,operation=child)==data['closedTrust']
+    gates.observe(parent,{child})
+    assert gates.measurements(f.cs,None)[child] is None
+    assert not gates.advance(child,None)
+    assert gates.advance(child,.8,when=7)
+    assert gates.cap(named=False,operation=child)==1.
+    assert not gates.advance(child,0.,when=8)
 
 
 def test_open_gates_survive_checkpoint_and_epoch_and_missing_state_is_rejected(monkeypatch):
     from IndependentComponents import _pack_state,_unpack_state
     from Memory import LTM1
-    f,_,ids,_,row=named_fixture(monkeypatch);bank=f.store.parts
-    bank.begin_epoch()
-    agreeing_views(f.cs,ids[1]);expected=torch.stack(bank.evidence(row)).clone()
-    assert bank.gates.open==dict(interpret=True,clause=True)
-    state=copy.deepcopy(bank.state_dict())
-    bank.begin_epoch()
-    assert bank.gates.open==dict(interpret=True,clause=True)
-    torch.testing.assert_close(torch.stack(bank.evidence(row)),expected)
-    restored=LTM1(bank.capacity);restored.configure_operations(f.language.parts_of_speech)
-    restored._concept_owner=weakref.ref(f.cs)
+    gate_data(monkeypatch)
+    f=gate_fixture(monkeypatch);bank=f.store.parts
+    child=next(name for name in bank.gates.names if name not in bank.gates.exempt)
+    parent=next(name for name in bank.gates.names if name in bank.gates.exempt)
+    bank.gates.observe(parent,{child});bank.gates.advance(child,.8,when=7)
+    state=copy.deepcopy(bank.state_dict());expected=bank.gates.state()
+    bank.begin_epoch();assert bank.gates.state()==expected
+    restored=LTM1(bank.capacity)
+    restored.configure_operations(f.language.parts_of_speech)
     pointers=tuple(getattr(restored,name).data_ptr() for name in restored.columns)
-    assert not restored.gates.open['interpret']
     restored.load_state_dict(state)
-    assert restored.gates.open==bank.gates.open
-    torch.testing.assert_close(torch.stack(restored.evidence(row)),expected)
+    assert restored.gates.state()==expected
     assert pointers==tuple(getattr(restored,name).data_ptr() for name in restored.columns)
     missing=copy.deepcopy(state);extra=_unpack_state(missing['_extra_state']);extra.pop('gate_open');missing['_extra_state']=_pack_state(extra)
     with pytest.raises(ValueError,match='gate state'):restored.load_state_dict(missing)
-    old=copy.deepcopy(state);old['layout_version'].sub_(1)
-    with pytest.raises(ValueError,match='layout checkpoint version'):restored.load_state_dict(old)
 
 
-@pytest.mark.parametrize('lesson',[False,True])
-def test_model_gate_start_is_open_by_default_and_closed_for_lesson_configuration(lesson):
-    from corpus_lessons import LESSON_CONFIG
-    from Models import BaseModel
-    from data import TheData
-    from util import init_config
-    root=Path(__file__).resolve().parents[1]
-    config=LESSON_CONFIG if lesson else root/'data/MM_corpus_orders.xml'
-    init_config(path=str(config),defaults_path=str(root/'data/model.xml'))
-    TheData.processLM({split:dict(text=['.'] if split=='train' else [],label=[]) for split in ('train','validation','test')})
-    model=BaseModel.from_config(str(config),data=TheData)[0]
-    try:
-        bank=model._concept_owner()._concept_allocator.parts
-        assert bank.gates.open==dict(interpret=not lesson,clause=not lesson)
-        speech = model.languageSpace.parts_of_speech
-        assert set(speech.concepts) == set(speech.arguments)
-        assert not speech.radii().any()
-        assert all(model._concept_owner()._concept_allocator.order_of(cid) == 1
-                   for cid in speech.concepts.values())
-    finally:
-        model.End();model.symbolSpace.soft_reset()
-
-
-def test_readiness_records_gate_state_and_measurement_without_a_lesson_run(monkeypatch):
-    from corpus_lessons import readiness_report,lexical_report
-    f,_,ids,_,row=named_fixture(monkeypatch)
+def test_readiness_records_each_operation_without_a_lesson_run(monkeypatch):
+    from corpus_lessons import readiness_report
+    gate_data(monkeypatch);f=gate_fixture(monkeypatch)
     report=readiness_report(f.cs)
-    assert report['gates']==dict(interpret=dict(open=False,measurement=1/3),clause=dict(open=True,measurement=0.,arguments=f.language.parts_of_speech.operation('lift')['argument_measurements']))
+    assert set(report['gates'])==set(f.store.parts.gates.names)
     assert report['trust_measurements']==f.cs.trust_measurements()
-    model=SimpleNamespace(_concept_owner=lambda:f.cs,languageSpace=f.language)
-    lexical=lexical_report(model,['token0'])
-    assert lexical['gates']==report['gates'] and lexical['trust_measurements']==report['trust_measurements']
-    assert not f.store.parts.gates.open['interpret']
 
 
-def test_empty_lift_classes_have_zero_radius_and_leave_the_clause_gate_closed(monkeypatch):
-    gate_data(monkeypatch,interpret='open')
-    f=gate_fixture(monkeypatch);bank=f.store.parts
-    assert not bank.gates.open['clause']
-    a,b=words(f,2);agreeing_views(f.cs,a,b)
-    address=f.store.write_clause(composition(f,a,b,'part'),evidence=(1.,0.))
-    row=f.store.location(address)[1]
-    torch.testing.assert_close(torch.stack(bank.evidence(row)), torch.tensor([min(bank.gates.closed_trust, positive_length(f.cs, f.language.parts_of_speech.seats['part'].concept)), 0.]))
-    assert f.language.parts_of_speech.operation('lift')['definiteness']==(0.,0.)
-    assert f.language.parts_of_speech.operation('lift')['uses']==0
-    assert not bank.gates.open['clause']
-    assert bank.gates.measurements(f.cs,f.language.parts_of_speech)['clause']==0.
-
-
-@pytest.mark.parametrize('field,value',[('closedTrust',float('nan')),('fraction',1.1),('threshold',-.1),('start','invalid')])
+@pytest.mark.parametrize('field,value',[('closedTrust',float('nan')),('threshold',1.1),('threshold',-.1)])
 def test_invalid_gate_data_fails_at_construction(monkeypatch,field,value):
     from Memory import LTM1
-    data=gate_data(monkeypatch)
-    if field=='closedTrust':data[field]=value
-    elif field=='fraction':data['interpret'][field]=value
-    else:data['clause'][field]=value
+    data=gate_data(monkeypatch);data[field]=value
     with pytest.raises(ValueError):LTM1(8)
 
 
-@pytest.mark.parametrize('excluded', [None, '', '   '])
-def test_empty_except_list_caps_lift_too(monkeypatch, excluded):
-    data=gate_data(monkeypatch,interpret='open',excluded=excluded)
-    f=gate_fixture(monkeypatch)
-    a,b=words(f,2);agreeing_views(f.cs,a,b)
-    learned_operation(f.language.parts_of_speech,'lift',a,b,count=1)
-    address=f.store.write_clause(composition(f,a,b,'lift'),evidence=(.8,.4))
-    row=f.store.location(address)[1]
-    assert not f.store.parts.gates.excluded
-    assert not f.store.parts.gates.open['clause']
-    torch.testing.assert_close(torch.stack(f.store.parts.evidence(row)),torch.tensor([.8,.4])*data['closedTrust'])
+def test_retired_group_configuration_fails_loudly(monkeypatch):
+    from Memory import LTM1
+    data=gate_data(monkeypatch);data['interpret']=dict(start='open',fraction=.5)
+    with pytest.raises(ValueError,match='retired'):LTM1(8)

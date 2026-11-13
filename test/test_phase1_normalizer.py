@@ -50,7 +50,7 @@ def test_model_attaches_normalizer_to_every_space():
 
     config_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "basicmodel", "data", "MM_xor.xml",
+        "basicmodel", "data", "MM_text.xml",
     )
     # Load data first (same order as ModelFactory.run).
     TheData.load("xor")

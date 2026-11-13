@@ -124,7 +124,9 @@ def test_fractional_feature_weights_use_per_pole_min_and_max_extent_union():
     spans = torch.tensor([[[0, 1], [1, 2]]])
     extent = torch.tensor([[[0, 2]]])
     read = cs.cs_read_memberships((raw, spans, primitive, raw, spans), extent)
-    occurrence = torch.tensor([.25 ** .5, .36])
+    # The shared weighted intersection qualifies both lanes: the first
+    # feature's .75 against lane becomes 1 - (1 - .75)**.5 = .5.
+    occurrence = torch.tensor([.25 ** .5, max(1 - (1 - .75) ** .5, .36)])
     native = cs._percept_field.event_evidence([('bp', cs.basic_percepts.index[((65,), (prop,))]) for prop in (0, 1)])
     torch.testing.assert_close(native[:, 0, 0, 0], torch.tensor([[.25, .75], [.36, .64]]))
     torch.testing.assert_close(read[0, 0, 0], occurrence)
