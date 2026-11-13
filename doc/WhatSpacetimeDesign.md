@@ -1,15 +1,8 @@
 # What, spacetime, and thinking
 
-> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record.
-> - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
-> - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; a stream is the batch row that wrote a row, and a document is the cover row that starts it in that stream (reused at every later presentation; a row belongs to the document of the latest cover before it), so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded (2026-10-24).
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23; recorded 2026-10-30):** an LTM1 row is two tagged references (each to an LTM0 occurrence, a symbol or another LTM1 row, its tag saying which) with its kind read from the referents, not three. The unused `LTM0` columns are removed and the row has this layout (Alec, 2026-11-01).
-
-
-> **Status:** the question-answering design, first written 2026-09-08 and
-> kept to the code. It separates faithful input reconstruction from rational
-> output construction while retaining one `Data`, `Model`, and `Model.run()`
-> framework.
+This is the question-answering design (2026-09-08). It separates faithful
+input reconstruction from rational output construction while retaining one
+`Data`, `Model`, and `Model.run()` framework.
 
 ## 1. One question, different authority
 
@@ -123,6 +116,13 @@ its internal coordinates; `Data` never writes the model's `.where`/`.when`.
 Positions name locations, never content, so this adds no target to the model
 context.
 
+Inside the model, symbols carry `.where` and `.when`, and a concept keeps the
+extent of its occurrences and never the clock (decided 2026-10-20). A question
+that asks *when* therefore reads the stamp from an occurrence, where a
+particular event, a concept with few occurrences, lands on a definite time.
+`.when` is model time on one clock, sinusoidally encoded, and learned readers
+see it only as ages or differences.
+
 The same target-free context vector reaches the answer through the question
 conditioner, `Model._question_conditioner`: one zero-initialized, bias-free
 linear map per answer width, kept in the state dict as `question_conditioners`
@@ -131,9 +131,7 @@ occupied role of the conceptual answer, the root of the generate walk, as a
 cube translation that leaves the position and time band unchanged. Because it
 starts at zero the answer path starts independent of the question, and the
 answer cost trains it, so temporal question content is used rather than
-merely present: `test_what_training.py::test_temporal_question_content_is_causally_used`
-changes only the question's temporal content, with the input fixed, and
-requires the answer to change.
+merely present.
 
 An implicit lockstep between dataset order and the model clock is not a
 substitute: batch lanes share one tick per sentence slot, an epoch wrap
@@ -142,10 +140,8 @@ paths of one sentence share its tick, so "one presentation back" in dataset
 coordinates is not "one tick back" in model time.
 
 A finer rung of the same `.where` (a location within the datum presented at
-one trial, for text a span within the sentence) is deferred; it is not a
-separate coordinate. A corpus byte address as a coarser rung, and a
-document-boundary bit for `past` questions at a document start, are noted
-follow-ons.
+one trial, for text a span within the sentence) is not a separate coordinate;
+further rungs are [future work](FutureWork.md).
 
 Each stable presentation index reserves both sides of an interaction:
 
@@ -196,21 +192,21 @@ may be returned to the caller or recorded as the output side of the
 
 ## 4. One understanding, two downward paths
 
-> **Naming (2026-09-09; amended 2026-11-10):** the two downward paths are
-> `Model.reverseReconstruct()` and `Model.reverseOutput()`, one seeded by the
-> analysed input and ending at `InputSpace`, the other seeded by a resolved
-> answer and ending at `OutputSpace`. Both end in one order-zero decoder,
-> `BasicModel.reverse(x, field=...)`: reconstruction reverses the input's own
-> order-zero field, and output reverses the order-zero field that the generate
-> walk and its occurrence writer produce from the thought's conclusion. The
-> decoder is shared by construction, so every reconstruction step trains the
-> decoder that output uses; what stays separate is the per-call state.
->
-> **The answer path's own weights:** the generate chooser, the question
-> conditioner (§2) and, for a tensor output, `OutputSpace`'s `percept_adapter`.
-> The per-Space synthesis layers are retired; a checkpoint's `synthesis_layer`
-> keys are dropped with a warning. On the parameters output shares with
-> reconstruction, its gradient is projected against reconstruction's (§5).
+The two downward paths are `Model.reverseReconstruct()` and
+`Model.reverseOutput()` (2026-11-10), one seeded by the analysed input and
+ending at `InputSpace`, the other seeded by a resolved answer and ending at
+`OutputSpace`. Both end in one order-zero decoder,
+`BasicModel.reverse(x, field=...)`: reconstruction reverses the input's own
+order-zero field, and output reverses the order-zero field that the generate
+walk and its occurrence writer produce from the thought's conclusion. The
+decoder is shared by construction, so every reconstruction step trains the
+decoder that output uses; what stays separate is the per-call state.
+
+The answer path's own weights are the generate chooser, the question
+conditioner (§2) and, for a tensor output, `OutputSpace`'s `percept_adapter`;
+a checkpoint's retired `synthesis_layer` keys are dropped with a warning. On
+the parameters output shares with reconstruction, its gradient is projected
+against reconstruction's (§5).
 
 Bottom-up processing produces one internal understanding:
 
@@ -257,7 +253,7 @@ matrix belonging to the forward operation. It may use the exact forward-local
 carriers needed to invert routing and bindings, but those carriers may not
 cache the pre-analysis surface payload. Their content-bearing state is limited
 to the processed activation of mereonymic parts and wholes. Its purpose is
-fidelity to the presented input. As built there are two input reconstructions
+fidelity to the presented input. There are two input reconstructions
 through the one decoder (`SentenceField.reconstruct`): the input
 reconstruction reverses the open attention pass's field with no grammar, and
 the order-zero reconstruction runs the generate walk on the sentence's
@@ -303,7 +299,7 @@ At a high level, the answer is resolved, then realized:
 
 ```text
 derivation = Model.resolveAnswer(understanding, question)
-    # the row's current or recalled completed field (section 9);
+    # the row's current or recalled completed field (section 8);
     # the thought controller transforms its ideas
 response   = Model.reverseOutput(understanding, derivation)
     # condition the root on the question once, then the generate walk,
@@ -349,7 +345,7 @@ not decide the answer by projecting directly from the input symbol. A numeric
 output (XOR) is the one exception in form: it reads the path's composed state
 through a single affine head, a modality with no grammar.
 
-### 4.3 Invertibility contract and current gap
+### 4.3 Invertibility contract
 
 Perceptual and conceptual analysis should be primarily invertible before
 quantization, collectively over their active fields. Concept-to-symbol
@@ -364,16 +360,15 @@ fold, nor an individually invertible encoding of all those parts. This is
 acceptable only if the collective processed field supplies the remaining
 information. Use `W0..W3` for whole-source folds alongside `P0..P3`.
 
-The live bridge now replaces the RMS/same-row/mean sequence with addressed
-native-code evidence and one learned affine Sigma/tanh activation per existing
-word-concept candidate/location. It decodes that concept once. Each concept
+The bridge reads addressed native-code evidence through one learned affine
+Sigma/tanh activation per existing word-concept candidate/location. It decodes
+that concept once. Each concept
 has up to eight stable typed P/W references, not one duplicate identity per
 fold. Full processed native fold stacks remain beside the concept event and
 survive symbolic selection; the inverse binder returns terminal P/W states
 without averaging. WHERE/WHEN and prior symbolic content are kept separate
-from the evidence readout. This preserves distinctions the previous RMS
-erased, but retained native state is not proof of collective concept-only
-inversion. Overlapping concept-field formation and its decoder remain work.
+from the evidence readout. Retained native state is not proof of collective
+concept-only inversion.
 
 Several identified parts and wholes should knit into each first-level
 concept at a coherent `.where`; this is not one concept per source. Eight
@@ -395,16 +390,15 @@ learned selector. A diagonal-metric proximal Adam update can make admitted
 connections exactly zero while leaving biases and unused slots unpenalized.
 This explicitly trades some reconstruction accuracy for sparse definitions;
 it does not guarantee independent concepts or a collectively invertible basis.
-Reference admission uses existing concept relationships with stable slots;
-the full field-level migration is not complete. Strong L1 deletes useful
-references, especially where a concept needs many, so sparsity is chosen
-against a reconstruction tolerance: reducing input count cannot take
-precedence over preserving useful reconstruction detail.
+Reference admission uses existing concept relationships with stable slots.
+Strong L1 deletes useful references, especially where a concept needs many, so
+sparsity is chosen against a reconstruction tolerance: reducing input count
+cannot take precedence over preserving useful reconstruction detail
+([Training](Training.md)).
 
-The local numerical fixes preserve nonzero effective LDU diagonals even at
-exact zero and hold butterfly pairs touching padding at identity after
-training. Their reasons are documented beside the implementation. Existing
-ergodic sampling before `forward()` and after `reverse()` is compatible with
+The LDU parameterization preserves nonzero effective diagonals even at exact
+zero and holds butterfly pairs touching padding at identity after training.
+Ergodic sampling before `forward()` and after `reverse()` is compatible with
 a paired round trip; both directions must use the same intervening sample.
 The contract is an inverse on the image of valid perceptual analysis, not a
 claim that every imagined concept lies on that image.
@@ -482,11 +476,11 @@ and synthesis gates may have their own parameters, while the perceptual and
 conceptual coordinate system remains common.
 
 When the same `W` participates in analysis and again as `W^-1` during
-synthesis, answer loss produces both an indirect gradient through
-`F_theta(x)` and a direct gradient through the inverse use. Autograd must
-retain and sum both before priority projection; this is one path with a tied parameter, not two answer
-losses. Because derivatives through an inverse grow unstable near a singular
-matrix, the implementation must monitor conditioning and preserve its
+synthesis, answer loss produces both an indirect gradient through `F_theta(x)`
+and a direct gradient through the inverse use. Autograd must retain and sum
+both before priority projection; this is one path with a tied parameter, not
+two answer losses. Because derivatives through an inverse grow unstable near a
+singular matrix, the implementation must monitor conditioning and preserve its
 invertible parameterization rather than stopping the synthesis gradient.
 
 An exact, fully observed round trip `W^-1 W x = x` has zero reconstruction
@@ -511,8 +505,6 @@ read-only: it runs under `_synthesis_guard` with `_online_learning_frozen` set
 on every Space, so no word is promoted into the percept store, no live carrier
 or stream changes, and the stem's stash is restored. The detached result has
 the shape of a presented input event and is never a model input.
-
-*A superseded passage beginning "For each protected perceptual/conceptual parameter tensor, l" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 
 Serial grammar introduces a separate credit boundary. Continuous answer loss
 can train the chosen operations, their operands, synthesis, and the shared
@@ -568,8 +560,7 @@ An answer comes only from a concluded, accepted thought; with no conclusion
 the output role is empty and the model is silent
 ([Training](Training.md#what-questions-and-the-two-primary-costs)).
 
-*Moved to [DevelopmentHistory](DevelopmentHistory.md#8-context-for-the-grammar-chooser) (2026-10-30): "8. Context for the grammar chooser".*
-## 9. Prediction, supervision, and completion
+## 8. Prediction, supervision, and completion
 
 Prediction and verification remain part of the existing `Model.run()`
 training and evaluation loop. The substantive change is that the question
@@ -599,9 +590,11 @@ row's own k-th most recent completed field from a bounded per-row history
 sentence is admitted and cleared by that row's hard end-of-document reset
 (`dispatch_per_row_reset`). A row whose history is shorter than k is cold and
 stays unresolved. `What(future, +k)` stays unresolved until a conceptual
-predictor exists. An unresolved row leaves the other rows of the batch
-resolved. Training scores only supplied answers; automatic temporal targets
-are evaluation metrics.
+predictor exists: the activation predictor forecasts an activation over the
+symbol bank, which primes the next reading, not a completed field that could
+be realized as an answer. An unresolved row leaves the other rows of the
+batch resolved. Training scores only supplied answers; automatic temporal
+targets are evaluation metrics.
 
 This design keeps the existing batching, optimizer, grammar chooser, STM, and
 LTM owners and builds both branches in one model, with no second

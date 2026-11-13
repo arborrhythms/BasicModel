@@ -16,15 +16,16 @@ the XML knobs, and Testing for how changes are tested.
 | [Runtime architecture](doc/Componentization.md) | Live ownership map, non-modular mechanisms, and componentization sequence |
 | [BasicModel](doc/BasicModel.md) | Cognitive science foundations |
 | [Spaces](doc/Spaces.md) | Runtime spaces: Input, Part/Perceptual, Modal, Conceptual, Whole/Symbolic, Output, and SymbolSpace |
-| [STM](doc/STM.md) | Short-term memory: shift/reduce slots, routing conditioning, ltmConsolidation |
-| [Language](doc/Language.md) | Grammar layers, signal routing, category codebook, and syntax output |
+| [STM](doc/STM.md) | Short-term memory: the working set of ideas, serial and parallel sequencing, attention, end-states and their chain into long-term memory |
+| [Language](doc/Language.md) | The grammar: its layers and operators, and how a sentence is composed and generated |
 | [Orders](doc/Orders.md) | Sets, membership and the ladders of concept order |
-| [Mereology](doc/Mereology.md) | Parthood as the fundamental operation, the five mereological relations, ImpenetrableLayer |
+| [Mereology](doc/Mereology.md) | Parthood as the fundamental operation and the relations defined from it, asserted and geometric parthood, synthesis and analysis of the percept lattice |
 | [Lexicon](doc/Lexicon.md) | Word-vector store: surface forms, codebook binding, LBG splitting |
 | [Logic](doc/Logic.md) | Subsymbolic and symbolic logic operations |
-| [Reasoning](doc/Reasoning.md) | Truth methods, bidirectional reasoning, contemplative awareness stubs |
+| [Extend](doc/Extend.md) | An operator's fourth use, and the field of understanding |
+| [Reasoning](doc/Reasoning.md) | Direct and derived truth, the thought episode and its operators, and intuition, understanding and thought |
 | [Expectation](doc/ExpectationRetention.md) | The activation predictor and expectation at every level |
-| [What and spacetime design](doc/WhatSpacetimeDesign.md) | One understanding, reconstruction vs output synthesis, queryable spacetime, thinking stack, and grammar-chooser context |
+| [What and spacetime design](doc/WhatSpacetimeDesign.md) | The question-answering design: the `what` question, queryable spacetime, one understanding with input reconstruction and output construction, the interaction record, and thinking |
 | [Selected meaning](doc/SelectedMeaning.md) | Selected linguistic meaning and the one thought controller |
 | [Accessible mind](doc/AccessibleMind.md) | Thought operators as effects on the subsystems of the accessible mind |
 | [Thought-operator contracts](doc/QueryContracts.md) | Contracts of the thought operators and their grammar-owned catalogue |
@@ -66,7 +67,7 @@ learned gain that raises binary logits as occupancy and deadline urgency grow.
 Hard deadlines reserve a slot for the next word and finish each sentence within
 its one-slot absolute or three-slot relative end state. See
 [Architecture](doc/Architecture.md#whole-paths-and-concept-episodes-2026-11-11)
-and [Language](doc/Language.md#one-operation-per-round-item-75).
+and [Language](doc/Language.md#one-operation-per-round).
 
 ## Files
 
@@ -76,7 +77,7 @@ and [Language](doc/Language.md#one-operation-per-round-item-75).
 | [bin/Models.py](bin/Models.py) | Main entry point: model factory, training loop, `--compare`, optional `--report` |
 | [bin/Layers.py](bin/Layers.py) | Layer library: SigmaLayer, PiLayer, ErgodicLayer, LinearLayer, TruthLayer |
 | [bin/Spaces.py](bin/Spaces.py) | Space classes: InputSpace, PartSpace, ModalSpace, ConceptualSpace, WholeSpace, OutputSpace |
-| [bin/Language.py](bin/Language.py) | Grammar layers and SymbolSpace: parsing, composition, category codebook |
+| [bin/Language.py](bin/Language.py) | Grammar layers and SymbolSpace: parsing and composition |
 | [bin/embed.py](bin/embed.py) | Word vector training: CBOW/SBOW with negative sampling, `WordVectors` (gensim-compatible `.kv`) |
 | [bin/serve.py](bin/serve.py) | HTTP server: OpenAI-compatible `/chat/completions` endpoint for WikiOracle integration |
 | [data/](data/) | XML model configurations |

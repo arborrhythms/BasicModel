@@ -1,16 +1,5 @@
 # Philosophy
 
-> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record.
-> - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23; recorded 2026-10-30):** an LTM1 row is two tagged references (each to an LTM0 occurrence, a symbol or another LTM1 row, its tag saying which) with its kind read from the referents, not three. The unused `LTM0` columns are removed and the row has this layout (Alec, 2026-11-01).
-> - Parthood, subsumption and kind statements ("cats are animals") are **folds** in the meronomy and the taxonomy over symbols, not rows; equality is membership in a singleton; no `REL_PARTOF` row exists.
-> - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
-> - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; a stream is the batch row that wrote a row, and a document is the cover row that starts it in that stream (reused at every later presentation; a row belongs to the document of the latest cover before it), so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded (2026-10-24).
-> - Expectation is a **gain field** $c = m \odot a \odot o$ (attention's gain $m$, expectation's gain $a$, the arriving signal $o$) with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
-> - Amended 2026-10-29/30 (Alec): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are built (accepted as implemented, Alec, 2026-11-01).
-> - Operators are minimal: tense, aspect, the preposition and the modal are one `position` operation (the modal with a world as object; no `MP` rule); the verb is a group element (`verbSpectrum` diagonal, log-ratio teacher); `surface` is absorb and transpose only; no language is named or special-cased in code, configuration, fixtures or tests. Defaults: NP = everything, VP = *occurs* (read for "exists"), MP = all possible worlds.
-
-
 This document maps the model's machinery onto three philosophical accounts
 of cognition: Kant's analysis/synthesis pair, Ramsey's treatment of
 theoretical structure, and Buddhist epistemology (pramana theory). The
@@ -47,9 +36,8 @@ under.
 The model realizes the pair literally:
 
 - The **perceptual branch synthesizes**: the input arrives as a manifold of
-  atoms (`[B, N, 1]`), and the bottom-up Sigma (union) fold — with the
-  chunking front ends (radix/BPE/byte) — combines atoms into recurring
-  surface forms held in the percept store.
+  atoms (`[B, N, 1]`), and the bottom-up Sigma (union) fold combines atoms
+  into recurring surface forms held in the percept store.
 - The **symbolic branch analyzes**: the same input arrives as one undivided
   unity (`[B, 1, N]`), and the top-down Pi (intersection) fold divides it —
   lexer cuts, part-whole divisions, coarse large-scale characterizations
@@ -58,25 +46,20 @@ The model realizes the pair literally:
   without content are empty and intuitions without concepts are blind maps
   directly: symbolic generalities without perceptual particulars cannot
   spell out a surface; perceptual particulars without the symbolic scaffold
-  carry structure but no meaning. `InputSpace.reverse(subspace)` recombines
-  both branches: the conceptual reconstruction rides the incoming SubSpace
-  (`_concepts_recon`), and the private helper `_paint_reconstruction`,
-  called inside `reverse`, paints it together with the atomic percept
-  branch.
+  carry structure but no meaning. Reconstruction (`InputSpace.reverse`)
+  recombines both branches.
 
 ## Epistemic Levels (Ramsey)
 
-The codebase's term **"Ramsified"** (e.g. `RamsifiedModel.xml`; spaces
-replicated "Ramsified across conceptual orders") descends from the **Ramsey
-sentence**: replace a theory's theoretical terms with existentially bound
-variables, so the theory's content lives in the *roles its structure
-realizes* rather than in privileged names. In the model, the per-order
-conceptual/symbolic spaces are exactly such role-realizations — what a space-role
-*is* is exhausted by its position in the recurrent loop, not by an intrinsic
-label; the same structural theory is instantiated at each conceptual order. *(Since 2026-10-22 the conceptual space is one,
-[Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3); what is ramsified is the symbol tree and its
-orders, an order-n concept defined over order-(n−1) symbols, not the
-space.)*
+The codebase's term **"Ramsified"** (e.g. `RamsifiedModel.xml`) descends from
+the **Ramsey sentence**: replace a theory's theoretical terms with
+existentially bound variables, so the theory's content lives in the *roles
+its structure realizes* rather than in privileged names. In the model what is
+ramsified is the symbol tree and its orders: an order-$n$ concept is defined
+over order-$(n-1)$ symbols, so what a concept *is* is exhausted by its position
+in that structure, not by an intrinsic label, and the same structural theory
+is instantiated at each order. The conceptual space itself is one
+([Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21)).
 
 > Scholarship hedge (recorded deliberately): this section states the
 > project's working usage. Verify the mapping against Ramsey's "Theories"
@@ -140,9 +123,6 @@ the dependent seen without the imagined is the perfected
 (*pariniṣpanna*), which forgetting by value and MTM's expiry leave open.
 The ethical reading is in [Ethics](../../doc/Ethics.md#witnessing-plants-the-seeds-of-identity-alec-2026-10-23).
 
-The remainder of this document is the original pramana-theory mapping of
-the truth ontology.
-
 ## Direct Perception and the Conceptual Overlay (Gelug)
 
 In Gelug terms, the **first moment of encounter** with an object is a
@@ -155,30 +135,25 @@ overlay of interpretation.
 
 The architecture realizes this distinction structurally:
 
-- **The first moment is the parallel prelude.** Percepts cross the
-  corpus callosum **nameless** — the interface law factors
-  a percept into content (row selection) and evidence (magnitude),
-  with no naming side-channel — and the σ/π folds carve the scene:
-  the analysis, in its carving of the domain into parts, IS the
-  parallel act. The prelude pumps **up to the model's
-  `subsymbolicOrder`** (the per-order derivation ladder), seeding both
-  codebook towers with a scene description that is pre-conceptual in
-  exactly the Gelug sense: no table lookup, no naming, no story. The
-  σ and π layers are the real subsymbolic shapers of meaningfulness
-  within conceptual space — the words in the codebooks are produced
-  and conditioned by them — so the parallel scene description primes
-  semantics at that moment and shapes it to a minor degree (the small
-  EMA step; the word-learning guarantee).
+- **The first moment is the open, parallel pass.** Percepts arrive
+  **nameless**: the interface law factors a percept into content (row
+  selection) and evidence (magnitude), with no naming side-channel, and the
+  Sigma and Pi folds carve the scene. The analysis, in its carving of the
+  domain into parts, is the parallel act. The scene description it leaves is
+  pre-conceptual in exactly the Gelug sense: no table lookup, no naming, no
+  story. The folds are the subsymbolic shapers of meaningfulness within
+  conceptual space, and the words in the codebooks are produced and
+  conditioned by them, so the parallel scene description primes semantics at
+  that moment.
 - **The subsequent moments are the serial STM process.** Naming (the
   binding-table deref), recognition (the codebook snap), memory (the
-  workspace stacks), preference and afflictive projection (intent
-  priming, heat), conceptual elaboration (shift/reduce composition):
-  each serial pump meets the object through the gist-primed,
-  intent-weighted overlay, no longer as it first appeared. The serial
-  bit happens **in STM**.
+  workspace stacks), preference and afflictive projection (intent priming,
+  heat), conceptual elaboration (shift/reduce composition): each serial step
+  meets the object through the primed, intent-weighted overlay, no longer as
+  it first appeared. The serial part happens **in STM**.
 - **Collapse and back-action.** Where serial collapse is mandated,
-  serial processing selects a **story** — the soft superposition of
-  readings collapses, one commit per pump — and the wavefunction of
+  serial processing selects a **story**: the soft superposition of
+  readings collapses, one commit per step, and the wavefunction of
   reality is simultaneously perturbed: selection is not passive
   observation; the commits write (workspace, bindings, codebook EMA),
   so the act of meaning-making back-acts on the state that produced
@@ -197,7 +172,6 @@ The architecture realizes this distinction structurally:
   forces the enclosing clause to stay relative: “he said cats are animals”
   retains the part row separately from the attribution. A generic subject
   makes a relation even without a copula; a particular subject may fuse.
-  Grammar closes these alternatives as `NP → S` and `NP → REF(S)`.
 
   Reference carries content, not credibility. Embedded rows register at
   zero trust; external provenance asserts the outer observation. Negation
@@ -209,24 +183,17 @@ The architecture realizes this distinction structurally:
   and separate content/source traces is grounded in
   [the psychological discussion](#psychological-grounding-2026-09-16).
 
-  Trust and evidence are distinct (Alec, September 28). The evidence pair
+  Trust and evidence are distinct (Alec, 2026-09-28). The evidence pair
   says how well the input identified its concept. Source trust says whether
   the event it refers to is veridical, and applies to that event as a whole.
-  A well-identified report can be untrusted. A row keeps no separate trust
-  column: a close scales the evidence poles it writes by its source's trust,
-  and forgetting reads a row's trust as its larger evidence pole. The row
-  also carries its order: a higher-order point descends to order 0 when
-  decoded.
+  A well-identified report can be untrusted.
 
 **Expectation belongs to the overlay and cannot reach the first moment**
-(2026-09-20; *the subtraction is superseded 2026-10-19*: expectation is now
-a gain that attenuates what was predicted and never subtracts;
-the point about the first moment stands). The expected next idea was held as a
-sign-reversed *negative image* and added to the ended idea, so what is
-conceived is what was not predicted. Perceptual space carries no negation, so the first moment is met
-in full whatever is expected; attention, which excludes without predicting,
-is the faculty that can reach it. See
-[Expectation as a Negative Image; Attention as Exclusion](#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20).
+(2026-09-20). Expectation adds nothing to what is perceived, and perceptual
+space carries no negation, so the first moment is met in full whatever is
+expected; attention, which excludes without predicting, is the faculty that
+can reach it. See
+[Expectation as a Gain; Attention as Exclusion](#expectation-as-a-gain-attention-as-exclusion).
 
 At the corpus callosum, objects are analysed and synthesized — by
 sending them back to PerceptualSpace (the shared base of the two
@@ -241,11 +208,9 @@ an arbitrary stand-in, related to its referent only through the
 binding table (the conceptual-overlay side; cf. *sgra-spyi*, the term
 generality, versus the object it evokes).
 
-Protocol summary: any sentence, when processed, has
-``subsymbolicOrder`` parallel steps to seed the codebook towers, and
-then meaning-making happens over the complete sentence, producing an
-absolute truth (an idea) or a relative truth (a relation between
-ideas).
+In summary: a sentence is first read whole in the open pass, and meaning is
+then made word by word over the complete sentence, producing an absolute truth
+(an idea) or a relative truth (a relation between ideas).
 
 ## Purpose
 
@@ -317,6 +282,124 @@ feeling (direct perception) -> fact (conceptual judgment) -> operator -> new fac
 Authorities influence which providers are trusted; logical validity is
 determined by operators and evidence.
 
+### The three sources of trust in the model (Alec, 2026-11-13)
+
+> trust can be established by reasoning from trusted premises, authority,
+> or direct witnessing. Direct witnessing we already have, but that covers
+> word-concepts and feelings, not object concepts. object concept truth is
+> established by reasoning from existing trusted premises (in LTM or
+> conceptual space). authority trust is brought directly into LTM by the
+> WikiOracle harness at face value from the truth store.
+
+The truth objects above are the application's. Inside the model the same
+sources establish the trust of what it holds.
+
+| Source | Valid cognition | What it establishes in the model |
+| --- | --- | --- |
+| Direct witnessing | direct perception (*pratyaksa*) | word-concepts and feelings: a percept that is present, a felt number, and a word-concept's radius, counted from its occurrences |
+| Reasoning from trusted premises | inference (*anumana*) by the power of the fact | object concepts and conclusions: on each lane the least of the premises, and the greatest across alternatives; the premises are the relations of long-term memory and the radii of concepts |
+| Authority | inference through belief in a reliable speaker (*apta*) | what the truth store holds, entered into long-term memory at the value the store gives |
+
+Which source serves follows the object. What is manifest is witnessed,
+what is hidden is reasoned from what is manifest, and what cannot be
+reasoned from what the knower has is taken from one who knows. To a model
+that reads, only words and felt numbers are manifest; every object is
+hidden.
+
+Who sets the value follows the source. Alec, 2026-11-13: "this should be
+something that wiki oracle sets when training, and users set in the truth
+store. Conversations go in at zero, so truth statements have their trust
+evaluated." What is read in training is trusted at the value WikiOracle
+gives it, an entry of the truth store at the value its user gave it, and
+what is only said in a conversation at zero: it is remembered and can be
+recalled, and it lights nothing. Once written, a value is not revised by
+saying otherwise: "facts can be forgotten, but changing trust values has
+to be done by proof (establishing contradiction within the existing truth
+store)."
+
+**Luminosity is how this trust is read.** Alec, 2026-11-13: "A yes/no
+question is a query into conceptual space. We can ask the positive or
+negative form as an existence check within the region of order-0
+conceptual space that is specified by that; the question is true if a
+trusted object exists in that space. So we can consider the projection of
+multiple turth statements into that space: it is a luminousity test." A
+concept of the region is lit by the brightest statement that reaches it
+and none is added to another, so a statement repeated is no truer. The
+positive and the negative form give the two lanes, for and against, and
+a region with no trusted object is dark on both: the corner *neither* of
+the [catuskoti](#quaternary-truth-and-the-catuskoti). The measure over
+the whole space is in [Logic](Logic.md#luminosity).
+
+A lit region is read in two ways, and they are not the same warrant.
+Alec, 2026-11-13: "we can do reasoning from analogy wi "the brightest
+statement in a region", but that is not sufficient for logical pervasion
+in the geluk sense. For pervasion we need the entire space of the truth
+claim in conceptual space to be luminous, or have a positive value
+(non-negative is not contradicted, but unknown, so analogy is not
+deductively true)." That a trusted object exists in the region is the
+example of a proof, an instance in which the claim holds: a statement of
+a like object of the same order. Pervasion (*vyapti*) "is just coverage
+from a higher order", and only it carries a deduction. Alec, the same
+day: "Like "cats have fur" should be a relation in a higher order space
+about cat-things and things-with-fur. So every intention (e.g. the
+property fur) will have an extension when applied to a set (things with
+fur) which will look like a region in conceptual space (the furry things
+region)." A property's extension is a region, a subject's set is a
+region, and the pervasion is the one relation between the two kinds, in
+the space where each kind is a single object, by which the first region
+lies wholly within the second. Such a sentence is a relative truth, "a
+relation between two ideas (have expresses parthood, is expresses
+identity (unless predication), both are relations that are written to
+STM1 by a correct grammatical parse, are stored in LTM1, and teach the
+conceptual taxonomy)". That Felix has fur follows from his being a cat
+by the relation of cats to things with fur, and not from another cat's
+having it. A region lit in part and held false nowhere is unknown
+and not false, and a region held false anywhere is contradicted.
+
+### What an animal lacks (Alec, 2026-11-13)
+
+"animal cognition, which should be a fully capable but intuitive S1, needs
+mereology and similarity." Leaving the combination of things to System 2 then
+reframes the animal "as one which lacks interpret() rather than one that lacks
+system 2."
+
+- **The same mapping, into a different space.** "if we have a PI-mapping of
+  concepts back onto percepts even for animals, but percepts live in
+  perceptual space rather than symbolic space, might this explain the
+  difference of animal cognition? so the interpret operator is somehow one
+  which transforms from a constrained perceptual space to a zero-D symbolic
+  space?"
+- **What the constraint is.** In a space a kind is a region, and a kind of
+  kinds is only a larger region: the group taken as one thing cannot be told
+  from its members taken together. A point with no dimensions can be
+  collected again, so orders can stack.
+- **What an animal's symbol can do.** "For animals, they can have symbols of
+  their concepts, but they cannot use those symbols to represent arbitrary
+  concepts." A symbol's mapping to its object has "no initial basis": nothing
+  in an empty symbol points to what it stands for, so the mapping is given and
+  is not witnessed.
+
+The comparative evidence agrees in outline and is contested in detail. Rhesus
+monkeys individuate objects by kind when perceptual properties are held
+constant (Phillips & Santos 2007). Chimpanzees with no language training but
+with a history of token training match relations between relations (Thompson,
+Oden & Boysen 1997), which its authors explain as the re-encoding of an
+abstract relation as a symbol; a token is a percept that stands in for the
+relation. Hooded crows have matched relations after training only on identity
+(Smirnova, Zorina, Obozova & Wasserman 2015). Penn, Holyoak & Povinelli (2008)
+hold that higher-order relational operations are absent outside humans.
+
+**References.** Penn, Holyoak & Povinelli (2008), *Darwin's mistake:
+Explaining the discontinuity between human and nonhuman minds*, Behavioral and
+Brain Sciences 31(2). Phillips & Santos (2007), *Evidence for kind
+representations in the absence of language: Experiments with rhesus monkeys
+(Macaca mulatta)*, Cognition 102(3). Smirnova, Zorina, Obozova & Wasserman
+(2015), *Crows spontaneously exhibit analogical reasoning*, Current Biology
+25(2). Thompson, Oden & Boysen (1997), *Language-naive chimpanzees (Pan
+troglodytes) judge relations between relations in a conceptual
+matching-to-sample task*, Journal of Experimental Psychology: Animal Behavior
+Processes 23(1).
+
 ## Frame-Relative Truth
 
 WikiOracle evaluates facts relative to **epistemic frames** defined by
@@ -354,23 +437,20 @@ $\neg[a_P, a_N] = [a_N, a_P]$:
 - Conjunction: $[\min(a_P, b_P), \max(a_N, b_N)]$ (truth-min, falsity-max)
 - Disjunction: $[\max(a_P, b_P), \min(a_N, b_N)]$
 
-> Implementation note (amended 2026-11-12): the activation carrier between
-> components (`ActiveEncoding`, `bin/Spaces.py`) is one signed scalar in
-> $[-1, 1]$, but evidence about a concept is never netted to one. Since
-> 2026-10-07 a concept's evidence is the pair $(c^+, c^-) \in [0, 1]^2$,
-> carried in two lanes from the attention walk to the stored row
-> (`truth_plus`, `truth_minus`). The four corners are derived when read,
-> and they overlap: $t = \min(c^+, 1 - c^-)$, $f = \min(c^-, 1 - c^+)$,
-> $both = \min(c^+, c^-)$, $neither = \min(1 - c^+, 1 - c^-)$
-> (`ConceptEvidence.corners`, `LTM0.corners`). Neither the corners nor a
-> signed $c^+ - c^-$ is stored, since a signed value cannot tell *both* from
-> *neither*. Conjunction and disjunction take the pole-wise minimum and
+> Implementation note: evidence about a concept is never netted to one signed
+> value, since a signed value cannot tell *both* from *neither*. It is the
+> pair $(c^+, c^-) \in [0, 1]^2$, carried in two lanes from the attention walk
+> to the stored row (`truth_plus`, `truth_minus`). The four corners are
+> derived when read, and they overlap: $t = \min(c^+, 1 - c^-)$,
+> $f = \min(c^-, 1 - c^+)$, $both = \min(c^+, c^-)$,
+> $neither = \min(1 - c^+, 1 - c^-)$ (`ConceptEvidence.corners`,
+> `LTM0.corners`). Conjunction and disjunction take the pole-wise minimum and
 > maximum above, `not` exchanges the poles (`NotLayer`), and `non` withholds
 > both (`NonLayer`). The four-valued analysis of stored truths is in
 > `TruthLayer` (`tetralemma_balance_penalty`, `consistency`,
-> `suggest_clarifications`, `bin/Layers.py`).
+> `suggest_clarifications`).
 
-The *Both* corner is no longer conflated with *indeterminate* nor exiled to
+The *Both* corner is conflated neither with *indeterminate* nor with
 feeling. Truth is defined over existence: a predicate holds of a thing when
 the thing's region lies in the predicate's region. A thing has parts, and its
 parts may differ: a soccer ball is black and white, so "the ball is black" is
@@ -411,7 +491,7 @@ WikiOracle's operators map to Dharmakirti's theory of inference:
 | `conjunction` (`ConjunctionLayer`) | positive concomitance / co-presence | *anvaya* |
 | `disjunction` (`DisjunctionLayer`) | negative concomitance / co-absence | *vyatireka* |
 
-> Implementation note (2026-07): these are **grammar operators** --- rule
+> Implementation note: these are **grammar operators** --- rule
 > names in `data/complete.grammar` dispatched to the layer classes in
 > `bin/Language.py` --- not markup. The corpus format is plain text; no
 > `<not>` / `<non>` / `<and>` / `<or>` XML tags are parsed anywhere.
@@ -424,19 +504,17 @@ produces **epistemic openness** rather than contradiction. Valid cognitions
 deepen stable conceptual attractors; false cognitions weaken them, producing
 a truth-weighted energy landscape similar to a Hopfield memory.
 
-The two negations are also two faculties (2026-09-20) — **amended
-2026-10-19**: expectation's effect on the signal is now a gain, a
-non-affirming exclusion of the same kind as attention's (`non`), and `not`
-lives only in the against lane and in thought. As first
-written: `not` needs a signed carrier and was how **expectation** entered,
-the predicted idea sign-reversed and added to what was composed. `non`
-needs no sign and is how **attention** works: the non-object is removed and
-nothing is put in its place, so attention needs no prediction. Alec's
-2026-09-20 statement 1 (prediction as sign reversal; "for a perfect
-prediction we then conceive of nothing") is withdrawn with the subtraction
-and amended to *nothing new*: the expected cat was conceived in
-anticipation. See
-[Expectation as a Negative Image; Attention as Exclusion](#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20).
+The two negations also sort the two faculties (2026-09-20; in this form since
+2026-10-19). `non` needs no sign and is how **attention** works: the
+non-object is removed and nothing is put in its place, so attention needs no
+prediction. **Expectation** acts on the signal in the same non-affirming way:
+it is a gain that dims what was predicted, withholding signal without
+asserting its contrary. `not` lives only in the against lane and in thought.
+A perfect prediction therefore does not leave nothing conceived; it leaves
+nothing *new*. A fully expected cat arrives twice, as the prime before it
+appears and as content dimmed toward the gain's floor, and is seen as an
+expectation confirmed. See
+[Expectation as a Gain; Attention as Exclusion](#expectation-as-a-gain-attention-as-exclusion).
 
 ### The two negations on a modifier: not-heavy and non-heavy (Alec, 2026-10-15)
 
@@ -461,15 +539,15 @@ mark beside the two lanes. It is the trace that lets the inverse re-emit
 *non-heavy* (the row differs from a plain paper weight exactly there), it
 is what the forward discard charge should count as retained rather than
 discarded, and it is what expectation's
-prior must respect.
+prior must respect: that dimension gets neither a prime nor attenuation.
+Nothing is expected there, which is not the same as expecting zero.
 
 `non` applies to **modifiers only**: applied to the noun it erases the
-thing entirely, which is the degenerate reading item 6 found the compose
-policy choosing when `non` was free (`cat → non` leaves no cat). Which
-position `non` takes is for exposure to the grammatical possibilities to
-teach — its operand position forms a class under the participation rule
-(the words that fill an operand position form that position's class);
-the corpus must offer negated modifiers for that.
+thing entirely, the degenerate reading the compose policy chose when `non`
+was free (`cat -> non` leaves no cat). Which position `non` takes is learned
+from exposure: the words that fill an operand position form that position's
+class ([Language](Language.md), "Learned argument concepts"), so the corpus
+must offer negated modifiers.
 
 ## Truth Lattice
 
@@ -503,20 +581,18 @@ In WikiOracle (design intent):
 
 This preserves the tetralemma without logical explosion.
 
-> Implementation note (2026-07): the exclusion above is stated design
-> intent, not implemented machinery. No `<feeling>` tag exists, and there
-> is no feeling-specific training or TruthSet filter; the `<truthSet>` /
-> trust machinery (provisioning in `bin/Models.py`, `LTM0` in
-> `bin/Layers.py`) is real but generic over truth texts. The hedonic
-> *reading* of the stored trust sign (next subsection) is the current
-> stand-in for a feeling channel.
+> Implementation note: the exclusion above is stated design intent, not
+> implemented machinery. No `<feeling>` tag exists, and there is no
+> feeling-specific training or TruthSet filter; the `<truthSet>` and trust
+> machinery is generic over truth texts. The hedonic *reading* of the stored
+> trust sign (next subsection) is the current stand-in for a feeling channel.
 
-*2026-11-11 (Alec), on the scalar that item 1.8 places beside the words:* "so
+A decided and unbuilt direction gives feeling a carrier of its own: a
+continuous value read beside the discrete words. Alec (2026-11-11): "so
 feelings are continuous, concepts are discrete, and we have a better model of
-nonconceptual knowing: continuity." The scalar is "the continuous "feeling"
-that corresponds to the discrete boundaries established by symbolic
-discrimination" ([specification](plans/2026-11-11-item1-8-last-architecture-round.md)
-decisions 13 and 15).
+nonconceptual knowing: continuity." The value is the continuous feeling that
+corresponds to the discrete boundaries symbolic discrimination establishes
+([FutureWork](FutureWork.md), "Operations on continuous values").
 
 ### Trust-sign as hedonic tone --- luminosity as joy
 
@@ -533,96 +609,69 @@ determined content is, not merely how *settled* it is. The epistemic and
 contemplative luminosities coincide in magnitude and differ only in the
 sign-weighting.
 
-## Expectation as a Negative Image; Attention as Exclusion (2026-09-20)
+## Expectation as a Gain; Attention as Exclusion
 
-**Superseded mechanism, October 19:** Item 4
-replaces subtraction with attenuation. Expectation's content action belongs
-with `non`: withholding signal without asserting its contrary. Its separate
-omission lane can support a checked `not` inference, but an omission is not
-an observed negative fact. A withheld modifier retains its identity and
-reconstruction obligation while receiving neither attenuation nor a prime.
-Desire remains a desired/hated selection signal with outcome supervision.
-The historical discussion below explains the earlier subtraction proposal.
+In the first formulation, of 2026-09-20, the expected idea was to
+be held as a sign-reversed image and added to what was composed, so that a
+perfect prediction left nothing conceived. Since 2026-10-19 expectation is a
+gain. What arrives is multiplied by a factor in $[0, 1]$ that dims what was
+predicted toward a floor and passes whole what was not: $c = m \odot a \odot o$
+for attention's gain $m$, expectation's gain $a$ and the arriving signal $o$.
+The difference between the arrival and the prediction is kept beside the
+content in two lanes, excess and omission; it alone trains the predictor and
+measures surprise. The expected activation also primes selection and never
+adds content. The mechanism is in [Expectation](ExpectationRetention.md); this
+section records what the two faculties mean and what they answer to.
 
-
-Four statements of Alec's (2026-09-20) fix how expectation and attention
-enter the mind; this section records what they mean and what they answer to.
-
-> Prediction is the negation (the affirming negation, or sign-reversal) over
-> the conceptual activation, which is left in conceptual space and added to
-> the incoming conceptual activation. For a perfect prediction we then
-> conceive of nothing.
+Two of Alec's statements of 2026-09-20 still fix the roles. The first is that
+expectation is applied around the object and not to it:
 
 > The object appears to the mind as the negation of the non-object. So we
 > apply expectation to everything but the object of observation, which allows
 > it to (for example) be recognized more quickly.
 
-> I'm not sure negation can be applied to zero-order concepts, which are just
-> perceptual assemblages, since perceptual space does not carry negation.
+The second is that the exclusion by which an object appears, opposite from
+non-pot, is a non-affirming negation, so attention does not need a full
+prediction in order to focus.
 
-*Superseded by Alec, 2026-09-28, after item 11 gave every concept two
-symbols:* "Both `not` and `non` can apply to any bivalent values; so concepts
-of any order can be negated. The reversal of a point is its negation wrt the
-origin, which is just another point, not a region." Perceptual space still
-carries no negation — a percept remains one-sided — but a zeroth-order
-*concept* is no longer one-sided: its bivalence is the pair `(c⁺, c⁻)`, not a
-sign, and negation is the swap of that pair.
-
-> Opposite of non-pot is a non-affirming negation. So I guess attention does
-> not need full prediction in order to focus (which makes sense).
-
-*Moved to [DevelopmentHistory](DevelopmentHistory.md#the-rule) (2026-10-30): "The rule".*
 ### Perception carries no negation
 
-The third statement is settled by the percept geometry
-([Spaces](Spaces.md#percept-geometry-positive-unit-hypercube)): a percept is a
-presence in `[0, 1]`, "one-sided; its opposite is the complement `1-x`, not
-the signed negation `-x`". The cube has a complement but no additive inverse,
-and cancelling by addition needs one. Zeroth-order concepts are assemblages
-of percepts; sign enters conceptual activation only at the first rung above
-them.
-
-*Amended (Alec, 2026-09-28).* The paragraph above holds of **percepts** and
-no longer of **concepts**. Since item 11 every concept owns a negative
-symbol, so order 0 carries bivalence as the pair `(c⁺, c⁻)` rather than as a
-sign, and the two poles are antipodal in direction with independent
-magnitudes — one row holds the content, the two symbols differ only in sign.
-A concept's contribution `(c⁺ − c⁻)·v` lies in the signed span of the rows,
-which is closed under reflection through the origin at every order, so the
-negative image raises no order and needs no region: negation forms no
-complement. The withdrawn claim was that the negation of a zeroth-order point
-is "a region, everything the exclusion leaves"; it is not, it is the
-concept's own negative symbol. The image is still added to the ended idea,
-now at whatever order that idea has.
-
-*Superseded at the leaf (Alec, 2026-10-07).* The signed-span expression above
-is historical. One signless concept code now has two positively-valued
-symbols, carried in independent for and against lanes. Their magnitudes
-remain a pair from the attention walk to the stored row; no difference or
-sign is formed. Thus *both* retains both witnesses and never cancels to
-*neither*.
+A percept is a presence in `[0, 1]`
+([Spaces](Spaces.md#percept-geometry-positive-unit-hypercube)): "one-sided;
+its opposite is the complement `1-x`, not the signed negation `-x`". The cube
+has a complement and no additive inverse, so nothing can be cancelled in
+perception. A concept is different. At every order it has two positively
+valued symbols, carried in independent for and against lanes, and negation
+exchanges the lanes (Alec, 2026-09-28: "concepts of any order can be
+negated"). No difference or sign is formed, so *both* keeps both witnesses and
+never cancels to *neither*.
 
 Read against [the Gelug account above](#direct-perception-and-the-conceptual-overlay-gelug),
-this is exact. The **first moment** — the parallel prelude, percepts crossing
-nameless — is out of expectation's reach by construction: sensation is never
-subtracted from. Expectation belongs wholly to the **conceptual overlay**.
-The purity of accepting the input is the purity of the first moment, and it
-is guaranteed by the geometry, not by restraint.
+this is exact. The **first moment**, percepts arriving nameless, is out of
+expectation's reach by construction: the percept path carries the whole
+attended signal, and expectation scales only what is conceived of it.
+Expectation belongs wholly to the **conceptual overlay**. The purity of
+accepting the input is the purity of the first moment, and it is guaranteed by
+the geometry, not by restraint.
 
-It also forces the two negations of
-[the operators table](#negation-and-logical-operators) apart into two
-faculties, by the carrier each needs:
+It also sorts the two negations of
+[the operators table](#negation-and-logical-operators) between the two
+faculties and thought:
 
-| | unsigned carrier | signed carrier |
+| | attention | expectation |
 | --- | --- | --- |
-| Where | presence `[0,1]`; the priority surface; the reading scope | conceptual activation `[-1,1]` above order 0; ideas |
-| Negation | `non` (*prasajya-pratisedha*): withdrawal, "not taken up" | `not` (*paryudasa*): sign reversal, "the opposite is affirmed" |
-| Faculty | **attention**, as selection | **expectation**, as the negative image |
-| Failing to register | the unattended is not conceived: no trace, no absence (inattentional blindness) | the expected is cancelled: nothing new is conceived, and the estimate stands for it (habituation) |
-| Omission | nothing: one does not miss what one was not looking for | the uncancelled image: the absence is conceived |
+| Acts on | which percepts and symbols are taken up | how much of an arrival is conceived |
+| Needs a prediction | no | yes |
+| Negation | `non` (*prasajya-pratisedha*): the non-object is not taken up | `non`: what was predicted is dimmed, and its contrary is not asserted |
+| Failing to register | the unattended is not conceived: no trace, no absence (inattentional blindness) | the expected is dimmed: nothing new is conceived (habituation) |
+| Omission | nothing: one does not miss what one was not looking for | the omission lane: what was predicted and did not arrive |
+
+`not` (*paryudasa*), which affirms the opposite, belongs to neither faculty's
+action on the signal. It lives in the against lane, where evidence against a
+concept is recorded, and in thought, where an absence is concluded (below).
 
 One can habituate only to what one can conceptualise: content that reaches no
-idea has no negative image and is met in full every time.
+concept has no prediction and is met in full every time.
 
 ### Eliminative and collective engagement
 
@@ -636,14 +685,14 @@ what is not that object, and so never takes in all of the object's features.
 The architecture has both, in the same places. Order-0 presence is engaged
 collectively: all of it, nothing subtracted. Conception is eliminative twice
 over: a code is already a projection, the nearest row with every other row
-eliminated; and what is conceived of a sentence is what the negative image
-leaves.
+eliminated; and how much of an arrival is conceived depends on how far it
+was from what was expected.
 
 ### Apoha: attention excludes, and needs no prediction
 
 *Apoha* (*gzhan sel*, exclusion of the other) is Dignaga's and Dharmakirti's
 account of how a concept can apply to many particulars without a real
-universal: "cow" is whatever is not non-cow. The second and fourth statements
+universal: "cow" is whatever is not non-cow. The two statements
 above apply it to attention, and the kind of negation decides what attention
 needs. The exclusion by which an object appears — opposite from non-pot — is
 **non-affirming**: it removes the non-object and puts nothing in its place.
@@ -651,19 +700,19 @@ It therefore needs no estimate of what the non-object *is*, only which thing
 is the object.
 
 - **Attention focuses without prediction.** One can attend in a wholly novel
-  scene. In the architecture attention is the unsigned machinery that was
-  already there — the reading scope over the percepts, and the intent channel
-  of the priority surface at the competitive readout — and neither reads the
-  predictor. What they exclude is *not taken up*: not conceived, no trace, no
-  absence.
+  scene. What attention excludes is *not taken up*: not conceived, no trace,
+  no absence. Where there is a prediction it only biases where attention
+  opens: the conceptual spread that primes attention, the chooser and
+  retrieval is the activation predictor's forecast of the next state
+  (2026-10-30), read detached, and it selects without adding anything.
 - **Where there is also a prediction, it is applied to everything but the
-  object.** The context is cancelled to the extent that it was expected, and
+  object.** The context is dimmed to the extent that it was expected, and
   the object of observation is conceived in full, expected or not. This is
   the one place the two faculties meet, and with no prediction it costs
   attention nothing.
 - **Facilitation is reduced competition.** Serial thinking takes one thing at
-  a time. With the non-object excluded, and cancelled where it was expected,
-  the object is the only content with magnitude and wins without a contest.
+  a time. With the non-object excluded, and dimmed where it was expected,
+  the object has the greatest magnitude and wins without a contest.
   Expectation silences; attention is what makes the expected thing *easier*
   to see. They are different faculties, and the experimental literature that
   treats them as one reports a paradox (below). How soft the exclusion is
@@ -677,17 +726,12 @@ is the object.
   nominalist point of *apoha*, as arithmetic.
 - **A question is an expectation with a hole in it.** Its bound roles are the
   context and its open role is the object of observation. Laid over a
-  remembered frame, the bound roles cancel and what remains conceived is the
-  answer. *Answering is subtracting the question.*
+  remembered frame, the bound roles are what was expected, and what stands
+  out is the answer.
 
-**Amended 2026-10-30 (Alec).** Attention still
-excludes without needing a prediction, but the bias on what it is likely to
-take up is now an expectation: the conceptual spread that primes attention,
-the chooser and retrieval is `ActivationPredictor`'s predicted next state,
-read detached. Intuition is the separate top-down faculty,
-`intuit`, with its own weights trained by output; a thought is an intuition
-`infer` has checked ([Reasoning](Reasoning.md), "Intuition, understanding and
-thought").
+Intuition is a separate top-down faculty, `intuit`, trained only by output; a
+thought is an intuition that `infer` has checked
+([Reasoning](Reasoning.md), "Intuition, understanding and thought").
 
 ### Absence is inferred, never perceived
 
@@ -697,37 +741,32 @@ of valid reason, and restricts it: only the non-observation of what is
 non-observation of what would not have appeared anyway establishes nothing
 beyond the lack of a warrant to affirm.
 
-The negative image gives the same account. Nothing in the input says that the
+The omission lane gives the same account. Nothing in the input says that the
 dog did not bark. The sentence is silent, and the silence is informative only
-against the expectation of a bark: the uncancelled image `−ê` *is* the
-absence, conceived. So:
+against the expectation of a bark: what was predicted and did not arrive is
+the omission. So:
 
 - an absence is never composed from the input, only **concluded** in thought,
-  as an inference;
+  as an inference; an omission is not an observed negative fact;
 - it is licensed only where the thing **would have been observed**: the role
-  was strongly expected (`κ`) and within the scope of what was read;
-- a conceptual activation of zero is **unknown, not absent** (presence `½`).
-  "Confirmed" and "never in play" both conceive nothing, and only the
+  was strongly expected and within the scope of what was read;
+- evidence of zero in both lanes is **unknown, not absent**. A confirmed
+  expectation and a thing never in play both leave no residual, and only the
   retained estimate tells them apart.
 
 Negative facts therefore exist only against expectations, which is also the
 psycholinguistic finding: a denial is natural only where the affirmative was
 plausible (Wason 1965).
 
-**Hallucination and imagery.** Expectation never adds to what is perceived:
-at the percept level the forward path keeps the full attended signal, split
-into its expected part and its residual, so a hallucination cannot be a
-percept predicted into existence. It is a concept conceived without
-perceptual evidence, an estimate taken for an observation: an expected
-concept whose for lane is filled where attention found nothing. Imagery and
-dreaming are the same path run on purpose, the generate walk and the one
-decoder unfolding an expected idea toward percepts. Top-down expectation has
-one legitimate route into perception, attention: an expected concept can bias
-where attention opens (the expected is recognized more quickly, as in biased
-competition), but attention only selects and adds nothing, so misdirected
-attention yields mis-attended percepts, never invented ones. Desire is held
-to the same limit: it can make a thought more likely to be built and a thing
-recognized sooner, but cannot make a thing appear where attention found none.
+**Hallucination and imagery.** Expectation never adds to what is perceived, so
+a hallucination cannot be a percept predicted into existence. It is a concept
+conceived without perceptual evidence, an estimate taken for an observation.
+Imagery and dreaming are the same path run on purpose: an expected idea
+unfolded toward percepts by the generate walk. Top-down expectation has one
+legitimate route into perception, attention: an expected concept can bias
+where attention opens, as in biased competition, but attention only selects,
+so misdirected attention yields mis-attended percepts, never invented ones.
+Desire is held to the same limit.
 
 ### Identity is an expectation
 
@@ -745,12 +784,13 @@ perception; Hume called the identity we ascribe to things and persons a
 fiction of the imagination, produced by resemblance and causation among
 successive perceptions.
 
-So the architecture stores no identity. A later sentence's word may be tied by
-reference to an earlier row,
-and that reference records only that the mind *took* the two as one. What
-carries the individual across the gap is the predictor: each anchor in its
-situation is a standing prediction that something continues. Empty the
-situation and the same words name only their types.
+So the architecture stores no identity as a fact about the world. What carries
+the individual across the gap is a held expectation that something continues:
+an open file in MTM, to which a later mention may be bound. The binding
+(`bind`) is a scored judgment that may be withheld, with what was expected as
+one of its terms beside content and form, and it records only that the mind
+*took* the two as one. Empty the situation and the same words name only their
+types. No word is wired to the choice, not *the* and not *it*: it is learned.
 
 This is also how identity is found in people. Object permanence in infants is
 *measured* as surprise when a hidden object fails to persist (Baillargeon
@@ -770,79 +810,78 @@ downstream.
 
 ### Beginner's mind
 
-At `g = 0` nothing is subtracted. Every sentence is conceived in full, as if
-for the first time, and no absence can be conceived, because there is nothing
-for the world to fall short of. That is a formal reading of **beginner's
-mind** (*shoshin*). The world-model goes on learning — estimating continues;
-only its application to what is conceived is suspended — and every document
-begins this way, since there is no prior context to expect from.
+At a gain of zero nothing is dimmed. Every arrival is conceived in full, as if
+for the first time. That is a formal reading of **beginner's mind**
+(*shoshin*). The world-model goes on learning: the predictor still forecasts
+and still learns from its residual, and only its application to what is
+conceived is suspended. The default gains are zero, so this is where the
+model starts.
 
 Two cautions keep the reading honest. Beginner's mind in this sense is **not
 non-conceptual**: a code is still a projection, so conception remains an
 eliminative engager; what is suspended is the *prior*, not the concept. And
-it is **not free**: with nothing cancelled nothing stands out, so load rises,
-and the absences, which are real information, are given up. It is a setting
-to be able to reach, not a default to prefer.
+it is **not free**: with nothing dimmed nothing stands out, so load rises.
 
-**Learning has its own beginner's mind** (Alec, 2026-09-21). The negative
-image keeps *comprehension* honest at any gain, because it is added after
-composition. *Learning* is a separate matter. Where a word's meaning settles
-depends on its context, and that context can be what occurred or, in part,
-what was expected. In people it is both: anomalous playing cards are seen,
-and reported, as the normal cards that were expected (Bruner & Postman
-1949), and evidence is assimilated to the belief it was meant to test (Lord,
-Ross & Lepper 1979). With a share `w` of the context taken from the
-estimate, the step toward what occurred shrinks to `(1 − w)` and the rest
-goes toward what was already believed; at `w = 1` nothing new can be
-learned. "We get perfect learning only when we drop our preconceived ideas
-about the situation." `w` is a model variable, not a prohibition: zero is
-the unbiased learner, above zero the human one. And the model has two knobs
-where a person has one — it can conceive through its expectations and still
-learn without them.
+**Learning has its own beginner's mind** (Alec, 2026-09-21). The gain acts
+after composition and never bends what is composed toward the prediction, so
+*comprehension* is honest at any gain. *Learning* is a separate matter. Where
+a word's meaning settles depends on its context, and that context can be what
+occurred or, in part, what was expected. In people it is both: anomalous
+playing cards are seen, and reported, as the normal cards that were expected
+(Bruner & Postman 1949), and evidence is assimilated to the belief it was
+meant to test (Lord, Ross & Lepper 1979). With a share $w$ of the context
+taken from the estimate, the step toward what occurred shrinks to $(1 - w)$
+and the rest goes toward what was already believed; at $w = 1$ nothing new can
+be learned. "We get perfect learning only when we drop our preconceived ideas
+about the situation." The model places a meaning from what occurred alone,
+$w = 0$, the unbiased learner; above zero is the human one. So the model can
+conceive through its expectations and still learn without them, where a person
+has one setting for both.
 
 The contemplative literature's two families of attention regulation (Lutz et
-al. 2008) fall on the rule's two parameters: **focused attention** holds one
-object of observation and excludes the rest (`m` on one object); **open
-monitoring** holds no object and lets what arises arise (`m = 0`, with the
-gain lowered).
+al. 2008) fall on the two gains: **focused attention** holds one object of
+observation and excludes the rest; **open monitoring** holds no object, lets
+what arises arise, and lowers the gain of expectation.
 
 ### Desire, lack and feeling-tone
 
-A desire is a standing prediction. Held as a negative image it makes the
-*absence* of the desired thing perceptible: what is wanted and not there is
-conceived as `−ê`, a **lack**. Valence becomes reference-dependent:
-disappointment is an uncancelled image, relief a cancelled threat, and the
-same outcome is gain or loss according to what was expected.
+A **lack** is a conceived absence: what was expected and did not arrive, read
+from the omission lane and concluded in thought. Valence read this way is
+reference-dependent: disappointment is an expectation unmet, relief a threat
+that did not arrive, and the same outcome is gain or loss according to what
+was expected.
 
 This separates lack from
 [feeling-tone](#feelings-vedana-and-the-neither-position). *Vedana* arises
 from contact and is pre-conceptual: it lives where there is no negation, so
 there is pleasant, unpleasant and neutral sensation but **no lack in
-sensation**. Lack needs the signed carrier. It is a conceived absence, a
-product of the overlay — "preference and afflictive projection" in the Gelug
-list above — and at `g = 0` it cannot be formed. On this reading craving
-conditions suffering through a specific mechanism: the standing prediction is
-what makes the world fall short.
+sensation**. Lack is a product of the overlay, "preference and afflictive
+projection" in the Gelug list above, and where nothing is expected it cannot
+be formed. On this reading craving conditions suffering through a specific
+mechanism: the standing expectation is what makes the world fall short.
 
-The same sign creates a degenerate optimum, the "dark room": a mind rewarded
-for conceiving little would seek what it can predict, or stop looking. The
-rule is that residual credit may train how an estimate is
-*formed* and never what is *observed or conceived* — not the gain, not the
-object of observation, not reading attention.
+Desire itself is kept apart from expectation. It is a separate desired or
+hated signal that primes selection and learns only from the outcome, while
+expectation acts against the arrival and learns only from its own residual.
+Merging the two, treating a preference as a prior, creates a degenerate
+optimum, the "dark room": a mind rewarded for conceiving little would seek
+what it can predict, or stop looking. So residual credit may train how an
+estimate is *formed* and never what is *observed or conceived*: not the gain,
+not the object of observation, not reading attention.
 
 ### Correspondences, and where they strain
 
-In brief:
+The mechanisms of expectation and attention have close precedents:
 
-- **The negative image is a known circuit.** Cerebellum-like structures in
-  weakly electric fish learn, by anti-Hebbian plasticity, a negative image of
-  the sensory consequences of the animal's own discharge; it is added to the
-  input and cancels it, leaving what the world added (Bell 1981; Bell, Han &
-  Sawtell 2008). It is the reafference principle (von Holst & Mittelstaedt
-  1950), and it gives the estimate its two signs: positive in production,
-  where the predicted idea is what is said, and negative in comprehension,
-  where it is what need not be conceived. Generation is the dual of
-  comprehension in sign as well as in direction.
+- **The negative image is a known circuit, and here it is the residual.**
+  Cerebellum-like structures in weakly electric fish learn, by anti-Hebbian
+  plasticity, a negative image of the sensory consequences of the animal's own
+  discharge; it is added to the input and cancels it, leaving what the world
+  added (Bell 1981; Bell, Han & Sawtell 2008). It is the reafference principle
+  (von Holst & Mittelstaedt 1950). In the model that difference is the
+  residual, kept beside the content, which is scaled and never subtracted
+  from. In production the same estimate is what is said: generation is the
+  dual of comprehension.
 - **Habituation, and its release.** Sokolov's (1963) neuronal model: a
   repeated stimulus builds a model, the response fades, and any mismatch —
   including an omission — brings it back.
@@ -850,11 +889,19 @@ In brief:
   with the expected sound's signature (SanMiguel et al. 2013); dopamine
   neurons dip at the moment of an omitted reward (Schultz, Dayan & Montague
   1997).
+- **Two lanes, two populations.** Firing rates cannot be negative, so signed
+  prediction errors are carried by separate positive-error and negative-error
+  populations (Keller & Mrsic-Flogel 2018), as the residual is carried in two
+  lanes.
+- **The dark room.** That a mind minimizing prediction error would seek what
+  it can predict is a known objection to predictive processing, with a known
+  answer (Friston, Thornton & Clark 2012); here the answer is the rule above,
+  that residual credit never trains what is observed or conceived.
 - **Attention reverses silencing.** Prediction silences unattended signals
   and attention reverses the effect (Kok, Rahnev et al. 2012); expectation and
   attention are distinct and routinely confounded (Summerfield & Egner 2009).
-  The rule reproduces that 2 × 2, the better identification of an object in
-  its expected scene (Palmer 1975), and inattentional blindness (Simons &
+  The two gains reproduce that two-by-two, the better identification of an
+  object in its expected scene (Palmer 1975), and inattentional blindness (Simons &
   Chabris 1999).
 - **Pointer plus tag.** A scripted event is remembered as a pointer to the
   script plus tags for what was atypical; typical actions are falsely
@@ -862,13 +909,15 @@ In brief:
   store's linked estimate and observation rows are that layout, and a
   perfectly predicted sentence is the first thing forgotten.
 
-Where it strains: expectation also *sharpens* the representation of what was
-expected (Kok, Jehee & de Lange 2012), and this design has no sharpening;
-cortical gain control is mostly divisive, not subtractive (Carandini & Heeger
-2012); and the classic report that Zen practitioners do not habituate
-(Kasamatsu & Hirai 1966) did not replicate (Becker & Shapiro 1981), though
-habituation of startle is reduced with intensive practice (Antonova, Chadwick
-& Kumari 2015).
+Two findings that strained the first formulation fit the gain. Cortical gain
+control is mostly divisive, not subtractive (Carandini & Heeger 2012), as the
+gain is; and expectation also *sharpens* the representation of what was
+expected (Kok, Jehee & de Lange 2012), which the prime supplies by biasing
+selection toward it. Where it still strains: the electric-fish circuit
+subtracts where the content path here scales; and the classic report that Zen
+practitioners do not habituate (Kasamatsu & Hirai 1966) did not replicate
+(Becker & Shapiro 1981), though habituation of startle is reduced with
+intensive practice (Antonova, Chadwick & Kumari 2015).
 
 > Scholarship hedge (recorded deliberately): this section states the
 > project's working usage. The division of awarenesses into eliminative and
@@ -899,7 +948,9 @@ phenomena: implicative and non-implicative* and *Special features of the
 Gelug tradition*, Study Buddhism (studybuddhism.com). Carandini & Heeger
 (2012), *Normalization as a canonical neural computation*, Nature Reviews
 Neuroscience 13. Dreyfus (1997), *Recognizing Reality: Dharmakirti's
-Philosophy and Its Tibetan Interpretations*, SUNY. Hume (1739), *A Treatise
+Philosophy and Its Tibetan Interpretations*, SUNY. Friston, Thornton & Clark
+(2012), *Free-energy minimization and the dark-room problem*, Frontiers in
+Psychology 3. Hume (1739), *A Treatise
 of Human Nature*, I.iv.6, "Of personal identity". Graesser, Gordon & Sawyer
 (1979), *Recognition memory for typical and atypical actions in scripted
 activities: tests of a script pointer + tag hypothesis*, Journal of Verbal
@@ -907,7 +958,9 @@ Learning and Verbal Behavior 18. Kahneman, Treisman & Gibbs (1992), *The
 reviewing of object files: object-specific integration of information*,
 Cognitive Psychology 24. Kasamatsu & Hirai (1966), *An
 electroencephalographic study on the Zen meditation (Zazen)*, Folia
-Psychiatrica et Neurologica Japonica 20. Kellner (2003), *Integrating
+Psychiatrica et Neurologica Japonica 20. Keller & Mrsic-Flogel (2018),
+*Predictive processing: a canonical cortical computation*, Neuron 100.
+Kellner (2003), *Integrating
 negative knowledge into pramana theory: the development of the
 drsyanupalabdhi in Dharmakirti's earlier works*, Journal of Indian Philosophy
 31. Klein (1986), *Knowledge and Liberation*, Snow Lion. Kok, Jehee & de
@@ -938,46 +991,35 @@ Verbal Behavior 4.
 
 ### Learning is surprise, at every layer (2026-10-06)
 
-The training loop's two derivations were first described as exploit and
-explore. Alec's reframing:
-the greedy derivation is what the model *expects of itself*; the one
-departure is a question put to that expectation; the better of the two is
-what is conceived, written and answered from; and what is learned at the
-choice is the surprise — the difference between what was expected and what
-turned out better. Nothing in this is sampling for its own sake. The second
-derivation is the model's own expectation being contradicted.
+The training loop's greedy path and its departures were first described as
+exploit and explore. Alec's reframing: the greedy path is what the model
+*expects of itself*; a departure is a question put to that expectation; the
+cheapest complete path is what is conceived, written and answered from; and
+what is learned at the choice is the surprise, the difference between what was
+expected and what turned out better. Nothing in this is sampling for its own
+sake. A departure is the model's own expectation being contradicted. A
+sentence puts `explorePaths` such questions to its greedy path, each departing
+once ([Architecture](Architecture.md#whole-paths-and-concept-episodes-2026-11-11)).
 
-The same reading runs down the whole chain. The one prediction formed
-without the input — the next row from the previous rows, the world-model —
-is inverted through the operations the actual derivation committed, and at
-every layer the expected operand meets the actual one; the difference is
-that layer's surprise, local and, for an invertible layer, exact. Expectation
-never completes a derivation of its own, so it is never free-running, never
-compounding its own errors; it borrows the structure of what actually
-happened and runs its content down through it. This is predictive coding in
-its original form — a prediction descending, an error ascending at every
-level (Rao & Ballard 1999) — and it is the free and nudged phases of
-equilibrium propagation, where the layer-wise difference between the two
-phases is the gradient. It was already decided (2026-09-20) that surprise
-is what is learned; this says where: at every layer, in
-the one place the layer could have done otherwise.
+The same reading runs through every level. Each level has its own predictor
+and a local error against that level's own observation; the difference is
+that level's surprise, and it trains only that predictor. Expectation never
+completes a derivation of its own, so it is never free-running and never
+compounds its own errors, and one wrong estimate at the top cannot become a
+wrong expectation at every level below. This keeps predictive coding's error
+at every level (Rao & Ballard 1999) without its descending prediction: no
+level's expectation is derived from another's. It was already decided
+(2026-09-20) that surprise is what is learned; this says where. The magnitude
+of the surprise stays on the stored row, where forgetting reads it as
+retention value, so what was fully expected is the first thing forgotten.
 
-Two consequences follow for how the mind is built. Reconstruction, which
-was an objective, becomes a property: with the path up through percepts
-made invertible, nothing is lost by construction, and reconstruction is a
-check that reads zero rather than a loss that competes. And the only
-sampled estimate left anywhere is at the choice itself — the choice stays
-discrete, the forward is always one derivation, one row — so the structure
-of thought is never a mixture; only the gradient is.
-
-*Amended 2026-11-11.* Reconstruction is again a trained objective: in
-training part of each sentence is omitted, out of band, so the round trip is
-no identity, and restoring what was hidden is the reconstruction loss
-([Training](Training.md#within-sentence-reconstruction-objective)).
+The only sampled estimate anywhere is at the choice itself. The choice stays
+discrete and the forward is always one derivation and one row, so the
+structure of thought is never a mixture; only the gradient is.
 
 ## Where Is Context: Particulars, Universals and the Two Axes (2026-09-22)
 
-*Orders as sets of symbols, membership by evidence, and the two ladders (forms and referents) are written up in [Orders](Orders.md) (2026-10-15); this section is the earlier statement it extends.*
+*Orders as sets of symbols, membership by evidence, and the two ladders (forms and referents) are in [Orders](Orders.md), which extends this section.*
 
 > We need to integrate the "same space and time" that creates wholes and
 > parts, and the "substitution" that creates syntactic categories and parts
@@ -1040,10 +1082,10 @@ paradigmatic set of a position is the set of things that could have been
 there. That is precisely the domain over which *apoha* operates: the
 concept *cow* is what excludes the non-cows *at that place*, the
 alternatives that the affirmation of *cow* rules out
-([above](#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20)).
-Substitution therefore gives the concept its contrast class, and the
-negative image gives that class its work: an expectation at a where is a
-prediction over its paradigm, and what is conceived is the departure from
+([above](#expectation-as-a-gain-attention-as-exclusion)).
+Substitution therefore gives the concept its contrast class, and
+expectation gives that class its work: an expectation at a where is a
+prediction over its paradigm, and what stands out is the departure from
 it.
 
 ### A concept has no where of its own
@@ -1178,18 +1220,12 @@ is the reification that **sunyata** (emptiness) challenges.
 | Emptiness | *sunyata* | phenomena are empty of inherent existence |
 
 Making existence explicit --- "fire exists" --- restores existence as a
-*relation* rather than an *attribute*. The live grammar enforces this at
-the root: its absolute-truth start state is `exist_O1`, the output of the
-EXISTS operator (`<start name="absolute_truth">exist_O1</start>`,
-`data/complete.grammar`), so even the bare "Fire!" completes only by
-passing through an explicit existential predicate --- existence is
-supplied as a relation, never presumed as an attribute.
-
-> Implementation note (2026-07): an earlier grammar expressed the same
-> point as the rule $VP \to \varepsilon$ iff $MP \to \varepsilon$ (absence
-> of existential predicate implies absence of modal frame). That rule is
-> retired --- the role-collapsed grammar has no VP/MP nonterminals ---
-> and the `exist_O1` root above is its successor.
+*relation* rather than an *attribute*. The design keeps it explicit:
+`exist` is an operator of the grammar, and a sentence with no verb phrase
+takes by default the verb phrase *occurs*, read for "exists"
+([Two Differences](#two-differences-the-verb-across-time-the-modal-across-possibility-alec-2026-10-19)).
+So even the bare "Fire!" is completed by an existential predicate: existence
+is supplied as a relation, never presumed as an attribute.
 
 ## Shamatha Speech and Single-Pointedness
 
@@ -1231,18 +1267,17 @@ covers memory, the two truths, expectation, testimony and feeling.
   **situation model**, the integrated representation of one state of
   affairs that survives when the text's wording is gone (Zwaan & Radvansky
   1998); it is episodic in Tulving's sense, a particular. A *relation*
-  (relative truth, `row R row`) is **semantic memory**: general, structured,
+  (relative truth, a row of references) is **semantic memory**: general, structured,
   read by inference rather than by matching (Tulving 1972). Semantic memory
   is organised as a hierarchy over which properties are inherited
   (Collins & Quillian 1969), which is what the part rows between concept
   rows and the taxonomy index derived from them provide. LTM makes the
   split explicit: ideas in `LTM0`, relations in `LTM1`.
-  *Amended 2026-11-11.* The episodic side gains an entry: a sentence keeps
-  up to `episodicConcepts` order-zero concepts of its open attention pass
-  beside its idea row, and a recall by time reinstates them as the attended
-  field. A sentence that only states a relation leaves
-  both memories, the relation and an `episode` anchor row for the moment it
-  was read (Alec, 2026-11-11: "An LTM0 anchor row"): the fact, and the dated
+  The episodic side has an entry of its own: a sentence keeps up to
+  `episodicConcepts` order-zero concepts of its open attention pass beside
+  its idea row, and a recall by time reinstates them as the attended field.
+  A sentence that only states a relation leaves both memories, the relation
+  and an anchor row for the moment it was read: the fact, and the dated
   occasion of learning it, which is the difference Tulving (1972) draws. See
   [Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11).
 
@@ -1251,8 +1286,8 @@ covers memory, the two truths, expectation, testimony and feeling.
   it while memory for its meaning persists (Sachs 1967); fuzzy-trace theory
   separates a durable gist trace from a fragile verbatim trace (Reyna &
   Brainerd 1995). Fusing an absolute sentence to one point puts the gist in
-  memory; the grammar regenerates its wording. Under the September 28
-  decision no derivation persists beside that point. These findings motivate
+  memory; the grammar regenerates its wording, and no derivation persists
+  beside that point. These findings motivate
   the distinction; they do not establish the model's generation accuracy.
 
 - **Propositions embed by reference.** Text memory is a network of
@@ -1277,7 +1312,7 @@ covers memory, the two truths, expectation, testimony and feeling.
   calibrate belief to the source, not to the confidence the speaker
   expresses, which is the rule that a sentence never sets its own trust.
 
-- **The parallel prelude and the serial pump are preattentive and
+- **The open parallel pass and the serial reading are preattentive and
   attentive processing.** Feature-integration theory separates a parallel
   preattentive stage that registers features across the whole field from a
   serial attentive stage that binds them into objects one at a time
@@ -1299,8 +1334,13 @@ covers memory, the two truths, expectation, testimony and feeling.
   activation flowing along associative edges and decaying with distance. In
   the model the bias on the next read is the activation predictor's forecast
   of the next state, learned from what followed what, not a diffusion along
-  stored edges (amended 2026-10-30): the correspondence is with the priming
-  effect, not with its spreading-activation mechanism.
+  stored edges: the correspondence is with the priming
+  effect, not with its spreading-activation mechanism. The design of
+  2026-11-12 replaces the forecast by a pass that goes up to what holds
+  the active concepts and down to their missing members
+  ([Reasoning](Reasoning.md#the-two-networks-of-system-1-alec-2026-11-12)),
+  which does follow stored relations; it corresponds to the route with the
+  best support, from a category to its members (Rosch 1975; Neely 1977).
 
 - **Attention is a mask over located items.** Attention is a graded
   multiplicative filter, Broadbent's early filter (1958) as Treisman's
@@ -1325,16 +1365,19 @@ covers memory, the two truths, expectation, testimony and feeling.
   processing holds that perception and cognition proceed by predicting
   input and learning from the discrepancy (Rao & Ballard 1999; Friston
   2010; Clark 2013). In language, comprehenders predict upcoming content at
-  every level and prediction is graded (Kuperberg & Jaeger 2016), and
+  every level and prediction is graded (Kuperberg & Jaeger 2016): the
+  brain's response to a word falls as the word's predictability from its
+  sentence rises (Kutas & Hillyard 1984), while the pre-activation of a
+  specific word's sound has not been reproduced (Nieuwland et al. 2018);
+  and
   prediction during comprehension runs the production system in reverse
   (Pickering & Garrod 2013). The concept-to-concept expectation of the next
   sentence, scored by discrepancy, and generation as the dual of
-  comprehension, are both of a piece with this. Since 2026-09-20 the
-  estimate enters comprehension against the arrival, after composition
-  (as a subtraction then; since 2026-10-19 as an attenuating gain with the
-  residual kept beside the content), so that what is conceived is not
-  bent toward the prediction
-  ([above](#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20)); in production the same estimate is what is said.
+  comprehension, are both of a piece with this. The estimate enters
+  comprehension against the arrival, after composition, as an attenuating
+  gain with the residual kept beside the content, so that what is conceived
+  is not bent toward the prediction
+  ([above](#expectation-as-a-gain-attention-as-exclusion)); in production the same estimate is what is said.
 
 - **Reasoning by simulation and by rule are both real.** Relative truths
   are evaluated "relationally or by simulation": simulation is the
@@ -1351,15 +1394,14 @@ covers memory, the two truths, expectation, testimony and feeling.
   1994). *Vedana* in the *neither* position, and the hedonic reading of the
   trust sign, are consistent with both.
 
-- **Symbols, signs and the word/object generalisation.** The doc's *sign*
+- **Symbols, signs and the word/object generalisation.** This document's *sign*
   (a quantised version of the referent) and *symbol* (an arbitrary stand-in
   related only through the binding table) are Peirce's icon and symbol.
   Symbolic reference proper is not the word-to-object link but a
-  **generalisation over many such links** (Deacon 1997). The September 29
-  definition amendment
-  retires the proposed META generalisation: each `word DEF object` row names
-  two concept identities and implies no order relation. Several rows express
-  polysemy and synonymy, with object selection at interpretation time.
+  **generalisation over many such links** (Deacon 1997). A definition row,
+  `word DEF object`, names two concept identities by their symbols and
+  implies no order relation; several rows express polysemy and synonymy,
+  with the object selected at interpretation time.
   Grounding the symbol side in the perceptual towers addresses the symbol
   grounding problem (Harnad 1990); the DEF link itself is not a claim to
   implement Deacon's generalisation.
@@ -1378,7 +1420,7 @@ covers memory, the two truths, expectation, testimony and feeling.
   computational analogue; here the operations and their slots are given a
   priori. Adults generalize categories from overlapping contexts,
   restrained by systematic gaps and by the amount of evidence (Reeder,
-  Newport & Aslin 2013), so the lessons must test restrained generalization
+  Newport & Aslin 2013), so the lessons test restrained generalization
   as well as clustering. Reliable category cues help infants learn word
   meanings (Lany & Saffran 2010), which supports an interaction between
   grammatical classes and meaning without showing one hierarchy. Graded
@@ -1416,11 +1458,11 @@ covers memory, the two truths, expectation, testimony and feeling.
 
 Where the model and the human evidence differ. Alec's direction
 (2026-09-16): **parameterise optimal versus human operation** so both can
-be explored in one model, rather than fixing either. An `<operation>`
-profile in `model.xml` (`optimal` | `human`) selects the human-like
-behaviour for every item marked **profile** below; items marked **future**
-are collected in [FutureWork.md](FutureWork.md); items marked **closed**
-are not discrepancies on inspection.
+be explored in one model, rather than fixing either. No such profile switch
+exists yet; items marked **profile** below are where it would act, and they
+describe the `optimal` and `human` settings it would select. Items marked
+**future** are collected in [FutureWork.md](FutureWork.md); items marked
+**closed** are not discrepancies on inspection.
 
 1. **Default belief (profile).** People believe what they comprehend and
    must spend effort to unbelieve it (the Spinozan account: Gilbert 1991).
@@ -1430,30 +1472,24 @@ are not discrepancies on inspection.
    acquire beliefs it was never given. Under `human` comprehension asserts
    at the source's provenance trust, and unbelieving is a later,
    effortful revision.
-   *2026-11-11 (Alec):* "Trust of percepts is 1, seeing is believing.
+   Alec (2026-11-11): "Trust of percepts is 1, seeing is believing.
    After word-concepts are turned into object-concepts, though, trust is
-   uncertain (0) to start with." The profile switch is not built; this is
-   the rule of todo item 1.8.
+   uncertain (0) to start with."
 
-2. **Verbatim retention (revised September 28).** People lose wording
+2. **Verbatim retention (closed).** People lose wording
    within seconds (Sachs 1967). The model keeps no derivation after reading,
    under either profile. Reconstruction uses the operation record while a
-   sentence is open; later recall generates from its stored end state. The
-   earlier proposal to decay derivations before points is therefore vacuous.
+   sentence is open; later recall generates from its stored end state.
 
-3. **Forgetting and consolidation (Item 5 candidate).** Forgetting runs at
-   a closed document boundary under capacity pressure, in both profiles, and
-   keeps the rows of highest value (`Forgetting.retention_values`): trust,
-   read as the larger evidence pole; utility, the row's surprise, so low
-   surprise reduces retention value and isolation alone does not;
-   luminosity, which a row loses when a stronger, similar row of the same
-   order and scope asserts the contrary; and age in model time since the
-   row's stamp, which lowers the value. Opposing sources contribute that
-   dissonance, while a row's intrinsic *both* remains heterogeneous content.
-   Optional coverage replaces luminosity by the positive area a row adds
-   minus negative and contested area. Wording and subordinate detail can go
-   before gist; this mechanism does not establish a psychological forgetting
-   curve or learned consolidation result.
+3. **Forgetting and consolidation.** Forgetting runs at a closed document
+   boundary under capacity pressure, in both profiles, and keeps the rows of
+   highest value: trust, surprise and luminosity, less age
+   ([Params](Params.md#ltm-forgetting-architecture)). So what was fully
+   expected goes first, and wording and subordinate detail can go before
+   gist. Opposing sources lower each other's luminosity, while a row's
+   intrinsic *both* remains heterogeneous content. This mechanism does not
+   establish a psychological forgetting curve or learned consolidation
+   result.
 
 4. **Document boundaries (future).** The hard reset at a document boundary
    clears transient context; people carry context across texts and
@@ -1462,16 +1498,12 @@ are not discrepancies on inspection.
 
 5. **Level of prediction (closed).** Human comprehension predicts at the
    word level too, with reading times tracking surprisal (Hale 2001; Levy
-   2008). The model expects the next sentence's concepts; the unfolding of an
-   expected idea into words through the reverse chain was withdrawn on
-   2026-10-19 — each level now has its own predictor with a local error,
-   the word level being the order-0 case of one activation predictor over
-   the symbol bank.
-   Not a discrepancy; surprisal is the level's own residual.
+   2008). So does the model: each level has its own predictor with a local
+   error, the word level being the order-0 case of one activation predictor
+   over the symbol bank. Surprisal is the level's own residual.
 
-6. **One word, one object (amended September 29).** People have polysemy
-   and synonymy as the norm, resolved by context. Definition rows replace
-   the earlier n-ary META proposal. One word
+6. **One word, one object (closed).** People have polysemy
+   and synonymy as the norm, resolved by context, and so does the model. One word
    can name several objects, and several words can name one object; one
    derived table indexes both directions. The grammar selects an object
    from context at interpretation time. `interpret` replaces the word by
@@ -1484,34 +1516,21 @@ are not discrepancies on inspection.
    carry their own trust, so inheritance is graded and an exception is a
    lower-trust or negative row, not a contradiction.
 
-8. **Explicit existence (withdrawn).** An earlier draft set psychological
-   essentialism (Gelman 2003) against the grammar's forced `exist`. The
-   two are not about the same thing: essentialism concerns hidden category
-   essences, the `exist` start concerns whether an NP is found and trusted
-   in LTM. No discrepancy is claimed.
+8. **Explicit existence (closed).** Psychological essentialism (Gelman
+   2003) concerns hidden category essences; the grammar's explicit `exist`
+   concerns whether an NP is found and trusted in LTM. The two are not about
+   the same thing, and no discrepancy is claimed.
 
-9. **Inversion is not exact (future).** The reconstruction trace will be
-   partially dropped over time (item 2), so inversion becomes a learned
-   approximation from a lossy trace rather than an exact replay. That is
-   what gives inversion a role in learning: with a complete trace,
-   reconstruction teaches nothing. The trace-dropping schedule is in
-   FutureWork.md; Architecture.md's note that brains approximate rather
-   than invert then applies to the model too.
-   *2026-11-11 (Claude):* this entry predates the revision of entry 2
-   (2026-09-28): no derivation is kept after reading, so there is no trace
-   to drop. It is kept as the record.
+9. **Dampening and sharpening (closed).** In people expectation both
+   reduces the response to what was predicted and sharpens its
+   representation (Kok, Jehee & de Lange 2012), and cortical gain control
+   is largely divisive rather than subtractive (Carandini & Heeger 2012).
+   The model has both: expectation is a divisive gain, and the expected
+   activation primes selection, which is the Press, Kok and Yon pairing of
+   dampening and sharpening. References and the rest of the comparison are
+   [above](#expectation-as-a-gain-attention-as-exclusion).
 
-10. **Silencing without sharpening (open).** In people expectation both
-    reduces the response to what was predicted and sharpens its
-    representation (Kok, Jehee & de Lange 2012), and cortical gain control
-    is largely divisive rather than subtractive (Carandini & Heeger 2012).
-    Since 2026-10-19 the model has divisive silencing (expectation is a
-    gain) and the sharpening too: the expected activation primes selection,
-    which is the Press, Kok and Yon pairing of dampening and sharpening.
-    Closed in that form. References and the rest of the
-    comparison are [above](#expectation-as-a-negative-image-attention-as-exclusion-2026-09-20).
-
-11. **Further strains, stated as choices.** "Semantic" has two senses: a
+10. **Further strains, stated as choices.** "Semantic" has two senses: a
     kind of content (Tulving) and a learning system (complementary learning
     systems); by the second the whole row store is the fast system, and the
     slow semantic system is the codebook, the operators and the taxonomy.
@@ -1538,61 +1557,66 @@ are not discrepancies on inspection.
     one decoder, and what separates them is grammar, not a claim that people
     have two separate systems.
 
-**References.** Baddeley & Hitch (1974), *Working memory*, in Bower (ed.),
-The Psychology of Learning and Motivation 8. Braine & O'Brien (1998),
-*Mental Logic*, Erlbaum. Clark (2013), *Whatever next? Predictive brains,
-situated agents, and the future of cognitive science*, Behavioral and Brain
-Sciences 36(3). Collins & Loftus (1975), *A spreading-activation theory of
-semantic processing*, Psychological Review 82(6). Collins & Quillian (1969),
-*Retrieval time from semantic memory*, Journal of Verbal Learning and Verbal
-Behavior 8. Cowan (2001), *The magical number 4 in short-term memory*,
-Behavioral and Brain Sciences 24(1). Damasio (1994), *Descartes' Error*,
-Putnam. Deacon (1997), *The Symbolic Species*, Norton. Ebbinghaus (1885),
-*Über das Gedächtnis*. Ericsson & Kintsch (1995), *Long-term working
-memory*, Psychological Review 102(2). Flavell (1979), *Metacognition and
-cognitive monitoring*, American Psychologist 34(10). Friston (2010), *The
-free-energy principle: a unified brain theory?*, Nature Reviews Neuroscience
-11. Gelman (2003), *The Essential Child*, Oxford. Gilbert (1991), *How
-mental systems believe*, American Psychologist 46(2). Gobet, Lane, Croker,
-Cheng, Jones, Oliver & Pine (2001), *Chunking mechanisms in human
-learning*, Trends in Cognitive Sciences 5(6). Hale (2001), *A probabilistic
-Earley parser as a psycholinguistic model*, NAACL. Harnad (1990), *The
-symbol grounding problem*, Physica D 42. Hovland & Weiss (1951), *The
-influence of source credibility on communication effectiveness*, Public
-Opinion Quarterly 15. Johnson, Hashtroudi & Lindsay (1993), *Source
-monitoring*, Psychological Bulletin 114(1). Johnson-Laird (1983), *Mental
-Models*, Harvard. Kintsch & van Dijk (1978), *Toward a model of text
-comprehension and production*, Psychological Review 85(5). Kumkale &
-Albarracín (2004), *The sleeper effect in persuasion: a meta-analytic
-review*, Psychological Bulletin 130(1). Kuperberg & Jaeger (2016), *What do
-we mean by prediction in language comprehension?*, Language, Cognition and
-Neuroscience 31(1). Levy (2008), *Expectation-based syntactic
+**References.** Baddeley & Hitch (1974), *Working memory*, in Bower (ed.), The
+Psychology of Learning and Motivation 8. Braine & O'Brien (1998), *Mental
+Logic*, Erlbaum. Clark (2013), *Whatever next? Predictive brains, situated
+agents, and the future of cognitive science*, Behavioral and Brain Sciences
+36(3). Collins & Loftus (1975), *A spreading-activation theory of semantic
+processing*, Psychological Review 82(6). Collins & Quillian (1969), *Retrieval
+time from semantic memory*, Journal of Verbal Learning and Verbal Behavior 8.
+Cowan (2001), *The magical number 4 in short-term memory*, Behavioral and Brain
+Sciences 24(1). Damasio (1994), *Descartes' Error*, Putnam. Deacon (1997), *The
+Symbolic Species*, Norton. Ebbinghaus (1885), *Über das Gedächtnis*. Ericsson &
+Kintsch (1995), *Long-term working memory*, Psychological Review 102(2).
+Flavell (1979), *Metacognition and cognitive monitoring*, American Psychologist
+34(10). Friston (2010), *The free-energy principle: a unified brain theory?*,
+Nature Reviews Neuroscience 11. Gelman (2003), *The Essential Child*, Oxford.
+Gilbert (1991), *How mental systems believe*, American Psychologist 46(2).
+Gobet, Lane, Croker, Cheng, Jones, Oliver & Pine (2001), *Chunking mechanisms
+in human learning*, Trends in Cognitive Sciences 5(6). Hale (2001), *A
+probabilistic Earley parser as a psycholinguistic model*, NAACL. Harnad (1990),
+*The symbol grounding problem*, Physica D 42. Hovland & Weiss (1951), *The
+influence of source credibility on communication effectiveness*, Public Opinion
+Quarterly 15. Johnson, Hashtroudi & Lindsay (1993), *Source monitoring*,
+Psychological Bulletin 114(1). Johnson-Laird (1983), *Mental Models*, Harvard.
+Kintsch & van Dijk (1978), *Toward a model of text comprehension and
+production*, Psychological Review 85(5). Kumkale & Albarracín (2004), *The
+sleeper effect in persuasion: a meta-analytic review*, Psychological Bulletin
+130(1). Kuperberg & Jaeger (2016), *What do we mean by prediction in language
+comprehension?*, Language, Cognition and Neuroscience 31(1). Kutas & Hillyard
+(1984), *Brain potentials during reading reflect word expectancy and semantic
+association*, Nature 307. Levy (2008), *Expectation-based syntactic
 comprehension*, Cognition 106. McClelland, McNaughton & O'Reilly (1995), as
 cited in Architecture.md. Meyer & Schvaneveldt (1971), *Facilitation in
 recognizing pairs of words*, Journal of Experimental Psychology 90. Miller
-(1956), as cited in Architecture.md. Neisser (1967), *Cognitive
-Psychology*, Appleton-Century-Crofts. Nelson & Narens (1990), *Metamemory:
-a theoretical framework and new findings*, The Psychology of Learning and
-Motivation 26. Pickering & Garrod (2013), *An integrated theory of language
-production and comprehension*, Behavioral and Brain Sciences 36(4). Rao &
-Ballard (1999), *Predictive coding in the visual cortex*, Nature
+(1956), as cited in Architecture.md. Neely (1977), *Semantic priming and
+retrieval from lexical memory: roles of inhibitionless spreading activation and
+limited-capacity attention*, Journal of Experimental Psychology: General
+106(3). Neisser (1967), *Cognitive Psychology*, Appleton-Century-Crofts. Nelson
+& Narens (1990), *Metamemory: a theoretical framework and new findings*, The
+Psychology of Learning and Motivation 26. Nieuwland et al. (2018), *Large-scale
+replication study reveals a limit on probabilistic prediction in language
+comprehension*, eLife 7. Pickering & Garrod (2013), *An integrated theory of
+language production and comprehension*, Behavioral and Brain Sciences 36(4).
+Rao & Ballard (1999), *Predictive coding in the visual cortex*, Nature
 Neuroscience 2. Reyna & Brainerd (1995), *Fuzzy-trace theory: an interim
-synthesis*, Learning and Individual Differences 7. Rips, Shoben & Smith
-(1973), *Semantic distance and the verification of semantic relations*,
-Journal of Verbal Learning and Verbal Behavior 12. Sachs (1967),
-*Recognition memory for syntactic and semantic aspects of connected
-discourse*, Perception & Psychophysics 2. Simons (1987), *Parts: A Study in
-Ontology*, Oxford. Sperber, Clément, Heintz, Mascaro, Mercier, Origgi &
-Wilson (2010), *Epistemic vigilance*, Mind & Language 25(4). Treisman &
-Gelade (1980), *A feature-integration theory of attention*, Cognitive
-Psychology 12. Tulving (1972), *Episodic and semantic memory*, in Tulving &
-Donaldson (eds.), Organization of Memory. Zajonc (1980), *Feeling and
-thinking: preferences need no inferences*, American Psychologist 35(2).
-Zwaan & Radvansky (1998), *Situation models in language comprehension and
-memory*, Psychological Bulletin 123(2).
+synthesis*, Learning and Individual Differences 7. Rips, Shoben & Smith (1973),
+*Semantic distance and the verification of semantic relations*, Journal of
+Verbal Learning and Verbal Behavior 12. Rosch (1975), *Cognitive
+representations of semantic categories*, Journal of Experimental Psychology:
+General 104(3). Sachs (1967), *Recognition memory for syntactic and semantic
+aspects of connected discourse*, Perception & Psychophysics 2. Simons (1987),
+*Parts: A Study in Ontology*, Oxford. Sperber, Clément, Heintz, Mascaro,
+Mercier, Origgi & Wilson (2010), *Epistemic vigilance*, Mind & Language 25(4).
+Treisman & Gelade (1980), *A feature-integration theory of attention*,
+Cognitive Psychology 12. Tulving (1972), *Episodic and semantic memory*, in
+Tulving & Donaldson (eds.), Organization of Memory. Zajonc (1980), *Feeling and
+thinking: preferences need no inferences*, American Psychologist 35(2). Zwaan &
+Radvansky (1998), *Situation models in language comprehension and memory*,
+Psychological Bulletin 123(2).
 
-**References for learned argument classes, attention, the accessible mind
-and item 11.** Anderson (1974), *Retrieval of propositional information from
+**References for learned argument classes, attention and the accessible
+mind.** Anderson (1974), *Retrieval of propositional information from
 long-term memory*, Cognitive Psychology 6. Atkinson & Shiffrin (1968), *Human
 memory: a proposed system and its control processes*, in Spence & Spence
 (eds.), The Psychology of Learning and Motivation 2. Broadbent (1958),
@@ -1656,8 +1680,8 @@ Cognitive Science 11.
 ## Attention as One Bracket, Both as the Field's Report, and the Sharing of the Two Modes (2026-09-25)
 
 **The catuṣkoṭi's *both*, located.** The architecture reads four corners
-from a concept's two presences: true, false, both, neither. Item 9b says
-where *both* comes from. The conceptual field is a percept activation
+from a concept's two presences: true, false, both, neither. This section
+says where *both* comes from. The conceptual field is a percept activation
 vector pooled over one convex bracket of attention; a concept row carries
 no location. If a property holds on one occurrence inside the bracket and
 fails on another, the field reports the concept as both present and
@@ -1719,7 +1743,9 @@ supplies the remedy.
   not remove the narrative one.
 
 **What the architecture does with this.** Share the structure: one
-inventory for both modes. Expect erosion in both directions and measure it
+inventory for both modes. Neither mode keeps a private copy of a definition:
+a concept learned in one mode is read in the other by the same identity, with
+the same definition and poles. Expect erosion in both directions and measure it
 with a categorical-perception index logged on fixed probes. The modes can
 alternate: first read the coming sentences with open attention, then read
 them serially in the context just formed. The serial reading supplies the
@@ -1728,10 +1754,9 @@ serial loop `interpret`, the one operator that writes the parallel
 field's objects from words — so that reading develops the objects a video
 feed would otherwise have to supply, and an unfamiliar word can create an
 object the mind has never seen.
-The initial [implementation measurements](FutureWork.md#shared-mode-erosion-measurement-item-9b)
-support only part of the predicted ordering; they do not establish the proposed
-label-based restoration of category boundaries. Their interleave rows used the
-opposite pass order and are void for the current schedule.
+The first [measurements](FutureWork.md#shared-mode-erosion-measurement)
+support only part of the predicted ordering; they do not establish the
+proposed label-based restoration of category boundaries.
 
 **Sources.** Alogna et al. 2014, *Perspect. Psychol. Sci.* 9:556; Benn et
 al. 2023, *Cereb. Cortex* 33:10380; Carey 2009, *The Origin of Concepts*;
@@ -1765,42 +1790,40 @@ operators onto lower-dimensional or smaller subspaces**.
 Three things follow that bear on the rest of this document.
 
 **Nouns are not things.** A noun and an adjective are the same kind of
-operator; the noun is only the one already applied. "Neither may be a
-region; they may both be operators, which can be treated as nouns when
-mapped to all of space, or which restrict the noun they are applied to."
-The category is never stored as an extent: it is the operator, and
-membership is the operator's leaving a thing unchanged. This is
+operator; the noun is only the one already applied. Neither need be a region:
+both may be operators, which are treated as nouns when mapped to all of space
+and otherwise restrict the noun they are applied to. The category is never
+stored as an extent: it is the operator, and membership is the operator's
+leaving a thing unchanged. This is
 [apoha](#apoha-attention-excludes-and-needs-no-prediction) carried into
-grammar. "The exclusion is framed in apoha theory as the non-affirming
-negation of the complement of the object; that is the locus of perceptual
-attention (which treats everything not relevant to the definition of the cup
-as a zero value)" (Alec, 2026-09-28). Giving what is not relevant a zero
-value is a projection, and zero rather than a negative value is what makes
-the negation non-affirming: nothing is asserted of the non-cup, it is simply
-not taken up. So the word is the formula and attention is what it produces —
-the word specifies the projection, and perceptual attention carries out the
-exclusion. A word may also exclude nothing: a percept can direct attention
-to the symbol *everything*, "which has no narrowing effect". As elsewhere in
-this document, the classification is the project's working usage.
+grammar. In apoha theory the exclusion is the non-affirming negation of the
+complement of the object, and that is the locus of perceptual attention, which
+treats everything not relevant to the definition of the cup as a zero value.
+Giving what is not relevant a zero value is a projection, and zero rather than
+a negative value is what makes the negation non-affirming: nothing is asserted
+of the non-cup, it is simply not taken up. So the word is the formula and
+attention is what it produces: the word specifies the projection, and
+perceptual attention carries out the exclusion. A word may also exclude
+nothing: a percept can direct attention to the symbol *everything*, which has
+no narrowing effect. As elsewhere in this document, the classification is the
+project's working usage.
 
-The two attentions differ in one respect. Perceptual attention, whose
-objects include the symbols of thought "since we regard symbols as
-percepts", does not take up what it excludes. "The conceptual narrowing is
-different, and probably needs a Ground in order to make its Figure
-meaningful" (Alec, 2026-09-28): the domain a word elects from is kept,
-because the Figure means what it means only against it.
+The two attentions differ in one respect. Perceptual attention, whose objects
+include the symbols of thought, since symbols are regarded as percepts, does
+not take up what it excludes. Conceptual narrowing is different and probably
+needs a Ground to make its Figure meaningful: the domain a word elects from is
+kept, because the Figure means what it means only against it.
 
-**The noun is eternal until the verb.** "NPs are basically eternal and can
-do anything until the VP comes along and restricts their movement or
-freedom on the temporal dimension." A verb adds dimensions to the
-description and removes freedom from the thing described: the noun was
-silent on when, and on what the thing does. So the three "dimensions" that
-language seems to add — the thing, its time, its alternatives — are three
-indices along which a speaker individuates, by determiner, tense and modal.
-They belong to the symbolic projection and not to the concept, which stays
-one opaque code. The worry that prompted this was exactly that the other
-reading conflates "the conceptual space with its projection into a symbolic
-or rational encoding".
+**The noun is eternal until the verb.** A noun phrase is eternal and can do
+anything until the verb phrase comes along and restricts its freedom on the
+temporal dimension. A verb adds dimensions to the description and removes
+freedom from the thing described: the noun was silent on when, and on what the
+thing does. So the three "dimensions" that language seems to add, the thing,
+its time and its alternatives, are three indices along which a speaker
+individuates, by determiner, tense and modal. They belong to the symbolic
+projection and not to the concept, which stays one opaque code; the other
+reading conflates the conceptual space with its projection into a symbolic or
+rational encoding.
 
 **Where this leaves Boole.** His principle of contradiction,
 `x(1 − x) = 0`, says that the evidence against is the complement of the
@@ -1810,8 +1833,11 @@ neither *both* nor *neither*. His complement `1 − x` is an affirming
 negation; the non-affirming one, `non`, withdraws a pole without asserting
 the other.
 
-The engineering statement is in
-[Architecture](Architecture.md#words-are-a-formula-for-narrowing-attention-2026-09-28).
+In engineering terms, regions are derived, never stored: membership is
+invariance under the operator (a thing is a gun if `gun(x) = x`) and
+subsumption is absorption (cats are animals if `animal(cat) = cat`, Boole's
+`y = xy`), so `part`, `whole` and `equal` are tests on one algebra
+([Architecture](Architecture.md#words-are-a-formula-for-narrowing-attention-2026-09-28)).
 
 ## The Sign in Two Spaces: Genera Are Not Located (2026-10-04)
 
@@ -1822,10 +1848,10 @@ The engineering statement is in
 
 This is Saussure's sign: the signifier in perceptual space, the signified in
 conceptual space, the pairing by the shared index. It answers a worry Alec
-raised the same day, that a mereological subspace inside a concept's code
-"feels like the philosophical position that genera are located in space and
-time, but we have removed their particularity in virtue of abstracting over
-space and time." The answer is that the address is not in the code. A
+raised the same day: a mereological subspace inside a concept's code looks
+like the position that genera are located in space and time, when their
+particularity was removed by abstracting over space and time. The answer is
+that the address is not in the code. A
 percept has content (which letters, in what arrangement) and an address
 (`.where`, `.when`: this occurrence); a word's form is the join of its parts'
 content with the address coordinates zero, and that zeroing *is* the
@@ -1854,9 +1880,8 @@ constituent meanings, while identity keeps one, the fold of forms. Identity
 from below, meaning from above, at every rung: order is a stamp on the row,
 not a space of its own.
 
-**Negation and the four corners (amended October 7).** Evidence is a pair
-of independent nonnegative magnitudes on one signless code. The leaf carries
-`[form × presence | code × c⁺ | code × c⁻]`; `(1,0)`, `(0,1)`, `(1,1)` and
+**Negation and the four corners.** Evidence is a pair of independent
+nonnegative magnitudes on one signless code: `(1,0)`, `(0,1)`, `(1,1)` and
 `(0,0)` retain true, false, both and neither. Conjunction takes `(min⁺, max⁻)`,
 disjunction `(max⁺, min⁻)`, and `not` exchanges the lanes. The code is never
 negated: percepts have no negation, and a concept is denied, not moved.
@@ -1868,19 +1893,16 @@ the use of the four. Nāgārjuna negates all four, the prasajya negation that
 affirms nothing in their place; in the design that is `non`, which withholds
 both poles, a step down the knowledge order to *neither*, without inverse, as
 against `not`, which affirms the opposite and is its own inverse. Tetralemma for the corners, Belnap for the connectives, Nāgārjuna for
-`non`. A Boolean reading was tried the same day and withdrawn: it reads the
-unknown as a probability of one half, and Boole has no unknown.
+`non`. A Boolean reading fails: it reads the unknown as a probability of one
+half, and Boole has no unknown.
 
-Composition and required-evidence closing carry all four corners: A-true and
-B-false stores *both*. Defined absence and ignorance are told apart by the
-concept's definedness, `m=n/(n+4)` on a unit identity direction
-(`MeaningCodes.definedness`). A word counts containing rows; a sentence counts
-re-witnesses. Forms retain full identification presence, and neither evidence
-pole nor trust is changed. The exact convergence error is `4/(n+4)`.
-Definedness distinguishes ignorance near zero from absence at the unit limit
-without turning the evidence pair into a signed truth value.
+Composition carries all four corners: A-true and B-false stores *both*.
+Defined absence and ignorance are told apart by the concept's definedness,
+$n/(n+4)$ for $n$ witnesses, which distinguishes ignorance near zero from
+absence at the unit limit without turning the evidence pair into a signed
+truth value.
 
-### Four scopes of binding in item 6.5
+### Four scopes of binding
 
 A fixed column can represent one individual across frames. Co-varying
 properties can form that column's signature, so statistical binding also
@@ -1888,10 +1910,10 @@ acts within an object. Neither fact assigns grammatical roles: exchanging
 the two noun slots leaves their superposition unchanged. The closing must
 still represent who did what to whom. Nor does statistical independence
 decide which simultaneous red patch belongs to which thing within a field;
-located meronomy supplies those bundles. These are the four separate scopes.
-The independent components are now an expectation term
-(`expectation.components`), off the identity path; identity is carried by
-MTM's tokens, `bind` and promotion by recurrence.
+located meronomy supplies those bundles. These are four separate scopes of
+binding. Identity is carried by MTM's tokens, `bind` and promotion by
+recurrence; the independent components are a term of expectation, off the
+identity path.
 
 ## Two Differences: the Verb Across Time, the Modal Across Possibility (Alec, 2026-10-19)
 
@@ -1901,32 +1923,37 @@ his work in *Cognitive Set Theory* and *The Whole Part*, the books
 attached to his ORCID record
 ([0000-0002-6570-7571](https://orcid.org/0000-0002-6570-7571)).
 
-The first difference is the verb's: a verb is an element of a group
-acting on the identity's frame, mapping the object before to the object
-after — in the code, a diagonal the verb defines, not a subtraction — and
-an undefined verb is the group's identity element (what "all-ones" named),
-meaningless, read as unknown. Selections (tense, aspect, the preposition)
-are the other algebra, the idempotent meet of the Boolean and mereological
-picture; the change itself is the group element. The second difference is the
-modal's: it extends the actual event into the set of events it is one of,
-making a whole of which the actual is a part, and the merely possible is
-that whole minus that part. The first is taken between phases of one
-history; the second between the actual and its possibilities at a time.
+The first difference is the verb's: a verb is an element of a group acting on
+the identity's frame, mapping the object before to the object after, and an
+undefined verb is the group's identity element, meaningless, read as unknown.
+Selections (tense, aspect, the preposition) are the other algebra, the
+idempotent meet of the Boolean and mereological picture; the change itself is
+the group element. The second difference is the modal's: it extends the
+actual event into the set of events it is one of, making a whole of which the
+actual is a part, and the merely possible is that whole minus that part. The
+first is taken between phases of one history; the second between the actual
+and its possibilities at a time.
+
+The possibilities are alternative timelines of the one identity in MTM
+(settled 2026-10-23). A modal clause is the ordinary composition with its
+lowering withheld, so its idea stays above order 0 and is never an order-zero
+occurrence; it continues its subject's most recent alternative timeline and
+leaves the actual one intact. *Possible* holds on some timeline and
+*necessary* on every one. A modal is learned as the difference between two
+states of one identity at one time on different timelines, as a verb is
+learned between two states of one identity across time.
+
 Synchronic generics are relations, relative truths; situated events and
-states are ideas, ultimate truths. In Alec's syntax an absolute truth is
-`S` and a relation between two truths is `S REL S`. An absolute truth is one
-fused point, an idea in `LTM0`; a relation is an `LTM1` row of two tagged
-references, each to an occurrence, a symbol or another relation row, and its
-kind (definition, attribution, conditional, parthood) is read from what the
-references name, never stored (decided 2026-10-23). A modal sentence read
-*de re* is `S REL S` written as **membership evidence** in the taxonomy (`[Alec]` in `[running things]` in the kept worlds — a fold, not a row) and read *de dicto* writes `S` located in those worlds (the world a context whole like the document), and
-either way the identity's history is untouched. Every sentence has a noun phrase, a verb phrase and a modal phrase, each
-defaulting to the top of its algebra — everything, *occurs* (read for "exists"), in all possible
-worlds — so that the empty sentence asserts that everything exists
-everywhere, which is attention wide open, and every word narrows one of
-the three (Alec, 2026-10-19). The two
-differences are the project's reading of modality and are not to be
-reduced to "modals do not train" or to a probability over outcomes.
+states are ideas, ultimate truths
+([the two truths](#direct-perception-and-the-conceptual-overlay-gelug)). In
+Alec's syntax an absolute truth is `S` and a relation between two truths is
+`S REL S`. Every sentence has a noun phrase, a verb phrase and a modal phrase,
+each defaulting to the top of its algebra: everything, *occurs* (read for
+"exists"), in all possible worlds. So the empty sentence asserts that
+everything exists everywhere, which is attention wide open, and every word
+narrows one of the three (Alec, 2026-10-19). The two differences are the
+project's reading of modality and are not to be reduced to "modals do not
+train" or to a probability over outcomes.
 
 ## Identity by Intersection and by Union: the Materialist and the Uncollapsed Models (Alec, 2026-10-20)
 
@@ -1948,12 +1975,11 @@ The mechanism holds both, and uses each for a different thing.
 - **Union.** Identity as the superposition of all its occurrences, none
   privileged, held together without being reduced. In the architecture it
   is STM1's wide vector, the join of the open sentence's constituents, and
-  it is recurrence in LTM1, where an individual is nothing but the set of
-  rows that name it (identity is its occurrences, Alec, 2026-09-30). The **collapse is
-  the act of reference**: `bind` selects one occurrence as the referent,
-  and since the identity candidate is computed in STM and never written
-  back, the selection can be reinterpreted — until a reference is made,
-  the identity is a distribution over candidates.
+  it is recurrence in LTM0, where an individual is nothing but the set of
+  rows that name it (identity is its occurrences, Alec, 2026-09-30). The
+  **collapse is the act of reference**: `bind` selects one candidate as the
+  referent, a scored judgment that can be withheld and revised, and until a
+  reference is made the identity is a distribution over candidates.
 
 So the two models are not rivals here: the meet is the **test**, the union
 is the **thing**, and the collapse is a reference, not a discovery. The
@@ -1991,14 +2017,12 @@ disagree, both fill, and that corner is the prompt to refine. Neither
 overrides the other, and the lanes are never netted. Implicit learning
 finds classes; explicit learning names them; a word learned for a class
 already found is where they meet. The mechanism is
-[Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3).
+[Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21).
 
 Vocabulary (Alec, 2026-10-28): a word's implicit definition, its definition
 over its use, is its *extension*; its explicit definition is its *intension*.
-The extension is learned at the open attention pass and at the per-sentence
-update, where kept closes place meanings by context; the intension in the
-word-by-word pass, where a defining clause mints the object and checks the
-raise.
+The extension is learned from use, by context; the intension from defining
+clauses.
 
 ## Object Files, File Cards and Dharmakīrti's Particulars: STM, MTM and LTM (2026-10-23)
 
@@ -2015,11 +2039,11 @@ identity threading; event segmentation theory (Zacks et al. 2007,
 the kept close. Pylyshyn's visual indexes (1989; 2001, *Cognition* 80) are the
 pointer-only file MTM was before it held content, and Recanati's mental files
 (*Mental Files*, 2012) are the same object for names. Tulving's episodic and semantic memory are the two
-parts of every entry (Alec, 2026-10-23): the percept part, located by
-its `.where` and `.when`, is episodic, and the concept part is semantic;
-the concept index with LTM1's edges is the semantic store proper, with
-promotion by recurrence as consolidation. Every mental event has both
-parts, which is why a thought and a perception share one form. Identity is the
+parts of every entry (Alec, 2026-10-23): the part located by its `.where`
+and `.when` is episodic, and the concept part is semantic; the concept index
+with LTM1's edges is the semantic store proper, with promotion by recurrence
+as consolidation. Every mental event has both parts, which is why a thought
+and a perception share one form. Identity is the
 stitching of perceived occurrences: MTM threads noun-phrase mentions into
 an identity and verb-phrase events into its timelines, holds working
 state for each, and holds no concept row of its own (Alec, 2026-10-23). In Dharmakīrti's terms, an LTM0 idea is the
@@ -2046,34 +2070,32 @@ witnessing is what plants the seeds of attachment to identity, the
 Yogācāra reading under [Buddhist Epistemology](#buddhist-epistemology)
 and the ethical one in [Ethics](../../doc/Ethics.md#witnessing-plants-the-seeds-of-identity-alec-2026-10-23).
 
-*Amended 2026-11-11 (Alec, 2026-11-10 and 2026-11-11).* An `LTM0` row keeps an
-episodic entry beside it: up to `episodicConcepts` order-zero concepts of its
-sentence's open attention pass, the strongest signed readings in reading
-order. Alec: "This effectively gives all of the Memory structures (LTM, MTM,
-STM) both percepts and concepts." A recall by time reinstates the kept
-concepts as the attended field: "review of episodic memory should be represented as the
-attended field, otherwise we could not reason about as a previously lived
-experience." The statement above still stands, that memory is reconstruction
-and not re-perception: the field is rebuilt from a few stored concepts, it
-carries the stamp it was stored with and not the present one, and reviewing
-it observes nothing new. `.when` is model time in every store, semantic
-memory included (Alec, 2026-11-10). See
+What a sentence keeps of its moment is an episodic entry beside its `LTM0`
+row: up to `episodicConcepts` order-zero concepts of its open attention pass
+(2026-11-11). A recall by time reinstates them as the attended field; Alec:
+"review of episodic memory should be represented as the attended field,
+otherwise we could not reason about as a previously lived experience." Memory
+is still reconstruction and not re-perception: the field is rebuilt from a
+few stored concepts, it carries the stamp it was stored with and not the
+present one, and reviewing it observes nothing new. `.when` is model time in
+every store, semantic memory included. See
 [Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11).
 
 ### Dual process and the reference file (2026-11-09)
 
 The object file remains MTM's origin at every level, including basic percepts: references describe what the file stores, not a change to its grounding. The file tracks continuity and supplies a candidate for the next-order concept; recurrence promotes that candidate. MTM's perceptual contents do not make its function separate from the development of conceptual space.
 
-In this design, Dharmakīrti's perception, *pratyakṣa*, free of conceptual construction (*kalpanāpoḍha*), corresponds to System 1. Identity across moments, the *santāna*, is attributed by conceptual determination, *adhyavasāya*, corresponding to System 2. Continuity opens the file; determination supplies the identity it becomes. Yogācāra's seventh consciousness, *manas*, imputes persistence: its imputation belongs to System 2, and the tracking on which it works to System 1. The loop without a thinking step is the animal mind in this architectural reading; Kahneman's fast/slow distinction and Evans and Stanovich's autonomous Type 1 versus working-memory Type 2 distinction provide its modern dual-process comparison. Reference memory and the loop that closes without grammar are built (2026-11-10).
+In this design, Dharmakīrti's perception, *pratyakṣa*, free of conceptual construction (*kalpanāpoḍha*), corresponds to System 1. Identity across moments, the *santāna*, is attributed by conceptual determination, *adhyavasāya*, corresponding to System 2. Continuity opens the file; determination supplies the identity it becomes. Yogācāra's seventh consciousness, *manas*, imputes persistence: its imputation belongs to System 2, and the tracking on which it works to System 1. The loop without a thinking step is the animal mind in this architectural reading; Kahneman's fast/slow distinction and Evans and Stanovich's autonomous Type 1 versus working-memory Type 2 distinction provide its modern dual-process comparison.
 
-*Added 2026-11-11.* Alec, 2026-11-10: "For system 1 and animal cognition, the inverse happens from order-zero concepts. When symbolic processing is turned on (system 2, human cognition), we run the grammar inverse to determine the order-zero concept layer and then run the system 1 inverse." Speech therefore passes through perception's own inverse: grammar decides which order-zero concepts are to be shown, and the one decoder shows them. Episodic memory divides between the systems in the same way (2026-11-11): the order-zero concepts of a moment are kept from System 1's open attention pass, with no grammar, and returning to that moment is an act of thought, a recall by time, which restores System 1's attended field ([Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11)). *Claude's reading:* what is remembered lies on the side of perception and the remembering on the side of determination. As built, a mind without grammar keeps no episodes; whether it should is open.
+Alec, 2026-11-10: "For system 1 and animal cognition, the inverse happens from order-zero concepts. When symbolic processing is turned on (system 2, human cognition), we run the grammar inverse to determine the order-zero concept layer and then run the system 1 inverse." Speech therefore passes through perception's own inverse: grammar decides which order-zero concepts are to be shown, and the one decoder shows them. Episodic memory divides between the systems in the same way (2026-11-11): the order-zero concepts of a moment are kept from System 1's open attention pass, with no grammar, and returning to that moment is an act of thought, a recall by time, which restores System 1's attended field ([Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11)). *Claude's reading:* what is remembered lies on the side of perception and the remembering on the side of determination. A mind without grammar keeps no episodes at present; whether it should is open.
 
 ## The Afflicted Mind and the Transformation of the Basis: Two Configurations of MTM (Alec's question, 2026-10-23)
 
-Alec: "Given the relation of MTM to the kliṣṭa-manas, describe how to make
-an unenlightened vs an enlightened mind." In Yogācāra the afflicted mind
-(*kliṣṭa-manas*) continuously takes the store consciousness as "I",
-always accompanied by four afflictions, self-view (*ātma-dṛṣṭi*),
+Alec asked how, given the relation of MTM to the afflicted mind, an
+unenlightened and an enlightened mind would each be made. In Yogācāra the
+afflicted mind (*kliṣṭa-manas*) continuously takes the store consciousness as
+"I", always
+accompanied by four afflictions, self-view (*ātma-dṛṣṭi*),
 self-delusion (*ātma-moha*), self-pride (*ātma-māna*) and self-love
 (*ātma-sneha*), and the other consciousnesses cognize with it as their
 support, so everything is cognized as mine or not mine. Enlightenment is
@@ -2177,31 +2199,41 @@ no exemptions, identity by designation, and value over occurrences alone.
 
 ## Witnessing Suchness: the Stand-in for a Pointed-at Worldline (Alec's question, 2026-10-31)
 
-Alec: "Let's say 'this' is a word that *temporarily* corresponds to a
-worldline, that we do not want to conceptualize, or if we do, conceive of
-it in the maximally generic way. So we can't interpret it by linking it to
-a known object; it is merely witnessed. So let us say that we witness
-suchness. We need a conceptual stand-in for that, and we have tools like
-both, neither, which probably won't work (but need to be specified), and
-the certainty (which I suggested should be frozen at zero). So how does
-the model represent tathāgatagarbha, suchness? What would Dharmakīrti or
-Nāgārjuna say?" The design is in [Orders §11](Orders.md), "Worldline, not
-word line; witness() and the unknown", and [FutureWork](FutureWork.md),
-"The stand-in for witnessed suchness". This section is Claude's reading of
-the question.
+Alec's question: let "this" be a word that *temporarily* corresponds to a
+worldline we do not want to conceptualize, or conceive of only in the
+maximally generic way. It cannot be interpreted by linking it to a known
+object; it is merely witnessed. What conceptual stand-in does the model give
+witnessed suchness, and what would Dharmakirti or Nagarjuna say? The design is
+in [Orders §11](Orders.md#11-pointers-identity-and-relations-across-known-concepts-alec-2026-10-31); this section is Claude's reading of the question.
 
-**What is witnessed, and what stands in for it.** The model has two places
-for a pointed-at thing, and the stand-in is only the second. The first is
-the witnessed thing itself: the MTM token that `witness` opens for the
-mention, a point on a worldline, its `.where` and `.when`, its occurrence
-address, and, once there is a field, the percept's presence. It is never
-promoted and never given a concept. The row that "this is Felix" writes is
-keyed to that occurrence: Felix acquires the occurrence as a part, one
-order below, and nothing is minted for the word. The second place is the
-concept the word carries into composition when the grammar needs a point,
-since fusion is fair only when every operand has one
-([the two truths](#buddhist-epistemology)). That is the stand-in Alec asks
-for, and three are on the table.
+**Three readings of a word (Alec, 2026-11-01).** After Peirce, a word may be
+read in three ways, and the reading is two decisions, one above the other.
+The first is whether to interpret the percept at all. A leaf left
+uninterpreted is the **no-op**, Peirce's icon at its limit, where the thing
+stands for itself: a word heard as a sound, a quoted word, an onomatopoeia.
+The second, taken only when the first interprets, is what the interpretation
+is. It is a **`sign`**, Peirce's index, the determination that a percept is
+pointed at: it opens a token in MTM for the pointed-at occurrence, and since a
+text supplies no object to point at, the token's content is zero until the
+model has a perceptual field. Or it is a **symbol**, the word's conventional
+meaning. Both decisions are the chooser's, by credit; the first is initially
+forced, since "words are so often meaningful beyond themselves". The operation
+`sign` is Alec's name for the index; it is not the *sign* of
+[the Gelug section](#direct-perception-and-the-conceptual-overlay-gelug),
+which is a quantized version of its referent.
+
+**What is pointed at, and what stands in for it.** The model has two places
+for a pointed-at thing, and the stand-in is only the second. The first is the
+thing itself: the MTM token that `sign` opens for the mention, a point on a
+worldline, its `.where` and `.when`, its occurrence address, and, once there
+is a field, the percept's presence. It is never promoted by recurrence, and it
+is conceptualized only by being named or kinded in a definition. The row that
+"this is Felix" writes is keyed to that occurrence: Felix acquires the
+occurrence as a part, one order below, and nothing is minted for the word.
+The second place is the concept the word carries into composition when the
+grammar needs a point, since fusion is fair only when every operand has one
+([the two truths](#direct-perception-and-the-conceptual-overlay-gelug)). That
+is the stand-in, and three candidates were weighed.
 
 - **Neither, `[0, 0]`, *anubhaya*.** The tetralemma's fourth corner
   ([Quaternary Truth](#quaternary-truth-and-the-catuskoti)), where this
@@ -2221,9 +2253,8 @@ for, and three are on the table.
   which is wrong: the lanes are evidence, conjunction takes the falsity
   maximum, so an against-lane at 1 poisons every conjunction the stand-in
   enters, and "this is Felix" would teach Felix's definition both poles.
-  The model treats *Both* as inconsistency to detect and suppress
-  (`TruthLayer.tetralemma_balance_penalty`), which is what it is. It is a
-  contradiction, not an openness.
+  And *Both* says something: within one row it reports a heterogeneous
+  whole, across sources a dissonance. It is a commitment, not an openness.
 - **Certainty frozen at zero.** By the interface law a lane's length is its
   evidence, so a concept whose two lanes are zero and are never written by
   evidence has no certainty and never acquires any: no row teaches it, no
@@ -2253,9 +2284,10 @@ the unique particular (*svalakṣaṇa*), momentary, causally efficacious and
 inexpressible; the universal (*sāmānyalakṣaṇa*) is constructed by exclusion
 (*apoha*) and is conventionally real
 ([Valid Cognition in Dharmakirti](#valid-cognition-in-dharmakirti),
-[Apoha](#apoha-attention-excludes-and-needs-no-prediction)). `witness` is
-*pratyakṣa* and `interpret` is the determination (*adhyavasāya*) that
-follows it, a second cognition, conceptual, which can err. "This" is the
+[Apoha](#apoha-attention-excludes-and-needs-no-prediction)). The no-op, the word taken as the percept it is, is
+*pratyakṣa*, and `interpret` is the determination (*adhyavasāya*) that
+follows it, a second cognition, conceptual, which can err; `sign` and the
+symbol are the two determinations an interpretation may be. "This" is the
 word that expresses nothing and only points; the token is what is real,
 and the only thing in the model that is. He would accept the freeze and
 correct its description: the concept's certainty is zero because there is
@@ -2277,8 +2309,9 @@ pacification of proliferation (*prapañcopaśama*). The tetralemma denies all
 four corners of the ultimate, so none of the three stand-ins *is*
 suchness, and *Neither* taken as the answer is still a position, the
 fourth lemma, which he denies with the other three. What the model can do
-is first not conceptualize: `witness` returning no concept is the closest
-the model comes to the pacification. When it must designate, as it must
+is first not conceptualize: a reading that applies no concept, the no-op or
+`sign` with its null-concept, is the closest the model comes to the
+pacification. When it must designate, as it must
 to compose, the designation is dependent (*prajñaptir upādāya*, 24.18), a
 mere name on dependent arising, and the freeze is the refusal of
 intrinsic nature (*svabhāva*): the stand-in must never acquire members,
@@ -2305,14 +2338,14 @@ identifies it with the store consciousness in its purified aspect. On
 either reading the model does not represent it; it has it. It is the
 capacity to witness before conceptualizing: the first moment, always
 present and overwritten by the conceptual overlay, which here is the
-defilement. `witness` keeps a path on which that moment is never
+defilement. The no-op keeps a path on which that moment is never
 overwritten, and the enlightened configuration of
 [the section above](#the-afflicted-mind-and-the-transformation-of-the-basis-two-configurations-of-mtm-alecs-question-2026-10-23),
-no privileged identity, joined to a witness that conceptualizes nothing,
+no privileged identity, joined to a reading that conceptualizes nothing,
 is the mirror wisdom holding what occurred without grasping it. A
 representation of it would be the obscuration.
 
-**The null-concept, and two questions (Alec, 2026-10-31, night).** Alec
+**The null-concept, and two questions (Alec, 2026-10-31).** Alec
 decided the stand-in: "witnessing is an alternative to interpreting that
 gives a perceptual identity a null-concept, a concept that is not limiting
 because it is unknowing. It must be a frozen concept, and it must be
@@ -2329,47 +2362,16 @@ In both, the perceptual referent is present and identified, a token the
 question's "I" or "this" binds to, and the question invites the concept
 that would limit it. The null-concept is the model's Thomas: the token has
 an identity MTM can hold and follow, and its concept says nothing, because
-it is unknowing rather than unknown. The design is in
-[Orders §11](Orders.md), "Witnessing gives a perceptual identity a
-null-concept".
+it is unknowing rather than unknown.
 
-**Peirce's three signs, and a correction (Alec, 2026-11-01).** Alec, after
-Claude's reading that `witness` as built is called on a word's handle and
-never reaches a percept: "let's force a three way decision of an object
-(no op, sign(), or interpret() are the icon, sign, and symbol), so that
-the confusing term witness is replaced with pierces SIGN"; and, refining
-it the same day: "the better way to implement this is for interpret() to
-be optional, and if it happens, then the interpretation may be a sign or
-a symbol. Again, interpretation can be initially forced since words are
-so often meaningful beyond themselves." The design is in
-[Orders §11](Orders.md), "The three readings forced". In this section's
-terms the correction is this. The model has perception in reading mode: of
-words, as forms. A word heard as a sound, a quoted word, an onomatopoeia,
-which is a sound rendered in letters, are percepts taken as what they are,
-and that reading is the no-op, Peirce's icon, the limit of resemblance
-where the thing stands for itself: a leaf not interpreted at all. It is
-*pratyakṣa*: the sound of the word (*śabda*) is a perceptible, and its
-meaning is not. `interpret` is the act of determination, and its
-interpretation is one of two. What this section called `witness` is now
-`sign`, Peirce's index, and it is not the perception but the determination
-that a percept is pointed at, whose object a text cannot supply, so its
-token's content is zero; with a field it will be the pointed-at percept.
-The symbol is the determination of the word's meaning, which for
-Dharmakīrti is always *apoha*, conventional. So the sentence above that
-`witness` is *pratyakṣa* reads: the no-op is *pratyakṣa*, and `sign` and
-the symbol are the two determinations (*adhyavasāya*) an interpretation
-may be. Nothing before vision changes in
+**Every leaf read as itself.** Nothing before vision changes in
 [The witness and the testimony](#the-witness-and-the-testimony):
-objects still have no wheres the mind sees. What is added is that words
-do, and the no-op is how a word is seen without being read. Dharmakīrti
+objects still have no wheres the mind sees. Words do, and the no-op is how a
+word is seen without being read. Dharmakīrti
 would add that the onomatopoeia's resemblance to the bark is a fact about
 the percept and not the word's meaning, which is why the no-op is the
-right reading of the sound and the symbol of the kind. The readings are
-two decisions, one above the other, whether to interpret at all and, if
-so, whether the interpretation is a `sign` or a symbol; both are the
-chooser's, by credit, and the first is initially forced, since words are
-so often meaningful beyond themselves. The configuration in which every
-leaf is the no-op is therefore a real one, reached when the forcing is
+right reading of the sound and the symbol of the kind. The configuration in
+which every leaf is the no-op is a real one, reached when the forcing is
 lifted and the chooser declines interpretation everywhere. Jill Bolte
 Taylor's account of her stroke in *My Stroke of Insight* (2008) describes
 it: a colleague's words heard as the sounds of a golden retriever, digits

@@ -1,23 +1,10 @@
 # Thought-operator contracts
 
-> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record.
-> - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23; recorded 2026-10-30):** an LTM1 row is two tagged references (each to an LTM0 occurrence, a symbol or another LTM1 row, its tag saying which) with its kind read from the referents, not three. The unused `LTM0` columns are removed and the row has this layout (Alec, 2026-11-01).
-> - Parthood, subsumption and kind statements ("cats are animals") are **folds** in the meronomy and the taxonomy over symbols, not rows; equality is membership in a singleton; no `REL_PARTOF` row exists.
-> - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
-> - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; a stream is the batch row that wrote a row, and a document is the cover row that starts it in that stream (reused at every later presentation; a row belongs to the document of the latest cover before it), so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded (2026-10-24).
-> - Expectation is a **gain field** $c = m \odot a \odot o$ (attention's gain $m$, expectation's gain $a$, the arriving signal $o$) with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
-> - Amended 2026-10-29/30 (Alec): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are built (accepted as implemented, Alec, 2026-11-01).
-
-
-Status: one normal controller and subsystem-scoped thought effects. The
-loader/registry catalogue is grammar-owned. Learned questioning utility and
-compound generativity remain unproven. See [AccessibleMind](AccessibleMind.md).
-
 Thought operators are the checked, boundary-executed faces of the one sentence
-grammar. They were formerly called checked queries. This document describes the
-production interface; the historical reasoner classes remain quarantined until
-their removal receives review.
+grammar (formerly called checked queries). One normal controller runs them, and
+their catalogue is owned by the grammar. This document describes their
+interface; [AccessibleMind](AccessibleMind.md) describes their effects on the
+subsystems.
 
 ## One source of operator identity
 
@@ -62,12 +49,11 @@ converse spelling of conceptual `part`, with permutation `(I2, I1)`.
 their pair, witnesses and producing operation; subsequent requests bind those
 slots without an implicit LTM search.
 
-The old operator names were retired on 2026-10-07. Thought `what` raises with
-`ask`; LTM `what` and `lookup` raise with `query`; grammar `chunk` raises with
-`synthesize` (inverse `analyze`).
-`quantize` is removed; symbolization is future work. `arma`/`expect` are removed
-from thought: `<sentenceExpectation>` and gain govern the global predictor.
-`true` raises with `isTrue`; scalar existence is retired.
+Retired operator names raise with their replacements (2026-10-07): thought
+`what` with `ask`; LTM `what` and `lookup` with `query`; grammar `chunk` with
+`synthesize` (inverse `analyze`); `true` with `isTrue`. `quantize`, `arma` and
+`expect` are removed from thought: `<sentenceExpectation>` and `gain` govern
+the global predictor.
 
 ## Common grammar-face signature
 
@@ -95,11 +81,11 @@ A binary composition takes the older constituent as `I1` and the newer as
 
 `StructuralGrammarContext` is exactly the base context plus phase
 `compose`/`generate`. Compose receives the current input-owned stream; generate
-receives only its output-owned emitted prefix and no priming. It has neither LTM, taxonomy, a
-controller, a model/reasoner, nor a writable priming buffer. The dispatcher
-adapts old tensor-kernel `compose`/`generate` and unary `forward`/`reverse`
-call shapes behind this contract, preserving gradients through full-width
-operands, outputs, and registered structural parameters.
+receives only its output-owned emitted prefix and no priming. It has neither
+LTM, taxonomy, a controller, a model/reasoner, nor a writable priming buffer.
+The dispatcher adapts old tensor-kernel `compose`/`generate` and unary
+`forward`/`reverse` call shapes behind this contract, preserving gradients
+through full-width operands, outputs, and registered structural parameters.
 
 `ThoughtGrammarContext` is a distinct boundary context. It includes the same
 frozen completed stream, conceptual-space capability, and primed-symbol
@@ -176,10 +162,11 @@ occurrence (`_query_occurrence`).
 
 A description-valued operand names an existing durable `ltm` occurrence, an
 ordinary live `thought` occurrence, or a complete already-held constituent.
-Holding that constituent does not write a speculative LTM row. Its illumination summary is not a substitute
-for the full role-labelled record. Resolution preserves the complete meaning,
-including VP, NP2, scope, bindings, and provenance; it never substitutes NP1,
-rebinding, a row number, or a surface token.
+Holding that constituent does not write a speculative LTM row. Its illumination
+summary is not a substitute for the full role-labelled record. Resolution
+preserves the complete meaning, including VP, NP2, scope, bindings, and
+provenance; it never substitutes NP1, rebinding, a row number, or a surface
+token.
 
 At owned compose-program recovery, one direct signed leaf can form only a
 descriptor-declared `concept` operand. A direct leaf or its arbitrary concept
@@ -239,16 +226,12 @@ not a separate planner stack.
 The grammar's operation scorer, the one compose uses, makes every thought
 choice. Thinking is part of each whole path
 ([Architecture](Architecture.md#whole-paths-and-concept-episodes-2026-11-11)):
-the exploit path thinks greedily, and an explore path may depart at one
-uniformly drawn eligible thought decision, restore the exploit episode's state
-recorded there, take another action and complete its suffix. Each stream keeps
-its cheapest complete path in reconstruction plus supplied-answer cost (R + A),
-ties keeping the exploit path; a departure's credit is the proposal-corrected
-score function $p(a)\,\Delta C$ on that difference, and exact ties contribute no
-policy term. Work bounds an episode but is not a cost in the comparison.
-Expectation trains only its own predictor. The presented answer is the binding;
-there is no separate comparison reader. There is no REINFORCE/EMA controller or
-`selectedThoughtPolicyWeight`; the old setting is rejected.
+a departure at a thought decision is credited by the proposal-corrected score
+function $p(a)\,\Delta C$ on its complete path's change in reconstruction plus
+supplied-answer cost (R + A), and exact ties contribute no policy term. Work
+bounds an episode but is not a cost in the comparison. Expectation trains only
+its own predictor. The presented answer is the binding; there is no separate
+comparison reader.
 
 Before a field with no open slot is offered its episode, the close may conceive
 one absence: an expectation image whose omission of a predicted symbol exceeds
@@ -258,24 +241,14 @@ See [thought history](ThoughtHistory.md) and [accessible mind](AccessibleMind.md
 
 ## Compatibility quarantine
 
-`QueryContext`, `QuerySignature` and its `BUILTIN_QUERIES` table remain
-isolated historical reader contracts pending review. The legacy query registry,
-the frame kernel and the `NeuralToolUser` class are deleted; public reasoning
-APIs enter the one normal controller. A production `BasicModel` installs only
-`GrammaticalThoughtRegistry`. Compatibility aliases cannot define grammar
-identity, become policy features, or grant a thought executor authority.
+`QueryContext`, `QuerySignature` and its `BUILTIN_QUERIES` table are isolated
+standalone reader contracts. A production `BasicModel` installs only
+`GrammaticalThoughtRegistry`, and public reasoning APIs enter the one normal
+controller. Compatibility aliases cannot define grammar identity, become policy
+features, or grant a thought executor authority.
 
-`resolveAnswer()` also never calls the legacy `answer_query()` from a
-`WhatQuestion.prompt`, even when `reasoningIterations` is positive. An
-unselected program retains its owned identity/temporal seed rather than letting
-raw surface text select a hidden legacy tool or append a second reasoner trace.
-`answer_query()` is an explicit serving API over the same completed meaning
-and normal controller. The older controller has been removed.
-
-## Validation
-
-Catalogue, VP, program-recovery and normal-controller probes cover the
-contexts, subsystem permissions, canonical/converse/open-role forms, boundary
-admission, signed leaves, detached effects and shared work. Retrieval,
-checkpoint and generativity measurements are in
-[AccessibleMind](AccessibleMind.md) and [Testing](Testing.md).
+`resolveAnswer()` never calls `answer_query()` from a `WhatQuestion.prompt`,
+even when `reasoningIterations` is positive. An unselected program retains its
+owned identity/temporal seed rather than letting raw surface text select a
+hidden tool or append a second reasoner trace. `answer_query()` is an explicit
+serving API over the same completed meaning and normal controller.

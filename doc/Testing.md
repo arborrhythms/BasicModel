@@ -51,7 +51,13 @@ from operating-system entropy. A component constructed, or a code minted, while
 the model reads leaves the global stream untouched: it draws inside a forked
 stream, or from a generator its owner seeds once from a constant and checkpoints
 (a document cover's code), so adding a component does not shift a fixture's
-later draws.
+later draws. When `bind` rejects an identity whose working value is not finite,
+`ReferenceClose._bind_with_capture` saves the rejected value, the identity's
+members and the medium-term pool's state as `mtm-value-rejection-<id>.pt` in
+the run's output directory and then raises, so the failure is read where it
+arose. `bin/CompilerEffects.py` adjusts a compiled graph through private torch
+interfaces; after any torch upgrade `test/test_compiler_effects.py` is run
+before a compiled result is trusted.
 
 **Capacities and shapes.** A model's capacities are fixed when it is
 constructed, and compiled code is built for them. Changing a capacity or shape
@@ -83,6 +89,8 @@ nothing, and a mechanism probe never satisfies a learning gate. A test of a
 mechanism keeps the smallest operation menu that reads its sentence, so that it
 asserts nothing about an untrained chooser. No natural language is named in
 code, configuration, fixtures or test names; the words of a corpus are data.
+A certificate for a new parameter checks that the optimizer steps it, not only
+that a gradient reaches it.
 
 **Failures, ports and producers.** A broken calculation fails loudly: no
 handler swallows it and no default hides a missing field. A case that fails in
@@ -94,7 +102,19 @@ expectation keeps its before and after text and its reason, and one that lowers
 an expectation is recorded as a weak port. A producer defect is repaired at its
 producer, never by a default that serves a fixture, and its whole test file is
 rerun together with every test file that imports the changed module. Nothing is
-retired without a record of what it did.
+retired without a record of what it did. A rule that a learned mechanism may
+replace is retired only when the lesson that teaches the replacement passes
+without it ([Training, identity from data](Training.md#the-generated-supervised-curriculum-in-order-alec-2026-10-09)).
+
+**Strict xfail for an unresolved deviation (Alec, 2026-11-01).** "You can
+implement everything and xfail what tests you need to, let's lock down what is
+working going forward." A standing test or certificate that fails on a
+deviation that a change does not resolve is marked
+`pytest.mark.xfail(strict=True, reason=...)`, with the reason naming the
+deviation, and the work proceeds. Only a source-hash mismatch or a numerical
+divergence stops it; both stay fail-loud. `make test` remains the criterion: a
+strict xfail that starts passing fails the suite, and is removed together with
+the deviation it named.
 
 **Proportion.** A change is measured only where it can change a result. While a
 change is built, only fast checks run: its direct before-and-after cases (red on
@@ -166,30 +186,20 @@ construction and compilation costs mean wall time need not scale exactly
 with the repeated work.
 
 **The generated math suite under `RUN_SLOW` (Alec, 2026-10-20).** Beside
-the convergence experiments, the slow tier carries a **generated, graded
-corpus of mathematical sentences in English** that trains a grammar for
-real, at scale, and whose gates are the things we claim the model can
-learn: equality and definition by name, `VP → VP NP` applied twice with
-order-sensitive roles ("x minus one" against "one minus x"), one-step then
-two-step decomposition with the answer line as supervision, premises in
-either order, `what` bound by `bind`, yes/no questions on the truth lanes,
-conditionals and counterfactuals with computable consequents, ellipsis and
-coordination, generics against particulars, attribution with conflicting
-sources and known truth, the inverse verb (minus undoes plus) and the verb
-groups (the additive verbs jointly diagonalizable in one basis, the
-multiplicative in another — a translation along the successor chain of
-opaque numerals is a diagonal in the chain's Fourier basis, so joint
-diagonalization has an exact answer to find), and the carrier variants (the
-same meaning under "equals", "is", "sums to", and the marker moved from word
-to affix). Numerals stay opaque words, so the suite
-tests mechanisms, never arithmetic competence. The corpus is produced in
-the Viterbi order (one more step per item, bottom-up) by the `MM_math_chain`
-generator and its successors; each run records
-throughput so item 1's runtime blocker is measured where it bites. **The
-same run is the compiler test at scale:** compiled and eager execution of
-the identical corpus, seed and budget must agree in actions,
-probabilities, costs and parameter updates, which no fixture-sized check
-can show. Coverage, and what the suite cannot reach, is in
+the convergence experiments, the slow tier carries a generated, graded
+corpus of mathematical sentences in English that trains a grammar at scale.
+Its gates are the things the model is claimed to learn: identity by name,
+order-sensitive roles, one-step then two-step decomposition with the answer
+line as supervision, binding and yes/no questions, conditionals and
+counterfactuals, the inverse verb and the verb groups, and one meaning under
+different surface carriers. Numerals stay opaque words, so the suite tests
+mechanisms, never arithmetic competence. The corpus is produced in the graded
+order (one more step per item, bottom-up) by the `MM_math_chain` generator and
+its successors, and each run records throughput. **The same run is the
+compiler test at scale:** compiled and eager execution of the identical
+corpus, seed and budget must agree in actions, probabilities, costs and
+parameter updates, which no fixture-sized check can show. Coverage, and what
+the suite cannot reach, is in
 [Training, "The generated math suite"](Training.md#the-generated-math-suite-what-it-exercises-and-what-it-cannot-2026-10-20).
 
 Long full-model work runs under the slow gate: repeated corpus-learning
@@ -230,10 +240,7 @@ tier, where `RUN_TRAINED=1` fails them strictly while their phase artifacts are
 absent. A result keeps its predictions and errors, failures included; a loose
 signal threshold alone does not establish XOR learning. A case stopped by the
 unchanged 8 GiB guard runs once more without that guard as a separate
-diagnostic, never as a replacement passing gate. Item 1.8 will move the XOR
-proofs to numbers in and out on the field
-([last architecture round](plans/2026-11-11-item1-8-last-architecture-round.md),
-§3.9).
+diagnostic, never as a replacement passing gate.
 
 **The grammar XOR gate** (`XOR_grammar.xml`) poses XOR to the design as it
 stands. A continuous output is a modality: the numeric answer is an affine read
@@ -258,8 +265,8 @@ the understanding carries no word order and a transposition is the only error
 admitted. The System 1 reading of the observed field
 (`reconstruct_field_sentence`) is printed beside it as an audit count and
 asserted nowhere. Both certificates read one shared training
-(`shared_training('xor_grammar')`); the reconstruction test keeps its
-historical name while it asserts four of four.
+(`shared_training('xor_grammar')`); the reconstruction test,
+`test_piecewise_overall_at_least_50_pct`, asserts four of four.
 
 **What the gates certify.** The XOR table measures the composition mechanism:
 two words composed nonlinearly into one understanding, decoded back, and read
@@ -347,12 +354,9 @@ remove or corrupt the intermediate results; and mask only the stored questions
 from later reads. Asking adds no knowledge by itself, re-reading one's own
 answer is not independent corroboration, and nothing rewards asking more.
 
-Phase prerequisites are separate from learning outcomes. No phase artifact is
-registered yet: every registry entry is null, so each phase certificate skips
-with its phase and reason until its producing lesson registers one. The retired
-`stage3`, `np_definite` and `np_description` signed-coordinate artifacts
-(October 20 migration decision) are never read. The column-copula test remains
-an unconditional mechanism contract.
+Phase prerequisites are separate from learning outcomes. Every registry entry
+is null until its producing lesson registers an artifact, so each phase
+certificate skips with its phase and reason until then.
 
 `restore_phase(loader)` verifies the marked prerequisite before calling the
 consumer's loader with its resolved path. There is no training or fresh-model
@@ -361,8 +365,7 @@ external artifact, select a complete registry with
 `BASICMODEL_PHASE_ARTIFACTS=/path/to/registry.json`. FineWeb entries also name
 `config` and optionally `minimum_sentences` (default 1,000,000); the completed
 training-progress check still applies. A `stage4e` entry hashes the produced
-`kept-programs.json` that the certificate grades. This replaces the old
-FineWeb and constituent artifact environment switches.
+`kept-programs.json` that the certificate grades.
 
 The slow set, from those timings (durations in seconds, call phase):
 
@@ -455,6 +458,91 @@ bound-declarative departure-diversity certificate
 default tier with its stated probability bound. The MM XOR and explicit XOR
 convergence and reconstruction certificates are default tests; artifact
 certificates still require the declared trained artifact.
+
+### The trained tier (`RUN_TRAINED`)
+
+`RUN_TRAINED` is independent of `RUN_SLOW`. `@pytest.mark.trained('phase')` skips before fixture setup unless `RUN_TRAINED=1`; the phase and reason are counted in terminal output, `skipped_trained_by_phase` in JSON, and the HTML report. Enabled tests require the exact artifact through `phase_artifacts.PhaseRegistry`, failing on unknown phases, null or absent files, wrong hashes and absent producing receipts. `BASICMODEL_PHASE_ARTIFACTS` selects a private registry for the tier's own certificate. Existing `phase` certificates are unchanged. The registry names `words`, `interpret`, `clause`, `ask`, `verb`, `modifiers`, `determiners`, `adverb`, `prepositions` and `relations`, each with a null artifact and a producer row naming the lesson runner, `bin/corpus_lessons.py`, and its row in the lesson order.
+
+The tier holds the ten functions below (the answer-quality function with both
+parameter cases), with their assertion bodies unchanged. Central `slow`
+markers do not gate a `trained` test.
+
+| Test | Phase |
+|---|---|
+| `test/test_meronomy_ladder.py::test_cold_start_learns_space_as_the_basic_boundary` | `words` |
+| `test/test_math_thinking_training.py::test_stage_zero_direct_arithmetic_learns_as_syntax` | `verb` |
+| `test/test_math_thinking_training.py::test_stage_one_dependency_chains_learn_as_syntax` | `relations` |
+| `test/test_math_thinking_training.py::test_successor_is_learned_as_a_verb` | `verb` |
+| `test/test_what_training.py::test_joint_training_keeps_both_primary_costs_in_band` | `ask` |
+| `test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training` | `ask` |
+| `test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_serial_topology` | `ask` |
+| `test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip` | `clause` |
+| `test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal` | `mm_xor_grammar` (2026-11-08) |
+| `test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy` | `xor_grammar` (2026-11-08) |
+
+The two grammar-XOR fits are in this tier (Alec, 2026-11-08). `mm_xor_grammar` registers a null artifact with the test's own `_fit_xor` producer: `data/MM_grammar.xml`, seed 41001, 900 epochs and the 0.20 bar. `xor_grammar` registers a null artifact with `ModelFactory.run(data/XOR_grammar.xml)` as producer and the criterion of four answers correct with MSE below 0.05. The `shared_training('xor_grammar')` group and `TestXorGrammarReconstruction` remain in the default suite.
+
+The criterion for the tier is acquisition from presented sentences, or a
+required free chooser decision in an untrained first batch. Numeric XOR
+convergence, direct tensor optimization, loss and gradient ownership,
+admission and checkpoint mechanics, and fixtures with explicit forced choices
+remain default or slow mechanisms under their own rules. A trained-tier test
+still trains a fresh model after its prerequisite is checked; it does not yet
+restore the registered artifact into that model.
+
+## Weekly slow coverage
+
+`make test_slow_weekly` uses the existing virtual environment and does not depend
+on the venv rebuild stamp. It selects central `slow` markers, historical
+`RUN_SLOW` decorators/body gates, and the three `RUN_MPS_SLOW` cases. The older
+switches retain their original gating behavior; the common marker now exposes
+them to selection. CUDA-only cases keep their availability skips.
+
+This machine's weekly target uses the suite's CPU fixture contract; the three
+MPS-specific tests explicitly switch to MPS. Weekly ordinary cases retain an **8 GiB
+per-worker ceiling**. The production objective measurement in
+`test_objective_conflicts_slow.py`, at its unchanged batch of 28, has a
+**24 GiB per-worker ceiling**; it makes one ownership measurement. Both tiers
+run one worker at a time under a **24 GiB aggregate reservation** and the
+existing **30-minute worker deadline**.
+The ordinary full sweep uses the same 12 GiB worker ceiling.
+
+The same weekly target also runs `python bin/Legacy.py` and the three
+`bin/etc` inline unittest suites once, under the weekly ordinary 8 GiB worker ceiling.
+Their individual test counts and failures join the weekly record. The Makefile's
+`SigmaPi`, `SymPercept` and `SPNN` demonstration targets pass `--demo`.
+
+The weekly target freezes source and fixtures into its receipt's `source/`
+directory before collection (a plain file copy, not another Git worktree).
+Workers read that copy, so subsequent cost-function edits cannot change the
+measurement. Its manifest identifies the exact uncommitted candidate tested.
+Each run writes its detailed bounded receipts beneath `tmp/slow-tests/`, plus a
+small `record.json` and `latest.json`: UTC date, commit, case counts, outcomes,
+failures, duration, peaks, ceilings and source-match status. A full sweep's
+summary warns when that record is missing, older than seven days, incomplete,
+or failed. A subset run cannot stand in for the weekly record. A guard-stopped case remains a failed attempt; the weekly dispatcher continues only cases that have not started, without retrying failures or raising their ceilings. The record distinguishes attempted cases from cases with a completed pytest report. A complete attempt record can therefore still contain process failures. The frozen source shares the unchanged `.venv` runtime through a link so subprocess tests resolve the same interpreter; source and fixture files remain independent copies.
+
+Compiler tests retain capture; ordinary ownership and gradient tests can use
+`eager_reading`, which executes the same loop bodies with ordinary autograd.
+Setting `MODEL_COMPILE=eager` alone still captures higher-order loop graphs.
+
+### Large-file corpus tier
+
+The capacity search and the selected large corpus prefix are
+registered as `test/test_corpus_large_slow.py::test_capacity_search_and_selected_corpus_prefix`.
+Ordinary collection skips this test before construction with `RUN_SLOW` unset.
+The weekly runner discovers it alongside the existing slow cases,
+then runs it alone with a 28 GiB process-tree budget and 48-hour outer guard.
+Its fixed-grid search uses fresh native B28/W256 construction, optimizer state,
+backward and update, with 28 GiB/one-hour per-trial guards. A selected prefix
+must pass whole-document admission and a fresh brick before a full epoch
+(24-hour guard). Known native admission exhaustion may select the preceding
+whole document; unrelated errors cannot be classified as capacity pressure.
+
+The test writes its commands, source snapshot, grid, trial results, admission,
+selected configuration, and initial/periodic/final checkpoints under the weekly
+receipt's `corpus-measurements`. It never overwrites the checked-in candidate
+configuration.
 
 ## Limits and isolation
 
@@ -590,176 +678,92 @@ evidence; `test/test_training_device.py` and `test/test_test_modes.py` cover
 device dispatch and the slow switches. A runner revision is validated only by
 these tests, run on its own source.
 
-*Moved to [DevelopmentHistory](DevelopmentHistory.md#fast-aggregate-runner-evidence-september-19) (2026-10-30): "Fast aggregate-runner evidence (September 19)".*
+## Certificates and fixture helpers by subject
+
+- **Compilation.** `test_compile_guard.py` checks that each declared model
+  execution phase admits its initial graph, reuses it for compatible inputs,
+  and raises on a later shape or owner-attribute guard failure. The failure
+  must reach the caller even when an outer compiler policy requests silent
+  fallback. Initial training/evaluation and decoder trial phases are explicit;
+  arbitrary new shapes are not warmup exceptions. `test_generation_budget.py`
+  checks the construction-time free-generation limit and preserves complete
+  recorded-derivation replay independently of it.
+- **Trust and gates.** `test_trust_round1.py` certifies concept radii, ordered
+  effective relation evidence, the definition-index threshold and lexical
+  admission; its `close_named_sign` closes a kept sign through
+  `define_pending(null_referent=True)`, with no explicit promotion.
+  `test_trust_round2.py` certifies one and three kept uses, argument agreement
+  and shared membership, the fixed and identity exemptions, checkpoint and
+  epoch persistence, first-writer operation provenance, naming that clears an
+  operation cap, and bind result-order eligibility. `test_trust_gates.py`
+  closes gates through construction data (`gate_data`) and attaches the paired
+  owner to the ordinary clause writer (`gate_fixture`), without unused thought
+  rows or resizing; it covers named-row caps, opening and later falling
+  readiness, operation and fixed-relation caps and exceptions, lift
+  definiteness, persistence and missing-state rejection, and readiness reports
+  without lesson execution.
+- **Learned state in fixtures.** `definition_fixtures.learned_operation` sits
+  beside `agreeing_views` and requires an explicit kept-use count and fixture
+  occupants. It calls `PartsOfSpeech.observe_use`, the application writer that
+  `observe_kept` uses, and never writes counts directly.
+  `argument_fixtures.argument_inventory` and `view_counts` supply native seated
+  words and explicit concept views. A fixture that must fix one decision
+  restricts the operation menu on its own instance
+  (`OperationSelectionLayer.set_stage_menu`, as
+  `test_reading_round.symbol_interpretation` does), never through a production
+  setting.
+- **Argument concepts.** `test_argument_concepts.py` covers zero-view
+  declarations, atomic capacity refusal, native orders and checkpoint
+  addresses, member centroids, shared roles, nested-class feedback, preserved
+  forms and radii, coverage fit, separability and evidence, boundary scope and
+  scheduling, and whole-value chart behavior.
+  `test_direct_operand_occupations.py` observes exact writer calls and
+  per-class view increments; the kept-reading certificate compares the view
+  increments against its independent journal replay and proves that
+  annotations and rejected trials cannot write them.
+- **Word admission.** `test_word_admission.py` certifies Unicode
+  classification (`WordSurfaces.is_lexical_form`) and retained punctuation
+  percepts without lexical identities.
+- **Question conditioning.**
+  `test_what_training.py::test_temporal_question_content_is_causally_used`
+  (slow) trains with the question as the only distinguishing signal, then
+  exchanges the questions over a fixed input and requires a worse answer cost:
+  the question's content is used, not merely present.
+- **The reading, thinking and output loop.** `test/test_item20_round*.py` hold
+  the direct certificates of the memory and journal layout, thought `.when`
+  stamps, admission and terminal routing, recorded action witnesses, free
+  walks that need no action record or live STM (with compiled gradients),
+  two-sided gradient and cost routing, reference paths and state errors, basic
+  percepts, the common decoder and the field gradient, timed memory, concept
+  episodes and the one clock of sentences and thoughts.
+- **Training corpus data.** Four fast certificates read the frozen corpora and
+  never regenerate them: `test/test_math_corpus.py` (hashes, grade order,
+  every answer and intermediate answer, held-out and beyond pairs),
+  `test/test_game_corpus.py` (hashes, `verify` on every row, splits, transfer
+  words kept out of the games), `test/test_lesson_stages.py` (hashes, phases
+  in lesson order, answers, held-out words, the lesson driver reads every
+  stage) and `test/test_training_corpus.py` (stage hashes, part A
+  disjointness, the held-out cost set, the next-word gate's documents, the
+  recorded part B scan). Local part B data is checked by hash only where
+  present.
+
 ## Future work: bounded fixture reuse
 
 A reused fixture would be one compact, preallocated model per compatible
 family inside a bounded worker, keyed by configuration contents, grammar,
-backend, dtype and device, and declared capacity, and sized for that family
-rather than for production tables. There is no unbounded global model cache:
-the central memory cap, deadlines and worker recycling stay, incompatible
-families are evicted, and the existing fixed-capacity contracts remain.
-Construction, ownership, checkpoint-migration and reset-isolation tests keep
-fresh models. A complete reset restores in place the weights, buffers,
-gradients, optimizer state, random state, dictionaries and allocators, row
-activation, grammar ownership, dataset and configuration globals, STM and LTM,
-thought history, expectation stream, traces, hooks and retained autograd
-graphs. `util.TheCompileBackend` is read once at import, so a fixture selects
-and restores the backend explicitly rather than by changing the environment.
-Reuse is accepted only when the same selection, seeds, orderings and backend
-give identical outcomes, storage and optimizer identity are preserved, no
-gradient or memory state crosses between tests, memory stays bounded, and the
-time saving is reproducible, measured separately for construction, compilation
-and warmed steps. No saving has been measured.
+backend, dtype, device and declared capacity. There would be no unbounded
+global model cache: the memory cap, deadlines and worker recycling stay,
+incompatible families are evicted, and construction, ownership,
+checkpoint-migration and reset-isolation tests keep fresh models. A complete
+reset must restore in place everything a test can touch: weights, buffers,
+gradients, optimizer and random state, dictionaries and allocators, grammar
+ownership, configuration globals, STM and LTM, thought history, the
+expectation stream, traces, hooks and retained autograd graphs. Since
+`util.TheCompileBackend` is read once at import, a fixture would select and
+restore the backend explicitly. Reuse is acceptable only when the same
+selection, seeds, orderings and backend give identical outcomes, no gradient
+or memory state crosses between tests, memory stays bounded, and the time
+saving is reproducible. No saving has been measured.
 
-*Moved to [DevelopmentHistory](DevelopmentHistory.md#selected-meaning-and-one-controller-september-20) (2026-10-30): "Selected meaning and one controller (September 20)".*
-## Weekly slow coverage
-
-`make test_slow_weekly` uses the existing virtual environment and does not depend
-on the venv rebuild stamp. It selects central `slow` markers, historical
-`RUN_SLOW` decorators/body gates, and the three `RUN_MPS_SLOW` cases. The older
-switches retain their original gating behavior; the common marker now exposes
-them to selection. CUDA-only cases keep their availability skips.
-
-This machine's weekly target uses the suite's CPU fixture contract; the three
-MPS-specific tests explicitly switch to MPS. Weekly ordinary cases retain an **8 GiB
-per-worker ceiling**. The production objective measurement in
-`test_objective_conflicts_slow.py`, at its unchanged batch of 28, has a
-**24 GiB per-worker ceiling**; it makes one ownership measurement. Both tiers
-run one worker at a time under a **24 GiB aggregate reservation** and the
-existing **30-minute worker deadline**.
-The ordinary full sweep uses the same 12 GiB worker ceiling.
-
-The same weekly target also runs `python bin/Legacy.py` and the three
-`bin/etc` inline unittest suites once, under the weekly ordinary 8 GiB worker ceiling.
-Their individual test counts and failures join the weekly record. The Makefile's
-`SigmaPi`, `SymPercept` and `SPNN` demonstration targets pass `--demo`.
-
-The weekly target freezes source and fixtures into its receipt's `source/`
-directory before collection (a plain file copy, not another Git worktree).
-Workers read that copy, so subsequent cost-function edits cannot change the
-measurement. Its manifest identifies the exact uncommitted candidate tested.
-Each run writes its detailed bounded receipts beneath `tmp/slow-tests/`, plus a
-small `record.json` and `latest.json`: UTC date, commit, case counts, outcomes,
-failures, duration, peaks, ceilings and source-match status. A full sweep's
-summary warns when that record is missing, older than seven days, incomplete,
-or failed. A subset run cannot stand in for the weekly record. A guard-stopped case remains a failed attempt; the weekly dispatcher continues only cases that have not started, without retrying failures or raising their ceilings. The record distinguishes attempted cases from cases with a completed pytest report. A complete attempt record can therefore still contain process failures. The frozen source shares the unchanged `.venv` runtime through a link so subprocess tests resolve the same interpreter; source and fixture files remain independent copies.
-
-A Sunday 03:00 local launchd schedule is proposed and not installed.
-Compiler tests retain capture; ordinary ownership and gradient tests can use
-`eager_reading`, which executes the same loop bodies with ordinary autograd.
-Setting `MODEL_COMPILE=eager` alone still captures higher-order loop graphs.
-
-*Moved to [DevelopmentHistory](DevelopmentHistory.md#october-3-decoder-exploration-operators-and-one-attention--review-candidate) (2026-10-30): "October 3 decoder exploration, operators and one attention".*
-*Moved to [DevelopmentHistory](DevelopmentHistory.md#item-50-forgetting-candidate-2026-10-19) (2026-10-30): "Item 5.0 forgetting candidate (2026-10-19)".*
-*Moved to [DevelopmentHistory](DevelopmentHistory.md#item-4-step-0-second-repair-round-2026-10-19) (2026-10-30): "Item 4 Step 0, second repair round (2026-10-19)".*
-### Large-file corpus tier (item 2.7, 2026-10-29)
-
-At Alec's request, the capacity search and selected large corpus prefix are
-registered as `test/test_corpus_large_slow.py::test_capacity_search_and_selected_corpus_prefix`.
-Ordinary collection skips this test before construction with `RUN_SLOW` unset.
-The November weekly runner discovers it alongside the existing slow cases,
-then runs it alone with a 28 GiB process-tree budget and 48-hour outer guard.
-Its fixed-grid search uses fresh native B28/W256 construction, optimizer state,
-backward and update, with 28 GiB/one-hour per-trial guards. A selected prefix
-must pass whole-document admission and a fresh brick before a full epoch
-(24-hour guard). Known native admission exhaustion may select the preceding
-whole document; unrelated errors cannot be classified as capacity pressure.
-
-The test writes its commands, source snapshot, grid, trial results, admission,
-selected configuration, and initial/periodic/final checkpoints under the weekly
-receipt's `corpus-measurements`. It never overwrites the checked-in candidate
-configuration.
-
-
-## Strict xfail for an unresolved deviation (Alec, 2026-11-01)
-
-Alec: "You can implement everything and xfail what tests you need to, let's
-lock down what is working going forward." A standing test or certificate that
-fails on a deviation that a change does not resolve is marked
-`pytest.mark.xfail(strict=True, reason=...)`, with the reason naming the
-deviation, and the work proceeds. Only a source-hash mismatch or a numerical
-divergence stops it; both stay fail-loud. `make test` remains the criterion: a
-strict xfail that starts passing fails the suite, and is removed together with
-the deviation it named.
-
-### Unexpected recompilation checks (2026-11-03)
-
-`test_compile_guard.py` checks that each declared model execution phase admits its initial graph, reuses it for compatible inputs, and raises on a later shape or owner-attribute guard failure. The failure must reach the caller even when an outer compiler policy requests silent fallback. Initial training/evaluation and decoder trial phases are explicit; arbitrary new shapes are not warmup exceptions. `test_generation_budget.py` checks the construction-time free-generation limit and preserves complete recorded-derivation replay independently of it.
-
-Item 2.3's concept radii, ordered effective relation evidence, definition-index threshold and lexical-admission certificates (`test_trust_round1.py`) run in the default sweep.
-
-Item 2.3 admission uses `WordSurfaces.is_lexical_form` in corpus, aligned, grammar-word and eager paths; `test_word_admission.py` certifies Unicode classification and retained punctuation percepts without lexical identities.
-
-Item 2.3's named-sign certificates use `test_trust_round1.close_named_sign` on the paired fixture to close a kept sign through `define_pending(null_referent=True)`, with no explicit promotion; the full `SentenceFixture` case also covers an already resolved remembered endpoint.
-
-
-### The trained tier (`RUN_TRAINED`)
-
-`RUN_TRAINED` is independent of `RUN_SLOW`. `@pytest.mark.trained('phase')` skips before fixture setup unless `RUN_TRAINED=1`; the phase and reason are counted in terminal output, `skipped_trained_by_phase` in JSON, and the HTML report. Enabled tests require the exact artifact through `phase_artifacts.PhaseRegistry`, failing on unknown phases, null or absent files, wrong hashes and absent producing receipts. `BASICMODEL_PHASE_ARTIFACTS` selects a private registry for the tier's own certificate. Existing `phase` certificates are unchanged. The registry names `words`, `interpret`, `clause`, `ask`, `verb`, `modifiers`, `determiners`, `adverb`, `prepositions` and `relations`, each with a null artifact and a producer row naming the lesson runner, `bin/corpus_lessons.py`, and its row in the lesson order.
-
-The tier holds the ten functions below (the answer-quality function with both parameter cases), with their assertion bodies unchanged. This prerequisite replaces the two syntax-learning expected-failure decorators and the successor and free-derivation `RUN_SLOW` skip guards, and central `slow` markers no longer gate a `trained` test.
-
-| Test | Phase |
-|---|---|
-| `test/test_meronomy_ladder.py::test_cold_start_learns_space_as_the_basic_boundary` | `words` |
-| `test/test_math_thinking_training.py::test_stage_zero_direct_arithmetic_learns_as_syntax` | `verb` |
-| `test/test_math_thinking_training.py::test_stage_one_dependency_chains_learn_as_syntax` | `relations` |
-| `test/test_math_thinking_training.py::test_successor_is_learned_as_a_verb` | `verb` |
-| `test/test_what_training.py::test_joint_training_keeps_both_primary_costs_in_band` | `ask` |
-| `test/test_what_training.py::test_supplied_text_answer_quality_improves_with_training` | `ask` |
-| `test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_serial_topology` | `ask` |
-| `test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip` | `clause` |
-| `test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal` | `mm_xor_grammar` (2026-11-08) |
-| `test/test_explicit_dimensions.py::TestXorGrammarLearnsXor::test_xor_class_accuracy` | `xor_grammar` (2026-11-08) |
-
-The two grammar-XOR fits are in this tier by Alec's decision of 2026-11-08. `mm_xor_grammar` registers a null artifact with the test's own `_fit_xor` producer: `data/MM_grammar.xml`, seed 41001, 900 epochs and the 0.20 bar. `xor_grammar` registers a null artifact with `ModelFactory.run(data/XOR_grammar.xml)` as producer and the criterion of four answers correct with MSE below 0.05. The `shared_training('xor_grammar')` group and `TestXorGrammarReconstruction` remain in the default suite.
-
-The criterion is acquisition from presented sentences or a required free chooser decision in an untrained first batch. Numeric XOR convergence, direct tensor optimization, loss/gradient ownership, admission and checkpoint mechanics, and fixtures with explicit forced choices remain default/slow mechanisms under their existing rules; older artifact-backed `phase` tests are unchanged. The three-document token case retains its body and remains a mechanism: `test_reading_round.symbol_interpretation` uses the existing `OperationSelectionLayer.set_stage_menu` on fixture instances to exclude `sign`, fixing the second decision at the symbol without a production setting.
-
-`definition_fixtures.learned_operation` sits beside `agreeing_views` and requires an explicit kept-use count and fixture occupants. It calls `PartsOfSpeech.observe_use`, the same application writer used by `observe_kept`; it never writes counts directly. It supplies input member views to native argument concepts; complete kept programs retain their ordinary output/head-flow member views. `test_trust_round2` certifies one and three kept uses, argument agreement and shared membership, fixed and identity exemptions, checkpoint pointers/catalogue/native argument geometry/use counts/effective pairs, epoch persistence, empty occupations and hand-counted curriculum measurements. These and the private-registry trained-tier certificate run in the default sweep. Gate mechanisms are certified separately by the closed-gate fixtures below.
-
-The moved trained-tier tests still train a fresh model after the prerequisite is checked; restoring the registered artifact into that model belongs to the lessons item. The two strict expected failures recorded before the tier (`test_stage_zero_direct_arithmetic_learns_as_syntax` and `test_stage_one_dependency_chains_learn_as_syntax`) are now trained-tier skips without `RUN_TRAINED=1`.
-
-`test_trust_round2` also certifies first-writer operation provenance, naming that clears an operation cap, ownerless catalogue reattachment and bind result-order eligibility. The three-document mechanism uses the existing instance menu with `STOP`, `interpret` and `union`: interpretation retains the symbol and union reduces the word and punctuation spans. The user-ingestion fixture supplies union through `learned_operation` and checks the stored source pair plus effective evidence by the measured operation formula; the checkpoint inventory includes the operation column and catalogue extra state.
-
-Both parameters of `test_identity_threading::test_compose_bind_locations_share_the_operation_chooser_and_zero_dummy` deposit each antecedent with order 1, as a working token requires.
-
-`test_trust_gates.py` uses `gate_data` to close gates through construction data and `gate_fixture` to attach the paired owner to the ordinary clause writer, without unused thought rows or resizing. Its certificates cover named-row caps with identity maps, opening and later falling readiness, operation and fixed-relation caps and exceptions, lift definiteness, epoch/checkpoint persistence and missing-state rejection, open default and closed lesson models, readiness reports without lesson execution, empty lift classes and invalid data. In `test_trust_round2::test_fixed_operations_and_identity_mechanics_stay_at_one` the part row carries its catalogue index and still contributes operation trust one. All existing test configurations retain open starts.
-
-The 2026-11-08 argument-concept correction uses `argument_fixtures.argument_inventory` and `view_counts` for native seated words and explicit concept views. `test_argument_concepts` covers zero-view declarations, atomic capacity refusal, native orders, native checkpoint addresses, member centroids, shared roles, generic nested-class feedback, preserved forms/radii, and whole-value chart behavior. The nested-class certificate has no grammar catalogue. `test_trust_gates` now requires zero empty-class readiness and tests empty `except` elements. The input carrier retains repeated lexical occurrences; `test_direct_operand_occupations` observes exact writer calls and per-class view increments rather than a stored word-by-role count table. The kept-reading certificate compares the view increments against its independent journal replay and proves annotations and rejected trials cannot write them.
-
-Representation ports replace exclusive argmax/probability assertions in `test_parts_of_speech`, denotation-order count slices in `test_orders_learned`, count migration in `test_grammar_checkpoint`, count snapshots in `test_part_closing`, and the operation/gate probability formula in `test_trust_round2` and `test_trust_gates`. `test_reference_participants` supplies actual lexical members separate from their object referents. `test_config_scoping` includes the fixed declaration seats in reference capacity while retaining ordinary input/output sizes. The two small round-1 paired fixtures and round-2 fixtures declare capacity for the formal concepts before construction. No mechanism is retired. Artifact-backed restoration requires a new native-geometry artifact; old count artifacts fail loudly. `RUN_TRAINED`, phase prerequisites, and the default sweep's XOR and pending-premise cases retain their tier rules.
-
-Argument-concepts continuation certificates cover coverage fit, separability/evidence, boundary scope and scheduling, fit-weighted centroids, neutral unmeasurable charts, unique membership edges, object/binding isolation and named formal-class proof paths.
-
-The argument-concepts-iii ports retain consolidation → promotion → one `ConceptHierarchy.refresh` derivation → condition, and read order-independent class fits after the boundary: aligned classes each have coverage one even with different radii.
-
-### Item 2.0 certificates
-
-Item 2.0's direct certificates are in `test/test_item20_round*.py`: the memory
-and journal move, thought WHEN stamps, absent nonoperation journal rows,
-symbol-description rejection and the shared memory snapshot base (round 1);
-admission and terminal routing, recorded action witnesses, ownership and
-address migration, and candidate-owned action bases with free walks that need
-no action record or live STM, including compiled gradients (round 2, among them
-[test_item20_round2_generation.py](../test/test_item20_round2_generation.py));
-two-sided gradient and cost routing, participation re-reads, rates, clamp
-velocity, output typing, and graph lifetime with an unseeded packed-sentence
-scan and an optional chooser-owner certificate (rounds 3 and 4); reference
-paths, state errors, shared strata, seat authority and basic percepts
-(round 5); the common decoder, field gradient, output and timed memory
-(round 6); and concept episodes and the one sentence and thought clock
-(round 7).
-
-### Data certificates of the training corpus (item 0.5, 2026-11-12)
-
-Four fast certificates read the frozen corpora and never regenerate them:
-`test/test_math_corpus.py` (hashes, grade order, every answer and
-intermediate answer, held-out and beyond pairs), `test/test_game_corpus.py`
-(hashes, `verify` on every row, splits, transfer words kept out of the
-games), `test/test_lesson_stages.py` (hashes, phases in lesson order,
-answers, held-out words, the lesson driver reads every stage) and
-`test/test_training_corpus.py` (stage hashes, part A disjointness, the
-held-out cost set, the next-word gate's documents, the recorded part B
-scan). Local part B data is checked by hash only where present.
+Superseded runner evidence and earlier test rounds are recorded in
+[DevelopmentHistory](DevelopmentHistory.md).

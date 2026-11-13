@@ -1,16 +1,8 @@
 # The Symbol Firewall
 
-> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record.
-> - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
-> - Operators are minimal: tense, aspect, the preposition and the modal are one `position` operation (the modal with a world as object; no `MP` rule); the verb is a group element (`verbSpectrum` diagonal, log-ratio teacher); `surface` is absorb and transpose only; no language is named or special-cased in code, configuration, fixtures or tests. Defaults: NP = everything, VP = *occurs* (read for "exists"), MP = all possible worlds.
-> - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
-> - Amended 2026-10-23 (recorded 2026-10-30): `bind` is live both as a compose operation (`BindLayer`, `bind.forward` in `<compose>`) and as a thought operation (`bind.thought`), once per site; see [Architecture](Architecture.md)'s read-first box.
-
-
-*A governing architectural principle. This document is the code-anchored,
-normative version of an earlier source proposal — it states the principle
-and maps each invariant onto the structures that already realize it (or
-names the gap).*
+*A governing architectural principle. This document states the principle
+and maps each invariant onto the structures that realize it, or names the
+gap.*
 
 ## Relation to LLMs, Formal Concept Analysis, and DisCoCat
 
@@ -66,13 +58,11 @@ that bifurcation needs to be complete; we don't want leakage."
   index does exactly this and would produce mixed errors with no geometry
   crossing. The architecture is Levelt on representation and Dell on
   dynamics, which is where the field settled.
-- **Consequences for the decided mechanisms.** `bind`'s content term, the
-  priming spread (from item 2.5 round B, `ActivationPredictor`'s predicted
-  next state), placement by the registered surface, and the two identity
-  models (intersection, union) are all **in conceptual space**. The
-  perceptual fold enters identity
-  only as form identification (the word symbol). Where earlier text says
-  "the cube" for these, read the conceptual cube.
+- **Consequences.** `bind`'s content term, the priming spread
+  (`ActivationPredictor`'s predicted next state), placement by the
+  registered surface, and the two identity models (intersection, union)
+  are all **in conceptual space**. The perceptual fold enters identity
+  only as form identification (the word symbol).
 
 ## Hierarchical context preserves the firewall (Alec, 2026-11-08)
 
@@ -117,8 +107,8 @@ doctrine those pieces jointly satisfy.
 The architecture is **symbol-composed by construction**. There is no global dense
 hidden vector that modules read and write freely; state lives in codebook rows
 and short-term-memory slots that carry addresses, types, and meronomic relations.
-The firewall is therefore mostly a *naming and auditing* discipline over what is
-already built, plus a small set of identified gaps.
+The firewall is therefore mostly a *naming and auditing* discipline over that
+structure, plus a small set of identified gaps.
 
 ## Invariant $\to$ code scorecard
 
@@ -126,23 +116,20 @@ already built, plus a small set of identified gaps.
 |---|---|---|---|
 | 1 | No anonymous persistent state | **satisfied** | `Codebook` rows are addressed by integer position; `part_parents` meronomy (Spaces.py, `Codebook.part_parents`, `Codebook.set_part_parent`) |
 | 2 | No unrestricted global residual stream | **satisfied** | Five-Space pipeline; cross-module signal goes through STM + the grammar router, not a shared hidden vector ([Architecture.md](Architecture.md), [Spaces.md](Spaces.md)) |
-| 3 | All latent vectors owned by symbols | **satisfied** | Every concept is an allocator id with a `similarity_codebook` row; a word's latent is bound by the DEF row `interpret` writes (Interpret.py) and parthood by LTM1 Part rows (re-anchored 2026-10-30; the META taxonomy APIs named before are retired) |
-| 4 | Operations declare read/write masks | **partial** | Every grammar operation declares its subsystem reads and writes (`AccessibleMind.OperatorEffects`) and its footprint over form, meaning and poles (`OperatorFootprint`), checked at grammar load; a face may only remove a write, and a subsystem is written once per round (`EffectRound`). Mode-partitioned `reference_update_mask`, `update_mask_fn` (installed by `install_reference_update_law`), `intent_priming_weights` (Spaces.py), inert under the default `<architecture><meronomy>` setting: the law returns no mask unless it is on (audit 2026-10-30). The per-feature mask is the verb's support below. |
+| 3 | All latent vectors owned by symbols | **satisfied** | Every concept is an allocator id with a `similarity_codebook` row; a word's latent is bound by the DEF row `interpret` writes (Interpret.py) and parthood by LTM1 Part rows |
+| 4 | Operations declare read/write masks | **partial** | Every grammar operation declares its subsystem reads and writes (`AccessibleMind.OperatorEffects`) and its footprint over form, meaning and poles (`OperatorFootprint`), checked at grammar load; a face may only remove a write, and a subsystem is written once per round (`EffectRound`). Mode-partitioned `reference_update_mask`, `update_mask_fn` (installed by `install_reference_update_law`), `intent_priming_weights` (Spaces.py), inert under the default `<architecture><meronomy>` setting: the law returns no mask unless it is on. The per-feature mask is the verb's support below. |
 | 5 | Semantic mutation emits a delta | **partial** | Truth-domain only: luminosity + `extrapolate` deltas ([Logic.md](Logic.md), [Reasoning.md](Reasoning.md)). Not yet generalized to all mutations. |
 | 6 | Temporary latent is compressed or discarded | **satisfied (by design)** | Bounded STM depth + reset cascade ([STM.md](STM.md), [Spaces.md](Spaces.md)); no indefinite latent workspace |
-| 7 | Recurrent useful patterns are promoted | **satisfied** | MTM recurrence promotion (`FamiliarTier.promote_candidates`, `conceptMintCount`); the LBG split and `_maybe_autobind_meta` named before are retired (re-anchored 2026-10-30) |
+| 7 | Recurrent useful patterns are promoted | **satisfied** | MTM recurrence promotion (`FamiliarTier.promote_candidates`, `conceptMintCount`) |
 
-"Partial" rows (#4, #5) are where this body of work makes concrete progress; the
+Rows #4 and #5 are partial: the instance below advances them, and the
 remaining gaps are listed under *Future work*.
 
-## Two delivered instances
+## A delivered instance: verb application as a masked, sparse semantic edit (invariants #4, #5)
 
-These are not new doctrine: they are the firewall principle applied at two
-specific seams. The first is retired and kept in the history; the second is
-live.
-
-*Moved to [DevelopmentHistory](DevelopmentHistory.md#a-metasymbol-participation-categories--a-typed-symbol-owns-a-latent) (2026-10-30): "A. MetaSymbol participation categories".*
-### B. Verb application as a masked, sparse semantic edit (invariants #4, #5)
+This is not new doctrine: it is the firewall principle applied at one seam.
+(An earlier instance, the MetaSymbol participation categories, is retired;
+see [DevelopmentHistory](DevelopmentHistory.md#a-metasymbol-participation-categories--a-typed-symbol-owns-a-latent).)
 
 A verb does not transform a noun phrase as an undifferentiated vector. On a
 configuration with a meaning block, `lift` applies the verb phrase to its
@@ -159,10 +146,8 @@ verb phrase, soft-thresholded (threshold .1, straight-through) and bounded to
 $\pm 4$: an untrained verb is the identity, and a coordinate enters its
 support only when its push recurs. `adverb` is the same action in one shared
 basis. The inverse solves the same restricted system, so the edit is exactly
-invertible given the verb. Configurations without a meaning block keep the
-numerical verb spectrum (`LiftLayer.apply_verb` / `unapply_verb`, inherited
-by `VerbLayer`, sparse by soft threshold and bounded to $\pm 8$) and the
-adverb's multiplicative modifier (`apply_adverb`). The full account is in
+invertible given the verb. The full account, with the numerical verb spectrum
+that configurations without a meaning block keep, is in
 [Language](Language.md#grammarlayer-forward--reverse-inventory).
 
 This is the firewall's verb example made real: the same NP participates in
@@ -172,13 +157,12 @@ local, bounded, invertible and reportable.
 
 ## Future work (out of scope for this pass)
 
-The firewall is ~70% realized by construction. Closing it fully is deferred:
+The firewall holds mostly by construction. Closing it fully needs:
 
 - **Generalized semantic deltas** (#5): emit a structured delta for *every*
   symbol-state mutation, not only truth-domain inferences.
 - **Per-operation audit records**: an `operation_id` stamping input units, masks
-  checked, latent kernel, output delta, confidence, provenance (the proposal's
-  audit-record shape).
+  checked, latent kernel, output delta, confidence, provenance.
 - **Type/role metadata catalog** (#2 hardening): a queryable registry of every
   symbol's declared type and role.
 - **Safety/factuality constraints over the symbolic graph**, generalized beyond
@@ -194,7 +178,7 @@ residual stream exists; temporary latent is compressed/attached/discarded;
 recurrent useful patterns are promoted; and safety constraints operate over the
 symbolic graph rather than only over final text. Today, criteria tied to
 invariants #1, #2, #3, #6, #7 hold by construction; #4 and #5 are advanced by the
-two instances above and completed by the future work.
+instance above and completed by the future work.
 
 ## One-sentence formulation
 

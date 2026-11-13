@@ -622,3 +622,130 @@ record the commit and the source hash (test/bounded_tests.source_snapshot,
 SHA-256 of its compact sorted JSON, and whether
 data/corpus/assembly-01/manifest.json was present); push testing.
 ~~~
+
+### 18.3 The review round here: integration, and the lesson gates (Alec, 2026-11-13)
+
+Alec, 2026-11-13: "0.5 is being completedin one round on the other machine,
+so we will have to integrate against the pushed 1.5 source and make this
+change before subitting. can you make sure that is in the purview of your
+review round?" Claude reads "1.5" as the pushed checkpoint of item 1.8
+(`main`, `ab5176e0e2`); the round below also integrates with the pushed
+source of this item (`origin/testing`, `b6370617d3` when this was written),
+so it holds under either reading.
+
+No further text goes to the second machine. Claude's review of its return
+(§19, on `origin/testing`) covers, before anything is submitted:
+
+1. *The review of §19* as returned.
+2. *Integration.* The uncommitted document work of this worktree is based on
+   `96307818d2` and is brought onto the pushed `testing`; and `testing` is
+   integrated with the pushed 1.8 source, so that what is submitted runs on
+   it.
+3. *The lesson gates*, made here.
+
+The lesson gates are the outside gate of the 1.8 specification's §17 point
+18. Alec: "Operators are "a priori" concepts that we are using for the
+control of the architecture itself. Lets not do that; the gating of those
+operators might be able to be done *in the tests*, which would act like
+piagetian stages signalling that the test suite can move on to the next
+stage. Are there tests that we could administer that would determine if
+the correct operators are being used in the correct locations? If so, the
+test gating should be moved outside."
+
+- *What each lesson expects is declared.* Each variant of each recipe
+  (`data/lessons/recipes`) states the operator applications its sentences
+  should contain: the operator by its rule name in the grammar file the
+  lessons run under, and the slots that are its operands, in order. Claude
+  proposes them from the templates and the grammar; which operator is
+  right at a place is Alec's to decide, from the table.
+- *It is carried into the records.* `lesson_stages.expand` writes, for each
+  generated record, every expected application as the operator's name and
+  the places of its operands in the rendered sentence. The corpus is
+  rebuilt with its recorded seed; its sentences do not change.
+- *Two measures*, on a stage's held-out records presented without training
+  (`corpus_lessons.heldout`):
+  - `operator_placement`: the share of expected applications found in the
+    tree of the path the model kept. One is found when a node of that tree
+    has that operator and its operands' words are exactly the declared
+    places. Structure around it does not count against it, since a
+    sentence can have more than one right tree.
+  - `heldout_answers`: the share of held-out questions answered with the
+    supplied answer (`text_correct`, `bound_correct`, as scored now).
+- *The criterion.* Each recipe's `criterion` names these two measures in
+  place of `occupant_definiteness`, which no code computes. Their
+  thresholds stay null until Alec sets them from the numbers;
+  `test_lesson_stages.py` keeps its assertion that none is set.
+- *The gate.* The lesson driver takes a stage's two measures after each
+  pass and records them. While a threshold is null it moves on as it does
+  now and says so; once thresholds are set, a stage is passed when both
+  are met and the next begins then. Nothing in the model changes for this.
+- *Later.* A test of the field a sentence is left with waits for item
+  1.8's extend. The prerequisites of `test/phase_artifacts.py` are not
+  changed before thresholds exist.
+- *The relations stage* (`09-relations.json`). Alec, 2026-11-13: "If a
+  sentence like "cats have fur" does not write a relation, then we have
+  not correctly parsed the sentence as a relative truth, or a relation
+  between two ideas (have expresses parthood, is expresses identity
+  (unless predication), both are relations that are written to STM1 by a
+  correct grammatical parse, are stored in LTM1, and teach the conceptual
+  taxonomy)." So this stage's expected operator applications are `part`
+  at the verb of a sentence of parthood and `equal` at the verb of a
+  sentence of identity, each between the sentence's two ideas, and its
+  held-out measure counts a sentence as right only where the relation is
+  in `LTM1` after it. No word is tied to an operator in code: the recipe
+  says which slot each operator is expected at.
+
+### 18.4 A proposal for the lesson gates (Claude, 2026-11-13; for Alec to correct)
+
+Alec: "please just make a proposal and well go from there." Nothing here
+is set in a recipe yet.
+
+**The operators expected, by stage.** A slot is a named place of a
+recipe's variant. Interpretation of a leaf is forced while reading and is
+not counted.
+
+| Stage | Sentences | Operator expected, and between which slots |
+|---|---|---|
+| 0 words | "{w}." | none: one word |
+| 1 interpret | "This is {n}." "What is this?" | `sign` at "this"; `equal` between "this" and {n}; `ask` at "What" |
+| 2 clause | "{n} {v}." "{p} {v}." | `verb` between the subject and {v}; `lower_unary` at the bare plural {p} |
+| 3 ask | "{n} {v}." "Who {v}?" | `ask` at "Who"; `verb` between "Who" and {v} |
+| 4 verb | "{a} {t} {b}." | `verb` between {t} and {b}, and between {a} and that phrase |
+| 5 modifiers | "{j} {p} {v}." | `intersection` or `product` between {j} and {p} |
+| 6 determiners | "The {c} {v}." "A {c} {v}." | `definite` between "The" and {c}; `lower` between "A" and {c} |
+| 7 adverb | "{n} {v} {a}." | `adverb` between {v} and {a} |
+| 8 prepositions | "{n} {v} {p} the {l}." | `definite` between "the" and {l}; `preposition` between {p} and that phrase; `compound` between {v} and the prepositional phrase |
+| 9 relations | "{n} is a {c}." "A {c} is an animal." | `lower` between "a" and {c}; `part` at "is", between the two ideas |
+
+Four rows are the least sure and are the ones to correct first: the bare
+plural of stage 2; the operator that joins a subject to an intransitive
+verb; `compound` as what attaches a prepositional phrase; and `part` at
+"is a" in stage 9, which is a predication and so, by Alec, not `equal`.
+
+**The thresholds.** One number for both new measures at every stage:
+0.875, that is one record in eight may miss.
+
+| Stage | Held-out records | May miss |
+|---|---|---|
+| 0 words | 3 | 0 |
+| 1 interpret | 2 | 0 |
+| 2 clause | 7 | 0 |
+| 3 ask | 4 | 0 |
+| 4 verb | 24 | 3 |
+| 5 modifiers | 12 | 1 |
+| 6 determiners | 8 | 1 |
+| 7 adverb | 12 | 1 |
+| 8 prepositions | 15 | 1 |
+| 9 relations | 12 | 1 |
+
+- *Which measures a stage has.* `operator_placement` at stages 1 to 9.
+  `heldout_answers` at the stages whose variants ask a question: 1, 3, 4
+  and 9. Stage 0 keeps `definition_trust_fraction` and stage 1 keeps
+  `denotation_fraction`, each at 0.875 too. Stage 9 keeps
+  `relation_groups` as it is.
+- *Twice running.* A stage is passed when its measures hold on two passes
+  in a row. The held-out sets are small, and one pass can be met by
+  chance.
+- *From the first numbers.* No stage has been measured against these.
+  The first run reports each measure beside its threshold, and the
+  thresholds are corrected from that before any stage is made to wait.

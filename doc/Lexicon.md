@@ -1,12 +1,5 @@
 # Lexicon
 
-> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record.
-> - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
-> - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23; recorded 2026-10-30):** an LTM1 row is two tagged references (each to an LTM0 occurrence, a symbol or another LTM1 row, its tag saying which) with its kind read from the referents, not three. The unused `LTM0` columns are removed and the row has this layout (Alec, 2026-11-01).
-> - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; a stream is the batch row that wrote a row, and a document is the cover row that starts it in that stream (reused at every later presentation; a row belongs to the document of the latest cover before it), so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded (2026-10-24).
-
-
 ## Relation to LLMs, Formal Concept Analysis, and DisCoCat
 
 The lexicon is the language-facing entry point shared with LLM practice:
@@ -38,7 +31,8 @@ ball.
 ## Word forms and concept orders
 
 A form or fused unit resolves to its word concept through the index derived
-from `REL_DEF` rows. The same index resolves word → objects and object → words;
+from the definition rows (`DefinitionIndex`): LTM1 rows whose two references
+are an object and a word, read as definitions from their referents' types. The same index resolves word → objects and object → words;
 no lookup scans or compares learned vectors. It rebuilds from the common
 store on load and after compaction. There is no fixed order per spelling
 and no permanent attended row identity.
@@ -50,10 +44,10 @@ Higher kinds can occupy further orders. Formation and testimony supply
 these concepts; lexical resolution never invents a missing one. Grounding is
 textual: a new word's object starts nearly empty and learns its parts and
 kinds from what the text states
-([Language](Language.md#interpret-word-concept-to-object-concept-item-9b-2026-09-25)).
+([Language](Language.md#interpret-word-concept-to-object-concept-2026-09-25)).
 
-Item 9b names the operator that performs this resolution: `interpret`
-([Language](Language.md#interpret-word-concept-to-object-concept-item-9b-2026-09-25)),
+The operator that performs this resolution is `interpret`
+([Language](Language.md#interpret-word-concept-to-object-concept-2026-09-25)),
 the per-word step, forced in reading mode under every binding, from the
 word-concept PartSpace looked up to its associated object-concept. An
 existing association wins at its existing order, including a kind. If
@@ -65,7 +59,9 @@ learned content. Neither is a part of the other merely because they are
 linked. A missing particular is not a reason to add one beside a known kind.
 
 `InterpretLayer` reserves capacity before the transaction and is the only
-writer of definitions. Reading identical canonical parts is a lookup,
+writer of definitions (`Interpret.define`). A definition names its word and its
+object as symbols, never by their codes, so what training does to either code
+never redirects it. Reading identical canonical parts is a lookup,
 even when their property evidence has changed. Where the field discovers
 objects by recurrence, interpretation uses the case the field admits.
 The definition's `.when` stays fixed and its recency timestamp refreshes.
@@ -80,7 +76,7 @@ determiner, its referent (`referent="mint"`, `"bind"` or `"kind"`). No
 operand is named as a kind of word (pronoun, particular, kind), and there is
 no name-to-order table or maximum order: the requested order is what the
 composition denotes (`ReferenceContext.binding_spec`, `denoted_order`;
-[Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3)).
+[Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21)).
 Which words fill which position is learned by participation, so proper-name
 and generic readings resolve through the selected grammar, without
 capitalization rules or word lists. Inner reference phrases retain their
@@ -98,16 +94,20 @@ witnessed ("walked" into "walk" + "ed" once "walk" has been seen; a stem
 witnessed later licenses an earlier marked word). With no marker named, every
 word stays whole, and an irregular form ("went") never nests. There is no
 vocabulary-wide search for shared letter runs, no prefix or infix admission
-and no token-count threshold: a lesson first runs the grammar without the
-marker, then turns the marker on and tests it, one generalization at a time.
+and no token-count threshold: one generalization is admitted at a time.
 The permission is not a learned identity or a checkpoint setting, but parts
 already witnessed persist after the lesson ends. The word remains the unit of
-attention, and no marker label chooses a grammar operation.
+attention. A marker, free or nested inside a word, is one kind of leaf: which
+selection it calls, and with what object, is learned by exposure and never
+declared, and no language is named or special-cased in code, configuration,
+fixtures or tests (Alec, 2026-10-19).
 
 A candidate's declared noun references are resolved before its numerical
 operation runs. Particular and pronoun choices are limited to earlier live
-constituents and the predictor's bounded situation; pronouns never select
-kinds. The hard choice retains the softmax gradient. A completed row stores
+constituents and the bounded situation of the symbol predictor
+(`SymbolExpectation`, whose order-zero read, `WordExpectation`, predicts
+activation over the candidate words;
+[Expectation](ExpectationRetention.md)); pronouns never select kinds. The hard choice retains the softmax gradient. A completed row stores
 its end-state values and references, not the operations or lexical leaves.
 The temporary reading record keeps the original reconstruction provenance
 and the selected operand values until the sentence ends, then is discarded.

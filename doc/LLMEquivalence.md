@@ -1,11 +1,5 @@
 # LLM equivalence: compose, predict, invert, emit
 
-> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record.
-> - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
-> - Expectation is a **gain field** $c = m \odot a \odot o$ (attention's gain $m$, expectation's gain $a$, the arriving signal $o$) with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
-> - Amended 2026-10-29/30 (Alec): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are built (accepted as implemented, Alec, 2026-11-01).
-
-
 **Purpose (Alec, 2026-09-26).** State once, with a proof, the sense in
 which a sentence-level model — partition a text on sentences, combine each
 sentence's words into a representation by invertible transforms, predict
@@ -63,25 +57,27 @@ it, and where it deliberately does not, is recorded beside each.
    the mode; it is usually not a sentence at all. Under MSE the
    equivalence holds only when the conditional is nearly deterministic —
    the regime of **reading**, where the next sentence is given and the
-   predictor's job is expectation,
-   and not the regime of generation. Item 9's null on ordered prediction
-   is consistent with asking a regressor for a distribution's worth of
-   information. Closing the gap in the generative regime means a
-   distribution over the next representation: a mixture, a diffusion, or
-   the discrete form BasicModel already has, the chooser over candidate
-   rows.
+   predictor's job is expectation: each arriving sentence scores the
+   forecast its preceding context made, and the forecast primes the reading
+   rather than being emitted ([Expectation](ExpectationRetention.md)). It is
+   not the regime of generation, where a regressor is asked for a
+   distribution's worth of information. Closing the gap in the generative
+   regime means a distribution over the next representation: a mixture, a
+   diffusion, or the discrete form BasicModel already has, the chooser over
+   candidate rows.
    At the word bracket, the shared activation predictor's forecast over a
    native candidate bank (`WordExpectation.word_distribution`) supplies that
    discrete distribution, and the frozen next-word gate
    (`bin/eval_nanochat_grammar.py`) scores candidates by its probabilities.
    This meets the distribution requirement at the word bracket; it does not
-   make the sentence-level predictor a distribution over all sentences or
-   establish the language learning gates.
+   make the sentence-level predictor a distribution over all sentences.
 3. **The history must be the same.** A token model conditions on every
    token in its window; the sentence model conditions on what it keeps.
    With LTM rows as a lossy statistic, equivalence holds up to
    the information retained — a truncated context of a different shape
-   from the window.
+   from the window. A row keeps a sentence's composed idea, or a chain of
+   references for a sentence that does not compress, and never its parse;
+   when a store nears capacity, forgetting deletes the rows of least value.
 4. **Evaluation by perplexity is not available.** The token conditionals
    are marginals of the sentence conditional and are intractable from `g`
    unless `g` factorizes. A sentence model can be equivalent as a
@@ -99,8 +95,7 @@ language model over meaning classes, and emission chooses a wording within
 the class. Equivalence *modulo paraphrase* is weaker than equivalence, and
 it is the intended weakness — the two truths are built on it: an idea,
 an absolute truth, is one point in conceptual space that its paraphrases
-share, and a relation, a relative truth, holds two references to ideas,
-symbols or other relations.
+share, and a relation, a relative truth, refers to such points.
 The `<compose>`, `<thought>` and `<generate>` catalogs are the three faces
 of `f`, its use, and `f⁻¹`
 ([Language](Language.md#grammar)).
