@@ -455,6 +455,9 @@ representation to an object, for which there is no initial basis."
   and perhaps necessary for a zero-D thing."
 - **Only `interpret` makes a symbol.** "lets let interpret() make all
   symbols."
+- **Its two names.** "lets call interpret as objectForWord, and its reverse
+  wordForObject." Saying what a present thing is, with no word given, is
+  `wordForObject`.
 - **The trust of the mapping** is one for now: "the trust of a words mapping
   is really something the architecture should be setting based on success.
   lets just use one, and flag it" ([FutureWork](FutureWork.md)).
