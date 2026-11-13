@@ -1973,3 +1973,23 @@ Stored papers remain stored, and the seven pre-existing planning notes
 remain available in `scratch_preexisting_notes/`. Publication is to
 **testing only**; local main and the parent repository pointer are outside
 this landing.
+
+### 20.10 Publication identity
+
+Implementation and measured return commit on `testing`: `170ea508ec5e40a264a34d37d07b730c0f9142dc`.
+The following metadata-only commit records this identity; it changes no
+validated executable, test, fixture, corpus or configuration. The source
+snapshot was rechecked after committing and still has 1,154 entries, SHA-256
+`1ca4a02418452145d854d1b4b8d957764941399e74d964d8e221729dd64f0e82`;
+`data/corpus/assembly-01/manifest.json` remains present.
+
+Tracked blob size (`git ls-tree -r -l`): before this continuation,
+1,271 files / 94,586,951 bytes at `91e71c40cf`; implementation
+1,344 files / 96,155,856 bytes at `170ea508ec`.
+Stored research papers have no diff in this continuation. The seven original
+planning notes remain ignored local files, preserved for inspection.
+
+The H1 wrapper completed in 4,794.725143750 s. Its final grammar-reconstruction
+worker passed in 874.446467084 s, peak 4,542,813,272 bytes. Both complete
+sweep source snapshots match the implementation source above. Publication
+uses a normal push to `origin testing`, with no main update or force push.
