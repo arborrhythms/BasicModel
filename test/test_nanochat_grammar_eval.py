@@ -209,3 +209,17 @@ def test_checkpoint_prewarm_builds_reducer_and_full_wholes_inventory():
     assert reducer_calls == [True]
     assert codebook.nVectors == 8192
     assert to_calls == [torch.device("cpu")]
+
+
+def test_evaluation_freezes_argument_learning_and_restores_flags_on_error():
+    import pytest
+    space=SimpleNamespace(_online_learning_frozen=False)
+    held=SimpleNamespace(_online_learning_frozen=True)
+    speech=SimpleNamespace(frozen=False)
+    model=SimpleNamespace(inputSpace=space,perceptualSpace=held,conceptualSpace=space,
+        conceptualSpaces=[space],wholeSpace=space,languageSpace=SimpleNamespace(parts_of_speech=speech))
+    with pytest.raises(RuntimeError,match='measurement stopped'):
+        with gate.frozen_online_learning(model):
+            assert space._online_learning_frozen and held._online_learning_frozen and speech.frozen
+            raise RuntimeError('measurement stopped')
+    assert not space._online_learning_frozen and held._online_learning_frozen and not speech.frozen

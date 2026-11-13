@@ -62,13 +62,15 @@ def stage_documents(data, stage, *, split='train'):
     """Math records supply loss-side answers; document addresses stay grouped."""
     import torch
     from math_chain_corpus import ChainDocument, flatten
-    records, sources = [], []
+    records, sources, document_ids = [], [], {}
     for document in stage['documents']:
+        key = document['document']
+        identity = document_ids.setdefault(key, len(document_ids))
         offset = 0
         for record in document['records']:
             doc = ChainDocument(**dict(record, sentences=tuple(record['sentences'])))
             records.append(doc)
-            sources.extend((document['document'], offset+i) for i in range(len(doc.sentences)))
+            sources.extend((identity, key, offset+i) for i in range(len(doc.sentences)))
             offset += len(doc.sentences)
     texts, targets, addresses = flatten(records, supplied=True)
     setattr(data,split+'_input',texts)
@@ -77,8 +79,9 @@ def stage_documents(data, stage, *, split='train'):
         data.text_answers = {}
     data.text_answers[split] = targets
     data.has_supervised_outputs = any(target is not None for target in targets)
-    data.source_addresses[split] = [dict(address, split=split, document=key, sentence=sentence)
-        for address, (key, sentence) in zip(addresses, sources)]
+    data.source_addresses[split] = [dict(address, split=split, document=identity,
+        external_id=str(key), sentence=sentence)
+        for address, (identity, key, sentence) in zip(addresses, sources)]
     return texts, targets
 
 
@@ -170,7 +173,7 @@ def phase_acquisition(model, measurement, observations, *, relations=False):
     return dict(passed=bool(tests) and all(row['passed'] for row in tests),tests=tests)
 
 
-def heldout(model, stage, data):
+def heldout(model, stage, data, *, after_batch=None):
     """Untrained held-out recombinations; their answers never admit forms."""
     from MathChainTraining import present
     from BindingAnswers import matches
@@ -186,15 +189,13 @@ def heldout(model, stage, data):
                 answer=None if actual is None else actual.text,
                 text_correct=None if target is None else actual is not None and actual.text==str(target),
                 bound_correct=None if target is None else field is not None and bool(matches(model,field.meaning,str(target)))))
+        if after_batch is not None:
+            after_batch(model,split,indices,result)
     # Evaluation may observe the input but may not grow its vocabulary from
     # the held-out records. The records reuse admitted training forms.
-    spaces=(model.inputSpace,model.perceptualSpace,model.conceptualSpace,model.wholeSpace)
-    old=[getattr(space,'_online_learning_frozen',False) for space in spaces]
-    try:
-        for space in spaces:space._online_learning_frozen=True
+    from eval_nanochat_grammar import frozen_online_learning
+    with frozen_online_learning(model):
         present(model,split='validation',optimizer=None,batch_size=1,after_batch=scored,epoch_boundary=False)
-    finally:
-        for space,value in zip(spaces,old):space._online_learning_frozen=value
     return rows
 
 
@@ -396,17 +397,25 @@ def measure(config, lessons, output, *, eager=False, presentations=None, curricu
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config', type=Path, default=LESSON_CONFIG)
-    parser.add_argument('--lessons', type=Path, required=True)
+    parser.add_argument('--lessons', type=Path)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--eager', action='store_true')
     parser.add_argument('--gradient-report', action='store_true')
     parser.add_argument('--presentations', '--epochs', type=int)
     parser.add_argument('--curriculum',choices=('lesson-13','final'),default='lesson-13')
+    parser.add_argument('--stage-protocol', type=Path,
+                        help='run the declared criterion-driven part-A rehearsal protocol')
     args = parser.parse_args()
+    if args.stage_protocol is not None:
+        from stage_models import run
+        result = run(args.stage_protocol, args.output)
+        return 0 if result['status'] == 'complete' else 1
+    if args.lessons is None:
+        parser.error('--lessons is required without --stage-protocol')
     measure(args.config, args.lessons, args.output, eager=args.eager,
             presentations=args.presentations,curriculum_name=args.curriculum,
             gradient_report=args.gradient_report)
 
 
 if __name__ == '__main__':
-    main()
+    raise SystemExit(main())

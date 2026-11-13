@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "config": "data/MM_corpus_lessons.xml",
+  "lessons": "data/lessons/parts-of-speech.json",
+  "training_manifest": "data/training-corpus.json",
+  "validation": "data/eval/heldout-cost.json",
+  "max_epochs": 1,
+  "training_documents": 2,
+  "heldout_documents": 2,
+  "batch_size": 1,
+  "learning_rate": 0.001,
+  "selection": "first documents in lexicographic document-key order; per grade for math",
+  "seed_policy": "fresh unseeded; one attempt; no retry or budget extension",
+  "games_training": "stopped: neither whole-sentence signal qualified in section 19",
+  "math_criterion": {"measure": "heldout_answers", "threshold": null, "declared_by": "Alec"},
+  "operations": {
+    "clause": ["lift"],
+    "verb": ["verb", "lift"],
+    "modifiers": ["intersection", "product"],
+    "determiners": ["lower", "definite"],
+    "adverb": ["adverb"],
+    "prepositions": ["preposition"]
+  }
+}

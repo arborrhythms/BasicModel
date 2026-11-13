@@ -21,12 +21,20 @@
   },
   {
    "name": "held-out cost (H11)",
-   "sha256": "18dd7b2a3d03d0fb8d812bdc67cc083948034c869145638fc5911e5e06dd8e29",
+   "sha256": "dac3dacc2e1c197e3918d2760237ce720af9709d7f055434d5a725ecaf0bcd4e",
    "source": "data/eval/heldout-cost.json"
   },
   {
-   "built": false,
-   "name": "item 8 tasks"
+   "built": true,
+   "name": "item 8 tasks",
+   "sha256": "9832d4173c2072bb7e1e8fbd9545958866ec20c206fd00bf06452404d1c64b20",
+   "source": "data/eval/studies/causal-heldout.json"
+  },
+  {
+   "built": true,
+   "name": "6.5 learning tasks",
+   "sha256": "b541dcb6df4b31025710712569d68d1af0bfdff2d1eb3d54bca0b2e91156961d",
+   "source": "data/eval/studies/learning-heldout.json"
   }
  ],
  "order": [
@@ -38,13 +46,18 @@
   "B3"
  ],
  "part_b_scan": {
-  "held_out_digest": "8e40e033b0a24e1052ae7ff9254b2499d3c17d7145b274329be5f0fc151a04dc",
-  "held_out_sentences": 983,
+  "held_out_digest": "c62f6123b5f8d57b4b71563e347bc28db62539a639b8ba31d33e8240a916b64b",
+  "held_out_sentences": 2456,
   "occurrences": {
+   "a cat.": 13,
+   "dog fish.": 1,
    "hen": 1,
    "hen.": 1,
    "nora.": 2,
-   "rests.": 1
+   "rests.": 1,
+   "the cat.": 11,
+   "the dog.": 7,
+   "violet.": 43
   },
   "sentences_scanned": 3421205
  },
@@ -71,7 +84,7 @@
     },
     {
      "path": "data/games/manifest.json",
-     "sha256": "500b2e6972308b99d80977fe39b2d11ad7209551d9860da9586a082c04eb8c1d"
+     "sha256": "694059aab1b6bc6c315198244239b9f6ecdcaa0e439ab0c25c2f0e0524c7a01a"
     }
    ],
    "lessons": [

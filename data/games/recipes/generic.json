@@ -1,0 +1,125 @@
+{
+ "schema": 1,
+ "game": "generic",
+ "note": "Template production task. The intended operator is an evaluation label, never a learner constraint; surface acquisition remains unproven.",
+ "fillers": {
+  "noun": [
+   {
+    "form": "dog"
+   },
+   {
+    "form": "bird"
+   },
+   {
+    "form": "horse"
+   },
+   {
+    "form": "mouse"
+   },
+   {
+    "form": "fox"
+   },
+   {
+    "form": "wolf"
+   },
+   {
+    "form": "bear"
+   },
+   {
+    "form": "deer"
+   },
+   {
+    "form": "goat"
+   },
+   {
+    "form": "pig"
+   },
+   {
+    "form": "duck"
+   },
+   {
+    "form": "goose"
+   },
+   {
+    "form": "swan"
+   },
+   {
+    "form": "fish"
+   },
+   {
+    "form": "frog"
+   },
+   {
+    "form": "whale"
+   },
+   {
+    "form": "shark"
+   },
+   {
+    "form": "seal"
+   },
+   {
+    "form": "crab"
+   },
+   {
+    "form": "moth"
+   }
+  ],
+  "verb": [
+   {
+    "third": "runs",
+    "base": "run"
+   },
+   {
+    "third": "jumps",
+    "base": "jump"
+   },
+   {
+    "third": "swims",
+    "base": "swim"
+   },
+   {
+    "third": "sits",
+    "base": "sit"
+   },
+   {
+    "third": "sings",
+    "base": "sing"
+   },
+   {
+    "third": "walks",
+    "base": "walk"
+   }
+  ]
+ },
+ "transfer": {
+  "noun": [
+   {
+    "form": "cat"
+   }
+  ],
+  "verb": [
+   {
+    "third": "sleeps",
+    "base": "sleep"
+   },
+   {
+    "third": "eats",
+    "base": "eat"
+   }
+  ]
+ },
+ "variants": {
+  "template": {
+   "slots": {
+    "n": "noun",
+    "v": "verb"
+   },
+   "sources": [
+    "A {n.form} {v.third}."
+   ],
+   "target": "Every {n.form} {v.third}.",
+   "limit": 320
+  }
+ }
+}

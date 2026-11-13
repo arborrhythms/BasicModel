@@ -84,8 +84,14 @@ def test_complete_paths_train_in_one_step_and_commit_once(monkeypatch):
         observed.append((alternative, state[1][15].detach().clone(),
                          state[0][0].detach().clone(), float(result.parts.detach().sum())))
         if alternative:
+            forced = result.compose_forced_slots
+            if forced is None:
+                # Later walks reuse the base reading without a new compose fork.
+                walk = kwargs['draw']['walk']
+                assert not ((walk >= 0) & (walk < 4)).any()
+                forced = torch.zeros_like(state[1][15], dtype=torch.bool)
             constraints.append((m._compose_fork.taken.clone(),
-                                m._compose_forced_slots.detach().clone()))
+                                forced.detach().clone()))
         return result
     monkeypatch.setattr(WholePaths, 'finish', capture)
     backward = m._backward_training_loss

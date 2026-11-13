@@ -1,0 +1,52 @@
+{
+ "schema": 1,
+ "game": "preposition_unary",
+ "note": "Template production task. The intended operator is an evaluation label, never a learner constraint; surface acquisition remains unproven.",
+ "fillers": {
+  "place": [
+   {
+    "form": "pond"
+   },
+   {
+    "form": "cave"
+   },
+   {
+    "form": "river"
+   },
+   {
+    "form": "lake"
+   },
+   {
+    "form": "hill"
+   },
+   {
+    "form": "valley"
+   },
+   {
+    "form": "meadow"
+   },
+   {
+    "form": "forest"
+   },
+   {
+    "form": "beach"
+   },
+   {
+    "form": "island"
+   }
+  ]
+ },
+ "transfer": {},
+ "variants": {
+  "template": {
+   "slots": {
+    "p": "place"
+   },
+   "sources": [
+    "the {p.form}."
+   ],
+   "target": "in the {p.form}.",
+   "limit": 320
+  }
+ }
+}

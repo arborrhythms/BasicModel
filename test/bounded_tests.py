@@ -428,12 +428,25 @@ def make_batches(nodes, batch_size=256, max_files=16, devices=None, shared_train
 
 
 def source_snapshot(root):
+    root = Path(root)
     paths = set()
     for directory, suffixes in (("bin", {".py"}), ("test", {".py", ".json"}),
                                 ("data", {".xml", ".xsd", ".grammar", ".json"})):
         paths.update(p for p in (root / directory).rglob("*") if p.suffix in suffixes and p.is_file())
     paths.update(root / name for name in ("pytest.ini", "Makefile", "requirements.txt", "README.md")
                  if (root / name).is_file())
+    # Uncommitted source counts, but locally prepared ignored data does not.
+    repository = subprocess.run(["git", "-C", str(root), "rev-parse", "--is-inside-work-tree"],
+                                capture_output=True, text=True)
+    if repository.returncode == 0 and repository.stdout.strip() == 'true' and paths:
+        ordered = sorted(paths)
+        ignored = subprocess.run(["git", "-C", str(root), "check-ignore", "--stdin", "-z"],
+            input='\0'.join(str(path.resolve()) for path in ordered)+'\0',
+            capture_output=True, text=True)
+        if ignored.returncode not in (0, 1):
+            raise RuntimeError('Cannot determine ignored source paths: '+ignored.stderr)
+        excluded = set(ignored.stdout.rstrip('\0').split('\0'))
+        paths = {path for path in ordered if str(path.resolve()) not in excluded}
     return {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
 
 

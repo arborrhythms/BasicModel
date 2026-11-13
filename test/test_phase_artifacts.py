@@ -10,11 +10,14 @@ from phase_artifacts import PhaseArtifact, PhaseRegistry
 
 def test_registry_round_trip(tmp_path):
     registry = PhaseRegistry({'pending': None, 'taught': PhaseArtifact(
-        'trained.ckpt', 'ab'*32, 'receipt.md', config='model.xml', minimum_sentences=123)})
+        'trained.ckpt', 'ab'*32, 'receipt.md', config='model.xml', minimum_sentences=123)},
+        metadata={'producers': {'pending': {'runner': 'producer.py'}},
+                  'outcomes': {'pending': {'status': 'null', 'updates': 2}}})
     path = tmp_path/'registry.json'
     registry.write(path)
     restored = PhaseRegistry.read(path)
     assert restored.phases == registry.phases
+    assert restored.metadata == registry.metadata
     assert json.loads(path.read_text())['phases']['pending'] is None
     from bounded_tests import source_snapshot
     fixtures=tmp_path/'test/fixtures'

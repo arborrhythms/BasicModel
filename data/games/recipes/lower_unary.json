@@ -1,0 +1,88 @@
+{
+ "schema": 1,
+ "game": "lower_unary",
+ "note": "Template production task. The intended operator is an evaluation label, never a learner constraint; surface acquisition remains unproven.",
+ "fillers": {
+  "noun": [
+   {
+    "form": "dog"
+   },
+   {
+    "form": "bird"
+   },
+   {
+    "form": "horse"
+   },
+   {
+    "form": "mouse"
+   },
+   {
+    "form": "fox"
+   },
+   {
+    "form": "wolf"
+   },
+   {
+    "form": "bear"
+   },
+   {
+    "form": "deer"
+   },
+   {
+    "form": "goat"
+   },
+   {
+    "form": "pig"
+   },
+   {
+    "form": "duck"
+   },
+   {
+    "form": "goose"
+   },
+   {
+    "form": "swan"
+   },
+   {
+    "form": "fish"
+   },
+   {
+    "form": "frog"
+   },
+   {
+    "form": "whale"
+   },
+   {
+    "form": "shark"
+   },
+   {
+    "form": "seal"
+   },
+   {
+    "form": "crab"
+   },
+   {
+    "form": "moth"
+   }
+  ]
+ },
+ "transfer": {
+  "noun": [
+   {
+    "form": "cat"
+   }
+  ]
+ },
+ "variants": {
+  "template": {
+   "slots": {
+    "n": "noun"
+   },
+   "sources": [
+    "{n.form}."
+   ],
+   "target": "a {n.form}.",
+   "limit": 320
+  }
+ }
+}

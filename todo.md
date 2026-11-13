@@ -1281,6 +1281,16 @@ generation is expected at this stage and is recorded, not tuned away.
    mechanism defect it finds keeps its strict assertion and goes to Alec.
    File ownership against item 1 is in spec §3.
 
+   **2026-11-13 continuation on testing:** the remaining template games,
+   stage/criterion/operator evaluation and H9/H10 task scaffolding are built;
+   bounded rehearsals and strict nulls are recorded in spec §20. Exit still
+   requires byte-exact checkpoint/update restoration, the missing historical
+   whole-pullback capture, runtime control definitions and lesson/study bars,
+   and the final joint item-1 default/weekly exit. H1 now has a complete
+   256/16-versus-64/4 comparison on one source (spec §20.8); the retained
+   default is 256/16, with no fixture-reuse speedup claim. Game learning
+   remains stopped at its two signal nulls.
+
    The work:
    (a) the existing test and harness work from items 2, 1 and 0 (spec §5;
    the text moved from item 2 is below, unchanged);

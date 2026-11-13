@@ -393,18 +393,23 @@ def _reset_model(model):
 
 @contextmanager
 def frozen_online_learning(model):
-    """Disable vocabulary/taxonomy growth while held-out choices are read."""
-    owners = [getattr(model, "perceptualSpace", None)]
+    """Disable vocabulary, taxonomy and argument-class learning during evaluation."""
+    owners = [getattr(model, name, None) for name in
+              ('inputSpace', 'perceptualSpace', 'conceptualSpace', 'wholeSpace')]
     owners.extend(list(getattr(model, "conceptualSpaces", []) or []))
     saved = []
-    for owner in owners:
-        if owner is None:
-            continue
+    for owner in {id(owner): owner for owner in owners if owner is not None}.values():
         saved.append((owner, getattr(owner, "_online_learning_frozen", False)))
         object.__setattr__(owner, "_online_learning_frozen", True)
+    speech = getattr(getattr(model, 'languageSpace', None), 'parts_of_speech', None)
+    speech_frozen = None if speech is None else speech.frozen
+    if speech is not None:
+        speech.frozen = True
     try:
         yield
     finally:
+        if speech is not None:
+            speech.frozen = speech_frozen
         for owner, previous in saved:
             object.__setattr__(owner, "_online_learning_frozen", previous)
 

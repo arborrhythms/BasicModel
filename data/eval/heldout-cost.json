@@ -881,6 +881,397 @@
    "sha256": "916d17b1c4d2adf212f02a049ab35fe10b14a1172338dae1773940d60c706620"
   },
   {
+   "key": "adverb-template-000004",
+   "kind": "games",
+   "sentences": [
+    "Arlo runs.",
+    "briskly.",
+    "Arlo runs briskly."
+   ],
+   "sha256": "c313fcd6b97f68be27494e792203882d0138850b8df4458370ff429063017ebb"
+  },
+  {
+   "key": "adverb-template-000005",
+   "kind": "games",
+   "sentences": [
+    "Arlo runs.",
+    "swiftly.",
+    "Arlo runs swiftly."
+   ],
+   "sha256": "74032644d2e7aa11c13e642a59a6ba7e9823b2b0a37a76d8d138e35228293ae8"
+  },
+  {
+   "key": "adverb-template-000007",
+   "kind": "games",
+   "sentences": [
+    "Arlo sits.",
+    "briskly.",
+    "Arlo sits briskly."
+   ],
+   "sha256": "b47620162c2f01207dd4e8c18b8585ef24d1785686ea2bec65f9642adb59e1b2"
+  },
+  {
+   "key": "adverb-template-000008",
+   "kind": "games",
+   "sentences": [
+    "Arlo sits.",
+    "swiftly.",
+    "Arlo sits swiftly."
+   ],
+   "sha256": "38e47775b786a84ba21a73fe76f9c5077710c5cb3cda547d91ca83f253d4a65d"
+  },
+  {
+   "key": "adverb-template-000099",
+   "kind": "games",
+   "sentences": [
+    "Hugo walks.",
+    "briskly.",
+    "Hugo walks briskly."
+   ],
+   "sha256": "9991aa4e0280af91c95a17b878d325fb50e2e3b640020ddcf9e1282997bca74a"
+  },
+  {
+   "key": "adverb-template-000100",
+   "kind": "games",
+   "sentences": [
+    "Hugo walks.",
+    "swiftly.",
+    "Hugo walks swiftly."
+   ],
+   "sha256": "3bd4b117cd06bb407f30e7c9efc0dcd18160febd9f7141c4456dd905797c7dcf"
+  },
+  {
+   "key": "adverb-template-000129",
+   "kind": "games",
+   "sentences": [
+    "Lars swims.",
+    "briskly.",
+    "Lars swims briskly."
+   ],
+   "sha256": "e8211303da89308b9a7d99f333b87970daa788fbd72ada85fb215445ea971c8f"
+  },
+  {
+   "key": "adverb-template-000130",
+   "kind": "games",
+   "sentences": [
+    "Lars swims.",
+    "swiftly.",
+    "Lars swims swiftly."
+   ],
+   "sha256": "be34864b29946129ee61bdce0e72b8301f2174c47ca9b9c4c159bcdde30b33ab"
+  },
+  {
+   "key": "adverb-template-000166",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "briskly.",
+    "Max jumps briskly."
+   ],
+   "sha256": "d6e7f36e068865bc83413bd2e3d3d147e7152422d917aed7e652060cabe1da01"
+  },
+  {
+   "key": "adverb-template-000167",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "swiftly.",
+    "Max jumps swiftly."
+   ],
+   "sha256": "3483a332886fe9f572c966ee51e1141a13a1bc7c0132da16f0c4109cb2d64bc1"
+  },
+  {
+   "key": "adverb-template-000183",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "briskly.",
+    "Milo sings briskly."
+   ],
+   "sha256": "780b63844d7f69a533ce9542a2613893bce04a6c9c47494e11a321b4d73c3cc7"
+  },
+  {
+   "key": "adverb-template-000184",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "swiftly.",
+    "Milo sings swiftly."
+   ],
+   "sha256": "5fd4bd789a28cb57a214ac48b4d20ea37d722164c842591b07fc3b985ecf6f60"
+  },
+  {
+   "key": "adverb-template-000191",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "briskly.",
+    "Milo walks briskly."
+   ],
+   "sha256": "db911f639149d9ced1ea8df956c2c81b5152ad15e26d2a725ae6643eb58bd814"
+  },
+  {
+   "key": "adverb-template-000192",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "swiftly.",
+    "Milo walks swiftly."
+   ],
+   "sha256": "122058d923391a5d9056236bbdca2afc33a1cfb593cfb9e8b351b5c14ee25e19"
+  },
+  {
+   "key": "adverb-template-000197",
+   "kind": "games",
+   "sentences": [
+    "Nils runs.",
+    "briskly.",
+    "Nils runs briskly."
+   ],
+   "sha256": "41dedd93b9cc3facf1c3248b3d48d3be7814d9adc7d87c5122c8e6e09377a750"
+  },
+  {
+   "key": "adverb-template-000198",
+   "kind": "games",
+   "sentences": [
+    "Nils runs.",
+    "swiftly.",
+    "Nils runs swiftly."
+   ],
+   "sha256": "0f1e9478b1fb9bc99523e6edc54b4a828be6294ff12dcb3d3d42a0e04b8932fb"
+  },
+  {
+   "key": "adverb-template-000287",
+   "kind": "games",
+   "sentences": [
+    "Theo sits.",
+    "briskly.",
+    "Theo sits briskly."
+   ],
+   "sha256": "af193f6bc31aea06b67317f1eab01dd458a0c2d7f41e9a6c17a6452e2dfe96d5"
+  },
+  {
+   "key": "ask-template-000002",
+   "kind": "games",
+   "sentences": [
+    "Arlo runs.",
+    "Does Arlo run?"
+   ],
+   "sha256": "8b93f2af2177df3092a8be4719cd774d16292ea057de7ab86599c0256de63caf"
+  },
+  {
+   "key": "ask-template-000004",
+   "kind": "games",
+   "sentences": [
+    "Arlo sits.",
+    "Does Arlo sit?"
+   ],
+   "sha256": "2187ccec632e4afa10ebc30c6afd2a8b1587f7d806cc3482e8c5620fcac0cc0e"
+  },
+  {
+   "key": "ask-template-000055",
+   "kind": "games",
+   "sentences": [
+    "Hugo walks.",
+    "Does Hugo walk?"
+   ],
+   "sha256": "46f842c4d866ce69b949d9a2d19dee27b373652da7db75ff497ef3443583b64e"
+  },
+  {
+   "key": "ask-template-000070",
+   "kind": "games",
+   "sentences": [
+    "Lars swims.",
+    "Does Lars swim?"
+   ],
+   "sha256": "f1013eee435523477301c536518b32fc7eb4929b99dea3c45c65598281ff2e17"
+  },
+  {
+   "key": "ask-template-000089",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Does Max jump?"
+   ],
+   "sha256": "c143a961a1c5aa5238babac5e472e8b5f5bf85a47c7110a90e7dee8229cd10e6"
+  },
+  {
+   "key": "ask-template-000099",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Does Milo sing?"
+   ],
+   "sha256": "976ea673c627bd2e71900c719344098ac463bb6b62724bbd0b4c09ac52f11035"
+  },
+  {
+   "key": "ask-template-000103",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Does Milo walk?"
+   ],
+   "sha256": "a6f35dd3aae98059c2ebe25dfffa3bdd7ee5c7458bd30ac1e32f29e770b8abf0"
+  },
+  {
+   "key": "ask-template-000106",
+   "kind": "games",
+   "sentences": [
+    "Nils runs.",
+    "Does Nils run?"
+   ],
+   "sha256": "fdfdf7a8a6d0af3860b6d3bc8a0933e2c88c7f61b5ada657c41517bff1594aea"
+  },
+  {
+   "key": "ask-template-000156",
+   "kind": "games",
+   "sentences": [
+    "Theo sits.",
+    "Does Theo sit?"
+   ],
+   "sha256": "d395f4b66806c4ec2e90572f77ba55bd04d4d3fc3d75f706bead9eec03158b8c"
+  },
+  {
+   "key": "bind-template-000003",
+   "kind": "games",
+   "sentences": [
+    "Arlo runs.",
+    "Arlo jumps.",
+    "Arlo runs and jumps."
+   ],
+   "sha256": "5c814ffb53ed8b46d92254aadbb5cc5d67213ae0560283c8fd6f88d6279bda3b"
+  },
+  {
+   "key": "bind-template-000004",
+   "kind": "games",
+   "sentences": [
+    "Arlo runs.",
+    "Arlo sings.",
+    "Arlo runs and sings."
+   ],
+   "sha256": "68015df68176b11fabafce3a009bf36f9dd4014c96f4a330875fa2ecb67e66b6"
+  },
+  {
+   "key": "bind-template-000005",
+   "kind": "games",
+   "sentences": [
+    "Arlo runs.",
+    "Arlo sits.",
+    "Arlo runs and sits."
+   ],
+   "sha256": "f161cf05ec6399e66ab4170161df48f3ba4ea3ee12179f5237fda9936bb860bd"
+  },
+  {
+   "key": "bind-template-000006",
+   "kind": "games",
+   "sentences": [
+    "Arlo runs.",
+    "Arlo swims.",
+    "Arlo runs and swims."
+   ],
+   "sha256": "a36c64a562d7f7f3a27b3a31b9a713dbffc7ab905d7d153032da21f8ce4e2584"
+  },
+  {
+   "key": "bind-template-000011",
+   "kind": "games",
+   "sentences": [
+    "Arlo sits.",
+    "Arlo runs.",
+    "Arlo sits and runs."
+   ],
+   "sha256": "be1b02c76609044ddbf81728b47a7a09afdd17c01f17378736a4707d319106ed"
+  },
+  {
+   "key": "bind-template-000012",
+   "kind": "games",
+   "sentences": [
+    "Arlo sits.",
+    "Arlo swims.",
+    "Arlo sits and swims."
+   ],
+   "sha256": "aff98d01da546523b6210bcd4040c04dede62b43c8be4baeddeddc6178ef305a"
+  },
+  {
+   "key": "bind-template-000105",
+   "kind": "games",
+   "sentences": [
+    "Hugo walks.",
+    "Hugo runs.",
+    "Hugo walks and runs."
+   ],
+   "sha256": "a7320d0b6ccf61596bc13238a482401489d95f56ba973293760b5443537676d5"
+  },
+  {
+   "key": "bind-template-000106",
+   "kind": "games",
+   "sentences": [
+    "Hugo walks.",
+    "Hugo swims.",
+    "Hugo walks and swims."
+   ],
+   "sha256": "cb09665f5cf2be368b0543dbd1400b3d5b0b6a2a76d83389f73eca782d931101"
+  },
+  {
+   "key": "bind-template-000159",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Max sings.",
+    "Max jumps and sings."
+   ],
+   "sha256": "159a92b35f386cd2d97b271cbe66427d7205eafbe234f6a51eaf116fc87e0511"
+  },
+  {
+   "key": "bind-template-000160",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Max sits.",
+    "Max jumps and sits."
+   ],
+   "sha256": "d4fe1117075b5b33d636bc83a690e4bf7bdf35a0f3620d1ab437fb7a2ee4579a"
+  },
+  {
+   "key": "bind-template-000161",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Max walks.",
+    "Max jumps and walks."
+   ],
+   "sha256": "ba116ff2422c49750dd30cb7269d0f1e602ef49d5a1ac10210bc2e206087a6f7"
+  },
+  {
+   "key": "bind-template-000182",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Milo swims.",
+    "Milo sings and swims."
+   ],
+   "sha256": "1ec2b2f277f433a20cf7be6fcdb8e390fb0e71f87fd6ceb17aa0e46ceb03a996"
+  },
+  {
+   "key": "bind-template-000190",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Milo jumps.",
+    "Milo walks and jumps."
+   ],
+   "sha256": "fe4e943cac70cdb925c956ad51ec22440d6be24fa78b96a71c63f276ece0d1df"
+  },
+  {
+   "key": "bind-template-000191",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Milo sits.",
+    "Milo walks and sits."
+   ],
+   "sha256": "96cfaeb47ee9a9b72b97dd5e17dd7ecae6be3075f3e93f4e520fbf2b02bd7a2e"
+  },
+  {
    "key": "conjunction-predicates-000232",
    "kind": "games",
    "sentences": [
@@ -1181,6 +1572,413 @@
    "sha256": "58ccb7e25745d63c5f5b8ac2e5ac489b5b0d728ac288fcfe327110ad6eadfb84"
   },
   {
+   "key": "disjunction-template-000003",
+   "kind": "games",
+   "sentences": [
+    "Arlo runs.",
+    "Milo runs.",
+    "Arlo or Milo runs."
+   ],
+   "sha256": "78a79e39501abe5f2be23144dac8ebda393b27e19c13d3b6a1be6b48e1ef217c"
+  },
+  {
+   "key": "disjunction-template-000006",
+   "kind": "games",
+   "sentences": [
+    "Arlo sits.",
+    "Hugo sits.",
+    "Arlo or Hugo sits."
+   ],
+   "sha256": "377bab97dbcf9dbf44562c018c378fe5f7317e52945f8faa7f8a02c6b59d5650"
+  },
+  {
+   "key": "disjunction-template-000007",
+   "kind": "games",
+   "sentences": [
+    "Arlo sits.",
+    "Otto sits.",
+    "Arlo or Otto sits."
+   ],
+   "sha256": "214ef470b4f4ab76e13cd34ce928c81c211f1cd5500fe7af7bfb54d2c8173665"
+  },
+  {
+   "key": "disjunction-template-000008",
+   "kind": "games",
+   "sentences": [
+    "Arlo sits.",
+    "Tom sits.",
+    "Arlo or Tom sits."
+   ],
+   "sha256": "e5c522d0136e3f87a77f265269df3ccfa9388cabc690713e3fd8cfd78cec902c"
+  },
+  {
+   "key": "disjunction-template-000095",
+   "kind": "games",
+   "sentences": [
+    "Hugo walks.",
+    "Lars walks.",
+    "Hugo or Lars walks."
+   ],
+   "sha256": "d6b70beb5bc1a578c361682e2029a61e563e7ac64f292dad4fc623d2fe90b136"
+  },
+  {
+   "key": "disjunction-template-000155",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Finn jumps.",
+    "Max or Finn jumps."
+   ],
+   "sha256": "0db53d3631e01c7a6668aff1fb83191d1f92082f80a33ba8d2489bed9a7ab485"
+  },
+  {
+   "key": "disjunction-template-000156",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Leon jumps.",
+    "Max or Leon jumps."
+   ],
+   "sha256": "b8cae12525b55c5bbb41e36d812ecd4eef86902ec53ad83e6c1277dffb2836ae"
+  },
+  {
+   "key": "disjunction-template-000157",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Luna jumps.",
+    "Max or Luna jumps."
+   ],
+   "sha256": "fc38ece27b754dbf1bcccbdce22a9c5bf536dae8251c27934d7ae59ddfcd5278"
+  },
+  {
+   "key": "disjunction-template-000178",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Max sings.",
+    "Milo or Max sings."
+   ],
+   "sha256": "ad2f81c03d66e368d4cb4edd3fc2b1f64766317fbc02375d583d64b705518289"
+  },
+  {
+   "key": "disjunction-template-000186",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Arlo walks.",
+    "Milo or Arlo walks."
+   ],
+   "sha256": "497388c090134dc1f9b1ca468a281f822e93e2edd26e111d444ddd35ddfd2ee7"
+  },
+  {
+   "key": "disjunction-template-000188",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Otto walks.",
+    "Milo or Otto walks."
+   ],
+   "sha256": "ea0091193a68cea3e08815528bef7dc46dec96853eedd5562cd5bebb97be8b50"
+  },
+  {
+   "key": "disjunction-template-000189",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Tom walks.",
+    "Milo or Tom walks."
+   ],
+   "sha256": "edfbbe0ea93cda2f19618616928ed7ca06b885eced25bf9d270588673146295c"
+  },
+  {
+   "key": "disjunction-template-000194",
+   "kind": "games",
+   "sentences": [
+    "Nils runs.",
+    "Bella runs.",
+    "Nils or Bella runs."
+   ],
+   "sha256": "ad086011d7773aa6361c195aa2d2e1d5830ea3d720a29a149cbd5790440f85e3"
+  },
+  {
+   "key": "disjunction-template-000195",
+   "kind": "games",
+   "sentences": [
+    "Nils runs.",
+    "Omar runs.",
+    "Nils or Omar runs."
+   ],
+   "sha256": "5bcbe26019ee3dc7325cf9c7da5037f000390124377ace9273461c6112daf1e4"
+  },
+  {
+   "key": "disjunction-template-000282",
+   "kind": "games",
+   "sentences": [
+    "Theo sits.",
+    "Ezra sits.",
+    "Theo or Ezra sits."
+   ],
+   "sha256": "ec36e8da4a94c1d520a812b34124d3f037c5f8312f829bed1d1525a339251b56"
+  },
+  {
+   "key": "generic-template-000006",
+   "kind": "games",
+   "sentences": [
+    "A bear swims.",
+    "Every bear swims."
+   ],
+   "sha256": "df8fcfb0022d4e0e7bcfae9ee89b47babb59d9b7aaf0688a0ca927940f6b4de4"
+  },
+  {
+   "key": "generic-template-000009",
+   "kind": "games",
+   "sentences": [
+    "A bird jumps.",
+    "Every bird jumps."
+   ],
+   "sha256": "2ddf43d9520ff5d5affd4058b8f8c40b8b0a1b611ea00ee5b5653d8ed9454e44"
+  },
+  {
+   "key": "generic-template-000033",
+   "kind": "games",
+   "sentences": [
+    "A deer jumps.",
+    "Every deer jumps."
+   ],
+   "sha256": "87ef101743c7a21f6f5bdc63bdd31de36a5a094f9329e17d925b62a504baaa56"
+  },
+  {
+   "key": "generic-template-000034",
+   "kind": "games",
+   "sentences": [
+    "A deer runs.",
+    "Every deer runs."
+   ],
+   "sha256": "ece5b81ffa5c9c6680761191489a4ffe2519411ddfcde024686c6a959761b7e5"
+  },
+  {
+   "key": "generic-template-000036",
+   "kind": "games",
+   "sentences": [
+    "A deer sits.",
+    "Every deer sits."
+   ],
+   "sha256": "a4cbfae0b2480ef0461f0aeb87b649b26d3fd8962844675a614ea4c04e79f7ab"
+  },
+  {
+   "key": "generic-template-000046",
+   "kind": "games",
+   "sentences": [
+    "A dog swims.",
+    "Every dog swims."
+   ],
+   "sha256": "00f29cb642efcd582d1404972183fe164828b5b925db27faee730012301a0931"
+  },
+  {
+   "key": "generic-template-000063",
+   "kind": "games",
+   "sentences": [
+    "A fish walks.",
+    "Every fish walks."
+   ],
+   "sha256": "5dd12679be09c2c63400a8bf53e48fa4d83f087efd7548f5e9c27c2960c79226"
+  },
+  {
+   "key": "generic-template-000100",
+   "kind": "games",
+   "sentences": [
+    "A horse sits.",
+    "Every horse sits."
+   ],
+   "sha256": "0b39f3659810d26e4ba79cb3738c14d3558a8b56830b8737d622ca297fd65ab8"
+  },
+  {
+   "key": "generic-template-000113",
+   "kind": "games",
+   "sentences": [
+    "A mouse jumps.",
+    "Every mouse jumps."
+   ],
+   "sha256": "149c3f8a9f6f6d750734542bbea02d69a38be72e208227bad205e1700f63af05"
+  },
+  {
+   "key": "generic-template-000116",
+   "kind": "games",
+   "sentences": [
+    "A mouse sits.",
+    "Every mouse sits."
+   ],
+   "sha256": "6db6609720a0832e67fa84b27be7c2a905e639e5a39d5b9218305381118cd0f4"
+  },
+  {
+   "key": "generic-template-000119",
+   "kind": "games",
+   "sentences": [
+    "A mouse walks.",
+    "Every mouse walks."
+   ],
+   "sha256": "c641eadce6ae0681b85e3913816c0bf2c274766caffff65c017adaf94b26d4be"
+  },
+  {
+   "key": "generic-template-000135",
+   "kind": "games",
+   "sentences": [
+    "A seal walks.",
+    "Every seal walks."
+   ],
+   "sha256": "4558c49f662f1f22339b404f77c2bd84a49852ba0e3b424eeb10e2a2be3f01be"
+  },
+  {
+   "key": "generic-template-000146",
+   "kind": "games",
+   "sentences": [
+    "A swan runs.",
+    "Every swan runs."
+   ],
+   "sha256": "f9ce56e300ae83d28d08668e64e1144b268cd877a2c1e39443ca33db7c107b27"
+  },
+  {
+   "key": "implies-template-000003",
+   "kind": "games",
+   "sentences": [
+    "Arlo runs.",
+    "Arlo jumps.",
+    "If Arlo runs, Arlo jumps."
+   ],
+   "sha256": "1b885d902f362f689ed72f2b07933f06536e3b0710ff80d4c9e63b64ea61ba57"
+  },
+  {
+   "key": "implies-template-000004",
+   "kind": "games",
+   "sentences": [
+    "Arlo runs.",
+    "Arlo sings.",
+    "If Arlo runs, Arlo sings."
+   ],
+   "sha256": "4b85515721c9119236aa19bccc83d3e20691395b54097c569939076fd1c3c7f9"
+  },
+  {
+   "key": "implies-template-000005",
+   "kind": "games",
+   "sentences": [
+    "Arlo runs.",
+    "Arlo sits.",
+    "If Arlo runs, Arlo sits."
+   ],
+   "sha256": "87629a22e3e22898273538928060cd175364c728dd43f9a114c843a7fdd0454c"
+  },
+  {
+   "key": "implies-template-000006",
+   "kind": "games",
+   "sentences": [
+    "Arlo runs.",
+    "Arlo swims.",
+    "If Arlo runs, Arlo swims."
+   ],
+   "sha256": "0173257d35d7181340927c812eebd5fa300c17f143fd629c246e7ea9fcfcb728"
+  },
+  {
+   "key": "implies-template-000011",
+   "kind": "games",
+   "sentences": [
+    "Arlo sits.",
+    "Arlo runs.",
+    "If Arlo sits, Arlo runs."
+   ],
+   "sha256": "f1c779ea5732a788cf7e590760d314818c59ab72d96303c12323e752802ed0f1"
+  },
+  {
+   "key": "implies-template-000012",
+   "kind": "games",
+   "sentences": [
+    "Arlo sits.",
+    "Arlo swims.",
+    "If Arlo sits, Arlo swims."
+   ],
+   "sha256": "712a4b797b60a737539ab87d8ff231d0b057d455ed8eb147ffd7711fdae201dd"
+  },
+  {
+   "key": "implies-template-000105",
+   "kind": "games",
+   "sentences": [
+    "Hugo walks.",
+    "Hugo runs.",
+    "If Hugo walks, Hugo runs."
+   ],
+   "sha256": "9583d8b71d187b9ee127d41c2a1cf2387847edb8d65acb7d0725ae3424e2e12d"
+  },
+  {
+   "key": "implies-template-000106",
+   "kind": "games",
+   "sentences": [
+    "Hugo walks.",
+    "Hugo swims.",
+    "If Hugo walks, Hugo swims."
+   ],
+   "sha256": "0b5b9bf776f2ffe66969192b4ed6661e2ebf48dc2b8f47dd81876e634296adcb"
+  },
+  {
+   "key": "implies-template-000159",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Max sings.",
+    "If Max jumps, Max sings."
+   ],
+   "sha256": "c9d0d2a84149907e3af2e9e1bfd3e3bf9aa436275c48169d5da01ea2f17672ed"
+  },
+  {
+   "key": "implies-template-000160",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Max sits.",
+    "If Max jumps, Max sits."
+   ],
+   "sha256": "3ba7ce8efbee2617f33fab22a91d6f3b381ed3f1560c95ea1699d9c35e40f64c"
+  },
+  {
+   "key": "implies-template-000161",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Max walks.",
+    "If Max jumps, Max walks."
+   ],
+   "sha256": "a289cfc053516d417489ffde74db3dca06c2e9c01239e197548f437d8019e0ed"
+  },
+  {
+   "key": "implies-template-000182",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Milo swims.",
+    "If Milo sings, Milo swims."
+   ],
+   "sha256": "0b2f98168a65a81bd6c0174053b758a1588b8cfb69cbfeb130ab62d4852b4f1a"
+  },
+  {
+   "key": "implies-template-000190",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Milo jumps.",
+    "If Milo walks, Milo jumps."
+   ],
+   "sha256": "64450ee89eb36a868d83f23b2323b3307d585f01cca137de05c752da60784ef4"
+  },
+  {
+   "key": "implies-template-000191",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Milo sits.",
+    "If Milo walks, Milo sits."
+   ],
+   "sha256": "01cfb280fd44050af5f5256ce25793bf41b8bfb7a9e9e4efdd8c207d8372aae9"
+  },
+  {
    "key": "not-clause-000033",
    "kind": "games",
    "sentences": [
@@ -1235,6 +2033,372 @@
    "sha256": "ea170601ff4791343ac2ea61793f0ec771178550ada9f4da921b379639d5180e"
   },
   {
+   "key": "preposition-template-000010",
+   "kind": "games",
+   "sentences": [
+    "a bird.",
+    "in the beach.",
+    "a bird in the beach."
+   ],
+   "sha256": "be2f127e5e1a669bdc8cc0f29dcaea6fc51d2c991e1b2e1bbf555b84f7c085c1"
+  },
+  {
+   "key": "preposition-template-000011",
+   "kind": "games",
+   "sentences": [
+    "a bird.",
+    "in the cave.",
+    "a bird in the cave."
+   ],
+   "sha256": "11ddab0be66696f23927dc287db7d1b36b0993363eccb7a3d2330bc3d378df3a"
+  },
+  {
+   "key": "preposition-template-000012",
+   "kind": "games",
+   "sentences": [
+    "a bird.",
+    "in the forest.",
+    "a bird in the forest."
+   ],
+   "sha256": "380221406c1762efcda660cf9e449198f64ecccd347e91a806a7276e5b5e60b1"
+  },
+  {
+   "key": "preposition-template-000013",
+   "kind": "games",
+   "sentences": [
+    "a bird.",
+    "in the hill.",
+    "a bird in the hill."
+   ],
+   "sha256": "c11e2b92af4565ea7bdf2207ef6b7f5f4876a1263d5297e07b9b6e310f182a1f"
+  },
+  {
+   "key": "preposition-template-000014",
+   "kind": "games",
+   "sentences": [
+    "a bird.",
+    "in the island.",
+    "a bird in the island."
+   ],
+   "sha256": "7b99298eaf9744a22b2a1305b7e00658e11ccaf9fc1a24940559770209e6d588"
+  },
+  {
+   "key": "preposition-template-000015",
+   "kind": "games",
+   "sentences": [
+    "a bird.",
+    "in the lake.",
+    "a bird in the lake."
+   ],
+   "sha256": "5a562942c28ab8d039011fed945f3bc5ac7fd85624221334a8d97c5bbae85d93"
+  },
+  {
+   "key": "preposition-template-000016",
+   "kind": "games",
+   "sentences": [
+    "a bird.",
+    "in the meadow.",
+    "a bird in the meadow."
+   ],
+   "sha256": "79e93f004ced1958ce09d735dc34fcc87170c5e9dc35d2fc31f35368299fb960"
+  },
+  {
+   "key": "preposition-template-000017",
+   "kind": "games",
+   "sentences": [
+    "a bird.",
+    "in the pond.",
+    "a bird in the pond."
+   ],
+   "sha256": "1d907220c86f6d5371c1e0c900c75a6f6a0fb60ac43d4cbeb972289fd12afb42"
+  },
+  {
+   "key": "preposition-template-000018",
+   "kind": "games",
+   "sentences": [
+    "a bird.",
+    "in the river.",
+    "a bird in the river."
+   ],
+   "sha256": "f48537f1e55bb50bf1ab318b78da8408926e56df9b7edbd2da47321a1d951de8"
+  },
+  {
+   "key": "preposition-template-000019",
+   "kind": "games",
+   "sentences": [
+    "a bird.",
+    "in the valley.",
+    "a bird in the valley."
+   ],
+   "sha256": "08b8fb5c4994714ea8430671bf43afec0f047a153e16b28102e0c2639b457573"
+  },
+  {
+   "key": "preposition-template-000040",
+   "kind": "games",
+   "sentences": [
+    "a deer.",
+    "in the beach.",
+    "a deer in the beach."
+   ],
+   "sha256": "ee4662b38ca4a03ff46f2c201a079e5acd64e6f4d53570e06f37f42b05f935c0"
+  },
+  {
+   "key": "preposition-template-000041",
+   "kind": "games",
+   "sentences": [
+    "a deer.",
+    "in the cave.",
+    "a deer in the cave."
+   ],
+   "sha256": "964065da961eb4d6392402214f35d9d6ca40641d7f5703a2a493fb5218e3d4e6"
+  },
+  {
+   "key": "preposition-template-000042",
+   "kind": "games",
+   "sentences": [
+    "a deer.",
+    "in the forest.",
+    "a deer in the forest."
+   ],
+   "sha256": "b0c3bf2a80be4fbe08ec3d61ddca54f216988a7e654c9da3a8f3d92e44ac9a67"
+  },
+  {
+   "key": "preposition-template-000043",
+   "kind": "games",
+   "sentences": [
+    "a deer.",
+    "in the hill.",
+    "a deer in the hill."
+   ],
+   "sha256": "5af178f871d243c2f6938d28a5b8024f5bdee7aaa843e429a558c898b1145430"
+  },
+  {
+   "key": "preposition-template-000044",
+   "kind": "games",
+   "sentences": [
+    "a deer.",
+    "in the island.",
+    "a deer in the island."
+   ],
+   "sha256": "401134673f7d362234d5f6cfae39a7ad30cdf3a45facf238d73dd56fb8097384"
+  },
+  {
+   "key": "preposition-template-000045",
+   "kind": "games",
+   "sentences": [
+    "a deer.",
+    "in the lake.",
+    "a deer in the lake."
+   ],
+   "sha256": "8f1f6de9c8224c6f0b241009a9147de0a84ed3e4b8a16b31768d35d0e00bdc69"
+  },
+  {
+   "key": "preposition-template-000046",
+   "kind": "games",
+   "sentences": [
+    "a deer.",
+    "in the meadow.",
+    "a deer in the meadow."
+   ],
+   "sha256": "166cda725486085880c8228191b854fc5ee7d551b34b440bbf23b0cb5657035b"
+  },
+  {
+   "key": "preposition-template-000047",
+   "kind": "games",
+   "sentences": [
+    "a deer.",
+    "in the pond.",
+    "a deer in the pond."
+   ],
+   "sha256": "aca72618f4bbd1a03032d6b1ac25186df7932df0f629f28a2852e671059381b0"
+  },
+  {
+   "key": "preposition-template-000048",
+   "kind": "games",
+   "sentences": [
+    "a deer.",
+    "in the river.",
+    "a deer in the river."
+   ],
+   "sha256": "fb781423fb23b7e117796c1b8f2d33944e54c455f3ba8f4885c0993fa32c1930"
+  },
+  {
+   "key": "preposition-template-000049",
+   "kind": "games",
+   "sentences": [
+    "a deer.",
+    "in the valley.",
+    "a deer in the valley."
+   ],
+   "sha256": "736e97cf306cbadbdae7c089a89a0fcd5ccc047caecf07c9174d26a02ca19f4f"
+  },
+  {
+   "key": "preposition-template-000060",
+   "kind": "games",
+   "sentences": [
+    "a duck.",
+    "in the beach.",
+    "a duck in the beach."
+   ],
+   "sha256": "0082d7d99c6e0e568f2ee2c7fc8fcbe44f0a20e10154b0c8033db25328fdde41"
+  },
+  {
+   "key": "preposition-template-000061",
+   "kind": "games",
+   "sentences": [
+    "a duck.",
+    "in the cave.",
+    "a duck in the cave."
+   ],
+   "sha256": "b781235422424547a956595b1f41b7224ce970546c3cb1e66ac4f51bf6eae058"
+  },
+  {
+   "key": "preposition-template-000062",
+   "kind": "games",
+   "sentences": [
+    "a duck.",
+    "in the forest.",
+    "a duck in the forest."
+   ],
+   "sha256": "05c2d4a4d5874243e6c596bcac59c27a3f4cff4da29ad5a72f4f54befdca467b"
+  },
+  {
+   "key": "preposition-template-000063",
+   "kind": "games",
+   "sentences": [
+    "a duck.",
+    "in the hill.",
+    "a duck in the hill."
+   ],
+   "sha256": "f95a8361bdb4cf918406f5f64ebec3de9d005273e726afe3a3151a6e1e5edd7e"
+  },
+  {
+   "key": "preposition-template-000064",
+   "kind": "games",
+   "sentences": [
+    "a duck.",
+    "in the island.",
+    "a duck in the island."
+   ],
+   "sha256": "b29b60aafb394eec98b691a773df27afb31c25d98bb4ae1f118ace679956e979"
+  },
+  {
+   "key": "preposition-template-000065",
+   "kind": "games",
+   "sentences": [
+    "a duck.",
+    "in the lake.",
+    "a duck in the lake."
+   ],
+   "sha256": "053e826062efe55f84576ddc059bb17112e02fbde0a4c9d8d8a9b4bfef2f3586"
+  },
+  {
+   "key": "preposition-template-000066",
+   "kind": "games",
+   "sentences": [
+    "a duck.",
+    "in the meadow.",
+    "a duck in the meadow."
+   ],
+   "sha256": "d15e2b4850b65f70c02ffc7638243eaa69f8af4e5babb12ab51e1ce33fedc0e2"
+  },
+  {
+   "key": "preposition-template-000067",
+   "kind": "games",
+   "sentences": [
+    "a duck.",
+    "in the pond.",
+    "a duck in the pond."
+   ],
+   "sha256": "ea7eefc24ed9ad3d51f36e20169c7ae7197c0a9bb4476e2d0cfa7d7a9f2b79ed"
+  },
+  {
+   "key": "preposition-template-000068",
+   "kind": "games",
+   "sentences": [
+    "a duck.",
+    "in the river.",
+    "a duck in the river."
+   ],
+   "sha256": "6193551e678a475eaed9c088cf6525d23b7369ec3999d8458e44c2b7f1af5585"
+  },
+  {
+   "key": "preposition-template-000069",
+   "kind": "games",
+   "sentences": [
+    "a duck.",
+    "in the valley.",
+    "a duck in the valley."
+   ],
+   "sha256": "302bfcfb9b6b0428ef17774c85a880b880a06ea834609555d6785d29d2980242"
+  },
+  {
+   "key": "preposition_unary-template-000004",
+   "kind": "games",
+   "sentences": [
+    "the island.",
+    "in the island."
+   ],
+   "sha256": "bd5bd54b7730237b5fcd106810d4ba150552078d28d0298218c2d1ff72f010e5"
+  },
+  {
+   "key": "surface-template-000001",
+   "kind": "games",
+   "sentences": [
+    "a bird.",
+    "indeed.",
+    "indeed a bird."
+   ],
+   "sha256": "193440cc22198f72cacb35ab856207bc8462db2233cfe92d9641b23ffb978323"
+  },
+  {
+   "key": "surface-template-000004",
+   "kind": "games",
+   "sentences": [
+    "a deer.",
+    "indeed.",
+    "indeed a deer."
+   ],
+   "sha256": "3c66e5c1873a477a4363e5738ababe5d6ce67faf684921b76fb963be94afed5c"
+  },
+  {
+   "key": "surface-template-000006",
+   "kind": "games",
+   "sentences": [
+    "a duck.",
+    "indeed.",
+    "indeed a duck."
+   ],
+   "sha256": "021aa30fd723845e5239ad472131f70829305767f73539d407a63960d42bf893"
+  },
+  {
+   "key": "surface_unary-template-000001",
+   "kind": "games",
+   "sentences": [
+    "a bird.",
+    "indeed a bird."
+   ],
+   "sha256": "9bcb79bf63b1f029e2d4e085f052436eb8356566aedb7188d836a203c1367af5"
+  },
+  {
+   "key": "surface_unary-template-000004",
+   "kind": "games",
+   "sentences": [
+    "a deer.",
+    "indeed a deer."
+   ],
+   "sha256": "22e6f7d7b716dcfc0f754bf0aff046e7eb5945f7f660745228e46390046d6113"
+  },
+  {
+   "key": "surface_unary-template-000006",
+   "kind": "games",
+   "sentences": [
+    "a duck.",
+    "indeed a duck."
+   ],
+   "sha256": "5419c28ece20e2833f449212bd4fefaba5bd238ba9dd23ed33f8e3ce64803997"
+  },
+  {
    "key": "unary_chain-k1-000004",
    "kind": "games",
    "sentences": [
@@ -1287,6 +2451,596 @@
     "Not all the foxes jump."
    ],
    "sha256": "e3cb2c43e30deece9db47166433cc2933819d93d298ab1d62f904fe42c4948e8"
+  },
+  {
+   "key": "verb-template-000097",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a bear.",
+    "fears a bear."
+   ],
+   "sha256": "58750304fc20e409310e61850b316717b66e8b9d96ad4a9f9bde792648771d86"
+  },
+  {
+   "key": "verb-template-000098",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a bird.",
+    "fears a bird."
+   ],
+   "sha256": "044d7896a59d2dfd67664daa232d33ccb35f9f70944156b46acd98b9fdbd0450"
+  },
+  {
+   "key": "verb-template-000100",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a crab.",
+    "fears a crab."
+   ],
+   "sha256": "b81e1a651dd7552402433eaf7aeff1c36232cd8c5033e100f5ba6a5dd01b579f"
+  },
+  {
+   "key": "verb-template-000101",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a duck.",
+    "fears a duck."
+   ],
+   "sha256": "cad3f5f328441951e147b174697d1b5694852b9ce56b450d18ddaf13291fe0a8"
+  },
+  {
+   "key": "verb-template-000102",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a fish.",
+    "fears a fish."
+   ],
+   "sha256": "08ba87e3ae0d1e58a388bc64f6fc0c9752772c9896fba433731fc39d378fb9b3"
+  },
+  {
+   "key": "verb-template-000103",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a fox.",
+    "fears a fox."
+   ],
+   "sha256": "1f8b995630b6a91d1f5b55a1c178c5399d462e28aa989a194135b3346d80fa49"
+  },
+  {
+   "key": "verb-template-000104",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a frog.",
+    "fears a frog."
+   ],
+   "sha256": "24fbfc4560821117eda7ec8d30710e8a92845751b5d6f0de044a0eeddf98b824"
+  },
+  {
+   "key": "verb-template-000105",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a goat.",
+    "fears a goat."
+   ],
+   "sha256": "eda77ca127753b189ab2141680c7df85872c103213e71a932a3927737c1438e5"
+  },
+  {
+   "key": "verb-template-000106",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a goose.",
+    "fears a goose."
+   ],
+   "sha256": "bf88e15c69759f3318a60dad4a012a8b29d5dbc8dd6d44c77e4a0919963f6f84"
+  },
+  {
+   "key": "verb-template-000107",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a moth.",
+    "fears a moth."
+   ],
+   "sha256": "0b99a4ec482b03ade8ff739a28e6793d03271e4ffc13593bc3fd7cdf479ade0f"
+  },
+  {
+   "key": "verb-template-000108",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a mouse.",
+    "fears a mouse."
+   ],
+   "sha256": "5934201a87fcd8aaed8370525806b04c98672d950ff212d70ddeb8f1f3cab6ff"
+  },
+  {
+   "key": "verb-template-000109",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a seal.",
+    "fears a seal."
+   ],
+   "sha256": "24690336cc64e37903c087243caabc9fc1811df294ca6f808c0bbad744124501"
+  },
+  {
+   "key": "verb-template-000110",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a shark.",
+    "fears a shark."
+   ],
+   "sha256": "1937f953a7967e4414a5d0e2e3b785bb7461fa59b869e2a7461ba65076f29705"
+  },
+  {
+   "key": "verb-template-000111",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a swan.",
+    "fears a swan."
+   ],
+   "sha256": "5c4a8f333116b0e09eb26a2e3205f1aaefa66b0ca7815d7325b092e0e597026b"
+  },
+  {
+   "key": "verb-template-000112",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a whale.",
+    "fears a whale."
+   ],
+   "sha256": "bdc901076af0108d14f3f5747bcaeba91f865f005506191dc75c21410de902b2"
+  },
+  {
+   "key": "verb-template-000205",
+   "kind": "games",
+   "sentences": [
+    "pats.",
+    "a crab.",
+    "pats a crab."
+   ],
+   "sha256": "72c0ed0643787d2098cf656ac220cd3cdf7c68d1b3b202aa179f9178da3122ec"
+  },
+  {
+   "key": "verb-template-000206",
+   "kind": "games",
+   "sentences": [
+    "pats.",
+    "a deer.",
+    "pats a deer."
+   ],
+   "sha256": "57d8822db7613bb3be3ef24010ff15e2cbb29e7aa205e37d99594ae91341391b"
+  },
+  {
+   "key": "verb-template-000207",
+   "kind": "games",
+   "sentences": [
+    "pats.",
+    "a dog.",
+    "pats a dog."
+   ],
+   "sha256": "d7447a90491bfa04e987834b425c8f3868175647ca7247dcd7fa816175103da5"
+  },
+  {
+   "key": "verb-template-000208",
+   "kind": "games",
+   "sentences": [
+    "pats.",
+    "a fish.",
+    "pats a fish."
+   ],
+   "sha256": "ed7de060a526eedf09a249fbc8ffb0a689f6536d4ea2c8709f28af6fdeef345d"
+  },
+  {
+   "key": "verb-template-000209",
+   "kind": "games",
+   "sentences": [
+    "pats.",
+    "a frog.",
+    "pats a frog."
+   ],
+   "sha256": "1a4b9b9d22835ec86daae70f23c855eba64051c4588c5f1c616001b66206aba6"
+  },
+  {
+   "key": "verb-template-000210",
+   "kind": "games",
+   "sentences": [
+    "pats.",
+    "a goat.",
+    "pats a goat."
+   ],
+   "sha256": "9f44f9edf6ac1800f3a6b63a352a4a6d348f45acaf5056c66559cf1f38b98e72"
+  },
+  {
+   "key": "verb-template-000211",
+   "kind": "games",
+   "sentences": [
+    "pats.",
+    "a goose.",
+    "pats a goose."
+   ],
+   "sha256": "068d0a9e476a32c3e4b54cb4d94675dacc24a078762fbd456f7aabcad4addd42"
+  },
+  {
+   "key": "verb-template-000212",
+   "kind": "games",
+   "sentences": [
+    "pats.",
+    "a moth.",
+    "pats a moth."
+   ],
+   "sha256": "8857f6aeba77a2c2203349cd5749de86bb1695580df2f2ae90554fef45608b45"
+  },
+  {
+   "key": "verb-template-000213",
+   "kind": "games",
+   "sentences": [
+    "pats.",
+    "a seal.",
+    "pats a seal."
+   ],
+   "sha256": "7a39f7c41a6f8affe6742c47f751ac20a2ce35546cce9a96602c90f10f57c3d0"
+  },
+  {
+   "key": "verb-template-000214",
+   "kind": "games",
+   "sentences": [
+    "pats.",
+    "a swan.",
+    "pats a swan."
+   ],
+   "sha256": "9d5c2e995dbe16f8f1ba3e2455f55c515bb7027a61b39dc74b6eab7a8e91255a"
+  },
+  {
+   "key": "verb-template-000215",
+   "kind": "games",
+   "sentences": [
+    "pats.",
+    "a wolf.",
+    "pats a wolf."
+   ],
+   "sha256": "9117a7dd1ad710801d25a976ddca0d28da78e3cc05555e3f5658104b6bfd308a"
+  },
+  {
+   "key": "verb-template-000216",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a bear.",
+    "pulls a bear."
+   ],
+   "sha256": "b4a7380ed6c4ee7ec06f06965b29513e8258f78aaff75ea4db90841a908acb1a"
+  },
+  {
+   "key": "verb-template-000217",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a bird.",
+    "pulls a bird."
+   ],
+   "sha256": "1e957de6cfd44301a1a51347eeceed01659a70f3425825526c973c5309e6fcbc"
+  },
+  {
+   "key": "verb-template-000219",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a crab.",
+    "pulls a crab."
+   ],
+   "sha256": "67b0f8afd875e0f5c551838233b626325751b2b96273d79ccba189c15e3c7c54"
+  },
+  {
+   "key": "verb-template-000220",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a deer.",
+    "pulls a deer."
+   ],
+   "sha256": "e31ee311ace849d8c5c96c170cb4fe1a15242c37304cd3e7724f06dab827b646"
+  },
+  {
+   "key": "verb-template-000221",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a dog.",
+    "pulls a dog."
+   ],
+   "sha256": "0aa16dce0b9e42e4488f7c6c13e5e39216bfc4fb02e4c2e08d955c5da8f74e86"
+  },
+  {
+   "key": "verb-template-000222",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a fish.",
+    "pulls a fish."
+   ],
+   "sha256": "72577232ca7eda2b9ee9bcda745dea39ea0f3b5d6d78909c51585d03a593bddd"
+  },
+  {
+   "key": "verb-template-000223",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a fox.",
+    "pulls a fox."
+   ],
+   "sha256": "9a535e0d4b037a2adf2db294545eed0f4b37104602fdbe37c8c365b3febb72b0"
+  },
+  {
+   "key": "verb-template-000224",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a goat.",
+    "pulls a goat."
+   ],
+   "sha256": "09531e767ac80700442230bb27cc2d1a11df03a6afb698bf638b23aa057034ec"
+  },
+  {
+   "key": "verb-template-000225",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a goose.",
+    "pulls a goose."
+   ],
+   "sha256": "5f749a48845d9deefe9d9376700fdd37be685d384578bec7989a22e016c0c8b1"
+  },
+  {
+   "key": "verb-template-000226",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a horse.",
+    "pulls a horse."
+   ],
+   "sha256": "0061a9c6d4c493cc72bd4d13d74a6ac15ca66b42b94491d427a05df6a30b0e94"
+  },
+  {
+   "key": "verb-template-000227",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a moth.",
+    "pulls a moth."
+   ],
+   "sha256": "139cf360665b630ccd95436563220048054ea1a9c28c1a479d99bb57b16d1bdb"
+  },
+  {
+   "key": "verb-template-000228",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a pig.",
+    "pulls a pig."
+   ],
+   "sha256": "d217e917f5be1fb9ed44ffa97a889ed0d0a02a262b5c347de5896cab9aed13b9"
+  },
+  {
+   "key": "verb-template-000229",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a seal.",
+    "pulls a seal."
+   ],
+   "sha256": "81f464953959944c411ff6c2db5c3a2c4b1165a2fce21950d3027c5dc4f7355c"
+  },
+  {
+   "key": "verb-template-000230",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a shark.",
+    "pulls a shark."
+   ],
+   "sha256": "beeea315fa829e973ce632dd1fb2d65427d97abff588c199c2e173a454998271"
+  },
+  {
+   "key": "verb-template-000231",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a swan.",
+    "pulls a swan."
+   ],
+   "sha256": "54d170811c048957663e8580b026e9e3d2c0cc100c7bc812bc38977c2f61ecde"
+  },
+  {
+   "key": "verb-template-000232",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a wolf.",
+    "pulls a wolf."
+   ],
+   "sha256": "0ed45f4b0d0a36d1b273f9be12752e1933267cf03c968baee135e9a3e084114c"
+  },
+  {
+   "key": "verb-template-000252",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a bear.",
+    "rescues a bear."
+   ],
+   "sha256": "b1260046354a2889448226103bf8737abb4e7001167ba0ff8db5d1f0df1198ac"
+  },
+  {
+   "key": "verb-template-000253",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a bird.",
+    "rescues a bird."
+   ],
+   "sha256": "99a62ab73a69328443766077867604d19e2ecec6416e1d759d3848eef853051c"
+  },
+  {
+   "key": "verb-template-000255",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a crab.",
+    "rescues a crab."
+   ],
+   "sha256": "f16fca285be7142fea1ab575d279a0ed866bf6dec0420f396f816f021a291b35"
+  },
+  {
+   "key": "verb-template-000256",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a deer.",
+    "rescues a deer."
+   ],
+   "sha256": "d2387dc95a6eb485565e598d80d0cdaccff84277f21976fe11badee18225d086"
+  },
+  {
+   "key": "verb-template-000257",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a dog.",
+    "rescues a dog."
+   ],
+   "sha256": "5474dadb01d391daa2489721cab0f52a8ea889ea452bffb63f6f3ab7ecf08744"
+  },
+  {
+   "key": "verb-template-000258",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a duck.",
+    "rescues a duck."
+   ],
+   "sha256": "0b18259f41a2d07ca93eb94cf75e9004877cad29d77ac387d1bd55932f446618"
+  },
+  {
+   "key": "verb-template-000259",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a fish.",
+    "rescues a fish."
+   ],
+   "sha256": "b2478aa1224ca9cb656a4ad3afb571803f3059b4470c5f2011e1a54a07a7568b"
+  },
+  {
+   "key": "verb-template-000260",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a fox.",
+    "rescues a fox."
+   ],
+   "sha256": "3361b2d11c416e91290ecf10015e359c4924ad57c6234065ca20c9a941689cd1"
+  },
+  {
+   "key": "verb-template-000261",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a frog.",
+    "rescues a frog."
+   ],
+   "sha256": "34301203830b667fab46677e5e1c3642ebec662a86d60b417da8bebf6b4ff291"
+  },
+  {
+   "key": "verb-template-000262",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a goat.",
+    "rescues a goat."
+   ],
+   "sha256": "c9e0f85faf97533f90b7de86ad4d43a0e5cbfcf45ca91cf3a2ced9083e5913c1"
+  },
+  {
+   "key": "verb-template-000263",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a goose.",
+    "rescues a goose."
+   ],
+   "sha256": "d58ac914b185c74bca3519c850bba3e77abd724925730df3a18b1d73830525c4"
+  },
+  {
+   "key": "verb-template-000264",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a moth.",
+    "rescues a moth."
+   ],
+   "sha256": "51f0c59dce944973c82ce61f72576af6663e7aa082a50f7795b980a4ad74ada0"
+  },
+  {
+   "key": "verb-template-000265",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a mouse.",
+    "rescues a mouse."
+   ],
+   "sha256": "feca0c430460da78433a0dc99b63ad5c4573a5093ef2fafba6889a179b78ec33"
+  },
+  {
+   "key": "verb-template-000266",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a pig.",
+    "rescues a pig."
+   ],
+   "sha256": "ecb9f7008425c13cdece3408cfc6025d237184f6c9da3978bd235aae03129c0f"
+  },
+  {
+   "key": "verb-template-000267",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a seal.",
+    "rescues a seal."
+   ],
+   "sha256": "f6e981994e3db0f6639845675659f9e2a0164f477988a38e8d20e2b70b9486f1"
+  },
+  {
+   "key": "verb-template-000268",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a swan.",
+    "rescues a swan."
+   ],
+   "sha256": "c1959f4c06f8dd9f23dc81204c89084f664414deb8a17928da5d9812c2af9f42"
+  },
+  {
+   "key": "verb-template-000269",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a wolf.",
+    "rescues a wolf."
+   ],
+   "sha256": "76000e396cc2deb59ea81e4c308b257e7fad558a1ff99508bf78ba34fc50e55f"
   },
   {
    "key": "identity:validation:5",
@@ -1830,6 +3584,6 @@
   }
  ],
  "schema": 1,
- "sha256": "18dd7b2a3d03d0fb8d812bdc67cc083948034c869145638fc5911e5e06dd8e29",
+ "sha256": "dac3dacc2e1c197e3918d2760237ce720af9709d7f055434d5a725ecaf0bcd4e",
  "source": "the union of part A validation splits (plan sections 8, 9.1, H11)"
 }

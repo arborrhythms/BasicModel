@@ -34,6 +34,21 @@ by default), not a bounded run. `make preflight` and `make preflight_full` use t
 bounded runner. Select affected tests for short development cycles; the complete default
 suite remains the commit gate. Compilation remains enabled for tests that exercise it.
 
+The item 0.5 saved-stage tests are in `test/test_stage_models.py`. Default
+runs skip null registry entries; an explicitly requested trained tier requires
+the actual artifact, its recorded configuration and hashes, strict byte-exact
+restoration, declared criteria, and the reproducible operator column. Producer
+metadata and recorded null outcomes survive registry round trips. The original
+grammar-XOR producer descriptions are historical: the MM learning test now
+exercises the numeric field, and the XOR class bar is numeric while its separate
+grammar inverse still trains a model. Neither supplies the old combined
+grammar-stage artifact criterion.
+
+Source snapshots include tracked files and unignored new source, and exclude
+Git-ignored local artifacts. Thus a prepared assembly does not change the
+source identity; its tracked manifest still names its content hashes. Historical
+receipts retain the identity rules under which they were measured.
+
 ## Rules for tests and measurements
 
 **Seeds.** No random seed is chosen, pinned or changed so that an assertion
@@ -42,9 +57,8 @@ unseeded runs or is reported with its pass count (for example, five or more of
 ten trainings). A seed is fixed only to make something reproducible: a seed that
 names a generated dataset is that dataset's identity and is recorded in its
 manifest, and a recorded random stream may be reinstalled to replay a failure,
-never to select a passing initialization. The one seeded learning certificate
-is `test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal`,
-which fits `MM_grammar.xml` from seed 41001 in the trained tier.
+never to select a passing initialization. The former grammar-XOR seeded producer was superseded by the current numeric
+field certificate; its old phase entry remains null and is not a producer.
 
 **Replaying a failure.** Results do not depend on the process hash: a set whose
 iteration feeds a computation is enumerated in admission or declaration order at

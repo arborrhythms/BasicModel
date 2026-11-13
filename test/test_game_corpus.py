@@ -47,7 +47,8 @@ def lesson_words():
 def test_files_match_their_manifest_hashes_counts_and_recipes():
     data = manifest()
     assert data['schema'] == 1 and isinstance(data['seed'], int)
-    assert {entry['game'] for entry in data['files']} == {'not', 'conjunction', 'unary_chain'}
+    inventory=json.loads((GAMES/'inventory.json').read_text())
+    assert {entry['game'] for entry in data['files']} == set(inventory['games'])
     for entry in data['files']:
         text = (GAMES / entry['path']).read_text()
         assert hashlib.sha256(text.encode()).hexdigest() == entry['sha256'], entry['path']
@@ -107,6 +108,20 @@ def test_the_expander_knows_no_language():
         ('ka zu.', 'ka lo zu.'), ('mi zu.', 'mi lo zu.'), ('po zu.', 'po lo zu.')]
     assert [row['split'] for row in out if row['sources'][0] == 'mi zu.'] == ['transfer']
     assert verify(out, toy)['rejected'] == []
+
+
+def test_inventory_names_live_implementations_and_every_game_has_a_test_probe():
+    from Language import GRAMMAR_LAYER_CLASSES, _OPERATOR_SURFACE_SCHEMAS
+    import xml.etree.ElementTree as ET
+    inventory=json.loads((GAMES/'inventory.json').read_text())
+    assert set(inventory['rules'].values()) <= set(GRAMMAR_LAYER_CLASSES)
+    live={node.text.split('=')[1].split('.')[0].strip() for node in
+          ET.parse(ROOT/'data/complete.grammar').findall('./Symbolic/compose/rule')}
+    assert set(inventory['rules']) <= live
+    assert (live & set(_OPERATOR_SURFACE_SCHEMAS)) <= set(inventory['rules'])
+    for game in inventory['games']:
+        assert any(row['split']=='test' for entry in manifest()['files']
+                   if entry['game']==game for row in rows(entry)), game
 
 
 def test_written_pairs_preserve_authorship_and_an_audit_sample():

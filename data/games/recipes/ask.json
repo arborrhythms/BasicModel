@@ -1,0 +1,128 @@
+{
+ "schema": 1,
+ "game": "ask",
+ "note": "Template production task. The intended operator is an evaluation label, never a learner constraint; surface acquisition remains unproven.",
+ "fillers": {
+  "name": [
+   {
+    "form": "Rex"
+   },
+   {
+    "form": "Max"
+   },
+   {
+    "form": "Bella"
+   },
+   {
+    "form": "Tom"
+   },
+   {
+    "form": "Luna"
+   },
+   {
+    "form": "Milo"
+   },
+   {
+    "form": "Otto"
+   },
+   {
+    "form": "Leon"
+   },
+   {
+    "form": "Hugo"
+   },
+   {
+    "form": "Sven"
+   },
+   {
+    "form": "Lars"
+   },
+   {
+    "form": "Nils"
+   },
+   {
+    "form": "Ezra"
+   },
+   {
+    "form": "Ivan"
+   },
+   {
+    "form": "Omar"
+   },
+   {
+    "form": "Zane"
+   },
+   {
+    "form": "Theo"
+   },
+   {
+    "form": "Arlo"
+   },
+   {
+    "form": "Finn"
+   },
+   {
+    "form": "Saul"
+   }
+  ],
+  "verb": [
+   {
+    "third": "runs",
+    "base": "run"
+   },
+   {
+    "third": "jumps",
+    "base": "jump"
+   },
+   {
+    "third": "swims",
+    "base": "swim"
+   },
+   {
+    "third": "sits",
+    "base": "sit"
+   },
+   {
+    "third": "sings",
+    "base": "sing"
+   },
+   {
+    "third": "walks",
+    "base": "walk"
+   }
+  ]
+ },
+ "transfer": {
+  "name": [
+   {
+    "form": "Felix"
+   },
+   {
+    "form": "Ciao"
+   }
+  ],
+  "verb": [
+   {
+    "third": "sleeps",
+    "base": "sleep"
+   },
+   {
+    "third": "eats",
+    "base": "eat"
+   }
+  ]
+ },
+ "variants": {
+  "template": {
+   "slots": {
+    "s": "name",
+    "v": "verb"
+   },
+   "sources": [
+    "{s.form} {v.third}."
+   ],
+   "target": "Does {s.form} {v.base}?",
+   "limit": 320
+  }
+ }
+}

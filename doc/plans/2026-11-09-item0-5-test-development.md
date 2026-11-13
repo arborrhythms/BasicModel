@@ -1352,3 +1352,624 @@ Publication is to **`testing` only**, for Alec's review and landing. Per his
 later direction, this local checkout returns to the fetched **`main`** after
 the testing push is verified. This handback does not merge testing into main,
 push main, rewrite history, or remove the preserved local material.
+## 20. Continuation and round 3 (2026-11-13)
+
+Alec authorized all remaining 0.5 rounds without intermediate review, with
+integration and review after 1.8, and then specified **testing only**. This
+continuation does not alter §19's results, budgets, source identity or nulls.
+It does not authorize learner-mechanism changes under §3. Stored papers and
+the seven ignored planning notes remain local and unchanged.
+
+### 20.1 Starting checkpoint and environment
+
+`testing` starts this continuation at merge `91e71c40cf`, incorporating
+`origin/main` checkpoint `ab5176e0e2` into prior testing tip `b6370617d3`.
+The incoming checkpoint describes accepted 1.8 work but still schedules
+§§3.16–3.18; it is not the final joint-exit hash. The actual local `main`
+ref remains `9f7923d67f`. No main push or force push is authorized.
+An invalid duplicate loose ref, `refs/heads/main 2`, prevented fetch; its
+contents were preserved in the ignored continuation receipts before removing
+it from Git's ref namespace. The real main ref was not changed.
+
+The first compose setup replay failed during PyTorch compiler import, before
+its test assertions: `duplicate extern kernel: conv1x1_via_mm`.
+It exited 1 in 10.358644583 s, peak 799,835,720 bytes. An installed-package
+audit checked 2,475 canonical Python files against torch's RECORD: zero
+missing and zero mismatches. It found 14,632 unregistered duplicate files
+with numbered names and canonical counterparts, totaling 508,817,512 bytes.
+Those files were moved to ignored local quarantine, preserving their bytes;
+no registered package file or version changed. RECORD SHA-256:
+`b98ea4d12125be094c139d7db8e5dafb6fe19948b5164fb7abac531a6a1aaf07`.
+Compiler import then passed. This finding does not attribute §19's earlier
+H1 timeout to the environment.
+
+The compose observer now reads the completed path's forced-slot mask instead
+of a transient model member restored by `WholePaths.finish`. A later path
+without a reading walk has no compose fork; the observer checks that fact
+and records an all-false mask. Test assertions and fixture shapes are
+unchanged. Replay with the original RNG SHA-256
+`d2a2922756ee7d2bb323a732efcfb51084c1f794c9c82b74067ebc8953bf6fb6`
+and `PYTHONHASHSEED=1381815608` passed: 1 case, pytest 4.59 s,
+guard elapsed 7.448905125 s, peak 1,095,370,576 bytes. The reader inventory
+also follows the renamed `PartSpace._radix_code_events` implementation.
+
+H18 is taken at this new measurement boundary: source snapshots exclude
+Git-ignored local data but continue to hash tracked files, even when an
+ignore pattern matches, and untracked files not ignored. Non-repository
+test roots retain their previous behavior. §19's old hashes are historical
+and are not recomputed under this rule.
+
+### 20.2 Declared rehearsal protocol, before learning
+
+The existing `data/MM_corpus_lessons.xml` configuration is used unchanged.
+The small rehearsal budget is one epoch and the first two documents in
+lexicographic document-key order per lesson, plus the first two training
+documents in key order per math grade. Each lesson's first two held-out
+documents supply its bounded diagnostic reading. Full validation identities
+remain available to the saved-model operator table; a bounded diagnostic is
+labelled as such and does not substitute for full validation. No learning
+seed is set or selected, and no arm is retried or extended after a null.
+Each process retains the 8 GiB, 1,800-second guard. Stage continuation uses
+the same live small model; saved checkpoints are separately restored and
+must match bytes before a saved-model reading is accepted.
+
+All ten lesson bars and the math chain bar remain undeclared. The harness
+records readings and explicit null registrations until declared criteria
+are met. A missing measurement, restoration failure or runtime exception
+cannot become a zero, an acquired lesson, or a passing trained artifact.
+The earlier two whole-sentence signal nulls remain binding: remaining game
+corpora and production probes are built, but game learning is stopped at
+that finding. A2's rehearsal therefore reports this incomplete component.
+No full-size model is substituted or resized.
+
+H9's four arms and H10's six paired comparisons get frozen task data and
+executable measurement scaffolding. Their small smoke budget is one epoch,
+two training documents and two held-out documents per arm; differences in
+actual work are recorded, never called matched merely because counts were
+requested. Existing full-study seeds 0, 1 and 2 and exposure qualifications
+remain unchanged. Missing runtime control surfaces are reported as
+unavailable; the harness does not implement a second learner to mimic them.
+
+Owned implementation files added or edited in this continuation will be
+listed with the final measurements below. Existing test edits begin with
+`test_compose_pair_driver.py`, `test_bounded_test_runner.py`, and the
+`when-readers-round4a0.json` inventory. Fast whole-file checks precede the
+single combined default freeze sweep. The joint weekly exit remains pending
+the final compiler/runtime integration.
+
+### 20.3 Rehearsal launch record
+
+Before launching learning, the affected source checks completed 90/90 cases
+(89 passed, one inventory metadata failure) in 287.672293958 s, aggregate
+peak 4,588,574,672 bytes. The new `ScalarPercepts.join` inventory row lacked
+`previous_absolute_time` and `now`; those descriptive fields were supplied
+without changing its strict reader assertion. Subsequent new harness/data
+checks passed 36 cases and skipped the three unregistered stage models
+(default tier), in 9.68 s. The first stage-runner unit check caught the
+math corpus's evaluation-only grade; the runner now preserves that split
+and never trains those held-out rows.
+
+The H6 run on the merged checkpoint completed 3 cases: the scheduling/
+retention check passed; both real next-batch variants failed exact loss-byte
+equality. Guard elapsed 70.239827792 s, peak 1,814,170,816 bytes; pytest
+67.83 s. The mixed variant alternates complete four-sentence documents
+from two sources, keeping the original twelve sentences and model shapes.
+Its first and next batches each consumed four sentences, so its resume
+crosses the source-document boundary. Assertions remain strict.
+
+The bounded math preflight contains 9 grades, 8 with training rows, 16
+training documents and 104 sentences. Maximum sentence size is 25 bytes,
+6 whitespace words and a conservative 12 native units, within the existing
+32-unit serial word capacity. No full-size model or resized fixture is used.
+
+If a stage producer stops on a runtime defect, later stages are unattempted
+continuations, never newly initialized substitutes. Each *unattempted*
+lesson may receive one separate standalone diagnostic at the already
+declared two-document, one-epoch budget; failed or completed lessons are
+not retried. Such standalone diagnostics cannot register stage models.
+All H9/H10 small-arm runs retain the same two-document budget, with missing
+control implementations recorded as unavailable before any training.
+The actual full-study seeds and exposure gates remain unchanged.
+
+The missing local MNIST files and FineWeb shard zero were restored with
+`.venv/bin/python bin/prepare_data.py`, which verified their tracked sizes
+and SHA-256 values. The training manifest was then regenerated with the
+assembly present. Its expanded held-out-only set has 2,456 sentences;
+80 occurrences were found in the 3,421,205-sentence developmental assembly.
+This is the existing reported overlap scan, not a claim of part-B disjointness.
+
+The first rehearsal execution found a harness setup defect: string math and
+study document keys reached `Teacher.where`, which requires native integer
+addresses. The adapter now assigns document ordinals and preserves each
+original key as `external_id`; a teacher-boundary regression check preserves
+both grouping and sentence order. Twelve focused cases passed in 5.02 s.
+The failed setup attempts are retained. Replays use their captured original
+Python/NumPy/torch RNG states and unchanged budgets, without selecting seeds
+or extending a null. The continuous stage replay necessarily repeats its
+A1/A2 prelude to reach A3; those repeated measurements are not independent
+learning trials. A separate inspection also corrected held-out evaluation:
+word-order/determiner training controls read the same ordinary held-out text,
+while a bijective vocabulary control transforms held-out answers as well.
+No original study run reached evaluation before these fixes.
+
+The replay's first ten lessons reproduced every recorded per-batch input/output
+cost and every operator-parameter delta exactly. Thus the A1/A2 prelude did not
+introduce another selected initialization. The original setup failures occurred
+before a math/study training batch could complete.
+
+The additional H6 CLI diagnostic uses four frozen word-lesson documents,
+alternating source labels, in the unchanged `MM_corpus_orders.xml` capacities.
+Only dataset/manifest, packing, auto-load/save and `checkpointEveryBatches=1`
+are changed in a local XML copy. The identical command is executed twice:
+`.venv/bin/python bin/train.py --model <local-resume.xml> --num-epochs 1
+--batches 1 --batch-size 1`, with CPU, `MODEL_COMPILE=none` and a local
+`BASIC_WEIGHTS_PATH`. Exit status and cursor/exposure advancement are recorded
+separately from the already failing exact next-update parity certificate.
+
+Before the new default sweep, the H1 comparison is declared again on this
+continuation's final source: the retained 256-case/16-file default against
+64 cases/four files, complete selection in both, two workers, 8 GiB per
+worker, 16 GiB aggregate, 1,800 seconds per worker and 10,800 seconds overall.
+No model work runs concurrently. The comparison follows only if the first
+sweep completes without a mandatory stop. The repaired environment and new
+source are the boundary of this measurement; neither explains away §19's
+prior timeout. No fixture reuse, cap increase or mechanism timing claim is
+introduced. Both sweeps preserve every failure independently.
+
+Saved-model observer repairs after the rehearsal freeze: game probes now use
+a shared runtime document and runtime question addresses; the operator observer
+reads only selected, active programs at `_commit_sentence`, while their native
+references are still pinned, and publishes counts only after the original
+commit succeeds. An initial saved-M0 evaluation exposed the journal lifetime
+error; its failed table is retained and the corrected reader is replayed on
+the same saved checkpoints. Each table reader has its own unchanged
+8 GiB/1,800-second guard; the serial supervisor only aggregates results and
+does not terminate one reader at the same instant as its own timeout. Partial
+validation is retained as incomplete and cannot populate full-set use counts.
+Evaluation freezes the existing argument-learning flag as well as vocabulary
+growth and reads checkpoint class geometry before presenting held-out input.
+The same saved word model is re-evaluated without a learning replay. Future
+stage runs also persist each completed batch's costs/exposure before a timeout.
+
+### 20.4 Completed bounded rehearsal readings
+
+All commands used CPU, eager model execution, one thread, an 8 GiB process-tree guard and a 1,800-second process limit. The original setup attempts remain failures; their captured RNG states were used only for the documented repair replay.
+
+| Phase | Training documents | Sentences | Batches | Outcome | Criterion |
+|---|---:|---:|---:|---|---|
+| words | 2 | 2 | 2 | null | undeclared; value 0.0 |
+| interpret | 2 | 4 | 4 | null | unavailable; value None |
+| clause | 2 | 2 | 2 | null | unavailable; value None |
+| ask | 2 | 4 | 4 | null | unavailable; value None |
+| verb | 2 | 4 | 4 | null | unavailable; value None |
+| modifiers | 2 | 2 | 2 | null | unavailable; value None |
+| determiners | 2 | 2 | 2 | null | unavailable; value None |
+| adverb | 2 | 2 | 2 | null | unavailable; value None |
+| prepositions | 2 | 2 | 2 | null | unavailable; value None |
+| relations | 2 | 6 | 6 | null | unavailable; value None |
+| math-00 | 2 | 3 | 3 | null | unavailable; value None |
+| math-01 | 2 | 6 | 6 | null | unavailable; value None |
+| math-02 | 2 | 8 | 8 | null | unavailable; value None |
+| math-03 | 2 | 8 | 8 | null | unavailable; value None |
+| math-04 | 2 | 12 | 12 | null | unavailable; value None |
+| math-05 | 2 | 22 | 22 | null | unavailable; value None |
+| math-06 | 2 | 26 | 26 | null | unavailable; value None |
+| math-07 | 2 | partial, not persisted | partial, not persisted | interrupted by process limit | not measured |
+
+The word lesson measured stability fraction 0.0. Every later saved lesson reader rejected changed shared conceptual dictionary tensors before claiming a criterion. No threshold was supplied and no artifact was registered. The last training grade was interrupted; the evaluation-only grade was not reached and receives no training. MA3 was not produced. The original child result remains running because the process was terminated; its outer receipt records timeout after 1,801.020528375 s, peak 1,970,343,440 bytes. Future runner versions persist each completed batch so an interruption retains partial exposure. No partial counts are invented for this run.
+
+| Process | Status / exit | Seconds | Peak bytes |
+|---|---|---:|---:|
+| replay-stages | running / 124 | 1801.020528375 | 1970343440 |
+| replay-causal-learned_thought | evaluation_failed / 1 | 27.943362250 | 1649741016 |
+| replay-gate-anaphora-treatment | evaluation_failed / 1 | 26.069032375 | 1642056896 |
+| replay-gate-verb_reuse-treatment | evaluation_failed / 1 | 20.604904042 | 1720405208 |
+| replay-gate-prediction-treatment | evaluation_failed / 1 | 42.089977083 | 1706364192 |
+| replay-gate-shuffled_order-treatment | evaluation_failed / 1 | 28.684582042 | 1926532504 |
+| replay-gate-shuffled_order-control | evaluation_failed / 1 | 28.134227875 | 1807469832 |
+| replay-gate-renamed_vocabulary-treatment | evaluation_failed / 1 | 23.235783209 | 1871990120 |
+| replay-gate-renamed_vocabulary-control | evaluation_failed / 1 | 33.280430084 | 1929268656 |
+| replay-gate-mint_bind-treatment | evaluation_failed / 1 | 38.798760042 | 1759841664 |
+| replay-gate-mint_bind-control | evaluation_failed / 1 | 39.963697708 | 1740852632 |
+| causal-direct_answer | unavailable / 0 | 4.364600292 | 402359448 |
+| causal-equal_actual_compute | unavailable / 0 | 4.369102459 | 402097280 |
+| causal-reconstruction_only | unavailable / 0 | 4.368825083 | 402310320 |
+| gate-anaphora-control | unavailable / 0 | 4.640222833 | 401802392 |
+| gate-verb_reuse-control | unavailable / 0 | 4.379710875 | 401933488 |
+| gate-prediction-control | unavailable / 0 | 4.383959250 | 402113664 |
+
+Study-arm exposure and query work (successful runtime charges, including discarded trials; not total compute):
+
+| Arm | Updates | Sentences | Query charges | Result |
+|---|---:|---:|---:|---|
+| replay-causal-learned_thought | 6 | 6 | 415 | evaluation_failed |
+| replay-gate-anaphora-treatment | 6 | 6 | 541 | evaluation_failed |
+| replay-gate-verb_reuse-treatment | 4 | 4 | 272 | evaluation_failed |
+| replay-gate-prediction-treatment | 6 | 6 | 551 | evaluation_failed |
+| replay-gate-shuffled_order-treatment | 6 | 6 | 323 | evaluation_failed |
+| replay-gate-shuffled_order-control | 6 | 6 | 478 | evaluation_failed |
+| replay-gate-renamed_vocabulary-treatment | 6 | 6 | 284 | evaluation_failed |
+| replay-gate-renamed_vocabulary-control | 6 | 6 | 448 | evaluation_failed |
+| replay-gate-mint_bind-treatment | 4 | 4 | 336 | evaluation_failed |
+| replay-gate-mint_bind-control | 4 | 4 | 331 | evaluation_failed |
+| causal-direct_answer | — | — | — | unavailable |
+| causal-equal_actual_compute | — | — | — | unavailable |
+| causal-reconstruction_only | — | — | — | unavailable |
+| gate-anaphora-control | — | — | — | unavailable |
+| gate-verb_reuse-control | — | — | — | unavailable |
+| gate-prediction-control | — | — | — | unavailable |
+
+Rehearsal source SHA-256: `a98f30eb93e7d7838b09aac261641acac4bfa345d0ce64a8957a342ca8ffccdb`. Original initialization identities replayed after the setup fix:
+
+- `replay-stages`: `ce3b6733a982e8e805f1346424ba2222afeb0d8defe30059fe44cabe8d02d6db`.
+- `replay-causal-learned_thought`: `d152b0a7fcc66ca625a4dff2cb7aebf65d64f66f6bbb1aa5a455a174c903a0e9`.
+- `replay-gate-anaphora-treatment`: `ed25e8bc3f20db4a3e53efb849d0b80eab5411b920dff7b01625afe579addb7b`.
+- `replay-gate-verb_reuse-treatment`: `129d4e054e5cd74c47878f749bff905e9a1867f6286d79ac9d4f3633eb6cb724`.
+- `replay-gate-prediction-treatment`: `3d3e8910ecc417aa7be5aaba51ffa52e0116eb88b30c82dc27366b1e3cb2c6ba`.
+- `replay-gate-shuffled_order-treatment`: `4b81951cd64be07aeb09251b1934467fa4f26c8aec231ec543acfb36bfc17747`.
+- `replay-gate-shuffled_order-control`: `388d32b4366edd12f0323fe5a5f0ac31f833d0030d2c6c338d4e37cbefed18a2`.
+- `replay-gate-renamed_vocabulary-treatment`: `d62f4dbd66daa883c8019975876a600185966c73cd00bc741cb2ffc8cf4e71e2`.
+- `replay-gate-renamed_vocabulary-control`: `5359311a7ed788654fce7a10e6895056c035a0e23533993dbe3ff4804d09f20e`.
+- `replay-gate-mint_bind-treatment`: `b5a273ca2a234454e37117b5e2505e2997a2d314d9bc8ac548715533a7d93f20`.
+- `replay-gate-mint_bind-control`: `b3d4f6bb6dd1e1699385bdfc56ab08a0bf5cf208629f0dd5a87eeb67b46e3a1d`.
+
+Checkpoint identities (local weights, not registrations):
+
+- `M0`: `5c4e3b692e0b68676456a441c80cd244003a04cf8e8244c3c10721c43f8c5477`.
+- `MA1`: `c77d4f5d5d16e4ec48576f874009ad3ae60dda5251a835a9649c36279bbe1b9f`.
+- `MA2`: `deac8c7bb643067ffc31a7d81e87232769e518192b286fbb596c8d3f074abb3b`.
+- `MA3`: not produced.
+
+Frozen data reproduced byte for byte: 90 compared files, zero differences. The original three game variants were unchanged. New template variants extend the inventory to 31; intended-rule labels remain diagnostics. The H9/H10 training set and learning-heldout set each contain 320 tasks; causal-heldout contains exactly 256. Content and manifest hashes:
+
+- `data/games/manifest.json`: `694059aab1b6bc6c315198244239b9f6ecdcaa0e439ab0c25c2f0e0524c7a01a`.
+- `data/games/inventory.json`: `a82372b716f47b52104845324a42201abf652d292bdaf7bb06f78481cbc399ad`.
+- `data/eval/stage-models.json`: `94db779660672ac98a8cb63a2c41a12245766580d5c4b213da09127228d70a61`.
+- `data/eval/studies/recipe.json`: `29ab35509da83ad1ab5467c427427448811007cc13dceae40789d35926b31c51`.
+- `data/eval/studies/manifest.json`: `75d340009202dd968ad55d1bf21eceafb793976c7a3d2c93602e6b942ce6fcad`.
+- `data/eval/studies/protocol.json`: `229586ae2c6665d6feb0f8f8d78ba09875a4f07b122810542016f257713804dd`.
+- `data/training-corpus.json`: `687922eb2c5d38b93999464619f3f5379e2ca428b65ef61b6fb5785040dffb31`.
+- `data/eval/heldout-cost.json`: `9ae11509855b0cb1913426db5d594e4e1e0e3638c914037b781bb18a7269ef83`.
+
+The corrected saved-word reading has **2 admitted forms, 0 stable, 0 named,
+0 denoting**, stability fraction **0.0**. All **92** argument radii and every
+entry of the 92-by-92 cosine table are zero before held-out presentation.
+The initial reader reported four admitted forms and three nonzero radii after
+probe presentation; those are contaminated post-probe readings and are not
+checkpoint geometry. The corrected measurement restores the same checkpoint
+and trains nothing. Its process completed in 7.709020209 s, peak
+1,040,336,600 bytes. Threshold remains undeclared, registration null.
+
+The stage producer's live, pre-evaluation parameter observations are retained
+below. They do not replace byte-exact saved-model readings. `none` means the
+rule has no owned parameters; relative change is undefined for a zero-norm
+baseline. MA3 is absent because the rehearsal timed out.
+
+| Rule | Owned parameters | Relative change M_A1 | Relative change M_A2 |
+|---|---:|---:|---:|
+| divide | 0 | none | none |
+| descend | 0 | none | none |
+| gloss | 0 | none | none |
+| intersection | 0 | none | none |
+| union | 0 | none | none |
+| interpret | 0 | none | none |
+| sign | 288 | none | none |
+| part | 288 | none | none |
+| whole | 288 | none | none |
+| equal | 288 | none | none |
+| implies | 288 | none | none |
+| generic | 288 | none | none |
+| ask | 288 | none | none |
+| not | 0 | none | none |
+| non | 0 | none | none |
+| conjunction | 0 | none | none |
+| disjunction | 0 | none | none |
+| sum | 0 | none | none |
+| product | 288 | none | none |
+| lift | 4096 | 0 | 1.09442186664e-05 |
+| verb | 288 | none | none |
+| compound | 288 | none | none |
+| adverb | 2624 | 0 | 0 |
+| lower | 288 | none | none |
+| definite | 288 | none | none |
+| universal | 288 | none | none |
+| preposition | 288 | none | none |
+| surface | 288 | none | none |
+| transpose | 0 | none | none |
+| lower_unary | 288 | none | none |
+| definite_unary | 288 | none | none |
+| preposition_unary | 288 | none | none |
+| surface_unary | 288 | none | none |
+| compound_unary | 288 | none | none |
+| bind | 0 | none | none |
+
+### 20.5 Final evaluation and verification boundary
+
+The post-observer fast command selected `test_game_probes.py`,
+`test_stage_models.py`, `test_nanochat_grammar_eval.py`, `test_lesson_stages.py`
+and `test_study_harnesses.py`: 25 passed, 3 default trained skips, one failure,
+15.43 s. The failure occurred during Inductor artifact loading in the configured
+`~/.cache/torchinductor` cache; a direct temporary-file check confirmed
+`PermissionError: Operation not permitted` under the restricted execution
+environment. It is retained as an incomplete fast check, not a model failure
+regraded by selecting another initialization. The remaining scoped checks
+and sweeps use the bounded runner with access to its existing compiler cache.
+After the pinned-journal observer correction, the complete stage/probe files
+passed 6 cases with 3 default trained skips in 4.14 s.
+
+The initial saved-model table attempt finished in 14.984667416 s, peak
+950,536,496 bytes, with 35 declared rule rows. M0 exposed the observer's
+expired-reference setup defect; MA1 and MA2 were rejected by strict restoration;
+MA3 was explicitly absent. The corrected M0 reader repeats inference only
+on the same saved file. The live-parameter table above is preserved separately.
+
+The MA1 interval probe attempt exited 1 in 5.145660042 s, peak 788,350,464
+bytes, before its 72+4 probe readings: the same six shared dictionary aliases
+failed byte identity. It supplies no fabricated zero-valued probe metrics.
+The initial CLI invocation exited 1 in 11.854784166 s, peak 992,037,216 bytes.
+Its one training batch completed and checkpointed before `_reconstructionReport`
+failed to stack variable-length input tensors (lengths 5 and 6). Its checkpoint
+therefore permits the intended second invocation; the reporting failure is
+retained and no runtime code is changed.
+
+The identical second CLI invocation loaded the checkpoint and exited 1 in
+10.058625042 s, peak 1,001,523,600 bytes. `--batches 1` is a cumulative cap:
+the resumed training loop performed zero further batches and the final report
+again failed on lengths 5 and 6. Both checkpoint hashes were
+`4f9fe08ed9db84cbe60b1bb88528e3b1f8feb7c0f532125f06834558cba4cfce`;
+training-step count, total batches, epoch batches and cursor steps remained
+1, 1, 1 and `[1]`, respectively. Thus this command demonstrated loading and
+cap preservation, not resumed advancement or next-update equality. It does
+not replace the failing H6 uninterrupted-versus-restored test.
+
+The final operator table used source
+`60004b6d4eee5067e2f465858884db9f3137479cdbd201438306b064d5bbc016`.
+The corrected M0 observer completed 489 of the frozen 999 validation
+sentences before its unchanged 1,800-second guard stopped it at
+1,801.017922834 s, peak 1,075,627,808 bytes. MA1 and MA2 exited 1 in
+5.161082750 s / 788,956,720 bytes and 5.420678833 s / 792,479,280 bytes,
+respectively, at the six-alias byte-identity check. MA3 was absent. All 35
+declared rule rows remain in the table, with full-set use counts and probes
+unavailable. M0 partial counts are explicitly partial; the live parent
+parameter observations in §20.4 remain separate evidence.
+
+The H10 referent collector now reads the native occurrence-close audit,
+copying selected word identities before the pinned journal expires. It
+requires a fresh first referent, two distinct mention occurrences and the
+same resolved referent; an operator name never satisfies this measurement.
+Ambiguous instrumentation yields unavailable, and a missing admitted form
+yields false. The observer restores the original commit binding and ignores
+stale audit objects. Prediction-head evaluation runs without gradients.
+The saved M0 baseline command was
+`.venv/bin/python bin/eval_studies.py evaluate --config data/MM_corpus_lessons.xml
+--checkpoint <M0.ckpt> --manifest data/eval/studies/manifest.json --control ordinary
+--family mint_bind --limit 2 --output <reading.json>`, under CPU, eager evaluation,
+one thread, no automatic load/save, 8 GiB and 1,800 s. It exited 0 in
+10.312872583 s, peak 846,972,440 bytes, on source
+`72a4aa561a4159988a1bfea27f20c9d289b4cc12e3edc768fcdd22975f42a3bb`.
+The two tasks were `mint_bind-09af68b6a36b6ac8` and
+`mint_bind-0b018fbe060b21ae`: referent accuracy 0/2 (forms not admitted),
+answer accuracy unavailable, input reconstruction error 0.10000000149011612.
+Prediction activation MSE was 0.2900126576423645 for ordered and shuffled
+contexts, 0.29018527269363403 for context-free input, identically across
+seeds 0, 1 and 2; two targets, bank size 141, both activation variances zero.
+The query meter charged 236 units over 14 successful attempts: 208 bracket,
+26 serial-word-loop and 2 space-read. This is a collector baseline, not a
+trained comparison or a measure of total compute.
+
+The registry retains 54 null phase artifacts. It records outcomes for the
+ten lessons, three stage models, both obsolete combined XOR producers and
+31 game variants. Each game's training remains unattempted after §19.8's
+two signal nulls. The current numeric XOR class tests are not producers for
+the old combined grammar criteria; the separate grammar inverse test still
+exists and is not retired by this registry correction.
+
+The final focused command was `env -u RUN_TRAINED -u RUN_SLOW make test`
+with the complete files `test_study_harnesses`, `test_stage_models`,
+`test_game_probes`, `test_game_corpus`, `test_lesson_stages`,
+`test_training_corpus`, `test_math_corpus`, `test_phase_artifacts`,
+`test_bounded_test_runner`, `test_interval_log`, `test_nanochat_grammar_eval`,
+`test_operators_round4a0` and `test_doc_links` (all under `test/`, suffix `.py`).
+All 178 selected cases completed: 163 passed, six marked skips and nine
+documentation-link failures, 240.111877792 s, peak aggregate 6,540,761,928
+bytes. Compilation remained enabled, and the earlier compiler-cache case
+passed with cache access restored.
+
+The nine link failures came from untracked, Git-ignored numbered copies of
+retired documents, not the current tracked documentation. All ten `* 2.md`
+copies under `doc/plans` and `doc/specs` were moved byte for byte to
+`scratch_icloud_notes_2026_11_13/`, retaining their relative paths: 404,001
+bytes, audit SHA-256
+`ce0ecf604e37811e6faf577b62fffe4aacab03e1974556cd7b5bad7de3fb64ff`.
+No link assertion or tracked document was removed. The seven notes in
+`scratch_preexisting_notes/` are separate and unchanged. The complete
+`test/test_doc_links.py` then passed all 51 cases under the bounded runner.
+There were no numbered duplicate Python/configuration/manifest files under
+`bin`, `test` or `data` at freeze.
+
+### 20.6 Frozen source and landing verification
+
+The final source snapshot has 1,154 entries; SHA-256 of its compact,
+sorted JSON is
+`1ca4a02418452145d854d1b4b8d957764941399e74d964d8e221729dd64f0e82`.
+`data/corpus/assembly-01/manifest.json` was present. The last pre-freeze
+fetch left `origin/main` at `ab5176e0e2` and `origin/testing` at
+`b6370617d3`; the working branch was `testing`, HEAD `91e71c40cf`.
+Compilation checks passed for all nine added or edited `bin/` modules.
+
+Owned implementation files in this continuation:
+
+- Added `bin/eval_games.py`, `bin/eval_lessons.py`, `bin/eval_operators.py`,
+  `bin/eval_studies.py`, `bin/stage_models.py` and `bin/study_corpus.py`;
+  edited `bin/corpus_lessons.py`, `bin/eval_nanochat_grammar.py` and
+  `bin/training_corpus.py`.
+- Added the stage protocol and six study files under `data/eval/`, the game
+  inventory and 28 template recipes with frozen rows; updated the game,
+  training and held-out-cost manifests. The original three game variants
+  and stored papers were preserved.
+- Edited `test/bounded_tests.py`, `test/phase_artifacts.py`,
+  `test/fixtures/phase-artifacts.json` and
+  `test/fixtures/when-readers-round4a0.json`.
+- Existing test edits: `test/test_bounded_test_runner.py`,
+  `test/test_compose_pair_driver.py`, `test/test_corpus_checkpoint.py`,
+  `test/test_game_corpus.py`, `test/test_lesson_stages.py`,
+  `test/test_nanochat_grammar_eval.py` and `test/test_phase_artifacts.py`.
+  New tests: `test/test_game_probes.py`, `test/test_stage_models.py` and
+  `test/test_study_harnesses.py`.
+- Updated this plan, `doc/Testing.md`, `doc/Training.md` and `todo.md`.
+  No learner-runtime file was edited in this continuation.
+
+The complete default command is `env -u RUN_TRAINED -u RUN_SLOW make test`,
+with only `TEST_ARGS=--run-dir <new-local-receipt-directory>` added. It
+selects 7,235 cases with no deselection: two workers, 256 cases / 16 files,
+8 GiB per worker, 16 GiB aggregate, 1,800 seconds per worker and 10,800
+seconds for the suite. No other model work runs concurrently. The two
+mandatory stop selectors in the original request are monitored during the
+run; a failure stops further work rather than triggering a retry.
+
+### 20.7 Default sweep result
+
+The default sweep completed all **7,235 / 7,235** selected cases on the
+frozen source: **6,885 passed, 328 skipped, 21 failed, one XPASS**.
+Bounded-runner exit 1 (`test_failure`), make exit 2; runner elapsed
+**4,655.268484375 s**, wrapper elapsed **4,655.550953583 s**.
+There were **151 workers** including resource-boundary recycling and the
+large-memory phase. Peak worker footprint was **7,466,556,184 bytes**;
+peak aggregate footprint **11,485,425,928 bytes**. No worker timed out,
+exceeded its memory cap, or aborted. The frozen source was checked again
+after completion and was unchanged. SHA-256 of the compact ordered selected
+node-ID list is
+`fba02a255721ec9963780d2d2dd181845c477b80a6f1f6dfc4ceb9c17219b308`.
+Counts use one outcome per selected node ID; three extra successful reports
+for `test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected`
+do not inflate the total.
+
+Both mandatory stop gates passed:
+`test/test_mm_xor.py::TestMMXorConvergence::test_convergence` in
+0.810372375 s and
+`test/test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class`
+in 0.221694542 s. The last large-memory worker, containing
+`test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct`,
+also passed: worker elapsed 872.769260083 s, peak 4,536,210,496 bytes.
+Thus the predeclared H1 comparison is eligible; this does not regrade any
+default failure.
+
+Five failures are runtime/assertion findings, with their assertions intact:
+
+| Selector | Observed failure |
+|---|---|
+| `test/test_identification_evidence.py::test_native_sentence_carries_paired_identification_to_its_row` | Evidence `(0.5487958192825317, 0.0)` instead of `(0.8, 0.6)`. |
+| `test/test_per_row_hard_reset.py::test_runEpoch_dispatches_per_row_reset_per_batch` | `MemoryConsolidation._preflight`: consolidation exceeds the concept row pool. No capacity was changed. |
+| `test/test_reading_round.py::test_native_read_sites_carry_one_token_across_three_documents` | The read token has no retained occurrence: `entry.occurrences == ()`. |
+| `test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully` | The tied reconstruction bank was not staged after concept admission. |
+| `test/test_sparse_concept_e2e.py::test_interpreted_object_keeps_the_native_features_in_one_row` | Native feature columns `{0}` instead of `{4, 402}`. |
+
+Their pre-setup RNG identities, in the table's order, are:
+
+1. `578194a6360300a58eb288cf2b060f313a22c2ccaa2dec76b5027918a50a9bf3`.
+2. `77d36cf733bb5850b81a8f45c05b9da3ccee57f36f7ca711f7f1d8ea5fd3cc7f`.
+3. `2d500816ebda100e6b5ba317fc989317af006c23cfec6ecd629c171d18e2bf71`.
+4. `e722e3fcf3affdd1be01c249a0f36242202d488592e9d04880f88f665d271cc2`.
+5. `12da30ba4a9acb906cca40f168cce9d45ce095be1e83a493999a72959050d568`.
+
+All five used `PYTHONHASHSEED=2498025303`; torch 2.15.0, executorch
+1.6.0, pytest 9.2.0. These are captured streams, not selected learning seeds.
+
+The other **16 failures** are the still-missing original
+`doc/benchmarks/2026-10-31-item2-5-completion/addendum-10/native-mean/whole-pullback-1.pt`
+capture. The selectors under `test/test_whole_presence.py` are:
+
+- `test_whole_presence_forward_and_weight_pullback_are_bounded` and
+  `test_whole_presence_tiny_mass_jvp_and_weight_gradcheck`, each with
+  `captured-dtype0`, `captured-dtype1`, `smallest_normal-dtype0` and
+  `smallest_normal-dtype1` (eight cases).
+- `test_whole_presence_compiled_pullback_matches_decided_bounds_at_tiny_mass`,
+  the Cartesian product of `aot_eager` / `inductor`, `captured` /
+  `smallest_normal`, and `dtype0` / `dtype1` (eight cases).
+
+The XPASS is
+`test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input`.
+Its existing `xfail(strict=False)` explicitly permits this result; the
+historical bar remains unchanged. It is not counted as an additional failure.
+
+### 20.8 H1 completed comparison
+
+The second command was `env -u RUN_TRAINED -u RUN_SLOW make test` with
+`TEST_ARGS=--batch-size 64 --max-files 4 --run-dir <new-local-receipt-directory>`.
+It retained two workers, 8 GiB per worker, 16 GiB aggregate, 1,800 seconds
+per worker and 10,800 seconds overall. Both complete sweeps used the same
+ordered 7,235-case selection and source hashes recorded above.
+
+| Reading | Default 256 / 16 | Comparison 64 / 4 |
+|---|---:|---:|
+| Completed | 7235 | 7235 |
+| Worker processes | 151 | 271 |
+| Elapsed seconds | 4655.268484375003 | 4793.822899542007 |
+| Peak worker bytes | 7466556184 | 7616601240 |
+| Peak aggregate bytes | 11485425928 | 11027918464 |
+| passed | 6885 | 6886 |
+| skipped | 328 | 328 |
+| failed | 21 | 20 |
+| xpassed | 1 | 1 |
+
+The comparison elapsed difference was +2.976%.
+Both runner results are `test_failure` (exit 1; make exit 2), with no
+incomplete selection, worker timeout, memory-cap termination or aborted
+worker. Both mandatory stop gates passed again: MM XOR convergence in
+0.829557958 s and the shared-concept denotation gate in 0.207299209 s.
+The retained default remains **256 cases / 16 files**. This is one ordered
+comparison using the existing compiler cache and fresh unseeded learning;
+the different failure outcomes also matter. It is not an isolated estimate
+of construction, reset, compilation, forward or backward costs, and no
+fixture-reuse or component-speedup claim is made.
+
+The comparison repeats the identical paired-evidence values, concept-row
+pool exhaustion, native feature-column mismatch and 16 missing-capture
+failures from §20.7. It also fails
+`test/test_serial_mode_integration.py::test_serial_mode_does_not_slow_short_streams`:
+`MemoryConsolidation.recurrence_groups` raises because angular recurrence
+exceeds the constructed `recurrenceCapacity`. This occurs during the
+baseline forward loop, before the speed assertion; it supplies no completed
+speed comparison. That case passed in the default sweep.
+
+Conversely, `test_native_read_sites_carry_one_token_across_three_documents`
+and `TestReasoningCDEModel::test_answer_query_degrades_gracefully` passed in
+the comparison (6.682046458 s and 1.295084708 s). Their default failures
+remain failures. Run order, fresh random streams and process grouping were
+not separately controlled, so the differing outcomes are not attributed
+to one cause. The same permitted non-strict XPASS occurred in both runs.
+
+The comparison runtime-failure streams used `PYTHONHASHSEED=1866004773`
+(same library versions as §20.7). SHA-256 identities:
+
+- `test/test_identification_evidence.py::test_native_sentence_carries_paired_identification_to_its_row`: `02fa1fbf8fd42ac6801f3257d8c374cdf3e084828ede3d229caf865a5f723a56`.
+- `test/test_per_row_hard_reset.py::test_runEpoch_dispatches_per_row_reset_per_batch`: `6e2630baed59dfa57b584a3b94def96ca05bfd3c4a4ba2d81f3d86698dce771e`.
+- `test/test_serial_mode_integration.py::test_serial_mode_does_not_slow_short_streams`: `0ed36dc96ffff28054b05729b26b1d5ec81edbe3f142bb571638dbe27a3db9db`.
+- `test/test_sparse_concept_e2e.py::test_interpreted_object_keeps_the_native_features_in_one_row`: `0e1dc9b28f61f116b27a64bf380e69402fbbdc62817c875e4039be842599d09f`.
+
+### 20.9 Remaining integration work
+
+All authorized test-development rounds now have implementation and recorded
+bounded outcomes. Item 0.5 is **not a green exit**. No learner mechanism was
+changed to hide a failure, no fixture capacity or assertion was relaxed,
+and no unsuccessful learning arm was extended or selected away. Remaining
+requirements for the later integration pass are:
+
+- Repair byte-exact saved-model restoration and next-update parity; finish
+  a CLI continuation that advances after restoration, with the reporting
+  failure and cumulative-cap behavior above preserved as evidence.
+- Supply the original whole-pullback capture and resolve the named runtime
+  failures and cross-run differences without substituting a capture.
+- Define the unavailable study controls, opaque routing implementation and
+  acceptance bars; qualify a whole-sentence game learning signal. Until
+  then the game and stage registrations remain null and Part B stays gated.
+- Resolve the recorded A3 rehearsal and full operator-reading timeouts at
+  a separately declared measurement boundary; this continuation did not
+  extend either budget or rerun their learning.
+- Run the joint default/weekly exit on the final item-1 integration hash.
+  The accepted checkpoint used here is not that final joint hash.
+
+Stored papers remain stored, and the seven pre-existing planning notes
+remain available in `scratch_preexisting_notes/`. Publication is to
+**testing only**; local main and the parent repository pointer are outside
+this landing.

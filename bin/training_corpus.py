@@ -147,7 +147,10 @@ def freeze(root, local_root):
                  rule='its documents are test documents of shard_00000 under B2\'s split rule'),
             dict(name='held-out cost (H11)', source='data/eval/heldout-cost.json',
                  sha256=heldout_cost['sha256']),
-            dict(name='item 8 tasks', built=False),
+            dict(name='item 8 tasks', built=True, source='data/eval/studies/causal-heldout.json',
+                 sha256=sha256_file(root/'data/eval/studies/causal-heldout.json')),
+            dict(name='6.5 learning tasks', built=True, source='data/eval/studies/learning-heldout.json',
+                 sha256=sha256_file(root/'data/eval/studies/learning-heldout.json')),
         ],
         part_b_scan=scan)
     (root / 'data/training-corpus.json').write_text(json.dumps(manifest, indent=1, sort_keys=True) + '\n')

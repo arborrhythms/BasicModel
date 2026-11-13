@@ -96,3 +96,18 @@ def test_the_lesson_driver_reads_every_stage():
             data = SimpleNamespace(text_answers=None, source_addresses={})
             texts, targets = stage_documents(data, dict(stage, documents=stage[part]), split=split)
             assert texts and len(texts) == len(targets)
+
+
+def test_string_document_keys_use_native_addresses_without_losing_identity():
+    from corpus_lessons import stage_documents
+    from Teacher import Teacher
+    documents=[dict(document=key,records=[dict(key=key,sentences=['a','b'],
+        question=1,answer='a')]) for key in ('math:train:0','study:train:1')]
+    data=SimpleNamespace(text_answers=None,source_addresses={})
+    stage_documents(data,dict(documents=documents))
+    data.source_address=lambda split,row:data.source_addresses[split][row]
+    teacher=SimpleNamespace(data=data,context=SimpleNamespace(identity=1))
+    addresses=[Teacher.where(teacher,'train',row) for row in range(4)]
+    assert [a.document for a in addresses]==[0,0,1,1]
+    assert [a.sentence for a in addresses]==[0,1,0,1]
+    assert [a.external_id for a in addresses]==['math:train:0']*2+['study:train:1']*2

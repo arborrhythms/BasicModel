@@ -20,7 +20,41 @@
     "prepositions": null,
     "relations": null,
     "mm_xor_grammar": null,
-    "xor_grammar": null
+    "xor_grammar": null,
+    "stage_words": null,
+    "stage_sentences": null,
+    "stage_math": null,
+    "game_adverb": null,
+    "game_ask": null,
+    "game_bind": null,
+    "game_compound": null,
+    "game_compound_unary": null,
+    "game_conjunction": null,
+    "game_definite": null,
+    "game_definite_unary": null,
+    "game_disjunction": null,
+    "game_equal": null,
+    "game_generic": null,
+    "game_implies": null,
+    "game_intersection": null,
+    "game_lift": null,
+    "game_lower": null,
+    "game_lower_unary": null,
+    "game_non": null,
+    "game_not": null,
+    "game_part": null,
+    "game_preposition": null,
+    "game_preposition_unary": null,
+    "game_product": null,
+    "game_sum": null,
+    "game_surface": null,
+    "game_surface_unary": null,
+    "game_transpose": null,
+    "game_unary_chain": null,
+    "game_union": null,
+    "game_universal": null,
+    "game_verb": null,
+    "game_whole": null
   },
   "producers": {
     "copular_identity": {
@@ -30,80 +64,816 @@
       "criterion": "unforced order-1 names and order-2 kind containing both"
     },
     "words": {
-      "runner": "bin/corpus_lessons.py",
-      "lesson": "doc/specs/2026-10-18-parts-of-speech.md#5b-order-of-operations-alec-2026-11-07-claudes-filling-out-confirmed-in-part",
+      "runner": "bin/stage_models.py",
+      "lesson": "data/lessons/parts-of-speech.json",
       "row": 0,
-      "phase": "words"
+      "phase": "words",
+      "protocol": "data/eval/stage-models.json",
+      "criterion": {
+        "declared_by": "Alec",
+        "measure": "definition_trust_fraction",
+        "note": "a set fraction of admitted forms have length at least definitionTrust (parts of speech 5b, lesson 0)",
+        "threshold": null
+      }
     },
     "interpret": {
-      "runner": "bin/corpus_lessons.py",
-      "lesson": "doc/specs/2026-10-18-parts-of-speech.md#5b-order-of-operations-alec-2026-11-07-claudes-filling-out-confirmed-in-part",
+      "runner": "bin/stage_models.py",
+      "lesson": "data/lessons/parts-of-speech.json",
       "row": 1,
-      "phase": "interpret"
+      "phase": "interpret",
+      "protocol": "data/eval/stage-models.json",
+      "criterion": {
+        "declared_by": "Alec",
+        "measure": "denotation_fraction",
+        "note": "a set fraction of defined words have a denotation (lesson 1)",
+        "threshold": null
+      }
     },
     "clause": {
-      "runner": "bin/corpus_lessons.py",
-      "lesson": "doc/specs/2026-10-18-parts-of-speech.md#5b-order-of-operations-alec-2026-11-07-claudes-filling-out-confirmed-in-part",
+      "runner": "bin/stage_models.py",
+      "lesson": "data/lessons/parts-of-speech.json",
       "row": 2,
-      "phase": "clause"
+      "phase": "clause",
+      "protocol": "data/eval/stage-models.json",
+      "criterion": {
+        "declared_by": "Alec",
+        "measure": "occupant_definiteness",
+        "note": "the subject and VP occupant classes are definite (lesson 2)",
+        "threshold": null
+      }
     },
     "ask": {
-      "runner": "bin/corpus_lessons.py",
-      "lesson": "doc/specs/2026-10-18-parts-of-speech.md#5b-order-of-operations-alec-2026-11-07-claudes-filling-out-confirmed-in-part",
+      "runner": "bin/stage_models.py",
+      "lesson": "data/lessons/parts-of-speech.json",
       "row": 3,
-      "phase": "ask"
+      "phase": "ask",
+      "protocol": "data/eval/stage-models.json",
+      "criterion": {
+        "declared_by": "Alec",
+        "measure": "heldout_answers",
+        "note": "the answers to the held-out questions (lesson 3)",
+        "threshold": null
+      }
     },
     "verb": {
-      "runner": "bin/corpus_lessons.py",
-      "lesson": "doc/specs/2026-10-18-parts-of-speech.md#5b-order-of-operations-alec-2026-11-07-claudes-filling-out-confirmed-in-part",
+      "runner": "bin/stage_models.py",
+      "lesson": "data/lessons/parts-of-speech.json",
       "row": 4,
-      "phase": "verb"
+      "phase": "verb",
+      "protocol": "data/eval/stage-models.json",
+      "criterion": {
+        "declared_by": "Alec",
+        "measure": "occupant_definiteness_and_answers",
+        "note": "the object argument's class definite, and the answers (lesson 4)",
+        "threshold": null
+      }
     },
     "modifiers": {
-      "runner": "bin/corpus_lessons.py",
-      "lesson": "doc/specs/2026-10-18-parts-of-speech.md#5b-order-of-operations-alec-2026-11-07-claudes-filling-out-confirmed-in-part",
+      "runner": "bin/stage_models.py",
+      "lesson": "data/lessons/parts-of-speech.json",
       "row": 5,
-      "phase": "modifiers"
+      "phase": "modifiers",
+      "protocol": "data/eval/stage-models.json",
+      "criterion": {
+        "declared_by": "Alec",
+        "measure": "occupant_definiteness",
+        "note": "the modifier argument's class definite (lesson 5)",
+        "threshold": null
+      }
     },
     "determiners": {
-      "runner": "bin/corpus_lessons.py",
-      "lesson": "doc/specs/2026-10-18-parts-of-speech.md#5b-order-of-operations-alec-2026-11-07-claudes-filling-out-confirmed-in-part",
+      "runner": "bin/stage_models.py",
+      "lesson": "data/lessons/parts-of-speech.json",
       "row": 6,
-      "phase": "determiners"
+      "phase": "determiners",
+      "protocol": "data/eval/stage-models.json",
+      "criterion": {
+        "declared_by": "Alec",
+        "measure": "occupant_definiteness",
+        "note": "the determiner argument's class definite (lesson 6)",
+        "threshold": null
+      }
     },
     "adverb": {
-      "runner": "bin/corpus_lessons.py",
-      "lesson": "doc/specs/2026-10-18-parts-of-speech.md#5b-order-of-operations-alec-2026-11-07-claudes-filling-out-confirmed-in-part",
+      "runner": "bin/stage_models.py",
+      "lesson": "data/lessons/parts-of-speech.json",
       "row": 7,
-      "phase": "adverb"
+      "phase": "adverb",
+      "protocol": "data/eval/stage-models.json",
+      "criterion": {
+        "declared_by": "Alec",
+        "measure": "occupant_definiteness",
+        "note": "the adverb argument's class definite (lesson 7)",
+        "threshold": null
+      }
     },
     "prepositions": {
-      "runner": "bin/corpus_lessons.py",
-      "lesson": "doc/specs/2026-10-18-parts-of-speech.md#5b-order-of-operations-alec-2026-11-07-claudes-filling-out-confirmed-in-part",
+      "runner": "bin/stage_models.py",
+      "lesson": "data/lessons/parts-of-speech.json",
       "row": 8,
-      "phase": "prepositions"
+      "phase": "prepositions",
+      "protocol": "data/eval/stage-models.json",
+      "criterion": {
+        "declared_by": "Alec",
+        "measure": "occupant_definiteness",
+        "note": "the preposition argument's class definite (lesson 8)",
+        "threshold": null
+      }
     },
     "relations": {
-      "runner": "bin/corpus_lessons.py",
-      "lesson": "doc/specs/2026-10-18-parts-of-speech.md#5b-order-of-operations-alec-2026-11-07-claudes-filling-out-confirmed-in-part",
+      "runner": "bin/stage_models.py",
+      "lesson": "data/lessons/parts-of-speech.json",
       "row": 9,
-      "phase": "relations"
+      "phase": "relations",
+      "protocol": "data/eval/stage-models.json",
+      "criterion": {
+        "declared_by": "Alec",
+        "measure": "relation_groups",
+        "note": "item 2.3 section 6.3, groups 4 and 5 (lesson 9)",
+        "threshold": null
+      }
     },
     "mm_xor_grammar": {
-      "runner": "test/test_mm_xor.py::TestMMXorConvergence::_fit_xor",
-      "test": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
-      "config": "data/MM_grammar.xml",
-      "seed": 41001,
-      "epochs": 900,
-      "criterion": "best output MSE below 0.20",
-      "spec": "doc/plans/2026-10-27-item2-5-thinking.md",
-      "section": "41.7"
+      "status": "unavailable",
+      "reason": "The retained MM test now trains the numeric field; it is not a grammar artifact producer."
     },
     "xor_grammar": {
-      "runner": "Models.ModelFactory.run",
-      "config": "data/XOR_grammar.xml",
-      "fixture": "test/test_explicit_dimensions.py::trained_xor_grammar",
-      "criterion": "four answers correct and output MSE below 0.05"
+      "status": "unavailable",
+      "reason": "The former combined criterion is now split: a numeric class fit and a separate trained grammar inverse; no current producer meets the old combined artifact criterion."
+    },
+    "stage_words": {
+      "runner": "bin/stage_models.py",
+      "stage": "A1",
+      "config": "data/MM_corpus_lessons.xml",
+      "protocol": "data/eval/stage-models.json",
+      "criterion": "all declared stage criteria, byte-exact restore, reproducible full validation operator table"
+    },
+    "stage_sentences": {
+      "runner": "bin/stage_models.py",
+      "stage": "A2",
+      "config": "data/MM_corpus_lessons.xml",
+      "protocol": "data/eval/stage-models.json",
+      "criterion": "all declared stage criteria, byte-exact restore, reproducible full validation operator table"
+    },
+    "stage_math": {
+      "runner": "bin/stage_models.py",
+      "stage": "A3",
+      "config": "data/MM_corpus_lessons.xml",
+      "protocol": "data/eval/stage-models.json",
+      "criterion": "all declared stage criteria, byte-exact restore, reproducible full validation operator table"
+    },
+    "game_adverb": {
+      "status": "unavailable",
+      "game": "adverb",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "adverb/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_ask": {
+      "status": "unavailable",
+      "game": "ask",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "ask/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_bind": {
+      "status": "unavailable",
+      "game": "bind",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "bind/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_compound": {
+      "status": "unavailable",
+      "game": "compound",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "compound/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_compound_unary": {
+      "status": "unavailable",
+      "game": "compound_unary",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "compound_unary/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_conjunction": {
+      "status": "unavailable",
+      "game": "conjunction",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "conjunction/predicates.jsonl",
+        "conjunction/subjects.jsonl",
+        "conjunction/ability.written.jsonl",
+        "conjunction/arrival.written.jsonl",
+        "conjunction/objects.written.jsonl",
+        "conjunction/weather.written.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_definite": {
+      "status": "unavailable",
+      "game": "definite",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "definite/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_definite_unary": {
+      "status": "unavailable",
+      "game": "definite_unary",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "definite_unary/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_disjunction": {
+      "status": "unavailable",
+      "game": "disjunction",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "disjunction/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_equal": {
+      "status": "unavailable",
+      "game": "equal",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "equal/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_generic": {
+      "status": "unavailable",
+      "game": "generic",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "generic/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_implies": {
+      "status": "unavailable",
+      "game": "implies",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "implies/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_intersection": {
+      "status": "unavailable",
+      "game": "intersection",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "intersection/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_lift": {
+      "status": "unavailable",
+      "game": "lift",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "lift/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_lower": {
+      "status": "unavailable",
+      "game": "lower",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "lower/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_lower_unary": {
+      "status": "unavailable",
+      "game": "lower_unary",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "lower_unary/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_non": {
+      "status": "unavailable",
+      "game": "non",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "non/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_not": {
+      "status": "unavailable",
+      "game": "not",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "not/clause.jsonl",
+        "not/copula.jsonl",
+        "not/ability.written.jsonl",
+        "not/future.written.jsonl",
+        "not/past.written.jsonl",
+        "not/progressive.written.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_part": {
+      "status": "unavailable",
+      "game": "part",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "part/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_preposition": {
+      "status": "unavailable",
+      "game": "preposition",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "preposition/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_preposition_unary": {
+      "status": "unavailable",
+      "game": "preposition_unary",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "preposition_unary/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_product": {
+      "status": "unavailable",
+      "game": "product",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "product/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_sum": {
+      "status": "unavailable",
+      "game": "sum",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "sum/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_surface": {
+      "status": "unavailable",
+      "game": "surface",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "surface/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_surface_unary": {
+      "status": "unavailable",
+      "game": "surface_unary",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "surface_unary/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_transpose": {
+      "status": "unavailable",
+      "game": "transpose",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "transpose/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_unary_chain": {
+      "status": "unavailable",
+      "game": "unary_chain",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "unary_chain/k1.jsonl",
+        "unary_chain/k2.jsonl",
+        "unary_chain/k3.jsonl",
+        "unary_chain/k1.written.jsonl",
+        "unary_chain/k2.written.jsonl",
+        "unary_chain/k3.written.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_union": {
+      "status": "unavailable",
+      "game": "union",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "union/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_universal": {
+      "status": "unavailable",
+      "game": "universal",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "universal/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_verb": {
+      "status": "unavailable",
+      "game": "verb",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "verb/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    },
+    "game_whole": {
+      "status": "unavailable",
+      "game": "whole",
+      "manifest": "data/games/manifest.json",
+      "files": [
+        "whole/template.jsonl"
+      ],
+      "evaluation": "bin/eval_games.py::production_probe",
+      "reason": "Game training stopped after both whole-sentence learning signals returned null (plan section 19.8)."
+    }
+  },
+  "outcomes": {
+    "words": {
+      "status": "null",
+      "run_status": "null",
+      "source_sha256": "a98f30eb93e7d7838b09aac261641acac4bfa345d0ce64a8957a342ca8ffccdb",
+      "protocol_sha256": "94db779660672ac98a8cb63a2c41a12245766580d5c4b213da09127228d70a61",
+      "epochs": 1,
+      "sentences": 2,
+      "criterion": {
+        "measure": "definition_trust_fraction",
+        "value": 0.0,
+        "threshold": null,
+        "status": "undeclared",
+        "passed": false,
+        "reason": null,
+        "operations": [],
+        "answer_accuracy": null,
+        "occupant_definiteness": null
+      }
+    },
+    "interpret": {
+      "status": "null",
+      "run_status": "null",
+      "source_sha256": "a98f30eb93e7d7838b09aac261641acac4bfa345d0ce64a8957a342ca8ffccdb",
+      "protocol_sha256": "94db779660672ac98a8cb63a2c41a12245766580d5c4b213da09127228d70a61",
+      "epochs": 1,
+      "sentences": 4,
+      "criterion": {
+        "status": "unavailable",
+        "passed": false,
+        "reason": "isolated criterion reader failed"
+      }
+    },
+    "clause": {
+      "status": "null",
+      "run_status": "null",
+      "source_sha256": "a98f30eb93e7d7838b09aac261641acac4bfa345d0ce64a8957a342ca8ffccdb",
+      "protocol_sha256": "94db779660672ac98a8cb63a2c41a12245766580d5c4b213da09127228d70a61",
+      "epochs": 1,
+      "sentences": 2,
+      "criterion": {
+        "status": "unavailable",
+        "passed": false,
+        "reason": "isolated criterion reader failed"
+      }
+    },
+    "ask": {
+      "status": "null",
+      "run_status": "null",
+      "source_sha256": "a98f30eb93e7d7838b09aac261641acac4bfa345d0ce64a8957a342ca8ffccdb",
+      "protocol_sha256": "94db779660672ac98a8cb63a2c41a12245766580d5c4b213da09127228d70a61",
+      "epochs": 1,
+      "sentences": 4,
+      "criterion": {
+        "status": "unavailable",
+        "passed": false,
+        "reason": "isolated criterion reader failed"
+      }
+    },
+    "verb": {
+      "status": "null",
+      "run_status": "null",
+      "source_sha256": "a98f30eb93e7d7838b09aac261641acac4bfa345d0ce64a8957a342ca8ffccdb",
+      "protocol_sha256": "94db779660672ac98a8cb63a2c41a12245766580d5c4b213da09127228d70a61",
+      "epochs": 1,
+      "sentences": 4,
+      "criterion": {
+        "status": "unavailable",
+        "passed": false,
+        "reason": "isolated criterion reader failed"
+      }
+    },
+    "modifiers": {
+      "status": "null",
+      "run_status": "null",
+      "source_sha256": "a98f30eb93e7d7838b09aac261641acac4bfa345d0ce64a8957a342ca8ffccdb",
+      "protocol_sha256": "94db779660672ac98a8cb63a2c41a12245766580d5c4b213da09127228d70a61",
+      "epochs": 1,
+      "sentences": 2,
+      "criterion": {
+        "status": "unavailable",
+        "passed": false,
+        "reason": "isolated criterion reader failed"
+      }
+    },
+    "determiners": {
+      "status": "null",
+      "run_status": "null",
+      "source_sha256": "a98f30eb93e7d7838b09aac261641acac4bfa345d0ce64a8957a342ca8ffccdb",
+      "protocol_sha256": "94db779660672ac98a8cb63a2c41a12245766580d5c4b213da09127228d70a61",
+      "epochs": 1,
+      "sentences": 2,
+      "criterion": {
+        "status": "unavailable",
+        "passed": false,
+        "reason": "isolated criterion reader failed"
+      }
+    },
+    "adverb": {
+      "status": "null",
+      "run_status": "null",
+      "source_sha256": "a98f30eb93e7d7838b09aac261641acac4bfa345d0ce64a8957a342ca8ffccdb",
+      "protocol_sha256": "94db779660672ac98a8cb63a2c41a12245766580d5c4b213da09127228d70a61",
+      "epochs": 1,
+      "sentences": 2,
+      "criterion": {
+        "status": "unavailable",
+        "passed": false,
+        "reason": "isolated criterion reader failed"
+      }
+    },
+    "prepositions": {
+      "status": "null",
+      "run_status": "null",
+      "source_sha256": "a98f30eb93e7d7838b09aac261641acac4bfa345d0ce64a8957a342ca8ffccdb",
+      "protocol_sha256": "94db779660672ac98a8cb63a2c41a12245766580d5c4b213da09127228d70a61",
+      "epochs": 1,
+      "sentences": 2,
+      "criterion": {
+        "status": "unavailable",
+        "passed": false,
+        "reason": "isolated criterion reader failed"
+      }
+    },
+    "relations": {
+      "status": "null",
+      "run_status": "null",
+      "source_sha256": "a98f30eb93e7d7838b09aac261641acac4bfa345d0ce64a8957a342ca8ffccdb",
+      "protocol_sha256": "94db779660672ac98a8cb63a2c41a12245766580d5c4b213da09127228d70a61",
+      "epochs": 1,
+      "sentences": 6,
+      "criterion": {
+        "status": "unavailable",
+        "passed": false,
+        "reason": "isolated criterion reader failed"
+      }
+    },
+    "stage_words": {
+      "status": "null",
+      "run_status": "null",
+      "source_sha256": "a98f30eb93e7d7838b09aac261641acac4bfa345d0ce64a8957a342ca8ffccdb",
+      "protocol_sha256": "94db779660672ac98a8cb63a2c41a12245766580d5c4b213da09127228d70a61",
+      "checkpoint_sha256": "c77d4f5d5d16e4ec48576f874009ad3ae60dda5251a835a9649c36279bbe1b9f",
+      "process_limit_seconds": 1800,
+      "reason": "Criteria remain undeclared; saved-model evaluation rejects changed tensor bytes; A2 also lacks a qualified game-learning signal."
+    },
+    "stage_sentences": {
+      "status": "null",
+      "run_status": "null",
+      "source_sha256": "a98f30eb93e7d7838b09aac261641acac4bfa345d0ce64a8957a342ca8ffccdb",
+      "protocol_sha256": "94db779660672ac98a8cb63a2c41a12245766580d5c4b213da09127228d70a61",
+      "checkpoint_sha256": "deac8c7bb643067ffc31a7d81e87232769e518192b286fbb596c8d3f074abb3b",
+      "process_limit_seconds": 1800,
+      "reason": "Criteria remain undeclared; saved-model evaluation rejects changed tensor bytes; A2 also lacks a qualified game-learning signal."
+    },
+    "stage_math": {
+      "status": "null",
+      "run_status": "interrupted",
+      "source_sha256": "a98f30eb93e7d7838b09aac261641acac4bfa345d0ce64a8957a342ca8ffccdb",
+      "protocol_sha256": "94db779660672ac98a8cb63a2c41a12245766580d5c4b213da09127228d70a61",
+      "checkpoint_sha256": null,
+      "process_limit_seconds": 1800,
+      "reason": "Criteria remain undeclared; saved-model evaluation rejects changed tensor bytes; A2 also lacks a qualified game-learning signal."
+    },
+    "mm_xor_grammar": {
+      "status": "null",
+      "reason": "The retained MM test now trains the numeric field; it is not a grammar artifact producer."
+    },
+    "xor_grammar": {
+      "status": "null",
+      "reason": "The former combined criterion is now split: a numeric class fit and a separate trained grammar inverse; no current producer meets the old combined artifact criterion."
+    },
+    "game_adverb": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_ask": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_bind": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_compound": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_compound_unary": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_conjunction": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_definite": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_definite_unary": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_disjunction": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_equal": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_generic": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_implies": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_intersection": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_lift": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_lower": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_lower_unary": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_non": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_not": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_part": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_preposition": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_preposition_unary": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_product": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_sum": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_surface": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_surface_unary": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_transpose": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_unary_chain": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_union": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_universal": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_verb": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
+    },
+    "game_whole": {
+      "status": "null",
+      "run_status": "unattempted",
+      "reason": "No qualified whole-sentence training signal; template corpus and diagnostic probe exist."
     }
   }
 }

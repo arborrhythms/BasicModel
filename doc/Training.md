@@ -50,6 +50,35 @@ identity, live STM and expectation continuation state. Replaying a tick count un
 later learned tiling is not a safe resume method. Native update parity is a
 separate measurement; cursor equality alone does not establish it.
 
+**Item 0.5 small-stage rehearsal (2026-11-13).** The frozen sequence is
+`data/training-corpus.json`; `data/eval/stage-models.json` declares the unchanged
+small configuration, bounded document/epoch budget and held-out readings. Run
+`.venv/bin/python bin/stage_models.py --output <new-local-directory>` (also
+available through `bin/corpus_lessons.py --stage-protocol`). The producer saves
+M0 and each completed stage on the same live model. A standalone
+`--only-lesson` run is a diagnostic and cannot register a stage. All lesson
+thresholds remain undeclared; completed exposure alone cannot register one.
+
+`bin/eval_operators.py::operator_table` restores each saved checkpoint in an
+isolated process, verifies tensor bytes, and reads the same full validation
+manifest. It reports selected-rule use, each existing layer's own parameter
+change and held-out game production. Unavailable readings remain null;
+parameter-only readings after failed validation are explicitly incomplete.
+The 31 game variants are frozen under `data/games/`, with coverage in
+`inventory.json`. Their intended rules are diagnostic labels, never required
+learner choices. Game training remains stopped at the two whole-sentence
+signal nulls recorded in the [item 0.5 return](plans/2026-11-09-item0-5-test-development.md#19-item-05-return-codex-2026-11-12).
+
+The H9/H10 task recipe, files and protocol live in `data/eval/studies/`.
+`bin/study_corpus.py` reproduces their recorded hashes. Small diagnostics use
+`bin/eval_studies.py smoke --arm <name> --output <new-directory>` or
+`--gate <name> --side treatment|control`. Missing runtime controls are reported
+before training; there is no substitute learner. Order/determiner controls
+share ordinary held-out text, and vocabulary controls transform the text and
+answer together. Recorded query-work charges include discarded trials but are
+not total compute. These small diagnostics do not satisfy the million-sentence
+qualification, three-seed comparisons, or undeclared acceptance bars.
+
 **Concept dictionary ownership (October 2).** Codes are parameters
 trained only by reconstruction, without a norm constraint. The canonical
 configurations set `conceptualContextLearningRate=0`; contextual rotation and
@@ -1337,7 +1366,8 @@ The verb lessons use names and bare plurals as subjects and objects, so that no 
 The training corpus of item 0 is named by one manifest,
 `data/training-corpus.json`: part A (words only; simple sentences and
 synthetics; math) as tracked, frozen files, and part B (the developmental
-assembly, which is built locally, and the web shard, which git tracks)
+assembly, which is built locally, and the web shard, which the preparation
+command downloads and verifies)
 recorded by hash. Every held-out
 set is listed there: the lesson held-out records, the games' validation,
 test and transfer splits, the math validation, test and beyond splits, the

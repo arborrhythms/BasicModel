@@ -720,7 +720,7 @@
     },
     {
       "file": "bin/Spaces.py",
-      "function": "PartSpace._radix_part_events",
+      "function": "PartSpace._radix_code_events",
       "attributes": [
         "nWhen",
         "whenEncoding"
@@ -728,7 +728,7 @@
       "role": "writer",
       "previous_absolute_time": true,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 10907,
+      "line": 10944,
       "reads": "absolute"
     },
     {
@@ -1270,7 +1270,10 @@
       "function": "join",
       "attributes": [
         "when"
-      ]
+      ],
+      "previous_absolute_time": false,
+      "role": "carrier",
+      "now": "Pads the existing conceptual field when brackets while appending the scalar modality; it does not interpret absolute time."
     }
   ],
   "dynamic_readers": [

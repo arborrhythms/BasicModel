@@ -152,7 +152,8 @@ def test_checkpoint_uses_consumed_positions_and_resumes_without_epoch_clear(tmp_
 
 
 @pytest.mark.slow
-def test_real_next_batch_matches_checkpoint_losses_and_kept_programs(tmp_path, monkeypatch, eager_reading):
+@pytest.mark.parametrize('mixed_documents', [False, True], ids=['single-source', 'mixed-sources'])
+def test_real_next_batch_matches_checkpoint_losses_and_kept_programs(tmp_path, monkeypatch, eager_reading, mixed_documents):
     """Compare one uninterrupted update with the same update after native restore."""
     from data import TheData
     from Models import BaseModel, BasicModel
@@ -166,6 +167,11 @@ def test_real_next_batch_matches_checkpoint_losses_and_kept_programs(tmp_path, m
     tree.write(config)
     rows = [dict(text=text, split='train', stage=0, document='document', sentence=i)
             for i, text in enumerate(('A cat sleeps.', 'A bird sings.', 'The cat sleeps.', 'The bird sings.') * 3)]
+    if mixed_documents:
+        # Alternate complete source documents; keep the original total rows,
+        # model capacities and next-update equality assertions.
+        for i, row in enumerate(rows):
+            row.update(document=f'source-{(i//4)%2}:document-{i//4}', sentence=i%4)
     TheData.load('curriculum', dat={'corpusManifest': str(manifest(tmp_path, rows))})
     models, programs, losses = [], [], []
     original = BasicModel._commit_sentence
