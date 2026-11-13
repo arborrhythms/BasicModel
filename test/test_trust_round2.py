@@ -142,7 +142,7 @@ def test_kept_lift_uses_cap_only_the_effective_pair(monkeypatch, uses):
     assert positive_length(f.cs, speech.seats['lift'].concept) == pytest.approx(seat_trust)
     endpoints = min(positive_length(f.cs, word) for word in words)
     torch.testing.assert_close(torch.stack(parts.evidence(row)),
-                               torch.tensor([.8,.6])*min(endpoints, seat_trust))
+                               torch.tensor([.8,.6])*min(endpoints, seat_trust, .1))
     assert (float(parts.truth_plus[row]), float(parts.truth_minus[row])) == pytest.approx((.8,.6))
 
 

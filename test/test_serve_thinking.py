@@ -65,7 +65,11 @@ def test_thinking_payload_is_attached_for_a_thinking_model(served, monkeypatch):
     thinking = body.get("thinking")
     assert thinking is not None and thinking["thought_free"] is False
     assert calls == [1]
-    assert thinking["iterations"] == 0 and thinking["slots"] == []
+    assert thinking["iterations"] == 0 and thinking["steps"] == []
+    # An empty selected episode still owns its begin/finish boundaries.
+    records = tuple(getattr(model._last_selected_thought, "records", ()) or ())
+    assert thinking["slots"] == [record.kind for record in records]
+    assert thinking["slots"] in ([], ["begin", "finish"])
     assert "content" in body["choices"][0]["message"]
 
 

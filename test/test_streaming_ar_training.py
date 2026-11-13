@@ -67,10 +67,10 @@ def test_mentalmodel_forward_populates_inputs_and_symbolic_state():
     import Models
     import Language
 
-    # Build a minimal BasicModel from MM_xor.xml (small + fast).
+    # Build a minimal BasicModel from MM_text.xml (small + fast).
     src = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "data", "MM_xor.xml")
+        "data", "MM_text.xml")
     Language.TheGrammar._configured = False
     model, _ = Models.BasicModel.from_config(src)
 

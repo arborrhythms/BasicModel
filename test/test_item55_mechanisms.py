@@ -103,9 +103,11 @@ def _serial_read(tmp_path, clock=0, offset=0):
                                                  if i not in forecasts))
         return dict(programs=[p.actions.detach().clone() for p in programs],
             rows={k.removeprefix('addressing.'):v.detach().clone() for k,v in store.state_dict().items()},
+            recurrence_weights=store.recurrence_weights.detach().clone(),
             forecast_errors=(store.surprise[:len(store)] >= 0).nonzero().flatten().tolist(),
             time_start=store.when_start,
-            part_times=store.parts.percept[store.parts.ref_kinds[:,0].ne(0),4:].detach().clone(),
+            part_times=torch.stack([__import__('RowTime').read_time(store, ('sym', int(i)))
+                for i in store.parts.ref_kinds[:,0].ne(0).nonzero().flatten()]).detach().clone(),
             omissions=omissions, forecasts=forecasts,
             semantics=canonical(semantics),
             initial_rows=initial_rows, initial_clock=initial_clock, count=len(store),
@@ -197,7 +199,7 @@ def test_clock_independence(tmp_path):
             omission_evidence=value['rows']['truth_minus'][list(value['omissions'])].tolist(),
             forecast_content=value['rows']['slots'][list(value['forecasts'])].tolist(),
             surprise=value['rows']['surprise'].tolist(),
-            recurrence_weights=value['rows']['recurrence_weights'].tolist()))
+            recurrence_weights=value['recurrence_weights'].tolist()))
         assert torch.isfinite(value['answer']).all()
         start = value['time_start']
         stamps = value['rows']['slots'][value['initial_rows']:value['count'],start:start+4]
@@ -214,6 +216,9 @@ def test_clock_independence(tmp_path):
         assert len(value['programs']) == len(baseline['programs'])
         for a,b in zip(value['programs'],baseline['programs']):
             torch.testing.assert_close(a,b,rtol=0,atol=0)
+        # D16: this derived cache is inspected without saving it as a row column.
+        assert value['recurrence_weights'].shape == baseline['recurrence_weights'].shape
+        assert torch.isfinite(value['recurrence_weights']).all()
         assert value['rows'].keys() == baseline['rows'].keys()
         assert (value['initial_rows'],value['count']) == (baseline['initial_rows'],baseline['count'])
         # Located content has different native hashes when its time changes;
@@ -333,15 +338,15 @@ def test_stream_chain(tmp_path,monkeypatch):
                 assert observations.numel()==2
                 if documents==('a','b'):
                     from RowTime import encoder
-                    assert encoder().decode_index(torch.stack([live.entry_when(int(row)) for row in observations])).tolist() == [model._sentence_ticks[0]]*2
+                    assert encoder().decode_index(torch.stack([live.entry_time(int(row)) for row in observations])).tolist() == [model._sentence_ticks[0]]*2
                     before={key:getattr(live,key)[observations].clone()
                             for key in ('address_keys','sentence_index')}
-                    before_time=torch.stack([live.entry_when(int(row)) for row in observations])
+                    before_time=torch.stack([live.entry_time(int(row)) for row in observations])
                     witnesses=live.access_count[observations].clone()
                     first=[live.stream_rows(b).tolist() for b in (0,1)]
                     assert set(first[0]).isdisjoint(first[1])
                 else:
-                    torch.testing.assert_close(torch.stack([live.entry_when(int(row)) for row in observations]),before_time,rtol=0,atol=0)
+                    torch.testing.assert_close(torch.stack([live.entry_time(int(row)) for row in observations]),before_time,rtol=0,atol=0)
                     for key,value in before.items():
                         assert torch.equal(getattr(live,key)[observations],value)
                     assert (live.access_count[observations]>witnesses).all()

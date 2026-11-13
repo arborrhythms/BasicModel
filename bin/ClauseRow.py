@@ -231,13 +231,14 @@ class ClauseRows:
             if kind == OCCURRENCE:
                 row = self.index_of_row(value)
                 if row is not None:
-                    if bool(self.entry_when(row).ne(0).any()):
+                    if bool(self.entry_time(row).ne(0).any()):
                         result.add('situation')
                     if self.when_start is not None and bool(self.slots[row, self.when_start-4:self.when_start].ne(0).any()):
                         result.add('spatial')
             if kind == RELATION:
                 result.add('situation')
-                if bool(self.parts.percept[value, :4].ne(0).any()):
+                source = self.index_of_row(int(self.parts.sentence_reference[value]))
+                if source is not None and self.when_start is not None and bool(self.slots[source,self.when_start-4:self.when_start].ne(0).any()):
                     result.add('spatial')
             return result
         readings = self.parts.readings(symbol, types)
@@ -308,7 +309,7 @@ class ClauseRows:
             sentence_kind='relation', bindings=marks), opened, pair=pair)
         return dict(part, meaning=meaning, head_point=head_idea(self, symbol), occurrence=('sym', symbol), row_id=symbol,
             refs=part['refs'].clone(), readings=readings, evidence=pair,
-            trust=pair[0]-pair[1], when=part['percept'][4:].clone(),
+            trust=pair[0]-pair[1], time=__import__('RowTime').read_time(self, ('sym', symbol)),
             kind='question' if opened else 'observation' if any(pair) else 'unverified', order=0, stream=(), pending=False,
             metadata_complete=True, expectation=self.expectation_of(('sym', symbol)), text=None, origin=0)
 
@@ -429,7 +430,7 @@ class ClauseRows:
         import math
         from PartClosing import PartClosing
         from Memory import OCCURRENCE, SYMBOL, RELATION
-        from RowTime import stamp
+        from RowTime import next_time
         from Occurrence import native_content_key
         from ThoughtReferences import bindings
         if not isinstance(clause, Clause):
@@ -532,11 +533,11 @@ class ClauseRows:
         if len(self) + needed > self.capacity:
             raise ClauseCapacityError(f'LTM0 construction capacity exhausted before close: '
                                       f'{len(self)} occupied + {needed} needed > {self.capacity}')
-        closing.when = stamp(self)
+        closing.time = next_time(self)
         if clause.when is not None:
             # Thinking and output may have advanced the clock since opening.
             # The input occurrence retains the tick of its own attention pass.
-            closing.when = clause.when.to(closing.when)
+            closing.time = clause.when.to(closing.time)
         before_rows = len(self)
         rows, occurrences, mentions, event_occurrences = {}, {}, {}, {}
         context = self.__dict__.get('_write_address')
@@ -579,7 +580,7 @@ class ClauseRows:
                 compacted = replace(ConceptualMeaning.from_description(point),
                     bindings={'_relations': (entry[1],)})
                 event_row = self.append_meaning(compacted, evidence=pair, order=value.order,
-                    kind='unverified', when=closing.when, stream=stream,
+                    kind='unverified', time=closing.time, stream=stream,
                     document_key=('event', closing.content_key), sentence_index=position)
                 event_occurrences[id(value)] = self.occurrence_of(event_row)
             if record.get('mention'):
@@ -618,7 +619,7 @@ class ClauseRows:
         if episode is not None and root_kind == RELATION:
             count(self, 'relation_only_closings')
         if episode_anchor is not None:
-            episode_row = anchor(self, episode_anchor, episode, stream=stream, when=closing.when)
+            episode_row = anchor(self, episode_anchor, episode, stream=stream, time=closing.time)
             if written_rows is not None:
                 written_rows['episode'] = self.occurrence_of(episode_row)
         if written_rows is not None:

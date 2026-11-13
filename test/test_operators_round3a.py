@@ -140,7 +140,7 @@ def test_live_mint_rekeys_pending_and_completed_definitions(tmp_path, complete_f
 
 def test_numeric_mm_keeps_its_original_geometry():
     from test_mm_xor import _fresh_model
-    model, _, _ = _fresh_model('data/MM_xor.xml')
+    model, _, _ = _fresh_model('data/MM_text.xml')
     try:
         assert model.perceptualSpace.subspace.muxedSize == 14
         assert getattr(model.perceptualSpace.percept_store, 'identity', None) is None

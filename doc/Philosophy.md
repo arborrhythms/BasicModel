@@ -2399,3 +2399,8 @@ logical structure of Dharmakirti and the tetralemma of Nagarjuna. Plural
 frames coexist, inference operates within frames, feelings provide the
 perceptual ground from which concepts arise, and non-affirming negation
 preserves epistemic openness.
+
+
+## Item 1.8 amendment (2026-11-12)
+
+The continuous feeling uses the fixed map f(n)=ln(1+n)/(1+ln(1+n)), with zero at absence and one at infinity. A positive reading has a basic percept whose part and whole have the felt value as their codes. A word's order-zero concept collects those percepts; its common part and covering whole derive the least and greatest bounds without a separate interval dictionary. The common conceptual reader supplies membership. Values are distinguished by containment, and the permitted value operations remain part, minimum and maximum. The definition's certainty counts views and agreement. A bound object is said by its uniquely naming word through its reference. Zero remains an inferred absence, not a positive perceived interval; native recognition is deferred to the next item-1.8 round. Numeric rows retain their separate value-as-evidence convention.

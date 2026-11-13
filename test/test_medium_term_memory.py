@@ -15,7 +15,7 @@ from part_fixtures import part_references, assert_part_references
 
 def snapshot(resolver):
     store = resolver.store
-    return (part_references(store), store.slots.clone(), torch.stack([store.entry_when(row).clone() for row in range(len(store))]) if len(store) else store.slots.new_empty(0, 4),
+    return (part_references(store), store.slots.clone(), torch.stack([store.entry_time(row).clone() for row in range(len(store))]) if len(store) else store.slots.new_empty(0, 4),
             {k: v.clone() for k, v in store.parts.state_dict().items()},
             resolver.components.owner.similarity_codebook.W.detach().clone())
 
@@ -276,14 +276,15 @@ def test_complete_forward_body_does_not_access_the_pool(tmp_path, monkeypatch, c
         raise AssertionError('the tensor forward body accessed MTM')
     for name in ('token_of', 'open', 'bind', 'forget'):
         monkeypatch.setattr(pool, name, forbidden)
-    forward = lambda unused: model._forward_with_compiled_sentence_state(None)
+    # The end-field output is read after the host close. This certificate
+    # owns only the tensor body's prohibition on MTM access.
+    forward = lambda unused: model._forward_body(model._staged_in_sub, return_sentence_state=True)[1]
     torch._dynamo.reset()
     torch._dynamo.utils.counters.clear()
     if compiled:
         forward = torch.compile(forward, backend='eager', fullgraph=True)
     try:
         result = forward(raw)
-        model._publish_compiled_sentence_state(result)
         assert not pool.entries
         if compiled:
             assert torch._dynamo.utils.counters['stats']['unique_graphs'] > 0

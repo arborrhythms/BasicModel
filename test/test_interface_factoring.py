@@ -235,12 +235,12 @@ def test_bind_streams_knob_paths():
     import Models
     from util import init_config, TheXMLConfig
     _PROJECT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-    init_config(path=os.path.join(_PROJECT, "data", "MM_xor.xml"),
+    init_config(path=os.path.join(_PROJECT, "data", "MM_text.xml"),
                 defaults_path=os.path.join(_PROJECT, "data", "model.xml"))
     Language.TheGrammar._configured = False
     torch.manual_seed(1)
     m, cfg = Models.BasicModel.from_config(
-        os.path.join(_PROJECT, "data", "MM_xor.xml"))
+        os.path.join(_PROJECT, "data", "MM_text.xml"))
     cs = getattr(m, "conceptualSpace", None)
     if cs is None or getattr(cs, "combine", None) is None:
         return  # model variant without the bind stage: nothing to pin

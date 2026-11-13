@@ -73,6 +73,14 @@ def test_new_run_resets_trial_scratch_even_if_the_body_raises(tmp_path, monkeypa
 def test_trial_leaf_mask_does_not_leak_to_the_next_trial_or_commit(tmp_path, monkeypatch):
     model = _model(tmp_path, monkeypatch)
     from SentenceAttention import SentenceField
+    import SentenceCredit
+    departure = SentenceCredit.departure
+    def compose_departure(_narrowing, compose, **options):
+        # Whole paths may depart after composition. This contract explicitly
+        # exercises a second compose path so both leaf masks are observed.
+        return departure(None, compose, active=options['active'],
+            compose_round=options['compose_round'], used=options['used'])
+    monkeypatch.setattr(SentenceCredit, 'departure', compose_departure)
     original = model._sentence_path_cost
     masks = []
     def cost(*args):

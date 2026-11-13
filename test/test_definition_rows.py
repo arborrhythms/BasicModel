@@ -40,7 +40,7 @@ def test_22_supplied_object_keeps_its_form_row_and_writes_one_definition():
     assert 'definition' in store.part_row(row)['readings']
     assert store.parts.refs[row].tolist() == [obj, word]
     # Definitions are inner semantic rows; only a sentence entry is stamped.
-    assert not store.entry_when(('sym', row)).any()
+    assert not store.entry_time(('sym', row)).any()
     assert ('sym', word) not in cs.concept_parts(obj)
     assert all(not hasattr(cs, name) for name in ('bind_meta', 'meta_members'))
     assert all(not hasattr(alloc, name) for name in ('interpretations', 'word_obj_meta'))
@@ -107,7 +107,7 @@ def test_27_definition_rewitness_keeps_its_when_and_store_position():
     cs, store = m._concept_owner(), m.symbolSpace.ltm_store
     first = admit(m, 'hello')
     r0 = cs.definitions.row(*first)
-    when = store.entry_when(('sym', r0)).clone()
+    when = store.entry_time(('sym', r0)).clone()
     m._advance_when_time()
     admit(m, 'there')
     count = len(store.parts)
@@ -117,7 +117,7 @@ def test_27_definition_rewitness_keeps_its_when_and_store_position():
     assert len(store.parts) == count
     assert int(store.parts.access_count[r0]) == witness + 1
     assert cs.definitions.row(*first) == r0
-    torch.testing.assert_close(store.entry_when(('sym', r0)), when, atol=0, rtol=0)
+    torch.testing.assert_close(store.entry_time(('sym', r0)), when, atol=0, rtol=0)
     chain = m.symbolSpace.ensure_sentence_expectation().get_stm_chain(n=count)
     assert len(chain) == len(store.stream_rows(0))
 
@@ -136,7 +136,7 @@ def test_28_forgotten_definition_does_not_survive_in_any_lookup():
 
 
 @pytest.mark.usefixtures('eager_reading')
-@pytest.mark.parametrize('configuration', ['MM_xor.xml', 'MM_grammar.xml', 'XOR_grammar.xml'])
+@pytest.mark.parametrize('configuration', ['MM_text.xml', 'MM_grammar.xml', 'XOR_grammar.xml'])
 def test_31_read_forms_wait_for_object_testimony_without_changing_the_configuration(configuration):
     from test_mm_xor import _fresh_model, _PROJECT
     path = Path(_PROJECT) / 'data' / configuration

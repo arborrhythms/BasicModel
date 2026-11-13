@@ -105,7 +105,7 @@ def write(store, meaning, *, key):
     store.to(device=meaning.roles.device, dtype=meaning.roles.dtype)
     def append(point, bindings):
         value = replace(ConceptualMeaning.from_description(point.detach()), bindings=bindings)
-        row = store.append_meaning(value, kind='unverified', when=False,
+        row = store.append_meaning(value, kind='unverified', time=False,
             document_key=('thought', tuple(float(value).hex() for value in key)),
             sentence_index=len(store))
         return OCCURRENCE, int(store.address_keys[row])

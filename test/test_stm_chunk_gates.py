@@ -83,7 +83,7 @@ def test_bind_menu_at_each_order_and_kept_mention_commit(monkeypatch,order):
     assert item['written_node'].order == order
 
 
-def test_chain_query_reenters_shared_chunks_with_stored_stamp_and_identities():
+def test_content_cue_reenters_shared_chunks_with_stored_stamp_and_identities():
     from test_layout_removal import pending_chain
     from Memory import ShortTermMemory
     from Queries import ThoughtLTMCapability
@@ -96,9 +96,11 @@ def test_chain_query_reenters_shared_chunks_with_stored_stamp_and_identities():
         owner.stm.set_state(state)
     old = owner.stm.state[chunks.READ].clone()
     reader = ThoughtLTMCapability(store=lambda:store,equal=lambda *_:0.,tau_id=.9)
-    when = store.entry_when(chain)
-    result = reader.query(when=when,max_records=32,work=QueryWorkBudget(64))
-    assert result['frames'] and not result['incomplete']
+    when = store.entry_time(chain)
+    result = store.cued_rows(store.meaning_of(chain), references=(chain,),
+        max_records=1, work=QueryWorkBudget(64))
+    assert not store.recall_chunks(result['value'], work=QueryWorkBudget(64))
+    assert result['value'] and not result['incomplete']
     state = owner.stm.state
     assert state[chunks.REFS][0,0,0].tolist() == [chunks.RELATION,chain[1]]
     torch.testing.assert_close(state[chunks.WHEN][0,0],when,rtol=0,atol=0)

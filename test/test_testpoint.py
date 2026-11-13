@@ -419,7 +419,7 @@ class TestModelXmlSchema(unittest.TestCase):
         self._validate(os.path.join(_DATA_DIR, "BasicModel.xml"))
 
     def test_xor_exact_xml(self):
-        self._validate(os.path.join(_DATA_DIR, "XOR_exact.xml"))
+        self._validate(os.path.join(_DATA_DIR, "XOR_symbols.xml"))
 
 
 

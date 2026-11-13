@@ -6,7 +6,7 @@ import pytest
 import torch
 
 
-@pytest.mark.parametrize('configuration', ['MM_xor.xml', 'XOR_grammar.xml', 'aligned'])
+@pytest.mark.parametrize('configuration', ['MM_text.xml', 'XOR_grammar.xml', 'aligned'])
 def test_every_read_word_has_a_concept_and_symbol(tmp_path, monkeypatch, configuration):
     import util
     monkeypatch.setattr(util, 'TheCompileBackend', 'none')

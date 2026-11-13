@@ -105,10 +105,10 @@ def test_data_what_supervised_returns_the_onehot_answer():
     assert any(p.depth == 3 for p in data.math_problems["test"])
 
 
-def test_xor_dataset_is_unchanged():
+def test_xor_dataset_keeps_four_numeric_truth_table_rows():
     from data import Data
     data = Data(); data.load("xor")
-    assert data.train_input[:2] == ["hello world", "hello there"]
+    torch.testing.assert_close(torch.stack(data.train_input), torch.tensor([[0., 0.], [0., 1.], [1., 0.], [1., 1.]]))
     assert not hasattr(data, "math_problems")
 
 

@@ -127,7 +127,7 @@ def test_separate_chooser_option_routes_compose_credit_without_reader_updates():
     model._sentence_cost_registry = model.errors
     model._compose_forced_slots = torch.tensor([[True, False]])
     model._compose_sampling_scale = torch.tensor([[6., 0.]])
-    model.objective_parameter_groups = lambda optimizer: {'chooser': (logits, unrelated), 'output': (reader,), 'attention': ()}
+    model.objective_parameter_groups = lambda optimizer: {'compose_policy': (logits,), 'chooser': (unrelated,), 'output': (reader,), 'attention': ()}
     actions = torch.tensor([[1, 0]])
     path = [None, [None] * 28]
     path[1][15], path[1][24] = actions, logits.log_softmax(-1).gather(1, actions)
@@ -139,5 +139,5 @@ def test_separate_chooser_option_routes_compose_credit_without_reader_updates():
     assert reader.grad is None and unrelated.grad is None
     optimizer.step()
     assert logits.softmax(-1)[0, 1] > before.softmax(-1)[0, 1]
-    record('separate-owner', dict(separateChooser=True, owner='chooser', side='A',
+    record('separate-owner', dict(separateChooser=True, owner='compose_policy', side='A',
         before=before.tolist(), after=logits.detach().tolist(), reader_gradient=None))

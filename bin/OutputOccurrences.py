@@ -12,6 +12,8 @@ class Generated:
     bank: object
     trace: tuple
     field: ConceptualField
+    references: tuple = ()
+    realization_field: ConceptualField | None = None
 
     def texts(self, surface):
         decoded = surface[:, 0].detach().long().cpu().tolist()
@@ -23,10 +25,33 @@ class Generated:
 def realize(model, generation):
     """The same system-1 inverse realizes output and reconstructed grammar."""
     with model.languageSpace.generation_scope(), model._synthesis_guard():
-        return model.reverse(model.conceptualSpace.subspace.carrier_like(), field=generation.field)
+        return model.reverse(model.conceptualSpace.subspace.carrier_like(),
+            field=generation.field if generation.realization_field is None else generation.realization_field)
 
 
-def generated(model, words, counts, truncated, bank, trace, *, when=None):
+def object_identity(owner, reference):
+    """Follow an owned reference to its object; coordinates never name it."""
+    seen = set()
+    store = owner._closed_clause_store()
+    while reference is not None and reference not in seen:
+        seen.add(reference)
+        if reference[0] == 'sym':
+            return reference[1]
+        token = owner.mtm.token_of(reference)
+        entry = owner.mtm.entries.get(token)
+        if entry is not None and entry.symbol is not None and not entry.pending:
+            return entry.symbol
+        location = store.location(reference)
+        if location is None:
+            return None
+        meaning = store.meaning_of(location)
+        if int(meaning.role_mask.sum()) != 1:
+            return None
+        reference = meaning.role_refs[int(meaning.role_mask.nonzero()[0])]
+    return None
+
+
+def generated(model, words, counts, truncated, bank, trace, *, when=None, references=()):
     from SentenceUnderstanding import readback_scores
     owner = model._concept_owner()
     B, W, D = words.shape
@@ -38,31 +63,42 @@ def generated(model, words, counts, truncated, bank, trace, *, when=None):
     selected = bank.rows.gather(1, chosen)
     active = (torch.arange(W, device=words.device)[None] < counts[:, None]) & bank.terminal_valid.any(-1)[:, None]
     selected = torch.where(active, selected, -1)
-    # Generate already emitted a terminal. Its form owns identity; contextual
-    # priming breaks identity ties but cannot rename that terminal. The leaf
-    # still supplies its live amplitude, including the opposing pole.
-    codes = bank.codes.gather(1, chosen[..., None].expand(B, W, D))
-    from ConceptActivation import poles as activation_poles
-    poles = activation_poles(words, codes, D if bank.meaning_start is None else bank.meaning_start)
-    poles = poles * active[..., None]
-    addresses = sorted(set(int(row) for row in selected.reshape(-1).tolist() if row >= 0),
-                       key=lambda row: (owner._row_order(row), row))
-    # Include the higher symbols' dependencies before descent; basic rows
-    # have their own feature definitions and need no perception witness.
-    store = owner._concept_allocator.layer(0)
-    reached = set(addresses)
-    while True:
-        parents = {int(source) % (store.nOutput + 1) for target, source in zip(store._rows, store._cols)
-                   if target in reached and int(source) % (store.nOutput + 1) < store.nOutput}
-        if parents <= reached:
-            break
-        reached |= parents
-    addresses = sorted(reached, key=lambda row: (owner._row_order(row), row))
-    if not addresses:
-        addresses = [-1]
-    rows = selected.new_tensor(addresses)
-    ids = selected.new_tensor([owner.concept_id_at_row(row) if row >= 0 else -1 for row in addresses])
-    evidence = (rows[:, None, None] == selected[None])[..., None] * poles[None]
+    from FieldProjection import stimulate
+    field = stimulate(owner, words)
+    scalar = torch.zeros_like(active)
+    memberships = {}
+    if hasattr(owner, 'basic_percepts'):
+        from ScalarPercepts import bare, concepts
+        scalar = bare(owner, words)
+        memberships = {owner.concept_id_at_row(row): None for row in concepts(owner)}
+    # Only actual box membership names a bare reading. Partial support
+    # outside every box supplies no word; ties keep inventory order.
+    ids = field.concept_ids.tolist()
+    candidates = [cid for cid in ids if cid in memberships and owner.word_surface_for_row(owner._csw_row_of(cid))]
+    native = words.clone()
+    said = [[None] * W for _ in range(B)]
+    for b in range(B):
+        for w in range(min(W, int(counts[b]))):
+            reference = references[b][w] if references else None
+            identity = object_identity(owner, reference) if reference is not None else None
+            if reference is None and bool(scalar[b, w]):
+                eligible = [cid for cid in candidates if float(field.evidence[ids.index(cid), b, w, 0].detach()) >= 1.]
+                identity = eligible[0] if eligible else None
+            if reference is None and not bool(scalar[b, w]):
+                continue
+            row = None if identity is None else owner._csw_row_of(identity)
+            raw = None if row is None else owner.word_surface_for_row(row)
+            active[b, w] = raw is not None
+            selected[b, w] = -1 if raw is None else row
+            if raw is None:
+                native[b, w] = 0.
+                continue
+            word = (identity if identity in owner.definitions.word_ids or owner.interpret.no_object(identity)
+                    else owner.interpret.reverse(identity))
+            # The learned unique definition supplies the interpretation
+            # inverse. The semantic point remains unchanged for scoring.
+            native[b, w] = owner.similarity_codebook.lookup_rows([owner._csw_row_of(word)])[0].to(words)
+            said[b][w] = reference if reference is not None else ('sym', identity)
     where = selected.new_zeros(B, W, 2)
     for b in range(B):
         cursor = 0
@@ -78,7 +114,7 @@ def generated(model, words, counts, truncated, bank, trace, *, when=None):
         tick = model.present()
         when = selected.new_tensor((tick, tick + 1))[None, None]
     when = when.to(device=words.device).expand(B, W, 2)
-    evidence = owner.cs_reverse_presence(evidence, inventory_rows=rows)
-    base = rows.new_tensor([row >= 0 and owner._row_order(row) == 0 for row in addresses], dtype=torch.bool)
-    evidence = evidence * base[:, None, None, None]
-    return Generated(words, counts, truncated, bank, trace, ConceptualField(ids, evidence, where, when, None))
+    emitted = torch.arange(W, device=words.device)[None] < counts[:, None]
+    field = stimulate(owner, words * emitted[...,None], where=where, when=when)
+    realization = stimulate(owner, native * active[...,None], where=where, when=when)
+    return Generated(words, counts, truncated, bank, trace, field, tuple(map(tuple, said)), realization)

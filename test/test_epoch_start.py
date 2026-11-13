@@ -91,7 +91,7 @@ def test_new_given_knowledge_retains_its_relation_and_transitive_dependencies():
         assert bank.contains(claim) and bank.contains(child) and not bank.contains(unrelated)
         assert store.location(given) is not None and store.location(dependency) is not None
         assert bank.find((OCCURRENCE,given[-1]),(RELATION,child)) == claim
-        for key in ('refs','ref_kinds','percept'):
+        for key in ('refs','ref_kinds','sentence_reference'):
             assert torch.equal(bank.row(child)[key],saved_child[key])
         assert float(bank.truth_plus[child]) == float(bank.truth_minus[child]) == 0.
         assert int(bank.access_count[child]) == 1 and float(bank.surprise[child]) == -1.
@@ -132,7 +132,7 @@ def test_supplied_outer_keeps_history_relation_as_unverified_dependency():
         assert store.row(('sym',child))['evidence'] == (0.,0.)
         assert stored_pair(store,claim) == pytest.approx((.7,0.))
         assert store.row(claim)['evidence'] == (0.,0.)
-        for key in ('refs','ref_kinds','percept'):
+        for key in ('refs','ref_kinds','sentence_reference'):
             assert torch.equal(store.parts.row(child)[key],saved[key])
 
 

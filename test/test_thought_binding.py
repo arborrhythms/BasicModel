@@ -39,27 +39,24 @@ def test_substitution_requires_the_returned_premise_and_keeps_its_witness():
     name, operand, value, answer, modifier = [('sym', n) for n in range(1, 6)]
     compound, rewritten = ('ltm', 'test', 6), ('ltm', 'test', 7)
     premise, binding, license = [('ltm', 'test', n) for n in (8, 9, 10)]
-    components = {compound: dict(kind='lift', identity=operand),
-                  rewritten: dict(kind='lift', identity=value)}
     first = read(name, compound, premise)
-    first.evidence['evaluations'] = components
-    def apply(goal, result, previous):
-        return integrate(goal,result,previous,isomorphic=lambda a,b:a['kind']==b['kind'])
-    goal = apply(question(equality(None, name), (('referent', 0),)), first, ())
-    step = read(rewritten, answer, license, components=components, pair=(.6, .1))
-    assert apply(goal, step, (first,)) is goal
-    bound = apply(goal, step, (first, read(operand, value, binding, pair=(.7, 0.))))
+    goal = integrate(question(equality(None, name), (('referent', 0),)), first, ())
+    step = read(rewritten, answer, license, pair=(.6, .1))
+    assert integrate(goal, step, (first,)) is goal
+    bound = integrate(goal, step, (first, read(compound, rewritten, binding, pair=(.7, 0.))))
     assert bound.role_refs[0] == answer
     assert bindings(bound)['_derived_binding']
     assert bindings(bound)['_thought_witnesses'] == (premise, binding, license)
     assert evidence_pair(bound) == (.6, .1)
-    weak = apply(goal, read(rewritten, answer, license, components=components, pair=(.9, .9)),
-                     (first, read(operand, value, binding, pair=(.4, 0.))))
+    weak = integrate(goal, read(rewritten, answer, license, pair=(.9, .9)),
+                     (first, read(compound, rewritten, binding, pair=(.4, 0.))))
     assert evidence_pair(weak) == (.4, .4)
-    wrong_operation = {**components, rewritten: dict(components[rewritten], kind='other')}
-    wrong = read(rewritten, answer, license)
-    wrong.evidence['evaluations'] = wrong_operation
-    assert apply(goal, wrong, (first, read(operand, value, binding))) is goal
+    assert integrate(goal, step, (first, read(operand, value, binding))) is goal
+    # Equal cached vectors and isomorphic descriptions are not declared relations.
+    first.evidence['evaluation_values'] = {compound: torch.ones(3), rewritten: torch.ones(3)}
+    first.evidence['evaluations'] = {compound: dict(kind='lift', identity=operand),
+                                   rewritten: dict(kind='lift', identity=value)}
+    assert integrate(goal, step, (first, read(operand, value, binding))) is goal
 
 
 def test_missing_cached_operand_is_not_a_structural_proof():

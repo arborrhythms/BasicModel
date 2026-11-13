@@ -19,7 +19,7 @@ _BIN = os.path.join(_PROJECT, "bin")
 if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
-_CONFIG = os.path.join(_PROJECT, "data", "MM_xor_fixture.xml")
+_CONFIG = os.path.join(_PROJECT, "data", "MM_text_fixture.xml")
 _DEFAULTS = os.path.join(_PROJECT, "data", "model.xml")
 
 

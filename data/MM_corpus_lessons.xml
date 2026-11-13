@@ -31,8 +31,7 @@
   <ConceptualSpace>
     <gates>
       <closedTrust>0.1</closedTrust>
-      <interpret><start>closed</start><fraction>0.5</fraction></interpret>
-      <clause><start>closed</start><threshold>0.75</threshold><except>interpret sign bind lift</except></clause>
+      <threshold>0.75</threshold>
     </gates>
     <attentionPromotion>true</attentionPromotion><conceptualPi>true</conceptualPi>
     <nInput>8</nInput><nInputDim>136</nInputDim><nVectors>4096</nVectors><stmCapacity>8</stmCapacity>

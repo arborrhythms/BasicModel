@@ -192,7 +192,7 @@ def test_reference_configs_still_build_no_false_positive():
     # The recurrent WS input and direct CS->OS checks must not reject either
     # reference config. MM_20M carries a deep conceptual event; XOR_exact is
     # the equal-width case.
-    for cfg in ("MM_20M_xor.xml", "XOR_exact.xml"):
+    for cfg in ("MM_20M_xor.xml", "XOR_symbols.xml"):
         m = _build(cfg)
         assert m is not None, cfg
 

@@ -83,7 +83,7 @@ def test_10_packed_pending_and_eager_ends_write_identical_rows(monkeypatch):
     for store in stores[1:]:
         assert addresses(store) == addresses(stores[0])
         assert not hasattr(store, 'role_mask')
-        torch.testing.assert_close(store.when, stores[0].when, rtol=0, atol=0)
+        torch.testing.assert_close(store.time, stores[0].time, rtol=0, atol=0)
         for name in ('slots', 'truth_plus', 'truth_minus', 'access_count'):
             torch.testing.assert_close(getattr(store, name), getattr(stores[0], name), rtol=0, atol=0)
         assert not hasattr(store.parts, 'when')

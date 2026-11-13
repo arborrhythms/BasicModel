@@ -1,4 +1,4 @@
-"""Detached concept readings, row lifecycle, and actual time-only review."""
+"""Detached concept readings, row lifecycle, and content-cued review."""
 import copy
 import weakref
 from types import SimpleNamespace
@@ -13,7 +13,7 @@ from Understanding import ConceptualField
 
 
 def test_selection_keeps_signed_readings_in_order_and_zero_stores_nothing():
-    # Repeated concepts are separate readings. Both/neither leave no entry;
+    # Repeated concepts and contradictory lanes are separate readings;
     # ranking uses magnitude, then retained references return to reading order.
     values = torch.tensor([[[[.5, .5], [.1, .1]]],
                            [[[.4, .6], [.7, .8]]],
@@ -21,11 +21,11 @@ def test_selection_keeps_signed_readings_in_order_and_zero_stores_nothing():
     where = torch.tensor([[[0., 2.], [3., 7.]]])
     field = ConceptualField(torch.tensor([9, 4, 2]), values, where, where.long(), None)
     ids, signed = select(field, 4, torch.tensor([True]), [0, 0, 0])
-    assert ids.tolist() == [[2, 4, 4, -1]]
-    torch.testing.assert_close(signed, torch.tensor([[1., -.2, -.1, 0.]]))
+    assert ids.tolist() == [[[2, 4, 4, 4]]]
+    torch.testing.assert_close(signed, torch.tensor([[[1., -.6, .7, -.8]]]))
     assert not signed.requires_grad
     empty = select(field, 0, torch.tensor([True]), [0, 0, 0])
-    assert all(value.shape[1] == 0 for value in empty)
+    assert all(value.shape[2] == 0 for value in empty)
     absent = select(field, 4, torch.tensor([False]), [0, 0, 0])
     assert (absent[0] == -1).all() and not absent[1].any()
 
@@ -37,8 +37,8 @@ def test_episode_columns_compact_with_rows_keep_first_entry_and_import_empty_leg
     owner = SimpleNamespace()
     model = install(SimpleNamespace(_episode_counts=dict(written=0)))
     model._open_sentence_slot = 0
-    model._sentence_episodes = {0: (torch.tensor([[2, -1], [7, -1]]),
-        torch.tensor([[-.6, 0.], [.8, 0.]]))}
+    model._sentence_episodes = {0: (torch.tensor([[[2, -1]], [[7, -1]]]),
+        torch.tensor([[[-.6, 0.]], [[.8, 0.]]]))}
     owner._model = model
     store._concept_owner = lambda: owner
     # Compaction only needs MTM's forgetting callback for an isolated store.
@@ -56,7 +56,7 @@ def test_episode_columns_compact_with_rows_keep_first_entry_and_import_empty_leg
     assert all(torch.equal(getattr(store, name)[0], value) for name, value in zip(
         ('episodic_concepts', 'episodic_values'), first))
     store.compact_rows([1])
-    assert store.episodic_concepts[0].tolist() == [7, -1]
+    assert store.episodic_concepts[0].tolist() == [[7, -1]]
     assert (store.episodic_concepts[1:] == -1).all()
     assert not store.episodic_values[1:].any()
     saved = copy.deepcopy(store.state_dict())
@@ -70,7 +70,7 @@ def test_episode_columns_compact_with_rows_keep_first_entry_and_import_empty_leg
     assert restored.episode_migration == dict(source=14, target=16, entries='empty', dropped=[])
 
 
-def test_time_only_query_reinstates_own_stream_and_next_open_attention_replaces_it(tmp_path, monkeypatch):
+def test_content_query_reinstates_own_stream_and_next_open_attention_replaces_it(tmp_path, monkeypatch):
     from test_item20_round7_time import native
     from reading_fixtures import force_absolute_reading
     from Queries import ThoughtLTMCapability
@@ -88,21 +88,21 @@ def test_time_only_query_reinstates_own_stream_and_next_open_attention_replaces_
         with torch.no_grad():
             source = model.inputSpace.prepInput(['alpha', 'beta'])
             model.forward(source)
-        occupied = (store.episodic_concepts[:len(store)] >= 0).any(-1)
+        occupied = (store.episodic_concepts[:len(store)] >= 0).any((-1, -2))
         indices = [int((occupied & store.stream[:len(store), b]).nonzero()[0]) for b in (0, 1)]
         assert indices[0] != indices[1]
         row = indices[0]
-        assert int(model.when_encoding.decode_index(store.entry_when(row))) == model._sentence_ticks[0]
-        wanted = store.episodic_concepts[row]
-        expected = {int(cid): torch.stack((store.episodic_values[row, k].clamp_min(0),
-                    (-store.episodic_values[row, k]).clamp_min(0)))
+        assert int(model.when_encoding.decode_index(store.entry_time(row))) == model._sentence_ticks[0]
+        wanted = store.episodic_concepts[row].flatten()
+        expected = {int(cid): torch.stack((store.episodic_values[row].flatten()[k].clamp_min(0),
+                    (-store.episodic_values[row].flatten()[k]).clamp_min(0)))
                     for k, cid in enumerate(wanted) if int(cid) >= 0}
         before = owner._percept_field
         old_other = {key: before.values[k, 1].sum(0) for k, key in enumerate(before.keys)}
         from WalkTrials import ThoughtTrialState
         trial = ThoughtTrialState(model)
         query = ThoughtLTMCapability(store=weakref.ref(store), equal=lambda *args: 0., tau_id=.9, row=0)
-        found = query.query(when=store.entry_when(row), window=0,
+        found = query.query(model._sentence_open_fields[0],
             max_records=store.capacity, work=QueryWorkBudget(2048))
         assert found['frames']
         recalled = owner._percept_field
@@ -117,7 +117,7 @@ def test_time_only_query_reinstates_own_stream_and_next_open_attention_replaces_
         for k, key in enumerate(recalled.keys):
             torch.testing.assert_close(recalled.values[k, 1].sum(0), old_other[key], rtol=0, atol=0)
         live = field.evidence[:, 0].any((0, 2))
-        tick = model.when_encoding.decode_index(store.entry_when(row))
+        tick = model.when_encoding.decode_index(store.entry_time(row))
         assert (field.when[0, live, 0] == tick).all()
         assert model._episode_counts['reinstatements'] >= 1
         trial.restore(effects_only=True)

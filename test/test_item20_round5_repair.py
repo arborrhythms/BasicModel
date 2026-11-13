@@ -83,11 +83,11 @@ def test_short_term_stream_table_rejects_another_stream_without_redirection():
     assert short.addressing.stream.shape == (3, 1)
     assert long.addressing.stream.shape == (3, 3)
     meaning = ConceptualMeaning.from_description(torch.ones(4))
-    row = short.append_meaning(meaning, stream=0, when=False)
+    row = short.append_meaning(meaning, stream=0, time=False)
     assert short.stream[row, 0]
     before = short.stream.clone()
     with pytest.raises(OverflowError, match='stream exceeds LTM0 construction capacity'):
-        short.append_meaning(meaning, stream=1, when=False)
+        short.append_meaning(meaning, stream=1, time=False)
     torch.testing.assert_close(short.stream, before)
     receipt('stm-stream-table', dict(capacity=3, short_columns=1, long_columns=3,
         rejected_stream=1, redirected_writes=0))

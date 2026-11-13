@@ -991,13 +991,26 @@ class ThoughtLTMCapability:
                             work=work, role_mask=role_mask)
         if segment is not None:
             return segment
-        return store.cued_rows(description,
+        from EpisodicMemory import query
+        from FieldProjection import stimulate
+        owner_ref = getattr(store, '_concept_owner', None)
+        owner = None if owner_ref is None else owner_ref()
+        scoped = tuple(dict.fromkeys((*references, *(ref for ref in description.role_refs if ref is not None))))
+        occupied = description.role_mask if role_mask is None else role_mask
+        found = dict(value=(), records_scanned=0, incomplete=())
+        if owner is not None and store.episodic_capacity and bool(occupied.any()):
+            cue = stimulate(owner, description.roles[occupied][None])
+            found = query(store, cue, max_records=max_records, work=work, references=scoped)
+        result = store.cued_rows(description,
             primed=object.__getattribute__(self, '_ThoughtLTMCapability__primed'),
-            references=tuple(references) + tuple(
-                ref for ref in description.role_refs if ref and ref[0] == 'ltm'),
+            references=scoped,
             retrieved=tuple(frame['occurrence'] for frame in self.held_frames()),
+            episodic_frames=found['value'],
             stream=object.__getattribute__(self, '_ThoughtLTMCapability__row'),
             max_records=max_records, work=work, role_mask=role_mask)
+        return dict(result, episodic_frames=found['value'],
+            records_scanned=found['records_scanned'] + result['records_scanned'],
+            incomplete=tuple(dict.fromkeys((*found['incomplete'], *result['incomplete']))))
 
     def _timeline_read(self, description, *, max_records, work, references=()):
         from ThoughtReferences import bindings
@@ -1062,15 +1075,8 @@ class ThoughtLTMCapability:
                     records_scanned=1, incomplete=())
 
     def best_match(self, pattern, *, max_records, work, references=()):
-        """One content match, or all nearest sentence entries for a time-only cue."""
+        """One content match, preserving declared relation and document scope."""
         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
-        if store is not None and store.when_start is not None:
-            start = store.when_start
-            cue = pattern.roles.clone()
-            when = cue[0, start:start+4].clone()
-            cue[0, start:start+4] = 0
-            if bool(when.ne(0).any()) and not bool(cue.ne(0).any()):
-                return self.query(None, when=when, max_records=max_records, work=work)
         from ThoughtReferences import bindings, open_slots, unresolved_operands_match
         timelines = self._timeline_read(pattern, max_records=max_records, work=work, references=references)
         if timelines is not None:
@@ -1131,7 +1137,8 @@ class ThoughtLTMCapability:
         return dict(value=frames, frames=frames, result_kind='set',
                     support_true=positive, support_false=negative,
                     witnesses=() if best is None else (best['occurrence'],),
-                    records_scanned=found['records_scanned'], incomplete=found['incomplete'])
+                    records_scanned=found['records_scanned'], incomplete=found['incomplete'],
+                    episodic_frames=found.get('episodic_frames', ()))
 
     def _with_components(self, result, *, max_records, work):
         """Read chains and their identity-bound values on the same meter."""
@@ -1248,26 +1255,64 @@ class ThoughtLTMCapability:
         if relation not in ('part', 'equal', 'implies'):
             raise ValueError('unknown symbolic relation reading')
         candidates, scanned, incomplete = [], 0, []
-        for symbol in store.parts.indices().tolist():
+        from Memory import OCCURRENCE, SYMBOL, RELATION
+        def tags(reference):
+            if reference is None:
+                return ()
+            if reference[0] == 'ltm' and reference[1] == store.address_domain:
+                return ((OCCURRENCE, reference[-1]),)
+            if reference[0] == 'sym':
+                # Shared handles can be an endpoint concept or a nested
+                # pair. The envelope names that handle; the stored pair
+                # retains which of its declared uses it owns.
+                return (((RELATION, reference[1]), (SYMBOL, reference[1]))
+                        if store.parts.contains(reference[1]) else ((SYMBOL, reference[1]),))
+            return ()
+        lrefs, rrefs = tags(left), tags(right)
+        if left is not None and not lrefs or right is not None and not rrefs:
+            symbols = ()
+        elif lrefs and rrefs:
+            selected = next((row for lref in lrefs for rref in rrefs
+                if (row := store.parts.find(lref, rref)) is not None), None)
+            if selected is None and relation == 'equal':
+                selected = next((row for lref in lrefs for rref in rrefs
+                    if (row := store.parts.find(rref, lref)) is not None), None)
+            symbols = () if selected is None else (selected,)
+        elif lrefs or rrefs:
+            symbols = tuple(dict.fromkeys(row for ref in (lrefs or rrefs)
+                for row in store.parts.rows_referencing(*ref)))
+        else:
+            symbols = ()
+        for symbol in symbols:
             if scanned >= max_records or not work.consume('record'):
                 incomplete.append('work_budget' if work.remaining == 0 else 'capture_limit')
                 break
             scanned += 1
-            row = store.part_row(symbol)
+            row = store.part_row(symbol, reading='part')
             if row['occurrence'] in excluded or not any(row['evidence']):
                 continue
             if relation == 'equal' and 'equality' not in row['readings']:
                 continue
             if relation == 'implies' and 'conditional' not in row['readings']:
                 continue
-            row = store.part_row(symbol, reading=relation)
+            if relation != 'part':
+                from ClauseRow import predicate_point, predicate_identity
+                meaning = row['meaning']
+                roles = meaning.roles.clone()
+                roles[1] = predicate_point(relation, roles[1])
+                marks = dict(meaning.bindings)
+                if relation == 'equal':
+                    marks['_equality'] = True
+                row = dict(row, meaning=replace(meaning, roles=roles,
+                    role_refs=(meaning.role_refs[0], ('sym', predicate_identity(relation)), meaning.role_refs[2]),
+                    bindings=marks))
             refs = row['meaning'].role_refs
             direct = (left is None or refs[0] == left) and (right is None or refs[2] == right)
             reverse = relation == 'equal' and (left is None or refs[2] == left) and (right is None or refs[0] == right)
             if direct or reverse:
                 temporal = ()
                 if relation == 'implies' and all(store.location(ref) is not None for ref in (refs[0], refs[2])):
-                    # Composed situations have their own retained .when.
+                    # Composed situations have their own retained time.
                     # Read the endpoints on this meter; rule insertion time
                     # cannot stand in for their order.
                     times = []
@@ -1276,7 +1321,7 @@ class ThoughtLTMCapability:
                             incomplete.append('temporal_work_budget')
                             break
                         scanned += 1
-                        times.append(store.entry_when(store.location(ref)))
+                        times.append(store.entry_time(store.location(ref)))
                     if len(times) != 2:
                         continue
                     times = torch.stack(times)
@@ -1355,37 +1400,34 @@ class ThoughtLTMCapability:
                 return value.detached(), 1
         raise ValueError('description occurrence is unavailable within the query read limit')
 
-    def query(self, pattern=None, *, when=None, window=1, max_records, work):
-        if when is None:
-            found = self.best_match(pattern, max_records=max_records, work=work)
-            if found.get('chunks_loaded'):
-                return found
-            store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
-            frames = found.get('frames',())
-            missing = () if store is None else store.recall_chunks(frames,work=work,
-                stream=object.__getattribute__(self, '_ThoughtLTMCapability__row'))
-            return dict(found,chunks_loaded=True,
-                incomplete=tuple(dict.fromkeys((*found.get('incomplete',()),*missing))))
-        if pattern is not None and bool(pattern.roles.ne(0).any()):
-            raise ValueError('time-only query requires a blank description')
+    def query(self, pattern, *, max_records, work, references=()):
+        """Read semantic content with its scope, and recall matching episodes.
+
+        A field cues episodic readings. A proposition still needs a declared
+        semantic match: episodic overlap is context, never its truth evidence.
+        Operand references retain cover/timeline scoping in that match.
+        """
+        from Understanding import ConceptualField
+        from EpisodicMemory import query, reinstate
         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
-        found = store.recall_time(when, max_records=max_records, work=work, window=window)
-        missing = store.recall_chunks(found['value'], work=work,
-            stream=object.__getattribute__(self, '_ThoughtLTMCapability__row'))
+        stream = object.__getattribute__(self, '_ThoughtLTMCapability__row')
+        semantic = None
+        if not isinstance(pattern, ConceptualField):
+            semantic = self.best_match(pattern, max_records=max_records, work=work,
+                                       references=references)
+            frames = semantic.get('episodic_frames', ())
+            if frames:
+                reinstate(store, frames, stream)
+            return semantic
+        else:
+            cue, cue_stream = pattern, stream
+        found = query(store, cue, stream=cue_stream, max_records=max_records,
+                      work=work, references=references)
         frames = found['value']
-        from EpisodicMemory import reinstate
-        reinstate(store, frames, object.__getattribute__(self, '_ThoughtLTMCapability__row'))
-        discourse = object.__getattribute__(self, '_ThoughtLTMCapability__discourse')
-        if discourse is not None:
-            for frame in frames:
-                if frame['kind'] == 'episode':
-                    continue
-                discourse.include_occurrence(object.__getattribute__(self, '_ThoughtLTMCapability__row'), frame['occurrence'])
+        reinstate(store, frames, stream)
         return dict(found, frames=frames, result_kind='set', chunks_loaded=True,
-            support_true=max((row['evidence'][0] for row in frames), default=0.),
-            support_false=max((row['evidence'][1] for row in frames), default=0.),
-            witnesses=tuple(row['occurrence'] for row in frames),
-            incomplete=tuple(dict.fromkeys((*found['incomplete'], *missing))))
+            support_true=max((row['match'] for row in frames), default=0.), support_false=0.,
+            witnesses=tuple(row['occurrence'] for row in frames))
 
     def lookup(self, *args, **kwargs):
         raise ValueError('lookup is retired; use query')
@@ -1669,7 +1711,7 @@ _thought_executors = (
     ThoughtExecutorDescriptor('infer', 'symbolic-derivation', ('reference', 'reference'), Mind.SERIAL,
         (Mind.SERIAL, Mind.SYMBOLIC, Mind.KNOWING, Mind.LTM, Mind.TAXONOMY, Mind.BUDGET), (Mind.SERIAL,), 'inference', _infer,
         evidence_pair=True, relation_directions=((0, 2), (2, 0)),
-        method_grants=(('ltm', ('relation_evidence', 'premise_evidence')),
+        method_grants=(('ltm', ('relation_evidence',)),
                        ('taxonomy', ('evidence', 'neighbors')),
                        ('conceptual_space', ('intuition_selection',)))),
     ThoughtExecutorDescriptor('intuit', 'conceptual-inference', ('meaning',), Mind.SERIAL,
@@ -1685,7 +1727,7 @@ _thought_executors = (
         evidence_pair=True, method_grants=(('conceptual_space', ('payload', 'extent', 'negate')),)),
     ThoughtExecutorDescriptor('query', 'conceptual-lookup', ('description',), Mind.SERIAL,
         (Mind.SERIAL, Mind.LTM, Mind.PRIMING, Mind.BUDGET), (Mind.SERIAL,), 'retrieval', _query,
-        evidence_pair=True, content_kind='set', method_grants=(('ltm', ('best_match', 'resolve_description')),)),
+        evidence_pair=True, content_kind='set', method_grants=(('ltm', ('query', 'resolve_description')),)),
     ThoughtExecutorDescriptor('ask', 'conceptual-subgoal', ('description',), Mind.SERIAL,
         (Mind.SERIAL, Mind.LTM, Mind.PRIMING, Mind.BUDGET), (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC),
         'subgoal', _ask, evidence_pair=True, content_kind='subgoal', effect_kind='frames', continues=True,

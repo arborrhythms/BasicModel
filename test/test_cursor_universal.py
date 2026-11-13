@@ -36,7 +36,7 @@ def test_xor_runs_through_trial_cursor():
     from data import TheData
     from Models import BaseModel
 
-    config = str(_project / "data" / "MM_xor.xml")
+    config = str(_project / "data" / "MM_text.xml")
     TheData.load("xor")
 
     model, _ = BaseModel.from_config(config, data=TheData)

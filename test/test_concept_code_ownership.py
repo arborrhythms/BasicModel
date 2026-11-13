@@ -60,19 +60,21 @@ def test_concept_quantization_cannot_refresh_the_reconstruction_dictionary():
     from pathlib import Path
     import Models
     from test_mm_xor import _fresh_model
-    # Field dictionaries still have direct parameters. Serial word views are
-    # covered by test_derived_concept_codes, including their actual owner.
-    model, _, _ = _fresh_model(str(Path(Models.__file__).resolve().parents[1]/'data/MM_xor.xml'))
+    # Native form/meaning dictionaries are derived views. Quantization must
+    # preserve that view and must never turn it into an EMA-owned parameter.
+    model, _, _ = _fresh_model(str(Path(Models.__file__).resolve().parents[1]/'data/MM_text.xml'))
     seen = set()
     for cs in model.conceptualSpaces:
         cb = cs.similarity_codebook
         if id(cb) in seen:
             continue
         seen.add(id(cb))
-        assert isinstance(cb.W, nn.Parameter) and cb.W.requires_grad
+        assert not isinstance(cb.W, nn.Parameter) and not cb.W.requires_grad
+        assert cb.mereology is not None
         assert cb.vq is not None and not cb.vq.ema_update
-        W, counts = cb.W.detach().clone(), cb.vq.cluster_size.clone()
+        W = cb.W.detach().clone()
+        assert not hasattr(cb.vq, 'cluster_size') and not hasattr(cb.vq, 'embed_avg')
         cb.train()
         cb.quantize(torch.randn(2, 3, cb.W.shape[-1]))
         torch.testing.assert_close(cb.W, W, rtol=0, atol=0)
-        torch.testing.assert_close(cb.vq.cluster_size, counts, rtol=0, atol=0)
+        assert not hasattr(cb.vq, 'cluster_size') and not hasattr(cb.vq, 'embed_avg')

@@ -207,7 +207,7 @@ def test_grammar_config_declares_sum_product(tmp_path):
     from data import TheData
     from util import init_config
     _PROJECT = os.path.dirname(_BIN)
-    fixture = os.path.join(_PROJECT, "data", "MM_xor_fixture.xml")
+    fixture = os.path.join(_PROJECT, "data", "MM_text_fixture.xml")
     with open(fixture) as f:
         xml = f.read()
     xml = xml.replace(

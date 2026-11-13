@@ -22,7 +22,95 @@ class BasicPercepts(nn.Module):
         self.index = {}
         self.words = {}
         self.selectors = {}
+        self.numeric_axes = {}
+        # Native values are endpoints, not concepts or learned codes. Negative
+        # references below the fixed-axis namespace address this bounded table.
+        self.register_buffer('value_codes', torch.zeros(self.capacity))
+        self.register_buffer('value_count', torch.zeros((), dtype=torch.long))
         self.revision = 0
+
+    def part_codes(self, references):
+        return self._boundary_codes(references, whole=False)
+
+    def is_value(self, row):
+        return min(self.occurrences[int(row)][0]) < -self.identity_width
+
+    def whole_codes(self, references):
+        return self._boundary_codes(references, whole=True)
+
+    def _boundary_codes(self, references, *, whole):
+        ids = torch.as_tensor(references, device=self.codes.device, dtype=torch.long)
+        width = self.property_width if whole else self.identity_width
+        result = self.codes.new_zeros(*ids.shape, width)
+        values = ids < -self.identity_width
+        if bool(values.any()):
+            seats = -ids[values] - self.identity_width - 1
+            if bool((seats >= self.value_count).any()):
+                raise ValueError('unavailable value percept reference')
+            result[values, -1] = self.value_codes[seats]
+        if bool((~values).any()):
+            bank = self.whole if whole else self.native._basis
+            native = bank.lookup_rows(ids[~values])
+            result[~values] = (native[..., self.identity_width:self.width] if whole
+                               else native[..., :self.identity_width])
+        return result
+
+    @torch.no_grad()
+    def perceive_value(self, value):
+        """Admit the exact value as both its tightest part and its whole."""
+        value = torch.as_tensor(value, device=self.codes.device, dtype=self.codes.dtype)
+        if value.ndim or not bool((value > 0) & (value <= 1)):
+            raise ValueError('a value percept requires one felt presence in (0, 1]')
+        known = (self.value_codes[:int(self.value_count)] == value).nonzero().flatten()
+        if len(known):
+            seat = int(known[0])
+        else:
+            seat = int(self.value_count)
+            if seat == self.capacity:
+                raise OverflowError('value percept capacity exhausted')
+            self.value_codes[seat] = value
+            self.value_count += 1
+        reference = -self.identity_width - 1 - seat
+        row = self.reserve((reference,), (reference,))
+        self.promote(row)
+        return row
+
+    def collection_code(self, rows):
+        """Common part and covering whole of the observed basic percepts."""
+        codes = self.lookup_rows(rows)
+        return torch.cat((codes[..., :self.identity_width].amin(0),
+                          codes[..., self.identity_width:].amax(0)))
+
+    def read_points(self, points, rows):
+        """Read the two native boundaries of each basic percept separately."""
+        from IdentityRows import meet_ratios
+        codes = self.lookup_rows(rows).to(points)
+        lower = codes[:, :self.identity_width]
+        upper = codes[:, self.identity_width:]
+        part, _ = meet_ratios(points[None, ..., :self.identity_width].clamp_min(0), lower[:, None, None])
+        whole, _ = meet_ratios(upper[:, None, None],
+            points[None, ..., self.identity_width:self.width].clamp_min(0))
+        zero = torch.zeros_like(part)
+        return torch.stack((torch.stack((part, zero), -1), torch.stack((whole, zero), -1)))
+
+    @staticmethod
+    def read_collection(boundaries, weights):
+        """A collection generalizes its two boundaries, then requires both."""
+        from FieldLogic import reduce
+        # Each view offers a part and a whole. Join alternatives on each
+        # boundary before meeting the boundaries, retaining both poles.
+        alternatives = reduce(boundaries, operation='union', dim=1, weights=weights[None, :, None, None])
+        return reduce(alternatives, operation='intersection', dim=0)
+
+    def numeric_dimension(self, axis):
+        """One fixed native atom per numeric dimension, independent of values."""
+        axis = int(axis)
+        if not 0 <= axis < self.identity_width:
+            raise ValueError('numeric dimension exceeds the declared percept cube')
+        row = self.reserve((-axis-1,), ())
+        self.numeric_axes[row] = axis
+        self.promote(row)
+        return row
 
     def bind(self, whole):
         object.__setattr__(self, 'whole', whole)
@@ -59,16 +147,20 @@ class BasicPercepts(nn.Module):
                      if set(features) <= set(self.occurrences[row][1]))
 
     def subspace_bounds(self, row):
+        if int(row) in self.numeric_axes:
+            code = self.codes.new_zeros(self.width)
+            code[self.numeric_axes[int(row)]] = 1.
+            return code[:self.identity_width], code[self.identity_width:]
         parts, wholes = self.occurrences[int(row)]
         ids = torch.tensor(parts, device=self.codes.device, dtype=torch.long)
-        identity = self.native._basis.lookup_rows(ids)[..., :self.identity_width].amax(0)
+        identity = self.part_codes(ids).amax(0)
         if not self.property_width:
             return identity, identity.new_empty(0)
         if wholes:
             if self.whole is None:
                 raise ValueError('basic percept property read requires its WholeSpace')
             ids = torch.tensor(wholes, device=self.codes.device, dtype=torch.long)
-            properties = self.whole.lookup_rows(ids)[..., self.identity_width:self.width].amin(0)
+            properties = self.whole_codes(ids).amin(0)
         else:
             properties = identity.new_ones(self.property_width)
         return identity, properties
@@ -130,13 +222,19 @@ class BasicPercepts(nn.Module):
         keys, groups = [], []
         for row in rows:
             parts, wholes = self.occurrences[row]
-            group = [('ps', tuple(leaf for part in parts for leaf in leaves(part))),
-                     *(('ws', part) for part in wholes)]
+            group = ([] if min(parts) < -self.identity_width else
+                     [('ps', tuple(leaf for part in parts for leaf in leaves(part))),
+                      *(('ws', part) for part in wholes)])
             keys.extend(group); groups.append(group)
         native = read_percepts(percepts, brackets, keys, part_reader=PartSpace.part_memberships,
             native=self.native, **options)
-        values, events = [], []
+        values, events, boundaries = [], [], []
         for group in groups:
+            if not group:
+                values.append(native.values.new_zeros(native.values.shape[1:]))
+                events.append(native.events.new_zeros(native.events.shape[1:]))
+                boundaries.append(torch.stack((values[-1], values[-1])))
+                continue
             selected = native.selected(group)
             value = native.values.index_select(0, selected)
             event = native.events.index_select(0, selected)
@@ -151,6 +249,9 @@ class BasicPercepts(nn.Module):
             # A property of a word does not assert the word's presence.
             values.append(minimum(value) * value[0, ..., :1].gt(0))
             events.append(minimum(event) * value[0, ..., None, :1].gt(0))
+            whole = torch.stack((minimum(value[1:])[..., 0], minimum(value)[..., 1]), -1) if len(value) > 1 else torch.stack(
+                (torch.ones_like(value[0, ..., 0]), torch.zeros_like(value[0, ..., 0])), -1)
+            boundaries.append(torch.stack((value[0], whole)))
         shape = (0, *native.values.shape[1:])
         value = torch.stack(values) if values else native.values.new_zeros(shape)
         event = torch.stack(events) if events else native.events.new_zeros((0, *native.events.shape[1:]))
@@ -164,7 +265,8 @@ class BasicPercepts(nn.Module):
             bands = (torch.stack([torch.nn.functional.pad(group, (0, 0, 0, width-len(group)))
                                   for group in grouped]) if grouped else native.percept_where[:0])
         return PerceptField(tuple(('bp', row) for row in rows), value, event, native.spans,
-            native.where, native.when, bands, native.when_band)
+            native.where, native.when, bands, native.when_band,
+            torch.stack(boundaries, 1) if boundaries else value.new_zeros(2, *value.shape))
 
     def lookup_rows(self, rows, *, valid=None):
         rows = torch.as_tensor(rows, device=self.codes.device, dtype=torch.long)
@@ -213,7 +315,7 @@ class BasicPercepts(nn.Module):
 
     def get_extra_state(self):
         from IndependentComponents import _pack_state
-        return _pack_state(dict(version=1, occurrences=tuple(self.occurrences[:len(self.index)]), words=self.words, selectors=tuple(self.selectors.items())))
+        return _pack_state(dict(version=1, occurrences=tuple(self.occurrences[:len(self.index)]), words=self.words, selectors=tuple(self.selectors.items()), numeric_axes=self.numeric_axes))
 
     def set_extra_state(self, state):
         from IndependentComponents import _unpack_state
@@ -226,3 +328,13 @@ class BasicPercepts(nn.Module):
             self.reserve(parts, wholes)
         self.words = dict(state['words'])
         self.selectors = dict(state['selectors'])
+        self.numeric_axes = dict(state.get('numeric_axes', {}))
+        if state.get('scalar_state') is not None:
+            import warnings
+            warnings.warn('retired scalar sidecar cannot supply perceptual witnesses; relearn its definitions')
+
+    def _load_from_state_dict(self, state, prefix, *args, **kwargs):
+        # Older checkpoints did not yet have value-bearing native endpoints.
+        state.setdefault(prefix+'value_codes', torch.zeros_like(self.value_codes))
+        state.setdefault(prefix+'value_count', torch.zeros_like(self.value_count))
+        super()._load_from_state_dict(state, prefix, *args, **kwargs)

@@ -206,14 +206,14 @@ def test_ambiguous_pointer_identity_across_time_is_empty(tmp_path):
     for i, form in enumerate(('a', 'b', 'c')):
         label = owner.interpret.lookup_word([i+1], (), form=form)
         row = store.append_meaning(ConceptualMeaning.from_description(points[i]), order=0,
-                                   document_key=('given', form), when=False)
+                                   document_key=('given', form), time=False)
         occurrence = store.occurrence_of(row)
         token = pool.open(occurrence, kind=None, value=points[i], when=i)
         # These relata are supplied as known operands of the pointer test.
         # Three agreeing occurrences meet the new definition threshold.
         for view in range(2):
             extra = store.append_meaning(ConceptualMeaning.from_description(points[i]), order=0,
-                document_key=('given-view', form, view), when=False)
+                document_key=('given-view', form, view), time=False)
             pool.bind(token, store.occurrence_of(extra), kind=None, value=points[i], when=i)
         symbol = promote_identity(owner, token, word=label)
         assert alloc.order_of(symbol) == 1
@@ -264,7 +264,7 @@ def test_ambiguous_pointer_identity_across_time_is_empty(tmp_path):
             from ConceptTrust import observe
             for view in range(2):
                 extra = store.append_meaning(ConceptualMeaning.from_description(points[3]), order=0,
-                    document_key=('pointer-view', view), when=False)
+                    document_key=('pointer-view', view), time=False)
                 observe(owner, identity, points[3])
         pair = ((SYMBOL, identity), (SYMBOL, member))
         direct, reverse = alloc.parts.find(*pair), alloc.parts.find(*reversed(pair))
@@ -402,7 +402,7 @@ def test_two_kept_signs_survive_a_full_pool_until_their_definition_is_read(monke
     import weakref
     pool._owner = weakref.ref(owner)
     value = torch.zeros(store.nDim)
-    previous = [store.occurrence_of(store.append_idea(value, when=False,
+    previous = [store.occurrence_of(store.append_idea(value, time=False,
         document_key=('old', i))) for i in (1, 2)]
     for address in previous:
         pool.open(address, kind=None, when=0, value=value)
@@ -485,7 +485,7 @@ def test_sign_question_reads_the_latest_named_token_and_no_concept_for_an_unname
     observed = torch.eye(f.store.nDim)[2]
     def observe(reference, when):
         pool = f.cs.mtm
-        row = f.store.append_idea(observed, when=False,
+        row = f.store.append_idea(observed, time=False,
             document_key=('observed-state', reference, when))
         pool.event(reference, f.store.occurrence_of(row), verb=verb, role=0, when=when,
             before=pool.value_of(reference))
@@ -553,10 +553,10 @@ def test_ltm0_amended_row_reads_referents_and_rejects_old_checkpoints(tmp_path):
     row = store.append_meaning(idea, evidence=(.6, .3), order=0, document_key='row-layout')
     assert store.order_of_row(row) == 2 and store.row(row)['evidence'] == pytest.approx((.6, .3))
     assert store.addressing.address_keys[row] == store.row(row)['row_id']
-    assert store.when.shape == (store.capacity, 4)
-    assert store.when.untyped_storage().data_ptr() == store.slots.untyped_storage().data_ptr()
+    assert store.time.shape == (store.capacity, 4)
+    assert store.time.untyped_storage().data_ptr() == store.slots.untyped_storage().data_ptr()
 
-    columns = dict(slots=store.slots, when=store.when, truth_plus=store.truth_plus,
+    columns = dict(slots=store.slots, when=store.time, truth_plus=store.truth_plus,
                    truth_minus=store.truth_minus, access_count=store.access_count, surprise=store.surprise,
                    document_keys=store.addressing.source_documents,
                    document_authorities=store.addressing.source_authorities)

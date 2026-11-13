@@ -79,6 +79,13 @@ def import_episode_state(model, store):
                     template = getattr(store, name)[:count].detach().cpu()
                     state['columns'][name] = torch.full_like(template, -1 if name == 'episodic_concepts' else 0)
                     imported.append(name)
+                elif state['columns'][name].ndim == 2:
+                    old = state['columns'][name]
+                    target = torch.full_like(getattr(store, name)[:count].detach().cpu(),
+                                             -1 if name == 'episodic_concepts' else 0)
+                    target[:, 0].copy_(old)
+                    state['columns'][name] = target
+                    imported.append(name + ' at order zero')
         for key in ('_base',):
             if key in state:
                 columns(state[key])
@@ -340,10 +347,6 @@ def refresh_supplies(store, *, first=False):
     updated['initial_observations'] = observations
     store._epoch_rows = updated
     relations['count'].fill_(int(relations['ref_kinds'][:,0].ne(0).sum()))
-    ordered = bank.ordered_rows(relations['refs'], relations['ref_kinds'])
-    relations['relation_order'].fill_(-1)
-    if ordered:
-        relations['relation_order'][:len(ordered)] = relations['relation_order'].new_tensor(ordered)
     relations['_base'] = relation_base
     relations['_initial_observations'] = relation_observations
     bank.epoch_start = relations
@@ -599,7 +602,23 @@ def epoch(model):
     # Withdrawing the old LTM0 history also forgets its MTM occurrences.
     # Restore intentional setup only after its occurrence rows are back.
     for item in owners:
+        field_candidates = [entry for entry in item.mtm.entries.values()
+            if entry.symbol is None and entry.order == 0
+            and entry.refinement.get('literal', (None,))[0] == 'field']
         item.mtm.restore(item._epoch_mtm, device=item.similarity_codebook.W.device)
+        # A concept-lane hypothesis has no historical occurrence address.
+        # Preserve its bounded recurrence statistics across presentations;
+        # the next view must have a fresh close clock in the restored pool.
+        from dataclasses import replace
+        for entry in field_candidates:
+            pool = item.mtm
+            key = pool.open_candidate(order=0, when=0,
+                value=__import__('FamiliarTier').centroid(item,entry.support),support=entry.support)
+            latest = {stream:max(x[1] for x in entry.readings if x[0]==stream)
+                      for stream in {x[0] for x in entry.readings}}
+            readings = tuple((stream,clock-latest[stream],p,n) for stream,clock,p,n in entry.readings)
+            pool.entries[key] = replace(entry, transient=pool.entries[key].transient,
+                readings=readings, when=0)
         # The driver resets its threaded sentence tensors; the shared STM
         # stores own recent ideas and thoughts whose references expire here.
         item.stm.clear()

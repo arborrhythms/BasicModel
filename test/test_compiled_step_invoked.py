@@ -39,7 +39,7 @@ def test_compiled_step_is_invoked():
     # TheDevice.get().type (MPS -> eager fallback by design). Order-
     # independent so this argout1 net is reliable in the full suite.
     init_device("cpu")
-    cfg = str(_p / "data" / "MM_xor.xml")
+    cfg = str(_p / "data" / "MM_text.xml")
     init_config(path=cfg, defaults_path=str(_p / "data" / "model.xml"))
     TheData.load("xor")
     m, _ = BaseModel.from_config(cfg, data=TheData)

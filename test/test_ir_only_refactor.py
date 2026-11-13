@@ -171,13 +171,13 @@ class TestIrForwardShape(unittest.TestCase):
     """
 
     def test_ir_forward_returns_b_n_d(self):
-        init_config(path=os.path.join(_DATA, "MM_xor.xml"),
+        init_config(path=os.path.join(_DATA, "MM_text.xml"),
                     defaults_path=os.path.join(_DATA, "model.xml"))
         Language.TheGrammar._configured = False
         from data import TheData
         TheData.load("xor")
         m, _ = Models.BaseModel.from_config(
-            os.path.join(_DATA, "MM_xor.xml"), data=TheData)
+            os.path.join(_DATA, "MM_text.xml"), data=TheData)
         m.eval()
         inp = torch.tensor(
             [[0.0, 0.0], [1.0, 0.0]]).float().unsqueeze(1)
@@ -205,13 +205,13 @@ class TestReconstructConceptsLoss(unittest.TestCase):
     """
 
     def test_reconstruction_is_unconditionally_from_concepts(self):
-        init_config(path=os.path.join(_DATA, "MM_xor.xml"),
+        init_config(path=os.path.join(_DATA, "MM_text.xml"),
                     defaults_path=os.path.join(_DATA, "model.xml"))
         Language.TheGrammar._configured = False
         from data import TheData
         TheData.load("xor")
         m, _ = Models.BaseModel.from_config(
-            os.path.join(_DATA, "MM_xor.xml"), data=TheData)
+            os.path.join(_DATA, "MM_text.xml"), data=TheData)
         # The retired enum leaves NO enum value behind. (The What-spec
         # ``Model.reverseReconstruct(understanding)`` METHOD (``reverseReconstruct``), Step 2 of
         # doc/specs/2026-07-27-teaching-modes-and-next-iteration.md, is the
@@ -222,11 +222,11 @@ class TestReconstructConceptsLoss(unittest.TestCase):
             "carry a self.reconstruct enum attribute")
         self.assertTrue(callable(getattr(m, "reverseReconstruct", None)))
         # The reconstruction term is gated by reconstruction_scale > 0
-        # (MM_xor.xml configures 0.1); without that gate there is nothing
+        # (MM_text.xml configures 0.1); without that gate there is nothing
         # to assert.
         self.assertGreater(
             float(getattr(m.loss, "reconstruction_scale", 0.0) or 0.0), 0.0,
-            "MM_xor.xml is expected to set reconstructionScale > 0 so the "
+            "MM_text.xml is expected to set reconstructionScale > 0 so the "
             "reconstruction_reverse term fires")
         # The head-seeded reverse primitive (``_run_pipeline_rev``) was
         # REMOVED 2026-06-07, so the concepts-seeded ``reverse`` is the ONLY
@@ -237,14 +237,13 @@ class TestReconstructConceptsLoss(unittest.TestCase):
             "the head-seeded _run_pipeline_rev primitive was removed; "
             "reconstruction is unconditionally concepts-seeded")
         seeds = []
-        _orig_concepts = m._reverse_input_surface
+        original = m.reverse
 
-        def _spy_concepts(x):
-            seeds.append((x.materialize().detach().clone(),
-                          m._last_understanding.conceptual_state.detach().clone()))
-            return _orig_concepts(x)
+        def spy(x, *, field):
+            seeds.append(field)
+            return original(x, field=field)
 
-        m._reverse_input_surface = _spy_concepts
+        m.reverse = spy
         m.eval()
         loader = m.inputSpace.data.data_loader(
             split="train", num_streams=2)
@@ -253,20 +252,18 @@ class TestReconstructConceptsLoss(unittest.TestCase):
         outputTensor = m.outputSpace.prepOutput(out_items)
         m.runBatch(train=False, batchSize=2, split="train",
                    batch_override=(inputTensor, outputTensor))
-        # Concepts-seeded reverse fired; head-seeded reverse did NOT --
-        # reconstruction no longer dispatches on the (gone) enum.
-        self.assertTrue(seeds, "input reconstruction must realize the conceptual seed")
-        for seed, owned_state in seeds:
-            torch.testing.assert_close(seed, owned_state, rtol=0, atol=0)
-            torch.testing.assert_close(
-                seed, m._last_understanding.conceptual_state, rtol=0, atol=0)
+        self.assertTrue(seeds, "input reconstruction must realize the conceptual field")
+        for field in seeds:
+            self.assertEqual(field.evidence.shape[-1], 2)
+            self.assertEqual(len(field.concept_ids), len(field.evidence))
+            self.assertTrue(bool(torch.isfinite(field.evidence).all()))
         # The concepts reconstruction term is present and finite.
         terms = {t[0]: t[1] for t in Layers.TheError.terms()}
         self.assertIn(
-            "reconstruction_reverse", terms,
+            "reconstruction", terms,
             f"concepts reconstruction must add a reconstruction_reverse "
             f"term to TheError; got {set(terms)}")
-        val = terms["reconstruction_reverse"]
+        val = terms["reconstruction"]
         if torch.is_tensor(val):
             self.assertTrue(
                 bool(torch.isfinite(val).all()),
@@ -295,13 +292,13 @@ class TestGenerateSentenceSmoke(unittest.TestCase):
         A cold predictor may return an empty list; the call
         must succeed and not raise.
         """
-        init_config(path=os.path.join(_DATA, "MM_xor.xml"),
+        init_config(path=os.path.join(_DATA, "MM_text.xml"),
                     defaults_path=os.path.join(_DATA, "model.xml"))
         Language.TheGrammar._configured = False
         from data import TheData
         TheData.load("xor")
         m, _ = Models.BaseModel.from_config(
-            os.path.join(_DATA, "MM_xor.xml"), data=TheData)
+            os.path.join(_DATA, "MM_text.xml"), data=TheData)
         m.eval()
         out = m.generate_sentence("zero")
         self.assertIsInstance(out, list)

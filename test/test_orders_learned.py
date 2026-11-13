@@ -29,7 +29,7 @@ def event(cs, store, place, *, order=0, value=.5, token=False):
         cs._csw_concept_row(order, referent)
         meaning = replace(meaning, role_refs=(('sym', referent), None, None))
     row = store.append_meaning(meaning, order=order,
-                              document_key=('event', place), when=False)
+                              document_key=('event', place), time=False)
     address = int(store.address_keys[row])
     if token:
         cs.mtm.open(store.occurrence_of(row), kind=17, when=place, value=point,

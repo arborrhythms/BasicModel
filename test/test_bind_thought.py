@@ -46,7 +46,7 @@ def native(monkeypatch):
 
 
 def keep(f, clause, *, training=False, dummy=False):
-    plan = f.resolver.preview(clause, chunk_context(f.resolver, tuple(f.frames)))
+    plan = f.resolver.preview(clause, chunk_context(f.resolver, tuple(f.frames)), stream=0)
     if dummy:
         for item in plan['items']:
             item['selected'] = None
@@ -68,11 +68,14 @@ def keep(f, clause, *, training=False, dummy=False):
     return row, plan
 
 
-def occurrence(f, content, predicate, *, mode='mint', role=0, training=False):
+def occurrence(f, content, predicate, *, mode='mint', role=0, training=False, identity=None):
     request = dict(mode=mode, role=role, leaves=(0, 1), cue=f.atoms[7],
                    predicate=predicate, content=content)
     term = Composition(content, order=1)
-    constituent = Clause(ConceptualMeaning.from_description(content), point=content, order=1,
+    meaning = ConceptualMeaning.from_description(content)
+    if identity is not None:
+        meaning = replace(meaning, bindings={'_identity': ('sym', identity)})
+    constituent = Clause(meaning, point=content, order=1,
                          reference_request=request, composition=term, evidence=(1., 0.))
     # The supplied predicate is an admitted native symbol, as it is in a
     # recorded grammar program. A composed value alone does not mint it.
@@ -169,8 +172,14 @@ def test_g2_generated_leaf_without_object_uses_same_resolver(monkeypatch, kind, 
     f = native(monkeypatch)
     # §50 item 101 / §52 item 111: the new word's description is a part
     # of this retained individual, distinct from the distractor.
-    target, _ = occurrence(f, f.atoms[kind]+f.atoms[7], f.atoms[4])
-    occurrence(f, f.atoms[other], f.atoms[5])
+    from test_reference_close import known_concept
+    # The generated description below is explicitly order one. Its two
+    # candidate readings must carry identities of that same order, rather
+    # than anonymous order-zero occurrences of otherwise matching content.
+    target_identity = known_concept(f.cs, f.atoms[kind]+f.atoms[7], order=1)
+    distractor_identity = known_concept(f.cs, f.atoms[other], order=1)
+    target, _ = occurrence(f, f.atoms[kind]+f.atoms[7], f.atoms[4], identity=target_identity)
+    occurrence(f, f.atoms[other], f.atoms[5], identity=distractor_identity)
     expected = f.identities[target]
     marker = f'm{kind}{other}'
     word = f.cs.interpret.lookup_word([100+kind*4+other], (), form=marker)

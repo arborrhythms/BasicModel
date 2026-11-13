@@ -1312,6 +1312,9 @@ class Grammar:
                 rule = self._parse_rule(lhs, body.strip(), space_role=space_role)
                 attributes = entry if isinstance(entry, dict) else {}
                 implementation = attributes.get('implementation', rule.method_name)
+                if implementation in ('and', 'or'):
+                    replacement = {'and': 'intersection', 'or': 'union'}[implementation]
+                    raise ValueError(f'field operator {implementation} is retired; use {replacement}')
                 self._check_operator_availability(implementation, face=face)
                 if 'implementation' in attributes:
                     from Queries import THOUGHT_EXECUTORS
@@ -1416,7 +1419,8 @@ class Grammar:
     @staticmethod
     def _check_operator_availability(implementation, *, face):
         """All grammar syntaxes and implementation aliases share retirement checks."""
-        retired = {'what': 'ask (open references) or query (LTM lookup)',
+        retired = {'and': 'intersection', 'or': 'union',
+                   'what': 'ask (open references) or query (LTM lookup)',
                    'lookup': 'query', 'chunk': 'synthesize; inverse analyze',
                    'true': 'isTrue', 'queryPart': 'isPart', 'queryEqual': 'isEqual',
                    'quantize': 'all concepts are symbolized; symbolize/conceptualize are future work',
@@ -2275,6 +2279,8 @@ class NonLayer(GrammarLayer):
         return self.reverse(parent)
 
 class IntersectionLayer(GrammarLayer):
+    field_only = True
+    field_action = 3
     """Lossy ``intersection(C, C)`` over bivectors via ``Ops.intersection``."""
     inverse_kind = 'search'
     field_eligible = True
@@ -2449,6 +2455,9 @@ class IntersectionLayer(GrammarLayer):
                             left_priming=left_priming, right_priming=right_priming)
 
 class UnionLayer(GrammarLayer):
+    field_only = True
+    field_eligible = True
+    field_action = 4
     """Lossy lattice UNION ``union(C, C)`` (RadMax radial / lattice max) via
     ``Ops.union`` — the saturating OR-fold, DUAL to ``intersection`` (RadMin /
     lattice min). RENAMED from ``join`` (2026-07-05, Alec): the additive
@@ -3367,6 +3376,10 @@ class CompoundLayer(GrammarLayer):
     lossy = True
     left_identity = 0.
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.register_buffer('kernel_test_count', torch.zeros((), dtype=torch.long), persistent=False)
+
     def compose(self, modifier, head, *, selected_cases=None, case_view=None):
         if self.meaning_layout is not None and modifier.shape[-1] == self.meaning_layout[1]:
             return self.compose_blocks(None, modifier, head, case_view=case_view)
@@ -3376,11 +3389,29 @@ class CompoundLayer(GrammarLayer):
         return fold_cases(selected_cases)
 
     def select_view(self, modifier, view):
-        """One learned test; intersect with the already retained cases."""
+        """Intersect the staged case field; count an ungrounded kernel read."""
+        from IdentityRows import meet_ratios
         width = self.meaning_layout[0]
-        test = self.meaning_kernel(modifier[..., width:], view.origin(meaning_start=width))
+        wanted = modifier[..., width:].unflatten(-1, (2, -1))
+        codes = view.codes[..., width:].unflatten(-1, (2, -1))
+        while codes.ndim < wanted.ndim+1:
+            codes = codes.unsqueeze(-4)
+        coverage, _ = meet_ratios(wanted.unsqueeze(-3).clamp_min(0), codes.clamp_min(0))
+        known = ((view.weights > 0) & (coverage > 0)).any(-1).any(-1)
+        weights = torch.minimum(view.weights, coverage)
+        self.kernel_test_count.add_((~known).sum())
+        origin = view.origin(meaning_start=width)
+        missing = (~known)[...,None]
+        # The fixed tensor body supplies only missing-field operands to the
+        # fallback. Grounded rows have no kernel test and retain a unit mask.
+        test = self.meaning_kernel(torch.where(missing,modifier[...,width:],0.),
+                                   torch.where(missing,origin,0.))
+        test = torch.where(missing,test,1.)
         test = torch.cat((torch.ones_like(modifier[..., :width]), test), -1)
-        return view.select(test)
+        fallback = view.select(test)
+        return fallback._replace(weights=torch.where(known[...,None,None], weights, view.weights),
+            test=torch.where(known[...,None],view.test,fallback.test),
+            selected=torch.ones_like(view.selected))
 
     def compose_case_meaning(self, modifier, head, *, view=None):
         if view is None:
@@ -3576,6 +3607,7 @@ class SurfaceLayer(GrammarLayer):
     invertible = False
     lossy = True
     semantic_operand = 1
+    meaning_head_role = 1
 
     def __init__(self, nInput=0, nOutput=0):
         super().__init__(nInput, nOutput)
@@ -4511,25 +4543,8 @@ class GlossLayer(BracketOperation):
     bracket_action = 2
 
 
-class FieldAndLayer(BracketOperation):
-    bracket_action = 3
-
-    def forward(self, field):
-        from Attention import field_reduce
-        return field_reduce(field, operation='and', dim=-2)
-
-
-class FieldOrLayer(BracketOperation):
-    bracket_action = 4
-
-    def forward(self, field):
-        from Attention import field_reduce
-        return field_reduce(field, operation='or', dim=-2)
-
-
 GRAMMAR_LAYER_CLASSES = {
     'divide': DivideLayer, 'descend': DescendLayer, 'gloss': GlossLayer,
-    'and': FieldAndLayer, 'or': FieldOrLayer,
     'interpret':    InterpretLayer,
     'sign':         SignLayer,
     'bind':         BindLayer,
@@ -6745,7 +6760,6 @@ class OperationSelectionLayer(nn.Module):
         self.unary_names = list(unary_names) if unary_names is not None else None
         self.op_space_roles = list(op_space_roles) if op_space_roles is not None else None
         self.register_buffer('argument_inputs', torch.empty((self.r_reduce+self.r_apply, 2), dtype=torch.long), persistent=False)
-        self.stage_menu = None
 
     def configure_arguments(self, arguments, binary_rules, unary_rules):
         from PartsOfSpeech import operation_name
@@ -6756,13 +6770,6 @@ class OperationSelectionLayer(nn.Module):
             rows.append([index[f'{name}_argin{i+1}'] for i in range(len(rule.rhs_symbols))])
         self.argument_inputs = torch.tensor([row+[row[0]]*(2-len(row)) for row in rows], dtype=torch.long, device=self.stop_anchor.device).reshape(-1, 2)
         self.argument_operation_names = tuple(operation_name(rule) for rule in (*binary_rules, *unary_rules))
-
-    def set_stage_menu(self, operations=None):
-        if operations is not None:
-            if 'STOP' not in operations or not set(operations) <= {'STOP', *self.argument_operation_names}:
-                raise ValueError('a stage menu must include STOP and only declared operations')
-        self.stage_menu = None if operations is None else tuple(operations)
-
 
     def select_logits(self, logits, *, structural, masked_action=None, replay_action=None, sample=False,
                       departure_eligible=None, alternative_logits=None, return_proposal=False):
@@ -7164,10 +7171,6 @@ class OperationSelectionLayer(nn.Module):
             if dummy is not None:
                 fixed = torch.tensor(dummy, device=x.device, dtype=torch.bool)[None, None]
                 unary_scores = torch.where(fixed & reference_data['unary_valid'] & torch.isfinite(unary_scores), 0., unary_scores)
-        if self.stage_menu is not None:
-            allowed = torch.tensor([name in self.stage_menu for name in self.argument_operation_names], device=x.device)
-            binary_scores = binary_scores.masked_fill(~allowed[:self.r_reduce].index_select(0, bi)[None,None], -torch.inf)
-            unary_scores = unary_scores.masked_fill(~allowed[self.r_reduce:].index_select(0, ui)[None,None], -torch.inf)
         binary_scores = binary_scores.masked_fill(~torch.where(binds[None,None],live.any(-1)[:,None,None],live[:,1:,None]),-torch.inf)
         binary_scores = binary_scores.masked_fill(binds[None,None] & deadline[:,None,None],-torch.inf)
         if closing and rounds_left is not None:
@@ -9493,6 +9496,7 @@ class SymbolSubSpace(SubSpace):
         _paired = getattr(getattr(conceptualSpace, 'similarity_codebook', None), 'mereology', None)
         self.ltm_store = LTM0(muxed, capacity=_ltm_cap, content_width=symbol_dim,
             episodic_concepts=int(TheXMLConfig.space('SymbolSpace', 'episodicConcepts', 4)),
+            episodic_orders=len(conceptualSpace._order_caps()),
             relation_capacity=int(TheXMLConfig.space("SymbolSpace","relationCapacity",8192)),
             percept_width=getattr(_paired, 'percept_event_width', muxed),
             # Reading summaries are bounded by the concept inventory, not by
@@ -13799,6 +13803,18 @@ class LanguageSpace(nn.Module):
                 from MeaningCodes import recover_lanes
                 recovered_left, recovered_right = recover_lanes(getattr(op, 'meaning_rule', None),
                     parent[:, None, None], older, newer, form_width)
+                # A free inverse must leave a reading of each proposed
+                # concept. Erasing a defined candidate's two lanes can fit
+                # an empty parent algebraically, but leaves no conceptual
+                # evidence for the common field decoder to say. An already
+                # empty candidate or an explicit operand remains legal.
+                left_readable = (~older[..., form_width:].ne(0).any(-1)
+                    | recovered_left[..., form_width:].ne(0).any(-1)
+                    | (known & ~on_right)[:, None, None])
+                right_readable = (~newer[..., form_width:].ne(0).any(-1)
+                    | recovered_right[..., form_width:].ne(0).any(-1)
+                    | (known & on_right)[:, None, None])
+                allowed = allowed & left_readable & right_readable
                 older = torch.where((known & ~on_right)[:, None, None, None], older, recovered_left)
                 newer = torch.where((known & on_right)[:, None, None, None], newer, recovered_right)
                 domain = ((older >= 0) & (older <= 1) & (newer >= 0) & (newer <= 1)).all(-1)

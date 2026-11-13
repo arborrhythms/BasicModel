@@ -2,6 +2,8 @@
 
 
 def read(owner, address, concept=None):
+    if concept is None and address[:1] == ('bp',):
+        concept = address
     if isinstance(concept, tuple) and concept[:1] == ('bp',):
         from torch.nn.functional import pad
         value = owner.basic_percepts.code(concept[1])
@@ -22,12 +24,14 @@ def read(owner, address, concept=None):
     stm = getattr(owner, 'stm', None)
     for group in getattr(stm, '_thought_stores', ()):
         for shared in group:
-            if shared.location(address) is not None:
+            # Local relation numbers are not native symbol identities.
+            # Only an addressed occurrence can select a thought store.
+            if isinstance(shared.location(address), int):
                 return shared.point_of_row(address[-1])
     strata = getattr(stm, 'strata', None)
     if strata is not None:
         for shared in (*strata.recent_stores, *strata.banks):
-            if shared.location(address) is not None:
+            if isinstance(shared.location(address), int):
                 return shared.point_of_row(address[-1])
     store = owner._closed_clause_store()
     location = None if store is None else store.location(address)

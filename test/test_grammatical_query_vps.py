@@ -122,13 +122,18 @@ def test_unary_query_keeps_full_description_through_an_existing_occurrence():
     assert inline.constituents[0] is description
     assert inline.role_refs[0] == ('constituent', 0)
     assert len(store) == 1
-    assert registry.execute(inline, context).value[0]['occurrence'] == reference
+    # D16: an inline value does not address the earlier occurrence.
+    assert registry.execute(inline, context).value == ()
     assert len(store) == 1
     bound = store.bind_constituents(inline)
     assert len(store) == 2
     assert store.row(1)['kind'] == 'unverified' and store.row(1)['trust'] == 0
     result = registry.execute(bound, _context(cs, store=store))
-    assert result.value[0]['trust'] == pytest.approx(0.75)
+    assert result.value[0]['occurrence'] == store.occurrence_of(1)
+    assert result.value[0]['trust'] == 0
+    addressed = registry.execute(question, context)
+    assert addressed.value[0]['occurrence'] == reference
+    assert addressed.value[0]['trust'] == pytest.approx(0.75)
     torch.testing.assert_close(result.value[0]['meaning'].roles, description.roles)
     assert result.value[0]['meaning'].scope == description.scope
 

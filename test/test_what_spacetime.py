@@ -196,7 +196,7 @@ def test_ltm_capacity_evicts_only_balanced_prefixes():
 
 class _TinyWhatModel(BasicModel):
     def __init__(self, memory=None, actions=()):
-        nn.Module.__init__(self)
+        super().__init__()
         self.symbolSpace = SimpleNamespace(
             what_memory=memory, discourse=None, languageLayer=SimpleNamespace())
         self._actions = list(actions)

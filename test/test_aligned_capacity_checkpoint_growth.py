@@ -25,7 +25,7 @@ from Spaces import Codebook, ConceptualSpace
 from util import init_config
 
 
-_CONFIG = _ROOT / "data" / "MM_xor_fixture.xml"
+_CONFIG = _ROOT / "data" / "MM_text_fixture.xml"
 _DEFAULTS = _ROOT / "data" / "model.xml"
 
 

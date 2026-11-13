@@ -1,0 +1,13 @@
+{
+  "description": "One scalar beside one word; the fourth word has no scalar witness.",
+  "repetitions": 6,
+  "lessons": [
+    {"text": "one", "scalar": 1.0},
+    {"text": "two", "scalar": 2.0},
+    {"text": "three", "scalar": 3.0},
+    {"text": "unfelt", "scalar": null}
+  ],
+  "recognition_question": "what is this?",
+  "untrained_values": [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 10.0],
+  "absence": {"text": "zero", "scalar": null}
+}

@@ -18,12 +18,12 @@ from Layers import Error
 from Spaces import SubSpace
 
 
-_CONFIG_PATH = str(_project / "data" / "MM_xor.xml")
+_CONFIG_PATH = str(_project / "data" / "MM_text.xml")
 
 
 @pytest.fixture
 def model():
-    """A BasicModel built from MM_xor.xml (has SymbolSpace + discourse)."""
+    """A BasicModel built from MM_text.xml (has SymbolSpace + discourse)."""
     from data import TheData
     from Models import BaseModel
     TheData.load("xor")

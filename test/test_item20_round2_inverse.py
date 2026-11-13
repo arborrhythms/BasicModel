@@ -79,8 +79,8 @@ def test_decoder_stage_error_reaches_body_reconstruction_and_batch(monkeypatch):
         error = RuntimeError('injected decoder stage')
         def reject(*args, **kwargs):
             raise error
-        monkeypatch.setattr(model.body_stages[-1]['cs'], 'reverse', reject)
-        for call in (lambda: model._reverse_body(model.conceptualSpace.subspace),
+        monkeypatch.setattr(model.numeric_percepts, 'reverse', reject)
+        for call in (lambda: model.reverse(model.conceptualSpace.subspace, field=understanding.reconstruction_carriers['field']),
                      lambda: model.reverseReconstruct(understanding),
                      lambda: model.runBatch(train=False, batchSize=4, split='train', batch_override=batch)):
             with pytest.raises(RuntimeError, match='injected decoder stage') as raised:
@@ -94,7 +94,7 @@ def test_projection_basis_reverse_uses_recorded_input_shape(tmp_path):
     from pathlib import Path
     from test_conceptual_recurrence import _build
     from Spaces import ProjectionBasis, SubSpace
-    source = Path('data/MM_xor.xml').read_text().replace(
+    source = Path('data/MM_text.xml').read_text().replace(
         '<ConceptualSpace>', '<ConceptualSpace><codebook>project</codebook>')
     path = tmp_path / 'projection.xml'
     path.write_text(source)

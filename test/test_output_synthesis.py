@@ -221,7 +221,7 @@ def test_present_and_supervised_resolve_by_identity(synth_config):
         u = m.understand(x)
         for q in (What.present(1), What.supervised(1),
                   What.inference(1, split="train")):
-            d = m._resolve_answer(u, q)
+            d = m.resolveAnswer(u, q)
             assert d.source == "identity" and d.resolved
             # The zero-initialised question conditioner leaves the symbol
             # numerically identical (a clone, so the understanding is never
@@ -243,7 +243,7 @@ def test_past_resolves_by_recall_from_discourse_memory(synth_discourse_config):
         cond = getattr(m, "question_conditioner", None)
         if cond is not None:
             cond.weight.zero_()
-        d = m._resolve_answer(u, What.past(1, -1))
+        d = m.resolveAnswer(u, What.past(1, -1))
     assert d.source == "recall" and d.resolved
     assert d.answer_symbol is not u.symbolic_state
     assert d.answer_symbol.shape == u.symbolic_state.shape
@@ -255,7 +255,7 @@ def test_past_resolves_by_recall_from_discourse_memory(synth_discourse_config):
         assert torch.equal(d.answer_symbol[b, 0, :width], history[b][-1][:width])
     assert torch.equal(d.answer_symbol[:, 1:], u.symbolic_state[:, 1:])
     # Deeper than the history -> cold, unresolved identity.
-    far = m._resolve_answer(u, What.past(9, -(len(history[0]) + 1)))
+    far = m.resolveAnswer(u, What.past(9, -(len(history[0]) + 1)))
     assert far.source == "identity:cold-memory" and not far.resolved
 
 
@@ -268,8 +268,8 @@ def test_future_resolves_by_prediction_without_committing_memory(synth_discourse
     before = [[frame[1].clone() for frame in row] for row in memory._inter_context]
     with torch.no_grad():
         u = m.understand(batch[0])
-        d1 = m._resolve_answer(u, What.future(1, 1))
-        d2 = m._resolve_answer(u, What.future(1, 2))
+        d1 = m.resolveAnswer(u, What.future(1, 1))
+        d2 = m.resolveAnswer(u, What.future(1, 2))
     assert d1.source == "prediction" and d1.resolved
     assert all(torch.equal(frame[1], old) for row, saved in zip(memory._inter_context, before)
                for frame, old in zip(row, saved))
@@ -284,7 +284,7 @@ def test_cold_memory_resolution_is_flagged_unresolved(synth_config):
     x, _ = _batch(m)
     with torch.no_grad():
         u = m.understand(x)
-        d = m._resolve_answer(u, What.past(3, -1))
+        d = m.resolveAnswer(u, What.past(3, -1))
     assert not d.resolved and d.source == "identity:cold-memory"
 
 
@@ -355,7 +355,7 @@ def test_no_bindings_by_default_keeps_context_out_of_the_answer(synth_config):
     x, _ = _batch(m)
     with torch.no_grad():
         u = m.understand(x)
-        d = m._resolve_answer(u, What.supervised(0))
+        d = m.resolveAnswer(u, What.supervised(0))
     assert d.synthesis_references == ()
 
 
@@ -374,24 +374,22 @@ def test_prompted_question_cannot_route_normal_resolution_to_legacy_reasoner(
     x, _ = _batch(m)
     with torch.no_grad():
         u = m.understand(x)
-        d = m._resolve_answer(u, What.inference(0, split="train",
+        d = m.resolveAnswer(u, What.inference(0, split="train",
                                                 prompt="is the cat black?"))
     assert d.source == "identity"
     assert all(item["operation"] != "reason" for item in d.grammar_trace)
 
 
-def test_exact_identity_reconstruction_is_flagged_not_counted(synth_config):
+def test_numeric_field_inverse_scores_identity_and_a_changed_target(synth_config):
     m = _build(synth_config)
     x, _ = _batch(m)
     with torch.no_grad():
         u = m.understand(x)
         rev, cost = m.reverseReconstruct(u, target=u.execution[0])
-        assert cost is not None and float(cost) > 0.0
-        assert m._reconstruction_identity_flag is False
-        # Score the reconstruction against ITSELF: an exact identity.
+        assert cost is not None and float(cost) == 0.
         _, zero = m.reverseReconstruct(u, target=rev)
-    assert float(zero) == 0.0
-    assert m._reconstruction_identity_flag is True
+        _, changed = m.reverseReconstruct(u, target=rev+1.)
+    assert float(zero) == 0. and float(changed) == 1.
 
 
 def test_what_report_separates_families_and_thinking(loop_model):
@@ -452,19 +450,19 @@ def test_batched_questions_resolve_per_row(synth_discourse_config):
         cond = getattr(m, "question_conditioner", None)
         if cond is not None:
             cond.weight.zero_()
-        d = m._resolve_answer(u, (What.past(2, -1), What.past(2, -2)))
+        d = m.resolveAnswer(u, (What.past(2, -1), What.past(2, -2)))
     assert d.row_sources == ("recall", "recall") and d.resolved
     width = min(u.symbolic_state.shape[-1], history[0][-1].shape[-1])
     assert torch.equal(d.answer_symbol[0, 0, :width], history[0][-1][:width])
     assert torch.equal(d.answer_symbol[1, 0, :width], history[1][-2][:width])
     # Mixed relations: row 0 present (identity), row 1 past recall.
     with torch.no_grad():
-        d2 = m._resolve_answer(u, (What.present(2), What.past(2, -1)))
+        d2 = m.resolveAnswer(u, (What.present(2), What.past(2, -1)))
     assert d2.row_sources == ("identity", "recall") and d2.source == "mixed"
     assert torch.equal(d2.answer_symbol[0], u.symbolic_state[0])
     # A cold lane invalidates ONLY that lane.
     with torch.no_grad():
-        d3 = m._resolve_answer(u, (What.past(2, -1), What.past(2, -9)))
+        d3 = m.resolveAnswer(u, (What.past(2, -1), What.past(2, -9)))
     assert d3.row_sources == ("recall", "identity:cold-memory")
     assert not d3.resolved
     assert torch.equal(d3.answer_symbol[1], u.symbolic_state[1])
@@ -481,7 +479,7 @@ def test_recall_returns_the_most_recent_sentence_during_ring_fill(synth_discours
         u=m.understand(batch[0])
         if getattr(m,'question_conditioner',None) is not None:
             m.question_conditioner.weight.zero_()
-        d=m._resolve_answer(u,What.past(3,-1))
+        d=m.resolveAnswer(u,What.past(3,-1))
     width=min(u.symbolic_state.shape[-1],seen[0][-1].shape[-1])
     expected=torch.stack([seen[b][-1][:width] for b in range(2)])
     torch.testing.assert_close(d.answer_symbol[:,0,:width],expected,rtol=0,atol=0)

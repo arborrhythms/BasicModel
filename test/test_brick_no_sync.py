@@ -42,7 +42,7 @@ pytestmark = pytest.mark.skipif(
 # FineWeb-EDU shard corpus (kept small here -- this is a host-sync
 # profile, not a convergence run).
 _CONFIGS = [
-    ("MM_xor.xml", "xor", {}),
+    ("MM_text.xml", "xor", {}),
     ("MM_grammar.xml", "xor", {}),
     ("MM_20M_xor.xml", "text", {
         "shard_dir": str(_project / "data" / "fineweb"),

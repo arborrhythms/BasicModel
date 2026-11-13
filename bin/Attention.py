@@ -7,6 +7,7 @@ from typing import NamedTuple
 import torch
 from torch import nn
 import torch.nn.functional as F
+from FieldLogic import reduce as reduce_field
 
 SPACE_INPUT, SPACE_STM, SPACE_LTM, SPACE_PART, SPACE_WHOLE, SPACE_SYMBOL = range(6)
 LEVEL_BYTE, LEVEL_WORD, LEVEL_SENTENCE, LEVEL_ROW = range(4)
@@ -91,19 +92,6 @@ def narrowing_mask(pure,both,neither,*,singular,word,can_split,has_parts):
     return torch.stack((divide,descend,gloss),-1)
 
 
-def field_reduce(poles,*,operation,dim):
-    """Associative, commutative paired Boolean fields, with exact silence.
-
-    Conjunction intersects positives and unions counterevidence; disjunction
-    does the dual. Negation exchanges the two observed poles.
-    """
-    if operation=='not':return poles.flip(-1)
-    positive,negative=poles.unbind(-1)
-    if operation=='and':return torch.stack((positive.amin(dim),negative.amax(dim)),-1)
-    if operation=='or':return torch.stack((positive.amax(dim),negative.amin(dim)),-1)
-    raise ValueError('undeclared field operation')
-
-
 def pooled_keys(event,spans):
     """Detached content inside each bracket, including an exact empty mask."""
     B,N,D=event.shape
@@ -153,6 +141,7 @@ class NarrowedWords(NamedTuple):
     poles: torch.Tensor = None
     pole_changes: torch.Tensor = None
     round_words: torch.Tensor = None
+    field_scopes: torch.Tensor = None
 
 
 def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,departure=None,identities=None,poles=None,spent=None):
@@ -259,12 +248,8 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
         # its reduction sentinel (inf) by a live straight-through credit.
         changed=torch.where((count>0)[...,None],changed,0.)
         field_values=torch.where(where[...,None],changed*credit[:,None,None],field_values)
-        conjunctive=torch.stack((
-            torch.where(covered,evidence[:,None,:,0],1.).amin(2),
-            torch.where(covered,evidence[:,None,:,1],0.).amax(2)),-1)
-        disjunctive=torch.stack((
-            torch.where(covered,evidence[:,None,:,0],0.).amax(2),
-            torch.where(covered,evidence[:,None,:,1],1.).amin(2)),-1)
+        conjunctive=reduce_field(evidence[:,None].expand(-1,K,-1,-1), operation='intersection', dim=2, mask=covered)
+        disjunctive=reduce_field(evidence[:,None].expand(-1,K,-1,-1), operation='union', dim=2, mask=covered)
         changed_poles=torch.where((op==3)[:,None,None],conjunctive,
             torch.where((op==4)[:,None,None],disjunctive,pooled_poles.flip(-1)))
         field_poles=torch.where(where[...,None],changed_poles,field_poles)
@@ -290,18 +275,15 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
     # the progress budget and local value reads above are unchanged. Earlier
     # fields supply the evidence for later fields on overlapping brackets.
     for reached,op in zip(field_scopes,field_operations):
-        positive,negative=handed_poles.unbind(-1)
-        conjunction=torch.stack((torch.where(reached,positive,torch.inf).amin(1),
-                                 torch.where(reached,negative,0.).amax(1)),-1)
-        disjunction=torch.stack((torch.where(reached,positive,0.).amax(1),
-                                 torch.where(reached,negative,torch.inf).amin(1)),-1)
+        conjunction=reduce_field(handed_poles, operation='intersection', dim=1, mask=reached)
+        disjunction=reduce_field(handed_poles, operation='union', dim=1, mask=reached)
         pooled=torch.where(reached[...,None],handed_poles,0.).amax(1)
         pair=torch.where((op==3)[:,None],conjunction,
                          torch.where((op==4)[:,None],disjunction,pooled.flip(-1)))
         handed_poles=torch.where(reached[...,None],pair[:,None],handed_poles)
     return NarrowedWords(table,values,accepted,descended,torch.stack(actions,1),
         torch.stack(alternatives,1),torch.stack(probabilities,1),torch.stack(counts,1),
-        handed_poles.detach(),pole_changes,torch.stack(round_words,1))
+        handed_poles.detach(),pole_changes,torch.stack(round_words,1),torch.stack(field_scopes,1))
 
 
 class BracketKeys:

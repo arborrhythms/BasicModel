@@ -279,7 +279,7 @@ class ReferenceClose(nn.Module):
             from RowTime import encoder
             uses = [(occurrence,store.location(occurrence)) for occurrence in entry.occurrences]
             uses = [(occurrence,row) for occurrence,row in uses if isinstance(row,int)]
-            times = [int(encoder().decode_index(store.entry_when(row))) for _,row in uses]
+            times = [int(encoder().decode_index(store.entry_time(row))) for _,row in uses]
             value = pool.value_of(key, references=names.get(key, ()))
             for use,(occurrence,location) in enumerate(uses):
                 following = times[use+1] if use+1 < len(times) else float('inf')
@@ -657,13 +657,21 @@ class ReferenceClose(nn.Module):
             content = self.expected_content(predicate, site.get('role', role))
         cue = self.cue(None if site.get('cue') is None else meaning.roles.new_tensor(site['cue']))
         records = self.context_records(frames)
+        perceived = self.perceived_records(stream)
+        records.update({identity: record for identity,record in perceived.items()})
         query_occurrence = bindings(meaning).get('_query_occurrence')
         binding_occurrence = site.get('occurrence', query_occurrence)
         # A shared identity can participate in a self-referential relation.
         # Bind reads its finite content; bounded readers own graph traversal.
         individuals = self.individuals(records)
+        for identity,(_,record) in perceived.items():
+            individuals[identity] = dict(value=record['mention_value'],content=record['mention_value'],
+                role=role,position=record['position'],occurrences=(),perception=True,
+                token=record.get('token'))
+        coordinate_read = None
         choices, features, logits = self.score(content, predicate, cue,
-            site.get('role', role), individuals, stream=stream)
+            site.get('role', role), individuals, stream=stream,coordinate_read=coordinate_read,
+            member_order=site.get('member_order'))
         base = dict(binding_role=role, reverse_leaves=tuple(site.get('leaves', ())),
                     binding_candidates=choices, witnesses=(),
                     binding_occurrence=binding_occurrence)
@@ -673,6 +681,36 @@ class ReferenceClose(nn.Module):
         result = self.finish_thought_bind(plan, logits=logits)
         if decisions is not None:
             decisions.append(plan)
+        return result
+
+    def perceived_records(self, stream):
+        """Offer the present event and individuals witnessed in the open field."""
+        if stream is None:
+            return {}
+        owner = self.components.owner
+        model = getattr(owner,'_model',None)
+        fields = getattr(model,'_sentence_open_fields',{})
+        if not fields:
+            return {}
+        field = fields[max(fields)]
+        ids = field.concept_ids if field.concept_ids.ndim==1 else field.concept_ids[:,stream]
+        values = field.evidence[:,stream,:,0].detach().amax(-1)
+        alloc = owner._concept_allocator
+        scalar = getattr(model,'_scalar_present',{}).get(stream)
+        result = {}
+        for cid,strength in zip(ids.tolist(),values):
+            if cid not in alloc.individuals or cid in alloc.retired or float(strength)<1.:
+                continue
+            # Membership admits the class. Its own content is what the
+            # binding returns; the separate occurrence carries the reading.
+            point = owner.similarity_codebook.W[owner._csw_row_of(cid)].detach()
+            result[cid] = ('sym',cid),dict(identity=cid,role=0,position=(len(fields),len(result)),
+                mention_value=point,perception=True)
+        if scalar is not None:
+            occurrence = scalar['occurrence']
+            result[occurrence] = occurrence,dict(identity=occurrence,role=0,
+                position=(len(fields),len(result)),mention_value=scalar['point'],
+                token=scalar['candidate'],perception=True)
         return result
 
     def finish_thought_bind(self, plan, *, departure=False, logits=None):
@@ -719,6 +757,10 @@ class ReferenceClose(nn.Module):
         result = fill(meaning, evidence, witnesses=witnesses,
                       operation='bind', slots=(('referent', role),))
         result = with_slots(result, open_slots(result), pair=(probability, 1-probability))
+        if individuals[identity].get('perception'):
+            from dataclasses import replace
+            from ThoughtReferences import bindings
+            result = replace(result,bindings=dict(bindings(result),_evidence_kind='perception'))
         return dict(evidence, value=result, meaning=result)
 
     def answer_meaning(self, plan, meaning):
@@ -1293,7 +1335,7 @@ class ReferenceClose(nn.Module):
             kind = self._derivation_symbol(reference)
             resolved_bind = (request.get('compose_bind', 0) > 0 and not unresolved
                              and (kind is not None or alias is not None or token is not None))
-            site = dict(role=item['role'], leaves=item['leaves'],
+            site = dict(role=item['role'], leaves=item['leaves'], member_order=item.get('member_order'),
                 cue=None if request.get('cue') is None else request['cue'].detach().cpu().tolist(),
                 content=None if request.get('content') is None else request['content'].detach().cpu().tolist(),
                 predicate=None if request.get('predicate') is None else request['predicate'].detach().cpu().tolist())
@@ -1490,8 +1532,8 @@ class ReferenceClose(nn.Module):
         mtm = self.components.owner.mtm
         previous = dict(mtm.entries) if verb_action is not None else {}
         observed = set()
-        from RowTime import encoder, stamp
-        when = int(encoder().decode_index(stamp(self.store)))
+        from RowTime import encoder, next_time
+        when = int(encoder().decode_index(next_time(self.store)))
         mentions = self.__dict__.setdefault('_mentions', OrderedDict())
         allocated, audit, uses, sites, native_tokens = {}, [], [], {}, {}
         closed_mentions, refinements = set(), []
@@ -1569,7 +1611,7 @@ class ReferenceClose(nn.Module):
                 # are owned by the open pass and its mint by the update.
                 closed_mentions.add(reference)
             elif isinstance(reference, tuple) and reference[:1] in (('ltm',), ('name',)):
-                from RowTime import encoder, stamp
+                from RowTime import encoder, next_time
                 kind = self._derivation_symbol(occurrence)
                 token = mtm.token_of(reference)
                 if reference[:1] == ('name',) and (token is None or mtm.entries[token].pending):
@@ -1641,14 +1683,14 @@ class ReferenceClose(nn.Module):
             if isinstance(selected, int) and selected in alloc.individuals and mtm.token_of(token) is not None:
                 # A native identity needs no synthetic occurrence holding its
                 # working vector. Refine through the existing introduction.
-                from RowTime import encoder, stamp
+                from RowTime import encoder, next_time
                 bind(token, token, kind=selected,
                          when=when, value=point(self.components.owner, selected))
                 selected = token
             if (isinstance(selected, tuple) and selected[:1] == ('ltm',)
                     and selected != token and mtm.token_of(token) is not None):
-                from RowTime import encoder, stamp
-                when = int(encoder().decode_index(stamp(self.store)))
+                from RowTime import encoder, next_time
+                when = int(encoder().decode_index(next_time(self.store)))
                 if mtm.token_of(selected) not in (None, mtm.token_of(token)):
                     if token in mtm.entries and mtm.entries[token].occurrences == (token,):
                         mtm.merge(token, selected, when=when)

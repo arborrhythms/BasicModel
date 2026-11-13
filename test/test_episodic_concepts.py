@@ -32,12 +32,12 @@ def test_basic_concept_readings_keep_largest_signed_values_in_reading_order():
     field = ConceptualField(torch.tensor([30, 10, 20, 40]), values,
         torch.tensor([[[0, 2], [3, 5]]]), torch.tensor([[[1, 2], [1, 2]]]), None)
     ids, signed = select(field, 4, torch.tensor([True]), [0, 0, 1, 0])
-    assert ids.tolist() == [[10, 30, 30, -1]]
-    torch.testing.assert_close(signed, torch.tensor([[-.8, .3, .9, 0.]]))
+    assert ids.tolist() == [[[10, 40, 40, 30]]]
+    torch.testing.assert_close(signed, torch.tensor([[[-.8, 1., -1., .9]]]))
     assert not signed.requires_grad
     selected, _ = select(field, 2, torch.tensor([True]), [0, 0, 1, 0])
-    assert selected.tolist() == [[10, 30]]
-    assert all(t.shape[1] == 0 for t in select(field, 0, torch.tensor([True]), [0, 0, 1, 0]))
+    assert selected.tolist() == [[[40, 40]]]
+    assert all(t.shape[2] == 0 for t in select(field, 0, torch.tensor([True]), [0, 0, 1, 0]))
 
 
 def test_recalled_concepts_decode_directly_and_withdrawn_ids_are_counted(tmp_path, monkeypatch):
@@ -54,19 +54,19 @@ def test_recalled_concepts_decode_directly_and_withdrawn_ids_are_counted(tmp_pat
         with torch.no_grad():
             model.forward(model.inputSpace.prepInput(['alpha alpha beta']))
         opened = model._sentence_open_fields[0]
-        entries = (store.episodic_concepts[:len(store)] >= 0).any(-1)
+        entries = (store.episodic_concepts[:len(store)] >= 0).any((-1, -2))
         row = int(entries.nonzero()[0])
         assert int(entries.sum()) == 1
-        assert 0 < int((store.episodic_concepts[row] >= 0).sum()) <= 4
-        assert all(owner._row_order(owner._csw_row_of(cid)) == 0
-                   for cid in store.episodic_concepts[row].tolist() if cid >= 0)
+        assert 0 < int((store.episodic_concepts[row] >= 0).sum()) <= 4 * store.episodic_orders
+        assert all(owner._row_order(owner._csw_row_of(cid)) == order
+                   for order, slice in enumerate(store.episodic_concepts[row].tolist()) for cid in slice if cid >= 0)
         before = model.reverse(model.conceptualSpace.subspace.carrier_like(), field=opened)
         def forbidden(*args, **kwargs):
             raise AssertionError('direct episodic reconstruction invoked the grammar')
         monkeypatch.setattr(model, 'generate', forbidden)
         monkeypatch.setattr(model.languageSpace, 'reverse_binary_step', forbidden)
         query = ThoughtLTMCapability(store=weakref.ref(store), equal=lambda *args: 0., tau_id=.9, row=0)
-        found = query.query(when=store.entry_when(row), window=0, max_records=store.capacity,
+        found = query.query(opened, max_records=store.capacity,
                             work=QueryWorkBudget(2048))
         assert found['frames']
         recalled = knowing(model)
@@ -85,7 +85,7 @@ def test_recalled_concepts_decode_directly_and_withdrawn_ids_are_counted(tmp_pat
         # A missing surface keeps the reference with an empty extent; positions
         # come from the stored reading order, never from a saved input bracket.
         surface = owner.word_surface_for_row
-        first = int(store.episodic_concepts[row, 0])
+        first = int(store.episodic_concepts[row, 0, 0])
         missing = int((store.episodic_concepts[row] == first).sum())
         monkeypatch.setattr(owner, 'word_surface_for_row',
             lambda slot: None if owner.concept_id_at_row(slot) == first else surface(slot))
@@ -93,7 +93,7 @@ def test_recalled_concepts_decode_directly_and_withdrawn_ids_are_counted(tmp_pat
         assert model._episode_counts['surfaces_missing'] == missing
         assert knowing(model).where[0, 0].tolist() == [0, 0]
         previous = model._episode_counts['ids_skipped']
-        store.episodic_concepts[row, 0] = 10**9
+        store.episodic_concepts[row, 0, 0] = 10**9
         assert reinstate(store, [{'index': row}], 0)
         assert model._episode_counts['ids_skipped'] == previous + 1
         assert 10**9 not in knowing(model).concept_ids.tolist()

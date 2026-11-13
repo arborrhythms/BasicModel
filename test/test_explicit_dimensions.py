@@ -237,34 +237,15 @@ def _bind_trained_xor_grammar(request, trained_xor_grammar):
     request.instance.trained_xor_grammar = trained_xor_grammar
 
 
-@pytest.mark.usefixtures("_bind_trained_xor_grammar")
-@pytest.mark.shared_training("xor_grammar")
-@pytest.mark.large_memory
 class TestXorGrammarLearnsXor(unittest.TestCase):
-    """Grammar XOR convergence must survive an arbitrary initialization."""
-
-    @pytest.mark.trained('xor_grammar')
+    """The class bar reads the numeric field; the verbal inverse stays below."""
     @pytest.mark.learning_certificate
     def test_xor_class_accuracy(self):
-        model = self.trained_xor_grammar
-        # Read the answers saved by the final evaluation. Another forward
-        # would advance the clock; rCorrect is an embedding-report placeholder.
-        data = model.inputSpace.data
-        answers = torch.stack(data.reconstructed_output).reshape(-1)
-        targets = torch.stack(data.test_output).reshape(-1).to(answers)
-        self.assertEqual(answers.numel(), 4)
-        self.assertEqual(targets.numel(), 4)
-        self.assertTrue(bool(torch.isfinite(answers).all()))
-        correct = (answers > 0.5) == (targets > 0.5)
-        mse = torch.mean((answers - targets).square()).item()
-        self.assertTrue(
-            bool(correct.all()),
-            f"XOR_grammar requires all four answers correct: {answers.tolist()}",
-        )
-        self.assertLess(
-            mse, 0.05,
-            f"XOR_grammar requires MSE <0.05, got {mse}: {answers.tolist()}",
-        )
+        from numeric_xor import fit
+        model, answers, mse = fit()
+        self.assertEqual(answers.numel(),4)
+        self.assertTrue(bool(((answers>.5)==torch.tensor([False,True,True,False])).all()))
+        self.assertLess(mse,.05)
 
 
 @pytest.mark.usefixtures("_bind_trained_xor_grammar")

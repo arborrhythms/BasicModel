@@ -42,7 +42,7 @@ def _xor_model(monkeypatch):
     from util import init_config, init_device
     monkeypatch.setenv("MODEL_COMPILE", "none")
     init_device("cpu")
-    config = str(ROOT / "data/MM_xor.xml")
+    config = str(ROOT / "data/MM_text.xml")
     init_config(path=config, defaults_path=str(ROOT / "data/model.xml"))
     TheData.load("xor")
     return Models.BaseModel.from_config(config, data=TheData)[0]

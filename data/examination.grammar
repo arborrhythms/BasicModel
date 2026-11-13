@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<grammar name="examination">
+  <compose>
+    <rule operands="field">F = divide.forward(F)</rule>
+    <rule operands="field">F = descend.forward(F)</rule>
+    <rule operands="field">F = gloss.forward(F)</rule>
+    <rule operands="field">F = intersection.forward(F)</rule>
+    <rule operands="field">F = union.forward(F)</rule>
+    <rule operands="field">F = not.forward(F)</rule>
+  </compose>
+</grammar>

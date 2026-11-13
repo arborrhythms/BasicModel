@@ -23,7 +23,7 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
 _DATA_DIR = os.path.join(_PROJECT, "data")
-_OFF_CONFIG = os.path.join(_DATA_DIR, "MM_xor_fixture.xml")
+_OFF_CONFIG = os.path.join(_DATA_DIR, "MM_text_fixture.xml")
 _ON_CONFIG = os.path.join(_DATA_DIR, "MM_ltm_consolidation_fixture.xml")
 # SERIAL fixture for the FOLLOW-UPS: real-parse
 # provisioning (Change 3) needs the per-word serial forward to fire the

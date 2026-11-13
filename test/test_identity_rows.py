@@ -149,10 +149,10 @@ def test_model_time_is_independent_of_source_position_and_covers_the_run_horizon
     tick=[731]
     object.__setattr__(store,'_model_present',lambda:tick[0])
     row=store.append_idea(torch.ones(12),document_key='first',sentence_index=9000)
-    assert int(encoder().decode_index(store.entry_when(row))) == 731
+    assert int(encoder().decode_index(store.entry_time(row))) == 731
     tick[0]+=1
     other=store.append_idea(torch.ones(12),document_key='second',sentence_index=0)
-    assert int(encoder().decode_index(store.entry_when(other))) == 732
+    assert int(encoder().decode_index(store.entry_time(other))) == 732
     torch.testing.assert_close(store.slots[row,8:],store.slots[other,8:],rtol=0,atol=0)
     trials=torch.tensor([0,731,1000000,HORIZON-1,HORIZON])
     torch.testing.assert_close(encoder().decode_index(encoder().encode(trials)),trials,rtol=0,atol=0)

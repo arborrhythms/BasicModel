@@ -111,11 +111,11 @@
         <rule operands="field">F = divide.forward(F)</rule>
         <rule operands="field">F = descend.forward(F)</rule>
         <rule operands="field">F = gloss.forward(F)</rule>
-        <rule operands="field">F = and.forward(F)</rule>
-        <rule operands="field">F = or.forward(F)</rule>
+        <rule operands="field">F = intersection.forward(F)</rule>
+        <rule operands="field">F = union.forward(F)</rule>
         <rule>S = not(S)</rule>
-        <rule>S = intersection(S, S)</rule>
-        <rule>S = union(S, S)</rule>
+        <rule>S = conjunction(S, S)</rule>
+        <rule>S = disjunction(S, S)</rule>
       </compose>
     </grammar>
     </language>

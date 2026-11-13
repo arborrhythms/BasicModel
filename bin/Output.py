@@ -18,6 +18,29 @@ import torch
 from Meaning import ConceptualMeaning
 
 
+def concluded_meanings(meaning):
+    """Realize filled variables, or the complete proposition when none was asked.
+
+    The question's fixed operands remain in its proof. They are not extra
+    answers to its open referent, and require no second lookup to remove.
+    """
+    from dataclasses import replace
+    from ThoughtReferences import bindings, open_slots
+    from BindingAnswers import references
+    if open_slots(meaning):
+        return ()
+    values = references(meaning)
+    if not values:
+        return (meaning,)
+    data = bindings(meaning)
+    provenance = {name: data[name] for name in ('_evidence_pair', '_evidence_kind',
+        '_producing_operation', '_thought_witnesses', '_query_occurrence') if name in data}
+    return tuple(replace(ConceptualMeaning.from_description(value),
+        role_refs=(reference, None, None), bindings=provenance,
+        constituents=meaning.constituents, scope=meaning.scope, sentence_kind='idea')
+        for reference, value in values)
+
+
 def thought_answer_meanings(selected):
     """Adapt owned checked results without a reader or another execution.
 
@@ -33,7 +56,7 @@ def thought_answer_meanings(selected):
     if isinstance(meaning, ConceptualMeaning) and '_open_references' in bindings(meaning):
         # The concluded binding is the answer, even when the last operation
         # was only one link in its proof. An exhausted question is unanswered.
-        return () if open_slots(meaning) else (meaning,)
+        return concluded_meanings(meaning)
     seen = set()
     while isinstance(checked, ThoughtResult) and checked.result_kind == "subgoal":
         if id(checked) in seen or len(seen) >= 64:

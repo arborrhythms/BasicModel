@@ -1135,21 +1135,10 @@
     </xs:all>
   </xs:complexType>
 
-  <xs:simpleType name="gateStartType">
-    <xs:restriction base="xs:string"><xs:enumeration value="open"/><xs:enumeration value="closed"/></xs:restriction>
-  </xs:simpleType>
   <xs:complexType name="trustGatesType">
     <xs:all>
       <xs:element name="closedTrust" type="unitInterval"/>
-      <xs:element name="interpret"><xs:complexType><xs:all>
-        <xs:element name="start" type="gateStartType"/>
-        <xs:element name="fraction" type="unitInterval"/>
-      </xs:all></xs:complexType></xs:element>
-      <xs:element name="clause"><xs:complexType><xs:all>
-        <xs:element name="start" type="gateStartType"/>
-        <xs:element name="threshold" type="unitInterval"/>
-        <xs:element name="except" type="xs:string"/>
-      </xs:all></xs:complexType></xs:element>
+      <xs:element name="threshold" type="unitInterval"/>
     </xs:all>
   </xs:complexType>
 
@@ -1433,7 +1422,6 @@
            features faster so it converges to a crisp solution within the
            epoch budget. -->
       <xs:element name="lrScale" type="xs:decimal" minOccurs="0"/>
-      <xs:element name="conceptIds" type="xs:string" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 

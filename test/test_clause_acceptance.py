@@ -246,7 +246,7 @@ def test_08_direct_bare_np_rewitnesses_its_address(monkeypatch):
     assert f.store.address_keys[direct] == f.store.address_keys[direct] != f.noun('cat')
     located = f.store.write_clause(f.clause('cat'))
     assert located == direct and int(f.store.access_count[direct]) == 2
-    assert f.store.entry_when(located).any()
+    assert f.store.entry_time(located).any()
 
 
 def test_09_attribution_cannot_assert_its_child_and_negation_is_content(monkeypatch):

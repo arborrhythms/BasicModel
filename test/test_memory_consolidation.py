@@ -150,7 +150,7 @@ def test_token_promotes_at_three_sentences_with_the_occurrence_fold_and_keeps_it
     expected = atoms[0] + (2*atoms[1] + atoms[2]) / 3
     torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(entry.symbol)], expected)
     assert resolver._derivation_symbol(token) == entry.symbol
-    changed = store.append_idea(atoms[3], when=False, document_key='changed-state')
+    changed = store.append_idea(atoms[3], time=False, document_key='changed-state')
     pool.event(token, store.occurrence_of(changed), verb=verb, role=0, when=50,
         before=pool.value_of(token))
     consolidate(owner, store)

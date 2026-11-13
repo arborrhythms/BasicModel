@@ -26,7 +26,7 @@ def test_taxonomy_and_nested_relations_share_symbol_rows():
 
 def test_pair_rewitnesses_both_lanes_without_a_relation_kind():
     store = LTM1(16)
-    first = store.add(2, 3, truth_plus=.7, truth_minus=.1, when=torch.ones(4))
+    first = store.add(2, 3, truth_plus=.7, truth_minus=.1)
     assert store.add(2, 3, truth_plus=.2, truth_minus=.8) == first
     assert len(store) == 1 and store.access_count[first] == 2
     torch.testing.assert_close(store.truth_plus[first], torch.tensor(.7))

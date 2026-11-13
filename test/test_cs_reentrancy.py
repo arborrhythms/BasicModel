@@ -21,7 +21,7 @@ RETIRED). New ownership / forward contract:
     ``sigma`` before ``ConceptualSpace.reverse`` so the round-trip stays
     exact.
 
-The gate builds ``XOR_exact.xml`` (parallel, bindingDepth=1, invertible
+The gate builds ``XOR_symbols.xml`` (parallel, bindingDepth=1, invertible
 PS/CS/SS passthroughs, butterfly pi AND sigma) -- the fixture this refactor
 restored to exact 4/4 reconstruction (see
 test_explicit_dimensions.TestXorExactCliReconstruction for the end-to-end
@@ -52,7 +52,7 @@ from Layers import MeronymicFoldAdapter
 from util import init_config
 
 _DATA_DIR = os.path.join(_PROJECT, "data")
-_CONFIG = os.path.join(_DATA_DIR, "XOR_exact.xml")
+_CONFIG = os.path.join(_DATA_DIR, "XOR_symbols.xml")
 _DEFAULTS = os.path.join(_DATA_DIR, "model.xml")
 
 

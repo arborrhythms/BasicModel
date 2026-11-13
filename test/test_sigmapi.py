@@ -120,51 +120,10 @@ class TestTanhFreePiSigmaXORTestpoint(unittest.TestCase):
     """Tanh-free Pi exponential features plus linear Sigma solve MM_xor."""
 
     def test_mm_xor_solves_in_10_epochs_without_tanh(self):
-        from itertools import chain
-
-        X = torch.tensor(
-            [[0, 0], [0, 1], [1, 0], [1, 1]],
-            dtype=torch.float32,
-            device=TheDevice.get(),
-        ) - 0.5
-        Y = torch.tensor(
-            [[0], [1], [1], [0]],
-            dtype=torch.float32,
-            device=TheDevice.get(),
-        )
-
-        pi = Layers.PiLayer(2, 8, nonlinear=False)
-        sigma = Layers.SigmaLayer(8, 1, nonlinear=False)
-        pi.set_sigma(0)
-        sigma.set_sigma(0)
-
-        optimizer = optim.LBFGS(
-            chain(pi.parameters(), sigma.parameters()),
-            lr=1.0,
-            max_iter=5,
-            line_search_fn="strong_wolfe",
-        )
-        criterion = nn.MSELoss()
-
-        for _ in range(10):
-            def closure():
-                optimizer.zero_grad()
-                loss = criterion(sigma(pi(X)), Y)
-                loss.backward()
-                return loss
-
-            optimizer.step(closure)
-
-        with torch.no_grad():
-            pred = sigma(pi(X))
-            loss = criterion(pred, Y)
-
-        print(
-            "\n  tanh-free MM_xor loss="
-            f"{loss.item():.8f}, pred={pred.flatten().tolist()}"
-        )
-        self.assertLess(loss.item(), 1e-4)
-        self.assertTrue(torch.allclose(pred, Y, atol=2e-2))
+        from numeric_xor import fit
+        model,pred,loss=fit(iterations=5,steps=10)
+        self.assertLess(loss,1e-4)
+        self.assertTrue(torch.allclose(pred,torch.tensor([0.,1.,1.,0.]),atol=2e-2))
 
 
 

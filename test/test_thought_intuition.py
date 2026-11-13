@@ -597,28 +597,33 @@ def test_returned_intuition_proof_does_not_certify_an_unchanged_parent(source_pa
         chosen.append(operation)
         return value
     monkeypatch.setattr(model, '_choose_selected_thought_action', choose)
-    # The native return consumes the final unit. The empty child intuition
-    # leaves the caller's still-open proposition and source evidence intact.
+    # Empty intuition is a recorded result, but cannot close an open child
+    # (§3.6). The next attempt exhausts the same work budget; the caller and
+    # the empty proof retain their own propositions.
     result = run(model, goal, work_budget=13)
-    assert chosen == ['ask', 'intuit'] and result.work.spent == 13
+    assert chosen == ['ask', 'intuit', 'intuit'] and result.work.spent == 13
     assert result.meaning.role_refs == goal.role_refs and open_slots(result.meaning)
     assert evidence_pair(result.meaning) == source_pair
     returned = next(record for record in result.records if record.kind == 'return')
-    assert returned.result.evidence['intuition_derivation'] == ()
-    assert (returned.support_true, returned.support_false) == (0., 0.)
+    proof = next(record for record in result.records if record.result is not None
+                 and 'intuition_derivation' in record.result.evidence)
+    assert proof.result.evidence['intuition_derivation'] == ()
+    assert (proof.support_true, proof.support_false) == (0., 0.)
+    assert 'intuition_derivation' not in returned.result.evidence
+    assert (returned.support_true, returned.support_false) == source_pair
     assert result.result.semantic_id == 'ask'
-    assert result.records[-1].result is None
+    assert 'intuition_derivation' not in result.records[-1].result.evidence
     assert model._what_memory().thought_reference(returned) in result.records[-1].sources
     assert replay_thoughts(result.records).finished
-    corrupt = tuple(replace(record, support_true=.5) if record is returned else record
+    corrupt = tuple(replace(record, support_true=.5) if record is proof else record
                     for record in result.records)
     with pytest.raises(ValueError, match='intuition pair differs'):
         replay_thoughts(corrupt)
     # A changed pair on the same proposition still carries its proof and is
     # checked by replay. Only the unrelated parent/child attribution is removed.
     from ThoughtStream import completion_result
-    child = returned.result.evidence['meaning']
-    assert completion_result(with_slots(child, (), pair=(.5, 0.)), returned.result) is returned.result
+    child = proof.result.evidence['meaning']
+    assert completion_result(with_slots(child, (), pair=(.5, 0.)), proof.result) is proof.result
 
 
 @pytest.mark.parametrize('dtype', (torch.float32, torch.float64))
@@ -721,20 +726,26 @@ def test_nested_return_keeps_empty_proof_off_known_referent_fallback(dtype, monk
     returns = [record for record in result.records if record.kind == 'return']
     assert len(returns) == 2
     inner, outer = returns
-    assert inner.result.evidence['intuition_derivation'] == ()
-    assert inner.result.evidence['meaning'].role_refs == (None, None, None)
+    proof = next(record for record in result.records if record.result is not None
+                 and 'intuition_derivation' in record.result.evidence)
+    assert proof.result.evidence['intuition_derivation'] == ()
+    assert proof.result.evidence['meaning'].role_refs == (None, None, None)
+    assert 'intuition_derivation' not in inner.result.evidence
+    assert inner.result.evidence['value'].evidence['intuition_derivation'] == ()
+    assert inner.result.evidence['value'].evidence['meaning'].role_refs == (None, None, None)
+    assert inner.result.evidence['meaning'].role_refs == goal.role_refs
     assert (inner.support_true, inner.support_false) == (0., 0.)
     assert 'intuition_derivation' not in outer.result.evidence
-    assert outer.result.evidence['value'].evidence['intuition_derivation'] == ()
-    assert outer.result.evidence['value'].evidence['meaning'].role_refs == (None, None, None)
+    assert 'intuition_derivation' not in outer.result.evidence['value'].evidence
+    assert outer.result.evidence['value'].evidence['value'].evidence['intuition_derivation'] == ()
     assert outer.result.evidence['meaning'].role_refs == goal.role_refs
     assert (outer.support_true, outer.support_false) == source_pair
     assert 'intuition_derivation' not in result.records[-1].result.evidence
     assert model._what_memory().thought_reference(inner) in outer.sources
     assert replay_thoughts(result.records).finished
-    # The original same-proposition proof remains checked at its own return.
+    # The original same-proposition proof remains checked at its own thought.
     # Altering that pair must not become another reason to drop the proof.
-    corrupt = tuple(replace(record, support_true=.5) if record is inner else record
+    corrupt = tuple(replace(record, support_true=.5) if record is proof else record
                     for record in result.records)
     with pytest.raises(ValueError, match='intuition pair differs'):
         replay_thoughts(corrupt)

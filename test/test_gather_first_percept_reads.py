@@ -88,7 +88,7 @@ def test_slot_radix_embedding_gathers_without_full_codebook_read(monkeypatch):
     import Models
     from util import init_config
 
-    cfg = os.path.join(_PROJECT, "data", "MM_xor.xml")
+    cfg = os.path.join(_PROJECT, "data", "MM_text.xml")
     defaults = os.path.join(_PROJECT, "data", "model.xml")
     init_config(path=cfg, defaults_path=defaults)
     Language.TheGrammar._configured = False

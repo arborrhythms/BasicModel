@@ -31,17 +31,17 @@ def test_resolved_sentence_compresses_to_one_idea_without_composing_edges():
     assert store.slots.shape == (32, 16)
     assert len(store) == 1 and len(store.parts) == 0
     assert not hasattr(store, 'role_mask')
-    torch.testing.assert_close(store.when[row], store.entry_when(row))
+    torch.testing.assert_close(store.time[row], store.entry_time(row))
     assert 'role_refs' not in store._semantic_rows[int(store.address_keys[row])]
     assert dict(store.meaning_of(row).bindings)['_identity'] == ('sym', ids[0])
     torch.testing.assert_close(store.slots[row, :12], clause.point[:12])
-    assert bool(store.entry_when(row).ne(0).any())
+    assert bool(store.entry_time(row).ne(0).any())
 
 
 def pending_chain():
     store, (said,) = native_store(width=16, points=torch.eye(16)[3:4])
     rows = [store.append_meaning(ConceptualMeaning.from_description(torch.eye(16)[i]),
-        kind='unverified', sentence_index=i, when=False) for i in range(3)]
+        kind='unverified', sentence_index=i, time=False) for i in range(3)]
     owner = store._concept_owner()
     owner.mtm.open(store.occurrence_of(rows[2]), kind=None, value=store.slots[rows[2]], when=0, pending=True)
     he, she, unknown = [Composition(store.slots[row].clone(), reference=int(store.address_keys[row])) for row in rows]
@@ -62,10 +62,10 @@ def test_full_idea_inventory_can_rewitness_its_existing_sentence():
     row = store.write_clause(clause, document_key='same', sentence_index=0)
     for index in range(1, store.capacity):
         store.append_idea(torch.eye(16)[0], document_key='filler', sentence_index=index)
-    before = store.entry_when(row).clone()
+    before = store.entry_time(row).clone()
     assert store.write_clause(clause, document_key='same', sentence_index=0) == row
     assert len(store) == store.capacity and int(store.access_count[row]) == 2
-    torch.testing.assert_close(store.entry_when(row), before, rtol=0, atol=0)
+    torch.testing.assert_close(store.entry_time(row), before, rtol=0, atol=0)
 
 
 @pytest.mark.parametrize('clause_write', (False, True))
@@ -118,14 +118,14 @@ def test_pending_sentence_is_a_tagged_chain_with_only_its_top_stamped():
         node = second[1]
     assert store.parts.references(node) == ((SYMBOL, said), (OCCURRENCE, int(store.address_keys[rows[2]])))
     assert store.parts.rows_referencing(SYMBOL, said)
-    assert not any(bool(store.entry_when(row).ne(0).any()) for row in rows)
-    stamped = store.parts.percept[:, 4:].ne(0).any(-1).nonzero().flatten().tolist()
-    assert stamped == [result[1]] and not hasattr(store.parts, 'when')
+    assert not any(bool(store.entry_time(row).ne(0).any()) for row in rows)
+    assert not hasattr(store.parts, 'percept') and not hasattr(store.parts, 'when')
+    assert store.parts.contains(result[1])
     before = copy.deepcopy(store.parts.state_dict())
     owner = store._concept_owner()
     token = store.occurrence_of(rows[2])
     owner.mtm.open(token, kind=None, value=store.slots[rows[2]], when=0, pending=True)
-    changed = store.append_idea(torch.eye(16)[8], when=False,
+    changed = store.append_idea(torch.eye(16)[8], time=False,
         document_key='changed-state')
     owner.mtm.event(token, store.occurrence_of(changed), verb=said, role=0, when=1,
         before=store.slots[rows[2]])
@@ -176,21 +176,16 @@ def test_relation_query_cannot_use_its_own_closing_as_an_independent_witness():
     assert reader.best_match(independent, max_records=16, work=QueryWorkBudget(16))['witnesses'] == (('sym', relation),)
 
 
-def test_time_only_recall_returns_all_nearest_sentences_under_the_work_meter():
+def test_content_recall_reenters_retained_identities_under_the_work_meter():
     store, rows, _, _, _, chain = pending_chain()
-    when = store.entry_when(chain).clone()
-    idea = store.append_meaning(ConceptualMeaning.from_description(torch.eye(16)[9]),
-        kind='observation', when=when, sentence_index=9)
-    store.append_meaning(ConceptualMeaning.from_description(torch.eye(16)[10]),
-        kind='observation', when=encoder().encode(50), sentence_index=10)
     work = QueryWorkBudget(64)
-    found = store.recall_time(when, window=1, max_records=32, work=work)
-    assert {row['occurrence'] for row in found['value']} == {chain, store.occurrence_of(idea)}
-    assert not found['incomplete'] and work.spent == len(store)+len(store.parts)
+    found = store.cued_rows(store.meaning_of(chain), references=(chain,), max_records=1, work=work)
+    assert {row['occurrence'] for row in found['value']} == {chain}
+    assert not found['incomplete'] and work.spent == 1
     assert store.recall_identities(found['value'], work=work) == ()
     assert all(store._concept_owner().mtm.token_of(store.occurrence_of(row)) is not None for row in rows)
-    limited = store.recall_time(when, window=1, max_records=32, work=QueryWorkBudget(1))
-    assert limited['records_scanned'] == 1 and limited['incomplete'] == ('time_read_limit',)
+    limited = store.cued_rows(store.meaning_of(chain), references=(chain,), max_records=1, work=QueryWorkBudget(0))
+    assert not limited['value'] and limited['incomplete'] == ('work_budget',)
 
 
 def test_layout_checkpoint_is_versioned_and_never_resizes():
@@ -239,7 +234,6 @@ def test_deep_checkpoint_chains_validate_without_a_python_recursion_limit():
     state['refs'][1:, 1] = 2
     state['ref_kinds'][-1, 0] = SYMBOL
     state['count'].fill_(2047)
-    state['relation_order'][:2047] = torch.arange(2047, 0, -1)
     store.load_state_dict(state)
     assert len(store.protected_references((1,))) == 2048
     state['ref_kinds'][-1, 0] = RELATION
@@ -262,7 +256,7 @@ def test_invalid_relation_checkpoint_rejected_before_mutation(column, value):
         torch.testing.assert_close(store.state_dict()[name], original, rtol=0, atol=0)
 
 
-def test_close_placement_updates_meaning_and_content_retrieval_finds_idea(monkeypatch):
+def test_close_placement_updates_meaning_and_addressed_read_finds_idea(monkeypatch):
     from types import SimpleNamespace
     from MereologicalCodes import MereologicalCodes
     from MeaningCodes import identity_code
@@ -293,29 +287,27 @@ def test_close_placement_updates_meaning_and_content_retrieval_finds_idea(monkey
     store = LTM0(5, capacity=4, percept_width=0)
     row = store.append_idea(value, trust=1.)
     cue = ConceptualMeaning.from_description(value)
-    result = store.cued_rows(cue, max_candidates=4, work=QueryWorkBudget(8))
+    assert not store.cued_rows(cue, max_candidates=4, work=QueryWorkBudget(8))['value']
+    result = store.cued_rows(cue, references=(store.occurrence_of(row),),
+                             max_candidates=4, work=QueryWorkBudget(8))
     assert result['value'][0]['occurrence'] == store.occurrence_of(row)
     assert result['value'][0]['match'] == pytest.approx(1.)
 
 
-def test_time_query_loads_the_requested_stream_and_identity_pool():
-    from Layers import SymbolExpectation
+def test_content_recall_loads_only_the_requested_stream_and_identity_pool():
     from Queries import ThoughtLTMCapability
+    from Memory import ShortTermMemory, STMChunks
     store, rows, _, _, _, chain = pending_chain()
     owner = store._concept_owner()
-    for key in tuple(owner.mtm.entries):owner.mtm.forget(key)
-    from Memory import ShortTermMemory
-    owner.stm = ShortTermMemory(batch=2,capacity=8,concept_dim=16)
-    discourse = SymbolExpectation(n_symbols=8, max_depth=8, n_dim=16, concept_dim=16)
-    discourse._ltm_store = store
-    reader = ThoughtLTMCapability(store=lambda: store, equal=lambda *_: None,
-        tau_id=.99, discourse=discourse, row=1)
-    blank = torch.zeros(16); blank[store.when_start:store.when_start+4] = store.entry_when(chain)
-    result = reader.best_match(ConceptualMeaning.from_description(blank),
-                              max_records=32, work=QueryWorkBudget(64))
-    assert result['witnesses'] == (chain,)
-    assert [frame.row_id for frame in discourse.situation_references(1)] == [chain[1]]
-    assert not discourse.situation_references(0)
+    for key in tuple(owner.mtm.entries): owner.mtm.forget(key)
+    owner.stm = ShortTermMemory(batch=2, capacity=8, concept_dim=16)
+    reader = ThoughtLTMCapability(store=lambda: store, equal=lambda *_: None, tau_id=.99, row=1)
+    result = store.cued_rows(store.meaning_of(chain), references=(chain,),
+                              max_records=1, work=QueryWorkBudget(64))
+    assert tuple(row['occurrence'] for row in result['value']) == (chain,)
+    assert not store.recall_chunks(result['value'], work=QueryWorkBudget(64), stream=1)
+    assert owner.stm.state[STMChunks.REFS][1, 0, 0].tolist() == [STMChunks.RELATION, chain[1]]
+    assert not owner.stm.state[STMChunks.READ][0].any()
     assert all(owner.mtm.token_of(store.occurrence_of(row)) is not None for row in rows)
 
 

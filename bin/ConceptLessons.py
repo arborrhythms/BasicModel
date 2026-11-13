@@ -127,17 +127,7 @@ def teach_concept_lessons(model):
     orders = [alloc.order_of(cs.concept_id_at_row(row)) for row in cases]
     if min(orders) < 0:
         raise ValueError('an output definition requires witnessed source orders')
-    for concept in model.outputSpace.concept_ids:
-        # The existing output sigma is a definition over the witnessed cases.
-        # Read their orders before allocating it; no answer label is a member
-        # assertion and all numerical definition weights still start at zero.
-        alloc.reference_orders[concept] = 1 + max(orders)
-        alloc.settle(concept)
-        output = cs._csw_concept_row(alloc.order_of(concept), concept)
-        for row in cases:
-            cs.add_concept_edge(output, row)  # unwritten; labels train these later
-    model._concept_lesson_receipt = dict(name_losses=history, cases=cases,
-                                        output_concepts=list(model.outputSpace.concept_ids))
+    model._concept_lesson_receipt = dict(name_losses=history, cases=cases)
     model._concept_lessons_taught = True
     store.features._optimizer = None
     model.zero_grad(set_to_none=True)

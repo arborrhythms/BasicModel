@@ -1596,6 +1596,12 @@ class BaseModel(Mereology, nn.Module):
     # fraction; both default 0.0 -> the feature is off -> byte-identical.
     prediction_trial_ratio = 0.0
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Every construction route has an explicit optional numeric modality.
+        # The configured field reader replaces this slot with its module.
+        self.numeric_percepts = None
+
     @staticmethod
     def load_config(config_path=None):
         """Load model settings from an XML config file.
@@ -2040,7 +2046,7 @@ class BaseModel(Mereology, nn.Module):
         # Exposed as a model.xml parameter (live-wiring directive): default
         # false keeps every established path byte-identical until the
         # temporal/supervised curriculum trains the synthesis adapter.
-        self.answer_synthesis = bool(TheXMLConfig.get(
+        self.answer_synthesis = self.grammar_phases.vector and bool(TheXMLConfig.get(
             "architecture.answerSynthesis", default=False))
         # <synthesisBindings>: how many perceptual context slots a derivation
         # may NAME as bindings for output synthesis (spec 5.3: context reaches
@@ -2283,6 +2289,14 @@ class BaseModel(Mereology, nn.Module):
             object.__setattr__(_cs, '_basic_percepts', self.perceptualSpace.basic_percepts)
             _cs.basic_percepts.bind(self.wholeSpace.subspace.what)
 
+        self.numeric_percepts = None
+        from GrammarPhases import SUBSTRATE
+        if (str(TheXMLConfig.get('architecture.data.dataType', default='numeric')) == 'numeric'
+                and not self.grammar_phases.per_word
+                and not (self.grammar_phases.operators & SUBSTRATE)):
+            from NumericPercepts import NumericPercepts
+            self.numeric_percepts = NumericPercepts(self, int(self.inputSpace.inputShape[0]) * int(self.inputSpace.inputShape[1]))
+
         # Per-word ground-truth cursor enable. Pre-Stage-1.E this was
         # derived directly from ``useGrammar``; post-Stage-1.E it mirrors
         # ``self.word_brackets``.
@@ -2387,13 +2401,7 @@ class BaseModel(Mereology, nn.Module):
 
         # Every retained serial grammar reading uses its tied inverse.
         self.reconstruction_scope = self._understanding_reconstruction_scope()
-        self.reconstruct_in_loop = self.reconstruction_scope == 'understanding'
-        self.answer_record_reader = None
-        if self.word_brackets and not self.answer_synthesis:
-            from SentenceUnderstanding import SentenceRecordReader
-            width = int(self.conceptualSpace.muxedSize)
-            size = math.prod(self.outputSpace.outputShape)
-            self.answer_record_reader = SentenceRecordReader(width, size).to(TheDevice.get())
+        self.reconstruct_in_loop = self.grammar_phases.per_word and self.reconstruction_scope == 'understanding'
         self.detached_reverse = False  # diagnostic; no student runtime exists
         self._recon_keep_ideas = self.reconstruct_in_loop
         self._recon_completed = False
@@ -2553,7 +2561,7 @@ class BaseModel(Mereology, nn.Module):
             getattr(discourse, 'word_predictor', None), getattr(self, 'percept_expectation', None),
             *(getattr(cs, 'concept_predictor', None) for cs in getattr(self, 'conceptualSpaces', ()))])
         output = parameters([getattr(self, 'outputSpace', None),
-            getattr(self, 'answer_attention', None), getattr(self, 'answer_record_reader', None),
+            getattr(self, 'answer_attention', None),
             *(getattr(cs, 'intuition', None) for cs in getattr(self, 'conceptualSpaces', ()))])
         synthesis = getattr(self, 'synthesis_parameters', None)
         if synthesis is not None:
@@ -2562,15 +2570,6 @@ class BaseModel(Mereology, nn.Module):
         # alias. Registration there does not transfer its training ownership.
         output.difference_update(parameters([
             getattr(getattr(self, 'outputSpace', None), '_vocabulary', None)]))
-        if getattr(getattr(self, 'outputSpace', None), 'concept_ids', ()):
-            # A named-pole output has no separate numeric head. Its sparse
-            # evidence coefficients are the answer's reader, not the codes.
-            for cs in getattr(self, 'conceptualSpaces', ()):
-                allocator = getattr(cs, '_concept_allocator', None)
-                if allocator is not None:
-                    values = allocator.layer(0).values
-                    if id(values) in available:
-                        output.add(id(values))
         if expectation & output:
             raise RuntimeError('expectation and answer share an optimizer parameter')
         language = getattr(self, 'languageSpace', None)
@@ -2605,7 +2604,8 @@ class BaseModel(Mereology, nn.Module):
         return {name: tuple(available[i] for i in available if i in ids) for name, ids in
                 (('reconstruction', reconstruction), ('expectation', expectation), ('output', output),
                  ('attention', attention),
-                 ('compose_lesson', compose), ('generate_lesson', generate), ('chooser', reconstruction))}
+                 ('compose_lesson', compose), ('generate_lesson', generate), ('chooser', reconstruction),
+                 ('compose_policy', compose_policy), ('generate_policy', generate))}
 
     def _adopt_fresh_parameters(self, optimizer):
         """Join lazily enabled readers/predictors before their first backward."""
@@ -2677,8 +2677,9 @@ class BaseModel(Mereology, nn.Module):
             return
         measure(self, costs, optimizer, pullback=getattr(self, '_sentence_pullback', None) if sentence else None,
                 reconstruction_strength=drawn)
-        if 'reconstruction' in costs:
-            costs['reconstruction'] = costs['reconstruction'] * drawn
+        for name in ('reconstruction', 'generate_policy.R'):
+            if name in costs:
+                costs[name] = costs[name] * drawn
         owners = self.objective_parameter_groups(optimizer)
         # Admission receives the same R + A credit as the attention walk.
         # It has one composite writer; neither constituent can update codes
@@ -2749,7 +2750,7 @@ class BaseModel(Mereology, nn.Module):
         # the ``self.spaces`` walk above misses their params -- collect them
         # explicitly (deduped). Absent / gate-off => the attr is None => no
         # extra params => byte-identical optimizer state.
-        for _att_name in ("answer_attention", "answer_record_reader", "candidate_attention", "percept_expectation"):
+        for _att_name in ("answer_attention", "candidate_attention", "percept_expectation"):
             _att = getattr(self, _att_name, None)
             if _att is not None:
                 for p in _att.parameters():
@@ -5580,6 +5581,19 @@ class BaseModel(Mereology, nn.Module):
     def _reconstructionReport(self):
         """Run a final eval pass and print input reconstruction per row."""
         data = self.inputSpace.data
+        if self.numeric_percepts is not None:
+            values = self.inputSpace.prepInput(data.test_input)
+            with torch.no_grad():
+                understood = self.understand(values)
+                restored, _ = self.reverseReconstruct(understood)
+            for row, (original, rebuilt, label, prediction) in enumerate(zip(
+                    values.reshape(len(values),-1),restored.reshape(len(values),-1),
+                    data.test_output,understood.execution[2])):
+                matched = torch.allclose(original.to(rebuilt),rebuilt)
+                TheMessage(f"  row[{row}] input={original.tolist()!r} -> reconstructed={rebuilt.tolist()!r} "
+                    f"label={float(torch.as_tensor(label).reshape(-1)[0]):.4f} "
+                    f"predicted={float(prediction.reshape(-1)[0]):.4f} {'OK' if matched else 'MISMATCH'}")
+            return
         split = "test"
         split_input = getattr(data, f"{split}_input", None)
         split_output = getattr(data, f"{split}_output", None)
@@ -6763,45 +6777,6 @@ class BasicModel(BaseModel):
         if getattr(self.conceptualSpace, "nonlinear", False):
             return x.clamp(min=-1 + epsilon, max=1 - epsilon)
         return x
-
-    def _has_word_objects(self):
-        """An identified native word enables grammar between its brackets.
-
-        Primitive-only named-pole lessons read the field directly. A TruthSet
-        needs completed grammatical rows even with one native concept layer.
-        This is a carrier contract, not a selectable traversal schedule.
-        """
-        if TheXMLConfig.space('OutputSpace','conceptIds',default=''):
-            return False
-        if self._derive_use_grammar() == 'none':
-            return bool(TheXMLConfig.get('architecture.ltmConsolidation',default=False))
-        return (int(TheXMLConfig.get('architecture.conceptLayers',default=1)) > 1
-                or bool(TheXMLConfig.get('architecture.ltmConsolidation',default=False)))
-
-    def _derive_use_grammar(self):
-        """Derive ``useGrammar`` from the configured grammar rules.
-
-        Returns ``"all"`` when the grammar contains any non-default
-        rule (anything beyond unary ``pi`` / ``sigma`` substrate
-        folds), else ``"none"``. Replaces the retired
-        ``<SymbolSpace><useGrammar>`` XML knob — the grammar XML itself
-        is now the sole source of truth for whether the chart fires
-        and whether per-stage merge glue is wired.
-        """
-        try:
-            from Language import TheGrammar
-            TheGrammar._ensure_configured()
-            for rule in getattr(TheGrammar, 'rules', []) or []:
-                mn = getattr(rule, 'method_name', None)
-                arity = int(getattr(rule, 'arity', 1) or 1)
-                if mn is None or 'field' in rule.operand_kinds:
-                    continue
-                if mn in ('pi', 'sigma') and arity == 1:
-                    continue
-                return "all"
-        except Exception:
-            pass
-        return "none"
 
     def End(self):
         """Per-batch teardown. Cascades End() to every Space.
@@ -8629,9 +8604,14 @@ class BasicModel(BaseModel):
             "combine_last_cs_sub": getattr(self, "_combine_last_cs_sub", None),
             "merge_diffs": merge_diffs,
         }
-        if not self.word_brackets and self.concept_binding == 'aligned':
+        if self.numeric_percepts is not None:
+            from dataclasses import replace
+            field = self._numeric_field
+            carriers = {'field': replace(field, evidence=field.evidence.clone())}
+        elif self.concept_binding == 'aligned' and not self.grammar_phases.vector:
             carriers = {'ir_mask_positions': carriers['ir_mask_positions'], 'field':
-                self._concept_owner()._cs_open_field}
+                (self._last_sentence_field if self.grammar_phases.examination else
+                 self._concept_owner()._cs_open_field)}
         # The answer path's seed (spec 5.3): on the serial grammar path the
         # resolved input symbol is the grammar's ROOT IDEA (the STM-folded
         # S in the terminal conceptual state), which varies with the
@@ -8647,6 +8627,13 @@ class BasicModel(BaseModel):
         sentence_states, sentence_fields = (self._capture_sentence_end_states()
                                              if self.word_brackets else ((), {}))
         input_reconstruction = self._complete_input_reconstruction()
+        scalar_fields = getattr(self,'_sentence_open_fields',{})
+        if scalar_fields and int(self._concept_owner().basic_percepts.value_count):
+            from dataclasses import replace
+            field = scalar_fields[max(scalar_fields)]
+            carriers['scalar_field'] = replace(field,evidence=field.evidence.clone())
+            carriers['scalar_percepts'] = tuple(getattr(self, '_scalar_present', {}).get(batch, {}).get('percept')
+                for batch in range(field.evidence.shape[1]))
         return Understanding(
             perceptual_context=perceptual,
             conceptual_state=conceptual,
@@ -8690,6 +8677,14 @@ class BasicModel(BaseModel):
         self._last_understanding = understanding
         return understanding
 
+    def reconstructModalities(self, understanding):
+        """Return the common input inverse and its optional scalar modality."""
+        from ScalarPercepts import decode
+        field = understanding.reconstruction_carriers.get('scalar_field')
+        return dict(input=self.reverseReconstruct(understanding)[0],
+                    scalar=() if field is None else decode(self._concept_owner(), field,
+                        understanding.reconstruction_carriers.get('scalar_percepts', ())))
+
     @_sentence_query_mask
     def reverseReconstruct(self, understanding, *, target=None, train=False, registry=None):
         """Reconstruct the presented input from ``understanding`` (Step 2).
@@ -8726,6 +8721,15 @@ class BasicModel(BaseModel):
         if self.reconstruct_in_loop and self.word_brackets:
             raise RuntimeError("tied reconstruction requires an owned completed result")
         field = understanding.reconstruction_carriers.get('field')
+        if self.numeric_percepts is not None:
+            value = self.numeric_percepts.reverse(field)
+            score = None
+            if torch.is_tensor(target):
+                target = target.reshape_as(value)
+                score = (value-target).square().mean()
+                if registry is not None:
+                    registry.squared('reconstruction_reverse',value,target,category='reconstruction')
+            return value, score
         if field is not None:
             from SentenceField import native_target
             rev = self.reverse(self.conceptualSpace.subspace.carrier_like(), field=field)
@@ -8917,8 +8921,11 @@ class BasicModel(BaseModel):
                 meaning = entry.meaning
                 if meaning is None:
                     continue
-                answer_meanings[row] = (meaning,)
-                selected_answer_rows[row] = meaning.roles.to(answer)
+                from Output import concluded_meanings
+                items = concluded_meanings(meaning)
+                answer_meanings[row] = items
+                selected_answer_rows[row] = (torch.cat(tuple(item.roles.to(answer) for item in items))
+                    if items else torch.zeros_like(selected_answer_rows[row]))
                 selected_answer_applied = True
         for row, selected in selected_thoughts:
             checked = getattr(selected, "result", None)
@@ -9665,7 +9672,8 @@ class BasicModel(BaseModel):
                     params.extend(module.parameters())
         return list({id(p): p for p in params}.values())
 
-    def generate(self, idea, *, structure, occupied, infix_rows, walk_options, prepared, when=None):
+    def generate(self, idea, *, structure, occupied, infix_rows, walk_options, prepared, when=None,
+                 references=()):
         """System 2 emits terminals; the occurrence writer supplies order zero."""
         if prepared is not None:
             object.__setattr__(self, '_answer_attention_obs', prepared.attention)
@@ -9687,6 +9695,16 @@ class BasicModel(BaseModel):
         from Generative import walk_bank
         bank = (prepared.bank if prepared is not None else
                 walk_bank(self, idea, None if structure is None else structure.primed))
+        # References are addresses beside the operands, never code coordinates.
+        reference_table = [None]
+        reference_ids = torch.zeros(idea.shape[:2], device=idea.device, dtype=torch.long)
+        for b, row in enumerate(references):
+            for slot, reference in enumerate(row):
+                if reference is not None:
+                    reference_ids[b, slot] = len(reference_table)
+                    reference_table.append(reference)
+        stack_references = self._walk_operand(reference_ids[..., None],
+            infix_rows=infix_rows, occupied=occupied)[..., 0]
         walk = (
             self._compiled_output_walk()(
                 self._walk_operand(idea, infix_rows=infix_rows, occupied=occupied), budget, False,
@@ -9700,6 +9718,7 @@ class BasicModel(BaseModel):
                 whole_bank=None if bank is None else bank.form_wholes,
                 verb_groups=None if bank is None else bank.verb_groups,
                 initial_depth=occupied.long().sum(-1),
+                initial_references=stack_references, return_references=True,
                 require_symbols=(not self._aligned_serial_word_mode()
                     or (bank is not None and bank.meaning_start is not None
                         and bank.meaning_start < bank.codes.shape[-1])),
@@ -9708,6 +9727,7 @@ class BasicModel(BaseModel):
                 constituent_families=None if structure is None else structure.constituent_families,
                 structural_context=structure is not None,
                 **dict(walk_options or {},return_trace=True)))
+        walk, emitted_references = walk
         words,n_emitted,output_truncated,policy_cost=walk[:4]
         alternatives=(walk[5] if (walk_options or {}).get('return_candidates')
                       else torch.zeros_like(walk[4],dtype=torch.bool))
@@ -9718,6 +9738,7 @@ class BasicModel(BaseModel):
         if int(words.shape[1]) > kept:       # the realised slab keeps 2W words
             output_truncated = torch.logical_or(output_truncated, n_emitted > kept)
             words = words[:, :kept]
+            emitted_references = emitted_references[:, :kept]
         object.__setattr__(self, "_output_truncated", output_truncated)
         from OutputOccurrences import generated
         if when is None:
@@ -9726,7 +9747,9 @@ class BasicModel(BaseModel):
                 tick = self._advance_when_time()
             when = words.new_tensor((tick, tick + 1), dtype=torch.long)[None, None]
         return generated(self, words, n_emitted, output_truncated, bank,
-                         self._last_output_walk_trace, when=when)
+                         self._last_output_walk_trace, when=when,
+                         references=tuple(tuple(reference_table[index] for index in row)
+                                          for row in emitted_references.tolist()))
 
     from RowTime import produced as _produced_sentence
     @_produced_sentence
@@ -9780,7 +9803,7 @@ class BasicModel(BaseModel):
             # output loop; the walk un-folds it into words (the second
             # compiled loop) and the words are realised through the
             # reverse chain.  The symbol vector is never padded to fit.
-            idea, idea_resolved, idea_sources, _targets = self._materialize_answer_idea(
+            idea, idea_resolved, idea_sources, references = self._materialize_answer_idea(
                 understanding, derivation, questions)
             object.__setattr__(self, "_output_idea_sources", idea_sources)
             object.__setattr__(self, "_output_idea_resolved", idea_resolved)
@@ -9789,7 +9812,7 @@ class BasicModel(BaseModel):
                 structure = understanding.sentence_records[-1] if understanding.sentence_records else None
                 generated = self.generate(idea, structure=structure, occupied=occupied,
                     infix_rows=tuple(bool(items) for items in derivation.answer_meanings),
-                    walk_options=_walk_options, prepared=derivation.generation)
+                    walk_options=_walk_options, prepared=derivation.generation, references=references)
                 walked = generated.words
                 output_truncated = generated.truncated
         if walked is None:
@@ -10557,7 +10580,8 @@ class BasicModel(BaseModel):
             answers = [replace(answer, text=texts[b]) if answer.available else answer
                        for b, answer in enumerate(answers)]
         self._last_what_answers = tuple(answers)
-        if not self.word_brackets and self.concept_binding == 'aligned':
+        if (not self.word_brackets and self.concept_binding == 'aligned'
+                and self.numeric_percepts is None):
             from ConceptSpread import complete
             complete(self, self._concept_prediction.active, self.errors)
         return answers[0] if isinstance(question, WhatQuestion) else tuple(answers)
@@ -10871,7 +10895,7 @@ class BasicModel(BaseModel):
                 "post-training grammar dump failed: %s", _exc)
 
         # Reconstruction report: run final test pass and show input vs reconstructed
-        if self.reversible and self.inputSpace.model_type == "embedding":
+        if self.reversible and (self.inputSpace.model_type == "embedding" or self.numeric_percepts is not None):
             self._reconstructionReport()
 
         self.trainLosses = trainLosses
@@ -12657,9 +12681,9 @@ class BasicModel(BaseModel):
         context = derivation.conditioning_context
         idea = self._condition_answer_on_question(idea,
             context.detach() if torch.is_tensor(context) else context, occupied=occupied)
-        # The compatibility fourth result remains absent: no input-reading
-        # targets or generation actions cross this boundary.
-        return torch.where(resolved[:, None, None], idea, torch.zeros_like(idea)), resolved, tuple(sources), None
+        references = tuple(tuple(reference for meaning in items for reference in meaning.role_refs)
+                           for items in derivation.answer_meanings)
+        return torch.where(resolved[:, None, None], idea, torch.zeros_like(idea)), resolved, tuple(sources), references
 
     def _sentence_scope(self, t=None):
         """``[B, W]`` bool: the active words of sentence slot ``t``
@@ -13199,6 +13223,7 @@ class BasicModel(BaseModel):
                               departure_uniform=None, kept_actions=None,
                               return_candidates=False, case_bank=None,
                               initial_depth=None, require_symbols=True,
+                              initial_references=None, return_references=False,
                               constituents=None, constituent_valid=None, constituent_families=None,
                               terminal_valid=None, whole_bank=None, structural_context=False,verb_groups=None):
         """The shared conceptual decoder. No compose actions enter this walk.
@@ -13217,6 +13242,8 @@ class BasicModel(BaseModel):
         ar = torch.arange(B, device=event.device)
         n_live0 = (event.abs().amax(-1).ne(0).sum(-1)
                    if initial_depth is None else initial_depth)
+        reference_ids = (torch.zeros(B, N, device=event.device, dtype=torch.long)
+                         if initial_references is None else initial_references.clone())
         # while_loop lifts these snapshots as invariant inputs. Callers may
         # supply overlapping views (a primed row can also be a live whole),
         # but HOP inputs must have independent storage, including masks.
@@ -13270,11 +13297,13 @@ class BasicModel(BaseModel):
             proposed_actions = type(proposed_actions)(*(own(value) for value in proposed_actions))
 
         def cond(t, stack, depth, emitted, count, actions, alternatives, progressing, unary_run, tops,
-                 exact_path, residuals, features, stacks, depths, counts, unaries, exacts):
+                 exact_path, residuals, features, stacks, depths, counts, unaries, exacts,
+                 stack_refs, emitted_refs, reference_history):
             return (t < T) & (depth > 0).any() & progressing
 
         def body(t, stack, depth, emitted, count, actions, alternatives, progressing, unary_run, tops,
-                 exact_path, residuals, features, stacks, depths, counts, unaries, exacts):
+                 exact_path, residuals, features, stacks, depths, counts, unaries, exacts,
+                 stack_refs, emitted_refs, reference_history):
             pos = (depth - 1).clamp(0, N - 1)
             parent = stack[ar, pos]
             # A stream starts at its retained departure state. Earlier
@@ -13286,6 +13315,8 @@ class BasicModel(BaseModel):
             counts1 = counts.scatter(1, column, count[:, None])
             unaries1 = unaries.scatter(1, column[..., None].expand(B, 1, N), unary_run[:, None])
             exacts1 = exacts.scatter(1, column, exact_path[:, None])
+            references1 = reference_history.scatter(1,
+                column[..., None].expand(B, 1, N), stack_refs[:, None])
             from Generative import inverse_menu, selected_inverse, selected_residual
             selected_graph = torch.is_grad_enabled()
             # The menu is an observation. Only the selected inverse is an operand.
@@ -13299,6 +13330,19 @@ class BasicModel(BaseModel):
                     action_candidates=proposed_actions)
                 menu = (inverse_menu(language, parent, live, **menu_options)
                     if menu_read is None else menu_read.read(parent, live, **menu_options))
+                named = stack_refs[ar, pos] > 0
+                # A supplied identity already names this terminal. It needs
+                # no numerical identification or nearest-code projection.
+                menu = menu._replace(
+                    left=torch.cat((menu.left[:, :-1], torch.where(named[:, None], parent,
+                        menu.left[:, -1])[:, None]), 1),
+                    admissible=torch.cat((menu.admissible[:, :-1],
+                        (menu.admissible[:, -1] | named)[:, None]), 1),
+                    exact=torch.cat((menu.exact[:, :-1], (menu.exact[:, -1] | named)[:, None]), 1),
+                    form_residual=torch.cat((menu.form_residual[:, :-1],
+                        torch.where(named, 0., menu.form_residual[:, -1])[:, None]), 1),
+                    meaning_residual=torch.cat((menu.meaning_residual[:, :-1],
+                        torch.where(named[:, None], 0., menu.meaning_residual[:, -1])[:, None]), 1))
                 options,others,legal=menu.left,menu.right,menu.admissible
             logits=language.generate_policy_logits(parent,menu.features)
             is_binary = torch.arange(stop + 1, device=event.device) < R2
@@ -13382,6 +13426,13 @@ class BasicModel(BaseModel):
             emitted1 = emitted.clone()
             # Exact STOP retains the parent; approximate STOP is a native terminal.
             emitted1[ar, slot] = torch.where(pop[:, None], left, emitted1[ar, slot])
+            emitted_refs1 = emitted_refs.clone()
+            emitted_refs1[ar, slot] = torch.where(pop, stack_refs[ar, pos], emitted_refs1[ar, slot])
+            stack_refs1 = stack_refs.clone()
+            # An inverse consumes the whole's identity. Its newly derived
+            # children do not inherit that identity from equal coordinates.
+            stack_refs1[ar, pos] = torch.where(used, 0, stack_refs[ar, pos])
+            stack_refs1[ar, above] = torch.where(binary, 0, stack_refs1[ar, above])
             actions1 = actions.scatter(1, t.reshape(1, 1).expand(B, 1),
                 torch.where(t >= starts, torch.where(live & ready, choice, -1),
                     actions.gather(1, column)[:,0])[:,None])
@@ -13391,7 +13442,8 @@ class BasicModel(BaseModel):
             return (t + 1, stack1, depth + binary.long() - pop.long(),
                     emitted1, count + pop.long(), actions1, alternatives1,
                     ((live & ready) | ((depth > 0) & (t < starts))).any(), unary_run1, tops1, exact_path1,
-                    residuals1, features1, stacks1, depths1, counts1, unaries1, exacts1)
+                    residuals1, features1, stacks1, depths1, counts1, unaries1, exacts1,
+                    stack_refs1, emitted_refs1, references1)
 
         # With no legal move in any live row, the remaining trips would
         # repeat this exact state. Keep its pending depth and untouched
@@ -13408,7 +13460,8 @@ class BasicModel(BaseModel):
         if exploit_prefix is not None:
             (old_stacks, old_depths, old_counts, old_unaries, old_exacts,
              old_emitted, old_actions, old_alternatives, old_residuals, old_features,
-             old_tops, final_stack, final_depth, final_count, final_exact) = exploit_prefix
+             old_tops, final_stack, final_depth, final_count, final_exact,
+             old_reference_history, old_emitted_refs, final_refs) = exploit_prefix
             takes = departure >= 0
             at = departure.clamp_min(0)
             reuse = torch.zeros_like(takes) if reuse_rows is None else reuse_rows
@@ -13428,9 +13481,16 @@ class BasicModel(BaseModel):
                 torch.where(prefix[..., None, None], old_features, 0.))
         history = (event.new_zeros(B, T, N, D), zeros.new_zeros(B, T), zeros.new_zeros(B, T),
                    zeros.new_zeros(B, T, N), torch.zeros(B, T, device=event.device, dtype=torch.bool))
-        result_state = _reconstruction_while_loop(cond, body, _carries_with_grad((*initial, *history)))
+        initial_refs, emitted_refs = reference_ids, zeros.new_zeros(B, T)
+        if exploit_prefix is not None:
+            initial_refs = torch.where(takes[:, None], old_reference_history[ar, at],
+                torch.where(reuse[:, None], final_refs, reference_ids))
+            emitted_refs = torch.where(emitted_mask, old_emitted_refs, 0)
+        reference_state = (initial_refs, emitted_refs, zeros.new_zeros(B, T, N))
+        result_state = _reconstruction_while_loop(cond, body, _carries_with_grad((*initial, *history, *reference_state)))
         (_, stack, depth, emitted, count, actions, alternatives, _, _, tops, exact_path,
-         residuals, features, stacks, depths, counts, unaries, exacts) = result_state
+         residuals, features, stacks, depths, counts, unaries, exacts,
+         stack_refs, emitted_refs, reference_history) = result_state
         if exploit_prefix is not None:
             # Nondeparting streams keep the complete exploit result and its graph.
             depth = torch.where(reuse, final_depth, depth)
@@ -13439,18 +13499,22 @@ class BasicModel(BaseModel):
         # reconstruct an alias of a loop-carried tensor with journal strides.
         retained = tuple(own(value) for value in (
             stacks, depths, counts, unaries, exacts, emitted, actions, alternatives,
-            residuals, features, tops, stack, depth, count, exact_path))
+            residuals, features, tops, stack, depth, count, exact_path,
+            reference_history, emitted_refs, stack_refs))
         index = (torch.arange(T, device=event.device)[None] + (T-count)[:, None]).clamp_max(T-1)
         out = emitted.gather(1, index[..., None].expand(B, T, D))
         keep = torch.arange(T, device=event.device)[None] < count[:, None]
         out = torch.where(keep[..., None], out, 0.)
+        out_refs = torch.where(keep, emitted_refs.gather(1, index), 0)
         from Generative import walk_residual
         residual_cost=walk_residual(residuals,stack,event,depth,form_width=form_width,numeric=not require_symbols)
         result = (out, count, depth > 0, residual_cost)
         suffix=(exact_path & (depth==0),residuals,stack,features.detach(),tops.detach())
         if return_candidates:
-            return (*result, actions, alternatives, retained, *suffix)
-        return (*result, actions, *suffix) if return_trace else result
+            result = (*result, actions, alternatives, retained, *suffix)
+        elif return_trace:
+            result = (*result, actions, *suffix)
+        return (result, out_refs) if return_references else result
 
     def _compiled_output_walk(self):
         """The generate walk as the second compiled call (cached)."""
@@ -14432,7 +14496,7 @@ class BasicModel(BaseModel):
             # Keep eager staging immediately beside the compiled invocation:
             # the traced forward only reads these parked tensors.  The eager
             # path intentionally remains unchanged and lexes inline.
-            if self._compiled_step is not None:
+            if self._compiled_step is not None and self.numeric_percepts is None:
                 if isinstance(inputTensor, torch.Tensor):
                     inputTensor = inputTensor.to(TheDevice.get())
                 self._staged_in_sub = self._lex_embed_stem(inputTensor)
@@ -14778,7 +14842,11 @@ class BasicModel(BaseModel):
             # doc/BrickHostSyncStatus.md residual D.
             # Serial grammar readings consume the owned byte reconstruction.
             # Paths without a grammar keep perceptual reconstruction.
-            if self.reconstruct_in_loop:
+            if self.numeric_percepts is not None:
+                inputDataPred, lossIn = self.reverseReconstruct(self._last_understanding,
+                    target=inputTensor.reshape(len(inputTensor),-1,1), registry=input_errors)
+                inputPred = inputDataPred
+            elif self.reconstruct_in_loop:
                 # Completion belongs to understanding, before reasoning and
                 # output can change staging. Training and evaluation consume
                 # precisely the same owned byte objective, once.
@@ -14819,7 +14887,7 @@ class BasicModel(BaseModel):
             # A grammar-free reading retains its perceptual event inverse.
             # The grammar path has already supplied its single byte objective.
             lossRev = torch.zeros((), device=TheDevice.get())
-            _rev_dedupe = self.reconstruct_in_loop
+            _rev_dedupe = self.reconstruct_in_loop or self.numeric_percepts is not None
             if forwardInput is not None and not _rev_dedupe:
                 # reverseReconstruct owns the input inverse and its seed;
                 # runBatch consumes its result and diagnostic score.
@@ -15166,7 +15234,9 @@ class BasicModel(BaseModel):
                 # With no batch-end teacher term there is no third backward.
                 _fineweb_step_performed = bool(self._sentence_trial_costs)
             elif getattr(self, '_single_sentence_steps', 0):
-                raise RuntimeError('a trained sentence left a late objective outside its single backward')
+                late = [name for name,term in self.errors._terms.items()
+                        if term.get('trained',True) and self.errors._value(term).requires_grad]
+                raise RuntimeError(f'a trained sentence left late objectives outside its single backward: {late}')
             elif amp_scaler is not None:
                 # fp16 on CUDA: scale grads to avoid underflow, then unscale
                 # inside scaler.step() before the actual optimizer update.
@@ -16369,7 +16439,8 @@ class BasicModel(BaseModel):
             TheXMLConfig.get("architecture.monotonic", default=False))
         # ``useGrammar`` XML knob retired 2026-05-13: derived from the
         # configured grammar instead. See ``_derive_use_grammar``.
-        self.useGrammar = self._derive_use_grammar()
+        from GrammarPhases import GrammarPhases
+        self.grammar_phases = GrammarPhases.configured()
         # ``<reconstruct>`` enum retired (A1: schema element +
         # ``reconstructEnum`` removed). C3 (spec sec 7): reconstruction is
         # now UNCONDITIONALLY concepts-seeded in ``runBatch``, so there is
@@ -16387,15 +16458,6 @@ class BasicModel(BaseModel):
         self.load_balance_weight = float(
             TheXMLConfig.get(
                 "architecture.loadBalanceWeight", default=0.0) or 0.0)
-        # thoughtFree is structurally equivalent to bindingDepth=0: no
-        # higher-order P/C/S cycles. Reject the nonsense combination early.
-        TheXMLConfig.require(
-            lambda cfg, _ug=self.useGrammar, _co=self.bindingDepth:
-                _ug != "thoughtFree" or _co == 0,
-            f"useGrammar='thoughtFree' requires bindingDepth=0 "
-            f"(got useGrammar={self.useGrammar!r}, "
-            f"bindingDepth={self.bindingDepth})"
-        )
         # Truth integration config (optional -- absent in BasicModel.xml)
         self.truth_bias_scale = float(TheXMLConfig.get("architecture.truthBiasScale", default=0.1) or 0.1)
         self.luminosity_weight = float(TheXMLConfig.get("architecture.LuminosityWeight", default=0.1) or 0.1)
@@ -16603,7 +16665,7 @@ class BasicModel(BaseModel):
             conceptOutputShape = [nConcepts, concept_dim + obj_concept]
 
         # -- Grammar path: progressive bottleneck per conceptual order --
-        if self.useGrammar == "all":
+        if self.grammar_phases.vector:
             n_stages = self.bindingDepth
             self._level_shapes_list = self._level_shapes(
                 nPercepts, percept_dim + obj_percept, n_stages)
@@ -16636,7 +16698,7 @@ class BasicModel(BaseModel):
         # so resolve the selector here with the same legacy fallback. Indexed
         # sparse codebook reads are safe only on the canonical word-serial
         # path; a parallel CS has differentiable dense inventory consumers.
-        _serial_requested = self._has_word_objects()
+        _serial_requested = self.grammar_phases.per_word
         _aligned_codebook_sources = bool(
             _share_concept_dictionary
             and _serial_meta
@@ -16653,7 +16715,7 @@ class BasicModel(BaseModel):
             {} if _share_concept_dictionary else None)
         for t in range(T):
             is_last = (t == T - 1)
-            if self.useGrammar == "all":
+            if self.grammar_phases.vector:
                 # A pass changes attention, not the perceptual dimension.
                 n_t = nPercepts
                 # In the aligned serial model PS/WS recurse at their native
@@ -16717,7 +16779,7 @@ class BasicModel(BaseModel):
             # blocks + inert tail live inside it; concept_order_limit parses after
             # create, so read the XML directly).
             _so_v = self.concept_order_limit
-            _ser_v = self._has_word_objects()
+            _ser_v = self.grammar_phases.per_word
             if (getattr(self, 'concept_binding', 'mixing') == 'aligned'):
                 # Canonical aligned models address concepts by CS inventory
                 # row. Every stage therefore owns the full preallocated CS
@@ -17006,7 +17068,8 @@ class BasicModel(BaseModel):
         output_n = int(_term_cs_shape[0])
         outputInputShape = [output_n, int(_term_cs_shape[1])]
         self.outputSpace = OutputSpace(outputInputShape, spaceShape_output, outputShape,
-                                       vectors=self.perceptualSpace.vocabulary)
+                                       vectors=self.perceptualSpace.vocabulary,
+                                       field_capacity=self.conceptualSpaces[0].nVectors)
 
         self._symbol_shape = [nPercepts, percept_dim + obj_percept]
 
@@ -17263,7 +17326,7 @@ class BasicModel(BaseModel):
             rate=float(TheXMLConfig.training('perceptExpectationRate', .05)),
             epsilon=self.expectation_epsilon, saturation=self.expectation_saturation)
 
-        self.word_brackets = self._has_word_objects()
+        self.word_brackets = self.grammar_phases.per_word
         self._install_unit_span_fn()
 
         # Phase 2: Sequential pipeline is the only path.
@@ -17306,7 +17369,7 @@ class BasicModel(BaseModel):
         a CachePoint module and no longer a per-stage list lookup.
         """
         T = len(self.conceptualSpaces)
-        use_grammar_merge = (self.useGrammar == "all")
+        use_grammar_merge = (self.grammar_phases.vector)
 
         # PartSpace quantize: matches legacy's percept_quantize logic.
         # Reversible+invertible configurations skip codebook quantization to
@@ -17487,58 +17550,21 @@ class BasicModel(BaseModel):
 
 
 
-    def _forward_head(self, sub, *, sentence_state=None, understanding=None):
-        """Read the path's concluded state with the one continuous answer map."""
-        if self.outputSpace.concept_ids:
-            sub = self._combine_last_cs_sub
-        elif getattr(self, 'word_brackets', False):
-            # A fullgraph body returns these tensors explicitly. Its eager
-            # diagnostic attributes are published only after the head runs.
-            root = (sentence_state[0] if sentence_state is not None
-                    else getattr(self, '_stm_single_S', None))
-            if not torch.is_tensor(root):
-                raise RuntimeError('a serial numeric answer requires a concluded understanding')
-            slots = (sentence_state[-2] if sentence_state is not None
-                     else getattr(self, '_tensor_final_end_slots', None))
-            depth = (sentence_state[-1] if sentence_state is not None
-                     else getattr(self, '_tensor_final_end_depth', None))
-            if not (torch.is_tensor(slots) and torch.is_tensor(depth)):
-                slots, depth = self._final_end_state(
-                    root, getattr(self, '_stm_post_depth', None))
-            B, D = root.shape
-            occupied = depth.reshape(B).abs().clamp_max(3)
-            single = torch.cat((root[:, None], root.new_zeros(B, 2, D)), dim=1)
-            slots = torch.where((occupied == 1)[:, None, None], single, slots)
-            slots = torch.where(
-                (torch.arange(3, device=root.device)[None] < occupied[:, None])[..., None],
-                slots, torch.zeros_like(slots))
-            # Preserve the existing map's parameter geometry. Unoccupied
-            # inputs are zeros; no per-word carrier can bypass the state cut.
-            shape = tuple(self.outputSpace.inputShape)
-            width = int(shape[0]) * int(shape[1])
-            torch._assert_async((occupied * D <= width).all(),
-                'the answer map cannot hold the concluded understanding')
-            record = understanding if understanding is not None else getattr(self, '_last_sentence_understanding', None)
-            value = slots
-            if record is not None:
-                value = record.primed.reader_value(value)
-            value = value.reshape(B, 3 * D)
-            value = F.pad(value, (0, max(0, width - 3 * D)))[:, :width]
-            sub = SubSpace.from_tensor(value.reshape(B, *shape),
-                inputShape=shape, outputShape=shape,
-                nInputDim=shape[1], nOutputDim=shape[1])
-        # Numeric answers read the concluded state affinely. Nonlinear memory
-        # retrieval belongs to thought and generation, never this gate's head.
-        result = self.outputSpace(sub)
-        record = understanding if understanding is not None else getattr(self, '_last_sentence_understanding', None)
-        reader = getattr(self, 'answer_record_reader', None)
-        if (self.word_brackets and record is not None and reader is not None
-                and not self.answer_synthesis):
-            value = result.materialize()
-            result.set_event(value + reader(record,
-                attention=getattr(self, 'candidate_attention', None),
-                live=True).reshape_as(value))
-        return result
+    def _forward_head(self, sub, *, sentence_state=None, understanding=None, field=None):
+        """The end field owns the continuous output, including both lanes."""
+        if self.outputSpace.field_readout is None:
+            return self.outputSpace(sub)
+        if field is None:
+            field = getattr(self, '_numeric_field', None)
+        if field is None and self.grammar_phases.vector:
+            from SentenceField import knowing
+            field = knowing(self)
+        if field is None:
+            from Understanding import ConceptualField
+            field = ConceptualField(sub._concept_ids, sub._concept_activations, None, None, None)
+        value = self.outputSpace.read_field(field, self._concept_owner())
+        self.outputSpace.subspace.set_event(value)
+        return self.outputSpace.subspace
 
     @staticmethod
     def _empty_subspace(d=1):
@@ -20009,8 +20035,9 @@ class BasicModel(BaseModel):
         # Bracket narrowing and compose share this grammar chooser. Their
         # credit remains one policy term at scale one; candidate attention
         # has its separate local departure/lesson terms.
+        from ObjectiveOwnership import policy_objective
         self._sentence_cost_registry.add('output.compose_score_function', surrogate,
-            category='output', objective='chooser', side='A')
+            category='output', objective=policy_objective(self, 'compose', 'chooser'), side='A')
         active = self._sentence_cost_registry.row_mask
         return (surrogate.mean() if active is None else
                 (surrogate * active).sum() / active.sum().clamp_min(1))
@@ -20440,7 +20467,7 @@ class BasicModel(BaseModel):
         if not target.numel():
             return None
         answer = self._forward_head(None, sentence_state=(root, slots, depth),
-                                    understanding=observation['record'])
+                                    understanding=observation['record'], field=observation.get('answer_field'))
         pred = self.normalizer.denormalize(answer.materialize(), which='output')
         pred = self._align_output_pred(pred, target)
         if pred is None:
@@ -20484,7 +20511,7 @@ class BasicModel(BaseModel):
                 occurrence = store.occurrence_of(location)
                 references[b,0] = references.new_tensor((chunks.RELATION if isinstance(location,tuple)
                     else chunks.OCCURRENCE, occurrence[-1]))
-                stamps[b] = store.entry_when(location).to(stamps)
+                stamps[b] = store.entry_time(location).to(stamps)
                 if isinstance(location,int):
                     point[b] = store.slots[location].detach().to(point)
             elif clause.when is not None:
@@ -20819,9 +20846,15 @@ class BasicModel(BaseModel):
                 _bound, view = bound_view(state, view, sid, row, result.meaning)
                 self._last_sentence_understanding = view['record']
                 self._sentence_understandings[sid] = view['record']
+                # Capture the same concluded meaning that the path scored.
+                # The input occurrence remains its provenance; it is not a
+                # reason to replace a completed answer with the question.
+                from ThoughtReferences import evidence_pair
+                fields[row] = replace(fields[row], meaning=result.meaning, query=None,
+                    evidence=evidence_pair(result.meaning))
         self._last_closing_thoughts = tuple(closed_thoughts)
         self._sentence_fields[sid] = tuple(replace(field, thought_completed=True)
-            if field is not None else None for field in self._sentence_fields[sid])
+            if field is not None else None for field in fields)
         self.languageSpace.parts_of_speech.prepare_values()
         table = getattr(self, '_occupation_word_table', None)
         if table is not None:
@@ -21079,6 +21112,20 @@ class BasicModel(BaseModel):
                 payload = observe_percept(self,forecast,payload,sub,index,gate)
                 cache.append((index, payload, sub[3:9] if native_support else ()))
             self._open_sentence_slot = sid
+            if not self.grammar_phases.vector or not cache:
+                from Examination import run as examine
+                point = examine(self,sid,present)
+                current = list(lang)
+                for position in (6,10,11):
+                    current[position] = current[position].clone()
+                current[6][:,sid] = point
+                current[10][:,sid] = torch.cat((point,torch.zeros_like(point),torch.zeros_like(point)),-1)
+                current[11][:,sid] = present.long()
+                lang = tuple(current)
+                from SentenceTraining import finish_sentence
+                finish_sentence(self)
+                self._open_sentence_slot = None
+                continue
             from PrependedSymbols import stage as prepend_symbols
             resolver = self._concept_owner().components.reference_close
             stm = prepend_symbols(self,stm,present)
@@ -21107,8 +21154,6 @@ class BasicModel(BaseModel):
             compound_trials = []
             field_enabled = (getattr(self, 'attention_budget', 0) > 0
                 and hasattr(self, 'attention_floor') and cache and all(entry[2] for entry in cache))
-            observed_field = (self._pushed_word_slab(B, W, stm[0].shape[-1], stm[0],
-                words.new_ones(B, W)).detach().clone() if field_enabled else None)
             pending_steps = []
             reader_registries = []
             reader_observations = []
@@ -21206,7 +21251,7 @@ class BasicModel(BaseModel):
                     # Field reads have their own per-sentence allowance;
                     # bracket work must never consume a candidate's read.
                     field = SentenceField(self, cached, active, sentence_ids, sid,
-                        torch.full_like(attention_spent, self.attention_budget), observed_field)
+                        torch.full_like(attention_spent, self.attention_budget))
                 self._sentence_field = field
                 from SymbolField import SymbolField
                 symbol_field = SymbolField(getattr(self.symbolSpace, 'expectation', None),
@@ -23970,6 +24015,10 @@ class BasicModel(BaseModel):
 
     def reverse(self, x, *, field):
         """The common grammar-free decoder, from order zero to input percepts."""
+        if self.numeric_percepts is not None:
+            value = self.numeric_percepts.reverse(field)
+            x.set_event(value)
+            return x
         x = self._reverse_body(x, field=field)
         # Phase 7 (painting reverse): carry the conceptual reconstruction
         # branch across the PS handoff (the perceptual reverse may swap
@@ -24195,6 +24244,8 @@ class BasicModel(BaseModel):
         the per-cursor K-loop retired 2026-05-14; legacy reverse
         pipeline retired in the same change.
         """
+        if self.numeric_percepts is not None:
+            return self.numeric_percepts.forward(inputData)
         if isinstance(inputData, torch.Tensor):
             # Device placement is the eager producer's job on the
             # compiled path: runBatch moves inputTensor onto the compute
@@ -24343,7 +24394,7 @@ class BasicModel(BaseModel):
             if _restore_ev is not None:
                 body_sub.set_event(_restore_ev)
         pred = head_sub.materialize() if head_sub is not None else None
-        if pred is not None and not self.outputSpace.concept_ids:
+        if pred is not None:
             pred = self.normalizer.denormalize(pred, which="output")
 
         # WholeSpace owns properties only. The public symbolic state is the

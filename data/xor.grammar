@@ -33,27 +33,27 @@
          the start states. Tier / arity / invertibility derive from each
          operator's GrammarLayer subclass. -->
     <start name="connective">not_argout1</start>
-    <start name="connective">intersection_argout1</start>
-    <start name="connective">union_argout1</start>
+    <start name="connective">conjunction_argout1</start>
+    <start name="connective">disjunction_argout1</start>
 
     <compose>
       <!-- Typed attention candidates; no predefined surface or generate face. -->
       <rule operands="field">F = divide.forward(F)</rule>
       <rule operands="field">F = descend.forward(F)</rule>
       <rule operands="field">F = gloss.forward(F)</rule>
-      <rule operands="field">F = and.forward(F)</rule>
-      <rule operands="field">F = or.forward(F)</rule>
+      <rule operands="field">F = intersection.forward(F)</rule>
+      <rule operands="field">F = union.forward(F)</rule>
 
       <rule>not_argout1 = not.forward(not_argin1)</rule>
-      <rule>intersection_argout1 = intersection.forward(intersection_argin1, intersection_argin2)</rule>
-      <rule>union_argout1 = union.forward(union_argin1, union_argin2)</rule>
+      <rule>conjunction_argout1 = conjunction.forward(conjunction_argin1, conjunction_argin2)</rule>
+      <rule>disjunction_argout1 = disjunction.forward(disjunction_argin1, disjunction_argin2)</rule>
     </compose>
 
     <generate>
       <!-- Mirror of compose: output role back to input roles. -->
       <rule>not_argin1 = not.reverse(not_argout1)</rule>
-      <rule>intersection_argin1, intersection_argin2 = intersection.reverse(intersection_argout1)</rule>
-      <rule>union_argin1, union_argin2 = union.reverse(union_argout1)</rule>
+      <rule>conjunction_argin1, conjunction_argin2 = conjunction.reverse(conjunction_argout1)</rule>
+      <rule>disjunction_argin1, disjunction_argin2 = disjunction.reverse(disjunction_argout1)</rule>
     </generate>
   </Symbolic>
 

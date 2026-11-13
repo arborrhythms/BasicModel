@@ -15,7 +15,7 @@ def test_exact_match_rate_is_1_on_identity():
 
 def test_run_record_schema_smoke(tmp_path):
     """One epoch on a tiny fixture yields a complete run record."""
-    rec = run_config("data/MM_xor_fixture.xml", epochs=1, seed=0,
+    rec = run_config("data/MM_text_fixture.xml", epochs=1, seed=0,
                      out_dir=str(tmp_path))
     assert isinstance(rec, RunRecord)
     d = json.loads((tmp_path / rec.filename).read_text())
@@ -34,8 +34,9 @@ def _stub_model(batch_inputs, rendered):
     """Model stand-in exposing the two decode-path attributes."""
     return SimpleNamespace(
         inputSpace=SimpleNamespace(_last_sentences=list(batch_inputs)),
-        perceptualSpace=SimpleNamespace(
-            reconstruct_data=lambda text=False: list(rendered)))
+        _last_understanding=object(),
+        reverseReconstruct=lambda understanding: (rendered, None),
+        _decode_reconstructed_inputs=lambda value, originals: list(value))
 
 
 def test_decode_rows_align_with_last_eval_batch(tmp_path, monkeypatch):
@@ -52,7 +53,7 @@ def test_decode_rows_align_with_last_eval_batch(tmp_path, monkeypatch):
     # Force the 4-row fixture split to span two eval batches (cap=2): the
     # decode must cover exactly the last batch and say so in the note.
     monkeypatch.setattr(recon_bench, "_MAX_EVAL_BATCH", 2)
-    rec = run_config("data/MM_xor_fixture.xml", epochs=1, seed=0,
+    rec = run_config("data/MM_text_fixture.xml", epochs=1, seed=0,
                      out_dir=str(tmp_path))
     d = json.loads((tmp_path / rec.filename).read_text())
     notes = d["notes"]

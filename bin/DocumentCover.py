@@ -14,7 +14,7 @@ def segments(store, stream=None):
     result = {}
     if 'cover' not in store.KINDS or not len(store):
         return result
-    times = encoder().decode_index(torch.stack([store.entry_when(row) for row in range(len(store))])).tolist()
+    times = encoder().decode_index(torch.stack([store.entry_time(row) for row in range(len(store))])).tolist()
     streams = range(store.stream.shape[1]) if stream is None else (int(stream),)
     for batch in streams:
         current = None
@@ -123,13 +123,9 @@ def end_document(model, stream):
         owner.mtm.end_document(cover, store=store)
 
 
-def read(store, description, *, references=(), max_records, work, role_mask=None):
-    """A cover concept cues its bounded segment, without an invented name."""
-    wanted = set(references) | {ref for ref in description.role_refs if ref is not None}
-    if not wanted:
-        return None
-    if type(max_records) is not int or max_records < 0:
-        raise ValueError('cover read limit must be a nonnegative integer')
+def referenced_covers(store, references):
+    """Resolve declared cover identities for semantic and episodic reads."""
+    wanted = set(references)
     selected, cover_refs = set(), set()
     for reference in wanted:
         if not isinstance(reference, tuple):
@@ -143,6 +139,17 @@ def read(store, description, *, references=(), max_records, work, role_mask=None
             if store.kind_of(row) == 'cover':
                 selected.add(store.occurrence_of(row))
                 cover_refs.add(reference)
+    return selected, cover_refs
+
+
+def read(store, description, *, references=(), max_records, work, role_mask=None):
+    """A cover concept cues its bounded segment, without an invented name."""
+    wanted = set(references) | {ref for ref in description.role_refs if ref is not None}
+    if not wanted:
+        return None
+    if type(max_records) is not int or max_records < 0:
+        raise ValueError('cover read limit must be a nonnegative integer')
+    selected, cover_refs = referenced_covers(store, wanted)
     if not selected:
         return None
     # The cover narrows the region. Other occupied roles still constrain

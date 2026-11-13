@@ -10,7 +10,7 @@ def _make_model():
 
 
 @pytest.mark.usefixtures('eager_reading')
-@pytest.mark.parametrize('config',['MM_xor.xml','MM_xor_loopback.xml'])
+@pytest.mark.parametrize('config',['MM_text.xml','MM_xor_loopback.xml'])
 def test_open_read_precedes_every_native_word(config,monkeypatch):
     from test_mm_xor import _fresh_model, _PROJECT
     from pathlib import Path

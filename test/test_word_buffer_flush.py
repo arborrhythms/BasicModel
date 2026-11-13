@@ -31,7 +31,7 @@ import pytest
 from data import TheData
 from Models import BaseModel
 
-_CONFIG_PATH = str(_project / "data" / "MM_xor.xml")
+_CONFIG_PATH = str(_project / "data" / "MM_text.xml")
 
 
 def _model():

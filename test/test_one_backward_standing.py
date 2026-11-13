@@ -8,7 +8,9 @@ from test_one_backward import receipt,checkpoint_without_random_state
 @pytest.mark.parametrize('pool',[4,8])
 @pytest.mark.parametrize('trial',range(3))
 def test_grounded_xor_with_sentence_backward(tmp_path,separate,jitter,pool,trial):
-    from test_grounded_xor import learn_grounded_xor
+    from numeric_xor import fit
+    import xml.etree.ElementTree as ET
+    from test_grounded_xor import ROOT,_set_text
     from Layers import Error
     calls=[]
     def backward(model,optimizer,loss):
@@ -24,8 +26,15 @@ def test_grounded_xor_with_sentence_backward(tmp_path,separate,jitter,pool,trial
                 model._backward_training_loss(loss,optimizer=optimizer)
             finally:model._sentence_close_errors=registry
         calls.append(1)
-    error=learn_grounded_xor(tmp_path,pool,separate_chooser=separate,
-        reconstruction_jitter=jitter,backward=backward)
+    tree=ET.parse(ROOT/'data/MM_xor_fixture.xml')
+    for key,value in [('ConceptualSpace/nVectors',8*pool),('architecture/conceptLayers',2),
+                      ('architecture/separateChooser',str(separate).lower()),
+                      ('architecture/reconstructionJitter',jitter)]:
+        _set_text(tree.getroot(),key,value)
+    path=tmp_path/'numeric.xml';tree.write(path)
+    model,answers,error=fit(path,iterations=1,steps=64,backward=backward)
+    assert error<1e-6
+    torch.testing.assert_close(answers,torch.tensor([0.,1.,1.,0.]),atol=1e-6,rtol=0)
     assert len(calls)==64
     receipt(tmp_path,f'xor-{separate}-{jitter}-{pool}-{trial}',dict(
         separate_chooser=separate,reconstruction_jitter=jitter,pool=pool,trial=trial,

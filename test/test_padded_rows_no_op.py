@@ -23,7 +23,7 @@ sys.path.insert(0, str(_project / "bin"))
 import torch
 import pytest
 
-_CONFIG_PATH = str(_project / "data" / "MM_xor.xml")
+_CONFIG_PATH = str(_project / "data" / "MM_text.xml")
 
 
 def _xor_input():

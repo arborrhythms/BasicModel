@@ -227,8 +227,9 @@ def test_tensor_pipeline_records_both_one_word_packed_ends(tmp_path, monkeypatch
     try:
         _stage_packed(model, [['a', 'b']])
         with torch.no_grad():
-            result = model._forward_with_compiled_sentence_state(None)
-        model._publish_compiled_sentence_state(result)
+            # The tensor body records composition; the generated end field
+            # and its output reader belong to the subsequent host close.
+            _, state = model._forward_body(model._staged_in_sub, return_sentence_state=True)
         trace = model._reconstruction_stack()
         W = model.inputSpace._word_active_mask.shape[1]
         width = 2 * model.conceptualSpace.stm.capacity

@@ -223,7 +223,7 @@ class SentenceStrata(nn.Module):
                 data['_interface'] = rule.canonical
             if concept not in (-1, 0): data['_identity'] = ('sym', concept)
             meaning = replace(ConceptualMeaning.from_description(point), bindings=data)
-            row = store.append_meaning(meaning, kind='unverified', when=False,
+            row = store.append_meaning(meaning, kind='unverified', time=False,
                 document_key=('pinned', stream, self._clock), sentence_index=at)
             ref = OCCURRENCE, int(store.address_keys[row])
             if kind == 0: stack.append(ref); continue
@@ -259,7 +259,7 @@ class SentenceStrata(nn.Module):
         self._clock += 1
         meaning = replace(ConceptualMeaning.from_description(point.detach()), bindings={'_relations': tuple(relations)})
         row = store.append_meaning(meaning,
-            kind='unverified', when=when, address=address,
+            kind='unverified', time=when, address=address,
             document_key=('recent', stream, self._clock))
         if source is not None:
             selected, pending = set(), [relation for context in store._semantic_rows.values()
@@ -281,9 +281,9 @@ class SentenceStrata(nn.Module):
                 if relation not in selected: continue
                 left, right = source.references(relation)
                 bank.add(left, right, symbol=relation, truth_plus=float(source.truth_plus[relation]),
-                    truth_minus=float(source.truth_minus[relation]), where=source.percept[relation, :4],
-                    when=source.percept[relation, 4:], operator=int(source.operator_reference[relation]),
+                    truth_minus=float(source.truth_minus[relation]), operator=int(source.operator_reference[relation]),
                     operation_seat=int(source.operation_seat[relation]))
+                bank.sentence_reference[relation] = source.sentence_reference[relation]
         for index in range(self.trials*stream, self.trials*(stream+1)):
             self.banks[index].expire(); self._leases[index] = None
         return store.occurrence_of(row)

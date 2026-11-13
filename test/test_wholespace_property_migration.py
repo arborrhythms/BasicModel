@@ -45,7 +45,7 @@ def _small_property_model(
         concept_event: int | None = None, symbol_tower: bool = False,
         symbolic_lift: bool = False):
     """Build aligned live-width-8 towers with CS=16 and WS=8 rows."""
-    tree = ET.parse(ROOT / "data" / "MM_xor_fixture.xml")
+    tree = ET.parse(ROOT / "data" / "MM_text_fixture.xml")
     root = tree.getroot()
     _set_text(root, "architecture/conceptLayers", 2)
     _set_text(root, "architecture/conceptBinding", "aligned")

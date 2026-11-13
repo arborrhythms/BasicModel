@@ -62,8 +62,8 @@ def prepare(owner, field):
 
 
 def category(model):
-    """Sigma is output-owned only in the existing named-output partition."""
-    return 'output' if getattr(getattr(model,'outputSpace',None), 'concept_ids', ()) else 'reconstruction'
+    """Definitions reconstruct; the linear field reader owns supervised output."""
+    return 'reconstruction'
 
 
 def loss(owner, staged):

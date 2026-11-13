@@ -70,7 +70,7 @@ def test_forward_equals_compose_on_a_live_snapshot():
     from data import TheData
     import Models
 
-    config = _DATA / "MM_xor.xml"
+    config = _DATA / "MM_text.xml"
     init_config(path=str(config), defaults_path=str(_DATA / "model.xml"))
     Language.TheGrammar._configured = False
     TheData.load("xor")

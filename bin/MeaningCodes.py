@@ -148,8 +148,7 @@ def compose(name, left, right=None):
     if name == 'not':
         return exchange(left)
     if name == 'non':
-        positive, negative = left.chunk(2, -1)
-        return torch.cat((torch.zeros_like(positive), negative), -1)
+        return torch.zeros_like(left)
     if name == 'sum':
         return (left + right) * .5
     positive, negative = left.chunk(2, -1)

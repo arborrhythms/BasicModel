@@ -57,19 +57,30 @@ def test_answer_vocabulary_alias_keeps_perceptual_owner():
     torch.testing.assert_close(output.weight.grad, torch.ones_like(output.weight))
 
 
-def test_named_concept_evidence_has_the_answer_as_its_only_writer():
+def test_linear_field_reader_and_definitions_have_their_declared_writers(tmp_path):
     from pathlib import Path
+    import xml.etree.ElementTree as ET
     from recon_bench import _build_model
     import Models
-    model, _, _, _ = _build_model(str(Path(Models.__file__).resolve().parents[1]/'data/XOR_exact.xml'))
+    root = Path(Models.__file__).resolve().parents[1]
+    # Preserve this fixture's taught definitions and dimensions; §3.1
+    # requires its parallel field operations to be declared explicitly.
+    config = ET.parse(root / 'data/XOR_symbols.xml')
+    language = ET.SubElement(ET.SubElement(config.getroot(), 'SymbolSpace'), 'language')
+    ET.SubElement(language, 'grammar').text = str(root / 'data/field.grammar')
+    path = tmp_path / 'definitions.xml'
+    config.write(path)
+    model, _, _, _ = _build_model(str(path))
     try:
         from ConceptLessons import teach_concept_lessons
         teach_concept_lessons(model)
         optimizer=model.getOptimizer(lr=.01)
         groups=model.objective_parameter_groups(optimizer)
         coefficients=model.conceptualSpaces[0]._concept_allocator.layer(0).values
-        assert any(p is coefficients for p in groups['output'])
-        assert not any(p is coefficients for p in groups['reconstruction'])
+        assert any(p is coefficients for p in groups['reconstruction'])
+        assert not any(p is coefficients for p in groups['output'])
+        assert all(any(p is q for q in groups['output'])
+                   for p in model.outputSpace.field_readout.parameters())
     finally:
         model.End()
 
@@ -82,6 +93,8 @@ def test_trial_consumers_share_one_record_and_answer_cannot_write_it(monkeypatch
     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
     root = Path(Models.__file__).resolve().parents[1]
     model, _, data = _fresh_model(str(root/'data/XOR_grammar.xml'))
+    with torch.no_grad():
+        model.outputSpace.field_readout.weight.fill_(.1)
     reconstructed, answered = [], []
     import SentenceField
     reconstruct = SentenceField.reconstruct
@@ -93,7 +106,7 @@ def test_trial_consumers_share_one_record_and_answer_cannot_write_it(monkeypatch
         record = observation['record']
         answered.append(record)
         cost = answer(self, state, sid, active, observation, **kwargs)
-        gradients = torch.autograd.grad(cost.sum(), (state[1][6], state[1][10]), retain_graph=True, allow_unused=True)
+        gradients = torch.autograd.grad(cost.sum(), (observation['answer_field'].evidence,), retain_graph=True, allow_unused=True)
         assert any(g is not None and bool(g.abs().any()) for g in gradients)
         return cost
     monkeypatch.setattr(SentenceField, 'reconstruct', read)

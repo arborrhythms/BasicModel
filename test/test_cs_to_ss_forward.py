@@ -49,12 +49,12 @@ def _build(name):
 
 @pytest.mark.slow
 def test_symbol_tower_parallel_forward_smoke():
-    """XOR_exact.xml is concept_order_limit=0 (word_brackets=False -> PARALLEL) with
+    """XOR_symbols.xml is concept_order_limit=0 (word_brackets=False -> PARALLEL) with
     symbolTower on, so the 3-stream bind runs through the new SS leg. The
     forward must run without error."""
     import Models
     from util import TheXMLConfig
-    m = _build("XOR_exact.xml")
+    m = _build("XOR_symbols.xml")
     assert m.symbol_tower is True and m.word_brackets is False
     Models.TheData.load(TheXMLConfig.get("data.dataset", default="xor"))
     loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
@@ -69,7 +69,7 @@ def test_symbol_tower_parallel_forward_smoke():
 def test_forward_concept_to_symbol_returns_row_aligned_leg():
     """The leg is the row-aligned view of the concept: same [B, N, D] event as
     the concept it was handed (detached)."""
-    m = _build("XOR_exact.xml")
+    m = _build("XOR_symbols.xml")
     ss = m.symbolSpace
     # a small concept subspace [B, N, D]
     D = int(ss.subspace.what.getW().shape[-1]) if (
@@ -91,7 +91,7 @@ def test_forward_concept_to_symbol_returns_row_aligned_leg():
 
 @pytest.mark.slow
 def test_forward_concept_to_symbol_empty_is_none():
-    m = _build("XOR_exact.xml")
+    m = _build("XOR_symbols.xml")
     ss = m.symbolSpace
     empty = Spaces.SubSpace(inputShape=(1, 8), outputShape=(1, 8),
                             nInputDim=8, nOutputDim=8)
@@ -104,7 +104,7 @@ def test_symbol_leg_from_activations_is_0d_times_row_and_carries_grad():
     """Sparse-active contract: with ``_concept_activations`` stamped (the 0-D
     symbols from the sparse forward), the leg is activation x identity-row and
     the GRADIENT flows through the activation (the old detach bug)."""
-    m = _build("XOR_exact.xml")
+    m = _build("XOR_symbols.xml")
     ss = m.symbolSpace
     W = ss.subspace.what.getW()
     D = int(W.shape[-1])
@@ -135,7 +135,7 @@ def test_symbol_leg_survives_repeated_sync_backward():
     the SS codebook IN-PLACE before the next stage's product; backward
     through an earlier stage's leg must survive the later syncs (the
     identity rows are cloned, not a live view of the codebook)."""
-    m = _build("XOR_exact.xml")
+    m = _build("XOR_symbols.xml")
     ss = m.symbolSpace
     W = ss.subspace.what.getW()
     D = int(W.shape[-1])
@@ -163,7 +163,7 @@ def test_symbol_leg_survives_repeated_sync_backward():
 @pytest.mark.slow
 def test_symbol_leg_fallback_without_activations_stays_detached():
     """No stamp (sparse-inactive) -> the legacy detached-copy leg."""
-    m = _build("XOR_exact.xml")
+    m = _build("XOR_symbols.xml")
     ss = m.symbolSpace
     D = int(ss.subspace.what.getW().shape[-1])
     B, N = 2, 3

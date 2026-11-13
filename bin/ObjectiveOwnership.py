@@ -6,10 +6,15 @@ from GradientDiagnostics import _sum_gradients
 PRIMARY = ('reconstruction', 'expectation', 'output', 'attention')
 
 
+def policy_objective(model, policy, default):
+    """Restrict a departure to its drawing policy only in separate mode."""
+    return policy + '_policy' if getattr(model, 'separate_chooser', False) else default
+
+
 def term_owner(name, category, objective):
     if category == 'grammar':
         return 'generate_lesson' if 'generate.' in name else 'compose_lesson'
-    if objective in ('chooser', 'attention', 'compose_lesson', 'generate_lesson'):
+    if objective in ('chooser', 'attention', 'compose_lesson', 'generate_lesson', 'compose_policy', 'generate_policy'):
         return objective
     if objective in ('expectation', 'intra', 'inter'):
         return 'expectation'
@@ -19,7 +24,7 @@ def term_owner(name, category, objective):
 
 
 def default_side(owner):
-    return 'A' if owner in ('output', 'generate_lesson', 'chooser') else 'R'
+    return 'A' if owner in ('output', 'generate_lesson', 'chooser', 'compose_policy', 'generate_policy') else 'R'
 
 
 def registry_costs(registry, *, reader_rows=None, expectation_rows=None, definition_rows=None):
@@ -76,7 +81,8 @@ def backward_owned(costs, owners, *, pullback=None, scale=1., audit=None):
         parameters = tuple(owners.get(key, ()))
         if not parameters:
             continue
-        objective = ('reconstruction' if key in ('compose_lesson', 'generate_lesson', 'chooser') else key)
+        objective = ('reconstruction' if key in ('compose_lesson', 'compose_policy', 'chooser') else
+                     'output' if key in ('generate_lesson', 'generate_policy') else key)
         value = cost * scale
         gradients = (pullback.gradients(value, parameters)
                      if pullback is not None and objective in ('reconstruction', 'attention')

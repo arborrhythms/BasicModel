@@ -41,8 +41,8 @@
       <rule operands="field">F = divide.forward(F)</rule>
       <rule operands="field">F = descend.forward(F)</rule>
       <rule operands="field">F = gloss.forward(F)</rule>
-      <rule operands="field">F = and.forward(F)</rule>
-      <rule operands="field">F = or.forward(F)</rule>
+      <rule operands="field">F = intersection.forward(F)</rule>
+      <rule operands="field">F = union.forward(F)</rule>
 
       <rule>interpret_argout1 = interpret.forward(interpret_argin1)</rule>
       <rule>sign_argout1 = sign.forward(sign_argin1)</rule>

@@ -194,7 +194,7 @@ def _make_mm_xor_model():
     from Models import BaseModel
     from util import ProjectPaths
     config_path = os.path.join(
-        ProjectPaths.PROJECT_DIR, "basicmodel", "data", "MM_xor.xml")
+        ProjectPaths.PROJECT_DIR, "basicmodel", "data", "MM_text.xml")
     TheData.load("xor")
     model, _ = BaseModel.from_config(config_path, data=TheData)
     return model

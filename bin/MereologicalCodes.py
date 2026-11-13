@@ -419,6 +419,11 @@ class MereologicalCodes(nn.Module):
             out[row_index[row], :self.percept_width] = (
                 cached[row, :self.percept_width] if row in retained else self._forms[row])
             self._form_valid[row] = True
+        from PerceptCollections import definitions, code
+        collections = definitions(owner)
+        for row in unique:
+            if row in collections:
+                out[row_index[row], :self.percept_width] = code(owner, row)[:self.percept_width]
         if unique and self.meaning_pairs:
             start, k = self.percept_event_width, self.meaning_pairs
             trust = owner.similarity_codebook.trust

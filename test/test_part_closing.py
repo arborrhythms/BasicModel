@@ -78,7 +78,7 @@ def test_sentence_projection_keeps_its_own_entry_after_an_embedded_mention(monke
     assert isinstance(row,int) and isinstance(embedded,int) and row != embedded
     assert f.store.kind_of(row) == 'observation'
     assert f.store.kind_of(embedded) == 'unverified'
-    assert not f.store.entry_when(embedded).any()
+    assert not f.store.entry_time(embedded).any()
     assert f.store.row(row)['evidence'] == pytest.approx((.7,.2))
 
 

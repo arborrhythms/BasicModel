@@ -54,12 +54,12 @@ def test_four_occurrences_after_four_hundred_presentations_and_full_upsert():
 def test_rereading_replaces_vectors_refreshes_time_and_joins_poles():
     store = LTM0(12, 4, percept_width=8)
     row = write(store, value=2., evidence=(.8, .1))
-    band = store.entry_when(row).clone()
+    band = store.entry_time(row).clone()
     assert write(store, value=3., evidence=(.2, .7)) == row
     torch.testing.assert_close(store.slots[row, :4], torch.full((4,), 3.))
     assert store.row(row)['evidence'] == pytest.approx((.8, .7))
     assert int(store.access_count[row]) == 2
-    assert torch.equal(band, store.entry_when(row))
+    assert torch.equal(band, store.entry_time(row))
     assert write(store, 'other-document') == 1
     assert write(store, position=1) == 2
     assert list(store._index_occurrences) == store.address_keys[:3].tolist()
@@ -141,7 +141,7 @@ def test_live_gate_presentation_reuses_covers_addresses_and_epoch_time(monkeypat
         assert len(rows) == 4
         endings.append(dict(content={store.content_key(int(row)) for row in rows},
             addresses=store.address_keys[rows].clone(),
-            bands=torch.stack([store.entry_when(int(row)) for row in rows]).clone(),
+            bands=torch.stack([store.entry_time(int(row)) for row in rows]).clone(),
             covers={store.raw_meaning_of(i).role_refs[0][1] for i in range(len(store))
                     if store.row(i)['kind'] == 'cover'},
             kinds=[store.row(i)['kind'] for i in range(len(store))],

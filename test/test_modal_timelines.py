@@ -420,7 +420,7 @@ def test_retained_idea_keeps_its_subject_reference_after_token_expiry(monkeypatc
     # Compression retains identity and content, but no predicate derivation
     # from which an expired timeline's verb could be authenticated.
     assert f.store.raw_meaning_of(row).role_refs[0] == token
-    content = f.store.cued_rows(replace(query, bindings={}),
+    content = f.store.cued_rows(replace(query, bindings={}), references=(f.store.occurrence_of(row),),
         max_candidates=64, work=QueryWorkBudget(256))
     recalled, = (item for item in content['value'] if item['occurrence'] == f.store.occurrence_of(row))
     assert recalled['match'] == pytest.approx(1.)

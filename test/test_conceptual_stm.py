@@ -17,12 +17,12 @@ _PROJECT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
-_CONFIG = os.path.join(_PROJECT, "data", "MM_xor.xml")
+_CONFIG = os.path.join(_PROJECT, "data", "MM_text.xml")
 _DEFAULTS = os.path.join(_PROJECT, "data", "model.xml")
 
 
 def _fresh_model():
-    """Build a fresh BasicModel from MM_xor.xml."""
+    """Build a fresh BasicModel from MM_text.xml."""
     import Models
     import Language
     from util import init_config

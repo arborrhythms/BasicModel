@@ -3226,3 +3226,10 @@ The whole-path conditioner diagnostic also repaired lazy optimizer registration:
 
 
 Thought content sizing was amended during the whole-path return (Alec, 2026-11-11: "try resizing if there is a principled reason for it"). `stmCapacity` still fixes the number of simultaneous focus chunks. It does not bound the number of constituents inside one thought. Each native thought store starts at its previous `4 * stmCapacity` rows and may reconstruct its transient buffers to the exact required content size before a write. Its construction-time ceiling is four rows per possible input meaning: `4 * (W + O)`, where W is the declared sentence word bound and `O = 3W + 2 * stmCapacity` is the existing pinned operator bound. One meaning needs one head and at most three occupied role rows. A larger meaning still raises; no content is discarded. Trial rollback restores an occupied store's earlier size, contents and generation. This explicit transient-storage exception avoids preallocating the maximum in every focus chunk; no sentence, fixture or focus capacity changes.
+
+
+## Item 1.8 amendment (2026-11-12)
+
+The grammar declares examination (`divide`, `descend`, `gloss`), field (`intersection`, `union`, `not`) and vector operations. Tier-local `pi` and `sigma` remain substrate declarations; the default keeps the parallel body. Field arithmetic is shared by definitions, attention and intuition. Recurrent lane sets mint conjunctive order-zero definitions. Known concept codes are stimulated by candidate coverage, then closed upward; a generated point uses its inverse walk's stimulated leaves. The numeric field adapter reads fixed axes without a learned input layer and writes through a fixed linear field reader. Examination without vector operations has its own field-only R+A close and episodic anchor.
+
+One optional scalar joins text as a placeless reading. Counted word boxes use native MTM promotion and the definition writer. The native reference menu admits the current scalar event and its perceived individuals. See the item 1.8 return for the distinction between these mechanism certificates and the end-to-end question measurement.

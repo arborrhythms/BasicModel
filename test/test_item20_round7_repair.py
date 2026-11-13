@@ -22,7 +22,7 @@ def test_pending_selected_phrase_keeps_its_own_occurrence_when_the_head_is_resol
     earlier = known_concept(owner, atoms[1], order=1)
     first = store.append_meaning(replace(ConceptualMeaning.from_description(atoms[0]),
         bindings={'_forward_references': ((0, word),), '_open_references': (('referent', 0),)}),
-        when=False, kind='unverified', document_key='pending-member')
+        time=False, kind='unverified', document_key='pending-member')
     address = store.occurrence_of(first)
     key = owner.link(Occurrence(address, pending=True), {}, value=atoms[0],
         where=None, when=0, stream=0)
@@ -55,7 +55,7 @@ def test_composed_alias_keeps_the_selected_occurrence_instead_of_its_original_he
     selected = known_concept(owner, atoms[0], order=0)
     earlier = known_concept(owner, atoms[1], order=1)
     first = store.append_meaning(replace(ConceptualMeaning.from_description(atoms[0]),
-        bindings={'_identity': ('sym', selected)}), when=False, document_key='selected-member')
+        bindings={'_identity': ('sym', selected)}), time=False, document_key='selected-member')
     address = store.occurrence_of(first)
     key = owner.link(Occurrence(address, selected=None), {}, value=atoms[0],
         where=None, when=0, stream=0)
@@ -151,7 +151,7 @@ def episode_fixture(monkeypatch, capacity=2):
     f.model._sentence_ticks[0] = 17
     f.cs._model = f.model
     attach_clause_index(f.model, f.store, f.cs)
-    entry = (torch.tensor([2, 7][:capacity]), torch.tensor([-.6, .8][:capacity]))
+    entry = (torch.tensor([[2, 7][:capacity]]), torch.tensor([[-.6, .8][:capacity]]))
     f.model._sentence_episodes = {0: tuple(value[None] for value in entry)}
     return f, entry
 
@@ -166,7 +166,7 @@ def test_relation_only_anchor_keeps_first_entry_and_never_becomes_a_root(monkeyp
     assert f.store.kind_of(0) == 'episode'
     assert f.store.stream[0, 0]
     assert not f.store.slots[0, :f.store.when_start].any()
-    assert torch.equal(f.store.entry_when(0), clause.when)
+    assert torch.equal(f.store.entry_time(0), clause.when)
     assert torch.equal(f.store.episodic_concepts[0], entry[0])
     assert written['root_occurrence'] != written['episode']
     assert f.model._episode_counts['written'] == f.model._episode_counts['anchors'] == 1
@@ -174,7 +174,7 @@ def test_relation_only_anchor_keeps_first_entry_and_never_becomes_a_root(monkeyp
     again = f.store.write_clause(replace(clause, when=encoder().encode(23)), stream=0,
         document_key='presentation', sentence_index=1, episode=later)
     assert again == root and len(f.store) == 1
-    assert torch.equal(f.store.entry_when(0), clause.when)
+    assert torch.equal(f.store.entry_time(0), clause.when)
     assert torch.equal(f.store.episodic_values[0], entry[1])
     assert f.model._episode_counts['written'] == 1
     # A later semantic occurrence at this source address cannot reuse the anchor.
@@ -345,7 +345,7 @@ def force_relation(model, monkeypatch):
     monkeypatch.setattr(chooser, 'score_unary', score_unary)
 
 
-def test_native_relation_anchor_time_recall_reinstates_its_percepts(tmp_path, monkeypatch):
+def test_native_relation_anchor_content_recall_reinstates_its_percepts(tmp_path, monkeypatch):
     import weakref
     from test_item20_round7_time import native
     from Queries import ThoughtLTMCapability
@@ -362,16 +362,16 @@ def test_native_relation_anchor_time_recall_reinstates_its_percepts(tmp_path, mo
         row = anchors[0]
         entry = tuple(value[0] for value in model._sentence_episodes[0])
         assert torch.equal(store.episodic_concepts[row], entry[0])
-        assert torch.equal(store.entry_when(row), encoder().encode(model._sentence_ticks[0]))
+        assert torch.equal(store.entry_time(row), encoder().encode(model._sentence_ticks[0]))
         query = ThoughtLTMCapability(store=weakref.ref(store), equal=lambda *args: 0., tau_id=.9, row=0)
-        found = query.query(when=store.entry_when(row), window=0,
+        found = query.query(model._sentence_open_fields[0],
                             max_records=store.capacity, work=QueryWorkBudget(2048))
         assert any(frame['index'] == row for frame in found['frames'])
         field = knowing(model)
         actual = {int(cid): field.evidence[k, 0].sum(0) for k, cid in enumerate(field.concept_ids)
                   if bool(field.evidence[k, 0].any())}
-        expected = {int(cid): torch.stack((entry[1][i].clamp_min(0), (-entry[1][i]).clamp_min(0)))
-                    for i, cid in enumerate(entry[0]) if int(cid) >= 0}
+        expected = {int(cid): torch.stack((entry[1].flatten()[i].clamp_min(0), (-entry[1].flatten()[i]).clamp_min(0)))
+                    for i, cid in enumerate(entry[0].flatten()) if int(cid) >= 0}
         assert actual.keys() == expected.keys()
         for cid in expected:
             assert torch.equal(actual[cid], expected[cid])

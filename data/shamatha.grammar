@@ -37,8 +37,8 @@
       <rule operands="field">F = divide.forward(F)</rule>
       <rule operands="field">F = descend.forward(F)</rule>
       <rule operands="field">F = gloss.forward(F)</rule>
-      <rule operands="field">F = and.forward(F)</rule>
-      <rule operands="field">F = or.forward(F)</rule>
+      <rule operands="field">F = intersection.forward(F)</rule>
+      <rule operands="field">F = union.forward(F)</rule>
 
       <rule>union_argout1 = union.forward(union_argin1, union_argin2)</rule>
       <rule>intersection_argout1 = intersection.forward(intersection_argin1, intersection_argin2)</rule>

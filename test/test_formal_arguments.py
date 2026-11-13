@@ -73,7 +73,10 @@ def test_aliases_and_all_outputs_have_distinct_arguments():
     grammar = Grammar()
     grammar.load_from_grammar_file('complete.grammar')
     names = [operation_name(rule) for rule in grammar.rules_upward if operation_name(rule)]
-    assert len(names) == len(set(names))
+    from collections import Counter
+    assert {name: count for name, count in Counter(names).items() if count > 1} == {'intersection': 2, 'union': 2}
+    # Coordinate forms and field declarations share the canonical operation.
+    assert len(formal_arguments(grammar.rules_upward)) == len(set(formal_arguments(grammar.rules_upward)))
     arguments = formal_arguments(grammar.rules_upward)
     assert {'lower_argin1','definite_argin1','universal_argin1',
             'transpose_argout1','transpose_argout2'} <= set(arguments)

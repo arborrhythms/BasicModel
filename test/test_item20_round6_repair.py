@@ -114,14 +114,18 @@ def test_occurrence_writer_preserves_the_emitted_terminal_despite_priming():
     bank = PrimedSymbols(torch.tensor([[0, 1]]), codes, torch.tensor([[1., 2.]]),
         torch.ones(1, 2, dtype=torch.bool), torch.tensor([[[97], [98]]]),
         torch.ones(1, 2, 1, dtype=torch.bool), meaning_start=2)
-    owner = NS(_row_order=lambda row: 0, concept_id_at_row=lambda row: row + 10,
+    empty = NS(_index={}, values=torch.empty(0))
+    store = NS(_tensor_row_keys={0:10, 1:11}, _index={}, values=torch.empty(0), conjunctive=empty)
+    owner = NS(similarity_codebook=NS(lookup_rows=lambda rows: codes[0, rows],
+        mereology=NS(percept_event_width=2)),
+        _row_order=lambda row: 0, concept_id_at_row=lambda row: row + 10,
         word_surface_for_row=lambda row: (b'a', b'b')[row],
         cs_reverse_presence=lambda evidence, **kwargs: evidence,
-        _concept_allocator=NS(layer=lambda order: NS(nOutput=2, _rows=(), _cols=())))
+        _concept_allocator=NS(layer=lambda order: store))
     result = generated(NS(_concept_owner=lambda: owner), codes[:, :1],
         torch.tensor([1]), torch.tensor([False]), bank, (), when=torch.tensor([[[1, 2]]]))
-    assert result.field.concept_ids.tolist() == [10]
-    torch.testing.assert_close(result.field.evidence.flatten(), torch.tensor([1., 0.]))
+    assert result.field.concept_ids.tolist() == [10, 11]
+    torch.testing.assert_close(result.field.evidence.flatten(), torch.tensor([1., 0., 0., 0.]))
 
 
 @pytest.mark.parametrize('operation', ['conjunction', 'disjunction'])
@@ -150,7 +154,7 @@ def test_reconciled_reference_candidates_keep_one_collection_order(orders):
     owner = resolver.components.owner
     records = {}
     for index, order in enumerate(orders):
-        row = store.append_idea(atoms[index], order=order, when=False)
+        row = store.append_idea(atoms[index], order=order, time=False)
         address = store.occurrence_of(row)
         token = owner.link(Occurrence(address, order=order, selected=None), {},
             value=atoms[index], where=None, when=index + 1, stream=0)
@@ -172,13 +176,13 @@ def test_collected_state_members_are_not_offered_as_unpooled(origin):
     from MemoryLink import Occurrence, menu
     from test_reference_close import fixture
     resolver,store,atoms=fixture();owner=resolver.components.owner
-    first=store.append_idea(atoms[0],address=801,when=False);start=store.occurrence_of(first)
+    first=store.append_idea(atoms[0],address=801,time=False);start=store.occurrence_of(first)
     key=owner.link(Occurrence(start,kind='state',order=0,selected=None),{},value=atoms[0],where=None,when=1,stream=0)
-    second=store.append_idea(atoms[0]+atoms[1],address=802,when=False)
+    second=store.append_idea(atoms[0]+atoms[1],address=802,time=False)
     owner.link(Occurrence(store.occurrence_of(second),kind='state',order=0,selected=key),{},value=atoms[0]+atoms[1],where=None,when=2,stream=0)
-    third=store.append_idea(atoms[0],address=803,when=False);member=store.occurrence_of(third)
+    third=store.append_idea(atoms[0],address=803,time=False);member=store.occurrence_of(third)
     owner.link(Occurrence(member,kind='state',order=0,selected=key),{},value=atoms[0],where=None,when=3,stream=0)
-    fresh=store.append_idea(atoms[0]+atoms[2],address=804,when=False);unpooled=store.occurrence_of(fresh)
+    fresh=store.append_idea(atoms[0]+atoms[2],address=804,time=False);unpooled=store.occurrence_of(fresh)
     chosen=start if origin else member
     owner.stm.ensure_batch(1);state=owner.stm.state
     for address,value in ((chosen,atoms[0]),(unpooled,atoms[0]+atoms[2])):

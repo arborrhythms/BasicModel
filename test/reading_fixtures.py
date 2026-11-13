@@ -129,6 +129,35 @@ from contextlib import contextmanager
 
 
 @contextmanager
+def field_text_config(*, examine):
+    """Keep MM_xor's former text field pipeline at its original dimensions.
+
+    Item 1.8 §3.1 makes the declared operations choose the pipeline. The
+    symbolic cover MM_text now has vector connectives; field-body fixtures
+    therefore declare their field/examination operations explicitly.
+    """
+    import tempfile
+    from pathlib import Path
+    import xml.etree.ElementTree as ET
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(__file__).resolve().parents[1]
+        grammar = ET.parse(root / 'data/xor.grammar')
+        symbolic = grammar.getroot().find('Symbolic')
+        symbolic.clear()
+        compose = ET.SubElement(symbolic, 'compose')
+        names = ('divide', 'descend', 'gloss') if examine else ()
+        for name in (*names, 'intersection', 'union', 'not'):
+            ET.SubElement(compose, 'rule', operands='field').text = f'F = {name}.forward(F)'
+        grammar_path = Path(directory) / 'field.grammar'
+        grammar.write(grammar_path)
+        config = ET.parse(root / 'data/MM_text.xml')
+        config.getroot().find('SymbolSpace/language/grammar').text = str(grammar_path)
+        config_path = Path(directory) / 'field.xml'
+        config.write(config_path)
+        yield str(config_path)
+
+
+@contextmanager
 def capture_operation_traces(model):
     """Let a test observe the winner's trace before the boundary discards it."""
     from types import SimpleNamespace
@@ -162,7 +191,7 @@ def force_absolute_reading(model):
     unary = layer.chooser.score_unary
     binary_names = [rule.method_name for rule in model.languageSpace._compose_binary_rules]
     unary_names = [rule.method_name for rule in model.languageSpace._compose_unary_rules]
-    allowed = ('lift', 'union', 'intersection', 'sum')
+    allowed = ('lift', 'conjunction', 'disjunction', 'sum')
     def binary_scores(*args, **kwargs):
         stop, scores = binary(*args, **kwargs)
         mask = torch.tensor([name in allowed for name in binary_names], device=scores.device, dtype=torch.bool)

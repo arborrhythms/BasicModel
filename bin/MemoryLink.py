@@ -36,6 +36,8 @@ def member_order(owner, site):
     if site.order is not None:
         return site.order
     concept = site.concept
+    if concept is None and site.address[:1] == ('bp',):
+        return -1
     if concept is None and isinstance(site.address, tuple) and site.address[:1] == ('name',):
         # An empty pending path has no retained member yet. Its first kept
         # mention uses the named word's current referent, as commit_read_words

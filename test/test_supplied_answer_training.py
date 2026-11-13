@@ -12,13 +12,16 @@ def _sentence(supplied):
     chooser = torch.nn.Parameter(torch.tensor(2.))
     root = chooser * codes
     class Head:
-        concept_ids = ()
+        field_readout = True
         inputShape = (3, 2)
         def __init__(self):
             self.weight = torch.nn.Parameter(torch.ones(6))
-        def __call__(self, sub):
-            value = sub.materialize().flatten(1) @ self.weight
-            return SimpleNamespace(materialize=lambda: value[:, None])
+            self.subspace = SimpleNamespace(set_event=lambda value: setattr(self, 'value', value),
+                materialize=lambda: self.value)
+        def read_field(self, field, owner):
+            self.seen = field
+            value = field.evidence.amax(2).permute(1, 0, 2).flatten(1)
+            return (value @ self.weight)[:, None]
     head = Head()
     slots = torch.cat((root[:, None], root.new_zeros(2, 2, 2)), 1)
     lang = [None] * 12
@@ -34,6 +37,9 @@ def _sentence(supplied):
         _tensor_pushed_ideas=root[:, None], reconstruct_in_loop=False,
         _sentence_observation=lambda *a: {}, _reading_lesson_enabled=False,
         grammar_lesson_weight=0., symbolSpace=SimpleNamespace())
+    from Understanding import ConceptualField
+    model._numeric_field = ConceptualField(torch.arange(3), slots.permute(1, 0, 2)[:, :, None], None, None, None)
+    model._concept_owner = lambda: None
     model._forward_head = MethodType(BasicModel._forward_head, model)
     return model, ((), lang, ()), (codes, chooser, head.weight)
 
@@ -60,6 +66,9 @@ def test_real_supplied_paths_cost_before_updates_and_reach_understanding(monkeyp
     import util
     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
     model, _, data = _fresh_model('data/XOR_grammar.xml')
+    # The new linear head starts at zero. A nonzero reader exposes its
+    # cotangent into the field independently of a preceding optimizer step.
+    with torch.no_grad(): model.outputSpace.field_readout.weight.fill_(.1)
     score = WholePaths.output
     measured, versions = [], []
     def observed(owner, state, observation, sid, active, registry, **kwargs):
@@ -69,8 +78,9 @@ def test_real_supplied_paths_cost_before_updates_and_reach_understanding(monkeyp
         grads = torch.autograd.grad(error.mean(), params, retain_graph=True, allow_unused=True)
         live = {id(p) for p, g in zip(params, grads) if g is not None and bool(g.abs().any())}
         assert any(id(p) in live for p in model.outputSpace.parameters())
-        roots = torch.autograd.grad(error.mean(), (state[1][6], state[1][10]), retain_graph=True, allow_unused=True)
-        assert any(g is not None and bool(g.abs().any()) for g in roots)
+        field = observation['answer_field'].evidence
+        gradient, = torch.autograd.grad(error.mean(), field, retain_graph=True)
+        assert gradient.abs().sum() > 0
         assert not hasattr(model, 'comparison_reader')
         measured.append(live)
         versions.append(tuple(p._version for p in params))

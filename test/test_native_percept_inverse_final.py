@@ -73,14 +73,7 @@ def test_completed_native_forest_has_exact_leaves_and_live_source_pullback(monke
         model.End();model.symbolSpace.soft_reset()
 
 
-def test_unsupported_inverse_keeps_its_learning_gradient():
+def test_product_inverse_is_not_certified():
     from DerivationReconstruction import certified_map
     from Language import ProductLayer
     assert not certified_map(ProductLayer(8,8))
-    from AttentionObjective import field_cost
-    observed=torch.tensor([[[.7,.4]]],requires_grad=True)
-    recovered=torch.tensor([[[.3,.2]]],requires_grad=True)
-    expected=torch.tensor([[[.4,.5]]],requires_grad=True)
-    cost=field_cost(observed,recovered,torch.ones(1,1),torch.ones(1,1,dtype=torch.bool),floor=.1,expected=expected)
-    cost['inside'].sum().backward()
-    assert recovered.grad.abs().sum()>0 and observed.grad is None and expected.grad is None

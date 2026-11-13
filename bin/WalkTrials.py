@@ -213,6 +213,10 @@ class ThoughtTrialState:
         indices = winners.tolist()
         def rows(values, name=None):
             first = values[0]
+            if name == '_thought_next_id':
+                # Histories are selected per stream; their shared allocator
+                # must remain beyond every selected history's frontier.
+                return max(values[index] for index in set(indices))
             if name == '_cs_field_concept_ids' and torch.is_tensor(first):
                 return first.new_tensor(sorted({int(cid)
                     for row, index in enumerate(indices)
@@ -250,8 +254,19 @@ class ThoughtTrialState:
                 return torch.stack([torch.nn.functional.pad(values[index][row],
                     (0, width - values[index].shape[-1]))
                     for row, index in enumerate(indices)])
+            if (name is not None and name.startswith('_live_') and torch.is_tensor(first)
+                    and first.ndim and first.shape[0] >= batch):
+                # STM reserves more streams than this microbatch may use.
+                # Select its active prefix, retaining the unused reservation.
+                return torch.cat((torch.stack([values[index][row]
+                    for row, index in enumerate(indices)]), first[batch:]), 0)
             if torch.is_tensor(first) and first.ndim and first.shape[0] == batch:
                 return torch.stack([values[index][row] for row, index in enumerate(indices)])
+            if (name in ('_what_slots', '_thought_contents', '_what_closure_pressure',
+                         '_inter_last_meaning') and isinstance(first, (list, tuple))
+                    and len(first) >= batch):
+                return type(first)(values[indices[row]][row] if row < batch else value
+                                   for row, value in enumerate(first))
             if isinstance(first, (list, tuple)) and len(first) == batch:
                 return type(first)(values[index][row] for row, index in enumerate(indices))
             if isinstance(first, dict):

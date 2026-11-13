@@ -102,6 +102,8 @@ def reverse(model, sub, field):
     identity = getattr(radix, 'identity', None)
     atoms = set(identity.atoms.values()) if identity is not None else set()
     for edge, col in enumerate(columns.tolist()):
+        if col // 2 in cs.basic_percepts.numeric_axes or cs.basic_percepts.is_value(col // 2):
+            continue  # Values have no byte locations; the value inverse reads their percepts.
         support = attributed[edge, ..., 0]
         group, wholes = cs.basic_percepts.occurrences[col // 2]
         for whole in wholes:

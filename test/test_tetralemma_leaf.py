@@ -85,7 +85,7 @@ def test_not_exchange_and_non_withdrawal(pair):
     assert 'meaning' in withdrawal.footprint_reads and 'meaning' in withdrawal.footprint_writes
     negation.meaning_layout = withdrawal.meaning_layout = (2, 6)
     torch.testing.assert_close(negation(value), value[:, [0, 1, 4, 5, 2, 3]], rtol=0, atol=0)
-    expected = value.clone(); expected[:, 2:4] = 0
+    expected = value.clone(); expected[:, 2:] = 0
     torch.testing.assert_close(withdrawal(value), expected, rtol=0, atol=0)
 
 

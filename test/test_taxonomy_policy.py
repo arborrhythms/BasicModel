@@ -36,9 +36,11 @@ def test_unrelated_true_episode_cannot_establish_the_next_parent_relation():
     cs, (a, b, _), store, model = _setup()
     fact = ConceptualMeaning.from_description(model.grammatical_thoughts._payload(a))
     order = terminal_model_index(model, fact.role_refs)
-    store.append_meaning(fact, trust=1, order=order,
+    row = store.append_meaning(fact, trust=1, order=order,
                          evidence=(1., 0.))
-    assert model.reason_about(model.grammatical_thoughts.form('ask', fact)).support_true == 1
+    from dataclasses import replace
+    addressed = replace(fact, role_refs=(store.occurrence_of(row), None, None))
+    assert model.reason_about(model.grammatical_thoughts.form('ask', addressed)).support_true == 1
     model.symbolSpace.ltm_store=LTM0(8,capacity=32)
     cs._concept_allocator.parts.remove(a[1], b[1])
     result = model.reason_about(QuerySpec.from_surface('isPart', a, b))

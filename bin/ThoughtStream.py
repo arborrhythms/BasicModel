@@ -203,6 +203,11 @@ def integrate(registry, goal, result, records, *, work=None):
     """Compose witnesses already read into serial slots; never search LTM here."""
     if result is None:
         return goal
+    if (result.semantic_id == 'intuit' and not result.evidence.get('intuition_derivation')
+            and not result.evidence.get('pervasion_derivation')):
+        # The zero field records that no rule fired. It is not a consequent
+        # that can replace the question and remove its unresolved references.
+        return goal
     if result.semantic_id in ('infer', 'intuit'):
         return result.evidence.get('meaning', goal)
     if (result.semantic_id in ('query', 'ask') and bindings(goal).get('_subgoal_subject') is not None
@@ -216,6 +221,11 @@ def integrate(registry, goal, result, records, *, work=None):
         same = signature.operation.semantic_id == result.semantic_id
     except (TypeError, ValueError):
         same = False
+    if same and result.semantic_id in ('query', 'ask') and result.evidence.get('meaning') is None:
+        requested = result.evidence.get('requested_meaning')
+        if requested is None:
+            return goal  # A cutoff before the face ran did not read its operand.
+        return with_slots(requested, open_slots(requested), pair=(0., 0.), source_evidence=(0., 0.))
     if same and result.semantic_id == 'ask' and result.evidence.get('meaning') is not None:
         return result.evidence['meaning']
     if (same and result.semantic_id in ('exist', 'gain', 'not', 'query')
@@ -230,11 +240,8 @@ def integrate(registry, goal, result, records, *, work=None):
     if kind is None:
         if result.semantic_id in ('query', 'ask'):
             from ThoughtBinding import integrate as bind_region
-            from IdeaEvaluation import isomorphic
-            store = getattr(registry.space, '_closed_clause_store', lambda: None)()
-            kernels = getattr(store, '_evaluation_kernels', ())
-            aligned = bind_region(goal, result, tuple(item for item in slots(records) if item is not result),
-                isomorphic=lambda left, right: isomorphic(kernels, left, right, work))
+            aligned = bind_region(goal, result,
+                tuple(item for item in slots(records) if item is not result))
             if aligned is not None:
                 return aligned
             if not has_open_slots(goal):
@@ -511,7 +518,7 @@ def write(model, meaning, *, row, _active=None, _bound=None):
         if token is not None and point is not None:
             from RowTime import encoder
             from MemoryLink import Occurrence
-            when = int(encoder().decode_index(store.entry_when(result)))
+            when = int(encoder().decode_index(store.entry_time(result)))
             token = owner.link(Occurrence(store.occurrence_of(result),
                 referent=mtm.entries[token].kind, selected=token), {},
                 value=point, where=None, when=when, stream=row)
@@ -555,7 +562,7 @@ def commit(model, result, *, row):
                 and torch.equal(retained.roles, current.roles)):
             # Any selected operation can leave the source unchanged. Reuse
             # that entry by its content, including a chain whose predicate
-            # is not executable; preserve its original percept stamp.
+            # is not executable; preserve its original entry time.
             return prior
     if prior is not None and has_open_slots(result.meaning):
         # An unresolved working read does not rewrite its source or create

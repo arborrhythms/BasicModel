@@ -48,7 +48,7 @@ def test_unresolved_root_description_keeps_chain_and_own_occurrence(monkeypatch)
     mention = f.store.location(occurrence)
     assert f.store.kind_of(mention) == 'unverified'
     assert f.store.row(mention)['evidence'] == (0., 0.)
-    assert not f.store.entry_when(mention).any()
+    assert not f.store.entry_time(mention).any()
     torch.testing.assert_close(f.store.point_of_row(occurrence[-1]), kept.point, rtol=0, atol=0)
     resolver.commit(plan, row, written, document='chain-mention', position=0, training=False)
     token = f.cs.mtm.token_of(occurrence)

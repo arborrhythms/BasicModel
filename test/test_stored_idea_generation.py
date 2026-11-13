@@ -425,13 +425,20 @@ def _field_trial(words, returned, *, available=True, meaning_start=None):
         torch.stack((torch.eye(2), torch.zeros(2, 2)), -1)[:, None],
         torch.tensor([[[0, 1], [1, 2]]]), torch.ones(1, 2, 2), None)
     carrier = SimpleNamespace(carrier_like=SimpleNamespace)
-    codebook = SimpleNamespace(getW=lambda: words[0], mereology=(None if meaning_start is None
+    codebook = SimpleNamespace(W=words[0], lookup_rows=lambda rows, **kw: words[0][rows],
+        getW=lambda: words[0], mereology=(None if meaning_start is None
         else SimpleNamespace(percept_event_width=meaning_start)))
+    definitions = SimpleNamespace(_tensor_row_keys={0: 0, 1: 1}, nOutput=2,
+        _index={}, values=torch.empty(0),
+        conjunctive=SimpleNamespace(_index={}, values=torch.empty(0)))
     owner = SimpleNamespace(subspace=carrier, similarity_codebook=codebook,
         _csw_row_of=int, _row_order=lambda row: 0, _field_caps=lambda: (2,),
         _field_codes=lambda codes, rows: codes[rows], cs_reverse_presence=lambda query, **kwargs: query,
-        _concept_allocator=SimpleNamespace(layer=lambda order: SimpleNamespace(_rows=(), _cols=(), nOutput=2)),
+        _concept_allocator=SimpleNamespace(layer=lambda order: definitions),
+        _compose_order0=lambda evidence, **kw: evidence,
         concept_id_at_row=int, word_surface_for_row=lambda row: bytes([97 + row]))
+    from FieldProjection import stimulate
+    field = stimulate(owner, words, where=field.where, when=field.when)
     bank = PrimedSymbols(torch.tensor([[0, 1]]), words, torch.ones(1, 2),
         torch.ones(1, 2, dtype=torch.bool), torch.tensor([[[97], [98]]]),
         torch.ones(1, 2, 1, dtype=torch.bool), meaning_start=meaning_start)
@@ -518,7 +525,9 @@ def test_dropped_constituent_is_charged_and_never_complete(near, eager_reading, 
     # The common input reverse remains exact. Only the order-zero face
     # after the lossy composition can charge the missing conceptual support.
     cost, terms = _field_trial(words, root[:, None])
-    assert cost.item() == pytest.approx(.5)  # The single emitted word cannot realize the dropped word.
+    # The native field preserves the tiny residual in the near projection;
+    # its linear decoder credits that support without declaring completion.
+    assert cost.item() == pytest.approx(.5 - (1e-6 if near else 0.))
     assert terms['reconstruction_order_zero.what']['trained']
     assert not terms['reconstruction.coverage']['trained']
     assert not terms['reconstruction.free_bytes']['trained']
@@ -526,7 +535,9 @@ def test_dropped_constituent_is_charged_and_never_complete(near, eager_reading, 
 
 @pytest.mark.parametrize('available', [True, False])
 def test_keep_cost_charges_erased_meaning_even_with_every_surface_leaf(available):
-    words = torch.tensor([[[1., 0., .2, 0.], [0., 1., -.2, 0.]]])
+    # Meaning coordinates are nonnegative lanes (§3.2). The field's
+    # candidate coverages, including partial entailments, are the target.
+    words = torch.tensor([[[1., 0., .2, 0.], [0., 1., .8, 0.]]])
     returned = words.clone()
     returned[..., 2:] = 0.
     erased, _ = _field_trial(words, returned, available=available, meaning_start=2)

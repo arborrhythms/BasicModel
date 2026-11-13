@@ -1,13 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="model.xsd">
-  <!-- XOR from located primitive memberships: order-0 field conjunctions,
-       then a learned order-1 sigma positive pole. The lesson file teaches
-       only primitive memberships and one name, never XOR. Reconstruction
-       is best effort from the forward evidence, with no stored input event
-       or stack. Parallel field operators run here; grammar lift/lower do not. -->
   <architecture>
     <omissionTarget>1</omissionTarget>
-
     <bindingDepth>2</bindingDepth>
     <conceptLayers>2</conceptLayers>
     <conceptualPi>true</conceptualPi>
@@ -15,15 +9,8 @@
     <symbolTower>true</symbolTower>
     <conceptBinding>aligned</conceptBinding>
     <data>
-      <dataType>embedding</dataType>
-      <dataset>inline</dataset>
-      <conceptLessons>xor_concept_lessons.json</conceptLessons>
-      <input use="train">00|01|10|11</input>
-      <output use="train">0|1|1|0</output>
-      <input use="validation">00|01|10|11</input>
-      <output use="validation">0|1|1|0</output>
-      <input use="test">00|01|10|11</input>
-      <output use="test">0|1|1|0</output>
+      <dataType>numeric</dataType>
+      <dataset>xor</dataset>
     </data>
     <training>
       <autoload>false</autoload>
@@ -36,11 +23,13 @@
     </training>
   </architecture>
   <InputSpace>
-    <nVectors>16</nVectors>
-    <nDim>16</nDim>
-    <nOutput>16</nOutput>
+    <nVectors>2</nVectors>
+    <nDim>9</nDim>
+    <nOutput>2</nOutput>
+    <nOutputDim>9</nOutputDim>
   </InputSpace>
   <PartSpace>
+    <nInputDim>9</nInputDim>
     <nInput>16</nInput>
     <nVectors>256</nVectors>
     <basicPerceptCapacity>256</basicPerceptCapacity>
@@ -69,9 +58,14 @@
     <divideWithinWhole>false</divideWithinWhole>
   </WholeSpace>
   <OutputSpace>
+    <lrScale>10</lrScale>
     <nInput>16</nInput>
     <nVectors>1</nVectors>
     <nOutput>1</nOutput>
-    <conceptIds>20001</conceptIds>
   </OutputSpace>
+  <SymbolSpace>
+    <language>
+      <grammar>field.grammar</grammar>
+    </language>
+  </SymbolSpace>
 </model>

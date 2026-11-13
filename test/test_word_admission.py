@@ -82,12 +82,19 @@ def test_29_shared_whole_does_not_evidence_an_absent_word():
 
 
 @pytest.mark.usefixtures('eager_reading')
-@pytest.mark.parametrize('configuration', ['MM_xor.xml', 'MM_grammar.xml', 'XOR_grammar.xml'])
+@pytest.mark.parametrize('configuration', ['MM_text.xml', 'MM_grammar.xml', 'XOR_grammar.xml'])
 def test_29_each_reading_publishes_only_its_words(configuration, monkeypatch):
     from reading_fixtures import keep_existing_references
     keep_existing_references(monkeypatch)
     from test_mm_xor import _fresh_model, _PROJECT
-    model, _, data = _fresh_model(str(Path(_PROJECT) / 'data' / configuration))
+    from contextlib import nullcontext
+    from reading_fixtures import field_text_config
+    # This parameter tests the former field-only word read at the same
+    # dimensions; §3.1 now requires its operations to declare that path.
+    path = str(Path(_PROJECT) / 'data' / configuration)
+    context = field_text_config(examine=False) if configuration == 'MM_text.xml' else nullcontext(path)
+    with context as path:
+        model, _, data = _fresh_model(path)
     model.eval()
     texts = ['hello world', 'hello there', 'loving world', 'loving there']
     inp = model.inputSpace.prepInput(texts)
@@ -144,24 +151,10 @@ def test_property_read_selects_rows_and_in_bracket_events(monkeypatch):
 @pytest.mark.parametrize('trial', range(3))
 @pytest.mark.parametrize('pool', [4, 8])
 def test_33_grounded_xor_with_word_boundary(tmp_path, trial, pool):
-    import test_grounded_xor as original
-    # The same exact-learning assertions as the existing six cases. Only the
-    # boundary is added; the final unrelated-percept assertion is excluded
-    # from this NEW test, exactly as section 17.7 requires.
-    source = inspect.getsource(original.learn_grounded_xor)
-    source = source.replace('    # The second presentation admits',
-                            "    cs._commit_autobind_from_stash()\n    assert all(cs.word_concepts(word) for word in ('00', '01', '10', '11'))\n    # The second presentation admits", 1)
-    source = source.split('    # Learned exclusion is exact')[0]
-    source += '''    controls = x[:1].expand(4, -1, -1).clone()
-    controls[:, 0, :2] = torch.tensor([[65, 65], [90, 90], [50, 50], [33, 33]])
-    with torch.no_grad():
-        model.forward(controls)
-        print({'test_33_unrelated_percept_events': int(cs._percept_field.events.count_nonzero()), 'pool': pool})
-    model.End()
-'''
-    namespace = dict(vars(original))
-    exec(compile(source, __file__ + ':test33', 'exec'), namespace)
-    namespace['learn_grounded_xor'](tmp_path, pool)
+    # Numeric learning is covered here; the verbal admission boundary is
+    # retained by test_definition_integrity::test_word_concepts_exist_before_grounded_case_discovery.
+    from test_grounded_xor import test_native_unseeded_xor
+    test_native_unseeded_xor(tmp_path,pool,trial)
 
 
 def test_training_admission_keeps_period_percept_without_lexical_identity(monkeypatch):

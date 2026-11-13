@@ -60,7 +60,7 @@ def test_epoch_restores_every_relation_column_index_and_given_row():
     for k,v in bank.state_dict().items():
         assert torch.equal(v, initial[k])
     assert indexes() == expected_indexes and store.location(given) is not None
-    bank.add(a, b, truth_plus=.85, truth_minus=.99, when=torch.arange(4.), surprise=.01)
+    bank.add(a, b, truth_plus=.85, truth_minus=.99, surprise=.01)
     store.truth_plus[store.location(given)] = .5
     store.access_count[store.location(given)] += 4
     from test_reference_close import known_concept
