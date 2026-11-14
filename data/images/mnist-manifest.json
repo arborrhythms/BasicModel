@@ -1,0 +1,60 @@
+{
+  "command": ".venv/bin/python bin/image_corpus.py freeze-mnist --out data/images",
+  "comparison": ">=",
+  "labels": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "labels_hash_encoding": "signed little-endian int64 [N], C order bytes",
+  "name": "mnist",
+  "pixels_hash_encoding": "uint8 [N,28,28], C row-major bytes, values 0 or 1",
+  "preparation_command": ".venv/bin/python bin/prepare_data.py",
+  "schema": 1,
+  "selection": "first rows after the CSV header; source order; no shuffle",
+  "shape": [
+    28,
+    28
+  ],
+  "sources": {
+    "test": {
+      "path": "data/mnist_test.csv",
+      "sha256": "c5adfcc9ce29069f8a988a6af1dcdc009bba975d2c98a52233661f79d880292b"
+    },
+    "train": {
+      "path": "data/mnist_train.csv",
+      "sha256": "06e64b0bf65de89c522348319ce5f63f43fb1cb40e1ce3c2ff43c1d3b8a0e14c"
+    }
+  },
+  "splits": {
+    "test": {
+      "labels_sha256": "da7f2703def944efe765ca288252560f04f9d92058c8e1a665bd14bf57bbee72",
+      "pixels_sha256": "4e5d91afd4806551c95e4a8846fb9a9b064ef9854dff4e23d47482584d76412e",
+      "rows": 200,
+      "shape": [
+        200,
+        28,
+        28
+      ]
+    },
+    "train": {
+      "labels_sha256": "7c8733e936a08984ed9643de8fd50871b49bc9fd173030252f50154c302fc247",
+      "pixels_sha256": "6e5429e6869a3863a9bcb655d2c2dbd333689da1405df83c303faf5076d61f03",
+      "rows": 1000,
+      "shape": [
+        1000,
+        28,
+        28
+      ]
+    }
+  },
+  "storage": "derived arrays are in memory only; only this manifest is tracked",
+  "threshold": 128
+}

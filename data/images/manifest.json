@@ -1,0 +1,72 @@
+{
+  "bounds": {
+    "center_x": "radius..27-radius",
+    "center_y": "radius..27-radius",
+    "radius": [
+      4,
+      11
+    ],
+    "side": "2*radius+1",
+    "stroke": [
+      1,
+      3
+    ]
+  },
+  "classes": {
+    "0": "horizontal bar",
+    "1": "vertical bar",
+    "2": "falling diagonal",
+    "3": "rising diagonal",
+    "4": "plus",
+    "5": "X",
+    "6": "square outline",
+    "7": "filled square",
+    "8": "ring",
+    "9": "filled disc"
+  },
+  "command": ".venv/bin/python bin/image_corpus.py freeze --seed 20261112 --out data/images",
+  "encoding": "196 lowercase hex digits; row-major; first pixel is most significant bit",
+  "files": {
+    "test": {
+      "path": "test.jsonl",
+      "per_class": 20,
+      "rows": 200,
+      "sha256": "75f16d687917ba97acb05af9931a475880bf28692ccc2c5e32325833cbfa33d7"
+    },
+    "train": {
+      "path": "train.jsonl",
+      "per_class": 100,
+      "rows": 1000,
+      "sha256": "f72633edbb201dff56d8635c7d65d864f17ca394b5e84e63979c00a0e3eafa50"
+    },
+    "validation": {
+      "path": "validation.jsonl",
+      "per_class": 20,
+      "rows": 200,
+      "sha256": "b92d17161622daaeb18ef86f7b691a89664234df7724ff950973e07ed08f68c8"
+    }
+  },
+  "generator": "Python random.Random (MT19937); inclusive randint; class then train/validation/test",
+  "labels": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "name": "shapes",
+  "order": "ascending label, then accepted draw order within each split",
+  "raster": "integer masks; y increases downwards; axial/diagonal bands abs(offset)<stroke; square border max(abs(x),abs(y))>radius-stroke; ring (radius-stroke)^2<x^2+y^2<=radius^2; filled shapes ignore stroke and consume no stroke draw",
+  "schema": 1,
+  "seed": 20261112,
+  "shape": [
+    28,
+    28
+  ],
+  "uniqueness": "reject repeated pixel arrays globally, including across labels and splits"
+}

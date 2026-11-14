@@ -521,6 +521,22 @@ manifest, generator command and seed. The design is the
 [test development plan](plans/2026-11-09-item0-5-test-development.md) §6 to §9 and
 §17.
 
+Separate image evaluation data lives under `data/images/`: 28 by 28 binary
+shapes, with integer labels 0–9 for a horizontal bar, vertical bar, falling
+diagonal, rising diagonal, plus, X, square outline, filled square, ring and
+filled disc. Each class has 100 train, 20 validation and 20 test images,
+globally distinct, with seeded position, size and stroke variation and no
+words in the images. Rebuild the packed JSONL files and their manifest with
+`.venv/bin/python bin/image_corpus.py freeze --seed 20261112 --out data/images`.
+The same module's `load(name, split)` returns float32 `[N,28,28]` pixels and
+int64 `[N]` labels for `shapes` or `mnist`. MNIST is the first 1,000 train
+and 200 test rows, thresholded at 128 of 255 and derived only in memory;
+prepare its source CSVs with `.venv/bin/python bin/prepare_data.py`, then
+rebuild only its hash manifest with
+`.venv/bin/python bin/image_corpus.py freeze-mnist --out data/images`.
+Part A's schema has no evaluation-set slot, so these images are not added
+to the staged training manifest.
+
 Learning is judged by four measurements, each reported per epoch: the cost
 on the held-out cost set (`data/eval/heldout-cost.json`, the union of part A's
 validation splits); acquisition, by each lesson's criterion; answers, bound and
