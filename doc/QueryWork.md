@@ -1,13 +1,5 @@
 # Shared selected-thought work accounting
 
-> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record.
-> - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
-> - Expectation is a **gain field** $c = m \odot a \odot o$ (attention's gain $m$, expectation's gain $a$, the arriving signal $o$) with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
-> - Amended 2026-10-29/30 (Alec): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are built (accepted as implemented, Alec, 2026-11-01).
-
-
-Implementation reference, September 20.
-
 QueryWorkBudget is one transient integer allowance for a selected thought tree.
 Its read-only spent, remaining, and per-kind counts report actual debits. It
 owns no meaning, checkpoint state, child allowance, reset, learned parameter,
@@ -28,8 +20,8 @@ through preparation, execution, and nested calls.
 | expansion | Using a captured taxonomy edge in a proof or neighbor result |
 
 Also charged: `description` (entering a description resolution),
-`context_record`, `unfold` (an inverse or forward check while unfolding or
-evaluating an idea), `effect_node` (each committed thought effect), `index`,
+`context_record`, `unfold` (an inverse or forward check while unfolding an
+idea), `effect_node` (each committed thought effect), `index`,
 `concept`, `edge` and `part` (`intuit`'s rule index, order-zero expansion,
 literals and pervasion parts), `space-read` and `serial-word-loop` (the reading
 field), and `bracket` (the input's bracket work).
@@ -87,8 +79,8 @@ limits. The normal selected-meaning controller creates one meter from
 `attentionBudget` (`selectedThoughtBudget` fails at load), debits its own hard
 choices as `controller`, forwards the meter through every selected reader and
 nested `ask` continuation, and commits each actual meter delta to the ordinary
-record. A child neither gets a new
-allowance nor begins another optimizer episode. The existing thought owner
+record. A child neither gets a new allowance nor begins another optimizer
+episode. The existing thought owner
 still enforces the cutoff-drain bound; neither the meter nor that accounting
 creates residual policy credit or learned utility. The chooser's credit is the
 whole path's reconstruction and supplied-answer cost; the work an episode spent

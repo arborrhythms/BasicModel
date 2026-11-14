@@ -56,8 +56,8 @@ executorch's `to_edge_transform_and_lower` verifier: `SpecViolationError:
 Parameter output aten_mean_dim does not point to a parameter that exists`,
 the mutated parameter being `symbolSpace._owned_bases.what.W`. The exported
 core writes a parameter during forward, which this verifier rejects. Whether
-torch 2.15's export, executorch 1.5.1's verifier or the item 2.5 working
-tree exposed it is not established; the upstream shared-constant limitation
+torch 2.15's export, executorch 1.5.1's verifier or the working
+tree of that time exposed it is not established; the upstream shared-constant limitation
 is therefore unverified on 1.5.1. The non-strict xfails hide this, since
 pytest reports an xfail whatever the failure.
 
@@ -221,11 +221,12 @@ training).
 | `TEST_JOBS` | pytest-xdist worker count for `make testp` (e.g. `auto`) |
 
 Additional env vars read directly by `Models.py`/`util.py` (not surfaced as
-`train.py` flags): `BASIC_SEED` (overrides the training seed), `BASIC_CHECKPOINT_EVERY_BATCHES`
+`train.py` flags): `BASIC_CHECKPOINT_EVERY_BATCHES`
 (checkpoint frequency in batches, default off), `BASIC_PROFILE` (enable
-`cProfile` around Phase 2, also set by `train.py --profile`), `MODEL_AMP`
-(autocast mode: `off`/`fp16`/`bf16`), `MODEL_DEBUG` (gates verbose debug
-asserts/stat prints).
+`cProfile` around Phase 2, also set by `train.py --profile`), `MODEL_DEBUG`
+(gates verbose debug asserts/stat prints). The variables that override an
+XML parameter (`BASIC_SEED`, `MODEL_AMP` and others) and the remaining names
+the code reads are listed in [Params](Params.md#environment-variables).
 
 ---
 

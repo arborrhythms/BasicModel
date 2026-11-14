@@ -1,10 +1,10 @@
 # Existence evidence and grammatical descriptions
 
-> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record.
-> - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23; recorded 2026-10-30):** an LTM1 row is two tagged references (each to an LTM0 occurrence, a symbol or another LTM1 row, its tag saying which) with its kind read from the referents, not three. The unused `LTM0` columns are removed and the row has this layout (Alec, 2026-11-01).
-> - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
-
+An idea is conceived and does not exist (decided 2026-10-20). A noun phrase's
+default verb phrase is read as *occurs*: presence to the mind in a situation
+and nothing more, which holds of an idea, a percept and a relation alike.
+Existence proper is a further relation asserted by evidence, and that evidence
+is what the readers below weigh.
 
 The grammatical `exist` is `isTrue`'s conceptual face: it reports
 the presence of a concept's content as two independent lane magnitudes
@@ -16,11 +16,11 @@ anchors and questions without evidence never answer. Neither face brings a
 frame into STM; `query` does that. See
 [AccessibleMind](AccessibleMind.md) and [QueryContracts](QueryContracts.md).
 
-The older standalone `TruthGroundedReasoner` reader below retains its original
-maximum-support compatibility contract pending review. It is not the normal
-thought executor. The storage and admission rules remain shared.
+The standalone `TruthGroundedReasoner` reader below keeps a maximum-support
+contract. It is not the normal thought executor; the storage and admission
+rules are shared.
 
-## Historical standalone reader contract
+## Standalone reader contract
 
 The reader's `existence_evidence` asks whether the referent of a complete
 conceptual description is supported by accepted LTM facts. Its input retains
@@ -50,9 +50,8 @@ including missing-context diagnostics.
 
 The reasoner's `exist()` leaves conceptual content and its pair, and its
 `is_true()` an ended proposition's pair and witnesses; neither returns a
-scalar, and `true` is retired. Checked evaluation and the normal controller use
-the rich evidence result. Conceptual presence is never a substitute for a
-fact.
+scalar. Checked evaluation and the normal controller use the rich evidence
+result. Conceptual presence is never a substitute for a fact.
 [Compatibility view](../bin/reasoning.py).
 
 ## Meaning ownership and storage
@@ -60,24 +59,22 @@ fact.
 `ConceptualMeaning` is an owned value, not another memory or planner. Roles are
 `[3, D]`, with a separate Boolean presence mask, polarity and an optional
 sentence kind (`idea` or `relation`); bindings, scope and typed references are
-immutable metadata. It carries no grammatical mode. Whether a sentence asserts
-is a fact of its kept program: when the `ask` rule lies on the kept head path
-(an `ask` inside an operand does not count), the journal sets the clause's
-evidence pair and source evidence to $(0,0)$, so an asked clause asserts
-nothing. The model learns from the form of the parse whether to answer; nothing
-records that a sentence was a question. A live clone keeps its current-step
-gradient. The explicit adapter converts STM order to infix
-NP1/VP/NP2 order; depth three uses `[1, 2, 0]`, and depth two uses `[1, 0]`.
-The predictor and observation writers share that adapter. A two-role input
-retains its VP in the store and the legacy chain reader.
+immutable metadata. It carries no grammatical mode: whether a sentence asserts
+is a fact of its kept program. When the `ask` rule lies on the kept head path
+(an `ask` inside an operand does not count), the clause's evidence pair and
+source evidence are set to $(0,0)$, so an asked clause asserts nothing. A live
+clone keeps its current-step gradient. The explicit adapter converts STM order
+to infix NP1/VP/NP2 order; depth three uses `[1, 2, 0]`, and depth two uses
+`[1, 0]`. The predictor and observation writers share that adapter. A two-role
+input retains its VP in the store and the legacy chain reader.
 [Value](../bin/Meaning.py),
 [adapter](../bin/Meaning.py),
 [prediction adapter](../bin/Layers.py),
 [observation writer](../bin/Models.py).
 
-`LTM0` owns each row's idea vector and its two evidence lanes, beside its
-occurrence identity and required-metadata flag. A row's kind is read, not
-stored (`LTM0.kind_of`): `estimate` from its expectation provenance, `episode`
+`LTM0`, the occurrence store, owns each row's idea vector and its two evidence
+lanes, beside its occurrence identity and required-metadata flag. A row's kind
+is read, not stored (`LTM0.kind_of`): `estimate` from its expectation provenance, `episode`
 and `cover` from its anchors, `question` while it has open references, a direct
 document's declared kind, `inference` for a thought conclusion with evidence,
 `fact` or `observation` by its source's authority when it has evidence, and
@@ -101,7 +98,8 @@ not. Reset clears records without reusing their occurrence IDs. The standalone
 reader compares retained constituent-reference identities. The bounded
 nested-meaning reader and retention graph are described in
 [NestedRetention](NestedRetention.md); selected composition and all three
-observation writers now preserve nested occurrences ([SelectedMeaning](SelectedMeaning.md)).
+observation writers preserve nested occurrences
+([SelectedMeaning](SelectedMeaning.md)).
 [Occurrence identity](../bin/Memory.py),
 [compaction](../bin/Memory.py),
 [reset](../bin/Memory.py).
@@ -128,22 +126,19 @@ saved set of the new semantic columns is rejected even by a non-strict load.
 [Guarded read](../bin/Memory.py),
 [checkpoint migration](../bin/Memory.py).
 
-Older checkpoints lack all these columns. Explicit provisioned/user TruthSet
-origins may retain fact status; unclassified conversation rows become
-unverified. Old nonzero slots provide a best-effort presence mask. A legacy
-relation with no recoverable VP is unverified, rather than certified from NP1.
-Old missing scope/source text is not reconstructed from model activation.
-[Legacy migration](../bin/Memory.py).
+A checkpoint in an older row layout is not loaded: loading one fails with the
+retired column's name or the unsupported layout version. No legacy row is
+reclassified, given a presence mask or certified from part of its roles.
+[Layout check](../bin/Memory.py).
 
 ## Predictions and fact admission
 
 Expectation's estimates are typed `estimate` rows. Estimates, observations,
 questions and unverified rows do not become accepted facts through scalar
-conversion or high confidence. Fact admission preserves the complete meaning, scope and
-provenance under the existing store's explicit contract. The addressee/testimony
-registry and legacy world-lemma writer are removed. Ordinary thought history
-records checked support and typed results; it does not promote generated
-content into truth. See [Queries](../bin/Queries.py),
+conversion or high confidence. Fact admission preserves the complete meaning,
+scope and provenance under the store's explicit contract. Ordinary thought
+history records checked support and typed results; it does not promote
+generated content into truth. See [Queries](../bin/Queries.py),
 [thought history](ThoughtHistory.md) and [SelectedMeaning](SelectedMeaning.md).
 
 ## Gradients
@@ -151,12 +146,9 @@ content into truth. See [Queries](../bin/Queries.py),
 The meaning-value clone preserves live representation gradients, while durable
 store writes detach them. Fact lookup, metadata matching, thresholding and
 support aggregation are hard operations with scalar evidence; they provide no
-ordinary derivative through their choices. Later learned query selection needs
-its declared policy credit. This migration adds no learned parameters or new
-loss, and does not itself train useful questioning. The architecture-wide
-gradient boundaries remain documented in [GradientFlow](GradientFlow.md).
+ordinary derivative through their choices, and they add no learned parameter
+or loss. The architecture-wide gradient boundaries are documented in
+[GradientFlow](GradientFlow.md).
 [Owned value](../bin/Meaning.py),
 [detached write](../bin/Memory.py),
 [hard lookup](../bin/reasoning.py).
-
-*Moved to [DevelopmentHistory](DevelopmentHistory.md#historical-validation-september-16) (2026-10-30): "Historical validation (September 16)".*
