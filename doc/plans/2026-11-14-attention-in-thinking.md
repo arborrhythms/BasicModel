@@ -568,3 +568,209 @@ certificates. The temporary base worktree was removed after its evidence
 was saved. All work remains local on `performance`; nothing was pushed,
 and `main` was not changed. The additional learned-state dependence and
 nonlinear reading remain the explicitly deferred work in §4.
+
+## 9. Sole sentence walk: equality investigation (2026-11-14)
+
+**Stopped at the requested equality gate.** No production implementation
+of the sole-walk change was made. The sixteen separate lesson walks are
+equal, but moving expectation changes its tensors on twelve sentences.
+The packed fixture also has different admission, poles and expenditure.
+These are the cases Alec asked to receive before a choice is made.
+
+### Source and certificate
+
+This investigation starts at `a0ddd14125` on `performance`. The earlier
+§7 work was pushed on Alec's subsequent instruction; its historical
+"nothing was pushed" statements describe the earlier report time. This
+follow-up is local and has not been pushed. `main` is unchanged.
+
+The new observer is `test/attention_single_walk_certificate.py`, commit
+`6efaf8283f`. It is a new test file permitted by §5. The only other edit
+is this requested §9; no production file, existing assertion, fixture
+capacity, or runtime option is changed. There is no alternative production
+implementation behind a switch.
+
+All runs replay §7's original Python, NumPy and Torch streams and hash
+setting, without selecting another seed. The initial stream file's SHA-256
+remains `b4f4d373fb74a4c57d8c6f8d16338a4c319bc1edac8a668527f8ea98dadd4745`.
+The environment remains CPU/eager, one thread, on this M2 laptop. No MPS
+measurement was made.
+
+The observer checks each actual walk against the original attention
+function at `3926005f12cabfd8233fc444963eae96c994d7ba`. The sixteen lesson
+batches and both unchanged stopping gates also match the saved base
+certificates exactly: chooser results, registered cost contributions,
+parameters, optimizer state where present, and random streams. The packed
+fixture was additionally run in a fresh detached checkout of that exact
+base; its complete batch record matches this branch exactly. Both gates
+pass, but make **zero attention walks and zero staged word expectations**;
+they do not witness the proposed ownership change.
+
+Expectation probes call the actual `handoff` and `stage_expectation` on
+attribute overlays and a private copy of the expectation owner's bank
+buffers. They consume no random draws. They capture all four word-input
+tensors, all ten `ExpectedWords` fields, masks, content, handoff poles,
+and the four shared-symbol-bank buffers. The isolated staging probe first
+has to reproduce the real staging result exactly. Comparisons use the
+current sentence's slots; candidate and symbol banks are compared whole.
+Complete walk tensors are retained as well as the difference counts.
+
+Evidence is in ignored `output/attention-single-walk/`:
+`lesson-complete/`, `gates-complete/`, `base-packed/`, and `packed-prefix/`.
+Each has its batch records and timing result; the branch runs also have
+walk comparisons and expectation tensor snapshots. `receipt.json` records
+source, observer digest, environment and totals. The initial census and
+the earlier packed comparison remain alongside these runs.
+
+### Sixteen separate lesson sentences
+
+For **16/16**, staging and the actual greedy sentence walk have exactly
+equal `accepted`, `descended`, `poles` and `spent`. Substituting the sentence
+reading while holding the expectation call at the same point changes
+none of its outputs or banks. The separate oracle calls at staging time
+give the same result.
+
+Moving that call to `start_compose` is different. On **12/16** sentences,
+`probabilities`, `prediction`, `excess`, `omission`, `loss` and `activation`
+change. The unchanged cases, numbered from one, are 1, 5, 9 and 13.
+All other captured fields, including codes, banks, targets, content,
+gain, top-one result and rank, remain equal on these sixteen inputs.
+Maximum absolute differences are **0.000041604042** in probabilities,
+**0.000040560961** in prediction, and **0.000007286668** in staged loss.
+These small differences fail exact equality.
+
+The cause is the clock. `_run_sentence_word_bricks` advances it before
+composition; `Layers._prediction_inputs` converts temporal coordinates
+relative to the current model time. For example, sentence 2 stages at
+tick 3 and reaches `start_compose` at tick 8. A diagnostic that supplies
+only the earlier clock restores **every captured field exactly on all
+sixteen**. That diagnostic is not installed in production.
+
+This is a counterexample for the requested staging tensors, not proof
+that this particular clock shift changes an optimizer update: the current
+sentence closing code recomputes the word loss from
+`_word_expectation_input`. No changed production training path was run.
+
+### One row containing the complete first lesson document
+
+The additional fixture packs the existing document's four sentences into
+one row: "This is Felix.", "What is this?", "That is Ciao.", and
+"What is that?". It uses the original XML word capacity and allowance
+(32), all the original training-form admission, and a normal inference
+`runBatch`. No document is shortened and no capacity is adjusted.
+
+The staging walk spends **27**, accepts **10** words, and descends on
+four punctuation occurrences. The actual sentence walks do this:
+
+| Sentence | Meter entering walk | Walk's final spent | Evaluated rounds | Accepted, staging → sentence | Local field operations |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| This is Felix. | 0 | 12 | 13 | 2 → 2 | 6 |
+| What is this? | 13 | 25 | 14 | 3 → 3 | 5 |
+| That is Ciao. | 26 | 32 | 8 | 2 → 2 | 0 |
+| What is that? | 32 | 32 | 1 | 3 → 0 | 0 |
+
+`spent` is cumulative; it includes the entering allowance consumption,
+not just this walk's work. The selected sentence paths also spend query
+work between walks. The sentence loop already shares that meter across
+the row: it does **not** grant each sentence a fresh allowance of 32.
+
+On the corresponding sentence slots, `accepted`, `descended` and `poles`
+match for the first **3/4** sentences. On the fourth, the accepted bits
+for `is`, `that`, and `?` all disappear, the `?` descent bit disappears,
+and its positive pole changes from 1 to 0. Thus **3/10** staged accepted
+words are absent from the sentence walks. Cumulative `spent` differs
+from the staging total on **4/4** sentence comparisons.
+
+There is also a scope/budget difference before any sentence changes
+model state. The row walk takes **zero field operations**. Attention's
+`minimum` calculation reserves progress for all pending words in its
+scope, suppressing optional field operations. Diagnostic sentence-only
+walks opened at that same staging point with the same initial meter
+instead spend **12, 12, 12, 13**, taking **6, 5, 6, 6** field operations.
+Their accepted and descended bits still match on all four sentence
+slices, but the fourth changes both poles on `that` and `?`: `(1, 0)`
+becomes `(0, 1)`. Its local `not` field operation covers those two words.
+Resetting the allowance per sentence would therefore also change the
+reading; it is not an equality repair. Those four walks alone would
+spend 49 units rather than the row walk's 27.
+
+Expectations differ on **3/4** packed sentences even when both readings
+are evaluated at the same time. The word candidate bank remains the
+same ten identities from all live input words; acceptance controls
+targets and arrival, not which identities enter that bank. Calling the
+existing routine with only a sentence's accepted mask drops the earlier
+sentences from its causal prefix. `WordExpectation.word_distribution`
+updates its running context and activation from that prefix. At the
+staging point, restoring only the earlier accepted words and their
+poles makes expectations for sentences 2 and 3 exactly equal again.
+Sentence 4 still differs because of its local pole changes.
+
+At actual `start_compose`, the fourth sentence's targets change from
+`[1, 9, 6]` to `[-1, -1, -1]`; those three content/gain/loss entries become
+zero. Merely restoring the old clock does not repair the packed cases.
+Earlier sentences have also changed history and the native symbol bank:
+bank keys differ at sentences 2–4, with identities, addresses and orders
+also differing at sentence 4. Freezing the old clock, word codes and
+initial history still leaves the prefix/admission differences. These
+controls separate the clock, prefix, scope and live-state dependencies.
+
+One correction to the task's description matters for a later edit:
+`stage_input` already skips charging the staging walk when
+`_sentence_ends` is true. Sentence scoring charges private trial meters;
+the selected path transfers its charges to the real meter. That existing
+ownership is retained in this investigation.
+
+### Walks, evaluated rounds and seconds
+
+The sixteen sentences currently execute **35 walks / 430 evaluated
+rounds**: 16 staging walks / 197 rounds, 16 greedy sentence walks / 197
+rounds, and 3 attention-departure replays / 36 rounds. Each staging and
+greedy walk's rounds, in lesson order, are
+`13, 14, 13, 11, 13, 11, 13, 11, 13, 11, 13, 11, 13, 11, 13, 13`.
+The three departure walks occur on sentences 2, 4 and 10. They are actual
+extra walks, not omitted from a "one per sentence" count.
+
+| Fixture | `3926005f12` walks / rounds | Current branch walks / rounds | After sole-walk change |
+| --- | ---: | ---: | --- |
+| Sixteen lesson sentences | 35 / 1120 | 35 / 430 | Not built: equality gate failed |
+| Packed four-sentence row | 5 / 160 | 5 / 64 | Not built: equality gate failed |
+| Both stopping gates | 0 / 0 | 0 / 0 | Not built |
+
+The difference from the base in evaluated rounds is the already-certified
+§7 inert-tail removal. This follow-up changes neither count. Subtracting
+the sixteen staging walks would arithmetically leave **19 / 233**, if
+all other decisions survived. That is a projection, not a certificate or
+an implemented count; three departure replays would still remain.
+
+| Measurement, seconds | Exact base | §7 branch before this task | Current unchanged production | After sole-walk change |
+| --- | ---: | ---: | ---: | --- |
+| Sixteen lesson `runBatch` calls | 71.852380 | 70.905987 | 70.732232 | Not measured |
+| Both gate drivers, including observation | 1.000958 | 1.001150 | 1.009343 | Not measured |
+| Packed document `runBatch` | 5.838789 | — | 5.781457 | Not measured |
+
+The first two reference columns use §7's complete-registry observation;
+the packed base is the fresh run described above. `runBatch` timings
+subtract timed oracle/probe work but retain ordinary observation overhead.
+The current sixteen-sentence driver including all diagnostics takes
+79.918264 seconds; the packed driver takes 7.665632 seconds. These are
+single observations, not a speedup claim. Current lesson throughput is
+approximately **0.23 sentences/second**. There is no sole-walk after-time
+because implementing it would choose between the unequal results.
+
+### Decision for Alec
+
+| Choice | What it preserves and changes |
+| --- | --- |
+| Preserve exact base behavior | Keep the row-wide admission, field decisions, staging-time forecast context and cross-sentence prefix. Retaining the current row walk preserves those results; replacing it requires a design that derives that same row-wide result. Simply substituting the existing sentence walks fails the certificates above. |
+| Make each sentence's existing walk authoritative | Retain the shared row/query allowance; stage from that sentence's actual admission. The packed final sentence loses its three targets, and later-time forecasts change on 12/16 separate lesson sentences. Carry the causal prefix explicitly if earlier accepted words are to remain visible. This is a semantic change requiring a revised equality contract. |
+| Give every sentence a fresh allowance | The cold comparisons recover all ten accepted words, but spend 49 bracket units and change the final sentence's poles and expectation. This changes the row budget as well as the reading. |
+
+**Recommendation:** keep the shared row/query allowance and preserve the
+causal prefix; make the sentence walk authoritative only if Alec explicitly
+accepts the admission/forecast changes above. Do not reset the budget to
+make the packed case pass. If equality with `3926005f12` remains mandatory,
+retain the current production behavior pending a row-semantics design.
+No choice in this table has been implemented.
+
+The diagnostic commit is `6efaf8283f`; the following documentation-only
+commit records this return. Both remain local on `performance`.
