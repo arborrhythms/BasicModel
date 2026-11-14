@@ -1518,7 +1518,9 @@ line
 ([specification](plans/2026-11-11-item1-8-last-architecture-round.md),
 sections 3.9 and 3.10). Signals of several dimensions and images stay here;
 for images, `.where` would become two-dimensional, and wholes and parts
-hyperrectangles in the unit hypercube (Alec, 2026-11-11).
+hyperrectangles in the unit hypercube (Alec, 2026-11-11). A first path
+for images, as numbers of many dimensions with no place, is under
+[Numeric input as a modality](#numeric-input-as-a-modality-xor-as-a-system-1-model-and-one-model-class-alec-2026-11-11-to-specify).
 
 **Where magnitude is lost today.** (1) The join is idempotent: a word's
 form is the coordinatewise max of its parts ([Spaces, fold ladder](Spaces.md#fold-ladder)),
@@ -2124,6 +2126,37 @@ Outside the round:
 - *The whole-slab body* of numeric configurations that are not XOR proofs
   (`mnist.xml`, `model.xml`'s default) is not changed by the round.
 
+**Images by the same path (Alec, 2026-11-13).** "Please ensure a path for
+the number modality to process images as well as XOR (the only different
+being the percept dims; MNIST-size images would be a good test, but no
+need for multimodal at this point, that work is left to someone else)."
+
+- *One reader.* A row of numbers is flattened to its dimensions: 2 for
+  XOR, 784 for a 28 by 28 image. The numeric reader already takes the
+  product of the input shape as its dimensions.
+- *Level sets.* Each dimension's number is categorized against a part and
+  a whole ([Spaces](Spaces.md#percept-level-sets)). The numeric reader
+  today gives each dimension's concept the value as evidence, a
+  magnitude; the scalar beside the words is already categorized. Moving
+  the numeric reader to level sets is to build.
+- *One step of System 1* lies between the concepts and the linear output.
+  For XOR the one concept needed beyond the inputs is promoted when both
+  inputs recur together. A whole image's set of lit pixels does not
+  recur, so for images the step has to be a learned map between concepts
+  (*Claude's reading*; [Reasoning](Reasoning.md), "Implicit and explicit:
+  what each system holds").
+- *The test.* A 28 by 28 input of two levels, which differs from XOR in
+  its dimensions alone: it runs forward and backward and its
+  reconstruction returns every number. Learning on such images is first a
+  measurement, beside the same file with the System 1 step removed. Grey
+  levels follow. Two modalities at once are not part of it.
+
+To settle: whether a dimension is the percept's place, as a letter's
+position is; where the levels of a grey image come from; and which System
+1 step it is
+([specification](plans/2026-11-11-item1-8-last-architecture-round.md),
+section 22.9).
+
 ## The certainty of a word's mapping to its object, from a second modality (Alec, 2026-11-11; future work)
 
 Alec, asked what trust `interpret` should give a new definition:
@@ -2184,6 +2217,17 @@ feeling, as animals and infants compare and roughly add magnitudes without
 symbols (cited from memory, not checked: Dehaene 1997; Cantlon and Brannon
 2007); and they stay out of what a word's arithmetic can call. In floating
 point the feeling's sum is exact unless something makes it approximate.
+
+**Settled (Alec, 2026-11-13).** "arithmetic do not operate on the codes:
+that would break codebook lookup. So even with number, we categorize it
+perceptually: that puts us in a codebook, and percept activations have a
+kind there but no magnitude. So for now, the arithmetic operations are
+conceptual-space only." The rule of 2026-10-07 stands. The four of
+arithmetic, add, subtract, multiply and divide, act on concepts, and "can
+work in tanh-bounded space or something (0..inf)": in the chart, mapped
+back to the unit range ([Language](Language.md), "The operators"). What
+is left to say is what a difference does below zero and a quotient at a
+zero divisor.
 
 ## Removing the tanh and atanh of sigma and pi (Alec, 2026-11-13; to investigate)
 

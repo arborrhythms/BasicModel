@@ -455,9 +455,9 @@ representation to an object, for which there is no initial basis."
   and perhaps necessary for a zero-D thing."
 - **Only `interpret` makes a symbol.** "lets let interpret() make all
   symbols."
-- **Its two names.** "lets call interpret as objectForWord, and its reverse
-  wordForObject." Saying what a present thing is, with no word given, is
-  `wordForObject`.
+- **Its two names.** "let's use name() and interpret()." `interpret` takes
+  a word to its object and `name` takes an object to its word. Saying what
+  a present thing is, with no word given, is `name`.
 - **The trust of the mapping** is one for now: "the trust of a words mapping
   is really something the architecture should be setting based on success.
   lets just use one, and flag it" ([FutureWork](FutureWork.md)).
@@ -708,7 +708,7 @@ by whichever use the sentence's credit keeps.
 | word class | what it does | index |
 |---|---|---|
 | noun, adjective | narrows which thing | |
-| determiner | takes a kind to its extension and selects there: "the" a known identity from MTM, "a" one generic member, "some" some subconcepts, "every" the entire extension ([Extend](Extend.md#determiners)) | thing |
+| determiner | takes a kind to its extension and selects there: "the" a known identity from MTM, "a" one generic member, "some" some subconcepts, "every" the entire extension ([Extend](Extend.md#determiners)); *2026-11-13: a modifier, with the order dropped by `lower`, below* | thing |
 | verb, adverb | narrows which stretch of time, and what changes | |
 | tense, aspect | individuates the time: a selection over the verb phrase's phases (below) | time |
 | conditional | narrows which alternatives are in play | |
@@ -808,6 +808,92 @@ operator is learned from is written in no code.
 An earlier proposal, nouns from PartSpace and adjectives from WholeSpace, is
 recorded in
 [DevelopmentHistory](DevelopmentHistory.md#future-work-nouns-from-partspace-adjectives-from-wholespace).
+
+## Determiners, number words and the modifier (Alec, 2026-11-13)
+
+A determiner and a number word are modifiers. Neither has an operator of
+its own.
+
+- **A word at several orders.** "I think we can have "cat" exist at
+  multiple orders. So when it is found to be a count noun, we leave the
+  old "cat" reference and create a new "cat": so it is an instance of
+  polysemy. Seeing a determiner causes a choice at interpretation time to
+  chose the higher-order one (maybe that can be the default, also)." The
+  choice is `interpret`'s, made by expectation as for any word with
+  several objects ([Orders §12](Orders.md)).
+- **`lower` drops the order.** "lets keep lower as something that is used
+  for higher-order words. After we do that, the determiner is basically a
+  special case adjective, as is number. So we don't need a special case
+  number, that just gets muxed in with all the other adjectives and the
+  architecture will sort it out." `lower` takes one operand, a word of
+  order one or more, and gives a member of it. The sentence above, that
+  the order drops when the determiner is applied, stands with `lower` in
+  the determiner's place.
+- **"a" against "the"** is the length of the vector: "For now Im happy to
+  let that be encoded in vector length, since it is a measure or
+  certainty." A referent met once is short, and one met again is longer.
+- **Which operator a modifier takes is chosen at run time.** "Adjective
+  may not map to intersection, that decision of which operator is bound
+  is. run-time one." One fixed operator would be wrong: "I remember that
+  intersection did not take account of where the noun currently was, so
+  the idea of using a fixed intersection across all nouns was
+  problematic: a small elephant is not a small paperclip." A least sets
+  one ceiling for every noun. A gain scales the noun's own values, so it
+  is read against where the noun is. This is the difference recorded
+  above between a modifier that acts the same on any domain and one that
+  reads its scale from the domain it is given.
+- **No part of speech owns an operator.** "we should not presume which
+  parts of speech go with which operators". `modifier` acts on what
+  `change` takes as its changer, and on nouns, "which makes it play the
+  role of both adv and adj".
+
+## The operators (Alec, 2026-11-13)
+
+"Here are the operators I think we need for a UG, where each operator can
+compose/generate and operate on both the extent and intent". The intent
+is the idea's vector, and the extent is the field it leaves
+([Extend](Extend.md)).
+
+| Operators | |
+|---|---|
+| `not`, `non` | negation; `non` withholds |
+| `interpret`, `name` | a word to its object; an object to its word |
+| `sign` | keeps the word as a word: "I think sign() only goes one way" |
+| `bind` | ties a mention to its referent |
+| `part/implies` | one relation; `whole` is `part` with its operands exchanged |
+| `ask` | "a placeholder: perhaps it can mark a position of uncertainty within the sentence" |
+| a least and a greatest | "conjunction, disjunction, intersection, union (I think these collapse to two, with extent/intent each)" |
+| add, subtract, multiply, divide | arithmetic, in conceptual space only |
+| `lift`, `lower` | one operand each: raise an order, drop an order |
+| `change` | composes the sentence: "lets call the operation that lift was doing as change(), since it is a temporal modifier" |
+| `modifier` | the adverb and the adjective |
+| `preposition` | "is a compound modifier" |
+| `surface`, `swap` | attach a surface marker; exchange two constituents |
+
+- **No one-operand faces.** "I don't see a reason for the unary operator
+  "faces": lift and lower are now unary".
+- **Withdrawn.** `equal`: "equal can go, isEqual should stay"; an
+  identity is `part` both ways, which `define` writes in thought
+  ([Reasoning](Reasoning.md)). `generic`: "I think its the low-order
+  "cat" word, so it doesn't need to exist." `noun`: "can be subsumed by
+  interpret". A rule named for the verb goes on the principle above; what
+  it does today, attach an object to its verb, is the work of `modifier`
+  (*Claude's reading*).
+- **Arithmetic is not on codes.** "arithmetic do not operate on the
+  codes: that would break codebook lookup. So even with number, we
+  categorize it perceptually: that puts us in a codebook, and percept
+  activations have a kind there but no magnitude. So for now, the
+  arithmetic operations are conceptual-space only." It "can work in
+  tanh-bounded space or something (0..inf)": computed in the chart, where
+  a value runs from zero to infinity, and mapped back, so a sum
+  $\tanh(\operatorname{atanh} a + \operatorname{atanh} b)$ stays in the
+  unit range. Arithmetic on numerals remains thought by chained
+  successor ([Training](Training.md)).
+- **Attention's operations are not among these.** They find the words
+  the operators then compose: "attentions operations should be called
+  focus(), unfocus(). gloss() is better named mint()". To focus is to
+  narrow to a part of what is attended; `mint` accepts one clean region
+  as a word, whose symbol then enters the grammar.
 
 ## Exist and thought operations at the completed boundary
 

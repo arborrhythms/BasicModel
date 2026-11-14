@@ -510,6 +510,29 @@ observed, before any thought, so that what it has learned is known
 directly: "insights that trigger knowing as a result of observation
 directly".
 
+### The tools of thought (Alec, 2026-11-13)
+
+"For thought, we are giving tools to the model so that it can change its
+structures". The operators of [Language](Language.md) compose and
+generate; these act at a completed boundary.
+
+| Tool | Alec's note |
+|---|---|
+| `ask` | "as before" |
+| `query` | "over memory" |
+| `isPart` | "this is inferred after a difference" |
+| `isWhole` | "probably keep, but equivalent to a swapped part" |
+| `isEqual` | the test of identity; it "can unify over two different orders by doing lower or raise" |
+| `isTrue`, `inferBackward` | kept |
+| `not`, `non` | "as before" |
+| `bind`, `exist`, `infer`, `intuit` | |
+| `part/whole/implies` | "*creates* an STM1" |
+| `define` | "creates two STM1" |
+
+`define` is how an identity is written: two relations, `part` each way.
+The strength of expectation is not a tool: "drop gain, we can set that as
+expectationGain on the model."
+
 ### Where they fit
 
 *The first network.*

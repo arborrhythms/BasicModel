@@ -587,3 +587,28 @@ view-derived radii are unchanged by downward directional conditioning. See
 #### Thought over grammatical classes (Alec, 2026-11-08)
 
 `Priming.part_edges` carries argument-class memberships beside the relational ones, so `ThoughtTaxonomyCapability.evidence` may prove `part(word, formal argument)` and may traverse a grammatical class as a whole on its way to another; a relation a text asserts between a thing and a word class is written like any other, so what is said can join the two ladders, and a class of things in the world can then be treated as an instance of a part of speech. This is allowed deliberately. Alec's expectation is that such reasoning produces a samsaric logic for dealing with entities in the world, which are real and not grammatical; the broken rationality that results is to be observed carefully and recorded, as evidence that may help human understanding, not guarded against. No edge is excluded from the taxonomy on this account. The thought history records a membership proof whose path passes through a formal-argument class, so that these inferences can be found; the word-to-object binding itself is identity through the definition index and is not part of the traversal.
+
+## 12. A word at several orders; order read from the codebook (Alec, 2026-11-13)
+
+**A word at several orders.** "I think we can have "cat" exist at
+multiple orders. So when it is found to be a count noun, we leave the old
+"cat" reference and create a new "cat": so it is an instance of
+polysemy." A raise therefore leaves the concept it raised from, and that
+concept keeps its word. The new concept, one order up, has the same word,
+and `interpret` chooses between the two as it does for any word with
+several objects. `lower` is admitted only on the higher one, which is why
+a determiner calls for it ([Language](Language.md), "Determiners, number
+words and the modifier").
+
+**Order is implicit.** "Can we let order be implicit? We can retrieve it
+based on where it sits in the codebook, since concepts are currently
+ramsified and preallocated." Each order has its own block of rows in the
+concept inventory, and a concept is given its row at the order at which
+it is admitted. A concept never changes order, since a raise makes a new
+concept, so its order is read from its row and stored nowhere else. A
+full block spills into a tail that the orders share; there the row's key,
+which records the order it was given, is read in place of its position.
+
+An idea composed of several words has no row. Its order follows from its
+operands and its operators: `lower` drops one, `lift` raises one, and a
+modifier keeps the order of its head.

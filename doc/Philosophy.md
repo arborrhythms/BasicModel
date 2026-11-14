@@ -1454,6 +1454,82 @@ covers memory, the two truths, expectation, testimony and feeling.
   basic level, class inclusion is inferential (Tversky & Hemenway 1984;
   Collins & Quillian 1969).
 
+- **Level sets are tuned units.** What is identified on one dimension is
+  categorical and coarse: about seven categories by absolute judgment
+  (Miller 1956). Prefrontal neurons of the monkey are tuned to preferred
+  numerosities on a compressed scale (Nieder & Miller 2003), and a map of
+  preferred numerosity lies across human parietal cortex (Harvey et al.
+  2013). Models derive such a tuned unit from units that respond past a
+  threshold (Dehaene & Changeux 1993; Verguts & Fias 2004), which is a
+  basic percept as a part knit with a whole
+  ([Spaces](Spaces.md#percept-level-sets)). A value's membership in a
+  learned box falls off by degrees outside its bounds, as an animal's
+  response falls off around a trained value (Guttman & Kalish 1956). The
+  continuity itself is left out: "Im reserving the feeling of that
+  continuity for direct perception, but that is not something that we can
+  model" (Alec, 2026-11-13).
+- **Feelings are continuous before they are named.** Core affect is a
+  continuous state that can be felt free-floating, attributed to nothing
+  (Russell 2003). The discrete emotions people report arise when it is
+  categorized with learned emotion concepts (Barrett 2006), and making
+  emotion words less accessible impairs the categorizing of emotion in
+  faces (Lindquist et al. 2006). This agrees with Alec on unlabelled
+  feelings: "they are still unlabelled, so we cant talk about them".
+- **A count noun gives the kind under which things are counted.** At ten
+  months infants do not use a difference of kind to infer two objects,
+  and at twelve they do (Xu & Carey 1996); hearing two distinct count
+  nouns helps nine-month-olds individuate two objects (Xu 2002). This is
+  the word at a second, higher order
+  ([Orders §12](Orders.md)). That the kind is the default reading is the
+  hypothesis that generic generalization is the default mode (Leslie
+  2008).
+- **Number words and weak determiners behave as modifiers.** Across
+  languages the lower cardinals are the more adjective-like and the
+  higher the more noun-like (Corbett 1978). "a", "some", "many" and the
+  numerals are cardinality expressions, apart from "the" and "every"
+  (Milsark 1977), and a plural denotes a sum of individuals of the same
+  type as its atoms (Link 1983). Exact small numbers of individuals and
+  approximate large magnitudes are two core systems (Feigenson, Dehaene &
+  Spelke 2004).
+- **Definiteness is a status of the referent in memory.** The forms of
+  referring expressions follow an ordered set of cognitive statuses: the
+  indefinite article needs only that the type be identifiable, and the
+  definite article that the referent be uniquely identifiable (Gundel,
+  Hedberg & Zacharski 1993). That is "a" against "the" as how well the
+  referent is already held ([Language](Language.md), "Determiners, number
+  words and the modifier").
+
+**References for level sets, feelings, count nouns and determiners.**
+Barrett (2006), *Solving the emotion paradox: categorization and the
+experience of emotion*, Personality and Social Psychology Review 10(1).
+Corbett (1978), *Universals in the syntax of cardinal numerals*, Lingua
+46(4). Dehaene & Changeux (1993), *Development of elementary numerical
+abilities: a neuronal model*, Journal of Cognitive Neuroscience 5(4).
+Feigenson, Dehaene & Spelke (2004), *Core systems of number*, Trends in
+Cognitive Sciences 8(7). Gundel, Hedberg & Zacharski (1993), *Cognitive
+status and the form of referring expressions in discourse*, Language
+69(2). Guttman & Kalish (1956), *Discriminability and stimulus
+generalization*, Journal of Experimental Psychology 51(1). Harvey, Klein,
+Petridou & Dumoulin (2013), *Topographic representation of numerosity in
+the human parietal cortex*, Science 341(6150). Leslie (2008), *Generics:
+cognition and acquisition*, Philosophical Review 117(1). Lindquist,
+Barrett, Bliss-Moreau & Russell (2006), *Language and the perception of
+emotion*, Emotion 6(1). Link (1983), *The logical analysis of plurals and
+mass terms: a lattice-theoretical approach*, in Meaning, Use, and
+Interpretation of Language, de Gruyter. Miller (1956), *The magical
+number seven, plus or minus two: some limits on our capacity for
+processing information*, Psychological Review 63(2). Milsark (1977),
+*Toward an explanation of certain peculiarities of the existential
+construction in English*, Linguistic Analysis 3(1). Nieder & Miller
+(2003), *Coding of cognitive magnitude: compressed scaling of numerical
+information in the primate prefrontal cortex*, Neuron 37(1). Russell
+(2003), *Core affect and the psychological construction of emotion*,
+Psychological Review 110(1). Verguts & Fias (2004), *Representation of
+number in animals and humans: a neural model*, Journal of Cognitive
+Neuroscience 16(9). Xu (2002), *The role of language in acquiring object
+kind concepts in infancy*, Cognition 85(3). Xu & Carey (1996), *Infants'
+metaphysics: the case of numerical identity*, Cognitive Psychology 30(2).
+
 ### Discrepancies
 
 Where the model and the human evidence differ. Alec's direction

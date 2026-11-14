@@ -422,6 +422,37 @@ The signed orthographic Lexicon is a separate path. Its sign is form content,
 so it stays in the projective unit-ball geometry described under
 [Lexicon](#lexicon-projective-unit-ball).
 
+### Level Sets: an Intensity Is a Kind {#percept-level-sets}
+
+Every input intensity is categorized. Alec, 2026-11-13: "all input
+intensities are tuned into level-sets of percepts", and in the codebook
+"percept activations have a kind there but no magnitude". A letter is the
+plain case, present or absent. A number is treated the same way.
+
+- **A level is bounded by a part and a whole.** Alec, 2026-11-12: "Each
+  percept is categorized against perceptual parts and wholes, whose codes
+  are the values. So the order zero concept is a generalization over
+  basic percepts." A felt value's percept knits a bound it contains, its
+  part, with a bound that contains it, its whole.
+- **Order survives without magnitude.** The bounds' codes are values, so
+  `Ops.partOf` on two of them is less-than. No percept carries an amount,
+  and any two levels can still be compared.
+- **A concept generalizes levels.** A concept over several levels takes
+  their common part and their covering whole: an interval on one
+  dimension, a hyperrectangle on several.
+- **Why a kind.** A magnitude in the code would be operated on directly,
+  and "arithmetic do not operate on the codes: that would break codebook
+  lookup."
+- **What is left out.** "Im reserving the feeling of that continuity for
+  direct perception, but that is not something that we can model."
+
+**The number modality.** A row of numbers of any number of dimensions is
+read this way, one level percept for each dimension. Two dimensions are
+the XOR proofs and 784 are a 28 by 28 image, "the only different being
+the percept dims" ([FutureWork](FutureWork.md#numeric-input-as-a-modality-xor-as-a-system-1-model-and-one-model-class-alec-2026-11-11-to-specify)).
+That intensity is a code and never an amplitude was decided for images on
+2026-10-25 ([FutureWork](FutureWork.md#intensity-as-codes-not-amplitude-alec-2026-10-25-decided)).
+
 ### Complement, Copart, and Negation {#percept-complement}
 
 A percept's opposite is its complement:
