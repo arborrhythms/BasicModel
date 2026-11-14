@@ -27,16 +27,16 @@ def read(owner, address, concept=None):
             # Local relation numbers are not native symbol identities.
             # Only an addressed occurrence can select a thought store.
             if isinstance(shared.location(address), int):
-                return shared.point_of_row(address[-1])
+                return shared.point_of_row(address)
     strata = getattr(stm, 'strata', None)
     if strata is not None:
         for shared in (*strata.recent_stores, *strata.banks):
             if isinstance(shared.location(address), int):
-                return shared.point_of_row(address[-1])
+                return shared.point_of_row(address)
     store = owner._closed_clause_store()
     location = None if store is None else store.location(address)
     if isinstance(location, int):
-        value = store.point_of_row(address[-1])
+        value = store.point_of_row(address)
         if value is None:
             raise ValueError(f'unavailable memory member content {address!r}')
         return value

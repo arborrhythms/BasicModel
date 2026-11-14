@@ -185,7 +185,7 @@ def stage(model, state, present):
             order = (token.order if token.order is not None else owner._row_order(row) if row is not None
                      else token.refinement['member_order'] if 'member_order' in token.refinement
                      else owner._concept_source_order(owner.interpret.referent(key[1])) if key[0] == 'name'
-                     else owner._concept_source_order(token.occurrences[0][-1]))
+                     else owner._concept_source_order(token.occurrences[0]))
             value = symbolize(owner, store, key, token, timeline).to(state[0])
             where = token.where.to(value)
             if store.when_start is not None and token.order is None:

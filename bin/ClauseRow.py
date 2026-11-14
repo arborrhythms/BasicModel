@@ -28,7 +28,7 @@ def predicate_relation(reference):
     for name in ('part', 'implies'):
         if reference == predicate_identity(name):
             return name
-    return 'operator'
+    return None
 
 
 def predicate_point(name, like):
@@ -70,6 +70,7 @@ class Composition:
     word_id: int = -1
     formal_name: str | None = None
     interpretation: str | None = None
+    extension: tuple = ()
 
 
 @dataclass(frozen=True, eq=False)
@@ -108,7 +109,7 @@ class Clause:
         if len(self.evidence) != 2 or any(not math.isfinite(float(x)) or not 0 <= float(x) <= 1
                                         for x in self.evidence):
             raise ValueError('clause evidence requires two finite poles in [0, 1]')
-        if self.relation not in (None, 'part', 'whole', 'equal', 'implies', 'operator'):
+        if self.relation not in (None, 'part', 'whole', 'equal', 'implies'):
             raise ValueError('unknown clause relation')
         if len(self.refs) != 3:
             raise ValueError('a clause has three reference slots')
@@ -154,17 +155,18 @@ def attach_clause_index(model, store, space):
     allocator = _concept_alloc_of(space)
     object.__setattr__(store, 'parts', allocator.parts)
     allocator.parts._occurrence_store = weakref.ref(store)
+    allocator.parts._concept_owner = space_ref
     object.__setattr__(store, '_concept_owner', space_ref)
     language = getattr(model, 'languageSpace', None)
     occupations = getattr(language, 'parts_of_speech', None)
-    allocator.parts.configure_operations(occupations)
+    object.__setattr__(store, '_occupation_owner',
+                       None if occupations is None else weakref.ref(occupations))
     if occupations is not None:
         # Staged word IDs and kept clauses use this registry's allocator;
         # a terminal stage's local IDs need not name the same concepts.
         occupations.bind(space)
         occupations.seats.configure(language._compose_binary_rules, language._tree_layer(2).ops)
         occupations.seats.configure(language._compose_unary_rules, language._tree_layer(1).unary_ops)
-    object.__setattr__(store, '_occupation_owner', allocator.parts._occupation_owner)
     object.__setattr__(store, '_part_read_rules', tuple(
         getattr(language, '_compose_binary_rules', ())))
     # The declared inverse catalogue is fixed when the owner is attached.
@@ -237,8 +239,8 @@ class ClauseRows:
                         result.add('spatial')
             if kind == RELATION:
                 result.add('situation')
-                source = self.index_of_row(int(self.parts.sentence_reference[value]))
-                if source is not None and self.when_start is not None and bool(self.slots[source,self.when_start-4:self.when_start].ne(0).any()):
+                head = head_idea(self, value)
+                if head is not None and self.when_start is not None and bool(head[self.when_start-4:self.when_start].ne(0).any()):
                     result.add('spatial')
             return result
         readings = self.parts.readings(symbol, types)
@@ -291,6 +293,8 @@ class ClauseRows:
             if child is None:
                 continue
             data = dict(child.bindings)
+            if data.get('_unresolved_operands'):
+                unresolved.append((role, reference))
             if any(tag != 'evidence' for tag, _ in data.get('_open_references', ())):
                 opened.append(('referent', role))
             forwards.extend((role, name) for _, name in data.get('_forward_references', ()))
@@ -310,18 +314,20 @@ class ClauseRows:
         return dict(part, meaning=meaning, head_point=head_idea(self, symbol), occurrence=('sym', symbol), row_id=symbol,
             refs=part['refs'].clone(), readings=readings, evidence=pair,
             trust=pair[0]-pair[1], time=__import__('RowTime').read_time(self, ('sym', symbol)),
-            kind='question' if opened else 'observation' if any(pair) else 'unverified', order=0, stream=(), pending=False,
-            metadata_complete=True, expectation=self.expectation_of(('sym', symbol)), text=None, origin=0)
+            order=0)
 
-    def location(self, reference):
-        """Find either an LTM0 occurrence or a native LTM1 symbol."""
-        if isinstance(reference, tuple):
-            if len(reference) == 2 and reference[0] == 'sym' and self.parts.contains(reference[1]):
-                return reference
-            return self._index_occurrences.get(reference)
-        row = self.index_of_row(reference)
-        return row if row is not None else (('sym', int(reference))
-            if self.parts.contains(reference) else None)
+    def location(self,reference):
+        if reference is None:
+            return None
+        if isinstance(reference,tuple):
+            if len(reference)==2 and reference[0]=='sym':
+                return reference if self.parts.contains(reference[1]) else None
+            if len(reference)==3 and reference[:2]==('ltm',self.address_domain):
+                return self.index_of_row(reference[2])
+            return None
+        from Occurrence import operand_time
+        time=operand_time(reference)
+        return self.index_of_row(time) if time is not None else ('sym',int(reference)) if self.parts.contains(reference) else None
 
     def clause_relation(self, field):
         """Infer the row kind from occupancy and its REL's native identity."""
@@ -333,137 +339,101 @@ class ClauseRows:
         reference = field.refs[1]
         if isinstance(reference, ClausePredicate):
             return predicate_relation(reference.identity)
-        result = resolve(reference) if resolve is not None and type(reference) is int else 'operator'
-        if result not in ('part', 'implies', 'operator'):
+        result = resolve(reference) if resolve is not None and type(reference) is int else None
+        if result not in (None, 'part', 'implies'):
             raise ValueError('the REL identity has an unknown grammatical kind')
         return result
 
     @contextmanager
-    def clause_assertions(self, *, trust, origin, text):
+    def clause_assertions(self, *, trust):
         """External TruthSet authority, scoped to completed outer clauses only."""
         previous = self.__dict__.get('_clause_assertion')
-        context = dict(trust=float(trust), origin=origin, text=text, rows=[])
+        context = dict(trust=float(trust),rows=[])
         object.__setattr__(self, '_clause_assertion', context)
         try:
             yield context['rows']
         finally:
             object.__setattr__(self, '_clause_assertion', previous)
 
-    def _native_reference_indexes(self):
-        """Derived identity-to-occurrence caches, invalidated by row edits."""
-        count = len(self)
-        token = (count, id(self.address_keys), self.address_keys._version)
-        if self.__dict__.get('_native_reference_token') != token:
-            rows = {}
-            for row, identity in enumerate(self.address_keys[:count].tolist()):
-                if identity not in (-1, 0):
-                    rows.setdefault(identity, row)
-            object.__setattr__(self, '_native_row_index', rows)
-            object.__setattr__(self, '_native_reference_token', token)
-        return self._native_row_index
 
-    def index_of_row(self, reference):
-        return self._native_reference_indexes().get(int(reference))
 
-    def _index_slot_metadata(self, address):
+
+    def slot_of_reference(self,reference):
         from Occurrence import slot_key
-        data = dict(self._semantic_rows.get(address, {}).get('bindings', ()))
-        for kind, role in (*data.get('_open_references', ()), *data.get('_bound_roles', ())):
-            if kind != 'referent':
+        owner=self.owner()
+        if owner is None:
+            return None
+        for occurrence,(_,pending) in owner.mtm.pending.items():
+            marks=dict(pending.bindings)
+            row=self.location(occurrence)
+            if row is None:
                 continue
-            identity = slot_key(address, role)
-            previous = self._slot_index.get(identity)
-            if previous is not None and previous != (address, role):
-                raise RuntimeError('64-bit slot collision; refusing to merge different slots')
-            self._slot_index[identity] = address, role
+            for kind,role in marks.get('_open_references',()):
+                if kind=='referent' and slot_key(occurrence[-1],role)==int(reference):
+                    return row,role
+        return None
 
-    def slot_of_reference(self, reference):
-        """Derived shared posting: source address and role remain authoritative."""
-        if self.__dict__.get('_slot_index_source') is not self._semantic_rows:
-            self._slot_index_source, self._slot_index = self._semantic_rows, {}
-            for address in self._semantic_rows:
-                self._index_slot_metadata(address)
-        value = self._slot_index.get(int(reference))
-        if value is None:
-            return None
-        address, role = value
-        row = self._index_occurrences.get(address)
-        if row is None:
-            return None
-        if self.index_of_row(reference) is not None:
-            raise RuntimeError('slot address collides with an occurrence')
-        return row, role
+    def semantic_reference(self,reference):
+        if isinstance(reference,tuple):
+            return reference
+        from Occurrence import operand_time
+        time=operand_time(reference)
+        if time is not None:
+            return ('ltm',self.address_domain,time)
+        slot=self.slot_of_reference(reference)
+        return ('slot',self.occurrence_of(slot[0]),slot[1]) if slot is not None else ('sym',int(reference))
 
-    def semantic_reference(self, reference):
-        slot = self.slot_of_reference(reference)
-        if slot is not None:
-            return ('slot', self.occurrence_of(slot[0]), slot[1])
-        row = self.index_of_row(reference)
-        return self.occurrence_of(row) if row is not None else ('sym', reference)
-
-    def point_of_row(self, reference):
-        """Read a concept/idea point; a relation explicitly has no point."""
-        slot = self.slot_of_reference(reference)
+    def point_of_row(self,reference):
+        """Read the typed operand; a positive concept ID is never a row time."""
+        if isinstance(reference,tuple):
+            if reference[:1]==('ltm',):
+                row=self.location(reference)
+                return None if row is None else self.slots[row]
+            if reference[:1]==('sym',):
+                reference=reference[1]
+            else:
+                return None
+        from Occurrence import operand_time
+        time=operand_time(reference)
+        if time is not None:
+            row=self.index_of_row(time)
+            return None if row is None else self.slots[row]
+        slot=self.slot_of_reference(reference)
         if slot is not None:
             return self.slots[slot[0]]
-        index = self.index_of_row(reference)
-        if index is not None:
-            return self.slots[index]
-        resolve = getattr(self, '_concept_point', None)
-        if resolve is None:
-            raise ValueError('shared concept index is not attached')
-        point = resolve(int(reference))
-        if point is None:
-            raise ValueError(f'unavailable shared row {reference}')
-        return self._fit(point)
+        resolve=getattr(self,'_concept_point',None)
+        point=None if resolve is None else resolve(int(reference))
+        return None if point is None else self._fit(point)
 
     def _clause_reference(self, reference, children):
         if isinstance(reference, ClausePredicate):
             return reference.identity
-        return int(self.address_keys[children[reference[1]]]) if isinstance(reference, tuple) else reference
+        return self.row_name(children[reference[1]]) if isinstance(reference, tuple) else reference
 
     @torch.no_grad()
-    def write_clause(self, clause, *, trust=None, origin=None, stream=-1, kind='observation',
-                    evidence=None, text=None, expectation=None, document_key=None,
-                    sentence_index=0, content_key=None, written_rows=None, episode=None):
-        """Compress resolved semantic journal compositions, retaining only open chains."""
+    def write_clause(self,clause,*,trust=None,stream=-1,evidence=None,
+                     written_rows=None,episode=None,surprise=-1.):
+        """Keep the selected idea or declared semantic pair, never its syntax."""
         import math
         from PartClosing import PartClosing
-        from Memory import OCCURRENCE, SYMBOL, RELATION
-        from RowTime import next_time
-        from Occurrence import native_content_key
+        from Memory import OCCURRENCE,SYMBOL,RELATION
         from ThoughtReferences import bindings
-        if not isinstance(clause, Clause):
+        if not isinstance(clause,Clause):
             raise TypeError('write_clause requires a completed field')
-        if document_key is not None:
-            with self.at_address(document_key, sentence_index, content_key or native_content_key(clause.meaning)):
-                return self.write_clause(clause, trust=trust, origin=origin, stream=stream, kind=kind,
-                    evidence=evidence, text=text, expectation=expectation, written_rows=written_rows,
-                    episode=episode)
-        authority = self.__dict__.get('_clause_assertion')
+        authority=self.__dict__.get('_clause_assertion')
         if authority is not None:
-            if (bindings(clause.meaning).get('_open_references') or
-                    (clause.relation is not None and any(ref in (-1, 0) for ref in clause.refs))):
-                raise ValueError('a TruthSet cannot assert a clause with open references')
-            trust, origin, text = (authority[name] for name in ('trust', 'origin', 'text'))
-            kind = 'fact'
-        if trust is not None and not math.isfinite(float(trust)):
-            raise ValueError('clause provenance must be finite')
-        if kind not in self.KINDS or type(stream) is not int or stream < -1:
-            raise ValueError('invalid clause evidence kind or stream')
-        if stream >= self.stream.shape[1]:
-            raise OverflowError('stream exceeds LTM0 construction capacity')
-        if text is not None and not isinstance(text, str):
-            raise ValueError('truth source text must be a string')
+            if bindings(clause.meaning).get('_open_references'):
+                raise ValueError('a supplied truth cannot assert an open reference')
+            trust=authority['trust']
+        if trust is not None and (not math.isfinite(float(trust)) or abs(float(trust))>1):
+            raise ValueError('clause trust must be finite and in [-1, 1]')
         owner_ref = self.__dict__.get('_concept_owner')
         owner = None if owner_ref is None else owner_ref()
         if owner is None:
             raise ValueError('clause admission requires its native concept owner')
         closing = PartClosing(owner, self)
+        closing.episode = episode
         closing.source_trust = 1. if trust is None else min(1., abs(float(trust)))
-        given = origin in (self.ORIGIN_USER, self.ORIGIN_PROVISIONED)
-        before_relations = ({row:{name:value.detach().cpu().clone() for name,value in self.parts.row(row).items()}
-                             for row in self.parts.indices().tolist()} if given else {})
         nodes, seen, visiting = [], set(), set()
         def visit(value):
             if id(value) in visiting:
@@ -479,13 +449,29 @@ class ClauseRows:
             closing.prepare(value)
         visit(clause)
         closing.preflight()
-        context = self.__dict__.get('_write_address')
-        root_existing = None
-        if context is not None:
-            from Occurrence import address_key
-            root_existing = self._index_occurrences.get(address_key(*context))
         needed, reserved = 0, {}
-        def reserve(record, sentence=False, force=False):
+        def admitted_pair(value, sentence):
+            pair = tuple(value.evidence if evidence is None or not sentence else evidence)
+            from_trust = sentence and authority is not None
+            if from_trust:
+                pair = (1., 0.) if trust >= 0 else (0., 1.)
+            elif trust is not None and trust < 0:
+                pair = pair[::-1]
+            return pair, from_trust
+        def idea_count(pair):
+            return max(1, sum(pole * closing.source_trust > 0 for pole in pair))
+        def event_point(value, record, kind):
+            if value.identity is None or value.identity.get('event') is None:
+                return None
+            point = value.identity['result']
+            from IdentityRows import carrier
+            # The statement and the participant's resulting state can be
+            # different ideas even when the statement now closes as LTM0.
+            if kind == OCCURRENCE and torch.equal(carrier(owner, point),
+                                                  carrier(owner, record['value'].point)):
+                return None
+            return point
+        def reserve(record, sentence=False, force=False, pair=(0., 0.)):
             nonlocal needed
             term = record['value']
             forced_occurrence = (force or (sentence and record.get('selected_reference') is not None)) and (
@@ -499,13 +485,13 @@ class ClauseRows:
             if (not sentence and not force and ref is not None
                     and (not children or term.operation not in (*closing._assertions, 'lift', 'verb'))):
                 result = ref[0]
-            elif (record['resolved'] and not assertion) or not children or forced_occurrence:
+            elif not assertion or not children or forced_occurrence:
                 from IdentityRows import carrier
                 carrier(owner, term.point)
-                needed += int(not sentence or root_existing is None)
+                needed += idea_count(pair)
                 result = OCCURRENCE
             elif len(children) == 1:
-                result = reserve(children[0], sentence=sentence)
+                result = reserve(children[0], sentence=sentence, pair=pair)
             else:
                 for child in children:
                     reserve(child)
@@ -517,32 +503,21 @@ class ClauseRows:
             if sentence or value in clause.companions or value.reference_request is not None or value.identity is not None:
                 record = closing._planned[id(closing._terms[id(value)])]
                 force = not sentence
-                entry_kind = reserve(record, sentence, force)
+                pair, _ = admitted_pair(value, sentence)
+                entry_kind = reserve(record, sentence, force, pair)
                 if sentence:
                     root_kind = entry_kind
                 # An unresolved sentence keeps its chain, while its reference
                 # request still names the phrase's own located occurrence.
                 if record.get('mention') and entry_kind != OCCURRENCE:
                     needed += 1
-                if entry_kind != OCCURRENCE and value.identity is not None and value.identity.get('event') is not None:
-                    needed += 1  # The event's compacted state is an idea member, not a grammar application.
-        from EpisodicMemory import plan_anchor
-        episode_anchor = plan_anchor(self, clause, episode, stream) if root_kind == RELATION else None
-        needed += int(episode_anchor is not None and episode_anchor[1] is None)
-        needed += int(expectation is not None and expectation.estimate is not None and bool(expectation.source_occurrences))
+                if event_point(value, record, entry_kind) is not None:
+                    needed += idea_count(pair)
         if len(self) + needed > self.capacity:
             raise ClauseCapacityError(f'LTM0 construction capacity exhausted before close: '
                                       f'{len(self)} occupied + {needed} needed > {self.capacity}')
-        closing.time = next_time(self)
-        if clause.when is not None:
-            # Thinking and output may have advanced the clock since opening.
-            # The input occurrence retains the tick of its own attention pass.
-            closing.time = clause.when.to(closing.time)
         before_rows = len(self)
         rows, occurrences, mentions, event_occurrences = {}, {}, {}, {}
-        context = self.__dict__.get('_write_address')
-        root_key = native_content_key(clause.meaning) if context is None else context[2]
-        closing.content_key = (context[0], context[1], root_key) if context is not None else ('direct', root_key)
         def location(entry):
             tag, value = entry
             return self.index_of_row(value) if tag == OCCURRENCE else ('sym', value)
@@ -554,58 +529,37 @@ class ClauseRows:
             sentence = value is clause
             if not sentence and value not in clause.companions and value.reference_request is None and value.identity is None:
                 continue
-            pair = tuple(value.evidence if evidence is None or not sentence else evidence)
-            from_trust = sentence and trust is not None and (authority is not None or evidence is None)
-            if from_trust:
-                pair = (1., 0.) if trust >= 0 else (0., 1.)
+            pair, from_trust = admitted_pair(value, sentence)
             if sentence:
                 outer_pair, outer_from_trust = pair, from_trust
-            address = {} if value is clause else dict(document_key=('embedded', closing.content_key[0], closing.content_key[1]) if context is not None else ('mention', root_key),
-                sentence_index=position, content_key=native_content_key(value.meaning))
             record = closing._planned[id(closing._terms[id(value)])]
             force = not sentence
-            entry = closing.close(value, pair=pair, sentence=sentence, kind=kind if sentence else 'unverified',
-                address=address, stream=stream, force=force, from_trust=from_trust,
-                surprise=-1. if expectation is None or not sentence else expectation.surprise_for(clause.meaning))
+            entry = closing.close(value,pair=pair,sentence=sentence,stream=stream,force=force,
+                from_trust=from_trust,surprise=surprise if sentence else -1.)
             if sentence:
                 # Record this source's assertion, never a prior source's merged pair.
-                if entry[0] == RELATION or from_trust:
-                    pair = tuple(pole * closing.source_trust for pole in pair)
+                pair = tuple(pole * closing.source_trust for pole in pair)
                 outer_pair = pair
             row = location(entry)
             rows[id(value)] = row
             occurrences[id(value)] = self.occurrence_of(row)
-            if entry[0] != OCCURRENCE and value.identity is not None and value.identity.get('event') is not None:
-                point = value.identity['result']
+            point = event_point(value, record, entry[0])
+            if point is not None:
                 compacted = replace(ConceptualMeaning.from_description(point),
-                    bindings={'_relations': (entry[1],)})
-                event_row = self.append_meaning(compacted, evidence=pair, order=value.order,
-                    kind='unverified', time=closing.time, stream=stream,
-                    document_key=('event', closing.content_key), sentence_index=position)
+                    bindings={'_relations': (entry[1],)} if entry[0] == RELATION else {},
+                    extension=getattr(value.identity.get('result_composition'), 'extension', ()))
+                event_pair = pair if sentence else tuple(pole * closing.source_trust for pole in pair)
+                event_row = self.append_meaning(compacted,evidence=event_pair)
                 event_occurrences[id(value)] = self.occurrence_of(event_row)
+                closing.occurrence_groups[self.occurrence_of(event_row)] = tuple(
+                    self.occurrence_of(index) for index in range(event_row, len(self)))
             if record.get('mention'):
                 mention = entry
                 if entry[0] != OCCURRENCE:
-                    mention = closing._write_occurrence(record, pair=(0., 0.), sentence=False,
-                        kind='unverified', metadata=value.meaning,
-                        address=dict(document_key=('mention', closing.content_key),
-                            sentence_index=position, content_key=native_content_key(value.meaning)),
-                        stream=stream, surprise=-1.)
+                    mention = closing._write_occurrence(record,pair=(0.,0.),sentence=False,
+                        metadata=value.meaning,stream=stream,surprise=-1.)
                 mentions[id(value)] = self.occurrence_of(location(mention))
                 closing._mentions[id(record['value'])] = mention
-            if isinstance(row, int) and sentence:
-                if origin is not None or text is not None:
-                    self.set_origin(row, self.ORIGIN_CONVERSATION if origin is None else origin,
-                                    text=text, asserted=pair)
-        if given:
-            from PresentationMemory import supplied_closing
-            root = closing._entries[id(closing._terms[id(clause)])]
-            root_kind = 'occ' if root[0] == OCCURRENCE else 'rel'
-            asserted = outer_pair[::-1] if root_kind == 'rel' and outer_from_trust and not clause.meaning.polarity else outer_pair
-            supplied_closing(self, (root_kind,root[1]), origin=origin, asserted=asserted,
-                occurrences=closing.occurrences,
-                relations=set(closing.edges) | closing.relation_dependencies,
-                before_relations=before_relations)
         # Entries consumed inside a chain also remain addressable by the live
         # journal. This map ends with the close; it is not durable derivation.
         for value in nodes:
@@ -614,16 +568,13 @@ class ClauseRows:
                 rows[id(value)] = location(entry)
                 occurrences[id(value)] = self.occurrence_of(rows[id(value)])
         result = rows[id(clause)]
-        from EpisodicMemory import write, anchor, count
-        write(self, result, episode, new=isinstance(result, int) and result >= before_rows)
+        from EpisodicMemory import write, count
+        write(self, result, episode)
         if episode is not None and root_kind == RELATION:
             count(self, 'relation_only_closings')
-        if episode_anchor is not None:
-            episode_row = anchor(self, episode_anchor, episode, stream=stream, time=closing.time)
-            if written_rows is not None:
-                written_rows['episode'] = self.occurrence_of(episode_row)
         if written_rows is not None:
             written_rows.update(rows)
+            written_rows['occurrence_groups'] = closing.occurrence_groups
             written_rows.update({('occurrence', key): value for key, value in occurrences.items()})
             written_rows.update({('mention', key): value for key, value in mentions.items()})
             written_rows.update({('event_occurrence', key): value for key, value in event_occurrences.items()})
@@ -670,60 +621,17 @@ class ClauseRows:
                 (occurrences[id(value)], written_rows.get(('symbol', id(value))),
                  (value.reference_request or {}).get('role', 0))
                 for value in nodes if value.order == 1 and id(value) in occurrences)
-        if expectation is not None and expectation.estimate is not None and expectation.source_occurrences:
-            prediction = expectation.estimate
-            retained = prediction.retained_bindings(observed=expectation.observed,
-                occupied=expectation.occupied, activation=expectation.activation, identities=expectation.identities)
-            # This is the audited target of the frozen prior, not a second
-            # description or a recoverable sentence derivation.
-            from Expectation import symbol_activations
-            activation = expectation.activation
-            if activation is None:
-                activation = symbol_activations(prediction.symbol_keys[None],
-                    expectation.observed[None], expectation.occupied[None],
-                    identities=None if expectation.identities is None else expectation.identities[None],
-                    bank_ids=prediction.symbol_ids)[0]
-            retained['_expectation_observation'] = (('_observed_symbol_activations', tuple(
-                (int(identity), tuple(pair)) for identity, pair in zip(
-                    prediction.symbol_ids.tolist(), activation.detach().cpu().tolist()))),)
-            estimate = replace(ConceptualMeaning.from_description(prediction.roles[0]),
-                bindings=retained, scope=prediction.scope)
-            index = self.append_estimate(estimate, presence_logits=prediction.presence_logits,
-                source_occurrences=tuple(expectation.source_occurrences), stream=expectation.stream,
-                document=expectation.document)
-            self.link_estimate_observation(index, result)
-        self.parts.refresh_effective()
         if authority is not None:
             authority['rows'].append(result)
         return result
 
-    def _update_forward_index(self, address):
-        """Maintain the shared, derived posting list for unresolved identities."""
-        if self.__dict__.get('_slot_index_source') is self._semantic_rows:
-            self._index_slot_metadata(address)
-        if self.__dict__.get('_forward_index_source') is not self._semantic_rows:
-            return  # A restored/replaced store is rebuilt on its next lookup.
-        postings = self._forward_postings
-        by_address = self._forward_by_address
-        for identity in by_address.pop(address, ()):
-            postings[identity].discard(address)
-            if not postings[identity]:
-                del postings[identity]
-        metadata = self._semantic_rows.get(address, {})
-        identities = {identity for _, identity in
-                      dict(metadata.get('bindings', ())).get('_forward_references', ())}
-        if identities:
-            by_address[address] = identities
-            for identity in identities:
-                postings.setdefault(identity, set()).add(address)
 
-    def _forward_addresses(self, identities):
-        if self.__dict__.get('_forward_index_source') is not self._semantic_rows:
-            self._forward_index_source = self._semantic_rows
-            self._forward_postings, self._forward_by_address = {}, {}
-            for address in self._semantic_rows:
-                self._update_forward_index(address)
-        return set().union(*(self._forward_postings.get(identity, ()) for identity in identities))
+    def _forward_addresses(self,identities):
+        owner=self.owner()
+        return set() if owner is None else {reference
+            for reference,(_,pending) in owner.mtm.pending.items()
+            if reference[:2] == ('ltm',self.address_domain)
+            and any(identity in identities for _,identity in dict(pending.bindings).get('_forward_references',()))}
 
     def read_reference_bindings(self, index, meaning, *, exclude=()):
         """Read an already bound token; equality rows never select a binding.
@@ -752,7 +660,7 @@ class ClauseRows:
                     continue
                 if reference not in mtm.names:
                     continue  # an idea's identity binding is not its value's address
-                identity = dict(self.raw_meaning_of(child).bindings).get('_identity')
+                identity = self.referent_of(child)
                 if identity is None:
                     continue
                 token = mtm.token_of(identity)
@@ -805,8 +713,8 @@ class ClauseRows:
             witnesses = [self.location(address) for address in uses]
             witnesses = [row for row in witnesses if isinstance(row, int)]
             meaning = fill(meaning, dict(reference=target, binding_value=point,
-                support_true=max((float(self.truth_plus[row]) for row in witnesses), default=0.),
-                support_false=max((float(self.truth_minus[row]) for row in witnesses), default=0.)), slots=(('referent', role),),
+                support_true=max((max(0.,float(self.trust[row])) for row in witnesses), default=0.),
+                support_false=max((max(0.,-float(self.trust[row])) for row in witnesses), default=0.)), slots=(('referent', role),),
                 witnesses=uses, operation='bind')
         return meaning
 

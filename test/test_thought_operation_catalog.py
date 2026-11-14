@@ -1,3 +1,4 @@
+from definition_fixtures import class_over
 from Queries import ConceptualSpaceCapability
 from AccessibleMind import Subsystem as Mind
 """Reviewer probes for item 0's single structural thought-operation catalog."""
@@ -251,7 +252,7 @@ def test_canonical_form_derives_closed_and_open_roles_without_alias_methods():
     registry = GrammaticalThoughtRegistry.install(space, grammar)
     base = space.new_concept()
     force_order(space, base, 0)
-    part = ("sym", space.synthesize_higher_order([("sym", base)]))
+    part = ("sym", class_over(space, [("sym", base)]))
     whole = ("sym", space.new_concept())
     for reference in (part, whole):
         if space._concept_source_order(reference[1]) < 0:
@@ -362,7 +363,7 @@ def test_thought_execution_receives_the_common_context_and_only_capability_views
     registry = GrammaticalThoughtRegistry.install(space, grammar)
     base = space.new_concept()
     force_order(space, base, 0)
-    part = ("sym", space.synthesize_higher_order([("sym", base)]))
+    part = ("sym", class_over(space, [("sym", base)]))
     whole = ("sym", space.new_concept())
     for reference in (part, whole):
         if space._concept_source_order(reference[1]) < 0:
@@ -562,7 +563,7 @@ def test_complete_grammar_exposes_its_declared_canonical_thought_operations():
     assert {"true", "arma", "quantize", "lookup"}.isdisjoint(registry.executable_operation_ids)
 
 
-def test_owner_built_structural_context_freezes_only_owned_stream_and_priming():
+def test_owner_built_structural_context_freezes_only_owned_stream():
     """Compose snapshots its input; generate never inherits a target teacher."""
     from types import SimpleNamespace
     import torch
@@ -570,11 +571,9 @@ def test_owner_built_structural_context_freezes_only_owned_stream_and_priming():
 
     input_stream = torch.arange(8.0, requires_grad=True).reshape(1, 2, 4)
     output_prefix = torch.full((1, 1, 4), 7.0)
-    priming = torch.tensor([[1.0, 1.5, 1.0]])
     owner = SimpleNamespace(
         conceptualSpace=SimpleNamespace(
             subspace=SimpleNamespace(muxedSize=4)),
-        taxonomy=SimpleNamespace(priming_mask=lambda: priming),
         _generated_word_stream=output_prefix,
     )
 
@@ -584,18 +583,15 @@ def test_owner_built_structural_context_freezes_only_owned_stream_and_priming():
     assert compose.word_stream is not input_stream
     assert compose.word_stream.requires_grad
     torch.testing.assert_close(compose.word_stream, input_stream.detach())
-    assert compose.primed_symbols is not priming
-    torch.testing.assert_close(compose.primed_symbols, priming)
+    assert compose.primed_symbols is None
     assert compose.conceptual_space.width == 4
     assert not hasattr(compose.conceptual_space, "symbolSpace")
     assert not hasattr(compose, "taxonomy") and not hasattr(compose, "ltm")
 
     with torch.no_grad():
         input_stream.add_(100.0)
-        priming.add_(100.0)
     torch.testing.assert_close(
         compose.word_stream, torch.arange(8.0).reshape(1, 2, 4))
-    torch.testing.assert_close(compose.primed_symbols, torch.tensor([[1.0, 1.5, 1.0]]))
 
     # The passed target is deliberately ignored for the structural generate
     # context; only output-owner state may be exposed to a generate face.

@@ -220,18 +220,18 @@ def stage_event_cases(bank, resolver, frames, *, limit):
         inspected = 0
         accessible = resolver.individuals(resolver.context_records(references))
         for identity, record in accessible.items():
-            if remaining < 3 or inspected >= limit:
+            if inspected >= limit:
                 break
             token = owner.mtm.entries.get(record.get('token') or identity)
             if token is None:
                 continue
             for event in reversed(token.events):
-                if remaining < 3 or inspected >= limit:
+                if inspected >= limit:
                     break
                 inspected += 1
                 targets = tuple(index for index, symbol in heads.items() if symbol == event.verb)
                 key = (b, event.occurrence, event.verb)
-                if (remaining < 3 or not targets or key in seen or event.role != 0
+                if (not targets or key in seen or event.role != 0
                         or event.before is None):
                     continue
                 change = point(owner, event.verb)
@@ -239,7 +239,18 @@ def stage_event_cases(bank, resolver, frames, *, limit):
                 if change is None or row is None:
                     continue
                 record = store.row(row)
-                if record['kind'] in ('cover', 'episode', 'estimate', 'question'):
+                from ThoughtReferences import open_slots
+                if open_slots(record['meaning']):
+                    continue
+                values = (event.before, change, owner.mtm.event_value(event))
+                # The two signed rows of one conclusion are witnesses of
+                # the same cases. Case membership joins their lanes, without
+                # spending another three seats on identical case values.
+                previous = next((start for start in range(0, len(additions), 3)
+                    if all(additions[start+i][0] == b and additions[start+i][1] == targets
+                           and torch.equal(additions[start+i][2], value)
+                           for i, value in enumerate(values))), None)
+                if previous is None and remaining < 3:
                     continue
                 seen.add(key)
                 for target in targets:
@@ -247,9 +258,13 @@ def stage_event_cases(bank, resolver, frames, *, limit):
                     # event row has no token, and its symbol may name several.
                     current_values[b, identity, target] = owner.mtm.value_of(token)
                 pair = bank.codes.new_tensor(record['evidence'])
-                for value in (event.before, change, owner.mtm.event_value(event)):
-                    additions.append((b, targets, value, pair))
-                remaining -= 3
+                if previous is None:
+                    for value in values:
+                        additions.append((b, targets, value, pair.clone()))
+                    remaining -= 3
+                else:
+                    for index in range(previous, previous+3):
+                        additions[index][3].copy_(torch.maximum(additions[index][3], pair))
     if not additions:
         return bank
     count, width = size+len(additions), bank.codes.shape[-1]

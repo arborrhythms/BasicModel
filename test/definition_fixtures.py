@@ -1,5 +1,5 @@
 """Definition owner for isolated conceptual-inventory mechanism fixtures."""
-from Memory import LTM0
+from Memory import STM0
 
 
 def with_definitions(cs):
@@ -17,7 +17,10 @@ def with_definitions(cs):
     from clock_fixtures import install
     if not hasattr(cs._model, 'when_time'):
         install(cs._model)
-    store = LTM0(cs.nDim, capacity=1024)
+    # This isolated inventory has no perceptual clock, so it uses working
+    # occurrences at its original width and capacity (§17.15).
+    store = STM0(cs.nDim, capacity=1024, relation_capacity=8192,
+                 percept_width=cs.nDim if cs.nDim >= 8 else 0)
     object.__setattr__(cs, '_fixture_occurrences', store)
     attach_clause_index(SimpleNamespace(), store, cs)
     return cs
@@ -91,3 +94,27 @@ def learned_operation(occupations, operation, *occupants, count):
         occupations.observe_seat(operation, operands)
         from ConceptHierarchy import refresh
         refresh(occupations.owner)
+
+
+def collected(cs, parts=(), wholes=()):
+    """Declare a fixture's constituents through the live collection writers."""
+    identity = cs.new_concept()
+    for part in parts:
+        cs.add_part(identity, part)
+    for whole in wholes:
+        cs.add_whole(identity, whole)
+    cs._populate_concept_weights(identity)
+    return identity
+
+
+def class_over(cs, members):
+    """A declared fixture class, collected by the production definition store."""
+    members = tuple(members)
+    identity = cs.new_concept()
+    if len(members) == 1:
+        cs._concept_allocator.singletons.add(identity)
+    for member in members:
+        cs.add_part(identity, member)
+    cs._concept_allocator.raised.add(identity)
+    cs._populate_concept_weights(identity)
+    return identity

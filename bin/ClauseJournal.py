@@ -38,12 +38,13 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
     store_ref = getattr(getattr(registry, 'space', None), '_clause_store_ref', None)
     store = store_ref() if callable(store_ref) else None
     if store is not None:
-        native_ids.update(store.address_keys[:len(store)].tolist())
+        from Occurrence import operand_name
+        native_ids.update(operand_name(store.row_name(row)) for row in range(len(store)))
     def native(reference):
         return (reference > 0 or reference in native_ids or
                 (store is not None and store.slot_of_reference(reference) is not None))
     def reference_has_point(reference, default):
-        if store is not None and store.index_of_row(reference) is not None:
+        if store is not None and store.location(reference) is not None:
             return store.point_of_row(reference) is not None
         return default
     def forward_name(leaf):
@@ -239,7 +240,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                           rule=catalog[local], children=operands,
                           operand_refs=None if selected_refs is None else tuple(selected_refs),
                           leaves=tuple(i for child in operands for i in child['leaves']),
-                          has_point=not relation_rule and all(child['has_point'] for child in operands))
+                          has_point=not relation_rule and (all(child['has_point'] for child in operands)
+                              or getattr(catalog[local], 'clause_form', None) in ('S', 'VP')))
         if program.identity_actions is not None:
             record = program.identity_actions[action]
             parent['identity_handle'] = int(record[0])
@@ -402,6 +404,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             event=node.get('identity_event'), action=action,
             event_order=source_action,
             introduction=introductions.get(node.get('identity_handle', 0)) is node,
+            result_composition=None if action is None else composition(
+                node['children'][1] if getattr(node['rule'], 'relation_kind', None) == 'equal' else node),
             result=None if action is None else (frames[action, 1] if
                 getattr(node['rule'], 'relation_kind', None) == 'equal' else frames[action, 2]),
             before=None if source_action is None else frames[source_action, 0], basis=basis,
@@ -469,7 +473,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 result[key] = source[node['leaves'][0]].clone()
         return result
 
-    relative = {'part', 'whole', 'equal', 'implies', 'operator'}
+    relative = {'part', 'whole', 'equal', 'implies'}
     absolute_starts = set(TheGrammar.ws_absolute_starts)
 
     def head(node, *, clause=False):
@@ -748,15 +752,6 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             else:
                 right, right_ref = operand(operands[1], sentence=relation == 'implies')
                 role_nodes = operands[0], None, operands[1]
-            if (any(child.relation is not None for child in children) or not root['has_point']) and relation is None:
-                relation = 'operator'
-                if right_ref == -1:
-                    # A structural verb can itself take a completed truth.
-                    # Keep both operands and the selected operation's atom.
-                    right, right_ref = operand(operands[1])
-                    predicate_ref = operation_concept(node)
-                    predicate = predicate_ref.point
-                    role_nodes = operands[0], None, operands[1]
             if relation is not None and predicate_ref == -1:
                 # A lexical predicate over an ended relation can be an
                 # unindexed phrase too. Give its point an unasserted LTM
@@ -906,8 +901,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 data['_reference_sites'] = tuple(sites.items())
             described = replace(described, bindings=data)
             if relation is None and int(described.role_mask.sum()) > 1:
-                # An unfilled operand cannot disappear into a fused point.
-                relation = 'operator'
+                # Pending roles live in MTM; the durable entry is the fused idea.
                 references = factored_refs or references
                 if (references[1] == -1 and bool(described.role_mask[1])
                         and ('relation', 1) not in opened):
@@ -1029,7 +1023,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         operation = None
         if type(references[1]) is int:
             selected = predicate_relation(references[1])
-            if selected != 'operator':
+            if selected is not None:
                 # A first predicate occurrence carries its value into the
                 # writer, just as a selected binary grammar operation does.
                 # It has no earlier inventory or LTM row to read.
@@ -1049,9 +1043,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 except ValueError:
                     pass
         if operation not in relative:
-            if not any(child.relation is not None for child in children) and all(node['has_point'] for node in stack):
-                raise ValueError('three slots have no selected relative clause')
-            operation = 'operator'
+            raise ValueError('three slots have no selected relative clause')
         meaning = ConceptualMeaning(torch.stack(roles), torch.ones(3, dtype=torch.bool, device=program.leaves.device),
                                     polarity=True if meaning is None else meaning.polarity)
         if operation == 'whole':

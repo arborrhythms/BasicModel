@@ -200,22 +200,23 @@ def main(argv=None):
     all_rows = []
     tables = {}
     for seed in seeds:
-        model = build_model(args.config, args.weights, seed=seed)
         for budget in budgets:
-            rows = evaluate(model, split=args.split, budget=budget, rows=args.rows,
-                            batch=args.batch, illumination=args.illumination)
-            for r in rows:
-                r["seed"] = seed
-                r["ablation"] = "none"
-            all_rows.extend(rows)
-            if args.ablate_memory:
-                ab = evaluate(model, split=args.split, budget=budget, rows=args.rows,
-                              batch=args.batch, ablate_memory=True,
-                              illumination=args.illumination)
-                for r in ab:
+            for ablated in ((False, True) if args.ablate_memory else (False,)):
+                # Reading writes another occurrence, even in evaluation.
+                # Each comparison starts from the requested checkpoint, not
+                # the previous budget's or unablated arm's learned history.
+                model = build_model(args.config, args.weights, seed=seed)
+                try:
+                    rows = evaluate(model, split=args.split, budget=budget, rows=args.rows,
+                                    batch=args.batch, ablate_memory=ablated,
+                                    illumination=args.illumination)
+                finally:
+                    model.End()
+                    model.symbolSpace.soft_reset()
+                for r in rows:
                     r["seed"] = seed
-                    r["ablation"] = "memory"
-                all_rows.extend(ab)
+                    r["ablation"] = "memory" if ablated else "none"
+                all_rows.extend(rows)
     tables["thinking"] = summarize([r for r in all_rows if r["ablation"] == "none"])
     if args.ablate_memory:
         tables["memory ablation"] = summarize(

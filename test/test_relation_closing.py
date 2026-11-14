@@ -45,7 +45,7 @@ def test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent(
     assert f.store.row(row)['evidence'] == pytest.approx((0. if nested else .7, 0.))
     operand_rows = f.store.ideas().tolist()
     for index, leaf in zip(operand_rows, unknown):
-        assert f.store.row(index)['kind'] == 'unverified'
+        assert f.store.row(index)['evidence'] == (0., 0.)
         torch.testing.assert_close(f.store.slots[index], entry.leaves[leaf])
     assert len(operand_rows) == len(unknown)
     # The sentence itself is a tagged chain, not a duplicate LTM0 payload.
@@ -61,7 +61,8 @@ def test_three_slot_relation_closes_unindexed_numerical_operands(monkeypatch):
         word_rows=torch.full((3,), -1), word_ids=torch.full((3,), -1), activations=torch.ones(3),
         concept_ids=torch.tensor([-1, predicate[1], -1]),
         actions=torch.tensor([[0, -1, 0], [0, -1, 1], [0, -1, 2]]),
-        symbol_where=None, symbol_when=None, lexical_forms=(None,) * 3)
+        symbol_where=None, symbol_when=None, lexical_forms=(None,) * 3,
+        leaf_evidence=torch.tensor([[1.,0.]]).expand(3,-1))
     clause = finish_reading(f.language, entry, registry=f.registry)
     row = f.store.write_clause(clause, trust=.6)
     from ChainRead import point

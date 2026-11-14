@@ -18,6 +18,22 @@ if str(_BIN) not in sys.path:
 import eval_math_thinking as ev  # noqa: E402
 
 
+def test_budget_and_ablation_comparisons_start_from_the_same_history(monkeypatch):
+    from types import SimpleNamespace
+    histories = []
+    monkeypatch.setattr(ev, 'build_model', lambda *args, **kwargs: SimpleNamespace(
+        history=[], End=lambda: None, symbolSpace=SimpleNamespace(soft_reset=lambda: None)))
+    def evaluate(model, *, budget, ablate_memory=False, **kwargs):
+        histories.append(tuple(model.history))
+        model.history.append((budget, ablate_memory))
+        return [dict(row=0, depth=1, budget=budget, correct=True, iterations=1,
+                     forced=0, latency_s=0.)]
+    monkeypatch.setattr(ev, 'evaluate', evaluate)
+    rows = ev.main(['--budgets', '1,4', '--seeds', '1', '--ablate-memory'])
+    assert len(rows) == len(histories) == 4
+    assert histories == [(), (), (), ()]
+
+
 def test_eval_script_emits_every_report_column(tmp_path):
     out = tmp_path / "report.md"
     raw = tmp_path / "rows.json"

@@ -1,10 +1,11 @@
 """Step 1b: regions have one native owner; indexes cannot retain stale values."""
+from Memory import STM0
 from chunk_fixtures import context as chunk_context
 from dataclasses import replace
 import torch
 import pytest
 
-from IdentityRows import meet_ratios, point, access_count
+from IdentityRows import meet_ratios, point
 from Memory import LTM0
 from Meaning import ConceptualMeaning
 from test_reference_close import fixture, close, form_exposure
@@ -82,7 +83,6 @@ def test_mtm_holds_current_content_and_native_witnesses_are_live_queries():
     resolver, store, a = fixture()
     frame, address, _ = native_close(resolver,a[0],a[6],document='one',sentence=0)
     cid = resolver.last_audit[0]['reference']
-    assert access_count(resolver.components.owner,cid) == 1
     owner = resolver.components.owner
     assert not hasattr(resolver.components,'nouns')
     assert all(not hasattr(resolver,k) for k in ('seen','cooccurrence','associations','predicates','cue_policy'))
@@ -95,7 +95,7 @@ def test_mtm_holds_current_content_and_native_witnesses_are_live_queries():
     torch.testing.assert_close(candidates[cid]['content'],a[0]+a[1],rtol=0,atol=0)
     store.parts.remove_symbol(cid)
     store.reset()
-    assert access_count(owner,cid) == 0
+    assert len(store) == 0
 
 
 def test_forgetting_and_reinterpretation_never_refold_a_native_identity():
@@ -127,18 +127,18 @@ def test_stm_retains_addresses_and_reads_reinterpretation_without_a_copy():
     from test_sentence_expectation import layer, observe
     from ReferenceContext import SituationAddress
     discourse = layer()
-    store = LTM0(4,capacity=8)
+    store = STM0(4,capacity=8, relation_capacity=8192)
     discourse._ltm_store = store
     observed=torch.eye(4)[:3]
     observe(discourse,observed)
-    row=store.append_meaning(ConceptualMeaning.from_description(observed[0]),order=1)
+    row=store.append_meaning(ConceptualMeaning.from_description(observed[0]))
     discourse.bind_observation_occurrence(0,store.occurrence_of(row))
     held=discourse._inter_context[0][-1]
     assert isinstance(held,SituationAddress) and not any(torch.is_tensor(v) for v in vars(held).values())
     assert discourse._inter_context_ids[0][-1] is None and discourse._inter_context_lanes[0][-1] is None
     store.slots[row].copy_(observed[1])
     torch.testing.assert_close(discourse.situation_references()[0].roles[0],observed[1])
-    store._index_occurrences.clear()
+    store.reset()
     assert discourse.situation_references() == ()
     assert discourse.latest() is None
 
@@ -148,17 +148,17 @@ def test_model_time_is_independent_of_source_position_and_covers_the_run_horizon
     store=LTM0(12,capacity=8,percept_width=8)
     tick=[731]
     object.__setattr__(store,'_model_present',lambda:tick[0])
-    row=store.append_idea(torch.ones(12),document_key='first',sentence_index=9000)
+    row=store.append_idea(torch.ones(12),)
     assert int(encoder().decode_index(store.entry_time(row))) == 731
     tick[0]+=1
-    other=store.append_idea(torch.ones(12),document_key='second',sentence_index=0)
+    other=store.append_idea(torch.ones(12),)
     assert int(encoder().decode_index(store.entry_time(other))) == 732
     torch.testing.assert_close(store.slots[row,8:],store.slots[other,8:],rtol=0,atol=0)
     trials=torch.tensor([0,731,1000000,HORIZON-1,HORIZON])
     torch.testing.assert_close(encoder().decode_index(encoder().encode(trials)),trials,rtol=0,atol=0)
     tick[0]=HORIZON+1
     with pytest.raises(OverflowError,match='horizon'):
-        store.append_idea(torch.ones(12),document_key='third')
+        store.append_idea(torch.ones(12))
 
 
 def test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_time():
@@ -178,10 +178,11 @@ def test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_
     assert state['components.reference_close.policy'].tolist() == [0,0,1,1,0,2,3,4,0,0,0,0]
     stable={};migrate_checkpoint(host,state,host.state_dict(),stable,{})
     assert not stable
-    store.append_idea(a[0])
-    saved=store.state_dict();saved['truth_schema']=torch.tensor(10)
-    target=LTM0(12,capacity=512,percept_width=0)
-    with pytest.raises(ValueError, match='version'):
+    durable=LTM0(12,capacity=512,percept_width=8)
+    durable.append_idea(a[0])
+    saved=durable.state_dict();saved['truth_schema']=torch.tensor(10)
+    target=LTM0(12,capacity=512,percept_width=8)
+    with pytest.raises(ValueError, match='checkpoint layout'):
         target.load_state_dict(saved)
     assert len(target) == 0
 

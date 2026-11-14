@@ -367,18 +367,14 @@
       <xs:element name="ltmConsolidation" type="xs:boolean" minOccurs="0"/>
       <!-- Pressure-driven forgetting runs at closed host boundaries. -->
       <xs:element name="forgetting" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="activityDefault" type="unitInterval" minOccurs="0"/>
+      <xs:element name="activityStep" type="unitInterval" minOccurs="0"/>
+      <xs:element name="activityDecay" type="unitInterval" minOccurs="0"/>
+      <xs:element name="activityPromotion" type="unitInterval" minOccurs="0"/>
       <xs:element name="forgetHighWater" type="xs:double" minOccurs="0"/>
       <xs:element name="forgetLowWater" type="xs:double" minOccurs="0"/>
       <xs:element name="forgetMinInterval" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="forgetAtEpoch" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="forgetTrustWeight" type="xs:double" minOccurs="0"/>
-      <xs:element name="forgetUtilityWeight" type="xs:double" minOccurs="0"/>
-      <xs:element name="forgetLuminosityWeight" type="xs:double" minOccurs="0"/>
-      <xs:element name="forgetAgeWeight" type="xs:double" minOccurs="0"/>
-      <xs:element name="forgetHalfLife" type="xs:double" minOccurs="0"/>
-      <xs:element name="forgetSimilarity" type="xs:double" minOccurs="0"/>
-      <xs:element name="forgetCoverage" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="forgetProtectOrigins" type="xs:string" minOccurs="0"/>
       <!-- LTM provisioning (doc/specs/mereological-order-raising.md "Augment the
            LTM by parsing a TruthSet from XML config"; Alec 2026-06-18). A set of
            trusted truths appended to the consolidated LTM at model load
@@ -457,27 +453,6 @@
       </xs:element>
       <xs:element name="ergodic" type="xs:boolean" minOccurs="0"/>
       <xs:element name="naive" type="xs:boolean" minOccurs="0"/>
-      <!-- Master switch for symbolic-priming heat (forward working memory);
-           default false = off, zero training-path cost. Plan
-           2026-06-06-symbolic-heat-retrieval. -->
-      <xs:element name="symbolicPriming" type="xs:boolean" minOccurs="0"/>
-      <!-- Retrieval scalar knobs for heat-biased candidate scoring
-           (plan §Configuration, doc/plans/2026-06-06-symbolic-heat-retrieval.md).
-           All optional; defaults preserved in code (off by default when
-           attention=off).  retrievalTopKContent / retrievalTopKHeat: candidate
-           union sizes.  retrievalOuterTopK: active rows for outer-heat builders.
-           retrievalAlpha / retrievalBeta: content-sim / heat-log weights.
-           retrievalGamma / retrievalDelta: first- / second-order carrier weights
-           (zero = off = byte-identical to primer mode).
-           retrievalUseOuterProduct: reserved for future dense-C gating. -->
-      <xs:element name="retrievalTopKContent" type="xs:positiveInteger" minOccurs="0"/>
-      <xs:element name="retrievalTopKHeat" type="xs:positiveInteger" minOccurs="0"/>
-      <xs:element name="retrievalOuterTopK" type="xs:positiveInteger" minOccurs="0"/>
-      <xs:element name="retrievalAlpha" type="xs:decimal" minOccurs="0"/>
-      <xs:element name="retrievalBeta" type="xs:decimal" minOccurs="0"/>
-      <xs:element name="retrievalGamma" type="xs:decimal" minOccurs="0"/>
-      <xs:element name="retrievalDelta" type="xs:decimal" minOccurs="0"/>
-      <xs:element name="retrievalUseOuterProduct" type="xs:boolean" minOccurs="0"/>
       <xs:element name="sigmaPi" type="sigmaPiEnum" minOccurs="0"/>
       <!-- Trial-split: fraction of training batches run as pure next-idea
            prediction trials (reconstruction terms zeroed). 0.0 -> off ->
@@ -1133,13 +1108,6 @@
     </xs:all>
   </xs:complexType>
 
-  <xs:complexType name="trustGatesType">
-    <xs:all>
-      <xs:element name="closedTrust" type="unitInterval"/>
-      <xs:element name="threshold" type="unitInterval"/>
-    </xs:all>
-  </xs:complexType>
-
   <xs:complexType name="conceptualSpaceType">
     <xs:all>
       <xs:element name="meaningWidth" type="xs:nonNegativeInteger" minOccurs="0"/>
@@ -1151,12 +1119,9 @@
       <xs:element name="raiseEvidence" type="unitInterval" minOccurs="0"/>
       <xs:element name="trustViews" type="xs:double" minOccurs="0"/>
       <xs:element name="definitionTrust" type="xs:double" minOccurs="0"/>
-      <xs:element name="gates" type="trustGatesType" minOccurs="0"/>
       <xs:element name="raiseCount" minOccurs="0">
         <xs:simpleType><xs:restriction base="xs:integer"><xs:minInclusive value="2"/></xs:restriction></xs:simpleType>
       </xs:element>
-      <xs:element name="recurrenceAngle" type="nonNegativeFloat" minOccurs="0"/>
-      <xs:element name="recurrenceCapacity" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="readerBlockNormalization" type="xs:boolean" minOccurs="0"/>
       <xs:element name="latticeMargin" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Incoming-connection L1 for the indexed conceptsFromPercepts Sigma.

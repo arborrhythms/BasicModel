@@ -73,6 +73,7 @@ def test_real_supplied_paths_cost_before_updates_and_reach_understanding(monkeyp
     measured, versions = [], []
     def observed(owner, state, observation, sid, active, registry, **kwargs):
         value = score(owner, state, observation, sid, active, registry, **kwargs)
+        assert observation['answer_field'] is observation['record'].understanding_field
         error = value[0]
         params = tuple(model.parameters())
         grads = torch.autograd.grad(error.mean(), params, retain_graph=True, allow_unused=True)
@@ -88,12 +89,37 @@ def test_real_supplied_paths_cost_before_updates_and_reach_understanding(monkeyp
     monkeypatch.setattr(WholePaths, 'output', observed)
     try:
         batch = next(iter(data.data_loader(split='train', num_streams=4)))
+        # Disjoint concepts may have an empty intersection. For this reader
+        # gradient, pair each of the same four words with itself: either
+        # Boolean operator then leaves evidence. Keep the full grammar,
+        # construction, four two-word sentences, and supplied labels.
+        sentences = [model._bytes_to_text(row).replace('\0', ' ').split() for row in batch[0]]
+        words = tuple(dict.fromkeys(word for sentence in sentences for word in sentence))
+        assert len(sentences) == len(words) == 4 and all(len(row) == 2 for row in sentences)
+        inputs = [' '.join((word, word)) for word in words]
         model.runBatch(train=True, optimizer=model.getOptimizer(lr=.01), batchSize=4,
-            batch_override=(model.inputSpace.prepInput(batch[0]), model.outputSpace.prepOutput(batch[1])))
+            batch_override=(model.inputSpace.prepInput(inputs), model.outputSpace.prepOutput(batch[1])))
         assert len(measured) == 2 and versions[0] == versions[1]
     finally:
         model.End()
         model.symbolSpace.soft_reset()
+
+
+def test_output_reads_its_understanding_when_generation_publishes_a_different_field():
+    from WholePaths import output
+    from Layers import Error
+    model, state, _ = _sentence(True)
+    model.answer_synthesis = False
+    model._sentence_numeric_error = lambda state, sid, active, observation, **kwargs: observation['answer_field']
+    understood = model._numeric_field
+    generated = SimpleNamespace(evidence=torch.zeros_like(understood.evidence))
+    model.conceptualSpace = SimpleNamespace(subspace=SimpleNamespace(
+        _concept_ids=understood.concept_ids, _concept_activations=generated.evidence,
+        _concept_where=None, _concept_when=None))
+    observation = dict(record=SimpleNamespace(understanding_field=understood),
+                       order_zero_field=generated)
+    result = output(model, state, observation, 0, torch.ones(2, dtype=torch.bool), Error())
+    assert result[0] is understood
 
 
 def test_numeric_path_reads_its_composed_state_with_live_gradient():

@@ -20,9 +20,13 @@ def snapshot(resolver):
             resolver.components.owner.similarity_codebook.W.detach().clone())
 
 
-def unchanged(resolver, before, *, promoted_rows=()):
+def unchanged(resolver, before, *, promoted_rows=(), committed_access=False):
     after = snapshot(resolver)
     for index, (actual, expected) in enumerate(zip(after, before)):
+        if index == 3 and committed_access:
+            assert bool((actual['activity'] >= expected['activity']).all())
+            actual = {k: v for k, v in actual.items() if k != 'activity'}
+            expected = {k: v for k, v in expected.items() if k != 'activity'}
         if index == len(before)-1 and promoted_rows:
             keep = torch.ones(actual.shape[0], dtype=torch.bool, device=actual.device)
             keep[list(promoted_rows)] = False
@@ -62,8 +66,7 @@ def keep(resolver, clause, frames=(), *, position=0):
     kept = resolver.prepare(clause, plan)
     assert resolver.components.owner.mtm.entries == before
     written = {}
-    row = resolver.store.write_clause(kept, document_key='mtm',
-        sentence_index=position, written_rows=written)
+    row = resolver.store.write_clause(kept, written_rows=written)
     assert resolver.components.owner.mtm.entries == before
     retained = snapshot(resolver)
     seated = seats(resolver)
@@ -159,9 +162,15 @@ def test_reclosed_occurrence_survives_eviction_of_its_previous_token(reclose):
     occurrence = store.occurrence_of(row)
     assert pool.token_of(occurrence) == first
     retained = snapshot(resolver)
-    again, _ = keep(resolver, mention(a[0], mode=reclose, reference=kind),
-                    (frames[1],), position=2)
-    assert again == row
+    # Rebind the retained occurrence in MTM. §17.21 retires the old
+    # resubmission match: writing a sentence again now writes a new row.
+    when = max(entry.when for entry in pool.entries.values()) + 1
+    if reclose == 'bind':
+        pool.bind(second, occurrence, kind=kind, when=when)
+    else:
+        pool.open(occurrence, kind=kind, value=a[0], when=when)
+    pool.record_link(occurrence, occurrence, None)
+    pool.close(store, references=(occurrence,))
     target = second if reclose == 'bind' else occurrence
     assert pool.token_of(occurrence) == target
     assert occurrence not in pool.entries[first].occurrences

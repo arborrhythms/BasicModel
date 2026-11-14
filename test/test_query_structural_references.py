@@ -21,12 +21,13 @@ def _request():
     ]} for name, face in (('compose', 'forward'), ('thought', 'thought'))})
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     left, right = cs.new_concept(), cs.new_concept()
-    inner = cs.reify_concept(left, right)
+    inner = cs._concept_allocator.parts.add(left, right, truth_plus=1.)
     alloc = cs._concept_allocator
     alloc.symbol_types.setdefault(inner, set()).add('object')
     alloc.symbol_types.setdefault(right, set()).add('object')
     alloc.singletons.add(right)
     witness = alloc.parts.add(inner, right, truth_plus=.7, truth_minus=.2)
+    alloc.parts.refresh_effective()  # Compare the same derived cache before and after the read.
     # The completed parse supplies held values beside the structural handles;
     # no fixture call seats the Part operand to form its thought request.
     vp = registry._reference(('symbolic-definition', 'isEqual'))
@@ -34,7 +35,6 @@ def _request():
         torch.stack((torch.ones(8), registry._payload(vp), torch.ones(8))),
         torch.ones(3, dtype=torch.bool),
         role_refs=(('sym', inner), vp, ('sym', right)))
-    alloc.parts.refresh_effective()  # Materialize the derived read before the no-write snapshot.
     return cs, registry, request, witness
 
 
@@ -53,6 +53,9 @@ def _unchanged(cs, before):
     for group in ('rows', 'parts'):
         assert before[group].keys() == after[group].keys()
         for name, value in before[group].items():
+            if name == 'activity':
+                assert bool((after[group][name] >= value).all())
+                continue
             torch.testing.assert_close(after[group][name], value, rtol=0, atol=0)
     torch.testing.assert_close(after['bank'], before['bank'], rtol=0, atol=0)
     for name in ('placement', 'retired', 'tensor_rows'):

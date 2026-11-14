@@ -53,7 +53,7 @@ def test_live_reference_preserves_weak_candidate_and_keeps_a_representative():
     strong, _ = concept(cs, magnitude=.9)
     store = LTM0(8, capacity=4)
     store.append_meaning(replace(ConceptualMeaning.from_description(torch.ones(8)),
-        role_refs=(('sym', weak), None, None)), sentence_index=0)
+        role_refs=(('sym', weak), None, None)))
     report = reclaim_concepts(cs, store)
     assert report['retired'] == (strong,)
     assert cs._csw_row_of(weak) is not None
@@ -91,7 +91,7 @@ def test_unused_mints_are_reclaimed_by_magnitude_without_erasing_defined_or_refe
     cs.add_part(defined, 42)
     store = cs._closed_clause_store()
     store.append_meaning(replace(ConceptualMeaning.from_description(torch.ones(8)),
-        role_refs=(('sym', referenced), None, None)), sentence_index=0)
+        role_refs=(('sym', referenced), None, None)))
     cs._concept_allocator.parts.add(posted, referenced)
     layer.add_edge(rows[6], rows[5], 0.)  # Zero coefficients still have sparse placement.
     layer.features.add_edge(rows[7], 0, 0.)

@@ -33,6 +33,11 @@ def _allocator():
 def _model_with(cs, ws):
     if not hasattr(cs, 'definitions'):
         cs.definitions = cs._concept_allocator.definitions
+    from Memory import MediumTermMemory
+    if not hasattr(cs, 'mtm'):
+        cs.mtm = MediumTermMemory(64, horizon=16)
+    if not hasattr(cs, 'similarity_codebook'):
+        cs.similarity_codebook = types.SimpleNamespace(W=torch.zeros(1, 8))
     model = Models.BaseModel()
     model.name = "StructuralCheckpointTest"
     model.spaces = []

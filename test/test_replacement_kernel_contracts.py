@@ -1,3 +1,4 @@
+from definition_fixtures import class_over
 """Preserved evidence contracts from the retired 61 frame-kernel tests."""
 from dataclasses import replace
 
@@ -18,7 +19,7 @@ def _world():
         row = cs._csw_concept_row(0, base)
         with torch.no_grad():
             cs.similarity_codebook.W[row].copy_(torch.eye(cs.nDim)[index])
-    refs = tuple(('sym', cs.synthesize_higher_order([('sym', base)]))
+    refs = tuple(('sym', class_over(cs, [('sym', base)]))
                  for base in bases)
     for index, ref in enumerate(refs):
         row = cs._csw_concept_row(cs._concept_source_order(ref[1]), ref[1])
@@ -64,7 +65,7 @@ def test_dead_end_and_cycle_terminate_unknown_without_speculative_ltm(cycle):
     assert result.work.spent <= model.attention_budget
     assert result.records[-1].kind == 'finish' and len(store) == 0
     edge = store.parts.find(a[1], c[1])
-    assert store.row(('sym', edge))['kind'] == 'unverified'
+    assert store.row(('sym', edge))['evidence'] == (0., 0.)
 
 
 def test_budget_exhaustion_is_bounded_unknown_with_diagnostic():
@@ -92,28 +93,35 @@ def test_world_refutation_or_conflict_never_closes_taxonomy_false(trusts):
     for trust in trusts:
         from Meaning import ConceptualMeaning
         store.append_meaning(ConceptualMeaning.from_description(
-            (registry._payload(a) + registry._payload(b)) / 2), kind='fact', trust=trust)
+            (registry._payload(a) + registry._payload(b)) / 2),  trust=trust)
     result = model.reason_about(registry.form('isPart', a, b))
     assert result.posture == 'UNKNOWN'
     assert result.support_true == result.support_false == 0
 
 
 @pytest.mark.parametrize('positive,negative,posture', [(.8, .7, 'BOTH'), (.8, .1, 'TRUE'), (0, 0, 'UNKNOWN')])
-def test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees(positive,negative,posture):
-    from index_fixtures import terminal_model_index
-    model,registry,store,(a,b,_,_)=_world()
+def test_complete_fact_end_reads_preserve_conflicting_and_mixed_degrees(positive,negative,posture):
     from Meaning import ConceptualMeaning
-    meaning=ConceptualMeaning.from_description(registry._payload(a))
-    order=terminal_model_index(model,meaning.role_refs)
-    index=store.append_meaning(meaning,kind='fact',order=order,evidence=(positive,negative))
     from QueryWork import QueryWorkBudget
+    from Models import SelectedThoughtResult
+    model,registry,store,(a,b,_,_)=_world()
+    meaning=ConceptualMeaning.from_description(registry._payload(a))
+    first=len(store)
+    store.append_meaning(meaning,evidence=(positive,negative))
+    # The same kept idea now has one immutable signed row per nonzero lane.
+    # Read each addressed occurrence; an address alone is no region query.
+    poles=[0.,0.]
     with model._query_boundary_scope((0,)):
-        context=model._thought_grammar_context(meaning,row=0,work=QueryWorkBudget(32),continuation=None)
-        query=registry.form('ask',store.occurrence_of(index),context=context)
-    result=model.reason_about(query)
-    assert result.posture==posture
-    assert result.support_true==pytest.approx(positive) and result.support_false==pytest.approx(negative)
-    assert store.row(len(store)-1)['kind']==('unverified' if posture=='UNKNOWN' else 'inference')
+        for index in range(first,len(store)):
+            context=model._thought_grammar_context(meaning,row=0,work=QueryWorkBudget(32),continuation=None)
+            request=registry.form('isTrue',store.occurrence_of(index),context=context)
+            result=registry.execute(request,context)
+            poles=[max(poles[0],result.support_true),max(poles[1],result.support_false)]
+    assert poles == pytest.approx((positive,negative))
+    result = SelectedThoughtResult(meaning=meaning,
+        evidence=dict(support_true=poles[0], support_false=poles[1]),
+        work=QueryWorkBudget(32), records=())
+    assert result.posture == posture
 
 
 def test_supplied_mechanism_walk_uses_one_controller_at_every_level(monkeypatch):

@@ -33,14 +33,6 @@
     <forgetLowWater>0.7</forgetLowWater>
     <forgetMinInterval>256</forgetMinInterval>
     <forgetAtEpoch>false</forgetAtEpoch>
-    <forgetTrustWeight>1.0</forgetTrustWeight>
-    <forgetUtilityWeight>1.0</forgetUtilityWeight>
-    <forgetLuminosityWeight>1.0</forgetLuminosityWeight>
-    <forgetAgeWeight>1.0</forgetAgeWeight>
-    <forgetHalfLife>4096</forgetHalfLife>
-    <forgetSimilarity>0.9</forgetSimilarity>
-    <forgetCoverage>false</forgetCoverage>
-    <forgetProtectOrigins>provisioned user</forgetProtectOrigins>
 
     <!-- The data tier (embedding | numeric) is set under <data> as
          <dataType>; this defaults file uses numeric (see <data> below). -->
@@ -524,17 +516,11 @@
     <!-- Zero retains the complete bridge reservation; a positive capacity
          bounds the sparse 32-destination blocks and raises on exhaustion. -->
     <primingBridgeCapacity>0</primingBridgeCapacity>
-    <recurrenceAngle>15</recurrenceAngle>
     <raiseEvidence>0</raiseEvidence>
     <raiseCount>3</raiseCount>
     <trustViews>3</trustViews>
     <definitionTrust>0.5</definitionTrust>
-    <gates>
-      <closedTrust>0.1</closedTrust>
-      <threshold>0.75</threshold>
-    </gates>
     <mtmPrepend>64</mtmPrepend>
-    <!-- recurrenceCapacity defaults to this space's resolved nVectors. -->
     <readerBlockNormalization>true</readerBlockNormalization>
     <!-- Deterministic room between the part and property-whole bounds. -->
     <latticeMargin>0</latticeMargin>

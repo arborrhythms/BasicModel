@@ -100,8 +100,7 @@ def test_existing_identity_needs_no_introducing_operation(monkeypatch, origin):
     if origin == 'durable':
         identity, expected = symbol, [1, symbol, 1]
     else:
-        row = f.store.append_meaning(ConceptualMeaning.from_description(point),
-            document_key='held occurrence', sentence_index=0, order=1)
+        row = f.store.append_meaning(ConceptualMeaning.from_description(point))
         occurrence = f.store.occurrence_of(row)
         token = f.cs.mtm.open(occurrence, kind=None, when=0, value=point)
         identity = f.cs.mtm.entries[token].transient
@@ -192,7 +191,7 @@ def test_shift_alias_records_real_operation_and_closing_writes_it(monkeypatch, m
     assert introduction['selected'] == use['selected'] == ('new', 0)
     prepared, written = close.prepare(clause, plan), {}
     row = f.store.write_clause(prepared, written_rows=written,
-        document_key='packed operation', sentence_index=0)
+        )
     close.commit(plan, row, written, document='packed operation', position=0, training=False)
     first, second = [written[('occurrence', id(item['written_node']))]
                      for item in (introduction, use)]

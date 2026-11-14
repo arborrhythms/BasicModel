@@ -195,8 +195,27 @@ def test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners(tmp_path):
     restored, *_ = recon_bench._build_model(config)
     assert restored.load_weights(checkpoint, strict=True)
     restored_state = restored.state_dict()
+    from IndependentComponents import _unpack_state
+    def compare(actual, expected):
+        if torch.is_tensor(expected):
+            torch.testing.assert_close(actual, expected)
+        elif isinstance(expected, dict):
+            assert actual.keys() == expected.keys()
+            for name in expected:
+                compare(actual[name], expected[name])
+        elif isinstance(expected, (list, tuple)):
+            assert type(actual) is type(expected) and len(actual) == len(expected)
+            for a, b in zip(actual, expected):
+                compare(a, b)
+        else:
+            assert actual == expected
     for key, value in original.state_dict().items():
-        torch.testing.assert_close(restored_state[key], value)
+        actual = restored_state[key]
+        if key.endswith('._extra_state'):
+            # Serialized metadata may memoize equal strings differently after
+            # owner rebinding; all decoded values must still agree exactly.
+            actual, value = _unpack_state(actual), _unpack_state(value)
+        compare(actual, value)
 
     # Even the legacy construction setter must rebind VQ to the new sole
     # owner Parameter; otherwise a post-load replacement would quantize with

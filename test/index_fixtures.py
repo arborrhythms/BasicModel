@@ -19,7 +19,7 @@ def terminal_model_index(model, references):
     space = model.conceptualSpace
     rows = torch.tensor([_existing_row(space, reference) for reference in references
                          if reference is not None
-                         and predicate_relation(reference[1]) == 'operator'])
+                         and predicate_relation(reference[1]) is None])
     space.prime_seen(rows)
     # The mechanism's declared candidate set now arrives through the detached
     # predicted field; the seen ledger only supplies placement context.
@@ -37,6 +37,4 @@ def one_hot_unfold(value, limit, **kwargs):
 
 def append_content(store, meaning, **kwargs):
     """Each retrieval fixture write denotes one distinct source idea."""
-    kwargs.setdefault('document_key', 'content-fixture')
-    kwargs.setdefault('sentence_index', len(store))
     return store.append_meaning(meaning, **kwargs)

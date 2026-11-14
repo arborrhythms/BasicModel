@@ -17,8 +17,8 @@ def pending_chain(store, value, name, complement, *, sentence):
     atom = replace(ConceptualMeaning.from_description(value),
                    bindings={'_forward_references': ((0, name),)})
     row = store.append_meaning(question(atom, (('referent', 0),)),
-        kind='question', sentence_index=sentence, time=False)
-    edge = store.parts.add((OCCURRENCE, int(store.address_keys[row])), complement,
+        )
+    edge = store.parts.add((OCCURRENCE, store.row_name(row)), complement,
                           truth_plus=1.)
     return ('sym', edge)
 
@@ -53,8 +53,8 @@ def test_forward_name_stays_pending_beside_a_witnessed_occurrence_complement(rel
     else:
         atom = replace(ConceptualMeaning.from_description(torch.eye(4)[2]),
                        role_refs=(('sym', answer), None, None))
-        row = store.append_meaning(atom, evidence=(1., 0.), sentence_index=0, time=False)
-        complement = (OCCURRENCE, int(store.address_keys[row]))
+        row = store.append_meaning(atom, evidence=(1., 0.))
+        complement = (OCCURRENCE, store.row_name(row))
     store._concept_owner()._concept_allocator.singletons.add(complement)
     source = pending_chain(store, torch.eye(4)[0], name, complement, sentence=1)
     pending = pending_chain(store, torch.eye(4)[0], name, complement, sentence=2)

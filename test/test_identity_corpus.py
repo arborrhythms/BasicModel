@@ -177,12 +177,13 @@ def test_native_observer_uses_owned_individual_not_enclosing_sentence(monkeypatc
         assert token['selected_reference']==-1
         assert token['missing_reason']=='mint_awaits_row_write'
         written={}
-        root=fixture.store.write_clause(clause,stream=0,written_rows=written)
+        root=fixture.store.write_clause(clause,written_rows=written,stream=0)
         child=written[id(clause.children[0])]
         assert root != child
         assert clause.order == 0 and clause.children[0].order == 1
-        assert token['reference']==int(fixture.store.address_keys[child])
-        assert token['reference']!=int(fixture.store.address_keys[root])
+        from Occurrence import operand_name
+        assert token['reference']==operand_name(fixture.store.row_name(child))
+        assert token['reference']!=operand_name(fixture.store.row_name(root))
         assert token['missing_reason'] is None
 
         # A later selected bind must expose the same address to the grader.
@@ -232,7 +233,7 @@ def test_observer_reports_discarded_mint_and_unadmitted_leaf_by_reason(monkeypat
         _derivation_program=lambda *a:(torch.arange(3)[None],))
     with native_observer(model) as captured:
         model._sentence_observation(None,0,None,admit=True)
-        fixture.store.write_clause(clause,stream=0,written_rows={})
+        fixture.store.write_clause(clause,written_rows={},stream=0)
         label=dict(mentions=[dict(id='cat',sentence=0,word=1),
             dict(id='unread',sentence=0,word=7),dict(id='absent',sentence=1,word=0)])
         result=grade_capture(label,captured,0)

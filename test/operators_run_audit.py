@@ -40,21 +40,11 @@ def identity_recovered(model, owner, rows, forms):
 def storage_snapshot(model):
     store=model.symbolSpace.ltm_store
     n=len(store)
-    # Sentence arrivals are timed covers. Thought inference also carries a
-    # time stamp, so time alone cannot identify the input sentence rows.
-    stamps = [store.entry_time(row).detach().cpu().tolist() for row in range(n)]
-    row_kinds = [store.KINDS[int(k)] for k in store.kind_codes(torch.arange(n, device=store.count.device))]
-    sentences=torch.tensor([row for row, stamp in enumerate(stamps) if any(stamp) and row_kinds[row] == 'cover'],
-                           dtype=torch.long, device=store.address_keys.device)
-    return dict(rows_used=n, capacity=store.capacity, sentence_rows=len(sentences),
-        row_kinds=row_kinds, timed_rows=sum(any(stamp) for stamp in stamps),
-        definition_rows=0,
-        addresses=store.address_keys[sentences].detach().cpu().tolist(),
-        sentence_indices=store.sentence_index[sentences].detach().cpu().tolist(),
-        content_keys=[store.content_key(int(row)).hex() for row in sentences],
-        witness_counts=store.access_count[sentences].detach().cpu().tolist(),
-        when=[stamps[int(row)] for row in sentences],
-        all_witness_counts=store.access_count[:n].detach().cpu().tolist())
+    return dict(rows_used=n,capacity=store.capacity,
+        times=[store.row_name(row) for row in range(n)],
+        trust=store.trust[:n].detach().cpu().tolist(),
+        activity=store.activity[:n].detach().cpu().tolist(),
+        referents=[store.referent_of(row) for row in range(n)])
 
 
 @torch.no_grad()

@@ -34,7 +34,7 @@ _SERIAL_CONFIG = os.path.join(
 _DEFAULTS = os.path.join(_DATA_DIR, "model.xml")
 
 
-def _make_model(config, *, stateless=None):
+def _make_model(config, *, stateless=None, identified_input=True):
     if stateless is not None:
         from pathlib import Path
         import tempfile
@@ -43,7 +43,7 @@ def _make_model(config, *, stateless=None):
             text = Path(config).read_text().replace('<architecture>',
                 f'<architecture><stateless>{str(stateless).lower()}</stateless>', 1)
             path.write_text(text)
-            return _make_model(str(path))
+            return _make_model(str(path), identified_input=identified_input)
     import Models
     import Language
     from util import init_config
@@ -80,7 +80,8 @@ def _make_model(config, *, stateless=None):
         original_write = m.symbolSpace.ltm_store.write_clause
         def identified(clause, **kwargs):
             return original_write(replace(clause, evidence=(.8, 0.)), **kwargs)
-        m.symbolSpace.ltm_store.write_clause = identified
+        if identified_input:
+            m.symbolSpace.ltm_store.write_clause = identified
     return m
 
 
@@ -146,28 +147,26 @@ class TestProvisioning(unittest.TestCase):
         store = m.symbolSpace.ltm_store
         # This numerical fixture's grammar composes absolute scenes. XML
         # labels cannot turn its selected scenes into relation assertions.
-        asserted = store.rows_of_origin(T.ORIGIN_PROVISIONED).tolist()
+        asserted = list(range(3))
         definitions = store.relations('definition').tolist()
         self.assertEqual(len(asserted), 3)
         self.assertTrue(definitions)  # Objects were explicitly supplied by setup.
-        self.assertEqual(len(store), len(asserted) + 3)
-        self.assertEqual(sum(store.row(i)['kind'] == 'cover' for i in range(len(store))), 3)
-        self.assertEqual([i for i in store.ideas().tolist()
-                          if store.row(i)['kind'] != 'cover'], asserted)
+        self.assertEqual(len(store), len(asserted))
+        self.assertEqual(store.ideas().tolist(), asserted)
         self.assertTrue((store.parts.refs[store.relations()] > 0).all())
 
     @pytest.mark.usefixtures('eager_reading')
     def test_provisioned_trust_and_store_order(self):
         m = _make_model_provisioned(_SERIAL_CONFIG)
         store = m.symbolSpace.ltm_store
-        rows = store.rows_of_origin(store.ORIGIN_PROVISIONED).tolist()
+        rows = list(range(3))
         self.assertEqual(len(rows), 3)
         # Each row's trust is OVERWRITTEN with the XML trust.
         self.assertAlmostEqual(store.row(rows[0])["trust"], 0.9, places=5)
         self.assertAlmostEqual(store.row(rows[1])["trust"], 0.8, places=5)
         self.assertAlmostEqual(store.row(rows[2])["trust"], 0.7, places=5)
         assert rows == sorted(rows)
-        assert all(store.address_keys[row] == store.address_keys[row] for row in rows)
+        assert [store.row_name(row) for row in rows] == sorted(store.row_name(row) for row in rows)
 
     @pytest.mark.usefixtures('eager_reading')
     def test_provisioned_rows_are_real_encodings(self):
@@ -175,7 +174,7 @@ class TestProvisioning(unittest.TestCase):
         store = m.symbolSpace.ltm_store
         # The REAL parse lands a non-zero NP1 for every row (no all-zero row,
         # and no mean-pool placeholder -- it is the actual parsed end-state).
-        for i in store.rows_of_origin(store.ORIGIN_PROVISIONED).tolist():
+        for i in list(range(3)):
             self.assertGreater(float(store.row(i)['meaning'].roles[0].norm()), 0.0)
 
     @pytest.mark.usefixtures('eager_reading')
@@ -193,7 +192,7 @@ class TestProvisioning(unittest.TestCase):
         # provisioning fired (3 truths) + at least the batch's own append.
         self.assertTrue(m._ltm_provisioned)
         self.assertGreaterEqual(len(store), 3)
-        rows = store.rows_of_origin(store.ORIGIN_PROVISIONED).tolist()
+        rows = list(range(3))
         self.assertEqual(len(rows), 3)
         self.assertAlmostEqual(store.row(rows[0])["trust"], 0.9, places=5)
 
@@ -222,7 +221,7 @@ class TestObserveWrites(unittest.TestCase):
             trust = float(tet) if tet is not None else 0.0
             if d >= 3:
                 store.append_meaning(ConceptualMeaning.from_payload(
-                    payload, depth=d, layout='stm'), kind='observation', trust=trust)
+                    payload, depth=d, layout='stm'),  trust=trust)
             else:
                 store.append_idea(payload[0], trust=trust)
         return store
@@ -374,7 +373,7 @@ class TestSurviveResetAndPersistence(unittest.TestCase):
     def test_state_dict_keys_present(self):
         m = _make_model(_ON_CONFIG)
         sd = m.state_dict()
-        for suffix in ("slots", "percept_layout", "addressing.stream", "truth_plus", "truth_minus", "count"):
+        for suffix in ("slots", "percept_layout", "trust", "referent", "activity", "count"):
             self.assertIn(
                 f"symbolSpace.subspace.ltm_store.{suffix}", sd,
                 f"ltm_store.{suffix} must ride the state_dict")
@@ -448,8 +447,8 @@ class TestStoreBackedChain(unittest.TestCase):
         D = store.nDim
         a = torch.zeros(D); a[0] = 1.0           # oldest row
         b = torch.zeros(D); b[1] = 1.0           # newest row
-        store.append_idea(a, trust=0.5, stream=0)
-        store.append_idea(b, trust=0.6, stream=0)
+        store.append_idea(a, trust=0.5)
+        store.append_idea(b, trust=0.6)
         chain = disc.get_stm_chain()
         self.assertEqual(len(chain), 2)
         # oldest-first: chain[0] is 'a', chain[-1] is 'b'.
@@ -468,7 +467,7 @@ class TestStoreBackedChain(unittest.TestCase):
         D = store.nDim
         point = torch.zeros(D)
         point[:3] = torch.tensor([.2, .4, .6])
-        row = store.append_idea(point, trust=.7, stream=0)
+        row = store.append_idea(point, trust=.7)
         chain = disc.get_stm_chain()
         self.assertEqual(len(chain), 1)
         depth, payload, trust = chain[0]
@@ -486,7 +485,7 @@ class TestStoreBackedChain(unittest.TestCase):
         D = store.nDim
         for i in range(5):
             v = torch.zeros(D); v[i % D] = 1.0
-            store.append_idea(v, trust=0.1 * i, stream=0)
+            store.append_idea(v, trust=0.1 * i)
         chain = disc.get_stm_chain(n=2)
         self.assertEqual(len(chain), 2)
         # The two MOST RECENT, oldest-first: rows 3 then 4.
@@ -551,35 +550,25 @@ class TestTruthLayerLtmView(unittest.TestCase):
             any('truth_layer' in k for k in keys),
             "attach_ltm must not re-register the store under truth_layer")
 
-    def test_sync_materializes_user_and_provisioned_rows_only(self):
-        from Memory import LTM0 as T
+    def test_sync_materializes_nonzero_rows_only(self):
         m = _make_model(_ON_CONFIG)
-        store = m.symbolSpace.ltm_store
-        tl = m.symbolSpace.truth_layer
+        store, tl = m.symbolSpace.ltm_store, m.symbolSpace.truth_layer
         store.reset()
-        D = store.nDim
-        # the view slices the content band, clamped to the store width
-        cw = max(1, min(int(store.content_width), D))
-        a = torch.zeros(D); a[0] = 1.0
-        b = torch.zeros(D); b[1] = 1.0
-        store.append_idea(a, trust=0.5)                     # conversation
-        i_prov = store.append_idea(a, trust=0.9, evidence=(.9, 0.))
-        store.set_origin(i_prov, T.ORIGIN_PROVISIONED, text="prov", asserted=(float(store.truth_plus[i_prov]), float(store.truth_minus[i_prov])))
-        i_user = store.append_idea(b, trust=-0.5, evidence=(0., .5))
-        store.set_origin(i_user, T.ORIGIN_USER, text="user", asserted=(float(store.truth_plus[i_user]), float(store.truth_minus[i_user])))
-        n = tl.sync_from_ltm()
-        self.assertEqual(n, 2)
-        self.assertEqual(int(tl.count.item()), 2)
-        self.assertEqual(tl._sources, ["prov", "user"])
-        # flat view = content band * trust (an absolute row reduces to its
-        # NP1 band; negative trust flips the sign, no bivector re-bake),
-        # zero-padded up to the TruthLayer width when the band is narrower
-        exp0 = torch.zeros(tl.nDim); exp0[:cw] = a[:cw] * 0.9
-        exp1 = torch.zeros(tl.nDim); exp1[:cw] = b[:cw] * -0.5
+        D = store.nDim; cw = max(1, min(int(store.content_width), D))
+        a = torch.zeros(D); a[0] = 1.
+        b = torch.zeros(D); b[1] = 1.
+        store.append_idea(a, trust=0.)
+        i_prov = store.append_idea(a, trust=.9)
+        i_user = store.append_idea(b, trust=-.5)
+        self.assertEqual(tl.sync_from_ltm(), 2)
+        self.assertEqual(int(tl.count), 2)
+        self.assertEqual(tl._sources, [store.occurrence_of(i_prov), store.occurrence_of(i_user)])
+        exp0 = torch.zeros(tl.nDim); exp0[:cw] = a[:cw]*.9
+        exp1 = torch.zeros(tl.nDim); exp1[:cw] = b[:cw]*-.5
         self.assertTrue(torch.allclose(tl.truths[0], exp0, atol=1e-6))
         self.assertTrue(torch.allclose(tl.truths[1], exp1, atol=1e-6))
-        self.assertAlmostEqual(tl._trusts[0], 0.9, places=5)
-        self.assertAlmostEqual(tl._trusts[1], -0.5, places=5)
+        self.assertAlmostEqual(tl._trusts[0], .9, places=5)
+        self.assertAlmostEqual(tl._trusts[1], -.5, places=5)
         self.assertFalse(tl.is_empty())
 
     def test_sync_excludes_relation_rows(self):
@@ -603,7 +592,7 @@ class TestTruthLayerLtmView(unittest.TestCase):
         store = m.symbolSpace.ltm_store
         tl = m.symbolSpace.truth_layer
         store.reset()
-        store.append_idea(torch.ones(store.nDim), trust=0.5)  # conversation
+        store.append_idea(torch.ones(store.nDim), trust=0.)  # conversation
         self.assertEqual(tl.sync_from_ltm(), 0)
         self.assertEqual(int(tl.count.item()), 0)
         self.assertTrue(tl.is_empty())
@@ -624,57 +613,37 @@ class TestRuntimeUserIngestion(unittest.TestCase):
 
     @pytest.mark.usefixtures('eager_reading')
     def test_unary_preference_still_ends_and_records_user_truth(self):
-        from Memory import LTM0 as T
         m, store, _ = self._fresh()
-        m.provision_ltm()
+        m.provision_ltm(); m._ltm_provisioned = True
         from definition_fixtures import learned_operation
         owner = m._concept_owner()
         occupants = [owner.interpret.word_for_form(form) for form in ('hello','world')]
         assert all(word is not None for word in occupants)
-        learned_operation(m.languageSpace.parts_of_speech,'union',*occupants,count=64)
+        learned_operation(m.languageSpace.parts_of_speech, 'union', *occupants, count=64)
         before = len(store)
         chooser = m.symbolSpace.languageLayer.operation_layer.chooser
         def binary(x, candidates, *_args, **_kwargs):
-            return (x.new_full((*x.shape[:2], 1), 1e6),
-                    x.new_full(candidates.shape[:-1], -1e6))
+            return x.new_full((*x.shape[:2], 1), 1e6), x.new_full(candidates.shape[:-1], -1e6)
         def unary(x, candidates, *_args, **_kwargs):
-            return (x.new_full((*x.shape[:2], 1), 1e6),
-                    x.new_zeros(candidates.shape[:-1]))
+            return x.new_full((*x.shape[:2], 1), 1e6), x.new_zeros(candidates.shape[:-1])
         chooser.score_binary, chooser.score_unary = binary, unary
         from unittest.mock import patch
         endings = []
         ingest = m._ltm_ingest_truth_texts
-
         def capture(*args, **kwargs):
-            result = ingest(*args, **kwargs)
-            endings.extend(result)
-            return result
-
-        with warnings.catch_warnings(), patch.object(m, '_ltm_ingest_truth_texts', capture):
-            warnings.filterwarnings('ignore')
+            result = ingest(*args, **kwargs); endings.extend(result); return result
+        with patch.object(m, '_ltm_ingest_truth_texts', capture):
             m.store_truths([{'content': 'hello world', 'trust': .9}])
         self.assertTrue(bool((m._stm_post_depth == 1).all()))
         (ending,), = endings
         retained = store.row(ending)
-        bank,index = (store,ending) if isinstance(ending,int) else (store.parts,ending[1])
-        self.assertAlmostEqual(float(bank.truth_plus[index]), .9)
-        self.assertEqual(float(bank.truth_minus[index]), 0.)
-        if bank is store.parts:
-            speech = m.languageSpace.parts_of_speech
-            operation = speech.seats[int(bank.operation_seat[index])].name
-            self.assertEqual(operation,'union')
-            from ConceptTrust import positive_length
-            measured = positive_length(m._concept_owner(), speech.seats[operation].concept)
-            self.assertAlmostEqual(retained['evidence'][0], .9*measured,places=6)
-            self.assertEqual(retained['evidence'][1],0.)
-        users = store.rows_of_origin(T.ORIGIN_USER).tolist()
+        self.assertAlmostEqual(retained['evidence'][0], .9, places=6)
+        self.assertEqual(retained['evidence'][1], 0.)
         if isinstance(ending, int):
             self.assertGreaterEqual(ending, before)
-            self.assertEqual(users, [ending])
         else:
             self.assertEqual(ending[0], 'sym')
             self.assertTrue(store.parts.contains(ending[1]))
-            self.assertEqual(users, [])
 
     @pytest.mark.usefixtures('eager_reading')
     def test_user_rows_land_alongside_provisioned(self):
@@ -686,18 +655,16 @@ class TestRuntimeUserIngestion(unittest.TestCase):
                             {"content": "loving there", "trust": -0.5}])
         # lazy provisioning fired first (3 XML truths, earliest ticks) ...
         self.assertTrue(m._ltm_provisioned)
-        provisioned = store.rows_of_origin(T.ORIGIN_PROVISIONED).tolist()
+        provisioned = list(range(3))
         self.assertEqual(len(provisioned), 3)
         # ... then one real end-state row per user truth, tagged + trusted.
-        user_rows = store.rows_of_origin(T.ORIGIN_USER).tolist()
+        user_rows = list(range(3, len(store)))
         self.assertEqual(len(user_rows), 2)
         self.assertLess(max(provisioned), min(user_rows))
         r0 = store.row(user_rows[0])
         r1 = store.row(user_rows[1])
         self.assertAlmostEqual(r0["trust"], 0.9, places=5)
         self.assertAlmostEqual(r1["trust"], -0.5, places=5)
-        self.assertEqual(r0["text"], "hello world")
-        self.assertEqual(r1["text"], "loving there")
         self.assertGreater(float(r0['meaning'].roles[0].norm()), 0.0,
                            "real parse, not a placeholder")
 
@@ -711,10 +678,10 @@ class TestRuntimeUserIngestion(unittest.TestCase):
         # The view covers provisioned + user rows; sources carry the texts
         # clarifications reference.
         self.assertEqual(int(tl.count.item()), sum(
-            store.row(i)['kind'] != 'cover'
+            store.row(i)['trust'] != 0
             for i in range(len(store))))
-        self.assertIn("hello world", tl._sources)
-        self.assertIn("loving there", tl._sources)
+        self.assertIn(store.occurrence_of(3), tl._sources)
+        self.assertIn(store.occurrence_of(4), tl._sources)
         self.assertIn(0.9, [round(t, 5) for t in tl._trusts if t is not None])
         # Serve surface: score / clarifications / assessment are cached on
         # the model exactly as the legacy path did.
@@ -730,50 +697,26 @@ class TestRuntimeUserIngestion(unittest.TestCase):
         self.assertNotEqual(tl.luminosity(), 0.0)
 
     @pytest.mark.usefixtures('eager_reading')
-    def test_resubmit_replaces_user_rows_only(self):
-        from Memory import LTM0 as T
+    def test_resubmit_appends_rows_without_replacing_prior_truths(self):
         m, store, tl = self._fresh()
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore")
-            m.store_truths([{"content": "hello world", "trust": 0.9},
-                            {"content": "loving there", "trust": -0.5}])
-            n_prov = len(store.rows_of_origin(T.ORIGIN_PROVISIONED))
-            m.store_truths([{"content": "hello there", "trust": 0.7}])
-        user_rows = store.rows_of_origin(T.ORIGIN_USER).tolist()
-        self.assertEqual(len(user_rows), 1, "resubmit replaces, not appends")
-        self.assertEqual(store.row(user_rows[0])["text"], "hello there")
-        self.assertEqual(
-            len(store.rows_of_origin(T.ORIGIN_PROVISIONED)), n_prov,
-            "provisioned rows persist across user resubmits")
-        self.assertEqual(int(tl.count.item()), sum(
-            store.row(i)['kind'] != 'cover'
-            for i in range(len(store))))
-        self.assertIn("hello there", tl._sources)
-        self.assertNotIn("hello world", tl._sources)
+        m.store_truths([{'content': 'hello world', 'trust': .9}, {'content': 'loving there', 'trust': -.5}])
+        previous = store.trust[:len(store)].clone()
+        m.store_truths([{'content': 'hello there', 'trust': .7}])
+        torch.testing.assert_close(store.trust[:len(previous)], previous, rtol=0, atol=0)
+        self.assertEqual(len(store), len(previous)+1)
+        self.assertAlmostEqual(float(store.trust[len(previous)]), .7, places=5)
+        self.assertEqual(int(tl.count), int(store.trust[:len(store)].ne(0).sum()))
+        self.assertIn(store.occurrence_of(len(previous)), tl._sources)
 
     @pytest.mark.usefixtures('eager_reading')
-    def test_store_truths_after_load_does_not_reprovision(self):
-        # A checkpoint provisioned before saving comes back with the
-        # transient _ltm_provisioned flag reset while its provisioned rows
-        # survive (the load-time revive keeps them). store_truths must NOT
-        # re-run provisioning then -- that would duplicate the XML truthSet.
-        # Simulate that post-load state by resetting the flag on an already-
-        # provisioned model (a raw state_dict round-trip can't be used here:
-        # real provisioning grows the dynamic vocab, so the production reload
-        # goes through load_weights' vocab restore, not bare load_state_dict).
-        from Memory import LTM0 as T
+    def test_store_truths_after_load_keeps_all_existing_truths(self):
         m = _make_model_provisioned(_SERIAL_CONFIG)
         store = m.symbolSpace.ltm_store
-        n_prov = len(store.rows_of_origin(T.ORIGIN_PROVISIONED))
-        self.assertEqual(n_prov, 3)
-        m._ltm_provisioned = False               # as after a fresh reload
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore")
-            m.store_truths([{"content": "hello world", "trust": 0.9}])
-        # provisioned rows unchanged (no duplication), one user row added.
-        self.assertEqual(
-            len(store.rows_of_origin(T.ORIGIN_PROVISIONED)), n_prov)
-        self.assertEqual(len(store.rows_of_origin(T.ORIGIN_USER)), 1)
+        before = store.trust[:len(store)].clone()
+        self.assertEqual(len(before), 3)
+        m.store_truths([{'content': 'hello world', 'trust': .9}])
+        torch.testing.assert_close(store.trust[:len(before)], before, rtol=0, atol=0)
+        self.assertEqual(len(store), 2*len(before)+1)
         self.assertTrue(m._ltm_provisioned)
 
     @pytest.mark.usefixtures('eager_reading')
@@ -786,9 +729,9 @@ class TestRuntimeUserIngestion(unittest.TestCase):
             opt = m.getOptimizer(lr=0.01)
             m.runEpoch(optimizer=opt, batchSize=1, split="train",
                        max_batches=2)
-        conv = store.rows_of_origin(T.ORIGIN_CONVERSATION).tolist()
-        user = store.rows_of_origin(T.ORIGIN_USER).tolist()
-        prov = store.rows_of_origin(T.ORIGIN_PROVISIONED).tolist()
+        conv = list(range(4, len(store)))
+        user = [3]
+        prov = list(range(3))
         self.assertTrue(conv, "the epoch's observe push appends STM rows")
         self.assertEqual(len(user), 1)
         self.assertEqual(len(prov), 3)
@@ -797,7 +740,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
         # The view keeps reading only the user TruthSet surface.
         tl.sync_from_ltm()
         self.assertEqual(int(tl.count.item()), sum(
-            1 for i in user + prov))
+            1 for i in range(len(store)) if store.row(i)['trust'] != 0))
 
 
 # -- load-time LTM revive, gated by <stateless> ----------------------------
@@ -810,18 +753,11 @@ class TestRuntimeUserIngestion(unittest.TestCase):
 
 class TestStatelessRevive(unittest.TestCase):
     def _seed(self, m):
-        """Seed one row per origin (provisioned / user / conversation)."""
-        from Memory import LTM0 as T
         store = m.symbolSpace.ltm_store
         store.reset()
-        D = store.nDim
-        v = torch.zeros(D); v[0] = 1.0
-        i0 = store.append_idea(v, trust=0.9, evidence=(.9, 0.), document_key='provisioned')
-        store.set_origin(i0, T.ORIGIN_PROVISIONED, text="cat", asserted=(float(store.truth_plus[i0]), float(store.truth_minus[i0])))
-        i1 = store.append_idea(v, trust=0.8, evidence=(.8, 0.), document_key='user', sentence_index=1)
-        store.set_origin(i1, T.ORIGIN_USER, text="hello world", asserted=(float(store.truth_plus[i1]), float(store.truth_minus[i1])))
-        store.append_idea(v, trust=0.3, sentence_index=2)  # ORIGIN_CONVERSATION
-        return store
+        v = torch.zeros(store.nDim); v[0] = 1.
+        for trust in (.9, .8, 0.):
+            store.append_idea(v, trust=trust)
 
     def test_default_flag_is_stateless_true(self):
         # Config read: absent <stateless> -> default True (model + subspace).
@@ -835,31 +771,19 @@ class TestStatelessRevive(unittest.TestCase):
         self.assertFalse(m.stateless)
         self.assertFalse(m.symbolSpace._stateless)
 
-    def test_stateless_load_prunes_only_after_structural_owners_are_restored(self):
-        from Memory import LTM0 as T
+    def test_stateless_load_retains_truth_after_structural_owners_are_restored(self):
         m = _make_model(_ON_CONFIG)
         self._seed(m)
-        sd = m.state_dict()
-        m2 = _make_model(_ON_CONFIG)              # stateless (default)
-        m2.load_state_dict(sd, strict=False)
+        m2 = _make_model(_ON_CONFIG)
+        m2.load_state_dict(m.state_dict(), strict=False)
         store = m2.symbolSpace.ltm_store
-        # Tensor-only restore cannot prove that another owner does not retain
-        # this request-scoped occurrence.  It withdraws fact authority now,
-        # then prunes after the semantic sidecar / thought owners are restored.
         self.assertEqual(len(store), 3)
-        self.assertEqual(store.row(1)["kind"], "unverified")
-        self.assertEqual(store.row(1)["trust"], 0)
-        self.assertEqual(int(m2.symbolSpace.truth_layer.count.item()), 1)
+        self.assertAlmostEqual(store.row(1)['trust'], .8, places=6)
+        self.assertEqual(int(m2.symbolSpace.truth_layer.count), 2)
         m2._restore_structural_extras(m._collect_structural_extras())
-        # The unreferenced user row is now gone; other writers survive.
-        self.assertEqual(store.rows_of_origin(T.ORIGIN_USER).tolist(), [])
-        self.assertEqual(
-            store.rows_of_origin(T.ORIGIN_PROVISIONED).tolist(), [0])
-        self.assertEqual(
-            store.rows_of_origin(T.ORIGIN_CONVERSATION).tolist(), [1])
-        self.assertEqual(len(store), 2)
-        # the view was rematerialized from the surviving provisioned row only.
-        self.assertEqual(int(m2.symbolSpace.truth_layer.count.item()), 1)
+        self.assertEqual(len(store), 3)
+        self.assertEqual(int(m2.symbolSpace.truth_layer.count), 2)
+        torch.testing.assert_close(store.trust, m.symbolSpace.ltm_store.trust, rtol=0, atol=0)
 
     def test_stateful_load_keeps_user_rows(self):
         from Memory import LTM0 as T
@@ -870,7 +794,7 @@ class TestStatelessRevive(unittest.TestCase):
         m2.load_state_dict(sd, strict=False)
         store = m2.symbolSpace.ltm_store
         # every row survives; the user row is durable state.
-        self.assertEqual(store.rows_of_origin(T.ORIGIN_USER).tolist(), [1])
+        self.assertAlmostEqual(store.row(1)['trust'], .8, places=6)
         self.assertEqual(len(store), 3)
         # the view covers provisioned + user (conversation stays out).
         self.assertEqual(int(m2.symbolSpace.truth_layer.count.item()), 2)
@@ -884,9 +808,8 @@ class TestStatelessRevive(unittest.TestCase):
         store.reset()
         D = store.nDim
         v = torch.zeros(D); v[0] = 1.0
-        i0 = store.append_idea(v, trust=0.7, evidence=(.7, 0.), document_key='provisioned')
-        store.set_origin(i0, T.ORIGIN_PROVISIONED, text="p", asserted=(float(store.truth_plus[i0]), float(store.truth_minus[i0])))
-        store.append_idea(v, trust=0.2, sentence_index=2)                    # conversation
+        i0 = store.append_idea(v, trust=0.7, evidence=(.7, 0.))
+        store.append_idea(v, trust=0.)                    # conversation
         sd = m.state_dict()
         m2 = _make_model(_ON_CONFIG)
         m2.load_state_dict(sd, strict=False)
@@ -913,7 +836,7 @@ class TestSerialForwardAppendsStore(unittest.TestCase):
         # Deque stays empty (the store-append is the single source).
         self.assertEqual(len(disc._stm_end_states[0]), 0)
         # The store-backed chain reflects the store.
-        self.assertEqual(len(disc.get_stm_chain()), len(store.stream_rows(0)))
+        self.assertEqual(len(disc.get_stm_chain()), len(store))
 
 
 if __name__ == "__main__":

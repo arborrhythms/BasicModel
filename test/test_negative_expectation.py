@@ -45,16 +45,6 @@ def test_omitted_symbol_has_a_residual_and_trains_only_the_predictor():
 
 
 
-def test_old_checkpoint_unknown_surprise_is_not_zero():
-    store = LTM0(4, capacity=8)
-    store.append_idea(torch.ones(4), sentence_index=len(store))
-    state = store.state_dict()
-    state.pop("surprise", None)
-    restored = LTM0(4, capacity=8)
-    with pytest.raises(ValueError, match='surprise'):
-        restored.load_state_dict(state, strict=True)
-    restored.load_state_dict(store.state_dict(), strict=True)
-    assert restored.row(0)["surprise"] == -1
 
 
 
@@ -71,7 +61,7 @@ def test_declared_not_is_a_thought_act_not_an_observation(tmp_path, monkeypatch)
     model.symbolSpace.ltm_store = store
     from ClauseRow import attach_clause_index
     attach_clause_index(model, store, model.conceptualSpace)
-    observation = store.append_meaning(idea(source),kind='observation')
+    observation = store.append_meaning(idea(source))
     observed = store.meaning_of(observation).roles.clone()
     from meaning_fixtures import replay_thought_plan
     replay_thought_plan(model, monkeypatch, ('not', None))
@@ -83,7 +73,6 @@ def test_declared_not_is_a_thought_act_not_an_observation(tmp_path, monkeypatch)
     edge = store.parts.find(part[1], whole[1])
     # The common Part owner also retains the fixture's earlier affirmation.
     assert store.row(('sym', edge))['evidence'] == pytest.approx((1.,.3))
-    assert store.row(observation)['kind'] == 'observation'
     torch.testing.assert_close(store.meaning_of(observation).roles, observed)
 
 
@@ -113,24 +102,6 @@ def test_expectation_updates_predictors_outside_the_departure_comparison(monkeyp
     test_expectation_trains_predictor_without_moving_departure_chooser(monkeypatch)
 
 
-def test_metadata_comes_from_the_preceding_occurrence_not_the_target():
-    from dataclasses import replace
-    model, discourse, meaning = _anticipating_model()
-    store = discourse._ltm_store
-    prior = replace(meaning, bindings={"variable": "prior"}, scope={"where": "before"})
-    observe(discourse, prior.roles)
-    row = record_observation(store, prior.roles, 3, meaning=prior)
-    discourse.bind_observation_occurrence(0, store.occurrence_of(row))
-    estimate = discourse.expect_next_meaning()
-    target = replace(meaning, bindings={"variable": "target"}, scope={"where": "after"})
-    observe(discourse, target.roles)
-    comparison = discourse.last_expectation_comparison()
-    row = record_observation(store, target.roles, 3, meaning=target, expectation=comparison)
-    pair = store.expectation_pair(row)
-    assert dict(pair["estimate"].bindings)["variable"] == "prior"
-    assert prior.bindings != target.bindings
-    assert pair["estimate"].scope == prior.scope != target.scope
-    assert estimate.bindings == comparison.estimate.bindings
 
 
 def test_native_unlabelled_batch_trains_the_same_chooser(tmp_path, monkeypatch, eager_reading):
@@ -168,37 +139,6 @@ def test_native_unlabelled_batch_trains_the_same_chooser(tmp_path, monkeypatch, 
 
 
 
-@pytest.mark.parametrize("state", ["live", "restored", "compacted"])
-def test_pair_lookup_uses_occurrence_index_in_both_directions(state, monkeypatch):
-    store = LTM0(4, capacity=64)
-    meaning = ConceptualMeaning.from_description(torch.ones(4))
-    for _ in range(24):
-        row = store.append_idea(torch.ones(4), sentence_index=len(store))
-        store.set_origin(row, store.ORIGIN_USER, asserted=(float(store.truth_plus[row]), float(store.truth_minus[row])))
-    source = store.append_meaning(meaning, kind="observation", sentence_index=len(store))
-    from meaning_fixtures import symbol_prediction, estimate_meaning
-    prior = symbol_prediction(torch.ones(1, 4), torch.tensor([[1., 0.]]))
-    e, o = store.append_expectation_pair(estimate_meaning(prior), meaning, presence_logits=torch.ones(3),
-        source_occurrences=(store.occurrence_of(source),))
-    eref, oref = store.occurrence_of(e), store.occurrence_of(o)
-    if state == "restored":
-        restored = LTM0(4, capacity=64)
-        restored.load_state_dict(copy.deepcopy(store.state_dict()))
-        restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
-        store = restored
-    elif state == "compacted":
-        assert store.clear_origin(store.ORIGIN_USER) == 24
-    e, o = store._index_occurrences[eref], store._index_occurrences[oref]
-    occurrence_of = store.occurrence_of
-    def indexed_only(row):
-        assert row in (e, o), "pair lookup scanned an unrelated row"
-        return occurrence_of(row)
-    monkeypatch.setattr(store, "occurrence_of", indexed_only)
-    for row in (e, o):
-        pair = store.expectation_pair(row)
-        assert pair["estimate_occurrence"] == eref
-        assert pair["observation_occurrence"] == oref
-        assert pair["residual"].abs().max() < 1e-6
 
 
 def test_detached_pending_prediction_replays_without_an_optimizer_step():
@@ -263,7 +203,7 @@ def test_anticipation_ignores_incoming_staging_and_other_streams():
     # to prior-only thought, including the most recent mutable program slot.
     perturbed._last_understanding = SimpleNamespace(sentence_states=(SimpleNamespace(leaves=torch.full((9, meaning.roles.shape[-1]), 999.)),))
     perturbed.inputSpace = SimpleNamespace(_ar_embedded_N=torch.full((2, 8, 16), -999.))
-    perturbed.symbolSpace.ltm_store.append_meaning(idea(meaning), kind="observation", stream=1, sentence_index=len(perturbed.symbolSpace.ltm_store))
+    perturbed.symbolSpace.ltm_store.append_meaning(idea(meaning), )
     after = perturbed.symbolSpace.expectation.expect_next_meaning(record=True)
     torch.testing.assert_close(before.roles, after.roles, rtol=0, atol=0)
     assert not model._what_memory().thought_history()
@@ -399,24 +339,6 @@ def test_omission_is_residual_only_and_content_has_no_predictor_credit():
     torch.testing.assert_close(result.omission, expected)
 
 
-def test_retained_pair_keeps_full_prior_and_surprise_across_restore():
-    from meaning_fixtures import symbol_prediction, estimate_meaning
-    from Expectation import retention_surprise
-    store = LTM0(4, capacity=8)
-    actual = ConceptualMeaning.from_description(torch.eye(4)[0])
-    source = store.append_meaning(actual, kind='observation')
-    prediction = symbol_prediction(torch.eye(4), torch.full((4,2), .5))
-    _, row = store.append_expectation_pair(estimate_meaning(prediction), actual,
-        presence_logits=prediction.presence_logits, source_occurrences=(store.occurrence_of(source),))
-    pair = store.expectation_pair(row, gain=.5)
-    torch.testing.assert_close(pair['observation'].roles, actual.roles)
-    torch.testing.assert_close(pair['expected_activation'], prediction.expected_activation)
-    assert pair['surprise'] == pytest.approx(float(retention_surprise(pair['residual'], pair['expected_activation'])))
-    restored = LTM0(4, capacity=8)
-    restored.load_state_dict(copy.deepcopy(store.state_dict()))
-    restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
-    torch.testing.assert_close(restored.expectation_pair(row)['residual'], pair['residual'])
-    assert restored.row(row)['surprise'] == store.row(row)['surprise']
 
 
 def test_predictor_loss_and_gradients_are_identical_at_every_gain():

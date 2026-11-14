@@ -83,8 +83,8 @@ def test_memory_attention_is_bounded_metered_and_row_local():
     from ThoughtReferences import with_slots
     question = registry.form('isPart', whole, open_roles=('argin1',))
     fact = __import__("Meaning").ConceptualMeaning.from_description(question.roles[0])
-    store.append_meaning(fact, kind='fact', trust=.8)
-    private = store.append_meaning(replace(fact, roles=fact.roles + 30), kind='observation')
+    store.append_meaning(fact,  trust=.8)
+    private = store.append_meaning(replace(fact, roles=fact.roles + 30))
     memory.begin_thought_episode(with_slots(question, (('referent',0),)), b=0, work_budget=128)
     memory.begin_thought_episode(replace(question, roles=question.roles + 20), b=1, work_budget=128)
     with model._query_boundary_scope((0,)):

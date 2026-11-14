@@ -366,7 +366,7 @@ def symbolic_reference(value):
             and isinstance(value[1], tuple) and len(value[1]) == 4):
         return value
     if (isinstance(value, tuple) and len(value) == 3 and value[0] == 'ltm'
-            and isinstance(value[1], str) and type(value[2]) is int and value[2] not in (-1, 0)):
+            and isinstance(value[1], str) and type(value[2]) is int and value[2] >= 0):
         return value
     return concept_reference(value)
 
@@ -803,42 +803,17 @@ class ThoughtTaxonomyCapability:
     def evidence(self, part, whole, *, max_nodes, max_records, max_steps,
                  max_expansions, work):
         space = object.__getattribute__(self, '_ThoughtTaxonomyCapability__space')
-        from Priming import part_edges
-        edges = part_edges(space)
-        if edges is not None and part[0] == whole[0] == 'sym':
-            start, target = space._csw_row_of(part[1]), space._csw_row_of(whole[1])
-            pending, seen = [(start, 1., 0, ())], set()
-            expanded = 0
-            while pending and expanded < max_expansions:
-                point, strength, depth, path = pending.pop(0)
-                if point is None or point in seen or depth >= max_steps:
-                    continue
-                seen.add(point)
-                for edge in (edges[0] == point).nonzero().flatten().tolist():
-                    work.require('expansion')
-                    expanded += 1
-                    if expanded > max_expansions:
-                        break
-                    degree = min(strength, float(edges[2][edge]))
-                    next_point = int(edges[1][edge])
-                    from Taxonomy import TaxonomyEdge
-                    left, right = (('sym', space.concept_id_at_row(row)) for row in (point, next_point))
-                    trail = (*path, TaxonomyEdge(left, right, right, 'part', (degree, 0.)))
-                    names = getattr(space._concept_allocator, 'formal_arguments', {})
-                    classes = tuple((name, cid) for name, cid in names.items()
-                        if any(cid in (edge.part[1], edge.whole[1]) for edge in trail))
-                    if degree > 0 and next_point == target:
-                        return dict(support_true=degree, support_false=0., path=trail,
-                                    formal_arguments=classes, reason='membership', edges_expanded=expanded)
-                    if degree > 0:
-                        pending.append((next_point, degree, depth+1, trail))
         nodes, records = capture_limits(work, max_nodes, max_records)
         view = capture_taxonomy(
             object.__getattribute__(self, '_ThoughtTaxonomyCapability__space'),
             max_nodes=nodes, max_records=records, focus=(part, whole), work=work)
-        return _detach_boundary_value(view.part_of(
-            part, whole, max_steps=max_steps, max_expansions=max_expansions,
-            work=work))
+        result = view.part_of(part, whole, max_steps=max_steps,
+            max_expansions=max_expansions, work=work)
+        names = getattr(space._concept_allocator, 'formal_arguments', {})
+        result['formal_arguments'] = tuple((name,cid) for name,cid in names.items()
+            if any(cid in (edge.part[1],edge.whole[1]) for edge in result['path']))
+        return _detach_boundary_value(result)
+
 
     def neighbors(self, reference, *, direction, max_nodes, max_records,
                   max_expansions, work):
@@ -900,6 +875,8 @@ class ThoughtLTMCapability:
     __slots__ = ('__store', '__equal', '__tau', '__memory',
                  '__discourse', '__row', '__primed', '__expected', '__reference_close', '__reference_decisions')
 
+    from MemoryActivity import read_stream as _read_stream
+
     def __init__(self, *, store, equal, tau_id,
                  memory=None, discourse=None, row=0, primed=(), reference_close=None,
                  reference_decisions=None, expected=()):
@@ -916,6 +893,7 @@ class ThoughtLTMCapability:
         object.__setattr__(self, '_ThoughtLTMCapability__reference_close', reference_close)
         object.__setattr__(self, '_ThoughtLTMCapability__reference_decisions', reference_decisions)
 
+    @_read_stream(attribute='_ThoughtLTMCapability__row')
     def intuition_rules(self, *, max_records, work):
         """Only rules indexed by the expected knowing; every row read is metered."""
         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
@@ -945,6 +923,7 @@ class ThoughtLTMCapability:
                 result.append(frame)
         return tuple(result)
 
+    @_read_stream(attribute='_ThoughtLTMCapability__row')
     def bind_reference(self, meaning, role, *, max_records, work):
         """Read only situated frames and this episode's already held rows."""
         resolver = object.__getattribute__(self, '_ThoughtLTMCapability__reference_close')
@@ -968,39 +947,38 @@ class ThoughtLTMCapability:
         for occurrence in references:
             if len(frames) >= max_records:
                 break
-            index = store._index_occurrences.get(occurrence) if store is not None else None
-            if index is not None and int(store.address_keys[index]) not in seen:
+            index = store.location(occurrence) if store is not None else None
+            if index is not None and store.row_name(index) not in seen:
                 work.require('record')
                 frames.append(SituationFrame.from_row(store.row(index)))
-                seen.add(int(store.address_keys[index]))
+                seen.add(store.row_name(index))
         return resolver.bind_site(meaning, role, tuple(frames), stream=row,
             decisions=object.__getattribute__(self, '_ThoughtLTMCapability__reference_decisions'))
 
+    @_read_stream(attribute='_ThoughtLTMCapability__row')
     def held_frames(self, limit=32):
         memory = object.__getattribute__(self, '_ThoughtLTMCapability__memory')
         read = getattr(memory, 'retrieved_frames', None)
         return read(b=object.__getattribute__(self, '_ThoughtLTMCapability__row'), limit=limit) if callable(read) else ()
 
+    @_read_stream(attribute='_ThoughtLTMCapability__row')
     def _cued(self, description, *, max_records, work, references=(), role_mask=None):
         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
-        from Memory import LTM0
-        if not isinstance(store, LTM0):
+        from Memory import IdeaRows
+        if not isinstance(store, IdeaRows):
             return {'value': (), 'records_scanned': 0, 'incomplete': ('unavailable_ltm',)}
-        from DocumentCover import read as read_cover
-        segment = read_cover(store, description, references=references, max_records=max_records,
-                            work=work, role_mask=role_mask)
-        if segment is not None:
-            return segment
         from EpisodicMemory import query
-        from FieldProjection import stimulate
+        from ExtendedRecall import forest
         owner_ref = getattr(store, '_concept_owner', None)
         owner = None if owner_ref is None else owner_ref()
         scoped = tuple(dict.fromkeys((*references, *(ref for ref in description.role_refs if ref is not None))))
         occupied = description.role_mask if role_mask is None else role_mask
         found = dict(value=(), records_scanned=0, incomplete=())
-        if owner is not None and store.episodic_capacity and bool(occupied.any()):
-            cue = stimulate(owner, description.roles[occupied][None])
-            found = query(store, cue, max_records=max_records, work=work, references=scoped)
+        start = max(0,len(store)-store.ltm_window)
+        if (owner is not None and store.episodic_capacity and bool(occupied.any())
+                and bool(store.episodic_values[start:len(store)].any())):
+            cue = forest(owner,description,work=work)
+            found = query(store,cue,max_records=max_records,work=work,references=scoped)
         result = store.cued_rows(description,
             primed=object.__getattribute__(self, '_ThoughtLTMCapability__primed'),
             references=scoped,
@@ -1024,58 +1002,116 @@ class ThoughtLTMCapability:
             fallback=lambda clean: self._cued(clean, max_records=max_records,
                                               work=work, references=references))
 
+    def _region_evidence(self, description, *, max_records, work):
+        from ExtendedRecall import forest, matches, pervasion
+        store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
+        owner_ref = getattr(store,'_concept_owner',None)
+        owner = None if owner_ref is None else owner_ref()
+        if owner is None:
+            return dict(existence=(0.,0.),pervasion=(0.,0.),exact=(0.,0.),witnesses=(),
+                        existence_witnesses=((),()),exact_witnesses=((),()),pervasion_witnesses=((),()),
+                        records_scanned=0,incomplete=('unavailable_ltm',))
+        start = max(0,len(store)-store.ltm_window)
+        # A zero entry contributes zero for every question. No generate walk
+        # or decoded row is needed to establish this sparse product.
+        has_content = bool(store.episodic_values[start:len(store)].any())
+        results = matches(store,forest(owner,description,work=work) if has_content else ())
+        trust = store.trust[results.ids]
+        degrees = torch.where(trust[:,None] < 0,results.values.flip(-1),results.values)*trust.abs()[:,None]
+        exact_degrees = degrees * torch.where(trust[:,None] < 0,
+            results.values.flip(-1),results.values).eq(1)
+        addressed = []
+        incomplete = []
+        def acquire(values):
+            for lane in range(2):
+                if not len(values) or float(values[:,lane].max()) <= 0:
+                    continue
+                row = int(results.ids[values[:,lane].argmax()])
+                if row in addressed:
+                    continue
+                if len(addressed) >= max_records:
+                    incomplete.append('record_limit')
+                elif not work.consume('record'):
+                    incomplete.append('work_budget')
+                else:
+                    addressed.append(row)
+                    from MemoryActivity import accessed
+                    accessed(store, row)
+        acquire(exact_degrees)
+        acquire(degrees)
+        # A cutoff preserves the evidence already acquired. The sparse
+        # product may propose another brighter row, but that row supplies no
+        # proof or analogy until the shared meter admits its read.
+        captured = (results.ids[:,None] == results.ids.new_tensor(addressed)).any(-1)
+        def admitted(values):
+            values = values * captured[:,None]
+            poles = values.amax(0) if len(values) else values.new_zeros(2)
+            refs = tuple((store.occurrence_of(int(results.ids[values[:,lane].argmax()])),)
+                if float(poles[lane]) > 0 else () for lane in range(2))
+            return poles,refs
+        exact,exact_witnesses = admitted(exact_degrees)
+        luminous,existence_witnesses = admitted(degrees)
+        proof = pervasion(owner,description,work=work,max_records=max_records)
+        pervasion_witnesses = tuple(tuple(edge.owner for edge in proof.get(name,()))
+            for name in ('path','against_path'))
+        return dict(existence=tuple(luminous.tolist()),exact=tuple(exact.tolist()),
+            pervasion=(proof['support_true'],proof['support_false']),
+            witnesses=(*tuple(store.occurrence_of(row) for row in addressed),
+                       *pervasion_witnesses[0],*pervasion_witnesses[1]),
+            existence_witnesses=existence_witnesses,exact_witnesses=exact_witnesses,
+            pervasion_witnesses=pervasion_witnesses,
+            records_scanned=len(addressed)+proof.get('records_scanned',0),
+            incomplete=tuple(dict.fromkeys((*incomplete,*proof.get('incomplete',())))))
+
+    @_read_stream(attribute='_ThoughtLTMCapability__row')
     def existence_evidence(self, description, *, max_records, work):
         timelines = self._timeline_read(description, max_records=max_records, work=work)
         if timelines is not None:
             from TimelineRead import evidence
             return evidence(timelines, description)
-        result = self._cued(description, max_records=max_records, work=work)
-        positive = negative = 0.
-        sources = []
-        # Familiarity is summed support, not a retrieved row or a maximum.
-        # Only facts certify truth; observations can be retrieved by what.
-        for record in result['value']:
-            if record['kind'] != 'fact':
-                continue
-            # Preserve the evidence source without retaining an LTM frame.
-            # Only what may expose a stored meaning to serial context.
-            sources.append({key: record[key] for key in
-                            ('occurrence', 'origin', 'text', 'trust', 'match')})
-            # Existence uses external event authority. The separate ended
-            # identification pair is exposed by true, never used as trust.
-            signed = float(record['trust'])
-            if record['meaning'].polarity != description.polarity:
-                signed = -signed
-            positive += record['match'] * max(0., signed)
-            negative += record['match'] * max(0., -signed)
-        return {'support_true': min(1., positive), 'support_false': min(1., negative),
-                'familiarity': positive + negative, 'meaning': description.detached(),
-                'candidates': tuple(sources),
-                'records_scanned': result['records_scanned'], 'incomplete': result['incomplete']}
+        result = self._region_evidence(description,max_records=max_records,work=work)
+        positive,negative = result['existence']
+        return dict(result,support_true=positive,support_false=negative,
+                    familiarity=max(positive,negative),meaning=description.detached())
 
+    def _deductive_evidence(self, description, *, max_records, work):
+        result = self._region_evidence(description,max_records=max_records,work=work)
+        positive = max(result['pervasion'][0],result['exact'][0])
+        negative = max(result['pervasion'][1],result['existence'][1])
+        positive_refs = (result['pervasion_witnesses'][0] if result['pervasion'][0] > result['exact'][0]
+                         else result['exact_witnesses'][0])
+        negative_refs = (result['pervasion_witnesses'][1] if result['pervasion'][1] > result['existence'][1]
+                         else result['existence_witnesses'][1])
+        return dict(result,value=(),frames=(),result_kind='set',support_true=positive,
+            support_false=negative,analogy=result['existence'],meaning=description.detached(),
+            witnesses=tuple(dict.fromkeys((*positive_refs,*negative_refs))))
+
+    @_read_stream(attribute='_ThoughtLTMCapability__row')
     def end_evidence(self, reference, *, max_records, work):
         """Read the two poles of one addressed ended clause, under the same bound."""
         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
-        from Memory import LTM0
-        if not isinstance(store, LTM0) or store.location(reference) is None:
+        from Memory import IdeaRows
+        if not isinstance(store, IdeaRows) or store.location(reference) is None:
             raise ValueError('ended clause occurrence is unavailable')
         if not max_records:
             raise ValueError('ended clause is unavailable within the query read limit')
         work.require('record')
         index = store.location(reference)
+        if isinstance(index, int):
+            from MemoryActivity import accessed
+            accessed(store, index)
         retained = store.row(index)
         meaning = retained['meaning']
         if meaning is None:
             raise ValueError('ended clause metadata is unavailable')
         positive, negative = retained['evidence']
-        if retained['kind'] in ('estimate', 'cover', 'episode'):
-            positive = negative = 0.
         return dict(value=meaning, support_true=positive, support_false=negative, meaning=meaning,
                     occurrence=reference, witnesses=(reference,), trust=retained['trust'],
                     records_scanned=1, incomplete=())
 
+    @_read_stream(attribute='_ThoughtLTMCapability__row')
     def best_match(self, pattern, *, max_records, work, references=()):
-        """One content match, preserving declared relation and document scope."""
+        """Read the question's extension or its explicitly declared relation."""
         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
         from ThoughtReferences import bindings, open_slots, unresolved_operands_match
         timelines = self._timeline_read(pattern, max_records=max_records, work=work, references=references)
@@ -1086,17 +1122,49 @@ class ThoughtLTMCapability:
                            for records in timelines['groups'])
             return evidence(dict(timelines, groups=scoped), pattern)
         data = bindings(pattern)
-        relation = data.get('_query_relation')
+        relation = data.get('_query_relation') or ('equal' if data.get('_equality') else None)
+        if relation is None:
+            # A grammatical relation already declares its predicate. Its
+            # endpoints address LTM1 even when ask/query wraps it directly.
+            from ClauseRow import predicate_relation
+            predicate = pattern.role_refs[1]
+            if predicate is not None and predicate[:1] == ('sym',):
+                relation = predicate_relation(predicate[1])
+                if relation == 'part' and data.get('_equality'):
+                    relation = 'equal'
         if relation == 'truth':
             return self.premise_evidence(pattern.role_refs[0], max_records=max_records, work=work)
+        if relation == 'part' and not open_slots(pattern):
+            # A request for an explicitly named relation can read that
+            # statement itself by its two exact ends. Its returned rule is
+            # still available to infer; a geometric analogy supplies none.
+            direct = self.relation_evidence(relation,pattern.role_refs[0],pattern.role_refs[2],
+                max_records=max_records,work=work,excluded=tuple(data.get('_query_exclude',())))
+            from ExtendedRecall import orient_relation
+            direct = orient_relation(pattern,direct)
+            result = self._deductive_evidence(pattern,max_records=max_records,work=work)
+            if not direct['frames']:
+                return result
+            witnesses = tuple(dict.fromkeys((*result['witnesses'],*direct['witnesses'])))
+            return dict(result,value=direct['value'],frames=direct['frames'],meaning=direct['meaning'],
+                support_true=max(result['support_true'],direct['support_true']),
+                support_false=max(result['support_false'],direct['support_false']),
+                exact=tuple(max(result['exact'][i],direct[name]) for i,name in
+                            enumerate(('support_true','support_false'))),witnesses=witnesses,
+                records_scanned=result['records_scanned']+direct['records_scanned'],
+                incomplete=tuple(dict.fromkeys((*result['incomplete'],*direct['incomplete']))))
         if relation is not None:
             excluded = tuple(dict.fromkeys((*data.get('_query_exclude', ()),
                 *((data['_query_occurrence'],) if data.get('_query_occurrence') is not None else ()))))
             result = self.relation_evidence(relation, pattern.role_refs[0],
                 pattern.role_refs[2], max_records=max_records, work=work, excluded=excluded)
+            from ExtendedRecall import orient_relation
+            result = orient_relation(pattern,result)
             if data.get('_query_components'):
                 result = self._with_components(result, max_records=max_records, work=work)
             return result
+        if not open_slots(pattern):
+            return self._deductive_evidence(pattern,max_records=max_records,work=work)
         mask = pattern.role_mask.clone()
         for _kind, role in open_slots(pattern):
             mask[role] = False
@@ -1126,19 +1194,30 @@ class ThoughtLTMCapability:
                            for source, answer in ((0, 2), (2, 0)))
             return unresolved_operands_match(pattern, meaning) and not any(role in marked for role in free)
         candidates = tuple(row for row in found['value']
-                           if row['match'] >= tau and row['kind'] not in ('estimate', 'cover', 'episode')
-                           and (row['kind'] != 'question' or tuple(row['evidence']) != (0., 0.))
+                           if row['match'] >= tau
                            and row['occurrence'] not in excluded and can_answer(row))
-        best = max(candidates, key=lambda row: row['match']) if candidates else None
-        frames = () if best is None else (best,)
-        positive, negative = (0., 0.) if best is None else best['evidence']
-        if best is not None and best['meaning'].polarity != pattern.polarity:
-            positive, negative = negative, positive
-        return dict(value=frames, frames=frames, result_kind='set',
-                    support_true=positive, support_false=negative,
-                    witnesses=() if best is None else (best['occurrence'],),
-                    records_scanned=found['records_scanned'], incomplete=found['incomplete'],
-                    episodic_frames=found.get('episodic_frames', ()))
+        from ExtendedRecall import answer
+        owner_ref = getattr(store,'_concept_owner',None)
+        owner = None if owner_ref is None else owner_ref()
+        available = []
+        if owner is not None:
+            for candidate in candidates:
+                value = answer(owner,pattern,candidate['meaning'],work=work)
+                if value is not None:
+                    available.append((candidate,value))
+        best = max(available,key=lambda item:item[0]['match']) if available else None
+        frames = () if best is None else (best[0],)
+        value = None if best is None else best[1]
+        # An open operand can be recalled from untrusted conversation. Its
+        # content is returned; that availability does not turn into authority.
+        trust = 0. if best is None else best[0]['trust']
+        return dict(value=frames,frames=frames,result_kind='set',meaning=value,answer_operand=value,
+            reference=None if value is None else value.role_refs[0],
+            binding_value=None if value is None else value.roles[0],
+            support_true=max(0.,trust),support_false=max(0.,-trust),
+            witnesses=() if best is None else (best[0]['occurrence'],),
+            records_scanned=found['records_scanned'],incomplete=found['incomplete'],
+            episodic_frames=found.get('episodic_frames',()))
 
     def _with_components(self, result, *, max_records, work):
         """Read chains and their identity-bound values on the same meter."""
@@ -1169,7 +1248,7 @@ class ThoughtLTMCapability:
             else:
                 value = store.slots[location]
                 meaning = store.raw_meaning_of(location)
-                identity = bindings(meaning).get('_identity')
+                identity = store.referent_of(location)
                 if identity is not None:
                     token = owner.mtm.token_of(identity)
                     entry = owner.mtm.entries.get(token)
@@ -1217,6 +1296,7 @@ class ThoughtLTMCapability:
             result['trust'] = result['frames'][0]['trust']
         return result
 
+    @_read_stream(attribute='_ThoughtLTMCapability__row')
     def premise_evidence(self, reference, *, max_records, work):
         """A proposition's two poles and witnessing occurrence, under the meter."""
         from ThoughtFaces import pair
@@ -1227,25 +1307,17 @@ class ThoughtLTMCapability:
             found = self.end_evidence(reference, max_records=max_records, work=work)
             row = store.row(store.location(reference))
             return dict(found, frames=(row,))
-        scanned, best = 0, None
-        for index in range(min(len(store), max_records)):
-            if not work.consume('record'):
-                break
-            scanned += 1
-            row = store.row(index)
-            meaning = row['meaning']
-            if row['kind'] in ('question','estimate','unverified','cover','episode') or meaning is None:
-                continue
-            if int(meaning.role_mask.sum()) != 1:
-                continue
-            ref = meaning.role_refs[0]
-            if ref == reference and (best is None or max(row['evidence']) > max(best['evidence'])):
-                best = row
-        if best is None:
-            return pair(frames=(), records_scanned=scanned)
-        return pair(best['meaning'], *best['evidence'], meaning=best['meaning'],
-            frames=(best,), witnesses=(best['occurrence'],), records_scanned=scanned)
+        point = store.point_of_row(reference)
+        if point is None:
+            return pair(frames=(), records_scanned=0)
+        claim = replace(ConceptualMeaning.from_description(point),
+                        role_refs=(reference, None, None))
+        result = self._deductive_evidence(claim, max_records=max_records, work=work)
+        frames = tuple(store.row(store.location(ref)) for ref in result['witnesses']
+                       if store.location(ref) is not None)
+        return dict(result, frames=frames)
 
+    @_read_stream(attribute='_ThoughtLTMCapability__row')
     def relation_evidence(self, relation, left, right, *, max_records, work, excluded=()):
         """Read Part witnesses; argument types determine permissible readings."""
         from ThoughtFaces import pair
@@ -1309,6 +1381,12 @@ class ThoughtLTMCapability:
             refs = row['meaning'].role_refs
             direct = (left is None or refs[0] == left) and (right is None or refs[2] == right)
             reverse = relation == 'equal' and (left is None or refs[2] == left) and (right is None or refs[0] == right)
+            from ThoughtReferences import bindings
+            unresolved = dict(bindings(row['meaning']).get('_unresolved_operands', ()))
+            # A fixed unresolved reference can match itself; it cannot supply
+            # the missing endpoint of a query in the other direction.
+            direct &= (left is not None or 0 not in unresolved) and (right is not None or 2 not in unresolved)
+            reverse &= (left is not None or 2 not in unresolved) and (right is not None or 0 not in unresolved)
             if direct or reverse:
                 temporal = ()
                 if relation == 'implies' and all(store.location(ref) is not None for ref in (refs[0], refs[2])):
@@ -1375,24 +1453,24 @@ class ThoughtLTMCapability:
                 reference, b=row, max_records=max_records, work=work)
             return value.detached(), scanned
         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
-        from Memory import LTM0
+        from Memory import IdeaRows
         if (isinstance(reference, tuple) and len(reference) == 2
                 and reference[0] == 'sym' and type(reference[1]) is int):
-            if (isinstance(store, LTM0) and store.parts.contains(reference[1])
+            if (isinstance(store, IdeaRows) and store.parts.contains(reference[1])
                     and max_records):
                 work.require('record')
                 return store.meaning_of(reference).detached(), 1
             raise ValueError('description chain reference is unavailable within the query read limit')
         if (not isinstance(reference, tuple) or len(reference) != 3
                 or reference[0] != 'ltm' or not isinstance(reference[1], str)
-                or type(reference[2]) is not int or reference[2] in (-1, 0)):
+                or type(reference[2]) is not int or reference[2] < 0):
             raise TypeError('description argument requires an existing occurrence reference')
-        if (not isinstance(store, LTM0)
+        if (not isinstance(store, IdeaRows)
                 or store.address_domain != reference[1]):
             raise ValueError('description occurrence namespace is unavailable')
         # Description addresses are owner-given cue metadata, not a store
         # scan. A bounded direct read prepares what/exist/arma only.
-        index = store._index_occurrences.get(reference)
+        index = store.location(reference)
         if index is not None and max_records:
             work.require('record')
             value = store.meaning_of(index)
@@ -1400,12 +1478,13 @@ class ThoughtLTMCapability:
                 return value.detached(), 1
         raise ValueError('description occurrence is unavailable within the query read limit')
 
+    @_read_stream(attribute='_ThoughtLTMCapability__row')
     def query(self, pattern, *, max_records, work, references=()):
         """Read semantic content with its scope, and recall matching episodes.
 
-        A field cues episodic readings. A proposition still needs a declared
-        semantic match: episodic overlap is context, never its truth evidence.
-        Operand references retain cover/timeline scoping in that match.
+        A field cues episodic readings. A proposition takes the operated
+        extension and keeps existence, exact-content evidence and pervasion
+        distinct. Rows share one history.
         """
         from Understanding import ConceptualField
         from EpisodicMemory import query, reinstate
@@ -1941,7 +2020,7 @@ def _occurrence_description(context, reference):
             raise ValueError(
                 'thought LTM description capability returned invalid occurrence data')
         return resolved
-    from Memory import LTM0
+    from Memory import IdeaRows
     if not isinstance(context, QueryContext):
         raise TypeError('occurrence reference requires its query context')
     if isinstance(reference, tuple) and reference and reference[0] == 'thought':
@@ -1957,7 +2036,7 @@ def _occurrence_description(context, reference):
     store = context.reasoner.reasoning_store()
     if (isinstance(reference, tuple) and len(reference) == 2
             and reference[0] == 'sym' and type(reference[1]) is int):
-        if (isinstance(store, LTM0) and store.parts.contains(reference[1])
+        if (isinstance(store, IdeaRows) and store.parts.contains(reference[1])
                 and context.max_records):
             if context.work is not None:
                 context.work.require('record')
@@ -1965,15 +2044,15 @@ def _occurrence_description(context, reference):
         raise ValueError('description chain reference is unavailable within the query read limit')
     if (not isinstance(reference, tuple) or len(reference) != 3
             or reference[0] != 'ltm' or not isinstance(reference[1], str)
-            or type(reference[2]) is not int or reference[2] in (-1, 0)):
+            or type(reference[2]) is not int or reference[2] < 0):
         raise TypeError('description argument requires an existing occurrence reference')
-    if (not isinstance(store, LTM0)
+    if (not isinstance(store, IdeaRows)
             or store.address_domain != reference[1]):
         raise ValueError('description occurrence namespace is unavailable')
     for index in range(min(len(store), context.max_records)):
         if context.work is not None:
             context.work.require("record")
-        if int(store.address_keys[index]) == reference[2]:
+        if store.row_name(index) == reference[2]:
             value = store.meaning_of(index)
             if value is None:
                 raise ValueError('description occurrence metadata is unavailable')
@@ -2411,7 +2490,7 @@ class GrammaticalThoughtRegistry:
             return _concept_alloc_of(self.space).parts.contains(reference[1])
         return (len(reference) == 3 and reference[0] == 'ltm'
                 and isinstance(reference[1], str)
-                and type(reference[2]) is int and reference[2] not in (-1, 0))
+                and type(reference[2]) is int and reference[2] >= 0)
 
     def _candidate_operand(self, sources, role, kind):
         """Pick one already-held operand without executing a reader.

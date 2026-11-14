@@ -1,5 +1,6 @@
 """LTM2 has one relation, with readings supplied by native argument types."""
 import torch
+import pytest
 
 from Layers import ConceptAllocator
 from Memory import LTM1, SYMBOL, RELATION
@@ -28,7 +29,7 @@ def test_pair_rewitnesses_both_lanes_without_a_relation_kind():
     store = LTM1(16)
     first = store.add(2, 3, truth_plus=.7, truth_minus=.1)
     assert store.add(2, 3, truth_plus=.2, truth_minus=.8) == first
-    assert len(store) == 1 and store.access_count[first] == 2
+    assert len(store) == 1 and float(store.activity[first]) == pytest.approx(.6)
     torch.testing.assert_close(store.truth_plus[first], torch.tensor(.7))
     torch.testing.assert_close(store.truth_minus[first], torch.tensor(.8))
     types = {(SYMBOL, 2): {'situation'}, (SYMBOL, 3): {'situation', 'speech_individual'}}

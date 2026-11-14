@@ -4,7 +4,9 @@ import torch
 from MeaningKernels import MeaningAction
 from Memory import MediumTermMemory
 from memory_fixtures import attach, put
-from Occurrence import ADDRESS_DOMAIN
+from Memory import STM0
+
+ADDRESS_DOMAIN = STM0.address_domain
 from test_item20_round34_projection import record
 
 

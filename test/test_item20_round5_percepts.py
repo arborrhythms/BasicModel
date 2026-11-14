@@ -1,4 +1,5 @@
 """Basic percept boundaries, live reads, recurrence and fixed construction."""
+from Memory import STM0
 from types import SimpleNamespace as NS
 import torch
 import pytest
@@ -103,7 +104,7 @@ def test_recurring_basic_collection_promotes_once_without_an_order_zero_concept(
     basic, native, whole = percepts()
     owner = _cs(nS=64, dim=259)
     object.__setattr__(owner, '_basic_percepts', basic)
-    store = LTM0(259, capacity=8, percept_width=0)
+    store = STM0(259, capacity=8, percept_width=0, relation_capacity=8192)
     attach_clause_index(NS(), store, owner)
     owner.concept_mint_count = 3
     row = basic.reserve((0,), (0,), word=10)
@@ -111,7 +112,7 @@ def test_recurring_basic_collection_promotes_once_without_an_order_zero_concept(
     collection = None
     for clock in range(3):
         point = basic.code(row)
-        index = store.append_idea(point, address=301+clock, time=False)
+        index = store.append_idea(point)
         key = owner.link(Occurrence(store.occurrence_of(index), concept=('bp', row), kind='percept', order=-1), {},
             value=point, where=None, when=clock, stream=0)
         assert collection is None or key == collection

@@ -1,4 +1,5 @@
 """Before the first event, MTM reads its references' current meanings."""
+from Memory import STM0
 from types import SimpleNamespace
 
 import pytest
@@ -11,7 +12,7 @@ def _references():
     from Meaning import ConceptualMeaning
     from test_review13_subspaces import fixture, word
     owner, bank, _, _ = fixture(meaning_pairs=2)
-    store = LTM0(7, capacity=8)
+    store = STM0(7, capacity=8, relation_capacity=8192)
     owner.symbolSpace = SimpleNamespace(ltm_store=store)
     attach_clause_index(SimpleNamespace(), store, owner)
     rows = [word(owner, [(source, 1.)]) for source in (4, 7)]
@@ -23,8 +24,7 @@ def _references():
     agreeing_views(owner, *concepts)
     values = bank.lookup_rows(rows).detach()
     occurrences = [store.occurrence_of(store.append_meaning(
-        ConceptualMeaning.from_description(value), document_key='reference-values',
-        sentence_index=index, order=0)) for index, value in enumerate(values)]
+        ConceptualMeaning.from_description(value))) for index, value in enumerate(values)]
     key = owner.mtm.named(concepts[0], value=values[0])
     owner.mtm.bind(key, occurrences[0], kind=None, when=0,
                    value=values[0], reading=concepts[0])
@@ -82,7 +82,7 @@ def test_identity_with_an_event_reads_its_retained_idea():
     held = before.clone()
     start = bank.mereology.percept_event_width
     held[start:] = torch.tensor([.1, .3, .5, .7])
-    event = store.occurrence_of(store.append_idea(held, time=False))
+    event = store.occurrence_of(store.append_idea(held))
     pool.event(key, event, verb=concepts[1], role=0, when=1, before=before)
     _move(bank, rows)
     assert not torch.equal(bank.lookup_rows([rows[0]])[0, start:], held[start:])
@@ -94,7 +94,7 @@ def test_first_event_keeps_the_computed_forward_operand_only():
     _move(bank, rows)
     before = owner.mtm.value_of(key).clone()
     start = bank.mereology.percept_event_width
-    event = store.occurrence_of(store.append_idea(before, time=False))
+    event = store.occurrence_of(store.append_idea(before))
     owner.mtm.event(key, event, verb=concepts[1], role=0, when=1, before=before)
     bank.mereology.placement[rows[0]].zero_()
     bank.mereology.placement_dirty[rows[0]] = True
@@ -123,12 +123,12 @@ def test_event_on_alternative_reads_each_timelines_own_member():
     pool = owner.mtm
     _move(bank, rows)
     expected = pool.value_of(key).clone()
-    actual = store.occurrence_of(store.append_idea(expected, time=False))
+    actual = store.occurrence_of(store.append_idea(expected))
     pool.event(key, actual, verb=concepts[1], role=0, when=1, before=expected)
     branch = pool.alternative(key, when=1)
     alternative = expected.clone()
     alternative[bank.mereology.percept_event_width:] = .9
-    other = store.occurrence_of(store.append_idea(alternative, time=False))
+    other = store.occurrence_of(store.append_idea(alternative))
     pool.event(key, other, verb=concepts[1], role=0, when=2, timeline=branch, before=expected)
     bank.mereology.placement[rows].zero_()
     bank.mereology.placement_dirty[rows] = True

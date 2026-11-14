@@ -44,9 +44,9 @@ def index_part_row(cs, part, whole):
     if part_ref == whole_ref:
         return whole_ref[1]
     part_order = (alloc.order_of(part_ref[1]) if part_ref[0] == SYMBOL
-                  else cs._concept_source_order(part_ref[1]))
+                  else cs._concept_source_order(part_ref))
     whole_order = (alloc.order_of(whole_ref[1]) if whole_ref[0] == SYMBOL
-                   else cs._concept_source_order(whole_ref[1]))
+                   else cs._concept_source_order(whole_ref))
     base = alloc.relate_idx.get(('part-base', whole_ref[1])) if whole_ref[0] == SYMBOL else None
     if base is not None and part_order == whole_order - 1:
         # A later member joins the witnessed equivalence class. Naming its

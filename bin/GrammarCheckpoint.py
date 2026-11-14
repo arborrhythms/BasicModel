@@ -62,8 +62,7 @@ def align(model, state, old):
             if int(result.get(name+'.truth_schema', -1)) != int(module.truth_schema):
                 prefix = name+'.'
                 obsolete = [k[len(prefix):] for k in result if k.startswith(prefix)
-                            and '.' not in k[len(prefix):] and k not in live
-                            and k[len(prefix):] not in module.addressing._buffers]
+                            and '.' not in k[len(prefix):] and k not in live]
                 column = obsolete[0] if obsolete else 'truth_schema'
                 raise ValueError(f'pre-layout LTM checkpoint column {column}; replay its producing lesson')
     from Language import MarkerUnaryLayer

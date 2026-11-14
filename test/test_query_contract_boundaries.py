@@ -1,4 +1,5 @@
 """A thought operator's declared limits and payload contracts hold on reads."""
+from Memory import STM0
 from dataclasses import replace
 from types import SimpleNamespace
 
@@ -13,24 +14,30 @@ from test_cs_symbol_table import _cs
 from test_query_vp_boundaries import _context, _signature
 
 
-def test_query_limits_native_content_reads_and_reports_incompleteness(monkeypatch):
-    store = LTM0(8, percept_width=0)
+def test_explicit_addresses_bound_decoding_without_establishing_content_match(monkeypatch):
+    store = STM0(8, percept_width=0, capacity=1024, relation_capacity=8192)
     meaning = ConceptualMeaning.from_description(torch.ones(8))
     for strength in (0.2, 0.8):
-        store.append_meaning(meaning, trust=strength, sentence_index=len(store))
+        store.append_meaning(meaning, trust=strength)
     rows = []
     original = store.row
     def read(index):
         rows.append(index)
         return original(index)
     monkeypatch.setattr(store, 'row', read)
+    references = tuple(store.occurrence_of(i) for i in (1, 0))
+    one = store.cued_rows(meaning, references=references, max_records=1)
+    assert rows == [1] and one['records_scanned'] == 1
+    assert len(one['value']) == 1 and not one['incomplete']
+    rows.clear()
+    both = store.cued_rows(meaning, references=references, max_records=2)
+    assert rows == [1, 0] and both['records_scanned'] == 2
+    assert both['value'][1]['trust'] == pytest.approx(.2)
+    assert all(row['match'] == 0 for row in both['value'])
+    # An address grants a read; without an entry it establishes no field match.
     context = replace(_context(_cs(), store=store, max_records=1),
-        operand_references=tuple(('argin1', store.occurrence_of(i)) for i in (1, 0)))
-    result = _signature('query', 'argin1').invoke(context, replace(meaning))
-    assert rows == [1, 0]  # Given candidates are scored independently of returned K.
-    assert result['value'][0]['trust'] == pytest.approx(0.2)
-    assert result['records_scanned'] == 2
-    assert len(result['value']) == 1 and not result['incomplete']
+        operand_references=tuple(('argin1', reference) for reference in references))
+    assert _signature('query', 'argin1').invoke(context, meaning)['value'] == ()
 
 
 def test_zero_budget_does_not_fetch_a_named_concept_payload(monkeypatch):
@@ -54,23 +61,21 @@ def test_nonfinite_native_concept_atom_fails_instead_of_becoming_identity_eviden
             context, ('sym', concept), ('sym', concept))
 
 
-def test_unified_query_returns_complete_record_and_does_not_admit_observation():
-    store = LTM0(8, percept_width=0)
+def test_addressed_end_read_returns_complete_content_without_another_occurrence():
+    store = STM0(8, percept_width=0, capacity=1024, relation_capacity=8192)
     meaning = ConceptualMeaning.from_description(torch.eye(8)[0])
-    roles = meaning.roles
-    row = store.append_meaning(meaning, kind='observation', trust=0.9, sentence_index=len(store))
+    row = store.append_meaning(meaning, trust=.9)
     context = replace(_context(_cs(), store=store),
         operand_references=(('argin1', store.occurrence_of(row)),))
-    found = _signature('query', 'argin1').invoke(context, replace(meaning))
-    assert found['result_kind'] == 'set'
-    assert found['evidence_kind'] == 'retrieval'
-    assert len(found['value']) == 1
-    torch.testing.assert_close(found['value'][0]['meaning'].roles, roles)
-    assert found['value'][0]['occurrence'] == store.occurrence_of(row)
-    assert found['value'][0]['kind'] == 'observation'
-    assert found['support_true'] == pytest.approx(.9)  # signed ingestion trust is the pair
+    found = _signature('isTrue', 'argin1').invoke(context, replace(meaning))
+    torch.testing.assert_close(found['meaning'].roles, meaning.roles)
+    assert found['occurrence'] == store.occurrence_of(row)
+    assert found['support_true'] == pytest.approx(.9)
     assert found['support_false'] == 0
     assert len(store) == 1
+    # The closed content question has no stored extension to read here.
+    queried = _signature('query', 'argin1').invoke(context, replace(meaning))
+    assert queried['value'] == () and queried['support_true'] == queried['support_false'] == 0
 
 
 @pytest.mark.parametrize('declarations', [17, ['isPart(X,Y)', 'isPart(A,B)'], [None], ['isPart(X,,Y)']])

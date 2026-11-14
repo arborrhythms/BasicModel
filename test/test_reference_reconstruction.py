@@ -28,8 +28,15 @@ def sentence_cost(resolver, plans, *, active=None, enabled=True):
     from Models import BasicModel
     root = resolver.policy.new_zeros(len(plans), 12)
     active = torch.ones(len(plans), dtype=torch.bool) if active is None else active
-    record = SimpleNamespace(primed=SimpleNamespace(meaning_start=None),percept_expected=None)
-    observation = dict(reference_plans=plans, entries=(None,)*len(plans), meanings=(None,)*len(plans))
+    from SentenceUnderstanding import SentenceUnderstanding
+    from Understanding import ConceptualField
+    empty = ConceptualField(torch.empty(0, dtype=torch.long), root.new_zeros(0,len(plans),1,2),
+        torch.zeros(len(plans),1,2,dtype=torch.long), torch.zeros(len(plans),1,2,dtype=torch.long), None)
+    record = SentenceUnderstanding(root,root[:,None].expand(-1,3,-1),active.long(),root[:,None],
+        active[:,None].long(),root[:,None],torch.zeros(len(plans),1,dtype=torch.long),
+        active[:,None],SimpleNamespace(meaning_start=None),torch.tensor(0),open_field=empty)
+    observation = dict(reference_plans=plans, entries=(None,)*len(plans),
+        clauses=(None,)*len(plans), meanings=(None,)*len(plans))
     model = SimpleNamespace(reconstruct_in_loop=True, _sentence_reconstruction=enabled,
         loss=SimpleNamespace(reconstruction_scale=7.),
         inter_loss_weight=0., symbolSpace=SimpleNamespace(expectation=None),
@@ -138,7 +145,7 @@ def test_named_token_keeps_its_content_before_and_after_the_close():
         assert bindings(child.meaning)['_forward_references'] == ((0, word),)
         assert ('referent', 0) in open_slots(child.meaning)
     written = {}
-    row = store.write_clause(kept, document_key='r10', sentence_index=0, written_rows=written)
+    row = store.write_clause(kept,   written_rows=written)
     assert owner.mtm.entries == pool
     retained = snapshot(resolver)
     resolver.commit(same, row, written, document='r10', position=0, training=False)
@@ -231,7 +238,7 @@ def test_multileaf_bound_root_keeps_its_own_occurrence():
     # §52 item110: binding keeps the antecedent, but a multi-leaf phrase
     # reads its own occurrence rather than substituting its head's carrier.
     written = {}
-    row = store.write_clause(kept, document_key='carriers', sentence_index=1,
+    row = store.write_clause(kept,
                              written_rows=written)
     occurrence = written['root_mention']
     assert occurrence != antecedent

@@ -49,10 +49,9 @@ class TestTrustStamp(unittest.TestCase):
         self.assertAlmostEqual(m.trust, 1.0, places=6)
         self.assertAlmostEqual(
             getattr(m.conceptualSpace, "_trust", 1.0), 1.0, places=6)
-        self.assertAlmostEqual(
-            m._effective_incoming_trust(0.8), 0.8, places=6)
+        self.assertAlmostEqual(m.conceptualSpace._incoming_trust_multiplier(), 1., places=6)
 
-    def test_config_trust_stamps_cs_and_scales_incoming(self):
+    def test_config_trust_stamps_cs_training_multiplier(self):
         with open(_CONFIG, "r", encoding="utf-8") as fh:
             src = fh.read()
         self.assertIn("<conceptLayers>1</conceptLayers>", src)
@@ -71,9 +70,7 @@ class TestTrustStamp(unittest.TestCase):
             self.assertAlmostEqual(
                 getattr(m.conceptualSpace, "_trust", 1.0), 0.25, places=6)
             self.assertAlmostEqual(
-                m._effective_incoming_trust(0.8), 0.2, places=6)
-            self.assertAlmostEqual(
-                m._effective_incoming_trust(-0.8), -0.2, places=6)
+                m.conceptualSpace._incoming_trust_multiplier(), 0.25, places=6)
         finally:
             os.remove(tmp)
 
@@ -293,8 +290,7 @@ class TestRelativeTrustPersistence(unittest.TestCase):
     def test_evidence_and_unscaled_argument_identity_survive_checkpoint(self):
         st=_store();edge=part(st,_v(1,1),_v(0,0,1),evidence=(.7,.2))
         state=st.parts.state_dict()
-        self.assertEqual(set(state),{'layout_version','ref_kinds','refs','truth_plus','truth_minus','access_count','surprise','sentence_reference','count',
-                                    'operator_reference','operation_seat','_extra_state'})
+        self.assertEqual(set(state),{'layout_version','ref_kinds','refs','truth_plus','truth_minus','activity','count'})
         fresh=_store();same=part(fresh,_v(1,1),_v(0,0,1),evidence=(0.,0.))
         self.assertEqual(same,edge)
         fresh.parts.load_state_dict(state)

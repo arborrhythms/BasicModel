@@ -78,14 +78,6 @@ def test_word_reference_reader_rejects_reshaped_stale_presences():
         BasicModel._answer_leaf_slab(model, torch.zeros(2, 2, dtype=torch.long))
 
 
-def test_taxonomy_resize_cannot_reassign_live_priming_to_new_batch():
-    from Language import Taxonomy
-    tax = Taxonomy()
-    tax.allocate_priming(1, 4, 4)
-    tax.prime([1], batch=0)
-    with pytest.raises(ValueError, match='priming.*batch|batch.*priming'):
-        tax.allocate_priming(2, 4, 4)
-    assert tax._priming.shape == (1, 4)
 
 
 @pytest.mark.parametrize('reader', ['_recall_sentence_history'])
@@ -159,26 +151,6 @@ def test_program_reader_rejects_stale_reference_columns_even_with_empty_program(
             torch.zeros(2, 2), torch.zeros(2, 2), torch.zeros(2, 2), torch.zeros(2, 3, 4))
 
 
-def test_rejected_taxonomy_resize_does_not_partially_resize_its_owner():
-    from Language import SymbolSubSpace, Taxonomy
-    tax = Taxonomy()
-    tax.allocate_priming(1, 4, 4)
-    tax.prime([1], batch=0)
-    resized = []
-    owner = SimpleNamespace(batch=1, taxonomy=tax,
-        _knowledge=SimpleNamespace(_parent=torch.zeros(4), n_refs_live=4),
-        _last_svo=torch.zeros(1, 3, 4), _svo_valid=torch.ones(1, dtype=torch.bool), svo_dim=4,
-        category_stack=SimpleNamespace(ensure_batch=resized.append),
-        reconstruction_stack=SimpleNamespace(ensure_batch=resized.append),
-        _ensure_stm_batch=resized.append)
-    with pytest.raises(ValueError, match='priming.*batch'):
-        SymbolSubSpace.ensure_batch(owner, 2)
-    assert owner.batch == 1 and owner._last_svo.shape == (1, 3, 4)
-    assert resized == []
-    tax.reset()
-    SymbolSubSpace.ensure_batch(owner, 2)
-    assert owner.batch == 2 and tax._priming.shape == (2, 4)
-    assert tax._priming.eq(1).all()
 
 
 def test_recall_batch_shape_cannot_change_before_reset():

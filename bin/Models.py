@@ -190,11 +190,9 @@ def _append_observed_meaning(store, clause, *, trust=0.0, expectation=None, stre
         bindings(clause.meaning).get('_open_references', ()), pair=clause.evidence)
     source_clause = clause
     clause = replace(clause, meaning=meaning)
-    opened = (bool(bindings(meaning).get('_open_references')) or
-              (clause.relation is not None and any(ref in (-1, 0) for ref in clause.refs)))
-    kind = ('question' if opened else 'unverified' if tuple(clause.evidence) == (0., 0.) else 'observation')
-    result = store.write_clause(clause, trust=trust, kind=kind, stream=stream,
-        evidence=clause.evidence, expectation=expectation, written_rows=written_rows, episode=episode)
+    result = store.write_clause(clause, trust=trust, stream=stream,
+        evidence=clause.evidence, surprise=-1. if expectation is None else expectation.surprise_for(clause.meaning),
+        written_rows=written_rows, episode=episode)
     if written_rows is not None:
         written_rows[id(source_clause)] = result
         for name in ('symbol', 'symbols', 'activations', 'occurrence'):
@@ -1624,17 +1622,6 @@ class BaseModel(Mereology, nn.Module):
             out = float(default)
         return max(0.0, min(1.0, out))
 
-    def _effective_incoming_trust(self, trust):
-        """Signed incoming DoT scaled by the model's testimony trust."""
-        try:
-            raw = float(trust)
-        except (TypeError, ValueError):
-            raw = 0.0
-        if not math.isfinite(raw):
-            raw = 0.0
-        scale = self._unit_interval(getattr(self, 'trust', 1.0), default=1.0)
-        return max(-1.0, min(1.0, raw * scale))
-
     @staticmethod
     def _resolve_dim(section, prev_dim):
         """Resolve a Space's nDim sentinel: 0 -> inherit ``prev_dim``.
@@ -2232,14 +2219,8 @@ class BaseModel(Mereology, nn.Module):
 
         self.ltm_consolidation = True
 
-        # Stateless server (mirrors WikiOracle's server.stateless; the
-        # shipped deployment runs --stateless). Default TRUE: the runtime
-        # request-body TruthSet (``store_truths``, ORIGIN_USER rows) is
-        # request-scoped, so on every state_dict load the consolidated LTM
-        # is revived WITHOUT the user rows (config-provisioned + conversation
-        # rows persist) and the TruthLayer view is rematerialized -- see
-        # ``SymbolSubSpace._revive_ltm_post_load``. Set false for a stateful
-        # deployment where a saved checkpoint's user rows are durable state.
+        # Serving lifecycle preference. Checkpoint restoration preserves
+        # every retained claim; it withdraws no previously supplied truths.
         self.stateless = bool(TheXMLConfig.get(
             "architecture.stateless", default=True))
 
@@ -4030,7 +4011,7 @@ class BaseModel(Mereology, nn.Module):
         conceptual = {}
         for i, cs in enumerate(list(
                 getattr(self, "conceptualSpaces", None) or ())):
-            entry = {}
+            entry = {"mtm": cs.mtm.state()}
             alloc = getattr(cs, "_concept_allocator", None)
             if alloc is not None:
                 a = {"next_id": int(getattr(alloc, "next_id", 1))}
@@ -4063,10 +4044,6 @@ class BaseModel(Mereology, nn.Module):
                 a["layers"] = layers
                 a["construction"] = dict(relation_capacity=alloc.parts.capacity,
                     equality_witness_shape=list(alloc.singleton_values.shape))
-                if hasattr(alloc, '_epoch_singletons'):
-                    a["epoch_singletons"] = _checkpoint_host_copy(alloc._epoch_singletons)
-                a["epoch_relations"] = _checkpoint_host_copy((alloc.parts.epoch_start,
-                    alloc.parts.epoch_handles, alloc.parts._vacant_epoch_handles))
                 a["part_store"] = _checkpoint_host_copy(alloc.parts.state_dict())
                 entry["allocator"] = a
             attrs = {
@@ -4076,10 +4053,6 @@ class BaseModel(Mereology, nn.Module):
             }
             if attrs:
                 entry["attributes"] = attrs
-            if hasattr(cs, '_epoch_mtm'):
-                entry['epoch_mtm'] = _checkpoint_host_copy(cs._epoch_mtm)
-                if getattr(self, '_checkpoint_corpus_cursor', None) is None:
-                    entry['last_epoch_mtm'] = _checkpoint_host_copy(cs.mtm.state())
             interpretation = cs.__dict__.get('_interpret_operator')
             if interpretation is not None and interpretation._pending:
                 entry['pending_definitions'] = {
@@ -4143,24 +4116,15 @@ class BaseModel(Mereology, nn.Module):
             if entry:
                 wholes[int(i)] = entry
 
-        truth_semantics = {
-            name: module.semantic_extras()
-            for name, module in self.named_modules()
-            if isinstance(module, LTM0)
-        }
         memory = getattr(getattr(self, "symbolSpace", None), "what_memory", None)
         what_history = (memory.thought_extras() if memory is not None
                         and any(memory._what_slots) else None)
-        if not conceptual and not wholes and not truth_semantics and what_history is None:
+        if not conceptual and not wholes and what_history is None:
             return None
         return {
             "version": 3,
             "conceptual_spaces": conceptual,
             "whole_properties": wholes,
-            "truth_semantics": truth_semantics,
-            "epoch_rows": {name: _checkpoint_host_copy(module._epoch_rows)
-                           for name, module in self.named_modules()
-                           if isinstance(module, LTM0) and hasattr(module, '_epoch_rows')},
             "what_history": what_history,
         }
 
@@ -4215,17 +4179,9 @@ class BaseModel(Mereology, nn.Module):
 
         if "part_store" in saved:
             alloc.parts.load_state_dict(saved["part_store"])
-        if "epoch_singletons" in saved:
-            alloc._epoch_singletons = _checkpoint_host_copy(saved["epoch_singletons"])
-        else:
-            alloc.__dict__.pop('_epoch_singletons', None)
-        # Full checkpoints validate the epoch envelope before this helper.
-        # Partial allocator imports can update only the supplied structure.
-        if "epoch_relations" in saved:
-            epoch_start, handles, vacant = saved["epoch_relations"]
-            alloc.parts.epoch_start = _checkpoint_host_copy(epoch_start)
-            alloc.parts.epoch_handles = set(handles)
-            alloc.parts._vacant_epoch_handles = list(vacant)
+        for retired in ('epoch_singletons','epoch_relations'):
+            if retired in saved:
+                warnings.warn('checkpoint: discarded retired presentation history '+retired)
 
         next_id = int(saved.get("next_id", 1) or 1)
         known_ids = {0}
@@ -4362,8 +4318,6 @@ class BaseModel(Mereology, nn.Module):
 
         conceptual_spaces = list(
             getattr(self, "conceptualSpaces", None) or ())
-        from PresentationMemory import validate_checkpoint
-        validate_checkpoint(self, extras)
         entries = []
         for raw_i, entry in (extras.get("conceptual_spaces") or {}).items():
             i = int(raw_i)
@@ -4378,10 +4332,12 @@ class BaseModel(Mereology, nn.Module):
             if isinstance(alloc_blob, dict):
                 self._restore_allocator_extras(cs, alloc_blob)
         for cs, entry in entries:
-            if 'epoch_mtm' in entry:
-                cs._epoch_mtm = _checkpoint_host_copy(entry['epoch_mtm'])
+            if 'mtm' in entry:
+                cs.mtm.restore(entry['mtm'], device=cs.similarity_codebook.W.device)
             if 'last_epoch_mtm' in entry:
                 cs.mtm.restore(entry['last_epoch_mtm'], device=cs.similarity_codebook.W.device)
+            if 'epoch_mtm' in entry:
+                warnings.warn('checkpoint: discarded retired initial MTM history')
             pending = entry.get('pending_definitions') or {}
             if pending or hasattr(cs, 'interpret'):
                 cs.interpret._pending = _checkpoint_host_copy(pending.get('words', {}))
@@ -4488,15 +4444,8 @@ class BaseModel(Mereology, nn.Module):
             warnings.warn('Dropping retired WholeSpace word and META structure (§11.4).', UserWarning)
 
         modules = dict(self.named_modules())
-        for name, saved in (extras.get("truth_semantics") or {}).items():
-            store = modules.get(name)
-            if not isinstance(store, LTM0):
-                raise ValueError(f"checkpoint truth store {name!r} is not present")
-            store.load_semantic_extras(saved)
-            store._epoch_rows = _checkpoint_host_copy((extras.get("epoch_rows") or {}).get(name))
-            from PresentationMemory import import_checkpoint_observations, import_episode_state
-            import_episode_state(self, store)
-            import_checkpoint_observations(store, envelope_version=version)
+        from MemoryCheckpoint import finish_legacy
+        remap = finish_legacy(self, extras)
 
         for cs in conceptual_spaces:
             if cs.__dict__.pop('_legacy_definition_bindings', None) is not None:
@@ -4511,9 +4460,7 @@ class BaseModel(Mereology, nn.Module):
             memory = getattr(getattr(self, "symbolSpace", None), "what_memory", None)
             if memory is None:
                 raise ValueError("checkpoint thought history has no interaction memory owner")
-            for module in modules.values():
-                if isinstance(module, LTM0):
-                    what_history = module.remap_legacy_references(what_history)
+            what_history = remap(what_history)
             memory.load_thought_extras(what_history)
 
         # The state_dict post-hook can only withdraw request authority: this is
@@ -4636,8 +4583,11 @@ class BaseModel(Mereology, nn.Module):
             TheMessage(f"[{self.name}] Dropped retired decomposition chooser checkpoint key {key}; "
                        "the fixed joint residual argmin is unchanged.")
 
-        from PresentationMemory import validate_checkpoint
-        validate_checkpoint(self, structural_extras, state=state)
+        from MemoryCheckpoint import prepare
+        prepare(self, state)
+        from GrammarConceptCheckpoint import prepare as prepare_grammar_concepts
+        concept_drift, concept_transforms = prepare_grammar_concepts(
+            self, state, structural_extras, vocab_extras)
 
         percept_state = training_state.get('percept_expectation')
         if percept_state is None:
@@ -4675,6 +4625,8 @@ class BaseModel(Mereology, nn.Module):
         from GrammarCheckpoint import align, align_optimizer
         state, self._checkpoint_grammar_drift, grammar_transforms = align(
             self, state, saved.get('grammar_catalog', grammar_catalog))
+        self._checkpoint_grammar_drift.update(concept_drift)
+        grammar_transforms.update(concept_transforms)
         optimizer_state, optimizer_manifest = align_optimizer(
             optimizer_state, optimizer_manifest, grammar_transforms, state)
         if self._checkpoint_grammar_drift:
@@ -4702,7 +4654,8 @@ class BaseModel(Mereology, nn.Module):
                     ensure_prior(module)
             migrate = getattr(type(module), "migrate_generate_checkpoint", None)
             if migrate is not None:
-                generate_rows.update(migrate(module, state, name + "."))
+                generate_rows.update(migrate(module, state, name + ".",
+                    grammar_catalog=saved.get('grammar_catalog', grammar_catalog)))
         self._pending_generate_policy_rows = generate_rows
         # data/BasicModel.ckpt still carries the retired reverse student's
         # twelve parameter keys. Retain this one-way state/optimizer migration;
@@ -5192,20 +5145,11 @@ class BaseModel(Mereology, nn.Module):
                 return False
             TheMessage("\n".join(lines))
 
-        # The registered post-load hook belongs to SymbolSubSpace. Space's
-        # attribute forwarding reads that owner but does not forward writes.
-        symbol_owner = getattr(getattr(self, "symbolSpace", None), "subspace", None)
-        previous_defer = getattr(symbol_owner, "_defer_ltm_pruning", False)
-        if symbol_owner is not None and structural_extras is not None:
-            symbol_owner._defer_ltm_pruning = True
         try:
             self.load_state_dict(state, strict=strict)
         except RuntimeError as e:
             TheMessage(f"[{self.name}] Warning: cannot load {path}: {e}")
             return False
-        finally:
-            if symbol_owner is not None:
-                symbol_owner._defer_ltm_pruning = previous_defer
 
         if unexpected:
             TheMessage(
@@ -6082,6 +6026,9 @@ class BasicModel(BaseModel):
                 action=index))
         return actions[index]
 
+    from MemoryActivity import trial_activity as _trial_activity, read_stream as _read_stream
+    @_trial_activity(commit=True)
+    @_read_stream('row')
     def run_selected_thought(self, meaning, *, row=0, work_budget=32,
                              registry=None, work=None):
         """One completed field, one grammar chooser and shared bounded work."""
@@ -7004,7 +6951,26 @@ class BasicModel(BaseModel):
             form_wholes=candidate_wholes(self.wholeSpace, self._sentence_primed_bank, owner=owner))
         self._sentence_priming_written = True
 
-    def store_truths(self, entries, *, source_key='user-truths'):
+    @torch.no_grad()
+    def _describe_claim(self, store, row):
+        from WalkTrials import ThoughtTrialState
+        from MemoryActivity import trial_activity
+        from OutputOccurrences import realize
+        @trial_activity()
+        def read():
+            before = ThoughtTrialState(self)
+            try:
+                point = store.slots[row].detach()[None,None]
+                generated = self.generate(point, structure=None,
+                    occupied=torch.ones(point.shape[:2],device=point.device,dtype=torch.bool),
+                    infix_rows=(False,),walk_options=None,prepared=None,
+                    references=((store.referent_of(row),),))
+                return generated.texts(realize(self, generated).materialize())[0]
+            finally:
+                before.restore()
+        return read()
+
+    def store_truths(self, entries):
         """Parse externally trusted user assertions through the clause closing."""
         truth_layer = getattr(self.symbolSpace, 'truth_layer', None) if self.symbolSpace is not None else None
         if truth_layer is None:
@@ -7020,14 +6986,14 @@ class BasicModel(BaseModel):
             if trust is None:
                 continue
             texts.append(text)
-            trusts.append(self._effective_incoming_trust(trust))
+            trusts.append(float(trust))
         if not texts:
             return
 
         ltm_store = getattr(self.symbolSpace, 'ltm_store', None)
         if ltm_store is None:
             raise RuntimeError('TruthSet ingestion requires the clause row store')
-        self._store_truths_into_ltm(ltm_store, truth_layer, texts, trusts, source_key=source_key)
+        self._store_truths_into_ltm(ltm_store, truth_layer, texts, trusts)
 
         # 5. Run the consistency report and cache any clarification
         # messages on the model for the serve layer to expose.
@@ -7053,38 +7019,14 @@ class BasicModel(BaseModel):
             self._last_truth_assessment = None
 
     @torch.no_grad()
-    def _store_truths_into_ltm(self, store, truth_layer, texts, trusts, *, source_key='user-truths'):
-        """``store_truths``' consolidated arm: land the user TruthSet in
-        the unified LTM and rebuild the TruthLayer view.
-
-        Ordering: the lazy XML provisioning fires FIRST (mirroring the
-        runEpoch trigger) so provisioned rows keep the earliest ticks even
-        when the first thing a served model does is ingest a user
-        TruthSet. Then previous ``ORIGIN_USER`` rows are compacted out
-        (replace-on-resubmit), the texts run through the real forward
-        (rows land at the sentence boundary), each landed row gets its effective DoT +
-        user origin + source text, and the view is rematerialized."""
+    def _store_truths_into_ltm(self, store, truth_layer, texts, trusts):
+        """Append supplied claims, preserving their stated trust."""
         if not getattr(self, '_ltm_provisioned', True):
             self._ltm_provisioned = True
-            # Skip provisioning when the store already carries its XML
-            # truthSet: ``_ltm_provisioned`` is a transient attribute (not in
-            # the state_dict), so a LOADED checkpoint that was provisioned
-            # before saving comes back with the flag reset -- re-provisioning
-            # would duplicate those rows (they survive a stateless reload).
-            already = len(store.rows_of_origin(store.ORIGIN_PROVISIONED)) > 0
-            if not already:
-                self.provision_ltm()
-        memory = getattr(getattr(self, 'symbolSpace', None), 'what_memory', None)
-        namespace = store.address_domain
-        roots = (memory.retained_ltm_occurrences(namespace)
-                 if memory is not None else ())
-        from Occurrence import document_digest
-        incoming = {(document_digest(('ingestion', source_key, index)), text)
-                    for index, text in enumerate(texts)}
-        preserve = [int(store.address_keys[row]) for row in range(len(store))
-                    if (bytes(store.document_keys[row].tolist()), store.text_of(row)) in incoming]
-        store.clear_origin(store.ORIGIN_USER, retained_occurrences=roots, preserve_addresses=preserve)
-        self._ltm_ingest_truth_texts(store, texts, trusts=trusts, origin=store.ORIGIN_USER, source_key=source_key)
+            self.provision_ltm()
+        from Forgetting import serving_pass
+        serving_pass(self)
+        self._ltm_ingest_truth_texts(store, texts, trusts=trusts)
         truth_layer.sync_from_ltm()
 
     # -- LTM consolidation: XML TruthSet provisioning ------------------
@@ -7092,7 +7034,7 @@ class BasicModel(BaseModel):
     def provision_ltm(self):
         """Read the configured text assertions through the sentence driver.
 
-        Each text supplies only external trust, origin and source text. Its
+        Each text supplies its external trust. Its
         trained grammar selects an idea or relation and the writer preserves
         that actual end state. An untrained chooser is not a provisioning
         mechanism for relation fixtures (§11.5 of the two-truths spec).
@@ -7113,7 +7055,7 @@ class BasicModel(BaseModel):
             return 0
         if isinstance(entries, dict):           # singleton un-listed by parser
             entries = [entries]
-        # TruthSet supplies plain text and provenance, never grammar.
+        # TruthSet supplies plain text and trust.
         texts, trusts = [], []
         for ent in entries:
             if not isinstance(ent, dict):
@@ -7123,8 +7065,7 @@ class BasicModel(BaseModel):
             if not text:
                 continue
             try:
-                trust = self._effective_incoming_trust(
-                    ent.get('trust', 0.0) or 0.0)
+                trust = float(ent.get('trust', 0.0) or 0.0)
             except (TypeError, ValueError):
                 trust = 0.0
             texts.append(text)
@@ -7134,8 +7075,7 @@ class BasicModel(BaseModel):
 
         n_before = len(store)
         try:
-            self._ltm_ingest_truth_texts(store, texts, trusts=trusts,
-                origin=store.ORIGIN_PROVISIONED)
+            self._ltm_ingest_truth_texts(store, texts, trusts=trusts)
         finally:
             # Provisioning is outside the live interaction. Reading the
             # truths creates temporary what context as well as durable rows.
@@ -7144,7 +7084,7 @@ class BasicModel(BaseModel):
                 memory.Reset(hard=True)
         return max(0, len(store) - n_before)
 
-    def _ltm_ingest_truth_texts(self, store, texts, *, trusts=None, origin=None, source_key='configured-truths'):
+    def _ltm_ingest_truth_texts(self, store, texts, *, trusts=None):
         """Understand each external assertion through the ordinary sentence closing.
 
         Registration writes child clauses without assertion authority. Only
@@ -7181,8 +7121,8 @@ class BasicModel(BaseModel):
         try:
             with sequence:
                 for source_index, (text, trust) in enumerate(zip(texts, trusts)):
-                    with store.clause_assertions(trust=trust, origin=origin, text=text) as rows:
-                        with torch.no_grad(), self._runtime_batch([text], document_keys=[('ingestion', source_key, source_index)]):
+                    with store.clause_assertions(trust=trust) as rows:
+                        with torch.no_grad(), self._runtime_batch([text]):
                             from What import What
                             inp = self.inputSpace.prepInput(list(self.data.train_input))
                             self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',
@@ -7229,7 +7169,12 @@ class BasicModel(BaseModel):
                 "training/inference is IR-only; for sentence-level "
                 "generation use BasicModel.generate_sentence (Phase 4)."
             )
-        result = self._infer_ir(text, document_key=document_key)
+        previous = self.__dict__.get('_conversation_read', False)
+        self._conversation_read = True
+        try:
+            result = self._infer_ir(text, document_key=document_key)
+        finally:
+            self._conversation_read = previous
         if not self.stateless:
             self._forget_document_boundary = True
             self._forget_all_streams_closed = True
@@ -9673,8 +9618,14 @@ class BasicModel(BaseModel):
         return list({id(p): p for p in params}.values())
 
     def generate(self, idea, *, structure, occupied, infix_rows, walk_options, prepared, when=None,
-                 references=()):
+                 references=(), work=None):
         """System 2 emits terminals; the occurrence writer supplies order zero."""
+        budget = self._walk_budget()
+        if work is not None:
+            streams = max(1, int(occupied.any(-1).sum()))
+            budget = min(budget, work.remaining // streams)
+            if budget == 0:
+                work.require('generate', streams)
         if prepared is not None:
             object.__setattr__(self, '_answer_attention_obs', prepared.attention)
             if prepared.with_grad or not torch.is_grad_enabled():
@@ -9691,7 +9642,6 @@ class BasicModel(BaseModel):
         # A prepared answer may be trained after a no-grad capture,
         # without entering forward/runBatch's anchor setup first.
         _ensure_grad_anchors(idea.device, (idea.dtype,))
-        budget = self._walk_budget()
         from Generative import walk_bank
         bank = (prepared.bank if prepared is not None else
                 walk_bank(self, idea, None if structure is None else structure.primed))
@@ -9728,6 +9678,8 @@ class BasicModel(BaseModel):
                 structural_context=structure is not None,
                 **dict(walk_options or {},return_trace=True)))
         walk, emitted_references = walk
+        if work is not None:
+            work.require('generate', int((walk[4] >= 0).sum()))
         words,n_emitted,output_truncated,policy_cost=walk[:4]
         alternatives=(walk[5] if (walk_options or {}).get('return_candidates')
                       else torch.zeros_like(walk[4],dtype=torch.bool))
@@ -9748,6 +9700,7 @@ class BasicModel(BaseModel):
             when = words.new_tensor((tick, tick + 1), dtype=torch.long)[None, None]
         return generated(self, words, n_emitted, output_truncated, bank,
                          self._last_output_walk_trace, when=when,
+                         depths=occupied.long().sum(-1),
                          references=tuple(tuple(reference_table[index] for index in row)
                                           for row in emitted_references.tolist()))
 
@@ -10901,7 +10854,7 @@ class BasicModel(BaseModel):
         self.trainLosses = trainLosses
         self.testLosses  = testLosses
         return accuracy
-    
+
     BatchResult = namedtuple('BatchResult', [
         'outputPred', 'symbols', 'lossOut', 'lossIn', 'inputPred', 'forwardInput',
     ])
@@ -13757,10 +13710,6 @@ class BasicModel(BaseModel):
             if torch.is_tensor(depth) and depth.numel():
                 stm._max_depth_host = int(depth.max().item())
         if any(getattr(self, '_thought_document_ends', ())):
-            from DocumentCover import end_document
-            for stream, ended in enumerate(self._thought_document_ends):
-                if ended:
-                    end_document(self, stream)
             self._forget_document_boundary = True
             self._forget_all_streams_closed = all(self._thought_document_ends)
             self._forget_training = bool(getattr(self, '_sentence_training', False))
@@ -13882,10 +13831,13 @@ class BasicModel(BaseModel):
     def _advance_when_time(self):
         """Advance the one clock for a sentence or newly deposited thought."""
         from RowTime import HORIZON
-        if self.present() >= HORIZON:
+        store = getattr(getattr(self, 'symbolSpace', None), 'ltm_store', None)
+        tick = max(self.present() + 1, int(store.model_clock) if store is not None else 0)
+        if tick > HORIZON:
             raise OverflowError('model time exceeds the declared row-time ladder horizon')
-        # In-place so the registered buffer (and its device) is preserved.
-        self.when_time += 1
+        # Closing can write several occurrences during one sentence. A new
+        # thought must also advance past those times, including recalled ones.
+        self.when_time.fill_(tick)
         self.when_encoding.t = self.present()
         return self.present()
 
@@ -14272,9 +14224,6 @@ class BasicModel(BaseModel):
         bound = inspect.signature(self._run_batch_once).bind(*args, **kwargs)
         bound.apply_defaults()
         call = dict(bound.arguments)
-        if not call['train'] and call['split'] in ('test', 'validation'):
-            from PresentationMemory import capture_start
-            capture_start(self)
         with self._sentence_run(training=call['train'], optimizer=call['optimizer'],
                 split=call['split'], source_rows=call['source_rows'], trial_mode=call['trial_mode']):
             return self._run_batch_once(**call)
@@ -15790,9 +15739,9 @@ class BasicModel(BaseModel):
             self._thread.join(timeout=2.0)
 
     def begin_presentation(self):
-        """Begin a document cover without discarding this epoch's memory."""
-        from PresentationMemory import begin
-        return begin(self)
+        """Mark a presentation boundary without rewinding the single history."""
+        if getattr(self, '_sentence_run_active', False) or getattr(self, '_open_sentence_slot', None) is not None:
+            raise RuntimeError('a presentation cannot begin inside a live sentence')
 
     def runEpoch(self, optimizer=None, batchSize=10, split="train",
                  max_batches=None):
@@ -15839,10 +15788,6 @@ class BasicModel(BaseModel):
             self._ltm_provisioned = True
             if getattr(self, 'ltm_consolidation', False):
                 self.provision_ltm()
-
-        if not training:
-            from PresentationMemory import capture_start
-            capture_start(self)
 
         self.train(training)
         self.outputSpace.clearBatchResults()
@@ -20275,7 +20220,14 @@ class BasicModel(BaseModel):
         errors = Error(row_mask=active)
         record = self._trial_understanding(state, sid, active)
         observation = self._sentence_observation(state, sid, active)
+        from Extension import understand
+        extension, understanding_field = understand(self,record,observation['entries'])
+        record = replace(record,extension=extension,understanding_field=understanding_field)
         observation['record'] = record
+        from Extension import with_extensions
+        observation['clauses']=[with_extensions(clause,extension[row])
+            for row,clause in enumerate(observation['clauses'])]
+        observation['meanings']=[None if clause is None else clause.meaning for clause in observation['clauses']]
         from MemoryLink import preview_cost
         if observation['reference_plans']:
             errors.add('memory.link_coverage', preview_cost(self._concept_owner().components.reference_close,
@@ -20524,7 +20476,7 @@ class BasicModel(BaseModel):
             gate = torch.arange(len(clauses),device=point.device) == b
             values = chunks.keep_close(values,gate,refs=references,value=point,when=stamps)
             self.conceptualSpace.stm.strata.keep_close(b, point[b], stamps[b],
-                address=row_addresses[b] if isinstance(location, int) else None,
+                address=store.row_name(location) if isinstance(location, int) else None,
                 relations=written[b].get('relations', ()), source=None if store is None else store.parts)
             slots = field.new_zeros(3, field.shape[-1])
             slots[:depth] = field.detach()
@@ -20599,6 +20551,10 @@ class BasicModel(BaseModel):
         # their dictionary values in place of the scored path's values or
         # change the discrete identity choice that was scored.
         chosen = [observations[int(index)] for index in rows]
+        from SentenceField import select_fields
+        from EpisodicMemory import stage
+        kept_field = select_fields([item['record'].understanding_field for item in observations], wins)
+        stage(self, sid, active, kept_field)
         admitted = view['entries']
         entries = []
         for b, source in enumerate(chosen):
@@ -20637,7 +20593,7 @@ class BasicModel(BaseModel):
                 raise RuntimeError('admission changed the selected clause structure')
             value = replace(admitted, point=scored.point,
                 meaning=replace(admitted.meaning, roles=scored.meaning.roles,
-                                role_mask=scored.meaning.role_mask),
+                                role_mask=scored.meaning.role_mask,extension=scored.meaning.extension),
                 children=tuple(frozen_values(a, s, retained) for a, s in zip(admitted.children, scored.children)),
                 companions=tuple(frozen_values(a, s, retained) for a, s in zip(admitted.companions, scored.companions)))
             retained[id(admitted)] = value
@@ -20667,25 +20623,8 @@ class BasicModel(BaseModel):
                 if payload is None:
                     continue
                 comparison = (disc.last_expectation_comparison(b) if retain else None)
-                from Occurrence import address_at, sentence_key, native_content_key
+                from Occurrence import address_at
                 document, position = address_at(self, b, sid)
-                # The scored reading owns the resolved word identities. The
-                # legacy WORD lane may be empty on the mixing grammar path;
-                # hashing it would give every sentence the empty content key.
-                record = chosen[b].get('record')
-                word_rows = getattr(record, 'word_rows', None)
-                word_valid = getattr(record, 'word_valid', None)
-                identified_codes = []
-                if torch.is_tensor(word_rows) and torch.is_tensor(word_valid):
-                    owner = self._concept_owner()
-                    # Unresolved or clipped slots are not identified words.
-                    # Do not substitute target text or composed coordinates.
-                    identified_codes = [int(code) for code in word_rows[b][word_valid[b]].tolist()
-                                        if code >= 0 and isinstance(owner.word_surface_for_row(int(code)), bytes)]
-                    words = [owner.word_surface_for_row(code) for code in identified_codes]
-                    content = sentence_key(words)
-                else:
-                    content = native_content_key(view.get('clauses', [None]*len(view['meanings']))[b].meaning)
                 clause = view.get('clauses', [None]*len(view['meanings']))[b]
                 reference_plan = None
                 if getattr(self, '_component_reading', False):
@@ -20706,20 +20645,21 @@ class BasicModel(BaseModel):
                     clause = replace(clause, when=encoding.encode(self._sentence_ticks[int(sid)]).to(clause.meaning.roles))
                     view.get('clauses', [None]*len(view['meanings']))[b] = clause
                 episode = self._sentence_episodes.get(int(sid))
-                with store.at_address(document, position, content):
-                    row = _append_observed_meaning(store, clause,
-                        trust=self.conceptualSpace._incoming_trust_multiplier(),
-                        expectation=comparison, stream=b, written_rows=written_clauses[b],
-                        episode=None if episode is None else tuple(value[b] for value in episode))
+                row = _append_observed_meaning(store, clause,
+                    trust=0. if self.__dict__.get('_conversation_read', False) else self.conceptualSpace._incoming_trust_multiplier(),
+                    expectation=comparison, stream=b, written_rows=written_clauses[b],
+                    episode=None if episode is None else tuple(value[b] for value in episode))
                 from FamiliarTier import commit_read_words
                 commit_read_words(self._concept_owner(), entries[b], batch=b,
                     document=document, position=position, clause=clause, written=written_clauses[b],
                     link_choices={} if reference_plan is None else reference_plan.get('link_choices', {}))
                 if row is not None and row != -1:
-                    row_addresses[b] = int(store.row(row)['row_id'])
+                    from Occurrence import operand_name
+                    row_addresses[b] = (row[1] if isinstance(row, tuple)
+                                        else operand_name(store.row_name(row)))
                     if getattr(self, '_component_reading', False):
                         from MemoryLink import Occurrence as LinkOccurrence, state_eligible
-                        if isinstance(row, int) and state_eligible(clause) and store.kind_of(row) not in ('estimate', 'question', 'cover', 'episode'):
+                        if isinstance(row, int) and state_eligible(clause):
                             reference_plan['state_link'] = (
                                 LinkOccurrence(store.occurrence_of(row), kind='state', order=store.order_of_row(row),
                                     selected=reference_plan.get('link_choices', {}).get(('state', 0), Ellipsis)), clause.point, clause.where)
@@ -20947,9 +20887,10 @@ class BasicModel(BaseModel):
                 # This bank supplies numerical NP operands. A relational
                 # row has no fusible point; its typed description remains
                 # available to the boundary query/ask capabilities.
-                if frame.row_id in (-1, 0):
+                if frame.row_id == -1:
                     continue
-                ids[b, i] = frame.row_id
+                from Occurrence import operand_name
+                ids[b, i] = operand_name(frame.row_id) if frame.occurrence[0] == 'ltm' else frame.row_id
                 valid[b, i] = True
                 values[b, i] = (frame.roles[0] if frame.point is None else frame.point).detach().to(like)
                 relations[b, i] = frame.point is None
@@ -20978,20 +20919,20 @@ class BasicModel(BaseModel):
                             entries.append((identity, owner.similarity_codebook.lookup_rows(
                                 torch.tensor(seat, device=like.device), stream=b).detach().to(like),
                                 False, owner._concept_source_order(identity)))
-                    index = store.location(frame.row_id)
+                    index = store.location(frame.occurrence)
                     if index is None:
                         continue
                     current = store.meaning_of(index)
                     opened = open_slots(current)
                     for role in (0, 2):
                         if ('referent', role) in opened and isinstance(index, int):
-                            identity = slot_key(int(store.address_keys[index]), role)
+                            identity = slot_key(store.row_name(index), role)
                             entries.append((identity, current.roles[role].detach().to(like), False, -1))
                         elif current.role_refs[role] is not None and bool(current.role_mask[role]):
                             reference = current.role_refs[role]
                             target = store.location(reference)
                             identity = (int(reference[1]) if reference[0] == 'sym' else
-                                int(store.address_keys[target]) if isinstance(target, int) else -1)
+                                operand_name(store.row_name(target)) if isinstance(target, int) else -1)
                             if identity not in (-1, 0):
                                 target = store.location(identity)
                                 relative = target is not None and store.meaning_of(target).sentence_kind == 'relation'
@@ -21009,13 +20950,6 @@ class BasicModel(BaseModel):
                 for i, (identity, point, relative, order) in enumerate(tuple(unique.values())[-C:]):
                     ids[b, i], values[b, i], valid[b, i], relations[b, i] = identity, point, True, relative
                     orders[b, i] = order
-            if store is not None:
-                from ReferenceContext import exclude_replaced_occurrences
-                from Occurrence import address_at
-                document, position = address_at(self, b, self._open_sentence_slot)
-                valid[b] = exclude_replaced_occurrences(store, ids[b], valid[b], document, position)
-                values[b] = torch.where(valid[b, :, None], values[b], 0.)
-                ids[b] = torch.where(valid[b], ids[b], -1)
             queries.append(query)
         types = self._sentence_reference_types(like)
         cases = None
@@ -21093,8 +21027,6 @@ class BasicModel(BaseModel):
                 for module in self.symbolSpace.modules():
                     if hasattr(module, '_what_context'):
                         module._what_context, module._what_ltm_context = context, detail
-            from DocumentCover import begin_sentence
-            begin_sentence(self, sid, present)
             from SentenceTraining import begin_sentence as begin_gradients
             begin_gradients(self)
             # A sentence is perceived once, after its predecessor's commit.
@@ -21607,13 +21539,9 @@ class BasicModel(BaseModel):
             previous_close_errors = getattr(self, '_sentence_close_errors', None)
             self._sentence_close_errors = close_errors
             try:
-                from SentenceField import publish, selected_field, sentence_generated
-                if self._sentence_reconstruction:
-                    field = observations[0]['order_zero_field']
-                    for index, observation in enumerate(observations[1:], 1):
-                        field = selected_field(field, observation['order_zero_field'], selected == index)
-                else:
-                    field = sentence_generated(self, self._last_sentence_understanding).field
+                from SentenceField import publish, select_fields
+                field = select_fields([observation['record'].understanding_field
+                                       for observation in observations], selected)
                 from WalkTrials import ThoughtTrialState
                 ThoughtTrialState.keep([path.effects for path in complete_paths], selected)
                 self._sentence_order_zero_field = None
@@ -23555,21 +23483,8 @@ class BasicModel(BaseModel):
             cnt = int(getattr(ltm, "count", torch.tensor(0)).item()) \
                 if torch.is_tensor(getattr(ltm, "count", None)) else 0
             if cnt > 0:
-                # A retained next-sentence estimate is durable so its
-                # residual can be learned later, but it is not observed LTM
-                # evidence.  Generic retrieval has no provenance channel to
-                # distinguish a forecast from a fact, so letting it enter the
-                # shared attention pool would feed a prediction back into the
-                # parser/reasoner as if it were a new source.  The dedicated
-                # expectation-pair API is its only generic reader here.
-                estimate_kind = ltm.KINDS.index("estimate")
-                kind_codes = ltm.kind_codes(torch.arange(cnt, device=ltm.count.device))
-                eligible = ((kind_codes != estimate_kind)
-                            & (kind_codes != ltm.KINDS.index('cover'))
-                            & (kind_codes != ltm.KINDS.index('episode')))
-                if bool(eligible.any()):
-                    rows = ltm.slots[:cnt][eligible].detach()  # [M, D]
-                    spaces.append({"id": GA.SPACE_LTM, "keys": rows})
+                # Every retained row is an idea; estimates and covers have no rows.
+                spaces.append({"id": GA.SPACE_LTM, "keys": ltm.slots[:cnt].detach()})
         # The three tower codebooks, emitted as distinct address spaces (PART,
         # WHOLE, SYMBOL). Was previously one lumped SPACE_CODEBOOK (ws0-or-PS).
         concept_q = BracketKeys._pool(prevCS_forSS)
@@ -24747,8 +24662,7 @@ class BasicModel(BaseModel):
         The intent is the product of the parallel parse (the §6c
         pump-zero gist); it is sentence-scoped and refreshed on
         preemption. ``intent=None`` clears the tower boosts (the
-        byte-identical off state); the taxonomy buffer's merged boost
-        dissipates through its own sentence-scoped decay/reset.
+        byte-identical off state); both tower boosts are cleared.
 
         Returns the WS-tower boosts (or ``None``).
         """
@@ -24759,18 +24673,6 @@ class BasicModel(BaseModel):
         ws_boosts = None
         if ws is not None and hasattr(ws, 'set_intent'):
             ws_boosts = ws.set_intent(intent, gain=gain)
-        # WS retrieval plumbing: merge into the word-space taxonomy
-        # priming buffer (consumed by the inverse recommender through
-        # priming_kwargs_for_slots). Best-effort and dark: no taxonomy
-        # or no buffer => recognition priming alone.
-        if ws_boosts is not None:
-            tax = getattr(getattr(self, 'symbolSpace', None),
-                          'taxonomy', None)
-            if tax is not None and hasattr(tax, 'prime_with_weights'):
-                try:
-                    tax.prime_with_weights(ws_boosts)
-                except Exception:
-                    pass
         return ws_boosts
 
     # -- Bidirectional Reasoning Loop (Phase 3) ------------------------

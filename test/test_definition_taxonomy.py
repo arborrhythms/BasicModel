@@ -189,7 +189,8 @@ def test_selected_anaphor_form_binds_to_its_own_end_particular(monkeypatch):
     prior = f.store.write_clause(f.clause('cat'))
     entry = f.program(('lift', 'he', 'rests'))
     refs = entry.concept_ids.clone()
-    refs[0] = f.store.address_keys[prior]
+    from Occurrence import operand_name
+    refs[0] = operand_name(f.store.row_name(prior))
     values = entry.leaves.clone()
     values[0] = f.store.point_of_row(int(refs[0]))
     entry = replace(entry, reference_ids=refs, reference_orders=torch.tensor([1, -1]),

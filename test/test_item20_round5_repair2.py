@@ -41,7 +41,7 @@ def test_unnamed_order_one_site_binds_the_trial_selected_order_zero_path(monkeyp
     from chunk_fixtures import context
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
-    index = store.append_idea(atoms[0], order=0, time=False)
+    index = store.append_idea(atoms[0], )
     address = store.occurrence_of(index)
     path = owner.link(Occurrence(address, order=0, selected=None), {},
                       value=atoms[0], where=None, when=0, stream=None)

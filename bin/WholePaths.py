@@ -1,4 +1,5 @@
 """Complete sentence derivations, with one keep and one credit per departure."""
+from MemoryActivity import trial_activity
 from dataclasses import dataclass, replace
 import torch
 from Layers import Error
@@ -105,6 +106,7 @@ def fields(model, observation, sid):
         meaning = (clause.meaning if clause.relation is not None else
             replace(ConceptualMeaning.from_description(clause.point),
                     polarity=clause.meaning.polarity, sentence_kind='idea'))
+        meaning = replace(meaning,extension=clause.meaning.extension)
         program = observation['entries'][row]
         query = closing_question(meaning, clause, meaning, program, store=store)
         # No current occurrence exists to exclude. Retained event origins
@@ -135,8 +137,7 @@ def output(model, state, observation, sid, active, registry, *, trace=None, depa
     if not model.inputSpace.data.has_supervised_outputs:
         return None, None, None
     if not model.answer_synthesis:
-        from SentenceField import knowing
-        observation['answer_field'] = knowing(model)
+        observation['answer_field'] = observation['record'].understanding_field
         cost = model._sentence_numeric_error(state, sid, active, observation, registry=registry)
         return cost, None, None
     fields = tuple(observation['thought_fields'])
@@ -180,6 +181,7 @@ def answer_cost(model, construction, thoughts, questions, active, registry, *, s
     return cost
 
 
+@trial_activity()
 def finish(model, state, sid, active, *, base=None, draw=None):
     """Run only the suffix after this path's departure, ending before a write."""
     if base is not None and not bool((draw['walk'] >= 0).any()):
@@ -228,8 +230,10 @@ def finish(model, state, sid, active, *, base=None, draw=None):
                     order_zero_reverse=model._sentence_order_zero_reverse,
                     input_reconstruction=model._input_reconstructions[int(sid)])
                 residual(registry, model._sentence_generation.trace, active, 'reconstruction')
-        if 'order_zero_field' in observation:
-            publish(model, observation['order_zero_field'])
+        # Reconstruction has its own operated field. Questions and the
+        # answer reader start from what this sentence understood.
+        if reading or regeneration:
+            publish(model, observation['record'].understanding_field)
         model._sentence_close_errors = registry
         supervised = model.inputSpace.data.has_supervised_outputs
         thinking = Thinking(None if base is None else base.thinking,
@@ -240,7 +244,7 @@ def finish(model, state, sid, active, *, base=None, draw=None):
         if supervised and rethink:
             if base is not None:
                 ThoughtTrialState.keep([base.before_output, before], rethink_rows.long())
-                publish(model, observation['order_zero_field'])
+                publish(model, observation['record'].understanding_field)
             preview = fields(model, observation, sid)
             if base is not None:
                 preview = [value if bool(rethink_rows[row]) else base.observation['thought_fields'][row]
@@ -429,6 +433,7 @@ def keep_output(model, paths, selected, sid):
         for value in actions]).detach()
 
 
+@trial_activity(commit=True)
 def output_only(model, understanding, questions, *, score=None):
     """A batch without a sentence read uses the same path judge, over output."""
     from SentenceCredit import comparison, departure, reader_weights

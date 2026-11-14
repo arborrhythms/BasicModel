@@ -50,7 +50,7 @@ def allocation_plan(config, output):
         [cfg['SymbolSpace'].get('equalityWitnessCapacity',8192), cs['nDim']-sum(canonical_shape('ConceptualSpace'))], 4, stages,
         'Layers.py ConceptAllocator.__init__: singleton_values')
     add('shared relation records', [cfg['SymbolSpace'].get('relationCapacity',8192)],
-        16+2+32+8+8+4, stages, 'LTM1: native handles, kinds, bands, evidence, accesses and surprise')
+        16+2+8+4, stages, 'LTM1: typed ordered pairs, evidence and activity')
     add('shared conceptual dictionary', [count, cs['nDim']], 4, 1,
         'Spaces.py ConceptualSpace.__init__: similarity_codebook')
     add('shared derived placements', [count, cs['meaningWidth']//2], 4, 1,
@@ -66,8 +66,6 @@ def allocation_plan(config, output):
         'RadixLayer codebook W and fixed_row_codes')
     add('retained LTM0 ideas', [capacity, cs['nDim']], 4, 1,
         'Memory.py LTM0.__init__: slots; excludes other columns')
-    add('recurrence reading summaries', [int(cs.get('recurrenceCapacity', count)), cs['nDim']], 4, 1,
-        'Memory.py LTM0.__init__: recurrence_codes')
     report = dict(kind='source-derived nominal storage lower bound, not resident memory',
         config_sha256=hashlib.sha256(Path(config).read_bytes()).hexdigest(), rows=rows,
         total_nominal_bytes=sum(row['bytes'] for row in rows),
@@ -523,7 +521,7 @@ def search(config, grid, output):
     output=Path(output);output.mkdir(parents=True,exist_ok=False)
     declaration=json.loads(Path(grid).read_text())
     axes=declaration['axes']; current=dict(declaration['floors']); trials=[]
-    if [x['name'] for x in axes]!=['inventory','relationCapacity','equalityWitnessCapacity','primingBridgeCapacity','recurrenceCapacity']:
+    if [x['name'] for x in axes]!=['inventory','relationCapacity','equalityWitnessCapacity','primingBridgeCapacity']:
         raise ValueError('capacity axes must follow the approved lexicographic order')
     (output/'grid.json').write_text(json.dumps(declaration,indent=2)+'\n')
     def trial(axis,value):
@@ -539,8 +537,7 @@ def search(config, grid, output):
             ('ConceptualSpace','activeVectors',min(declaration['active_vectors_ceiling'],4*values['inventory'])),
             ('SymbolSpace','relationCapacity',values['relationCapacity']),
             ('SymbolSpace','equalityWitnessCapacity',values['equalityWitnessCapacity']),
-            ('ConceptualSpace','primingBridgeCapacity',values['primingBridgeCapacity']),
-            ('ConceptualSpace','recurrenceCapacity',values['recurrenceCapacity'])]:set_value(section,key,value)
+            ('ConceptualSpace','primingBridgeCapacity',values['primingBridgeCapacity'])]:set_value(section,key,value)
         name=f'{len(trials):03d}-{axis}-{values[axis]}'
         cfg=output/(name+'.xml');set_value('architecture','weightsPath',str((output/(name+'-periodic.ckpt')).resolve()))
         tree.write(cfg,encoding='unicode')
@@ -573,7 +570,7 @@ def search(config, grid, output):
             result=dict(status='no_fitting_floor',axis=name,trials=trials,winner=None)
             (output/'result.json').write_text(json.dumps(result,indent=2)+'\n');return result
         current[name]=values[good]
-    status=trial('recurrenceCapacity',current['recurrenceCapacity'])
+    status=trial(axes[-1]['name'],current[axes[-1]['name']])
     result=dict(status=status,winner=current if status=='complete' else None,trials=trials,
                 winner_config=trials[-1]['config'] if status=='complete' else None)
     (output/'result.json').write_text(json.dumps(result,indent=2)+'\n')

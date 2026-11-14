@@ -112,7 +112,8 @@ def test_promotion_folds_form_and_takes_one_context_step(monkeypatch):
     cs, derived, rows, reading = lesson(monkeypatch)
     cs._symbolic_order = 3
     cb = cs.similarity_codebook
-    store = LTM0(cb.W.shape[-1], capacity=32, percept_width=3)
+    from Memory import STM0
+    store = STM0(cb.W.shape[-1], capacity=32, percept_width=3, relation_capacity=8192)
     object.__setattr__(cs, '_clause_store_ref', weakref.ref(store))
     attach_clause_index(SimpleNamespace(), store, cs)
     values = []
@@ -120,14 +121,16 @@ def test_promotion_folds_form_and_takes_one_context_step(monkeypatch):
     for i, weight in enumerate((1., .5, .25)):
         value = torch.zeros(cb.W.shape[-1]); value[:3] = torch.tensor([.2,.4,.6]) + i*.1
         value[3:] = .2*(i+1)
-        row = store.append_meaning(ConceptualMeaning.from_description(value), order=0,
-            evidence=(weight,0.), sentence_index=i, document_key='promoting')
+        row = store.append_meaning(ConceptualMeaning.from_description(value),
+            evidence=(weight,0.), )
         values.append(value)
         addresses.append(store.occurrence_of(row))
         if i == 0:
             cs.mtm.open(addresses[0], kind=None, value=value, when=i)
         else:
             cs.mtm.bind(addresses[0], addresses[-1], kind=None, value=value, when=i)
+        cs.mtm.event(addresses[0], addresses[-1], verb=cs.concept_id_at_row(rows[0]),
+                     role=0, when=i, before=value)
     cs.prime_seen(torch.tensor([rows[:2]]))
     context = derived.observe_close(reading)
     before_codes = derived.placement.clone()

@@ -32,4 +32,4 @@ def test_unlike_order_equality_keeps_evidence_without_a_partial_raise(mismatch_f
     assert parent != word and alloc.order_of(parent) == 1
     assert set(alloc.parts.parts((SYMBOL, parent))) == {(OCCURRENCE, m) for m in (first, second, third)}
     assert alloc.singleton_values.data_ptr() == pointer
-    assert cs._concept_source_order(other) == 1
+    assert cs._concept_source_order(store.occurrence_of(store.index_of_row(other))) == 1

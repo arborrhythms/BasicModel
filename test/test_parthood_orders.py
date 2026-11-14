@@ -237,49 +237,5 @@ class TestOrderConvention:
         assert 0.0 <= s <= 1.0
 
 
-# ─────────────────────────── Group 6: Taxonomy ──────────────────────────────
-
-class TestTaxonomy:
-    """Explicit parent→children order hierarchy on the SymbolSubSpace
-    singleton (distinct from the codebook-implicit Meronomy)."""
-
-    def _model(self):
-        import warnings
-        import Models
-        import Language
-        from util import init_config
-        cfg = os.path.join(_PROJECT, "data", "MM_text.xml")
-        init_config(path=cfg,
-                    defaults_path=os.path.join(_PROJECT, "data", "model.xml"))
-        Language.TheGrammar._configured = False
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore")
-            m, _ = Models.BasicModel.from_config(cfg)
-        Models.TheData.load("xor")
-        return m
-
-    def test_wordspace_hosts_taxonomy(self):
-        m = self._model()
-        assert hasattr(m.symbolSpace, "taxonomy"), \
-            "SymbolSubSpace singleton must host the Taxonomy"
-
-    def test_taxonomy_add_and_walk_by_order(self):
-        m = self._model()
-        tax = m.symbolSpace.taxonomy
-        root = tax.add(order=0)
-        child = tax.add(order=1, parent=root)
-        assert child in tax.children(root)
-        assert tax.order(child) == 1 and tax.order(root) == 0
-
-    def test_taxonomy_flat_enumeration_across_orders(self):
-        m = self._model()
-        tax = m.symbolSpace.taxonomy
-        tax.add(order=0)
-        tax.add(order=1)
-        tax.add(order=2)
-        orders = sorted(tax.order(n) for n in tax.all())
-        assert orders == [0, 1, 2]
-
-
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-q"]))

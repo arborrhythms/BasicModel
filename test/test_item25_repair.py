@@ -1,4 +1,5 @@
 """Stage 2 repair: bounded full-memory reads and actual R/A gradient receipts."""
+from Memory import STM0
 from types import SimpleNamespace
 import torch
 import pytest
@@ -14,14 +15,13 @@ def meaning(values, *, scope=(), bindings=()):
     return ConceptualMeaning(roles, torch.tensor([True, False, False]), scope=scope, bindings=bindings)
 
 
-def test_small_cued_window_preserves_match_order_filters_and_explicit_references(tmp_path, monkeypatch):
-    store = LTM0(8, capacity=32, percept_width=0, stream_capacity=1)
+def test_small_cued_window_reads_explicit_references_without_role_matching(tmp_path, monkeypatch):
+    store = STM0(8, capacity=32, percept_width=0, relation_capacity=8192)
     values = ((1., 0.), (1., 0.), (1., 0.), (1., 0.), (1., 1.), (1., 1.),
               (1., 2.), (0., 1.), (1., 0.), (1., 0.), (1., 3.), (1., 0.))
     for index, value in enumerate(values):
-        kind = 'estimate' if index == 1 else 'question' if index in (2, 3) else 'fact'
         store.append_meaning(meaning(value, scope={'region': index != 9}, bindings={'bound': index != 8}),
-            kind=kind, evidence=(.4 if index == 3 else 0., 0.), sentence_index=index)
+             evidence=(.4 if index == 3 else 0., 0.))
     cue = meaning((1., 0.), scope={'region': True}, bindings={'bound': True})
     calls = []
     original = torch.bmm
@@ -34,20 +34,20 @@ def test_small_cued_window_preserves_match_order_filters_and_explicit_references
     calls.clear()
     result = store.cued_rows(cue, references=tuple(store.occurrence_of(i) for i in range(len(store))),
                              max_records=32, work=work)
-    # The old scalar cosine reader, with every candidate fitting its cap,
-    # returns these ties by ascending physical address after all filters.
-    assert [row['index'] for row in result['value']] == [0, 3, 11, 4, 5, 6, 10, 7]
-    assert [row['match'] for row in result['value']] == pytest.approx([1., 1., 1., 2**-.5, 2**-.5, 5**-.5, 10**-.5, 0.])
+    # An explicit address permits its read, without a role resemblance or
+    # retired kind/origin filters. Equal relevance retains requested order.
+    assert [row['index'] for row in result['value']] == list(range(12))
+    assert [row['match'] for row in result['value']] == [0.] * 12
     assert result['records_scanned'] == 12 and not result['incomplete']
-    assert work.spent == 8 and work.counts == {'record': 8} and len(calls) == 1
+    assert work.spent == 12 and work.counts == {'record': 12} and not calls
     receipt(tmp_path, 'small-window-compatibility', dict(indices=[row['index'] for row in result['value']],
-        records_scanned=12, returned=8, meter=work.spent, batched_products=calls))
+        records_scanned=12, returned=12, meter=work.spent, batched_products=calls))
 
 
 def test_two_thousand_rows_read_only_given_references_and_charge_returns(tmp_path):
-    store = LTM0(8, capacity=2000, percept_width=0, stream_capacity=1)
+    store = STM0(8, capacity=2000, percept_width=0, relation_capacity=8192)
     for index in range(2000):
-        store.append_meaning(meaning((1., 0.) if index in (20, 1777) else (0., 1.)), sentence_index=index)
+        store.append_meaning(meaning((1., 0.) if index in (20, 1777) else (0., 1.)))
     before = {name: (buffer.data_ptr(), tuple(buffer.shape)) for name, buffer in store.named_buffers()}
     states = {name: value.clone() for name, value in store.state_dict().items()}
     work = QueryWorkBudget(1)
@@ -58,7 +58,9 @@ def test_two_thousand_rows_read_only_given_references_and_charge_returns(tmp_pat
     assert result['incomplete'] == ()
     assert work.spent == 1 and work.counts == {'record': 1}
     assert before == {name: (buffer.data_ptr(), tuple(buffer.shape)) for name, buffer in store.named_buffers()}
-    assert all(torch.equal(value, store.state_dict()[name]) for name, value in states.items())
+    assert all(torch.equal(value, store.state_dict()[name]) for name, value in states.items()
+               if name != 'activity')
+    assert store.activity[1777] > states['activity'][1777]
     # A returned-record limit, unlike meter exhaustion, is not work exhaustion.
     exact = store.cued_rows(meaning((1., 0.)), references=(store.occurrence_of(1777),), max_records=1, work=QueryWorkBudget(1))
     assert exact['incomplete'] == ()
@@ -205,7 +207,7 @@ def test_recalled_chunk_addresses_depend_only_on_their_own_stream(tmp_path):
 def test_determined_mention_keeps_an_occurrence_after_its_relation_was_written(room, tmp_path, monkeypatch):
     from ClauseRow import Clause, ClauseCapacityError, Composition
     from test_clause_acceptance import SentenceFixture
-    f = SentenceFixture(monkeypatch)
+    f = SentenceFixture(monkeypatch, percept_width=8)
     left, right = (f.noun(name) for name in ('first', 'second'))
     terms = tuple(Composition(f.registry._payload(('sym', ref)), reference=ref)
                   for ref in (left, right))
@@ -214,13 +216,15 @@ def test_determined_mention_keeps_an_occurrence_after_its_relation_was_written(r
     determined = Composition(point, (pair,), operation='definite_unary', head_role=1)
     mention = Clause(ConceptualMeaning.from_description(point), point=point,
         composition=determined, reference_request=dict(mode='bind', determined=True, introduction=True))
-    projected = Composition(point, (determined,), operation='preposition_unary', head_role=1)
-    earlier = Clause(mention.meaning, point=point, composition=projected)
+    # The earlier close explicitly asserts the shared pair. A projection's
+    # saved operator chain was retired; it now closes as its own idea.
+    earlier = Clause(mention.meaning, point=point, composition=pair)
     root = Clause(mention.meaning, point=point, composition=Composition(point),
                   companions=(earlier, mention))
     # The earlier branch writes the shared term as a relation before its
     # determined introduction is closed. Admission needs two occurrences.
-    f.store.count.fill_(f.store.capacity-room)
+    for _ in range(f.store.capacity-room):
+        f.store.append_idea(torch.zeros_like(point))
     before = len(f.store), len(f.store.parts), f.cs._concept_allocator.next_id
     pointers = {name: (value.data_ptr(), tuple(value.shape)) for name, value in f.store.named_buffers()}
     written = {}
@@ -230,14 +234,19 @@ def test_determined_mention_keeps_an_occurrence_after_its_relation_was_written(r
         assert (len(f.store), len(f.store.parts), f.cs._concept_allocator.next_id) == before
         assert not written
     else:
-        row = f.store.write_clause(root, evidence=(.7, .2), written_rows=written)
+        # This unchanged two-seat admission fixture exercises one claim.
+        # Both-lane conclusions now require two signed rows (certificate 53).
+        row = f.store.write_clause(root, evidence=(.7, 0.), written_rows=written)
         retained = written[id(mention)]
         assert isinstance(retained, int) and retained != row
         assert written['occurrence', id(mention)] == f.store.occurrence_of(retained)
         assert written['occurrence', id(mention)][0] == 'ltm'
         assert written[id(earlier)][0] == 'sym'
         assert f.store.parts.find(left, right) == written[id(earlier)][1]
-        torch.testing.assert_close(f.store.slots[retained], point)
+        stored = f.store.slots[retained].clone()
+        assert f.store.row_name(retained) < f.store.row_name(row)
+        stored[f.store.when_start:f.store.when_start+4] = point[f.store.when_start:f.store.when_start+4]
+        torch.testing.assert_close(stored, point)
         assert len(f.store) == before[0]+2
     assert pointers == {name: (value.data_ptr(), tuple(value.shape)) for name, value in f.store.named_buffers()}
     receipt(tmp_path, f'determined-occurrence-{room}', dict(available=room,

@@ -40,8 +40,7 @@ def test_supplied_trust_preserves_both_possible_grammatical_fields():
     fields = [Clause(meaning, point=torch.ones(4), refs=(1, 2, -1)),
               Clause(meaning, relation='part', refs=(1, 3, 2))]
     for field in fields:
-        with store.clause_assertions(trust=.8, origin=store.ORIGIN_PROVISIONED,
-                                     text='given plain text') as rows:
+        with store.clause_assertions(trust=.8, ) as rows:
             store.write_clause(field)
         assert len(rows) == 1
         row = rows[0]

@@ -72,14 +72,15 @@ def test_sentence_projection_keeps_its_own_entry_after_an_embedded_mention(monke
     root = Composition(point, (head,), operation='project', head_role=1)
     clause = replace(mention, composition=root, companions=(mention,), reference_request=None)
     written = {}
-    row = f.store.write_clause(clause, document_key='entry', sentence_index=0,
+    row = f.store.write_clause(clause,
                                evidence=(.7,.2), written_rows=written)
     embedded = written[id(mention)]
     assert isinstance(row,int) and isinstance(embedded,int) and row != embedded
-    assert f.store.kind_of(row) == 'observation'
-    assert f.store.kind_of(embedded) == 'unverified'
+    assert f.store.row(embedded)['evidence'] == (0.,0.)
     assert not f.store.entry_time(embedded).any()
-    assert f.store.row(row)['evidence'] == pytest.approx((.7,.2))
+    assert f.store.row(row)['evidence'] == pytest.approx((.7,0.))
+    assert f.store.row(row+1)['evidence'] == pytest.approx((0.,.2))
+    assert f.store.row_name(row+1) > f.store.row_name(row)
 
 
 def test_nested_unknown_terminal_keeps_its_word_without_minting(monkeypatch):
@@ -91,7 +92,7 @@ def test_nested_unknown_terminal_keeps_its_word_without_minting(monkeypatch):
     left = Composition(f.registry._payload(('sym', participant)), reference=participant)
     right = Composition(torch.eye(8)[3], word_id=word)
     value = torch.maximum(left.point, right.point)
-    root = Composition(value, (left, right), operation='verb', formal_name='verb', head_role=1)
+    root = Composition(value, (left, right), operation='part', formal_name='part', head_role=1)
     clause = Clause(ConceptualMeaning.from_description(value), point=value, composition=root)
     row = f.store.write_clause(clause, evidence=(.8, .1))
     from Memory import SYMBOL
@@ -144,7 +145,7 @@ def test_unseated_native_argument_does_not_acquire_the_working_value_at_close(mo
     left = Composition(f.registry._payload(('sym', participant)), reference=participant)
     right = Composition(torch.eye(8)[3], reference=word)
     point = torch.maximum(left.point, right.point)
-    term = Composition(point, (left, right), operation='verb', formal_name='verb', head_role=1)
+    term = Composition(point, (left, right), operation='part', formal_name='part', head_role=1)
     clause = Clause(ConceptualMeaning.from_description(point), point=point, composition=term)
     f.store.write_clause(clause)
     assert f.store.parts.find(participant, word) is not None
@@ -206,8 +207,7 @@ def test_lower_word_alias_does_not_double_count_kept_occupations(monkeypatch):
                     composition=root)
     row = f.store.write_clause(clause)
     assert view_counts(parts) == expected
-    assert row[0] == 'sym'
-    assert all(row[1] not in parts.members(arg) for arg in parts.arguments)
+    assert isinstance(row, int)  # Point 17: the completed operator is an idea.
     assert parts.members('lower_argout1') == parts.members('intersection_argin1') == (words[1],)
     assert expected['lower_argout1'] == expected['intersection_argin1'] == 1
 
@@ -231,7 +231,7 @@ def test_same_description_tokens_keep_distinct_occurrence_identities(monkeypatch
     frames, addresses = [], []
     for sentence in range(2):
         written = {}
-        row = f.store.write_clause(clause, document_key='tokens', sentence_index=sentence,
+        row = f.store.write_clause(clause,
                                    written_rows=written)
         addresses.append(f.store.occurrence_of(row))
         assert clause.order == 1
@@ -259,7 +259,7 @@ def test_pronoun_at_occurrence_closes_verb_over_antecedent_kind_without_seating(
     point, predicate = (f.registry._payload(('sym', identity)) for identity in (kind, verb))
     antecedent = Clause(ConceptualMeaning.from_description(point), point=point, order=1,
                         composition=Composition(point, reference=kind, order=1))
-    first = f.store.write_clause(antecedent, document_key='pronoun', sentence_index=0)
+    first = f.store.write_clause(antecedent, )
     address = f.store.occurrence_of(first)
     request = dict(mode='pronoun', leaves=(0,), cue=torch.zeros_like(point),
                    predicate=predicate, role=0)
@@ -278,7 +278,7 @@ def test_pronoun_at_occurrence_closes_verb_over_antecedent_kind_without_seating(
     bank = f.cs.similarity_codebook.W.detach().clone()
     seats = dict(f.cs._concept_allocator.layer()._tensor_rows)
     written = {}
-    row = f.store.write_clause(kept, document_key='pronoun', sentence_index=1,
+    row = f.store.write_clause(kept,
                                written_rows=written)
     resolver.commit(plan, row, written, document='pronoun', position=1, training=False)
     assert isinstance(row, int)
@@ -315,7 +315,7 @@ def test_new_relation_argument_needs_an_occurrence_and_no_concept_seat(monkeypat
     left = Composition(f.registry._payload(('sym', native)), reference=native)
     argument = Composition(torch.eye(8)[3], order=1)
     root = Composition(torch.maximum(left.point, argument.point), (left, argument),
-                       operation='verb', formal_name='verb', head_role=1)
+                       operation='part', formal_name='part', head_role=1)
     clause = Clause(ConceptualMeaning.from_description(root.point), point=root.point,
                     composition=root)
     # The occurrence value needs no order-1 concept seat.
@@ -326,7 +326,7 @@ def test_new_relation_argument_needs_an_occurrence_and_no_concept_seat(monkeypat
     from Memory import OCCURRENCE
     tag, address = f.store.parts.references(row[1])[1]
     assert tag == OCCURRENCE
-    torch.testing.assert_close(f.store.point_of_row(address), argument.point)
+    torch.testing.assert_close(f.store.point_of_row(('ltm', f.store.address_domain, address)), argument.point)
     assert set(f.cs._concept_allocator.layer()._tensor_row_keys) == seats
 
 
@@ -338,7 +338,7 @@ def test_relation_argument_does_not_use_the_concept_tail(monkeypatch):
     left = Composition(f.registry._payload(('sym', native)), reference=native)
     argument = Composition(torch.eye(8)[3], order=1)
     root = Composition(torch.maximum(left.point, argument.point), (left, argument),
-                       operation='verb', formal_name='verb', head_role=1)
+                       operation='part', formal_name='part', head_role=1)
     clause = Clause(ConceptualMeaning.from_description(root.point), point=root.point,
                     composition=root)
     capacity = f.cs.nVectors
@@ -365,7 +365,7 @@ def test_surface_phrase_keeps_the_unknown_head_word_without_minting(monkeypatch)
     phrase = Composition(description.point, (marker, description), operation='surface',
                          formal_name='surface', head_role=2)
     root = Composition(torch.maximum(phrase.point, marker.point), (phrase, marker),
-                       operation='verb', formal_name='verb', head_role=1)
+                       operation='part', formal_name='part', head_role=1)
     clause = Clause(ConceptualMeaning.from_description(root.point), point=root.point,
                     composition=root)
     row = f.store.write_clause(clause)

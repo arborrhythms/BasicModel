@@ -5,7 +5,7 @@ from ReferenceContext import ReferenceBank, resolve_operand
 
 
 def test_transparent_operation_preserves_a_vp_with_a_relational_operand():
-    """A verb with a unary surface attachment retains three native roles."""
+    """A verb over a completed relation closes as its composed idea."""
     from dataclasses import replace
     from types import SimpleNamespace
     import weakref
@@ -37,12 +37,13 @@ def test_transparent_operation_preserves_a_vp_with_a_relational_operand():
         end_state=torch.stack((combined,point*0,point*0)))
     registry = SimpleNamespace(space=SimpleNamespace(_clause_store_ref=weakref.ref(store)))
     field = finish_clause(language, entry, registry=registry)
-    assert field.relation == 'operator' and field.point is None
-    assert field.slots.shape[0] == 3
-    assert field.refs[0] == head_identity and field.refs[2] == identity
-    assert field.refs[1].identity == predicate_identity('verb')
+    assert field.relation is None
+    torch.testing.assert_close(field.point, combined)
+    assert field.slots.shape[0] == 1
+    assert field.refs[0] == head_identity
     row = store.write_clause(field)
-    assert set(store.row(row)['refs'].tolist()) == {head_identity, identity}
+    assert isinstance(row, int)
+    torch.testing.assert_close(store.row(row)['point'], combined)
     assert store.location(identity) == prior
     assert store.parts.contains(identity)
 
@@ -316,7 +317,7 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
     # The supplied individual collects order-0 word occurrences, like the
     # incoming mention. Its collection is the order-1 reference presented.
     index = store.write_clause(Clause(ConceptualMeaning.from_description(prior), point=prior, order=0))
-    cid = int(store.address_keys[index])
+    cid = store.row_name(index)
     from Spaces import _concept_alloc_of
     from ReferenceContext import SituationAddress
     owner = model._concept_owner()
@@ -398,7 +399,8 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
         from Memory import STMChunks as chunks
         state = model.conceptualSpace.stm.state
         written = model._sentence_fields[0][0].row_id
-        recent = state[chunks.REFS][0,:,0,1] == written
+        from Occurrence import operand_time
+        recent = state[chunks.REFS][0,:,0,1] == operand_time(written)
         assert recent.sum() == 1 and state[chunks.STACK][0,recent].eq(-1).all()
         torch.testing.assert_close(state[0][0,recent][0,:content_width],clause.point[:content_width],rtol=0,atol=0)
         torch.testing.assert_close(state[chunks.WHEN][0,recent][0],store.entry_time(store.location(written)),rtol=0,atol=0)

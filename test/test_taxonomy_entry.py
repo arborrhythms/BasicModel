@@ -1,3 +1,4 @@
+from definition_fixtures import class_over
 """Public PartOf routes must use the conceptual taxonomy exclusively."""
 from types import SimpleNamespace
 
@@ -16,7 +17,7 @@ def _world():
     bases = tuple(cs.new_concept() for _ in range(3))
     for base in bases:
         force_order(cs, base, 0)
-    refs = tuple(('sym', cs.synthesize_higher_order([('sym', base)]))
+    refs = tuple(('sym', class_over(cs, [('sym', base)]))
                  for base in bases)
     for ref in refs:
         cs._csw_concept_row(cs._concept_source_order(ref[1]), ref[1])
@@ -27,7 +28,7 @@ def _world():
 
 def test_public_evaluate_follows_taxonomy_and_retains_record_provenance():
     cs, (a, b, c), reasoner = _world()
-    relation = cs.reify_concept(a[1], b[1])
+    relation = cs._concept_allocator.parts.add(a[1], b[1], truth_plus=1.)
     cs.add_whole(b[1], c)
     result = reasoner.evaluate(QuerySpec.from_surface("isPart", a, c))
     assert result["posture"] == TRUE
@@ -69,7 +70,6 @@ def test_normal_entry_does_not_verify_generated_vectors_as_taxonomy():
     assert result.result.domain == "conceptual-taxonomy"
     edge = cs._ltm_store.parts.find(a[1], b[1])
     assert len(cs._ltm_store) == 0 and cs._ltm_store.parts.contains(edge)
-    assert cs._ltm_store.row(('sym', edge))['kind'] == 'observation'
     assert cs._ltm_store.parts.truth_plus[edge] == 1
     with pytest.raises((ValueError, TypeError), match='reference|concept'):
         reasoner.model.reason_about(
@@ -80,7 +80,7 @@ def test_normal_controller_does_not_certify_a_world_row_as_taxonomy():
     cs, (a, b, _), reasoner = _world()
     from Meaning import ConceptualMeaning
     cs._ltm_store.append_meaning(ConceptualMeaning.from_description(
-        torch.eye(8)[0]), kind='fact', trust=1)
+        torch.eye(8)[0]),  trust=1)
     result = reasoner.model.reason_about(QuerySpec.from_surface("part", a, b))
     assert result.posture == UNKNOWN and result.support_true == 0
 
@@ -113,11 +113,11 @@ def test_actual_model_entry_and_checkpoint_keep_taxonomy_identity(tmp_path):
         bases = tuple(cs.new_concept() for _ in range(2))
         for base in bases:
             force_order(cs, base, 0)
-        a, b = (('sym', cs.synthesize_higher_order([('sym', base)]))
+        a, b = (('sym', class_over(cs, [('sym', base)]))
                 for base in bases)
         for ref in (a, b):
             cs._csw_concept_row(cs._concept_source_order(ref[1]), ref[1])
-        relation = cs.reify_concept(a[1], b[1])
+        relation = cs._concept_allocator.parts.add(a[1], b[1], truth_plus=1.)
         spec = QuerySpec.from_surface("isPart", a, b)
         before = source.reason_about(spec, spaces=[])
         assert before.posture == TRUE

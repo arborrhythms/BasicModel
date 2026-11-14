@@ -28,7 +28,7 @@ def test_kept_event_link_precedes_its_words_new_trust_views(repetitions):
         value=event, where=None, when=2, stream=0)
     assert key in choices
     store = owner._closed_clause_store()
-    event_row = store.append_idea(event, document_key='event', sentence_index=0)
+    event_row = store.append_idea(event, )
     address = store.occurrence_of(event_row)
     reading = NS(word_ids=torch.full((repetitions,), word),
         leaves=member[None].expand(repetitions, -1), symbol_where=None)
@@ -121,11 +121,15 @@ def test_occurrence_writer_preserves_the_emitted_terminal_despite_priming():
         _row_order=lambda row: 0, concept_id_at_row=lambda row: row + 10,
         word_surface_for_row=lambda row: (b'a', b'b')[row],
         cs_reverse_presence=lambda evidence, **kwargs: evidence,
-        _concept_allocator=NS(layer=lambda order: store))
-    result = generated(NS(_concept_owner=lambda: owner), codes[:, :1],
-        torch.tensor([1]), torch.tensor([False]), bank, (), when=torch.tensor([[[1, 2]]]))
-    assert result.field.concept_ids.tolist() == [10, 11]
-    torch.testing.assert_close(result.field.evidence.flatten(), torch.tensor([1., 0., 0., 0.]))
+        _concept_allocator=NS(layer=lambda order: store, refs=lambda *_: ()))
+    model = NS(_concept_owner=lambda: owner, languageSpace=NS(
+        _generate_binary_rules=(), _generate_unary_rules=(),
+        _generate_binary_ops=(), _generate_unary_ops=()))
+    result = generated(model, codes[:, :1], torch.tensor([1]),
+        torch.tensor([False]), bank, (torch.tensor([[0]]),),
+        when=torch.tensor([[[1, 2]]]), depths=torch.tensor([1]))
+    assert result.field.concept_ids.tolist() == [10]
+    torch.testing.assert_close(result.field.evidence.flatten(), torch.tensor([1., 0.]))
 
 
 @pytest.mark.parametrize('operation', ['conjunction', 'disjunction'])
@@ -154,7 +158,7 @@ def test_reconciled_reference_candidates_keep_one_collection_order(orders):
     owner = resolver.components.owner
     records = {}
     for index, order in enumerate(orders):
-        row = store.append_idea(atoms[index], order=order, time=False)
+        row = store.append_idea(atoms[index])
         address = store.occurrence_of(row)
         token = owner.link(Occurrence(address, order=order, selected=None), {},
             value=atoms[index], where=None, when=index + 1, stream=0)
@@ -176,13 +180,13 @@ def test_collected_state_members_are_not_offered_as_unpooled(origin):
     from MemoryLink import Occurrence, menu
     from test_reference_close import fixture
     resolver,store,atoms=fixture();owner=resolver.components.owner
-    first=store.append_idea(atoms[0],address=801,time=False);start=store.occurrence_of(first)
+    first=store.append_idea(atoms[0]);start=store.occurrence_of(first)
     key=owner.link(Occurrence(start,kind='state',order=0,selected=None),{},value=atoms[0],where=None,when=1,stream=0)
-    second=store.append_idea(atoms[0]+atoms[1],address=802,time=False)
+    second=store.append_idea(atoms[0]+atoms[1])
     owner.link(Occurrence(store.occurrence_of(second),kind='state',order=0,selected=key),{},value=atoms[0]+atoms[1],where=None,when=2,stream=0)
-    third=store.append_idea(atoms[0],address=803,time=False);member=store.occurrence_of(third)
+    third=store.append_idea(atoms[0]);member=store.occurrence_of(third)
     owner.link(Occurrence(member,kind='state',order=0,selected=key),{},value=atoms[0],where=None,when=3,stream=0)
-    fresh=store.append_idea(atoms[0]+atoms[2],address=804,time=False);unpooled=store.occurrence_of(fresh)
+    fresh=store.append_idea(atoms[0]+atoms[2]);unpooled=store.occurrence_of(fresh)
     chosen=start if origin else member
     owner.stm.ensure_batch(1);state=owner.stm.state
     for address,value in ((chosen,atoms[0]),(unpooled,atoms[0]+atoms[2])):
@@ -198,7 +202,7 @@ def test_collected_state_members_are_not_offered_as_unpooled(origin):
     assert key in choices and unpooled in choices and chosen not in choices
 
 
-def test_kept_thought_finishes_definitions_before_relation_withdrawal(monkeypatch):
+def test_kept_thought_finishes_definitions_before_relation_forgetting(monkeypatch):
     from types import SimpleNamespace as NS
     from part_fixtures import native_store
     from test_thought_binding import equality
@@ -211,13 +215,12 @@ def test_kept_thought_finishes_definitions_before_relation_withdrawal(monkeypatc
     model = NS(symbolSpace=NS(ltm_store=store), grammatical_thoughts=NS(
         signature_for=lambda *args, **kwargs: NS(operation=NS(semantic_id='isEqual'))))
     monkeypatch.setattr(Occurrence, 'source_at', lambda *args: ('definition-boundary', 0))
-    store.parts.begin_epoch()
     index = write(model, equality(('sym', a), ('sym', b)), row=0)
     assert store.parts.contains(index[1])
     assert store.parts.references(index[1]) == ((SYMBOL, a), (SYMBOL, b))
-    store.parts.begin_epoch()
-    # The next input close must not try to finish the preceding epoch's
-    # concluded thought. The relation's ordinary withdrawal is unchanged.
+    store.parts.retain(())
+    # Finishing the preceding thought consumes its pending definition.
+    # A later close does not retry it after its relation is forgotten.
     finish_definitions(owner)
     assert not getattr(owner, '_kept_definition_witnesses', ())
     owner._kept_definition_witnesses = [((SYMBOL, a), (SYMBOL, b), None, None, False)]
@@ -225,39 +228,6 @@ def test_kept_thought_finishes_definitions_before_relation_withdrawal(monkeypatc
         finish_definitions(owner)
 
 
-@pytest.mark.parametrize('unwitnessed_position', (0, 2))
-def test_recurrence_waits_for_each_members_order_before_allocating(unwitnessed_position):
-    from dataclasses import replace
-    from test_reference_close import fixture
-    from DocumentCover import open_cover
-    from Meaning import ConceptualMeaning
-    from MemoryConsolidation import consolidate
-    from order_fixtures import force_order
-    resolver, store, atoms = fixture()
-    owner = resolver.components.owner
-    unknown, known = owner.new_concept(), owner.new_concept()
-    force_order(owner, known, 0)
-    rows = []
-    for n in range(3):
-        document = ('order-witness', n)
-        open_cover(owner, store, stream=0, document=document)
-        reference = unknown if n == unwitnessed_position else known
-        meaning = replace(ConceptualMeaning.from_description(atoms[0] + atoms[1]),
-                          role_refs=(('sym', reference), None, None))
-        rows.append(store.append_meaning(meaning, document_key=document,
-            sentence_index=n, stream=0, evidence=(1., 0.)))
-    allocator = owner._concept_allocator
-    before = allocator.next_id
-    assert consolidate(owner, store) == ()
-    assert allocator.next_id == before
-    reading = int(store.recurrence_readings[rows[0]])
-    assert all(int(store.recurrence_readings[row]) == reading for row in rows)
-    assert int(store.recurrence_documents[reading]) == 3
-    assert int(store.recurrence_symbols[reading]) == -1
-    force_order(owner, unknown, 0)
-    assert consolidate(owner, store) == (('reading', reading),)
-    symbol = int(store.recurrence_symbols[reading])
-    assert symbol > 0 and allocator.order_of(symbol) == 0
 
 
 @pytest.mark.parametrize('order', (0, 1))
@@ -279,7 +249,7 @@ def test_arrival_eligibility_reads_the_identity_after_shared_site_preparation(or
     meaning = replace(ConceptualMeaning.from_description(atoms[0]),
         role_refs=(('sym', native), None, None),
         bindings={'_forward_references': ((0, subject),)})
-    row = store.append_meaning(meaning, document_key='arrival-order', stream=0)
+    row = store.append_meaning(meaning)
     token = store.occurrence_of(row)
     owner.link(Occurrence(token, concept=native, selected=None), {},
                value=atoms[0], where=None, when=1, stream=0)
@@ -302,7 +272,7 @@ def test_arrival_eligibility_reads_the_identity_after_shared_site_preparation(or
     assert child.composition.reference == concept, 'a trial read must not publish the preparation'
     assert (chosen in decision['candidates']) == (order == 0)
     prepared = resolver.prepare(clause, plan)
-    written = store.write_clause(prepared.children[0], document_key='arrival-written', stream=0)
+    written = store.write_clause(prepared.children[0])
     assert store.order_of_row(written) == owner._concept_source_order(word) == 0
     options = dict(value=atoms[0], where=None, when=2, stream=0)
     occurrence = Occurrence(store.occurrence_of(written), selected=token)
@@ -364,7 +334,7 @@ def test_arrival_menu_keeps_the_planned_member_instead_of_a_duplicate_occurrence
     native=known_concept(owner,a[0],order=order)
     meaning=replace(ConceptualMeaning.from_description(a[0]),role_refs=(('sym',native),None,None),
         bindings={'_forward_references':((0,subject),)})
-    row=store.append_meaning(meaning,document_key='arrival-order',stream=0)
+    row=store.append_meaning(meaning)
     token=store.occurrence_of(row)
     owner.link(Occurrence(token,concept=native,selected=None),{},value=a[0],where=None,when=1,stream=0)
     clause=equality(a[0],subject,concept,subject=a[0])
@@ -390,7 +360,7 @@ def test_arrival_menu_keeps_the_planned_member_instead_of_a_duplicate_occurrence
     assert (planned['selected'] in arrival['candidates']) == (order == 1)
     assert all(duplicate not in item['candidates'] for item in plan['arrivals'])
     prepared=resolver.prepare(clause,plan)
-    written={};row=store.write_clause(prepared,document_key='arrival-written',stream=0,written_rows=written)
+    written={};row=store.write_clause(prepared,written_rows=written)
     resolver.commit(plan,row,written,document='arrival-written',position=1,training=False)
     retained = owner.mtm.entries[owner.mtm.token_of(token)]
     assert retained.refinement['member_order'] == order

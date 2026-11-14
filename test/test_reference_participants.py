@@ -114,7 +114,7 @@ def test_ordinary_menu_uses_the_retained_argument_occupations(monkeypatch):
         Composition(atoms[1], reference=words['wrong'])), operation='lift', head_role=2)
     written = {}
     clause = Clause(ConceptualMeaning.from_description(atoms[0]), point=atoms[0], composition=tree)
-    row = store.write_clause(clause, document_key='participants', written_rows=written)
+    row = store.write_clause(clause,  written_rows=written)
     frame = replace(SituationFrame.from_row(store.row(row)),
                     symbol_ids=written['symbols', id(clause)])
     # The ordinary field reads an identity's retained role history. Writing
@@ -160,7 +160,8 @@ def test_journal_and_close_use_the_reading_order_and_argument_position(monkeypat
     unchanged(f.resolver, held)
     _, committed = keep(f.resolver, clause)
     assert len(committed['items']) == expected
-    assert len(f.cs.mtm.entries) == expected
+    assert sum(entry.refinement.get('member_kind') != 'event'
+               for entry in f.cs.mtm.entries.values()) == expected
 
 
 def test_bind_wrapper_keeps_the_verb_participant_and_excludes_its_predicate():

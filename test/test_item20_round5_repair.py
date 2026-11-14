@@ -1,4 +1,5 @@
 """Declared sentence banks and one-stream short-term addressing."""
+from Memory import STM0
 from types import SimpleNamespace
 import xml.etree.ElementTree as ET
 
@@ -25,7 +26,7 @@ def test_default_pinned_banks_use_the_declared_word_bound(default_model):
     assert recent == 8
     assert len(strata.banks) == 3 * default_model._concept_owner().nStreams
     assert all(bank.capacity == 256 + 3*256 + 2*recent == 1040 for bank in strata.banks)
-    assert all(bank.addressing.stream.shape == (bank.capacity, 1)
+    assert all(not hasattr(bank, 'stream')
                for bank in (*strata.banks, *strata.recent_stores))
     declared = sum(value.numel()*value.element_size() for value in strata.buffers())
     # Ordered-pair stores are linked rather than registered child modules.
@@ -35,7 +36,7 @@ def test_default_pinned_banks_use_the_declared_word_bound(default_model):
     assert declared + linked < .25 * 2**30
     receipt('bank-bound', dict(words=strata.words, streams=strata.streams,
         banks=len(strata.banks), rows_per_bank=strata.banks[0].capacity,
-        stream_columns=1, declared_bytes=declared, declared_gib=declared/2**30,
+        stream_columns=0, declared_bytes=declared, declared_gib=declared/2**30,
         linked_pair_bytes=linked, all_buffer_bytes=declared+linked))
 
 
@@ -73,21 +74,3 @@ def test_construction_requires_the_word_bound_in_config_or_defaults(tmp_path, mo
         Models.BaseModel.from_config(str(own), data=TheData)
     receipt('required-sentence-bound', dict(own_declared=False,
         defaults_declared=False, raised=True, element='serialWordCapacity'))
-
-
-def test_short_term_stream_table_rejects_another_stream_without_redirection():
-    from Memory import LTM0, STM0
-    from Meaning import ConceptualMeaning
-    short = STM0(4, 3)
-    long = LTM0(4, 3)
-    assert short.addressing.stream.shape == (3, 1)
-    assert long.addressing.stream.shape == (3, 3)
-    meaning = ConceptualMeaning.from_description(torch.ones(4))
-    row = short.append_meaning(meaning, stream=0, time=False)
-    assert short.stream[row, 0]
-    before = short.stream.clone()
-    with pytest.raises(OverflowError, match='stream exceeds LTM0 construction capacity'):
-        short.append_meaning(meaning, stream=1, time=False)
-    torch.testing.assert_close(short.stream, before)
-    receipt('stm-stream-table', dict(capacity=3, short_columns=1, long_columns=3,
-        rejected_stream=1, redirected_writes=0))

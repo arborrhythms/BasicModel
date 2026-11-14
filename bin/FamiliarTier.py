@@ -338,12 +338,10 @@ def open_sentence(model, sid, present):
     field = owner.cs_read_memberships((native.get('native_indices', native['indices']),
         native.get('native_part_spans', native['part_spans']),
         ws.subspace.what.primitive_properties, raw, whole_spans), brackets)
-    from EpisodicMemory import stage
     from SentenceField import open_field
-    opened = open_field(model, sid, field)
-    stage(model, sid, present, opened)
     owner._cs_last_a0 = field.detach()
     _, acts = owner.cs_forward_content(field, None)
+    opened = open_field(model, sid, acts)
     model._definition_fold_field = acts.detach()
     from ConceptEvidence import symbols
     readings = symbols(acts)
@@ -378,9 +376,8 @@ def member_row(owner, kind, identity):
     row = store.index_of_row(identity)
     if row is None:
         return None
-    seat = int(store.recurrence_readings[row])
-    symbol = int(store.recurrence_symbols[seat]) if seat >= 0 else None
-    return None if symbol is None or symbol <= 0 else owner._csw_row_of(symbol)
+    reference = store.referent_of(row)
+    return owner._csw_row_of(reference[1]) if reference is not None and reference[0] == 'sym' else None
 
 
 def class_members(owner, cid):
@@ -445,7 +442,6 @@ def commit_read_words(owner, reading, *, batch, document, position, clause=None,
     if reading is None or reading.word_ids is None:
         return {}
     from Meaning import ConceptualMeaning
-    from Occurrence import native_content_key
     pool, store = owner.mtm, owner._closed_clause_store()
     occurrences = {}
     retained, pending = {}, [clause]
@@ -497,17 +493,14 @@ def commit_read_words(owner, reading, *, batch, document, position, clause=None,
         value = reading.leaves[index]
         referent = owner.interpret.referent(word)
         meaning = replace(ConceptualMeaning.from_description(value), bindings={
-            '_identity': key if referent == word else ('sym', referent), '_forward_references': ((0,word),),
+            '_identity': None if referent == word else ('sym', referent), '_forward_references': ((0,word),),
             '_open_references': (('referent',0),)})
         row = retained.get(index)
         if (row is None or store.order_of_row(row) != order
                 or not torch.equal(store.slots[row], value.to(store.slots))):
             # This is a retained unknown referent, not an asserted answer.
             # Use the existing open-question storage contract and evidence.
-            row = store.append_meaning(meaning, kind='question', evidence=(0., 0.),
-                order=order, stream=batch, time=False,
-                document_key=('reading', document, word, index), sentence_index=position,
-                content_key=native_content_key(meaning))
+            row = store.append_meaning(meaning, evidence=(0., 0.))
         occurrence = store.occurrence_of(row)
         occurrences[index] = occurrence
         from MemoryLink import Occurrence
@@ -556,7 +549,7 @@ def promote_identity(owner, key, *, word=None, trust=None, evidence=None):
     store = owner._closed_clause_store()
     index = None if store is None else store.location(origin)
     member_order = entry.refinement.get('member_order',
-        -1 if index is None else owner._concept_source_order(origin[-1]))
+        -1 if index is None else owner._concept_source_order(origin))
     reading = pool.reading_of(origin)
     if 'word' in alloc.symbol_types.get(reading, ()):
         denotation = owner.interpret.referent(reading)
@@ -629,15 +622,10 @@ def promote_identity(owner, key, *, word=None, trust=None, evidence=None):
     alloc.individuals.add(cid)
     alloc.symbol_types.setdefault(cid, set()).update(('concept', 'object'))
     from MemoryConsolidation import _fold
-    # An event's branch and a standalone percept's origin identify actual
-    # observations. A grammatical mention may also occur on a modal branch.
+    # Only the actual MTM timeline witnesses observed events. Retained
+    # ideas no longer say whether a grammatical mention was modal; when
+    # there is no actual event, promotion keeps the current MTM value.
     actual = dict.fromkeys(event.occurrence for event in entry.events if event.role == 0)
-    for address in entry.occurrences:
-        index = store.location(address)
-        if isinstance(index, int) and store.order_of_row(index) == 0:
-            idea = store.raw_meaning_of(index)
-            if idea is not None and not dict(idea.bindings).get('_reference_sites'):
-                actual[address] = None
     locations = (store.location(address) for address in actual)
     members = [index for index in locations if isinstance(index, int)]
     form = _fold(owner, store, members)
@@ -696,8 +684,8 @@ def define_pending(owner, left, right, *, word=None, other_word=None, null_refer
     entry = owner.mtm.entries[key]
     if not entry.occurrences:
         return False  # The kept reading will retain its mentions before finish_definitions.
-    member_order = owner._concept_source_order(entry.occurrences[0][-1]) + 1
-    shared_order = owner._concept_source_order(right[1])
+    member_order = owner._concept_source_order(entry.occurrences[0]) + 1
+    shared_order = owner._concept_source_order(right)
     existing_class = right[0] == SYMBOL and ('part-base', right[1]) in alloc.relate_idx
     if not (unbound_label(owner, right) or member_order == shared_order
             or existing_class and member_order == shared_order-1):
@@ -718,7 +706,7 @@ def _resolve_null_token(owner, key, left, right, other_word):
     entry = pool.entries[key]
     if left[0] != OCCURRENCE or envelope(store,left) not in entry.occurrences:
         raise ValueError(f'perceptual token has no kept occurrence at {left!r}')
-    order = owner._concept_source_order(left[1]) + 1
+    order = owner._concept_source_order(left) + 1
     label = right[1] if right[0] == SYMBOL and 'word' in alloc.symbol_types.get(right[1], ()) else other_word
     target = right[1] if right[0] == SYMBOL and right[1] != label else None
     if label not in (None,-1,0):
@@ -770,7 +758,7 @@ def _resolve_null_token(owner, key, left, right, other_word):
     row = alloc.parts.find(left,right)
     for address in entry.occurrences:
         member = (OCCURRENCE, address[-1])
-        if owner._concept_source_order(address[-1]) + 1 != alloc.order_of(target):
+        if owner._concept_source_order(address) + 1 != alloc.order_of(target):
             raise ValueError(f'witnessed member {address!r} disagrees with the order of {target}')
         if (member, (SYMBOL,target)) != (left,right):
             from MemoryPaths import membership

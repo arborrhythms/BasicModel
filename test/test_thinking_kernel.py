@@ -33,8 +33,7 @@ class TestDepth3RelativeEndState(unittest.TestCase):
         m._clause_end_state = spy
         try:
             m._ltm_ingest_truth_texts(m.symbolSpace.ltm_store,
-                ['socrates is a human', 'humans are mortal'], trusts=[.9, .9],
-                origin=m.symbolSpace.ltm_store.ORIGIN_PROVISIONED)
+                ['socrates is a human', 'humans are mortal'], trusts=[.9, .9])
         finally:
             del m._clause_end_state
         flat = [x for row in depths for x in row]

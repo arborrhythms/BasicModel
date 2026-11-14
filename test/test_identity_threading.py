@@ -12,7 +12,7 @@ from Spaces import LanguageOperationChoice
 
 
 def address(number):
-    return 'ltm', 'address-v1', number
+    return 'ltm', 'stm-v1', number
 
 
 def reference_pool(values, *, readings=None, capacity=64):
@@ -27,7 +27,7 @@ def reference_pool(values, *, readings=None, capacity=64):
     owner._csw_row_of = lambda concept: concept if concept in codes else None
     owner.similarity_codebook = SimpleNamespace(lookup_rows=lambda rows: torch.stack([codes[row] for row in rows]))
     store = SimpleNamespace(location=lambda reference: reference[-1] if reference in values else None,
-        point_of_row=lambda row: next((value for reference, value in values.items() if reference[-1] == row), None))
+        point_of_row=lambda reference: values.get(reference))
     owner._closed_clause_store = lambda: store
     owner._test_member_values = values
     pool = MediumTermMemory(capacity)
@@ -185,8 +185,7 @@ def test_frame_access_does_not_leak_a_native_individuals_other_stream_value():
     # Independently opened streams own distinct working tokens even when
     # both recall the same promoted native identity.
     from Meaning import ConceptualMeaning
-    rows = [store.append_meaning(ConceptualMeaning.from_description(atoms[0]),
-        stream=index,sentence_index=index,document_key='streams',order=1) for index in (0,1)]
+    rows = [store.append_meaning(ConceptualMeaning.from_description(atoms[0])) for index in (0,1)]
     for index,row in enumerate(rows):
         pool.open(store.occurrence_of(row),kind=native,native=native,when=index,value=atoms[0])
         pool.record_link(store.occurrence_of(row), store.occurrence_of(row), index, kind='reference', order=1)
@@ -195,7 +194,7 @@ def test_frame_access_does_not_leak_a_native_individuals_other_stream_value():
     # A state change is retained after an event. Before its first event an
     # identity now reads its occurrence, so record this stream's event first.
     changed = store.append_meaning(ConceptualMeaning.from_description(atoms[1]),
-        stream=0, sentence_index=20, document_key='streams', order=0)
+        )
     pool.event(first, store.occurrence_of(changed), verb=native, role=0, when=20, before=atoms[0])
     for row,expected in zip(rows,(atoms[1],atoms[0])):
         frame = replace(SituationFrame.from_row(store.row(row)),symbol_ids=(native,),
@@ -262,8 +261,8 @@ def test_compose_menu_uses_the_resolvers_observed_exclusions():
         individual = mint(resolver.components.owner, atoms[index])
         idea = replace(ConceptualMeaning.from_description(atoms[index]),
                       role_refs=(('sym', individual), None, None))
-        row = store.append_meaning(idea, document_key='supports', sentence_index=index)
-        store.access_count[row] = 8
+        for _ in range(8):
+            store.append_meaning(idea)
     exclusions=torch.tensor(resolver.exclusion_pairs()).reshape(-1,2)
     state=chunks.empty(1,8,12)
     state,_=chunks.deposit(state,atoms[:1],torch.tensor([True]),identity=101)
@@ -306,7 +305,7 @@ def test_kept_journal_commits_two_verbs_one_identity_and_immutable_occurrences(m
     assert not f.cs.mtm.entries
     assert all(decision['candidates'] == (None,) for decision in plan['decisions'])
     written = {}
-    row = f.store.write_clause(prepared, written_rows=written, document_key='identity', sentence_index=0)
+    row = f.store.write_clause(prepared, written_rows=written, )
     retained = snapshot(resolver)
     resolver.commit(plan, row, written, document='identity', position=0, training=False)
     unchanged(resolver, retained)
@@ -318,7 +317,7 @@ def test_kept_journal_commits_two_verbs_one_identity_and_immutable_occurrences(m
     assert f.cs.mtm.entries[token].count == 2
     assert len(f.cs.mtm.entries[token].events) == 2
     torch.testing.assert_close(f.cs.mtm.value_of(token), lifts[1][2][0])
-    later = f.store.append_idea(torch.zeros(8), time=False)
+    later = f.store.append_idea(torch.zeros(8))
     retained = snapshot(resolver)  # Adding the reference is separate from recording its event.
     f.cs.mtm.event(token, f.store.occurrence_of(later), verb=f.cs.mtm.entries[token].events[-1].verb, role=0, when=20)
     unchanged(resolver, retained)
@@ -383,7 +382,7 @@ def test_later_bind_keeps_its_earlier_determination_under_a_wrapper(monkeypatch,
         plan = dict(plan, items=[dict(item, **site) for item, site in zip(plan['items'], sites)])
     prepared = resolver.prepare(clause, plan)
     written = {}
-    row = f.store.write_clause(prepared, written_rows=written, document_key='wrapped', sentence_index=0)
+    row = f.store.write_clause(prepared, written_rows=written, )
     retained = snapshot(resolver)
     resolver.commit(plan, row, written, document='wrapped', position=0, training=False)
     first, second = [written[('occurrence', id(item['written_node']))] for item in plan['items']]
@@ -392,32 +391,6 @@ def test_later_bind_keeps_its_earlier_determination_under_a_wrapper(monkeypatch,
     unchanged(resolver, retained)
 
 
-def test_three_slot_close_keeps_the_introduction_used_by_its_embedded_bind(monkeypatch):
-    """Captured final curriculum: a three-slot root orphaned a determined subject."""
-    from dataclasses import replace
-    from ClauseJournal import finish_clause
-    from test_clause_acceptance import SentenceFixture
-    f = SentenceFixture(monkeypatch)
-    supply_meaning(f, 'alias', f.program(('lower_unary', 'subject')).end_state[0].detach() * .5)
-    entry, _, handle = recorded_identity_reading(f, ('sum', ('lower_unary', 'subject'),
-        ('sum', 'predicate', ('implies', ('bind', 'alias'), 'tail'))))
-    # Stop the fixed operation journal before its final two sums. The three
-    # surviving roots are subject, predicate, and an embedded relative clause.
-    action_fields = ('actions', 'operation_values', 'operation_refs', 'operation_relations',
-        'operation_probabilities', 'identity_actions', 'timeline_actions', 'case_values',
-        'case_selected', 'operand_counts', 'form_wholes', 'form_whole_counts', 'form_whole_presence')
-    entry = replace(entry, **{name: getattr(entry, name)[:-2] for name in action_fields
-                              if getattr(entry, name) is not None})
-    clause = finish_clause(f.language, entry, registry=f.registry)
-    resolver = f.cs.components.reference_close
-    plan = resolver.preview(clause, chunk_context(resolver, ()))
-    introduction = next(item for item in plan['items']
-        if item['node'].identity['handle'] == handle and item['node'].identity['introduction'])
-    use = next(item for item in plan['items']
-        if item['node'].reference_request.get('compose_bind') == handle)
-    assert use['selected'] == introduction['selected']
-    assert clause.refs[0][0] == 'clause'
-    assert clause.children[clause.refs[0][1]] is introduction['node']
 
 
 def test_dummy_bind_preserves_a_carried_object_with_different_working_content(monkeypatch):
@@ -439,43 +412,11 @@ def test_dummy_bind_preserves_a_carried_object_with_different_working_content(mo
     assert (int(closing.alloc.next_id), len(closing.parts)) == before
 
 
-def test_dummy_binds_preserve_the_relative_operand_in_a_three_slot_close(monkeypatch):
-    """Captured whole + repeated dummy binds must not become three plain points."""
+def test_three_point_roots_require_a_selected_relative_predicate(monkeypatch):
     from dataclasses import replace
-    from types import SimpleNamespace
     from ClauseJournal import finish_clause
-    from ClauseScope import ClauseScope
-    from ReferenceContext import prepare_operands
     from test_clause_acceptance import SentenceFixture
-    from Memory import STMChunks
     f = SentenceFixture(monkeypatch)
-    tree = ('sum', 'prefix', ('sum', 'predicate',
-        ('bind', ('bind', ('whole', 'subject', 'tail')))))
-    entry, _, _ = recorded_identity_reading(f, tree, dummy_binds=(0, 1))
-    action_fields = ('actions', 'operation_values', 'operation_refs', 'operation_relations',
-        'operation_probabilities', 'identity_actions', 'timeline_actions', 'case_values',
-        'case_selected', 'operand_counts', 'form_wholes', 'form_whole_counts', 'form_whole_presence')
-    entry = replace(entry, **{name:getattr(entry, name)[:-2] for name in action_fields
-                             if getattr(entry, name) is not None})
-    relations = torch.zeros(len(entry.actions), 2, dtype=torch.bool)
-    rule = next(rule for rule in f.binary if rule.method_name == 'bind')
-    field = STMChunks.empty(1, 8, 8, device=entry.leaves.device, dtype=entry.leaves.dtype)
-    for index, (kind, operation, _) in enumerate(entry.actions.tolist()):
-        if kind != 1 or f.binary[operation].method_name != 'bind':
-            continue
-        left = entry.operation_values[index, 0]
-        menu = prepare_operands(torch.stack((left*0, left))[None],
-            torch.tensor([[0, -2]]), torch.tensor([[0, ClauseScope.RELATIVE | ClauseScope.LOCAL]]),
-            torch.tensor([[0, 1]]), orders=torch.zeros(1, 2, dtype=torch.long),
-            rules=(rule,), unary_rules=(), bank=SimpleNamespace(interpreter=None,cases=None),
-            live=(), active=torch.ones(1, 2, dtype=torch.bool), chunk_state=field)
-        relations[index] = menu['binary_relations'][0, 0, 0]
-    clause = finish_clause(f.language, replace(entry, operation_relations=relations), registry=f.registry)
-    assert clause.relation == 'operator'
-    assert clause.refs[2][0] == 'clause'
-    child = clause.children[clause.refs[2][1]]
-    assert child.relation == 'part' and child.point is None
-    assert child.reference_request is None
     # The close still rejects three point roots with no relative grammar.
     from reading_fixtures import record_reading
     plain = record_reading(f.language, f.program(('sum', 'prefix', ('sum', 'predicate', 'tail'))))
@@ -532,7 +473,7 @@ def test_compose_bind_pending_child_keeps_the_direct_question_role(monkeypatch, 
     plan = resolver.preview(parent, chunk_context(resolver, ()))
     prepared = resolver.prepare(parent, plan)
     written = {}
-    row = store.write_clause(prepared, document_key='direct-question', written_rows=written)
+    row = store.write_clause(prepared,  written_rows=written)
     resolver.commit(plan, row, written, document='direct-question', position=0, training=False)
     raw = store.raw_meaning_of(row)
     query = closing_question(store.meaning_of(row), prepared, store=store, written_rows=written)
@@ -580,7 +521,7 @@ def test_transparent_wrapper_retains_one_completed_event(monkeypatch):
     plan = resolver.preview(clause, chunk_context(resolver, ()))
     prepared = resolver.prepare(clause, plan)
     written = {}
-    row = f.store.write_clause(prepared, written_rows=written, document_key='wrapped-event', sentence_index=0)
+    row = f.store.write_clause(prepared, written_rows=written, )
     resolver.commit(plan, row, written, document='wrapped-event', position=0, training=False)
     events = {event.occurrence for token in f.cs.mtm.entries.values() for event in token.events}
     assert events == {written[('occurrence', id(prepared))]}
@@ -613,7 +554,7 @@ def test_resolved_compose_bind_keeps_the_parent_relation_closed(monkeypatch, rol
     plan = resolver.preview(parent, chunk_context(resolver, (SituationFrame.from_row(store.row(first)),)))
     prepared = resolver.prepare(parent, plan)
     written = {}
-    row = store.write_clause(prepared, document_key='resolved-question', written_rows=written)
+    row = store.write_clause(prepared,  written_rows=written)
     retained = snapshot(resolver)
     resolver.commit(plan, row, written, document='resolved-question', position=1, training=False)
     assert plan['items'][0]['reference'] == token
@@ -621,7 +562,7 @@ def test_resolved_compose_bind_keeps_the_parent_relation_closed(monkeypatch, rol
     assert store.meaning_of(row).role_refs[role] == ('sym', words['three'])
     assert not open_slots(store.meaning_of(row))
     assert not open_slots(closing_question(store.meaning_of(row), prepared, store=store, written_rows=written))
-    unchanged(resolver, retained)
+    unchanged(resolver, retained, committed_access=True)
 
 
 @pytest.mark.parametrize('pending', (False, True))
@@ -634,8 +575,8 @@ def test_unminted_value_and_anonymous_name_have_distinct_pending_state(pending):
     from test_medium_term_memory import snapshot,unchanged
     from chunk_fixtures import prepend
     resolver,store,atoms=fixture()
-    row=store.append_meaning(ConceptualMeaning.from_description(atoms[0]),order=1,
-        document_key='unminted',sentence_index=0,evidence=(1.,0.))
+    row=store.append_meaning(ConceptualMeaning.from_description(atoms[0]),
+        evidence=(1.,0.))
     token=store.occurrence_of(row);pool=resolver.components.owner.mtm
     pool.open(token,kind=None,pending=pending,when=1,value=atoms[0])
     raw=with_slots(replace(store.raw_meaning_of(row),bindings={'_forward_references':((0,101),)}),(('referent',0),))
@@ -723,25 +664,29 @@ def test_nested_unresolved_operand_keeps_its_resolution_annotation(pending, wrap
         refs=(words['wrong'], ClausePredicate(pred, 'equal'), ('clause', 0)),
         children=(operand,), evidence=(1., 0.))
     written = {}
-    row = store.write_clause(parent, document_key='unresolved-operand', written_rows=written)
+    row = store.write_clause(parent,  written_rows=written)
     raw = store.raw_meaning_of(row)
     marks = bindings(raw).get('_unresolved_operands', ())
     if pending and wrapped:
         occurrence = written[('occurrence', id(operand))]
         assert marks == ((2, occurrence),) and raw.role_refs[2] == occurrence
-        assert occurrence[0] == 'sym' and store.parts.contains(occurrence[1])
+        assert occurrence[0] == 'ltm' and store.location(occurrence) is not None
         from ChainRead import point
-        from Memory import RELATION
-        assert point(store, (RELATION, occurrence[1])) is None
+        from Memory import OCCURRENCE
+        torch.testing.assert_close(point(store, (OCCURRENCE, occurrence[-1])), operand.point)
+        pending_value = store._concept_owner().mtm.pending[occurrence][1]
+        assert bindings(pending_value.constituents[0])['_forward_references'] == ((0, words['x']),)
         retained = snapshot(resolver)
         _, restored, _, _, _ = world()
         restored.load_state_dict(copy.deepcopy(store.state_dict()))
-        restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
         restored.parts.load_state_dict(copy.deepcopy(store.parts.state_dict()))
+        restored._concept_owner().mtm.restore(copy.deepcopy(store._concept_owner().mtm.state()))
         from Spaces import _concept_alloc_of
         _concept_alloc_of(restored._concept_owner()).singletons = copy.deepcopy(
             _concept_alloc_of(store._concept_owner()).singletons)
         assert bindings(restored.raw_meaning_of(row))['_unresolved_operands'] == marks
+        restored._concept_owner().mtm.restore(None)
+        assert '_unresolved_operands' not in bindings(restored.raw_meaning_of(row))
         unchanged(resolver, retained)
     else:
         assert marks == ()
@@ -781,7 +726,7 @@ def test_bind_training_never_updates_or_creates_a_concept_region(monkeypatch, ph
     assert selected == plan['items'][0]['candidates'][1]
     prepared = resolver.prepare(clause, plan)
     written = {}
-    row = store.write_clause(prepared, document_key='bank-isolation', sentence_index=3,
+    row = store.write_clause(prepared,
                              written_rows=written)
     retained = snapshot(resolver)
     alloc = owner._concept_allocator
@@ -838,7 +783,7 @@ def test_relative_determination_keeps_its_introduction_and_later_bind(monkeypatc
         plan = dict(plan, items=[dict(item, **site) for item, site in zip(plan['items'], sites)])
     prepared = resolver.prepare(clause, plan)
     written = {}
-    row = f.store.write_clause(prepared, written_rows=written, document_key='relative', sentence_index=0)
+    row = f.store.write_clause(prepared, written_rows=written, )
     retained = snapshot(resolver)
     resolver.commit(plan, row, written, document='relative', position=0, training=False)
     mentions = [written[('occurrence', id(item['written_node']))] for item in plan['items']
@@ -866,7 +811,7 @@ def test_two_relative_determinations_keep_distinct_objects(monkeypatch):
     assert [item['selected'] for item in introductions] == [('new', 0), ('new', 1)]
     prepared = resolver.prepare(clause, plan)
     written = {}
-    row = f.store.write_clause(prepared, written_rows=written, document_key='separate', sentence_index=0)
+    row = f.store.write_clause(prepared, written_rows=written, )
     resolver.commit(plan, row, written, document='separate', position=0, training=False)
     tokens = [f.cs.mtm.token_of(written[('occurrence', id(item['written_node']))]) for item in introductions]
     assert tokens[0] != tokens[1]
@@ -881,7 +826,7 @@ def test_missing_determined_event_introduction_fails_loudly():
     value = ConceptualMeaning.from_description(atoms[0])
     node = Clause(value, point=atoms[0], identity=dict(handle=1, action=0,
         event=(1, 1, 0, 101, -1, 1), origins=torch.tensor([[3, 0, 1]]), values=atoms[:1]), evidence=(1., 0.))
-    row = store.write_clause(Clause(value, point=atoms[0]), document_key='lost-introduction')
+    row = store.write_clause(Clause(value, point=atoms[0]))
     plan = dict(items=[], prepared_root=node)
     written = {('occurrence', id(node)): store.occurrence_of(row)}
     with pytest.raises(RuntimeError, match='lost its determined introduction'):
@@ -904,8 +849,7 @@ def test_journal_native_bind_without_a_pool_token_keeps_its_symbol_origin(monkey
     for index in range(pool_aliases):
         # Reference-backed aliases require actual held occurrence rows.
         from Meaning import ConceptualMeaning
-        row = f.store.append_meaning(ConceptualMeaning.from_description(content),
-            document_key='native-bind-aliases', sentence_index=index, order=1)
+        row = f.store.append_meaning(ConceptualMeaning.from_description(content))
         f.cs.mtm.open(f.store.occurrence_of(row), kind=symbol, native=symbol,
                      when=index, value=content)
     # No token and an ambiguous pair both leave the durable symbol usable.

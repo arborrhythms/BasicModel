@@ -79,7 +79,7 @@ class ConceptualTaxonomyView:
         max_expansions = _limit(max_expansions, "max_expansions")
         incomplete = list(self.incomplete)
         result = {"domain": "conceptual-taxonomy", "support_true": 0.0,
-                  "support_false": 0.0, "path": (), "incomplete": (),
+                  "support_false": 0.0, "path": (), "against_path": (), "incomplete": (),
                   "nodes_scanned": self.nodes_scanned,
                   "records_scanned": self.records_scanned, "edges_expanded": 0}
         if part not in self.concepts or whole not in self.concepts:
@@ -113,10 +113,12 @@ class ConceptualTaxonomyView:
                     if edge.whole == whole:
                         if support > result["support_true"]:
                             result["support_true"], result["path"] = support, proof
-                        # A negative direct edge is counterevidence. It is
-                        # never propagated through positive containment.
-                        if current == part:
-                            result["support_false"] = max(result["support_false"], edge.evidence[1])
+                        # Positive containment reaches a kind whose exclusion
+                        # from this property applies to the subject too. A
+                        # negative intermediate edge never continues a path.
+                        against = min(strength,edge.evidence[1])
+                        if against > result["support_false"]:
+                            result["support_false"], result["against_path"] = against, proof
                     if support > visited.get(edge.whole, 0.):
                         visited[edge.whole] = support
                         queue.append((edge.whole, proof, support))
@@ -193,7 +195,10 @@ def capture_taxonomy(conceptual_space, *, max_nodes=256, max_records=1024,
                 continue
             part, whole = ('sym', a), ('sym', b)
             concepts.update((part, whole))
-            evidence = tuple(float(pole) for pole in part_store.evidence(symbol))
+            # A relation's assertion is the authority for a taxonomy proof.
+            # Its grammatical occupation is how it was composed, not a
+            # second premise that can lower the stored assertion's trust.
+            evidence = tuple(float(value) for value in part_store.evidence(symbol))
             edges.append(TaxonomyEdge(part, whole, ('sym', symbol), 'part', evidence))
         if 'work_budget' in incomplete or 'capture_limit' in incomplete:
             break

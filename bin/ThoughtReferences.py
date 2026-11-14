@@ -196,7 +196,18 @@ def fill(meaning, result, *, witnesses=(), operation=None, slots=None):
             continue
         if supplied is not None and role in dict(bindings(supplied).get('_unresolved_operands', ())):
             continue
-        if supplied is not None and supplied.role_refs[role] is not None:
+        operand = evidence.get('answer_operand')
+        if operand is not None:
+            # Extend returned this operand, not the whole witnessing row.
+            # A plural set is an ordinary local idea constituent; it must
+            # not borrow that row's occurrence as its own identity.
+            if operand.role_refs[0] is not None:
+                references[role] = import_reference(operand.role_refs[0])
+            else:
+                references[role] = ('constituent',len(children))
+                children.append(operand)
+            roles[role], mask[role] = operand.roles[0], True
+        elif supplied is not None and supplied.role_refs[role] is not None:
             references[role] = import_reference(supplied.role_refs[role])
             roles[role], mask[role] = supplied.roles[role], supplied.role_mask[role]
         elif (supplied is not None and len(frames) == 1

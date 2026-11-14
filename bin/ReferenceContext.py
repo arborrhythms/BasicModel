@@ -10,29 +10,6 @@ import torch
 from torch.nn import functional as F
 
 
-def exclude_replaced_occurrences(store, identities, valid, document, position):
-    """A re-reading cannot use the occurrence it is about to replace.
-
-    These are structural eligibility checks, independent of relevance or
-    attention. The store has no versioned old interpretation to bind: such
-    a reference would become a self-edge when the selected reading commits.
-    The same applies to its embedded rows, whose addresses are reused.
-    """
-    from Occurrence import document_digest
-    current = document_digest(document)
-    embedded = document_digest(('embedded', current, position))
-    result = valid.clone()
-    for column, identity in enumerate(identities.detach().cpu().tolist()):
-        row = store.index_of_row(identity)
-        if row is None or not bool(valid[column]):
-            continue
-        source = bytes(store.document_keys[row].detach().cpu().tolist())
-        if source == embedded or (source == current and int(store.sentence_index[row]) == position):
-            result[column] = False
-    return result
-
-
-
 @dataclass(frozen=True)
 class SituationAddress:
     """STM retains an occurrence address; its current region lives in LTM."""
@@ -60,6 +37,7 @@ class SituationFrame:
     time: object = None
     symbol_ids: tuple = ()
     activations: tuple = ()
+    occurrence: tuple | None = None
 
     def __iter__(self):
         # The working envelope has one occupied entry vector.
@@ -73,16 +51,18 @@ class SituationFrame:
     @classmethod
     def from_row(cls, row):
         meaning = row['meaning']
-        if meaning is None or row.get('row_id', -1) in (-1, 0):
+        if meaning is None or row.get('row_id', -1) == -1:
             return None
-        point = meaning.roles[0] if meaning.sentence_kind == 'idea' else row.get('head_point')
+        # Pending question bindings can change the working meaning's kind.
+        # Its retained idea still supplies the context point.
+        point = row.get('point', row.get('head_point'))
         roles = torch.zeros_like(meaning.roles)
         occupied = torch.zeros_like(meaning.role_mask)
         if point is not None:
             roles[0] = point; occupied[0] = True
         return cls(int(occupied.sum()), roles.detach(),
                    occupied, row['row_id'], None if point is None else point.detach().clone(),
-                   order=int(row.get('order', -1)), time=row.get('time'))
+                   order=int(row.get('order', -1)), time=row.get('time'), occurrence=row.get('occurrence'))
 
 
 class OrderReference(NamedTuple):

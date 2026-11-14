@@ -15,7 +15,7 @@ def test_complete_grammar_declares_sentence_predicate_generic_and_implication():
     assert rules['generic'].reference_modes == (('argin1', 'generic'),)
     assert rules['lower'].head_role == 2
     assert rules['implies'].clause_form == 'implies'
-    assert 'operator_argout1' in grammar.ws_relative_starts
+    assert 'operator_argout1' not in grammar.ws_relative_starts
     assert 'implies_argout1' in grammar.ws_relative_starts
 
 

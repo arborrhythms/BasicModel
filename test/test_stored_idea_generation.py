@@ -1,4 +1,5 @@
 """Stored ideas invert from dictionaries and live wholes, without input traces."""
+from Memory import STM0
 from types import MethodType, SimpleNamespace
 
 import torch
@@ -139,7 +140,7 @@ def test_nontaxonomic_cue_does_not_enter_concept_order_reader(reference):
     from Memory import LTM0
     from Meaning import ConceptualMeaning
     from Taxonomy import concept_reference
-    store = LTM0(4, capacity=2)
+    store = STM0(4, capacity=2, relation_capacity=8192)
     cue = ConceptualMeaning(torch.ones(3, 4), torch.tensor([True, False, False]),
                             role_refs=(reference, None, None))
     # Content reads do not unfold or send reference-shaped values to an
@@ -434,7 +435,7 @@ def _field_trial(words, returned, *, available=True, meaning_start=None):
     owner = SimpleNamespace(subspace=carrier, similarity_codebook=codebook,
         _csw_row_of=int, _row_order=lambda row: 0, _field_caps=lambda: (2,),
         _field_codes=lambda codes, rows: codes[rows], cs_reverse_presence=lambda query, **kwargs: query,
-        _concept_allocator=SimpleNamespace(layer=lambda order: definitions),
+        _concept_allocator=SimpleNamespace(layer=lambda order: definitions, refs=lambda *args: ()),
         _compose_order0=lambda evidence, **kw: evidence,
         concept_id_at_row=int, word_surface_for_row=lambda row: bytes([97 + row]))
     from FieldProjection import stimulate
@@ -463,24 +464,26 @@ def _field_trial(words, returned, *, available=True, meaning_start=None):
         perceptualSpace=SimpleNamespace(percept_store=native,
             _forward_input=dict(native_indices=torch.tensor([[0, 1]]), native_part_spans=field.where),
             _radix_part_events=lambda ids, positions: observed),
-        languageSpace=SimpleNamespace(generation_scope=nullcontext), _synthesis_guard=nullcontext,
+        languageSpace=SimpleNamespace(generation_scope=nullcontext,
+            _generate_binary_rules=(), _generate_unary_rules=(),
+            _generate_binary_ops=(), _generate_unary_ops=()), _synthesis_guard=nullcontext,
         inter_loss_weight=0., symbolSpace=SimpleNamespace(expectation=None),
         _staged_concepts_in=torch.ones(1, 1, 2, dtype=torch.long), _input_reconstructions={},
         _publish_sentence_scratch=lambda state: None, _trial_understanding=lambda *args: record,
         _tensor_pushed_ideas=words, _sentence_field=None,
-        _sentence_observation=lambda *args: dict(entries=(None,), meanings=(None,), reference_plans=()))
+        _sentence_observation=lambda *args: dict(entries=(None,), clauses=(None,), meanings=(None,), reference_plans=()))
     def reverse(carrier, *, field):
         percepts = events(field)
         return SimpleNamespace(_reconstruction_percepts=percepts,
             materialize=lambda: percepts[..., ::2].sum(-1).gt(0).long()[:, None])
     model.reverse = reverse
     model._reverse_event_loss = MethodType(BasicModel._reverse_event_loss, model)
-    trace = (torch.zeros(1, 1, dtype=torch.long), torch.zeros(1, 1, dtype=torch.bool),
+    trace = (torch.zeros(1, returned.shape[1], dtype=torch.long), torch.zeros(1, returned.shape[1], dtype=torch.bool),
         torch.tensor([False]), words.new_zeros(1, 3), torch.tensor([True]),
         words.new_zeros(1, 1, 1, 9), words[:, :1])
     def proposal(model, record, **options):
         return generated(model, returned, record.end_depth, torch.tensor([False]), bank, trace,
-                         when=record.open_field.when[:, :1])
+                         when=record.open_field.when[:, :1], depths=record.end_depth)
     lang = [None] * 12
     lang[6], lang[10], lang[11] = root[:, None], record.roots, record.depths
     with patch('SentenceField.sentence_generated', proposal):

@@ -20,7 +20,7 @@ def event(cs, store, place, *, order=0, value=.5, token=False):
     from Meaning import ConceptualMeaning
     point = torch.zeros(16)
     point[0] = value
-    point[store.when_start-4] = place
+    point[-8] = place
     meaning = ConceptualMeaning.from_description(point)
     if order:
         from dataclasses import replace
@@ -28,12 +28,11 @@ def event(cs, store, place, *, order=0, value=.5, token=False):
         force_order(cs, referent, order)
         cs._csw_concept_row(order, referent)
         meaning = replace(meaning, role_refs=(('sym', referent), None, None))
-    row = store.append_meaning(meaning, order=order,
-                              document_key=('event', place), time=False)
-    address = int(store.address_keys[row])
+    row = store.append_meaning(meaning)
+    address = store.row_name(row)
     if token:
         cs.mtm.open(store.occurrence_of(row), kind=17, when=place, value=point,
-                    pending=False, where=point[store.when_start-4:store.when_start])
+                    pending=False, where=point[-8:-4])
         # §50: the explicit state below belongs to an event, not a cached mention.
         cs.mtm.event(store.occurrence_of(row), store.occurrence_of(row), verb=17, role=0, when=place)
     return address
@@ -44,13 +43,15 @@ def equal_close(cs, store, left, right, *, word=None, evidence=(1., 0.)):
     from Meaning import ConceptualMeaning
     from Memory import OCCURRENCE, SYMBOL
     from ChainRead import point
-    operands = (Composition(point(store, (OCCURRENCE, left)), reference=left,
-                            order=cs._concept_source_order(left)),
+    from Occurrence import operand_name
+    left_reference = store.occurrence_of(store.index_of_row(left))
+    operands = (Composition(point(store, (OCCURRENCE, left)), reference=left_reference,
+                            order=cs._concept_source_order(left_reference)),
                 Composition(point(store, (SYMBOL, right)), reference=right,
                             word_id=right if word is None else word, order=cs._concept_source_order(right)))
     composed = Composition(operands[0].point, operands, operation='equal', order=operands[0].order)
     return store.write_clause(Clause(ConceptualMeaning.from_description(composed.point),
-        relation='equal', refs=(left, predicate_identity('equal'), right),
+        relation='equal', refs=(operand_name(left), predicate_identity('equal'), right),
         composition=composed, order=composed.order), evidence=evidence)
 
 

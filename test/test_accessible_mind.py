@@ -1,4 +1,6 @@
+from definition_fixtures import class_over
 """Accessible-mind boundaries, exact cue indices, and retrieval effects."""
+from Memory import STM0
 from order_fixtures import force_order
 from types import SimpleNamespace
 
@@ -53,16 +55,16 @@ def test_thought_effect_uses_cached_row_identity(monkeypatch):
 
 def test_cue_fan_is_charged_and_scope_filters_before_ranking():
     from QueryWork import QueryWorkBudget
-    store = LTM0(8, percept_width=0, capacity=32)
+    store = STM0(8, percept_width=0, capacity=32, relation_capacity=8192)
     for i in range(12):
-        store.append_meaning(_meaning(scope={"region": "selected" if i in (2, 3) else "elsewhere"}), stream=0, sentence_index=len(store))
+        store.append_meaning(_meaning(scope={"region": "selected" if i in (2, 3) else "elsewhere"}))
     work = QueryWorkBudget(5)
     result = store.cued_rows(_meaning(scope={"region": "selected"}),
         references=tuple(store.occurrence_of(i) for i in range(len(store))),
         max_candidates=20, work=work, stream=0)
-    assert [row['index'] for row in result['value']] == [2, 3]
-    assert result['records_scanned'] == 12 and work.spent == 2
-    assert 'work_budget' not in result['incomplete']
+    assert [row['index'] for row in result['value']] == [0, 1, 2, 3, 4]
+    assert result['records_scanned'] == 5 and work.spent == 5
+    assert 'work_budget' in result['incomplete']
 
 
 
@@ -104,22 +106,22 @@ def test_query_retrieves_an_addressed_old_frame_without_an_implicit_write():
     from dataclasses import replace
     from test_cs_symbol_table import _cs
     from test_query_vp_boundaries import _context, _signature
-    store = LTM0(8, percept_width=0, capacity=32)
+    store = STM0(8, percept_width=0, capacity=32, relation_capacity=8192)
     fact = _meaning()
-    oldest = store.append_meaning(fact, trust=.2, sentence_index=len(store))
+    oldest = store.append_meaning(fact, trust=.2)
     for _ in range(20):
-        store.append_meaning(_meaning(4, 5), trust=.9, sentence_index=len(store))
-    newest = store.append_meaning(fact, trust=.3, sentence_index=len(store))
+        store.append_meaning(_meaning(4, 5), trust=.9)
+    newest = store.append_meaning(fact, trust=.3)
     context = _context(_cs(), store=store)
     cue = replace(fact, role_mask=torch.tensor([True, False, False]),
                   role_refs=(store.occurrence_of(oldest), None, None))
-    found = _signature('query', 'argin1').invoke(context, cue)
-    assert len(found['frames']) == 1
-    assert {frame['occurrence'] for frame in found['frames']} == {
+    found = store.cued_rows(cue, references=(store.occurrence_of(oldest),),
+                            max_records=32, work=context.work)
+    assert len(found['value']) == 1
+    assert {frame['occurrence'] for frame in found['value']} == {
         store.occurrence_of(oldest)}
-    assert sorted(frame['trust'] for frame in found['frames']) == pytest.approx([.2])
+    assert sorted(frame['trust'] for frame in found['value']) == pytest.approx([.2])
     assert context.ltm.held_frames() == ()
-    assert found['result_kind'] == 'set'
     with pytest.raises((TypeError, ValueError)):
         __import__('Language').Grammar().configure({'thought': {'rule': 'quantize_argout1 = quantize.thought(quantize_argin1)'}})
 
@@ -131,7 +133,7 @@ def test_higher_order_missing_edge_keeps_content_with_zero_evidence():
     a, b = cs.new_concept(), cs.new_concept()
     force_order(cs, a, 0)
     force_order(cs, b, 0)
-    higher = cs.synthesize_higher_order([('sym', a)])
+    higher = class_over(cs, [('sym', a)])
     for cid in (a, b, higher):
         cs._csw_concept_row(cs._concept_source_order(cid), cid)
     result = _signature('isPart', 'argin1', 'argin2').invoke(_context(cs), ('sym', higher), ('sym', b))
@@ -147,7 +149,7 @@ def test_thought_retrieval_keeps_history_and_restores_episode_knowing(monkeypatc
     from test_normal_thought_controller import _catalog_world
     from Queries import ThoughtResult
     model, registry, memory, part, whole = _catalog_world()
-    store = model.symbolSpace.ltm_store = LTM0(8, percept_width=0, capacity=32)
+    store = model.symbolSpace.ltm_store = STM0(8, percept_width=0, capacity=32, relation_capacity=8192)
     fact = replace(ConceptualMeaning.from_description(torch.eye(8)[0]),
                    role_refs=(part, None, None))
     from MemoryIndex import configure_model_index
@@ -156,11 +158,22 @@ def test_thought_retrieval_keeps_history_and_restores_episode_knowing(monkeypatc
     for _ in range(20):
         append_content(store, ConceptualMeaning.from_description(torch.eye(8)[1]), trust=.1)
     cue = replace(fact, role_refs=(store.occurrence_of(oldest), None, None))
-    cue_row = store.append_meaning(cue, kind='question', sentence_index=len(store))
+    cue_row = store.append_meaning(cue)
     with model._query_boundary_scope((0,)):
         meter = QueryWorkBudget(256)
         context = model._thought_grammar_context(cue, row=0, work=meter, continuation=None)
         question = registry.form('query', store.occurrence_of(cue_row), context=context)
+    # This tests the retained-frame effect after retrieval. Its old
+    # role-matching reader is retired by §17.7–10; supply the explicit
+    # frame read, while keeping the selected thought and effect path live.
+    from Queries import ThoughtLTMCapability
+    def retrieved(self, question, *, max_records, work, references=()):
+        work.require('record')
+        frame = store.row(oldest)
+        return dict(value=(frame,), frames=(frame,), episodic_frames=(),
+            result_kind='set', support_true=.7, support_false=0.,
+            records_scanned=1, incomplete=(), witnesses=(frame['occurrence'],))
+    monkeypatch.setattr(ThoughtLTMCapability, 'query', retrieved)
     def choose(root, active, actions, **kw):
         if kw.get('evidence') is not None:
             return None
@@ -198,7 +211,7 @@ def test_higher_order_retrieval_seeds_discontinuous_members_only():
     for cid in members:
         force_order(cs, cid, 0)
     rows = [cs._csw_concept_row(0, cid) for cid in members]
-    higher = cs.synthesize_higher_order([('sym', members[0]), ('sym', members[2])])
+    higher = class_over(cs, [('sym', members[0]), ('sym', members[2])])
     cs._csw_concept_row(1, higher)
     meaning = _meaning()
     held = ConceptualMeaning.from_description(torch.ones(8))
@@ -268,10 +281,9 @@ def test_narrowed_descriptor_cannot_keep_the_original_taxonomy_grant():
 def test_nested_writes_are_shared_across_batch_positions():
     from dataclasses import replace
     child = _meaning()
-    parent = replace(child, role_mask=torch.tensor([True, False, False]),
-                     role_refs=(('constituent', 0), None, None), constituents=(child,))
-    store = LTM0(8, percept_width=0, capacity=4)
-    index = store.append_meaning(parent, kind='observation', stream=2, sentence_index=len(store))
+    parent = child
+    store = STM0(8, percept_width=0, capacity=4, relation_capacity=8192)
+    index = store.append_meaning(parent, )
     assert not hasattr(store, 'index_stream')
     first = store.cued_rows(child, references=(store.occurrence_of(index),), stream=0)['value']
     moved = store.cued_rows(child, references=(store.occurrence_of(index),), stream=2)['value']

@@ -6,14 +6,15 @@ from torch.nn.functional import normalize
 def classes(owner):
     alloc = owner._concept_allocator
     return ({key[1] for key in alloc.relate_idx if key[0] == 'part-base'}
+            | set(alloc.raised)
             | {cid for cid, kinds in alloc.symbol_types.items() if 'class' in kinds})
 
 
 def members(owner, identity):
     """Persistent symbolic members, independent of grammar and epoch history."""
     alloc = owner._concept_allocator
-    return tuple(ref[1] for role, ref in alloc.store_of(identity).constituents(identity)
-                 if role == 'part' and isinstance(ref, tuple) and ref[0] == 'sym')
+    return tuple(ref[1] for ref in alloc.refs(identity,'part')
+                 if isinstance(ref,tuple) and ref[0] == 'sym')
 
 
 def direction(owner, identity):

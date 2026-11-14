@@ -52,7 +52,9 @@ def test_walk_to_leaf_reference_and_stored_row(corner, monkeypatch):
         leaf_evidence=symbol._word_reference_evidence[0])
     clause = finish_reading(fixture.language, program, registry=fixture.registry)
     row = fixture.store.write_clause(clause)
-    assert fixture.store.row(row)['evidence'] == pytest.approx(corner)
+    stored = [fixture.store.row(i)['evidence'] for i in range(row, len(fixture.store))]
+    assert len(stored) == max(1, sum(pole > 0 for pole in corner))
+    assert tuple(max(pair[lane] for pair in stored) for lane in (0, 1)) == pytest.approx(corner)
     assert clause.meaning.polarity  # no Boolean is inferred from the pair
 
 
@@ -97,7 +99,10 @@ def test_required_evidence_read_of_true_and_false_is_both(monkeypatch):
         leaf_evidence=torch.tensor([[1., 0.], [0., 1.]]))
     clause = finish_reading(fixture.language, program, registry=fixture.registry)
     row = fixture.store.write_clause(clause)
-    assert clause.evidence == fixture.store.row(row)['evidence'] == (1., 1.)
+    assert clause.evidence == (1., 1.)
+    assert len(fixture.store) - row == 2
+    assert fixture.store.row(row)['evidence'] == (1., 0.)
+    assert fixture.store.row(row + 1)['evidence'] == (0., 1.)
 
 
 @pytest.mark.parametrize('left_pair,right_pair', tuple(product(CORNERS + ((.2, .7),), repeat=2)))
@@ -121,6 +126,15 @@ def test_path_ast_has_no_pole_collapse():
     from tetralemma_audit import audit
     report = audit()
     assert report['sites'] and not report['violations']
+
+
+def test_path_ast_distinguishes_two_rows_from_netted_evidence():
+    import ast
+    from tetralemma_audit import inspect_site
+    separated = ast.parse('def rows(pair):\n    return ([pair[0]] if pair[0] else []) + ([-pair[1]] if pair[1] else [])').body[0]
+    netted = ast.parse('def rows(pair):\n    return [pair[0] - pair[1]]').body[0]
+    assert not inspect_site(separated, {'pair'})
+    assert inspect_site(netted, {'pair'})
 
 
 @pytest.mark.parametrize('name', ['conjunction', 'disjunction'])

@@ -28,7 +28,7 @@ class View:
             mask = torch.tensor(metadata['_roles'], dtype=torch.bool, device=roles.device)
             occupied = mask.nonzero().flatten().tolist()
             for role, member in zip(occupied, contents[:len(occupied)], strict=True):
-                roles[role] = store.point_of_row(member[1])
+                roles[role] = store.point_of_row(('ltm', store.address_domain, member[1]))
             children = tuple(meaning(child) for child in contents[len(occupied):])
             def unquote(item):
                 if isinstance(item, tuple):
@@ -105,10 +105,8 @@ def write(store, meaning, *, key):
     store.to(device=meaning.roles.device, dtype=meaning.roles.dtype)
     def append(point, bindings):
         value = replace(ConceptualMeaning.from_description(point.detach()), bindings=bindings)
-        row = store.append_meaning(value, kind='unverified', time=False,
-            document_key=('thought', tuple(float(value).hex() for value in key)),
-            sentence_index=len(store))
-        return OCCURRENCE, int(store.address_keys[row])
+        row = store.append_meaning(value)
+        return OCCURRENCE, store.row_name(row)
     def retain(value):
         children = [retain(child) for child in value.constituents]
         # Semantic metadata already uses local constituent indices. It owns
@@ -134,9 +132,7 @@ def snapshot(stores):
     return tuple(tuple(None if not len(store) else (
         {name:value.clone() for name,value in store.state_dict().items()},
         {name:value.clone() for name,value in store.parts.state_dict().items()},
-        {name:deepcopy(getattr(store, name)) for name in (
-            '_semantic_rows', '_expectation_rows', '_texts', '_document_sources',
-            '_cover_symbols', '_recurrence_identities', '_supplies')},
+        {'working': deepcopy(store.working)},
         store.generation) for store in row) for row in stores)
 
 
@@ -150,13 +146,13 @@ def restore(stores, saved):
             capacity = int(tensors['slots'].shape[0])
             if store.capacity != capacity:
                 _resize(store, capacity)
-            store.load_state_dict(tensors)
-            store.parts.load_state_dict(parts)
+            store.restore_runtime_state(tensors)
+            store.parts.restore_runtime_state(parts)
             # This is a rollback of already admitted working content, not a
             # durable checkpoint import. An external occurrence may have
             # expired since the thought was written; restoring the thought
             # must neither resurrect it nor require it to be present again.
             for name, value in metadata.items():
                 setattr(store, name, deepcopy(value))
-            store.rebuild_addresses()
+            store.rebuild_caches()
             store.generation = generation

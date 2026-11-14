@@ -181,17 +181,19 @@ def _stage_packed(m, rows):
     return raw
 
 
-def _select_completed_binary_path(m):
+def _select_completed_binary_path(m, operation=None):
     """Control the derivation for traversal/provenance assertions, not quality."""
     chooser = m.symbolSpace.languageLayer.operation_layer.chooser
+    selected = 0 if operation is None else next(i for i, rule in
+        enumerate(m.languageSpace._compose_binary_rules) if rule.method_name == operation)
 
     def binary(x, candidates, *_args, **_kwargs):
         scores = x.new_full(candidates.shape[:-1], -1e6)
-        scores[..., 0] = 0.
-        return x.new_full((*x.shape[:2], 1), -1e6), scores
+        scores[..., selected] = 0.
+        return x.new_full((*x.shape[:2], 1), -1e3), scores
 
     def unary(x, candidates, *_args, **_kwargs):
-        return (x.new_full((*x.shape[:2], 1), -1e6),
+        return (x.new_full((*x.shape[:2], 1), -1e3),
                 x.new_full(candidates.shape[:-1], -1e6))
 
     chooser.score_binary, chooser.score_unary = binary, unary

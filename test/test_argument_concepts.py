@@ -6,14 +6,11 @@ import torch
 from test_review13_subspaces import fixture
 
 
-def descendant_measurement(owner, occupations, parent='lift'):
-    """Measure one descendant from the kept parent relation, without a stage gate."""
-    from TrustGates import TrustGates
-    gates = TrustGates.__new__(TrustGates)
-    gates.names = ('surface',)
-    gates.exempt = frozenset()
-    gates.parents = {'surface': {parent}}
-    return gates.measurements(owner, occupations)['surface']
+def operation_measurement(occupations, name='lift'):
+    """The reported definiteness remains a lesson measurement, without a gate."""
+    value = occupations.operation(name)
+    return min(value['definiteness']) if value['measurable'] and all(
+        v is not None for v in value['definiteness']) else None
 
 
 def test_formal_arguments_are_prebuilt_zero_radius_concepts_above_words():
@@ -149,15 +146,14 @@ def test_higher_order_context_moves_word_meanings_without_changing_forms_or_radi
     torch.testing.assert_close(bank.lookup_rows(torch.tensor(rows))[:, :3], forms, rtol=0, atol=0)
 
 
-def test_empty_argument_views_supply_no_operation_authority_or_gate_readiness(monkeypatch):
-    from TrustGates import TrustGates
+def test_empty_argument_views_supply_no_operation_authority_or_definiteness(monkeypatch):
     cs, _, _, speech, _ = argument_fixture()
     for _ in range(3):
         speech.observe_use('lift', ((), ()))
     assert speech.operation('lift')['uses'] == 3
     from ConceptTrust import positive_length
     assert positive_length(cs, speech.seats['lift'].concept) == 0.
-    assert descendant_measurement(cs, speech) == 0.
+    assert operation_measurement(speech) == 0.
 
 
 @pytest.mark.parametrize('formal', [False, True])
@@ -282,7 +278,6 @@ def test_explicit_class_views_on_a_whole_conceptual_chart_use_the_same_radius_ru
 def test_revised_separability_evidence_and_contiguous_classes():
     import math
     from ConceptHierarchy import refresh
-    from TrustGates import TrustGates
     cs, bank, _, speech, (a,b) = argument_fixture('lift_argin1','lift_argin2','verb_argin1')
     for view in range(1,6):
         speech.observe_use('lift', ((a,), (b,)))
@@ -291,7 +286,7 @@ def test_revised_separability_evidence_and_contiguous_classes():
         expected=-math.expm1(-view/bank.trust.trust_views)
         assert [v['d_j'] for v in result['argument_measurements'].values()] == [1.,1.]
         assert result['definiteness'] == pytest.approx((expected,expected))
-        assert descendant_measurement(cs,speech) == pytest.approx(expected)
+        assert operation_measurement(speech) == pytest.approx(expected)
         assert (expected >= .75) == (view == 5)
     speech.add(a,'verb_argin1');refresh(cs)
     assert speech.operation('lift')['argument_measurements']['lift_argin1']['d_j']==1.
@@ -302,7 +297,7 @@ def test_revised_separability_evidence_and_contiguous_classes():
     speech.add(b,'lift_argin1')
     result=speech.operation('lift')
     assert result['argument_measurements']['lift_argin1']['d_j'] < 1.
-    assert descendant_measurement(cs,speech) < .75
+    assert operation_measurement(speech) < .75
 
 
 def test_revised_fit_is_coverage_and_radius_is_commitment():
@@ -361,19 +356,17 @@ def test_revised_centroid_uses_fit_and_first_members_are_equal():
     assert float(bank.mereology.placement[parent] @ before) > float(torch.tensor([1.,1.,0.,0.]) @ before)/(2**.5)
 
 
-def test_revised_form_only_operation_waits_for_seat_authority():
+def test_revised_form_only_operation_reports_unmeasurable_definiteness():
     from PartsOfSpeech import PartsOfSpeech
-    from TrustGates import TrustGates
     cs,bank,_,alloc=fixture(meaning_pairs=0)
     speech=PartsOfSpeech(('lift_argin1','lift_argin2'),cs)
     a,b=[cs.interpret.lookup_word([i],(),form=f'term{i}') for i in (4,7)]
     speech.observe_use('lift',((a,),(b,)))
     from ConceptTrust import positive_length
     assert positive_length(cs, speech.seats['lift'].concept) == 0.
-    assert descendant_measurement(cs,speech) is None
-    alloc.parts.configure_operations(speech)
-    row=alloc.parts.add(a,b,truth_plus=.8,truth_minus=.3,operation_seat=speech.seats['lift'].concept)
-    torch.testing.assert_close(torch.stack(alloc.parts.evidence(row)), torch.zeros(2))
+    assert operation_measurement(speech) is None
+    row=alloc.parts.add(a,b,truth_plus=.8,truth_minus=.3)
+    torch.testing.assert_close(torch.stack(alloc.parts.evidence(row)), torch.tensor([.8, .3]))
     torch.testing.assert_close(torch.stack((alloc.parts.truth_plus[row], alloc.parts.truth_minus[row])), torch.tensor([.8, .3]))
 
 
@@ -394,7 +387,12 @@ def test_revised_membership_proof_names_formal_class():
     cs,bank,_,speech,(a,b)=argument_fixture('group_argin1')
     for _ in range(3):speech.add(a,'group_argin1')
     refresh(cs);parent=speech.concepts['group_argin1']
-    proof=ThoughtTaxonomyCapability(cs).evidence(('sym',a),('sym',parent),max_nodes=64,max_records=64,max_steps=8,max_expansions=64,work=QueryWorkBudget(128))
-    assert proof['reason']=='membership' and proof['path']
+    # An observed occupant alone does not assert the taxonomy relation.
+    reader = ThoughtTaxonomyCapability(cs)
+    bounds = dict(max_nodes=64,max_records=64,max_steps=8,max_expansions=64)
+    assert not reader.evidence(('sym',a),('sym',parent),work=QueryWorkBudget(128),**bounds)['path']
+    cs._concept_allocator.parts.add(a,parent,truth_plus=1.)
+    proof=reader.evidence(('sym',a),('sym',parent),max_nodes=64,max_records=64,max_steps=8,max_expansions=64,work=QueryWorkBudget(128))
+    assert proof['path']
     assert proof['path'][0].part==('sym',a) and proof['path'][0].whole==('sym',parent)
     assert proof['formal_arguments']==(('group_argin1',parent),)

@@ -190,25 +190,3 @@ def test_same_intent_moves_both_towers_same_direction():
 
 
 # -- SS retrieval plumbing: the taxonomy merge ----------------------------
-
-def test_taxonomy_prime_with_weights_max_merges():
-    from Language import Taxonomy
-    tax = Taxonomy()
-    tax.allocate_priming(batch_size=2, capacity=6, live=4)
-    tax.prime([1], batch=0, boost=3.0)          # existing write: 4.0
-    weights = torch.tensor([1.0, 2.0, 1.5, 1.0])
-    tax.prime_with_weights(weights)             # merge into every row
-    pm = tax.priming_mask()
-    assert pm[0, 1] == pytest.approx(4.0)       # max keeps the stronger
-    assert pm[1, 1] == pytest.approx(2.0)
-    assert pm[0, 2] == pytest.approx(1.5)
-    assert pm[0, 0] == pytest.approx(1.0)
-    # Batch-targeted merge touches only that row.
-    tax.prime_with_weights(torch.tensor([5.0, 1.0, 1.0, 1.0]), batch=1)
-    pm = tax.priming_mask()
-    assert pm[1, 0] == pytest.approx(5.0)
-    assert pm[0, 0] == pytest.approx(1.0)
-    # Unallocated buffer / None weights: silent no-ops.
-    bare = Taxonomy()
-    bare.prime_with_weights(weights)
-    tax.prime_with_weights(None)

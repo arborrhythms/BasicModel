@@ -225,11 +225,13 @@ def test_phase_question_uses_selected_content_and_never_the_event_clock(monkeypa
         question = phase_request(question, content)
         return reader.truth_evidence(question, max_records=16, work=QueryWorkBudget(32))
     assert ask(wanted)['support_true'] == ask(wanted)['support_false'] == 0
-    f.cs.mtm.event(token, event.occurrence, verb=event.verb, role=0, when=2, case_value=partial)
+    for witness in entry.events:
+        f.cs.mtm.event(token, witness.occurrence, verb=witness.verb, role=0, when=2, case_value=partial)
     assert ask(wanted)['support_true'] == ask(wanted)['support_false'] == 0
     first = ask(partial)
     assert first['support_true'] == pytest.approx(.8) and first['support_false'] == pytest.approx(.2)
-    f.cs.mtm.event(token, event.occurrence, verb=event.verb, role=0, when=20000, case_value=partial)
+    for witness in entry.events:
+        f.cs.mtm.event(token, witness.occurrence, verb=witness.verb, role=0, when=20000, case_value=partial)
     second = ask(partial)
     assert second['support_true'] == first['support_true'] and second['support_false'] == first['support_false']
     f.cs.mtm.forget(token)

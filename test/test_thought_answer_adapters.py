@@ -1,4 +1,5 @@
 """Checked non-truth results become owned, full-width answer meanings."""
+from Memory import STM0
 
 from dataclasses import replace
 
@@ -27,7 +28,7 @@ def test_code_answer_uses_the_checked_atom_and_keeps_its_reference():
 
 def _stored_query(model, registry, part, whole):
     from Memory import LTM0
-    store=LTM0(8, percept_width=0,capacity=16)
+    store=STM0(8, percept_width=0,capacity=16, relation_capacity=8192)
     model.symbolSpace.ltm_store=store
     source=registry.form('part',part,whole)
     from MemoryIndex import configure_model_index
@@ -35,7 +36,9 @@ def _stored_query(model, registry, part, whole):
     row=store.append_relation(part[1],whole[1],truth_plus=.7,truth_minus=.1)
     with model._query_boundary_scope((0,)):
         context=model._thought_grammar_context(source,row=0,work=QueryWorkBudget(32),continuation=None)
-        return registry.form('query',store.occurrence_of(row),context=context)
+        opened = replace(source, role_refs=(None, source.role_refs[1], whole),
+            role_mask=torch.tensor([False, True, True]))
+        return registry.form('query',opened,context=context)
 
 
 def test_open_relation_answer_preserves_every_member_without_another_reader():
@@ -48,7 +51,7 @@ def test_open_relation_answer_preserves_every_member_without_another_reader():
     cost=selected.work.spent
     answers=thought_answer_meanings(selected)
     assert len(answers)==1
-    assert answers[0].role_refs[:2]==(part,whole)
+    assert (answers[0].role_refs[0], answers[0].role_refs[2])==(part,whole)
     assert selected.work.spent==cost==memory.thought_state().work_spent
     checked=ThoughtResult.from_checkpoint(selected.result.checkpoint())
     restored=thought_answer_meanings(replace(selected,result=checked))

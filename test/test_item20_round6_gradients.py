@@ -140,6 +140,7 @@ def test_order_zero_decode_reaches_the_grammar_inverse_and_selected_definition(m
         op.meaning_kernel.bias.fill_(.03)
     policy = GeneratePolicy(12, 2)
     language = NS(_generate_binary_ops=(op,), _generate_unary_ops=(),
+        _generate_binary_rules=(NS(method_name='surface', head_role=2),), _generate_unary_rules=(),
         decomposition_chooser=DecompositionChooser(), generate_policy=policy, _generate_policy_width=12,
         _tree_layer=lambda arity: NS(ops=(op,), exploration_fraction=.5, exploration_temperature=1.),
         generation_scope=nullcontext)
@@ -155,7 +156,8 @@ def test_order_zero_decode_reaches_the_grammar_inverse_and_selected_definition(m
     left, right = language.reverse_binary_step(parent, torch.tensor([0]), torch.tensor([True]),
         ops=(op,), basis=codes, basis_valid=bank.valid)
     proposal = generated(model, torch.stack((left, right), 1), torch.tensor([2]),
-        torch.tensor([False]), bank, (), when=torch.tensor([[[1, 2]]]))
+        torch.tensor([False]), bank, (torch.tensor([[0, 1, 1]]),),
+        when=torch.tensor([[[1, 2]]]), depths=torch.tensor([1]))
     decoded = realize(model, proposal)._radix_activity.percepts
     field = ConceptualField(torch.tensor([101, 102]),
         torch.stack((torch.eye(2), torch.zeros(2, 2)), -1)[:, None],
@@ -189,7 +191,7 @@ def test_order_zero_decode_reaches_the_grammar_inverse_and_selected_definition(m
     credit = generate_credit(model.languageSpace, audit, parent[:, None], torch.ones(1, 1, 2, 9))
     errors.add('reconstruction.walk_credit', credit, category='reconstruction', objective='reconstruction', side='R')
     assert any(g is not None and bool(g.abs().any()) for g in gradient('reconstruction.walk_credit', tuple(policy.parameters())))
-    assert proposal.field.where[0].tolist() == [[0, 1], [2, 3]]
+    assert proposal.realization_field.where[0].tolist() == [[0, 1], [2, 3]]
 
 
 def test_concept_activation_preserves_both_poles_including_neither():

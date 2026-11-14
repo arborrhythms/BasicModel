@@ -1,4 +1,6 @@
+from definition_fixtures import class_over
 """Structural operator faces and boundary thought use the same native VP."""
+from Memory import STM0
 from order_fixtures import force_order
 from dataclasses import replace
 from types import SimpleNamespace
@@ -21,7 +23,7 @@ def _world():
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     base = cs.new_concept()
     force_order(cs, base, 0)
-    a = ('sym', cs.synthesize_higher_order([('sym', base)]))
+    a = ('sym', class_over(cs, [('sym', base)]))
     b = ('sym', cs.new_concept())
     cs._csw_concept_row(cs._concept_source_order(a[1]), a[1])
     force_order(cs, b[1], 0)
@@ -99,43 +101,39 @@ def test_forming_candidates_does_not_mint_or_write_memory_after_setup():
     assert tuple(cs._concept_allocator._layers[0].constituents(a[1])) == records
 
 
-def test_unary_query_keeps_full_description_through_an_existing_occurrence():
+def test_unary_end_read_keeps_full_description_through_an_existing_occurrence():
     cs, registry, a, b, _ = _world()
-    store = LTM0(8, percept_width=0)
+    store = STM0(8, percept_width=0, capacity=1024, relation_capacity=8192)
     description = ConceptualMeaning.from_description(torch.arange(1., 9.) / 8)
-    from dataclasses import replace
     description = replace(description, scope={'place': 'workshop'}, role_refs=(a, None, None))
-    index = store.append_meaning(description, trust=0.75)
+    index = store.append_meaning(description, trust=.75)
     context = _context(cs, store=store)
     reference = store.occurrence_of(index)
-    question = registry.form('ask', reference, context=context)
+    question = registry.form('isTrue', reference, context=context)
     assert question.role_refs[0] == reference
     assert question.role_mask.tolist() == [True, True, False]
     result = registry.execute(question, context)
-    assert result.value[0]['trust'] == pytest.approx(0.75)
-    torch.testing.assert_close(result.value[0]['meaning'].roles, description.roles)
-    assert result.value[0]['meaning'].scope == description.scope
-    assert len(store) == 1
-    # Pure construction owns the complete child without writing or granting
-    # execution authority. Only the completed boundary binds its occurrence.
-    inline = registry.form('ask', description, context=context)
+    assert result.evidence['trust'] == pytest.approx(.75)
+    torch.testing.assert_close(result.value.roles, description.roles)
+    assert result.value.scope == description.scope and len(store) == 1
+    # Pure construction carries the complete child without writing it.
+    inline = registry.form('isTrue', description, context=context)
     assert inline.constituents[0] is description
-    assert inline.role_refs[0] == ('constituent', 0)
-    assert len(store) == 1
-    # D16: an inline value does not address the earlier occurrence.
-    assert registry.execute(inline, context).value == ()
-    assert len(store) == 1
-    bound = store.bind_constituents(inline)
-    assert len(store) == 2
-    assert store.row(1)['kind'] == 'unverified' and store.row(1)['trust'] == 0
+    assert inline.role_refs[0] == ('constituent', 0) and len(store) == 1
+    assert registry.execute(inline, context).value == () and len(store) == 1
+    # A separate kept occurrence has its own supplied zero trust. No reader
+    # binds and persists its constituents as a side effect.
+    second = store.append_meaning(description, trust=0.)
+    bound = registry.form('isTrue', store.occurrence_of(second), context=context)
+    assert len(store) == 2 and store.row(second)['trust'] == 0
     result = registry.execute(bound, _context(cs, store=store))
-    assert result.value[0]['occurrence'] == store.occurrence_of(1)
-    assert result.value[0]['trust'] == 0
+    assert result.evidence['occurrence'] == store.occurrence_of(second)
+    assert result.evidence['trust'] == 0
     addressed = registry.execute(question, context)
-    assert addressed.value[0]['occurrence'] == reference
-    assert addressed.value[0]['trust'] == pytest.approx(0.75)
-    torch.testing.assert_close(result.value[0]['meaning'].roles, description.roles)
-    assert result.value[0]['meaning'].scope == description.scope
+    assert addressed.evidence['occurrence'] == reference
+    assert addressed.evidence['trust'] == pytest.approx(.75)
+    torch.testing.assert_close(result.value.roles, description.roles)
+    assert result.value.scope == description.scope
 
 
 def test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation():

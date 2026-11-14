@@ -75,16 +75,19 @@ def _make_word_space_with_grammar(nSymbols=3, symbolDim=4, conceptDim=4, nPercep
     # Reset grammar so SymbolSubSpace.__init__ can (re)configure it cleanly.
     Language.TheGrammar._configured = False
 
-    ss = Language.SymbolSubSpace(
-        perceptualSpace=percept_space,
-        conceptualSpace=concept_space,
-        wholeSpace=symbolic_space,
-        nPercepts=nPercepts,
-        nConcepts=nSymbols,
-        nSymbols=nSymbols,
-        concept_dim=conceptDim,
-        symbol_dim=symbolDim,
-    )
+    from memory_fixtures import working_symbol_store
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(Language, "LTM0", working_symbol_store)
+        ss = Language.SymbolSubSpace(
+            perceptualSpace=percept_space,
+            conceptualSpace=concept_space,
+            wholeSpace=symbolic_space,
+            nPercepts=nPercepts,
+            nConcepts=nSymbols,
+            nSymbols=nSymbols,
+            concept_dim=conceptDim,
+            symbol_dim=symbolDim,
+        )
     return ss
 
 

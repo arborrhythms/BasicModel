@@ -12,11 +12,11 @@ from Memory import SYMBOL, OCCURRENCE
 
 def placed_fixture():
     from ClauseRow import attach_clause_index
-    from Memory import LTM0
+    from Memory import STM0
     cs, cb, ps, alloc = fixture(meaning_pairs=2)
     from clock_fixtures import install
     install(cs._model)
-    store = LTM0(cb.W.shape[-1], capacity=32)
+    store = STM0(cb.W.shape[-1], capacity=32, relation_capacity=8192)
     attach_clause_index(SimpleNamespace(), store, cs)
     a, b, base = word(cs, [(4,1.)]), word(cs, [(7,1.)]), word(cs, [(4,1.)])
     angles = torch.tensor([0.,10.])*math.pi/180
@@ -32,7 +32,7 @@ def test_symbol_and_promoted_occurrence_members_have_the_same_three_initializers
     first = index_part_row(cs, ids[0], ids[2])
     index_part_row(cs, ids[1], first)
     occurrence = store.append_meaning(ConceptualMeaning.from_description(cb.lookup_rows(b)),
-        order=0, document_key='coverage', sentence_index=0)
+        )
     key = store.occurrence_of(occurrence)
     cs.mtm.open(key, kind=None, when=0, value=cb.lookup_rows(b))
     cs.mtm.promote(key, ids[1])
@@ -51,7 +51,7 @@ def test_transient_occurrence_is_deferred_and_covered_when_its_symbol_arrives():
     from Meaning import ConceptualMeaning
     cs, cb, alloc, store, (a,b,base) = placed_fixture()
     occurrence = store.append_meaning(ConceptualMeaning.from_description(cb.lookup_rows(b)),
-        order=0, document_key='deferred', sentence_index=0)
+        )
     key = store.occurrence_of(occurrence)
     cs.mtm.open(key, kind=None, when=0, value=cb.lookup_rows(b))
     parent = index_part_row(cs, (OCCURRENCE,key[-1]), cs.concept_id_at_row(base))
@@ -95,7 +95,7 @@ def test_defining_equality_promotes_a_pending_subject_without_an_order_or_choice
     # First sentence's noun site retains an unnamed identity, with the native
     # occurrence's ordinary order; neither the token nor the word gets one.
     first = store.append_meaning(ConceptualMeaning.from_description(value),
-        document_key='definition', sentence_index=0)
+        )
     key = store.occurrence_of(first)
     cs.mtm.open(key, kind=None, when=0, value=value, reading=subject)
     assert cs.definitions.objects(subject) == () and cs.mtm.entries[key].symbol is None
@@ -108,7 +108,7 @@ def test_defining_equality_promotes_a_pending_subject_without_an_order_or_choice
         point = value.detach().clone()
         point[0] = value[0] + number
         other = store.append_meaning(ConceptualMeaning.from_description(point),
-            document_key='definition', sentence_index=number)
+            )
         token = store.occurrence_of(other)
         cs.mtm.open(token, kind=None, when=number, value=point)
         equal_close(cs, store, token[-1], label)
@@ -322,7 +322,7 @@ def test_promoting_an_identity_does_not_reinitialize_unrelated_classes():
         cb.W[row,:3].add_(.1)
     retained = cb.W[row].clone()
     occurrence = store.append_meaning(ConceptualMeaning.from_description(cb.lookup_rows(b)),
-        document_key='unrelated',sentence_index=0)
+        )
     key = store.occurrence_of(occurrence)
     cs.mtm.open(key,kind=None,when=0,value=cb.lookup_rows(b))
     cs.mtm.promote(key,cs.concept_id_at_row(b))
@@ -358,7 +358,7 @@ def test_candidate_zero_survives_the_kept_bind_journal_without_an_occurrence_ali
     original = pool.entries[key]
     written = {}
     closed = f.store.write_clause(prepared, written_rows=written,
-        document_key='candidate-bind', sentence_index=0)
+        )
     resolver.commit(plan, closed, written, document='candidate-bind', position=0, training=False)
     assert pool.entries[key].count == original.count
     torch.testing.assert_close(pool.value_of(key), pool.value_of(original))
@@ -415,7 +415,7 @@ def test_identity_promotion_at_capacity_preserves_the_open_token_and_rows():
     resolver, store, points = fixture()
     owner = resolver.components.owner
     alloc = owner._concept_allocator
-    occurrence = write(store, points[0], ('full', 0), order=0)
+    occurrence = write(store, points[0], ('full', 0))
     token = owner.mtm.open(occurrence, kind=None, value=points[0], when=0)
     layer = alloc.layer()
     for index in range(owner.nVectors):
@@ -476,8 +476,7 @@ def test_mixing_keeps_lexical_witnesses_across_ten_presentations(monkeypatch, ea
                     key = owner.mtm.token_of(('name', word))
                 for stream, program in enumerate(captured[0]):
                     point = program.leaves[site]
-                    row = store.append_meaning(ConceptualMeaning.from_description(point), order=0,
-                        document_key=('kept-word', stream, word), sentence_index=0, time=False)
+                    row = store.append_meaning(ConceptualMeaning.from_description(point), )
                     from ConceptTrust import observe
                     observe(owner, word, point)
                     reading = None if program.word_ids is None else int(program.word_ids[site])
@@ -508,7 +507,7 @@ def test_named_promotion_counts_kept_words_independently_of_bind_aliases():
         value = owner.similarity_codebook.lookup_rows(row)
         program = SimpleNamespace(word_ids=torch.tensor([word]), leaves=value[None], symbol_where=None)
         from Meaning import ConceptualMeaning
-        root = store.append_meaning(ConceptualMeaning.from_description(value), document_key=doc, sentence_index=0, order=0)
+        root = store.append_meaning(ConceptualMeaning.from_description(value))
         site = commit_read_words(owner, program, batch=0, document=doc, position=0,
             written={'root_occurrence': store.occurrence_of(root)})[0]
         key = owner.mtm.token_of(('name', label))

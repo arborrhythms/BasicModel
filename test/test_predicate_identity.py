@@ -81,7 +81,8 @@ def test_first_three_slot_predicate_occurrence(monkeypatch, relation, use_regist
     reference = f.registry.clause_reference(relation)
     point = f.registry._payload(reference)
     leaves = torch.stack((f.store.slots[left], point, f.store.slots[right]))
-    refs = torch.tensor([int(f.store.address_keys[left]), reference[1], int(f.store.address_keys[right])])
+    from Occurrence import operand_name
+    refs = torch.tensor([operand_name(f.store.row_name(left)), reference[1], operand_name(f.store.row_name(right))])
     entry = Reading(rows=torch.full((3,), -1), word_rows=torch.full((3,), -1),
         word_ids=torch.full((3,), -1), activations=torch.ones(3), leaves=leaves,
         actions=torch.tensor([[0, -1, 0], [0, -1, 1], [0, -1, 2]]),
@@ -94,7 +95,7 @@ def test_first_three_slot_predicate_occurrence(monkeypatch, relation, use_regist
     assert reference[1] not in arguments
     from Memory import OCCURRENCE
     assert f.store.parts.ref_kinds[row[1]].tolist() == [OCCURRENCE, OCCURRENCE]
-    assert arguments == [int(f.store.address_keys[source]) for source in (left, right)]
+    assert arguments == [f.store.row_name(source) for source in (left, right)]
     for role, source in zip((0, 2), (left, right)):
         torch.testing.assert_close(f.store.slots[source], leaves[role])
     assert dict(f.cs._csw_rows) == before

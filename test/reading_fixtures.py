@@ -23,8 +23,11 @@ def resolve_reading_references(language, entry, *, frames=(), prediction=None,
     anchors = tuple(frame for frame in frames if frame.order == 1)
     points = [torch.zeros_like(values[0]) if frame.point is None else frame.point
               for frame in anchors]
+    from Occurrence import operand_name
     bank = ReferenceBank(
-        ids.new_tensor([[frame.row_id for frame in anchors]]),
+        ids.new_tensor([[operand_name(frame.row_id)
+                         if frame.occurrence is not None and frame.occurrence[0] == 'ltm'
+                         else frame.row_id for frame in anchors]]),
         torch.stack(points)[None] if points else entry.leaves.new_zeros(1, 0, entry.leaves.shape[-1]),
         torch.ones(1, len(anchors), dtype=torch.bool),
         torch.tensor([[frame.point is None for frame in anchors]], dtype=torch.bool),
@@ -327,6 +330,23 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
     state = stm, tuple(lang), None
     active = torch.tensor([active], dtype=torch.bool)
     view = owner._sentence_observation(state, sid, active)
+    # This fixture supplies conceptual leaves explicitly. Extend their actual
+    # placed evidence through the same kept program used by a normal trial.
+    from Understanding import ConceptualField
+    from Extension import reading, as_field, joined, ConceptSet, with_extensions
+    ids = entry.concept_ids.unique(sorted=True)
+    evidence = entry.leaves.new_zeros(len(ids),1,len(entry.leaves),2)
+    for position, identity in enumerate(entry.concept_ids):
+        evidence[ids == identity,0,position] = (entry.leaf_evidence[position]
+                if entry.leaf_evidence is not None else evidence.new_tensor([max(0.,float(entry.activations[position])),max(0.,-float(entry.activations[position]))]))
+    bounds = entry.leaves.new_zeros(1,len(entry.leaves),2)
+    field = ConceptualField(ids,evidence,bounds,bounds,None)
+    roots = reading(owner,entry,field,0,torch.arange(len(entry.leaves))) if bool(active.any()) else ()
+    empty = ConceptSet(ids[:0],evidence.new_empty(0,2))
+    extended = as_field((joined(roots,empty),),where=bounds,when=bounds)
+    view['record'] = SimpleNamespace(understanding_field=extended)
+    view['clauses'] = [with_extensions(value, roots) for value in view['clauses']]
+    view['meanings'] = [None if value is None else value.meaning for value in view['clauses']]
     cost, pending = None, None
     if discourse is not None:
         cost, pending = discourse.sentence_prediction_cost(

@@ -1,4 +1,5 @@
 """Identity by construction, dense binding only, and trust as an evidence pair."""
+from Memory import STM0
 import copy
 import pytest
 import torch
@@ -153,12 +154,12 @@ def test_numeric_mm_keeps_its_original_geometry():
 def test_trust_to_pair_and_negation(trust, polarity, expected):
     from Memory import LTM0
     from Meaning import ConceptualMeaning
-    store = LTM0(4, capacity=4)
+    store = STM0(4, capacity=4, relation_capacity=8192)
     meaning = ConceptualMeaning(torch.ones(3,4), torch.tensor([True,False,False]),
                                  polarity=polarity)
     row = store.append_meaning(meaning, trust=trust)
-    torch.testing.assert_close(torch.stack((store.truth_plus[row],store.truth_minus[row])), torch.tensor(expected))
-    assert 'trust' not in store.state_dict()
+    torch.testing.assert_close(torch.tensor(store.evidence_of(row)), torch.tensor(expected))
+    assert 'trust' in store.state_dict()
     assert float(store.trust[row]) == pytest.approx(expected[0]-expected[1])
 
 
@@ -193,6 +194,6 @@ def test_live_grammar_uses_sparse_index_dense_nonzero_roots_and_exact_rung0(monk
         assert model._last_sentence_credit['components'][:,:,0].isfinite().all()
         from Forgetting import model_boundary
         model_boundary(model, epoch_boundary=True)
-        assert model._last_sentence_understanding is None
+        assert model._last_sentence_understanding is record  # Point 20 removes epoch presentation rollback.
     finally:
         model.End(); model.symbolSpace.soft_reset()

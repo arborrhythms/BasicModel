@@ -1,4 +1,6 @@
 """Reference collections, state errors and the bounded shared sentence stores."""
+from Memory import STM0
+from Occurrence import operand_name
 import json
 import os
 from pathlib import Path
@@ -26,7 +28,7 @@ def test_all_link_callers_window_likeness_and_reference_values():
     object.__setattr__(owner, '_model', NS(_sentence_close_errors=errors))
     owner.mtm.horizon = 2
     def observed(value, number, kind='state', order=0):
-        row = store.append_idea(value, address=number, time=False)
+        row = store.append_idea(value, name=number)
         address = store.occurrence_of(row)
         key = owner.link(Occurrence(address, kind=kind, order=order), {},
             value=value, where=torch.zeros(4), when=number, stream=0)
@@ -62,14 +64,14 @@ def test_merge_path_promotion_cycle_and_epoch_withdrawal():
     from MemoryLink import Occurrence
     from FamiliarTier import promote_identity
     from Memory import OCCURRENCE, SYMBOL
-    from ChainRead import path
+    def members_of(store, concept):
+        return store.parts.parts((2, concept))
     resolver, store, atoms = fixture()
     owner, pool = resolver.components.owner, resolver.components.owner.mtm
     parts = owner._concept_allocator.parts
-    parts.begin_epoch()
     keys, addresses = [], []
     for clock in range(4):
-        row = store.append_idea(atoms[0], address=201+clock, time=False)
+        row = store.append_idea(atoms[0], name=201+clock)
         address = store.occurrence_of(row); addresses.append(address)
         pool.closes[0] = clock
         keys.append(owner.link(Occurrence(address, kind='state', order=0,
@@ -82,17 +84,14 @@ def test_merge_path_promotion_cycle_and_epoch_withdrawal():
     concept = promote_identity(owner, merged)
     assert pool.entries[merged].transient is None
     members = tuple((OCCURRENCE, address[-1]) for address in addresses)
-    assert path(store, concept) == members
+    assert members_of(store, concept) == members
     assert all(parts.find(member, (SYMBOL, concept)) is not None for member in members)
-    assert all(parts.find(left, right) is not None for left, right in zip(members, members[1:]))
+    assert all(parts.find(left, right) is None for left, right in zip(members, members[1:]))
     parts.add(members[-1], members[0], truth_plus=1.)
-    assert set(path(store, concept)) == set(members) and len(path(store, concept)) == 4
-    removed = parts.begin_epoch()
-    assert removed and path(store, concept) == ()
+    assert set(members_of(store, concept)) == set(members) and len(members_of(store, concept)) == 4
     assert concept in owner._concept_allocator.symbol_types
-    receipt('promotion-path', dict(members=4, membership_rows=4, successor_rows=3,
-        cycle_visits=4, released=transient, order=owner._concept_source_order(concept),
-        withdrawn=len(removed), retained_concept=concept))
+    receipt('promotion-membership', dict(members=4, membership_rows=4, successor_rows=0,
+        released=transient, order=owner._concept_source_order(concept), retained_concept=concept))
 
 
 def test_promoted_reference_reenters_as_one_higher_order_member():
@@ -103,7 +102,7 @@ def test_promoted_reference_reenters_as_one_higher_order_member():
     owner, pool = resolver.components.owner, resolver.components.owner.mtm
     key, original = None, []
     for clock in range(3):
-        row = store.append_idea(atoms[0], address=301+clock, time=False)
+        row = store.append_idea(atoms[0], name=301+clock)
         address = store.occurrence_of(row)
         original.append(address)
         key = owner.link(Occurrence(address, order=0, selected=key), {},
@@ -118,7 +117,7 @@ def test_promoted_reference_reenters_as_one_higher_order_member():
     assert concept in choices and key not in choices
     higher = []
     for clock in range(3, 5):
-        row = store.append_idea(atoms[0], order=1, address=301+clock, time=False)
+        row = store.append_idea(atoms[0], referent=('sym', concept))
         address = store.occurrence_of(row)
         higher.append(owner.link(Occurrence(address, concept=concept, order=1, selected=key), {},
             value=atoms[0], where=None, when=clock, stream=0))
@@ -129,10 +128,11 @@ def test_promoted_reference_reenters_as_one_higher_order_member():
     assert pool.entries[higher[0]].native == concept
     assert pool.entries[higher[0]].refinement['member_order'] == 1
     assert len(pool.entries[higher[0]].occurrences) == 2
-    from ChainRead import path
-    path_before = path(store, concept)
+    def members_of(store, concept):
+        return store.parts.parts((2, concept))
+    path_before = members_of(store, concept)
     assert promote_identity(owner, higher[0]) == concept
-    assert path(store, concept) == path_before and len(path_before) == 3
+    assert members_of(store, concept) == path_before and len(path_before) == 3
     with pytest.raises(ValueError, match='cannot mix collection kinds or orders'):
         owner.link(Occurrence(original[0], order=2, selected=key), {},
             value=atoms[0], where=None, when=5, stream=0)
@@ -147,13 +147,14 @@ def test_event_relation_path_promotes_with_native_tags_and_bands():
     from MemoryLink import Occurrence
     from FamiliarTier import promote_identity
     from Memory import OCCURRENCE, RELATION, SYMBOL
-    from ChainRead import path
+    def members_of(store, concept):
+        return store.parts.parts((2, concept))
     resolver, store, atoms = fixture()
     owner, parts = resolver.components.owner, store.parts
     key, members = None, []
     for clock in range(3):
-        left = store.append_idea(atoms[0], address=331+2*clock, time=False)
-        right = store.append_idea(atoms[1], address=332+2*clock, time=False)
+        left = store.append_idea(atoms[0], name=331+2*clock)
+        right = store.append_idea(atoms[1], name=332+2*clock)
         relation = parts.add((OCCURRENCE, store.occurrence_of(left)[-1]),
             (OCCURRENCE, store.occurrence_of(right)[-1]), truth_plus=1.)
         members.append((RELATION, relation))
@@ -162,18 +163,13 @@ def test_event_relation_path_promotes_with_native_tags_and_bands():
         owner.mtm.closes[0] = clock+1
     count = len(store)
     concept = promote_identity(owner, key)
-    assert len(store) == count and path(store, concept) == tuple(members)
-    for member in members:
-        row = parts.find(member, (SYMBOL, concept))
-        torch.testing.assert_close(parts.sentence_reference[row], parts.sentence_reference[member[1]])
-    for left, right in zip(members, members[1:]):
-        row = parts.find(left, right)
-        torch.testing.assert_close(parts.sentence_reference[row], parts.sentence_reference[right[1]])
+    assert len(store) == count and members_of(store, concept) == tuple(members)
+    assert all(parts.find(member, (SYMBOL, concept)) is not None for member in members)
+    assert all(parts.find(left, right) is None for left, right in zip(members, members[1:]))
     parts.add(members[-1], members[0], truth_plus=1.)
-    assert len(path(store, concept)) == 3 and set(path(store, concept)) == set(members)
+    assert len(members_of(store, concept)) == 3 and set(members_of(store, concept)) == set(members)
     receipt('event-relation-promotion', dict(event_members=3, membership_rows=3,
-        successor_rows=2, member_tag='RELATION', new_idea_rows=0,
-        sentence_references_preserved=True, cycle_visits=3))
+        successor_rows=0, member_tag='RELATION', new_idea_rows=0))
 
 
 def test_replaced_root_links_its_written_event_idea_instead_of_its_relation():
@@ -186,11 +182,11 @@ def test_replaced_root_links_its_written_event_idea_instead_of_its_relation():
     owner = resolver.components.owner
     subject = known_concept(owner, atoms[0], order=1)
     verb = known_concept(owner, atoms[1], order=0)
-    first = store.append_idea(atoms[0], document_key='event-subject', time=False)
+    first = store.append_idea(atoms[0])
     subject_address = store.occurrence_of(first)
     subject_key = owner.link(Occurrence(subject_address, referent=subject,
         native=subject, selected=None), {}, value=atoms[0], where=None, when=0, stream=0)
-    earlier = store.append_idea(atoms[2], document_key='event-before', time=False)
+    earlier = store.append_idea(atoms[2])
     earlier_address = store.occurrence_of(earlier)
     event_key = owner.link(Occurrence(earlier_address, kind='event', order=0, selected=None),
         {}, value=atoms[2], where=None, when=0, stream=0)
@@ -226,7 +222,8 @@ def test_word_member_order_is_its_read_concept_not_the_clause_order():
         owner.similarity_codebook.W[owner._csw_row_of(word)].copy_(atoms[0])
     key = None
     for clock in range(2):
-        row = store.append_idea(atoms[0], order=clock, address=351+clock, time=False)
+        from test_reference_close import known_concept
+        row = store.append_idea(atoms[0], referent=('sym', known_concept(owner, atoms[0], order=clock)))
         site = Occurrence(store.occurrence_of(row), concept=word, selected=key)
         assert member_order(owner, site) == 0
         linked = owner.link(site, {}, value=atoms[0], where=None, when=clock, stream=0)
@@ -256,7 +253,7 @@ def test_reference_departure_filters_collection_order_before_selection():
     assert owner._concept_source_order(owner.interpret.referent(word)) == 1
     keys = []
     for order in (0, 1):
-        row = store.append_idea(atoms[0], order=order, address=371+order, time=False)
+        row = store.append_idea(atoms[0], referent=('sym', known_concept(owner, atoms[0], order=order)))
         keys.append(owner.link(Occurrence(store.occurrence_of(row),
             concept=word if order == 1 else None, order=order, selected=None), {},
             value=atoms[0], where=None, when=0, stream=0))
@@ -368,7 +365,8 @@ def test_state_teachers_use_later_references_and_keep_stored_values_detached():
     from VerbLearning import observe
     from ModalLearning import observe as observe_modal
     from Layers import Error
-    from Occurrence import ADDRESS_DOMAIN
+    from Memory import STM0
+    ADDRESS_DOMAIN = STM0.address_domain
     owner, store, key, timeline, action, modifier, sources = seat(alternative=False)
     pool = owner.mtm
     previous = dict(pool.entries)
@@ -426,7 +424,7 @@ def test_unnamed_alias_reads_a_pending_names_order_without_resolving_it():
     assert owner.mtm.entries[key].pending
     own = (atoms[0] * .7).requires_grad_()
     meaning = replace(ConceptualMeaning.from_description(own), bindings={'_identity': first})
-    alias = store.append_meaning(meaning, time=False, document_key='unnamed-alias')
+    alias = store.append_meaning(meaning)
     address = store.occurrence_of(alias)
     assert store.order_of_row(row) == store.order_of_row(alias) == 1
     linked = owner.link(Occurrence(address, selected=key), {}, value=own,
@@ -453,7 +451,7 @@ def test_alias_order_follows_the_words_denotation_for_symbol_and_name_references
     assert owner._concept_source_order(word) == 0
     assert owner._concept_source_order(owner.interpret.referent(word)) == 1
     first = store.append_meaning(replace(ConceptualMeaning.from_description(atoms[0]),
-        bindings={'_identity': ('sym', owner.interpret.referent(word))}), address=391, time=False)
+        bindings={'_identity': ('sym', owner.interpret.referent(word))}), name=391)
     key = owner.link(Occurrence(store.occurrence_of(first), concept=word, selected=None), {},
         value=atoms[0], where=None, when=0, stream=0)
     for tag in ('sym', 'name'):
@@ -463,7 +461,7 @@ def test_alias_order_follows_the_words_denotation_for_symbol_and_name_references
                      else store.occurrence_of(first))
         meaning = replace(ConceptualMeaning.from_description(atoms[0]),
             bindings={'_identity': reference})
-        row = store.append_meaning(meaning, time=False, document_key=tag)
+        row = store.append_meaning(meaning)
         assert store.order_of_row(row) == 1
         assert owner.link(Occurrence(store.occurrence_of(row), selected=key), {},
             value=atoms[0], where=None, when=1, stream=0) == key
@@ -482,7 +480,7 @@ def test_shared_definition_witness_resolves_a_null_token_only_once(monkeypatch):
     owner = resolver.components.owner
     label = owner.interpret.lookup_word([104], (), form='shared-sign')
     row = store.append_meaning(ConceptualMeaning.from_description(atoms[0]*0),
-        order=0, time=False)
+        )
     address = store.occurrence_of(row)
     key = owner.mtm.open(address, kind=owner.null_concept_id, when=0, value=atoms[0]*0)
     left, right = (OCCURRENCE, address[-1]), (SYMBOL, label)
@@ -514,7 +512,7 @@ def test_kept_word_read_reenters_a_definition_learned_after_its_pending_path():
     key = pool.named(word, value=atoms[0], when=0)
     reading = NS(word_ids=torch.tensor([word]), leaves=atoms[0][None], symbol_where=None)
     def close(position):
-        root = store.append_idea(atoms[0], address=401+position, time=False)
+        root = store.append_idea(atoms[0])
         return commit_read_words(owner, reading, batch=0, document='later-definition',
             position=position, written={'root_occurrence': store.occurrence_of(root)})[0]
     first = close(0)
@@ -545,7 +543,7 @@ def test_unnamed_reference_reenters_a_pending_words_later_definition():
     with torch.no_grad():
         owner.similarity_codebook.W[owner._csw_row_of(word)].copy_(atoms[0])
     first = store.append_meaning(replace(ConceptualMeaning.from_description(atoms[0]),
-        bindings={'_forward_references': ((0, word),)}), time=False, document_key='first')
+        bindings={'_forward_references': ((0, word),)}))
     address = store.occurrence_of(first)
     key = owner.link(Occurrence(address, concept=word, pending=True, selected=None), {},
         value=atoms[0], where=None, when=0, stream=0)
@@ -554,8 +552,7 @@ def test_unnamed_reference_reenters_a_pending_words_later_definition():
     owner.interpret.define(word, concept, trust=.1)
     own = atoms[0] + atoms[1]
     alias = store.append_meaning(replace(ConceptualMeaning.from_description(own),
-        bindings={'_identity': ('sym', owner.interpret.referent(word))}),
-        time=False, document_key='unnamed')
+        bindings={'_identity': ('sym', owner.interpret.referent(word))}))
     new = owner.link(Occurrence(store.occurrence_of(alias), selected=key), {},
         value=own, where=None, when=1, stream=0)
     assert pool.entries[key].symbol == concept and pool.entries[key].occurrences == (address,)
@@ -593,7 +590,7 @@ def test_shared_sentence_strata_operator_references_gradients_and_expiry():
     assert isinstance(a.tree.store.parts, STM1) and STM1.references is LTM1.references
     assert a.tree.forest()[0][1] == 0 and b.tree.forest()[0][1] == 1
     assert len(a.tree.store) == 3 and len(a.tree.store.parts) == 2
-    assert bool(a.tree.store.parts.operation_seat.eq(-1).all())
+    assert not hasattr(a.tree.store.parts, 'operation_seat')
     # Conditioning's composition view and MTM resolve the same live entry
     # that reconstruction's forest names; neither owns another value/tree.
     from MemberRead import read
@@ -629,7 +626,7 @@ def test_reentry_joins_native_identity_and_records_the_current_link_clock():
     references = []
     for at in range(2):
         meaning = replace(ConceptualMeaning.from_description(atoms[0]), bindings={'_identity': ('sym', concept)})
-        row = store.append_meaning(meaning, document_key='recall', sentence_index=at, order=1)
+        row = store.append_meaning(meaning)
         references.append(store.occurrence_of(row))
         pool.closes[0] = at+4
         assert not store.recall_identities((store.row(row),), work=QueryWorkBudget(16), stream=0)
@@ -640,7 +637,7 @@ def test_reentry_joins_native_identity_and_records_the_current_link_clock():
     receipt('memory-reentry', dict(tokens=1, references=2, last_link=[0, 6], candidate=True))
 
 
-def test_epoch_withdrawal_expires_shared_short_term_references():
+def test_hard_reset_expires_shared_short_term_references():
     from test_presentation_memory import fixture, model_for, begin
     from SentenceStrata import SentenceStrata
     from ThoughtStrata import write
@@ -660,8 +657,8 @@ def test_epoch_withdrawal_expires_shared_short_term_references():
     write(thoughts, ConceptualMeaning.from_description(atoms[0]), key=(2, 2, 2, 2))
     assert len(strata.recent_stores[0]) == len(strata.recent_stores[0].parts) == 1
     assert len(thoughts) == 2  # The role and its written thought root.
-    begin(model)
-    assert not store.parts.contains(relation)
+    owner.stm.clear()
+    assert store.parts.contains(relation)  # A document boundary withdraws no durable relation.
     assert len(strata.recent_stores[0]) == len(strata.recent_stores[0].parts) == len(thoughts) == 0
     with pytest.raises(ValueError, match='expired'):
         strata.read(address)
@@ -676,8 +673,8 @@ def test_thought_trial_rollback_preserves_expired_external_references_without_re
     from Memory import LTM0
     from Meaning import ConceptualMeaning
     from ThoughtStrata import construct, write, snapshot, restore
-    external = LTM0(4, capacity=4)
-    row = external.append_idea(torch.ones(4), time=False)
+    external = STM0(4, capacity=4, relation_capacity=8192)
+    row = external.append_idea(torch.ones(4))
     address = external.occurrence_of(row)
     stores = construct(1, 2, 4)
     store = stores[0][0]
@@ -685,18 +682,15 @@ def test_thought_trial_rollback_preserves_expired_external_references_without_re
     meaning = replace(ConceptualMeaning.from_description(torch.ones(4)), role_refs=(address, None, None))
     view = write(store, meaning, key=(2, 2, 2, 2))
     saved = snapshot(stores)
-    portable = store.semantic_extras()
     external.reset()
     write(store, ConceptualMeaning.from_description(torch.zeros(4)), key=(3, 2, 2, 2))
     restore(stores, saved)
     torch.testing.assert_close(view.read().roles, meaning.roles)
     assert view.read().role_refs[0] == address
     assert external.location(address) is None and len(external) == 0
-    with pytest.raises(ValueError, match='semantic context occurrence is unavailable'):
-        store.load_semantic_extras(portable)
     receipt('thought-trial-expired-reference', dict(restored_thoughts=1,
         external_rows_before=1, external_rows_after=0, reference_preserved=True,
-        checkpoint_validation_preserved=True))
+        transient_restore=True))
 
 
 def test_unnamed_leaf_closing_reads_its_idea_without_a_sentinel_concept(monkeypatch):
@@ -719,7 +713,7 @@ def test_unnamed_leaf_closing_reads_its_idea_without_a_sentinel_concept(monkeypa
     pool, store = f.cs.mtm, f.cs._closed_clause_store()
     address = store.occurrence_of(row)
     assert pool.reading_of(address) is None
-    torch.testing.assert_close(pool.value_of(address), store.point_of_row(address[-1]))
+    torch.testing.assert_close(pool.value_of(address), store.point_of_row(address))
     assert all(name.reading != -1 for name in pool.names.values())
     receipt('unnamed-leaf-reference', dict(forward_names=0, sentinel_concepts=0,
         reference_reads_own_idea=True))
@@ -731,7 +725,7 @@ def test_mtm_v12_and_policy_migrations_are_reported_and_invalid_members_are_atom
     from Memory import MediumTermMemory
     resolver, store, atoms = fixture()
     pool = resolver.components.owner.mtm
-    row = store.append_idea(atoms[0], time=False)
+    row = store.append_idea(atoms[0])
     address = store.occurrence_of(row)
     key = pool.open(address, kind=None, when=0, value=atoms[0])
     pool.record_link(key, address, 0, kind='reference', order=0)
@@ -761,12 +755,12 @@ def test_consecutive_state_links_witness_a_noun_without_a_separate_counter():
     resolver, store, atoms = fixture()
     owner, pool = resolver.components.owner, resolver.components.owner.mtm
     owner.concept_mint_count = 3
-    introduction = store.append_idea(atoms[0], address=501, time=False)
+    introduction = store.append_idea(atoms[0], name=501)
     address = store.occurrence_of(introduction)
     noun = owner.link(Occurrence(address, kind='reference', order=0), {},
         value=atoms[0], where=None, when=0, stream=0)
     for close in range(3):
-        row = store.append_idea(atoms[0], address=502+close, time=False)
+        row = store.append_idea(atoms[0], name=502+close)
         member = store.occurrence_of(row)
         pool.event(noun, member, verb=1, role=0, when=close, before=atoms[0])
         owner.link(Occurrence(member, kind='state', order=0), {}, value=atoms[0], where=None, when=close, stream=0)
@@ -780,49 +774,27 @@ def test_consecutive_state_links_witness_a_noun_without_a_separate_counter():
         chain_witnesses=3, promoted_order=1))
 
 
-def test_operator_authority_and_legacy_columns_use_declared_seats(monkeypatch):
-    from test_trust_gates import gate_fixture, gate_data, words
+def test_operator_choice_does_not_scale_relation_endpoint_confidence(monkeypatch):
+    from test_operation_measurements import operation_fixture, words
     from ConceptTrust import positive_length
     from definition_fixtures import agreeing_views, learned_operation
-    from Memory import SYMBOL
-    gate_data(monkeypatch)
-    f = gate_fixture(monkeypatch)
+    f = operation_fixture(monkeypatch)
     owner, parts, occupations = f.cs, f.store.parts, f.language.parts_of_speech
-    left, right, external = words(f, 3)
-    for word in (left, right, external): agreeing_views(owner, word)
+    left, right = words(f, 2)
+    for word in (left, right): agreeing_views(owner, word)
     learned_operation(occupations, 'part', left, right, count=3)
     seat = occupations.seats['part']
-    row = parts.add((SYMBOL, left), (SYMBOL, right), truth_plus=.8,
-                    operator=left, operation_seat=seat.concept)
-    parts.refresh_effective()
-    expected = .8*min(positive_length(owner, left), positive_length(owner, right),
-        positive_length(owner, seat.concept), parts.gates.cap(named=False, operation='part'))
-    assert float(parts.effective_plus[row]) == pytest.approx(expected)
-    assert int(parts.operator_reference[row]) == -1
+    row = parts.add(left, right, truth_plus=.8)
+    expected = .8*min(positive_length(owner, left), positive_length(owner, right))
+    assert float(parts.evidence(row)[0]) == pytest.approx(expected)
     assert seat.native and 'trust' not in occupations.operation('part')
-    external_row = parts.add((SYMBOL, right), (SYMBOL, left), truth_plus=.7,
-                            operator=external, operation_seat=seat.concept)
-    parts.refresh_effective()
-    external_expected = .7*min(positive_length(owner, left), positive_length(owner, right),
-        positive_length(owner, external), positive_length(owner, seat.concept),
-        parts.gates.cap(named=False, operation='part'))
-    assert int(parts.operator_reference[external_row]) == external
-    assert float(parts.effective_plus[external_row]) == pytest.approx(external_expected)
-    state = {key: value.clone() for key, value in parts.state_dict().items()}
-    old = state.pop('operation_seat')
-    catalog = torch.full_like(old, -1)
-    for index, name in enumerate(parts.operation_catalog): catalog[old == occupations.seats[name].concept] = index
-    state['grammar_operation'] = catalog
-    state['operator'] = state.pop('operator_reference'); state['operator'][row] = left
-    parts.load_state_dict(state)
-    assert int(parts.operation_seat[row]) == seat.concept and int(parts.operator_reference[row]) == -1
-    assert parts.operation_migration['redundant_endpoints'] == 1
-    assert int(parts.operator_reference[external_row]) == external
-    receipt('operator-authority', dict(effective=float(parts.effective_plus[row]), expected=expected,
-        seat=seat.concept, interfaces=len(seat.native), migration=parts.operation_migration,
-        nonendpoint_case='operator word distinct from both symbolic endpoints',
-        nonendpoint_reference=external, nonendpoint_effective=float(parts.effective_plus[external_row]),
-        nonendpoint_expected=external_expected))
+    state = {key:value.clone() for key,value in parts.state_dict().items()}
+    state['operation_seat'] = torch.full_like(parts.refs[:,0], seat.concept)
+    state['operator_reference'] = torch.full_like(parts.refs[:,0], left)
+    with pytest.warns(UserWarning, match='retired'):
+        parts.load_state_dict(state)
+    assert float(parts.evidence(row)[0]) == pytest.approx(expected)
+    assert not hasattr(parts, 'operation_seat') and not hasattr(parts, 'operator_reference')
 
 
 def test_one_ltm_idea_generates_a_meaning_compatible_surface_without_input_stm(paired, monkeypatch):
@@ -836,8 +808,8 @@ def test_one_ltm_idea_generates_a_meaning_compatible_surface_without_input_stm(p
     monkeypatch.setattr(ChunkJournal, 'read_identity', forbidden)
     language, words, phrase, parent, bank, groups, structure = proposal('group')
     store = LTM0(12, capacity=4).double()
-    row = store.append_idea(parent[0].detach(), time=False)
-    idea = store.point_of_row(int(store.address_keys[row]))[None]
+    row = store.append_idea(parent[0].detach())
+    idea = store.point_of_row(store.occurrence_of(row))[None]
     class Owner:
         languageSpace = language
         stm = property(forbidden)
@@ -868,18 +840,18 @@ def test_pool_and_unpooled_stm_share_the_menu_and_states_never_prepend():
     from PrependedSymbols import SymbolEntries, stage
     resolver, store, atoms = fixture()
     owner, pool = resolver.components.owner, resolver.components.owner.mtm
-    first = store.append_idea(atoms[0], address=601, time=False)
+    first = store.append_idea(atoms[0], name=601)
     pooled = owner.link(Occurrence(store.occurrence_of(first), kind='state', order=0), {},
         value=atoms[0], where=None, when=1, stream=0)
     pool.close(store, stream=0)
-    second = store.append_idea(atoms[0], address=602, time=False)
+    second = store.append_idea(atoms[0], name=602)
     unpooled = store.occurrence_of(second)
     owner.stm.ensure_batch(1)
     refs = torch.tensor([[[STMChunks.OCCURRENCE, unpooled[-1]], [0, 0]]])
     state, _ = STMChunks.deposit(owner.stm.state, atoms[0][None], torch.tensor([True]),
         order=0, refs=refs)
     owner.stm.set_state(state)
-    query = store.append_idea(atoms[0], address=603, time=False)
+    query = store.append_idea(atoms[0], name=603)
     choices, features, _ = menu(owner, Occurrence(store.occurrence_of(query), kind='state', order=0), {},
         value=atoms[0], where=None, when=2, stream=0)
     assert pooled in choices and unpooled in choices and features.shape[-1] == 12
@@ -915,12 +887,12 @@ def test_link_coverage_reaches_live_member_readers_and_modal_is_not_a_state():
     concept = owner.new_concept(); force_order(owner, concept, 0)
     row = owner._csw_concept_row(0, concept)
     with torch.no_grad(): owner.similarity_codebook.W[row].copy_(atoms[0]*.5)
-    first = store.append_idea(atoms[0], address=611, time=False)
+    first = store.append_idea(atoms[0], name=611)
     key = owner.link(Occurrence(store.occurrence_of(first), concept=concept, kind='reference', order=0), {},
         value=atoms[0]*.5, where=None, when=0, stream=0)
     owner.mtm.close(store, stream=0)
     errors = Error(); owner._model._sentence_close_errors = errors
-    second = store.append_idea(atoms[0], address=612, time=False)
+    second = store.append_idea(atoms[0], name=612)
     own = atoms[0].clone().requires_grad_()
     owner.link(Occurrence(store.occurrence_of(second), kind='reference', order=0, selected=key), {},
         value=own, where=None, when=1, stream=0)
@@ -956,7 +928,7 @@ def test_native_kept_close_uses_all_three_link_callers(monkeypatch):
         return result
     def commit(plan,row,written,**options):
         clause=plan['prepared_root']
-        if isinstance(row,int) and state_eligible(clause) and f.store.kind_of(row) not in ('estimate','question','cover'):
+        if isinstance(row,int) and state_eligible(clause):
             plan['state_link']=(Occurrence(f.store.occurrence_of(row),kind='state',order=f.store.order_of_row(row)),clause.point,clause.where)
         return native_commit(plan,row,written,**options)
     monkeypatch.setattr(owner,'link',link);monkeypatch.setattr(resolver,'commit',commit)
@@ -1068,7 +1040,7 @@ def test_written_alias_uses_the_kept_binding_instead_of_earlier_identity_metadat
     chosen = known_concept(owner, atoms[0], order=1)
     earlier = known_concept(owner, atoms[1], order=0)
     target = store.append_meaning(replace(ConceptualMeaning.from_description(atoms[0]),
-        bindings={'_identity': ('sym', chosen)}), time=False, document_key='chosen-member')
+        bindings={'_identity': ('sym', chosen)}))
     key = owner.link(Occurrence(store.occurrence_of(target), selected=None), {},
         value=atoms[0], where=None, when=0, stream=0)
     antecedent = Composition(atoms[0], reference=chosen, order=1)
@@ -1103,7 +1075,7 @@ def test_written_alias_retains_the_selected_pending_name_and_its_order():
     owner.interpret.define(earlier_word, known_concept(owner, atoms[0], order=1))
     selected = owner.mtm.named(selected_word, value=atoms[0])
     first = store.append_meaning(replace(ConceptualMeaning.from_description(atoms[0]),
-        bindings={'_identity': selected}), time=False, document_key='pending-choice')
+        bindings={'_identity': selected}))
     owner.link(Occurrence(store.occurrence_of(first), concept=selected_word, selected=selected),
         {}, value=atoms[0], where=None, when=0, stream=0)
     own = atoms[0] + atoms[1]
@@ -1117,9 +1089,9 @@ def test_written_alias_retains_the_selected_pending_name_and_its_order():
     assert plan['items'][0]['selected'] == selected and resolver.address(selected) is None
     kept = resolver.prepare(node, plan)
     written = {}
-    row = store.write_clause(kept, document_key='pending-alias', written_rows=written)
+    row = store.write_clause(kept,  written_rows=written)
     resolver.commit(plan, row, written, document='pending-alias', position=1, training=False)
-    retained = dict(store.raw_meaning_of(row).bindings)['_identity']
+    retained = store.referent_of(row)
     assert retained == store.occurrence_of(first)
     assert owner.mtm.token_of(retained) == selected
     assert store.order_of_row(row) == owner.mtm.entries[selected].refinement['member_order'] == 0
@@ -1143,7 +1115,7 @@ def test_written_ltm_selection_replaces_earlier_identity_without_a_binding_child
     selected = known_concept(owner, atoms[0], order=1)
     earlier = known_concept(owner, atoms[1], order=0)
     first = store.append_meaning(replace(ConceptualMeaning.from_description(atoms[0]),
-        bindings={'_identity': ('sym', selected)}), time=False, document_key='selected-ltm')
+        bindings={'_identity': ('sym', selected)}))
     address = store.occurrence_of(first)
     key = owner.link(Occurrence(address, selected=None), {}, value=atoms[0],
         where=None, when=0, stream=0)
@@ -1158,7 +1130,7 @@ def test_written_ltm_selection_replaces_earlier_identity_without_a_binding_child
     kept = resolver.prepare(node, plan)
     assert kept.composition.binding is None
     written = {}
-    row = store.write_clause(kept, document_key='selected-alias', written_rows=written)
+    row = store.write_clause(kept,  written_rows=written)
     resolver.commit(plan, row, written, document='selected-alias', position=1, training=False)
     assert dict(store.raw_meaning_of(row).bindings)['_identity'] == address
     assert store.order_of_row(row) == 1
@@ -1197,9 +1169,9 @@ def test_same_close_binding_keeps_the_introductions_own_mention():
     kept = resolver.prepare(root, plan)
     assert kept.composition.binding is kept.children[0].composition
     written = {}
-    row = store.write_clause(kept, document_key='local-introduction', written_rows=written)
+    row = store.write_clause(kept,  written_rows=written)
     first, alias = (written[('mention', id(item['written_node']))] for item in plan['items'])
-    assert row[0] == 'sym'  # The unresolved semantic chain remains a relation.
+    assert isinstance(row, int)  # Bind projects the selected introduction into its idea.
     assert dict(store.raw_meaning_of(store.location(alias)).bindings)['_identity'] == first
     resolver.commit(plan, row, written, document='local-introduction', position=0, training=False)
     assert owner.mtm.token_of(first) == owner.mtm.token_of(alias)
@@ -1207,4 +1179,4 @@ def test_same_close_binding_keeps_the_introductions_own_mention():
     torch.testing.assert_close(owner.mtm.read_member(alias), point)
     receipt('same-close-mention-binding', dict(introductions=1, members=2,
         member_order=0, relation_substitutions_before=1, relation_substitutions_after=0,
-        semantic_relation_retained=True, alias_reads_own_idea=True))
+        projected_idea_retained=True, alias_reads_own_idea=True))

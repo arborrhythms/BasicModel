@@ -1,4 +1,5 @@
 """Native support reads, independent meters and sentence lifetime isolation."""
+from Memory import STM0
 import torch
 
 
@@ -149,24 +150,6 @@ def test_native_candidate_departure_credits_only_scorer_parameters(tmp_path, mon
         model.End()
 
 
-def test_rereading_cannot_bind_the_occurrence_or_embedded_rows_it_replaces():
-    from ReferenceContext import exclude_replaced_occurrences
-    from Memory import LTM0
-    from Meaning import ConceptualMeaning
-    from Occurrence import document_digest, sentence_key
-    store = LTM0(4, capacity=8)
-    point = ConceptualMeaning.from_description(torch.ones(4))
-    content = sentence_key((b'field',))
-    rows = []
-    for document, position in (('current', 1), ('current', 2), ('other', 1),
-                               (('embedded', document_digest('current'), 1), 0)):
-        rows.append(store.append_meaning(point, document_key=document,
-                                        sentence_index=position, content_key=content))
-    ids = store.address_keys[rows]
-    valid = torch.ones(len(rows), dtype=torch.bool)
-    result = exclude_replaced_occurrences(store, ids, valid, 'current', 1)
-    assert result.tolist() == [False, True, True, False]
-    assert valid.all() and len(store) == 4
 
 
 def test_reversed_candidate_reads_keep_native_field_order_without_teacher(tmp_path, monkeypatch):

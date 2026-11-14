@@ -1,11 +1,8 @@
 """Stable source addresses and the separate staging of model-time coordinates."""
-from contextlib import contextmanager
 import hashlib
 import json
 
 import torch
-
-ADDRESS_DOMAIN = 'address-v1'  # Format tag, shared by every store; not an owner ID.
 
 
 def canonical(value):
@@ -36,65 +33,17 @@ def sentence_key(words):
     return digest.digest()
 
 
-def native_content_key(meaning):
-    """Content for non-lexical direct writes and unrecoverable legacy rows.
-
-    Sentence ingestion supplies identified words instead. This fallback never
-    consults a timestamp, occurrence ID, or store identity.
-    """
-    roles = meaning.roles.detach().to(device='cpu', dtype=torch.float32).contiguous()
-    return hashlib.sha256(b'native-content-v1\0' + roles.numpy().astype('<f4').tobytes()
-        + bytes(meaning.role_mask.to('cpu').tolist())
-        + json.dumps(meaning.metadata(), sort_keys=True, separators=(',', ':')).encode()).digest()
-
-
-def address_key(document, index, content):
-    """Full 64-bit digest, carried as the signed bit pattern in int64 columns."""
-    if type(index) is not int or index < 0 or len(document) != 32 or len(content) != 32:
-        raise ValueError('address requires document/content digests and a nonnegative index')
-    payload = b'occurrence-address-v1\0' + document + index.to_bytes(8, 'little') + content
-    value = int.from_bytes(hashlib.sha256(payload).digest()[:8], 'little', signed=True)
-    if value in (-1, 0):
-        raise ValueError('address hash collides with a reserved null; change the source key')
-    return value
-
-
-def definition_key(word, obj):
-    return address_key(document_digest(('DEF', int(word), int(obj))), 0, sentence_key(()))
-
-
 def slot_key(address, role):
     """The int64 carrier of a row-address/role reference, never an allocation."""
-    if type(address) is not int or address in (-1, 0) or role not in (0, 1, 2):
+    if type(address) is not int or address < 0 or role not in (0, 1, 2):
         raise ValueError('a slot requires an occurrence address and canonical role')
     payload = b'occurrence-slot-v1\0' + address.to_bytes(8, 'little', signed=True) + bytes((role,))
     value = int.from_bytes(hashlib.sha256(payload).digest()[:8], 'little') | (1 << 63)
     value -= 1 << 64
-    if value == -1:
-        raise ValueError('slot hash collides with a reserved null')
+    from RowTime import HORIZON
+    if value >= -HORIZON-2:
+        raise ValueError('slot hash collides with a reserved occurrence or null')
     return value
-
-
-class AddressIndex(dict):
-    """Address key -> row; accept the typed reference envelope at read seams."""
-    @staticmethod
-    def key(value):
-        if isinstance(value, tuple) and len(value) == 3 and value[:2] == ('ltm', ADDRESS_DOMAIN):
-            return value[2]
-        return value
-
-    def __getitem__(self, value):
-        return super().__getitem__(self.key(value))
-
-    def __setitem__(self, value, row):
-        return super().__setitem__(self.key(value), row)
-
-    def __contains__(self, value):
-        return super().__contains__(self.key(value))
-
-    def get(self, value, default=None):
-        return super().get(self.key(value), default)
-
 
 
 def prepared_input(space, raw, result):
@@ -229,76 +178,17 @@ def event_positions(space, shape, *, device):
     return positions.to(device).reshape(shape[0], *((1,) * (len(shape) - 1))).expand(shape)
 
 
-class OccurrenceRows:
-    address_domain = ADDRESS_DOMAIN
 
-    @contextmanager
-    def at_address(self, document, index, content):
-        previous = self.__dict__.get('_write_address')
-        self._write_address = (document_digest(document), int(index), content)
-        try:
-            yield
-        finally:
-            self._write_address = previous
+def operand_name(time):
+    """A working grammar operand tags a row time apart from positive concept IDs."""
+    time=int(time)
+    from RowTime import HORIZON
+    if not 0 <= time <= HORIZON:
+        raise ValueError('an occurrence time must fit the declared time ladder')
+    return -time-2
 
-    def stream_rows(self, b=0):
-        """Rows witnessed by this batch stream, in the store's own order."""
-        if not 0 <= int(b) < self.stream.shape[1]:
-            return self.address_keys.new_empty(0)
-        return self.stream[:len(self), int(b)].nonzero(as_tuple=True)[0]
 
-    def witness_stream(self, row, b):
-        """A shared address can have been experienced by several streams."""
-        if int(b) < 0:
-            return
-        if int(b) >= self.stream.shape[1]:
-            raise OverflowError('stream exceeds LTM0 construction capacity')
-        self.stream[int(row), int(b)] = True
-
-    def recency_weights(self, b=0):
-        """Other streams have the weight of this stream's first row."""
-        from Forgetting import history_age
-        return 1 / (1 + history_age(self))
-
-    def content_key(self, row):
-        return bytes(self.sentence_content_keys[int(row)].tolist())
-
-    def identity_code(self, row, pairs, ones):
-        """Read the fixed content direction at its durable definedness."""
-        from MeaningCodes import identity_code, defined_code
-        direction = identity_code(self.content_key(row), pairs, ones, like=self.slots)
-        return defined_code(direction, self.access_count[int(row)])
-
-    def rows_for_content(self, key):
-        return tuple(row for row in range(len(self)) if self.content_key(row) == key)
-
-    def _address_for_write(self, meaning, *, kind, document_key=None,
-                           sentence_index=0, content_key=None, key=None):
-        context = self.__dict__.get('_write_address')
-        content = content_key or (context[2] if context else native_content_key(meaning))
-        document = (document_digest(document_key) if document_key is not None else
-                    context[0] if context else document_digest(('direct', kind)))
-        index = context[1] if context and document_key is None else int(sentence_index)
-        identity = address_key(document, index, content) if key is None else int(key)
-        previous = self._index_occurrences.get(identity)
-        if previous is not None and (bytes(self.document_keys[previous].tolist()) != document
-                or int(self.sentence_index[previous]) != index or self.content_key(previous) != content):
-            raise RuntimeError('64-bit address collision; refusing to merge different occurrences')
-        return identity, document, index, content, previous
-
-    def _estimate_write_address(self, meaning, *, document=None, stream=None):
-        context = self.__dict__.get('_write_address')
-        source = ('thought', context[0], context[1]) if context else ('thought', document, stream)
-        return dict(document_key=source, sentence_index=0, content_key=native_content_key(meaning))
-
-    def remap_legacy_references(self, value):
-        """Apply this checkpoint's old handle/address map to any sidecar owner."""
-        if isinstance(value, dict):
-            return {key: self.remap_legacy_references(item) for key, item in value.items()}
-        if isinstance(value, (tuple, list)):
-            mapped = getattr(self, '_legacy_reference_map', {}).get(tuple(value)) if (
-                len(value) == 3 and isinstance(value[0], str) and value[0] == 'ltm') else None
-            if mapped is not None:
-                return mapped
-            return type(value)(self.remap_legacy_references(item) for item in value)
-        return value
+def operand_time(name):
+    """Decode only the occurrence arm of the temporary scalar reference union."""
+    from RowTime import HORIZON
+    return -int(name)-2 if -HORIZON-2 <= int(name) < -1 else None

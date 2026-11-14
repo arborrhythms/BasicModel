@@ -17,7 +17,8 @@ def owner(points):
         placement_witnesses=torch.ones(len(points), dtype=torch.long, device=points.device),
         placement_derived=torch.zeros(len(points), dtype=torch.bool, device=points.device),
         placement_valid=torch.zeros(len(points), dtype=torch.bool, device=points.device)))
-    native._concept_allocator = SimpleNamespace(symbol_types={}, parts=LTM1(256), relate_idx={('part-base', 2): (2, 1), ('part-base', 3): (2, 2)})
+    native._concept_allocator = SimpleNamespace(symbol_types={}, raised=set(), placement={i+1:0 for i in range(len(points))},
+        retired=set(), _layers={0:object()}, parts=LTM1(256), relate_idx={('part-base', 2): (2, 1), ('part-base', 3): (2, 2)})
     native._priming_edge_src = torch.full((512,), -1, dtype=torch.long)
     native._priming_edge_dst = torch.full((512,), -1, dtype=torch.long)
     native._priming_edge_weight = torch.ones(512)

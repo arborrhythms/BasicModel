@@ -156,7 +156,13 @@ def negate(context, arguments):
             context.conceptual_space.negate(role) for role in value.roles]))
         data = bindings(value)
         data['_operand_negated'] = not data.get('_operand_negated', False)
-        result = with_slots(replace(value, roles=roles, bindings=data), open_slots(value), pair=(negative, positive))
+        from Extension import Node, Context
+        from Language import NotLayer
+        operator = NotLayer()
+        extension = tuple(Node(operator.compose_extend(node.field), (node,), operator,
+                               Context(name='not')) for node in value.extension)
+        result = with_slots(replace(value, roles=roles, bindings=data, extension=extension),
+                            open_slots(value), pair=(negative, positive))
         return pair(result, negative, positive, meaning=result,
                     witnesses=bindings(value).get('_thought_witnesses', ()), operand_pair=(positive, negative))
     tensor = _vector(context, value)

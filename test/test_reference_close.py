@@ -8,7 +8,7 @@ import torch
 from order_fixtures import force_order
 
 from ClauseRow import Clause, Composition, attach_clause_index
-from Memory import LTM0
+from Memory import LTM0, STM0
 from Meaning import ConceptualMeaning
 from ReferenceClose import ReferenceClose
 from ReferenceContext import SituationFrame
@@ -19,7 +19,7 @@ def fixture(*, percept=False):
     from test_cs_sparse_weights import _cs
     from IdentityRows import point
     owner = _cs(nS=512, order=3, dim=12)
-    store = LTM0(12, capacity=512, percept_width=8 if percept else 0)
+    store = LTM0(12, capacity=512, percept_width=8) if percept else STM0(12, capacity=512, relation_capacity=8192)
     import weakref
     object.__setattr__(owner, "_clause_store_ref", weakref.ref(store))
     resolver = owner.components.reference_close
@@ -93,8 +93,7 @@ def close(resolver, point, predicate, mode, frames, *, document, sentence, selec
         plan['items'][0]['selected'] = plan['items'][0]['candidates'][selected]
     kept = resolver.prepare(clause, plan)
     written = {}
-    row = resolver.store.write_clause(kept, document_key=document, sentence_index=sentence,
-                                     written_rows=written)
+    row = resolver.store.write_clause(kept, written_rows=written)
     resolver.commit(plan, row, written, document=document, position=sentence, training=False)
     frame = replace(SituationFrame.from_row(resolver.store.row(row)),
         symbol_ids=written.get(('symbols', id(kept)), ()),
@@ -175,7 +174,7 @@ def test_later_common_evidence_merges_accessible_occurrences_without_rewriting_t
     identities = current_identities(resolver, frames)
     assert len({identities[a] for a in addresses}) == 1
     for address, point in zip(addresses, contents):
-        torch.testing.assert_close(store.point_of_row(address), point, rtol=0, atol=0)
+        torch.testing.assert_close(store.point_of_row(('ltm', store.address_domain, address)), point, rtol=0, atol=0)
 
 
 def same_kind_fourth_close(kind):
@@ -207,7 +206,7 @@ def same_kind_fourth_close(kind):
         references = [identities[address] for address in occurrences]
         assert len(set(references)) == (2 if distinct else 1)
         for address, content in zip(occurrences, contents):
-            torch.testing.assert_close(store.point_of_row(address), content, rtol=0, atol=0)
+            torch.testing.assert_close(store.point_of_row(('ltm', store.address_domain, address)), content, rtol=0, atol=0)
         yield references
 
 
@@ -243,12 +242,11 @@ def test_empty_close_has_no_policy_gradient_or_store_side_effect():
     kept = resolver.prepare(clause, plan)
     assert kept is clause
     written = {}
-    row = store.write_clause(kept, document_key='field', sentence_index=0, written_rows=written)
-    metadata = dict(store._semantic_rows)
-    required, refs = store.metadata_required.clone(), store.parts.refs.clone()
+    row = store.write_clause(kept, written_rows=written)
+    metadata = dict(store.working)
+    refs = store.parts.refs.clone()
     resolver.commit(plan, row, written, document='field', position=0, training=True)
-    assert store._semantic_rows == metadata and resolver.last_audit == ()
-    torch.testing.assert_close(store.metadata_required, required, rtol=0, atol=0)
+    assert store.working == metadata and resolver.last_audit == ()
     torch.testing.assert_close(store.parts.refs, refs, rtol=0, atol=0)
     assert not resolver.components.individual_ids and not resolver._participants()
 
@@ -286,7 +284,7 @@ def test_revision_merges_three_accessible_groups_transitively_across_cued_docume
     _, inaccessible, _ = close(resolver, atoms[0]+atoms[4], atoms[6], 'mint', (),
                                document='outside', sentence=0)
     outside = resolver.last_audit[0]['reference']
-    before = {address: store.point_of_row(address).clone() for address in addresses}
+    before = {address: store.point_of_row(('ltm', store.address_domain, address)).clone() for address in addresses}
     identities = current_identities(resolver, frames)
     assert len({identities[a] for a in addresses}) == 1
     assert outside not in set(identities.values())
@@ -296,7 +294,7 @@ def test_revision_merges_three_accessible_groups_transitively_across_cued_docume
         resolver.components.owner.mtm.entries)
     assert not resolver.components.individual_ids
     for address, point in before.items():
-        torch.testing.assert_close(store.point_of_row(address), point, rtol=0, atol=0)
+        torch.testing.assert_close(store.point_of_row(('ltm', store.address_domain, address)), point, rtol=0, atol=0)
 
 
 def test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues():
@@ -448,18 +446,19 @@ def test_kept_journal_supplies_np_content_predicate_and_positional_provenance(mo
     kept = resolver.prepare(clause, plan)
     assert component.individual_ids == before
     written = {}
-    row = f.store.write_clause(kept, document_key='native', sentence_index=0, written_rows=written)
+    row = f.store.write_clause(kept, written_rows=written)
     resolver.commit(plan, row, written, document='native', position=0, training=False)
     identity = resolver.last_audit[0]['reference']
     assert isinstance(identity, tuple) and identity[:2] == ('ltm', f.store.address_domain)
     assert component.individual_ids == before
     assert f.store.raw_meaning_of(f.store.location(identity)).role_refs[0] == ('sym', program.concept_ids[1].item())
-    assert int(f.store.access_count[f.store.location(identity)]) == 1 and not hasattr(component, 'nouns')
+    assert not hasattr(component, 'nouns')  # The row counter is retired by §17.14.
     occurrence = resolver.last_audit[0]['occurrence']
     kind = int(program.concept_ids[1])
     assert f.store.row(f.store.index_of_row(occurrence))['order'] == f.cs._concept_source_order(kind) == 0
-    restored = LTM0(8, capacity=64, percept_width=0)
-    restored.load_state_dict(f.store.state_dict())
-    restored.load_semantic_extras(f.store.semantic_extras())
+    # This unclocked grammar fixture is working memory (§17.15). Copy its
+    # admitted runtime state; legacy durable migration has separate coverage.
+    restored = STM0(8, capacity=64, relation_capacity=8192)
+    restored.restore_runtime_state(f.store.state_dict())
     assert not hasattr(restored, 'refs') and 'refs' not in restored.state_dict()
     torch.testing.assert_close(restored.slots, f.store.slots, rtol=0, atol=0)

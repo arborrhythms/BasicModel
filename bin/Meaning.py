@@ -156,6 +156,8 @@ class ConceptualMeaning:
     scope: Any = ()
     constituents: tuple = field(default=(), repr=False)
     sentence_kind: str | None = None
+    # An invocation's operator extension is not a durable row sidecar.
+    extension: tuple = field(default=(), repr=False, compare=False)
 
     def __post_init__(self):
         if not torch.is_tensor(self.roles) or self.roles.ndim != 2 or self.roles.shape[0] != 3:
@@ -216,8 +218,10 @@ class ConceptualMeaning:
                 "sentence_kind": self.sentence_kind}
 
     def detached(self):
+        from SentenceBoundary import detached
         return type(self)(self.roles.detach(), self.role_mask, **self.metadata(),
-                          constituents=tuple(child.detached() for child in self.constituents))
+                          constituents=tuple(child.detached() for child in self.constituents),
+                          extension=detached(self.extension))
 
 
 def symbol_identities(meaning):
@@ -229,32 +233,8 @@ def symbol_identities(meaning):
     return torch.tensor(named, device=meaning.roles.device, dtype=torch.long)
 
 
-def retained_symbol_prediction(meaning):
-    """Rehydrate a complete activation prior from an estimate occurrence."""
-    from types import SimpleNamespace
-    entries = dict(meaning.bindings).get('_expected_symbols')
-    if not entries:
-        return None
-    ids, orders, keys, logits = zip(*entries)
-    like = meaning.roles
-    valid = torch.tensor([key is not None for key in keys], device=like.device, dtype=torch.bool)
-    values = like.new_zeros(len(keys), like.shape[-1])
-    if bool(valid.any()):
-        values[valid] = like.new_tensor([key for key in keys if key is not None])
-    return SimpleNamespace(symbol_keys=values, key_valid=valid, symbol_logits=like.new_tensor(logits),
-        symbol_ids=torch.tensor(ids, device=like.device, dtype=torch.long),
-        symbol_orders=torch.tensor(orders, device=like.device, dtype=torch.long), bindings=meaning.bindings,
-        confidence=like.new_tensor(logits).sigmoid().amax(-1))
 
 
-def retained_symbol_activation(meaning, prediction):
-    """Read the original local target after the stored row has been fused."""
-    entries = dict(meaning.bindings).get('_observed_symbol_activations')
-    if entries is None or prediction is None:
-        return None
-    values = {int(identity): pair for identity, pair in entries}
-    return prediction.symbol_keys.new_tensor([
-        values.get(int(identity), (0., 0.)) for identity in prediction.symbol_ids.tolist()])
 
 
 def withheld_symbols(meaning, prediction):

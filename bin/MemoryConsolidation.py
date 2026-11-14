@@ -1,103 +1,12 @@
-"""Kept-close recurrence and identity promotion over today's occurrence rows.
-
-Angle recurrence and evidence are rebuilt from retained ideas and cover
-segments. Fixed reading seats preserve the first identity and promoted symbol.
-"""
-from dataclasses import replace
-
+"""Promote an active idea once, preserving its selected reference's order."""
 import torch
 
 
 def _content(store, row):
-    """The idea's content, with its sentence time removed for recurrence."""
     value = store.slots[row].detach().clone()
     if store.when_start is not None:
         value[store.when_start:store.when_start+4] = 0
     return value
-
-
-@torch.no_grad()
-def recurrence_groups(store):
-    """Angle admission; rebuild evidence once from each retained assigned idea."""
-    import math
-    from util import TheXMLConfig
-    # Fifteen degrees admits modest drift (cos = .966), without exact hashes.
-    angle = float(TheXMLConfig.space('ConceptualSpace', 'recurrenceAngle', 15.))
-    if not math.isfinite(angle) or not 0 < angle <= 180:
-        raise ValueError('recurrenceAngle must lie in (0, 180] degrees')
-    threshold = math.cos(math.radians(angle))
-    groups, pending = {}, []
-    from Memory import NULL_CONCEPT
-    owner_ref = store.__dict__.get('_concept_owner')
-    owner = None if owner_ref is None else owner_ref()
-    # Epoch data is empty again, but a previously promoted reading already
-    # has a concept. Its fixed prototype is available for angular recognition.
-    learned_orders = {}
-    if owner is not None:
-        alloc = owner._concept_allocator
-        for seat in store.recurrence_symbols.gt(0).nonzero().flatten().tolist():
-            symbol = int(store.recurrence_symbols[seat])
-            if symbol in alloc.retired:
-                store.recurrence_symbols[seat] = -1
-            else:
-                learned_orders[seat] = alloc.order_of(symbol)
-    learned = store.recurrence_symbols.gt(0)
-    for row in range(len(store)):
-        if store.kind_of(row) in ('estimate', 'question', 'cover', 'episode'):
-            continue
-        pool = None if owner is None else owner.mtm
-        token = None if pool is None else pool.token_of(store.occurrence_of(row))
-        if token is not None and pool.entries[token].kind == NULL_CONCEPT:
-            continue
-        seat = int(store.recurrence_readings[row])
-        (pending if seat < 0 else groups.setdefault(seat, [])).append(row)
-    # Forgotten unpromoted groups release their fixed seats. Promoted summaries
-    # keep their symbol association even while no occurrence is retained.
-    for seat in store.recurrence_used.nonzero().flatten().tolist():
-        if seat not in groups and int(store.recurrence_symbols[seat]) < 0:
-            store.recurrence_used[seat] = False
-            store.recurrence_codes[seat].zero_()
-            store.recurrence_weights[seat] = 0
-            store._recurrence_identities[seat] = None
-    def update(seat, rows):
-        values = torch.stack([_content(store, row) for row in rows])
-        weights = (store.truth_plus[rows] + store.truth_minus[rows]).to(values)
-        total = weights.sum()
-        store.recurrence_codes[seat].copy_((values * weights[:, None]).sum(0) / total.clamp_min(1e-12))
-        store.recurrence_weights[seat] = total
-    for seat, rows in groups.items():
-        update(seat, rows)
-    for row in pending:
-        value = _content(store, row)
-        scores = torch.nn.functional.cosine_similarity(store.recurrence_codes, value[None], dim=-1)
-        eligible = store.recurrence_used | learned
-        order = store.order_of_row(row)
-        for seat, registered in learned_orders.items():
-            if registered != order:
-                eligible[seat] = False
-        scores.masked_fill_(~eligible, -torch.inf)
-        # Strict angle tolerance; equal scores choose the earliest fixed seat.
-        seat = int(scores.argmax())
-        if not float(scores[seat]) > threshold:
-            free = (~(store.recurrence_used | learned)).nonzero().flatten()
-            if not len(free):
-                raise RuntimeError('angular recurrence exceeds the constructed recurrenceCapacity')
-            seat = int(free[0])
-        if not bool(store.recurrence_used[seat]):
-            store.recurrence_used[seat] = True
-            store._recurrence_identities[seat] = dict(store.raw_meaning_of(row).bindings).get('_identity')
-        store.recurrence_readings[row] = seat
-        groups.setdefault(seat, []).append(row)
-        update(seat, groups[seat])
-    from DocumentCover import segments
-    membership = segments(store)
-    store.recurrence_documents.zero_()
-    for seat, rows in groups.items():
-        # Multiple presentations of one cover concept are still one document.
-        documents = {bytes(store.document_keys[store.location(cover)].tolist())
-                     for row in rows for cover in membership.get(row, ())}
-        store.recurrence_documents[seat] = len(documents)
-    return groups
 
 
 def _fold(owner, store, rows, *, order=1, members=None):
@@ -114,7 +23,7 @@ def _fold(owner, store, rows, *, order=1, members=None):
         value = cb.W.new_zeros(cb.W.shape[-1])
         value[:width] = convex_mean(weights, codes)[0]
         return value
-    weights = store.truth_plus[rows] + store.truth_minus[rows]
+    weights = store.trust[rows].abs()
     if not bool(weights.any()):
         return None
     value = cb.W.new_zeros(cb.W.shape[-1])
@@ -147,68 +56,73 @@ def _preflight(owner, plans):
 
 
 @torch.no_grad()
-def consolidate(owner, store, *, context=None, key=None, batch=0):
-    """Consolidate a reading witnessed in three source documents."""
+def consolidate(owner, store, *, context=None, key=None, batch=0, rows=None, written_now=False):
+    """Mint each eligible idea and retain the minted concept as its referent."""
     from Spaces import _concept_alloc_of
+    from Memory import SYMBOL
+    from MemoryActivity import deferred
+    if deferred() or store.__dict__.get('_promoting', False):
+        return ()
     alloc = _concept_alloc_of(owner)
-    close_key = key
-    readings = recurrence_groups(store)
-    plans, actions = [], []
-    for reading, rows in readings.items():
-        retained = int(store.recurrence_symbols[reading])
-        if retained > 0 and retained not in alloc.retired:
+    selected = range(len(store)) if rows is None else rows
+    plans, sources = [], []
+    for index in selected:
+        index = int(index)
+        activity = float(store.activity[index])
+        if activity < store.activity_config.promotion:
             continue
-        if int(store.recurrence_documents[reading]) < 3:
+        reference = store.referent_of(index)
+        # A promoted row has activity one and refers to its minted concept.
+        # A just-written one is considered before its activity is made permanent.
+        if activity == 1. and not written_now:
             continue
-        orders = [store.order_of_row(row) for row in rows]
-        # Recurrence witnesses frequency, not the order of an unresolved
-        # reference. Keep its evidence until every member has an order;
-        # allocating first would leave a partially minted, unwitnessed concept.
-        if any(order < 0 for order in orders):
-            continue
-        # A retained non-word concept is already minted. Recurrence must not
-        # duplicate that seat just because it was reached by another close.
-        reference = store._recurrence_identities[reading]
-        if reference is not None and reference[0] == 'sym':
-            seat = owner._csw_row_of(reference[1])
-            if seat is not None and torch.equal(store.slots[rows[0]], owner.similarity_codebook.W[seat]):
-                store.recurrence_symbols[reading] = reference[1]
-                continue
-        value = _fold(owner, store, rows, order=orders[0])
-        if value is not None:
-            plans.append((orders[0], value))
-            actions.append(('reading', reading))
-    if plans:
-        _preflight(owner, plans)
-    promoted = []
-    for (order, value), (kind, key) in zip(plans, actions):
-        symbol = owner.new_concept()
-        alloc.reference_orders[symbol] = order
-        alloc.symbol_types.setdefault(symbol, set()).update(('concept', 'object'))
-        row = owner._csw_concept_row(order, symbol)
-        if row is None:
-            raise RuntimeError('consolidation inventory changed after preflight')
-        derived = getattr(owner.similarity_codebook, 'mereology', None)
+        if reference is not None:
+            order = store.order_of_row(index)
+        else:
+            orders = [alloc.order_of(int(cid)) for cid in store.episodic_concepts[index].tolist() if cid >= 0]
+            order = max(orders, default=-1) + 1
+        if order < 0:
+            raise ValueError('an active idea refers to an unavailable concept')
+        point = _content(store, index)
+        value = owner.similarity_codebook.W.new_zeros(owner.similarity_codebook.W.shape[-1])
+        value[:min(len(point),len(value))] = point[:len(value)].to(value)
+        plans.append((order, value)); sources.append(index)
+    if not plans:
+        return ()
+    _preflight(owner, plans)
+    store._promoting = True
+    try:
+        promoted = []
+        for index,(order,value) in zip(sources,plans):
+            symbol = owner.new_concept()
+            alloc.reference_orders[symbol] = order
+            alloc.symbol_types.setdefault(symbol,set()).update(('concept','object'))
+            seat = owner._csw_concept_row(order,symbol)
+            if seat is None:
+                raise RuntimeError('promotion inventory changed after preflight')
+            derived = getattr(owner.similarity_codebook,'mereology',None)
+            if derived is not None:
+                derived.remember_content(seat,value)
+                derived.placement[seat].zero_()
+                derived.placement_witnesses[seat] = 0
+                derived.placement_dirty[seat] = True
+            owner.similarity_codebook.W[seat].copy_(value)
+            owner.similarity_codebook.trust.remember(symbol,value)
+            from ConceptTrust import observe
+            observe(owner,symbol,value)
+            alloc.settle(symbol)
+            store.referent[index] = store.referent.new_tensor((SYMBOL,symbol))
+            store.activity[index] = 1.
+            promoted.append(seat)
+        derived = getattr(owner.similarity_codebook,'mereology',None)
         if derived is not None:
-            derived.remember_content(row, value)
-            derived.placement[row].zero_()
-            derived.placement_witnesses[row] = 0
-            derived.placement_dirty[row] = True
-        owner.similarity_codebook.W[row].copy_(value)
-        owner.similarity_codebook.trust.remember(symbol, value)
-        from ConceptTrust import observe
-        for occurrence in readings[key]:
-            observe(owner, symbol, _content(store, occurrence))
-        promoted.append(row)
-        alloc.settle(symbol)
-        store.recurrence_symbols[key] = symbol
-    derived = getattr(owner.similarity_codebook, 'mereology', None)
-    if promoted and derived is not None:
-        if context is None:
-            context = owner.placement_context(batch)
-        if close_key is None:
-            from Occurrence import sentence_key
-            close_key = sentence_key([derived.content_key(row) for row in promoted])
-        derived.place_rows(promoted, context, close_key)
-        owner.similarity_codebook.lookup_rows(promoted)
-    return tuple((kind, key) for kind, key in actions)
+            if context is None:
+                context = owner.placement_context(batch)
+            if key is None:
+                from Occurrence import sentence_key
+                key = sentence_key([derived.content_key(row) for row in promoted])
+            derived.place_rows(promoted,context,key)
+            owner.similarity_codebook.lookup_rows(promoted)
+        return tuple(sources)
+    finally:
+        store._promoting = False

@@ -148,7 +148,7 @@ def test_kept_wrong_equality_neither_binds_nor_reopens_a_token(monkeypatch, when
     def wrong():
         before = dict(resolver.components.owner.mtm.entries)
         store.write_clause(equality(a[1], words['x'], words['wrong']),
-                           document_key='wrong', sentence_index=0)
+                           )
         value = store.meaning_of(pending)
         assert resolver.components.owner.mtm.entries == before
         return value
@@ -221,7 +221,7 @@ def test_anonymous_parent_keeps_its_raw_open_role_and_query_predicate(monkeypatc
     plan = resolver.preview(clause, chunk_context(resolver, ()))
     prepared = resolver.prepare(clause, plan)
     written = {}
-    row = store.write_clause(prepared, document_key='parent', written_rows=written)
+    row = store.write_clause(prepared,  written_rows=written)
     resolver.commit(plan, row, written, document='parent', position=0, training=False)
     raw = store.raw_meaning_of(row)
     assert raw.role_refs[0][0] == 'ltm' and open_slots(raw) == (('referent', 0),)

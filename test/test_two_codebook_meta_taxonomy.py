@@ -1,6 +1,7 @@
 """Native percept/property insertion; word-object META is owned by CS."""
 
 from __future__ import annotations
+from Memory import STM0
 
 import os
 import sys
@@ -49,7 +50,7 @@ def _idea_store(model):
     from ClauseRow import attach_clause_index
     from Memory import LTM0
     owner = model._concept_owner()
-    store = LTM0(int(owner.outputShape[-1]), capacity=8, percept_width=0)
+    store = STM0(int(owner.outputShape[-1]), capacity=8, percept_width=0, relation_capacity=8192)
     attach_clause_index(model, store, owner)
     return store
 
@@ -85,7 +86,7 @@ class TestInsertIdea(unittest.TestCase):
         point = torch.zeros(store.nDim)
         point[0], point[1] = .7, .3
         row = _write_point(store, point)
-        pos = int(store.address_keys[row])
+        pos = store.row_name(row)
         self.assertIsInstance(pos, int)
         self.assertNotIn(pos, (-1, 0))
         self.assertEqual(store.raw_meaning_of(row).role_mask.tolist(), [True, False, False])
@@ -99,5 +100,5 @@ class TestInsertIdea(unittest.TestCase):
         m = _make_radix_model()
         store = _idea_store(m)
         first = _write_point(store, torch.ones(store.nDim))
-        second = _write_point(store, torch.ones(store.nDim), document_key='another-occurrence')
-        self.assertNotEqual(int(store.address_keys[first]), int(store.address_keys[second]))
+        second = _write_point(store, torch.ones(store.nDim))
+        self.assertNotEqual(store.row_name(first), store.row_name(second))

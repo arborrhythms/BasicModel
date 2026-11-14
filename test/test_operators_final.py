@@ -84,8 +84,8 @@ def test_determined_sentences_keep_distinct_occurrences_and_universal_stays_high
     f = SentenceFixture(monkeypatch)
     clause = f.clause(('lift', ('lower', 'a', 'cat'), 'sleeps'))
     writes_a, writes_b = {}, {}
-    a = f.store.write_clause(clause, document_key='first', sentence_index=1, written_rows=writes_a)
-    b = f.store.write_clause(clause, document_key='second', sentence_index=1, written_rows=writes_b)
+    a = f.store.write_clause(clause,   written_rows=writes_a)
+    b = f.store.write_clause(clause,   written_rows=writes_b)
     assert id(clause.children[0]) not in writes_a and id(clause.children[0]) not in writes_b
     assert f.store.occurrence_of(a) != f.store.occurrence_of(b)
     torch.testing.assert_close(f.store.slots[a], f.store.slots[b])
@@ -101,7 +101,7 @@ def test_definition_sentence_joins_identities_beside_the_interpret_definition(mo
     from test_clause_acceptance import SentenceFixture
     f = SentenceFixture(monkeypatch)
     clause = f.clause(('equal', 'bachelor', 'unmarried-man'))
-    first = f.store.write_clause(clause, document_key='definition', sentence_index=1)
+    first = f.store.write_clause(clause, )
     assert len(f.store) == 0 and first[0] == 'sym'
     row = f.store.row(first)
     assert row['refs'].tolist() == [f.noun('bachelor'), f.noun('unmarried-man')]
@@ -149,7 +149,7 @@ def test_determiner_lowering_keeps_order_without_minting_a_composing_argument(mo
     clause = finish_reading(f.language, reading, registry=f.registry)
     assert clause.order == 0 and clause.children[0].order == 1
     written = {}
-    row = f.store.write_clause(clause, document_key='determiner', sentence_index=1,
+    row = f.store.write_clause(clause,
                                written_rows=written)
     assert id(clause.children[0]) not in written
     assert f.store.row(row)['order'] == 0 and len(f.store) == 1

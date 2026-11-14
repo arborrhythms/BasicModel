@@ -95,7 +95,6 @@
     <nVectors>1048576</nVectors>
     <activeVectors>32768</activeVectors>
     <primingBridgeCapacity>8388608</primingBridgeCapacity>
-    <recurrenceCapacity>262144</recurrenceCapacity>
     <stmCapacity>8</stmCapacity>
     <nDim>1000</nDim>
     <meaningWidth>896</meaningWidth>

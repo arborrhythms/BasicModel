@@ -3,6 +3,7 @@
 The outgoing lookup/blend tests are retained in review13-settled-before.
 The settled native-subspace arithmetic is in test_review13_subspaces.py.
 """
+from Memory import STM0
 from types import SimpleNamespace
 import torch
 from torch import nn
@@ -19,7 +20,7 @@ def test_predicted_rows_do_not_cross_streams_or_read_placement_conduction():
     from Meaning import ConceptualMeaning
     cs, cb, alloc = fixture()
     a, b, c = [word(cs, [(p, 1.)]) for p in (4, 7, 8)]
-    store = LTM0(3, capacity=8)
+    store = STM0(3, capacity=8, relation_capacity=8192)
     cs.symbolSpace = SimpleNamespace(ltm_store=store)
     from ClauseRow import attach_clause_index
     attach_clause_index(SimpleNamespace(), store, cs)
@@ -60,11 +61,8 @@ def test_actual_serial_leaf_pairs_forms_and_meanings_and_perception_owns_forms()
     rows = model.inputSpace._ar_grammar_object_rows
     atoms = model.inputSpace._ar_grammar_object_atoms
     store = owner._closed_clause_store()
-    covers = {owner._csw_row_of(store.raw_meaning_of(i).role_refs[0][1])
-              for i in range(len(store)) if store.row(i)['kind'] == 'cover'}
-    assert len(covers) == 2
     seats = {owner._csw_row_of(seat.concept) for seat in model.languageSpace.parts_of_speech.seats.by_name.values()}
-    assert set(owner._concept_allocator.layer()._tensor_row_keys) == set(rows[rows>=0].tolist()) | covers | {owner._csw_row_of(cid) for cid in owner._concept_allocator.formal_arguments.values()} | seats
+    assert set(owner._concept_allocator.layer()._tensor_row_keys) == set(rows[rows>=0].tolist()) | {owner._csw_row_of(cid) for cid in owner._concept_allocator.formal_arguments.values()} | seats
     width = cb.mereology.percept_width
     torch.testing.assert_close(atoms[rows>=0][..., :width], cb.lookup_rows(rows[rows>=0])[..., :width])
     assert cb.mereology.placement_witnesses[rows[rows>=0]].gt(0).all()

@@ -89,7 +89,7 @@ def test_symbolicspace_owns_its_starts():
     # relative-truth start; S is the absolute-truth start, without a truth-reducing wrapper.
     assert "S" in ws_syms, ws_syms
     assert g.ws_relative_starts == frozenset({
-        'part_argout1', 'whole_argout1', 'equal_argout1', 'implies_argout1', 'operator_argout1'})
+        'part_argout1', 'whole_argout1', 'equal_argout1', 'implies_argout1'})
     assert "S" in g.ws_absolute_starts
 
 

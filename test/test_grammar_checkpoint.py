@@ -60,3 +60,57 @@ def test_count_checkpoint_and_changed_argument_catalogue_require_explicit_replay
         counts={17: {('first_argin1', -1): 2}}, uses={'first':2}))
     with pytest.raises(ValueError, match='replay its producer'):
         align(current, saved, catalog(current))
+
+
+def test_added_declaration_preserves_concept_identity_and_checkpoint_rows(tmp_path, monkeypatch):
+    import copy
+    from pathlib import Path
+    from Models import BaseModel
+    from test_compiled_word_chunk import _tiny_canonical_model
+    from test_reference_close import known_concept
+    load = BaseModel.load_weights
+    source = Path(__file__).resolve().parents[1]/'data/complete.grammar'
+    previous_grammar = tmp_path/'previous.grammar'
+    previous_grammar.write_text('\n'.join(line for line in source.read_text().splitlines()
+                                         if 'some.' not in line)+'\n')
+    model = _tiny_canonical_model(tmp_path, monkeypatch, batch_size=1,
+        word_buckets='8', input_width=32, concept_rows=32, grammar=previous_grammar)
+    restored = None
+    try:
+        owner = model._concept_owner()
+        concept = known_concept(owner, torch.eye(owner.nDim)[0], order=0)
+        row = owner._csw_row_of(concept)
+        point = owner.similarity_codebook.W[row].detach().clone()
+        pool = owner.mtm
+        store = model.symbolSpace.ltm_store
+        written = store.append_idea(point, trust=.3)
+        occurrence = store.occurrence_of(written)
+        pool.open(occurrence, kind=None, value=point, when=0)
+        arguments = copy.deepcopy(owner._concept_allocator.formal_arguments)
+        before = {name: getattr(store, name).clone() for name in store.columns}
+        checkpoint = tmp_path/'previous.pt'
+        model.save_weights(str(checkpoint))
+        model.End(); model.symbolSpace.soft_reset()
+        restored = _tiny_canonical_model(tmp_path, monkeypatch, batch_size=1,
+            word_buckets='8', input_width=32, concept_rows=32)
+        assert load(restored, str(checkpoint), require_match=True)
+        current = restored._concept_owner()
+        assert current._csw_row_of(concept) == row
+        torch.testing.assert_close(current.similarity_codebook.W[row], point, rtol=0, atol=0)
+        assert all(current._concept_allocator.formal_arguments[key] == value
+                   for key, value in arguments.items())
+        for name, value in before.items():
+            torch.testing.assert_close(getattr(restored.symbolSpace.ltm_store, name), value, rtol=0, atol=0)
+        assert current.mtm.token_of(occurrence) is not None
+        assert set(current.mtm.transient_ids.tolist()).isdisjoint(
+            range(current.nVectors))
+        # The migrated identities must also survive a native second load.
+        migrated = tmp_path/'current.pt'
+        restored.save_weights(str(migrated))
+        identities = dict(current._concept_allocator.formal_arguments)
+        assert load(restored, str(migrated), require_match=True)
+        assert current._concept_allocator.formal_arguments == identities
+    finally:
+        for instance in (model, restored):
+            if instance is not None:
+                instance.End(); instance.symbolSpace.soft_reset()

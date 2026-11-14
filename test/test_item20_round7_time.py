@@ -76,49 +76,6 @@ def test_thought_deposits_take_unique_nonempty_model_ticks_and_updates_keep_them
     assert model.present() == 2 and not hasattr(stm, '_thought_clock')
 
 
-def test_epoch_restores_both_clocks_and_repeats_sentence_stamps(tmp_path, monkeypatch):
-    from PresentationMemory import capture_start, epoch
-    from Meaning import ConceptualMeaning
-    from reading_fixtures import force_absolute_reading
-    model = native(tmp_path, monkeypatch)
-    force_absolute_reading(model)
-    store = model.symbolSpace.ltm_store
-    try:
-        value = torch.zeros(store.nDim)
-        value[0] = 1
-        row = store.append_meaning(ConceptualMeaning.from_description(value),
-            document_key='setup', stream=0)
-        start_stamp = store.entry_time(row).clone()
-        capture_start(model)
-        baseline = dict(store._epoch_rows['clock'])
-        assert int(encoder().decode_index(start_stamp)) < baseline['when_time']
-        stamps = []
-        for _ in range(2):
-            epoch(model)
-            assert model.present() == baseline['when_time']
-            assert int(store.model_clock) == baseline['model_clock']
-            source = model.inputSpace.prepPackedInput([['alpha beta', 'beta alpha']])
-            with torch.no_grad():
-                model.runBatch(train=False, batchSize=1,
-                    batch_override=(source, torch.empty(1, 0)))
-            stamps.append(dict(model._sentence_ticks))
-        assert stamps[0] == stamps[1]
-        assert torch.equal(store.entry_time(0), start_stamp)
-        saved = tmp_path/'time.ckpt'
-        model.save_weights(str(saved))
-        bundle = torch.load(saved, map_location='cpu', weights_only=False)
-        def clocks(value):
-            if isinstance(value, dict):
-                if set(('when_time', 'model_clock')) <= value.keys():
-                    yield value
-                for child in value.values():
-                    yield from clocks(child)
-            elif isinstance(value, (tuple, list)):
-                for child in value:
-                    yield from clocks(child)
-        assert baseline in list(clocks(bundle))
-    finally:
-        model.End()
 
 
 def test_relative_reader_inputs_and_word_order_survive_the_full_clock_horizon():

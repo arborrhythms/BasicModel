@@ -36,7 +36,7 @@ SITES = {
     'bin/ClauseJournal.py': {'finish_clause': ['pair', 'evidence']},
     'bin/ClauseRow.py': {'ClauseRows.write_clause': ['evidence']},
     'bin/Understanding.py': {'Reading.__post_init__': []},
-    'bin/Memory.py': {'LTM0.append_meaning': ['evidence']},
+    'bin/Memory.py': {'IdeaRows.append_meaning': ['evidence']},
     'bin/MeaningCodes.py': {'exchange': [], 'compose': []},
 }
 
@@ -113,10 +113,14 @@ def inspect_site(node, sources):
     failures = []
     def fail(child, reason):
         failures.append(dict(line=child.lineno, reason=reason, expression=ast.unparse(child)))
+    def sequence(value):
+        return (isinstance(value, (ast.List, ast.Tuple)) or
+                isinstance(value, ast.IfExp) and sequence(value.body) and sequence(value.orelse))
     for child in local_nodes(node):
         if isinstance(child, ast.BinOp) and isinstance(child.op, (ast.Sub, ast.Add, ast.Div, ast.Mult)):
             left, right = tags(child.left), tags(child.right)
-            if left and right and left != both and right != both and left != right:
+            concatenates = isinstance(child.op, ast.Add) and sequence(child.left) and sequence(child.right)
+            if left and right and left != both and right != both and left != right and not concatenates:
                 fail(child, 'arithmetic combines different evidence lanes')
         if isinstance(child, ast.Compare):
             values = [tags(v) for v in (child.left, *child.comparators)]

@@ -36,7 +36,7 @@ def test_native_arrival_without_synthetic_occurrence_joins_its_working_entry(mon
     unchanged(resolver, before)
     assert resolver.components.owner.mtm.entries == entries
     written = {}
-    row = store.write_clause(prepared, document_key='mtm', sentence_index=1, written_rows=written)
+    row = store.write_clause(prepared,   written_rows=written)
     before = snapshot(resolver)
     resolver.commit(plan, row, written, document='mtm', position=1, training=False)
     unchanged(resolver, before)
@@ -71,8 +71,8 @@ def test_new_document_can_refine_a_same_stream_site_in_the_live_pool(monkeypatch
         plan = resolver.preview(clause, chunk_context(resolver, ()), document=document, position=0, stream=0)
         prepared = resolver.prepare(clause, plan)
         written = {}
-        row = store.write_clause(prepared, document_key=document, sentence_index=0,
-                                 stream=0, written_rows=written)
+        row = store.write_clause(prepared,
+                                  written_rows=written)
         retained = snapshot(resolver)
         resolver.commit(plan, row, written, document=document, position=0, training=False)
         unchanged(resolver, retained)
@@ -117,39 +117,17 @@ def test_refining_from_a_pooled_candidate_keeps_its_earlier_use_and_full_content
                  if member in before.occurrences) == before.occurrences  # Merge interleaves the older introduction.
 
 
-def test_arrival_readers_exclude_scoped_rows_before_a_new_stream_column_exists():
-    resolver, store, atoms, words, _ = world()
-    clause = named(atoms[0], words['x'])
-    plan = resolver.preview(clause, chunk_context(resolver, ()), stream=0)
-    prepared = resolver.prepare(clause, plan)
-    written = {}
-    pending = store.write_clause(prepared, document_key='initial-stream', stream=0,
-                                 written_rows=written)
-    resolver.commit(plan, pending, written, document='initial-stream', position=0, training=False)
-    token = store.occurrence_of(pending)
-    retained, entry = snapshot(resolver), resolver.components.owner.mtm.entries[token]
-    assert store.stream.shape[1] == store.capacity and store.stream[pending, 0]
-    arrival = equality(atoms[0], words['x'], words['three'])
-    individuals = resolver.individuals(resolver.accessible(chunk_context(resolver, (SituationFrame.from_row(store.row(pending)),))))
-    for stream in (1, 2, 7):
-        assert resolver.pending_names(arrival, individuals, stream) == ()
-        result = dict(items=[], records={token: (pending, 1.)})
-        resolver._arrival_plan(arrival, result, individuals, stream=stream)
-        assert result['arrivals'] == []
-        assert resolver.components.owner.mtm.entries[token] is entry
-        assert store.stream.shape[1] == store.capacity
-        unchanged(resolver, retained)
 
 
-def test_arrival_readers_keep_unscoped_rows_available_to_a_new_stream():
+def test_arrival_readers_keep_single_history_rows_available_to_a_new_stream():
     resolver, store, atoms, words, _ = world()
     pending, _ = keep(resolver, named(atoms[0], words['x']))
     token = store.occurrence_of(pending)
-    assert not store.stream[pending].any()
+    assert not hasattr(store, 'stream')
     arrival = equality(atoms[0], words['x'], words['three'])
     individuals = resolver.individuals(resolver.accessible(chunk_context(resolver, (SituationFrame.from_row(store.row(pending)),))))
     retained = snapshot(resolver)
-    stream = store.stream.shape[1]
+    stream = 7
     assert resolver.pending_names(arrival, individuals, stream) == (words['x'],)
     result = dict(items=[], records={token: (pending, 1.)}, decisions=[], departure=-1,
                   cost=atoms[0].new_zeros(()))

@@ -1,4 +1,5 @@
 """A selected checked thought preserves its declared object and effects."""
+from Memory import STM0
 from types import SimpleNamespace
 from dataclasses import replace
 
@@ -25,21 +26,16 @@ def test_content_query_keeps_all_roles_and_conflicting_fact_sources():
     for ref in refs:
         force_order(cs, ref[1], 0)
         cs._csw_concept_row(0, ref[1])
-    store = LTM0(8, percept_width=0)
+    store = STM0(8, percept_width=0, capacity=1024, relation_capacity=8192)
     from index_fixtures import one_hot_unfold
     idea = replace(_meaning(), role_refs=(refs[0], None, None))
-    first = store.append_meaning(idea, kind="fact", trust=0.6, sentence_index=len(store))
-    second = store.append_meaning(idea, kind="fact", trust=-0.4, sentence_index=len(store))
-    store.set_origin(first, store.ORIGIN_PROVISIONED, text="teacher", asserted=(float(store.truth_plus[first]), float(store.truth_minus[first])))
-    store.set_origin(second, store.ORIGIN_USER, text="witness", asserted=(float(store.truth_plus[second]), float(store.truth_minus[second])))
-    result = _signature('query', 'argin1').invoke(
-        _context(cs, store=store), replace(idea, role_refs=(store.occurrence_of(first), None, None)))
-    assert sorted(item['trust'] for item in result['value']) == pytest.approx([.6])
-    for item in result['value']:
-        torch.testing.assert_close(item['meaning'].roles, idea.roles)
-    assert {item["text"] for item in result["value"]} == {"teacher"}
-    assert {item['occurrence'] for item in result['value']} == {
-        store.occurrence_of(first)}
+    first = store.append_meaning(idea,  trust=0.6)
+    second = store.append_meaning(idea,  trust=-0.4)
+    result = _context(cs,store=store).ltm.end_evidence(store.occurrence_of(first),
+        max_records=1,work=__import__('QueryWork').QueryWorkBudget(1))
+    assert result['trust'] == pytest.approx(.6)
+    torch.testing.assert_close(result['meaning'].roles,idea.roles)
+    assert result['occurrence'] == store.occurrence_of(first)
     assert len(store) == 2
 
 
@@ -90,9 +86,9 @@ def test_removed_quantize_raises_without_symbol_snapping():
 def test_query_does_not_fill_an_unconstrained_name_from_a_held_row():
     from meaning_fixtures import unsupported as question
     cs = _cs()
-    store = LTM0(8, percept_width=0)
+    store = STM0(8, percept_width=0, capacity=1024, relation_capacity=8192)
     retained = ConceptualMeaning.from_description(torch.ones(8))
-    row = store.append_meaning(retained, kind='observation', evidence=(1., 0.))
+    row = store.append_meaning(retained,  evidence=(1., 0.))
     memory = SimpleNamespace(retrieved_frames=lambda **kwargs: (store.row(row),))
     context = _context(cs, store=store, memory=memory)
     pending = question(retained, (('referent', 0),))
@@ -164,20 +160,35 @@ def test_query_returns_only_the_completed_direction_of_an_unresolved_equality(mo
     from ThoughtReferences import bindings
     from meaning_fixtures import unsupported as question
     from test_thought_binding import equality
-    name, unresolved = ('sym', 1), ('ltm', 'test', 2)
+    cs = _cs()
+    store = cs._fixture_occurrences
+    name, unresolved = ('sym', 1), ('ltm', store.address_domain, 2)
     meaning = equality(name, unresolved)
+    from ClauseRow import predicate_identity, predicate_point
+    roles = meaning.roles.clone()
+    roles[1] = predicate_point('equal', roles[1])
+    meaning = replace(meaning, roles=roles,
+        role_refs=(name, ('sym', predicate_identity('equal')), unresolved))
     meaning = replace(meaning, bindings=dict(bindings(meaning),
         _unresolved_operands=((2, unresolved),)))
-    frame = dict(meaning=meaning, occurrence=('ltm', 'test', 3),
-                 kind='observation', evidence=(.8, 0.), match=1.)
-    monkeypatch.setattr(ThoughtLTMCapability, '_cued', lambda *args, **kwargs:
-        dict(value=(frame,), records_scanned=1, incomplete=()))
+    frame = dict(meaning=meaning, occurrence=('sym', 3),
+                 trust=.8, evidence=(.8, 0.), match=1., readings=('equality',))
+    monkeypatch.setattr(store.parts, 'rows_referencing', lambda *args: (3,))
+    monkeypatch.setattr(store, 'part_row', lambda *args, **kwargs: frame)
     target = unresolved if reverse else name
     pattern = question(equality(None, target), (('referent', 0),))
-    result = _context(_cs()).ltm.best_match(pattern, max_records=10, work=None)
+    # This unit isolates the unresolved-role guard. Certificate 39 exercises
+    # the matching inverse tree itself; here that inverse supplies an operand.
+    monkeypatch.setattr('ExtendedRecall.answer',lambda *args,**kwargs:
+        ConceptualMeaning.from_description(torch.eye(8)[0]))
+    from QueryWork import QueryWorkBudget
+    result = _context(cs,store=store).ltm.best_match(pattern,max_records=10,work=QueryWorkBudget(32))
     assert result['records_scanned'] == 1
     if reverse:
-        assert result['frames'] == (frame,) and result['support_true'] == .8
+        assert len(result['frames']) == 1 and result['support_true'] == .8
+        assert result['frames'][0]['occurrence'] == frame['occurrence']
+        assert result['frames'][0]['meaning'].role_refs == meaning.role_refs
+        torch.testing.assert_close(result['frames'][0]['meaning'].roles, meaning.roles)
     else:
         assert result['frames'] == () and result['witnesses'] == ()
         assert result['support_true'] == result['support_false'] == 0.

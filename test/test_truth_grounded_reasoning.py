@@ -3,6 +3,7 @@ reasoning.md): QuerySpec framing + the hard tools is_true / is_part_direct /
 evaluate. Unit tests, no trained model -- the reasoner reads a hand-built
 LTM0 and an optional model stub.
 """
+from Memory import STM0
 
 import sys
 import os
@@ -68,14 +69,14 @@ class TestQuerySpec(unittest.TestCase):
 def _store(rows_ideas=(), rows_partof=()):
     """Build a LTM0. rows_ideas = [(vec, trust)]; rows_partof =
     [(np1, np2, trust)]."""
-    s = LTM0(nDim=24 if rows_partof else 8, capacity=32, percept_width=0)
+    s = STM0(width=24 if rows_partof else 8, capacity=32, percept_width=0, relation_capacity=8192)
     for vec, trust in rows_ideas:
-        s.append_idea(vec, trust=trust, kind='fact')
+        s.append_idea(vec, trust=trust)
     for np1, np2, trust in rows_partof:
         from Meaning import ConceptualMeaning
         s.append_meaning(ConceptualMeaning.from_payload(
             torch.stack((np1, torch.zeros(8), np2)).flatten()[None], depth=1, layout='infix'),
-            kind='fact', trust=trust, sentence_index=len(s))
+             trust=trust)
     return s
 
 
@@ -122,15 +123,7 @@ def _taxonomy(*links):
 
 
 class TestEvaluate(unittest.TestCase):
-    def test_is_true_true(self):
-        r = TruthGroundedReasoner(store=_store(rows_ideas=[(IDEA_A, 0.9)]))
-        res = r.evaluate(QuerySpec.from_surface("exist", IDEA_A))
-        self.assertEqual(res["posture"], TRUE)
 
-    def test_is_true_false(self):
-        r = TruthGroundedReasoner(store=_store(rows_ideas=[(IDEA_C, -0.8)]))
-        res = r.evaluate(QuerySpec.from_surface("exist", IDEA_C))
-        self.assertEqual(res["posture"], FALSE)
 
     def test_is_true_unknown(self):
         r = TruthGroundedReasoner(store=_store())

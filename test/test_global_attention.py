@@ -227,7 +227,7 @@ def test_addressable_spaces_gathers_input_stm_codebook():
 
 
 @pytest.mark.slow
-def test_ltm_space_appears_when_store_present_but_excludes_estimates():
+def test_ltm_space_appears_when_store_present():
     # The LTM address space is gathered from symbolSpace.ltm_store; stage a
     # synthetic LTM0 so the path is exercised without
     # <ltmConsolidation>.
@@ -244,10 +244,8 @@ def test_ltm_space_appears_when_store_present_but_excludes_estimates():
     ps = m.perceptualSpace.forward(in_sub)
     D = int(ps.materialize().shape[-1])
     store = LTM0(D, capacity=8)
-    store.slots[:3] = torch.randn(3, D)
-    store.count = torch.tensor(3)
-    from Occurrence import document_digest
-    store.document_keys[2] = torch.tensor(list(document_digest(("direct","estimate"))), dtype=torch.uint8)
+    store.slots[:2] = torch.randn(2, D)
+    store.count = torch.tensor(2)
     object.__setattr__(m.symbolSpace, "ltm_store", store)
     prev = m._combine_last_cs_sub if m._combine_last_cs_sub is not None else m.conceptualSpace.subspace
     spaces, _ = m._addressable_spaces(prev, ps)

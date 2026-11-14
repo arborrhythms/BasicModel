@@ -390,7 +390,6 @@ class InterpretLayer(GrammarLayer):
         if row is not None and obj in alloc.named_identities.get(word, ()):
             alloc.named_identities.setdefault(word, set()).add(obj)
             store.add(obj, word, truth_plus=pair[0], truth_minus=pair[1])
-            store.clear_operation(row)
             index.add(row)
             return row
         self._preflight(inventory=False, word=word)
@@ -407,7 +406,6 @@ class InterpretLayer(GrammarLayer):
         # when present, owns the percept clock stamp.
         alloc.named_identities.setdefault(word, set()).add(obj)
         row = store.add(obj, word, truth_plus=pair[0], truth_minus=pair[1])
-        store.clear_operation(row)
         index.add(row)
         self._pending.pop(word, None)
         self._description_revision += 1

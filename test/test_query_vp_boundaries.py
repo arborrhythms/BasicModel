@@ -1,3 +1,4 @@
+from definition_fixtures import class_over
 """Structural thought grounding, mode, live payload and native identity."""
 from dataclasses import replace
 from types import SimpleNamespace
@@ -70,7 +71,7 @@ def _world(capacity=64):
     base = cs.new_concept()
     from order_fixtures import force_order
     force_order(cs, base, 0)
-    a, b = ('sym', cs.synthesize_higher_order([('sym', base)])), ('sym', cs.new_concept())
+    a, b = ('sym', class_over(cs, [('sym', base)])), ('sym', cs.new_concept())
     force_order(cs, b[1], 0)
     for ref in (a, b):
         cs._csw_concept_row(cs._concept_source_order(ref[1]), ref[1])
@@ -144,8 +145,8 @@ def test_occurrence_namespace_and_bound_are_never_rebound_to_matching_row():
     cs, _, registry, _, _, _ = _world()
     store = LTM0(8)
     description = ConceptualMeaning.from_description(torch.eye(8)[0])
-    first = store.append_meaning(description, sentence_index=len(store))
-    second = store.append_meaning(description, sentence_index=len(store))
+    first = store.append_meaning(description)
+    second = store.append_meaning(description)
     context = _context(cs, store=store, max_records=1)
     # A direct occurrence address costs one read regardless of row age.
     question = registry.form('ask', store.occurrence_of(second), context=context)

@@ -19,7 +19,8 @@ def test_reading_an_idea_returns_its_one_occupied_slot():
     torch.testing.assert_close(meaning.roles[0], ended.point, rtol=0, atol=0)
     assert not meaning.roles[1:].any()
     assert not hasattr(store, 'refs')
-    assert store.row(row)['evidence'] == (.75, .25)
+    assert store.row(row)['evidence'] == (.75, 0.)
+    assert store.row(row+1)['evidence'] == (0., .25)
 
 
 def test_part_stores_native_addresses_and_reads_current_concept_content():
@@ -40,11 +41,10 @@ def test_no_clause_derivation_or_factored_target_is_checkpointed():
     row = store.write_clause(ended, trust=.5)
     assert 'derivation' not in {field.name for field in fields(Clause)}
     assert not hasattr(store, 'clause_derivation')
-    extras = store.semantic_extras()
-    assert all('clause' not in record for record in extras['records'])
+    assert not hasattr(store,'semantic_extras')
+    assert all('clause' not in name for name in store.state_dict())
     restored, _ = clause_store()
     restored.load_state_dict(copy.deepcopy(store.state_dict()))
-    restored.load_semantic_extras(copy.deepcopy(extras))
     torch.testing.assert_close(restored.slots, store.slots, rtol=0, atol=0)
     assert not hasattr(restored, 'refs') and 'refs' not in restored.state_dict()
     assert restored.meaning_of(row).role_mask.tolist() == [True, False, False]
@@ -229,7 +229,8 @@ from test_clause_acceptance import SentenceFixture
 def test_program_meaning_reads_ended_points_from_their_rows(monkeypatch):
     f = SentenceFixture(monkeypatch)
     row = f.store.write_clause(f.clause('earlier'), trust=.8)
-    identity = int(f.store.address_keys[row])
+    from Occurrence import operand_name
+    identity = operand_name(f.store.row_name(row))
     assert f.cs._csw_row_of(identity) is None
     entry = f.program(('part', 'it', 'animals'))
     refs = entry.concept_ids.clone()

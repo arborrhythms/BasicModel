@@ -88,6 +88,7 @@ def closing_question(meaning, clause, parsed=None, program=None, *, store=None, 
     if tuple(pair) == (0., 0.):
         source = with_slots(source, slots, pair=(0., 0.), source_evidence=(0., 0.))
     result = from_closing(source, evidence=pair)
+    result = replace(result,extension=meaning.extension)
     if committed is not None:
         data = bindings(result)
         data['_query_occurrence'] = store.occurrence_of(index)

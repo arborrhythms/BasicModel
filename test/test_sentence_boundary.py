@@ -29,9 +29,10 @@ def test_every_entry_writes_once_with_one_trial_and_no_optimizer(tmp_path, monke
     import Models
     original = Models._append_observed_meaning
     def write(store, clause, **kwargs):
-        address = store._write_address
+        # The source close is a live stream/slot, not a durable document key.
+        address = kwargs['stream'], model._open_sentence_slot
         result = original(store, clause, **kwargs)
-        writes.append((address[0], address[1]))
+        writes.append(address)
         return result
     monkeypatch.setattr(Models, '_append_observed_meaning', write)
     try:

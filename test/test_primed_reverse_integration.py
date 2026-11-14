@@ -44,16 +44,6 @@ def _tiny_view():
     return KnowledgeView(build_knowledge_section(_tiny_grammar()))
 
 
-def _bare_word_space(batch=1):
-    from Language import SymbolSubSpace, Taxonomy
-    import torch.nn as nn
-    ss = object.__new__(SymbolSubSpace)
-    nn.Module.__init__(ss)
-    ss.batch = int(batch)
-    ss.taxonomy = Taxonomy()
-    return ss
-
-
 def _scenario():
     """Set up a SymbolSpace + KnowledgeView + competing-NP3 W codebook.
 
@@ -63,9 +53,8 @@ def _scenario():
     than the artifact's stock NP3 so it wins on un-primed argmax;
     priming the stock NP3 should flip the choice.
     """
-    ss = _bare_word_space()
+    ss = None
     view = _tiny_view()
-    ss.attach_knowledge(view)
     np3 = view._ordered_taxonomy_names['NP3']
     # Build a 2-D W matching the artifact references (scalar prototypes
     # promoted to a 2-D codebook so the recommender's broadcast works).
@@ -111,11 +100,10 @@ def test_primed_disjunction_picks_primed_candidate():
     """
     from Layers import Ops
     ss, view, W, y, left_rows, np3, np3_alt_idx = _scenario()
-    ss.taxonomy.prime([np3], batch=0)
     # Build priming aligned with W's row count: artifact prefix
     # (n_refs_live) + the np3_alt row appended.
     priming = torch.ones(W.shape[0])
-    priming[:view.n_refs_live] = ss.taxonomy.priming_mask(batch=0)
+    priming[np3] = 2.
     x1, _ = Ops.unionReverse(
         y, y, W, left_rows=left_rows, left_priming=priming)
     assert torch.allclose(x1[0, 0, 0], W[np3, 0])
@@ -124,54 +112,16 @@ def test_primed_disjunction_picks_primed_candidate():
 # -- priming_enabled=false reproduces typed-only behavior -----------------
 
 
-def test_priming_disabled_matches_unprimed():
-    """With priming_enabled=False, the helper omits priming kwargs;
-    the result must match a direct un-primed call byte-for-byte."""
-    from Layers import Ops
-    ss, view, W, y, left_rows, np3, np3_alt_idx = _scenario()
-    ss.taxonomy.prime([np3], batch=0)        # would normally flip the choice
-    ss.taxonomy.configure_priming(priming_enabled=False)
-    # The helper would return only left_rows / right_rows in this mode.
-    kw = ss.priming_kwargs_for_slots(
-        left_category='NP', left_order=3,
-        right_category='VP', right_order=1)
-    assert 'left_priming' not in kw
-    assert 'right_priming' not in kw
-    # Direct un-primed call should match.
-    x1_disabled, _ = Ops.unionReverse(
-        y, y, W, left_rows=left_rows)
-    x1_unprimed, _ = Ops.unionReverse(
-        y, y, W, left_rows=left_rows)
-    assert torch.equal(x1_disabled, x1_unprimed)
 
 
 # -- Decay between calls --------------------------------------------------
 
 
-def test_priming_decays_between_calls():
-    """After ``decay(temporal_decay=0.9)``, the primed value moves
-    toward identity but is still > 1.0 (still biases selection).
-    """
-    ss, view, W, y, left_rows, np3, np3_alt_idx = _scenario()
-    ss.taxonomy.prime([np3], batch=0)        # 2.0
-    ss.taxonomy.decay(temporal_decay=0.9)    # → 1.9
-    assert float(ss.taxonomy._priming[0, np3].item()) == pytest.approx(1.9)
-    ss.taxonomy.decay(temporal_decay=0.9)    # → 1.81
-    assert float(ss.taxonomy._priming[0, np3].item()) == pytest.approx(1.81)
 
 
 # -- Sentence boundary clears priming -------------------------------------
 
 
-def test_sentence_boundary_clears_priming():
-    """Taxonomy.reset() at the sentence boundary returns the buffer to
-    identity."""
-    ss, view, W, y, left_rows, np3, np3_alt_idx = _scenario()
-    ss.taxonomy.prime([np3], batch=0)
-    ss.taxonomy.propagate([np3], batch=0, depth=2)
-    assert not torch.all(ss.taxonomy._priming == 1.0)
-    ss.taxonomy.reset()
-    assert torch.all(ss.taxonomy._priming == 1.0)
 
 
 # -- Hard mask still wins over priming in the integration setup -----------
@@ -183,9 +133,8 @@ def test_hard_mask_excludes_primed_off_category_ref():
     ss, view, W, y, left_rows, np3, np3_alt_idx = _scenario()
     # Prime the off-category ref (e.g. a DET ref) with huge boost.
     det = view.ref_id_for('DET')
-    ss.taxonomy.prime([det], batch=0, boost=99.0)
     priming = torch.ones(W.shape[0])
-    priming[:view.n_refs_live] = ss.taxonomy.priming_mask(batch=0)
+    priming[det] = 99.
     x1, _ = Ops.unionReverse(
         y, y, W, left_rows=left_rows, left_priming=priming)
     # Selection must come from {⊥, W[np3], W[np3_alt_idx], ⊤}.

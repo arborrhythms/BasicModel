@@ -1,4 +1,5 @@
 """Round 3a: testimony enters the pair; field order and both poles persist."""
+from Memory import STM0
 from dataclasses import replace
 
 import pytest
@@ -19,25 +20,13 @@ def store_and_clause():
 
 def test_source_authority_enters_the_positive_pole():
     store, clause = store_and_clause()
-    row = store.write_clause(clause, trust=.8)
+    with store.clause_assertions(trust=.8):
+        row = store.write_clause(clause)
     assert store.row(row)['trust'] == pytest.approx(.8)
     assert store.row(row)['evidence'] == pytest.approx((.8, 0.))
-    assert 'trust' not in store.state_dict()
+    assert 'trust' in store.state_dict()
 
 
-def test_pair_retains_both_and_neither_until_explicit_signed_reassertion():
-    store, clause = store_and_clause()
-    both = store.write_clause(clause, trust=.8, evidence=(.6, .6))
-    neither = store.write_clause(clause, trust=.8, evidence=(0., 0.), document_key='neither')
-    assert store.row(both)['evidence'] == pytest.approx((.6, .6))
-    assert store.row(neither)['evidence'] == (0., 0.)
-    store.set_trust(both, -.3)
-    store.set_trust(neither, -.3)
-    assert store.row(both)['evidence'] == pytest.approx((0., .3))
-    assert store.row(neither)['evidence'] == pytest.approx((0., .3))
-    assert store.row(both)['trust'] == store.row(neither)['trust'] == pytest.approx(-.3)
-    store.set_evidence(both, .9, .2)
-    assert store.row(both)['trust'] == pytest.approx(.7)
 
 
 def recorded_clause(store, clause, order, evidence):
@@ -56,30 +45,28 @@ def test_clause_order_and_evidence_are_stored_without_a_program():
     clause = recorded_clause(store, clause, 3, (.75, .5))
     row = store.write_clause(clause)
     assert store.row(row)['order'] == 3
-    assert store.row(row)['evidence'] == pytest.approx((.75, .5))
-    restored = LTM0(4, capacity=8)
+    assert store.trust[row:row+2].tolist() == pytest.approx([.75, -.5])
+    restored = STM0(4, capacity=8, relation_capacity=8192)
     from types import SimpleNamespace
     from ClauseRow import attach_clause_index
     attach_clause_index(SimpleNamespace(), restored, store._concept_owner())
     restored.load_state_dict(store.state_dict(), strict=True)
-    restored.load_semantic_extras(store.semantic_extras())
     assert restored.row(row)['order'] == 3
-    assert restored.row(row)['trust'] == pytest.approx(.25)
-    assert restored.row(row)['evidence'] == pytest.approx((.75, .5))
+    assert restored.row(row)['trust'] == pytest.approx(.75)
+    assert restored.trust[row:row+2].tolist() == pytest.approx([.75, -.5])
     assert not hasattr(restored, 'clause_derivation')
 
 
 def test_row_compaction_preserves_each_order_and_pole():
     store, clause = store_and_clause()
     first = store.write_clause(recorded_clause(store, clause, 1, (.2, .1)))
-    store.set_origin(first, store.ORIGIN_USER, asserted=(float(store.truth_plus[first]), float(store.truth_minus[first])))
-    second = store.write_clause(recorded_clause(store, clause, 3, (.6, .5)), document_key='second')
+    second = store.write_clause(recorded_clause(store, clause, 3, (.6, .5)))
     occurrence = store.occurrence_of(second)
-    assert store.clear_origin(store.ORIGIN_USER) == 1
+    store.compact_rows([second, second+1])
     assert store.occurrence_of(0) == occurrence
     assert store.row(0)['order'] == 3
-    assert store.row(0)['evidence'] == pytest.approx((.6, .5))
-    assert store.row(0)['trust'] == pytest.approx(.1)
+    assert store.trust[:2].tolist() == pytest.approx([.6, -.5])
+    assert store.row(0)['trust'] == pytest.approx(.6)
 
 
 def test_embedded_identification_does_not_grant_source_authority():
@@ -87,7 +74,8 @@ def test_embedded_identification_does_not_grant_source_authority():
     child = replace(clause, evidence=(.8, .4), order=2)
     parent = replace(clause, children=(child,), refs=(('clause', 0), -1, -1),
                      evidence=(.9, .3), order=2)
-    row = store.write_clause(parent, trust=.7)
+    with store.clause_assertions(trust=.7):
+        row = store.write_clause(parent)
     assert row == 0 and len(store) == 1
     assert store.row(row)['trust'] == pytest.approx(.7)
     assert store.row(row)['evidence'] == pytest.approx((.7, 0.))
@@ -105,8 +93,8 @@ def test_open_reading_keeps_both_poles_and_its_order(monkeypatch):
     row = fixture.store.write_clause(clause)
     assert clause.order == 3
     assert fixture.store.row(row)['order'] == 0
-    assert fixture.store.row(row)['evidence'] == pytest.approx((.6, .7))
-    assert fixture.store.row(row)['trust'] == pytest.approx(-.1)
+    assert fixture.store.trust[row:row+2].tolist() == pytest.approx([.6, -.7])
+    assert fixture.store.row(row)['trust'] == pytest.approx(.6)
 
 
 
@@ -128,18 +116,6 @@ def test_abstract_unfold_descends_each_sigma_rung():
     assert result['spent'] == 3
 
 
-def test_old_scalar_checkpoint_does_not_invent_evidence_or_order():
-    store, clause = store_and_clause()
-    store.write_clause(clause, trust=.8)
-    state = store.state_dict()
-    state['trust'] = torch.full((store.capacity,), .8)  # legacy provenance
-    for name in ('truth_plus', 'truth_minus'):
-        del state[name]
-    restored = LTM0(4, capacity=8)
-    state['truth_schema'].fill_(10)
-    with pytest.raises(ValueError, match='checkpoint column: trust'):
-        restored.load_state_dict(state, strict=True)
-    assert len(restored) == 0
 
 
 def test_native_word_reference_accepts_both_without_touching_its_signed_value():
@@ -153,30 +129,23 @@ def test_native_word_reference_accepts_both_without_touching_its_signed_value():
     torch.testing.assert_close(owner._word_reference_evidence, torch.tensor([[[.8, .6]]]), rtol=0, atol=0)
 
 
-def test_withdrawing_testimony_clears_its_pair():
-    store, clause = store_and_clause()
-    row = store.write_clause(replace(clause, evidence=(.8, .6)), trust=.9,
-                             origin=store.ORIGIN_USER, kind='fact')
-    store.withdraw_origin(store.ORIGIN_USER)
-    assert store.row(row)['trust'] == 0.
-    assert store.row(row)['evidence'] == (0., 0.)
 
 
 def test_luminosity_view_reads_signed_testimony_from_the_pair():
     from Layers import TruthLayer
     store, clause = store_and_clause()
-    store.write_clause(replace(clause, evidence=(.8, .6)), trust=-.3,
-                       origin=store.ORIGIN_USER, kind='fact')
+    with store.clause_assertions(trust=-.3):
+        store.write_clause(replace(clause, evidence=(.8, .6)))
     light = TruthLayer(4, max_truths=8)
     light.attach_ltm(store)
     assert light.sync_from_ltm() == 1
     assert light._trusts == pytest.approx([-.3])
-    before = light.luminosity()
-    store.set_trust(0, .9)
+    assert light.luminosity() == pytest.approx(-.15)
+    with store.clause_assertions(trust=.9):
+        store.write_clause(clause)
     light.sync_from_ltm()
-    assert before == pytest.approx(-.15)
-    assert light.luminosity() == pytest.approx(.45)
-    assert light._trusts == pytest.approx([.9])
+    assert light._trusts == pytest.approx([-.3, .9])
+    assert store.trust[:2].tolist() == pytest.approx([-.3, .9])
 
 
 def test_native_sentence_carries_paired_identification_to_its_row(tmp_path, monkeypatch):
@@ -218,10 +187,13 @@ def test_native_sentence_carries_paired_identification_to_its_row(tmp_path, monk
         if isinstance(row, tuple):
             assert (float(store.parts.truth_plus[row[1]]), float(store.parts.truth_minus[row[1]])) == pytest.approx((.8, .6))
         assert t == pytest.approx(operand_minimum) and t >= .5
-        assert field.evidence == pytest.approx((.8*t, .6*t))
-        assert store.row(row)['evidence'] == pytest.approx((.8*t, .6*t))
+        assert field.evidence == store.row(row)['evidence']
+        if isinstance(row, int):
+            assert store.trust[row:row+2].tolist() == pytest.approx([.8*t, -.6*t])
+        else:
+            assert store.row(row)['evidence'] == pytest.approx((.8*t, .6*t))
         assert store.row(row)['order'] == field.order
-        assert store.row(row)['trust'] == pytest.approx(.2*t)
+        assert store.row(row)['trust'] == pytest.approx((.2 if isinstance(row, tuple) else .8)*t)
     finally:
         model.End()
         model.symbolSpace.soft_reset()

@@ -269,8 +269,6 @@ class PartsOfSpeech(nn.Module):
                 operands = stack[-2:]
             name = operation_name(rule)
             descendants = operators[at] if kind == 2 or field_bind else set().union(*operators[-2:])
-            if self._space is not None:
-                self.owner._concept_allocator.parts.gates.observe(name, descendants)
             current = descendants | {name}
             self.observe_use(name, operands)
             self.observe_seat(name, operands)

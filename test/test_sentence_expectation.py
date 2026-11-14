@@ -3,6 +3,7 @@
 The old root-only tests remain a labelled compatibility/benchmark baseline.
 These tests exercise the production structured predictor and boundary owner.
 """
+from Memory import STM0
 import copy
 from pathlib import Path
 from types import SimpleNamespace
@@ -22,7 +23,7 @@ def layer(batch=1, consolidated=False):
     result.set_symbol_bank(torch.eye(result.concept_dim))
     result.set_symbol_bank(torch.eye(4))
     if consolidated:
-        result._ltm_store = LTM0(4, capacity=32)
+        result._ltm_store = STM0(4, capacity=32, relation_capacity=8192)
     return result
 
 
@@ -136,26 +137,14 @@ def test_streaming_and_packed_boundary_use_same_full_roles(monkeypatch, consolid
             sentence_kinds=['idea'], documents=['a'],
             evidence=[closed.evidence])
         if consolidated:
-            rows = [i for i in range(len(f.store)) if f.store.row(i)['kind'] == 'unverified']
+            rows = list(range(len(f.store)))
             streaming.bind_observation_occurrence(0, f.store.occurrence_of(rows[t]))
     assert streaming._inter_loss_count == 1
     torch.testing.assert_close(costs[1].mean(), streaming.consume_inter_loss())
     torch.testing.assert_close(packed.expect_next_meaning().roles,
                                streaming.expect_next_meaning().roles)
     if consolidated:
-        # The second external input now keeps its antecedent estimate beside
-        # (not inside) the observed sequence. The predictor remains aligned
-        # with the streaming path because its context contains observations
-        # only; the durable owner retains the auditable pair separately.
-        kinds = [packed._ltm_store.row(i)['kind'] for i in range(len(packed._ltm_store))]
-        assert kinds.count('unverified') == 2
-        assert kinds.count('estimate') == 1
-        estimate_index = kinds.index('estimate')
-        pair = packed._ltm_store.expectation_pair(estimate_index)
-        observation_index = packed._ltm_store.location(pair['observation_occurrence'])
-        assert kinds[observation_index] == 'unverified'
-        assert pair['observation_occurrence'] == packed._ltm_store.occurrence_of(rows[1])
-        assert packed._ltm_store.expectation_pair(estimate_index)['source_occurrences'] == (packed._ltm_store.row(0)['occurrence'],)
+        assert len(packed._ltm_store) == 2
         # Future context reads the committed fused point through its address.
         torch.testing.assert_close(packed._ltm_store.meaning_of(0).roles[0], entries[0].end_state[0])
         assert packed._ltm_store.meaning_of(0).role_mask.tolist() == [True, False, False]
@@ -269,8 +258,7 @@ def test_real_provisioning_is_not_an_external_prediction_stream(monkeypatch, eag
     model.provision_ltm()
     assert not bound
     store = model.symbolSpace.ltm_store
-    assert len(store) == 6
-    assert sum(store.row(i)['kind'] == 'cover' for i in range(len(store))) == 3
+    assert len(store) == 3
     assert not any(discourse._inter_context)
     assert model.symbolSpace.expectation.expect_next_meaning() is None
 

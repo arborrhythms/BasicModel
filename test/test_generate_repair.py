@@ -177,7 +177,7 @@ def identity_fixture():
     identity, row, order = owner.interpret.reading(word)
     value = owner.similarity_codebook.lookup_rows(row)
     index = store.append_meaning(ConceptualMeaning.from_description(value),
-        order=order, document_key='first', sentence_index=0)
+         )
     occurrence = store.occurrence_of(index)
     key = owner.mtm.token_of(identity)
     owner.mtm.bind(key, occurrence, kind=None, when=0, value=value, reading=word)
@@ -204,19 +204,6 @@ def test_promotion_rejects_missing_witness_at_creation():
     owner, store, alloc, key, word, occurrence = identity_fixture()
     store.reset()
     before = alloc.next_id
-    with pytest.raises(RuntimeError, match='identity promotion has no witnessed order: occurrence=.*record='):
+    with pytest.raises(RuntimeError, match='identity promotion requires a kept mention'):
         promote_identity(owner, key, word=word)
     assert alloc.next_id == before
-
-
-def test_epoch_guard_still_rejects_unwitnessed_constructed_individual():
-    from Forgetting import model_boundary
-    from test_presentation_memory import model_for
-    owner, store, alloc, key, word, occurrence = identity_fixture()
-    cid = alloc.new_concept()
-    alloc.store_of(cid).add_constituent(cid, 'part', ('occ', occurrence[-1]))
-    alloc.individuals.add(cid)
-    # An unavailable typed referent supplies no recorded order.
-    store._semantic_rows[occurrence[-1]]['bindings'] = (('_identity', ('sym', alloc.new_concept())),)
-    with pytest.raises(RuntimeError, match='a promoted identity has no witnessed order at the epoch boundary'):
-        model_boundary(model_for(owner, store), epoch_boundary=True)

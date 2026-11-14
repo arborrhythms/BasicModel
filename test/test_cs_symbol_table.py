@@ -1,3 +1,4 @@
+from definition_fixtures import class_over, collected
 """Relation-only CS symbol table + taxonomy (Stage 1; doc/specs/mereological-
 order-raising.md "The CS symbol table + taxonomy").
 
@@ -55,27 +56,20 @@ def test_parts_wholes_are_independent_multivalued():
     assert cs.concept_wholes(A) == ["cat-object-properties"]
 
 
-def test_relate_is_idempotent_per_pair():
-    cs = _cs()
-    s1 = cs.relate(10, 20)                       # part-code 10 <= whole-code 20
-    s2 = cs.relate(10, 20)
-    assert s1 == s2                              # minted once
-    assert cs.concept_parts(s1) == [10] and cs.concept_wholes(s1) == [20]
-    assert cs.relate(10, 21) != s1               # different whole -> new symbol
 
 
 def test_reify_relation_between_symbols():
     cs = _cs()
-    A = cs.relate(1, 2)                          # cat-object <= cat-object-props
-    B = cs.relate(3, 4)                          # cat-word   <= cat-word-props
-    C = cs.reify_concept(A, B)                  # "the object is a word"
+    A = collected(cs, (1,), (2,))                          # cat-object <= cat-object-props
+    B = collected(cs, (3,), (4,))                          # cat-word   <= cat-word-props
+    C = cs._concept_allocator.parts.add(A, B, truth_plus=1.)                  # "the object is a word"
     assert cs._concept_allocator.parts.refs[C].tolist() == [A, B]
     assert cs._concept_allocator.parts.find(A, B) == C
 
 
 def test_identity_at_one_part_one_whole():
     cs = _cs()
-    A = cs.relate(1, 2)
+    A = collected(cs, (1,), (2,))
     assert cs.concept_is_identity(A)              # 1 part + 1 whole = identity tie
     cs.add_part(A, 99)
     assert not cs.concept_is_identity(A)          # 2 parts -> no longer identity
@@ -91,16 +85,16 @@ def test_counts_alone_do_not_request_refinement():
     for w in range(6):
         cs.add_whole(B, ("w", w))                # 6 wholes > k_wholes
     assert not cs.concept_over_collected(B)
-    assert not cs.concept_over_collected(cs.relate(7, 8))   # 1+1, not over
+    assert not cs.concept_over_collected(collected(cs, (7,), (8,)))   # 1+1, not over
 
 
 def test_retire_transient_symbol():
     cs = _cs()
-    A = cs.relate(1, 2)
+    A = collected(cs, (1,), (2,))
     cs.retire_concept(A)
     assert cs.concept_parts(A) == [] and cs.concept_wholes(A) == []
     # idempotency cache cleared -> re-relating the same pair mints a NEW symbol
-    assert cs.relate(1, 2) != A
+    assert collected(cs, (1,), (2,)) != A
     cs.retire_concept(A)                          # idempotent
 
 
@@ -122,7 +116,7 @@ def test_populate_cs_symbols_location_knitting():
 
 def test_resolve_identities_zeros_out_1to1():
     cs = _cs()
-    A = cs.relate(1, 2)                               # 1 part + 1 whole -> identity
+    A = collected(cs, (1,), (2,))                               # 1 part + 1 whole -> identity
     B = cs.new_concept()
     cs.add_part(B, 10)
     cs.add_part(B, 11)                                # 2 parts -> not 1:1
@@ -168,20 +162,6 @@ def test_interpret_word_structure():
 
 
 
-def test_singleton_concept_is_idempotent_unit_set():
-    """The SINGLETON (Alec 2026-07-02): a whole containing exactly one
-    symbolic part -- the unit-set {x}, the constructive primitive behind
-    if->then ({x} => x) and the recursion vine. Idempotent per symbol;
-    persists the lifecycle (no whole -> never the 1:1 identity shape)."""
-    cs = _cs()
-    x = cs.relate(1, 2)
-    S = cs.singleton_concept(x)
-    assert cs.singleton_concept(x) == S              # idempotent
-    assert cs.concept_parts(S) == [("sym", x)]       # exactly one sym part
-    assert cs.concept_wholes(S) == []                # whole side disconnected
-    assert cs.singleton_concept(cs.relate(3, 4)) != S
-    cs.resolve_identities()
-    assert cs.concept_parts(S) == [("sym", x)]       # unit-set persists
 
 
 def test_singleton_populates_one_untyped_edge():
@@ -189,7 +169,7 @@ def test_singleton_populates_one_untyped_edge():
     untyped edge onto the constituent's global row (v3)."""
     cs = _cs_sparse_active()
     _word, A = cs.interpret_word([1], 2, key="w")   # order-0 sym
-    S = cs.singleton_concept(A)
+    S = class_over(cs, [('sym', A)])
     assert cs._concept_source_order(S) == 1
     row = cs._csw_rows[(1, S)]
     assert cs.concept_weights(row) == [(cs._csw_rows[(0, A)], 1.0)]
@@ -250,7 +230,7 @@ def test_resolve_identities_does_not_collapse_unspecified_object():
 
 def test_refinement_keeps_definitions_without_a_both_reading():
     cs = _cs()
-    ident = cs.relate(1, 2)
+    ident = collected(cs, (1,), (2,))
     keep = cs.new_concept()
     for part in range(20):
         cs.add_part(keep, part)
@@ -261,12 +241,6 @@ def test_refinement_keeps_definitions_without_a_both_reading():
     assert cs.refine_over_collected() == []
 
 
-def test_synthesize_higher_order_idempotent_per_part_set():
-    cs = _cs()
-    H1 = cs.synthesize_higher_order([1, 2, 3])
-    H2 = cs.synthesize_higher_order([3, 2, 1])   # same set, order-independent
-    assert H1 == H2
-    assert cs.synthesize_higher_order([1, 2, 4]) != H1   # different set -> new
 
 
 def _cs_sparse_active(nS=64, order=1):
@@ -319,7 +293,7 @@ def test_prune_drops_generic_word_class_when_specific_whole_linked():
 
 def test_prune_drops_constituents_of_linked_raised_symbol():
     cs = _cs()
-    H = cs.synthesize_higher_order([7, 8])           # raised: Parts(H)={7,8}
+    H = class_over(cs, [7, 8])           # raised: Parts(H)={7,8}
     c = cs.new_concept()
     cs.add_part(c, 7)                                # constituent AND ...
     cs.add_part(c, ("sym", H))                       # ... the raised H itself
@@ -377,55 +351,10 @@ def test_refine_over_collected_runs_pruning_round():
 
 # -- statement channel: assert_concept_relation (2026-07-02 plan, Task 10) -----
 
-def test_assert_relation_replaces_poles_and_enters_embedding():
-    cs = _cs_sparse_active()
-    A, B = cs.interpret_word([1], 2, key="cat")
-    assert set(cs.concept_parts(B)) == {1}
-    assert set(cs.concept_wholes(B)) == {2}
-    # Supply the object explicitly; a word's witnessed form stays order zero.
-    from reading_fixtures import supply_object
-    from order_fixtures import force_order
-    B = supply_object(cs, A)
-    part = cs.new_concept()
-    force_order(cs, part, 0)
-    force_order(cs, B, 1)
-    cs.assert_concept_relation(B, sym_part=part)
-    assert ATOM not in cs.concept_parts(B)           # pole replaced
-    # "cats are animals" (animal-object = concept 11):
-    whole = cs.new_concept()
-    cs.assert_concept_relation(B, sym_whole=whole)
-    assert UNIVERSE not in cs.concept_wholes(B)
-    # B's definition now has content -> it holds sparse edges (min-support).
-    order = cs._concept_source_order(B)
-    row = cs._csw_rows[(order, B)]
-    assert cs.concept_weights(row) != []
 
 
-def test_assert_relation_raw_codes_reserve_snap_row_no_edges():
-    """Raw-code assertions land in the reference store (P2): the order-0
-    concept RESERVES its snap row; no PS/WS columns exist to weight."""
-    cs = _cs_sparse_active()
-    c = cs.new_concept()
-    cs.assert_concept_relation(c, part=3, whole=4, weight=0.5)
-    assert 3 in cs.concept_parts(c) and 4 in cs.concept_wholes(c)
-    row = cs._csw_rows[(0, c)]                       # snap row reserved
-    assert cs.concept_weights(row) == []             # no edges at order 0
 
 
-def test_assert_relation_sym_weight_lands_on_edge():
-    """A weighted SYM assertion sets the trained value of the untyped edge
-    (relation_row, constituent_row) (no_grad evidence, not a backprop
-    target)."""
-    cs = _cs_sparse_active()
-    _word, A = cs.interpret_word([1], 2, key="w")   # order-0 sym
-    c = cs.new_concept()
-    cs.assert_concept_relation(c, sym_part=A, whole=7, weight=0.5)
-    order = cs._concept_source_order(c)
-    assert order == 1
-    row = cs._csw_rows[(1, c)]
-    got = dict(cs.concept_weights(row))
-    a_row = cs._csw_rows[(0, A)]
-    assert got[a_row] == 0.5                         # the edge carries it
 
 
 # -- the poles as presence-lattice vectors (Alec 2026-07-02) -------------------
@@ -441,23 +370,6 @@ def test_pole_rename_aliases_hold():
 
 
 
-def test_assert_concrete_whole_retires_everything_bias_edge():
-    """A pool concept holding the EVERYTHING bias (col nVectors) loses that
-    edge when a concrete whole replaces the pole (the wide-open object
-    narrows)."""
-    cs = _cs_sparse_active()
-    _word, A = cs.interpret_word([1, 2], 3, key="cat")
-    c = cs.new_concept()
-    cs.add_part(c, ("sym", A))                       # order 1
-    cs.add_whole(c, EVERYTHING)
-    cs._populate_concept_weights(c)
-    row = cs._csw_rows[(1, c)]
-    bias = int(cs.nVectors)
-    assert (bias, 1.0) in cs.concept_weights(row)
-    cs.assert_concept_relation(c, whole=5)           # concrete whole arrives
-    cols = [col for (col, _w) in cs.concept_weights(row)]
-    assert bias not in cols                          # bias edge retired
-    assert 5 in cs.concept_wholes(c)                 # the record landed
 
 
 def test_prune_drops_everything_when_other_whole_linked():

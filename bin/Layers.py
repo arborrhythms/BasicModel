@@ -233,7 +233,7 @@ class Lexicon(nn.Embedding):
                  init: str = "uniform_ball",
                  padding_idx=None, **kwargs):
         """Initialize Lexicon; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         super().__init__(num_embeddings, embedding_dim,
@@ -740,7 +740,7 @@ class Layer(nn.Module):
     """
     def __init__(self, nInput, nOutput):
         """Initialize Layer; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         super(Layer, self).__init__()
@@ -769,14 +769,14 @@ class Layer(nn.Module):
             layer.set_sigma(sigma)
     def observe_sigma(self):
         """Observe sigma.
-        
+
         See class docstring for the operation contract.
         """
         for layer in self.layers:
             layer.observe_sigma()
     def sigma_to_ergodic(self):
         """Sigma to ergodic.
-        
+
         See class docstring for the operation contract.
         """
         for layer in self.layers:
@@ -843,7 +843,7 @@ class ErgodicLayer(Layer):
     """
     def __init__(self, nInput, nOutput, ergodic=False):
         """Initialize ErgodicLayer; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         super().__init__(nInput, nOutput)
@@ -939,7 +939,7 @@ class LinearLayer(ErgodicLayer):
     """
     def __init__(self, nInput, nOutput, hasBias=True, naive=False, stable=False, ergodic=False):
         """Initialize LinearLayer; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         super(LinearLayer, self).__init__(nInput, nOutput, ergodic=ergodic)
@@ -977,7 +977,7 @@ class LinearLayer(ErgodicLayer):
 
     def forward(self, x):
         """Forward pass.
-        
+
         See class docstring for the operation this layer applies.
         """
         if self.ergodic:
@@ -989,7 +989,7 @@ class LinearLayer(ErgodicLayer):
         return output
     def forwardBias(self, x):
         """Forward bias.
-        
+
         See class docstring for the operation contract.
         """
         if self.hasBias:
@@ -1031,7 +1031,7 @@ class NonNegativeLinearLayer(LinearLayer):
 
     def __init__(self, nInput, nOutput, hasBias=True, naive=False, stable=False, ergodic=False):
         """Initialize NonNegativeLinearLayer; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         super().__init__(nInput, nOutput, hasBias=hasBias, naive=naive, stable=stable, ergodic=ergodic)
@@ -1044,7 +1044,7 @@ class NonNegativeLinearLayer(LinearLayer):
 
     def compute_W_current(self):
         """Compute w current.
-        
+
         See class docstring for the operation contract.
         """
         if self.ergodic:
@@ -1053,7 +1053,7 @@ class NonNegativeLinearLayer(LinearLayer):
 
     def forward(self, x):
         """Forward pass.
-        
+
         See class docstring for the operation this layer applies.
         """
         if self.ergodic:
@@ -1074,7 +1074,7 @@ class NonNegativeLinearLayer(LinearLayer):
 
     def forwardBias(self, x):
         """Forward bias.
-        
+
         See class docstring for the operation contract.
         """
         if self.hasBias:
@@ -1107,7 +1107,7 @@ class InvertibleLinearLayer(ErgodicLayer):
     def __init__(self, nInput, nOutput, naive=False, ergodic=False,
                  hasBias=True, stable=False):
         """Initialize InvertibleLinearLayer; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         super().__init__(nInput, nOutput, ergodic=ergodic)
@@ -1202,7 +1202,7 @@ class InvertibleLinearLayer(ErgodicLayer):
     # --- Noise resampling ---
     def resample_noise(self):
         """Resample noise.
-        
+
         See class docstring for the operation contract.
         """
         if not self.ergodic:
@@ -1511,7 +1511,7 @@ class InvertibleLinearLayer(ErgodicLayer):
 
     def forwardBias(self, x):
         """Forward bias.
-        
+
         See class docstring for the operation contract.
         """
         if self.hasBias:
@@ -1522,7 +1522,7 @@ class InvertibleLinearLayer(ErgodicLayer):
         return x
     def forwardBiasInterleaved(self, x):
         """Forward bias interleaved.
-        
+
         See class docstring for the operation contract.
         """
         if self.hasBias:
@@ -1539,7 +1539,7 @@ class InvertibleLinearLayer(ErgodicLayer):
 
     def reverseBias(self, y):
         """Reverse bias.
-        
+
         See class docstring for the operation contract.
         """
         if self.hasBias:
@@ -1551,7 +1551,7 @@ class InvertibleLinearLayer(ErgodicLayer):
 
     def reverseBiasInterleaved(self, y):
         """Reverse bias interleaved.
-        
+
         See class docstring for the operation contract.
         """
         if self.hasBias:
@@ -2053,7 +2053,7 @@ class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
     def __init__(self, nInput, nOutput, naive=False, ergodic=False,
                  hasBias=True, stable=False):
         """Initialize NonNegativeInvertibleLinearLayer; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         super().__init__(nInput, nOutput, naive=naive, ergodic=ergodic,
@@ -2492,6 +2492,14 @@ class GrammarLayer(Layer):
     thought_predicate_identity = None
     substrate = False
     mandatory = False
+
+    def compose_extend(self, *operands, context=None):
+        from Extension import compose
+        return compose(self, operands, context)
+
+    def generate_extend(self, parent, *operands, context=None):
+        from Extension import generate
+        return generate(self, parent, operands, context)
 
     def compose_blocks(self, kernel, *operands, counts=None, action_context=None, whole=None, **kwargs):
         """Compose meaning; carry the leaf-weighted form centroid alongside it."""
@@ -3725,7 +3733,7 @@ class NegationLayer(Layer):
 
     def __init__(self, nInput, ternary=False):
         """Initialize NegationLayer; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         ternary = bool(ternary)
@@ -4755,7 +4763,7 @@ class PiLayer(GrammarLayer):
 
         def check_roundtrip(desc, **kwargs):
             """Check roundtrip.
-            
+
             See class docstring for the operation contract.
             """
             kw = dict(nInput=3, nOutput=6, invertible=True, nonlinear=True)
@@ -4776,7 +4784,7 @@ class PiLayer(GrammarLayer):
 
         def check_stability(desc, **kwargs):
             """Check stability.
-            
+
             See class docstring for the operation contract.
             """
             kw = dict(nInput=3, nOutput=6, invertible=True, stable=True,
@@ -5982,6 +5990,7 @@ class ConceptAllocator:
 
     def _part_order(self, cid, seen):
         """An implicit definition is one order above its referenced members."""
+        from Memory import OCCURRENCE, RELATION
         subs, percept = [], False
         # A word's native form is its definition. A chain may reference the
         # same bare word as an operand; that semantic relation is not an
@@ -5993,7 +6002,8 @@ class ConceptAllocator:
                 if ref[0] == 'sym':
                     order = self.order_of(ref[1], seen)
                 else:
-                    order = -1 if self.reference_order is None else self.reference_order(ref[1], seen)
+                    reference = (OCCURRENCE if ref[0] == 'occ' else RELATION, ref[1])
+                    order = -1 if self.reference_order is None else self.reference_order(reference, seen)
                 subs.append(order)
             else:
                 percept = True
@@ -6627,7 +6637,7 @@ class MapppingLayer(InvertibleLinearLayer):
     """
     def __init__(self, nInput, nOutput, init='orthogonal'):
         """Initialize MapppingLayer; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         super().__init__(nInput, nOutput, naive=False, hasBias=False, stable=True)
@@ -6651,7 +6661,7 @@ class SortingLayer(Layer):
 
     def __init__(self, symbol_dim, n_passes=None):
         """Initialize SortingLayer; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         super().__init__(symbol_dim, symbol_dim)
@@ -6704,7 +6714,7 @@ class AssociationLayer(Layer):
     def __init__(self, nInput, nOutput=None, nHidden=None,
                  type="symmetric", beta=10.0):
         """Initialize AssociationLayer; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         nOutput = nOutput or nInput
@@ -6788,7 +6798,7 @@ class LiftingLayer(Layer):
     """
     def __init__(self, nVerbs, nDim, ergodic=False):
         """Initialize LiftingLayer; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         super().__init__(nDim, nDim)
@@ -6965,7 +6975,7 @@ class LiftingLayer(Layer):
                 self.subspace = _MockSubspace()
             def forward(self, vspace):
                 """Forward pass.
-                
+
                 See class docstring for the operation this layer applies.
                 """
                 act = vspace.materialize()
@@ -7001,7 +7011,7 @@ class LoweringLayer(Layer):
     """
     def __init__(self, nDim, bottleneck=None):
         """Initialize LoweringLayer; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         if bottleneck is None:
@@ -7044,7 +7054,7 @@ class SparsityRegLayer(Layer):
         # nInput/nOutput are unused -- this is a pointwise op -- but the
         # Layer base contract requires both. Pass zeros; dim-agnostic.
         """Initialize SparsityRegLayer; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         super().__init__(0, 0)
@@ -7053,7 +7063,7 @@ class SparsityRegLayer(Layer):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass.
-        
+
         See class docstring for the operation this layer applies.
         """
         if not self.enabled or self.l1_lambda <= 0.0:
@@ -7082,7 +7092,7 @@ class SmoothingRegLayer(Layer):
 
     def __init__(self, lam: float = 0.0, enabled: bool = True):
         """Initialize SmoothingRegLayer; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         super().__init__(0, 0)
@@ -7091,7 +7101,7 @@ class SmoothingRegLayer(Layer):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass.
-        
+
         See class docstring for the operation this layer applies.
         """
         if not self.enabled or self.lam <= 0.0:
@@ -7144,7 +7154,7 @@ class ImpenetrableLayer(Layer):
                  disjoint_threshold: float = 0.1,
                  equal_suppression: float = 4.0):
         """Initialize ImpenetrableLayer; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         super().__init__(0, 0)
@@ -7207,7 +7217,7 @@ class ImpenetrableLayer(Layer):
 
     def forward(self, codebook: torch.Tensor, basis=None) -> torch.Tensor:
         """Forward pass.
-        
+
         See class docstring for the operation this layer applies.
         """
         zero = (codebook.new_tensor(0.0) if isinstance(codebook, torch.Tensor)
@@ -7325,44 +7335,21 @@ def ste_answer(q, f):
 
 
 class TruthLayer(Layer):
-    """Truth store on WholeSpace: encoded truth statements scaled by DoT.
+    """A read view of the latest LTM0 claims whose signed trust is nonzero.
 
-    Each truth statement is processed through the model pipeline to produce
-    a symbolic activation ``[nSymbols]``.  The activation is then scaled by
-    the DegreeOfTruth before storage:
+    ``sync_from_ltm`` projects each idea at its trust into ``truths``;
+    ``_sources`` holds its occurrence and ``_trusts`` its signed authority.
+    Contradictions compare the ideas' containment and those authorities'
+    signs. They report a conflict without changing either stored claim.
 
-        stored = activation * degree
-
-    This means the stored vector carries the DoT intrinsically:
-      - degree = +1 -> full activation stored (attractor)
-      - degree = -1 -> negated activation stored (disperser)
-      - degree =  0 -> zero vector (inert, prunable)
-
-    The ``field()`` method projects stored truths into ConceptualSpace
-    via cosine similarity.  Because the degree is baked into the stored
-    vectors, positive-DoT truths attract and negative-DoT truths repel
-    without needing a separate degree buffer.
-
-    Propositional structure is defined by the S-space_role grammar:
-      - ``part(S, S)`` -- parthood / containment
-      - ``equals(S, S)`` -- identity / equivalence
-
-    LTM-BACKED MODE (``<ltmConsolidation>`` on): the canonical user-truth
-    store is the unified ``LTM0`` (``symbolSpace.ltm_store``);
-    this layer is then a COMPATIBILITY READ MODEL over it. ``attach_ltm``
-    wires the back-reference and ``sync_from_ltm`` materializes the
-    provisioned + user rows into ``truths``/``count``/``_sources``/
-    ``_trusts``. Each nonzero identification pole contributes a flat vector
-    scaled by that pole, preserving both independently. Scalar source trust
-    stays in ``_trusts`` and never supplies a pole's magnitude. The flat-field
-    readers include luminosity, falsity penalty, consistency, clarifications
-    and assess. Gate off: no back-reference, this buffer stays the
-    canonical store (legacy behaviour).
+    Standalone callers can also record conceptual givens directly. The
+    luminosity, consistency, clarification and assessment readers share
+    this flat view; LTM0 remains the persistent sentence/thought store.
     """
 
     def __init__(self, nDim: int, max_truths: int = 1024):
         """Initialize TruthLayer; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         super().__init__(nDim, nDim)
@@ -7616,45 +7603,22 @@ class TruthLayer(Layer):
 
     @torch.no_grad()
     def sync_from_ltm(self) -> int:
-        """Rebuild the materialized view from the attached LTM store.
-
-        Selects the provisioned + user rows (``rows_of_origin``) in row
-        order and expands each independent evidence pole into ``truths[:n]``,
-        together with ``count`` / ``_sources`` / scalar source ``_trusts`` /
-        ``_nonempty``, then drops any staged pending entries (the view
-        supersedes per-cell candidates recorded during ingestion
-        forwards). Conversation rows stay out: they are the training-time
-        corpus, not the user TruthSet the flat-field readers surface.
-        Rows beyond ``max_truths`` are dropped oldest-last (the leading
-        ``max_truths`` selected rows win). Returns the view size; no-op
-        returning -1 when no store is attached."""
+        """The latest nonzero signed claims, each represented at its trust."""
         store = self.ltm_backed
         if store is None:
             return -1
-        idxs = store.rows_of_origin(store.ORIGIN_PROVISIONED,
-                                    store.ORIGIN_USER)
-        # Origin identifies the writer, not evidential authority.  A retained
-        # request-scoped occurrence may still be needed as grammatical content
-        # after its fact status and trust have been withdrawn; it must not then
-        # re-enter this flat accepted-truth view.
-        idx_list = [i for i in idxs.tolist() if store.kind_of(i) == 'fact'][:self.max_truths]
+        rows = store.trust[:len(store)].ne(0).nonzero().flatten().tolist()[-self.max_truths:]
         self.truths.zero_()
-        sources, trusts = [], []
-        for row_i in idx_list:
-            poles = (float(store.truth_plus[row_i]), -float(store.truth_minus[row_i]))
-            for t in poles:
-                if t == 0 or len(trusts) == self.max_truths:
-                    continue
-                self.truths[len(trusts)] = self._flatten_ltm_row(store, row_i).to(self.truths) * t
-                sources.append(store.text_of(row_i))
-                trusts.append(float(store.trust[row_i]))
-        n = len(trusts)
-        self.count.fill_(n)
-        self._nonempty = n > 0
-        self._sources = sources
-        self._trusts = trusts
+        self._sources, self._trusts = [], []
+        for position,row in enumerate(rows):
+            trust = float(store.trust[row])
+            self.truths[position] = self._flatten_ltm_row(store,row).to(self.truths)*trust
+            self._sources.append(store.occurrence_of(row))
+            self._trusts.append(trust)
+        self.count.fill_(len(rows))
+        self._nonempty = bool(rows)
         self._pending_count = 0
-        return n
+        return len(rows)
 
     def query(self, activation: torch.Tensor, threshold: float = 0.9
               ) -> Optional[Tuple[int, float]]:
@@ -8114,6 +8078,23 @@ class TruthLayer(Layer):
         if n < 2:
             return contradictions
 
+        if self.ltm_backed is not None:
+            # The view scales the idea by signed trust. Recover its content
+            # for the existing containment read, and take polarity from the
+            # trust itself: coordinate parity cannot identify a claim's sign.
+            for i in range(n):
+                for j in range(i + 1, n):
+                    left, right = self._trusts[i], self._trusts[j]
+                    if left * right >= 0:
+                        continue
+                    a, b = stored[i] / left, stored[j] / right
+                    score = max(self._part_score(a, b, basis),
+                                self._part_score(b, a, basis))
+                    if score >= part_threshold:
+                        contradictions.append((i, j,
+                            f'part-of (score={score:.2f}) with opposite trust'))
+            return contradictions
+
         bivector = stored.shape[-1] % 2 == 0
 
         if bivector:
@@ -8182,39 +8163,24 @@ class TruthLayer(Layer):
 
     def suggest_clarifications(self, basis=None,
                                part_threshold: float = 0.3) -> list:
-        """Generate one user-facing message per detected contradiction.
-
-        The template is fixed (for test stability and translation
-        ease): ::
-
-            "'{source_i}' (trust={trust_i}) and '{source_j}' "
-            "(trust={trust_j}) appear to contradict — please revise "
-            "to enable more rational thought."
-
-        Missing source falls back to ``"(truth #i)"`` and missing trust
-        to ``"unknown"``.
-        """
+        """Report contradictory claims by generated wording and retained time."""
         _, contradictions = self.consistency(
-            basis=basis, part_threshold=part_threshold, return_report=True
-        )
-        messages = []
-        sources = getattr(self, "_sources", []) or []
-        trusts = getattr(self, "_trusts", []) or []
-        for i, j, _desc in contradictions:
-            src_i = sources[i] if i < len(sources) and sources[i] else None
-            src_j = sources[j] if j < len(sources) and sources[j] else None
-            trust_i = trusts[i] if i < len(trusts) and trusts[i] is not None else None
-            trust_j = trusts[j] if j < len(trusts) and trusts[j] is not None else None
-            label_i = f"'{src_i}'" if src_i is not None else f"(truth #{i})"
-            label_j = f"'{src_j}'" if src_j is not None else f"(truth #{j})"
-            t_i = f"{trust_i:g}" if trust_i is not None else "unknown"
-            t_j = f"{trust_j:g}" if trust_j is not None else "unknown"
-            messages.append(
-                f"{label_i} (trust={t_i}) and {label_j} (trust={t_j}) "
-                f"appear to contradict — please revise to enable more "
-                f"rational thought."
-            )
-        return messages
+            basis=basis, part_threshold=part_threshold, return_report=True)
+        store = self.ltm_backed
+        def label(index):
+            reference = self._sources[index] if index < len(self._sources) else None
+            if store is None or reference is None:
+                return f'truth #{index}'
+            row = store.location(reference)
+            owner = store.owner()
+            model = None if owner is None else owner.__dict__.get('_model')
+            wording = ''
+            if model is not None:
+                wording = model._describe_claim(store, row)
+            return (f'{wording} ' if wording else '') + f'(time {store.row_name(row)})'
+        return [f'{label(i)} (trust={self._trusts[i]:g}) and '
+                f'{label(j)} (trust={self._trusts[j]:g}) contradict.'
+                for i,j,_ in contradictions]
 
     # -- Client-facing paraconsistent assessment ---------------------
 
@@ -8907,7 +8873,7 @@ class WhatInteractionMemory(LevelledThoughtHistory):
         self._what_slots = [collections.deque() for _ in range(self.batch)]
         self._what_closure_pressure = [0.0 for _ in range(self.batch)]
         self._episode_live = {}          # row -> live ordinary thought records
-        self._thought_namespace = 'address-v1'
+        self._thought_namespace = 'time-v1'
         self._thought_next_id = 0
 
     # -- sizing / resets ----------------------------------------------------
@@ -9198,37 +9164,6 @@ class MeaningExpectation:
         withheld = withheld_symbols(self, self)
         return expected if withheld is None else expected * (1.-withheld[:, None])
 
-    def retained_bindings(self, *, observed=None, occupied=None, activation=None, identities=None,
-                          key_valid=None):
-        """Retain all ids/logits, but keys only for this row's realized support.
-
-        The unary envelope's key remains available for awareness. Missing keys
-        are explicit; they are never guessed from a later mutable codebook.
-        """
-        from Expectation import match_symbols
-        keys = self.symbol_keys.detach()
-        keep = torch.ones(len(keys), device=keys.device, dtype=torch.bool) if observed is None else torch.zeros(len(keys), device=keys.device, dtype=torch.bool)
-        if observed is not None:
-            index, matched = match_symbols(keys[None], observed[None],
-                identities=None if identities is None else identities[None], bank_ids=self.symbol_ids,
-                key_valid=None if key_valid is None else key_valid[None])
-            live = observed.abs().sum(-1)>0 if occupied is None else occupied
-            keep.scatter_reduce_(0, index[0], matched[0] & live, reduce='amax')
-        index, matched = match_symbols(keys[None], self.roles[None],
-            key_valid=None if key_valid is None else key_valid[None])
-        keep.scatter_reduce_(0, index[0], matched[0] & self.roles.abs().sum(-1).ne(0), reduce='amax')
-        if activation is not None:
-            keep |= activation.detach().amax(-1)>0
-        if key_valid is not None:
-            keep &= key_valid
-        positions = keep.nonzero().flatten()
-        retained_keys = {i:tuple(key) for i,key in zip(positions.cpu().tolist(),keys[positions].cpu().tolist())}
-        data = dict(self.bindings)
-        data.pop('_observed_symbol_activations', None)
-        data['_expected_symbols'] = tuple((int(identity), int(order), retained_keys.get(i), tuple(logit))
-            for i,(identity,order,logit) in enumerate(zip(self.symbol_ids.cpu().tolist(),
-                self.symbol_orders.cpu().tolist(),self.symbol_logits.detach().cpu().tolist())))
-        return data
 
 
 @dataclass(frozen=True)
@@ -9487,7 +9422,7 @@ class SymbolExpectation(Layer):
         inputs = (*inputs, now)
         bindings, scope = (), ()
         if self._ltm_store is not None and occurrences and occurrences[-1] is not None:
-            index = self._ltm_store._index_occurrences.get(occurrences[-1])
+            index = self._ltm_store.location(occurrences[-1])
             source = None if index is None else self._ltm_store.meaning_of(index)
             if source is not None:
                 bindings, scope = source.bindings, source.scope
@@ -9693,7 +9628,7 @@ class SymbolExpectation(Layer):
     def _address_frame(self, frame):
         from ReferenceContext import SituationAddress
         store = self._ltm_store
-        index = None if store is None else store.location(frame.row_id)
+        index = None if store is None else store.location(frame.occurrence)
         if index is None:
             raise ValueError('STM reference must name a retained LTM occurrence')
         return SituationAddress(store.occurrence_of(index), frame.symbol_ids, frame.activations)
@@ -9808,10 +9743,7 @@ class SymbolExpectation(Layer):
         if store is not None:
             if int(b) < 0 or (n is not None and int(n) <= 0):
                 return []
-            indices = store.stream_rows(b)
-            kinds = store.kind_codes(indices)
-            indices = indices[(kinds != store.KINDS.index('estimate')) &
-                              (kinds != store.KINDS.index('episode'))]
+            indices = torch.arange(len(store),device=store.slots.device)
             if n is not None:
                 indices = indices[-int(n):]
             result = []
@@ -9924,7 +9856,7 @@ class ChunkLayer(Layer):
                  n_vectors=1024, word_learning=2,
                  cold_start_floor=300):
         """Initialize ChunkLayer; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         super().__init__(nDim, nDim)
@@ -12517,7 +12449,7 @@ class Ops:
     @staticmethod
     def true():
         """True.
-        
+
         See class docstring for the operation contract.
         """
         return 1
@@ -12525,7 +12457,7 @@ class Ops:
     @staticmethod
     def false():
         """False.
-        
+
         See class docstring for the operation contract.
         """
         return -1
@@ -12573,7 +12505,7 @@ class Ops:
     @staticmethod
     def positive(x):
         """Positive.
-        
+
         See class docstring for the operation contract.
         """
         t = torch.as_tensor(x)
@@ -12582,7 +12514,7 @@ class Ops:
     @staticmethod
     def negative(x):
         """Negative.
-        
+
         See class docstring for the operation contract.
         """
         t = torch.as_tensor(x)
@@ -12591,7 +12523,7 @@ class Ops:
     @staticmethod
     def neutral(x):
         """Neutral.
-        
+
         See class docstring for the operation contract.
         """
         return 1 - torch.as_tensor(x).abs()
@@ -12612,7 +12544,7 @@ class Ops:
     @staticmethod
     def threshold(x, activationThreshold=0.01):
         """Threshold.
-        
+
         See class docstring for the operation contract.
         """
         t = torch.as_tensor(x)
@@ -12621,7 +12553,7 @@ class Ops:
     @staticmethod
     def complement(x):
         """Complement.
-        
+
         See class docstring for the operation contract.
         """
         t = torch.as_tensor(x)
@@ -12630,7 +12562,7 @@ class Ops:
     @staticmethod
     def convertSensation(x):
         """Convert sensation.
-        
+
         See class docstring for the operation contract.
         """
         return 2 * torch.as_tensor(x) - 1
@@ -12638,7 +12570,7 @@ class Ops:
     @staticmethod
     def minMag(x1, x2):
         """Min mag.
-        
+
         See class docstring for the operation contract.
         """
         t1, t2 = torch.as_tensor(x1), torch.as_tensor(x2)
@@ -12647,7 +12579,7 @@ class Ops:
     @staticmethod
     def maxMag(x1, x2):
         """Max mag.
-        
+
         See class docstring for the operation contract.
         """
         t1, t2 = torch.as_tensor(x1), torch.as_tensor(x2)
@@ -12656,7 +12588,7 @@ class Ops:
     @staticmethod
     def error(x1, x2):
         """Error.
-        
+
         See class docstring for the operation contract.
         """
         t1, t2 = torch.as_tensor(x1).float(), torch.as_tensor(x2).float()
@@ -12665,7 +12597,7 @@ class Ops:
     @staticmethod
     def isActive(x, activationThreshold=0.01):
         """Is active.
-        
+
         See class docstring for the operation contract.
         """
         return torch.as_tensor(x).abs() >= activationThreshold
@@ -12673,7 +12605,7 @@ class Ops:
     @staticmethod
     def isEqual(x1, x2):
         """Is equal.
-        
+
         See class docstring for the operation contract.
         """
         return torch.equal(torch.as_tensor(x1), torch.as_tensor(x2))
@@ -12681,7 +12613,7 @@ class Ops:
     @staticmethod
     def isReducer(x1, x2):
         """Is reducer.
-        
+
         See class docstring for the operation contract.
         """
         t1, t2 = torch.as_tensor(x1), torch.as_tensor(x2)
@@ -13997,7 +13929,7 @@ class ModelLoss(Loss):
                  bindingDepth=0,
                  nWhere=None, nWhen=None):
         """Initialize ModelLoss; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         super().__init__()
@@ -14029,7 +13961,7 @@ class ModelLoss(Loss):
 
     def output(self, pred, target):
         """Output.
-        
+
         See class docstring for the operation contract.
         """
         return self.output_criterion(pred, target)
@@ -14175,7 +14107,7 @@ class ModelLoss(Loss):
 
     def forward(self, lossOut, lossIn=None, sbow=None):
         """Forward pass.
-        
+
         See class docstring for the operation this layer applies.
         """
         total = lossOut
@@ -14218,7 +14150,7 @@ class ModelLoss(Loss):
 
     def total(self, lossOut, lossIn=None, sbow=None):
         """Total.
-        
+
         See class docstring for the operation contract.
         """
         return self(lossOut, lossIn, sbow)
@@ -14256,7 +14188,7 @@ class Error:
 
     def __init__(self, loss: Loss = None, history_max: int = 1024, *, row_mask=None):
         """Initialize Error; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         self._loss: Loss = loss
@@ -14314,7 +14246,7 @@ class Error:
 
     def enable(self, category: str):
         """Enable.
-        
+
         See class docstring for the operation contract.
         """
         self._disabled.discard(category)
@@ -14718,7 +14650,7 @@ class CertaintyWeightedCrossEntropy(Loss):
     """
     def __init__(self, alpha=0.5, epsilon=1e-8):
         """Initialize CertaintyWeightedCrossEntropy; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         super().__init__()
@@ -14728,7 +14660,7 @@ class CertaintyWeightedCrossEntropy(Loss):
     def forward(self, logits, targets):
         # If targets are one-hot, convert to indices
         """Forward pass.
-        
+
         See class docstring for the operation this layer applies.
         """
         if targets.dim() == 2 and targets.size(1) == logits.size(1):
@@ -14914,7 +14846,7 @@ class VectorQuantize(nn.Module):
     @property
     def codebook(self):
         """Codebook.
-        
+
         See class docstring for the operation contract.
         """
         external = self.__dict__.get("_external_codebook")
@@ -14925,7 +14857,7 @@ class VectorQuantize(nn.Module):
     @codebook.setter
     def codebook(self, value):
         """Codebook.
-        
+
         See class docstring for the operation contract.
         """
         param = value if isinstance(value, nn.Parameter) else nn.Parameter(value.detach().clone())
@@ -15213,7 +15145,7 @@ class VectorQuantize(nn.Module):
 
     def forward(self, x, return_all_codes=False, freeze_codebook=False, **kwargs):
         """Forward pass.
-        
+
         See class docstring for the operation this layer applies.
         """
         original_shape = x.shape
@@ -15641,7 +15573,7 @@ def test():
 
 def main():
     """Main.
-    
+
     See class docstring for the operation contract.
     """
     try:
@@ -15673,7 +15605,7 @@ class _OpHandle:
 
     def __init__(self, kernel, layer):
         """Initialize _OpHandle; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         self._kernel = kernel
@@ -15685,14 +15617,14 @@ class _OpHandle:
 
     def forward(self, *args, **kwargs):
         """Forward pass.
-        
+
         See class docstring for the operation this layer applies.
         """
         return self._layer.forward(*args, **kwargs)
 
     def reverse(self, *args, **kwargs):
         """Reverse pass; inverse of ``forward``.
-        
+
         See class docstring for the inversion contract.
         """
         return self._layer.reverse(*args, **kwargs)

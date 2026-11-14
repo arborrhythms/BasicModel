@@ -1,4 +1,5 @@
 """The named PartOf helpers must share the public query evidence domain."""
+from Memory import STM0
 from types import SimpleNamespace
 
 import torch
@@ -11,10 +12,10 @@ from test_cs_symbol_table import _cs
 
 def test_public_part_helpers_cannot_accept_geometric_or_world_row_evidence():
     a, b = torch.eye(8)[:2]
-    store = LTM0(24, percept_width=0)
+    store = STM0(24, percept_width=0, capacity=1024, relation_capacity=8192)
     from Meaning import ConceptualMeaning
     store.append_meaning(ConceptualMeaning.from_payload(torch.stack((a, torch.ones(8), b)).flatten()[None],
-        depth=1, layout='infix'), kind='fact', trust=1)
+        depth=1, layout='infix'),  trust=1)
     reasoner = TruthGroundedReasoner(store=store)
     assert reasoner.is_part_direct(a, torch.ones(8)) is None
     assert reasoner.is_part(a, b) == []

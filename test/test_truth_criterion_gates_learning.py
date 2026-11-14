@@ -10,7 +10,7 @@ from test_clause_storage import clause_store, part_clause
 def test_registration_does_not_depend_on_testimony_trust(trust):
     store, _ = clause_store()
     evidence = (max(trust, 0.), max(-trust, 0.))
-    row = store.write_clause(part_clause(), trust=trust)
+    row = store.write_clause(part_clause(), trust=trust, evidence=(1., 0.))
     assert row == ('sym', store.parts.find(1, 2)) and len(store.parts) == 1
     assert store.row(row)['evidence'] == pytest.approx(evidence)
     assert store.row(row)['trust'] == pytest.approx(trust)

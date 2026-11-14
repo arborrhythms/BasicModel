@@ -1,4 +1,5 @@
 """Public lookup and trust updates preserve the complete evidence contract."""
+from Memory import STM0
 import pytest
 import torch
 
@@ -8,25 +9,12 @@ from reasoning import TruthGroundedReasoner
 from reasoning import QuerySpec
 
 
-@pytest.mark.parametrize("structured", [True, False])
-def test_checked_reader_accepts_complete_single_idea_description(structured):
-    roles = torch.eye(6)[:3]
-    fact = ConceptualMeaning.from_description(roles.flatten())
-    store = LTM0(roles.numel(), capacity=8, percept_width=0)
-    store.append_meaning(fact, trust=.8)
-    reasoner = TruthGroundedReasoner(store=store)
-    query = fact if structured else roles.flatten()
-    assert reasoner.evaluate(QuerySpec.from_surface('exist', query))['support_true'] == pytest.approx(.8)
-    altered = roles.clone()
-    altered[1] = torch.eye(6)[3]
-    other = ConceptualMeaning.from_description(altered.flatten()) if structured else altered.flatten()
-    assert reasoner.evaluate(QuerySpec.from_surface('exist', other))['support_true'] == 0
 
 
 @pytest.mark.parametrize("trust", [float("nan"), float("inf"), -float("inf")])
-def test_trust_update_rejects_nonfinite_degrees_without_mutating_evidence(trust):
-    store = LTM0(6, capacity=8)
+def test_new_trust_rejects_nonfinite_degrees_without_mutating_evidence(trust):
+    store = STM0(6, capacity=8, relation_capacity=8192)
     row = store.append_idea(torch.eye(6)[0], trust=.4)
     with pytest.raises(ValueError, match="finite"):
-        store.set_trust(row, trust)
+        store.append_idea(torch.eye(6)[0], trust=trust)
     assert float(store.trust[row]) == pytest.approx(.4)

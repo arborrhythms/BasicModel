@@ -10,7 +10,7 @@ import pytest
 import Language
 from ClauseRow import attach_clause_index
 from reading_fixtures import finish_reading
-from Memory import LTM0
+from Memory import LTM0, STM0
 from Queries import GrammaticalThoughtRegistry
 from Understanding import Reading
 from test_cs_sparse_weights import _cs
@@ -58,7 +58,8 @@ class SentenceFixture:
         self.words = {}
         from PartsOfSpeech import PartsOfSpeech, formal_arguments
         self.language.parts_of_speech = PartsOfSpeech(formal_arguments((*self.binary, *self.unary)))
-        self.store = LTM0(width, capacity=64, percept_width=percept_width)
+        self.store = (LTM0(width, capacity=64, percept_width=percept_width) if percept_width >= 8
+                      else STM0(width, capacity=64, percept_width=percept_width, relation_capacity=8192))
         self.model = SimpleNamespace(languageSpace=self.language, grammatical_thoughts=self.registry)
         attach_clause_index(self.model, self.store, self.cs)
 
@@ -109,6 +110,7 @@ class SentenceFixture:
         return Reading(rows=torch.tensor([self.cs._csw_row_of(cid) for cid in ids]),
             word_rows=torch.tensor(word_rows), word_ids=torch.tensor(word_ids), activations=torch.ones(count), leaves=torch.stack(leaves),
             actions=torch.tensor(actions), targets=torch.tensor(targets), concept_ids=torch.tensor(ids),
+            leaf_evidence=torch.tensor([[1., 0.]]).expand(count, 2).clone(),
             end_state=torch.stack((root, root * 0, root * 0)), lexical_forms=(None,) * count,
             symbol_where=torch.ones(count, 4) if located else None,
             symbol_when=torch.tensor([1., 0., 0., 1.]).expand(count, 4).clone() if located else None)
@@ -143,39 +145,25 @@ def test_04_absolute_clauses_close_bottom_up_with_their_part_edges(monkeypatch):
     assert not hasattr(f.store, 'clause_derivation')
 
 
-def test_05_embedded_part_is_unasserted_and_propagates_operator_kind(monkeypatch):
+def test_05_verb_over_completed_part_closes_an_idea_without_operator_edges(monkeypatch):
     f = SentenceFixture(monkeypatch)
-    inner = ('part', 'cats', 'animals')
-    clause = f.clause(('lift', 'he', ('verb', 'said', inner)))
-    row = f.store.write_clause(clause, trust=.6)
-    child = f.store.parts.find(f.noun('cats'), f.noun('animals'))
-    outer = f.store.row(row)
-    verb = int(outer['refs'][1])
-    assert f.store.parts.refs[verb, 1] == child
-    assert len(f.store) == 0
-    assert f.store.row(('sym', child))['evidence'] == (0., 0.)
-    assert stored_pair(f.store,row) == pytest.approx((.6, 0.))
-    assert outer['evidence'] == (0., 0.)
+    clause = f.clause(('lift','he',('verb','said',('part','cats','animals'))))
+    row = f.store.write_clause(clause,trust=.6)
+    assert isinstance(row,int) and len(f.store) == 1
+    assert f.store.parts.find(f.noun('cats'),f.noun('animals')) is None
+    assert len(f.store.parts) == len(f.words)
+    torch.testing.assert_close(f.store.meaning_of(row).roles[0],clause.point)
+    assert stored_pair(f.store,row) == pytest.approx((.6,0.))
 
 
-def test_pointless_predicate_retains_the_relative_child_as_an_occupied_role(monkeypatch):
-    from Memory import RELATION
+def test_completed_relative_predicate_is_fused_into_its_idea(monkeypatch):
     f = SentenceFixture(monkeypatch)
-    predicate = ('union', ('part', 'cats', 'animals'), 'present')
-    clause = f.clause(('lift', 'he', ('verb', predicate, 'mice')))
-    assert clause.refs[1] == ('clause', 0)
-    assert clause.children[0].relation == 'operator' and clause.children[0].point is None
-    assert clause.meaning.role_mask.tolist() == [True, True, True]
-    assert not clause.meaning.roles[1].any()
-
-    row = f.store.write_clause(clause, trust=.5)
-    written = f.store.part_row(row[1])['meaning']
-    _, vp = f.store.parts.references(row[1])
-    relative, obj = f.store.parts.references(vp[1])
-    inner, _ = f.store.parts.references(relative[1])
-    assert relative[0] == RELATION and written.role_refs[1] == ('sym', relative[1])
-    assert inner == (RELATION, f.store.parts.find(f.noun('cats'), f.noun('animals')))
-    assert obj[1] == f.noun('mice')
+    predicate = ('union',('part','cats','animals'),'present')
+    clause = f.clause(('lift','he',('verb',predicate,'mice')))
+    row = f.store.write_clause(clause,trust=.5)
+    assert isinstance(row,int) and len(f.store) == 1
+    assert f.store.parts.find(f.noun('cats'),f.noun('animals')) is None
+    torch.testing.assert_close(f.store.meaning_of(row).roles[0],clause.point)
 
 
 def test_12_generic_subject_is_a_relation_with_either_predicate(monkeypatch):
@@ -236,17 +224,10 @@ def test_07_equality_is_one_membership_in_a_singleton(monkeypatch):
     assert f.store.row(first)['refs'].tolist() == [a, b]
     assert 'equality' in f.store.row(first)['readings']
     assert f.store.parts.find(b, a) is None
-    f.store.set_evidence(first, .2, .4)
+    f.store.parts.add(a,b,truth_plus=.2,truth_minus=.4)
     assert stored_pair(f.store, first) == pytest.approx((.49, .4))
 
 
-def test_08_direct_bare_np_rewitnesses_its_address(monkeypatch):
-    f = SentenceFixture(monkeypatch, percept_width=8)
-    direct = f.store.write_clause(f.clause('cat', located=False))
-    assert f.store.address_keys[direct] == f.store.address_keys[direct] != f.noun('cat')
-    located = f.store.write_clause(f.clause('cat'))
-    assert located == direct and int(f.store.access_count[direct]) == 2
-    assert f.store.entry_time(located).any()
 
 
 def test_09_attribution_cannot_assert_its_child_and_negation_is_content(monkeypatch):
@@ -254,9 +235,8 @@ def test_09_attribution_cannot_assert_its_child_and_negation_is_content(monkeypa
     inner = ('part', 'cats', 'animals')
     for attitude in ('certain', 'doubtful'):
         f.store.write_clause(f.clause(('lift', 'it', ('verb', attitude, inner))), trust=.8)
-    edge = ('sym', f.store.parts.find(f.noun('cats'), f.noun('animals')))
-    assert f.store.row(edge)['evidence'] == (0., 0.)
-    f.store.write_clause(f.clause(('not', inner)), trust=.6, evidence=(0., .6))
+    assert f.store.parts.find(f.noun('cats'),f.noun('animals')) is None
+    edge = f.store.write_clause(f.clause(('not', inner)), trust=.6, evidence=(0., .6))
     assert stored_pair(f.store, edge) == pytest.approx((0., .36))
 
 

@@ -275,7 +275,8 @@ def test_prior_statement_is_a_reference_candidate_before_noun_columns_exist(has_
     from ReferenceContext import SituationFrame
     from WhereRegistry import WhereRegistry
     frame = SituationFrame(1, torch.eye(4)[:3], torch.tensor([True, False, False]),
-                           12345, torch.eye(4)[0] if has_point else None)
+                           12345, torch.eye(4)[0] if has_point else None,
+                           occurrence=('ltm', 'time-v1', 12345) if has_point else ('sym', 12345))
     discourse = SimpleNamespace(_inter_chain_window=2, _inter_last_meaning=[None],
                                 situation_references=lambda row: (frame,))
     owner = SimpleNamespace(components=None)
@@ -285,9 +286,11 @@ def test_prior_statement_is_a_reference_candidate_before_noun_columns_exist(has_
         conceptualSpace=SimpleNamespace(),
         where_registry=WhereRegistry((('conceptual', 8),)))
     bank = BasicModel._sentence_reference_bank(model, torch.tensor([True]), torch.zeros(1, 4))
-    assert bank.ids[bank.valid].tolist() == [12345]
+    from Occurrence import operand_name
+    expected = operand_name(12345) if has_point else 12345
+    assert bank.ids[bank.valid].tolist() == [expected]
     assert bank.relations[bank.valid].tolist() == [not has_point]
-    assert bank.column_ids.tolist() == [12345]
+    assert bank.column_ids.tolist() == [expected]
     if has_point:
         torch.testing.assert_close(bank.values[bank.valid][0], frame.point)
 
@@ -295,7 +298,8 @@ def test_prior_statement_is_a_reference_candidate_before_noun_columns_exist(has_
 def test_thought_menu_checks_open_reference_types_before_choice():
     from dataclasses import replace
     from test_normal_thought_controller import _catalog_world
-    from Occurrence import ADDRESS_DOMAIN
+    from Memory import STM0
+    ADDRESS_DOMAIN = STM0.address_domain
     model, registry, memory, part, whole = _catalog_world()
     root = registry.form('isPart', part, whole)
     # An existing statement occurrence is a valid closed relation operand,

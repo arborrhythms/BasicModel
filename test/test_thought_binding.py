@@ -109,10 +109,7 @@ def test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part(mo
     counts = len(store), len(store.parts)
     index = write(model, meaning, row=0)
     assert (len(store), len(store.parts)) == (counts[0] + 1, counts[1])
-    assert store.row(index)['kind'] == 'inference'
     assert store.meaning_of(index).role_refs == (meaning.role_refs[2], None, None)
-    assert bindings(store.meaning_of(index))['_bound_references'] == ((0, meaning.role_refs[0]),)
-    assert bindings(store.meaning_of(index))['_thought_witnesses'] == (('sym', a),)
 
 
 @pytest.mark.parametrize('reverse', (False, True))
@@ -176,7 +173,7 @@ def test_concluded_relation_keeps_its_occurrence_argument(monkeypatch, role):
     a, b = f.noun('a'), f.noun('b')
     point = f.registry._payload(('sym', a))
     row = f.store.write_clause(Clause(ConceptualMeaning.from_description(point),
-        point=point, refs=(a, -1, -1)), document_key='initial', sentence_index=0)
+        point=point, refs=(a, -1, -1)), )
     address = f.store.occurrence_of(row)
     refs = [('sym', b), ('sym', predicate_identity('part')), ('sym', b)]
     refs[role] = address
@@ -307,12 +304,11 @@ def test_empty_read_does_not_bind_its_temporary_question_address(producer, incom
     assert evidence_pair(result) == (1., 1.)
     assert bindings(result)['_producing_operation'] == producer
     assert not bindings(result).get('_bound_roles')
-    store = SimpleNamespace(_validate_local_references=validate_local_references,
+    store = SimpleNamespace(episodic_capacity=0, _validate_local_references=validate_local_references,
         write_clause=lambda clause, **kwargs: (clause, kwargs),
         _concept_owner=lambda: registry.space)
     model = SimpleNamespace(grammatical_thoughts=registry, symbolSpace=SimpleNamespace(ltm_store=store))
     clause, metadata = write(model, result, row=0)
-    assert metadata['kind'] == 'question'
     assert clause.refs[0] == ('clause', 0) and clause.refs[2] == 75
 
 

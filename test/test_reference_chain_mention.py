@@ -28,7 +28,7 @@ def unresolved_description(f, *, lexical_kind=False):
     return clause, known, word
 
 
-def test_unresolved_root_description_keeps_chain_and_own_occurrence(monkeypatch):
+def test_root_description_keeps_its_idea_and_own_occurrence_without_a_chain(monkeypatch):
     f = SentenceFixture(monkeypatch)
     resolver = f.cs.components.reference_close
     clause, known, word = unresolved_description(f)
@@ -38,21 +38,18 @@ def test_unresolved_root_description_keeps_chain_and_own_occurrence(monkeypatch)
     # work when that final dataclass replacement changes its Python identity.
     closed = replace(kept, when=kept.point.new_zeros(4))
     written = {}
-    row = f.store.write_clause(closed, evidence=(.8, .1), document_key='chain-mention',
-                               sentence_index=0, written_rows=written)
-    assert row[0] == 'sym'
-    assert f.store.parts.references(row[1]) == ((SYMBOL, known), (SYMBOL, word))
-    assert written['root_occurrence'] == row
-    occurrence = written['root_mention']
-    assert occurrence[0] == 'ltm' and occurrence != row
-    mention = f.store.location(occurrence)
-    assert f.store.kind_of(mention) == 'unverified'
-    assert f.store.row(mention)['evidence'] == (0., 0.)
-    assert not f.store.entry_time(mention).any()
-    torch.testing.assert_close(f.store.point_of_row(occurrence[-1]), kept.point, rtol=0, atol=0)
+    row = f.store.write_clause(closed, evidence=(.8, .1),
+                                written_rows=written)
+    assert isinstance(row, int)
+    assert written['relations'] == ()
+    occurrence = f.store.occurrence_of(row)
+    assert written['root_occurrence'] == written['root_mention'] == occurrence
+    assert f.store.row(row)['evidence'] == pytest.approx((.8,0.))
+    assert f.store.row(row+1)['evidence'] == pytest.approx((0.,.1))
+    torch.testing.assert_close(f.store.point_of_row(occurrence), kept.point, rtol=0, atol=0)
     resolver.commit(plan, row, written, document='chain-mention', position=0, training=False)
     token = f.cs.mtm.token_of(occurrence)
-    assert token is not None and f.cs.mtm.token_of(row) is None
+    assert token is not None and f.cs.mtm.token_of(occurrence) == token
     torch.testing.assert_close(f.cs.mtm.value_of(token), kept.point, rtol=0, atol=0)
     assert f.cs.definitions.objects(word) == ()
 

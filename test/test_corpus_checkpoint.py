@@ -74,7 +74,7 @@ def test_checkpoint_uses_consumed_positions_and_resumes_without_epoch_clear(tmp_
         from Meaning import ConceptualMeaning
         store = first.symbolSpace.ltm_store
         row = store.append_meaning(ConceptualMeaning.from_description(store.slots[0].new_ones(store.nDim)),
-            evidence=(.8,.2), document_key='incomplete', sentence_index=0)
+            evidence=(.8,.2), )
         occurrence = store.occurrence_of(row)
         owner = first._concept_owner()
         left, right = owner.new_concept(), owner.new_concept()

@@ -437,7 +437,7 @@ class LevelledThoughtHistory:
                 continue
             if (len(value) == 3 and value[0] == "ltm"
                     and value[1] == namespace
-                    and type(value[2]) is int and value[2] not in (-1, 0)):
+                    and type(value[2]) is int and value[2] >= 0):
                 found.add(tuple(value))
                 continue
             pending.extend(value)
@@ -763,9 +763,8 @@ class LevelledThoughtHistory:
             or len(rows) != batch
         ):
             raise ValueError("invalid thought history rows")
-        from Occurrence import ADDRESS_DOMAIN
         namespace = extras.get('namespace')
-        if namespace != ADDRESS_DOMAIN:
+        if namespace != self._thought_namespace:
             raise ValueError('invalid thought address format')
         counter = extras.get("next_id")
         if type(counter) is not int or counter < 0:

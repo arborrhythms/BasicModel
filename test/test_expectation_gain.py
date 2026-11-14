@@ -121,38 +121,6 @@ def test_trial_keep_and_credit_use_same_r_plus_a_judge():
     torch.testing.assert_close(result['costs'], torch.tensor([[4.,2.]]))
 
 
-def test_expected_identity_survives_zero_content_and_retained_pair_restore():
-    from Layers import MeaningExpectation
-    from Memory import LTM0
-    from Meaning import ConceptualMeaning, ClosingImage
-    keys = torch.eye(4)
-    logits = torch.full((4,2), -60.); logits[0,0] = 60.
-    roles = torch.cat((keys[:1], torch.zeros(2,4)))
-    prediction = MeaningExpectation(roles, torch.tensor([60.,-60.,-60.]),
-        symbol_keys=keys, symbol_logits=logits, symbol_ids=torch.arange(4), symbol_orders=torch.arange(4))
-    occupied = torch.tensor([True,False,False])
-    view = ClosingImage.form(roles, prediction.roles, prediction.confidence,
-        prediction=prediction, occupied=occupied, gain=1.)
-    assert not view.conceived.any()
-    torch.testing.assert_close(view.restore(), roles)
-    assert view.awareness()['expectation'][0,0] == 1
-    assert view.awareness()['identities'][0] == 0
-    observed = ConceptualMeaning(roles, occupied)
-    estimate = ConceptualMeaning(roles, occupied,  bindings=prediction.retained_bindings())
-    store = LTM0(4, capacity=8)
-    source = store.append_meaning(observed, kind='observation')
-    e, o = store.append_expectation_pair(estimate, observed, presence_logits=prediction.presence_logits,
-        source_occurrences=(store.occurrence_of(source),), document='test', stream='test')
-    pair = store.expectation_pair(o, gain=1.)
-    assert pair['estimate_occurrence'] == store.occurrence_of(e)
-    assert pair['expected_activation'].shape == (4,2)
-    assert not pair['conceived'].any()
-    restored = LTM0(4, capacity=8)
-    restored.load_state_dict(copy.deepcopy(store.state_dict()))
-    restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
-    other = restored.expectation_pair(o)
-    torch.testing.assert_close(other['expected_activation'], pair['expected_activation'])
-    torch.testing.assert_close(other['observation'].roles, roles)
 
 
 def test_non_mark_blocks_prime_and_gain_without_erasing_retained_modifier():
@@ -174,43 +142,6 @@ def test_non_mark_blocks_prime_and_gain_without_erasing_retained_modifier():
     assert dict(actual.detached().bindings)['_withheld_symbols'] == actual.bindings[0][1]
 
 
-def test_fused_retained_row_replays_original_two_lane_target():
-    """A fused row is not a new observation of its nearest bank identity."""
-    from Layers import MeaningExpectation
-    from Memory import LTM0
-    from Meaning import ConceptualMeaning
-    keys = torch.eye(4)
-    expected = torch.tensor([[.8, .1], [.1, .7], [.2, .2], [.1, .1]])
-    target = torch.tensor([[.6, .0], [.0, .9], [.0, .0], [.0, .0]])
-    ids = torch.tensor([17, 42, 103, 999])
-    roles = torch.cat((keys[:1], torch.zeros(2,4)))
-    occupied = torch.tensor([True, False, False])
-    prediction = MeaningExpectation(roles, torch.zeros(3), symbol_keys=keys,
-        symbol_logits=expected.logit(), symbol_ids=ids, symbol_orders=torch.arange(4))
-    # This durable description has different coordinates from either original
-    # observed symbol. Store the exact local target beside the full prior.
-    fused = torch.cat(((keys[0]+keys[1])[None]/2, torch.zeros(2,4)))
-    observed = ConceptualMeaning(fused, occupied, bindings={
-        '_observed_symbol_activations': tuple((int(i), tuple(pair))
-            for i, pair in zip(ids, target.tolist()))})
-    estimate = ConceptualMeaning(roles, occupied,
-        bindings=prediction.retained_bindings())
-    store = LTM0(4, capacity=8)
-    _, row = store.append_expectation_pair(estimate, observed,
-        presence_logits=prediction.presence_logits, document='fused', stream='fused')
-    residual = target-expected
-    from Expectation import retention_surprise
-    surprise = retention_surprise(residual, expected)
-    for replay in (store, LTM0(4, capacity=8)):
-        if replay is not store:
-            replay.load_state_dict(copy.deepcopy(store.state_dict()))
-            replay.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
-        pair = replay.expectation_pair(row)
-        torch.testing.assert_close(pair['residual'], residual)
-        torch.testing.assert_close(pair['excess'], residual.relu())
-        torch.testing.assert_close(pair['omission'], (-residual).relu())
-        torch.testing.assert_close(pair['observation'].roles, fused)
-        assert pair['surprise'] == pytest.approx(float(surprise))
 
 
 def test_symbol_gain_keeps_native_identity_and_inactive_row_context():

@@ -44,8 +44,7 @@ def test_bind_menu_at_each_order_and_kept_mention_commit(monkeypatch,order):
         concept = known_concept(f.cs, torch.eye(8)[i], order=order)
         meaning = replace(ConceptualMeaning.from_description(torch.eye(8)[i]),
             bindings={'_identity': ('sym', concept)})
-        row = f.store.append_meaning(meaning,
-            sentence_index=i,document_key='antecedents',order=order)
+        row = f.store.append_meaning(meaning)
         key = f.store.occurrence_of(row)
         f.cs.mtm.open(key,kind=None,when=i,value=f.store.slots[row],pending=False)
         f.cs.mtm.record_link(key,key,0,kind='reference',order=order)
@@ -72,7 +71,7 @@ def test_bind_menu_at_each_order_and_kept_mention_commit(monkeypatch,order):
     plan = resolver.preview(clause,chunks.empty(1,8,8))
     prepared = resolver.prepare(clause,plan)
     written = {}
-    row = f.store.write_clause(prepared,written_rows=written,document_key='mention',sentence_index=0)
+    row = f.store.write_clause(prepared,written_rows=written,)
     before = f.cs.mtm.entries[chosen].count
     resolver.commit(plan,row,written,document='mention',position=0,training=False)
     assert len(plan['items']) == 1
@@ -137,7 +136,7 @@ def test_expired_and_promoted_transient_ids_cannot_alias_resident_chunks():
 def test_unpublished_timeline_cannot_survive_as_a_recent_identity(monkeypatch):
     from test_clause_acceptance import SentenceFixture
     f = SentenceFixture(monkeypatch)
-    row = f.store.append_meaning(ConceptualMeaning.from_description(torch.eye(8)[0]),order=1)
+    row = f.store.append_meaning(ConceptualMeaning.from_description(torch.eye(8)[0]))
     key = f.store.occurrence_of(row)
     f.cs.mtm.open(key,kind=None,when=1,value=f.store.slots[row],pending=False)
     f.cs.mtm.record_link(key,key,0,kind='reference',order=1)
@@ -157,11 +156,11 @@ def test_unpublished_timeline_cannot_survive_as_a_recent_identity(monkeypatch):
 def test_prepend_transients_do_not_prime_or_place_and_promoted_symbol_registers(monkeypatch):
     from test_placement_surface import lesson
     from ClauseRow import attach_clause_index
-    from Memory import LTM0
+    from Memory import STM0
     from Models import BasicModel
     import weakref
     cs,derived,rows,reading = lesson(monkeypatch)
-    store = LTM0(cs.similarity_codebook.W.shape[-1],capacity=32,percept_width=derived.percept_event_width)
+    store = STM0(cs.similarity_codebook.W.shape[-1],capacity=32,percept_width=derived.percept_width, relation_capacity=8192)
     object.__setattr__(cs,'_clause_store_ref',weakref.ref(store))
     attach_clause_index(SimpleNamespace(),store,cs)
     entries = SymbolEntries(1,2,8,store.nDim)
@@ -187,7 +186,7 @@ def test_prepend_transients_do_not_prime_or_place_and_promoted_symbol_registers(
     model = Model()
     from clock_fixtures import install
     install(model)
-    row = store.append_meaning(ConceptualMeaning.from_description(cs.similarity_codebook.W[rows[0]].detach()),order=1)
+    row = store.append_meaning(ConceptualMeaning.from_description(cs.similarity_codebook.W[rows[0]].detach()))
     key = store.occurrence_of(row)
     cs.mtm.open(key,kind=None,when=1,value=store.slots[row],pending=False)
     cs.mtm.record_link(key,key,0,kind='reference',order=1)
@@ -229,7 +228,7 @@ def test_retired_modules_and_transient_checkpoint_version():
 def test_restaging_reads_live_values_once_without_reading_the_menu(monkeypatch):
     from test_clause_acceptance import SentenceFixture
     f = SentenceFixture(monkeypatch)
-    row = f.store.append_meaning(ConceptualMeaning.from_description(torch.eye(8)[0]),order=1)
+    row = f.store.append_meaning(ConceptualMeaning.from_description(torch.eye(8)[0]))
     key = f.store.occurrence_of(row)
     f.cs.mtm.open(key,kind=None,when=1,value=f.store.slots[row],pending=False)
     f.cs.mtm.record_link(key,key,0,kind='reference',order=1)
@@ -257,8 +256,7 @@ def test_restaging_reads_live_values_once_without_reading_the_menu(monkeypatch):
 def test_prepend_breaks_equal_time_ties_by_admission_and_keeps_event_recency(monkeypatch, admission_order):
     from test_clause_acceptance import SentenceFixture
     fixture = SentenceFixture(monkeypatch)
-    rows = [fixture.store.append_meaning(ConceptualMeaning.from_description(torch.eye(8)[i]),
-             sentence_index=i, document_key='same-time', order=1) for i in range(4)]
+    rows = [fixture.store.append_meaning(ConceptualMeaning.from_description(torch.eye(8)[i])) for i in range(4)]
     pool = fixture.cs.mtm
     admitted = []
     for index in admission_order:

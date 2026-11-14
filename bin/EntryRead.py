@@ -1,30 +1,17 @@
-"""Bounded role reads of explicitly addressed or recalled records."""
+"""Bounded reads of explicitly addressed or extension-recalled records."""
 import math
 import torch
-from torch.nn import functional as F
-from Occurrence import AddressIndex
 
 
 class EntryRead:
-    def rebuild_addresses(self):
-        from RetentionColumns import reindex
-        reindex(self)
-        self._index_occurrences = AddressIndex({int(key): row for row, key in
-                                              enumerate(self.address_keys[:len(self)].tolist())})
-
     def entry_time(self, index):
         from RowTime import read_time
         return read_time(self, index)
 
-    @staticmethod
-    def _scope_contains(query, stored):
-        stored = dict(stored)
-        return all(stored.get(key) == wanted for key,wanted in dict(query).items())
-
     @torch.no_grad()
     def cued_rows(self, cue, *, primed=(), references=(), retrieved=(), max_candidates=None,
                   max_records=32, work=None, stream=None, role_mask=None, episodic_frames=()):
-        """Score explicitly addressed and recalled rows; never scan for candidates."""
+        """Read explicitly addressed and recalled rows, preserving their relevance."""
         max_candidates = self.ltm_window if max_candidates is None else max_candidates
         for name, value in (('candidate', max_candidates), ('record', max_records)):
             if type(value) is not int or value < 0:
@@ -37,72 +24,32 @@ class EntryRead:
             if ref is not None and ref[0] == 'sym' and type(ref[1]) is int and ref[1] > 0:
                 explicit.extend(('sym', row) for row in self.parts.rows_referencing(SYMBOL, ref[1]))
         recalled = {frame['index']: frame for frame in episodic_frames}
-        candidates = list(dict.fromkeys(row for row in (*explicit, *recalled) if row is not None
-            and (not isinstance(row, int) or self.kind_of(row) != 'episode')))
+        candidates = list(dict.fromkeys(row for row in (*explicit, *recalled) if row is not None))
         incomplete = ['ltm_window'] if len(candidates) > max_candidates else []
         candidates = candidates[:max_candidates]
         scanned = len(candidates)
         if not scanned:
             return dict(value=(), records_scanned=0, incomplete=tuple(incomplete))
-        occupied = (cue.role_mask if role_mask is None else role_mask).to(self.slots.device)
-        roles, masks, available = self._cue_roles, self._cue_role_mask, self._cue_available
-        roles.zero_(); masks.zero_(); available.zero_()
-        # Occurrence kind and question evidence are tensor-valued filters.
-        occurrence_slots = [slot for slot, index in enumerate(candidates) if isinstance(index, int)]
-        occurrence_rows = [index for index in candidates if isinstance(index, int)]
-        if occurrence_rows:
-            rows = torch.tensor(occurrence_rows, device=self.slots.device)
-            kinds = self.kind_codes(rows)
-            available[occurrence_slots] = ((kinds != self.KINDS.index('estimate')) &
-                (kinds != self.KINDS.index('cover')) &
-                (kinds != self.KINDS.index('episode')) &
-                ((kinds != self.KINDS.index('question')) | self.truth_plus[rows].ne(0) | self.truth_minus[rows].ne(0)))
-        records = []
-        for slot, index in enumerate(candidates):
-            record = recalled[index] if index in recalled else self.row(index)
-            records.append(record)
-            meaning = record['meaning']
-            if isinstance(index, tuple):
-                available[slot] = (record['kind'] not in ('estimate', 'cover', 'episode') and
-                    (record['kind'] != 'question' or any(record['evidence'])))
-            if meaning is None:
-                if bool(available[slot]):
-                    incomplete.append('unavailable_metadata')
-                available[slot] = False
-                continue
-            roles[slot].copy_(meaning.roles)
-            masks[slot].copy_(meaning.role_mask)
-        wanted = cue.roles.to(roles).clone()
-        if self.when_start is not None:
-            wanted[:, self.when_start:self.when_start+4] = 0
-            roles[:, :, self.when_start:self.when_start+4] = 0
-        available &= ~(occupied[None] & ~masks).any(-1)
-        # Exactly one batched product, one batch for each semantic role.
-        similarities = torch.bmm(
-            F.normalize(roles, dim=-1, eps=1e-8).transpose(0, 1),
-            F.normalize(wanted, dim=-1, eps=1e-8).unsqueeze(-1)).squeeze(-1).transpose(0, 1)
-        if bool(occupied.any()):
-            matches = similarities.clamp(0, 1)[:, occupied].mean(-1)
-        else:
-            matches = torch.ones_like(similarities[:, 0])
-        ranked = sorted(range(scanned), key=lambda slot: (-float(matches[slot]),
-            (1, candidates[slot][1]) if isinstance(candidates[slot], tuple) else (0, candidates[slot])))
-        constraints = {key: value for key, value in cue.bindings if not key.startswith('_')}
-        found = []
-        for slot in ranked:
+        found, read = [], 0
+        for index in candidates:
             if len(found) >= max_records:
                 break
-            if not bool(available[slot]):
-                continue
-            record = records[slot]
-            meaning = record['meaning']
-            if not self._scope_contains(cue.scope, meaning.scope) or not self._scope_contains(constraints, meaning.bindings):
-                continue
-            if candidates[slot] not in recalled and work is not None and not work.consume('record'):
+            if index not in recalled and work is not None and not work.consume('record'):
                 incomplete.append('work_budget')
                 break
-            found.append(dict(record, index=candidates[slot], match=float(matches[slot])))
-        return dict(value=tuple(found), records_scanned=sum(index not in recalled for index in candidates),
+            record = recalled[index] if index in recalled else self.row(index)
+            read += int(index not in recalled)
+            if index not in recalled and isinstance(index, int):
+                from MemoryActivity import accessed
+                accessed(self, index)
+            meaning = record['meaning']
+            if meaning is None:
+                continue
+            # Content relevance belongs to the question's operator result.
+            # An address permits a read; it supplies no resemblance score.
+            found.append(dict(record,index=index,match=record.get('match',0.)))
+        found.sort(key=lambda record:record['match'],reverse=True)
+        return dict(value=tuple(found),records_scanned=read,
                     incomplete=tuple(dict.fromkeys(incomplete)))
 
     def recall_identities(self, frames, *, work, stream=0):
@@ -116,8 +63,6 @@ class EntryRead:
         from RowTime import encoder
         missing = []
         for frame in frames:
-            if frame['kind'] == 'episode':
-                continue
             pending, seen = [frame['occurrence']], set()
             tick = int(encoder().decode_index(frame['time']))
             while pending:
@@ -135,8 +80,8 @@ class EntryRead:
                 row = self.location(reference)
                 if row is None:
                     missing.append('unavailable_identity'); continue
-                data = dict(self._semantic_rows.get(int(self.address_keys[row]), {}).get('bindings', ()))
-                identity = data.get('_identity')
+                data = dict(self.raw_meaning_of(row).bindings)
+                identity = self.referent_of(row)
                 if identity is not None and identity[0] == 'ltm':
                     pending.append(identity)
                 if owner.mtm.token_of(reference) is None:
@@ -171,8 +116,6 @@ class EntryRead:
             raise ValueError('query stream exceeds the constructed STM batch')
         gate = torch.arange(state[0].shape[0],device=state[0].device) == stream
         for frame in frames:
-            if frame['kind'] == 'episode':
-                continue
             occurrence = frame['occurrence']
             location = self.location(occurrence)
             relation = isinstance(location,tuple)

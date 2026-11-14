@@ -1,11 +1,10 @@
 """Bounded event reads from a grammatical subject, predicate and order.
-
 Timeline membership lasts with MTM. Surviving ideas can still be read through
 their retained Part arguments; they do not reconstruct expired timelines.
 """
 from dataclasses import replace
 
-from ThoughtReferences import bindings
+from ThoughtReferences import bindings, open_slots
 
 
 def request(clause, written, store):
@@ -107,7 +106,7 @@ def read(store, description, *, max_records, work, fallback):
                     actual_events.add(marker)
                 row = cache[marker]
                 if (row is not None and event.role == 0 and event.verb == verb
-                        and event.occurrence not in excluded and row['kind'] not in ('estimate', 'question', 'cover', 'episode')):
+                        and event.occurrence not in excluded and not open_slots(row['meaning'])):
                     if phase is not None:
                         coverage = case_coverage(owner, phase, event.case_value)
                         evidence = tuple(value*weight for value, weight in zip(row['evidence'], coverage))

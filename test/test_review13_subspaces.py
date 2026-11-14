@@ -1,4 +1,5 @@
 """Native form and detached meaning faces, paired by the shared index."""
+from Memory import STM0
 from order_fixtures import force_order
 from types import SimpleNamespace
 import torch
@@ -83,7 +84,7 @@ def test_close_placement_is_confined_to_detached_context_coordinates():
     a, b = word(cs, [(4, 1.)]), word(cs, [(7, 1.)])
     from definition_fixtures import agreeing_views
     agreeing_views(cs, cs.concept_id_at_row(a), cs.concept_id_at_row(b))
-    store = LTM0(5, capacity=8)
+    store = STM0(5, capacity=8, relation_capacity=8192)
     cs.symbolSpace = SimpleNamespace(ltm_store=store)
     part = store.parts.add(cs.concept_id_at_row(a), cs.concept_id_at_row(b),
                            symbol=cs.new_concept())
@@ -104,7 +105,7 @@ def test_close_placement_is_confined_to_detached_context_coordinates():
     torch.testing.assert_close(codes[:,3:4], direction * radius)
     assert not codes[:,4:5].any()
     assert not codes.requires_grad
-    assert root.grad is None and not store.slots.requires_grad
+    assert root.grad is None and store.slots.requires_grad  # STM0 retains the live working graph.
     newer = store.append_meaning(ConceptualMeaning(roles*2, torch.tensor([True,False,False]),
          sentence_kind='idea', role_refs=(('sym', part), None, None)),
         evidence=(0.,0.))

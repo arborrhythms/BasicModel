@@ -129,7 +129,7 @@ def test_native_runtime_reports_pairs_without_accumulating_or_updating(tmp_path,
         assert discourse.consume_inter_loss() is None
         metrics = discourse.expectation_metrics()
         assert metrics["observations"] == 2
-        assert metrics["predicted_targets"] == 2  # The cover precedes the first sentence.
+        assert metrics["predicted_targets"] == 1  # The first sentence has no preceding cover.
         assert metrics["activation_mse"] >= 0
         from ReferenceContext import SituationAddress
         assert all(isinstance(value, SituationAddress) for chain in discourse._inter_context for value in chain)
@@ -256,7 +256,8 @@ def test_expectation_off_keeps_every_packed_closing_in_ltm(tmp_path, monkeypatch
         row = append(target, clause, **kwargs)
         if target is store:
             written.append(written_rows['root_occurrence'])
-            sources.append(target._write_address[:2])
+            from Occurrence import source_at
+            sources.append(source_at(model,kwargs['stream'],len(written)-1))
         return row
 
     monkeypatch.setattr(Models, '_append_observed_meaning', capture)
@@ -275,11 +276,7 @@ def test_expectation_off_keeps_every_packed_closing_in_ltm(tmp_path, monkeypatch
         assert all(row is not None for row in roots)
         closings = [store.row(row) for row in roots]
         assert len(set(sources)) == 2  # Both packed source positions reached the writer.
-        assert all(row['kind'] in ('observation', 'unverified', 'question') for row in closings)
         rows.extend(row for address, row in zip(roots, closings) if isinstance(address, tuple))
-        assert all(row['kind'] in ('observation', 'unverified', 'question', 'inference', 'cover', 'episode') for row in rows)
-        assert sum(row['kind'] == 'cover' for row in rows) == 1
-        assert not any(row['kind'] == 'estimate' for row in rows)
         assert all(int(store.meaning_of(i).role_mask.sum()) == 1 for i in range(before, len(store)))
         assert not hasattr(store, 'clause_derivation')
     finally:

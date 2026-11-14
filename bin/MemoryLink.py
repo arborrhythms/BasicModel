@@ -49,7 +49,7 @@ def member_order(owner, site):
         if 'word' in owner._concept_allocator.symbol_types.get(concept, ()):
             concept = owner.interpret.referent(concept)
         return owner._concept_source_order(concept)
-    return owner._concept_source_order(site.address[-1])
+    return owner._concept_source_order(site.address)
 
 
 def candidate_eligible(owner, identity, record, *, kind, order, stream, allow_promotion=True):
@@ -63,7 +63,7 @@ def candidate_eligible(owner, identity, record, *, kind, order, stream, allow_pr
         if isinstance(identity, int):
             return owner._concept_source_order(identity) == order
         if isinstance(identity, tuple) and identity[:1] in (('ltm',), ('sym',)):
-            return owner._concept_source_order(identity[-1]) == order
+            return owner._concept_source_order(identity) == order
         return record.get('member_order', order) == order
     if not pool.in_window(token, stream) or entry.refinement.get('member_kind', 'reference') != kind:
         return False

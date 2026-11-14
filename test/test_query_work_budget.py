@@ -1,4 +1,5 @@
 """All selected thought work consumes one shared allowance before its read."""
+from Memory import STM0
 
 from dataclasses import replace
 from types import SimpleNamespace
@@ -80,9 +81,9 @@ def test_invalid_call_spends_no_work_and_never_executes():
     assert calls == [] and meter.spent == 0
 
 
-def test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence(monkeypatch):
-    from Queries import _existing_row, ThoughtLTMCapability
-    from reasoning import TruthGroundedReasoner
+def test_addressed_truth_reads_share_one_budget_without_renewal(monkeypatch):
+    from Queries import ThoughtLTMCapability
+    from QueryWork import QueryWorkExhausted
     from index_fixtures import append_content
     cs = _cs()
     ref = ('sym', cs.new_concept())
@@ -90,33 +91,26 @@ def test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence(monkeypa
     cs._csw_concept_row(0, ref[1])
     meaning = replace(ConceptualMeaning.from_description(torch.ones(8)),
                       role_refs=(ref, None, None))
-    store = LTM0(8, percept_width=0)
-    code = _existing_row(cs, ref)
-    append_content(store, meaning, kind='fact', trust=0.6)
-    append_content(store, meaning, kind='fact', trust=-0.4)
-    # Given references are scored first; only returned records charge the shared
-    # meter. Query dispatch spends one unit and leaves one returned record.
+    store = STM0(8, percept_width=0, capacity=1024, relation_capacity=8192)
+    append_content(store, meaning, trust=.6)
+    append_content(store, meaning, trust=-.4)
     read, original = [], store.row
-
     def row(index):
         read.append(index)
         return original(index)
-
-    monkeypatch.setattr(store, "row", row)
+    monkeypatch.setattr(store, 'row', row)
     meter = budget(2)
-    reader = TruthGroundedReasoner(store=store)
-    context = replace(_context(cs, store=store, work=meter),
-        ltm=ThoughtLTMCapability(store=reader.reasoning_store,
-            equal=reader.equal, tau_id=reader.tau_id, primed=(code,)),
-        operand_references=tuple(('argin1', store.occurrence_of(i)) for i in (1, 0)))
-    from test_query_vp_boundaries import _signature
-    result = _signature('query', 'argin1').invoke(
-        context, replace(meaning))
-    assert read == [1, 0] and result["records_scanned"] == 2
-    assert len(result["value"]) == 1
-    assert result["value"][0]["trust"] == pytest.approx(.6)
-    assert result["support_false"] == 0 and "work_budget" in result["incomplete"]
-    assert meter.spent == 2
+    reader = ThoughtLTMCapability(store=lambda:store,equal=lambda *_:0.,tau_id=.5)
+    against = reader.end_evidence(store.occurrence_of(1),max_records=2,work=meter)
+    result = reader.end_evidence(store.occurrence_of(0),max_records=2,work=meter)
+    with pytest.raises(QueryWorkExhausted):
+        reader.end_evidence(store.occurrence_of(1),max_records=2,work=meter)
+    assert read == [1, 0]
+    assert result['records_scanned'] + against['records_scanned'] == 2
+    assert against['support_false'] == pytest.approx(.4)
+    assert result['trust'] == pytest.approx(.6) and result['support_false'] == 0.
+    torch.testing.assert_close(result['value'].roles, meaning.roles)
+    assert meter.spent == 2 and meter.remaining == 0
 
 
 def test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances():

@@ -41,8 +41,7 @@ def run(model, sid, present):
     from FamiliarTier import open_sentence,promote_candidates
     from SentenceField import native_target,publish,select_fields
     from ModelAttention import handoff
-    from EpisodicMemory import select,plan_anchor,anchor
-    from Occurrence import address_at,native_content_key
+    from EpisodicMemory import select
     from Meaning import ConceptualMeaning
     from FieldProjection import key
     owner = model._concept_owner()
@@ -108,17 +107,13 @@ def run(model, sid, present):
     if model.training:
         operated(model,opened,reading,proposals=True)
     store = model.symbolSpace.ltm_store
-    ids = field.concept_ids
-    orders = ids.new_tensor([owner._row_order(owner._csw_row_of(int(cid))) if int(cid)>=0 else -1 for cid in ids.flatten()]).reshape(ids.shape)
-    entry_ids,entry_values = select(field,store.episodic_capacity,present,orders,order_count=store.episodic_orders)
+    entry_ids,entry_values = select(field,store.episodic_capacity,present)
     for batch in present.nonzero().flatten().tolist():
-        entry = entry_ids[batch],entry_values[batch]
-        document,position = address_at(model,batch,sid)
-        meaning = ConceptualMeaning.from_description(points[batch].detach())
-        with store.at_address(document,position,native_content_key(meaning)):
-            plan = plan_anchor(store,SimpleNamespace(meaning=meaning),entry,batch)
-            if plan is not None:
-                anchor(store,plan,entry,stream=batch,time=True)
+        # A glance keeps its examined idea and the selected field together.
+        certainty = float(field.evidence[:,batch,:,0].amax()) if field.evidence[:,batch].numel() else 0.
+        trust = 0. if model.__dict__.get('_conversation_read', False) else owner._incoming_trust_multiplier()*certainty
+        store.append_meaning(ConceptualMeaning.from_description(points[batch].detach()),
+            trust=trust,entry=(entry_ids[batch],entry_values[batch]))
         owner.mtm.close(None,stream=batch,references=owner._field_activated_references.get(batch,()))
     if model.training:
         promote_candidates(owner)

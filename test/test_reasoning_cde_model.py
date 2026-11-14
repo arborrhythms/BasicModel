@@ -49,8 +49,7 @@ class TestReasoningCDEModel(unittest.TestCase):
         store = self.m.symbolSpace.ltm_store
         # This is a learning assertion, with no supplied relation annotation.
         written = self.m._ltm_ingest_truth_texts(store,
-            ['socrates is a human', 'humans are mortal'], trusts=[.9, .9],
-            origin=store.ORIGIN_PROVISIONED)
+            ['socrates is a human', 'humans are mortal'], trusts=[.9, .9])
         # The ingress result associates each source with its native writes;
         # Part has no duplicate source-text or relation-kind column.
         assert len(written) == 2

@@ -16,6 +16,7 @@ class PartClosing:
         self.parts = self.alloc.parts
         self._terms, self._planned, self._entries = {}, {}, {}
         self._mentions = {}
+        self.occurrence_groups = {}
         self.symbols, self.edges = {}, []
         self.occurrences = set()
         self.relation_dependencies = set()
@@ -37,10 +38,12 @@ class PartClosing:
             return None
         location = self.store.location(reference)
         if isinstance(location, int):
-            return OCCURRENCE, int(self.store.address_keys[location])
+            return OCCURRENCE, self.store.row_name(location)
         if isinstance(location, tuple):
             return RELATION, location[1]
-        if reference > 0 and (self._point(reference) is not None or reference in self.alloc.symbol_types):
+        if isinstance(reference,tuple) and reference[:1] == ('sym',):
+            reference=reference[1]
+        if isinstance(reference,int) and reference > 0 and (self._point(reference) is not None or reference in self.alloc.symbol_types):
             return SYMBOL, reference
         return None
 
@@ -99,11 +102,11 @@ class PartClosing:
         terms = []
         for role in (0, 2):
             ref = clause.refs[role]
-            if isinstance(ref, tuple):
+            if isinstance(ref, tuple) and ref[:1] == ('clause',):
                 child = clause.children[ref[1]]
                 terms.append(self._terms.get(id(child)) or self.clause_term(child))
             else:
-                point = self._point(ref)
+                point = self.store.point_of_row(ref)
                 terms.append(Composition(clause.meaning.roles[role] if point is None else point,
                                          reference=ref, order=clause.order))
         return Composition(terms[1].point, tuple(terms), operation=clause.relation, order=clause.order)
@@ -127,8 +130,6 @@ class PartClosing:
             # A pending selection retains its native address in the grammar
             # term while the clause's semantic role remains open.
             record['selected_reference'] = self._reference(term)
-        if clause.relation == 'operator':
-            record['operator'] = clause.refs[1]
         if request.get('sign_leaf') or request.get('no_op_leaf'):
             record['percept_value'] = request.get('percept')
             record.update(reference=None, identity=None, order=0)
@@ -144,7 +145,7 @@ class PartClosing:
     def preflight(self):
         # At worst every binary semantic term is a relation and every leaf or
         # compressed child an occurrence. Reserve the whole transaction first.
-        relations = sum(len(r['children']) == 2 and (not r['resolved'] or r['value'].operation in self._assertions)
+        relations = sum(len(r['children']) == 2 and r['value'].operation in self._assertions
                         for r in self._planned.values())
         if int(self.alloc.next_id) + relations > self.parts.capacity:
             raise OverflowError('LTM1 construction capacity exhausted before close')
@@ -200,10 +201,10 @@ class PartClosing:
         from ConceptIndex import index_part_row, unbound_label
         if (SYMBOL, NULL_CONCEPT) in (member, side):
             return
-        order = self.owner._concept_source_order(member[1])
+        order = self.owner._concept_source_order(member)
         if order < 0:
             return
-        shared_order = self.owner._concept_source_order(side[1])
+        shared_order = self.owner._concept_source_order(side)
         if (side[0] == SYMBOL and ('part-base', side[1]) in self.alloc.relate_idx
                 and order + 1 == shared_order):
             index_part_row(self.owner, member, side)
@@ -237,7 +238,7 @@ class PartClosing:
                 old_refs = self.alloc.singleton_rows.get(seat, (witness[0], side))
                 old_row = self.parts.find(*old_refs)
                 if (old_row is not None and float(self.parts.truth_plus[old_row]) > threshold
-                        and self.owner._concept_source_order(witness[0][1]) == order):
+                        and self.owner._concept_source_order(witness[0]) == order):
                     if old_refs == evidence_refs or not self._distinct_member(member, token, value, witness):
                         return
                     members.append(witness[0])
@@ -345,43 +346,67 @@ class PartClosing:
             marks = self.occurrence_bindings(record, metadata)
             identity = marks.get('_identity')
             if identity:
-                return (self.owner._concept_source_order(identity[-1])
-                        if identity[0] in ('ltm', 'sym', 'name') else 0)
+                if identity[0] == 'ltm':
+                    index = self.store.location(identity)
+                    return 0 if index is None else self.store.order_of_row(index)
+                return self.owner._concept_source_order(identity[-1]) if identity[0] in ('sym', 'name') else 0
             names = tuple(marks.get('_forward_references', ()))
             if len(names) == 1 and names[0][0] == 0:
                 return self.owner._concept_source_order(names[0][1])
             return 0
         return order(self.prepare(clause), clause.meaning, set())
 
-    def _write_occurrence(self, record, *, pair, sentence, kind, metadata, address,
-                          stream, surprise):
-        """Write a mention's own idea without replacing its open chain."""
-        term = record['value']
-        marks = self.occurrence_bindings(record, metadata)
-        reference = self.occurrence_reference(record)
-        if reference is not None and reference[0] == RELATION:
+    def _write_occurrence(self,record,*,pair,sentence,metadata,stream,surprise):
+        term=record['value']
+        def pending(value):
+            source = value.get('metadata')
+            data = {} if source is None else dict(source.bindings)
+            if any(data.get(name) for name in
+                   ('_open_references', '_forward_references', '_unresolved_operands')):
+                return source
+            children = tuple(child for item in value['children']
+                             if (child := pending(item)) is not None)
+            if not children:
+                return None
+            source = source or ConceptualMeaning.from_description(self.store._fit(value['value'].point))
+            offset = len(source.constituents)
+            # Compression retires the durable operator chain, not the
+            # unfilled operands within it. Their descriptions belong to MTM.
+            data['_unresolved_operands'] = tuple(
+                (0, ('constituent', offset+i)) for i in range(len(children)))
+            return replace(source, bindings=data, constituents=(*source.constituents, *children))
+        working = pending(record)
+        if working is not None:
+            metadata = working
+        marks=self.occurrence_bindings(record,metadata)
+        reference=self.occurrence_reference(record)
+        if reference is not None and reference[0]==RELATION:
             self.relation_dependencies.add(reference[1])
-        content = term.point
-        if 'percept_value' in record or term.operation == 'sign':
-            content = record.get('percept_value')
-            if content is None:
-                content = torch.zeros_like(term.point)
-        value = replace(ConceptualMeaning.from_description(self.store._fit(content)),
-            bindings=marks, scope=() if metadata is None else metadata.scope,
-            polarity=True if metadata is None else metadata.polarity)
-        if address is None:
-            from Occurrence import native_content_key
-            address = dict(document_key=('operand', self.content_key),
-                sentence_index=list(self._planned).index(id(term)), content_key=native_content_key(value))
-        row = self.store.append_meaning(value, kind=kind, evidence=pair, order=record.get('order', term.order),
-            stream=stream, surprise=surprise,
-            time=self.time if sentence else False, **(address or {}))
-        result = OCCURRENCE, int(self.store.address_keys[row])
+            marks.pop('_identity',None)
+        content=term.point
+        if 'percept_value' in record or term.operation=='sign':
+            content=record.get('percept_value')
+            if content is None: content=torch.zeros_like(term.point)
+        value=replace(ConceptualMeaning.from_description(self.store._fit(content)),
+            bindings=marks,polarity=True if metadata is None else metadata.polarity)
+        extension=getattr(term,'extension',())
+        if extension:
+            value=replace(value,extension=extension)
+        first = len(self.store)
+        row=self.store.append_meaning(value,evidence=pair,surprise=surprise,
+            entry=getattr(self,'episode',None) if sentence else None)
+        if metadata is not None:
+            for index in range(first, len(self.store)):
+                self.owner.mtm.hold_pending(self.store.occurrence_of(index),
+                    replace(metadata,bindings=marks))
+        result=OCCURRENCE,self.store.row_name(row)
+        self.occurrence_groups[self.store.occurrence_of(row)] = tuple(
+            self.store.occurrence_of(index) for index in range(first, len(self.store)))
         self.occurrences.add(result[1])
         return result
 
-    def _write(self, record, *, pair=(0., 0.), sentence=False, kind='unverified',
-               metadata=None, address=None, stream=-1, surprise=-1., force=False, from_trust=False):
+    def _write(self,record,*,pair=(0.,0.),sentence=False,metadata=None,
+               stream=-1,surprise=-1.,force=False,from_trust=False):
         term = record['value']
         forced_occurrence = (force or (sentence and record.get('selected_reference') is not None)) and (
             term.binding is not None or record.get('mention'))
@@ -399,14 +424,13 @@ class PartClosing:
         if (not sentence and not force and record['reference'] is not None
                 and (not children or term.operation not in (*self._assertions, 'lift', 'verb'))):
             result = record['reference']
-        elif (record['resolved'] and not assertion) or not children or forced_occurrence:
-            if from_trust:
-                pair = tuple(pole * self.source_trust for pole in pair)
-            result = self._write_occurrence(record, pair=pair, sentence=sentence, kind=kind,
-                metadata=metadata, address=address, stream=stream, surprise=surprise)
+        elif not assertion or not children or forced_occurrence:
+            pair = tuple(pole * self.source_trust for pole in pair)
+            result = self._write_occurrence(record,pair=pair,sentence=sentence,
+                metadata=metadata,stream=stream,surprise=surprise)
         elif len(children) == 1:
-            result = self._write(children[0], pair=pair, sentence=sentence, kind=kind,
-                                 metadata=metadata, address=address, stream=stream, surprise=surprise,
+            result = self._write(children[0],pair=pair,sentence=sentence,
+                                 metadata=metadata,stream=stream,surprise=surprise,
                                  from_trust=from_trust)
         else:
             left, right = (self._write(child, stream=stream) for child in children)
@@ -415,23 +439,8 @@ class PartClosing:
             if from_trust and metadata is not None and not metadata.polarity:
                 pair = pair[::-1]
             pair = tuple(pole * self.source_trust for pole in pair)
-            operator = record.get('operator')
-            operator = operator if type(operator) is int and operator > 0 else -1
-            occupation_owner = getattr(self.store, '_occupation_owner', None)
-            occupations = None if occupation_owner is None else occupation_owner()
-            operation_seat = None
-            # A three-slot field can retain a lexical predicate without any
-            # grammar operation having combined its slots. 'operator' names
-            # that relative field kind, not a primitive operation. Its actual
-            # predicate reference above supplies the authority in that case.
-            operation = term.formal_name or (term.operation if term.operation != 'operator' else None)
-            if occupations is not None and operation is not None:
-                index = occupations.operation_index(operation)
-                if index >= 0:
-                    operation_seat = occupations.seats[operation].concept
             row = self.parts.add(left, right, truth_plus=pair[0], truth_minus=pair[1],
-                surprise=surprise, witness=sentence,
-                operator=operator, operation_seat=operation_seat)
+                surprise=surprise)
             self.edges.append(row)
             promoted = False
             if assertion and term.operation in ('equal', 'part', 'assertPart') and pair[0] > 0:
@@ -465,11 +474,10 @@ class PartClosing:
         self.symbols[id(term)] = result[1] if result[0] == SYMBOL else None
         return result
 
-    def close(self, clause, *, pair=(0., 0.), sentence=False, kind='unverified',
-              address=None, stream=-1, surprise=-1., force=False, from_trust=False):
+    def close(self,clause,*,pair=(0.,0.),sentence=False,
+              stream=-1,surprise=-1.,force=False,from_trust=False):
         record = self._planned[id(self._terms[id(clause)])]
-        result = self._write(record, pair=pair, sentence=sentence, kind=kind,
-            metadata=clause.meaning, address=address, stream=stream, surprise=surprise,
+        result = self._write(record,pair=pair,sentence=sentence,
+            metadata=clause.meaning,stream=stream,surprise=surprise,
             force=force, from_trust=from_trust)
-        self.parts.refresh_effective()
         return result

@@ -55,7 +55,7 @@ def _mint_chain(cs):
     (H, B1, B2) cids and their shared-store rows."""
     alloc = _concept_alloc_of(cs)
     H = cs.new_concept()
-    B1 = cs.relate(("sym", H), ("sym", H)) if False else cs.new_concept()
+    B1 = cs.new_concept()
     B2 = cs.new_concept()
     for cid in (B1, B2): force_order(cs, cid, 0)
     # B1, B2 are PARTS of H; H is the WHOLE covering them.

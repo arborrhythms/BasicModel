@@ -31,7 +31,14 @@ def test_every_read_word_has_a_concept_and_symbol(tmp_path, monkeypatch, configu
         assert all(owner.word_concepts(word) for word in words), {
             word: owner.word_concepts(word) for word in words}
         assert torch.isfinite(symbols).all()
-        assert symbols.abs().sum() > 0, 'derived concepts must have symbol activations'
+        # Word admission supplies the leaves. Their operator's final set can
+        # be empty (e.g. an intersection of disjoint word concepts).
+        from ConceptEvidence import decode
+        from SentenceField import inventory
+        leaf_symbols = [decode(field.evidence, owner._field_codes(
+            owner.similarity_codebook.getW(), inventory(owner, field)))
+            for field in model._sentence_open_fields.values()]
+        assert sum(value.abs().sum() for value in leaf_symbols) > 0, 'derived concepts must have symbol activations'
         if configuration != 'aligned':
             from ConceptEvidence import decode
             carrier = model.symbol_cache
@@ -299,7 +306,8 @@ def test_testimony_and_its_later_definition_are_read_by_the_parallel_field():
     original = tuple(cs.concept_parts(obj))
     cs._serial = False  # witness the later definition through the parallel field
     witnessed = witness_object(cs, interpret.lookup_word([8], [], form='witnessed'))
-    cs.assert_concept_relation(obj, sym_part=witnessed)
+    cs.add_part(obj, ('sym', witnessed))
+    cs._populate_concept_weights(obj)
     assert all(part in cs.concept_parts(obj) for part in original)
     assert ('sym', witnessed) in cs.concept_parts(obj)
     before = tuple(cs.concept_parts(obj))

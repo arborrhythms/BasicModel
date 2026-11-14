@@ -3,6 +3,7 @@
 The September 28 amendment keeps fixture identification evidence explicit
 beside source trust; equal numbers below are independently supplied.
 """
+from Memory import STM0
 from types import SimpleNamespace
 from dataclasses import replace
 
@@ -17,7 +18,7 @@ from Meaning import ConceptualMeaning
 
 
 def test_end_row_has_shared_references_and_field_coordinates():
-    store = LTM0(4, capacity=8)
+    store = STM0(4, capacity=8, relation_capacity=8192)
     assert not hasattr(store, 'refs')
     assert 'refs' not in store.state_dict()
     assert store.slots.shape == (8, 4)
@@ -25,21 +26,18 @@ def test_end_row_has_shared_references_and_field_coordinates():
 
 
 def test_both_evidence_poles_survive_checkpoint_separately_from_neither():
-    store = LTM0(4, capacity=8)
-    both = store.append_idea(torch.ones(4))
-    neither = store.append_idea(torch.ones(4), sentence_index=1)
-    store.set_evidence(both, .8, .8)
-    restored = LTM0(4, capacity=8)
+    store = STM0(4, capacity=8, relation_capacity=8192)
+    both = store.append_idea(torch.ones(4), evidence=(.8,.8))
+    neither = store.append_idea(torch.ones(4))
+    restored = STM0(4, capacity=8, relation_capacity=8192)
     restored.load_state_dict(store.state_dict())
-    assert restored.row(both)['evidence'] == pytest.approx((.8, .8))
+    assert restored.trust[both:both+2].tolist() == pytest.approx([.8, -.8])
     assert restored.row(neither)['evidence'] == (0., 0.)
-    assert restored.row(both)['corners'] == pytest.approx((.2, .2, .8, .2))
 
 
 def test_relation_has_no_kind_column_or_catch_all():
     from Memory import LTM1
-    assert LTM1.columns == ('refs','ref_kinds','truth_plus','truth_minus','access_count','surprise','sentence_reference',
-                           'operator_reference','operation_seat')
+    assert LTM1.columns == ('refs','ref_kinds','truth_plus','truth_minus','activity')
     assert not any(name.startswith('REL_') for name in vars(LTM0))
 
 
@@ -47,7 +45,6 @@ def test_relation_rows_never_enter_luminosity():
     store, _ = clause_store()
     idea = store.append_idea(torch.tensor([1.,0.,0.,0.]), trust=.6, evidence=(.6,0.))
     store.write_clause(part_clause(), evidence=(1.,0.))
-    store.set_origin(idea, store.ORIGIN_PROVISIONED, asserted=(float(store.truth_plus[idea]), float(store.truth_minus[idea])))
     light = TruthLayer(4, max_truths=8); light.attach_ltm(store)
     assert light.sync_from_ltm() == 1
     torch.testing.assert_close(light.truths[0], torch.tensor([.6,0.,0.,0.]))
@@ -96,8 +93,6 @@ def test_compound_idea_stores_only_fused_point_without_factored_target():
     assert not hasattr(store, 'refs')
     from Spaces import WhenEncoding
     from Occurrence import document_digest
-    assert int(store.sentence_index[row]) == 0
-    assert bytes(store.document_keys[row].tolist()) == document_digest(('direct', 'observation'))
     assert not store.entry_time(row).any()  # this fixture declares no percept band
 
 
@@ -106,9 +101,8 @@ def test_recursive_absolute_clauses_compress_to_one_sentence_idea():
     inner = idea_clause()
     middle = idea_clause(children=(inner,))
     outer = idea_clause(children=(middle,))
-    from Occurrence import sentence_key
-    with store.at_address('nested-document', 0, sentence_key((b'nested',))):
-        assert store.write_clause(outer, trust=.7) == 0
+    with store.clause_assertions(trust=.7):
+        assert store.write_clause(outer) == 0
     assert store.ideas().tolist() == [0]
     assert store.trust[:1].tolist() == pytest.approx([.7])
     assert not hasattr(store, 'refs')
@@ -119,16 +113,15 @@ def test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_
     child = part_clause()
     roles = child.meaning.roles.clone()
     roles[2].zero_()
-    outer = Clause(replace(child.meaning, roles=roles), relation='operator',
-                   refs=(4, 1, ('clause', 0)), children=(child,))
+    outer = Clause(replace(child.meaning, roles=roles), point=torch.tensor([.2,.3,.4,.5]),
+                   refs=(4, 1, ('clause', 0)), children=(child,), companions=(child,), evidence=(1.,0.))
     row = store.write_clause(outer, trust=.65)
     child_row = ('sym', store.parts.find(1,2))
     assert store.row(child_row)['evidence'] == (0.,0.)
-    assert store.row(row)['refs'].tolist() == [4,child_row[1]]
+    assert store.row(row)['meaning'].role_mask.tolist() == [True,False,False]
     assert store.write_clause(child, trust=.8, evidence=(.8,0.)) == child_row
-    assert len(store) == 0 and len(store.parts) == 2
+    assert len(store) == 1 and len(store.parts) == 1
     assert store.row(child_row)['evidence'] == pytest.approx((.64,0.))
-    store.parts.truth_plus[row[1]] = 0
     assert store.row(child_row)['evidence'] == pytest.approx((.64,0.))
 
 
@@ -172,12 +165,12 @@ def test_vector_and_row_readers_keep_both_poles_and_weight_substitution():
 def test_luminosity_preserves_both_instead_of_erasing_it_to_unknown():
     store, _ = clause_store()
     row = store.write_clause(idea_clause(torch.tensor([1., 0., 0., 0.])),
-        kind='fact', origin=store.ORIGIN_USER, evidence=(.8, .6))
+         evidence=(.8, .6))
     light = TruthLayer(4, max_truths=8)
     light.attach_ltm(store)
     assert light.sync_from_ltm() == 2
     torch.testing.assert_close(light.truths[:2, 0], torch.tensor([.8, -.6]))
-    assert store.row(row)['evidence'] == pytest.approx((.8, .6))
+    assert store.trust[row:row+2].tolist() == pytest.approx([.8, -.6])
 
 
 
@@ -197,31 +190,13 @@ def test_clause_end_state_and_evidence_checkpoint_roundtrip():
     row = store.write_clause(clause, trust=.6, evidence=(.6, 0.))
     restored, _ = clause_store()
     restored.load_state_dict(copy.deepcopy(store.state_dict()))
-    restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
     torch.testing.assert_close(restored.meaning_of(row).roles[0], clause.point)
-    assert restored.row(row)['evidence'] == pytest.approx((.6, 0.))
+    assert restored.row(row)['evidence'] == pytest.approx((.36, 0.))
     assert not hasattr(restored, 'refs') and 'refs' not in restored.state_dict()
 
 
-def test_retired_relation_columns_are_rejected_without_dropping_rows():
-    store = LTM0(4,capacity=8)
-    store.append_idea(torch.ones(4),evidence=(.5,0.))
-    state = store.state_dict(); state['rel_type'] = torch.ones(8,dtype=torch.long)
-    restored = LTM0(4,capacity=8)
-    with pytest.raises(ValueError, match='retired'):
-        restored.load_state_dict(state)
-    assert len(restored) == 0
 
 
-def test_native_provisioned_content_requires_its_layout_version():
-    store = LTM0(4,capacity=8)
-    row = store.append_idea(torch.ones(4),evidence=(.8,0.))
-    store.set_origin(row,store.ORIGIN_PROVISIONED, asserted=(float(store.truth_plus[row]), float(store.truth_minus[row])))
-    state = store.state_dict();state.pop('truth_schema')
-    restored = LTM0(4,capacity=8)
-    with pytest.raises(ValueError, match='layout checkpoint version'):
-        restored.load_state_dict(state)
-    assert len(restored) == 0 and store.source_document(row) == store.ORIGIN_PROVISIONED
 
 
 def test_verification_keeps_conflicting_observations_as_two_poles():
@@ -245,17 +220,6 @@ def test_invalid_parent_never_partially_writes_its_child():
     assert store._concept_owner()._concept_allocator.next_id == before
 
 
-def test_retired_relation_checkpoint_is_rejected_with_dependents_intact():
-    store = LTM0(4,capacity=8)
-    old = store.append_idea(torch.ones(4))
-    child = replace(ConceptualMeaning.from_description(torch.ones(4)),
-        role_refs=(store.occurrence_of(old),None,None))
-    store.append_meaning(child,kind='question')
-    state=store.state_dict();state['rel_type']=torch.tensor([0,1,0,0,0,0,0,0])
-    restored=LTM0(4,capacity=8)
-    with pytest.raises(ValueError,match='retired'):
-        restored.load_state_dict(state)
-    assert len(restored) == 0 and len(store) == 2
 
 
 def test_observation_writer_accepts_a_completed_field_without_a_program():
@@ -269,25 +233,29 @@ def test_full_store_can_update_an_existing_relation():
     store,points=clause_store()
     row=store.write_clause(part_clause(),evidence=(.2,0.))
     for position in range(store.capacity - len(store)):
-        store.append_idea(points[1],sentence_index=position)
+        store.append_idea(points[1])
     assert store.write_clause(part_clause(),evidence=(.8,0.))==row
     assert len(store)==store.capacity and len(store.parts)==1
     assert store.row(row)['evidence']==pytest.approx((.8,0.))
 
 
-def test_query_returns_end_clause_content_and_preserves_both_poles():
-    from test_query_vp_boundaries import _world, _context
-    cs, _grammar, registry, _a, _b, _ = _world()
-    store = LTM0(8, capacity=8, percept_width=0)
+def test_addressed_end_content_preserves_each_signed_row():
+    from test_cs_symbol_table import _cs
+    from test_query_vp_boundaries import _context
+    from QueryWork import QueryWorkBudget
+    cs = _cs()
+    store = STM0(8, capacity=8, percept_width=0, relation_capacity=8192)
     from ClauseRow import attach_clause_index
-    attach_clause_index(SimpleNamespace(),store,cs)
+    attach_clause_index(SimpleNamespace(), store, cs)
     point = torch.arange(8.).float() / 8
     meaning = ConceptualMeaning.from_description(point)
-    row = store.write_clause(Clause(meaning, point=point), kind='fact', evidence=(.8, .7))
+    row = store.write_clause(Clause(meaning, point=point), evidence=(.8, .7))
     context = _context(cs, store=store)
-    question = registry.form('ask', store.occurrence_of(row), context=context)
-    result = registry.execute(question, context)
-    assert result.evidence['semantic_id'] == 'ask'
-    torch.testing.assert_close(result.value[0]['meaning'].roles, meaning.roles)
-    assert result.support_true == pytest.approx(.8)
-    assert result.support_false == pytest.approx(.7)
+    results = [context.ltm.end_evidence(store.occurrence_of(index),
+        max_records=1, work=QueryWorkBudget(4)) for index in (row, row+1)]
+    for result in results:
+        torch.testing.assert_close(result['meaning'].roles, meaning.roles)
+    assert results[0]['support_true'] == pytest.approx(.8)
+    assert results[0]['support_false'] == 0.
+    assert results[1]['support_true'] == 0.
+    assert results[1]['support_false'] == pytest.approx(.7)

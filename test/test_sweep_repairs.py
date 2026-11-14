@@ -1,4 +1,5 @@
 """Scoped reader and reporting regressions found by item 3.0's full sweep."""
+from Memory import STM0
 from dataclasses import replace
 from types import SimpleNamespace
 import pytest
@@ -153,7 +154,7 @@ def test_numerical_chain_reader_reads_both_references_without_writing_a_predicat
 def test_numerical_idea_query_reads_the_single_point_column():
     from Memory import LTM0
     from reasoning import TruthGroundedReasoner
-    store = LTM0(6, capacity=3, percept_width=0)
+    store = STM0(6, capacity=3, percept_width=0, relation_capacity=8192)
     first, wanted = torch.eye(6)[:2]
     store.append_idea(first, trust=.3)
     row = store.append_idea(wanted, trust=.7)

@@ -340,7 +340,7 @@ def test_hidden_word_changes_only_loss_targets_through_the_close(tmp_path, monke
         record['percept_store'] = snapshot(dict(addresses=native.hash_map,
             values=native._basis.W, witnesses=native.identity.word_witnesses,
             words=native.identity.words, size=len(native)))
-        record['occurrences'] = snapshot((model._sentence_sources, store.address_keys))
+        record['occurrences'] = snapshot((model._sentence_sources, tuple(store.row_name(i) for i in range(len(store)))))
         record['word_values'] = model.inputSpace._ar_embedded_N.detach().clone()
         owner = model._concept_owner()
         record['expectation'] = snapshot(dict(
@@ -480,7 +480,9 @@ def test_kept_verbal_output_reaches_the_live_understanding_and_conditioner(tmp_p
         architecture_overrides={'answerSynthesis': True, 'explorePaths': 0, 'omissionTarget': 1})
     model._tensor_peer_while_eager = True
     from test_reverse_traversal import _select_completed_binary_path
-    _select_completed_binary_path(model)
+    # The whole grammar is open (§17.18). Select a parametric composition
+    # for this gradient contract; the first catalog rule is logical part.
+    _select_completed_binary_path(model, operation='compound')
     model.inputSpace.data.has_supervised_outputs = True
     monkeypatch.setattr(model.inputSpace.data, 'what', WhatAnswer.silence)
     # An explicit continuous thought transformation isolates the graph contract

@@ -5,20 +5,8 @@ from Meaning import ConceptualMeaning
 
 def record_observation(store, payload, depth, *, meaning, expectation=None):
     prediction = None if expectation is None else expectation.estimate
-    if prediction is not None and expectation.source_occurrences:
-        estimate = ConceptualMeaning(prediction.roles, torch.ones(3, dtype=torch.bool),
-             bindings=prediction.retained_bindings(), scope=prediction.scope)
-        from dataclasses import replace
-        bindings = dict(meaning.bindings)
-        bindings['_observed_symbol_activations'] = tuple((int(i), tuple(a)) for i,a in
-            zip(prediction.symbol_ids.tolist(), expectation.activation.tolist()))
-        meaning = replace(meaning, bindings=bindings)
-        return store.append_expectation_pair(estimate, meaning,
-            presence_logits=prediction.presence_logits,
-            source_occurrences=expectation.source_occurrences,
-            stream=expectation.stream, document=expectation.document)[1]
     surprise = -1. if prediction is None else expectation.surprise
-    return store.append_meaning(meaning, kind='observation', surprise=surprise)
+    return store.append_meaning(meaning,  surprise=surprise)
 
 
 def symbol_prediction(keys, activation, *, bindings=(), scope=()):
@@ -33,7 +21,7 @@ def symbol_prediction(keys, activation, *, bindings=(), scope=()):
 
 def estimate_meaning(prediction):
     return ConceptualMeaning(prediction.roles, torch.ones(3, dtype=torch.bool),
-         bindings=prediction.retained_bindings(), scope=prediction.scope)
+         bindings=prediction.bindings, scope=prediction.scope)
 
 
 def unsupported(meaning, slots=None):

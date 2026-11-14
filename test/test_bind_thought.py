@@ -54,8 +54,7 @@ def keep(f, clause, *, training=False, dummy=False):
     written = {}
     sentence = f.next_sentence
     f.next_sentence += 1
-    row = f.store.write_clause(kept, document_key='bind-corpus', sentence_index=sentence,
-                               written_rows=written)
+    row = f.store.write_clause(kept, written_rows=written)
     f.resolver.commit(plan, row, written, document='bind-corpus', position=sentence,
                       training=training)
     plan['written'] = written
@@ -308,15 +307,14 @@ def test_bind_keeps_self_and_containing_identities_without_rewriting_occurrences
     before = f.store.slots[missing].clone()
     # Self-reference is legal. Every candidate has a finite content point;
     # reading an identity must not recursively expand its own reference.
-    # The open NP has a value; its unresolved containing chain has none.
-    expected = {target}
-    assert f.store.parts.contains(f.frames[-1].row_id)
+    # The open NP and its containing idea have ordinary occurrence names.
+    expected = {target, f.frames[-1].occurrence}
+    assert f.store.location(f.frames[-1].occurrence) is not None
     child = target
     for position in range(2):
         meaning = replace(ConceptualMeaning.from_description(f.atoms[0]),
                           role_refs=(child,None,None))
-        row = f.store.append_meaning(meaning, order=1, document_key='ancestors',
-                                    sentence_index=position)
+        row = f.store.append_meaning(meaning)
         child = f.store.occurrence_of(row)
         expected.add(child)
         # The situation read exposes this occurrence by its native activation.
@@ -324,8 +322,7 @@ def test_bind_keeps_self_and_containing_identities_without_rewriting_occurrences
         f.frames.append(replace(SituationFrame.from_row(f.store.row(row)),
                                 activations=((child, None, 0),)))
     if has_antecedent:
-        row = f.store.append_meaning(ConceptualMeaning.from_description(f.atoms[0]*.5),
-                                    order=1, document_key='independent')
+        row = f.store.append_meaning(ConceptualMeaning.from_description(f.atoms[0]*.5))
         independent = f.store.occurrence_of(row)
         expected.add(independent)
         f.frames.append(replace(SituationFrame.from_row(f.store.row(row)),
@@ -410,7 +407,11 @@ def test_pending_subject_keeps_its_composed_predicate_when_stored(monkeypatch):
     stored = f.store.meaning_of(row)
     assert ('referent', 0) in open_slots(stored)
     assert ('relation', 1) not in open_slots(stored)
-    assert stored.role_refs[1] is not None
+    # §17.17 retires the composed predicate's operator-chain reference.
+    # Its value remains in the pending meaning in MTM (§17.22).
+    torch.testing.assert_close(stored.roles[1], clause.meaning.roles[1], rtol=0, atol=0)
+    pending = f.cs.mtm.pending[f.store.occurrence_of(row)][1]
+    torch.testing.assert_close(pending.roles[1], clause.meaning.roles[1], rtol=0, atol=0)
 
 
 def test_pending_name_stays_the_word_after_an_object_is_admitted(monkeypatch):
@@ -428,32 +429,3 @@ def test_pending_name_stays_the_word_after_an_object_is_admitted(monkeypatch):
                            registry=f.registry)
     assert bindings(clause.meaning)['_forward_references'] == ((0, word),)
     assert ('referent', 0) in open_slots(clause.meaning)
-
-
-@pytest.mark.parametrize('unresolved', (False, True))
-def test_objectless_predicate_keeps_its_identity_in_the_ended_compound(monkeypatch, unresolved):
-    from ClauseJournal import finish_clause
-    f = native(monkeypatch)
-    word = f.cs.interpret.lookup_word([101], (), form='v')
-    f.words['v'] = word, word
-    program = f.program(('equal', ('lift', KINDS[0], ('verb', 'v', KINDS[1])), KINDS[2]))
-    program = record_reading(f.language, program)
-    refs = program.operation_refs.clone()
-    verb = next(i for i, (kind, operation, _) in enumerate(program.actions.tolist())
-                if kind == 1 and f.language._compose_binary_rules[operation].method_name == 'verb')
-    if unresolved:
-        # The form has an identity while its object reference is still
-        # unknown. A selected raw form is not an admitted-singleton alias.
-        program = replace(program, reference_ids=torch.full_like(program.concept_ids, -1),
-                          reference_orders=torch.zeros_like(program.concept_ids))
-    else:
-        refs[verb, 0] = -1  # the predicate has no reference-choice menu
-    program = replace(program, operation_refs=refs)
-    clause = finish_clause(f.language, program, registry=f.registry)
-    row = f.store.write_clause(clause)
-    # The relative parent ends the complete subject and its VP. A later
-    # decomposition must be able to read the shared predicate's identity.
-    subject = int(f.store.row(row)['refs'][0])
-    vp = int(f.store.parts.refs[subject, 1])
-    head = next(rule.head_role for rule in f.binary if rule.method_name == 'verb')
-    assert int(f.store.parts.refs[vp, head - 1]) == word

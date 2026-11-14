@@ -84,10 +84,10 @@ def test_10_packed_pending_and_eager_ends_write_identical_rows(monkeypatch):
         assert addresses(store) == addresses(stores[0])
         assert not hasattr(store, 'role_mask')
         torch.testing.assert_close(store.time, stores[0].time, rtol=0, atol=0)
-        for name in ('slots', 'truth_plus', 'truth_minus', 'access_count'):
+        for name in ('slots', 'trust', 'referent', 'activity'):
             torch.testing.assert_close(getattr(store, name), getattr(stores[0], name), rtol=0, atol=0)
         assert not hasattr(store.parts, 'when')
-        for name in ('ref_kinds', 'refs', 'truth_plus', 'truth_minus', 'surprise'):
+        for name in ('ref_kinds', 'refs', 'truth_plus', 'truth_minus', 'activity'):
             torch.testing.assert_close(getattr(store.parts, name), getattr(stores[0].parts, name), rtol=0, atol=0)
         for row in range(len(store)):
             torch.testing.assert_close(store.meaning_of(row).roles,
@@ -121,20 +121,26 @@ def test_completed_ask_program_offers_the_same_controller_without_inventing_hole
     assert result.result.semantic_id == "part"
     assert not any(record.kind == "descend" for record in result.records)
     assert result.work.spent == memory.thought_state().work_spent
-    assert all(store.row(index)["kind"] != "fact" for index in range(len(store)))
     memory.end_what_episode()
 
 
 def test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_write(monkeypatch):
     _cs, registry, language, entry, _ = _nested(monkeypatch)
-    meaning = language.program_meaning(entry, registry)
+    from ClauseJournal import finish_clause
+    from ClauseRow import attach_clause_index
+    entry = replace(entry, concept_ids=torch.full_like(entry.concept_ids, -1),
+                    word_ids=torch.full_like(entry.concept_ids, -1))
+    from reading_fixtures import record_reading
+    clause = finish_clause(language, record_reading(language, entry), registry=registry)
     store = LTM0(8, capacity=1)
-    with pytest.raises(OverflowError, match='forgetting'):
-        store.append_meaning(meaning, kind='observation')
+    attach_clause_index(SimpleNamespace(), store, _cs)
+    with pytest.raises(OverflowError, match='capacity|forgetting'):
+        store.write_clause(clause)
     assert len(store) == 0
-    malformed = replace(meaning, role_refs=(None, meaning.role_refs[1], ('constituent', 7)))
-    with pytest.raises(ValueError, match='constituent'):
-        store.bind_constituents(malformed)
+    with pytest.raises(ValueError, match='unavailable child clause'):
+        malformed = replace(clause, refs=(clause.refs[0], clause.refs[1], ('clause', 7)),
+                            composition=None)
+        store.write_clause(malformed)
     assert len(store) == 0
 
 def _write_selected_observation(language, registry, entry, path):

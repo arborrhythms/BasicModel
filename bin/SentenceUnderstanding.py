@@ -137,6 +137,8 @@ class SentenceUnderstanding:
     constituent_families: torch.Tensor | None = None
     percept_expected: torch.Tensor | None = None
     open_field: object | None = None
+    extension: tuple = ()
+    understanding_field: object | None = None
 
     def reader_features(self, *, attention=None, live=False):
         """Fixed linear summaries with the selected training boundary.
@@ -160,7 +162,7 @@ class SentenceUnderstanding:
     def detached(self):
         from SentenceBoundary import detached
         return type(self)(**{f.name: detached(getattr(self, f.name))
-                            if f.name == 'open_field' or torch.is_tensor(getattr(self, f.name))
+                            if f.name in ('open_field','extension','understanding_field') or torch.is_tensor(getattr(self, f.name))
                             else getattr(self, f.name) for f in fields(self)})
 
     @classmethod
@@ -177,7 +179,12 @@ class SentenceUnderstanding:
             values = {}
             for field in fields(cls):
                 left, right = getattr(greedy, field.name), getattr(explore, field.name)
-                if not torch.is_tensor(left) or left.ndim == 0:
+                if field.name == 'extension':
+                    values[field.name] = tuple(right[b] if bool(win) else left[b] for b,win in enumerate(wins)) if left else ()
+                elif field.name == 'understanding_field' and left is not None:
+                    from SentenceField import selected_field
+                    values[field.name] = selected_field(left,right,wins)
+                elif not torch.is_tensor(left) or left.ndim == 0:
                     values[field.name] = left
                 else:
                     gate = wins.reshape((-1,) + (1,) * (left.ndim-1))
@@ -191,8 +198,14 @@ class SentenceUnderstanding:
             values = {}
             for field in fields(cls):
                 left, right = getattr(greedy, field.name), getattr(explore, field.name)
-                values[field.name] = (torch.where(wins.reshape((-1,) + (1,) * (left.ndim-1)), right, left)
-                    if torch.is_tensor(left) and left.ndim else left)
+                if field.name == 'extension':
+                    values[field.name] = tuple(right[b] if bool(win) else left[b] for b,win in enumerate(wins)) if left else ()
+                elif field.name == 'understanding_field' and left is not None:
+                    from SentenceField import selected_field
+                    values[field.name] = selected_field(left,right,wins)
+                else:
+                    values[field.name] = (torch.where(wins.reshape((-1,) + (1,) * (left.ndim-1)), right, left)
+                        if torch.is_tensor(left) and left.ndim else left)
             return cls(**values)
         selected = replay()
         if selected.primed is not expected.primed:

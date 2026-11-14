@@ -206,17 +206,15 @@ def test_omission_lane_concludes_absence_without_negative_content(monkeypatch):
     image=ClosingImage.form(observed.roles,keys,prior.confidence,
         prediction=prior,occupied=torch.zeros(3,dtype=torch.bool),gain=1.)
     assert not image.conceived.any()
-    source=store.append_meaning(ConceptualMeaning.from_description(predicted.roles[0]),kind='observation',evidence=(1.,0.))
+    source=store.append_meaning(ConceptualMeaning.from_description(predicted.roles[0]),evidence=(1.,0.))
     witness=store.occurrence_of(source)
     # Before commit, the discourse comparison is still the preceding sentence.
     stale = SimpleNamespace(symbol_keys=keys[:1], roles=keys)
     model.symbolSpace.expectation=SimpleNamespace(last_expectation_comparison=lambda row:SimpleNamespace(estimate=stale,source_occurrences=()))
     pending = SimpleNamespace(prediction=prior, source_occurrences=(witness,))
     index=absence(model,0,observed,image,pending=pending)
-    assert index==1 and store.row(index)['kind']=='inference'
+    assert index==1
     assert store.row(index)['evidence']==pytest.approx((0.,1.))
-    assert bindings(store.meaning_of(index))['_thought_witnesses']==(witness,)
-    assert bindings(store.meaning_of(index))['_omitted_symbol']==2
     complete=ClosingImage.form(keys,keys,prior.confidence,prediction=prior,gain=1.)
     assert absence(model,0,predicted,complete,pending=pending) is None
 
@@ -224,7 +222,7 @@ def test_omission_lane_concludes_absence_without_negative_content(monkeypatch):
 def test_modus_ponens_requires_premise_and_implication_witnesses(monkeypatch):
     model,registry,store,(p,q,_)=world()
     premise=replace(ConceptualMeaning.from_description(registry._payload(p)),role_refs=(p,None,None))
-    source=store.append_meaning(premise,kind='fact',evidence=(.8,.2))
+    source=store.append_meaning(premise,evidence=(.8,.2))
     for ref in (p,q):
         model.conceptualSpace._concept_allocator.symbol_types.setdefault(ref[1],set()).add('situation')
     rule=store.append_relation(p[1],q[1],truth_plus=.9)
@@ -235,7 +233,7 @@ def test_modus_ponens_requires_premise_and_implication_witnesses(monkeypatch):
     attach(memory, model.conceptualSpace.stm)
     goal = registry.form('isPart', p, q)
     memory.begin_thought_episode(goal, work_budget=128, opened_by_chooser=True)
-    premise_read = invoke(model, registry, registry.form('query', query_pattern(goal, 'truth', p, None)))
+    premise_read = invoke(model, registry, registry.form('query', query_pattern(goal, 'truth', store.occurrence_of(source), None)))
     rule_read = invoke(model, registry, registry.form('query', query_pattern(goal, 'implies', p, q)))
     result = invoke(model, registry, registry.form('infer', premise_read.evidence['meaning'], rule_read.evidence['meaning']))
     assert evidence_pair(result.evidence['meaning']) == pytest.approx((.8, 0.))
@@ -382,7 +380,7 @@ def test_open_closing_and_later_binding_are_reference_driven(surface):
     fields=[SentenceEndState(source,query=q)]
     with model._query_boundary_scope((0,)):
         close(model,fields,sentence=0,ready=(0,))
-    assert store.row(0)['kind']=='question'
+    assert store.row(0)['trust'] == 0
     assert len(model._last_closing_thoughts)==1
     # This boundary fixture bypasses compose/ReferenceClose. Supply the
     # kept anonymous token explicitly; a bare equality is never a binder.
@@ -396,8 +394,7 @@ def test_open_closing_and_later_binding_are_reference_driven(surface):
     copular=with_slots(replace(copular,role_refs=(None,copular.role_refs[1],b),
         bindings=dict(bindings(copular),_equality=True,_forward_references=((0,a[1]),))),
         (('referent',0),),pair=(1.,0.))
-    index=store.append_meaning(supplied,kind='observation',evidence=(1.,0.),
-        stream=0,sentence_index=1)
+    index=store.append_meaning(supplied,evidence=(1.,0.))
     pool.bind(store.occurrence_of(0), store.occurrence_of(index),
               kind=b[1], when=1, value=supplied.roles[0], reading=b[1])
     address=store.occurrence_of(0)
@@ -426,37 +423,29 @@ def test_answer_credit_is_complete_before_document_end():
 
 
 def event_world(positions):
-    """Two minted situations and their conditional, all in the Part store."""
-    from RowTime import encoder
+    """Two chronological idea occurrences and their conditional pair."""
+    from Memory import OCCURRENCE
     model,registry,store,(a,b,_)=world()
-    events=[]
-    for ref,position in zip((a,b),positions):
-        # Item 1.8 §3.8: a relation reads the stamp of its source sentence.
-        sentence = store.append_idea(registry._payload(ref), trust=1.,
-                                     document_key=('event-time', position))
-        store.slots[sentence, store.when_start:store.when_start+4] = encoder().encode(position)
-        event=store.parts.add(ref[1],ref[1],truth_plus=.8,truth_minus=.1)
-        store.parts.sentence_reference[event] = store.occurrence_of(sentence)[-1]
-        owner=model.conceptualSpace
-        owner._concept_allocator.symbol_types.setdefault(event,set()).add('situation')
-        force_order(owner,event,0)
-        seat=owner._csw_concept_row(0,event)
-        with torch.no_grad():
-            owner.similarity_codebook.W[seat].copy_(registry._payload(ref))
-        events.append(('sym',event))
-    store.append_relation(events[0][1],events[1][1],truth_plus=1.)
-    return model,registry,store,events
+    events=[None,None]
+    for index in sorted(range(2), key=lambda index: positions[index]):
+        ref=(a,b)[index]
+        store._model_present=lambda:10*positions[index]
+        meaning=ConceptualMeaning.from_description(registry._payload(ref))
+        sentence=store.append_meaning(meaning,evidence=(.8,.1))
+        events[index]=store.occurrence_of(sentence)
+    store.append_relation((OCCURRENCE,events[0][-1]),(OCCURRENCE,events[1][-1]),truth_plus=1.)
+    return model,registry,store,events,registry.form('isPart',a,b)
 
 
 @pytest.mark.parametrize('positions,known', [((1,2),True),((2,1),False)])
 def test_event_implication_reads_endpoint_when_order(monkeypatch,positions,known):
-    model,registry,store,events=event_world(positions)
+    model,registry,store,events,base=event_world(positions)
     from test_thought_infer import invoke
     from ThoughtChunks import attach
     from ThoughtStream import query_pattern
     memory = model._what_memory()
     attach(memory, model.conceptualSpace.stm)
-    goal = registry.form('isPart', *events)
+    goal = replace(base, role_refs=(events[0], base.role_refs[1], events[1]))
     memory.begin_thought_episode(goal, work_budget=128, opened_by_chooser=True)
     premise = invoke(model, registry, registry.form('query', query_pattern(goal, 'truth', events[0], None)))
     rule = invoke(model, registry, registry.form('query', query_pattern(goal, 'implies', *events)))
@@ -466,22 +455,12 @@ def test_event_implication_reads_endpoint_when_order(monkeypatch,positions,known
         assert evidence_pair(result.evidence['meaning']) == pytest.approx((.8, 0.))
         assert result.evidence['meaning'].role_refs[0] == events[1]
         assert set(events).issubset(bindings(result.evidence['meaning'])['_thought_witnesses'])
-        assert store.parts.find(events[0][1],events[1][1]) is not None
+        from Memory import OCCURRENCE
+        assert store.parts.find((OCCURRENCE,events[0][-1]),(OCCURRENCE,events[1][-1])) is not None
     else:
         assert (rule.support_true, rule.support_false) == (0., 0.)
 
 
-def test_event_implication_cannot_invent_an_order_for_unknown_legacy_time():
-    from Queries import ThoughtLTMCapability
-    from QueryWork import QueryWorkBudget
-    _,registry,store,events=event_world((1,2))
-    store.entry_time(events[0]).zero_()
-    reader=ThoughtLTMCapability(store=lambda:store,equal=lambda *_:None,tau_id=.5)
-    result=reader.relation_evidence('implies',*events,max_records=16,work=QueryWorkBudget(16))
-    assert result['frames'] == ()
-    assert (result['support_true'],result['support_false']) == (0.,0.)
-    assert result['incomplete'] == ('unknown_event_time',)
-    assert result['records_scanned'] == 3
 
 
 def test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read(monkeypatch):

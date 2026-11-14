@@ -78,16 +78,21 @@ def _make_word_space(nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
     # Reset grammar so SymbolSubSpace.__init__ can (re)configure it cleanly.
     Language.TheGrammar._configured = False
 
-    ss = Language.SymbolSubSpace(
-        perceptualSpace=percept_space,
-        conceptualSpace=concept_space,
-        wholeSpace=symbolic_space,
-        nPercepts=nPercepts,
-        nConcepts=nSymbols,
-        nSymbols=nSymbols,
-        concept_dim=conceptDim,
-        symbol_dim=symbolDim,
-    )
+    # This has no percept time band: use a working store for this isolated
+    # embedding fixture, preserving its width and both capacities.
+    from memory_fixtures import working_symbol_store
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(Language, "LTM0", working_symbol_store)
+        ss = Language.SymbolSubSpace(
+            perceptualSpace=percept_space,
+            conceptualSpace=concept_space,
+            wholeSpace=symbolic_space,
+            nPercepts=nPercepts,
+            nConcepts=nSymbols,
+            nSymbols=nSymbols,
+            concept_dim=conceptDim,
+            symbol_dim=symbolDim,
+        )
     return ss
 
 

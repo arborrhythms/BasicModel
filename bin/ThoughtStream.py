@@ -226,7 +226,7 @@ def integrate(registry, goal, result, records, *, work=None):
         if requested is None:
             return goal  # A cutoff before the face ran did not read its operand.
         return with_slots(requested, open_slots(requested), pair=(0., 0.), source_evidence=(0., 0.))
-    if same and result.semantic_id == 'ask' and result.evidence.get('meaning') is not None:
+    if same and result.semantic_id in ('query', 'ask', 'isTrue') and result.evidence.get('meaning') is not None:
         return result.evidence['meaning']
     if (same and result.semantic_id in ('exist', 'gain', 'not', 'query')
             and result.evidence.get('meaning') is not None
@@ -383,7 +383,8 @@ def write(model, meaning, *, row, _active=None, _bound=None):
                         location = store.location(reference)
                         if type(location) is not int:
                             raise ValueError('a concluded Part argument names an unavailable occurrence')
-                        refs.append(int(store.address_keys[location]))
+                        from Occurrence import operand_name
+                        refs.append(operand_name(store.row_name(location)))
                     elif reference is None and ('referent', role) in open_slots(value):
                         from Meaning import ConceptualMeaning
                         data = {'_open_references': (('referent', 0),)}
@@ -407,16 +408,9 @@ def write(model, meaning, *, row, _active=None, _bound=None):
             active.remove(id(value))
             clauses[id(value)] = result
             return result
-        from Occurrence import address_at
-        slot = int(getattr(model, '_open_sentence_slot', 0) or 0)
-        document, sentence = address_at(model, row, slot)
-        turn = ('thought', document, sentence)
-        ordinals = model.__dict__.setdefault('_thought_ordinals', {})
-        ordinal = ordinals.get(turn, 0)
-        result = store.write_clause(clause(meaning), kind='question' if has_open_slots(meaning) else 'unverified' if evidence_pair(meaning) == (0., 0.) else 'inference',
-            evidence=evidence_pair(meaning), stream=row, document_key=turn,
-            sentence_index=ordinal)
-        ordinals[turn] = ordinal + 1
+        from EpisodicMemory import for_meaning
+        result = store.write_clause(clause(meaning), evidence=evidence_pair(meaning), stream=row,
+                                    episode=for_meaning(store,meaning))
         # A kept thought can create the same defining relation as an input
         # close. Finish its witnesses while that relation is retained;
         # deferring them to the next sentence crosses epoch withdrawal.
@@ -476,13 +470,6 @@ def write(model, meaning, *, row, _active=None, _bound=None):
         active.remove(id(original))
     else:
         active.remove(id(meaning))
-    kind = 'question' if has_open_slots(meaning) else 'unverified' if evidence_pair(meaning) == (0., 0.) else 'inference'
-    from Occurrence import address_at
-    slot = int(getattr(model, '_open_sentence_slot', 0) or 0)
-    document, sentence = address_at(model, row, slot)
-    turn = ('thought', document, sentence)
-    ordinals = model.__dict__.setdefault('_thought_ordinals', {})
-    ordinal = ordinals.get(turn, 0)
     identity, point = None, None
     owner_ref = store.__dict__.get('_concept_owner')
     owner = None if owner_ref is None else owner_ref()
@@ -509,10 +496,10 @@ def write(model, meaning, *, row, _active=None, _bound=None):
         from Meaning import ConceptualMeaning
         meaning = replace(ConceptualMeaning.from_description(point), bindings=data,
             scope=meaning.scope, polarity=meaning.polarity)
-    result = store.append_meaning(meaning, kind=kind, evidence=evidence_pair(meaning),
-        stream=row, document_key=turn, sentence_index=ordinal, trust=0.)
+    from EpisodicMemory import for_meaning
+    result = store.append_meaning(meaning, evidence=evidence_pair(meaning),
+                                  entry=for_meaning(store,meaning))
     if result is not None and result != -1:
-        ordinals[turn] = ordinal+1
         mtm = None if owner is None else owner.mtm
         token = None if mtm is None or identity is None else mtm.token_of(identity)
         if token is not None and point is not None:
@@ -580,14 +567,13 @@ def commit(model, result, *, row):
     fields = getattr(model, '_sentence_fields', {}).get(slot, ())
     if store is not None and result.work.spent == 0 and open_slots(result.meaning) and row < len(fields):
         field = fields[row]
-        prior = None if field is None else store.index_of_row(field.row_id)
-        if (prior is not None and store.kind_of(prior) == 'question'
+        prior = None if field is None else store.location(field.row_id)
+        if (prior is not None and open_slots(store.meaning_of(prior))
                 and torch.equal(store.slots[prior], result.meaning.roles[0])):
             index = prior
     if index is None:
         index = write(model, result.meaning, row=row)
     if index is None or index == -1:
         return index
-    # Pending questions are already LTM rows. Address upserts, not a second
-    # row-keyed question cache, fill them when their referenced occurrence arrives.
+    # The kept question has an idea row; its pending slots live in MTM.
     return index

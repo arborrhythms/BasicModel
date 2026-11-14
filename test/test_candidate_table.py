@@ -88,13 +88,13 @@ def test_candidate_from_closed_chain_retains_its_declared_hole_at_the_part_write
         written.append((clause, kwargs))
         return 0
     owner.mtm = SimpleNamespace(entries={})
-    store = SimpleNamespace(_validate_local_references=validate_local_references,
+    store = SimpleNamespace(episodic_capacity=0, _validate_local_references=validate_local_references,
         write_clause=store_clause, _concept_owner=lambda: owner)
     model = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store),
         grammatical_thoughts=SimpleNamespace(signature_for=signature))
     assert write(model, formed, row=0) == 0
     clause, metadata = written[0]
-    assert metadata['kind'] == 'question' and clause.refs[missing] == ('clause', 0)
+    assert clause.refs[missing] == ('clause', 0)
     assert open_slots(clause.children[0].meaning) == (('referent', 0),)
     # The source remains a closed occurrence; opening a candidate is no edit.
     assert not open_slots(source)

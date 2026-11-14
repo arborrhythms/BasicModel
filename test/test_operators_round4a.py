@@ -28,26 +28,6 @@ def test_sentence_identity_is_recomputable_and_does_not_consume_global_rng():
     assert other == code.tolist()
 
 
-def test_content_address_is_independent_of_store_and_persists_with_occurrences():
-    from Memory import LTM0
-    from Meaning import ConceptualMeaning
-    stores = [LTM0(8, capacity=4) for _ in range(2)]
-    keys = []
-    for store in stores:
-        from Occurrence import sentence_key
-        key = sentence_key([b'hello', b'world'])
-        row = store.append_meaning(ConceptualMeaning.from_description(torch.ones(8)),
-                                   document_key='fixture', sentence_index=1, content_key=key)
-        keys.append(key)
-        assert store.content_key(row) == keys[-1]
-        assert store.rows_for_content(keys[-1]) == (row,)
-        store.slots[row].zero_()
-        assert store.content_key(row) == keys[-1]
-    assert stores[0].occurrence_of(0) == stores[1].occurrence_of(0)
-    assert keys[0] == keys[1]
-    restored = LTM0(8, capacity=4)
-    restored.load_state_dict(stores[0].state_dict())
-    assert restored.content_key(0) == keys[0]
 
 
 def test_one_presentation_updates_detached_context_at_the_close():

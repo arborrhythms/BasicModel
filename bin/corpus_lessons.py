@@ -15,7 +15,7 @@ LESSON_CONFIG = Path(__file__).resolve().parents[1] / 'data/MM_corpus_lessons.xm
 
 def readiness_report(owner):
     """The same measured readiness in presentation and lexical records."""
-    return dict(trust_measurements=owner.trust_measurements(), gates=owner.gate_measurements())
+    return dict(trust_measurements=owner.trust_measurements())
 
 
 def membership_report(alloc, identity):
@@ -342,7 +342,7 @@ def measure(config, lessons, output, *, eager=False, presentations=None, curricu
                     answers_scored=answers, observations=observations,
                     ltm1_rows=[dict(row=i, references=alloc.parts.references(i),
                         evidence=[float(alloc.parts.truth_plus[i]), float(alloc.parts.truth_minus[i])],
-                        sentence_reference=int(alloc.parts.sentence_reference[i])) for i in alloc.parts.indices().tolist()],
+                        activity=float(alloc.parts.activity[i])) for i in alloc.parts.indices().tolist()],
                     attention=attention, placements=placements, step_seconds=step_times,
                     step_training_seconds=training_times, step_diagnostic_seconds=diagnostic_times,
                     class_both=dict(both=sum(x for x,_ in fold_counts),

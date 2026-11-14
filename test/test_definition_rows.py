@@ -111,15 +111,15 @@ def test_27_definition_rewitness_keeps_its_when_and_store_position():
     m._advance_when_time()
     admit(m, 'there')
     count = len(store.parts)
-    witness = int(store.parts.access_count[r0])
+    activity = float(store.parts.activity[r0])
     m._advance_when_time()
     assert admit(m, 'hello') == first
     assert len(store.parts) == count
-    assert int(store.parts.access_count[r0]) == witness + 1
+    assert float(store.parts.activity[r0]) == pytest.approx(min(1., activity + store.parts.activity_config.step))
     assert cs.definitions.row(*first) == r0
     torch.testing.assert_close(store.entry_time(('sym', r0)), when, atol=0, rtol=0)
     chain = m.symbolSpace.ensure_sentence_expectation().get_stm_chain(n=count)
-    assert len(chain) == len(store.stream_rows(0))
+    assert len(chain) == len(store)
 
 
 def test_28_forgotten_definition_does_not_survive_in_any_lookup():

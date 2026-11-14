@@ -1,4 +1,5 @@
 """Item 2.7 §29: durable reuse, lexical exclusion, epoch and reading contracts."""
+from Memory import STM0
 import copy
 import json
 from pathlib import Path
@@ -120,10 +121,9 @@ def test_lexical_letters_open_nothing_but_nonlexical_located_case_does():
     assert cs.interpret.admit_discovered() is None and not cs.definitions.objects(word)
 
 
-def test_documents_retain_memory_and_mtm_until_epoch():
+def test_documents_and_epochs_retain_history_and_live_mtm():
     from test_presentation_memory import model_for, write
     from test_document_covers import fixture
-    from PresentationMemory import begin
     from Forgetting import model_boundary
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
@@ -131,33 +131,29 @@ def test_documents_retain_memory_and_mtm_until_epoch():
     model_boundary(model, epoch_boundary=True)
     first = write(store, atoms[0], 'first')
     owner.mtm.open(first, kind=None, when=0, value=atoms[0])
-    begin(model)
     second = write(store, atoms[1], 'second')
     owner.mtm.open(second, kind=None, when=0, value=atoms[1])
-    begin(model)
     assert all(store.location(ref) is not None and owner.mtm.token_of(ref) is not None for ref in (first,second))
     model_boundary(model, epoch_boundary=True)
-    assert len(store) == 0 and not owner.mtm.entries
+    assert len(store) == 2 and all(owner.mtm.token_of(ref) is not None for ref in (first, second))
 
 
 def test_reading_pending_name_survives_documents_then_defines_on_recurrence():
     from test_orders_learned import equality_fixture
     from test_presentation_memory import model_for
-    from PresentationMemory import begin
     from Meaning import ConceptualMeaning
     cs, store, alloc = equality_fixture()
     word = cs.interpret.lookup_word((4,7), (), form='label')
     ids = []
     for document in range(cs.concept_mint_count):
-        begin(model_for(cs,store))
         identity, row, order = cs.interpret.reading(word)
         key = cs.mtm.token_of(identity)
         assert cs.mtm.entries[key].pending and not cs.definitions.objects(word)
         assert order == alloc.order_of(word) == 0
         ids.append(identity)
         value = cs.similarity_codebook.lookup_rows(row)
-        index = store.append_meaning(ConceptualMeaning.from_description(value), order=order,
-            document_key=('document',document), sentence_index=0)
+        index = store.append_meaning(ConceptualMeaning.from_description(value),
+            )
         occurrence = store.occurrence_of(index)
         cs.mtm.bind(key, occurrence, kind=None, when=document, value=value, reading=word)
         cs.mtm.close(store, stream=0, references=(occurrence,))
@@ -200,7 +196,7 @@ def test_epoch_keeps_a_promoted_names_witnessed_order_after_deleting_its_occurre
     identity, row, order = cs.interpret.reading(word)
     value = cs.similarity_codebook.lookup_rows(row)
     index = store.append_meaning(ConceptualMeaning.from_description(value),
-        order=order, document_key='first', sentence_index=0)
+         )
     occurrence = store.occurrence_of(index)
     key = cs.mtm.token_of(identity)
     cs.mtm.bind(key, occurrence, kind=None, when=0, value=value, reading=word)
@@ -208,6 +204,9 @@ def test_epoch_keeps_a_promoted_names_witnessed_order_after_deleting_its_occurre
     before = cs.interpret.reading(word)
     assert before == (obj, cs._csw_row_of(obj), 1)
     for _ in range(2):
+        store.reset()
+        store.parts.retain(())
+        cs.mtm.restore(None)
         model_boundary(model, epoch_boundary=True)
         assert store.location(occurrence) is None and not cs.mtm.entries
         assert not cs.definitions.objects(word) and alloc.named_identities[word] == {obj}
@@ -216,7 +215,7 @@ def test_epoch_keeps_a_promoted_names_witnessed_order_after_deleting_its_occurre
         assert cs.interpret.reading(word) == before
         assert not cs.definitions.objects(word)  # a read alone creates no DEF
         index = store.append_meaning(ConceptualMeaning.from_description(value),
-            order=order, document_key='first', sentence_index=0)
+             )
         occurrence = store.occurrence_of(index)
         token = cs.mtm.token_of(('name',word))
         cs.mtm.bind(token, occurrence, kind=None, when=0, value=value, reading=word)
@@ -275,11 +274,11 @@ def test_order_zero_bind_keeps_its_introduction_and_event(monkeypatch, durable_m
     word_occurrences = {}
     for index, value in enumerate(entry.leaves):
         row = f.store.append_meaning(ConceptualMeaning.from_description(value),
-                                    order=0, document_key='words', sentence_index=index)
+                                     )
         word_occurrences[index] = f.store.occurrence_of(row)
     prepared = resolver.prepare(clause, plan)
     written = {}
-    row = f.store.write_clause(prepared, written_rows=written, document_key='order-zero')
+    row = f.store.write_clause(prepared, written_rows=written)
     introduction = introductions[0]['written_node']
     if durable_mention:
         # §50/§52: a durable semantic return leaves the separately recorded
@@ -305,8 +304,8 @@ def test_reading_close_follows_a_named_alias_after_merge(monkeypatch):
     plan = resolver.preview(clause, context(resolver, ()))
     prepared = resolver.prepare(clause, plan)
     written = {}
-    row = f.store.write_clause(prepared, document_key='merged-name',
-        sentence_index=0, written_rows=written)
+    row = f.store.write_clause(prepared,
+         written_rows=written)
     resolver.commit(plan, row, written, document='merged-name', position=0, training=False)
     assert pool.token_of(alias) == target
     assert pool.entries[target].pending and pool.entries[target].kind is None
@@ -343,7 +342,6 @@ def test_reading_event_cases_accept_native_part_rows_and_filter_open_questions(m
     symbol = f.store.parts.add(f.words['subject'][1], target, truth_plus=.6, truth_minus=.4)
     occurrence = ('sym', symbol)
     assert f.store.location(occurrence) == occurrence
-    assert f.store.row(occurrence)['kind'] == ('question' if pending else 'observation')
     f.cs.mtm.event(token, occurrence, verb=verb, role=0, when=2,
                    before=event.before)
     code = f.cs.similarity_codebook.W[f.cs._csw_row_of(verb)].clone()
@@ -370,7 +368,7 @@ def test_named_alias_follows_merge_restore_and_horizon_expiry():
     # §50 item 100g / §52 item 111: lexical names and occurrences need
     # their real dictionary/LTM owner, even in a lifecycle-only fixture.
     owner = _cs(nS=16, dim=4)
-    store = LTM0(4, capacity=4)
+    store = STM0(4, capacity=4, relation_capacity=8192)
     attach_clause_index(SimpleNamespace(), store, owner)
     object.__setattr__(owner, '_clause_store_ref', weakref.ref(store))
     word = owner.interpret.lookup_word([3], (), form='alias')
@@ -378,7 +376,7 @@ def test_named_alias_follows_merge_restore_and_horizon_expiry():
         owner.similarity_codebook.W[owner._csw_row_of(word)].fill_(1)
     occurrences = [store.occurrence_of(store.write_clause(
         Clause(ConceptualMeaning.from_description(torch.ones(4)), point=torch.ones(4), order=1),
-        document_key='alias', sentence_index=i)) for i in range(2)]
+        )) for i in range(2)]
     pool = MediumTermMemory(capacity=4, horizon=2, n_vectors=16)
     pool._owner = weakref.ref(owner)
     source = pool.named(word, value=torch.ones(4))
@@ -409,7 +407,7 @@ def test_forward_name_is_not_filled_by_its_own_defined_word():
         role_refs=(('sym',word),None,None), bindings={
             '_forward_references': ((0,word),), '_open_references': (('referent',0),)})
     store = cs._closed_clause_store()
-    index = store.append_meaning(meaning, kind='question', order=0)
+    index = store.append_meaning(meaning, )
     result = store.read_reference_bindings(index, meaning)
     assert open_slots(result) == (('referent',0),)
     assert dict(result.bindings)['_forward_references'] == ((0,word),)
@@ -424,13 +422,13 @@ def test_kept_word_mention_retains_its_pending_referent():
     reading = SimpleNamespace(word_ids=torch.tensor([word]),
         leaves=cs.similarity_codebook.lookup_rows([row]), symbol_where=None)
     store = cs._closed_clause_store()
-    root = store.append_idea(reading.leaves[0], document_key='first', sentence_index=0)
+    root = store.append_idea(reading.leaves[0], )
     occurrence = commit_read_words(cs, reading, batch=0, document='first', position=0,
         written={'root_occurrence': store.occurrence_of(root)})[0]
     index = store.location(occurrence)
     assert cs.mtm.entries[cs.mtm.token_of(occurrence)].pending
-    assert store.kind_of(index) == 'question'
-    assert float(store.truth_plus[index]) == float(store.truth_minus[index]) == 0.
+    assert store.row(index)['evidence'] == (0.,0.)
+    assert float(store.trust[index]) == 0.
     for meaning in (store.raw_meaning_of(index), store.meaning_of(index)):
         assert open_slots(meaning) == (('referent',0),)
         assert dict(meaning.bindings)['_forward_references'] == ((0,word),)
@@ -450,7 +448,7 @@ def test_thought_part_persists_a_named_token_through_its_native_reference(monkey
     _, row, _ = cs.interpret.reading(word)
     reading = SimpleNamespace(word_ids=torch.tensor([word]),
         leaves=cs.similarity_codebook.lookup_rows([row]), symbol_where=None)
-    root = store.append_idea(reading.leaves[0], document_key='first', sentence_index=0)
+    root = store.append_idea(reading.leaves[0], )
     occurrence = commit_read_words(cs, reading, batch=0, document='first', position=0,
         written={'root_occurrence': store.occurrence_of(root)})[0]
     key = cs.mtm.token_of(('name', word))
@@ -565,8 +563,8 @@ def test_defining_clause_promotes_a_named_reading_before_recurrence():
     identity, row, order = cs.interpret.reading(word)
     token = cs.mtm.token_of(identity)
     value = cs.similarity_codebook.lookup_rows(row)
-    index = store.append_meaning(ConceptualMeaning.from_description(value), order=order,
-                                document_key='first', sentence_index=0)
+    index = store.append_meaning(ConceptualMeaning.from_description(value),
+                                )
     occurrence = store.occurrence_of(index)
     cs.mtm.bind(token, occurrence, kind=None, when=0, value=value, reading=word)
     cs.mtm.close(store, stream=0, references=(occurrence,))

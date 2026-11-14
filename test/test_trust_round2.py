@@ -19,84 +19,10 @@ def through_operation(clause, name):
         operation=name, formal_name=name))
 
 
-def test_first_composition_keeps_its_operation_when_another_merges_poles(monkeypatch):
-    import Language
-    from ClauseRow import attach_clause_index
-    from Memory import LTM0
-    from PartsOfSpeech import PartsOfSpeech, formal_arguments
-    owner,bank,_,alloc = paired_fixture(meaning_pairs=4, capacity=160)
-    grammar = Language.Grammar()
-    grammar.load_from_grammar_file('complete.grammar')
-    speech = PartsOfSpeech(formal_arguments(grammar.rules_upward))
-    store = LTM0(owner.nDim,capacity=64)
-    language = SimpleNamespace(parts_of_speech=speech,
-        _compose_binary_rules=(), _compose_unary_rules=(),
-        _tree_layer=lambda arity: SimpleNamespace(ops=(), unary_ops=()))
-    attach_clause_index(SimpleNamespace(languageSpace=language),store,owner)
-    words = [owner.interpret.lookup_word([part],(),form=form) for part,form in ((4,'dax'),(7,'wug'))]
-    agreeing_views(owner,*words)
-    leaves = tuple(Composition(bank.lookup_rows(owner._csw_row_of(word)),reference=word,word_id=word) for word in words)
-    term = Composition(leaves[0].point,leaves,operation='disjunction',formal_name='disjunction')
-    clause = Clause(ConceptualMeaning.from_description(term.point),composition=term,point=term.point)
-    parts = store.parts
-    first = store.write_clause(clause, evidence=(.8,.2))
-    count = len(parts)
-    second = store.write_clause(through_operation(clause, 'conjunction'), evidence=(.3,.7))
-    row = store.location(first)[1]
-    assert second == first and len(parts) == count
-    assert parts.operation_seat[row] == speech.seats['disjunction'].concept
-    assert (float(parts.truth_plus[row]),float(parts.truth_minus[row])) == pytest.approx((.8,.7))
 
 
-def test_naming_clears_zero_use_operation_and_later_composition_cannot_restore_it(monkeypatch):
-    from IdentityRows import mint
-    f, words, clause, _ = operation_fixture(monkeypatch)
-    owner, parts = f.cs, f.store.parts
-    word = words[1]
-    obj = mint(owner, torch.eye(owner.nDim)[3])
-    agreeing_views(owner, obj, count=3)
-    left = Composition(owner.similarity_codebook.lookup_rows(owner._csw_row_of(obj)), reference=obj, order=0)
-    clause = replace(clause, composition=replace(clause.composition,
-        children=(left, clause.composition.children[1])))
-    clause = through_operation(clause, 'union')
-    address = f.store.write_clause(clause, evidence=(.8,.2))
-    row = f.store.location(address)[1]
-    assert parts.find(obj,word) == row
-    assert f.language.parts_of_speech.operation('union')['uses'] == 0
-    assert float(parts.evidence(row)[0]) == 0.
-    assert owner.interpret.define(word,obj,evidence=(.8,.2)) == row
-    assert parts.operation_seat[row] == -1
-    scale = min(positive_length(owner,obj),positive_length(owner,word))
-    torch.testing.assert_close(torch.stack(parts.evidence(row)),torch.tensor([.8,.2])*scale)
-    assert owner.definitions.objects(word) == (obj,)
-    # Once named, a complete clause may compress to an LTM0 point. Exercise
-    # the later write of this same pair at its relation writer explicitly.
-    assert parts.add(obj,word,truth_plus=.7,truth_minus=.1,
-        operation_seat=f.language.parts_of_speech.seats['union'].concept) == row
-    assert parts.operation_seat[row] == -1
-    assert owner.interpret.define(word,obj,evidence=(.9,.2)) == row
-    assert parts.operation_seat[row] == -1
 
 
-def test_attachment_without_occupations_preserves_owner_catalogue_and_effective_pairs(monkeypatch):
-    from ClauseRow import attach_clause_index
-    from PartsOfSpeech import PartsOfSpeech
-    f, _, clause, program = operation_fixture(monkeypatch)
-    speech,parts = f.language.parts_of_speech,f.store.parts
-    speech.observe_kept(program,f.binary,f.unary)
-    refresh(speech.owner)
-    address = f.store.write_clause(clause,evidence=(.8,.2))
-    parts.evidence(f.store.location(address)[1])
-    before = parts.effective_plus.clone(),parts.effective_minus.clone()
-    catalogue,owner = parts.operation_catalog,parts._occupation_owner()
-    attach_clause_index(SimpleNamespace(),f.store,f.cs)
-    assert parts.operation_catalog == catalogue and parts._occupation_owner() is owner
-    assert f.store._occupation_owner() is owner
-    parts.refresh_effective()
-    torch.testing.assert_close(parts.effective_plus,before[0])
-    torch.testing.assert_close(parts.effective_minus,before[1])
-    with pytest.raises(ValueError,match='catalogue'):
-        parts.configure_operations(PartsOfSpeech(('different_argin1',)))
 
 
 def operation_fixture(monkeypatch):
@@ -121,29 +47,6 @@ def operation_fixture(monkeypatch):
     return f, words, clause, program
 
 
-@pytest.mark.parametrize('uses', [1, 3])
-def test_kept_lift_uses_cap_only_the_effective_pair(monkeypatch, uses):
-    f, words, clause, program = operation_fixture(monkeypatch)
-    speech, parts = f.language.parts_of_speech, f.store.parts
-    for _ in range(uses):
-        address = f.store.write_clause(clause, evidence=(.8,.6))
-        speech.observe_kept(program, f.binary, f.unary)
-        refresh(speech.owner)
-    row = f.store.location(address)[1]
-    assert parts.operation_seat[row] == speech.seats['lift'].concept
-    measured = speech.operation('lift')
-    assert measured['uses'] == uses
-    expected_trust = -math.expm1(-uses/3)
-    assert measured['definiteness'] == pytest.approx((expected_trust, expected_trust))
-    trust = f.cs.similarity_codebook.trust
-    seat = f.cs._csw_row_of(speech.seats['lift'].concept)
-    views = int(trust.views[seat])
-    seat_trust = float(trust.agreement[seat]) / views * -math.expm1(-views / trust.trust_views)
-    assert positive_length(f.cs, speech.seats['lift'].concept) == pytest.approx(seat_trust)
-    endpoints = min(positive_length(f.cs, word) for word in words)
-    torch.testing.assert_close(torch.stack(parts.evidence(row)),
-                               torch.tensor([.8,.6])*min(endpoints, seat_trust, .1))
-    assert (float(parts.truth_plus[row]), float(parts.truth_minus[row])) == pytest.approx((.8,.6))
 
 
 def test_shared_word_teaches_another_argument_without_dividing_existing_authority(monkeypatch):
@@ -152,8 +55,8 @@ def test_shared_word_teaches_another_argument_without_dividing_existing_authorit
     speech.observe_kept(program, f.binary, f.unary)
     refresh(speech.owner)
     address = f.store.write_clause(clause, evidence=(.8,.6))
-    row = f.store.location(address)[1]
-    before = torch.stack(parts.evidence(row)).clone()
+    assert isinstance(address, int)
+    before = f.store.trust[:len(f.store)].clone()
     prior_seat = positive_length(f.cs, speech.seats['lift'].concept)
     revision = speech.revision
     learned_operation(speech, 'verb', (words[0],), (), count=1)
@@ -162,52 +65,11 @@ def test_shared_word_teaches_another_argument_without_dividing_existing_authorit
     radius = -math.expm1(-1/3)
     assert measure['uses'] == 1 and measure['definiteness'] == pytest.approx((radius, radius))
     assert positive_length(f.cs, speech.seats['lift'].concept) == prior_seat
-    torch.testing.assert_close(torch.stack(parts.evidence(row)), before)
+    torch.testing.assert_close(f.store.trust[:len(f.store)], before)
 
 
-def test_fixed_operation_interfaces_have_learned_concept_authority(monkeypatch):
-    f, words, _, _ = operation_fixture(monkeypatch)
-    speech = f.language.parts_of_speech
-    assert 'assertPart' not in speech.seats.by_name  # Not a configured primitive.
-    for operation in ('part','whole','equal','generic','implies','interpret','sign','bind'):
-        assert speech.seats[operation].fixed
-        assert positive_length(f.cs, speech.seats[operation].concept) == 0.
-    address = f.store.write_clause(Clause(ConceptualMeaning.from_description(torch.zeros(f.cs.nDim)),
-        relation='part', refs=(words[0], -1, words[1])), evidence=(.8,.6))
-    row = f.store.location(address)[1]
-    assert f.store.parts.operation_seat[row] == speech.seats['part'].concept
-    assert speech.seats['part'].fixed
-    scale = min(*(positive_length(f.cs, word) for word in words),
-                positive_length(f.cs, speech.seats['part'].concept))
-    torch.testing.assert_close(torch.stack(f.store.parts.evidence(row)), torch.tensor([.8,.6])*scale)
 
 
-def test_operation_counts_catalogue_column_and_pair_round_trip(monkeypatch):
-    f, _, clause, program = operation_fixture(monkeypatch)
-    speech, parts = f.language.parts_of_speech, f.store.parts
-    for _ in range(3):
-        speech.observe_kept(program, f.binary, f.unary)
-        refresh(speech.owner)
-    address = f.store.write_clause(clause, evidence=(.8,.6)); row = f.store.location(address)[1]
-    expected = torch.stack(parts.evidence(row)).clone()
-    speech_state, parts_state = copy.deepcopy(speech.state_dict()), copy.deepcopy(parts.state_dict())
-    concept_state = copy.deepcopy(f.cs.similarity_codebook.state_dict())
-    pointers = (parts.operation_seat.data_ptr(), parts.truth_plus.data_ptr())
-    parts.begin_epoch()
-    speech.observe_kept(program, f.binary, f.unary)
-    refresh(speech.owner)
-    parts.begin_epoch()
-    assert speech.operation('lift')['uses'] == 4  # Epoch restoration never unlearns uses.
-    assert parts.operation_seat[row] == speech.seats['lift'].concept
-    speech.load_state_dict(speech_state); parts.load_state_dict(parts_state)
-    f.cs.similarity_codebook.load_state_dict(concept_state)
-    assert speech.operation('lift')['uses'] == 3
-    assert pointers == (parts.operation_seat.data_ptr(), parts.truth_plus.data_ptr())
-    torch.testing.assert_close(torch.stack(parts.evidence(row)), expected)
-    assert parts.operation_catalog == speech.operations
-    bad = copy.deepcopy(parts_state); bad['operation_seat'][row] = -2
-    with pytest.raises(ValueError, match='operator concept reference'):
-        parts.load_state_dict(bad)
 
 
 def test_empty_occupants_count_uses_without_inventing_a_class(monkeypatch):

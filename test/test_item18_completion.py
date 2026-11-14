@@ -245,32 +245,6 @@ def test_percept_definition_uses_the_same_conjunction_lanes_as_the_field():
     torch.testing.assert_close(field[0, 0, 0], torch.tensor([0., 1.]))
 
 
-def test_mentioning_a_cover_is_an_observation_not_a_new_cover(monkeypatch):
-    from test_clause_acceptance import SentenceFixture
-    from DocumentCover import open_cover, segments
-    from Meaning import ConceptualMeaning
-    from Layers import MeaningExpectation
-    from dataclasses import replace
-    f = SentenceFixture(monkeypatch)
-    cover = open_cover(f.cs, f.store, stream=0, document='book')
-    row = f.store.location(cover)
-    meaning = f.store.raw_meaning_of(row)
-    mention = f.store.append_meaning(meaning, kind='observation', evidence=(1., 0.),
-        stream=0, document_key='reading', sentence_index=1)
-    assert f.store.kind_of(row) == 'cover'
-    assert f.store.kind_of(mention) == 'observation'
-    assert segments(f.store, 0)[mention] == {cover}
-    identity = dict(meaning.bindings)['_identity'][1]
-    prediction = MeaningExpectation(torch.zeros(3, f.store.nDim), torch.zeros(3),
-        symbol_keys=f.cs.similarity_codebook.lookup_rows([f.cs._csw_row_of(identity)]),
-        symbol_logits=torch.zeros(1, 2), symbol_ids=torch.tensor([identity]),
-        symbol_orders=torch.ones(1, dtype=torch.long))
-    expected = replace(ConceptualMeaning.from_description(torch.zeros(f.store.nDim)),
-        bindings=prediction.retained_bindings())
-    estimate = f.store.append_estimate(expected,
-        presence_logits=torch.zeros(3), source_occurrences=(cover,), stream=0, document='reading')
-    f.store.link_estimate_observation(estimate, mention)
-    assert f.store.expectation_pair(mention)['intended_occurrence'] == f.store.occurrence_of(mention)
 
 
 def test_mixed_thought_trials_keep_the_selected_history_frontier():

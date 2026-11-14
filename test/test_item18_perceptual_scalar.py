@@ -64,7 +64,7 @@ def test_intervals_generalize_their_percepts_and_have_distinct_codes(named_scala
     owner, store = model._concept_owner(), model.symbolSpace.ltm_store
     for form, value in (('alpha', 3.), ('beta', 2.)):
         word = owner.interpret.word_for_form(form)
-        row = store.append_idea(code(owner, value), document_key=('widen', form))
+        row = store.append_idea(code(owner, value))
         observe(owner, word, value, store.occurrence_of(row), stream=0)
     a, b = [owner.similarity_codebook.lookup_rows([owner._csw_row_of(objects[name])])[0]
             for name in ('alpha', 'beta')]
@@ -90,7 +90,7 @@ def test_point_and_native_read_share_the_collection_boundaries(named_scalar_mode
     model, objects = named_scalar_model
     owner, store = model._concept_owner(), model.symbolSpace.ltm_store
     word = owner.interpret.word_for_form('alpha')
-    row = store.append_idea(code(owner, 3.), document_key='second-endpoint')
+    row = store.append_idea(code(owner, 3.))
     observe(owner, word, 3., store.occurrence_of(row), stream=0)
     from NumericPercepts import feeling
     low, high = feeling(torch.tensor([1., 3.]))
@@ -134,8 +134,7 @@ def test_text_uses_the_same_percept_collection_reader(named_scalar_model, monkey
     for view in range(6):
         from MemberRead import read
         store = model.symbolSpace.ltm_store
-        row = store.append_idea(read(owner, ('bp', percept), ('bp', percept)),
-            document_key=('text-percept-view', view))
+        row = store.append_idea(read(owner, ('bp', percept), ('bp', percept)))
         identity = observe(owner, word, percept, store.occurrence_of(row), stream=0)
     calls = []
     shared = owner.basic_percepts.read_collection

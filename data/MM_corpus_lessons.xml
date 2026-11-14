@@ -29,10 +29,6 @@
     <nOutput>8</nOutput><nOutputDim>104</nOutputDim><synthesis>meronomy</synthesis><invertible>true</invertible>
   </PartSpace>
   <ConceptualSpace>
-    <gates>
-      <closedTrust>0.1</closedTrust>
-      <threshold>0.75</threshold>
-    </gates>
     <attentionPromotion>true</attentionPromotion><conceptualPi>true</conceptualPi>
     <nInput>8</nInput><nInputDim>136</nInputDim><nVectors>4096</nVectors><stmCapacity>8</stmCapacity>
     <nDim>136</nDim><nOutput>8</nOutput><nOutputDim>136</nOutputDim>

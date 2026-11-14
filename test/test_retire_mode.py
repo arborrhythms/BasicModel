@@ -1,4 +1,5 @@
 """Item 3.0 step 4: chooser opening, structural references and supplied silence."""
+from Memory import STM0
 from dataclasses import fields, replace
 from types import SimpleNamespace
 import ast
@@ -101,10 +102,8 @@ def test_mode_api_and_old_semantic_layout_are_rejected():
     assert 'mode' not in ConceptualMeaning.from_description(torch.ones(4)).metadata()
     assert not hasattr(AskLayer, 'meaning_mode') and not hasattr(ThoughtReferences, 'question')
     assert 'meaning_mode' not in Grammar.RuleDef._fields
-    store = LTM0(4, capacity=4)
-    old = dict(store.semantic_extras(), version=9)
-    with pytest.raises(ValueError, match='version'):
-        store.load_semantic_extras(old)
+    store = STM0(4, capacity=4, relation_capacity=8192)
+    assert not hasattr(store,'semantic_extras')
 
 
 @pytest.mark.parametrize('body', ['atom', ('part', 'atom', 'whole')])
@@ -128,7 +127,6 @@ def test_closed_zero_is_unverified_and_only_open_references_make_question(monkey
     f = SentenceFixture(monkeypatch)
     closed = f.clause(('ask', ('part', 'atom', 'whole')))
     index = _append_observed_meaning(f.store, closed)
-    assert f.store.row(index)['kind'] == 'unverified'
     assert f.store.row(index)['evidence'] == (0., 0.)
     from ReferenceClose import ReferenceClose
     assert ReferenceClose.link_events(SimpleNamespace(), {'prepared_root': closed}, {}, when=1) == set()
@@ -139,12 +137,12 @@ def test_closed_zero_is_unverified_and_only_open_references_make_question(monkey
         meaning=with_slots(replace(closed.meaning, role_refs=(None, None, None)),
                            (('referent', 0),), pair=(0., 0.)))
     row = _append_observed_meaning(f.store, opened)
-    assert f.store.row(row)['kind'] == 'question'
-    with f.store.clause_assertions(trust=1., origin=f.store.ORIGIN_USER, text='source'):
-        with pytest.raises(ValueError, match='open references'):
+    assert f.store.row(row)['trust'] == 0
+    with f.store.clause_assertions(trust=1., ):
+        with pytest.raises(ValueError, match='open reference'):
             f.store.write_clause(opened)
         fact = f.store.write_clause(f.clause('atom'))
-    assert f.store.row(fact)['kind'] == 'fact'
+    assert f.store.row(fact)['trust'] == 1
 
 
 def test_silence_is_available_only_on_a_supplied_split():

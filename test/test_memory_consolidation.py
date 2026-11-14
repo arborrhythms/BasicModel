@@ -17,18 +17,11 @@ from test_medium_term_memory import mention, snapshot, unchanged
 
 
 def kept(resolver, clause, frames=(), *, document='consolidation', position=0, stream=0):
-    from DocumentCover import begin_sentence
-    model = resolver.__dict__.setdefault('_cover_fixture_cursor', SimpleNamespace(
-        _concept_owner=lambda: resolver.components.owner))
-    model._sentence_sources = tuple(((document, position),) if b == stream else () for b in range(stream+1))
-    present = torch.zeros(stream+1, dtype=torch.bool)
-    present[stream] = True
-    begin_sentence(model, 0, present)
     plan = resolver.preview(clause, chunk_context(resolver, frames), stream=stream)
     prepared = resolver.prepare(clause, plan)
     written = {}
-    row = resolver.store.write_clause(prepared, document_key=document,
-        sentence_index=position, stream=stream, written_rows=written)
+    row = resolver.store.write_clause(prepared,
+          written_rows=written)
     resolver.commit(plan, row, written, document=document, position=position, training=False)
     return row, plan
 
@@ -41,80 +34,8 @@ def native(owner, point):
     return symbol
 
 
-def test_epoch_clears_the_readings_evidence_and_recognizes_its_learned_symbol():
-    from DocumentCover import open_cover
-    from Forgetting import model_boundary
-    from test_presentation_memory import model_for
-    resolver, store, atoms = fixture()
-    owner = resolver.components.owner
-    model = model_for(owner, store)
-    left, right = (native(owner, point) for point in atoms[:2])
-    value = atoms[0] + atoms[1]
-    tree = Composition(value, (Composition(atoms[0], reference=left),
-        Composition(atoms[1], reference=right)), operation='sum')
-    clause = Clause(ConceptualMeaning.from_description(value), point=value, composition=tree)
-    readings = []
-    storage = store.recurrence_codes.data_ptr()
-    for _ in range(2):
-        model_boundary(model, epoch_boundary=True)
-        assert len(store) == 0 and not store.recurrence_used.any()
-        assert not store.recurrence_documents.any() and not store.recurrence_weights.any()
-        assert store.recurrence_readings.eq(-1).all()
-        addresses = []
-        for n in range(3):
-            open_cover(owner, store, stream=0, document=('source', n))
-            row = store.write_clause(clause, document_key=('source', n), sentence_index=n,
-                                     stream=0, evidence=(1., 0.))
-            addresses.append(int(store.address_keys[row]))
-            consolidate(owner, store)
-        seat = int(store.recurrence_readings[row])
-        assert int(store.recurrence_documents[seat]) == 3
-        symbol = int(store.recurrence_symbols[seat])
-        assert symbol > 0
-        readings.append((addresses, symbol, owner._concept_allocator.next_id))
-    assert readings[0] == readings[1]
-    assert store.recurrence_codes.data_ptr() == storage
-    store.reset()
-    assert store.recurrence_symbols.eq(-1).all() and not store.recurrence_codes.any()
 
 
-@pytest.mark.parametrize('distinct', (False, True))
-def test_reading_recurrence_counts_distinct_documents_not_reobservations(distinct):
-    resolver, store, atoms = fixture()
-    owner = resolver.components.owner
-    left, right = (native(owner, atoms[n]) for n in (0, 1))
-    value = atoms[0] + atoms[1]
-    tree = Composition(value, (Composition(atoms[0], reference=left),
-        Composition(atoms[1], reference=right)), operation='sum')
-    clause = Clause(ConceptualMeaning.from_description(value), point=value, composition=tree)
-    from DocumentCover import open_cover
-    for n in range(3):
-        if n == 0 or distinct:
-            open_cover(owner, store, stream=0, document=('source', n if distinct else 0))
-        row = store.write_clause(clause, document_key=('source', n if distinct else 0), sentence_index=n,
-                                 stream=0, evidence=(1., 0.))
-        before = store.slots.clone(), store.parts.refs.clone()
-        consolidate(owner, store)
-        reading = int(store.recurrence_readings[row])
-        assert int(store.recurrence_documents[reading]) == (n + 1 if distinct else 1)
-        if n < 2 or not distinct:
-            assert int(store.recurrence_symbols[reading]) == -1
-        torch.testing.assert_close(store.slots, before[0], rtol=0, atol=0)
-        torch.testing.assert_close(store.parts.refs, before[1], rtol=0, atol=0)
-    if distinct:
-        symbol = int(store.recurrence_symbols[reading])
-        assert symbol > 0
-        from definition_fixtures import projected_content
-        torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(symbol)], projected_content(owner, symbol, value))
-        before = snapshot(resolver)
-        consolidate(owner, store)
-        unchanged(resolver, before)
-        from Memory import LTM0
-        restored = LTM0(12, capacity=512, percept_width=0)
-        restored.load_state_dict(store.state_dict())
-        restored.load_semantic_extras(store.semantic_extras())
-        assert int(restored.recurrence_symbols[reading]) == symbol
-        torch.testing.assert_close(restored.recurrence_codes, store.recurrence_codes)
 
 
 def test_token_promotes_at_three_sentences_with_the_occurrence_fold_and_keeps_its_state():
@@ -129,8 +50,8 @@ def test_token_promotes_at_three_sentences_with_the_occurrence_fold_and_keeps_it
         plan = resolver.preview(root, chunk_context(resolver, frames), stream=0)
         prepared = resolver.prepare(root, plan)
         written = {}
-        row = store.write_clause(prepared, document_key='consolidation', sentence_index=position,
-                                 stream=0, written_rows=written)
+        row = store.write_clause(prepared,
+                                  written_rows=written)
         resolver.commit(plan, row, written, document='consolidation', position=position, training=False)
         owner.mtm.promote_candidates(owner)
         return store.location(written[('occurrence', id(plan['items'][0]['written_node']))]), plan
@@ -139,18 +60,18 @@ def test_token_promotes_at_three_sentences_with_the_occurrence_fold_and_keeps_it
     frame = SituationFrame.from_row(store.row(first))
     second, _ = actual(mention(atoms[0]+atoms[1], mode='bind'), (frame,), position=1)
     assert pool.entries[token].symbol is None
-    # Reclosing the same source sentence increments accesses, not recurrence.
-    actual(mention(atoms[0]+atoms[1], mode='bind'), (frame,), position=1)
-    assert pool.entries[token].symbol is None
+    # A repeated sentence is a distinct retained observation (§17.21).
+    third, _ = actual(mention(atoms[0]+atoms[1], mode='bind'), (frame,), position=1)
+    assert pool.entries[token].symbol is not None
     # §50: the third mention contains the held description instead of only overlapping it.
-    third, _ = actual(mention(atoms[0]+atoms[1]+atoms[2], mode='bind'), (frame,), position=2)
+    fourth, _ = actual(mention(atoms[0]+atoms[1]+atoms[2], mode='bind'), (frame,), position=2)
     entry = pool.entries[token]
-    assert entry.occurrences == (token, store.occurrence_of(second), store.occurrence_of(third))
+    assert entry.occurrences == (token, store.occurrence_of(second), store.occurrence_of(third), store.occurrence_of(fourth))
     assert entry.kind == kind and entry.symbol is not None and entry.count == 4
-    expected = atoms[0] + (2*atoms[1] + atoms[2]) / 3
+    expected = atoms[0] + 2*atoms[1]/3
     torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(entry.symbol)], expected)
     assert resolver._derivation_symbol(token) == entry.symbol
-    changed = store.append_idea(atoms[3], time=False, document_key='changed-state')
+    changed = store.append_idea(atoms[3])
     pool.event(token, store.occurrence_of(changed), verb=verb, role=0, when=50,
         before=pool.value_of(token))
     consolidate(owner, store)
@@ -165,7 +86,7 @@ def test_token_promotes_at_three_sentences_with_the_occurrence_fold_and_keeps_it
 def test_many_mentions_in_one_sentence_do_not_promote():
     resolver, store, atoms = fixture()
     owner, pool = resolver.components.owner, resolver.components.owner.mtm
-    rows = [store.write_clause(mention(atoms[n]), document_key='one', sentence_index=0)
+    rows = [store.write_clause(mention(atoms[n]), )
             for n in range(3)]
     token = store.occurrence_of(rows[0])
     pool.open(token, kind=None, value=atoms[0], when=1)
@@ -380,7 +301,7 @@ def test_capacity_eviction_during_close_drops_only_the_evicted_tokens_history(mo
     plan = resolver.preview(clause, chunk_context(resolver, ()))
     prepared = resolver.prepare(clause, plan)
     written = {}
-    row = f.store.write_clause(prepared, written_rows=written, document_key='capacity-close', sentence_index=0)
+    row = f.store.write_clause(prepared, written_rows=written, )
     before = snapshot(resolver)
     resolver.commit(plan, row, written, document='capacity-close', position=0, training=False)
     names = [written[('occurrence', id(item['written_node']))] for item in plan['items']]
@@ -435,7 +356,7 @@ def test_retiring_a_token_keeps_another_tokens_event_until_row_reclamation(retir
     pool._owner = weakref.ref(resolver.components.owner)
     arow, _ = kept(resolver, mention(atoms[0]), position=0)
     brow, _ = kept(resolver, mention(atoms[1]), position=1)
-    crow = store.write_clause(mention(atoms[2]), document_key='consolidation', sentence_index=2)
+    crow = store.write_clause(mention(atoms[2]), )
     a, b, c = map(store.occurrence_of, (arow, brow, crow))
     pool.event(a, b, verb=1, role=2, when=50)
     events = pool.entries[a].events
@@ -451,56 +372,3 @@ def test_retiring_a_token_keeps_another_tokens_event_until_row_reclamation(retir
     unchanged(resolver, before)
     pool.forget(b)
     assert not pool.entries[a].events
-
-
-def test_angular_recurrence_admits_drift_and_keeps_evidence_weighted_content():
-    from MemoryConsolidation import recurrence_groups
-    from DocumentCover import open_cover
-    resolver, store, atoms = fixture()
-    owner = resolver.components.owner
-    first = native(owner, atoms[0])
-    pointers = tuple(getattr(store, name).data_ptr() for name in
-        ('recurrence_codes', 'recurrence_documents', 'recurrence_readings'))
-    rows = []
-    for n, weight in enumerate((.25, .5, .75)):
-        open_cover(owner, store, stream=0, document=('angle', n))
-        value = atoms[0] + .05*n*atoms[1]
-        meaning = replace(ConceptualMeaning.from_description(value), role_refs=(('sym', first), None, None))
-        rows.append(store.append_meaning(meaning, evidence=(weight, 0.), document_key=('angle', n),
-                                        sentence_index=n, stream=0))
-        recurrence_groups(store)
-    seat = int(store.recurrence_readings[rows[0]])
-    assert store.recurrence_readings[rows].tolist() == [seat]*3
-    assert int(store.recurrence_documents[seat]) == 3
-    assert store._recurrence_identities[seat] == ('sym', first)
-    weights = store.truth_plus[rows] + store.truth_minus[rows]
-    expected = (store.slots[rows] * weights[:, None]).sum(0) / weights.sum()
-    torch.testing.assert_close(store.recurrence_codes[seat], expected)
-    before = store.recurrence_codes.clone(), store.recurrence_weights.clone()
-    recurrence_groups(store)
-    torch.testing.assert_close(store.recurrence_codes, before[0], rtol=0, atol=0)
-    torch.testing.assert_close(store.recurrence_weights, before[1], rtol=0, atol=0)
-    separate = store.append_idea(atoms[2], trust=1.)
-    recurrence_groups(store)
-    assert int(store.recurrence_readings[separate]) != seat
-    assert pointers == tuple(getattr(store, name).data_ptr() for name in
-        ('recurrence_codes', 'recurrence_documents', 'recurrence_readings'))
-
-
-def test_recurrence_time_is_ignored_and_compaction_keeps_assignments():
-    from MemoryConsolidation import recurrence_groups
-    from Memory import LTM0
-    store = LTM0(12, capacity=8, percept_width=8)
-    value = torch.tensor([1., 0., 0., 0., 0., 0., 0., 0., .5, 0., 0., 0.])
-    a = store.append_idea(value, trust=1., document_key='time-a')
-    b = store.append_idea(value, trust=1., document_key='time-b')
-    store.slots[a, 4:8] = 3.
-    store.slots[b, 4:8] = -2.
-    recurrence_groups(store)
-    seat = int(store.recurrence_readings[a])
-    assert int(store.recurrence_readings[b]) == seat
-    assert store.recurrence_codes[seat, 4:8].eq(0).all()
-    store.compact_rows([b])
-    recurrence_groups(store)
-    assert int(store.recurrence_readings[0]) == seat
-    assert store.recurrence_readings[1:].eq(-1).all()

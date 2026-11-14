@@ -14,10 +14,11 @@ class Generated:
     field: ConceptualField
     references: tuple = ()
     realization_field: ConceptualField | None = None
+    extension: tuple = ()
 
     def texts(self, surface):
         decoded = surface[:, 0].detach().long().cpu().tolist()
-        spans = self.field.where.cpu().tolist()
+        spans = (self.field if self.realization_field is None else self.realization_field).where.cpu().tolist()
         return tuple(b' '.join(bytes(row[lo:hi]) for lo, hi in extents if hi > lo).decode('utf8', 'replace')
                      for row, extents in zip(decoded, spans))
 
@@ -51,7 +52,7 @@ def object_identity(owner, reference):
     return None
 
 
-def generated(model, words, counts, truncated, bank, trace, *, when=None, references=()):
+def generated(model, words, counts, truncated, bank, trace, *, when=None, references=(), depths=None):
     from SentenceUnderstanding import readback_scores
     owner = model._concept_owner()
     B, W, D = words.shape
@@ -117,4 +118,9 @@ def generated(model, words, counts, truncated, bank, trace, *, when=None, refere
     emitted = torch.arange(W, device=words.device)[None] < counts[:, None]
     field = stimulate(owner, words * emitted[...,None], where=where, when=when)
     realization = stimulate(owner, native * active[...,None], where=where, when=when)
-    return Generated(words, counts, truncated, bank, trace, field, tuple(map(tuple, said)), realization)
+    from Extension import generated as extend_generated, stored_field
+    realization = stored_field(owner, realization)
+    if depths is None:
+        raise ValueError('an emitted field requires the native generate walk root count')
+    extension, field = extend_generated(model,trace[0],counts,depths,field,references)
+    return Generated(words, counts, truncated, bank, trace, field, tuple(map(tuple, said)), realization, extension)

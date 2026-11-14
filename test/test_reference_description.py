@@ -38,7 +38,7 @@ def close_sentence(resolver, clause):
     plan = resolver.preview(clause, chunk_context(resolver, ()))
     kept = resolver.prepare(clause, plan)
     written = {}
-    row = resolver.store.write_clause(kept, document_key='description', sentence_index=0,
+    row = resolver.store.write_clause(kept,
                                       written_rows=written)
     resolver.commit(plan, row, written, document='description', position=0, training=False)
     frame = replace(SituationFrame.from_row(resolver.store.row(row)),

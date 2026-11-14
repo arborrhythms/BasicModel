@@ -171,5 +171,5 @@ def test_new_definitions_do_not_alias_later_sentence_identities():
     model = _make_model_provisioned(_SERIAL_CONFIG)
     store = model.symbolSpace.ltm_store
     symbols = set(store.parts.refs[store.relations('definition')].reshape(-1).tolist())
-    rows = store.rows_of_origin(store.ORIGIN_PROVISIONED)
-    assert symbols.isdisjoint(store.address_keys[rows].tolist())
+    rows = store.trust[:len(store)].ne(0).nonzero().flatten().tolist()
+    assert {('sym',i) for i in symbols}.isdisjoint(store.occurrence_of(row) for row in rows)

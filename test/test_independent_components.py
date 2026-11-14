@@ -1,9 +1,9 @@
 """Item 6.5 mechanism certificates; no passing seed is selected."""
+from Memory import STM0
 from order_fixtures import force_order
 import itertools
 from types import SimpleNamespace
 from dataclasses import replace
-from IdentityRows import access_count
 
 import pytest
 import torch
@@ -34,25 +34,6 @@ def test_definedness_keeps_direction_input_uncertainty_and_evidence_separate():
         torch.testing.assert_close(input_value @ code, code.new_tensor(.3 * m))
 
 
-def test_row_definedness_survives_rewitness_and_checkpoint_without_changing_truth():
-    from Memory import LTM0
-    from Meaning import ConceptualMeaning
-    from MeaningCodes import sentence_key
-    store = LTM0(8, capacity=4)
-    meaning = ConceptualMeaning.from_description(torch.ones(8))
-    key = sentence_key([b'a', b'cat'])
-    args = dict(document_key='fixture', sentence_index=0, content_key=key, evidence=(1., 1.))
-    row = store.append_meaning(meaning, **args)
-    first = store.identity_code(row, 64, 3)
-    assert first.norm().item() == pytest.approx(1 / 5)
-    store.append_meaning(meaning, **args)
-    second = store.identity_code(row, 64, 3)
-    torch.testing.assert_close(second / second.norm(), first / first.norm())
-    assert second.norm().item() == pytest.approx(2 / 6)
-    assert store.truth_plus[row] == store.truth_minus[row] == 1
-    restored = LTM0(8, capacity=4)
-    restored.load_state_dict(store.state_dict())
-    torch.testing.assert_close(restored.identity_code(row, 64, 3), second)
 
 
 
@@ -235,9 +216,9 @@ def test_unretained_innovation_cannot_change_population_cost(monkeypatch):
     from Memory import LTM0
     from Meaning import ConceptualMeaning
     columns = component_fixture()
-    store = LTM0(4, capacity=8)
+    store = STM0(4, capacity=8, relation_capacity=8192)
     meaning = ConceptualMeaning.from_description(torch.eye(4)[0])
-    row = store.append_meaning(meaning, document_key='retained', sentence_index=0, kind='observation', evidence=(1., 0.))
+    row = store.append_meaning(meaning,    evidence=(1., 0.))
     owner = columns.owner
     owner._closed_clause_store = lambda: store
     owner._order0_inventory_row = lambda physical: physical < 4
@@ -249,7 +230,7 @@ def test_unretained_innovation_cannot_change_population_cost(monkeypatch):
     prediction = SimpleNamespace(roles=torch.zeros(3, 4))
     columns.begin_forward()
     expected = columns.cost([meaning], [prediction], torch.tensor([True]))
-    retained = int(store.address_keys[row])
+    retained = store.row_name(row)
     absent = retained + 100
     columns._innovations[absent] = torch.ones(3 * columns.capacity)
     columns.begin_forward()
@@ -357,7 +338,6 @@ def test_native_admission_optimizer_ownership_and_checkpoint(tmp_path, monkeypat
         restored.load_state_dict(state)
         assert restored.individual_ids == (identity,)
         torch.testing.assert_close(restored.column_point(identity), columns.column_point(identity))
-        assert access_count(owner, identity) == 1
         path = tmp_path / 'admitted-columns.ckpt'
         model.save_weights(path)
         restored_model, _ = Models.BaseModel.from_config(str(config), data=TheData)
@@ -366,7 +346,6 @@ def test_native_admission_optimizer_ownership_and_checkpoint(tmp_path, monkeypat
             restored_owner = restored_model._concept_owner()
             assert restored_owner.components.individual_ids == (identity,)
             assert restored_owner._csw_row_of(identity) == owner._csw_row_of(identity)
-            assert access_count(restored_owner, identity) == 1
             torch.testing.assert_close(restored_owner.components.column_point(identity),
                                        columns.column_point(identity))
         finally:

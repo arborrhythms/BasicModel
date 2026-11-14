@@ -66,16 +66,19 @@ def _make_ws(batch=2, nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
                                              [nSymbols, conceptDim])
     symbolic_space  = Spaces.WholeSpace(inputShape, spaceShape, outputShape)
     Language.TheGrammar._configured = False
-    ss = Language.SymbolSubSpace(
-        perceptualSpace=percept_space,
-        conceptualSpace=concept_space,
-        wholeSpace=symbolic_space,
-        nPercepts=nPercepts,
-        nConcepts=nSymbols,
-        nSymbols=nSymbols,
-        concept_dim=conceptDim,
-        symbol_dim=symbolDim,
-    )
+    from memory_fixtures import working_symbol_store
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(Language, "LTM0", working_symbol_store)
+        ss = Language.SymbolSubSpace(
+            perceptualSpace=percept_space,
+            conceptualSpace=concept_space,
+            wholeSpace=symbolic_space,
+            nPercepts=nPercepts,
+            nConcepts=nSymbols,
+            nSymbols=nSymbols,
+            concept_dim=conceptDim,
+            symbol_dim=symbolDim,
+        )
     # ``ensure_microbatch`` is the per-row state entry point post-2026-05-13:
     # it sizes body-side state (B*K) AND the B-sized lifecycle fields
     # (``_sentence_completed``, discourse) together.  Passing K=1 makes B*K == B

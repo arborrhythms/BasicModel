@@ -53,7 +53,8 @@ class ReferenceClose(nn.Module):
                 return int(reference[1])
             if len(reference) != 3 or reference[:2] != ('ltm', self.store.address_domain):
                 return None
-            return int(reference[2])
+            from Occurrence import operand_name
+            return operand_name(reference[2])
         return reference
 
     def origin_reference(self, tag, address):
@@ -107,7 +108,7 @@ class ReferenceClose(nn.Module):
             return None
         if isinstance(reference, tuple) and reference[:1] in (('candidate',), ('name',)):
             return self.address(reference)
-        if isinstance(reference, int) and (self.store is None or self.store.index_of_row(reference) is None):
+        if isinstance(reference, int) and reference > 0:
             return None if self.components.owner.interpret.no_object(reference) else reference
         if isinstance(reference, tuple) and reference[:1] == ('sym',):
             return None if self.components.owner.interpret.no_object(reference[1]) else reference[1]
@@ -123,7 +124,7 @@ class ReferenceClose(nn.Module):
             mtm = self.components.owner.mtm
             token = mtm.token_of(self.store.occurrence_of(location))
             if token is None:
-                identity = dict(self.store.raw_meaning_of(location).bindings).get('_identity')
+                identity = self.store.referent_of(location)
                 token = mtm.token_of(identity)
             if token is not None:
                 kind = mtm.entries[token].kind
@@ -164,7 +165,7 @@ class ReferenceClose(nn.Module):
         if token is None:
             return None
         entry = mtm.entries[token]
-        value = self.store.point_of_row(token[-1])
+        value = self.store.point_of_row(token)
         if value is None:
             return None
         value = value.detach().clone()
@@ -175,7 +176,7 @@ class ReferenceClose(nn.Module):
                 size = min(value.numel(), kind.numel())
                 value[:size] = torch.maximum(value[:size], kind[:size].to(value))
         for occurrence in entry.occurrences[1:]:
-            point = self.store.point_of_row(occurrence[-1])
+            point = self.store.point_of_row(occurrence)
             if point is not None:
                 size = min(value.numel(), point.numel())
                 value[:size] = torch.maximum(value[:size], point[:size].to(value))
@@ -255,9 +256,6 @@ class ReferenceClose(nn.Module):
         if include_pool:
             for key in pool.entries:
                 row = store.location(key)
-                if (stream is not None and isinstance(row,int) and bool(store.stream[row].any())
-                        and (stream >= store.stream.shape[1] or not bool(store.stream[row,stream]))):
-                    continue
                 tokens.append(key)
         # A retained, unpooled idea can start a collection on its next link.
         from MemoryLink import chunk_candidates
@@ -288,7 +286,7 @@ class ReferenceClose(nn.Module):
                 event = events[-1] if events else None
                 records[occurrence[-1]] = location, dict(role=0 if event is None else event.role,
                     position=(position,use), identity=entry.native or key,token=key,
-                    value=value, mention_value=store.point_of_row(occurrence[-1]),
+                    value=value, mention_value=store.point_of_row(occurrence),
                     predicate=None if event is None else event.verb)
         return records
 
@@ -305,7 +303,7 @@ class ReferenceClose(nn.Module):
                     records[identity] = ('sym', identity), dict(role=0,
                         position=(position, 0), identity=identity)
             activations = list(frame.activations)
-            location = store.location(frame.row_id)
+            location = store.location(frame.occurrence) if frame.occurrence is not None else None
             if (isinstance(location, int) and (mtm.token_of(store.occurrence_of(location)) is not None
                                                 or store.order_of_row(location) == 1)
                     and not any(item[0] == store.occurrence_of(location) for item in activations)):
@@ -349,26 +347,27 @@ class ReferenceClose(nn.Module):
         return carrier(self.components.owner, value)
 
     def exclusion_pairs(self):
-        """Coordinate exclusions witnessed by eight uses on each side."""
+        """Exclusions witnessed by eight retained occurrences on each side.
+
+        Every retained idea counts, irrespective of native order, reference
+        resolution or how it was produced. Reads do not create observations.
+        """
         from itertools import combinations
+        from IdentityRows import coordinates
         observed = []
         for row in range(len(self.store)):
-            if self.store.order_of_row(row) != 1:
-                # A kept mention is still an observation of an individual when
-                # its stored referent is the concrete description it came from.
-                meaning = self.store.raw_meaning_of(row)
-                if meaning is None or not dict(meaning.bindings).get('_reference_sites'):
-                    continue
-            value = self.coordinates(self.store.slots[row])
-            observed.append((set((value >= .3).nonzero().flatten().tolist()),
-                             int(self.store.access_count[row])))
+            # An idea need not be an identity region. Count its positive
+            # conceptual coordinates without applying the identity chart's
+            # bounds to arbitrary kept ideas (including perceptual readings).
+            value = coordinates(self.components.owner, self.store.slots[row], region=False)
+            observed.append(set((value >= .3).nonzero().flatten().tolist()))
         counts = {}
-        for members, count in observed:
+        for members in observed:
             for coordinate in members:
-                counts[coordinate] = counts.get(coordinate, 0) + count
+                counts[coordinate] = counts.get(coordinate, 0) + 1
         return tuple((x, y) for x, y in combinations(sorted(
             coordinate for coordinate, count in counts.items() if count >= 8), 2)
-            if not any(x in members and y in members for members, _ in observed))
+            if not any(x in members and y in members for members in observed))
 
     def exclusion_query(self):
         """Read observed exclusion once, for grouping or a bind's candidates."""
@@ -408,7 +407,7 @@ class ReferenceClose(nn.Module):
                 return point(self.components.owner, identity)
             if identity in self.components.owner.mtm.entries:
                 index = self.store.location(identity)
-                return self.store.point_of_row(identity[-1]) if isinstance(index, int) else self.token_value(identity)
+                return self.store.point_of_row(identity) if isinstance(index, int) else self.token_value(identity)
             return None
         groups = {}
         for address, (location, original) in records.items():
@@ -419,7 +418,7 @@ class ReferenceClose(nn.Module):
             native = baseline(identity)
             observed = context.get('mention_value',context.get('value'))
             if observed is None:
-                observed = self.store.point_of_row(address) if isinstance(location, int) else native
+                observed = self.store.point_of_row(self.store.occurrence_of(location)) if isinstance(location, int) else native
             if observed is None:
                 continue
             context['content'] = self.coordinates(observed)
@@ -744,7 +743,7 @@ class ReferenceClose(nn.Module):
                           for location, context in records.values()
                           if (context.get('identity') == identity or
                               (isinstance(identity, tuple) and location ==
-                               self.store._index_occurrences.get(identity)))
+                               self.store.location(identity)))
                           and (not isinstance(location, int) or
                                identity not in self.components.owner.mtm.entries or
                                self.store.occurrence_of(location) in
@@ -966,8 +965,7 @@ class ReferenceClose(nn.Module):
         result, store, mtm = set(), self.store, self.components.owner.mtm
         for address in store._forward_addresses(names) if store is not None and names else ():
             index = store.location(address)
-            if not isinstance(index, int) or (stream is not None and bool(store.stream[index].any())
-                    and (stream >= store.stream.shape[1] or not bool(store.stream[index, stream]))):
+            if not isinstance(index, int):
                 continue
             value = store.raw_meaning_of(index)
             for role, name in bindings(value).get('_forward_references', ()):
@@ -978,6 +976,8 @@ class ReferenceClose(nn.Module):
                     result.add(name)
         return tuple(sorted(result))
 
+    from MemoryActivity import read_stream as _read_stream
+    @_read_stream('stream')
     def preview(self, clause, chunks, *, document=None, position=None, stream=None, departure=-1, reading=None):
         """One decision per constituent, reading the retained chunk field."""
         records = self.accessible(chunks,stream=stream,include_pool=True)
@@ -1196,9 +1196,6 @@ class ReferenceClose(nn.Module):
         for address in sorted(store._forward_addresses(names)) if store is not None and names else ():
             location = store.location(address)
             if not isinstance(location, int):
-                continue
-            if (stream is not None and bool(store.stream[location].any())
-                    and (stream >= store.stream.shape[1] or not bool(store.stream[location, stream]))):
                 continue
             value = store.raw_meaning_of(location)
             data = bindings(value)
@@ -1673,7 +1670,7 @@ class ReferenceClose(nn.Module):
                         selected = native_token
                     elif mtm.token_of(selected) is None:
                         bind(native_token, selected, kind=self._derivation_symbol(selected),
-                            value=self.store.point_of_row(selected[-1]), when=when)
+                            value=self.store.point_of_row(selected), when=when)
                 else:
                     selected = None
             node = plan.get('arrival_written', {}).get(selected)
@@ -1701,7 +1698,7 @@ class ReferenceClose(nn.Module):
                     pass
                 else:
                     bind(token, selected, kind=self._derivation_symbol(selected), when=when,
-                             value=self.store.point_of_row(selected[-1]))
+                             value=self.store.point_of_row(selected))
             item['reference'] = selected if selected is not None else token
             if selected is not None:
                 refinements.append(selected)
@@ -1937,15 +1934,18 @@ class ReferenceClose(nn.Module):
                 if is_action and basis is None and verb_action is not None:
                     basis = verb_action.groups.assignments.get(int(verb), -1)
                 result = record.get('result')
-                mtm.event(token, event, verb=int(verb), role=role, when=when, timeline=timeline,
-                    before=record.get('before') if role == 0 and changed else None,
-                    verb_meaning=record.get('verb_meaning') if is_action else None,
-                    basis=basis if is_action else None,
-                    case_value=record.get('case_value') if role == 0 else None,
-                    modifiers=record.get('modifiers', ()) if role == 0 and alternative else ())
+                witnesses = written.get('occurrence_groups', {}).get(event, (event,))
+                for witness in witnesses:
+                    mtm.event(token, witness, verb=int(verb), role=role, when=when, timeline=timeline,
+                        before=record.get('before') if role == 0 and changed else None,
+                        verb_meaning=record.get('verb_meaning') if is_action else None,
+                        basis=basis if is_action else None,
+                        case_value=record.get('case_value') if role == 0 else None,
+                        modifiers=record.get('modifiers', ()) if role == 0 and alternative else ())
                 referenced.add(token)
                 if not alternative and role == 0:
-                    new_events[event] = plan.get('link_choices', {}).get(('event', record['action']), Ellipsis)
+                    for witness in witnesses:
+                        new_events[witness] = plan.get('link_choices', {}).get(('event', record['action']), Ellipsis)
                 if role == 0 and changed:
                     values = record.get('timeline_values') if alternative else record['values']
                     if values is None:

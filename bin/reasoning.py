@@ -9,7 +9,7 @@ from typing import Any, Optional
 import torch
 
 from Spaces import ConceptualSpace
-from Memory import LTM0
+from Memory import IdeaRows
 from Meaning import ConceptualMeaning
 from Taxonomy import capture_taxonomy, concept_reference
 
@@ -135,65 +135,27 @@ class TruthGroundedReasoner:
         return float(torch.linalg.vector_norm(a[:n] - b[:n]))
 
     def existence_evidence(self, description, *, max_records=None, work=None):
-        """Ground the full description in accepted LTM facts, without chaining.
-
-        Match each occupied role at the same width and preserve bindings,
-        semantic scope and referenced constituents. Signed identity attenuates
-        the stored degree; the least-matching role bounds that degree. Keep
-        positive and negative evidence independently and never sum repeated
-        evidence. Concept activation is not evidence that a referent exists.
-        This is a hard lookup, with no derivative through its matching choices.
-        """
+        """The public face of the same extension-based existence read."""
+        from Queries import ThoughtLTMCapability
+        from QueryWork import QueryWorkBudget
         if max_records is not None and (type(max_records) is not int or max_records < 0):
             raise ValueError("existence max_records must be a non-negative integer")
         requested = ConceptualMeaning.from_description(description)
-        candidates, incomplete = [], []
-        diagnostics, scanned = [], 0
-        support_true = support_false = 0.0
         store = self.reasoning_store()
-        if isinstance(store, LTM0):
-            count = len(store) if max_records is None else min(len(store), max_records)
-            if count < len(store):
-                diagnostics.append("capture_limit")
-            for i in range(count):
-                if work is not None and not work.consume("record"):
-                    diagnostics.append("work_budget")
-                    break
-                scanned += 1
-                if store.kind_of(i) != 'fact':
-                    continue
-                row = store.row(i)
-                fact = row["meaning"]
-                if fact is None or not row["metadata_complete"]:
-                    incomplete.append(row["occurrence"])
-                    continue
-                if fact.roles.shape != requested.roles.shape:
-                    continue
-                if not torch.equal(fact.role_mask.cpu(), requested.role_mask.cpu()):
-                    continue
-                if (fact.bindings != requested.bindings or fact.scope != requested.scope
-                        or fact.role_refs != requested.role_refs):
-                    continue
-                strengths = [self.equal(requested.roles[role].to(fact.roles), fact.roles[role])
-                             for role in requested.role_mask.nonzero(as_tuple=True)[0].tolist()]
-                match = min(strengths)
-                if match < self.tau_id:
-                    continue
-                signed = float(row["trust"]) * match
-                if fact.polarity != requested.polarity:
-                    signed = -signed
-                support_true = max(support_true, signed)
-                support_false = max(support_false, -signed)
-                candidates.append({"row": i, "occurrence": row["occurrence"],
-                                   "origin": row["origin"], "text": row["text"],
-                                   "kind": "fact", "match": match,
-                                   "signed_support": signed, "trust": float(row["trust"]),
-                                   "bindings": fact.bindings, "scope": fact.scope,
-                                   "role_refs": fact.role_refs})
-        return {"support_true": support_true, "support_false": support_false,
-                "candidates": candidates, "incomplete_evidence": incomplete,
-                "incomplete": tuple(diagnostics), "records_scanned": scanned,
-                "meaning": requested}
+        if work is None:
+            work = QueryWorkBudget(getattr(self.model, 'attention_budget', 32))
+        limit = work.remaining if max_records is None else max_records
+        reader = ThoughtLTMCapability(store=lambda:store, equal=self.equal, tau_id=self.tau_id)
+        result = reader.existence_evidence(requested, max_records=limit, work=work)
+        candidates = []
+        for lane, witnesses in enumerate(result['existence_witnesses']):
+            degree = result['existence'][lane]
+            for reference in witnesses:
+                row = store.location(reference)
+                trust = float(store.trust[row])
+                candidates.append(dict(row=row, occurrence=reference, trust=trust,
+                    match=degree/abs(trust), signed_support=degree if lane == 0 else -degree))
+        return dict(result, candidates=candidates, incomplete_evidence=())
 
     def exist(self, X):
         """Conceptual presence leaves its content and pair, never a scalar."""
@@ -221,8 +183,6 @@ class TruthGroundedReasoner:
                 idxs = idxs.tolist() if hasattr(idxs, "tolist") else list(idxs)
                 for i in idxs:
                     row = store.row(int(i))
-                    if row['kind'] == 'episode':
-                        continue
                     s = self.equal(X, row["point"])
                     if best is None or s > best["match"]:
                         best = {"idea": row["point"], "trust": float(row["trust"]),
@@ -308,10 +268,10 @@ class TruthGroundedReasoner:
         """The symbolic face reads the proposition's ended evidence pair."""
         from Queries import ThoughtLTMCapability
         from QueryWork import QueryWorkBudget
-        from Memory import LTM0
+        from Memory import IdeaRows
         store = self.reasoning_store()
         meter = QueryWorkBudget(getattr(self.model, 'attention_budget', 32))
-        if isinstance(store, LTM0):
+        if isinstance(store, IdeaRows):
             reader = ThoughtLTMCapability(store=lambda:store, equal=self.equal, tau_id=self.tau_id)
             if isinstance(A, tuple) and A and A[0] == 'ltm':
                 return reader.end_evidence(A, max_records=meter.remaining, work=meter)

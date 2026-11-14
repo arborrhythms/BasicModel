@@ -21,7 +21,7 @@ def test_scalar_boxes_are_counted_native_definitions(tmp_path,monkeypatch):
         for item in lesson['lessons']:
             if item['scalar'] is None:continue
             point=code(owner,item['scalar'])
-            row=store.append_idea(point,trust=1.,document_key=('scalar-test',repeat,item['text']),sentence_index=repeat)
+            row=store.append_idea(point,trust=1.,)
             observe(owner,words[item['text']],item['scalar'],store.occurrence_of(row),stream=0)
     objects=[]
     for item in lesson['lessons'][:3]:
@@ -72,8 +72,7 @@ def test_scalar_perception_keeps_percept_and_concept_references(tmp_path,monkeyp
             model.wholeSpace.property_rows_for_bytes(item['text']),key=item['text'])
         if item['scalar'] is None:continue
         for repeat in range(lesson['repetitions']):
-            row=store.append_idea(code(owner,item['scalar']),trust=1.,
-                document_key=('lesson',word,repeat))
+            row=store.append_idea(code(owner,item['scalar']),trust=1.)
             observe(owner,word,item['scalar'],store.occurrence_of(row),stream=0)
     model.eval()
     try:
@@ -103,7 +102,7 @@ def test_scalar_only_presentation_closes_and_reconstructs_its_modalities(tmp_pat
     word, *_ = owner.interpret_word(model.perceptualSpace.percept_store.spell_out(b'one'),
         model.wholeSpace.property_rows_for_bytes('one'), key='one')
     for repeat in range(6):
-        row = store.append_idea(code(owner, 1.), trust=1., document_key=('scalar-only', repeat))
+        row = store.append_idea(code(owner, 1.), trust=1.)
         observe(owner, word, 1., store.occurrence_of(row), stream=0)
     model.eval()
     try:

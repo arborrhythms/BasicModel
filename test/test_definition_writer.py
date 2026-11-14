@@ -26,7 +26,7 @@ def _chain(f, word, original, pair):
     left = Composition(f.registry._payload(('sym', original)), reference=original)
     right = Composition(torch.eye(8)[3], reference=word, word_id=word)
     point = torch.maximum(left.point, right.point)
-    term = Composition(point, (left, right), operation='union', formal_name='union')
+    term = Composition(point, (left, right), operation='part', formal_name='part')
     clause = Clause(ConceptualMeaning.from_description(point), point=point, composition=term)
     row = f.store.write_clause(clause, evidence=pair)
     assert row[0] == 'sym'

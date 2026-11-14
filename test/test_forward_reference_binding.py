@@ -38,22 +38,20 @@ def forward_row(*, event=False, object_name=False):
         '_reference_sites': ((0, dict(role=0, leaves=(0,), content=point.tolist(),
             cue=(point*0).tolist(), predicate=(point*0).tolist())),)})
     value = with_slots(value, (('referent', 0),), pair=(0., 0.))
-    row = store.append_meaning(value, kind='question', order=1, evidence=(1., 0.),
-                               document_key='forward-reference', sentence_index=0)
+    row = store.append_meaning(value, evidence=(0., 0.))
     occurrence = store.occurrence_of(row)
     pool = owner.mtm
     pool.open(occurrence, kind=None, when=0, value=point, reading=word)
     pool.promote(occurrence, obj)
     if event:
         verb = identity(owner, atoms[6], order=0)
-        changed = store.append_idea(point + atoms[1], time=False,
-            document_key='forward-reference-change')
+        changed = store.append_idea(point + atoms[1])
         pool.event(occurrence, store.occurrence_of(changed), verb=verb, role=0, when=1, before=point)
     entry = pool.entries[occurrence]
     assert entry.kind is None and entry.symbol == obj and not entry.pending
     assert entry.occurrences == (occurrence,)
     assert owner.definitions.objects(word) == (obj,)
-    assert store.kind_of(row) == 'question'
+    assert store.row(row)['evidence'] == (0.,0.)
     return SimpleNamespace(resolver=resolver, store=store, atoms=atoms, owner=owner,
         pool=pool, row=row, occurrence=occurrence, word=word, obj=obj, name=name)
 
@@ -79,8 +77,8 @@ def selected_external_token(f):
     other = identity(f.owner, f.atoms[0] + f.atoms[1])
     value = replace(ConceptualMeaning.from_description(f.atoms[0] + f.atoms[1]),
                     role_refs=(('sym', other), None, None))
-    row = f.store.append_meaning(value, order=1, evidence=(.6, .2),
-                                 document_key='antecedent', sentence_index=0)
+    row = f.store.append_meaning(value,  evidence=(.6, .2),
+                                 )
     occurrence = f.store.occurrence_of(row)
     f.pool.open(occurrence, kind=other, when=2, value=f.atoms[0] + f.atoms[1])
     f.pool.bind(occurrence, f.occurrence, kind=other, when=3,

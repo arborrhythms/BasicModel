@@ -90,7 +90,6 @@
     <start name="relative_truth">whole_argout1</start>
     <start name="relative_truth">equal_argout1</start>
     <start name="relative_truth">implies_argout1</start>
-    <start name="relative_truth">operator_argout1</start>
 
     <compose>
       <!-- Typed attention candidates; no predefined surface or generate face. -->
@@ -164,6 +163,7 @@
       <rule reference="argin2" head="argin2" referent="mint">lower_argout1 = lower.forward(lower_argin1, lower_argin2)</rule>
       <rule implementation="lower" reference="argin2" head="argin2" referent="bind">definite_argout1 = definite.forward(definite_argin1, definite_argin2)</rule>
       <rule implementation="lower" reference="argin2" head="argin2" referent="kind">universal_argout1 = universal.forward(universal_argin1, universal_argin2)</rule>
+      <rule implementation="lower" reference="argin2" head="argin2" referent="kind">some_argout1 = some.forward(some_argin1, some_argin2)</rule>
 
       <!-- Preposition (PP): refines the NP or VP via a .where relation. -->
       <rule>preposition_argout1 = preposition.forward(preposition_argin1, preposition_argin2)</rule>
@@ -235,6 +235,8 @@
       <rule>adverb_argin1, adverb_argin2 = adverb.reverse(adverb_argout1)</rule>
       <rule referent="mint">lower_argin1, lower_argin2 = lower.reverse(lower_argout1)</rule>
       <rule implementation="lower" referent="bind">definite_argin1, definite_argin2 = definite.reverse(definite_argout1)</rule>
+      <rule implementation="lower" referent="kind">universal_argin1, universal_argin2 = universal.reverse(universal_argout1)</rule>
+      <rule implementation="lower" referent="kind">some_argin1, some_argin2 = some.reverse(some_argout1)</rule>
 
       <rule>preposition_argin1, preposition_argin2 = preposition.reverse(preposition_argout1)</rule>
 

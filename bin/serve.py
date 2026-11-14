@@ -270,8 +270,7 @@ def chat_completions():
     truth_entries = body.get("truth", [])
     if truth_entries and isinstance(truth_entries, list):
         try:
-            _model.store_truths(truth_entries,
-                source_key=body.get('truth_source_key', ('request-truths', document_key)))
+            _model.store_truths(truth_entries)
         except OverflowError as exc:
             logger.warning("Truth store is full: %s", exc)
             return jsonify({"error": "Truth store capacity exhausted; forgetting is required"}), 507

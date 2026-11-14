@@ -6,8 +6,8 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from Forgetting import ForgettingConfig, forget, history_age, retention_values, model_boundary
-from Memory import LTM0
+from Forgetting import ForgettingConfig, forget, model_boundary
+from Memory import LTM0, STM0
 from Meaning import ConceptualMeaning
 
 
@@ -15,12 +15,9 @@ def config(**kwargs):
     return replace(ForgettingConfig(high_water=.8, low_water=.5, min_interval=0), **kwargs)
 
 
-def append(store, index, *, trust=.5, surprise=1., stream=0, origin=0, evidence=None):
+def append(store, index, *, trust=.5, surprise=-1., evidence=None):
     point = torch.zeros(store.nDim); point[-4] = 1.
-    row = store.append_idea(point, trust=trust, document_key=('observation', index),
-                            sentence_index=index, stream=stream, surprise=surprise, evidence=evidence)
-    store.set_origin(row, origin, asserted=(float(store.truth_plus[row]), float(store.truth_minus[row])))
-    return row
+    return store.append_idea(point, trust=trust, surprise=surprise, evidence=evidence)
 
 
 def full_store():
@@ -30,33 +27,17 @@ def full_store():
     return store
 
 
-def test_age_uses_percept_time_and_rewitnessing_does_not_refresh():
-    store = LTM0(12, capacity=10, percept_width=8)
-    append(store, 0, stream=0)
-    append(store, 1, stream=1)
-    append(store, 2, stream=0)
-    append(store, 3, stream=0)
-    append(store, 4, stream=1)
-    torch.testing.assert_close(history_age(store), torch.tensor([4., 3., 2., 1., 0.]))
-    append(store, 0, stream=0)
-    assert len(store) == 5
-    assert history_age(store)[0] == 4
-    store.witness_stream(0, 2)
-    assert history_age(store)[0] == 4  # stream access does not rewrite event time
-    append(store, 5, stream=-1)
-    assert history_age(store)[5] == 0  # the latest sentence is present even without a stream
 
 
 def test_trigger_interval_and_age_select_oldest_without_moving_addresses():
     store = full_store()
-    ids = store.address_keys[:len(store)].clone()
+    ids = torch.tensor([store.row_name(row) for row in range(len(store))])
     assert forget(store, config()) is None
     assert forget(store, config(), document_boundary=True, open_sentence=True) is None
     assert forget(store, config(), document_boundary=True, stateless=True) is None
     report = forget(store, config(), document_boundary=True)
     assert report['before'] == 8 and report['after'] == 5
-    torch.testing.assert_close(store.address_keys[:len(store)], ids[3:])
-    assert store.stream_rows(0).tolist() == list(range(5))
+    torch.testing.assert_close(torch.tensor([store.row_name(row) for row in range(len(store))]), ids[3:])
     for i in range(8, 11):
         append(store, i)
     assert forget(store, config(min_interval=10), document_boundary=True) is None
@@ -64,76 +45,45 @@ def test_trigger_interval_and_age_select_oldest_without_moving_addresses():
     assert forget(store, config(min_interval=10), document_boundary=True)['after'] == 5
 
 
-@pytest.mark.parametrize('term', ['trust', 'utility'])
-def test_value_terms_outweigh_age(term):
-    store = full_store()
-    if term == 'trust':
-        store.truth_plus[:8] = torch.tensor([1., .9, .8, .7, .6, .1, .2, .3])
-        cfg = config(trust_weight=1, utility_weight=0, luminosity_weight=0, age_weight=0)
-    else:
-        store.surprise[:8] = torch.tensor([-1., .9, .8, .7, .6, .1, .2, .3])
-        cfg = config(trust_weight=0, utility_weight=1, luminosity_weight=0, age_weight=0)
-    ids = store.address_keys[:5].clone()
-    forget(store, cfg, document_boundary=True)
-    torch.testing.assert_close(store.address_keys[:len(store)], ids)
 
 
-def test_retention_reads_both_evidence_lanes():
-    store = LTM0(4, capacity=4)
-    row = append(store, 0, trust=.9, evidence=(1., 1.))
-    assert store.trust[row] == 0
-    assert retention_values(store, config())['trust'][row] == 1.
-    store.set_evidence(row, .2, .7)
-    assert retention_values(store, config())['trust'][row] == pytest.approx(.7)
-    store.set_trust(row, -.4)
-    assert store.truth_minus[row] == pytest.approx(.4)
 
 
 def test_ideas_forget_lower_surprise_at_equal_trust_and_age():
-    store = LTM0(4, capacity=2)
+    store = STM0(4, capacity=2, relation_capacity=8192)
     meaning = ConceptualMeaning.from_description(torch.tensor([1., 0., 0., 0.]))
-    for stream, surprise in enumerate((.9, .05)):
-        store.append_meaning(meaning, trust=.5, surprise=surprise, stream=stream,
-                             document_key=f'document-{stream}')
+    for surprise in (.9, .05):
+        store.append_meaning(meaning, trust=.5, surprise=surprise)
     assert store.slots.shape == (2, 4)
-    terms = retention_values(store, config())
-    torch.testing.assert_close(terms['age'], torch.zeros(2))
-    torch.testing.assert_close(terms['trust'], torch.full((2,), .5))
-    torch.testing.assert_close(terms['utility'], torch.tensor([.9, .05]))
-    high, low = store.address_keys[:2].tolist()
+    torch.testing.assert_close(store.trust, torch.full((2,), .5))
+    torch.testing.assert_close(store.activity, torch.tensor([.9, .05]))
+    high, low = [store.row_name(i) for i in range(2)]
     report = forget(store, config(), document_boundary=True)
     assert report['before'] == 2 and report['after'] == 1
     assert store.index_of_row(low) is None and store.index_of_row(high) == 0
 
 
-def test_dissonance_drops_weaker_opposition_not_intrinsic_both():
-    store = LTM0(4, capacity=4)
-    append(store, 0, trust=.9, evidence=(.9, 0))
-    append(store, 1, trust=.2, evidence=(0, .8))
-    append(store, 2, trust=.1, evidence=(1, 1))
-    lum = retention_values(store, config())['luminosity']
-    torch.testing.assert_close(lum, torch.tensor([1., 0., 1.]))
 
 
 def test_protected_and_live_roots_survive_and_block_unsafe_target():
     store = full_store()
-    for i in range(3):
-        store.set_origin(i, store.ORIGIN_USER, asserted=(float(store.truth_plus[i]), float(store.truth_minus[i])))
+    store.activity[:3] = 1.
     roots = tuple(store.occurrence_of(i) for i in (3, 4, 5))
     before = copy.deepcopy(store.state_dict())
     with pytest.warns(RuntimeWarning, match='low water'):
         report = forget(store, config(), document_boundary=True, retained_occurrences=roots)
-    assert not report['target_reached'] and len(store) == 8
-    for key in ('slots', 'addressing.address_keys', 'truth_plus', 'truth_minus'):
-        torch.testing.assert_close(before[key], store.state_dict()[key])
+    assert not report['target_reached'] and len(store) == 6
+    for key in ('slots', 'trust', 'referent'):
+        torch.testing.assert_close(before[key][:6], store.state_dict()[key][:6])
+    assert all(store.location(reference) is not None for reference in roots)
 
 
 def linked_store():
-    store = LTM0(4, capacity=4, percept_width=0)
+    store = STM0(4, capacity=4, percept_width=0, relation_capacity=8192)
     child = append(store, 0, trust=0.)
     ref = store.occurrence_of(child)
     parent = store.append_meaning(replace(ConceptualMeaning.from_description(torch.ones(4)),
-        role_refs=(ref, None, None)), trust=.9, stream=0, sentence_index=1)
+        role_refs=(ref, None, None)), trust=.9)
     append(store, 2, trust=.7)
     append(store, 3, trust=.8)
     return store, ref, store.occurrence_of(parent)
@@ -141,19 +91,19 @@ def linked_store():
 
 def test_idea_deletion_releases_its_identity_next_pass():
     store, child, parent = linked_store()
-    cfg = config(trust_weight=1, utility_weight=0, luminosity_weight=0, age_weight=0)
+    cfg = config()
     # The identity is protected by the dependency snapshot. Its parent has
     # its own value; deleting that parent releases the identity next pass.
-    store.set_evidence(1, 0., 0.)
+    store.activity[1] = 0.
     with pytest.warns(RuntimeWarning, match='low water'):
         report = forget(store, cfg, document_boundary=True,
                         retained_occurrences=tuple(store.occurrence_of(i) for i in (2, 3)))
     assert store.index_of_row(child[2]) is not None
-    assert store.index_of_row(parent[2]) is None and report['coarsened'] == 0
-    assert report['cascade'] == 0 and bool(store.forget_pending)
+    assert store.index_of_row(parent[2]) is None
+    assert bool(store.forget_pending)
     report = forget(store, cfg, document_boundary=True)
     assert store.index_of_row(child[2]) is None
-    assert report['cascade'] == 0 and report['target_reached']
+    assert report['target_reached']
 
 
 def test_live_parent_pins_its_child():
@@ -165,43 +115,15 @@ def test_live_parent_pins_its_child():
 
 def test_wording_is_one_stage_and_checkpoint_preserves_the_result():
     store = full_store()
-    for row in range(len(store)):
-        store.set_origin(row, 0, text=f'source {row}', asserted=(float(store.truth_plus[row]), float(store.truth_minus[row])))
-    before = store.slots.clone()
-    with pytest.warns(RuntimeWarning, match='low water'):
-        result = forget(store, config(), document_boundary=True)
-    assert result['wording'] == 8 and result['after'] == 8
-    torch.testing.assert_close(store.slots, before)
-    assert all(store.text_of(row) is None for row in range(8))
+    old = store.row_name(0)
+    assert forget(store, config(), document_boundary=True)['after'] == 5
     restored = LTM0(12, capacity=10, percept_width=8)
     restored.load_state_dict(store.state_dict())
-    restored.load_semantic_extras(store.semantic_extras())
     assert int(restored.forget_passes) == 1
-    assert forget(restored, config(), document_boundary=True)['after'] == 5
-    # Deleted stable addresses cannot alias a later physical occupant.
-    old = int(store.address_keys[0])
     append(restored, 20)
     assert restored.index_of_row(old) is None
 
 
-def test_pair_unlinking_preserves_observation_and_restores_cleanly():
-    store = LTM0(4, capacity=4)
-    value = ConceptualMeaning.from_description(torch.tensor([1., 0., 0., 0.]))
-    from meaning_fixtures import symbol_prediction, estimate_meaning
-    estimate = store.append_estimate(estimate_meaning(symbol_prediction(torch.eye(4),
-        torch.full((4,2), .5))), presence_logits=torch.zeros(3))
-    observation = store.append_meaning(value, kind='observation', trust=1., sentence_index=1, stream=0)
-    store.link_estimate_observation(estimate, observation)
-    observed = store.occurrence_of(observation)
-    append(store, 2, trust=.8)
-    append(store, 3, trust=.9)
-    cfg = config(trust_weight=1, utility_weight=0, luminosity_weight=0, age_weight=0)
-    forget(store, cfg, document_boundary=True)
-    assert store.index_of_row(observed[2]) is not None
-    assert store._expectation_rows == {}
-    restored = LTM0(4, capacity=4)
-    restored.load_state_dict(store.state_dict())
-    restored.load_semantic_extras(store.semantic_extras())
 
 
 def test_transitive_row_has_its_own_utility():
@@ -211,7 +133,7 @@ def test_transitive_row_has_its_own_utility():
     rows = [store.add(left, right, truth_plus=1, surprise=utility)
             for left, right, utility in ((10, 20, .1), (20, 30, .2), (10, 30, .9))]
     low = store.add(40, 50, truth_plus=.5, surprise=0.)
-    cfg = config(trust_weight=0, utility_weight=1, luminosity_weight=0, age_weight=0)
+    cfg = config()
     forget_parts(store, cfg)
     assert store.contains(rows[2]) and store.contains(rows[1])
     assert not store.contains(rows[0]) and not store.contains(low)
@@ -222,14 +144,14 @@ def test_epoch_trigger_and_disabled_setting():
     assert forget(store, config(enabled=False), document_boundary=True) is None
     cfg = config(high_water=1., at_epoch=True)
     assert forget(store, cfg, document_boundary=True) is None
-    assert forget(store, cfg, epoch_boundary=True)['after'] == 5
+    assert forget(store, cfg, epoch_boundary=True)['after'] == 8
 
 
 def test_partial_checkpoint_cannot_infer_missing_trust_or_forgetting_state():
     store = full_store()
     state = copy.deepcopy(store.state_dict())
-    del state['truth_plus']
-    for name in ('forget_passes', 'forget_sentences', 'forget_last_sentence', 'forget_cutoff'):
+    del state['trust']
+    for name in ('forget_passes', 'forget_sentences', 'forget_last_sentence'):
         del state[name]
     restored = LTM0(12, capacity=10, percept_width=8)
     with pytest.raises(ValueError, match='checkpoint column'):
@@ -272,8 +194,8 @@ def test_taxonomy_and_definitions_share_part_retention_not_ltm1_row_ownership():
     edge = store.parts.find(left, right)
     assert row == ('sym', edge)
     for i in range(1, 4):
-        store.append_idea(torch.ones(8), trust=1., sentence_index=i)
-    forget(store, config(trust_weight=1, utility_weight=0, luminosity_weight=0, age_weight=0),
+        store.append_idea(torch.ones(8), trust=1.)
+    forget(store, config(),
            document_boundary=True)
     assert store.parts.contains(edge)
     store.parts.retain([i for i in store.parts.indices().tolist() if i != edge])
@@ -331,10 +253,10 @@ def test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads(
     monkeypatch.setattr(data, 'has_supervised_outputs', False)
     store = model.symbolSpace.ltm_store
     assert store.capacity == 32
-    counters = ('forget_passes', 'forget_sentences', 'forget_last_sentence', 'forget_cutoff')
+    counters = ('forget_passes', 'forget_sentences', 'forget_last_sentence')
     def document(name, sentences):
         data.source_addresses = {'validation': [dict(document=name, document_key=name,
-            sentence=i, sentence_index=i, split='validation') for i in range(len(sentences))]}
+            sentence=i, split='validation') for i in range(len(sentences))]}
         inputs = model.inputSpace.prepPackedInput([sentences])
         model._thought_document_ends = (True,)
         with torch.no_grad():
@@ -360,14 +282,14 @@ def test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads(
         print(f'[LTM forgetting] {report}')
         snapshot = {name: getattr(store, name).clone() for name in counters}
         occupancy = len(store)
-        addresses = store.address_keys[:occupancy].clone()
+        addresses = torch.tensor([store.row_name(row) for row in range(occupancy)])
         checkpoint = tmp_path/'after-forgetting.ckpt'
         model.save_weights(str(checkpoint))
         document('second', ['dog', 'cat'])
         assert int(store.forget_sentences) == int(snapshot['forget_sentences']) + 2
         assert int(store.forget_passes) == 1  # The configured interval still applies.
         assert len(store) > occupancy
-        assert any(key not in addresses.tolist() for key in store.address_keys[:len(store)].tolist())
+        assert any(store.row_name(row) not in addresses.tolist() for row in range(len(store)))
         assert model._last_sentence_field is not None
     finally:
         model.End()
@@ -380,7 +302,7 @@ def test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads(
         assert restore(restored, str(checkpoint), require_match=True)
         loaded = restored.symbolSpace.ltm_store
         assert len(loaded) == occupancy
-        torch.testing.assert_close(loaded.address_keys[:occupancy], addresses, rtol=0, atol=0)
+        torch.testing.assert_close(torch.tensor([loaded.row_name(row) for row in range(occupancy)]), addresses, rtol=0, atol=0)
         for name, value in snapshot.items():
             torch.testing.assert_close(getattr(loaded, name), value, rtol=0, atol=0)
         assert all(loaded.meaning_of(i) is not None for i in range(occupancy))
@@ -388,27 +310,11 @@ def test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads(
         restored.End()
 
 
-def test_scope_prevents_false_dissonance():
-    store = full_store()
-    store.set_evidence(3, 1., 0.)
-    store.set_evidence(4, 0., 1.)
-    store.set_evidence(4, 0., .5)
-    store.set_scope(4, ('quoted',))
-    assert retention_values(store, config())['luminosity'][4] == 1
 
 
-def test_optional_coverage_separates_both_from_neither():
-    store = LTM0(4, capacity=4)
-    append(store, 0, evidence=(1, 0))
-    append(store, 1, evidence=(0, 0))
-    terms = retention_values(store, config(coverage=True))
-    assert terms['luminosity'][0] > 0 and terms['luminosity'][1] == 0
-    store.set_evidence(1, 1, 1)
-    assert retention_values(store, config(coverage=True))['luminosity'][1] == 0
 
 
-@pytest.mark.parametrize('kwargs', [{'low_water': .9}, {'half_life': 0}, {'age_weight': -1},
-                                   {'similarity': float('nan')}, {'protect_origins': (3,)}])
+@pytest.mark.parametrize('kwargs', [{'low_water': .9}])
 def test_invalid_configuration_fails_before_a_pass(kwargs):
     with pytest.raises(ValueError):
         config(**kwargs)
@@ -424,10 +330,9 @@ def test_packed_and_single_presentations_keep_the_same_stream_history():
                 store.forget_sentences.add_(1)
             assert forget(store, config()) is None
         forget(store, config(), document_boundary=True)
-        snapshots.append((store.state_dict(), store.semantic_extras()))
-    for name in snapshots[0][0]:
-        torch.testing.assert_close(snapshots[0][0][name], snapshots[1][0][name])
-    assert snapshots[0][1] == snapshots[1][1]
+        snapshots.append(store.state_dict())
+    for name in snapshots[0]:
+        torch.testing.assert_close(snapshots[0][name], snapshots[1][name])
 
 
 def test_checkpoint_cannot_resize_the_constructed_inventory():
@@ -446,8 +351,8 @@ def test_conflicting_proof_does_not_change_another_rows_utility():
     store.add(20, 30, truth_plus=1)
     conclusion = store.add(10, 30, truth_plus=1)
     low = store.add(40, 50, surprise=0.)
-    store.add(10, 20, truth_minus=1, witness=False)
-    cfg = config(low_water=.6, trust_weight=0, utility_weight=1, luminosity_weight=0, age_weight=0)
+    store.add(10, 20, truth_minus=1)
+    cfg = config(low_water=.6)
     forget_parts(store, cfg)
     assert store.contains(proof) and store.contains(conclusion)
     assert not store.contains(low)
@@ -467,19 +372,14 @@ def test_stateful_infer_runs_the_host_boundary_after_the_request(monkeypatch):
 
 def test_compaction_preserves_protected_row_columns_and_optional_metadata():
     store = full_store()
-    store.set_origin(7, store.ORIGIN_PROVISIONED, asserted=(float(store.truth_plus[7]), float(store.truth_minus[7])))
-    key = int(store.address_keys[7])
-    columns = ('slots', 'surprise', 'truth_plus', 'truth_minus', 'access_count',
-               'address_keys', 'document_keys', 'sentence_content_keys', 'sentence_index',
-               'stream', 'metadata_required', 'semantic_fingerprint', 'recurrence_readings')
-    before = {name: getattr(store, name)[7].clone() for name in columns}
+    store.activity[7] = 1.
+    key = store.row_name(7)
+    before = {name: getattr(store, name)[7].clone() for name in store.columns}
     forget(store, config(), document_boundary=True)
     row = store.index_of_row(key)
-    assert len(store) < 8 and store.source_document(row) == store.ORIGIN_PROVISIONED
+    assert len(store) < 8 and row is not None
     for name, value in before.items():
         torch.testing.assert_close(getattr(store, name)[row], value, msg=name)
-    # Point-only rows remain recoverable from tensor state without a sidecar.
-    assert not store.metadata_required[:len(store)].any()
     restored = LTM0(12, capacity=10, percept_width=8)
     restored.load_state_dict(store.state_dict())
     assert all(restored.meaning_of(i) is not None for i in range(len(restored)))

@@ -49,18 +49,6 @@ def _ordered_view():
     return KnowledgeView(ks)
 
 
-def _word_space():
-    from Language import SymbolSubSpace
-    from Spaces import ConceptualSpace
-    ss = object.__new__(SymbolSubSpace)
-    nn.Module.__init__(ss)
-    ss.parser_backend = 'stm'
-    ss.attach_knowledge(_ordered_view())
-    cs = object.__new__(ConceptualSpace)
-    nn.Module.__init__(cs)
-    cs._init_typed_stm(batch=1, max_depth=8, dim=4)
-    ss.conceptualSpace = cs
-    return ss
 
 
 def test_ordered_taxonomy_preserves_np3_np4_orders():

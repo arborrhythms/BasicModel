@@ -1,3 +1,4 @@
+from definition_fixtures import class_over
 """Preserved September 17 poison boundaries, on the current native owners.
 
 These are unconditional correctness checks, not arithmetic-learning claims.
@@ -62,7 +63,7 @@ def test_renamed_native_vocabulary_preserves_checked_relation_answers(monkeypatc
         registry = GrammaticalThoughtRegistry.install(cs, grammar)
         base = cs.new_concept()
         force_order(cs, base, 0)
-        part = ('sym', cs.synthesize_higher_order([('sym', base)]))
+        part = ('sym', class_over(cs, [('sym', base)]))
         whole = ('sym', cs.new_concept())
         force_order(cs, whole[1], 2)
         for ref, name in zip((part, whole), names):

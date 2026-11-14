@@ -49,23 +49,6 @@ def test_selected_clause_tree_owns_its_local_references(monkeypatch):
     assert len(clause.children) == 1
 
 
-def test_bare_unlocated_np_rewitnesses_its_address(monkeypatch):
-    from Memory import LTM0
-    _, registry, language, entry, _ = _nested(monkeypatch)
-    entry = replace(entry, rows=entry.rows[:1], word_rows=entry.word_rows[:1],
-                    activations=entry.activations[:1], leaves=entry.leaves[:1],
-                    concept_ids=torch.tensor([1]), lexical_forms=(None,),
-                    actions=torch.tensor([[0, -1, 0]]), targets=torch.tensor([-1]),
-                    end_state=torch.cat((entry.leaves[:1], torch.zeros_like(entry.end_state[1:]))))
-    clause = finish_reading(language, entry, registry=registry)
-    store = LTM0(entry.leaves.shape[-1], capacity=4)
-    from ClauseRow import attach_clause_index
-    from types import SimpleNamespace
-    attach_clause_index(SimpleNamespace(languageSpace=language), store, registry.space)
-    row = store.write_clause(clause)
-    assert int(store.address_keys[row]) == int(store.address_keys[row]) != 1
-    assert store.write_clause(clause) == row
-    assert len(store) == 1
 
 
 def test_three_slot_closing_registers_its_composite_operand(monkeypatch):

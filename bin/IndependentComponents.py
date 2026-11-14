@@ -366,8 +366,8 @@ class IndependentComponents(nn.Module):
             pole_stride=None if derived is None else derived.reserved_pairs)
         store = owner._closed_clause_store()
         if store is not None:
-            retained = store.observation_ids()
-            revision = store._observation_revision
+            retained = [store.row_name(row) for row in range(len(store))]
+            revision = (id(store.slots),store.slots._version,len(store))
         else:
             retained, revision = (), None
         if revision != self._observation_revision:
@@ -451,8 +451,7 @@ class IndependentComponents(nn.Module):
         store = self.owner._closed_clause_store()
         retained = store.row(row)
         identity = retained['row_id']
-        witness = (identity, int(store.access_count[row]) if isinstance(row, int)
-                   else int(retained['access_count']))
+        witness = (retained['occurrence'], int(store.model_clock))
         before = {id(p) for p in self.parameters()}
         # A's individuals were admitted from the kept NP occurrences at this
         # close. Whole-row residual recurrence is not individual identity.

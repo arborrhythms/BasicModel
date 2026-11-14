@@ -1,4 +1,5 @@
 """Only the explicit evidence owner can admit assertions after kernel retirement."""
+from Memory import STM0
 import pytest
 import torch
 from Memory import LTM0
@@ -11,27 +12,15 @@ def test_part_without_supplied_evidence_stays_unverified():
     store, _ = native_store(width=6)
     row = part(store, left, right, evidence=(0., 0.))
     assert store.row(row)['evidence'] == (0., 0.)
-    assert store.row(row)['kind'] == 'unverified'
 
 
-def test_prediction_and_observation_occurrences_cannot_certify_their_content():
-    description = ConceptualMeaning.from_description(torch.eye(6)[:3].flatten())
-    store = LTM0(18, capacity=8, percept_width=0)
-    for kind in ('estimate', 'observation', 'unverified'):
-        store.append_meaning(description, kind=kind, trust=1)
-    result = TruthGroundedReasoner(store=store).evaluate(QuerySpec.from_surface('exist', description))
-    assert result['posture'] == UNKNOWN
 
 
-def test_explicit_fact_admission_preserves_full_description_and_source():
-    description = ConceptualMeaning.from_payload(torch.eye(6)[:3].flatten()[None], depth=1,
-        layout='infix', scope={'where': ('sym', 5)})
-    store = LTM0(18, capacity=8, percept_width=0)
-    row = store.append_meaning(description, kind='fact', trust=-.8)
-    store.set_origin(row, store.ORIGIN_USER, text='named witness', asserted=(float(store.truth_plus[row]), float(store.truth_minus[row])))
-    reasoner = TruthGroundedReasoner(store=store)
-    result = reasoner.evaluate(QuerySpec.from_surface('exist', description))
+def test_explicit_fact_admission_preserves_full_description_and_trust():
+    from existence_fixtures import read_claim
+    description = ConceptualMeaning.from_payload(torch.eye(6)[:3].flatten()[None],depth=1,layout='infix')
+    store = STM0(18,capacity=8,percept_width=0, relation_capacity=8192)
+    row = store.append_meaning(description,trust=-.8)
+    result = read_claim(store,row)
     assert result['support_false'] == pytest.approx(.8)
-    assert result['candidates'][0]['text'] == 'named witness'
-    unscoped = ConceptualMeaning.from_description(torch.eye(6)[:3].flatten())
-    assert reasoner.evaluate(QuerySpec.from_surface('exist', unscoped))['posture'] == UNKNOWN
+    torch.testing.assert_close(result['meaning'].roles,description.roles)

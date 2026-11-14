@@ -1,4 +1,5 @@
 """Existence evidence must match the complete conceptual description."""
+from Memory import STM0
 from types import SimpleNamespace
 
 import pytest
@@ -12,38 +13,16 @@ def _description():
     return torch.eye(6)[:3].clone()
 
 
-@pytest.mark.parametrize("changed_role", [None, 1, 2])
-def test_exist_matches_the_complete_relational_description(changed_role):
-    roles = _description()
-    # Preserve all three independent content blocks in one supplied idea.
-    store = LTM0(roles.numel(), capacity=8, percept_width=0)
-    from Meaning import ConceptualMeaning
-    store.append_meaning(ConceptualMeaning.from_description(roles.flatten()),
-                         kind='fact', trust=.85)
-    probe = roles.clone()
-    if changed_role is not None:
-        probe[changed_role] = torch.eye(6)[4]
-    result = TruthGroundedReasoner(store=store).evaluate(
-        QuerySpec.from_surface("exist", probe.flatten()))
-    if changed_role is None:
-        assert result["posture"] == TRUE
-        assert result["support_true"] == pytest.approx(.85)
-        assert result["support_false"] == 0
-    else:
-        assert result["posture"] == UNKNOWN
-        assert result["support_true"] == result["support_false"] == 0
 
 
-def test_exist_preserves_conflicting_fact_support():
+def test_addressed_claims_preserve_conflicting_support():
+    from existence_fixtures import read_claim
     subject = _description()[0]
-    store = LTM0(6, capacity=8)
-    store.append_idea(subject, trust=.8, sentence_index=len(store))
-    store.append_idea(subject, trust=-.9, sentence_index=len(store))
-    result = TruthGroundedReasoner(store=store).evaluate(
-        QuerySpec.from_surface("exist", subject))
-    assert result["posture"] == BOTH
-    assert result["support_true"] == pytest.approx(.8)
-    assert result["support_false"] == pytest.approx(.9)
+    store = STM0(6, capacity=8, relation_capacity=8192)
+    positive = store.append_idea(subject, trust=.8)
+    negative = store.append_idea(subject, trust=-.9)
+    assert read_claim(store,positive)['support_true'] == pytest.approx(.8)
+    assert read_claim(store,negative)['support_false'] == pytest.approx(.9)
 
 
 def test_exist_requires_fact_evidence_instead_of_activation_truth():

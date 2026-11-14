@@ -67,8 +67,10 @@ def protected_concepts(owner, store, retained=()):
             if isinstance(ref, tuple) and ref[0] == 'sym':
                 protected.add(int(ref[1]))
     if store is not None:
-        protected.update(_integers(store._semantic_rows))
-        protected.update(store._cover_symbols.values())
+        from Memory import SYMBOL
+        protected.update(store.episodic_concepts[:len(store)].flatten().tolist())
+        protected.update(store.referent[:len(store),1][store.referent[:len(store),0]==SYMBOL].tolist())
+        protected.update(_integers(owner.mtm.pending))
     interpretation = owner.__dict__.get('_interpret_operator')
     if interpretation is not None:
         protected.update(_integers(interpretation._pending))

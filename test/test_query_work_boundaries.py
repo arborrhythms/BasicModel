@@ -43,7 +43,7 @@ def test_registry_description_resolution_and_fact_scan_use_one_budget():
     del a, b, context
     store = LTM0(8)
     description = ConceptualMeaning.from_description(torch.eye(8)[0])
-    slot = store.append_meaning(description, kind="fact", trust=.6)
+    slot = store.append_meaning(description,  trust=.6)
     context = _context(cs, store=store)
     question = registry.form("ask", store.occurrence_of(slot), context=context)
     meter = QueryWorkBudget(3)

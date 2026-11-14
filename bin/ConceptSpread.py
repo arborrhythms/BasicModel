@@ -54,7 +54,7 @@ def observe(model, field, addresses, present):
     for b in range(len(present)):
         rows = addresses[:, b] if addresses.ndim == 2 else addresses
         valid = torch.tensor([int(index) >= 0 and owner._row_order(int(index)) == 0
-                              for index in rows.tolist()], device=rows.device)
+                              for index in rows.tolist()], device=rows.device, dtype=torch.bool)
         target[b].scatter_reduce_(0, rows[valid, None].expand(-1, 2),
                                  field[valid, b], reduce='amax', include_self=True)
         valid_rows[b, rows[valid]] = True

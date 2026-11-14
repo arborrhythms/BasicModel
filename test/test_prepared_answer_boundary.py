@@ -78,16 +78,19 @@ def test_realization_uses_a_held_derivation_without_running_resolution(
             with monkeypatch.context() as prepared:
                 prepared.setattr(Generative, "lexical_candidates", rescan)
                 tick = model.present()
+                prepared.setattr(model, '_produced_when', tick, raising=False)
                 first = model.reverseOutput(understanding, held)
             with monkeypatch.context() as next_sentence:
                 next_sentence.setattr(model, "_resolve_answer", resolve)
                 _capture_program_probe(model, ["5 plus 6", "7 plus 8"])
             with monkeypatch.context() as prepared:
                 prepared.setattr(Generative, "lexical_candidates", rescan)
-                # Compare the held reading at the same output tick; its
-                # absolute stamp otherwise changes by the model-time contract.
+                # Both calls are trials of the same produced sentence. Its
+                # shared tick is explicit; resetting the model clock alone
+                # cannot rewind the retained occurrence clock (section 17.15).
                 model.when_time.fill_(tick)
                 model.when_encoding.t = tick
+                prepared.setattr(model, '_produced_when', tick, raising=False)
                 second = model.reverseOutput(understanding, held)
         assert first.derivation is held and second.derivation is held
         torch.testing.assert_close(second.actual, first.actual, rtol=0, atol=0)

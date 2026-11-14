@@ -24,13 +24,13 @@ def context(resolver, frames=()):
         if frame is None:
             continue
         from IdentityRows import point as identity_point
-        for symbol in (() if getattr(frame,'activations',()) or store.location(frame.row_id) is not None
+        for symbol in (() if getattr(frame,'activations',()) or store.location(getattr(frame,'occurrence',None)) is not None
                        else getattr(frame,'symbol_ids',())):
             value = identity_point(resolver.components.owner,symbol)
             if value is not None:
                 state,_ = chunks.deposit(state,value[None],torch.tensor([True]),identity=symbol,
                     refs=torch.tensor([[[chunks.SYMBOL,symbol],[0,0]]]),order=1)
-        location = store.location(frame.row_id)
+        location = store.location(getattr(frame,'occurrence',None))
         if location is None:
             continue
         occurrence = store.occurrence_of(location)
@@ -74,7 +74,7 @@ def context(resolver, frames=()):
 def recall(resolver, frames, *, stream=None):
     """Explicit query-style recall before a fixture reads an unpooled row."""
     from QueryWork import QueryWorkBudget
-    rows = [resolver.store.row(resolver.store.location(frame.row_id)) for frame in frames]
+    rows = [resolver.store.row(resolver.store.location(frame.occurrence)) for frame in frames]
     # Each input has at most the fixture's whole fixed store of references.
     work = QueryWorkBudget(max(1,len(rows)*(resolver.store.capacity+resolver.store.parts.capacity)))
     resolver.store.recall_identities(rows,work=work,stream=stream)

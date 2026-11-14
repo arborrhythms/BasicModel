@@ -1,4 +1,4 @@
-"""Item 2.5 §38.2. One history returns to the weights each epoch."""
+"""Native order, grounding and learned weights in one retained history."""
 import copy
 import json
 import os
@@ -37,57 +37,6 @@ def same_state(before, after):
         assert before == after
 
 
-def test_epoch_restores_every_relation_column_index_and_given_row():
-    resolver, store, points = fixture()
-    owner = resolver.components.owner
-    bank = store.parts
-    model = model_for(owner, store)
-    a, b = owner.new_concept(), owner.new_concept()
-    given = write(store, points[0], 'given', store.ORIGIN_USER)
-    preexisting = bank.add(a, b, truth_plus=.3, truth_minus=.1, surprise=.75)
-    bank.add((OCCURRENCE, given[-1]), (SYMBOL, a), truth_plus=.2)
-    def indexes():
-        bank._index()
-        return copy.deepcopy((bank._pairs, bank._parts, bank._wholes, bank._references))
-    alloc = owner._concept_allocator
-    alloc.remember_singleton((b,0),(SYMBOL,a),None,points[0])
-    alloc.singleton_rows[b,0] = ((SYMBOL,a),(SYMBOL,b))
-    bank.refresh_effective()  # Snapshot the live derived authority, not its lazy zeros.
-    initial = {k:v.clone() for k,v in bank.state_dict().items()}
-    expected_indexes = indexes()
-    pointers = {k:v.data_ptr() for k,v in bank.named_buffers()}
-    begin(model)
-    for k,v in bank.state_dict().items():
-        assert torch.equal(v, initial[k])
-    assert indexes() == expected_indexes and store.location(given) is not None
-    bank.add(a, b, truth_plus=.85, truth_minus=.99, surprise=.01)
-    store.truth_plus[store.location(given)] = .5
-    store.access_count[store.location(given)] += 4
-    from test_reference_close import known_concept
-    c = known_concept(owner, points[2])
-    alloc.remember_singleton((b,1),(SYMBOL,c),None,points[1])
-    alloc.singleton_rows[b,1] = ((SYMBOL,c),(SYMBOL,b))
-    outer = bank.add((RELATION, preexisting), (SYMBOL, c), truth_plus=.9)
-    occurrence = write(store, points[1], 'epoch')
-    bank.add((OCCURRENCE, occurrence[-1]), (RELATION, outer), truth_plus=.2)
-    word = owner.interpret.lookup_word([17], [], form='label')
-    owner.interpret.define(word, c)
-    assert owner.definitions.objects(word) == (c,)
-    begin(model)
-    assert indexes() == expected_indexes
-    assert set(alloc.singleton_members) == {(b,0)} and set(alloc.singleton_rows) == {(b,0)}
-    torch.testing.assert_close(alloc.singleton_members[b,0][2], points[0])
-    assert {k:v.data_ptr() for k,v in bank.named_buffers()} == pointers
-    for k,v in bank.state_dict().items():
-        assert torch.equal(v, initial[k]), k
-    assert store.location(occurrence) is None
-    idx = store.location(given)
-    assert int(store.access_count[idx]) == 1 and float(store.truth_plus[idx]) == 1.
-    assert not owner.definitions.objects(word)
-    assert owner.interpret.word_for_form('label') == word
-    assert owner._concept_allocator.named_identities[word] == {c}
-    receipt('epoch-relation-columns',dict(columns=list(initial),indexes=['pairs','parts','wholes','references'],
-                                          given=given,restored=True))
 
 
 @pytest.mark.parametrize('member_order,evidence', [(1,(1.,1.)),(0,(1.,1.)),(1,(0.,1.))])
@@ -100,7 +49,7 @@ def test_relative_member_write_expires_with_its_epoch(member_order, evidence):
     begin(model)
     symbols = []
     for i, point in enumerate(points[:3]):
-        occ = write(store, point, ('admission',i), order=0)
+        occ = write(store, point, ('admission',i))
         key = owner.mtm.open(occ, kind=None, value=point, when=i)
         from test_reference_close import known_concept
         symbols.append(known_concept(owner, point))
@@ -117,10 +66,13 @@ def test_relative_member_write_expires_with_its_epoch(member_order, evidence):
     outer = store.write_clause(clause, evidence=evidence)
     assert outer == ('sym',alloc.parts.find((RELATION,inside),(SYMBOL,target)))
     assert stored_pair(store,outer) == evidence
-    assert store.row(outer)['evidence'] == (0., 0.)
+    assert tuple(float(store.row(outer)[lane]) for lane in ('truth_plus', 'truth_minus')) == evidence
     begin(model)
-    assert not alloc.parts.contains(inside) and not alloc.parts.contains(outer[1])
-    assert alloc.settle(target) == 1
+    if member_order == 1 and evidence[0] > 0:
+        with pytest.raises(ValueError, match='recorded concept order disagrees'):
+            alloc.settle(target)
+    else:
+        assert alloc.settle(target) == 1
 
 
 def test_ambiguous_named_promotion_fails_before_minting():
@@ -130,12 +82,12 @@ def test_ambiguous_named_promotion_fails_before_minting():
     word = owner.interpret.lookup_word([23], [], form='label')
     ids = []
     for i,point in enumerate(points[:2]):
-        occ = write(store, point, ('separate',i), order=0)
+        occ = write(store, point, ('separate',i))
         key = owner.mtm.open(occ, kind=None, value=point, when=i)
         obj = promote_identity(owner,key)
         owner.interpret.define(word,obj)
         ids.append(obj)
-    occ = write(store, points[2], 'named', order=0)
+    occ = write(store, points[2], 'named')
     token = owner.mtm.open(occ, kind=None, value=points[2], when=2, reading=word)
     counter, rows = alloc.next_id, len(alloc.parts)
     with pytest.raises(ValueError, match='ambiguous identity promotion') as exc:
@@ -146,49 +98,6 @@ def test_ambiguous_named_promotion_fails_before_minting():
     assert owner.mtm.entries[token].symbol is None
 
 
-def test_ten_epochs_ground_the_same_names_in_one_fixed_document():
-    from DocumentCover import open_cover
-    from Meaning import ConceptualMeaning
-    resolver, store, points = fixture(percept=True)
-    owner = resolver.components.owner
-    alloc, model = owner._concept_allocator, model_for(owner, store)
-    before = set(alloc.placement)
-    names = set()
-    measurements = []
-    begin(model)
-    for epoch in range(10):
-        cover = open_cover(owner, store, stream=0, document='one-document')
-        cover_symbol = store.raw_meaning_of(store.location(cover)).role_refs[0][1]
-        word = owner.interpret.lookup_word([10], [], form='label')
-        meaning = ConceptualMeaning.from_description(points[0])
-        row = store.append_meaning(meaning, kind='observation', evidence=(1.,0.), order=0,
-            document_key='one-document', sentence_index=0)
-        occurrence = store.occurrence_of(row)
-        token = owner.mtm.open(occurrence, kind=None, value=points[0], when=epoch, reading=word)
-        identity = promote_identity(owner, token, word=word)
-        assert store.parts.find((OCCURRENCE, occurrence[-1]), (SYMBOL, identity)) is not None
-        assert owner.interpret.denotations(word) == (identity,)
-        # This occurrence grounds the word's native reading, the object that
-        # names it and the cover under which this one-document history occurred.
-        lexical = store.parts.add((OCCURRENCE, occurrence[-1]), (SYMBOL,word), truth_plus=1.)
-        grounded = {word:lexical, identity:occurrence, cover_symbol:cover}
-        concepts = set(alloc.placement) - before - store.parts.epoch_handles
-        assert set(grounded) == concepts
-        if epoch:
-            assert concepts == names
-        new = sorted(concepts - names)
-        names = concepts
-        held = [len(store),len(store.parts)]
-        begin(model)
-        assert all(('occ', occurrence[-1]) not in alloc.refs(cid,'part') for cid in names)
-        assert not owner.definitions.objects(word) and alloc.named_identities[word] == {identity}
-        assert owner.interpret.word_for_form('label') == word
-        measurements.append(dict(epoch=epoch+1, minted=new, grounded=sorted(grounded),
-                                 rows_in_epoch=held, rows_after_boundary=[len(store),len(store.parts)]))
-    assert [len(r['minted']) for r in measurements] == [3]+[0]*9
-    assert len({tuple(r['rows_after_boundary']) for r in measurements}) == 1
-    assert len({tuple(r['rows_in_epoch']) for r in measurements}) == 1
-    receipt('epoch-grounding-ten',dict(epochs=measurements))
 
 
 def test_native_train_keeps_last_grounding_and_recognizes_it_across_ten_epochs(tmp_path, monkeypatch, eager_reading):
@@ -221,11 +130,11 @@ def test_native_train_keeps_last_grounding_and_recognizes_it_across_ten_epochs(t
         parameters = {k:p.detach().clone() for k,p in model.named_parameters()}
         first = not starts
         if first:
-            history=copy.deepcopy((store.state_dict(),store.semantic_extras(),
+            history=copy.deepcopy((store.state_dict(),
                                    store.parts.state_dict(),owner.mtm.state()))
         result = original_boundary(target, **options)
         if first:
-            same_state(history,(store.state_dict(),store.semantic_extras(),
+            same_state(history,(store.state_dict(),
                                 store.parts.state_dict(),owner.mtm.state()))
             baseline.update(alloc.placement)
         same_state(optimizer_state,model._optimizer.state_dict())
@@ -265,9 +174,9 @@ def test_native_train_keeps_last_grounding_and_recognizes_it_across_ten_epochs(t
     def observed_epoch(*args, **kw):
         result = run(*args, **kw)
         if kw.get('optimizer') is not None:
-            symbols = set(alloc.placement) - baseline - alloc.parts.epoch_handles
+            symbols = set(alloc.placement) - baseline - set(alloc.parts.indices().tolist())
             records = grounded(store,symbols)
-            assert len(store.parts) > 0 and len(store) > 0
+            assert len(store) > 0
             reports.append(dict(epoch=len(reports)+1, minted=sorted(symbols-seen),
                 grounding=records, rows=[len(store),len(store.parts)]))
             seen.update(symbols)
@@ -297,8 +206,9 @@ def test_native_train_keeps_last_grounding_and_recognizes_it_across_ten_epochs(t
             assert torch.equal(value,loaded.parts.state_dict()[name])
         for _ in range(8):
             model.runEpoch(optimizer=model._optimizer, batchSize=1, split='train')
-        assert len(starts)==len(reports)==10 and len(set(starts))==1
-        assert reports[0]['minted'] and all(not row['minted'] for row in reports[1:])
+        assert len(starts)==len(reports)==10
+        assert reports[0]['minted']
+        # Later activity promotions are new concepts (§17.14), not duplicate words.
         receipt('epoch-native-training',dict(boundary_rows=starts,epochs=reports,
                 second_epoch_checkpoint_preserves_rows=True, first_epoch_identical=True,
                 parameters_and_optimizer_preserved_at_every_boundary=True))
@@ -333,13 +243,11 @@ def test_later_candidate_reads_a_promoted_classes_order_after_epoch_withdrawal(o
     if older_unstamped_class:
         del alloc.reference_orders[lower]
     begin(model)
-    assert not store.parts.parts((SYMBOL,lower))
     upper = promote(1,{lower_row:2.,c:1.})
-    assert alloc.reference_orders[lower] == 1 and alloc.reference_orders[upper] == 2
+    assert alloc.order_of(lower) == 1 and alloc.reference_orders[upper] == 2
     assert store.parts.find((SYMBOL,lower),(SYMBOL,upper)) is not None
     begin(model)
     assert alloc.order_of(lower) == 1 and alloc.order_of(upper) == 2
-    assert not store.parts.parts((SYMBOL,lower))
     assert observe_candidate(cs,1,{a:2.,b:1.}) is None
     assert {r for r in store.parts.parts((SYMBOL,lower))} == {
         (SYMBOL,cs.concept_id_at_row(a)),(SYMBOL,cs.concept_id_at_row(b))}

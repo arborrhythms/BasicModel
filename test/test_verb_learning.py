@@ -35,7 +35,7 @@ def test_two_kept_sentences_join_the_copular_observation_and_teach_once(monkeypa
         plan = resolver.preview(clause, chunk_context(resolver, frames))
         kept = resolver.prepare(clause, plan)
         written = {}
-        row = f.store.write_clause(kept, written_rows=written, document_key='teacher', sentence_index=position)
+        row = f.store.write_clause(kept, written_rows=written, )
         resolver.commit(plan, row, written, document='teacher', position=position, training=True,
                         verb_action=action)
         return SituationAddress(f.store.occurrence_of(row),
@@ -106,7 +106,7 @@ def test_copular_join_is_kept_and_fires_the_previous_verb_teacher(monkeypatch):
     plan = resolver.preview(clause, chunk_context(resolver, ()))
     prepared = resolver.prepare(clause, plan)
     written = {}
-    row = f.store.write_clause(prepared, written_rows=written, document_key='unit', sentence_index=0)
+    row = f.store.write_clause(prepared, written_rows=written, )
     resolver.commit(plan, row, written, document='unit', position=0, training=True, verb_action=action)
     token = next(key for key, value in f.cs.mtm.entries.items() if any(event.before is not None for event in value.events))
     prior = f.cs.mtm.value_of(token).clone()
@@ -124,7 +124,7 @@ def test_copular_join_is_kept_and_fires_the_previous_verb_teacher(monkeypatch):
     state=walk.apply(state,choice(property_value[None]),torch.stack((prior,property_value))[None],0)
     joined=value(state,512)[0]
     torch.testing.assert_close(joined,torch.maximum(prior,property_value))
-    changed = f.store.append_idea(joined, time=False, document_key='copular-observation')
+    changed = f.store.append_idea(joined)
     f.cs.mtm.bind(token, f.store.occurrence_of(changed), kind=None, when=3, value=joined)
     f.cs.mtm.record_link(token, f.store.occurrence_of(changed), None)
     errors = Error()

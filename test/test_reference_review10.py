@@ -42,7 +42,7 @@ def test_later_ball_mention_preserves_the_boxs_key_members_and_count(monkeypatch
         prepared = resolver.prepare(clause, plan)
         assert owner.mtm.entries == retained
         written = {}
-        row = store.write_clause(prepared, document_key='box-ball', sentence_index=position,
+        row = store.write_clause(prepared,
                                  written_rows=written)
         before, seated = snapshot(resolver), seats(resolver)
         resolver.commit(plan, row, written, document='box-ball', position=position, training=False)
@@ -120,8 +120,8 @@ def observed_individual(resolver, support, index):
     from test_reference_close import known_concept as mint
     subject = mint(resolver.components.owner, support)
     idea = replace(ConceptualMeaning.from_description(support), role_refs=(('sym', subject), None, None))
-    row = resolver.store.append_meaning(idea, document_key='exclusion', sentence_index=index)
-    resolver.store.access_count[row] = 8
+    for use in range(8):
+        resolver.store.append_meaning(idea)
 
 
 @pytest.mark.parametrize('has_word', (False, True))

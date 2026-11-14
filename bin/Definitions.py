@@ -31,7 +31,7 @@ class DefinitionIndex:
         return result
 
     def _ensure(self):
-        if self._revision != (self._store().revision, self._store().effective_revision):
+        if self._revision != self._store().effective_revision:
             self.rebuild()
 
     def rebuild(self):
@@ -39,12 +39,14 @@ class DefinitionIndex:
         self._descriptions = {}
         self._identities = {}
         store = self._store()
+        store.refresh_effective()
         for row in store.indices().tolist():
             self.add(row)
-        self._revision = (store.revision, store.effective_revision)
+        self._revision = store.effective_revision
 
     def add(self, row):
         store = self._store()
+        store.refresh_effective()
         obj, word = store.refs[row].tolist()
         allocator = self._allocator()
         value = allocator.word_descriptions.get(word)
@@ -64,7 +66,9 @@ class DefinitionIndex:
         for parts in value['parts']:
             self._units[tuple(parts)] = word
         from ConceptTrust import definition_threshold
-        if float(store.evidence(row)[0]) < definition_threshold():
+        # Rebuilding this derived index is not an evidential access. Its
+        # result and the store's activity must be independent of cache state.
+        if float(store.effective_plus[row]) < definition_threshold():
             return
         # A named class and its witnesses can all have object-typed handles.
         # The witnessed members of this word's own class denote their parent
@@ -72,7 +76,7 @@ class DefinitionIndex:
         for parent in store.wholes(obj):
             if allocator.relate_idx.get(('part-base', parent)) == (store.SYMBOL, word):
                 membership = store.find(obj, parent)
-                if bool(store.evidence(membership)[0] > 0):
+                if bool(store.effective_plus[membership] > 0):
                     return
         if (word, obj) in self._rows and self._rows[word, obj] != row:
             raise ValueError('duplicate word DEF object row')

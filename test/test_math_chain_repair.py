@@ -1,4 +1,5 @@
 """October 8 repair contracts; no arithmetic executor or seeded learner."""
+from Memory import STM0
 from dataclasses import replace
 from generation_fixtures import undeclared_arguments
 from types import SimpleNamespace
@@ -99,20 +100,18 @@ def test_pending_relation_fills_in_place_in_both_arrival_orders(forward_first):
     premise = replace(meaning, role_refs=(('sym', 1), None, None),
         bindings=dict(data, _equality=True))
     if not forward_first:
-        arrival = store.append_meaning(premise, kind='observation', document_key='arrival', evidence=(1.,0.))
-    row = store.append_meaning(meaning, kind='question', document_key='pending', evidence=(1.,0.))
+        arrival = store.append_meaning(premise,   evidence=(1.,0.))
+    row = store.append_meaning(meaning,   evidence=(1.,0.))
     address = store.occurrence_of(row)
     raw = store.raw_meaning_of(row)
-    document, position = store.document_keys[row].clone(), store.sentence_index[row].clone()
+    referent, trust = store.referent[row].clone(), store.trust[row].clone()
     if forward_first:
         assert ('referent', 0) in open_slots(store.meaning_of(row))
-        assert store._forward_addresses((word,)) == {int(store.address_keys[row])}
+        assert store._forward_addresses((word,)) == {address}
         # Loading invalidates only derived postings. The later occurrence is
         # evidence for the working read, never a rewrite of the earlier row.
-        extras = store.semantic_extras()
         store.load_state_dict(store.state_dict())
-        store.load_semantic_extras(extras)
-        arrival = store.append_meaning(premise, kind='observation', document_key='arrival', evidence=(1.,0.))
+        arrival = store.append_meaning(premise,   evidence=(1.,0.))
     # This direct storage fixture supplies the kept bind explicitly. Equality
     # rows alone stopped being a binder at §10.4; source rows stay immutable.
     pool = store._concept_owner().mtm
@@ -124,18 +123,18 @@ def test_pending_relation_fills_in_place_in_both_arrival_orders(forward_first):
     assert not bindings(resolved).get('_forward_references')
     assert resolved.role_refs[0] == ('sym', 1)
     assert store.occurrence_of(row) == address
-    torch.testing.assert_close(store.document_keys[row], document, rtol=0, atol=0)
-    torch.testing.assert_close(store.sentence_index[row], position, rtol=0, atol=0)
+    torch.testing.assert_close(store.referent[row], referent, rtol=0, atol=0)
+    torch.testing.assert_close(store.trust[row], trust, rtol=0, atol=0)
     assert store.raw_meaning_of(row).metadata() == raw.metadata()
     torch.testing.assert_close(store.raw_meaning_of(row).roles, raw.roles, rtol=0, atol=0)
 
 
 def test_configured_store_still_raises_when_full():
     from Memory import LTM0
-    store = LTM0(4, capacity=1)
-    store.append_idea(torch.ones(4), document_key='first')
-    with pytest.raises(OverflowError, match='capacity 1 exhausted'):
-        store.append_idea(torch.zeros(4), document_key='second')
+    store = STM0(4, capacity=1, relation_capacity=8192)
+    store.append_idea(torch.ones(4))
+    with pytest.raises(OverflowError, match='capacity exhausted'):
+        store.append_idea(torch.zeros(4))
 
 
 def test_retrieval_prior_rejects_a_stale_single_stream_surface():

@@ -11,18 +11,18 @@ def test_legacy_percept_entry_is_dropped_and_named(legacy):
     store = LTM0(12, capacity=4, percept_width=12, episodic_concepts=2)
     state = copy.deepcopy(store.state_dict())
     state[legacy] = torch.ones(4, 2) if legacy == 'episodic_percepts' else torch.ones(4, 2, 2)
-    with pytest.warns(UserWarning, match='dropped.*' + legacy):
+    with pytest.warns(UserWarning, match='dropped.*' + legacy) as warnings:
         store.load_state_dict(state)
     for name in ('episodic_percepts', 'episodic_poles', 'episodic_where'):
         assert not hasattr(store, name)
-        assert name not in store.row_columns
+        assert name not in store.columns
         assert not any(name in key for key in store.state_dict())
     assert (store.episodic_concepts == -1).all()
     assert not store.episodic_values.any()
-    assert store.episode_migration['dropped'] == [legacy]
+    assert len(warnings) == 1 and legacy in str(warnings[0].message)
 
 
-def test_basic_concept_readings_keep_largest_signed_values_in_reading_order():
+def test_all_orders_keep_largest_signed_values_in_one_flat_entry():
     from EpisodicMemory import select
     from Understanding import ConceptualField
     values = torch.tensor([[[[.3, 0.], [.9, 0.]]],
@@ -31,16 +31,16 @@ def test_basic_concept_readings_keep_largest_signed_values_in_reading_order():
                            [[[1., 1.], [0., 0.]]]], requires_grad=True)
     field = ConceptualField(torch.tensor([30, 10, 20, 40]), values,
         torch.tensor([[[0, 2], [3, 5]]]), torch.tensor([[[1, 2], [1, 2]]]), None)
-    ids, signed = select(field, 4, torch.tensor([True]), [0, 0, 1, 0])
-    assert ids.tolist() == [[[10, 40, 40, 30]]]
-    torch.testing.assert_close(signed, torch.tensor([[[-.8, 1., -1., .9]]]))
+    ids, signed = select(field, 4, torch.tensor([True]))
+    assert ids.tolist() == [[20, 20, 40, 40]]
+    torch.testing.assert_close(signed, torch.tensor([[1., -1., 1., -1.]]))
     assert not signed.requires_grad
-    selected, _ = select(field, 2, torch.tensor([True]), [0, 0, 1, 0])
-    assert selected.tolist() == [[[40, 40]]]
-    assert all(t.shape[2] == 0 for t in select(field, 0, torch.tensor([True]), [0, 0, 1, 0]))
+    selected, _ = select(field, 2, torch.tensor([True]))
+    assert selected.tolist() == [[20, 20]]
+    assert all(t.shape[1] == 0 for t in select(field, 0, torch.tensor([True])))
 
 
-def test_recalled_concepts_decode_directly_and_withdrawn_ids_are_counted(tmp_path, monkeypatch):
+def test_recalled_flat_extension_decodes_directly_and_retired_ids_are_counted(tmp_path, monkeypatch):
     from test_item20_round7_time import native
     from reading_fixtures import force_absolute_reading
     from Queries import ThoughtLTMCapability
@@ -54,13 +54,12 @@ def test_recalled_concepts_decode_directly_and_withdrawn_ids_are_counted(tmp_pat
         with torch.no_grad():
             model.forward(model.inputSpace.prepInput(['alpha alpha beta']))
         opened = model._sentence_open_fields[0]
-        entries = (store.episodic_concepts[:len(store)] >= 0).any((-1, -2))
+        entries = (store.episodic_concepts[:len(store)] >= 0).any(-1)
         row = int(entries.nonzero()[0])
-        assert int(entries.sum()) == 1
-        assert 0 < int((store.episodic_concepts[row] >= 0).sum()) <= 4 * store.episodic_orders
-        assert all(owner._row_order(owner._csw_row_of(cid)) == order
-                   for order, slice in enumerate(store.episodic_concepts[row].tolist()) for cid in slice if cid >= 0)
-        before = model.reverse(model.conceptualSpace.subspace.carrier_like(), field=opened)
+        assert bool(entries.any())
+        assert 0 < int((store.episodic_concepts[row] >= 0).sum()) <= 4
+        assert all(owner._row_order(owner._csw_row_of(cid)) >= 0
+                   for cid in store.episodic_concepts[row].tolist() if cid >= 0)
         def forbidden(*args, **kwargs):
             raise AssertionError('direct episodic reconstruction invoked the grammar')
         monkeypatch.setattr(model, 'generate', forbidden)
@@ -72,20 +71,30 @@ def test_recalled_concepts_decode_directly_and_withdrawn_ids_are_counted(tmp_pat
         recalled = knowing(model)
         def readings(field):
             ids = field.concept_ids[:, None] if field.concept_ids.ndim == 1 else field.concept_ids
-            return {(int(ids[c, 0]), tuple(field.where[0, r].tolist())): field.evidence[c, 0, r]
-                    for c in range(len(ids)) for r in range(field.evidence.shape[2])
-                    if bool(field.evidence[c, 0, r].any())}
-        original, actual = readings(opened), readings(recalled)
+            return {int(ids[c, 0]): field.evidence[c, 0].amax(0)
+                    for c in range(len(ids)) if bool(field.evidence[c, 0].any())}
+        original = {}
+        for frame in found['frames']:
+            index = frame['index']
+            for cid, value in zip(store.episodic_concepts[index].tolist(), store.episodic_values[index]):
+                if cid >= 0:
+                    pair = torch.stack((value.clamp_min(0), (-value).clamp_min(0)))
+                    original[cid] = torch.maximum(original.get(cid, torch.zeros_like(pair)), pair)
+        actual = readings(recalled)
         assert original.keys() == actual.keys()
         for key in original:
             torch.testing.assert_close(original[key], actual[key], rtol=0, atol=0)
         after = model.reverse(model.conceptualSpace.subspace.carrier_like(), field=recalled)
-        torch.testing.assert_close(before.materialize(), after.materialize(), rtol=0, atol=0)
+        from FieldReverse import word_texts
+        expected = tuple(owner.word_surface_for_row(owner._csw_row_of(cid)).decode()
+                         for frame in found['frames']
+                         for cid in store.episodic_concepts[frame['index']].tolist() if cid >= 0)
+        assert word_texts(after.materialize(), recalled.where) == (expected,)
         assert not owner._percept_field.values.any()
         # A missing surface keeps the reference with an empty extent; positions
         # come from the stored reading order, never from a saved input bracket.
         surface = owner.word_surface_for_row
-        first = int(store.episodic_concepts[row, 0, 0])
+        first = int(store.episodic_concepts[row, 0])
         missing = int((store.episodic_concepts[row] == first).sum())
         monkeypatch.setattr(owner, 'word_surface_for_row',
             lambda slot: None if owner.concept_id_at_row(slot) == first else surface(slot))
@@ -93,7 +102,7 @@ def test_recalled_concepts_decode_directly_and_withdrawn_ids_are_counted(tmp_pat
         assert model._episode_counts['surfaces_missing'] == missing
         assert knowing(model).where[0, 0].tolist() == [0, 0]
         previous = model._episode_counts['ids_skipped']
-        store.episodic_concepts[row, 0, 0] = 10**9
+        store.episodic_concepts[row, 0] = 10**9
         assert reinstate(store, [{'index': row}], 0)
         assert model._episode_counts['ids_skipped'] == previous + 1
         assert 10**9 not in knowing(model).concept_ids.tolist()

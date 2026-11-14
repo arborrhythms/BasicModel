@@ -114,9 +114,9 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
         result = commit(*args)
         disc = model.symbolSpace.expectation
         context = tuple(tuple(row) for row in disc._inter_context_occurrences)
-        # Each stream starts with its document cover, followed by the kept
-        # sentence occurrences. The last frame remains the just-kept reading.
-        assert [len(row) for row in context] == [args[1] + 2] * 2
+        # Each stream holds its kept sentence occurrences. Document covers
+        # are retired; the last frame remains the just-kept reading.
+        assert [len(row) for row in context] == [args[1] + 1] * 2
         assert all(occurrence is not None for row in context for occurrence in row)
         for b, alternative in enumerate((True, False)):
             expected = candidates[args[1], alternative]
@@ -129,8 +129,9 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
             depth, payload, mask = disc._read_context(b)[0][-1]
             # Inter-sentence context carries the occurrence's regional point.
             # The retained field above still has the complete relation.
-            row = model.symbolSpace.ltm_store.row(model.symbolSpace.ltm_store.location(context[b][-1]))
-            point = roles[0] if stored.sentence_kind == 'idea' else row['head_point']
+            location = model.symbolSpace.ltm_store.location(context[b][-1])
+            row = model.symbolSpace.ltm_store.row(location)
+            point = row['point'] if isinstance(location, int) else row['head_point']
             assert depth == int(point is not None) == int(mask.sum())
             if point is not None:
                 assert mask[0]
@@ -201,11 +202,25 @@ def test_disabled_sentence_prediction_leaves_adam_momentum_unused():
         sentence_prediction_cost=lambda *a, **k:
         (predictor.square().reshape(1), None))
     observation = dict(observed_depths=[1], observed=[root],
-        mask=torch.tensor([True]), layout='stm', roles=None, meanings=[None], reference_plans=[])
+        mask=torch.tensor([True]), layout='stm', roles=None, meanings=[None], reference_plans=[],
+        clauses=[None])
+    from Understanding import ConceptualField
+    from SentenceUnderstanding import SentenceUnderstanding
+    field = ConceptualField(torch.empty(0, dtype=torch.long), torch.empty(0, 1, 1, 2),
+        torch.tensor([[[0, 1]]]), torch.tensor([[[1, 2]]]), None)
+    record = SentenceUnderstanding(root, root[:, None].expand(-1, 3, -1),
+        torch.ones(1, dtype=torch.long), root[:, None], torch.ones(1, 1, dtype=torch.long),
+        root[:, None], torch.zeros(1, 1, dtype=torch.long), torch.ones(1, 1, dtype=torch.bool),
+        None, torch.tensor(0), open_field=field)
+    observation['entries'] = [SimpleNamespace(actions=torch.tensor([[0, 0, 0]]),
+        concept_ids=torch.tensor([-1]), interpret_forced=False, tree=None)]
     model = SimpleNamespace(reconstruct_in_loop=False, inter_loss_weight=0.,
         expectation_gain=0., symbolSpace=SimpleNamespace(expectation=disc),
         _publish_sentence_scratch=lambda state: None,
-        _trial_understanding=lambda *args: object(),
+        _trial_understanding=lambda *args: record,
+        _concept_owner=lambda: None,
+        languageSpace=SimpleNamespace(_tree_layer=lambda arity: SimpleNamespace()),
+        _sentence_leaf_positions=lambda record, row: torch.arange(1),
         _tensor_pushed_ideas=root[:, None],
         _sentence_observation=lambda *a: observation,
         _expectation_documents_for_slot=lambda *a: None)

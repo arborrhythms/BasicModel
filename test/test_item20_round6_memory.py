@@ -14,7 +14,7 @@ def test_expired_pending_path_reenters_a_later_native_definition():
     key = pool.named(word, value=atoms[0], when=0)
     reading = NS(word_ids=torch.tensor([word]), leaves=atoms[0][None], symbol_where=None)
     def close(position):
-        root = store.append_idea(atoms[0], address=501+position, time=False)
+        root = store.append_idea(atoms[0])
         return commit_read_words(owner, reading, batch=0, document='later-empty',
             position=position, written={'root_occurrence': store.occurrence_of(root)})[0]
     close(0)
@@ -30,21 +30,6 @@ def test_expired_pending_path_reenters_a_later_native_definition():
     assert store.order_of_row(store.location(second)) == 1
 
 
-def test_unreduced_relative_field_keeps_predicate_without_inventing_an_operation(monkeypatch):
-    from test_clause_acceptance import SentenceFixture
-    from ClauseRow import Clause
-    from Memory import SYMBOL, RELATION
-    f = SentenceFixture(monkeypatch)
-    child = f.clause(('part', 'a', 'b'))
-    subject, predicate = f.noun('speaker'), f.noun('predicate')
-    clause = Clause(child.meaning, relation='operator',
-                   refs=(subject, predicate, ('clause', 0)), children=(child,))
-    location = f.store.write_clause(clause, evidence=(.7, 0.))
-    row = location[1]
-    left, right = f.store.parts.references(row)
-    assert left == (SYMBOL, subject) and right[0] == RELATION
-    assert int(f.store.parts.operator_reference[row]) == predicate
-    assert int(f.store.parts.operation_seat[row]) == -1
 
 
 def test_rereading_the_same_position_at_a_new_order_preserves_the_original_member():
@@ -55,7 +40,7 @@ def test_rereading_the_same_position_at_a_new_order_preserves_the_original_membe
     word = owner.interpret.lookup_word([116], (), form='later-order')
     key = pool.named(word, value=atoms[0], when=0)
     reading = NS(word_ids=torch.tensor([word]), leaves=atoms[0][None], symbol_where=None)
-    root = store.append_idea(atoms[0], address=601, time=False)
+    root = store.append_idea(atoms[0], name=601)
     def close():
         return commit_read_words(owner, reading, batch=0, document='same-position',
             position=0, written={'root_occurrence': store.occurrence_of(root)})[0]

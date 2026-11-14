@@ -171,7 +171,9 @@ def native_observer(model):
                 owns_head=(child is not None and child.order==1 and
                            child.subject_word_id==node.subject_word_id)
                 if index is not None and node.order==1 and not owns_head:
-                    by_word[node.subject_word_id].add(int(store.address_keys[index]))
+                    from Occurrence import operand_name
+                    by_word[node.subject_word_id].add(operand_name(store.row_name(index))
+                        if isinstance(index, int) else index[1])
                 for child in (*node.children,*node.companions): visit(child)
             visit(clause)
             for token in captured[sid][b]['tokens'].values():
@@ -199,7 +201,8 @@ def native_observer(model):
                     occurrence = store.occurrence_of(index)
                     reference = model.conceptualSpace.mtm.token_of(occurrence) or record['reference']
                     if isinstance(reference, tuple):
-                        reference = reference[-1]
+                        from Occurrence import operand_name
+                        reference = operand_name(reference[-1]) if reference[0] == 'ltm' else reference[-1]
                 for leaf in record['leaves']:
                     word = source_leaves.get((sid, b, leaf))
                     if word is None or sid not in captured or b >= len(captured[sid]):

@@ -254,7 +254,7 @@ def test_kept_word_views_use_written_content_and_for_radius_only():
     bank.mereology.place_rows([row], torch.zeros(len(bank.W)), b'word-views')
     lengths = []
     store = owner._closed_clause_store()
-    roots = [store.append_idea(content, document_key='views', sentence_index=i) for i in range(3)]
+    roots = [store.append_idea(content, ) for i in range(3)]
     for i in range(3):
         commit_read_words(owner, reading, batch=0, document='views', position=i,
             written={'root_occurrence': store.occurrence_of(roots[i])})
@@ -373,7 +373,7 @@ def test_mint_without_occurrence_store_keeps_the_landed_contract(monkeypatch):
     assert mint(owner, atoms[0]) is None
 
 
-@pytest.mark.parametrize('reference', [(1,-7), (2,5000)])
+@pytest.mark.parametrize('reference', [(1,7), (2,5000)])
 def test_nonconcept_operand_contributes_one(reference):
     owner, store, _ = fixture()
     row = store.parts.add(reference, (2,5001), truth_plus=.8, truth_minus=.3)
@@ -439,25 +439,6 @@ def test_configured_truth_over_unread_words_keeps_its_source_pair():
     assert float(store.parts.truth_plus[row]) == pytest.approx(.9)
 
 
-def test_lexical_operator_is_retained_and_composed_at_the_read():
-    from dataclasses import replace
-    owner,store,operator,atoms = learned(1)
-    a,b = (owner.interpret.lookup_word([i],[],form=str(i)) for i in (4,7))
-    from definition_fixtures import agreeing_views
-    agreeing_views(owner,a,b)
-    clause = Clause(ConceptualMeaning.from_description(atoms[1]),relation='operator',
-                   refs=(a,operator,b),evidence=(.8,.2))
-    row = store.write_clause(clause)[1]
-    assert int(store.parts.operator_reference[row]) == operator
-    assert tuple(map(float,store.parts.evidence(row))) == pytest.approx((.8*-math.expm1(-1/3),.2*-math.expm1(-1/3)))
-    assert (2,operator) in store.parts.protected_references([row])
-    state={name:value.clone() for name,value in store.parts.state_dict().items()}
-    store.parts.load_state_dict(state)
-    assert int(store.parts.operator_reference[row])==operator
-    observe(owner,operator,atoms[0])
-    assert float(store.parts.evidence(row)[0]) == pytest.approx(.8*-math.expm1(-2/3))
-    with pytest.raises(ValueError,match='different lexical operators'):
-        store.parts.add(a,b,operator=b)
 
 
 def test_order_survives_retention_checkpoint_and_rejects_cycles():
@@ -494,16 +475,16 @@ def test_item107_generic_sentence_never_names_its_chain(monkeypatch):
     term=Composition(value,(left,right),operation='union',formal_name='union')
     sentence=Clause(ConceptualMeaning.from_description(value),point=value,composition=term)
     chain=f.store.write_clause(sentence,evidence=(1.,0.))
-    assert chain[0]=='sym' and not owner.definitions.objects(word)
+    assert isinstance(chain,int) and not owner.definitions.objects(word)
     named=owner.interpret.define(word,genuine)
-    assert named != chain[1] and not owner.definitions.objects(word)
+    assert not owner.definitions.objects(word)
     from definition_fixtures import agreeing_views
     agreeing_views(owner,word)
     assert owner.definitions.objects(word)==(genuine,)
     reclosed=f.store.write_clause(sentence,evidence=(1.,0.))
-    assert isinstance(reclosed,int)  # Known operands now compress to an occurrence.
+    assert isinstance(reclosed,int) and reclosed != chain
     assert f.store.row(reclosed)['evidence']==(1.,0.)
-    assert f.store.parts.find(original,word)==chain[1]
+    assert f.store.parts.find(original,word) is None
     owner.definitions.rebuild()
     assert owner.definitions.objects(word)==(genuine,)
     assert original not in owner.interpret.remembered_objects(word)
@@ -527,7 +508,7 @@ def test_unreferenced_empty_leaf_contributes_one_at_the_close():
     right=Composition(point(owner,known),reference=known)
     term=Composition(right.point,(left,right),operation='part')
     clause=Clause(ConceptualMeaning.from_description(term.point),point=term.point,composition=term)
-    row=store.write_clause(clause,trust=.9)[1]
+    row=store.write_clause(clause,trust=.9,evidence=(1.,0.))[1]
     assert tuple(map(float,store.parts.evidence(row)))==pytest.approx((.9,0.))
     with pytest.raises(IndexError,match='unavailable'):
         store.parts.evidence(0)
@@ -594,8 +575,8 @@ def test_null_kind_named_from_held_signs_reaches_the_definition_threshold(signs)
     # These are explicitly held observations of one token. This certifies
     # D7's counter through promotion; Q2's sign-close certificates are below.
     for n in range(signs):
-        row=store.append_meaning(ConceptualMeaning.from_description(empty),order=0,
-            document_key='held-signs',sentence_index=n,evidence=(1.,0.),time=False)
+        row=store.append_meaning(ConceptualMeaning.from_description(empty),
+            evidence=(1.,0.))
         assert not store.slots[row].any()
         occurrence=store.occurrence_of(row)
         if n == 0:
@@ -641,8 +622,8 @@ def close_named_sign(owner, store, label, number):
     from FamiliarTier import define_pending, finish_definitions
     from Memory import OCCURRENCE, SYMBOL
     empty = torch.zeros(owner.nDim)
-    row = store.append_meaning(ConceptualMeaning.from_description(empty), order=0,
-        document_key='pending-signs', sentence_index=number, evidence=(1., 0.), time=False)
+    row = store.append_meaning(ConceptualMeaning.from_description(empty),
+          evidence=(1., 0.))
     occurrence = store.occurrence_of(row)
     key = owner.mtm.open(occurrence, kind=owner.null_concept_id, when=number, value=empty)
     left, right = (OCCURRENCE, occurrence[-1]), (SYMBOL, label)

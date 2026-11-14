@@ -1,3 +1,4 @@
+from definition_fixtures import class_over
 """Symmetric dual towers (2026-07-10 plan, rev 2, Task A).
 
 PS and WS are symmetric duals — atoms vs universe views of the same input —
@@ -304,7 +305,7 @@ def test_pyramid_grads_reach_every_rung():
         if cs0.interpret.no_object(word):
             supply_object(cs0, word)
     for obj in cs0.definitions.object_ids:
-        cs0.singleton_concept(obj)
+        class_over(cs0, [('sym', obj)])
     opt = m.getOptimizer(lr=0.01)
     m.runEpoch(optimizer=opt, batchSize=4, split="train", max_batches=1)
     fams = cs0._sparse_families(0)

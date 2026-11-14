@@ -64,7 +64,7 @@ def test_later_fill_releases_the_menu_without_an_expectation_loss():
     clause = plan['items'][0]['node']
     kept = resolver.prepare(clause, plan)
     written = {}
-    row = store.write_clause(kept, document_key='pending', sentence_index=0, written_rows=written)
+    row = store.write_clause(kept,   written_rows=written)
     resolver.commit(plan, row, written, document='pending', position=0, training=False)
     original = store.meaning_of(row)
     assert resolver._mentions[store.occurrence_of(row)]

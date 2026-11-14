@@ -27,7 +27,7 @@ class Tree:
         return self.bank
 
     def metadata(self, address):
-        return dict(self.store._semantic_rows[address]['bindings'])
+        return dict(self.store.working[address]['bindings'])
 
     def operator(self, ref):
         first, second = self.store.parts.references(ref[1])
@@ -63,7 +63,7 @@ class Tree:
         # Event order belongs to occurrences. Pair references determine which
         # operands were consumed, including non-top unary steps and swaps.
         entries = {}
-        for address, context in self.store._semantic_rows.items():
+        for address, context in self.store.working.items():
             data = dict(context['bindings'])
             if '_at' in data:
                 entries[data['_at']] = (address, data)
@@ -100,13 +100,13 @@ class Tree:
                 if tuple(stack[-2:]) != node[3:]: raise ValueError('invalid ordered binary operands')
                 stack[-2:] = [node]; word = -1
             actions.append((kind, operation, word))
-        return self.store.address_keys.new_tensor(actions).reshape(-1, 3)
+        return self.store.row_names.new_tensor(actions).reshape(-1, 3)
 
     def leaves(self):
         leaves = sorted((dict(context['bindings'])['_word'], address)
-            for address, context in self.store._semantic_rows.items()
+            for address, context in self.store.working.items()
             if '_word' in dict(context['bindings']))
-        return torch.stack([self.store.point_of_row(address) for _, address in leaves])
+        return torch.stack([self.store.point_of_row(('ltm',self.store.address_domain,address)) for _, address in leaves])
 
     def view(self, address):
         if address not in self._views:
@@ -114,7 +114,7 @@ class Tree:
         return self._views[address]
 
     def composition(self, action=None, word=None):
-        for address, context in self.store._semantic_rows.items():
+        for address, context in self.store.working.items():
             data = dict(context['bindings'])
             if (action is not None and data.get('_at') == action or
                     word is not None and data.get('_word') == word):
@@ -123,13 +123,25 @@ class Tree:
 
     def install_composition(self, composition, *, action=None, word=None):
         view = self.composition(action, word)
-        context = self.store._semantic_rows[view.address]
+        context = self.store.working[view.address]
         data = dict(context['bindings'])
         data['_composition'] = {name: getattr(composition, name) for name in (
             'reference', 'operation', 'head_role', 'order', 'leaves', 'binding',
-            'word_id', 'formal_name', 'interpretation')}
+            'word_id', 'formal_name', 'interpretation', 'extension')}
+        if not data['_composition']['extension']:
+            data['_composition']['extension'] = dict(context['bindings']).get('_composition', {}).get('extension', ())
         context['bindings'] = tuple(data.items())
         return view
+
+    def install_extension(self, node, *, action=None, word=None):
+        view=self.composition(action,word)
+        context=self.store.working[view.address]
+        marks=dict(context['bindings'])
+        composition=dict(marks.get('_composition',{}))
+        composition['extension']=(node,)
+        marks['_composition']=composition
+        context['bindings']=tuple(marks.items())
+
 
 
 class CompositionView:
@@ -139,7 +151,7 @@ class CompositionView:
 
     @property
     def point(self):
-        return self.tree.store.point_of_row(self.address)
+        return self.tree.store.point_of_row(('ltm',self.tree.store.address_domain,self.address))
 
     @property
     def children(self):
@@ -170,7 +182,7 @@ def replace_composition(value, **changes):
         raise ValueError('a composition view cannot rewrite the pinned topology')
     data = value.tree.metadata(value.address)
     data['_composition'] = dict(data['_composition'], **changes)
-    value.tree.store._semantic_rows[value.address]['bindings'] = tuple(data.items())
+    value.tree.store.working[value.address]['bindings'] = tuple(data.items())
     return value
 
 
@@ -223,9 +235,8 @@ class SentenceStrata(nn.Module):
                 data['_interface'] = rule.canonical
             if concept not in (-1, 0): data['_identity'] = ('sym', concept)
             meaning = replace(ConceptualMeaning.from_description(point), bindings=data)
-            row = store.append_meaning(meaning, kind='unverified', time=False,
-                document_key=('pinned', stream, self._clock), sentence_index=at)
-            ref = OCCURRENCE, int(store.address_keys[row])
+            row = store.append_meaning(meaning, name=self._clock)
+            ref = OCCURRENCE, store.row_name(row)
             if kind == 0: stack.append(ref); continue
             if kind == 3:
                 left, right = stack[-2:]
@@ -250,6 +261,16 @@ class SentenceStrata(nn.Module):
 
     def keep_close(self, stream, point, when, *, address=None, relations=(), source=None):
         store = self.recent_stores[stream]
+        owner_ref = None if source is None else source.__dict__.get('_occurrence_store')
+        owner = None if owner_ref is None else owner_ref()
+        if owner is not None:
+            store.address_domain = owner.address_domain
+            if address is None:
+                # A relation's recent head has no LTM0 row. Reserve its
+                # occurrence name from the same clock as the retained rows;
+                # the syntax counter can otherwise alias a later row's time.
+                from RowTime import next_time, encoder
+                address = int(encoder().decode_index(next_time(owner)))
         store.to(device=point.device, dtype=point.dtype)
         previous = None if address is None else store.index_of_row(address)
         if previous is not None or len(store) == store.capacity:
@@ -258,11 +279,9 @@ class SentenceStrata(nn.Module):
             store.compact_rows([index for index in range(len(store)) if index != retired])
         self._clock += 1
         meaning = replace(ConceptualMeaning.from_description(point.detach()), bindings={'_relations': tuple(relations)})
-        row = store.append_meaning(meaning,
-            kind='unverified', time=when, address=address,
-            document_key=('recent', stream, self._clock))
+        row = store.append_meaning(meaning, name=self._clock if address is None else address)
         if source is not None:
-            selected, pending = set(), [relation for context in store._semantic_rows.values()
+            selected, pending = set(), [relation for context in store.working.values()
                 for relation in dict(context['bindings']).get('_relations', ())]
             while pending:
                 relation = pending.pop()
@@ -274,16 +293,12 @@ class SentenceStrata(nn.Module):
             bank = store.parts
             bank.expire()
             bank._concept_owner = source._concept_owner
-            bank._occupation_owner = source._occupation_owner
-            bank.operation_catalog = source.operation_catalog
             source._sort()
             for relation in source.relation_order[:len(source)].tolist():
                 if relation not in selected: continue
                 left, right = source.references(relation)
                 bank.add(left, right, symbol=relation, truth_plus=float(source.truth_plus[relation]),
-                    truth_minus=float(source.truth_minus[relation]), operator=int(source.operator_reference[relation]),
-                    operation_seat=int(source.operation_seat[relation]))
-                bank.sentence_reference[relation] = source.sentence_reference[relation]
+                    truth_minus=float(source.truth_minus[relation]))
         for index in range(self.trials*stream, self.trials*(stream+1)):
             self.banks[index].expire(); self._leases[index] = None
         return store.occurrence_of(row)
@@ -297,5 +312,5 @@ class SentenceStrata(nn.Module):
     def read(self, address):
         for store in (*self.recent_stores, *self.banks):
             if store.location(address) is not None:
-                return store.point_of_row(address[-1])
+                return store.point_of_row(address)
         raise ValueError('short-term member reference has expired')

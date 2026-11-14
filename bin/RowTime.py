@@ -108,17 +108,37 @@ def relative_idea(model, idea):
 
 def next_time(store):
     source = getattr(store, '_model_present', None)
-    tick = int(store.model_clock) if source is None else int(source())
+    tick = max(int(store.model_clock), 0 if source is None else int(source()))
     if not 0 <= tick <= HORIZON:
         raise OverflowError('model time exceeds the declared row-time ladder horizon')
     store.model_clock.fill_(max(int(store.model_clock), tick + 1))
     return encoder().encode(tick).to(store.slots)
 
 
+def checkpoint_times(slots, count, percept_width):
+    """Read unique legacy names before any destination checkpoint mutation.
+
+    Untimed or duplicate occurrences cannot be renamed without losing their
+    distinction. Alec chose rejection rather than changing the stored bands.
+    """
+    if slots.ndim != 2 or not 0 <= count <= len(slots):
+        raise ValueError('invalid occurrence checkpoint shape or count')
+    if not count:
+        return slots.new_empty(0, dtype=torch.long)
+    if not 8 <= percept_width <= slots.shape[-1]:
+        raise ValueError('ambiguous occurrence times: checkpoint has no time band')
+    bands = slots[:count, percept_width-4:percept_width]
+    if not bool(torch.isfinite(bands).all()) or not bool(bands.ne(0).any(-1).all()):
+        raise ValueError('ambiguous occurrence times: missing or nonfinite time band')
+    ticks = encoder().decode_index(bands)
+    if len(ticks.unique()) != count:
+        raise ValueError('ambiguous occurrence times: several rows have the same time')
+    return ticks
+
+
 def read_time(store, index):
     if isinstance(index, tuple):
-        row = store.index_of_row(int(store.parts.sentence_reference[int(index[1])]))
-        return store.slots.new_zeros(4) if row is None else read_time(store,row)
+        return store.slots.new_zeros(4)
     if store.when_start is None:
         return store.slots.new_zeros(4)
     return store.slots[int(index), store.when_start:store.when_start+4]

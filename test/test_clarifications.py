@@ -118,7 +118,7 @@ def test_suggest_clarifications_template():
     layer.truths[0] = torch.tensor([0.9, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     layer.truths[1] = torch.tensor([0.0, 0.9, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     layer.count.fill_(2)
-    layer._sources = ["A is red", "A is not red"]
+    layer._sources = [None, None]
     layer._trusts = [0.9, 0.8]
 
     basis = _StubBasis()
@@ -128,20 +128,19 @@ def test_suggest_clarifications_template():
     msgs = layer.suggest_clarifications(basis=basis)
     assert len(msgs) == 1
     expected = (
-        "'A is red' (trust=0.9) and 'A is not red' (trust=0.8) "
-        "appear to contradict — please revise to enable more rational thought."
+        "truth #0 (trust=0.9) and truth #1 (trust=0.8) contradict."
     )
     assert msgs[0] == expected
 
 
-def test_suggest_clarifications_missing_source_fallback():
-    """Missing source string falls back to '(truth #i)' rather than raising."""
+def test_suggest_clarifications_without_retained_source_uses_indices():
+    """An unattached truth view reports its local indices and signed trust."""
     layer = _make_layer()
     layer.truths[0] = torch.tensor([0.9, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     layer.truths[1] = torch.tensor([0.0, 0.9, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     layer.count.fill_(2)
-    layer._sources = [None, "A is not red"]
-    layer._trusts = [None, 0.8]
+    layer._sources = [None, None]
+    layer._trusts = [0.9, 0.8]
 
     basis = _StubBasis()
     basis.set(layer.truths[0], layer.truths[1], 0.8)
@@ -150,10 +149,10 @@ def test_suggest_clarifications_missing_source_fallback():
     msgs = layer.suggest_clarifications(basis=basis)
     assert len(msgs) == 1
     msg = msgs[0]
-    assert "(truth #0)" in msg
-    assert "trust=unknown" in msg
-    assert "A is not red" in msg
-    assert "please revise to enable more rational thought." in msg
+    assert "truth #0" in msg
+    assert "trust=0.9" in msg
+    assert "truth #1" in msg
+    assert "contradict." in msg
 
 
 def test_assess_contested_vs_silent():

@@ -14,6 +14,10 @@ from Layers import Error
 def same(actual, expected):
     if torch.is_tensor(actual):
         torch.testing.assert_close(actual, expected)
+    elif __import__('dataclasses').is_dataclass(actual):
+        assert type(actual) is type(expected)
+        for field in __import__('dataclasses').fields(actual):
+            same(getattr(actual,field.name),getattr(expected,field.name))
     elif isinstance(actual, dict):
         assert actual.keys() == expected.keys()
         for key in actual:
@@ -27,7 +31,8 @@ def same(actual, expected):
 
 
 def address(number):
-    from Occurrence import ADDRESS_DOMAIN
+    from Memory import STM0
+    ADDRESS_DOMAIN = STM0.address_domain
     return 'ltm', ADDRESS_DOMAIN, number
 
 
@@ -189,9 +194,6 @@ def close(f, program, frames=(), *, position=0, actions=(None,None), question=Fa
     from dataclasses import replace
     from ClauseJournal import finish_clause
     from ReferenceContext import SituationAddress
-    from DocumentCover import open_cover
-    if not hasattr(f, 'cover'):
-        f.cover = open_cover(f.cs, f.store, stream=0, document='timeline')
     clause=finish_clause(f.language,program,registry=f.registry)
     if question:
         from ThoughtReferences import with_slots, open_slots
@@ -203,8 +205,7 @@ def close(f, program, frames=(), *, position=0, actions=(None,None), question=Fa
     plan=resolver.preview(clause,chunk_context(resolver, frames), stream=0)
     kept=resolver.prepare(clause,plan)
     written={}
-    row=f.store.write_clause(kept,written_rows=written,document_key='timeline',sentence_index=position,stream=0,
-        kind='unverified' if question else 'observation')
+    row=f.store.write_clause(kept,written_rows=written,)
     resolver.commit(plan,row,written,document='timeline',position=position,training=False,
                     verb_action=actions[0],modifier_action=actions[1])
     frame=SituationAddress(f.store.occurrence_of(row),symbols=written.get(('symbols',id(kept)),()),
@@ -313,7 +314,8 @@ def test_some_every_include_actual_and_use_both_lanes(monkeypatch):
     necessary=reader.truth_evidence(q,max_records=32,work=QueryWorkBudget(64))
     assert possible['support_true']==pytest.approx(.8) and possible['support_false']==0
     assert necessary['support_true']==0 and necessary['support_false']==pytest.approx(.2)
-    f.cs.mtm.event(token,f.store.occurrence_of(row),verb=entry.events[0].verb,role=0,when=10,timeline=branch)
+    for event in entry.events:
+        f.cs.mtm.event(token,event.occurrence,verb=event.verb,role=0,when=10,timeline=branch)
     necessary=reader.truth_evidence(q,max_records=32,work=QueryWorkBudget(64))
     assert necessary['support_true']==pytest.approx(.8) and necessary['support_false']==pytest.approx(.2)
 
@@ -340,7 +342,6 @@ def test_promotion_folds_only_actual_events_and_document_end_keeps_ideas(monkeyp
     assert f.cs.mtm.value_of(entry, timeline=1).ne(actual_value).any()
     rows,bank=f.store.slots.clone(),f.cs.similarity_codebook.W.clone()
     consolidate(f.cs,f.store)
-    f.cs.mtm.end_document(f.cover,store=f.store)
     assert token in f.cs.mtm.entries and f.cs.mtm.names
     for stream in tuple(f.cs.mtm.closes):
         for _ in range(f.cs.mtm.horizon + 1):
@@ -408,7 +409,6 @@ def test_retained_idea_keeps_its_subject_reference_after_token_expiry(monkeypatc
     token,entry=next(iter(f.cs.mtm.entries.items()))
     query=replace(ConceptualMeaning.from_description(f.store.slots[row]),
         bindings={'_query_event':(token,entry.timelines[1].events[-1].verb,1)})
-    f.cs.mtm.end_document(f.cover,store=f.store)
     assert token in f.cs.mtm.entries
     for stream in tuple(f.cs.mtm.closes):
         for _ in range(f.cs.mtm.horizon + 1):
@@ -423,7 +423,7 @@ def test_retained_idea_keeps_its_subject_reference_after_token_expiry(monkeypatc
     content = f.store.cued_rows(replace(query, bindings={}), references=(f.store.occurrence_of(row),),
         max_candidates=64, work=QueryWorkBudget(256))
     recalled, = (item for item in content['value'] if item['occurrence'] == f.store.occurrence_of(row))
-    assert recalled['match'] == pytest.approx(1.)
+    assert recalled['match'] == 0.  # An address alone supplies no extension relevance.
     assert recalled['evidence'][0] == pytest.approx(.9)
 
 

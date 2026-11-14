@@ -1,4 +1,5 @@
 """A bounded derived taxonomy view reads only conceptual reference records."""
+from Memory import STM0
 from types import SimpleNamespace
 
 import pytest
@@ -42,7 +43,7 @@ def test_direct_taxonomic_links_change_partof_with_canonical_direction():
 
 def test_reified_relation_is_visible_without_endpoint_mutation():
     cs, (a, b, _c) = _world()
-    edge = cs.reify_concept(a, b)
+    edge = cs._concept_allocator.parts.add(a, b, truth_plus=1.)
     assert cs.concept_wholes(a) == [_ref(b)]
     assert cs.concept_parts(b) == [_ref(a)]
     result = _view(cs).part_of(_ref(a), _ref(b))
@@ -57,11 +58,11 @@ def test_percept_codes_vector_overlap_and_world_rows_are_not_taxonomy_edges():
     cs, (a, b, _c) = _world()
     cs.add_part(b, a)  # raw percept code, not a sym reference
     cs.add_whole(a, b)  # raw whole-space code, not a sym reference
-    cs._ltm_store = LTM0(12, percept_width=0)
+    cs._ltm_store = STM0(12, percept_width=0, capacity=1024, relation_capacity=8192)
     from Meaning import ConceptualMeaning
     cs._ltm_store.append_meaning(ConceptualMeaning.from_payload(
         torch.stack((torch.eye(4)[0], torch.eye(4)[2], torch.ones(4))).flatten()[None], depth=1, layout='infix'),
-        kind='fact', trust=1)
+         trust=1)
     cs.wholeSpace_ref = SimpleNamespace(taxonomy_parent=lambda _ref: b)
     result = _view(cs).part_of(_ref(a), _ref(b))
     assert result["support_true"] == result["support_false"] == 0
@@ -91,7 +92,7 @@ def test_taxonomy_cycles_do_not_loop_and_retired_references_are_unavailable():
 
 def test_taxonomy_budgets_report_incomplete_without_fabricating_falsehood():
     cs, (a, b, _c) = _world()
-    cs.reify_concept(a, b)
+    cs._concept_allocator.parts.add(a, b, truth_plus=1.)
     view = _view(cs, max_nodes=1, max_records=0)
     result = view.part_of(_ref(a), _ref(b))
     assert result["support_true"] == result["support_false"] == 0

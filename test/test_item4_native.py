@@ -70,7 +70,7 @@ def case(row_gain, document_gain, *, omitted=False, relation=False):
             torch.testing.assert_close(idea[0], entry.end_state, atol=0, rtol=0)
             assert ready.all() and answer.resolved
         index = fixture.store.location(field.row_id)
-        retained = fixture.store.expectation_pair(index, gain=document_gain)
+        retained = fixture.store.meaning_of(index)
         floor = (1-row_gain)*(1-document_gain)
         torch.testing.assert_close(image.conceived, image.observed*floor, atol=1e-7, rtol=1e-6)
         if relation:
@@ -78,16 +78,14 @@ def case(row_gain, document_gain, *, omitted=False, relation=False):
             # taxonomy reader does not invent a third predicate row.
             expected = torch.stack((fixture.registry._payload(('sym', clause.refs[0])),
                 fixture.registry._payload(('sym', clause.refs[2])), bank[0]*0))
-            assert retained['observation'].role_refs == (
+            assert retained.role_refs == (
                 ('sym', clause.refs[0]), ('sym', clause.refs[2]), None)
         else:
             expected = entry.end_state
-        torch.testing.assert_close(retained['observation'].roles, expected, atol=0, rtol=0)
+        torch.testing.assert_close(retained.roles, expected, atol=0, rtol=0)
         if omitted:
             assert image.omission[1, 0] == 1 and image.excess[1].sum() == 0
-            assert retained['omission'][1, 0] == 1 and retained['excess'][1].sum() == 0
             torch.testing.assert_close(image.conceived, entry.end_state*floor, atol=1e-7, rtol=1e-6)
-            torch.testing.assert_close(retained['content'], entry.end_state*(1-document_gain), atol=1e-7, rtol=1e-6)
         return dict(row_gain=row_gain, document_gain=document_gain, floor=floor,
                     content_norm=float(image.conceived.norm()), raw_norm=float(image.observed.norm()),
                     answer_correct=None if relation else True, store_correct=True, omitted=omitted, relation=relation,

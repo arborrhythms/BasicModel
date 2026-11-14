@@ -1,4 +1,5 @@
 """Storage-only 2b contracts; no parsing or learning claim."""
+from Memory import STM0
 import copy
 
 import pytest
@@ -52,24 +53,18 @@ def test_live_zero_evidence_question_opens_after_its_row_is_written(relative, pa
     assert 'grammatical_mode' not in store.state_dict()
 
 
-def test_stored_question_is_refused_by_kind_without_a_mode_column():
-    store = LTM0(4, capacity=4)
+def test_zero_trust_is_kept_without_a_mode_or_kind_column():
+    store = STM0(4, capacity=4, relation_capacity=8192)
     question = ConceptualMeaning.from_description(torch.ones(4))
-    from dataclasses import replace
-    row = store.append_meaning(replace(question), kind='question')
+    row = store.append_meaning(question)
     state = copy.deepcopy(store.state_dict())
     assert 'grammatical_mode' not in state and not hasattr(store, 'MODES')
-    restored = LTM0(4, capacity=4)
+    restored = STM0(4, capacity=4, relation_capacity=8192)
     restored.load_state_dict(state)
-    restored.load_semantic_extras(store.semantic_extras())
     for owner in (store, restored):
-        assert owner.row(row)['kind'] == 'question'
         assert owner.row(row)['evidence'] == (0., 0.)
-        with pytest.raises(ValueError, match='question, estimate, cover or episode'):
-            owner.accept_fact(row)
-        ordinary = owner.append_meaning(question, sentence_index=1)
-        owner.accept_fact(ordinary)
-        assert owner.row(ordinary)['kind'] == 'fact'
+        assert owner.row(row)['trust'] == 0.
+        assert not hasattr(owner, 'KINDS')
 
 
 @pytest.mark.parametrize('relation', (False, True))
@@ -82,7 +77,7 @@ def test_held_content_without_a_thought_signature_has_no_expectation_holes(relat
     from MemoryIndex import configure_model_index
     model, registry, _, part, whole = _catalog_world()
     meaning = registry.form('part', part, whole)
-    store = LTM0(8, capacity=64, percept_width=0)
+    store = STM0(8, capacity=64, percept_width=0, relation_capacity=8192)
     model.symbolSpace.ltm_store = store
     configure_model_index(model, store)
     discourse = SymbolExpectation(4, 8, 8, concept_dim=8)
@@ -90,12 +85,12 @@ def test_held_content_without_a_thought_signature_has_no_expectation_holes(relat
     discourse._ltm_store = store
     model.symbolSpace.expectation = discourse
     held = ConceptualMeaning.from_description(meaning.roles[0])
-    prior = store.append_meaning(held, kind='observation')
+    prior = store.append_meaning(held)
     observe(discourse, held.roles)
     discourse.bind_observation_occurrence(0, store.occurrence_of(prior))
     # A stored pair exposes actual operands, without a grammatical VP slot.
     index = (store.append_relation(part[1], whole[1]) if relation else
-             store.append_meaning(held, kind='observation', sentence_index=1))
+             store.append_meaning(held))
     with model._query_boundary_scope((0,)):
         context = model._thought_grammar_context(meaning, row=0,
             work=QueryWorkBudget(64), continuation=None)
@@ -112,7 +107,7 @@ def test_negative_trust_derived_pair_reverses_only_on_the_relation_edge():
     store, _ = clause_store()
     clause = part_clause()
     clause = replace(clause, meaning=replace(clause.meaning, polarity=False))
-    edge = store.write_clause(clause, trust=.7)
+    edge = store.write_clause(clause, trust=.7, evidence=(0., 1.))
     assert len(store) == 0
     assert store.row(edge)['evidence'] == pytest.approx((0., .7))
     assert store.parts.refs[edge[1]].tolist() == [1, 2]
@@ -122,16 +117,15 @@ def test_pending_forgetting_pressure_survives_restore_below_high_water():
     from Forgetting import forget
     from test_forgetting import linked_store, config
     store, child, parent = linked_store()
-    store.set_evidence(1, 0., 0.)
-    cfg = config(trust_weight=1, utility_weight=0, luminosity_weight=0, age_weight=0)
+    store.activity[1] = 0.
+    cfg = config()
     with pytest.warns(RuntimeWarning, match='low water'):
         report = forget(store, cfg, document_boundary=True,
                         retained_occurrences=tuple(store.occurrence_of(i) for i in (2, 3)))
     assert report['after'] == 3 and store.index_of_row(parent[2]) is None
     assert store.index_of_row(child[2]) is not None and bool(store.forget_pending)
-    restored = LTM0(4, capacity=4, percept_width=0)
+    restored = STM0(4, capacity=4, percept_width=0, relation_capacity=8192)
     restored.load_state_dict(store.state_dict())
-    restored.load_semantic_extras(store.semantic_extras())
     assert bool(restored.forget_pending)
     report = forget(restored, cfg, document_boundary=True)
     assert report['target_reached'] and not bool(restored.forget_pending)

@@ -116,7 +116,7 @@ def observe(model):
             child = node.children[head[1]] if isinstance(head, tuple) else None
             owns_head = child is not None and child.order == 1 and child.subject_word_id == node.subject_word_id
             if index is not None and node.order == 1 and not owns_head:
-                records[key]['individual_writes'].append(int(store.address_keys[index]))
+                records[key]['individual_writes'].append(store.row_name(index))
             for child in (*node.children, *node.companions):
                 visit(child)
         visit(clause)

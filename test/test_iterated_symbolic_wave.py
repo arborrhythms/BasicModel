@@ -1,3 +1,4 @@
+from definition_fixtures import class_over
 """Adjacent sigma orders propagate in one pass and cannot self-reference."""
 import pytest
 import torch
@@ -79,10 +80,10 @@ def test_no_self_edge_via_populate():
 def test_relate_x_x_merges_to_one_edge():
     cs = _cs(nS=16, order=2)
     _word, A = cs.interpret_word([1], 2, key="w")
-    sx = cs.singleton_concept(A)                     # the unit set {A}
-    C = cs.reify_concept(sx, sx)                     # part- AND whole-leg on sx
+    sx = class_over(cs, [('sym', A)])                     # the unit set {A}
+    C = cs._concept_allocator.parts.add(sx, sx, truth_plus=1.)                     # part- AND whole-leg on sx
     parts = Spaces._concept_alloc_of(cs).parts
     assert parts.refs[C].tolist() == [sx, sx]
     assert parts.find(sx, sx) == C
-    assert cs.reify_concept(sx, sx) == C
+    assert cs._concept_allocator.parts.add(sx, sx, truth_plus=1.) == C
     assert sum(parts.refs[edge].tolist() == [sx, sx] for edge in parts.indices()) == 1

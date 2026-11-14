@@ -1,4 +1,5 @@
 """The compiled reducer carries clause scope and local references per slot."""
+from Memory import STM0
 from types import SimpleNamespace
 
 import torch
@@ -79,7 +80,7 @@ def test_committed_close_keeps_recent_chunks_beside_the_output_field():
     lang[17] = torch.zeros(2, 8, 2, dtype=torch.long)
     idea, relation = idea_clause(), part_clause()
     from Memory import LTM0
-    store = LTM0(4, capacity=16)
+    store = STM0(4, capacity=16, relation_capacity=8192)
     from SentenceStrata import SentenceStrata
     owner = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store),
         conceptualSpace=SimpleNamespace(stm=SimpleNamespace(

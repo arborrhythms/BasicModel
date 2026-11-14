@@ -8,11 +8,11 @@ import torch
 
 def world(*, meaning_pairs=2):
     from ClauseRow import attach_clause_index
-    from Memory import LTM0
+    from Memory import STM0
     from Meaning import ConceptualMeaning
     from test_review13_subspaces import fixture, word
     owner, bank, _, _ = fixture(meaning_pairs=meaning_pairs)
-    store = LTM0(bank.W.shape[-1], capacity=16)
+    store = STM0(bank.W.shape[-1], capacity=16, relation_capacity=8192)
     owner.symbolSpace = SimpleNamespace(ltm_store=store)
     attach_clause_index(SimpleNamespace(), store, owner)
     rows = [word(owner, [(source, 1.)]) for source in (4, 7)]
@@ -22,8 +22,7 @@ def world(*, meaning_pairs=2):
     agreeing_views(owner, *concepts)
     values = bank.lookup_rows(rows).detach()
     occurrences = [store.occurrence_of(store.append_meaning(
-        ConceptualMeaning.from_description(value), document_key='referents',
-        sentence_index=index, order=0)) for index, value in enumerate(values)]
+        ConceptualMeaning.from_description(value))) for index, value in enumerate(values)]
     return owner, bank, store, rows, concepts, occurrences
 
 
@@ -49,7 +48,7 @@ def test_defined_word_reads_current_denotation_not_its_word_row():
 
 
 @torch.no_grad()
-def test_word_reads_its_single_remembered_object_after_epoch_boundary():
+def test_word_reads_its_single_remembered_object_after_definition_forgetting():
     from test_presentation_memory import begin, fixture, model_for
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
@@ -62,7 +61,7 @@ def test_word_reads_its_single_remembered_object_after_epoch_boundary():
     row = owner._csw_concept_row(1, obj)
     owner.similarity_codebook.W[row].copy_(atoms[0])
     owner.interpret.define(name, obj)
-    begin(model)
+    owner._concept_allocator.parts.retain(())
     assert not owner.definitions.objects(name)
     assert owner.interpret.remembered_objects(name) == (obj,)
     key = owner.mtm.named(name, value=atoms[1])
@@ -154,7 +153,7 @@ def test_kept_thought_adds_its_written_occurrence_reference():
     start = bank.mereology.percept_event_width
     store.slots[store.location(occurrences[0]), start:] = torch.tensor([.8, .1, .6, .2])
     point[start:] = torch.tensor([.2, .9, .1, .7])
-    key = owner.mtm.open(occurrences[0], kind=None, value=store.point_of_row(occurrences[0][-1]), when=0)
+    key = owner.mtm.open(occurrences[0], kind=None, value=store.point_of_row(occurrences[0]), when=0)
     before = owner.mtm.value_of(key).clone()
     meaning = ConceptualMeaning(torch.stack((before, torch.zeros_like(point), point)),
         torch.ones(3, dtype=torch.bool), role_refs=(key, ('sym', 42), occurrences[1]),
@@ -242,7 +241,7 @@ def test_ingestion_pool_has_its_owner_and_reads_current_meanings():
         torch.testing.assert_close(pool.value_of(key)[start:], current[start:], rtol=0, atol=0)
         captured.append(pool)
         store.append_meaning(ConceptualMeaning.from_description(current),
-            document_key='ingestion', sentence_index=0)
+            )
     model = SimpleNamespace(eval=lambda: None, set_sigma=lambda _: None,
         _what_memory=lambda: None, _concept_owner=lambda: owner,
         _runtime_batch=lambda *args, **kwargs: nullcontext(),
@@ -262,7 +261,7 @@ def test_accessible_reads_each_identity_once(monkeypatch):
     resolver, store, atoms = fixture()
     pool = resolver.components.owner.mtm
     uses = [store.occurrence_of(store.append_meaning(ConceptualMeaning.from_description(atoms[0]),
-            document_key='uses', sentence_index=i)) for i in range(3)]
+            )) for i in range(3)]
     key = pool.open(uses[0], kind=None, value=atoms[0], when=0)
     for occurrence in uses[1:]:
         pool.bind(key, occurrence, kind=None, value=atoms[0], when=1)

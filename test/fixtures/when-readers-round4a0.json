@@ -42,18 +42,6 @@
       "reads": "absolute"
     },
     {
-      "file": "bin/ClauseRow.py",
-      "function": "ClauseRows.write_clause",
-      "attributes": [
-        "when"
-      ],
-      "role": "clause closing",
-      "previous_absolute_time": false,
-      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 425,
-      "reads": "absolute"
-    },
-    {
       "file": "bin/EpisodicMemory.py",
       "function": "reinstate",
       "previous_absolute_time": false,
@@ -64,6 +52,54 @@
       "line": 92,
       "reads": "absolute",
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
+    },
+    {
+      "file": "bin/Extension.py",
+      "function": "generated",
+      "attributes": [
+        "when"
+      ],
+      "role": "operator extension",
+      "previous_absolute_time": false,
+      "now": "Transports the generated leaf field time extent to its operated extension; no learned scorer consumes its absolute phase.",
+      "line": 321,
+      "reads": "absolute"
+    },
+    {
+      "file": "bin/Extension.py",
+      "function": "held_context",
+      "attributes": [
+        "when"
+      ],
+      "role": "operator extension",
+      "previous_absolute_time": false,
+      "now": "Chooses the most recent held identity for a definite determiner by the existing MTM time; no learned scorer consumes it.",
+      "line": 230,
+      "reads": "absolute"
+    },
+    {
+      "file": "bin/Extension.py",
+      "function": "stored_field",
+      "attributes": [
+        "when"
+      ],
+      "role": "generated field transport",
+      "previous_absolute_time": false,
+      "now": "Preserves the emitted field time while reading declared concept members; no learned scorer receives its absolute phase.",
+      "line": 90,
+      "reads": "absolute"
+    },
+    {
+      "file": "bin/Extension.py",
+      "function": "understand",
+      "attributes": [
+        "when"
+      ],
+      "role": "operator extension",
+      "previous_absolute_time": false,
+      "now": "Transports the input field time extent to the composed extension; no learned scorer consumes its absolute phase.",
+      "line": 312,
+      "reads": "absolute"
     },
     {
       "file": "bin/FieldReverse.py",
@@ -369,28 +405,6 @@
       "reads": "difference"
     },
     {
-      "file": "bin/PresentationMemory.py",
-      "function": "_capture_clock",
-      "previous_absolute_time": false,
-      "attributes": [
-        "when_encoding"
-      ],
-      "line": 53,
-      "reads": "absolute",
-      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
-    },
-    {
-      "file": "bin/PresentationMemory.py",
-      "function": "epoch",
-      "previous_absolute_time": false,
-      "attributes": [
-        "when_encoding"
-      ],
-      "line": 524,
-      "reads": "absolute",
-      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
-    },
-    {
       "file": "bin/ReferenceClose.py",
       "function": "ReferenceClose.accessible",
       "attributes": [
@@ -412,6 +426,13 @@
       "line": 70,
       "reads": "age",
       "now": "Learned inputs use age, computed from the present tick and the observation band or interval."
+    },
+    {
+      "file": "bin/ScalarPercepts.py",
+      "function": "join",
+      "attributes": [
+        "when"
+      ]
     },
     {
       "file": "bin/SentenceAttention.py",
@@ -1264,13 +1285,6 @@
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
       "line": 794,
       "reads": "absolute"
-    },
-    {
-      "file": "bin/ScalarPercepts.py",
-      "function": "join",
-      "attributes": [
-        "when"
-      ]
     }
   ],
   "dynamic_readers": [

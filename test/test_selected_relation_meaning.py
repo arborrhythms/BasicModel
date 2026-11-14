@@ -31,7 +31,8 @@ def _program_owner(monkeypatch, *, face="part", interrogative=False):
 
     def bank(ids):
         return SimpleNamespace(ops=tuple(
-            Language.GRAMMAR_LAYER_CLASSES[face]() if index == selected else None
+            Language.GRAMMAR_LAYER_CLASSES[grammar.rules_upward[index].method_name]()
+            if grammar.rules_upward[index].method_name in (face, 'whole', 'ask') else None
             for index in ids))
 
     operations=SimpleNamespace(ops=bank(binary).ops,unary_ops=bank(unary).ops,

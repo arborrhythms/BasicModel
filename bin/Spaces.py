@@ -1457,7 +1457,7 @@ class Basis(nn.Module):
 
     def create(self, nInput, nVectors, nDim, customVQ=True, monotonic=True):
         """Construct the module's submodules and parameters.
-        
+
         Mutates ``self`` to install the layers and tensor buffers.
         """
         self.nInput = nInput
@@ -1469,7 +1469,7 @@ class Basis(nn.Module):
     @property
     def size(self):
         """Size.
-        
+
         See class docstring for the operation contract.
         """
         w = self.getW()
@@ -1478,7 +1478,7 @@ class Basis(nn.Module):
     @property
     def width(self):
         """Width.
-        
+
         See class docstring for the operation contract.
         """
         w = self.getW()
@@ -1553,14 +1553,14 @@ class Basis(nn.Module):
 
     def reverse_raw(self, y):
         """Reverse raw.
-        
+
         See class docstring for the operation contract.
         """
         return y
 
     def quantize(self, x):
         """Quantize.
-        
+
         See class docstring for the operation contract.
         """
         raise RuntimeError(f"{self.__class__.__name__} does not support quantize()")
@@ -1620,7 +1620,7 @@ class Basis(nn.Module):
 
     def _snap_content(self, content, weight=None, nWhat=None):
         """Snap content.
-        
+
         See class docstring for the operation contract.
         """
         weight = self._prototype_weight(weight, context="reverse")
@@ -1687,7 +1687,7 @@ class Basis(nn.Module):
 
     def norm(self, x):
         """Norm.
-        
+
         See class docstring for the operation contract.
         """
         return Ops.norm(x)
@@ -1863,14 +1863,14 @@ class Basis(nn.Module):
 
     def pos(self, x):
         """Pos.
-        
+
         See class docstring for the operation contract.
         """
         return Ops.pos(x)
 
     def distance(self, x, y, monotonic=False, dim=-1):
         """Distance.
-        
+
         See class docstring for the operation contract.
         """
         return Ops.distance(x, y, monotonic=monotonic, dim=dim)
@@ -1903,49 +1903,49 @@ class Basis(nn.Module):
 
     def part(self, x, y, monotonic=False, scalar=False):
         """Part.
-        
+
         See class docstring for the operation contract.
         """
         return Ops.part(x, y, monotonic=monotonic, scalar=scalar)
 
     def whole(self, x, y, monotonic=False, scalar=False):
         """Whole.
-        
+
         See class docstring for the operation contract.
         """
         return Ops.whole(x, y, monotonic=monotonic, scalar=scalar)
 
     def equal(self, x, y, monotonic=False, scalar=False):
         """Equal.
-        
+
         See class docstring for the operation contract.
         """
         return Ops.equal(x, y, monotonic=monotonic, scalar=scalar)
 
     def overlap(self, x, y, monotonic=False, scalar=False):
         """Overlap.
-        
+
         See class docstring for the operation contract.
         """
         return Ops.overlap(x, y, monotonic=monotonic, scalar=scalar)
 
     def underlap(self, x, y, monotonic=False, scalar=False):
         """Underlap.
-        
+
         See class docstring for the operation contract.
         """
         return Ops.underlap(x, y, monotonic=monotonic, scalar=scalar)
 
     def boundary(self, x, y, monotonic=False, scalar=False):
         """Boundary.
-        
+
         See class docstring for the operation contract.
         """
         return Ops.boundary(x, y, monotonic=monotonic, scalar=scalar)
 
     def copart(self, x, y, monotonic=False, scalar=False):
         """Copart.
-        
+
         See class docstring for the operation contract.
         """
         return Ops.copart(x, y, monotonic=monotonic, scalar=scalar)
@@ -2143,7 +2143,7 @@ class Codebook(Tensor):
         @staticmethod
         def forward(ctx, e, q):
             """Forward pass.
-            
+
             See class docstring for the operation this layer applies.
             """
             ctx.save_for_backward(e.detach(), q.detach())
@@ -2152,7 +2152,7 @@ class Codebook(Tensor):
         @staticmethod
         def backward(ctx, grad_q):
             """Backward.
-            
+
             See class docstring for the operation contract.
             """
             e, q = ctx.saved_tensors
@@ -3544,7 +3544,7 @@ class Codebook(Tensor):
 
     def updateWeights(self, embed_sum, cluster_size):
         """Update weights.
-        
+
         See class docstring for the operation contract.
         """
         return torch.ones(self.vq.codebook_size, device=TheDevice.get())
@@ -3661,7 +3661,7 @@ class Codebook(Tensor):
 
     def quantize(self, x):
         """Quantize.
-        
+
         See class docstring for the operation contract.
         """
         if os.environ.get("XVQ_PROBE"):
@@ -3771,7 +3771,7 @@ class Codebook(Tensor):
     def _record_codebook_grad(self, grad):
         # grad shape: (nVectors, nDim)
         """Record codebook grad.
-        
+
         See class docstring for the operation contract.
         """
         per_entry = grad.detach().norm(dim=-1).cpu()
@@ -4124,7 +4124,7 @@ class Codebook(Tensor):
 
     def learn(self, x, target_idx, lr=0.01):
         """Learn.
-        
+
         See class docstring for the operation contract.
         """
         x = F.normalize(x, p=2, dim=-1)
@@ -4496,7 +4496,7 @@ class Embedding(Basis):
 
     def __init__(self):
         """Initialize Embedding; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         super().__init__()
@@ -5138,7 +5138,7 @@ class Embedding(Basis):
 
     def _nearest_idx(self, vec, codebook=None):
         """Nearest idx.
-        
+
         See class docstring for the operation contract.
         """
         if codebook is None:
@@ -5828,7 +5828,7 @@ class SubSpace(nn.Module):
                  object=None, what=None, where=None, when=None, activation=None,
                  word=None):
         """Initialize SubSpace; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         super().__init__()
@@ -6287,7 +6287,7 @@ class SubSpace(nn.Module):
 
     def _coerce_basis(self, value, role):
         """Coerce basis.
-        
+
         See class docstring for the operation contract.
         """
         if isinstance(value, Basis):
@@ -6664,7 +6664,7 @@ class SubSpace(nn.Module):
             flags.append((when_slice.norm(dim=-1) > 1e-8).float())
         self._index = torch.stack(flags, dim=-1)  # [B, N, M]
 
-    #def set_activations(self, whatA, whereA, whenA): 
+    #def set_activations(self, whatA, whereA, whenA):
     #    # to store a cross-product activation
     #    return
     def set_activation(self, activation_tensor):
@@ -7666,31 +7666,9 @@ class Space(SpaceCarrierMixin, nn.Module):
     activation   = None
     config_section = None  # set by subclasses
 
-    # -- knowledge-artifact attach -----------------------------------------
-    # Plan: doc/plans/2026-05-20-knowledge-artifact-order-typed-stm.md
-    # §Phase 2 — Loaders. Every Space subclass inherits
-    # ``attach_knowledge(view)`` and the read-only ``.knowledge`` property,
-    # letting per-Space consumers read from a shared ``KnowledgeView``
-    # without each subclass re-implementing the plumbing. The same
-    # mechanism is mirrored on ``SymbolSpace`` (which doesn't subclass Space
-    # but follows the same pattern).
-
-    def attach_knowledge(self, view):
-        """Attach a loaded ``embed.KnowledgeView``. Replaces any
-        previously attached view. Stored via ``object.__setattr__`` to
-        bypass nn.Module's submodule registration (the view holds
-        tensors but isn't itself a Module)."""
-        object.__setattr__(self, '_knowledge', view)
-
-    @property
-    def knowledge(self):
-        """The attached ``embed.KnowledgeView``, or ``None`` before
-        ``attach_knowledge`` is called."""
-        return getattr(self, '_knowledge', None)
-
     def __init__(self, inputShape, spaceShape, outputShape, customVQ=True):
         """Initialize Space; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         super(Space, self).__init__()
@@ -7949,7 +7927,7 @@ class Space(SpaceCarrierMixin, nn.Module):
 
     def _build_object_basis(self):
         """Build object basis.
-        
+
         See class docstring for the operation contract.
         """
         if not self.codebook:
@@ -8585,7 +8563,7 @@ class Space(SpaceCarrierMixin, nn.Module):
 
     def lookup(self, x):
         """Lookup.
-        
+
         See class docstring for the operation contract.
         """
         activation = x[0]
@@ -8598,7 +8576,7 @@ class Space(SpaceCarrierMixin, nn.Module):
         # we get [ batch x nConcepts x symbolEmbedding ],
         # and must compute [ batch x nConcepts x conceptEmbedding ]
         """Dereference.
-        
+
         See class docstring for the operation contract.
         """
         batch = symbols.shape[0]
@@ -8616,7 +8594,7 @@ class Space(SpaceCarrierMixin, nn.Module):
         #codebookUse = self.subspace.get_vectors().codebookUse
         #TheMessage(f"{self.name} Codebook activation: { np.sum(self.subspace.get_vectors().codebookAct.get()) }")
         """Stats.
-        
+
         See class docstring for the operation contract.
         """
         return
@@ -8884,7 +8862,7 @@ class InputSpace(Space):
     def __init__(self, inputShape, spaceShape, outputShape, model_type="numeric"):
 
         """Initialize InputSpace; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         section = self.config_section
@@ -9030,13 +9008,13 @@ class InputSpace(Space):
     # Data client interface
     def getTrainData(self):
         """Get train data.
-        
+
         See class docstring for the operation contract.
         """
         return self.data.train_input, self.data.train_output
     def getTestData(self):
         """Get test data.
-        
+
         See class docstring for the operation contract.
         """
         return self.data.test_input, self.data.test_output
@@ -9045,7 +9023,7 @@ class InputSpace(Space):
         # BasicModel.forward() -- lets it compute N without rewiring
         # inp_items through runBatch's call signature.
         """Prep input.
-        
+
         See class docstring for the operation contract.
         """
         self._scalar_values = None
@@ -9386,7 +9364,7 @@ class InputSpace(Space):
 
     def shuffle(self):
         """Shuffle.
-        
+
         See class docstring for the operation contract.
         """
         self.data.shuffle()
@@ -10421,7 +10399,7 @@ class PartSpace(Space):
     def __init__(self, inputShape, spaceShape, outputShape, model_type=None):
 
         """Initialize PartSpace; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         section = self.config_section
@@ -10730,19 +10708,6 @@ class PartSpace(Space):
         cb.is_percept_store = True
         return cb
 
-    def attach_knowledge(self, view):
-        """Attach a ``KnowledgeView`` and stamp ``ref_ids`` onto ``self.wv``.
-
-        When ``self.wv`` is absent (e.g., a bare-instance unit test
-        with no Embedding allocated), the attach is a no-op beyond
-        the base-class view storage — no error.
-        """
-        super().attach_knowledge(view)
-        wv = getattr(self, 'wv', None)
-        if wv is None:
-            return
-        wt = view._ks['word_table']
-        wv.ref_ids = wt['ref_ids'].clone().detach().long()
 
     @property
     def vocabulary(self):
@@ -10906,13 +10871,13 @@ class PartSpace(Space):
 
     def distance(self, x, y):
         """Distance.
-        
+
         See class docstring for the operation contract.
         """
         return torch.prod( [1-x, 1-y] )
     def certainty(self, x):
         """Certainty.
-        
+
         See class docstring for the operation contract.
         """
         pass
@@ -12405,7 +12370,7 @@ class ModalSpace(Space):
 
     def __init__(self, inputShape, spaceShape, outputShape):
         """Initialize ModalSpace; allocate state for the class contract.
-        
+
         See class docstring for invariants.
         """
         section = self.config_section
@@ -13617,13 +13582,13 @@ class ConceptualSpace(Space):
         # They would do so naturally if the input vectors are normalized.
         # It would also be possible to use a tunable transfer function.
         """Distance.
-        
+
         See class docstring for the operation contract.
         """
         return x.T @ y
     def certainty(self, x):
         """Certainty.
-        
+
         See class docstring for the operation contract.
         """
         return x.T @ x
@@ -14547,35 +14512,7 @@ class ConceptualSpace(Space):
         return sorted(set(_concept_alloc_of(self).refs(sym, "whole")),
                       key=repr)
 
-    def relate(self, part, whole):
-        """The per-location symbol tying ``part`` to ``whole`` -- minted once
-        (idempotent per ``(part, whole)``). The symbol accumulates more parts /
-        wholes as it evolves (use :meth:`add_part` / :meth:`add_whole`)."""
-        alloc = _concept_alloc_of(self)
-        if (isinstance(part, tuple) and part[:1] == ('sym',)
-                and isinstance(whole, tuple) and whole[:1] == ('sym',)):
-            existing = alloc.parts.find(part[1], whole[1])
-            if existing is not None:
-                return existing
-            if alloc.next_id >= alloc.parts.capacity:
-                raise OverflowError("LTM2 symbol capacity exhausted before allocation")
-            sid = ConceptualSpace.new_concept(self)
-            alloc.parts.add(part[1], whole[1], symbol=sid, truth_plus=1.)
-            return sid
-        key = (part, whole)
-        existing = alloc.relate_idx.get(key)
-        if existing is not None:
-            return int(existing)
-        sid = ConceptualSpace.new_concept(self)
-        # sec-4c ordered pair, [whole, part] storage order (whole first).
-        alloc.store_of(sid).embed_pair(sid, whole_ref=whole, part_ref=part)
-        alloc.settle(sid)
-        alloc.relate_idx[key] = sid
-        return sid
 
-    def reify_concept(self, a_sym, b_sym):
-        """Name the common Part(a, b) edge by its native symbol."""
-        return self.relate(("sym", int(a_sym)), ("sym", int(b_sym)))
 
     def concept_is_identity(self, sym):
         """True iff Parts(sym) and Wholes(sym) have each collapsed to exactly
@@ -14685,60 +14622,9 @@ class ConceptualSpace(Space):
         collection, so it is never re-refined)."""
         return _concept_alloc_of(self).raised
 
-    def synthesize_higher_order(self, part_codes):
-        """σ-SYNTHESIS at the relation level: mint a HIGHER-ORDER symbol H that
-        subsumes ``part_codes`` as ONE unit — ``Parts(H) = part_codes`` is H's
-        provenance. This explicit reasoning operation remains separate from
-        automatic pool assignment, whose :meth:`maybe_raise_order` requires
-        stalled refinement on discontiguous support. H is tagged RAISED.
-        Returns H. Idempotent per identical ``part_codes`` set."""
-        alloc = _concept_alloc_of(self)
-        key = ("raise", frozenset(part_codes))
-        idx = alloc.relate_idx.get(key)
-        if idx is not None:
-            return int(idx)
-        H = ConceptualSpace.new_concept(self)
-        for c in part_codes:
-            alloc.add(H, "part", c)
-        alloc.raised.add(H)
-        alloc.relate_idx[key] = H
-        self._populate_concept_weights(H)          # per-order sparse decomposition
-        return H
-
-    def _automatic_synthesize_higher_order(self, part_codes,
-                                            *, reason="higher-order"):
-        """Reuse an exact synthesis identity or admit one optional new row."""
-        alloc = _concept_alloc_of(self)
-        key = ("raise", frozenset(part_codes))
-        existing = alloc.relate_idx.get(key)
-        if existing is not None:
-            return int(existing)
-        if not ConceptualSpace._automatic_concept_admitted(
-                self, 1, reason=reason):
-            return None
-        return ConceptualSpace.synthesize_higher_order(self, part_codes)
 
 
-    def singleton_concept(self, sym):
-        """The SINGLETON (unit-set) of a symbol -- a whole containing exactly
-        ONE symbolic part (Alec 2026-07-02; the Lewis singleton, embraced):
-        ``Parts(S) = {('sym', x)}``, no whole. The constructive primitive of
-        the relation table: if->then is the whole=>part direction it
-        degenerates from (``{x} => x``), and recursion over it (the vine)
-        yields ORDER from nesting while each row stays set-like (the COO
-        reading). Idempotent per ``sym``; min-support exempt (the ONE
-        part-role edge IS its weighted reading). Returns S."""
-        alloc = _concept_alloc_of(self)
-        key = ("singleton", int(sym))
-        cached = alloc.relate_idx.get(key)
-        if cached is not None:
-            return int(cached)
-        S = ConceptualSpace.new_concept(self)
-        alloc.add(S, "part", ("sym", int(sym)))
-        alloc.singletons.add(S)
-        alloc.relate_idx[key] = S
-        self._populate_concept_weights(S)
-        return S
+
 
     def _sparse_active(self):
         """Whether this pass runs conceptual sigma/pi over the shared store.
@@ -15485,9 +15371,10 @@ class ConceptualSpace(Space):
             bound = addresses[:, b] if addresses.ndim == 2 else addresses
             inverse = {int(row): slot for slot, row in enumerate(bound.tolist()) if row >= 0}
             slots = torch.tensor([inverse.get(int(row), -1) for row in rows.tolist()], device=field.device, dtype=torch.long)
+            present = (slots >= 0).nonzero().flatten()
             for pole in (0, 1):
-                values = inferred[slots.clamp_min(0), b, :, (columns % 2) ^ pole]
-                output[pole::2, b, :, 0] = values * ((slots >= 0) * shares)[:, None]
+                values = inferred[slots[present], b, :, (columns[present] % 2) ^ pole]
+                output[2 * present + pole, b, :, 0] = values * shares[present, None]
         spans = None
         if perception is not None:
             keys = [('bp', col // 2) for col in features._cols]
@@ -15507,7 +15394,18 @@ class ConceptualSpace(Space):
         Raw percept definitions witness zero; structural concepts are one
         above their members. Relation handles follow their tagged references.
         """
-        from Memory import NULL_CONCEPT
+        from Memory import NULL_CONCEPT, OCCURRENCE, SYMBOL, RELATION
+        if isinstance(concept_id, tuple):
+            if concept_id[:1] == ('ltm',) or concept_id[0] == OCCURRENCE:
+                store = self._closed_clause_store()
+                reference = (('ltm', store.address_domain, concept_id[1])
+                             if store is not None and concept_id[0] == OCCURRENCE else concept_id)
+                index = None if store is None else store.location(reference)
+                return -1 if index is None else store.order_of_row(index, _seen)
+            if concept_id[0] in ('sym', 'name', SYMBOL, RELATION):
+                concept_id = concept_id[1]
+            else:
+                return -1
         if concept_id == NULL_CONCEPT:
             raise ValueError('the null-concept has no order')
         alloc = _concept_alloc_of(self)
@@ -15521,15 +15419,18 @@ class ConceptualSpace(Space):
                 return -1  # A cyclic chain supplies no order witness.
             seen.add(key)
             refs = alloc.parts.references(concept_id)
-            orders = tuple(alloc.order_of(value, seen) if tag == SYMBOL
-                           else self._concept_source_order(value, seen) for tag, value in refs)
+            store = self._closed_clause_store()
+            orders = tuple(alloc.order_of(value,seen) if tag == SYMBOL else
+                store.order_of_row(store.index_of_row(value),seen) if tag == OCCURRENCE and store is not None and store.index_of_row(value) is not None else
+                self._concept_source_order(value,seen) if tag == RELATION else -1
+                for tag,value in refs)
             right = refs[1][1] if refs[1][0] == SYMBOL else refs[1]
             name = ('equal' if right in alloc.singletons and right not in alloc.raised else
                     'part' if all(tag == SYMBOL for tag, _ in refs) else 'lift')
             return denoted_order(SimpleNamespace(method_name=name), orders, refs, alloc)
         if int(concept_id) not in alloc.placement:
             store = self._closed_clause_store()
-            row = None if store is None else store.index_of_row(concept_id)
+            row = None if store is None else store.location(concept_id)
             if row is not None:
                 return store.order_of_row(row, _seen)
         return alloc.order_of(concept_id, _seen)
@@ -16382,56 +16283,6 @@ class ConceptualSpace(Space):
             with torch.no_grad():
                 ly.values[pos] = float(value)
 
-    def assert_concept_relation(self, cid, part=None, whole=None,
-                                sym_part=None, sym_whole=None, weight=1.0):
-        """Statement channel of the conceptual embedding: refine ``cid``'s
-        definition from an asserted relation ("a body has a leg" adds a part;
-        "cats are animals" adds a whole). Raw codes index PS/WS; ``sym_*``
-        reference other concepts. The FIRST concrete part replaces the
-        ``_NOTHING`` pole, the first concrete whole replaces ``_EVERYTHING`` (the
-        wide-open object narrows), then the sparse edges re-populate -- the
-        concept's position in conceptual space moves with its definition.
-        Host-side, at Reset."""
-        alloc = _concept_alloc_of(self)
-        c = alloc.touch(cid)
-        had_rows = _concept_rows_exist(self)
-        had_everything = _EVERYTHING in alloc.refs(c, "whole")
-        asserted = []
-        if part is not None:
-            alloc.remove(c, "part", _NOTHING)
-            self.add_part(c, int(part))
-            asserted.append((int(part), "part"))
-        if sym_part is not None:
-            alloc.remove(c, "part", _NOTHING)
-            self.add_part(c, ("sym", int(sym_part)))
-            asserted.append((int(sym_part), "sym_part"))
-        if whole is not None:
-            alloc.remove(c, "whole", _EVERYTHING)
-            self.add_whole(c, int(whole))
-            asserted.append((int(whole), "whole"))
-        if sym_whole is not None:
-            alloc.remove(c, "whole", _EVERYTHING)
-            self.add_whole(c, ("sym", int(sym_whole)))
-            asserted.append((int(sym_whole), "sym_whole"))
-        self._populate_concept_weights(c)
-        # A concrete whole replaced the EVERYTHING pole: retire its bias edge
-        # (global (row, nVectors) on the shared store -- v3).
-        if (had_everything and had_rows
-                and (whole is not None or sym_whole is not None)):
-            ly = alloc.layer(0)
-            row = self._csw_row_of(c)
-            if row is not None:
-                ly.remove_edges([(int(row), self._bias_col())])
-        for (code, side) in asserted:
-            # An explicit field stamp survives testimony. Its SYM links
-            # therefore use the existing field-to-field sparse edges,
-            # instead of relying on a derived order increase to add them.
-            if (_concept_rows_exist(self) and side in ('sym_part', 'sym_whole') and alloc.order_of(c) == 0
-                    and alloc.order_of(code) == 0):
-                self.add_concept_edge(self._csw_row_of(c),
-                                      self._csw_concept_row(0, code), weight)
-            self._set_concept_edge_value(c, code, side, weight)
-        return c
 
     def _hebbian_strengthen(self, cid, eta=0.1, cap=4.0):
         """Bump ``cid``'s sparse edge values by ``eta`` (clamped to ``cap``):
@@ -16529,9 +16380,6 @@ class ConceptualSpace(Space):
     def trust_measurements(self):
         from ConceptTrust import measurements
         return measurements(self)
-
-    def gate_measurements(self):
-        return _concept_alloc_of(self).parts.gate_measurements()
 
     def null_concept_read(self):
         """Verify the reserved storage, including the sign bit of every zero."""
@@ -17202,7 +17050,7 @@ class ConceptualSpace(Space):
         positive = max(float(store.parts.truth_plus[idx]), w if supporting else 0.)
         negative = max(float(store.parts.truth_minus[idx]), w if supporting < relevant else 0.)
         store.parts.add(*store.parts.refs[idx].tolist(), ref_kinds=store.parts.ref_kinds[idx].tolist(), truth_plus=positive,
-                        truth_minus=negative, witness=False)
+                        truth_minus=negative)
         return float(store.parts.evidence(idx)[0] - store.parts.evidence(idx)[1])
 
 
@@ -20471,7 +20319,7 @@ class OutputSpace(Space):
         # OutputSpace always uses its own Tensor basis for forward results.
         # The Embedding reference (if any) is stored separately for text_mode reverse.
         """Build object basis.
-        
+
         See class docstring for the operation contract.
         """
         initial_vectors = getattr(self, "_initial_vectors", None)
@@ -20624,7 +20472,7 @@ class OutputSpace(Space):
         return y
     def getTestOutput(self):
         """Get test output.
-        
+
         See class docstring for the operation contract.
         """
         if not self.data.test_output:
@@ -20635,7 +20483,7 @@ class OutputSpace(Space):
         return out.squeeze(-1) if out.ndim == 3 else out
     def prepOutput(self, outputBatch):
         """Prep output.
-        
+
         See class docstring for the operation contract.
         """
         if isinstance(outputBatch, list):
@@ -20792,7 +20640,7 @@ class OutputSpace(Space):
 
     def _reverse_text_vectors(self, vectors):
         """Reverse text vectors.
-        
+
         See class docstring for the operation contract.
         """
         emb = self._vocabulary

@@ -116,6 +116,8 @@ class ThoughtTrialState:
     def __init__(self,model, *, detach=False):
         memory=model._what_memory()
         self.model = model
+        from MemoryActivity import snapshot
+        self.activity = snapshot()
         self.clock = model.when_time.detach().clone()
         store = getattr(getattr(model, 'symbolSpace', None), 'ltm_store', None)
         self.store_clock = None if store is None else (store, store.model_clock.detach().clone())
@@ -170,6 +172,8 @@ class ThoughtTrialState:
             type(self).keep((current, departing), selected)
             return
         if not effects_only:
+            from MemoryActivity import restore
+            restore(self.activity)
             self.model.when_time.copy_(self.clock)
             self.model.when_encoding.t = self.model.present()
             if self.store_clock is not None:
@@ -278,6 +282,8 @@ class ThoughtTrialState:
         if chosen.store_clock is not None:
             chosen.store_clock = (chosen.store_clock[0],
                 torch.stack([states[index].store_clock[1] for index in set(indices)]).amax(0))
+        from MemoryActivity import select
+        chosen.activity = select([state.activity for state in states], winners)
         chosen.saved = []
         for position, (owner, values, names) in enumerate(states[0].saved):
             alternatives = [state.saved[position][1] for state in states]

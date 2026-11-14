@@ -195,8 +195,16 @@ def component_signal(model):
 
 
 def model_hashes(model):
-    return {k:hashlib.sha256(v.detach().cpu().contiguous().numpy().tobytes()).hexdigest()
-            for k,v in model.state_dict().items() if torch.is_tensor(v)}
+    from IndependentComponents import _unpack_state
+    def content(key, value):
+        if key.endswith('parts_of_speech._extra_state'):
+            # Its pickle envelope can share equal strings differently after
+            # restore. Hash the same metadata restore_warmup validates.
+            return json.dumps(_unpack_state(value), sort_keys=True,
+                              separators=(',', ':')).encode()
+        return value.detach().cpu().contiguous().numpy().tobytes()
+    return {key: hashlib.sha256(content(key, value)).hexdigest()
+            for key, value in model.state_dict().items() if torch.is_tensor(value)}
 
 
 def restore_warmup(model, path, restore):

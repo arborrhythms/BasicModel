@@ -35,11 +35,10 @@ def test_location_is_not_retained_and_time_survives_restore_and_compaction(legac
         state['where'] = torch.arange(store.capacity * 4).reshape(store.capacity, 4).float()
     restored, _ = clause_store()
     if legacy_where:
-        with pytest.raises(ValueError, match='checkpoint column: where'):
+        with pytest.raises(RuntimeError, match='where'):
             restored.load_state_dict(state, strict=True)
         return
     restored.load_state_dict(state, strict=True)
-    restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
     assert not hasattr(restored, 'where')
     assert 'where' not in restored.state_dict()
     torch.testing.assert_close(restored.entry_time(row), time, rtol=0, atol=0)

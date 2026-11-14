@@ -1,4 +1,5 @@
 """Regressions for Claude's repair-candidate review; no selected initialization."""
+from Memory import STM0
 import copy
 import json
 from dataclasses import replace
@@ -7,7 +8,7 @@ import torch
 from Expectation import sample_alternative, retention_surprise
 from Layers import SymbolExpectation, ExpectationComparison
 from Memory import LTM0
-from Meaning import ClosingImage, ConceptualMeaning, retained_symbol_prediction, withheld_symbols
+from Meaning import ClosingImage, ConceptualMeaning, withheld_symbols
 from meaning_fixtures import symbol_prediction, estimate_meaning
 
 
@@ -81,36 +82,11 @@ def test_omission_surprise_and_non_marks_agree_at_both_native_writers():
     assert comparison.surprise_for(ordinary)>0
     assert comparison.surprise_for(withheld)==0
     for observation in (ordinary,withheld):
-        store=LTM0(4,capacity=8)
-        _,row=store.append_expectation_pair(estimate_meaning(prior),observation,presence_logits=prior.presence_logits)
-        assert store.expectation_pair(row)['surprise']==pytest.approx(float(comparison.surprise_for(observation)))
+        store=STM0(4,capacity=8, relation_capacity=8192)
+        row=store.append_meaning(observation,surprise=float(comparison.surprise_for(observation)))
+        assert float(store.activity[row])==pytest.approx(float(comparison.surprise_for(observation)))
 
 
-def test_retained_prior_keys_are_bounded_by_realized_support_and_replay_is_exact():
-    n,width=128,32
-    # Distinct complete identities with a sparse actual observation.
-    keys=torch.eye(width).repeat(4,1)
-    keys[:,0]+=torch.arange(n)/1000
-    expected=torch.full((n,2),.25)
-    prior=symbol_prediction(keys,expected)
-    roles=torch.cat((keys[5:6],torch.zeros(2,width)))
-    occupied=torch.tensor([True,False,False])
-    target=torch.zeros_like(expected);target[5,0]=1
-    bindings=prior.retained_bindings(observed=roles,occupied=occupied,activation=target)
-    entries=bindings['_expected_symbols']
-    assert sum(key is not None for _,_,key,_ in entries)<=2
-    estimate=ConceptualMeaning(prior.roles,torch.ones(3,dtype=torch.bool),bindings=bindings)
-    observation=ConceptualMeaning(roles,occupied,bindings={'_observed_symbol_activations':((5,(1.,0.)),)})
-    store=LTM0(width,capacity=8)
-    _,row=store.append_expectation_pair(estimate,observation,presence_logits=prior.presence_logits)
-    restored=LTM0(width,capacity=8)
-    restored.load_state_dict(copy.deepcopy(store.state_dict()))
-    restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
-    for owner in (store,restored):
-        pair=owner.expectation_pair(row,gain=.5)
-        torch.testing.assert_close(pair['residual'],target-expected)
-        assert pair['surprise']==pytest.approx(float(retention_surprise(target-expected,expected)))
-    assert len(json.dumps(bindings)) < len(json.dumps(prior.retained_bindings()))/2
 
 
 def test_expectation_free_placement_is_independent_of_forecasts_and_percept_moments(tmp_path,monkeypatch):

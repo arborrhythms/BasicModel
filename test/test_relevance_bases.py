@@ -1,3 +1,4 @@
+from definition_fixtures import class_over
 """The simplified relevance law (Architecture sec C, 2026-07-11):
 ONE quadratic priming surface per space -- SEEN rows primed by being
 perceived (bump + exponential decay), DESIRED/HATED rows by signed intent
@@ -209,7 +210,7 @@ def test_symbol_history_projection():
     from test_cs_symbol_table import _cs_sparse_active
     cs = _cs_sparse_active()
     _, obj = cs.interpret_word([1], 2, key="w1")
-    parent = cs.singleton_concept(obj)
+    parent = class_over(cs, [('sym', obj)])
     row_object = cs._csw_row_of(parent)
     assert row_object is not None
     p = cs.symbol_history_priority({int(obj): 5.0})

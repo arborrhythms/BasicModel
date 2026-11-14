@@ -20,7 +20,7 @@ def test_same_order_identity_row_survives_the_epoch_boundary(operation):
     begin(model_for(owner, store))
     symbols = []
     for i, point in enumerate(points[:2]):
-        occurrence = write(store, point, ('admission', i), order=0)
+        occurrence = write(store, point, ('admission', i))
         token = owner.mtm.open(occurrence, kind=None, value=point, when=i)
         symbols.append(promote_identity(owner, token))
     left, right = symbols
@@ -36,7 +36,7 @@ def test_same_order_identity_row_survives_the_epoch_boundary(operation):
     assert ('sym', right) not in alloc.refs(left, 'whole')
     begin(model_for(owner, store))
     assert [alloc.order_of(cid) for cid in symbols] == [1, 1]
-    assert alloc.parts.find(left, right) is None
+    assert alloc.parts.find(left, right) == row
 
 
 def test_order_boundary_membership_follows_one_rule():
@@ -182,7 +182,7 @@ def test_lesson_sides_read_the_kept_occurrence_and_leave_an_unresolved_slot():
     from test_presentation_memory import fixture, write
     resolver, store, points = fixture()
     owner = resolver.components.owner
-    address = write(store, points[0], 'reading', order=0)
+    address = write(store, points[0], 'reading')
     token = owner.mtm.open(address, kind=None, value=points[0], when=0)
     symbol = promote_identity(owner, token)
     assert observed_sides(owner, ((OCCURRENCE, address[-1]),)) == [
@@ -205,21 +205,20 @@ def test_ambiguous_pointer_identity_across_time_is_empty(tmp_path):
     relata = []
     for i, form in enumerate(('a', 'b', 'c')):
         label = owner.interpret.lookup_word([i+1], (), form=form)
-        row = store.append_meaning(ConceptualMeaning.from_description(points[i]), order=0,
-                                   document_key=('given', form), time=False)
+        row = store.append_meaning(ConceptualMeaning.from_description(points[i]), )
         occurrence = store.occurrence_of(row)
         token = pool.open(occurrence, kind=None, value=points[i], when=i)
         # These relata are supplied as known operands of the pointer test.
         # Three agreeing occurrences meet the new definition threshold.
         for view in range(2):
-            extra = store.append_meaning(ConceptualMeaning.from_description(points[i]), order=0,
-                document_key=('given-view', form, view), time=False)
+            extra = store.append_meaning(ConceptualMeaning.from_description(points[i]), )
             pool.bind(token, store.occurrence_of(extra), kind=None, value=points[i], when=i)
         symbol = promote_identity(owner, token, word=label)
         assert alloc.order_of(symbol) == 1
         relata.append((label, symbol))
     vectors = torch.stack([store._concept_point(cid) for _, cid in relata])
     support = vectors.ne(0)
+    support[:,store.when_start:store.when_start+4] = False
     assert support.any(1).all() and (support.sum(0) <= 1).all()
 
     word = owner.interpret.lookup_word([4], (), form='this')
@@ -253,8 +252,8 @@ def test_ambiguous_pointer_identity_across_time_is_empty(tmp_path):
         plan = resolver.preview(clause, context(resolver, ()))
         kept = resolver.prepare(clause, plan)
         written = {}
-        address = store.write_clause(kept, document_key='pointer-over-time', sentence_index=i,
-                                     evidence=(1., 0.), text=sentence, written_rows=written)
+        address = store.write_clause(kept,
+                                     evidence=(1., 0.), written_rows=written)
         resolver.commit(plan, address, written, document='pointer-over-time', position=i, training=False)
         if i == 0:
             identity, = owner.definitions.objects(word)
@@ -263,8 +262,7 @@ def test_ambiguous_pointer_identity_across_time_is_empty(tmp_path):
             assert alloc.order_of(identity) == 1
             from ConceptTrust import observe
             for view in range(2):
-                extra = store.append_meaning(ConceptualMeaning.from_description(points[3]), order=0,
-                    document_key=('pointer-view', view), time=False)
+                extra = store.append_meaning(ConceptualMeaning.from_description(points[3]), )
                 observe(owner, identity, points[3])
         pair = ((SYMBOL, identity), (SYMBOL, member))
         direct, reverse = alloc.parts.find(*pair), alloc.parts.find(*reversed(pair))
@@ -292,6 +290,7 @@ def test_ambiguous_pointer_identity_across_time_is_empty(tmp_path):
             assert members == {cid for _, cid in relata}
             assert all(alloc.order_of(cid) + 1 == alloc.order_of(parent) for cid in members)
             invariant = torch.stack([store._concept_point(cid) for cid in sorted(members)]).amin(0)
+            invariant[store.when_start:store.when_start+4] = 0
             assert torch.count_nonzero(invariant) == 0
             receipt(tmp_path, 'pointer-across-time', dict(steps=facts, parent=parent,
                 members=sorted(members), member_rows=vectors.tolist(), invariant=invariant.tolist()))
@@ -319,8 +318,8 @@ def test_pointer_identity_across_time_keeps_bound_predicate(monkeypatch, tmp_pat
         composition=Composition(point, (Composition(cat_point, reference=cat, order=1),
                                         Composition(asleep, reference=sleeps)),
                                 operation='lift', formal_name='lift', head_role=2, order=1))
-    first = f.store.write_clause(antecedent, document_key='bound-over-time', sentence_index=0,
-                                 text='A cat sleeps.')
+    first = f.store.write_clause(antecedent,
+                                 )
     address = f.store.occurrence_of(first)
     assert dict(f.store.raw_meaning_of(first).bindings)['_identity'] == ('sym', cat)
     request = dict(mode='bind', leaves=(0,), cue=torch.zeros_like(point), predicate=predicate, role=0)
@@ -337,8 +336,8 @@ def test_pointer_identity_across_time_keeps_bound_predicate(monkeypatch, tmp_pat
     assert address in item['candidates'] and item['selected'] == address
     kept = resolver.prepare(clause, plan)
     written = {}
-    second = f.store.write_clause(kept, document_key='bound-over-time', sentence_index=1,
-                                  text='It is black.', written_rows=written)
+    second = f.store.write_clause(kept,
+                                  written_rows=written)
     resolver.commit(plan, second, written, document='bound-over-time', position=1, training=False)
     second_mention = plan['mention_occurrences'][id(item['written_node'])]
     token = f.cs.mtm.token_of(address)
@@ -383,8 +382,8 @@ def _sign_equation(f, form, label, position):
     assert site['candidates'] == ()
     kept=resolver.prepare(clause,plan)
     written={}
-    ref=store.write_clause(kept,document_key='sign-equations',sentence_index=position,
-        written_rows=written,evidence=(1.,0.),text=f'{form} is {label}.')
+    ref=store.write_clause(kept,
+        written_rows=written,evidence=(1.,0.))
     resolver.commit(plan,ref,written,document='sign-equations',position=position,training=False)
     return words, plan['mention_occurrences'][id(site['written_node'])]
 
@@ -402,8 +401,7 @@ def test_two_kept_signs_survive_a_full_pool_until_their_definition_is_read(monke
     import weakref
     pool._owner = weakref.ref(owner)
     value = torch.zeros(store.nDim)
-    previous = [store.occurrence_of(store.append_idea(value, time=False,
-        document_key=('old', i))) for i in (1, 2)]
+    previous = [store.occurrence_of(store.append_idea(value)) for i in (1, 2)]
     for address in previous:
         pool.open(address, kind=None, when=0, value=value)
     pool.close(None, stream=0, references=previous)
@@ -485,8 +483,7 @@ def test_sign_question_reads_the_latest_named_token_and_no_concept_for_an_unname
     observed = torch.eye(f.store.nDim)[2]
     def observe(reference, when):
         pool = f.cs.mtm
-        row = f.store.append_idea(observed, time=False,
-            document_key=('observed-state', reference, when))
+        row = f.store.append_idea(observed)
         pool.event(reference, f.store.occurrence_of(row), verb=verb, role=0, when=when,
             before=pool.value_of(reference))
         assert resolver.coordinates(pool.value_of(reference)).sum() > 0
@@ -524,7 +521,7 @@ def test_sign_question_reads_the_latest_named_token_and_no_concept_for_an_unname
     plan=resolver.preview(site, context(resolver,()))
     kept=resolver.prepare(site,plan)
     written={}
-    address=f.store.write_clause(kept,document_key='independent-sign',written_rows=written)
+    address=f.store.write_clause(kept,written_rows=written)
     resolver.commit(plan,address,written,document='independent-sign',position=0,training=False)
     unnamed=f.store.occurrence_of(address)
     assert f.cs.mtm.entries[f.cs.mtm.token_of(unnamed)].kind==f.cs.null_concept_id
@@ -539,45 +536,46 @@ def test_sign_question_reads_the_latest_named_token_and_no_concept_for_an_unname
     assert not references(empty['meaning']) and not matches(model,empty['meaning'],'Felix')
 
 
-def test_ltm0_amended_row_reads_referents_and_rejects_old_checkpoints(tmp_path):
+def test_ltm0_amended_row_reads_referents_and_discards_retired_columns(tmp_path):
     from dataclasses import replace
     from Meaning import ConceptualMeaning
     from test_one_backward import receipt
     from test_orders_learned import equality_fixture
-
-    _, store, alloc = equality_fixture()
+    owner, previous, alloc = equality_fixture()
+    from Memory import LTM0
+    from ClauseRow import attach_clause_index
+    from types import SimpleNamespace
+    store = LTM0(previous.nDim,capacity=previous.capacity,percept_width=previous.percept_width,
+                 relation_capacity=previous.parts.capacity,episodic_concepts=previous.episodic_capacity)
+    attach_clause_index(SimpleNamespace(),store,owner)
     identity = alloc.new_concept()
     alloc.reference_orders[identity] = 2
     idea = replace(ConceptualMeaning.from_description(store.slots.new_ones(store.nDim)),
-                   role_refs=(('sym', identity), None, None))
-    row = store.append_meaning(idea, evidence=(.6, .3), order=0, document_key='row-layout')
-    assert store.order_of_row(row) == 2 and store.row(row)['evidence'] == pytest.approx((.6, .3))
-    assert store.addressing.address_keys[row] == store.row(row)['row_id']
-    assert store.time.shape == (store.capacity, 4)
+                   role_refs=(('sym',identity),None,None))
+    row = store.append_meaning(idea,evidence=(.6,.3))
+    assert store.order_of_row(row) == 2
+    assert store.row(row)['evidence'] == pytest.approx((.6,0.))
+    assert store.row(row+1)['evidence'] == pytest.approx((0.,.3))
+    assert store.row_name(row) == store.row(row)['row_id']
+    assert store.time.shape == (store.capacity,4)
     assert store.time.untyped_storage().data_ptr() == store.slots.untyped_storage().data_ptr()
-
-    columns = dict(slots=store.slots, when=store.time, truth_plus=store.truth_plus,
-                   truth_minus=store.truth_minus, access_count=store.access_count, surprise=store.surprise,
-                   document_keys=store.addressing.source_documents,
-                   document_authorities=store.addressing.source_authorities)
-    allocations = {name: dict(shape=list(value.shape), pointer=value.data_ptr(),
-                              bytes=value.numel() * value.element_size()) for name, value in columns.items()}
-    store.set_origin(row, store.ORIGIN_USER, asserted=(float(store.truth_plus[row]), float(store.truth_minus[row])))
-    for column in ('order', 'origin', 'polarity'):
+    columns = {name:getattr(store,name) for name in store.columns}
+    columns['time'] = store.time
+    allocations = {name:dict(shape=list(value.shape),pointer=value.data_ptr(),
+                              bytes=value.numel()*value.element_size()) for name,value in columns.items()}
+    for column in ('order','origin','polarity'):
         legacy = store.state_dict()
         legacy[column] = torch.zeros(store.capacity)
-        with pytest.raises(ValueError, match='column: ' + column):
-            store.load_state_dict(legacy, strict=False)
-    restored = type(store)(store.nDim, capacity=store.capacity, percept_width=store.percept_width,
-        stream_capacity=store.stream.shape[1], recurrence_capacity=store.recurrence_capacity,
-        relation_capacity=store.parts.capacity)
+        with pytest.warns(UserWarning,match=column):
+            store.load_state_dict(legacy,strict=False)
+    restored = type(store)(store.nDim,capacity=store.capacity,percept_width=store.percept_width,
+        relation_capacity=store.parts.capacity,episodic_concepts=store.episodic_capacity)
     restored.load_state_dict(store.state_dict())
-    assert restored.source_document(row) == store.ORIGIN_USER
-    restored.load_semantic_extras(store.semantic_extras())
+    assert restored.referent_of(row) == ('sym',identity)
     assert restored.index_of_row(store.row(row)['row_id']) == row
-    assert all(value.data_ptr() == allocations[name]['pointer'] for name, value in columns.items())
-    receipt(tmp_path, 'ltm0-amended-allocation', dict(columns=allocations, schema=int(store.truth_schema),
-        source_documents=len(restored._document_sources), recovered_order=store.order_of_row(row)))
+    assert all(value.data_ptr() == allocations[name]['pointer'] for name,value in columns.items())
+    receipt(tmp_path,'ltm0-amended-allocation',dict(columns=allocations,schema=int(store.truth_schema),
+        recovered_order=store.order_of_row(row)))
 
 
 def test_serial_concept_expectation_does_not_select_a_concept():
@@ -656,7 +654,7 @@ def test_compose_bind_keeps_its_addressed_shifted_introduction(monkeypatch):
     assert [site['selected'] for site in plan['items']] == [('new', 0), ('new', 0)]
     assert [site['node'].identity['introduction'] for site in plan['items']] == [True, False]
     prepared, written = close.prepare(clause, plan), {}
-    address = f.store.write_clause(prepared, document_key='shift and bind', written_rows=written)
+    address = f.store.write_clause(prepared,  written_rows=written)
     close.commit(plan, address, written, document='shift and bind', position=0, training=False)
     first, second = (f.store.occurrence_of(written[id(site['written_node'])]) for site in plan['items'])
     assert first != second and f.cs.mtm.token_of(first) == f.cs.mtm.token_of(second) == first
@@ -694,7 +692,7 @@ def test_kept_event_retains_its_determination_and_shift(monkeypatch):
     assert introductions[1]['node'].identity['action'] == 1
     assert introductions[2]['node'].identity['action'] is None
     prepared, written = close.prepare(clause, plan), {}
-    address = f.store.write_clause(prepared, document_key='wrapped determination', written_rows=written)
+    address = f.store.write_clause(prepared,  written_rows=written)
     close.commit(plan, address, written, document='wrapped determination', position=0, training=False)
     events = {value for key, value in written.items()
               if isinstance(key, tuple) and key[0] == 'event_occurrence'}
@@ -814,8 +812,8 @@ def test_no_op_keeps_the_form_then_binds_and_acquires_a_kind(monkeypatch, tmp_pa
     monkeypatch.setattr(owner.mtm, 'open', observe)
     kept = resolver.prepare(clause, plan)
     written = {}
-    address = store.write_clause(kept, document_key='no-op-reading', sentence_index=0,
-        text='The dog went woof.', evidence=(1., 0.), written_rows=written)
+    address = store.write_clause(kept,
+        evidence=(1., 0.), written_rows=written)
     resolver.commit(plan, address, written, document='no-op-reading', position=0, training=False,
                     reading=reading)
     occurrence = plan['mention_occurrences'][id(site['written_node'])]
@@ -851,8 +849,8 @@ def test_no_op_keeps_the_form_then_binds_and_acquires_a_kind(monkeypatch, tmp_pa
     assert occurrence in item['candidates'] and item['selected'] == occurrence
     kept = resolver.prepare(clause, plan)
     written = {}
-    address = store.write_clause(kept, document_key='no-op-reading', sentence_index=1,
-        text='That was a bark.', evidence=(1., 0.), written_rows=written)
+    address = store.write_clause(kept,
+        evidence=(1., 0.), written_rows=written)
     resolver.commit(plan, address, written, document='no-op-reading', position=1, training=False)
     later = plan['mention_occurrences'][id(item['written_node'])]
     assert owner.mtm.token_of(later) == token and owner.mtm.entries[token].kind == bark
@@ -970,7 +968,7 @@ def test_optional_interpretation_keeps_the_pending_definition_path(monkeypatch):
     plan = resolver.preview(clause, context(resolver, ()))
     kept = resolver.prepare(clause, plan)
     written = {}
-    address = f.store.write_clause(kept, document_key='optional-symbol', evidence=(1., 0.), written_rows=written)
+    address = f.store.write_clause(kept,  evidence=(1., 0.), written_rows=written)
     resolver.commit(plan, address, written, document='optional-symbol', position=0, training=False, reading=reading)
     word = f.cs.interpret.word_for_form('Name')
     identity, = f.cs.interpret.denotations(word)

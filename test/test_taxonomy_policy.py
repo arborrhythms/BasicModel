@@ -1,3 +1,4 @@
+from definition_fixtures import class_over
 """Normal thought credit and evidence cannot regain world-vector shortcuts."""
 import torch
 from Memory import LTM0
@@ -15,7 +16,7 @@ def _setup():
     bases = tuple(cs.new_concept() for _ in range(3))
     for base in bases:
         force_order(cs, base, 0)
-    refs = tuple(('sym', cs.synthesize_higher_order([('sym', base)]))
+    refs = tuple(('sym', class_over(cs, [('sym', base)]))
                  for base in bases)
     for ref in refs:
         cs._csw_concept_row(cs._concept_source_order(ref[1]), ref[1])
@@ -28,7 +29,7 @@ def test_numeric_world_evidence_cannot_establish_taxonomic_inclusion():
     result = model.reason_about(QuerySpec.from_surface('isPart', a, b))
     assert result.support_true == result.support_false == 0
     assert len(store) == 1
-    assert store.row(('sym', store.parts.find(a[1], b[1])))['kind'] == 'unverified'
+    assert store.row(('sym', store.parts.find(a[1], b[1])))['evidence'] == (0., 0.)
 
 
 def test_unrelated_true_episode_cannot_establish_the_next_parent_relation():
@@ -36,11 +37,14 @@ def test_unrelated_true_episode_cannot_establish_the_next_parent_relation():
     cs, (a, b, _), store, model = _setup()
     fact = ConceptualMeaning.from_description(model.grammatical_thoughts._payload(a))
     order = terminal_model_index(model, fact.role_refs)
-    row = store.append_meaning(fact, trust=1, order=order,
+    row = store.append_meaning(fact, trust=1,
                          evidence=(1., 0.))
-    from dataclasses import replace
-    addressed = replace(fact, role_refs=(store.occurrence_of(row), None, None))
-    assert model.reason_about(model.grammatical_thoughts.form('ask', addressed)).support_true == 1
+    from QueryWork import QueryWorkBudget
+    with model._query_boundary_scope((0,)):
+        context = model._thought_grammar_context(fact, row=0,
+            work=QueryWorkBudget(32), continuation=None)
+        addressed = model.grammatical_thoughts.form('isTrue', store.occurrence_of(row), context=context)
+    assert model.reason_about(addressed).support_true == 1
     model.symbolSpace.ltm_store=LTM0(8,capacity=32)
     cs._concept_allocator.parts.remove(a[1], b[1])
     result = model.reason_about(QuerySpec.from_surface('isPart', a, b))

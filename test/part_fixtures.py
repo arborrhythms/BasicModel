@@ -5,12 +5,12 @@ from types import SimpleNamespace
 import torch
 
 from ClauseRow import attach_clause_index
-from Memory import LTM0
+from Memory import LTM0, STM0
 from Spaces import ConceptualSpace
 from test_basicmodel import _populate_test_config
 
 
-def native_store(width=4, capacity=32, points=()):
+def native_store(width=4, capacity=32, points=(), *, percept_width=0):
     _populate_test_config(inputDim=width, perceptDim=width, conceptDim=width,
         symbolDim=width, wordDim=width, outputDim=width, nInput=4, nPercepts=4,
         nConcepts=512, nSymbols=512, nWords=512, nOutput=512, nWhere=0, nWhen=0)
@@ -18,7 +18,8 @@ def native_store(width=4, capacity=32, points=()):
     owner._model = None  # This isolated store has no attended model field.
     with torch.no_grad():
         owner.similarity_codebook.W.sigmoid_()
-    store = LTM0(width, capacity=capacity)
+    store = (LTM0(width, capacity=capacity, percept_width=percept_width) if percept_width
+             else STM0(width, capacity=capacity, relation_capacity=8192))
     object.__setattr__(store, '_fixture_owner', owner)
     attach_clause_index(SimpleNamespace(), store, owner)
     symbols = tuple(symbol(store, point) for point in points)
@@ -61,4 +62,5 @@ def stored_pair(store, entry):
         bank, row = store.parts, entry[1]
     else:
         bank, row = store, entry
-    return float(bank.truth_plus[row]), float(bank.truth_minus[row])
+    return (tuple(map(float, bank.evidence_of(row))) if bank is store
+            else (float(bank.truth_plus[row]), float(bank.truth_minus[row])))

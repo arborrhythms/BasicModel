@@ -1,4 +1,4 @@
-"""Promotion records the member path in the existing binary relation store."""
+"""Occurrence membership in the existing binary relation store."""
 from Memory import OCCURRENCE, SYMBOL, RELATION
 
 
@@ -19,15 +19,4 @@ def membership(owner, address, concept, *, evidence=(1., 0.), when=None, where=N
     when = member_when if when is None else when
     where = member_where if where is None else where
     return parts.add(reference, (SYMBOL, concept),
-        truth_plus=evidence[0], truth_minus=evidence[1], witness=True)
-
-
-def write(owner, entry, concept):
-    store, parts = owner._closed_clause_store(), owner._concept_allocator.parts
-    previous = None
-    for address in entry.occurrences:
-        reference, when, where = member(store, address)
-        membership(owner, address, concept, when=when, where=where)
-        if previous is not None:
-            parts.add(previous, reference, truth_plus=1., witness=True)
-        previous = reference
+        truth_plus=evidence[0], truth_minus=evidence[1])

@@ -1,4 +1,5 @@
 """Free variables, stored columns, exhaustion and formation provenance (§14)."""
+from Memory import STM0
 from order_fixtures import force_order
 from dataclasses import replace
 from types import SimpleNamespace
@@ -42,17 +43,18 @@ def test_copula_fills_the_addressed_open_column_without_a_word_alias():
     from Memory import LTM0
     from Occurrence import slot_key
     from ThoughtStream import write
-    store = LTM0(4, capacity=32)
+    from part_fixtures import native_store
+    store, _ = native_store(4, capacity=32)
     points = {5:torch.tensor([.1,.2,.3,.4]), 7:torch.tensor([.4,.3,.2,.1])}
     store.configure_clause_index(concept_point=points.get)
     root = ConceptualMeaning(torch.ones(3,4),torch.ones(3,dtype=torch.bool),
         role_refs=(None,('sym',7),('sym',7)), sentence_kind='relation')
     root = question(root, (('referent',0),))
     pending = replace(ConceptualMeaning.from_description(root.roles[0]), bindings=bindings(root))
-    row = store.append_meaning(pending, kind='question', evidence=(0.,0.),
-                               document_key='original question', sentence_index=1)
-    address, position = store.occurrence_of(row), float(store.sentence_index[row])
-    column = slot_key(int(store.address_keys[row]), 0)
+    row = store.append_meaning(pending,  evidence=(0.,0.),
+                               )
+    address, position = store.occurrence_of(row), store.row_name(row)
+    column = slot_key(store.row_name(row), 0)
     assert store.slot_of_reference(column) == (row,0)
     assert store.semantic_reference(column) == ('slot',address,0)
     original = store.slots[row].clone(), store.raw_meaning_of(row)
@@ -69,12 +71,12 @@ def test_copula_fills_the_addressed_open_column_without_a_word_alias():
     assert resolved.role_refs[0] == ('sym',5)
     assert bindings(resolved)['_bound_roles'] == (('referent',0),)
     assert not bindings(resolved).get('_pending', False) and not has_open_slots(resolved)
-    assert store.occurrence_of(row) == address and float(store.sentence_index[row]) == position
+    assert store.occurrence_of(row) == address and store.row_name(row) == position
     torch.testing.assert_close(store.slots[row], original[0], rtol=0, atol=0)
     assert open_slots(store.meaning_of(row)) == open_slots(original[1])
     assert open_slots(store.raw_meaning_of(row)) == open_slots(original[1])
     # Rebuilding the derived posting (as on checkpoint load) retains its ID.
-    store._semantic_rows = dict(store._semantic_rows)
+    store.rebuild_caches()
     assert store.slot_of_reference(column) == (row,0)
 
 
@@ -504,8 +506,6 @@ def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager
         names = set(model._concept_owner().word_concepts('x'))
         if batches == 1 and not reverse:
             for index in range(len(store)):
-                if store.kind_of(index) == 'estimate':
-                    continue
                 value = store.meaning_of(index)
                 forwards = () if value is None else bindings(value).get('_forward_references', ())
                 if forwards and all(identity in names for _, identity in forwards):
@@ -517,8 +517,6 @@ def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager
                 check(store, index, names)
             if reverse:
                 for index in range(len(store)):
-                    if store.kind_of(index) == 'estimate':
-                        continue
                     raw = bindings(store.raw_meaning_of(index)).get('_forward_references', ())
                     read = bindings(store.meaning_of(index)).get('_forward_references', ())
                     if any(identity in names for _, identity in (*raw, *read)):
@@ -564,8 +562,6 @@ def test_live_pending_premise_closes_in_both_orders(tmp_path, reverse, eager_rea
         if batches == 1 and not reverse:
             names = set(model._concept_owner().word_concepts('x'))
             for index in range(len(store)):
-                if store.kind_of(index) == 'estimate':
-                    continue
                 value = store.meaning_of(index)
                 forwards = () if value is None else bindings(value).get('_forward_references', ())
                 # A live departure may also open a different name. This
@@ -586,8 +582,6 @@ def test_live_pending_premise_closes_in_both_orders(tmp_path, reverse, eager_rea
             if reverse:
                 names = set(model._concept_owner().word_concepts('x'))
                 for index in range(len(store)):
-                    if store.kind_of(index) == 'estimate':
-                        continue
                     value = store.meaning_of(index)
                     forwards = bindings(value).get('_forward_references', ())
                     # Explore may open an unrelated name (the captured

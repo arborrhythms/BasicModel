@@ -1,4 +1,5 @@
 """Constituent ownership at thought filling, before any index or write."""
+from Memory import STM0
 from dataclasses import replace
 from types import SimpleNamespace
 
@@ -29,13 +30,11 @@ def test_saved_construction_binds_and_writes_the_child():
     assert resolved.constituents == (child,)
     assert not open_slots(resolved)
     assert evidence_pair(resolved) == (.8, .2)
-    store = LTM0(4, capacity=8)
+    store = STM0(4, capacity=8, relation_capacity=8192)
     model = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store))
     index = write(model, resolved, row=0)
-    assert len(store) == 2
-    assert store.row(index)['kind'] == 'inference'
+    assert len(store) == 3
     assert store.meaning_of(index).role_refs[0] == store.occurrence_of(0)
-    assert bindings(store.meaning_of(index))['_producing_operation'] == 'ask'
 
 
 def test_fill_rebases_into_nonempty_goal_and_keeps_nested_ownership():
@@ -53,13 +52,13 @@ def test_fill_rebases_into_nonempty_goal_and_keeps_nested_ownership():
     assert nested.constituents == (leaf,)
     assert nested.role_refs[0] == ('constituent', 0)
     assert goal.constituents == (existing,) and goal.role_refs[0] is None
-    store = LTM0(4, capacity=8)
+    store = STM0(4, capacity=8, relation_capacity=8192)
     model = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store))
     idea = replace(atom(), role_refs=(resolved.role_refs[0],None,None),
         constituents=resolved.constituents, scope=(('existing',resolved.role_refs[2]),))
     idea = with_slots(idea, (), pair=evidence_pair(resolved))
     index = write(model, idea, row=0)
-    assert len(store) == 4
+    assert len(store) == 5
     root = store.meaning_of(index)
     assert root.scope == (('existing',store.occurrence_of(0)),)
     assert root.role_refs[0] == store.occurrence_of(2)
@@ -82,8 +81,8 @@ def test_multiple_roles_share_the_imported_child_without_reindexing_goal():
 def test_occurrence_binding_also_carries_the_supplied_constituent_table():
     child = atom(.5)
     supplied = replace(atom(), constituents=(child,))
-    store = LTM0(4, capacity=8)
-    index = store.append_meaning(supplied, kind='fact', evidence=(.8, .2))
+    store = STM0(4, capacity=8, relation_capacity=8192)
+    index = store.append_meaning(supplied,  evidence=(.8, .2))
     occurrence = store.occurrence_of(index)
     result = fill(question(atom(), (('referent', 0),)),
                   dict(**supply(supplied), frames=({'meaning': supplied,

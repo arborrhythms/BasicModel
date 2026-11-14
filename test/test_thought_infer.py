@@ -38,7 +38,7 @@ def invoke(model, registry, request):
 def operands(model, registry, store, refs, *, premise_pair=(.8, .2), rule_pair=(.9, .3)):
     p, q, _ = refs
     premise = idea(registry, p, premise_pair)
-    source = store.append_meaning(premise, kind='fact', evidence=premise_pair)
+    source = store.append_meaning(premise, evidence=premise_pair)
     rule = store.append_relation(p[1], q[1], truth_plus=rule_pair[0], truth_minus=rule_pair[1])
     rule_meaning = store.part_row(rule[1], reading='part')['meaning']
     premise = replace(premise, bindings=dict(bindings(premise), _thought_witnesses=(store.occurrence_of(source),)))
@@ -130,14 +130,14 @@ def test_duplicate_occupied_thought_address_fails_before_mutation():
 def test_membership_match_uses_the_existing_part_cache(monkeypatch):
     from Queries import ThoughtTaxonomyCapability
     from test_priming_diffusion import owner
-    import Priming
+    import Queries
     native = owner(torch.ones(4, 2))
     native._concept_allocator.parts.add(1, 2, symbol=100, truth_plus=.2)
-    calls, original = [], Priming.part_edges
-    def edges(value):
+    calls, original = [], Queries.capture_taxonomy
+    def edges(value, **kwargs):
         calls.append(value)
-        return original(value)
-    monkeypatch.setattr(Priming, 'part_edges', edges)
+        return original(value, **kwargs)
+    monkeypatch.setattr(Queries, 'capture_taxonomy', edges)
     model, registry, store, refs = setup()
     premise, rule, row = operands(model, registry, store, refs, rule_pair=(.9, .7))
     # These fixtures name the cache's actual member and class rows.
@@ -171,9 +171,8 @@ def test_unused_derived_idea_is_forgotten_by_existing_configuration():
         '_thought_witnesses': (), '_evidence_kind': 'inference'})
     index = write(model, value, row=0)
     occurrence = store.occurrence_of(index)
-    for number in range(3):
-        store.append_meaning(ConceptualMeaning.from_description(torch.ones(8)),
-            kind='fact', trust=1., surprise=1., document_key=('new', number))
+    for number in range(store.capacity - len(store)):
+        store.append_meaning(ConceptualMeaning.from_description(torch.ones(8)), trust=1., surprise=1.)
     forget(store, ForgettingConfig(), document_boundary=True)
     assert store.location(occurrence) is None
 
@@ -405,9 +404,11 @@ def test_worked_token_property_line_queries_backward_and_forward_then_replays(mo
     replay = replay_thoughts(result.records, chunks_state=model.conceptualSpace.stm.state)
     assert replay.finished
     assert evidence_pair(replay.contexts[0].meaning) == pytest.approx((.7, .3))
-    rows = [store.row(i) for i in range(len(store)) if store.row(i)['kind'] == 'inference']
-    assert rows and rows[-1]['evidence'] == pytest.approx((.7, .3))
-    assert bindings(rows[-1]['meaning'])['_thought_witnesses'] == (membership, rule_row)
+    # §17.12a keeps the two signed claims separately; §17.21–22 retires
+    # the row kind and the stored proof. The replay above checks the proof.
+    rows = [store.row(i) for i in range(len(store))]
+    assert len(rows) >= 2
+    assert [row['trust'] for row in rows[-2:]] == pytest.approx((.7, -.3))
     tampered = list(result.records)
     position = next(i for i, record in enumerate(tampered) if record.operation == 'infer' and record.evidence_kind == 'inference')
     tampered[position] = replace(tampered[position], support_true=.1)
