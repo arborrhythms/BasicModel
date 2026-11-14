@@ -174,3 +174,78 @@ before and passing after; the rule you found for 3.3; the steps taken
 beside the budget; the seconds before and after; every edit outside
 section 5's list, with its reason; and the commit.
 ~~~
+
+## 7. Laptop return (2026-11-14)
+
+### Source, boundaries and evidence
+
+The checkout is `/Users/arogers/github/basicmodel-perf`, on `performance`.
+The reference is exactly `3926005f12cabfd8233fc444963eae96c994d7ba`.
+The plan arrived as `2d412e80fd`. The existing `perf-1` commit does not
+touch any of §5's attention edit set; it was carried unchanged as
+`28828fc59e` (original `86192877d5`). No push has been made.
+
+That carried commit accounts for these edits outside §5: `Makefile`,
+`test/bounded_tests.py`, `test/conftest.py`, and their new/extended tests
+reduce and measure harness overhead; `bin/Layers.py` and `bin/Spaces.py`
+contain the already-certified retained-leaf repairs; `bin/prepare_data.py`
+and `bin/prepare_corpus.py` remove redundant preparation passes.
+`doc/plans/2026-11-14-performance-round.md`, `test/perf_observer.py`,
+`test/performance_leaves.py`, `test/test_performance_leaves.py`, and
+`test/tools/performance_round.py` retain that round's report and evidence
+tools. The attention task makes no further edits to those files. This
+plan's §7 is edited as requested. New attention tests and its observer
+are new files under `test`, as permitted. The withdrawn MPS measurement
+is not rerun.
+
+Local evidence is in ignored `output/attention-thinking/`. The new
+`test/attention_thinking_certificate.py` observes the actual source
+checkout: the first sixteen training sentences, native XML capacities,
+normal losses and optimizer. It records the bytes of every named
+parameter and optimizer tensor after each batch using SHA-256, every
+registered `Error.add`/`Error.error` contribution, all attention fields,
+and the other operation chooser results. Python, NumPy and Torch streams
+are recorded and replayed without choosing a successful initialization;
+the same recorded hash setting is used in both processes. The original
+attention source is loaded from the specified Git object as a test
+oracle, never as a production alternative. All comparisons are exact
+(`rtol=0, atol=0` for direct tensor comparisons).
+
+An observer initially failed while viewing a singleton strided tensor
+as bytes. Its flat-copy serialization was corrected and the run restarted
+from the **same already recorded initial stream**, not a new seed. That
+interrupted observation remains in `base-lesson-observer-error/`.
+
+### 3.1 — the walk as steps; P1
+
+`open_narrowing`, `narrow_step`, and `close_narrowing` now share a
+`NarrowingState`; `narrow_words` is their composition. The original
+arithmetic, ordering, field resolution and returned fields are retained.
+
+Before the extraction, the five new interface/equality cases failed on
+the absent step API (`p1-before.log`). Afterwards all five pass, including
+departure replay and the empty carrier (`p1-after.log`). The existing
+fullgraph assertion was run unchanged with `RUN_SLOW=1`: one pass in
+9.19 seconds (`p1-compile.log`).
+
+The real lesson certificate records **35 calls, including three attention
+departures**, over sixteen batches. Every `NarrowedWords` field, every
+observed chooser result, all registered costs, every parameter after each
+batch and the random streams match the original exactly
+(`base-lesson/`, `p1-lesson/`). Both unchanged stopping gates pass and
+match exactly (`base-gates/`, `p1-gates/`), including every numeric-XOR
+optimizer update and the shared-class fixture's final parameters. These
+two fixtures make **zero** `narrow_words` calls; their walk-field
+comparison is therefore empty, not an additional word-walk witness.
+
+| Observed work, CPU / one thread | Base seconds | After 3.1 seconds |
+| --- | ---: | ---: |
+| Sixteen lesson `runBatch` calls | 73.046459 | 72.701923 |
+| Lesson driver, including observation/reference checks | 74.367262 | 75.586065 |
+| Both stopping gates, including observation | 1.042574 | 1.003382 |
+
+The per-batch timings exclude the extra reference-oracle comparison;
+they still include the passive action/cost observation. These are one
+paired run, not a claimed speedup. The base consumes all 32 rounds on
+every one of the 35 recorded walks. The next step investigates its
+repeated stop actions after the legal menu is exhausted.

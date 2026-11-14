@@ -4,6 +4,7 @@ The table and its reads are tensors. Native identities and retained part
 witnesses are staged by the owners before this body; no allocation occurs here.
 """
 from typing import NamedTuple
+from dataclasses import dataclass
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -144,20 +145,46 @@ class NarrowedWords(NamedTuple):
     field_scopes: torch.Tensor = None
 
 
-def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,departure=None,identities=None,poles=None,spent=None):
-    """Batched pinned narrowing, with the field's observed poles as its mask.
+@dataclass
+class NarrowingState:
+    """One suspended bracket walk; closing reads it without advancing it."""
+    chooser: object
+    keys: object
+    spans: object
+    known: object
+    budget: object
+    prior: object
+    exploit: object
+    departure: object
+    identities: object
+    poles: object
+    lengths: object
+    table: object
+    accepted: object
+    descended: object
+    values: object
+    actions: object
+    alternatives: object
+    probabilities: object
+    counts: object
+    reductions: object
+    field_values: object
+    field_poles: object
+    field_valid: object
+    handed_poles: object
+    pole_changes: object
+    round_words: object
+    field_scopes: object
+    field_operations: object
+    declared: object
+    rows: object
+    slots: object
 
-    The six candidate meanings are declared by the grammar. Field reductions
-    alter the pooled reading used by the next choice; only pure singular word
-    brackets may project a native symbol. No row loops or allocation occur.
-    """
+
+def open_narrowing(chooser,keys,spans,known,*,budget,prior=None,exploit=None,departure=None,identities=None,poles=None,spent=None):
+    """Stage the original walk, without choosing any action."""
     B,W,D=keys.shape;K=int(budget);A=6
-    if W==0:
-        table=BracketTable.open(spans.new_zeros(B),budget=K)
-        return NarrowedWords(table,keys,known,known,spans.new_full((B,K),-1),
-            torch.zeros(B,K,device=keys.device,dtype=torch.bool),
-            keys.new_zeros(B,K),spans.new_zeros(B,K))
-    lengths=spans[...,1].amax(1)
+    lengths=spans[...,1].amax(1) if W else spans.new_zeros(B)
     table=BracketTable.open(lengths,budget=K)
     if spent is not None:table=table._replace(spent=spent)
     accepted=torch.zeros_like(known);descended=torch.zeros_like(known)
@@ -173,102 +200,180 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
     declared=torch.tensor([i in chooser.attention_operations for i in range(A)],device=keys.device)
     rows=torch.arange(B,device=keys.device)
     slots=torch.arange(K,device=keys.device)[None]
-    for step in range(K):
-        lo,hi=table.intervals.unbind(-1)
-        covered=(spans[:,None,:,0]>=lo[:,:,None])&(spans[:,None,:,1]<=hi[:,:,None])&(spans[:,None,:,1]>spans[:,None,:,0])
-        count=covered.sum(-1)
-        left=torch.where(covered,spans[:,None,:,0],lengths[:,None,None]).amin(-1)
-        right=torch.where(covered,spans[:,None,:,1],0).amax(-1)
-        table=table._replace(intervals=torch.where((count>0)[...,None],torch.stack((left,right),-1),table.intervals),
-                             level=torch.where(count==1,LEVEL_WORD,LEVEL_SENTENCE))
-        word=count==1
-        evidence=(torch.stack((known,torch.zeros_like(known)),-1).to(keys) if poles is None else poles)
-        evidence=torch.where(descended[...,None],torch.stack((torch.ones_like(known),torch.zeros_like(known)),-1).to(keys),evidence)
-        support=covered[...,None] & evidence[:,None].ne(0)
-        positive=support[...,0].any(-1);negative=support[...,1].any(-1)
-        pooled_poles=torch.where(covered[...,None],evidence[:,None],0.).amax(2)
-        pooled_poles=torch.where(field_valid[...,None],field_poles,pooled_poles)
-        positive=pooled_poles[...,0]>0;negative=pooled_poles[...,1]>0
-        both=positive&negative;pure=positive^negative;neither=~(positive|negative)
-        singular=support.any(-1).sum(-1)==1
-        live=table.valid&~table.done&(count>0)&(table.remaining>0)[:,None]
-        progress=narrowing_mask(pure,both,neither,singular=singular,word=word,
-                                can_split=count>1,has_parts=count>0)
-        field=((both | (count>1))[:,:,None]&~reductions)
-        # As in compose, reserve the remaining progress rounds. Optional
-        # field rewrites cannot starve a word's divide/descent/gloss sequence.
-        pending=(spans[...,1]>spans[...,0])&~accepted
-        minimum=2*pending.sum(-1)-live.sum(-1)+(pending&~evidence.any(-1)&~descended).sum(-1)
-        field=field & (table.remaining>minimum)[:,None,None]
-        legal=torch.cat((progress,field),-1)&live[...,None]&declared[None,None]
-        pooled=(covered.to(keys)@keys)/count.clamp_min(1)[...,None]
-        pooled=torch.where(field_valid[...,None],field_values,pooled)
-        local_prior=None if prior is None else (covered.to(keys)@prior[...,None])[...,0]/count.clamp_min(1)
-        mask=None if exploit is None else torch.where(departure==step,exploit.actions[:,step],-1)
-        replay=None if exploit is None else torch.where(step<departure,exploit.actions[:,step],-1)
-        action,credit,alternate,detail=chooser.attend(pooled,legal,table.space,prior=local_prior,
-            masked_action=mask,replay_action=replay,return_details=True,slot_limit=min(K,W))
-        slot=(action//A).clamp_max(K-1);op=action%A
-        chosen=live[rows,slot]&(action<A*K)
-        selected=covered[rows,slot]&chosen[:,None]
-        selected_word=word[rows,slot]
-        gloss=(op==2)&selected_word&chosen
-        unknown=(op==1)&selected_word&neither[rows,slot]&chosen
-        picked_gloss=selected&gloss[:,None]
-        accepted=accepted|picked_gloss
-        witness=selected&unknown[:,None]
-        if identities is not None:
-            witness=(witness[:,:,None] & (identities[:,:,None]==identities[:,None,:]) & (identities[:,None,:]>=0)).any(1)
-        descended=descended|witness
-        values=torch.where(picked_gloss[...,None],keys*credit[:,None,None],values)
-        # Divide at the first pole disagreement, descend at a retained part.
-        first=selected.long().argmax(-1)
-        first_positive=evidence[rows,first,0]>0
-        disagree=selected & torch.where(first_positive[:,None],evidence[...,1]>0,evidence[...,0]>0)
-        boundary=torch.where(disagree,spans[...,0],lengths[:,None]).amin(-1)
-        part_cut=torch.where(selected,spans[...,1],lengths[:,None]).amin(-1)
-        # A first word with both poles disagrees with itself. Its left edge
-        # is not a split: isolate that word at its right edge so the other
-        # words remain reachable without accepting the contradictory one.
-        interior=(boundary>lo[rows,slot])&(boundary<hi[rows,slot])
-        cut=torch.where((op==0)&disagree.any(-1)&interior,boundary,part_cut)
-        split=(op<2)&~selected_word&chosen
-        table=table.split(slot,cut,descend=(True),active=split)
-        table=table.accept(slot,active=gloss)
-        field_action=(op>=3)&chosen
-        table=table._replace(spent=table.spent+unknown.long()+field_action.long())
-        where=(slots==slot[:,None])&field_action[:,None]
-        which=torch.arange(3,device=keys.device)[None,None]==(op-3)[:,None,None]
-        reductions=reductions|(where[...,None]&which)
-        positive_keys=keys.clamp_min(0);negative_keys=(-keys).clamp_min(0)
-        conjunction=torch.where(covered[...,None],positive_keys[:,None],torch.inf).amin(2)-torch.where(covered[...,None],negative_keys[:,None],0.).amax(2)
-        disjunction=torch.where(covered[...,None],positive_keys[:,None],0.).amax(2)-torch.where(covered[...,None],negative_keys[:,None],torch.inf).amin(2)
-        changed=torch.where((op==3)[:,None,None],conjunction,torch.where((op==4)[:,None,None],disjunction,pooled))
-        # Empty padding contributes no field. In particular, never multiply
-        # its reduction sentinel (inf) by a live straight-through credit.
-        changed=torch.where((count>0)[...,None],changed,0.)
-        field_values=torch.where(where[...,None],changed*credit[:,None,None],field_values)
-        conjunctive=reduce_field(evidence[:,None].expand(-1,K,-1,-1), operation='intersection', dim=2, mask=covered)
-        disjunctive=reduce_field(evidence[:,None].expand(-1,K,-1,-1), operation='union', dim=2, mask=covered)
-        changed_poles=torch.where((op==3)[:,None,None],conjunctive,
-            torch.where((op==4)[:,None,None],disjunctive,pooled_poles.flip(-1)))
-        field_poles=torch.where(where[...,None],changed_poles,field_poles)
-        # Preserve the operated extent after splitting. Resolve its word
-        # witnesses at the end of the walk: an unknown word can acquire its
-        # native identification by descent after its parent was operated on.
-        # Freezing the parent's pre-descent (0,0) would erase that evidence.
-        reached=selected & field_action[:,None]
-        field_scopes.append(reached)
-        field_operations.append(op)
-        pole_changes |= reached
-        round_words.append(torch.where(chosen,first,-1))
-        # A child is a fresh reading of its retained parts. A parent's
-        # temporary Boolean aggregate must not become the child's evidence.
-        reset=(slots==slot[:,None])&(split|unknown|gloss)[:,None]
-        field_valid=(field_valid|where)&~reset
-        actions.append(torch.where(live.any(-1),action,-1));alternatives.append(alternate&live.any(-1))
-        probabilities.append(detail['probability'])
-        counts.append(torch.where(live.any(-1),detail['alternative_count'],0))
+    return NarrowingState(
+        chooser, keys, spans, known, budget, prior, exploit, departure, identities, poles,
+        lengths, table, accepted, descended, values, actions, alternatives, probabilities, counts, reductions,
+        field_values, field_poles, field_valid, handed_poles, pole_changes, round_words, field_scopes, field_operations, declared, rows, slots)
+
+
+def narrow_step(state):
+    """Take one original batched step; no row loop or word composition."""
+    chooser=state.chooser
+    keys=state.keys
+    spans=state.spans
+    known=state.known
+    budget=state.budget
+    prior=state.prior
+    exploit=state.exploit
+    departure=state.departure
+    identities=state.identities
+    poles=state.poles
+    lengths=state.lengths
+    table=state.table
+    accepted=state.accepted
+    descended=state.descended
+    values=state.values
+    actions=state.actions
+    alternatives=state.alternatives
+    probabilities=state.probabilities
+    counts=state.counts
+    reductions=state.reductions
+    field_values=state.field_values
+    field_poles=state.field_poles
+    field_valid=state.field_valid
+    handed_poles=state.handed_poles
+    pole_changes=state.pole_changes
+    round_words=state.round_words
+    field_scopes=state.field_scopes
+    field_operations=state.field_operations
+    declared=state.declared
+    rows=state.rows
+    slots=state.slots
+    B,W,D=keys.shape;K=int(budget);A=6
+    if W == 0 or len(actions) >= K:
+        return state
+    step=len(actions)
+    lo,hi=table.intervals.unbind(-1)
+    covered=(spans[:,None,:,0]>=lo[:,:,None])&(spans[:,None,:,1]<=hi[:,:,None])&(spans[:,None,:,1]>spans[:,None,:,0])
+    count=covered.sum(-1)
+    left=torch.where(covered,spans[:,None,:,0],lengths[:,None,None]).amin(-1)
+    right=torch.where(covered,spans[:,None,:,1],0).amax(-1)
+    table=table._replace(intervals=torch.where((count>0)[...,None],torch.stack((left,right),-1),table.intervals),
+                         level=torch.where(count==1,LEVEL_WORD,LEVEL_SENTENCE))
+    word=count==1
+    evidence=(torch.stack((known,torch.zeros_like(known)),-1).to(keys) if poles is None else poles)
+    evidence=torch.where(descended[...,None],torch.stack((torch.ones_like(known),torch.zeros_like(known)),-1).to(keys),evidence)
+    support=covered[...,None] & evidence[:,None].ne(0)
+    positive=support[...,0].any(-1);negative=support[...,1].any(-1)
+    pooled_poles=torch.where(covered[...,None],evidence[:,None],0.).amax(2)
+    pooled_poles=torch.where(field_valid[...,None],field_poles,pooled_poles)
+    positive=pooled_poles[...,0]>0;negative=pooled_poles[...,1]>0
+    both=positive&negative;pure=positive^negative;neither=~(positive|negative)
+    singular=support.any(-1).sum(-1)==1
+    live=table.valid&~table.done&(count>0)&(table.remaining>0)[:,None]
+    progress=narrowing_mask(pure,both,neither,singular=singular,word=word,
+                            can_split=count>1,has_parts=count>0)
+    field=((both | (count>1))[:,:,None]&~reductions)
+    # As in compose, reserve the remaining progress rounds. Optional
+    # field rewrites cannot starve a word's divide/descent/gloss sequence.
+    pending=(spans[...,1]>spans[...,0])&~accepted
+    minimum=2*pending.sum(-1)-live.sum(-1)+(pending&~evidence.any(-1)&~descended).sum(-1)
+    field=field & (table.remaining>minimum)[:,None,None]
+    legal=torch.cat((progress,field),-1)&live[...,None]&declared[None,None]
+    pooled=(covered.to(keys)@keys)/count.clamp_min(1)[...,None]
+    pooled=torch.where(field_valid[...,None],field_values,pooled)
+    local_prior=None if prior is None else (covered.to(keys)@prior[...,None])[...,0]/count.clamp_min(1)
+    mask=None if exploit is None else torch.where(departure==step,exploit.actions[:,step],-1)
+    replay=None if exploit is None else torch.where(step<departure,exploit.actions[:,step],-1)
+    action,credit,alternate,detail=chooser.attend(pooled,legal,table.space,prior=local_prior,
+        masked_action=mask,replay_action=replay,return_details=True,slot_limit=min(K,W))
+    slot=(action//A).clamp_max(K-1);op=action%A
+    chosen=live[rows,slot]&(action<A*K)
+    selected=covered[rows,slot]&chosen[:,None]
+    selected_word=word[rows,slot]
+    gloss=(op==2)&selected_word&chosen
+    unknown=(op==1)&selected_word&neither[rows,slot]&chosen
+    picked_gloss=selected&gloss[:,None]
+    accepted=accepted|picked_gloss
+    witness=selected&unknown[:,None]
+    if identities is not None:
+        witness=(witness[:,:,None] & (identities[:,:,None]==identities[:,None,:]) & (identities[:,None,:]>=0)).any(1)
+    descended=descended|witness
+    values=torch.where(picked_gloss[...,None],keys*credit[:,None,None],values)
+    # Divide at the first pole disagreement, descend at a retained part.
+    first=selected.long().argmax(-1)
+    first_positive=evidence[rows,first,0]>0
+    disagree=selected & torch.where(first_positive[:,None],evidence[...,1]>0,evidence[...,0]>0)
+    boundary=torch.where(disagree,spans[...,0],lengths[:,None]).amin(-1)
+    part_cut=torch.where(selected,spans[...,1],lengths[:,None]).amin(-1)
+    # A first word with both poles disagrees with itself. Its left edge
+    # is not a split: isolate that word at its right edge so the other
+    # words remain reachable without accepting the contradictory one.
+    interior=(boundary>lo[rows,slot])&(boundary<hi[rows,slot])
+    cut=torch.where((op==0)&disagree.any(-1)&interior,boundary,part_cut)
+    split=(op<2)&~selected_word&chosen
+    table=table.split(slot,cut,descend=(True),active=split)
+    table=table.accept(slot,active=gloss)
+    field_action=(op>=3)&chosen
+    table=table._replace(spent=table.spent+unknown.long()+field_action.long())
+    where=(slots==slot[:,None])&field_action[:,None]
+    which=torch.arange(3,device=keys.device)[None,None]==(op-3)[:,None,None]
+    reductions=reductions|(where[...,None]&which)
+    positive_keys=keys.clamp_min(0);negative_keys=(-keys).clamp_min(0)
+    conjunction=torch.where(covered[...,None],positive_keys[:,None],torch.inf).amin(2)-torch.where(covered[...,None],negative_keys[:,None],0.).amax(2)
+    disjunction=torch.where(covered[...,None],positive_keys[:,None],0.).amax(2)-torch.where(covered[...,None],negative_keys[:,None],torch.inf).amin(2)
+    changed=torch.where((op==3)[:,None,None],conjunction,torch.where((op==4)[:,None,None],disjunction,pooled))
+    # Empty padding contributes no field. In particular, never multiply
+    # its reduction sentinel (inf) by a live straight-through credit.
+    changed=torch.where((count>0)[...,None],changed,0.)
+    field_values=torch.where(where[...,None],changed*credit[:,None,None],field_values)
+    conjunctive=reduce_field(evidence[:,None].expand(-1,K,-1,-1), operation='intersection', dim=2, mask=covered)
+    disjunctive=reduce_field(evidence[:,None].expand(-1,K,-1,-1), operation='union', dim=2, mask=covered)
+    changed_poles=torch.where((op==3)[:,None,None],conjunctive,
+        torch.where((op==4)[:,None,None],disjunctive,pooled_poles.flip(-1)))
+    field_poles=torch.where(where[...,None],changed_poles,field_poles)
+    # Preserve the operated extent after splitting. Resolve its word
+    # witnesses at the end of the walk: an unknown word can acquire its
+    # native identification by descent after its parent was operated on.
+    # Freezing the parent's pre-descent (0,0) would erase that evidence.
+    reached=selected & field_action[:,None]
+    field_scopes.append(reached)
+    field_operations.append(op)
+    pole_changes |= reached
+    round_words.append(torch.where(chosen,first,-1))
+    # A child is a fresh reading of its retained parts. A parent's
+    # temporary Boolean aggregate must not become the child's evidence.
+    reset=(slots==slot[:,None])&(split|unknown|gloss)[:,None]
+    field_valid=(field_valid|where)&~reset
+    actions.append(torch.where(live.any(-1),action,-1));alternatives.append(alternate&live.any(-1))
+    probabilities.append(detail['probability'])
+    counts.append(torch.where(live.any(-1),detail['alternative_count'],0))
+    state.table=table
+    state.accepted=accepted
+    state.descended=descended
+    state.values=values
+    state.reductions=reductions
+    state.field_values=field_values
+    state.field_poles=field_poles
+    state.field_valid=field_valid
+    state.pole_changes=pole_changes
+    return state
+
+
+def close_narrowing(state):
+    """Resolve the recorded field acts and publish the original carrier."""
+    keys=state.keys
+    known=state.known
+    spans=state.spans
+    budget=state.budget
+    table=state.table
+    values=state.values
+    accepted=state.accepted
+    descended=state.descended
+    handed_poles=state.handed_poles
+    pole_changes=state.pole_changes
+    actions=state.actions
+    alternatives=state.alternatives
+    probabilities=state.probabilities
+    counts=state.counts
+    round_words=state.round_words
+    field_scopes=state.field_scopes
+    field_operations=state.field_operations
+    B,W,D=keys.shape;K=int(budget)
+    if W == 0:
+        return NarrowedWords(table,keys,known,known,spans.new_full((B,K),-1),
+            torch.zeros(B,K,device=keys.device,dtype=torch.bool),
+            keys.new_zeros(B,K),spans.new_zeros(B,K))
     handed_poles=torch.where(descended[...,None],
         torch.stack((torch.ones_like(known),torch.zeros_like(known)),-1).to(keys),handed_poles)
     # Only the evidence handoff is evaluated here; eligibility, action draws,
@@ -284,6 +389,15 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
     return NarrowedWords(table,values,accepted,descended,torch.stack(actions,1),
         torch.stack(alternatives,1),torch.stack(probabilities,1),torch.stack(counts,1),
         handed_poles.detach(),pole_changes,torch.stack(round_words,1),torch.stack(field_scopes,1))
+
+
+def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,departure=None,identities=None,poles=None,spent=None):
+    """The unchanged eager reading, composed from its public steps."""
+    state=open_narrowing(chooser,keys,spans,known,budget=budget,prior=prior,
+        exploit=exploit,departure=departure,identities=identities,poles=poles,spent=spent)
+    for _ in range(int(budget)):
+        narrow_step(state)
+    return close_narrowing(state)
 
 
 class BracketKeys:
