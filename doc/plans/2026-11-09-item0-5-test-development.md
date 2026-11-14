@@ -2407,3 +2407,9 @@ It matches `test/bounded_tests.source_snapshot` after testing;
 by the frozen shape manifest's file hashes. Publication is one normal push
 of `testing` after recording the implementation commit below. Local `main`
 remains `9f7923d67f8921ef5c14afdf2fe18c536802018b`.
+
+Implementation commit pushed on `testing`:
+**`5b59d5b8db19f4d26534701c67ad82aace231a39`**. The following metadata-only
+commit records that identity; both are included in the single end-of-round
+push. It changes no validated source or data. The final remote branch tip
+is the metadata commit, whose hash is reported in the chat handback.
