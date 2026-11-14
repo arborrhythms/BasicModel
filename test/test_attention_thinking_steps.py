@@ -20,6 +20,7 @@ def original_attention():
 def exact(left, right):
     if torch.is_tensor(left):
         assert torch.is_tensor(right)
+        assert left.requires_grad == right.requires_grad
         torch.testing.assert_close(left, right, rtol=0, atol=0)
     elif isinstance(left, (tuple, list)):
         assert len(left) == len(right)
@@ -59,14 +60,15 @@ def test_public_steps_equal_every_base_field_and_replay_stream(departure, field)
     exact(torch.get_rng_state(), final)
 
 
-def test_empty_walk_preserves_the_base_optional_fields():
+@pytest.mark.parametrize('spent', [None, torch.tensor([3, 4])])
+def test_empty_walk_preserves_the_base_optional_fields(spent):
     from Language import OperationSelectionLayer
     import Attention
     chooser = OperationSelectionLayer(d_model=4)
     args = (chooser, torch.empty(2, 0, 4), torch.empty(2, 0, 2, dtype=torch.long),
             torch.empty(2, 0, dtype=torch.bool))
-    wanted = original_attention().narrow_words(*args, budget=32)
-    walk = Attention.open_narrowing(*args, budget=32)
+    wanted = original_attention().narrow_words(*args, budget=32, spent=spent)
+    walk = Attention.open_narrowing(*args, budget=32, spent=spent)
     exact(Attention.close_narrowing(walk), wanted)
 
 

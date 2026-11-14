@@ -21092,8 +21092,8 @@ class BasicModel(BaseModel):
             greedy_attention = getattr(self, '_attention_greedy', None)
             attention_base = getattr(self, '_attention_words', None)
             attention_spent = words.new_tensor([m.spent for m in getattr(self,'_attention_meters',())],dtype=torch.long)
-            if greedy_attention is not None:
-                greedy_attention = self._attention_read(sentence=sid,spent_override=attention_spent)
+            greedy_walk = (self._attention_open(sentence=sid,spent_override=attention_spent)
+                           if greedy_attention is not None else None)
             self._sentence_departure = None
             from SentenceFork import SentenceFork, detached
             fork = (SentenceFork(present, live=single, capacity=self.explore_paths) if self._sentence_training and torch.is_grad_enabled()
@@ -21133,6 +21133,7 @@ class BasicModel(BaseModel):
                 reducer._expectation_prime = prime.detach()
             source_leaf_mask = self.inputSpace._ar_grammar_leaf_mask
             def compose(cached, exploit, *, kept=None, fork=fork):
+                nonlocal greedy_attention
                 self.inputSpace._ar_grammar_leaf_mask = source_leaf_mask
                 if kept is not None:
                     fork = None
@@ -21140,6 +21141,7 @@ class BasicModel(BaseModel):
                 self._sentence_pullback = None
                 from ModelAttention import handoff
                 reading = greedy_attention if kept is None else kept['attention']
+                reading_walk = greedy_walk if kept is None and exploit is None else None
                 if exploit is not None:
                     self._publish_sentence_scratch(exploit)
                     trace = self._reconstruction_stack()
@@ -21155,61 +21157,71 @@ class BasicModel(BaseModel):
                     self._compose_sampling_scale = trace._choice_alternative_counts * (
                         draw['walk_count'] * draw['walk_rounds'])[:,None]
                     if greedy_attention is not None and bool(draw['narrowing'].any()):
-                        reading = self._attention_read(exploit=greedy_attention,
+                        reading_walk = self._attention_open(exploit=greedy_attention,
                             departure=draw['attention_round'],sentence=sid,spent_override=attention_spent)
-                        # Non-departing rows retain precisely the greedy walk.
-                        from SentenceCompose import select_rows
-                        selected = select_rows(greedy_attention, reading, draw['narrowing'])
-                        reading = type(reading)(type(reading.table)(*selected[0]), *selected[1:])
-                if reading is not None:
-                    handoff(self, reading)
-                if kept is None:
-                    attention_trials.append(reading)
-                # Every trial begins with restored history. Give its first
-                # word the same grad contract as subsequent word carries,
-                # without connecting it to a previous optimizer version.
-                restored = tuple(_carries_with_grad(bank) for bank in before)
-                if exploit is not None:
-                    from SentenceCompose import select_rows
-                    from SentenceFork import snapshot
-                    restored = select_rows(snapshot(exploit, live=single), restored, draw['narrowing'] | (draw['candidate_round'] >= 0))
-                self._restore_sentence_state(restored)
-                self.languageSpace._reference_bank = reference_bank
-                current_stm, current_lang, current_feedback = restored
-                latches = [empty_feedback, empty_feedback]
-                field = None
-                if field_enabled:
-                    from SentenceAttention import SentenceField
-                    # Field reads have their own per-sentence allowance;
-                    # bracket work must never consume a candidate's read.
-                    field = SentenceField(self, cached, active, sentence_ids, sid,
-                        torch.full_like(attention_spent, self.attention_budget))
-                self._sentence_field = field
-                from SymbolField import SymbolField
-                symbol_field = SymbolField(getattr(self.symbolSpace, 'expectation', None),
-                    strength=self.word_expectation_gain, epsilon=self.expectation_epsilon,
-                    saturation=self.expectation_saturation)
-                self._sentence_symbol_field = symbol_field
-                if kept is None:
-                    field_trials.append(field)
-                from Generative import LiveConstituents
-                compound_field = LiveConstituents(self._sentence_primed_bank.codes,
-                    self._sentence_primed_bank.terminal_valid, self.conceptualSpace.stm.capacity)
-                if exploit is not None:
-                    replay=draw['narrowing'] | (draw['candidate_round']>=0)
-                    # A bind-only departure does not repeat composition. Its
-                    # inverse field is the whole greedy field, while a compose
-                    # fork carries only its own prefix, before the departure.
-                    compound_field.restore(compound_trials[0].snapshot(),~(replay | fork.selected))
-                    if bool(fork.selected.any()):
-                        if fork.inverse_prefix is None:
-                            raise RuntimeError('a compose fork lost its inverse candidate prefix')
-                        compound_field.restore(fork.inverse_prefix,fork.selected)
-                if kept is None:
-                    compound_trials.append(compound_field)
-                if fork is not None:
-                    fork.inverse_candidates=compound_field
-                self._sentence_inverse_candidates = compound_field
+                current_stm = current_lang = current_feedback = latches = None
+                field = symbol_field = compound_field = replay = None
+                def start_compose(index):
+                    nonlocal reading, greedy_attention, current_stm, current_lang, current_feedback
+                    nonlocal latches, field, symbol_field, compound_field, replay
+                    # This runs from the word loop. Restoration and candidate
+                    # construction both consume the whole evidence slab, so
+                    # their dependencies must settle before the first word.
+                    if reading_walk is not None:
+                        reading = reading_walk.for_restore(index)
+                        if exploit is None:
+                            greedy_attention = reading
+                        else:
+                            selected = select_rows(greedy_attention, reading, draw['narrowing'])
+                            reading = type(reading)(type(reading.table)(*selected[0]), *selected[1:])
+                    if reading is not None:
+                        handoff(self, reading)
+                    if kept is None:
+                        attention_trials.append(reading)
+                    # Every trial begins with restored history. Give its first
+                    # word the same grad contract as subsequent word carries,
+                    # without connecting it to a previous optimizer version.
+                    restored = tuple(_carries_with_grad(bank) for bank in before)
+                    if exploit is not None:
+                        from SentenceFork import snapshot
+                        restored = select_rows(snapshot(exploit, live=single), restored, draw['narrowing'] | (draw['candidate_round'] >= 0))
+                    self._restore_sentence_state(restored)
+                    self.languageSpace._reference_bank = reference_bank
+                    current_stm, current_lang, current_feedback = restored
+                    latches = [empty_feedback, empty_feedback]
+                    field = None
+                    if field_enabled:
+                        from SentenceAttention import SentenceField
+                        # Field reads have their own per-sentence allowance;
+                        # bracket work must never consume a candidate's read.
+                        field = SentenceField(self, cached, active, sentence_ids, sid,
+                            torch.full_like(attention_spent, self.attention_budget))
+                    self._sentence_field = field
+                    from SymbolField import SymbolField
+                    symbol_field = SymbolField(getattr(self.symbolSpace, 'expectation', None),
+                        strength=self.word_expectation_gain, epsilon=self.expectation_epsilon,
+                        saturation=self.expectation_saturation)
+                    self._sentence_symbol_field = symbol_field
+                    if kept is None:
+                        field_trials.append(field)
+                    from Generative import LiveConstituents
+                    compound_field = LiveConstituents(self._sentence_primed_bank.codes,
+                        self._sentence_primed_bank.terminal_valid, self.conceptualSpace.stm.capacity)
+                    if exploit is not None:
+                        replay=draw['narrowing'] | (draw['candidate_round']>=0)
+                        # A bind-only departure does not repeat composition. Its
+                        # inverse field is the whole greedy field, while a compose
+                        # fork carries only its own prefix, before the departure.
+                        compound_field.restore(compound_trials[0].snapshot(),~(replay | fork.selected))
+                        if bool(fork.selected.any()):
+                            if fork.inverse_prefix is None:
+                                raise RuntimeError('a compose fork lost its inverse candidate prefix')
+                            compound_field.restore(fork.inverse_prefix,fork.selected)
+                    if kept is None:
+                        compound_trials.append(compound_field)
+                    if fork is not None:
+                        fork.inverse_candidates=compound_field
+                    self._sentence_inverse_candidates = compound_field
                 def observe_compounds(rows):
                     if exploit is not None:
                         rows=rows & (replay | (fork.selected & fork.joined))
@@ -21222,6 +21234,8 @@ class BasicModel(BaseModel):
                     # through the perceptual reducer with an already resolved row.
                     raw_lanes = payload[11]
                     if not closing:
+                        if reading_walk is not None:
+                            reading_walk.for_word(index)
                         reading = getattr(self, '_attention_words', None)
                         if reading is not None:
                             from ModelAttention import read_poles
@@ -21248,10 +21262,7 @@ class BasicModel(BaseModel):
                         lanes=None if field is None else field.placements()['lanes'].clamp(0,1))
                     observe_compounds(payload[7].reshape(B))
                     latches = [latches[1], current_feedback]
-                if field is None:
-                    for index, payload, native in cached:
-                        word_step(index, payload, native)
-                else:
+                def read_field():
                     from SentenceAttention import masked_payload
                     last = torch.where(active & (sentence_ids == sid),
                         torch.arange(W, device=words.device), -1).amax(-1)
@@ -21295,6 +21306,15 @@ class BasicModel(BaseModel):
                             field._closing = rows
                             word_step(index, masked_payload(payload, rows, closing=True), native, closing=True)
                             closed |= rows
+                started = False
+                for index, payload, native in cached:
+                    if not started:
+                        start_compose(index)
+                        started = True
+                        if field is not None:
+                            read_field()
+                            break
+                    word_step(index, payload, native)
                 path = (current_stm, current_lang, current_feedback)
                 if kept is not None and field is not None:
                     self.inputSpace._ar_grammar_leaf_mask = field.grammar_leaves(source_leaf_mask)

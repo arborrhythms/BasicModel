@@ -188,7 +188,7 @@ def open_narrowing(chooser,keys,spans,known,*,budget,prior=None,exploit=None,dep
     B,W,D=keys.shape;K=int(budget);A=6
     lengths=spans[...,1].amax(1) if W else spans.new_zeros(B)
     table=BracketTable.open(lengths,budget=K)
-    if spent is not None:table=table._replace(spent=spent)
+    if spent is not None and W:table=table._replace(spent=spent)
     accepted=torch.zeros_like(known);descended=torch.zeros_like(known)
     values=torch.zeros_like(keys);actions=[];alternatives=[];probabilities=[];counts=[]
     reductions=torch.zeros(B,K,3,dtype=torch.bool,device=keys.device)
@@ -407,7 +407,8 @@ def _captured_narrowing(state):
     def unpack(values):
         return tuple(value.to(torch.bool) if template.dtype == torch.bool else
                      value.view(template.dtype).reshape(template.shape) if not template.is_floating_point()
-                     else value for value,template in zip(values,templates))
+                     else value if template.requires_grad else value.detach()
+                     for value,template in zip(values,templates))
 
     carried=pack(state)
     width=6+len(_NARROW_CARRY)
@@ -452,13 +453,12 @@ def finish_narrowing(state):
     after its field acts are spent). Such a round is just as inert as a
     table with no live brackets. Keep its original stop/-1 distinction.
     """
-    if state.keys.shape[1] == 0:
+    if state.keys.shape[1] == 0 or len(state.actions) >= int(state.budget):
         return state
     if torch.compiler.is_compiling():
         return _captured_narrowing(state)
     while len(state.actions) < int(state.budget):
-        narrow_step(state)
-        if not bool(state.can_advance):
+        if state.can_advance is not None and not bool(state.can_advance):
             missing=int(state.budget)-len(state.actions)
             if state.exploit is not None:
                 # select_logits draws once even when the masked departure
@@ -469,6 +469,44 @@ def finish_narrowing(state):
                 values=getattr(state,name)
                 values.extend([values[-1]]*missing)
             break
+        narrow_step(state)
+    return state
+
+
+def narrowing_stable(state, words):
+    """Whether each row's requested words have no remaining evidence source.
+
+    Work backwards through operated scopes, then include every occurrence
+    that could supply their shared descent witness. A done singleton alone
+    is insufficient: an earlier field or a later equal identity can still
+    change its handoff. Brackets only split, so future acts cannot reach a
+    word outside these unfinished source brackets.
+    """
+    if words.shape != state.known.shape or words.dtype != torch.bool:
+        raise ValueError('requested words must match the narrowing carrier')
+    if len(state.actions) >= int(state.budget):
+        return words.new_ones(words.shape[0])
+    needed=words
+    for scope in reversed(state.field_scopes):
+        needed=needed | (scope & (scope & needed).any(-1,keepdim=True))
+    if state.identities is not None:
+        same=(state.identities[:,:,None] == state.identities[:,None,:])
+        same=same & (state.identities[:,None,:] >= 0)
+        needed=needed | (needed[:,:,None] & same).any(1)
+    lo,hi=state.table.intervals.unbind(-1)
+    covered=((state.spans[:,None,:,0] >= lo[:,:,None]) &
+             (state.spans[:,None,:,1] <= hi[:,:,None]) &
+             (state.spans[:,None,:,1] > state.spans[:,None,:,0]))
+    live=state.table.valid & ~state.table.done & (state.table.remaining > 0)[:,None]
+    mutable=(covered & live[...,None]).any(1)
+    stable=~(needed & mutable).any(-1)
+    return stable if state.can_advance is None else stable | ~state.can_advance
+
+
+def advance_narrowing(state, words):
+    """Advance only until the requested evidence is settled in every row."""
+    while not bool(narrowing_stable(state,words).all()):
+        narrow_step(state)
     return state
 
 
@@ -508,9 +546,12 @@ def close_narrowing(state):
         pair=torch.where((op==3)[:,None],conjunction,
                          torch.where((op==4)[:,None],disjunction,pooled.flip(-1)))
         handed_poles=torch.where(reached[...,None],pair[:,None],handed_poles)
-    return NarrowedWords(table,values,accepted,descended,torch.stack(actions,1),
-        torch.stack(alternatives,1),torch.stack(probabilities,1),torch.stack(counts,1),
-        handed_poles.detach(),pole_changes,torch.stack(round_words,1),torch.stack(field_scopes,1))
+    def history(values, empty):
+        return torch.stack(values,1) if values else empty
+    return NarrowedWords(table,values,accepted,descended,history(actions,spans.new_empty(B,0)),
+        history(alternatives,known.new_empty(B,0)),history(probabilities,keys.new_empty(B,0)),
+        history(counts,spans.new_empty(B,0)),handed_poles.detach(),pole_changes,
+        history(round_words,spans.new_empty(B,0)),history(field_scopes,known.new_empty(B,0,W)))
 
 
 def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,departure=None,identities=None,poles=None,spent=None):

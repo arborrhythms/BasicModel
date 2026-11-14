@@ -56,13 +56,15 @@ def stream_digest():
 
 
 class Observer:
-    def __init__(self, patch, output, *, certify):
+    def __init__(self, patch, output, *, certify, require_word_driven=False):
         import Attention, ModelAttention, Language
         from Layers import Error
         from test_attention_thinking_steps import original_attention, exact
         self.output, self.certify = output, certify
+        self.require_word_driven = require_word_driven
         self.calls, self.actions, self.costs, self.records = [], [], [], []
         self.walk_steps = []
+        self.word_driven = []
         self.in_attention = 0
         self.reference_seconds = 0.
         base = original_attention()
@@ -71,15 +73,18 @@ class Observer:
             opening = Attention.open_narrowing
             def observe_open(*args, **kwargs):
                 state = opening(*args, **kwargs)
+                state._certificate_arguments = (
+                    state.chooser, state.keys, state.spans, state.known,
+                    {key: value for key, value in kwargs.items()
+                     if key not in ('chooser', 'keys', 'spans', 'known')})
                 opened.append(state)
                 return state
             patch.setattr(Attention, 'open_narrowing', observe_open)
+            if hasattr(ModelAttention, 'open_narrowing'):
+                patch.setattr(ModelAttention, 'open_narrowing', observe_open)
         read = Attention.narrow_words
-        def observed(chooser, keys, spans, known, **kwargs):
-            initial = torch.get_rng_state()
-            value = read(chooser, keys, spans, known, **kwargs)
-            final = torch.get_rng_state()
-            self.walk_steps.append(opened.pop().steps_taken if opened else kwargs['budget'])
+        def recorded(chooser, keys, spans, known, kwargs, value, initial, final, steps):
+            self.walk_steps.append(steps)
             if certify:
                 started = time.perf_counter()
                 torch.set_rng_state(initial)
@@ -93,8 +98,43 @@ class Observer:
                 budget=kwargs['budget'], spent=value.table.spent.tolist(),
                 departure=None if kwargs.get('departure') is None else kwargs['departure'].tolist()))
             return value
+        def observed(chooser, keys, spans, known, **kwargs):
+            initial = torch.get_rng_state()
+            value = read(chooser, keys, spans, known, **kwargs)
+            final = torch.get_rng_state()
+            steps = opened.pop().steps_taken if opened else kwargs['budget']
+            return recorded(chooser, keys, spans, known, kwargs, value, initial, final, steps)
         patch.setattr(Attention, 'narrow_words', observed)
         patch.setattr(ModelAttention, 'narrow_words', observed)
+        if hasattr(ModelAttention, 'SentenceNarrowing'):
+            start = ModelAttention.SentenceNarrowing.for_restore
+            def word_start(walk, index):
+                import inspect
+                caller = inspect.currentframe().f_back
+                assert caller.f_code.co_name == 'start_compose'
+                assert caller.f_back.f_code.co_name == 'compose'
+                assert caller.f_back.f_locals['index'] is index
+                del caller
+                initial = torch.get_rng_state()
+                value = start(walk, index)
+                final = torch.get_rng_state()
+                raw = Attention.close_narrowing(walk.state)
+                recorded(*walk.state._certificate_arguments, raw, initial, final, walk.state.steps_taken)
+                assert opened.pop() is walk.state
+                self.word_driven.append(dict(loop_entry=int(index), first_word=None,
+                    before_first_word_steps=walk.state.steps_taken, words=[]))
+                return value
+            patch.setattr(ModelAttention.SentenceNarrowing, 'for_restore', word_start)
+            next_word = ModelAttention.SentenceNarrowing.for_word
+            def word_read(walk, index):
+                before = walk.state.steps_taken
+                result = next_word(walk, index)
+                if self.word_driven[-1]['first_word'] is None:
+                    self.word_driven[-1]['first_word'] = int(index)
+                self.word_driven[-1]['words'].append(dict(index=int(index),
+                    additional_steps=walk.state.steps_taken-before))
+                return result
+            patch.setattr(ModelAttention.SentenceNarrowing, 'for_word', word_read)
         attend = Language.OperationSelectionLayer.attend
         def attending(chooser, *args, **kwargs):
             self.in_attention += 1
@@ -114,11 +154,15 @@ class Observer:
             original = getattr(Error, name)
             def register(registry, *args, _original=original, _name=name, **kwargs):
                 result = _original(registry, *args, **kwargs)
-                self.costs.append(dict(method=_name, args=frozen(args), kwargs=frozen(kwargs)))
+                term = args[0] if args else kwargs['name']
+                self.costs.append(dict(method=_name, args=frozen(args), kwargs=frozen(kwargs),
+                    registered=frozen(registry._terms.get(term)), rows=frozen(registry.row_mask)))
                 return result
             patch.setattr(Error, name, register)
 
     def batch(self, model, *, seconds, label, optimizer=None):
+        if self.require_word_driven and isinstance(label, dict):
+            assert self.word_driven, 'sentence attention was completed outside the word loop'
         index = len(self.records)
         record = dict(label=label, parameters=parameters(model), calls=self.calls,
                       actions=self.actions, costs=self.costs, stream=stream_digest())
@@ -127,9 +171,11 @@ class Observer:
         (self.output/f'batch-{index:03}.json').write_text(json.dumps(record) + '\n')
         self.records.append(dict(batch=index, label=label, seconds=seconds,
             attention_calls=len(self.calls), departure_calls=sum(c['departure'] is not None for c in self.calls),
-            parameter_count=len(record['parameters']), costs=len(self.costs), walk_steps=self.walk_steps))
+            parameter_count=len(record['parameters']), costs=len(self.costs), walk_steps=self.walk_steps,
+            word_driven=self.word_driven))
         self.calls, self.actions, self.costs = [], [], []
         self.walk_steps = []
+        self.word_driven = []
         print(json.dumps(self.records[-1]), flush=True)
 
 
@@ -220,6 +266,7 @@ def main():
     parser.add_argument('--replay', type=Path)
     parser.add_argument('--compare', type=Path)
     parser.add_argument('--certify', action='store_true')
+    parser.add_argument('--require-word-driven', action='store_true')
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=False)
     torch.set_num_threads(1)
@@ -227,7 +274,8 @@ def main():
     from reading_fixtures import use_eager_reading
     with MonkeyPatch.context() as patch:
         use_eager_reading(patch)
-        observer = Observer(patch, args.output, certify=args.certify)
+        observer = Observer(patch, args.output, certify=args.certify,
+                            require_word_driven=args.require_word_driven)
         if args.replay:
             restore(torch.load(args.replay/'initial-rng.pt', weights_only=False))
             metadata = json.loads((args.replay/'initial.json').read_text())

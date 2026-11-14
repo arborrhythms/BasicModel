@@ -2,13 +2,46 @@
 import torch
 import math
 from torch.nn import functional as F
-from Attention import narrow_words, read_code_field, BracketKeys
+from Attention import (narrow_words, open_narrowing, advance_narrowing,
+                       finish_narrowing, close_narrowing, read_code_field, BracketKeys)
 
 
 POLE_CONSUMERS = ('_attention_sentence_payload', '_pushed_word_slab:poles',
                   'commit_word_reference_slab:per_word',
                   'commit_word_reference_slab:whole_slab', 'SymbolField.read',
                   'WordExpectation.word_distribution')
+
+
+def _word_carrier(reading, width):
+    pad=width-reading.values.shape[1]
+    return reading._replace(values=F.pad(reading.values,(0,0,0,pad)),
+        accepted=F.pad(reading.accepted,(0,pad)),descended=F.pad(reading.descended,(0,pad)),
+        poles=F.pad(reading.poles,(0,0,0,pad)),pole_changes=F.pad(reading.pole_changes,(0,pad)),
+        field_scopes=F.pad(reading.field_scopes,(0,pad)))
+
+
+class SentenceNarrowing:
+    """A sentence's open walk, advanced by its word owner."""
+    def __init__(self, state, width):
+        self.state, self.width = state, width
+        self.reading = None
+
+    def for_restore(self, index):
+        # Restoring the sentence publishes the whole pole slab, and the
+        # candidate field reads every accepted word. Those consumers require
+        # the entire field, even when this particular word is already stable.
+        finish_narrowing(self.state)
+        self.reading=_word_carrier(close_narrowing(self.state),self.width)
+        return self.reading
+
+    def for_word(self, index):
+        if self.reading is not None and len(self.state.actions) == self.state.budget:
+            return self.reading
+        wanted=(torch.arange(self.state.keys.shape[1],device=self.state.keys.device)[None]
+                == index).expand_as(self.state.known)
+        advance_narrowing(self.state,wanted)
+        self.reading=_word_carrier(close_narrowing(self.state),self.width)
+        return self.reading
 
 
 def read_poles(model, consumer):
@@ -137,6 +170,7 @@ def stage_input(model):
     model._attention_poles=None
     model._attention_grammar_mask=None
     model._attention_read=None
+    model._attention_open=None
     model._attention_greedy=None
     model._attention_pole_representation=False
     model._word_expectation=None
@@ -224,25 +258,22 @@ def stage_input(model):
     prior=BracketKeys._codebook_retrieval_prior(keys[:, :live_width],rows,model._last_gist,boosts)
     if prior is not None: prior=F.pad(prior,(0,W-live_width))
     spent=spans.new_tensor([meter.spent for meter in model._attention_meters])
-    def read(*, sentence=None, spent_override=None, **trial):
+    def arguments(*, sentence=None, spent_override=None, **trial):
         reading_spans=spans[:, :live_width]
         if sentence is not None:
             here=model.inputSpace._packed_sentence_ids[:, :live_width] == sentence
             reading_spans=torch.where(here[...,None],reading_spans,0)
-        result = narrow_words(chooser,keys[:, :live_width],reading_spans,
-            known[:, :live_width],budget=model.attention_budget,
+        return dict(chooser=chooser,keys=keys[:, :live_width],spans=reading_spans,
+            known=known[:, :live_width],budget=model.attention_budget,
             prior=None if prior is None else prior[:, :live_width],
             identities=ids[:, :live_width],poles=poles[:, :live_width],
             spent=spent if spent_override is None else spent_override,**trial)
-        # Eager attention need not multiply its field reductions by inactive
-        # word storage. Restore the configured carrier before the tensor body.
-        return result._replace(values=F.pad(result.values,(0,0,0,W-live_width)),
-            accepted=F.pad(result.accepted,(0,W-live_width)),
-            descended=F.pad(result.descended,(0,W-live_width)),
-            poles=F.pad(result.poles,(0,0,0,W-live_width)),
-            pole_changes=F.pad(result.pole_changes,(0,W-live_width)),
-            field_scopes=F.pad(result.field_scopes,(0,W-live_width)))
+    def read(**trial):
+        return _word_carrier(narrow_words(**arguments(**trial)),W)
+    def opening(**trial):
+        return SentenceNarrowing(open_narrowing(**arguments(**trial)),W)
     model._attention_read=read
+    model._attention_open=opening
     model._attention_spans=spans
     model._attention_forms=(forms,ids,keys,live)
     phases = getattr(model, 'grammar_phases', None)

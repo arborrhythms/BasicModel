@@ -186,10 +186,12 @@ touch any of §5's attention edit set; it was carried unchanged as
 `28828fc59e` (original `86192877d5`). No push has been made.
 
 That carried commit accounts for these edits outside §5: `Makefile`,
-`test/bounded_tests.py`, `test/conftest.py`, and their new/extended tests
-reduce and measure harness overhead; `bin/Layers.py` and `bin/Spaces.py`
+`test/bounded_tests.py`, `test/conftest.py`, and the added test in
+`test/test_bounded_test_runner.py` reduce and measure harness overhead;
+`bin/Layers.py` and `bin/Spaces.py`
 contain the already-certified retained-leaf repairs; `bin/prepare_data.py`
-and `bin/prepare_corpus.py` remove redundant preparation passes.
+and `bin/prepare_corpus.py` remove redundant preparation passes, with added
+cases in `test/test_prepare_data.py`. No existing assertion was changed.
 `doc/plans/2026-11-14-performance-round.md`, `test/perf_observer.py`,
 `test/performance_leaves.py`, `test/test_performance_leaves.py`, and
 `test/tools/performance_round.py` retain that round's report and evidence
@@ -215,6 +217,8 @@ An observer initially failed while viewing a singleton strided tensor
 as bytes. Its flat-copy serialization was corrected and the run restarted
 from the **same already recorded initial stream**, not a new seed. That
 interrupted observation remains in `base-lesson-observer-error/`.
+Its recorded `initial-rng.pt` SHA-256 is
+`b4f4d373fb74a4c57d8c6f8d16338a4c319bc1edac8a668527f8ea98dadd4745`.
 
 ### 3.1 — the walk as steps; P1
 
@@ -316,3 +320,112 @@ The count includes the first inert round establishing the repeated tail.
 Before, every entry was 32/32. The first sixteen lesson `runBatch` calls
 take **73.046459 seconds before → 71.470917 seconds after** P2, with the
 same observation contract and capacities as P1. This is one paired run.
+
+The exhausted-tail change and P2 certificate are committed as `73eef9644a`.
+
+### 3.3 — the word owner advances the walk; P3
+
+The exact stability rule is a dependency test. Start with the requested
+word positions. Traverse the already recorded field scopes **backwards**:
+if a scope intersects the needed positions, include every word in that
+scope. Then include equal, nonnegative identities that may supply those
+words' shared descent witness. The reading is stable when none of those
+positions is covered by a valid, unfinished bracket with remaining
+budget, or when the whole legal menu or the total budget is exhausted.
+The rule is conservative: an unsupported but still-live bracket can make
+it wait longer than necessary. It never guesses a future chooser action.
+Later brackets only split existing extents; they cannot reach outside
+the unfinished source brackets. Shared descent is applied before field
+resolution, which is why identity dependencies are expanded after the
+backward field traversal.
+
+Three new cases fail on the base's absent step/stability API and pass
+afterwards (`p3-before.log`, `p3-rule.log`): an independent accepted word
+can settle before another word; an earlier field operation must wait
+for a later word's descent; and a later occurrence of the same identity
+can change a word already accepted. Partial handoffs and the eventual
+complete result are compared directly with the base at zero tolerance.
+
+`ModelAttention` stages an opening closure beside the existing read.
+`_run_sentence_word_bricks` opens the sentence walk at the former read
+site, and advances it from the cached-word loop. Attention departures
+replay the original trace and retain nondeparting rows exactly. The
+original input-staging read stays in place because expectation consumers
+need it before sentence composition. `Examination.run` is unchanged.
+
+There is an additional dependency at the first word: sentence restoration
+publishes the **whole** pole slab through `_pushed_word_slab` and
+`commit_word_reference_slab`; `SentenceField` also builds its candidate
+evidence from all words. Therefore all those sources must settle before
+restoration and the first composition. In the sixteen measured sentences,
+this requires completing each sentence-local walk on the first word-loop
+entry. There are **19 word-driven walks** (16 greedy and three departures),
+**233 evaluated rounds before the first composed word**, and **zero
+additional attention rounds between the 49 word compositions**. The
+first-word counts are the second and optional third entries of the P2
+table: 11–14, against the original budget of 32 each. Input staging takes
+another 197 rounds, giving **430 evaluated rounds versus 1,120** across
+all 35 walks. The result does not yet make attention depend on what a
+previous word has taught the model; that remains §4's later work.
+
+The placement certificate fails on `3926005f12` at its first batch with
+`sentence attention was completed outside the word loop`
+(`p3-placement-before.log`). On this branch it observes the actual
+`compose` loop index and the call from `start_compose`, and passes on all
+sixteen batches (`p3-final-lesson/`). Every batch's attention outputs,
+all chooser results, registered cost contributions, optimizer state,
+parameters and random streams equal the base exactly. Both unchanged
+stopping gates also pass and compare exactly (`p3-final-gates/`).
+
+The new step and handoff cases plus the existing fullgraph assertion
+pass (12 cases, 48.89 seconds, `final-step-certificates.log`). A further
+empty-carrier case verifies that a supplied `spent` is ignored exactly
+as in the original function (two parameterizations pass in
+`empty-final.log`). The captured comparison now checks `requires_grad`
+as well as tensor values and exact policy gradients; discrete outputs
+retain their original detached contract.
+
+The final observer also snapshots each accumulated cost record after
+registration, including its row mask, owner/side, weight, numerators and
+baselines, rather than checking only the supplied arguments. A fresh
+paired replay from the **same original recorded stream** passes for all
+901 registrations, all sixteen parameter/optimizer snapshots and all
+35 walks (`base-complete-lesson/`, `p3-complete-lesson/`). The two stopping
+gates again pass exactly (`base-complete-gates/`, `p3-complete-gates/`);
+those fixtures register no `Error.add`/`Error.error` terms and take no
+attention walks, so these portions of their comparisons are empty.
+
+| Observed work, CPU / one thread | Base seconds | After 3.3 seconds |
+| --- | ---: | ---: |
+| Sixteen lesson `runBatch` calls, initial final replay | 73.046459 | 71.163715 |
+| Sixteen calls, final accumulated-cost observation | 71.852380 | 70.905987 |
+| Final lesson driver, including observation/reference checks | 73.167360 | 73.767570 |
+| Both stopping gates, final observation | 1.000958 | 1.001150 |
+
+The final run is about **0.23 sentences/second**, or 4.43 seconds per
+sentence. The initial final replay is retained as separate evidence;
+timing rows with different observation contracts are not mixed. These
+small timing differences do not establish a throughput improvement.
+
+The attention/traversal/native-field/whole-path regression selection
+finishes with **87 passes and one failure** in 93.48 seconds
+(`regressions.log`). The failure is the unchanged
+`test_where_attention_handoff.py::test_mereology_raise_enables_conceptual_refinement`.
+It compares two consecutive raw forwards after freezing admission, but
+`BasicModel.forward` still calls `_advance_when_time` on each numeric
+presentation. The clock is part of the input evidence. A same-stream
+replay on the base and branch reproduces the failure with identical
+forward outputs and parameters in all three calls; the two compared
+outputs differ by at most `8.940696716308594e-08` on **both** versions.
+Only the clock buffers change between those calls. A diagnostic holding
+the last call's clock at the previous time makes the assertion pass
+exactly on both versions (`mereology-{base,after}[-clock].{json,pt,log}`).
+That diagnostic does not change the test or production clock. Unused,
+uninitialized priming scratch buffers are not equality witnesses. No
+attention regression was found, and the unchanged assertion is not
+reported as passing.
+
+An AST scope audit confirms that `_run_sentence_word_bricks` is the only
+changed `Models.py` method. The existing bodies in both extended carried
+test files remain identical to the base. No fixture or configured
+capacity was resized for these checks, and no sentence loop was compiled.
