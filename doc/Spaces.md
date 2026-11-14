@@ -484,13 +484,19 @@ modal basis."
   space of places lies below it. Text's `.where` is an order in a sequence
   and an image's is a place on a surface, so one space for both would give
   them distances that mean nothing.
-- **Modality is implicit.** Alec: "modality as implicit since both it and
-  order can be inferred from the .where?" A concept's modalities are read
-  from where its percepts sit: each percept's place belongs to one
-  modality's perceptual space, and the reference to the percept names that
-  space. The number of axes alone does not tell text from XOR, which both
-  have one. A concept's order is read the same way, from where the concept
-  sits in the codebook ([Orders §12](Orders.md)). Neither is stored.
+- **Modality and order are read from the place.** Alec: "the .where that
+  is baked into all concepts in virtue of muxing the .where of a percept
+  will include a .where in a range that can uniquely identify the modality
+  and order of a percept." The model's places are one address space,
+  divided into fixed, disjoint ranges (`WhereRegistry`), and every muxed
+  vector carries its address in its band. The ranges are the input, the
+  part rows, the whole rows, the symbols and the live conceptual slots. A
+  symbol's address is its concept's row, two addresses to a row, one for
+  each lane; rows lie in their order's block, so the range gives the order
+  ([Orders §12](Orders.md)). Each modality's input has a range of its own,
+  so the range gives the modality too. Neither is stored beside the vector.
+  The number of place axes would not tell text from XOR, which both have
+  one; the range does.
 
 ### Complement, Copart, and Negation {#percept-complement}
 

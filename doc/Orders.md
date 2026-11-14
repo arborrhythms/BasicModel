@@ -609,14 +609,17 @@ based on where it sits in the codebook, since concepts are currently
 ramsified and preallocated." Each order has its own block of rows in the
 concept inventory, and a concept is given its row at the order at which
 it is admitted. A concept never changes order, since a raise makes a new
-concept, so its order is read from its row and stored nowhere else. A
-full block spills into a tail that the orders share; there the row's key,
-which records the order it was given, is read in place of its position.
+concept. Its symbols' `.where` is its row, in the symbols' range of the
+model's one address space, so its order is read from that place and stored
+nowhere else. That holds only while no order's rows spill into rows the
+orders share: a full block is a capacity error (*default*; today a full
+block spills into a shared tail, where the row's key records its order).
 
 **So is modality.** "modality as implicit since both it and order can be
-inferred from the .where?" (Alec, 2026-11-13). Each modality has its own
-perceptual space, and a concept's modalities are read from where its
-percepts sit, as its order is read from where it sits in the codebook
+inferred from the .where?", and "the .where that is baked into all
+concepts in virtue of muxing the .where of a percept will include a .where
+in a range that can uniquely identify the modality and order of a percept"
+(Alec, 2026-11-13). Each modality's input has its own range of places
 ([Spaces](Spaces.md#percept-modalities)).
 
 An idea composed of several words has no row. Its order follows from its
