@@ -429,3 +429,142 @@ An AST scope audit confirms that `_run_sentence_word_bricks` is the only
 changed `Models.py` method. The existing bodies in both extended carried
 test files remain identical to the base. No fixture or configured
 capacity was resized for these checks, and no sentence loop was compiled.
+
+The word-loop change and P3 evidence are committed as `b5b92126bc`.
+
+### Carried performance work, checked after P3
+
+The carried changes are unchanged from `28828fc59e`. The following CPU
+refresh runs **sequentially**, with no other benchmark running, against
+the original source and saved inputs. MPS is not rerun. The historical
+complete default sweep and the original native-corpus measurements
+remain in [the performance report](2026-11-14-performance-round.md);
+no new complete sweep is claimed for the attention implementation.
+
+The matched default worker replays all 256 original selectors, their
+recorded initial Python/NumPy/Torch streams and hash setting, the six
+one-thread limits, and the same 8 GiB cap. Both versions produce 255
+passes and one skip. Initial **and final** random streams and each test's
+outcome match exactly (`harness-audit.json`).
+
+| Matched worker | Base seconds | Final branch seconds |
+| --- | ---: | ---: |
+| Process wall | 80.497796 | 55.567156 |
+| Test bodies | 23.601552 | 22.798686 |
+| Outside test bodies | 56.896244 | 32.768470 |
+| Setup | 23.987195 | 0.118955 |
+| Teardown | 24.859500 | 24.940574 |
+| GC (overlaps phases) | 49.517987 | 25.666983 |
+
+Outside-body time falls by 42.4%; peak process-tree memory is 2.723 → 2.699 GiB. The removed duplicate GC scan accounts for the setup reduction. The training fixtures remain unchanged. The original complete-sweep measurements separately identify model/configuration/training setup; their results are not extrapolated from this worker.
+
+All **31 CPU leaf variants** again compare eager values and gradients
+with the `3926005f12` fixed-input reference at **zero tolerance**. Each
+produces one full graph across positive batches `3, 1, 2, 4, 8, 17`,
+zero recompilations, and no checked `nonzero`, `item`, or
+`_local_scalar_dense` operation in forward or backward. The final
+`TORCH_LOGS=graph_breaks,recompiles` log contains zero such events.
+Compiled-versus-eager floating arithmetic retains the earlier explicit
+`rtol=2e-5, atol=2e-6` contract; integer indices are exact. This is not a
+claim of bitwise floating equality between Inductor and eager. Source
+before/after equality is exact. The original nonempty folds captured
+but executed synchronizing `nonzero`; the retained repair removes it.
+Zero-sized batches are outside the positive-batch claim, as documented
+in the carried report. No production compilation default is changed.
+
+Warm forward medians are **microseconds** below; startup is **seconds**
+for capture and the forward/gradient comparisons. Both retain the shared
+compiler disk cache; startup differences are not compiler speedup claims.
+The complete fixed shapes, staging and profiler contract are unchanged
+from the carried report.
+
+| CPU leaf | Eager µs, base → final | Compiled µs, base → final | Startup s, base → final |
+| --- | ---: | ---: | ---: |
+| `householder` | 121.13 → 120.25 | 41.27 → 40.67 | 1.107 → 1.713 |
+| `householder_action` | 97.07 → 95.67 | 35.30 → 35.23 | 0.123 → 0.139 |
+| `householder_action_transpose` | 96.42 → 95.55 | 35.50 → 35.30 | 0.112 → 0.129 |
+| `lane_neutral_forward` | 104.17 → 103.51 | 47.70 → 43.33 | 0.537 → 0.593 |
+| `lane_neutral_inverse` | 104.53 → 104.15 | 48.71 → 48.43 | 0.351 → 0.362 |
+| `lane_learned_forward` | 104.56 → 103.04 | 49.06 → 48.14 | 0.329 → 0.328 |
+| `lane_learned_inverse` | 104.15 → 105.24 | 48.48 → 48.10 | 0.332 → 0.332 |
+| `cube_chart_True` | 20.96 → 21.22 | 23.89 → 23.65 | 0.114 → 0.123 |
+| `cube_chart_False` | 17.97 → 17.80 | 23.74 → 23.12 | 0.043 → 0.052 |
+| `cube_unchart` | 16.07 → 15.97 | 22.86 → 22.53 | 0.042 → 0.057 |
+| `meet_ratios` | 25.05 → 24.19 | 28.68 → 28.04 | 0.052 → 0.068 |
+| `fold_False_False_False` | 88.40 → 72.10 | 53.64 → 35.04 | 2.487 → 0.157 |
+| `fold_False_False_True` | 87.31 → 81.25 | 52.82 → 36.16 | 2.225 → 0.333 |
+| `fold_own_False_False` | 105.93 → 98.69 | 64.28 → 43.01 | 2.677 → 0.403 |
+| `fold_False_True_False` | 113.82 → 97.02 | 54.73 → 35.85 | 2.322 → 0.141 |
+| `fold_False_True_True` | 112.27 → 106.24 | 54.40 → 37.49 | 2.148 → 0.341 |
+| `fold_own_False_True` | 129.68 → 122.83 | 64.63 → 43.37 | 2.582 → 0.433 |
+| `fold_True_False_False` | 110.33 → 94.39 | 55.41 → 36.27 | 0.911 → 0.116 |
+| `fold_True_False_True` | 109.74 → 103.60 | 53.87 → 37.39 | 0.967 → 0.315 |
+| `fold_own_True_False` | 127.94 → 121.30 | 64.90 → 43.84 | 1.157 → 0.388 |
+| `fold_True_True_False` | 89.82 → 74.20 | 53.15 → 35.31 | 0.765 → 0.111 |
+| `fold_True_True_True` | 89.38 → 83.48 | 53.24 → 36.73 | 0.807 → 0.292 |
+| `fold_own_True_True` | 107.42 → 101.37 | 66.14 → 43.60 | 0.989 → 0.363 |
+| `fold_empty` | 13.95 → 6.01 | 15.41 → 14.29 | 0.083 → 0.040 |
+| `fold_unsorted` | 81.69 → 76.79 | 49.31 → 36.90 | 1.889 → 0.295 |
+| `where_encode_2` | 7.96 → 7.87 | 14.80 → 14.62 | 0.140 → 0.142 |
+| `where_decode_2` | 16.00 → 16.60 | 22.10 → 22.39 | 0.041 → 0.057 |
+| `where_decode_index_2` | 18.43 → 19.35 | 14.14 → 13.94 | 0.034 → 0.043 |
+| `where_encode_4` | 13.70 → 13.63 | 15.14 → 15.22 | 0.032 → 0.040 |
+| `where_decode_4` | 29.67 → 30.19 | 22.41 → 22.23 | 0.047 → 0.063 |
+| `where_decode_index_4` | 25.39 → 25.49 | 14.12 → 13.87 | 0.037 → 0.046 |
+
+Corpus refresh uses the same pinned 94,511,680-byte source and 1,000
+complete documents: **39,289 sentences**, with identical shard bytes,
+row ordering, loaded splits and source addresses. The measurements use
+five repetitions (three for assembly) and local transport for the plain
+file installation. They are source/disk measurements, not network speed.
+
+| Corpus operation | Base seconds | Final branch seconds |
+| --- | ---: | ---: |
+| Verify prepared data | 0.098110 | 0.101618 |
+| Authenticate pinned source | 0.082722 | 0.041230 |
+| Install plain local file | 0.141533 | 0.097508 |
+| Assemble complete documents | 0.977438 | 0.936066 |
+| Read/validate rows | 0.089705 | 0.089486 |
+| Load splits and addresses | 0.154886 | 0.157139 |
+
+Evidence: `harness-{before,after}/`, their guard receipts and logs,
+`leaves-final/` and `corpus-final/`. The leaf and corpus baseline evidence
+is the original `output/perf-1/before/{leaves-cpu,corpus}-controlled/`.
+Unchanged paths serve as timing controls; small variations in them are
+not attributed to the optimization.
+
+The original native **math-chain** measurement is also replayed on the
+final implementation, from its original recorded stream and hash setting.
+All **60 sentences in nine batches** complete. Every recorded loss,
+breakdown and answer, all final model tensors and optimizer state, and
+the final Python/NumPy/Torch streams match `3926005f12` exactly
+(`math-final/`, compared with `output/perf-1/before/math-controlled/`).
+This retains the original single grade-00 presentation, batch eight and
+native tails; it does not claim the full multi-epoch curriculum.
+
+| Native math-chain measurement | Base seconds | Final branch seconds |
+| --- | ---: | ---: |
+| Model construction | 0.294618 | 0.293486 |
+| All 60 completed `runBatch` sentences | 172.696435 | 172.333245 |
+| Per completed sentence | 2.878274 | 2.872221 |
+| Presentation wall | 173.157195 | 172.794142 |
+
+That is about **0.35 sentences/second**, effectively unchanged. Its
+`TORCH_LOGS=graph_breaks,recompiles` log has zero events because this
+sentence owner is eager; this is not a full-model compile claim.
+
+### Local commits and final state
+
+| Work | Commit on `performance` |
+| --- | --- |
+| Carried performance round | `28828fc59e` |
+| P1: walk extraction | `1799c4a260` |
+| P2: exact inert-tail ending | `73eef9644a` |
+| P3: word-loop owner and exact stability rule | `b5b92126bc` |
+
+The final refresh changes documentation only. `certified-source.json`
+records the implementation commit and source digests used by the final
+certificates. The temporary base worktree was removed after its evidence
+was saved. All work remains local on `performance`; nothing was pushed,
+and `main` was not changed. The additional learned-state dependence and
+nonlinear reading remain the explicitly deferred work in §4.
