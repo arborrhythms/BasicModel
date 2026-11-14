@@ -20310,12 +20310,9 @@ class BasicModel(BaseModel):
             cost = component_cost * components.weight
             self._sentence_expectation_comparison = (cost if self._sentence_expectation_comparison is None
                 else self._sentence_expectation_comparison + cost)
-        from ModelAttention import read_poles
-        word_inputs = getattr(self, '_word_expectation_input', None)
-        word_expected = (None if word_inputs is None or disc is None else disc.expect('word', *word_inputs,
-             gain=self.word_expectation_gain,
-            active=self._word_expectation_mask, lanes=read_poles(self, 'WordExpectation.word_distribution'),
-            epsilon=self.expectation_epsilon, saturation=self.expectation_saturation))
+        # The greedy sentence walk stages one arrival forecast. Every path
+        # is scored against that same forecast, including attention departures.
+        word_expected = getattr(self, '_word_expectation', None)
         if word_expected is not None and self.word_expectation_weight > 0:
             mask = self._word_expectation_mask & (self.inputSpace._packed_sentence_ids == sid)
             targets = getattr(self, '_omission_targets', None)
@@ -21091,9 +21088,18 @@ class BasicModel(BaseModel):
             reader_observations = []
             greedy_attention = getattr(self, '_attention_greedy', None)
             attention_base = getattr(self, '_attention_words', None)
-            attention_spent = words.new_tensor([m.spent for m in getattr(self,'_attention_meters',())],dtype=torch.long)
+            sentence_meters = getattr(self, '_attention_meters', ())
+            attention_spent = words.new_tensor([m.spent for m in sentence_meters],dtype=torch.long)
             greedy_walk = (self._attention_open(sentence=sid,spent_override=attention_spent)
-                           if greedy_attention is not None else None)
+                           if getattr(self, '_attention_open', None) is not None else None)
+            def meters_for(reading):
+                from copy import copy
+                meters = tuple(copy(meter) for meter in sentence_meters)
+                for b, meter in enumerate(meters):
+                    meter._counts = meter._counts.copy()
+                    if bool(present[b]):
+                        meter.require('bracket', int(reading.table.spent[b] - attention_spent[b]))
+                return meters
             self._sentence_departure = None
             from SentenceFork import SentenceFork, detached
             fork = (SentenceFork(present, live=single, capacity=self.explore_paths) if self._sentence_training and torch.is_grad_enabled()
@@ -21132,6 +21138,10 @@ class BasicModel(BaseModel):
                         prime[b] = (signal[:, None]*keys).sum(0)/signal.abs().sum().clamp_min(1.)
                 reducer._expectation_prime = prime.detach()
             source_leaf_mask = self.inputSpace._ar_grammar_leaf_mask
+            if source_leaf_mask is None:
+                # No row-wide read has admitted the other sentences. Keep
+                # their leaves closed until their own walk publishes them.
+                source_leaf_mask = torch.zeros_like(active)
             def compose(cached, exploit, *, kept=None, fork=fork):
                 nonlocal greedy_attention
                 self.inputSpace._ar_grammar_leaf_mask = source_leaf_mask
@@ -21176,6 +21186,11 @@ class BasicModel(BaseModel):
                             reading = type(reading)(type(reading.table)(*selected[0]), *selected[1:])
                     if reading is not None:
                         handoff(self, reading)
+                        self._attention_meters = meters_for(reading)
+                        if kept is None and exploit is None:
+                            from ModelAttention import stage_expectation
+                            self._attention_greedy = reading
+                            stage_expectation(self, prefix=attention_base)
                     if kept is None:
                         attention_trials.append(reading)
                     # Every trial begins with restored history. Give its first
@@ -21328,14 +21343,13 @@ class BasicModel(BaseModel):
                         raise RuntimeError('compose fork did not take its saved departure')
                 if field_trials[-1] is not None:
                     self.inputSpace._ar_grammar_leaf_mask = field_trials[-1].grammar_leaves(source_leaf_mask)
-                meters = self._attention_meters if greedy_attention is not None else None
+                meters = sentence_meters if greedy_attention is not None else None
                 if meters is not None:
-                    from copy import copy
-                    trial_meters = tuple(copy(meter) for meter in meters)
-                    for b, meter in enumerate(trial_meters):
-                        meter._counts = meter._counts.copy()
-                        if bool(present[b]):
-                            meter.require('bracket', int(self._attention_words.table.spent[b] - attention_spent[b]))
+                    trial_meters = self._attention_meters
+                    # A thought/output-only departure reuses composition;
+                    # open its own charged meter without rerunning the walk.
+                    if trial_meters is meters:
+                        trial_meters = meters_for(self._attention_words)
                     self._attention_meters = trial_meters
                 try:
                     result = finish_path(self, path, sid, present,
@@ -21455,6 +21469,7 @@ class BasicModel(BaseModel):
                     reconstruction = select_rows(reconstruction, candidate.reconstruction, selected == index)
             finally:
                 pending_steps.clear()
+                self._attention_meters = sentence_meters
                 self._sentence_pullback = None
                 self._compose_fork = self._compose_forced_slots = None
                 if reducer is not None:
@@ -21472,10 +21487,11 @@ class BasicModel(BaseModel):
                 kept = type(greedy_attention)(type(greedy_attention.table)(*combined[0]), *combined[1:])
                 from ModelAttention import handoff
                 here = sentence_ids == sid
-                kept = kept._replace(**{name: torch.where(
-                    here[..., None] if getattr(kept, name).ndim == 3 else here,
-                    getattr(kept, name), getattr(attention_base, name))
-                    for name in ('values', 'accepted', 'descended', 'poles', 'pole_changes')})
+                if attention_base is not None:
+                    kept = kept._replace(**{name: torch.where(
+                        here[..., None] if getattr(kept, name).ndim == 3 else here,
+                        getattr(kept, name), getattr(attention_base, name))
+                        for name in ('values', 'accepted', 'descended', 'poles', 'pole_changes')})
                 if field_trials[0] is not None:
                     admitted = choose_tensors([field.full_admission() for field in field_trials]).detach() > 0
                     kept = kept._replace(accepted=kept.accepted & (~here | admitted))

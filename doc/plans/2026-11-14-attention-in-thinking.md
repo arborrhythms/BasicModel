@@ -775,87 +775,91 @@ No choice in this table has been implemented.
 The diagnostic commit is `6efaf8283f`; the following documentation-only
 commit records this return. Both remain local on `performance`.
 
-## 10. Accelerator sentence block: item 1 checkpoint (2026-11-14)
+## 10. Accelerator sentence block: sentence ownership and host work (2026-11-14)
 
-The new request retains exact equality with `3926005f12` and explicitly
-requires a stop if the packed row's staging and sentence walks differ.
-**That stop condition still holds.** The accepted §7 implementation is
-unchanged; no choice between the unequal readings has been implemented.
-A single compiled accelerator block has not been built or certified.
+### Decision and certificate boundary
 
-### Rechecked evidence and boundary
+The initial checkpoint (`7a1645e4e6`) stopped on the §9 differences. Alec
+then authorized making the semantic change: "in general Id expect this
+to change things", and asked to make it before recovering performance;
+better quality benchmarks will need a more highly trained model.
+The implementation below therefore makes the sentence walk authoritative
+with the existing shared row/query allowance and the earlier kept-word
+prefix. It does not give each sentence a fresh allowance.
 
-This checkpoint starts from `9ac040d8ef` on `performance`. Its production
-files are identical to the certified `a0ddd14125` source: the intervening
-commits add only the §9 diagnostic and report. The recorded stream and
-observer SHA-256 digests still match `output/attention-single-walk/receipt.json`.
-The following saved JSON records were compared again, exactly:
+The old exact result at `3926005f12` remains a reported comparison, not a
+claim of equality for this authorized change. Later host optimizations
+must be exactly equal to the sentence-owned implementation. Every replay
+uses §7's original ambient Python/NumPy/Torch stream and hash seed; no
+seed is selected again, no fixture is resized, no existing assertion is
+changed, and no production switch is introduced. Measurements are CPU
+measurements; the withdrawn MPS measurement is not reinstated.
 
-| Current evidence | Reference at `3926005f12` | Exact records |
-| --- | --- | ---: |
-| `attention-single-walk/lesson-complete` | `attention-thinking/base-complete-lesson` | 16 lesson batches |
-| `attention-single-walk/gates-complete` | `attention-thinking/base-complete-gates` | 51 gate records |
-| `attention-single-walk/packed-prefix` | `attention-single-walk/base-packed` | 1 complete packed batch |
+### Item 1: the sentence owns admission and expectation
 
-These paths are under ignored `output/`. They retain the original stream,
-native fixtures, actions, costs, parameters and optimizer state described
-in §9. They are existing measurements revalidated against unchanged source,
-not new timed runs. No seed, assertion, capacity or production switch was
-changed. The gates have no attention walk and therefore cannot resolve
-the ownership question.
+`ModelAttention.stage_input` retains spans, keys, native poles, prior and
+opening closure, but takes no walk when the sentence loop runs. Disabled
+examination/vector configurations expose no sentence opening. Non-sentence
+configurations retain their original one staged walk and charge.
 
-### Item 1: the case requiring Alec's decision
+At `start_compose`, the sentence walk finishes, publishes its leaf mask,
+and charges a private path meter. The first path stages the word forecast
+once; all explore paths share that forecast and its graph. Earlier kept
+accepted words and poles remain the causal prefix, and the candidate bank
+retains the native row's vocabulary. The selected path transfers its work
+to the shared meter once. Before the first sentence there are no admitted
+leaves from other sentences; this replaces the implicit mask formerly
+supplied by staging. No other sentence-loop behavior is intentionally
+changed.
 
-The four-sentence row still has **10 accepted words in its staging walk
-and 7 across its sentence walks**. The last sentence's `is`, `that`, and
-`?` are accepted by staging but rejected by its sentence walk after the
-shared meter is exhausted. Its descent and pole result also differ.
-This affects **1/4 sentences and 3/10 staged accepted words**; cumulative
-spent differs on all four sentence comparisons. Details and tensors are
-in §9, including the same-time, old-clock, frozen-history and prefix
-controls.
+The native sixteen-sentence replay now takes **19 walks / 233 evaluated
+rounds**, down from **35 / 430**: sixteen primary sentence walks and three
+actual attention-departure replays remain. There are exactly sixteen word
+forecasts, one per sentence. All paths consume their sentence's identical
+forecast object without modifying its loss. The packed four-sentence row
+takes **4 walks / 36 rounds** instead of **5 / 64**, with four forecasts.
+Both gates still take zero attention walks.
 
-The choices and their consequences remain:
+Every individual attention invocation, including departures, is exactly
+equal to the `3926005f12` kernel for its actual inputs and RNG state. The
+full lesson is intentionally unequal: parameter and optimizer hashes
+change in all sixteen batches; registered costs change in fifteen batches;
+non-attention chooser traces change in twelve. The RNG stream remains
+exactly equal at every batch boundary. The packed inference replay changes
+attention, costs and chooser traces; its parameters and RNG remain equal.
+Both original stopping gates pass and all 51 gate records remain exactly
+equal to `3926005f12`.
 
-| Choice | Consequence |
-| --- | --- |
-| Keep the existing row-wide reading | Preserves the exact base's staging result and forecast context, but leaves the extra walk. |
-| Substitute the existing sentence walks with the shared meter | Removes the final sentence's three targets and changes the reading. Later-time expectation also differs on 12/16 separately presented lesson sentences. |
-| Reset the allowance for each sentence | Restores those accepted words in the diagnostic but spends 49 bracket units instead of 27 and flips both poles of the final sentence's `that` and `?`. |
+The new ownership tests also cover no walk during preparation, retained
+non-sentence behavior, disabled examination, and the kept-prefix bank and
+pole handoff. The relevant unchanged attention, compose and expectation
+suite passes: **41 passed, 1 skipped**. The certificate additionally checks
+one forecast per sentence, identity across paths and bounded meters. On
+the unchanged `7a1645e4e6` source, the new ownership tests fail in the
+three expected places (staging walk, disabled opening, prefix argument);
+the retained non-sentence behavior already passes. All four pass after.
 
-Sharing one expectation across a sentence's explore paths does not remove
-these differences: they already occur in the initial greedy sentence
-read. The word expectation also carries an accepted-word prefix across
-the packed row; a sentence-only mask removes that prefix. Keeping the
-old clock repairs the sixteen separate-sentence expectation comparisons,
-but does not repair the packed-row admission and scope differences.
+Evidence: `test/attention_block_certificate.py`,
+`test/test_sentence_owned_attention.py`, and ignored
+`output/attention-block/owned-v3-{lesson,packed,gates}`. The initial failed
+integration replay is retained in `owned-v2-lesson.log`: it exposed the
+missing initial leaf mask, which is fixed rather than bypassed.
 
-**Recommendation under this request's unchanged exact-equality rule:**
-retain the current production behavior. Removing the row walk needs an
-explicit row-semantics design that reproduces its admission, poles,
-expenditure and forecast context. Do not silently substitute sentence
-semantics or a fresh per-sentence allowance.
+| Same native driver, seconds | Before ownership (§9) | Sentence owned |
+| --- | ---: | ---: |
+| Sixteen lesson `runBatch` calls | 70.732232 | 69.342439 |
+| Packed document `runBatch` | 5.781457 | 5.768452 |
 
-### Inventory, removals and measurement status
+These are single observations with the same oracle/registry observation
+method, not a statistically established speedup. Quality after further
+training is not established by these sixteen early training sentences.
+A full accelerator sentence graph is not yet certified; the following
+inventory identifies the remaining host boundaries.
 
-Items 2 and 3 have not been run at this checkpoint. Clarification was
-requested on whether item 1's instruction to "stop" applies to the whole
-round, or whether the read-only inventory and independent exact
-optimizations should proceed while ownership remains stopped. No host-work
-optimization, tensor-library call census or host-read census is claimed.
-The supplied `_freeze_metadata` and `SentenceCompose.pack` call estimates
-have not been presented as measurements from this round.
+### Items 2–3: inventory and independent exact optimizations
 
-| Existing measurement | Before this request | After production changes |
-| --- | --- | --- |
-| Sixteen lessons: walks / evaluated rounds | 35 / 430 | No production changes |
-| Sixteen lessons: `runBatch` seconds | 70.732232 | Not remeasured |
-| Packed row: walks / evaluated rounds | 5 / 64 | No production changes |
-| Packed row: `runBatch` seconds | 5.781457 | Not remeasured |
-| Tensor-library calls / host reads | Not inventoried | Not inventoried |
-
-Only this requested plan section is edited in this checkpoint; no file
-in the new rounds-A/B exclusion list is edited. The underlying diagnostic
-and evidence report are commits `6efaf8283f` and `9ac040d8ef`. This return
-is a following documentation-only commit on `performance`. Nothing from
-this follow-up has been pushed, and `main` is unchanged.
+The unchanged-source census is complete. The first sentence's detailed
+observer and the sixteen-sentence count-only observer reproduce original
+parameter, optimizer and RNG hashes exactly. The detailed inventory,
+optimization certificates, final counts and commits are recorded below
+as this round proceeds.

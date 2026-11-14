@@ -157,7 +157,7 @@ def native_word_poles(model, spans, forms, known):
 
 
 def stage_input(model):
-    """Read the open bracket, then select bounded percepts before admission.
+    """Prepare the bracket; its sentence, or a non-sentence read, owns admission.
 
     The native word dictionary is only consulted here. The tensor body sees
     identities as equality keys, never as numerical features. Repeated novel
@@ -175,6 +175,8 @@ def stage_input(model):
     model._attention_pole_representation=False
     model._word_expectation=None
     model._word_expectation_input=None
+    model._word_expectation_mask=None
+    model.conceptualSpace._word_column=None
     from QueryWork import QueryWorkBudget
     pending = getattr(model, '_pending_attention_meters', ())
     model._pending_attention_meters = ()
@@ -273,11 +275,15 @@ def stage_input(model):
     def opening(**trial):
         return SentenceNarrowing(open_narrowing(**arguments(**trial)),W)
     model._attention_read=read
-    model._attention_open=opening
     model._attention_spans=spans
     model._attention_forms=(forms,ids,keys,live)
     phases = getattr(model, 'grammar_phases', None)
     if phases is not None and (not phases.examination or not phases.vector):
+        return
+    model._attention_open=opening
+    if getattr(model, '_sentence_ends', False):
+        # The sentence owns admission. Preparation exposes an opening,
+        # without spending a second row-wide walk before composition.
         return
     reading=read()
     model._attention_greedy=reading
@@ -318,8 +324,8 @@ def handoff(model, reading):
     model.conceptualSpace._passback_scope_space=table.space.gather(1,last[:,None])[:,0]
 
 
-def stage_expectation(model):
-    """One word expectation per accepted percept, shared by both compose trials."""
+def stage_expectation(model, *, prefix=None):
+    """Stage the admitted arrivals once, shared by this sentence's paths."""
     staged=getattr(model,'_attention_forms',None)
     owner=getattr(model.symbolSpace,'expectation',None)
     if (staged is None or owner is None or 'word' not in owner.enabled_levels
@@ -341,13 +347,20 @@ def stage_expectation(model):
     bank=flat_codes[first][None].expand(B,-1,-1).detach()
     valid=matches.any(-1)[None].expand(B,-1)
     accepted=model._attention_words.accepted & live
+    lanes=read_poles(model, 'WordExpectation.word_distribution')
+    if prefix is not None:
+        # Earlier kept arrivals remain the causal word prefix of a packed
+        # row. Future sentences have not been admitted by a walk yet.
+        earlier=prefix.accepted & live
+        accepted=accepted | earlier
+        lanes=torch.where(earlier[...,None],prefix.poles,lanes)
     targets=torch.where(accepted,identities,-1)
     stage_symbol_bank(model, owner)
     model._word_expectation_input=(codes,bank,valid,targets)
     expected=owner.expect('word',codes,bank,valid,targets,
         gain=model.word_expectation_gain,active=accepted,
         epsilon=model.expectation_epsilon,saturation=model.expectation_saturation,
-        lanes=read_poles(model, 'WordExpectation.word_distribution'))
+        lanes=lanes)
     model._word_expectation=expected
     # The reader receives the attenuated whole; novelty has separate lanes.
     model.conceptualSpace._word_column=expected.content
