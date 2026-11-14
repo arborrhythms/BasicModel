@@ -13,6 +13,8 @@ METADATA_BYTES = 64
 # One polarity, then binding/scope bytes: eight bits + occupancy per byte
 # and one overflow bit per field. No grammatical-mode coordinates remain.
 METADATA_WIDTH = 1 + 2 * (9 * METADATA_BYTES + 1)
+_BYTE_FEATURES = tuple(tuple((byte >> bit) & 1 for bit in range(8)) + (1,)
+                       for byte in range(256))
 
 
 def context_width(width):
@@ -52,11 +54,13 @@ def semantic_metadata(meanings):
     def field(value, like):
         raw = json.dumps(freeze(value), ensure_ascii=False,
                          separators=(',', ':')).encode('utf-8')
-        values = like.new_zeros(METADATA_BYTES, 9)
-        for index, byte in enumerate(raw[:METADATA_BYTES]):
-            values[index, :8] = like.new_tensor([(byte >> bit) & 1 for bit in range(8)])
-            values[index, 8] = 1
-        return torch.cat((values.reshape(-1), like.new_tensor([len(raw) > METADATA_BYTES])))
+        # Address aliasing and JSON are native metadata work. Materialize
+        # their exact categorical bits once instead of issuing tensor
+        # writes and a small host-to-device copy for every byte.
+        values = [bit for byte in raw[:METADATA_BYTES] for bit in _BYTE_FEATURES[byte]]
+        values.extend([0] * (9 * max(0, METADATA_BYTES - len(raw))))
+        values.append(len(raw) > METADATA_BYTES)
+        return like.new_tensor(values)
 
     return tuple(torch.cat((meaning.roles.new_tensor(
         [meaning.polarity]),
