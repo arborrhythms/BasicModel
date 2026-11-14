@@ -42,9 +42,13 @@ def materialize(source, cache, root):
     expected = source.get('sha256') or source.get('git_blob_sha1')
     if not expected:
         raise ValueError('every corpus source needs a pinned content digest')
-    if digest(path, git='sha256' not in source) != expected:
+    actual = digest(path, git='sha256' not in source)
+    if actual != expected:
         raise ValueError(f'corpus source digest differs: {path.name}')
-    return path, dict(source, bytes=path.stat().st_size, sha256=digest(path))
+    # A SHA-256 source is already authenticated by the digest just computed.
+    # Git-blob pins still need the independent SHA-256 used in the manifest.
+    sha256 = actual if 'sha256' in source else digest(path)
+    return path, dict(source, bytes=path.stat().st_size, sha256=sha256)
 
 
 def vocabulary(paths, config):

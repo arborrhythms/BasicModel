@@ -14,6 +14,7 @@ import errno
 import hashlib
 import html
 from importlib.metadata import version
+from itertools import groupby
 import json
 import math
 import os
@@ -409,8 +410,25 @@ def make_batches(nodes, batch_size=256, max_files=16, devices=None, shared_train
         group = (shared_training or {}).get(node)
         key = ('case', node) if group is None else ('shared', group)
         groups.setdefault(key, []).append(node)
+    # Keep an ordinary module together when it fits one worker. Splitting it
+    # just to fill the previous batch repeats module/class fixture setup and
+    # compilation in a second interpreter. Oversized modules retain the case
+    # cap; explicit shared-training groups retain their existing soft boundary.
+    # Coalesce only adjacent groups, so selection order and device policy stay
+    # intact (including callers that deliberately interleave file selectors).
+    def module_device(group):
+        return (tuple(dict.fromkeys(node.split('::', 1)[0] for node in group)),
+                tuple(dict.fromkeys(devices[node] for node in group)) if devices else ())
+
+    units = []
+    for (modules, _), run in groupby(groups.values(), key=module_device):
+        run = list(run)
+        if len(modules) == 1 and sum(map(len, run)) <= batch_size:
+            units.append([node for group in run for node in group])
+        else:
+            units.extend(run)
     batches, batch, files = [], [], set()
-    for group in groups.values():
+    for group in units:
         node = group[0]
         group_files = {n.split("::", 1)[0] for n in group}
         if devices is not None and any(devices[n] != devices[node] for n in group):

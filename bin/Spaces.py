@@ -631,7 +631,21 @@ class WhereEncoding(QuadratureEncoding):
             encoded = torch.as_tensor(encoded, dtype=torch.float32)
         two_pi = 2 * math.pi
         a_lf = torch.atan2(encoded[..., 0], encoded[..., 1]) % two_pi
-        s_lf = a_lf / self.div_lf
+        divisor = self.div_lf
+        if self.nDim < 4 and encoded.device.type == 'mps' and a_lf.dtype == torch.float32:
+            # Inductor replaces scalar division on MPS with reciprocal
+            # multiplication. At large legacy single-rung addresses that
+            # changes the rounded integer. Keep the eager division as a
+            # float32 tensor input; stage it once per device/period, just like
+            # sparse topology. This scratch cache is not model state.
+            # Half precision keeps its original scalar promotion/rounding.
+            key = (a_lf.device, a_lf.dtype, self.div_lf)
+            cached = getattr(self, '_decode_divisor', None)
+            if cached is None or cached[0] != key:
+                cached = (key, a_lf.new_tensor(self.div_lf))
+                self._decode_divisor = cached
+            divisor = cached[1]
+        s_lf = a_lf / divisor
         if self.nDim >= 4 and encoded.shape[-1] >= 4:
             a_hf = torch.atan2(encoded[..., 2], encoded[..., 3]) % two_pi
             p_hf = self.period_hf

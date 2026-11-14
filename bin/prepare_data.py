@@ -42,6 +42,25 @@ def prepare(root=ROOT, manifest=None):
                 continue
             source = entry.get('archive', entry)
             url = entry['url']
+            if url not in cached and 'archive' not in entry:
+                # A plain file needs no archive cache or second copy. Download
+                # beside its destination, authenticate the staged bytes, then
+                # install atomically. A repeated URL can reuse this exact file.
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                with tempfile.NamedTemporaryFile(dir=destination.parent, delete=False) as output:
+                    staged = Path(output.name)
+                    try:
+                        request = urllib.request.Request(url, headers={'User-Agent': 'BasicModel data preparation'})
+                        with urllib.request.urlopen(request, timeout=120) as response:
+                            shutil.copyfileobj(response, output)
+                        output.flush()
+                        verify(staged, entry)
+                        staged.replace(destination)
+                    finally:
+                        staged.unlink(missing_ok=True)
+                cached[url] = destination
+                print(f'prepared {entry["path"]}')
+                continue
             if url not in cached:
                 downloaded = Path(temporary) / str(len(cached))
                 request = urllib.request.Request(url, headers={'User-Agent': 'BasicModel data preparation'})

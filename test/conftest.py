@@ -85,10 +85,12 @@ def _release_unreachable_test_models():
 
     Diagnostic continuation measured 2.1--2.7 GiB of unreachable tensors
     released by collection alone. Live module fixtures and compilation caches
-    remain owned; module teardown still resets the compilation cache.
+    remain owned; module teardown still resets the compilation cache. Collect
+    after function fixtures have released their models. Collecting again at
+    the next setup scanned the same live module graphs twice per case (the
+    perf-1 baseline spent more time in these scans than in test bodies).
     """
     import gc
-    gc.collect()
     yield
     gc.collect()
 

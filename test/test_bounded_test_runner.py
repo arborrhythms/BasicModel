@@ -115,6 +115,21 @@ def test_batches_keep_every_selected_case_once(runner):
     assert all(len({n.split('::')[0] for n in batch}) <= 2 for batch in batches)
 
 
+def test_batches_reuse_module_fixtures_without_reordering_or_raising_the_cap(runner):
+    first = [f'test_first.py::test_{i}' for i in range(7)]
+    second = [f'test_second.py::test_{i}' for i in range(6)]
+    large = [f'test_large.py::test_{i}' for i in range(23)]
+    nodes = first + second + large + ['test_first.py::test_return']
+    batches = runner.make_batches(nodes, batch_size=10, max_files=2)
+    assert [node for batch in batches for node in batch] == nodes
+    assert all(len(batch) <= 10 for batch in batches)
+    assert any(all(node in batch for node in second) for batch in batches)
+    devices = {node: ('mps' if node == second[-1] else 'cpu') for node in nodes}
+    batches = runner.make_batches(nodes, batch_size=10, max_files=2, devices=devices)
+    assert [node for batch in batches for node in batch] == nodes
+    assert all(len({devices[node] for node in batch}) == 1 for batch in batches)
+
+
 def test_shared_training_group_survives_batch_and_recycle_boundaries(runner, tmp_path):
     """A failing first bar must neither retrain nor suppress the second bar."""
     (tmp_path / "pytest.ini").write_text(

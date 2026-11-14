@@ -129,9 +129,10 @@ test : $(VENV_STAMP)
 
 # Fast local iteration is intentionally not a bounded receipt. The complete
 # `make test` path retains process limits and durable source-matched evidence.
+# Keep module fixtures and their compile warm-up on one xdist worker too.
 TEST_JOBS ?= auto
 testp : $(VENV_STAMP)
-	BASICMODEL_DEVICE=cpu PYTHONPATH=bin $(VENV_PYTHON) -m pytest -n "$(TEST_JOBS)" $(TEST_ARGS)
+	BASICMODEL_DEVICE=cpu PYTHONPATH=bin $(VENV_PYTHON) -m pytest -n "$(TEST_JOBS)" --dist loadfile $(TEST_ARGS)
 
 test_all : $(VENV_STAMP)
 	RUN_SLOW=1 PYTHONPATH=bin $(VENV_PYTHON) test/test_report.py $(TEST_ARGS)

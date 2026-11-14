@@ -45,3 +45,30 @@ def test_digest_failure_installs_nothing(tmp_path, monkeypatch):
 def test_missing_data_names_the_preparation_command(tmp_path):
     with pytest.raises(FileNotFoundError, match='bin/prepare_data.py'):
         prepare_data.require_local(tmp_path/'absent')
+
+
+def test_plain_payload_is_verified_before_install_and_shared(tmp_path, monkeypatch):
+    payload = b'fixed source bytes\x00\xff'
+    calls = []
+    def fetch(request, timeout):
+        calls.append(request.full_url)
+        assert not (tmp_path/'first').exists()
+        return io.BytesIO(payload)
+    monkeypatch.setattr(prepare_data.urllib.request, 'urlopen', fetch)
+    prepare_data.prepare(tmp_path, dict(files=[dict(
+        path=name, url='https://example.invalid/raw', **identity(payload))
+        for name in ('first', 'second')]))
+    assert calls == ['https://example.invalid/raw']
+    assert (tmp_path/'first').read_bytes() == (tmp_path/'second').read_bytes() == payload
+    assert sorted(p.name for p in tmp_path.iterdir()) == ['first', 'second']
+
+
+def test_interrupted_plain_download_leaves_no_staged_or_final_file(tmp_path, monkeypatch):
+    class Interrupted(io.BytesIO):
+        def read(self, size=-1):
+            raise OSError('interrupted transfer')
+    monkeypatch.setattr(prepare_data.urllib.request, 'urlopen', lambda *a, **k: Interrupted(b''))
+    with pytest.raises(OSError, match='interrupted transfer'):
+        prepare_data.prepare(tmp_path, dict(files=[dict(
+            path='raw', url='https://example.invalid/raw', **identity(b'complete'))]))
+    assert not list(tmp_path.iterdir())

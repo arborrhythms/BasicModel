@@ -5002,6 +5002,25 @@ class SigmaLayer2(Layer):
         return 1.0 - self.kernel.compose(1.0 - left, 1.0 - right, gate=gate)
 
 
+class _SelectDefinitionEdges(torch.autograd.Function):
+    """Gather unique COO positions; its pullback needs no atomic addition.
+
+    A range selects each edge once. index_select's general backward permits
+    duplicate indices and uses index_add; copy is exact for this narrower
+    contract, including a membership with several batch columns.
+    """
+    @staticmethod
+    def forward(ctx, value, positions):
+        ctx.save_for_backward(positions)
+        ctx.shape = value.shape
+        return value.index_select(0, positions)
+
+    @staticmethod
+    def backward(ctx, gradient):
+        (positions,) = ctx.saved_tensors
+        return gradient.new_zeros(ctx.shape).index_copy(0, positions, gradient), None
+
+
 class SparseLayer(Layer):
     """COO sparse linear substrate: forward tanh(W @ x), reverse tanh(W^T @ y).
 
@@ -5340,15 +5359,33 @@ class SparseLayer(Layer):
         conjunctive = bool(conjunctive) != bool(dual)
         end = self.nOutput if end is None else int(end)
         rows, cols = self._indices(u.device)
-        select = (rows >= int(start)) & (rows < end)
-        rows, cols = rows[select], cols[select]
+        # Topology is already host-owned and changes only at an edge edit.
+        # A tensor boolean subscript would run nonzero on every fold (and
+        # synchronize an accelerator to discover its data-dependent size).
+        # Reuse integer positions for this range until _indices is rebuilt.
+        if int(start) == 0 and end == self.nOutput:
+            select = slice(None)
+        else:
+            cache = getattr(self, '_presence_ranges', None)
+            if cache is None or cache[0] is not rows:
+                cache = (rows, {})
+                self._presence_ranges = cache
+            key = (int(start), end)
+            if key not in cache[1]:
+                cache[1][key] = torch.tensor(
+                    [i for i, row in enumerate(self._rows) if int(start) <= row < end],
+                    dtype=torch.long, device=u.device)
+            select = cache[1][key]
+        def selected(value):
+            return value if isinstance(select, slice) else _SelectDefinitionEdges.apply(value, select)
+        rows, cols = selected(rows), selected(cols)
         if dual:
             cols = (cols + self.nInput // 2) % self.nInput
         out = u.new_full((end - int(start), u.shape[-1]), 1. if conjunctive else 0.)
         mass = u.new_zeros(end - int(start))
         seen = torch.zeros_like(out, dtype=torch.bool)
         if self.values is not None:
-            raw = self.values.clone().to(u)[select]
+            raw = selected(self.values.clone().to(u))
             # Zero is the unwritten magnitude. Once a definition has an
             # observed part, prospective zero edges can receive credit;
             # projection after the update constrains their stored magnitude.
@@ -5356,14 +5393,14 @@ class SparseLayer(Layer):
             # Native percept inventories can be large. A membership read
             # gathers only the written edges, using this same pi scatter.
             v = (u.index_select(0, cols) if edge_memberships is None
-                 else edge_memberships[select]).clamp(0, 1)
+                 else selected(edge_memberships)).clamp(0, 1)
             if edge_known is not None:
-                known = edge_known[select]
+                known = selected(edge_known)
             else:
                 known = torch.ones_like(v, dtype=torch.bool)
             missing = getattr(self, '_missing_sources', None)
             if missing is not None:
-                known = known & ~missing.to(v.device)[select, None]
+                known = known & ~selected(missing.to(v.device))[:, None]
             from FieldLogic import power
             powered = power(v, w[:, None], conjunctive=conjunctive)
             if conjunctive:
