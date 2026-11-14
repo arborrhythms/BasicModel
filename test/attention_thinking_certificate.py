@@ -62,14 +62,24 @@ class Observer:
         from test_attention_thinking_steps import original_attention, exact
         self.output, self.certify = output, certify
         self.calls, self.actions, self.costs, self.records = [], [], [], []
+        self.walk_steps = []
         self.in_attention = 0
         self.reference_seconds = 0.
         base = original_attention()
+        opened = []
+        if hasattr(Attention, 'open_narrowing'):
+            opening = Attention.open_narrowing
+            def observe_open(*args, **kwargs):
+                state = opening(*args, **kwargs)
+                opened.append(state)
+                return state
+            patch.setattr(Attention, 'open_narrowing', observe_open)
         read = Attention.narrow_words
         def observed(chooser, keys, spans, known, **kwargs):
             initial = torch.get_rng_state()
             value = read(chooser, keys, spans, known, **kwargs)
             final = torch.get_rng_state()
+            self.walk_steps.append(opened.pop().steps_taken if opened else kwargs['budget'])
             if certify:
                 started = time.perf_counter()
                 torch.set_rng_state(initial)
@@ -117,8 +127,9 @@ class Observer:
         (self.output/f'batch-{index:03}.json').write_text(json.dumps(record) + '\n')
         self.records.append(dict(batch=index, label=label, seconds=seconds,
             attention_calls=len(self.calls), departure_calls=sum(c['departure'] is not None for c in self.calls),
-            parameter_count=len(record['parameters']), costs=len(self.costs)))
+            parameter_count=len(record['parameters']), costs=len(self.costs), walk_steps=self.walk_steps))
         self.calls, self.actions, self.costs = [], [], []
+        self.walk_steps = []
         print(json.dumps(self.records[-1]), flush=True)
 
 

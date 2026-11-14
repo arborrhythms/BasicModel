@@ -68,3 +68,51 @@ def test_empty_walk_preserves_the_base_optional_fields():
     wanted = original_attention().narrow_words(*args, budget=32)
     walk = Attention.open_narrowing(*args, budget=32)
     exact(Attention.close_narrowing(walk), wanted)
+
+
+@pytest.mark.parametrize('departure', [False, True])
+def test_exhausted_walk_skips_chooser_work_but_keeps_the_full_base_carrier(departure):
+    from Language import OperationSelectionLayer
+    import Attention
+    chooser = OperationSelectionLayer(d_model=4)
+    keys = torch.arange(12, dtype=torch.float32).reshape(1, 3, 4).div(12)
+    spans = torch.tensor([[[0, 3], [4, 7], [8, 11]]])
+    known = torch.ones(1, 3, dtype=torch.bool)
+    kwargs = dict(budget=32)
+    base = original_attention()
+    if departure:
+        kwargs.update(exploit=base.narrow_words(chooser, keys, spans, known, **kwargs),
+                      departure=torch.tensor([1]))
+    initial = torch.get_rng_state()
+    wanted = base.narrow_words(chooser, keys, spans, known, **kwargs)
+    final = torch.get_rng_state()
+    calls = []
+    attend = chooser.attend
+    def count(*args, **options):
+        calls.append(None)
+        return attend(*args, **options)
+    chooser.attend = count
+    torch.set_rng_state(initial)
+    found = Attention.narrow_words(chooser, keys, spans, known, **kwargs)
+    exact(found, wanted)
+    exact(torch.get_rng_state(), final)
+    assert len(calls) < 32, 'exhausted walk still evaluates its chooser to the budget'
+
+
+def test_captured_stop_keeps_discrete_bits_and_policy_gradients():
+    from Language import OperationSelectionLayer
+    import Attention
+    chooser = OperationSelectionLayer(d_model=4)
+    keys = torch.arange(8, dtype=torch.float32).reshape(1, 2, 4).div(8)
+    spans = torch.tensor([[[2**33, 2**33+3], [2**33+4, 2**33+7]]])
+    known = torch.ones(1, 2, dtype=torch.bool)
+    def run(keys):
+        return Attention.narrow_words(chooser, keys, spans, known, budget=8)
+    wanted = original_attention().narrow_words(chooser, keys, spans, known, budget=8)
+    found = torch.compile(run, backend='aot_eager', fullgraph=True)(keys)
+    exact(found, wanted)
+    weights = torch.arange(8, dtype=keys.dtype)[None]
+    parameters = tuple(chooser.parameters())
+    before = torch.autograd.grad((wanted.probabilities*weights).sum(), parameters, allow_unused=True)
+    after = torch.autograd.grad((found.probabilities*weights).sum(), parameters, allow_unused=True)
+    exact(after, before)

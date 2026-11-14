@@ -249,3 +249,70 @@ they still include the passive action/cost observation. These are one
 paired run, not a claimed speedup. The base consumes all 32 rounds on
 every one of the 35 recorded walks. The next step investigates its
 repeated stop actions after the legal menu is exhausted.
+
+The step extraction and P1 certificate are committed as `1799c4a260`.
+
+### 3.2 — an inert tail ends the walk; P2
+
+The stopping condition is that **no row has any legal act**, not merely
+that no table slot remains marked `live`. The recorded lesson words
+include contradictory/unsupported residual brackets: they can remain
+live after all available field acts have been used. Their unchanged
+inputs, unchanged remaining budget and empty menu make every subsequent
+step the same stop. The first recorded walk, for example, spends twelve
+actions and then returns action 192 twenty times. This is the cause of
+the original full-budget work even on known forms.
+
+The final implementation evaluates the first inert round, then repeats
+its exact stop/-1, probability, count and scope entries to the budget.
+It does not repeat the chooser or the field body. On a departure, the
+original selector still draws one uniform per inert round; the omitted
+rounds' draws are retained in order. Otherwise later choices and updates
+would change even though the immediate walk result looked equal.
+
+The two new exhausted-walk cases fail before the change (32 chooser
+calls) and pass afterwards, including all returned fields and the RNG
+state. Seven eager cases pass in 3.94 seconds. The full recorded lesson
+and both stopping gates again compare exactly with the base, including
+every batch's parameters, costs, chooser results and random streams
+(`p2-lesson/`, `p2-gates/`).
+
+The original fullgraph assertion also remains unchanged. A host break
+first failed its capture, so captured callers use tensor conditionals
+which skip the same exhausted body. This exposed two local PyTorch
+2.15 AOT issues: mixed Boolean/integer outputs were passed as floating
+tangents, and an unused stop-score parameter acquired a zero gradient
+instead of `None`. The conditional carries discrete **bits**, without
+converting integer addresses numerically, and detaches the already
+unused stop-score input before the conditional. No framework file is
+patched. The existing fullgraph assertion and a new exact all-field /
+policy-gradient case with addresses above `2**33` pass (two cases in
+47.51 seconds, `p2-compile-final.log`). This is compiler lowering, not a
+user-selectable legacy mode; eager and captured execution both stop
+chooser work at exhaustion.
+
+| Lesson sentence | Each walk's evaluated rounds / budget |
+| --- | --- |
+| This is Felix. | 13/32, 13/32 |
+| What is this? | 14/32, 14/32, 14/32 (departure) |
+| That is Ciao. | 13/32, 13/32 |
+| What is that? | 11/32, 11/32, 11/32 (departure) |
+| Here is Felix. | 13/32, 13/32 |
+| Who is here? | 11/32, 11/32 |
+| There is Ciao. | 13/32, 13/32 |
+| Who is there? | 11/32, 11/32 |
+| That is Felix. | 13/32, 13/32 |
+| What is that? | 11/32, 11/32, 11/32 (departure) |
+| This is Ciao. | 13/32, 13/32 |
+| What is this? | 11/32, 11/32 |
+| Here is Ciao. | 13/32, 13/32 |
+| Who is here? | 11/32, 11/32 |
+| There is Felix. | 13/32, 13/32 |
+| Who is there? | 13/32, 13/32 |
+
+The first walk in each row is the existing input-staging read; the
+second is the sentence-local read. The optional third is its departure.
+The count includes the first inert round establishing the repeated tail.
+Before, every entry was 32/32. The first sixteen lesson `runBatch` calls
+take **73.046459 seconds before → 71.470917 seconds after** P2, with the
+same observation contract and capacities as P1. This is one paired run.

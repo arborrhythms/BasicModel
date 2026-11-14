@@ -4,7 +4,7 @@ The table and its reads are tensors. Native identities and retained part
 witnesses are staged by the owners before this body; no allocation occurs here.
 """
 from typing import NamedTuple
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -179,6 +179,8 @@ class NarrowingState:
     declared: object
     rows: object
     slots: object
+    can_advance: object = None
+    steps_taken: int = 0
 
 
 def open_narrowing(chooser,keys,spans,known,*,budget,prior=None,exploit=None,departure=None,identities=None,poles=None,spent=None):
@@ -242,7 +244,7 @@ def narrow_step(state):
     B,W,D=keys.shape;K=int(budget);A=6
     if W == 0 or len(actions) >= K:
         return state
-    step=len(actions)
+    step=state.steps_taken
     lo,hi=table.intervals.unbind(-1)
     covered=(spans[:,None,:,0]>=lo[:,:,None])&(spans[:,None,:,1]<=hi[:,:,None])&(spans[:,None,:,1]>spans[:,None,:,0])
     count=covered.sum(-1)
@@ -270,6 +272,7 @@ def narrow_step(state):
     minimum=2*pending.sum(-1)-live.sum(-1)+(pending&~evidence.any(-1)&~descended).sum(-1)
     field=field & (table.remaining>minimum)[:,None,None]
     legal=torch.cat((progress,field),-1)&live[...,None]&declared[None,None]
+    state.can_advance=legal.any()
     pooled=(covered.to(keys)@keys)/count.clamp_min(1)[...,None]
     pooled=torch.where(field_valid[...,None],field_values,pooled)
     local_prior=None if prior is None else (covered.to(keys)@prior[...,None])[...,0]/count.clamp_min(1)
@@ -329,7 +332,7 @@ def narrow_step(state):
     reached=selected & field_action[:,None]
     field_scopes.append(reached)
     field_operations.append(op)
-    pole_changes |= reached
+    pole_changes = pole_changes | reached
     round_words.append(torch.where(chosen,first,-1))
     # A child is a fresh reading of its retained parts. A parent's
     # temporary Boolean aggregate must not become the child's evidence.
@@ -347,6 +350,125 @@ def narrow_step(state):
     state.field_poles=field_poles
     state.field_valid=field_valid
     state.pole_changes=pole_changes
+    state.steps_taken += 1
+    return state
+
+
+_NARROW_CARRY = ('accepted','descended','values','reductions','field_values',
+                 'field_poles','field_valid','pole_changes')
+_NARROW_HISTORY = ('actions','alternatives','probabilities','counts','round_words',
+                   'field_scopes','field_operations')
+
+
+class _CapturedAttentionChooser:
+    """Keep an unused stop-score input outside conditional autograd.
+
+    OperationSelectionLayer.attend discards the learned stop score: its
+    stop logit is the fixed legal-menu sentinel. Cond otherwise turns that
+    unused parameter's None gradient into zero, allowing momentum updates.
+    Detach before entering cond, while reusing the exact attend method.
+    """
+    def __init__(self, chooser):
+        self._source=chooser
+        self.stop_anchor=chooser.stop_anchor.detach()
+
+    def __getattr__(self, name):
+        return getattr(self._source,name)
+
+    def attend(self, *args, **kwargs):
+        return type(self._source).attend(self,*args,**kwargs)
+
+
+def _captured_narrowing(state):
+    """Tensor-conditional lowering of the same stop for fullgraph callers.
+
+    Captured execution cannot read a tensor stop on the host. Its fixed
+    carrier uses cond to skip the chooser/body after the first inert round;
+    it does not retain the old budget-many chooser evaluations.
+    """
+    def tensors(walk):
+        return (
+            *walk.table, *(getattr(walk,name) for name in _NARROW_CARRY),
+            *(getattr(walk,name)[-1] for name in _NARROW_HISTORY), walk.can_advance)
+
+    narrow_step(state)
+    templates=tensors(state)
+
+    def pack(walk):
+        # Cond's AOT backward in this stack passes tangents for integer/bool
+        # outputs although its joint graph only accepts floating tangents.
+        # Carry discrete bits through floating storage, without a numeric
+        # integer cast (which would lose large address bits). Unpack before
+        # every use. Boolean carriers are exactly zero or one.
+        return tuple((value.to(torch.float32) if value.dtype == torch.bool else
+                      value.contiguous().view(torch.float32) if not value.is_floating_point()
+                      else value).clone() for value in tensors(walk))
+
+    def unpack(values):
+        return tuple(value.to(torch.bool) if template.dtype == torch.bool else
+                     value.view(template.dtype).reshape(template.shape) if not template.is_floating_point()
+                     else value for value,template in zip(values,templates))
+
+    carried=pack(state)
+    width=6+len(_NARROW_CARRY)
+    from Language import OperationSelectionLayer
+    chooser=(_CapturedAttentionChooser(state.chooser)
+             if type(state.chooser) is OperationSelectionLayer else state.chooser)
+    for turn in range(len(state.actions),int(state.budget)):
+        def advance(*values):
+            values=unpack(values)
+            current=replace(state,chooser=chooser,table=BracketTable(*values[:6]),steps_taken=turn,
+                **dict(zip(_NARROW_CARRY,values[6:width])),
+                **{name: [] for name in _NARROW_HISTORY})
+            narrow_step(current)
+            return pack(current)
+
+        def stopped(*values):
+            result=tuple(value.clone() for value in values)
+            if state.exploit is not None:
+                probability=width+_NARROW_HISTORY.index('probabilities')
+                draw=torch.rand_like(values[probability][:,None])[:,0]
+                # Retain the original dead-round draw in the captured graph.
+                result=(*result[:probability],result[probability]+draw*0.,*result[probability+1:])
+            return result
+
+        active=carried[-1].to(torch.bool)
+        state.steps_taken=state.steps_taken+active.long()
+        carried=torch.cond(active,advance,stopped,carried)
+        values=unpack(carried)
+        state.table=BracketTable(*values[:6])
+        for name,value in zip(_NARROW_CARRY,values[6:width]):
+            setattr(state,name,value)
+        for name,value in zip(_NARROW_HISTORY,values[width:-1]):
+            getattr(state,name).append(value)
+        state.can_advance=values[-1]
+    return state
+
+
+def finish_narrowing(state):
+    """Finish decisions, retaining the original inert tail and random stream.
+
+    Valid brackets can have no legal act (for example a contradictory word
+    after its field acts are spent). Such a round is just as inert as a
+    table with no live brackets. Keep its original stop/-1 distinction.
+    """
+    if state.keys.shape[1] == 0:
+        return state
+    if torch.compiler.is_compiling():
+        return _captured_narrowing(state)
+    while len(state.actions) < int(state.budget):
+        narrow_step(state)
+        if not bool(state.can_advance):
+            missing=int(state.budget)-len(state.actions)
+            if state.exploit is not None:
+                # select_logits draws once even when the masked departure
+                # has no alternative. Preserve subsequent learners' draws.
+                for _ in range(missing):
+                    torch.rand_like(state.probabilities[-1][:,None])
+            for name in ('actions','alternatives','probabilities','counts','round_words','field_scopes'):
+                values=getattr(state,name)
+                values.extend([values[-1]]*missing)
+            break
     return state
 
 
@@ -395,8 +517,7 @@ def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,depar
     """The unchanged eager reading, composed from its public steps."""
     state=open_narrowing(chooser,keys,spans,known,budget=budget,prior=prior,
         exploit=exploit,departure=departure,identities=identities,poles=poles,spent=spent)
-    for _ in range(int(budget)):
-        narrow_step(state)
+    finish_narrowing(state)
     return close_narrowing(state)
 
 
