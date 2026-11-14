@@ -858,8 +858,20 @@ inventory identifies the remaining host boundaries.
 
 ### Items 2–3: inventory and independent exact optimizations
 
-The unchanged-source census is complete. The first sentence's detailed
-observer and the sixteen-sentence count-only observer reproduce original
-parameter, optimizer and RNG hashes exactly. The detailed inventory,
-optimization certificates, final counts and commits are recorded below
-as this round proceeds.
+The unchanged-source census is complete: [inventory by phase and function](2026-11-14-attention-host-inventory.md), with a [complete source-site ledger](2026-11-14-attention-host-inventory.json). It records 655 phase/host-API sites and 1,836 phase/loop sites across 678 functions, including comprehensions and zero-iteration entries. Every entry includes its source operation, count, purpose, kind, proposed removal class and edit boundary. Bounded numerical loops can be device loops or statically unrolled; a Python loop by itself is not proof of a graph break.
+
+The first sentence's detailed observer and the sixteen-sentence count-only observer reproduce original parameter, optimizer and RNG hashes exactly. The sentence-owned count-only observer reproduces all sixteen `94f2b03d9e` records exactly. No counter/AST/profiler time is used as a normal sentence timing. Host API calls include implicit `int`/`float` conversions; `cpu` on this CPU run may be a no-op. Public tensor calls, dispatcher calls and host-read calls are separate, overlapping counting levels, never summed.
+
+| Count over sixteen sentences, staging through kept close/update | Before ownership | Sentence owned, before host optimizations |
+| --- | ---: | ---: |
+| Public tensor API calls | 38,265,704 | 37,509,006 |
+| Tensor dispatcher operations | 42,981,464 | 42,158,992 |
+| Host-read API calls | 2,950,321 | 2,945,330 |
+| Scalar dispatcher reads | 2,333,771 | 2,329,329 |
+| Dynamic `nonzero` operations | 31,870 | 31,870 |
+
+The first sentence alone has 1,145,468 public tensor calls, 1,424,926 dispatcher operations and 164,454 host API reads. Thought accounts for 102,437 of those reads, preparation/orchestration 28,523, close 22,373, generation 10,964, a word's step 120, the two walks 28 and restoration 9. `ConceptSpread.rule_order` alone accounts for 92,994 thought reads; it remains excluded by §5. The other dominant read owners are `MereologicalCodes` and `Memory`, both reserved for rounds A/B.
+
+A separate cProfile-only pass, without the API/loop instrumentation, ranks the permitted candidates. On the original first sentence `_freeze_metadata` runs 138,954 times (0.180492 seconds inclusive), and `SentenceCompose.pack` 33,321 times (0.252057 seconds inclusive). These measured counts replace the supplied estimates. After sentence ownership, pack drops to 31,255 calls / 0.236066 seconds; metadata remains 138,954 / 0.180138. `ThoughtFeatures.semantic_metadata.field` takes 0.058314 seconds. These are profiled function costs, not additive whole-sentence timings.
+
+The ownership implementation is commit `94f2b03d9e`. The inventory and exact host optimization commits and final measurements follow below.
