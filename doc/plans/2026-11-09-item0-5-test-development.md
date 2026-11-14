@@ -2120,3 +2120,137 @@ The H1 wrapper completed in 4,794.725143750 s. Its final grammar-reconstruction
 worker passed in 874.446467084 s, peak 4,542,813,272 bytes. Both complete
 sweep source snapshots match the implementation source above. Publication
 uses a normal push to `origin testing`, with no main update or force push.
+
+## 21. Review of §19 and §20 (Claude, 2026-11-13)
+
+Alec, 2026-11-13: "please sync testing branch there so that you can do
+what you need, integrate with your docs branch, push back to github on
+testing branch, and then give me code to paste to codex in 0.5 thread".
+Reviewed on `testing` at `d3c76cf98fc2`.
+
+**Verified.**
+
+- `testing` holds the accepted item 1.8 checkpoint (`91e71c40cf` merges
+  `ab5176e0e2bc`). It was 10 commits ahead of `main` and none behind, so
+  `main` can move to it without a merge. Seven of its files are also open
+  in the first machine's uncommitted 1.8 work: two one-line `IntervalLog`
+  hooks (`Forgetting.py`, `Models.py`), the document identities of
+  `corpus_lessons.py`, and four files whose mode alone changed.
+- No learner mechanism changed. The source changes are evaluation
+  harnesses and data tools, the two `IntervalLog` hooks, which do nothing
+  unless `intervalLogEveryBatches` is set, and the evaluator's capture of
+  held-out word scores. The changed tests are setup ports with their
+  assertions kept, as §19.5 and §19.14 describe.
+- *The written tier.* Claude read the twelve keys of §19.1. All twelve
+  targets are right for their game: the negations (`will not`, `cannot`,
+  `is not`), the two conjunctions joined by `, and`, and the determiner
+  chains (`The horses`, `All the birds`). Two pairs repeat a sibling's
+  frame with other names (`not-written-000009` and `000011`;
+  `conjunction-written-000006` and `000008`), so the tier adds less
+  variety than it could; within a transfer split that is by design.
+  Accepted.
+
+**Repaired here.** The sixteen `test_whole_presence.py` failures had one
+cause: the test read its capture from `doc/benchmarks/`, which git
+ignores, so the file never reached the second machine. The original
+exists on the first machine in 24 copies with one SHA-256,
+`20ba5b9649d35a762a7c882e86400a6cc6a5d8235ccfd6f8ae9adb99ce435452`. It is
+now tracked at
+`test/fixtures/2026-10-31-item2-5-whole-presence/whole-pullback-1.pt`, and
+the test checks that hash before loading (`2746737f49`). Nothing was
+regenerated. The file passes all 37 cases on the first machine.
+
+**The other five failures of §20.7** are learner-side and stay with item
+1.8. Two are among the old failures the 1.8 return already lists
+(`test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully`,
+`test_sparse_concept_e2e.py::test_interpreted_object_keeps_the_native_features_in_one_row`),
+and `test_reading_round.py::test_native_read_sites_carry_one_token_across_three_documents`
+is repaired in the first machine's 1.8 work. They were not rerun here.
+
+**For the integration with 1.8** (no action in this round):
+
+- `IntervalLog` reads `truth_layer` and the LTM forgetting count; item
+  1.8's reduction changes both, so it is ported when 1.8 lands.
+- The 31 games are named for today's operators. Alec's operator list of
+  2026-11-13 (1.8 specification §22.8) withdraws several of them
+  (`equal`, `generic`, `definite`, `universal`, `verb`, the one-operand
+  faces). The games stay; their names and diagnostic labels are mapped
+  then.
+- The lesson-gate proposal, §18.4, names operators by today's list too.
+
+**For Alec.** The decisions of §19.13 stand as Codex wrote them (H2, H3,
+H5 and H6, H8, H12, the games' signal). The written tier is accepted. My
+docs branch is merged onto `testing` as `9630b8b371`.
+
+## 22. Codex text: test data for images (Claude, 2026-11-13; for Alec to paste on the second machine)
+
+~~~
+Item 0.5, a testing round on the second machine. Testing only: change no
+learner mechanism, no configuration of the model, no capacity and no
+fixture's sizes. Never push or force-push main; push testing only, and only
+at the end. Claude's review of your return is §21 of
+doc/plans/2026-11-09-item0-5-test-development.md.
+
+0. Sync. git fetch origin; git switch testing; git merge --ff-only
+   origin/testing. HEAD must be 2746737f49 or a descendant of it. That
+   brings Claude's docs merge (9630b8b371) and the whole-presence capture
+   (2746737f49). Run test/test_whole_presence.py: all 37 cases must pass
+   here, where the 16 captured cases failed before (§20.7). Report the
+   result.
+
+1. Image test data. The first machine is building a path for the number
+   modality that reads XOR and 28 by 28 images by one reader (designed in
+   §22.9 of the item 1.8 specification, which is on the first machine and
+   not yet on testing; you do not build that path). It needs fixed
+   two-level images. Build only the data.
+
+   a. A builder, bin/image_corpus.py (default name), with a freeze command
+      like the other builders:
+      .venv/bin/python bin/image_corpus.py freeze --seed 20261112 --out data/images
+      It writes generated 28 by 28 images whose every pixel is 0 or 1, in
+      ten classes labelled 0 to 9 by integer, with no word anywhere.
+      Default shapes, one per class: a horizontal bar, a vertical bar, a
+      falling diagonal, a rising diagonal, a plus, an X, a square outline,
+      a filled square, a ring and a filled disc. Position, size and stroke
+      vary within bounds drawn from the declared seed. Default counts per
+      class: 100 train, 20 validation, 20 test. No image appears twice
+      across or within splits. Store each split as JSONL, one image per row
+      with its label, its split and its 784 pixels packed as 196 hex digits
+      in row-major order (default). Write a manifest with the seed, the
+      command, the counts and each file's SHA-256, as data/games and
+      data/lessons do. The builder reproduces every file byte for byte.
+
+   b. A two-level MNIST subset, derived and never tracked. A function in
+      the same module reads the prepared MNIST files (bin/prepare_data.py;
+      require them through test/local_data.require_mnist as the MNIST
+      tests do), maps a pixel to 1 when its value is at least 128 of 255
+      and to 0 otherwise, and takes a fixed prefix: the first 1000 rows of
+      train and the first 200 of test (default). Track only a manifest of
+      that rule with the SHA-256 of the resulting arrays and labels.
+
+   c. One loader for both: image_corpus.load(name, split) returns a
+      float tensor [N, 28, 28] of 0s and 1s and a long tensor [N] of
+      labels, for name 'shapes' or 'mnist'. The first machine's
+      certificates will call it.
+
+   d. test/test_image_corpus.py: the freeze reproduces byte for byte; every
+      pixel is 0 or 1; shapes and label counts are as declared; the splits
+      are disjoint; the loader agrees with the files; the MNIST subset
+      reproduces its manifest hashes, and skips with the preparation
+      command when the files are absent. It runs in the default sweep and
+      constructs no model.
+
+   e. Add the corpus to data/training-corpus.json's part A only if its
+      schema has a place for an evaluation set; otherwise list it nowhere
+      and report. A short paragraph in doc/Training.md under the staged
+      training corpus says what the images are and how to rebuild them.
+
+2. Run the new test file, test/test_whole_presence.py, and the existing
+   corpus tests (test_math_corpus.py, test_game_corpus.py,
+   test_lesson_stages.py, test_training_corpus.py, test_prepare_data.py)
+   before pushing. Run no full sweep in this round.
+
+Return as §23 of the plan: each default kept or changed, the counts, the
+file hashes, the test results with times, and the pushed commit. Then push
+testing.
+~~~
