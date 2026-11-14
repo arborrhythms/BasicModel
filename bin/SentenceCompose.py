@@ -41,17 +41,23 @@ def saved_sentence_values(parameters=(), buffers=()):
         if value.layout != torch.strided:
             return _SavedValue(value, None, True)
         storage = value.untyped_storage()
-        base = value if value._base is None else value._base
-        if isinstance(base, torch.nn.Parameter):
-            protected.add(storage._cdata)
-        key = (storage._cdata, value._version, value.storage_offset(),
-               tuple(value.shape), value.stride(), value.dtype)
+        storage_id = storage._cdata
+        copy = storage_id in protected
+        if not copy:
+            base = value._base
+            if isinstance(value if base is None else base, torch.nn.Parameter):
+                protected.add(storage_id)
+                copy = True
+        # Shape is already an immutable tuple-compatible torch.Size. A
+        # protected storage also needs no repeated Parameter/base lookup.
+        key = (storage_id, value._version, value.storage_offset(),
+               value.shape, value.stride(), value.dtype)
         result = saved.get(key)
         if result is None:
             # Functional scratch and MLP intermediates are immutable. Retain
             # them directly and check versions when read; only optimizer-owned
             # storage needs a frozen copy across the two steps.
-            result = _SavedValue(value, storage, storage._cdata in protected)
+            result = _SavedValue(value, storage, copy)
             saved[key] = result
         return result
 

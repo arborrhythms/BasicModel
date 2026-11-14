@@ -8,7 +8,9 @@ from collections.abc import Mapping
 import math
 import subprocess
 import json
+from contextlib import contextmanager
 from types import SimpleNamespace
+from weakref import WeakValueDictionary
 
 import pytest
 import torch
@@ -119,3 +121,49 @@ def test_metadata_features_match_original_bytes_and_aliases(original_features, d
         assert torch.equal(a, b)
         assert a.dtype == b.dtype and a.device == b.device
         assert a.requires_grad == b.requires_grad
+
+
+@pytest.fixture(scope='module')
+def original_saves():
+    from SentenceCompose import _SavedValue, is_fake
+    return original_function('SentenceCompose', 'saved_sentence_values',
+        dict(contextmanager=contextmanager, torch=torch, WeakValueDictionary=WeakValueDictionary,
+             _SavedValue=_SavedValue, is_fake=is_fake))
+
+
+@pytest.mark.parametrize('owner', ['listed parameter', 'unlisted parameter', 'buffer'])
+def test_saved_views_keep_original_values_across_mutation(original_saves, owner):
+    from SentenceCompose import saved_sentence_values
+    def gradients(context):
+        value = torch.tensor([[2., 3.], [5., 7.]])
+        if owner != 'buffer':
+            value = torch.nn.Parameter(value)
+        inputs = torch.tensor([[11., 13.], [17., 19.]], requires_grad=True)
+        parameters = (value,) if owner == 'listed parameter' else ()
+        buffers = (value,) if owner == 'buffer' else ()
+        with context(parameters, buffers):
+            loss = (inputs * value.T).square().sum()
+            with torch.no_grad():
+                value.add_(100)
+            loss.backward()
+        return inputs.grad, value.grad
+    for actual, expected in zip(gradients(saved_sentence_values), gradients(original_saves)):
+        if expected is None:
+            assert actual is None
+        else:
+            assert torch.equal(actual, expected)
+
+
+def test_saved_scratch_still_rejects_mutation(original_saves):
+    from SentenceCompose import saved_sentence_values
+    messages = []
+    for context in (original_saves, saved_sentence_values):
+        value = torch.tensor([2., 3.], requires_grad=True)
+        with context():
+            loss = value.square().sum()
+            with torch.no_grad():
+                value.add_(1)
+            with pytest.raises(RuntimeError) as error:
+                loss.backward()
+            messages.append(str(error.value))
+    assert messages[0] == messages[1] == 'a sentence intermediate was mutated before backward'
