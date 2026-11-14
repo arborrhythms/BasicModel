@@ -1499,6 +1499,22 @@ covers memory, the two truths, expectation, testimony and feeling.
   referent is already held ([Language](Language.md), "Determiners, number
   words and the modifier").
 
+- **Each sense has its own map, and meaning unites them.** Semantic
+  memory is modality-specific features spread over cortex and linked
+  through an amodal hub in both anterior temporal lobes (Patterson, Nestor
+  & Rogers 2007). Convergence zones keep records of how modality-specific
+  fragments combine, while the fragments stay in the regions that perceived
+  them, with no single site holding their content (Damasio 1989). That is
+  a perceptual space for each modality and order-zero concepts that unite
+  their percepts ([Spaces](Spaces.md#percept-modalities)). Where the senses
+  do share a frame, it is a later binding: multisensory neurons of the
+  superior colliculus have receptive fields in spatial register and
+  integrate most when stimuli coincide in place and time (Stein & Meredith
+  1993), and two located cues combine by their reliability, close to the
+  optimal weighting (Alais & Burr 2004). The opposite emphasis, that
+  concepts are themselves perceptual simulations (Barsalou 1999), is met
+  here by concepts that collect percepts which stay in their own spaces.
+
 **References for level sets, feelings, count nouns and determiners.**
 Barrett (2006), *Solving the emotion paradox: categorization and the
 experience of emotion*, Personality and Social Psychology Review 10(1).
@@ -1529,6 +1545,16 @@ number in animals and humans: a neural model*, Journal of Cognitive
 Neuroscience 16(9). Xu (2002), *The role of language in acquiring object
 kind concepts in infancy*, Cognition 85(3). Xu & Carey (1996), *Infants'
 metaphysics: the case of numerical identity*, Cognitive Psychology 30(2).
+
+**References for modalities.** Alais & Burr (2004), *The ventriloquist
+effect results from near-optimal bimodal integration*, Current Biology
+14(3). Barsalou (1999), *Perceptual symbol systems*, Behavioral and Brain
+Sciences 22(4). Damasio (1989), *Time-locked multiregional retroactivation:
+a systems-level proposal for the neural substrates of recall and
+recognition*, Cognition 33(1-2). Patterson, Nestor & Rogers (2007), *Where
+do you know what you know? The representation of semantic knowledge in the
+human brain*, Nature Reviews Neuroscience 8(12). Stein & Meredith (1993),
+*The Merging of the Senses*, MIT Press.
 
 ### Discrepancies
 
