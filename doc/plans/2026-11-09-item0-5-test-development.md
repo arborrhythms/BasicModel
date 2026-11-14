@@ -2413,3 +2413,38 @@ Implementation commit pushed on `testing`:
 commit records that identity; both are included in the single end-of-round
 push. It changes no validated source or data. The final remote branch tip
 is the metadata commit, whose hash is reported in the chat handback.
+
+## 24. Review of §23, and integration with main (Claude, 2026-11-13)
+
+Alec: "please review and integrate 0.5 with main if it is ready."
+
+**§23 accepted.** On the first machine, `test/test_image_corpus.py` passed
+20 cases, and the three MNIST cases skipped because this checkout has no
+prepared MNIST. One validation image of each class, drawn as text, shows
+the declared shape: the two bars, the two diagonals, the plus, the X, the
+square outline, the filled square, the ring and the filled disc. Every
+default was kept, and `data/training-corpus.json` was left unchanged, as
+§22 asked when it has no place for an evaluation set. No learner mechanism
+changed.
+
+**Ready for main.** At `e5e64a03e1`:
+
+- Both stopping gates pass:
+  `test/test_mm_xor.py::TestMMXorConvergence::test_convergence` and
+  `test/test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class`.
+- The sixteen whole-presence failures of §20.7 are repaired (§21; §23.1).
+- Of the other five failures of §20.7, three are item 1.8's (§21). The
+  remaining two,
+  `test/test_identification_evidence.py::test_native_sentence_carries_paired_identification_to_its_row`
+  and `test/test_per_row_hard_reset.py::test_runEpoch_dispatches_per_row_reset_per_batch`,
+  pass when run alone, on `main` (`ab5176e0e2bc`) and on `testing` alike.
+  Their failures in the sweep depend on what ran before them, not on item
+  0.5's changes, and stay with the integration of item 1.8.
+- `testing` contains `main` and is ahead of it, so `main` moves to it
+  without a merge. Eight of its files are also open in the first
+  machine's uncommitted item 1.8 work, all small; that work merges them
+  when it lands.
+
+When item 1.8's work merges this, the MNIST CSV files and the FineWeb
+shard leave the tracked tree; `.venv/bin/python bin/prepare_data.py`
+restores them as verified local files.

@@ -2131,9 +2131,17 @@ the number modality to process images as well as XOR (the only different
 being the percept dims; MNIST-size images would be a good test, but no
 need for multimodal at this point, that work is left to someone else)."
 
-- *One reader.* A row of numbers is flattened to its dimensions: 2 for
-  XOR, 784 for a 28 by 28 image. The numeric reader already takes the
-  product of the input shape as its dimensions.
+- *One reader, with places.* XOR's two numbers are two places on one
+  axis, and an image's 784 are 28 by 28 places on two axes, each place
+  holding a level percept. Alec, 2026-11-13: "the .where for imagery has
+  to be 2D"; each modality keeps its own perceptual space, and modalities
+  meet at order-zero concepts ([Spaces](Spaces.md#percept-modalities)).
+  Today the numeric reader flattens the input and makes each number an
+  axis of the percept cube, with no place.
+- *Two axes of place.* Attention's brackets, the fold ladder and word
+  tiling are one-dimensional today. For an image a bracket is a box, its
+  parts and wholes are boxes, and the fold ladder is a quadtree (above,
+  "Images (future)").
 - *Level sets.* Each dimension's number is categorized against a part and
   a whole ([Spaces](Spaces.md#percept-level-sets)). The numeric reader
   today gives each dimension's concept the value as evidence, a
@@ -2151,9 +2159,9 @@ need for multimodal at this point, that work is left to someone else)."
   measurement, beside the same file with the System 1 step removed. Grey
   levels follow. Two modalities at once are not part of it.
 
-To settle: whether a dimension is the percept's place, as a letter's
-position is; where the levels of a grey image come from; and which System
-1 step it is
+The test images are frozen under `data/images/` (`bin/image_corpus.py`):
+ten shapes and a two-level subset of MNIST. To settle: where the levels
+of a grey image come from, and which System 1 step it is
 ([specification](plans/2026-11-11-item1-8-last-architecture-round.md),
 section 22.9).
 

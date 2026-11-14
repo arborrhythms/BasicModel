@@ -446,12 +446,51 @@ plain case, present or absent. A number is treated the same way.
 - **What is left out.** "Im reserving the feeling of that continuity for
   direct perception, but that is not something that we can model."
 
-**The number modality.** A row of numbers of any number of dimensions is
-read this way, one level percept for each dimension. Two dimensions are
-the XOR proofs and 784 are a 28 by 28 image, "the only different being
+**The number modality.** A row of numbers of any shape is read this way:
+a level percept at each place. The XOR proofs are two places on one axis,
+and a 28 by 28 image is 784 places on two axes, "the only different being
 the percept dims" ([FutureWork](FutureWork.md#numeric-input-as-a-modality-xor-as-a-system-1-model-and-one-model-class-alec-2026-11-11-to-specify)).
 That intensity is a code and never an amplitude was decided for images on
 2026-10-25 ([FutureWork](FutureWork.md#intensity-as-codes-not-amplitude-alec-2026-10-25-decided)).
+
+### Modalities: One Perceptual Space Each {#percept-modalities}
+
+Alec, 2026-11-13: "the .where for imagery has to be 2D." He weighed one
+shared space for all the senses and chose otherwise: "perhaps the
+integration path is leave each modality in its own perceptual space with
+varying .where, and integrate only at the level of zero-order concepts by
+adding a .modality field according to the percepts that they unite. this
+still allows perceptual space to have basic-level perceptual objects on a
+modal basis."
+
+- **Each modality has its own perceptual space.** A modality declares how
+  many place axes it has. Each axis is an interval of `.where`, encoded by
+  the same two-rung ladder that text uses for its one axis.
+
+  | Modality | Place axes | Place shape |
+  |---|---|---|
+  | the scalar beside the words | 0 | no place |
+  | text | 1 | positions in a sentence |
+  | XOR | 1 | two positions |
+  | an image | 2 | 28 by 28; parts and wholes are boxes |
+
+- **A percept is a level at a place.** A pixel is a level percept at a
+  place on two axes, as a letter is a byte percept at a place on one.
+  Parts and wholes, and so basic percepts, are knit within one modality,
+  so basic-level perceptual objects are modal.
+- **Modalities meet at order-zero concepts.** An order-zero concept
+  collects basic percepts from one modality or from several, and one that
+  collects from several is where the modalities are integrated. No shared
+  space of places lies below it. Text's `.where` is an order in a sequence
+  and an image's is a place on a surface, so one space for both would give
+  them distances that mean nothing.
+- **Modality is implicit.** Alec: "modality as implicit since both it and
+  order can be inferred from the .where?" A concept's modalities are read
+  from where its percepts sit: each percept's place belongs to one
+  modality's perceptual space, and the reference to the percept names that
+  space. The number of axes alone does not tell text from XOR, which both
+  have one. A concept's order is read the same way, from where the concept
+  sits in the codebook ([Orders §12](Orders.md)). Neither is stored.
 
 ### Complement, Copart, and Negation {#percept-complement}
 

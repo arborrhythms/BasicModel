@@ -613,6 +613,12 @@ concept, so its order is read from its row and stored nowhere else. A
 full block spills into a tail that the orders share; there the row's key,
 which records the order it was given, is read in place of its position.
 
+**So is modality.** "modality as implicit since both it and order can be
+inferred from the .where?" (Alec, 2026-11-13). Each modality has its own
+perceptual space, and a concept's modalities are read from where its
+percepts sit, as its order is read from where it sits in the codebook
+([Spaces](Spaces.md#percept-modalities)).
+
 An idea composed of several words has no row. Its order follows from its
 operands and its operators: `lower` drops one, `lift` raises one, and a
 modifier keeps the order of its head.
