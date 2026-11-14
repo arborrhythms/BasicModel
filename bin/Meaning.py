@@ -127,6 +127,16 @@ def canonical_role_payload(payload, depth, layout, role_mask=None, *, concept_di
 
 def _freeze_metadata(value):
     """Own semantic addresses/scope without tensors or mutable containers."""
+    # Native references already consist mostly of built-in tuples and
+    # scalars. Avoid Mapping's ABC checks and one generator frame per tuple
+    # on that path. Subclasses retain the original dispatch order below.
+    if value is None:
+        return value
+    kind = type(value)
+    if kind is tuple or kind is list:
+        return tuple(map(_freeze_metadata, value))
+    if kind is str or kind is bool or kind is int:
+        return value
     if isinstance(value, Mapping):
         if any(not isinstance(key, str) for key in value):
             raise TypeError("semantic metadata mapping keys must be strings")
