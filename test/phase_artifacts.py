@@ -30,8 +30,11 @@ class PhaseArtifact:
 
 
 class PhaseRegistry:
-    def __init__(self, phases, root=ROOT):
+    def __init__(self, phases, root=ROOT, *, metadata=None):
         self.phases, self.root = dict(phases), Path(root)
+        self.metadata = dict(metadata or {})
+        if {'schema', 'phases'} & self.metadata.keys():
+            raise ValueError('registry metadata cannot replace phases or schema')
 
     @classmethod
     def read(cls, path=REGISTRY, root=ROOT):
@@ -39,10 +42,11 @@ class PhaseRegistry:
         if data['schema'] != 1:
             raise ValueError('unsupported phase-artifact registry schema')
         return cls({phase: None if entry is None else PhaseArtifact(**entry)
-                    for phase, entry in data['phases'].items()}, root)
+                    for phase, entry in data['phases'].items()}, root,
+                   metadata={key: value for key, value in data.items() if key not in ('schema', 'phases')})
 
     def write(self, path):
-        Path(path).write_text(json.dumps(dict(schema=1, phases={
+        Path(path).write_text(json.dumps(dict(self.metadata, schema=1, phases={
             phase: None if entry is None else {key: value for key, value in asdict(entry).items()
                                                if value is not None}
             for phase, entry in self.phases.items()}), indent=2) + '\n')

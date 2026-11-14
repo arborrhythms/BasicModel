@@ -1,0 +1,99 @@
+{
+ "schema": 1,
+ "phase": "modifiers",
+ "lesson": 5,
+ "criterion": {
+  "measure": "occupant_definiteness",
+  "threshold": null,
+  "declared_by": "Alec",
+  "note": "the modifier argument's class definite (lesson 5)"
+ },
+ "measure": [
+  "red",
+  "cows"
+ ],
+ "fillers": {
+  "adj": [
+   {
+    "initial": "Red",
+    "inner": "red"
+   },
+   {
+    "initial": "Big",
+    "inner": "big"
+   },
+   {
+    "initial": "Small",
+    "inner": "small"
+   },
+   {
+    "initial": "Old",
+    "inner": "old"
+   }
+  ],
+  "plural": [
+   {
+    "initial": "Cows",
+    "inner": "cows"
+   },
+   {
+    "initial": "Bees",
+    "inner": "bees"
+   },
+   {
+    "initial": "Owls",
+    "inner": "owls"
+   }
+  ],
+  "verb": [
+   {
+    "third": "sleeps",
+    "plural": "sleep"
+   },
+   {
+    "third": "eats",
+    "plural": "eat"
+   },
+   {
+    "third": "moves",
+    "plural": "move"
+   },
+   {
+    "third": "waits",
+    "plural": "wait"
+   }
+  ]
+ },
+ "heldout": {
+  "adj": [
+   {
+    "initial": "Tall",
+    "inner": "tall"
+   }
+  ],
+  "plural": [
+   {
+    "initial": "Hens",
+    "inner": "hens"
+   }
+  ],
+  "verb": [
+   {
+    "third": "rests",
+    "plural": "rest"
+   }
+  ]
+ },
+ "variants": {
+  "pair": {
+   "slots": {
+    "j": "adj",
+    "p": "plural",
+    "v": "verb"
+   },
+   "sentences": [
+    "{j.initial} {p.inner} {v.plural}."
+   ]
+  }
+ }
+}

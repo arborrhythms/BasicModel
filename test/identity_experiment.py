@@ -136,7 +136,6 @@ def make_model(folder, patch):
         'architecture/weightsPath':folder/'unused.ckpt',
         'architecture/training/batchSize':4,'architecture/training/numWorkers':0,
         'architecture/training/branchDiagnosticsEvery':0,
-        'architecture/training/seed':20261010,
         'architecture/training/autoload':False,'architecture/training/autosave':False,
         'architecture/training/checkpointEveryBatches':0,
         'architecture/training/reconstructionPlacement':'eager'}
@@ -144,6 +143,9 @@ def make_model(folder, patch):
         node=root.find('./'+name)
         if node is None:raise RuntimeError(f'missing native configuration field: {name}')
         node.text=str(value).lower() if isinstance(value,bool) else str(value)
+    seed = root.find('./architecture/training/seed')
+    if seed is not None:
+        root.find('./architecture/training').remove(seed)
     config=folder/'identity_model.xml';tree.write(config,encoding='unicode')
     util.init_device('cpu')
     util.init_config(path=str(config),defaults_path=str(ROOT/'data/model.xml'))

@@ -93,8 +93,9 @@ parameter was added for this reader.
 
 Native traversal and evidence are hard reads, with no derivative through the
 lookup/path choice. Native IDs do not enter numerical chooser features. The
-one thought policy receives supplied-answer quality and actual shared work;
-verifier traces do not manufacture training labels. Learned utility remains
+one thought policy learns from the complete path's reconstruction-plus-answer
+cost difference ([SelectedMeaning](SelectedMeaning.md)); verifier traces do not
+manufacture training labels. Learned utility remains
 unproven pending the held-out, matched-compute multi-seed study.
 See [GradientFlow](GradientFlow.md).
 
@@ -103,7 +104,7 @@ See [GradientFlow](GradientFlow.md).
 The bounded supervised wording gate is met through compose/generate; general
 English and learned questioning utility remain unproven. The standalone codec
 is removed. Expectation/residual credit,
-generation ownership and causal utility remain explicit todo items. The separate
-two-truths design remains deferred. See [SelectedMeaning](SelectedMeaning.md).
+generation ownership and causal utility remain explicit todo items. See
+[SelectedMeaning](SelectedMeaning.md).
 
 *A superseded passage beginning "## Historical validation (September 16)" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*

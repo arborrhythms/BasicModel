@@ -1,0 +1,160 @@
+{
+ "schema": 1,
+ "game": "whole",
+ "note": "Template production task. The intended operator is an evaluation label, never a learner constraint; surface acquisition remains unproven.",
+ "fillers": {
+  "name": [
+   {
+    "form": "Rex"
+   },
+   {
+    "form": "Max"
+   },
+   {
+    "form": "Bella"
+   },
+   {
+    "form": "Tom"
+   },
+   {
+    "form": "Luna"
+   },
+   {
+    "form": "Milo"
+   },
+   {
+    "form": "Otto"
+   },
+   {
+    "form": "Leon"
+   },
+   {
+    "form": "Hugo"
+   },
+   {
+    "form": "Sven"
+   },
+   {
+    "form": "Lars"
+   },
+   {
+    "form": "Nils"
+   },
+   {
+    "form": "Ezra"
+   },
+   {
+    "form": "Ivan"
+   },
+   {
+    "form": "Omar"
+   },
+   {
+    "form": "Zane"
+   },
+   {
+    "form": "Theo"
+   },
+   {
+    "form": "Arlo"
+   },
+   {
+    "form": "Finn"
+   },
+   {
+    "form": "Saul"
+   }
+  ],
+  "noun": [
+   {
+    "form": "dog"
+   },
+   {
+    "form": "bird"
+   },
+   {
+    "form": "horse"
+   },
+   {
+    "form": "mouse"
+   },
+   {
+    "form": "fox"
+   },
+   {
+    "form": "wolf"
+   },
+   {
+    "form": "bear"
+   },
+   {
+    "form": "deer"
+   },
+   {
+    "form": "goat"
+   },
+   {
+    "form": "pig"
+   },
+   {
+    "form": "duck"
+   },
+   {
+    "form": "goose"
+   },
+   {
+    "form": "swan"
+   },
+   {
+    "form": "fish"
+   },
+   {
+    "form": "frog"
+   },
+   {
+    "form": "whale"
+   },
+   {
+    "form": "shark"
+   },
+   {
+    "form": "seal"
+   },
+   {
+    "form": "crab"
+   },
+   {
+    "form": "moth"
+   }
+  ]
+ },
+ "transfer": {
+  "name": [
+   {
+    "form": "Felix"
+   },
+   {
+    "form": "Ciao"
+   }
+  ],
+  "noun": [
+   {
+    "form": "cat"
+   }
+  ]
+ },
+ "variants": {
+  "template": {
+   "slots": {
+    "s": "name",
+    "n": "noun"
+   },
+   "sources": [
+    "{n.form}.",
+    "{s.form}."
+   ],
+   "target": "The {n.form} kind includes {s.form}.",
+   "limit": 320
+  }
+ }
+}

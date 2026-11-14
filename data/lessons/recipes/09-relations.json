@@ -1,0 +1,97 @@
+{
+ "schema": 1,
+ "phase": "relations",
+ "lesson": 9,
+ "criterion": {
+  "measure": "relation_groups",
+  "threshold": null,
+  "declared_by": "Alec",
+  "note": "item 2.3 section 6.3, groups 4 and 5 (lesson 9)"
+ },
+ "measure": [
+  "Felix",
+  "cat",
+  "animal"
+ ],
+ "fillers": {
+  "name": [
+   {
+    "form": "Felix"
+   },
+   {
+    "form": "Ciao"
+   },
+   {
+    "form": "Bill"
+   },
+   {
+    "form": "Anna"
+   }
+  ],
+  "noun": [
+   {
+    "form": "cat"
+   },
+   {
+    "form": "cow"
+   },
+   {
+    "form": "bee"
+   },
+   {
+    "form": "owl"
+   }
+  ]
+ },
+ "heldout": {
+  "name": [
+   {
+    "form": "Nora"
+   }
+  ],
+  "noun": [
+   {
+    "form": "hen"
+   }
+  ]
+ },
+ "variants": {
+  "what": {
+   "slots": {
+    "n": "name",
+    "c": "noun"
+   },
+   "sentences": [
+    "{n.form} is a {c.form}.",
+    "What is {n.form}?"
+   ],
+   "question": 1,
+   "answer": "{c.form}"
+  },
+  "is": {
+   "slots": {
+    "n": "name",
+    "c": "noun"
+   },
+   "sentences": [
+    "{n.form} is a {c.form}.",
+    "Is {n.form} a {c.form}?"
+   ],
+   "question": 1,
+   "answer": "yes"
+  },
+  "infer": {
+   "slots": {
+    "n": "name",
+    "c": "noun"
+   },
+   "sentences": [
+    "{n.form} is a {c.form}.",
+    "A {c.form} is an animal.",
+    "Is {n.form} an animal?"
+   ],
+   "question": 2,
+   "answer": "yes"
+  }
+ }
+}

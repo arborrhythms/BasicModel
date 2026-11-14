@@ -160,9 +160,9 @@ def test_fast_pool_reserves_memory_and_four_cpu_slots(runner, monkeypatch):
     monkeypatch.setattr(runner.os, "cpu_count", lambda: 14)
     monkeypatch.setattr(runner, "physical_memory", lambda: 36 * runner.GIB)
     assert runner.default_worker_count() == 3
-    assert runner.DEFAULT_WORKER_MEMORY_BYTES == 12 * runner.GIB
+    assert runner.DEFAULT_WORKER_MEMORY_BYTES == 8 * runner.GIB
     monkeypatch.setattr(runner, "physical_memory", lambda: 80 * runner.GIB)
-    assert runner.default_worker_count() == 8
+    assert runner.default_worker_count() == 9
     monkeypatch.setattr(runner, "physical_memory", lambda: 128 * runner.GIB)
     assert runner.default_worker_count() == 10
 
@@ -212,6 +212,28 @@ def test_documentation_is_recorded_without_invalidating_code_snapshot(runner, tm
     assert runner.documentation_snapshot(tmp_path) != recorded
     (tmp_path / "bin" / "module.py").write_text("value = 2\n")
     assert runner.source_snapshot(tmp_path) != code
+
+
+def test_source_identity_excludes_ignored_inputs_but_keeps_uncommitted_source(runner, tmp_path):
+    subprocess.run(['git', 'init', '-q', str(tmp_path)], check=True)
+    (tmp_path / '.gitignore').write_text('data/local/\ndata/tracked.json\n')
+    (tmp_path / 'data/local').mkdir(parents=True)
+    local = tmp_path / 'data/local/manifest.json'
+    local.write_text('{"assembly_seconds":1}\n')
+    tracked = tmp_path / 'data/tracked.json'
+    tracked.write_text('{}\n')
+    subprocess.run(['git', '-C', str(tmp_path), 'add', '-f', 'data/tracked.json'], check=True)
+    added = tmp_path / 'data/new.json'
+    added.write_text('{}\n')
+    first = runner.source_snapshot(tmp_path)
+    assert set(first) == {'data/tracked.json', 'data/new.json'}
+    local.write_text('{"assembly_seconds":2}\n')
+    assert runner.source_snapshot(tmp_path) == first
+    added.write_text('{"new":true}\n')
+    assert runner.source_snapshot(tmp_path) != first
+    before = runner.source_snapshot(tmp_path)
+    tracked.write_text('{"tracked":true}\n')
+    assert runner.source_snapshot(tmp_path) != before
 
 
 def test_weekly_continues_only_unattempted_cases_after_a_guard_stop(tmp_path, monkeypatch):

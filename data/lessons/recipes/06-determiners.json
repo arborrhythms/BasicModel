@@ -1,0 +1,82 @@
+{
+ "schema": 1,
+ "phase": "determiners",
+ "lesson": 6,
+ "criterion": {
+  "measure": "occupant_definiteness",
+  "threshold": null,
+  "declared_by": "Alec",
+  "note": "the determiner argument's class definite (lesson 6)"
+ },
+ "measure": [
+  "the",
+  "cat"
+ ],
+ "fillers": {
+  "noun": [
+   {
+    "form": "cat"
+   },
+   {
+    "form": "cow"
+   },
+   {
+    "form": "bee"
+   },
+   {
+    "form": "owl"
+   }
+  ],
+  "verb": [
+   {
+    "third": "sleeps",
+    "plural": "sleep"
+   },
+   {
+    "third": "eats",
+    "plural": "eat"
+   },
+   {
+    "third": "moves",
+    "plural": "move"
+   },
+   {
+    "third": "waits",
+    "plural": "wait"
+   }
+  ]
+ },
+ "heldout": {
+  "noun": [
+   {
+    "form": "hen"
+   }
+  ],
+  "verb": [
+   {
+    "third": "rests",
+    "plural": "rest"
+   }
+  ]
+ },
+ "variants": {
+  "definite": {
+   "slots": {
+    "c": "noun",
+    "v": "verb"
+   },
+   "sentences": [
+    "The {c.form} {v.third}."
+   ]
+  },
+  "indefinite": {
+   "slots": {
+    "c": "noun",
+    "v": "verb"
+   },
+   "sentences": [
+    "A {c.form} {v.third}."
+   ]
+  }
+ }
+}

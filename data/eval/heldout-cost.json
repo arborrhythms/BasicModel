@@ -1,0 +1,3589 @@
+{
+ "items": [
+  {
+   "key": "words-name-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Nora."
+   ],
+   "sha256": "329aa6c5db95633102b4845a93d2a65a98fc9dadfba20a9bc7f41d89a836e383"
+  },
+  {
+   "key": "words-noun-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "hen."
+   ],
+   "sha256": "855aa0916f4790883a0558a70c53c19124d8f8d1f02fc7c82daf36d59bab17ae"
+  },
+  {
+   "key": "words-verb-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "rests."
+   ],
+   "sha256": "9b1f3333d574e9e5c5bee7ed3db3d93a00a95beceaf275aeb9de881f302aa4c9"
+  },
+  {
+   "key": "interpret-here-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Here is Nora.",
+    "Who is here?",
+    "Nora"
+   ],
+   "sha256": "7762a9138ff3fc579562951ed613a1abe79a9ff66d0829720b72c21fd8a94577"
+  },
+  {
+   "key": "interpret-this-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "This is Nora.",
+    "What is this?",
+    "Nora"
+   ],
+   "sha256": "a24dea08c69ed4e351437eadc70a83a382fbac38d39566f926b333f22dab3d68"
+  },
+  {
+   "key": "clause-name-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Felix rests."
+   ],
+   "sha256": "09f7a0f9ea6cf8778646bf8d0cc4df02e8d32b2681c97130c5044faefb95d870"
+  },
+  {
+   "key": "clause-name-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "Nora moves."
+   ],
+   "sha256": "16e614c6383c1f1181784213f5d7b058d397b5f126ab1b7cf5848484c48320b8"
+  },
+  {
+   "key": "clause-name-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "Nora sleeps."
+   ],
+   "sha256": "3398667f9d2e9e31127a4f0a6570a15424ecc490023a2f89819cf91c4317bedd"
+  },
+  {
+   "key": "clause-name-heldout-0003",
+   "kind": "lessons",
+   "sentences": [
+    "Nora waits."
+   ],
+   "sha256": "ca26096f95a9f0fccd70b06a8bf4e567c98c47a11d7850346b4f8cbf24e01733"
+  },
+  {
+   "key": "clause-plural-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Bees rest."
+   ],
+   "sha256": "d4252c225ae262ede8374e8185dd6e3e9aa0032ce6f04fb8ed9835ce779008f7"
+  },
+  {
+   "key": "clause-plural-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "Hens move."
+   ],
+   "sha256": "02da7cc8f4623557747971cfabf145321d8e321f52c15f3368ccaa07bd6177a1"
+  },
+  {
+   "key": "clause-plural-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "Hens rest."
+   ],
+   "sha256": "3afc47acba4880da2e12a95362c8fa8b2bfb4b2c56c3c99bab59f58771a21903"
+  },
+  {
+   "key": "ask-who-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Felix rests.",
+    "Who rests?",
+    "Felix"
+   ],
+   "sha256": "e78d5b150a98abe3f7d0b91ebf9130ee0d118c204fb01b08383be4b00224ffb1"
+  },
+  {
+   "key": "ask-who-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "Nora moves.",
+    "Who moves?",
+    "Nora"
+   ],
+   "sha256": "aa4ddd85162f53d1469d54bbe58ed743093031cdf72732dae5afb11552b9c10e"
+  },
+  {
+   "key": "ask-who-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "Nora sleeps.",
+    "Who sleeps?",
+    "Nora"
+   ],
+   "sha256": "4b38d87571f14f706e1708a6bb3a5062509bd2c83b1e5afc49fa9a1d191b89be"
+  },
+  {
+   "key": "ask-who-heldout-0003",
+   "kind": "lessons",
+   "sentences": [
+    "Nora waits.",
+    "Who waits?",
+    "Nora"
+   ],
+   "sha256": "cac95a6e31977c16a1bfad894716f7da44f3a580027945a8527f371ec0a383f0"
+  },
+  {
+   "key": "verb-object-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Nora sees Anna.",
+    "Who does Nora see?",
+    "Anna"
+   ],
+   "sha256": "fe4bcb2df78d61e85236b1a0e79b702bfd6edefa6f5509d451200cce25cec225"
+  },
+  {
+   "key": "verb-object-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "Nora helps Bill.",
+    "Who does Nora help?",
+    "Bill"
+   ],
+   "sha256": "b1ef217ac5b6cc3f5418eb01657727f173aef379426f0809daac0a71f8085892"
+  },
+  {
+   "key": "verb-object-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "Nora sees Bill.",
+    "Who does Nora see?",
+    "Bill"
+   ],
+   "sha256": "80abff9d6a5de899431927940c7a13beb3b67db5e9714f7a98c4ce507c1e9216"
+  },
+  {
+   "key": "verb-object-heldout-0003",
+   "kind": "lessons",
+   "sentences": [
+    "Nora likes Ciao.",
+    "Who does Nora like?",
+    "Ciao"
+   ],
+   "sha256": "0d0c725afbfd72f04ca7386b23b07472043a556c831c3b63e57a2b8cf03c29e9"
+  },
+  {
+   "key": "verb-object-heldout-0004",
+   "kind": "lessons",
+   "sentences": [
+    "Anna helps Felix.",
+    "Who does Anna help?",
+    "Felix"
+   ],
+   "sha256": "1837e8c1ee438ec69856be33d76814388e4615bfba2471b6011209c07a7bab7b"
+  },
+  {
+   "key": "verb-object-heldout-0005",
+   "kind": "lessons",
+   "sentences": [
+    "Nora follows Felix.",
+    "Who does Nora follow?",
+    "Felix"
+   ],
+   "sha256": "c4f70f844999281ffdd45dec31c94e3b986cd3d418d3f53fbd87aaf8d925a519"
+  },
+  {
+   "key": "verb-object-heldout-0006",
+   "kind": "lessons",
+   "sentences": [
+    "Anna follows Nora.",
+    "Who does Anna follow?",
+    "Nora"
+   ],
+   "sha256": "db2e1168130484a30e4b3a83fa175dd42cf682cc3aab217bad3a8553c38303af"
+  },
+  {
+   "key": "verb-object-heldout-0007",
+   "kind": "lessons",
+   "sentences": [
+    "Bill hears Nora.",
+    "Who does Bill hear?",
+    "Nora"
+   ],
+   "sha256": "ce98994488fe4f3615e3195d5aeb32cfc0f559dc4995ee35113428ca8db95093"
+  },
+  {
+   "key": "verb-object-heldout-0008",
+   "kind": "lessons",
+   "sentences": [
+    "Ciao likes Nora.",
+    "Who does Ciao like?",
+    "Nora"
+   ],
+   "sha256": "9282ad92ac17e390a8735e68e6f44180a56f9c61ee947383a92aeb8f27a119a1"
+  },
+  {
+   "key": "verb-object-heldout-0009",
+   "kind": "lessons",
+   "sentences": [
+    "Ciao sees Nora.",
+    "Who does Ciao see?",
+    "Nora"
+   ],
+   "sha256": "5362a89242e8376492229ace71fe9cb1a48d8c18f4690cd9270d1f5c98e10ab5"
+  },
+  {
+   "key": "verb-object-heldout-0010",
+   "kind": "lessons",
+   "sentences": [
+    "Felix likes Nora.",
+    "Who does Felix like?",
+    "Nora"
+   ],
+   "sha256": "169bb25a2980e19a222672ea9a27e4b368691f4fa6bb718fb8fb0d534036c9d3"
+  },
+  {
+   "key": "verb-object-heldout-0011",
+   "kind": "lessons",
+   "sentences": [
+    "Felix sees Nora.",
+    "Who does Felix see?",
+    "Nora"
+   ],
+   "sha256": "96e642c47358374a0d98873edb855b4e1b722955e1fec2bd20e1710fbe590403"
+  },
+  {
+   "key": "verb-subject-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Anna hears Nora.",
+    "Who hears Nora?",
+    "Anna"
+   ],
+   "sha256": "302a5aeb796620b4992897e79a80c08caf842b8286b8721d5cdda96f49a351d6"
+  },
+  {
+   "key": "verb-subject-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "Bill helps Ciao.",
+    "Who helps Ciao?",
+    "Bill"
+   ],
+   "sha256": "00e95734dd0c473e6cbfbc96bf9b67e8af75a3643907b7c8de1255bda8a4061d"
+  },
+  {
+   "key": "verb-subject-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "Bill helps Nora.",
+    "Who helps Nora?",
+    "Bill"
+   ],
+   "sha256": "b64b3c69c687b3840d1f02885a7bbe0de84fdfe8482ae65ca1cc8ab8bc1ee84d"
+  },
+  {
+   "key": "verb-subject-heldout-0003",
+   "kind": "lessons",
+   "sentences": [
+    "Bill likes Nora.",
+    "Who likes Nora?",
+    "Bill"
+   ],
+   "sha256": "28b2d1a06ac2fba849f989e171c904c0ca35515d1e2599e0f72db4e51c8a384d"
+  },
+  {
+   "key": "verb-subject-heldout-0004",
+   "kind": "lessons",
+   "sentences": [
+    "Ciao helps Bill.",
+    "Who helps Bill?",
+    "Ciao"
+   ],
+   "sha256": "9218da85719197119f0ae4fe0f91a7278c1af2f8f85aa87b297878ad5f87477f"
+  },
+  {
+   "key": "verb-subject-heldout-0005",
+   "kind": "lessons",
+   "sentences": [
+    "Felix helps Bill.",
+    "Who helps Bill?",
+    "Felix"
+   ],
+   "sha256": "f5338d78b31cf192e618bf23569855a888394ee2b9be306597307a94e49fe0ec"
+  },
+  {
+   "key": "verb-subject-heldout-0006",
+   "kind": "lessons",
+   "sentences": [
+    "Felix likes Nora.",
+    "Who likes Nora?",
+    "Felix"
+   ],
+   "sha256": "624f020083d7eff22169fe87068b35b4ea7dd769d4696974546062cc0d9dac8e"
+  },
+  {
+   "key": "verb-subject-heldout-0007",
+   "kind": "lessons",
+   "sentences": [
+    "Felix sees Nora.",
+    "Who sees Nora?",
+    "Felix"
+   ],
+   "sha256": "2ef798db0d06afb1a2df133d1c8c773445894f03552fcc5395eadf3bd4a40e4f"
+  },
+  {
+   "key": "verb-subject-heldout-0008",
+   "kind": "lessons",
+   "sentences": [
+    "Nora follows Bill.",
+    "Who follows Bill?",
+    "Nora"
+   ],
+   "sha256": "102df673aef944fcc53cdda291e189deba4ed562fa5fc3ec400fd467467bef57"
+  },
+  {
+   "key": "verb-subject-heldout-0009",
+   "kind": "lessons",
+   "sentences": [
+    "Nora follows Ciao.",
+    "Who follows Ciao?",
+    "Nora"
+   ],
+   "sha256": "bfbac9da473deda80019e011d1faf7a95109655023d4315857636e8d570a0455"
+  },
+  {
+   "key": "verb-subject-heldout-0010",
+   "kind": "lessons",
+   "sentences": [
+    "Nora likes Anna.",
+    "Who likes Anna?",
+    "Nora"
+   ],
+   "sha256": "0a9113e127f1191b04b4edd88d41d28a5688db6919b32a491d8881744c524523"
+  },
+  {
+   "key": "verb-subject-heldout-0011",
+   "kind": "lessons",
+   "sentences": [
+    "Nora sees Ciao.",
+    "Who sees Ciao?",
+    "Nora"
+   ],
+   "sha256": "b813161f8e54b1fdfe105622a945381c0ef4d7692dd4cc936a8d3896b3ae3d52"
+  },
+  {
+   "key": "modifiers-pair-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Big owls rest."
+   ],
+   "sha256": "51f43b26fd08b18f6ae16c6ce3fb255e4dd70aeb4f2ef4d1baa3d7ce22fce84b"
+  },
+  {
+   "key": "modifiers-pair-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "Old hens sleep."
+   ],
+   "sha256": "04fc31f2ef791c8bc214698f59dd9f6094b11cb5dc69209192661f63b2002a2b"
+  },
+  {
+   "key": "modifiers-pair-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "Old owls rest."
+   ],
+   "sha256": "c7a80caf10dd5862772c404515a298156e8bafb4ed3b7cdac4439dd184375e1c"
+  },
+  {
+   "key": "modifiers-pair-heldout-0003",
+   "kind": "lessons",
+   "sentences": [
+    "Red hens wait."
+   ],
+   "sha256": "b6fd47ff1bfa08a4ba9bcf9636cca5715fbca8682afcc5495d0d4dc2b64a43c0"
+  },
+  {
+   "key": "modifiers-pair-heldout-0004",
+   "kind": "lessons",
+   "sentences": [
+    "Small bees rest."
+   ],
+   "sha256": "d7acb7cb19dc9c0e30ae6fb1c0d43cc377cd403d411d839ddf299962d3497c29"
+  },
+  {
+   "key": "modifiers-pair-heldout-0005",
+   "kind": "lessons",
+   "sentences": [
+    "Small hens move."
+   ],
+   "sha256": "d182b4858e02dc1a78274b85621e48c8321e503fa972c1c880f2616fa7149517"
+  },
+  {
+   "key": "modifiers-pair-heldout-0006",
+   "kind": "lessons",
+   "sentences": [
+    "Tall bees eat."
+   ],
+   "sha256": "f5ac4ff20c43f2500b9918e74ae3e70d8d2cdb9fcee69e9f9c6ea9ea3cbe69d7"
+  },
+  {
+   "key": "modifiers-pair-heldout-0007",
+   "kind": "lessons",
+   "sentences": [
+    "Tall cows move."
+   ],
+   "sha256": "debb42141e9ff273d581b05b5a6771aec020def56e3ab21bac3c18b3ce204309"
+  },
+  {
+   "key": "modifiers-pair-heldout-0008",
+   "kind": "lessons",
+   "sentences": [
+    "Tall hens sleep."
+   ],
+   "sha256": "e15f43ab246fb22f0f2dd35e50cc2e07cc3cb38ee4097d215048b97084b6ccdf"
+  },
+  {
+   "key": "modifiers-pair-heldout-0009",
+   "kind": "lessons",
+   "sentences": [
+    "Tall hens wait."
+   ],
+   "sha256": "7fd0b60de81b4f1e2b70c23e510b4c7398192d367b9facb3480b3f5e44cf1cea"
+  },
+  {
+   "key": "modifiers-pair-heldout-0010",
+   "kind": "lessons",
+   "sentences": [
+    "Tall owls sleep."
+   ],
+   "sha256": "8e8e9e0e29d38bf5fdbac58ed1501bfc592091ea910af359348853a3b3be312f"
+  },
+  {
+   "key": "modifiers-pair-heldout-0011",
+   "kind": "lessons",
+   "sentences": [
+    "Tall owls wait."
+   ],
+   "sha256": "bd4b0b9cf86793471c6c00bcf525ac8410cdbca4463351b91bf52c03400cad12"
+  },
+  {
+   "key": "determiners-definite-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "The hen eats."
+   ],
+   "sha256": "d44c685506560e2095a789059ce829baaf3a0be378a9737582052ea18f03e43f"
+  },
+  {
+   "key": "determiners-definite-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "The hen rests."
+   ],
+   "sha256": "ae5a7f588d6d6f7b5ed8f27c5c4dffde4e91db711c6b6da4d08dea113156cb0a"
+  },
+  {
+   "key": "determiners-definite-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "The hen waits."
+   ],
+   "sha256": "5f37bbf418e85d9bbc5cba9852a5c3a3ce0a37a86ce33bbfa36358fcaa9c5afb"
+  },
+  {
+   "key": "determiners-definite-heldout-0003",
+   "kind": "lessons",
+   "sentences": [
+    "The owl rests."
+   ],
+   "sha256": "f8a478fb0b29fd3efe8090e2c8743a6ac9a08fa74318bc1f134d1f9aeb3ffaa0"
+  },
+  {
+   "key": "determiners-indefinite-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "A cat rests."
+   ],
+   "sha256": "275c1251593588a01ee47051f5420a9ee8648c818c436c55bf7192e81ed986b9"
+  },
+  {
+   "key": "determiners-indefinite-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "A hen eats."
+   ],
+   "sha256": "5f881129ed6b31b8a8315a2e90a09be08a0a8c627c2bca3a8cc7813066f37cf9"
+  },
+  {
+   "key": "determiners-indefinite-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "A hen sleeps."
+   ],
+   "sha256": "7e0ec880e4f94b7372f9a95ac100406567b3f202fa52de0855109632434bac60"
+  },
+  {
+   "key": "determiners-indefinite-heldout-0003",
+   "kind": "lessons",
+   "sentences": [
+    "A hen waits."
+   ],
+   "sha256": "5184944fd276afbb2030e73964a57764c705fa369cfacc6bf72207db8a40c07e"
+  },
+  {
+   "key": "adverb-manner-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Anna waits loudly."
+   ],
+   "sha256": "e5f8fe6cfaee0f02d1080231663af5d29dd7429544ea8fbb708f30e2e1654e40"
+  },
+  {
+   "key": "adverb-manner-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "Bill rests slowly."
+   ],
+   "sha256": "8007e4944ca11f76f26a79738a9783018861e71f3f711954c9ac12698f6b28c1"
+  },
+  {
+   "key": "adverb-manner-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "Bill waits loudly."
+   ],
+   "sha256": "70e20a6a4b7e92ebc28291c468d9bbe4969f5017d349d104b9f4c51a19186ee2"
+  },
+  {
+   "key": "adverb-manner-heldout-0003",
+   "kind": "lessons",
+   "sentences": [
+    "Ciao sleeps loudly."
+   ],
+   "sha256": "4f1c003f17142cbaf8781a750ffd2a4dd429676d2d195d1ea74d64746ccea3d2"
+  },
+  {
+   "key": "adverb-manner-heldout-0004",
+   "kind": "lessons",
+   "sentences": [
+    "Felix eats loudly."
+   ],
+   "sha256": "de403c2498a0926270376c74f5f172c915f026dd4cf082a5f3e651df07b8e863"
+  },
+  {
+   "key": "adverb-manner-heldout-0005",
+   "kind": "lessons",
+   "sentences": [
+    "Felix rests loudly."
+   ],
+   "sha256": "ab1e09f9232c87915d12cc93c6339da96e05d9eb938d9d10725dd67fe24f99a5"
+  },
+  {
+   "key": "adverb-manner-heldout-0006",
+   "kind": "lessons",
+   "sentences": [
+    "Nora eats gladly."
+   ],
+   "sha256": "6ebe4ea5a54575e8b2b15f1fc9dab974090e5da35900bc9ac341f984aa3ad961"
+  },
+  {
+   "key": "adverb-manner-heldout-0007",
+   "kind": "lessons",
+   "sentences": [
+    "Nora moves quietly."
+   ],
+   "sha256": "7016b848c2fba288efd92c29e17a131ee6630b4ac94fd5b795fd484690bb9c5e"
+  },
+  {
+   "key": "adverb-manner-heldout-0008",
+   "kind": "lessons",
+   "sentences": [
+    "Nora sleeps loudly."
+   ],
+   "sha256": "54b3a919487f3e10711070c9a5bf3175f38d3725f13431f7c578735fdbb52a3c"
+  },
+  {
+   "key": "adverb-manner-heldout-0009",
+   "kind": "lessons",
+   "sentences": [
+    "Nora sleeps quietly."
+   ],
+   "sha256": "c1d0423b278f0c5938fd43e508b91785fd48b2eddd23effdb540a164e39505e5"
+  },
+  {
+   "key": "adverb-manner-heldout-0010",
+   "kind": "lessons",
+   "sentences": [
+    "Nora waits quietly."
+   ],
+   "sha256": "7d9f81b3564b5833d052543d01472ebe26efd4e1ca71f7888465837434dc6abf"
+  },
+  {
+   "key": "adverb-manner-heldout-0011",
+   "kind": "lessons",
+   "sentences": [
+    "Nora waits slowly."
+   ],
+   "sha256": "0b1fa83315f2e982a22465b7b42fb7a97a662174aefe979503ebcd04c25e1266"
+  },
+  {
+   "key": "prepositions-place-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Anna eats near the car."
+   ],
+   "sha256": "2b64b3179085fefcf5e122d9f5f674b33aceeef86158b3aadeb246e9f04d24cd"
+  },
+  {
+   "key": "prepositions-place-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "Anna rests near the tree."
+   ],
+   "sha256": "5935166bed4ce97812df52b2fc6198f13828d6ce6f6cf223c5d96fd5c4869830"
+  },
+  {
+   "key": "prepositions-place-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "Anna sleeps under the bed."
+   ],
+   "sha256": "17097ad5ee35831a5888c5d69c68735992959a099ac20035ced470101f1a09fd"
+  },
+  {
+   "key": "prepositions-place-heldout-0003",
+   "kind": "lessons",
+   "sentences": [
+    "Bill moves under the box."
+   ],
+   "sha256": "4801f7de84b5a92913a41a9669f86a92ecd0d9f4a11c6d99cd63cac4e71032d3"
+  },
+  {
+   "key": "prepositions-place-heldout-0004",
+   "kind": "lessons",
+   "sentences": [
+    "Bill rests near the box."
+   ],
+   "sha256": "06eb1532f1ea3a5f8c969e10788d2f6098852902897e807217f7cd9df115eff8"
+  },
+  {
+   "key": "prepositions-place-heldout-0005",
+   "kind": "lessons",
+   "sentences": [
+    "Bill rests on the bed."
+   ],
+   "sha256": "bee0c611e0d3edb7e9be167c77bbf2bd5080d819dae5cc9ac75648084b4d6f04"
+  },
+  {
+   "key": "prepositions-place-heldout-0006",
+   "kind": "lessons",
+   "sentences": [
+    "Bill rests under the tree."
+   ],
+   "sha256": "ee4213153a286588ab785c2f8070cff6ee6f26525d6d0ffa42fd4b73cba0661a"
+  },
+  {
+   "key": "prepositions-place-heldout-0007",
+   "kind": "lessons",
+   "sentences": [
+    "Ciao rests on the car."
+   ],
+   "sha256": "067704d0dc92997c29f3c032f0437523326d24c1c8fc730ec35fb97985a971d2"
+  },
+  {
+   "key": "prepositions-place-heldout-0008",
+   "kind": "lessons",
+   "sentences": [
+    "Ciao sleeps under the car."
+   ],
+   "sha256": "47c721278239876230a56249bc72262fc9a8ccc3502b037912c09a1f1a0fc69b"
+  },
+  {
+   "key": "prepositions-place-heldout-0009",
+   "kind": "lessons",
+   "sentences": [
+    "Felix moves under the box."
+   ],
+   "sha256": "c147eba1dd7b1bb24d6b06c006b7463598556240c87e5c714717c93956c63188"
+  },
+  {
+   "key": "prepositions-place-heldout-0010",
+   "kind": "lessons",
+   "sentences": [
+    "Felix moves under the car."
+   ],
+   "sha256": "4f5bed497eb45883f660f25aa73914816459285ddeddba3f32923ca11567cd1c"
+  },
+  {
+   "key": "prepositions-place-heldout-0011",
+   "kind": "lessons",
+   "sentences": [
+    "Nora rests on the tree."
+   ],
+   "sha256": "049cf016ed80c8312a4c9091b614fbfc15555c0acf3049f6fde47766aba9b333"
+  },
+  {
+   "key": "prepositions-place-heldout-0012",
+   "kind": "lessons",
+   "sentences": [
+    "Nora sleeps on the car."
+   ],
+   "sha256": "de68a60e6bebe6e25f705e6cd4e121ef0e1d9c6baadcb7ccc4bd796b23c2abe9"
+  },
+  {
+   "key": "prepositions-place-heldout-0013",
+   "kind": "lessons",
+   "sentences": [
+    "Nora waits in the box."
+   ],
+   "sha256": "375bfcde819970ab00253f3559954a13457dad3bc4f42ce914fb4db03853ad7a"
+  },
+  {
+   "key": "prepositions-place-heldout-0014",
+   "kind": "lessons",
+   "sentences": [
+    "Nora waits in the tree."
+   ],
+   "sha256": "9dc425fe85d94d95bdb9282088b0371d2cc582e67ec5689bc2a05b17d0dc88ba"
+  },
+  {
+   "key": "relations-infer-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Felix is a hen.",
+    "A hen is an animal.",
+    "Is Felix an animal?",
+    "yes"
+   ],
+   "sha256": "e2fce1e634e91d3f2fe0b2e0d16fdb64c2f56c3ac9da044edd37e222da4201d2"
+  },
+  {
+   "key": "relations-infer-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "Nora is a cat.",
+    "A cat is an animal.",
+    "Is Nora an animal?",
+    "yes"
+   ],
+   "sha256": "f7e48f32ec0441dba56406a32a5263bbb823d7ce3be87d788de220da5052935d"
+  },
+  {
+   "key": "relations-infer-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "Nora is a hen.",
+    "A hen is an animal.",
+    "Is Nora an animal?",
+    "yes"
+   ],
+   "sha256": "20928b767a93adcc1d61528bff863b63c9cbc3e038cc933844ce8e6ae2c58d38"
+  },
+  {
+   "key": "relations-infer-heldout-0003",
+   "kind": "lessons",
+   "sentences": [
+    "Nora is a owl.",
+    "A owl is an animal.",
+    "Is Nora an animal?",
+    "yes"
+   ],
+   "sha256": "de2b8d67674f7bf3f293beb93a7d3a6d36c262f530619ae2109466f3e5b7e8d5"
+  },
+  {
+   "key": "relations-is-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Bill is a hen.",
+    "Is Bill a hen?",
+    "yes"
+   ],
+   "sha256": "be99c3a2b6fdbe9236f9cf8f7d1c817c67efd186003c3e31c1461643b4a9d6c5"
+  },
+  {
+   "key": "relations-is-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "Felix is a hen.",
+    "Is Felix a hen?",
+    "yes"
+   ],
+   "sha256": "f7a7c60fd713e4dad0269d738e69beb16bb0f0836c6198b78e01167616ba590c"
+  },
+  {
+   "key": "relations-is-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "Nora is a cow.",
+    "Is Nora a cow?",
+    "yes"
+   ],
+   "sha256": "34eefb052a2b3ecb779f14b0df08ebff4947cfb41553bc041ce09d18a3ce20b8"
+  },
+  {
+   "key": "relations-is-heldout-0003",
+   "kind": "lessons",
+   "sentences": [
+    "Nora is a hen.",
+    "Is Nora a hen?",
+    "yes"
+   ],
+   "sha256": "d075f94ff4fe8dc54bdc6423d2a96f5f8eccff6833c522c69d30c752cdbfd19c"
+  },
+  {
+   "key": "relations-what-heldout-0000",
+   "kind": "lessons",
+   "sentences": [
+    "Nora is a cat.",
+    "What is Nora?",
+    "cat"
+   ],
+   "sha256": "5fd6785cce09b60184495a8b180d1ca16d03fb64a835b1ef8f56696c1f3f09d7"
+  },
+  {
+   "key": "relations-what-heldout-0001",
+   "kind": "lessons",
+   "sentences": [
+    "Anna is a hen.",
+    "What is Anna?",
+    "hen"
+   ],
+   "sha256": "f90202775a19081f7fb85745a48e0a15978116a902945aabb84347cc9b6259e8"
+  },
+  {
+   "key": "relations-what-heldout-0002",
+   "kind": "lessons",
+   "sentences": [
+    "Ciao is a hen.",
+    "What is Ciao?",
+    "hen"
+   ],
+   "sha256": "fe1d4f5c1fa7663cb6d74dd27ae644d4733c8a81bd5f81d3b35a9cc398995e50"
+  },
+  {
+   "key": "relations-what-heldout-0003",
+   "kind": "lessons",
+   "sentences": [
+    "Felix is a hen.",
+    "What is Felix?",
+    "hen"
+   ],
+   "sha256": "916d17b1c4d2adf212f02a049ab35fe10b14a1172338dae1773940d60c706620"
+  },
+  {
+   "key": "adverb-template-000004",
+   "kind": "games",
+   "sentences": [
+    "Arlo runs.",
+    "briskly.",
+    "Arlo runs briskly."
+   ],
+   "sha256": "c313fcd6b97f68be27494e792203882d0138850b8df4458370ff429063017ebb"
+  },
+  {
+   "key": "adverb-template-000005",
+   "kind": "games",
+   "sentences": [
+    "Arlo runs.",
+    "swiftly.",
+    "Arlo runs swiftly."
+   ],
+   "sha256": "74032644d2e7aa11c13e642a59a6ba7e9823b2b0a37a76d8d138e35228293ae8"
+  },
+  {
+   "key": "adverb-template-000007",
+   "kind": "games",
+   "sentences": [
+    "Arlo sits.",
+    "briskly.",
+    "Arlo sits briskly."
+   ],
+   "sha256": "b47620162c2f01207dd4e8c18b8585ef24d1785686ea2bec65f9642adb59e1b2"
+  },
+  {
+   "key": "adverb-template-000008",
+   "kind": "games",
+   "sentences": [
+    "Arlo sits.",
+    "swiftly.",
+    "Arlo sits swiftly."
+   ],
+   "sha256": "38e47775b786a84ba21a73fe76f9c5077710c5cb3cda547d91ca83f253d4a65d"
+  },
+  {
+   "key": "adverb-template-000099",
+   "kind": "games",
+   "sentences": [
+    "Hugo walks.",
+    "briskly.",
+    "Hugo walks briskly."
+   ],
+   "sha256": "9991aa4e0280af91c95a17b878d325fb50e2e3b640020ddcf9e1282997bca74a"
+  },
+  {
+   "key": "adverb-template-000100",
+   "kind": "games",
+   "sentences": [
+    "Hugo walks.",
+    "swiftly.",
+    "Hugo walks swiftly."
+   ],
+   "sha256": "3bd4b117cd06bb407f30e7c9efc0dcd18160febd9f7141c4456dd905797c7dcf"
+  },
+  {
+   "key": "adverb-template-000129",
+   "kind": "games",
+   "sentences": [
+    "Lars swims.",
+    "briskly.",
+    "Lars swims briskly."
+   ],
+   "sha256": "e8211303da89308b9a7d99f333b87970daa788fbd72ada85fb215445ea971c8f"
+  },
+  {
+   "key": "adverb-template-000130",
+   "kind": "games",
+   "sentences": [
+    "Lars swims.",
+    "swiftly.",
+    "Lars swims swiftly."
+   ],
+   "sha256": "be34864b29946129ee61bdce0e72b8301f2174c47ca9b9c4c159bcdde30b33ab"
+  },
+  {
+   "key": "adverb-template-000166",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "briskly.",
+    "Max jumps briskly."
+   ],
+   "sha256": "d6e7f36e068865bc83413bd2e3d3d147e7152422d917aed7e652060cabe1da01"
+  },
+  {
+   "key": "adverb-template-000167",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "swiftly.",
+    "Max jumps swiftly."
+   ],
+   "sha256": "3483a332886fe9f572c966ee51e1141a13a1bc7c0132da16f0c4109cb2d64bc1"
+  },
+  {
+   "key": "adverb-template-000183",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "briskly.",
+    "Milo sings briskly."
+   ],
+   "sha256": "780b63844d7f69a533ce9542a2613893bce04a6c9c47494e11a321b4d73c3cc7"
+  },
+  {
+   "key": "adverb-template-000184",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "swiftly.",
+    "Milo sings swiftly."
+   ],
+   "sha256": "5fd4bd789a28cb57a214ac48b4d20ea37d722164c842591b07fc3b985ecf6f60"
+  },
+  {
+   "key": "adverb-template-000191",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "briskly.",
+    "Milo walks briskly."
+   ],
+   "sha256": "db911f639149d9ced1ea8df956c2c81b5152ad15e26d2a725ae6643eb58bd814"
+  },
+  {
+   "key": "adverb-template-000192",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "swiftly.",
+    "Milo walks swiftly."
+   ],
+   "sha256": "122058d923391a5d9056236bbdca2afc33a1cfb593cfb9e8b351b5c14ee25e19"
+  },
+  {
+   "key": "adverb-template-000197",
+   "kind": "games",
+   "sentences": [
+    "Nils runs.",
+    "briskly.",
+    "Nils runs briskly."
+   ],
+   "sha256": "41dedd93b9cc3facf1c3248b3d48d3be7814d9adc7d87c5122c8e6e09377a750"
+  },
+  {
+   "key": "adverb-template-000198",
+   "kind": "games",
+   "sentences": [
+    "Nils runs.",
+    "swiftly.",
+    "Nils runs swiftly."
+   ],
+   "sha256": "0f1e9478b1fb9bc99523e6edc54b4a828be6294ff12dcb3d3d42a0e04b8932fb"
+  },
+  {
+   "key": "adverb-template-000287",
+   "kind": "games",
+   "sentences": [
+    "Theo sits.",
+    "briskly.",
+    "Theo sits briskly."
+   ],
+   "sha256": "af193f6bc31aea06b67317f1eab01dd458a0c2d7f41e9a6c17a6452e2dfe96d5"
+  },
+  {
+   "key": "ask-template-000002",
+   "kind": "games",
+   "sentences": [
+    "Arlo runs.",
+    "Does Arlo run?"
+   ],
+   "sha256": "8b93f2af2177df3092a8be4719cd774d16292ea057de7ab86599c0256de63caf"
+  },
+  {
+   "key": "ask-template-000004",
+   "kind": "games",
+   "sentences": [
+    "Arlo sits.",
+    "Does Arlo sit?"
+   ],
+   "sha256": "2187ccec632e4afa10ebc30c6afd2a8b1587f7d806cc3482e8c5620fcac0cc0e"
+  },
+  {
+   "key": "ask-template-000055",
+   "kind": "games",
+   "sentences": [
+    "Hugo walks.",
+    "Does Hugo walk?"
+   ],
+   "sha256": "46f842c4d866ce69b949d9a2d19dee27b373652da7db75ff497ef3443583b64e"
+  },
+  {
+   "key": "ask-template-000070",
+   "kind": "games",
+   "sentences": [
+    "Lars swims.",
+    "Does Lars swim?"
+   ],
+   "sha256": "f1013eee435523477301c536518b32fc7eb4929b99dea3c45c65598281ff2e17"
+  },
+  {
+   "key": "ask-template-000089",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Does Max jump?"
+   ],
+   "sha256": "c143a961a1c5aa5238babac5e472e8b5f5bf85a47c7110a90e7dee8229cd10e6"
+  },
+  {
+   "key": "ask-template-000099",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Does Milo sing?"
+   ],
+   "sha256": "976ea673c627bd2e71900c719344098ac463bb6b62724bbd0b4c09ac52f11035"
+  },
+  {
+   "key": "ask-template-000103",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Does Milo walk?"
+   ],
+   "sha256": "a6f35dd3aae98059c2ebe25dfffa3bdd7ee5c7458bd30ac1e32f29e770b8abf0"
+  },
+  {
+   "key": "ask-template-000106",
+   "kind": "games",
+   "sentences": [
+    "Nils runs.",
+    "Does Nils run?"
+   ],
+   "sha256": "fdfdf7a8a6d0af3860b6d3bc8a0933e2c88c7f61b5ada657c41517bff1594aea"
+  },
+  {
+   "key": "ask-template-000156",
+   "kind": "games",
+   "sentences": [
+    "Theo sits.",
+    "Does Theo sit?"
+   ],
+   "sha256": "d395f4b66806c4ec2e90572f77ba55bd04d4d3fc3d75f706bead9eec03158b8c"
+  },
+  {
+   "key": "bind-template-000003",
+   "kind": "games",
+   "sentences": [
+    "Arlo runs.",
+    "Arlo jumps.",
+    "Arlo runs and jumps."
+   ],
+   "sha256": "5c814ffb53ed8b46d92254aadbb5cc5d67213ae0560283c8fd6f88d6279bda3b"
+  },
+  {
+   "key": "bind-template-000004",
+   "kind": "games",
+   "sentences": [
+    "Arlo runs.",
+    "Arlo sings.",
+    "Arlo runs and sings."
+   ],
+   "sha256": "68015df68176b11fabafce3a009bf36f9dd4014c96f4a330875fa2ecb67e66b6"
+  },
+  {
+   "key": "bind-template-000005",
+   "kind": "games",
+   "sentences": [
+    "Arlo runs.",
+    "Arlo sits.",
+    "Arlo runs and sits."
+   ],
+   "sha256": "f161cf05ec6399e66ab4170161df48f3ba4ea3ee12179f5237fda9936bb860bd"
+  },
+  {
+   "key": "bind-template-000006",
+   "kind": "games",
+   "sentences": [
+    "Arlo runs.",
+    "Arlo swims.",
+    "Arlo runs and swims."
+   ],
+   "sha256": "a36c64a562d7f7f3a27b3a31b9a713dbffc7ab905d7d153032da21f8ce4e2584"
+  },
+  {
+   "key": "bind-template-000011",
+   "kind": "games",
+   "sentences": [
+    "Arlo sits.",
+    "Arlo runs.",
+    "Arlo sits and runs."
+   ],
+   "sha256": "be1b02c76609044ddbf81728b47a7a09afdd17c01f17378736a4707d319106ed"
+  },
+  {
+   "key": "bind-template-000012",
+   "kind": "games",
+   "sentences": [
+    "Arlo sits.",
+    "Arlo swims.",
+    "Arlo sits and swims."
+   ],
+   "sha256": "aff98d01da546523b6210bcd4040c04dede62b43c8be4baeddeddc6178ef305a"
+  },
+  {
+   "key": "bind-template-000105",
+   "kind": "games",
+   "sentences": [
+    "Hugo walks.",
+    "Hugo runs.",
+    "Hugo walks and runs."
+   ],
+   "sha256": "a7320d0b6ccf61596bc13238a482401489d95f56ba973293760b5443537676d5"
+  },
+  {
+   "key": "bind-template-000106",
+   "kind": "games",
+   "sentences": [
+    "Hugo walks.",
+    "Hugo swims.",
+    "Hugo walks and swims."
+   ],
+   "sha256": "cb09665f5cf2be368b0543dbd1400b3d5b0b6a2a76d83389f73eca782d931101"
+  },
+  {
+   "key": "bind-template-000159",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Max sings.",
+    "Max jumps and sings."
+   ],
+   "sha256": "159a92b35f386cd2d97b271cbe66427d7205eafbe234f6a51eaf116fc87e0511"
+  },
+  {
+   "key": "bind-template-000160",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Max sits.",
+    "Max jumps and sits."
+   ],
+   "sha256": "d4fe1117075b5b33d636bc83a690e4bf7bdf35a0f3620d1ab437fb7a2ee4579a"
+  },
+  {
+   "key": "bind-template-000161",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Max walks.",
+    "Max jumps and walks."
+   ],
+   "sha256": "ba116ff2422c49750dd30cb7269d0f1e602ef49d5a1ac10210bc2e206087a6f7"
+  },
+  {
+   "key": "bind-template-000182",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Milo swims.",
+    "Milo sings and swims."
+   ],
+   "sha256": "1ec2b2f277f433a20cf7be6fcdb8e390fb0e71f87fd6ceb17aa0e46ceb03a996"
+  },
+  {
+   "key": "bind-template-000190",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Milo jumps.",
+    "Milo walks and jumps."
+   ],
+   "sha256": "fe4e943cac70cdb925c956ad51ec22440d6be24fa78b96a71c63f276ece0d1df"
+  },
+  {
+   "key": "bind-template-000191",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Milo sits.",
+    "Milo walks and sits."
+   ],
+   "sha256": "96cfaeb47ee9a9b72b97dd5e17dd7ecae6be3075f3e93f4e520fbf2b02bd7a2e"
+  },
+  {
+   "key": "conjunction-predicates-000232",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Max runs.",
+    "Max jumps and runs."
+   ],
+   "sha256": "cc738a3798233af8ad79377841fc5b9325e998baee00a4aedf677981405b8db6"
+  },
+  {
+   "key": "conjunction-predicates-000233",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Max sings.",
+    "Max jumps and sings."
+   ],
+   "sha256": "159a92b35f386cd2d97b271cbe66427d7205eafbe234f6a51eaf116fc87e0511"
+  },
+  {
+   "key": "conjunction-predicates-000234",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Max sits.",
+    "Max jumps and sits."
+   ],
+   "sha256": "d4fe1117075b5b33d636bc83a690e4bf7bdf35a0f3620d1ab437fb7a2ee4579a"
+  },
+  {
+   "key": "conjunction-predicates-000236",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Max swims.",
+    "Max jumps and swims."
+   ],
+   "sha256": "c8d43c600bba61e0516fc0eb7f839e5d9cc2e3ae8b238fb0673f02d651edcf0c"
+  },
+  {
+   "key": "conjunction-predicates-000237",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Max walks.",
+    "Max jumps and walks."
+   ],
+   "sha256": "ba116ff2422c49750dd30cb7269d0f1e602ef49d5a1ac10210bc2e206087a6f7"
+  },
+  {
+   "key": "conjunction-predicates-000302",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Milo jumps.",
+    "Milo sings and jumps."
+   ],
+   "sha256": "9649ac6861f65e22bda34dbb0e37f161dc435b41e832f259d9039299eadbd24b"
+  },
+  {
+   "key": "conjunction-predicates-000303",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Milo runs.",
+    "Milo sings and runs."
+   ],
+   "sha256": "27709e1128ea3dfc86f1ab46e2c53d49b64d83bcba5b080a1d96a4b7efda74a7"
+  },
+  {
+   "key": "conjunction-predicates-000304",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Milo sits.",
+    "Milo sings and sits."
+   ],
+   "sha256": "3b071e511a8b30acbfb42c99147140262b875ff99f9f494d738173dc46ff68da"
+  },
+  {
+   "key": "conjunction-predicates-000306",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Milo swims.",
+    "Milo sings and swims."
+   ],
+   "sha256": "1ec2b2f277f433a20cf7be6fcdb8e390fb0e71f87fd6ceb17aa0e46ceb03a996"
+  },
+  {
+   "key": "conjunction-predicates-000307",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Milo walks.",
+    "Milo sings and walks."
+   ],
+   "sha256": "9f040a9da8c90ca6f07b6b304229f8ff3a2310cc7fa059383c7c9f190526f89b"
+  },
+  {
+   "key": "conjunction-predicates-000330",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Milo jumps.",
+    "Milo walks and jumps."
+   ],
+   "sha256": "fe4e943cac70cdb925c956ad51ec22440d6be24fa78b96a71c63f276ece0d1df"
+  },
+  {
+   "key": "conjunction-predicates-000331",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Milo runs.",
+    "Milo walks and runs."
+   ],
+   "sha256": "0cb8b32c829224494a1f56143f8067f7747f81729ba3cffaa49f6170a363f0ce"
+  },
+  {
+   "key": "conjunction-predicates-000332",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Milo sings.",
+    "Milo walks and sings."
+   ],
+   "sha256": "b1548cf73328073aa7da564b469221bb26c80cc71e2614f64316ff31f88acb70"
+  },
+  {
+   "key": "conjunction-predicates-000333",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Milo sits.",
+    "Milo walks and sits."
+   ],
+   "sha256": "96cfaeb47ee9a9b72b97dd5e17dd7ecae6be3075f3e93f4e520fbf2b02bd7a2e"
+  },
+  {
+   "key": "conjunction-predicates-000335",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Milo swims.",
+    "Milo walks and swims."
+   ],
+   "sha256": "fe3c317f2577798f6b6b4066681bd0e082270c6071d016816ae4ea5775e12abd"
+  },
+  {
+   "key": "conjunction-subjects-000231",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Bella jumps.",
+    "Max and Bella jump."
+   ],
+   "sha256": "28f0dcc7bbc85e69012681ec6c14c829ec2ba4ba5e3191bf02a38e691ca51929"
+  },
+  {
+   "key": "conjunction-subjects-000234",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Luna jumps.",
+    "Max and Luna jump."
+   ],
+   "sha256": "f2b5e0896e2143b0067965b2518e746f159f0476c42b22958217f6d8c8d6d04a"
+  },
+  {
+   "key": "conjunction-subjects-000235",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Milo jumps.",
+    "Max and Milo jump."
+   ],
+   "sha256": "75bca0940a82ada9cd678ac6bf67efd8f6b0809c001e9b31ed73d14c03749aba"
+  },
+  {
+   "key": "conjunction-subjects-000236",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Rex jumps.",
+    "Max and Rex jump."
+   ],
+   "sha256": "8e9c5aea97e3318d6645d443c01bd0939021028913fb1fcffe1ec9a1b49de60b"
+  },
+  {
+   "key": "conjunction-subjects-000237",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Tom jumps.",
+    "Max and Tom jump."
+   ],
+   "sha256": "4089bcf78e7ffe59e4dd6f7ca1d2624cacf21eb57b8e9d28b1334d53a54b7903"
+  },
+  {
+   "key": "conjunction-subjects-000301",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Bella sings.",
+    "Milo and Bella sing."
+   ],
+   "sha256": "cc8a5196949d76e3fc75444e61b15ea64a55674e38fb64ae62989de5cc45e25d"
+  },
+  {
+   "key": "conjunction-subjects-000304",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Luna sings.",
+    "Milo and Luna sing."
+   ],
+   "sha256": "b61f4668c73c9b1be6e609e4912557d506cb2203e6797a376b0081ea4435cbd4"
+  },
+  {
+   "key": "conjunction-subjects-000305",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Max sings.",
+    "Milo and Max sing."
+   ],
+   "sha256": "b6c34436af9eb48f912977f79f9d40b956b126da4d8173d1af4b8cb7f6a9852b"
+  },
+  {
+   "key": "conjunction-subjects-000306",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Rex sings.",
+    "Milo and Rex sing."
+   ],
+   "sha256": "f99c7c178615b79a9db536f5d52f42a1be05fded327a8c7a0fe3bb2eb7038e04"
+  },
+  {
+   "key": "conjunction-subjects-000307",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Tom sings.",
+    "Milo and Tom sing."
+   ],
+   "sha256": "1c13f6d7930ec402fc7e667db34aa8168d3e64fad1e0e35187cd1137bcf9a239"
+  },
+  {
+   "key": "conjunction-subjects-000329",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Bella walks.",
+    "Milo and Bella walk."
+   ],
+   "sha256": "01295e50abb7cc47ade8c6e2ced5f762a161d134eec4df68255a524b90b62e85"
+  },
+  {
+   "key": "conjunction-subjects-000332",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Luna walks.",
+    "Milo and Luna walk."
+   ],
+   "sha256": "cbcd5e748ab1f23065c759f37ed4838f784368481654d17cda1bafab6eb16c3a"
+  },
+  {
+   "key": "conjunction-subjects-000333",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Max walks.",
+    "Milo and Max walk."
+   ],
+   "sha256": "3701bd5e81e3eec84cfeb14362e8d82098896d555687d856307cd096cdecec7e"
+  },
+  {
+   "key": "conjunction-subjects-000334",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Rex walks.",
+    "Milo and Rex walk."
+   ],
+   "sha256": "20777df07f21e615654de9098b8c67e740cadeff09dfe998764ac6875e8d6b67"
+  },
+  {
+   "key": "conjunction-subjects-000335",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Tom walks.",
+    "Milo and Tom walk."
+   ],
+   "sha256": "58ccb7e25745d63c5f5b8ac2e5ac489b5b0d728ac288fcfe327110ad6eadfb84"
+  },
+  {
+   "key": "disjunction-template-000003",
+   "kind": "games",
+   "sentences": [
+    "Arlo runs.",
+    "Milo runs.",
+    "Arlo or Milo runs."
+   ],
+   "sha256": "78a79e39501abe5f2be23144dac8ebda393b27e19c13d3b6a1be6b48e1ef217c"
+  },
+  {
+   "key": "disjunction-template-000006",
+   "kind": "games",
+   "sentences": [
+    "Arlo sits.",
+    "Hugo sits.",
+    "Arlo or Hugo sits."
+   ],
+   "sha256": "377bab97dbcf9dbf44562c018c378fe5f7317e52945f8faa7f8a02c6b59d5650"
+  },
+  {
+   "key": "disjunction-template-000007",
+   "kind": "games",
+   "sentences": [
+    "Arlo sits.",
+    "Otto sits.",
+    "Arlo or Otto sits."
+   ],
+   "sha256": "214ef470b4f4ab76e13cd34ce928c81c211f1cd5500fe7af7bfb54d2c8173665"
+  },
+  {
+   "key": "disjunction-template-000008",
+   "kind": "games",
+   "sentences": [
+    "Arlo sits.",
+    "Tom sits.",
+    "Arlo or Tom sits."
+   ],
+   "sha256": "e5c522d0136e3f87a77f265269df3ccfa9388cabc690713e3fd8cfd78cec902c"
+  },
+  {
+   "key": "disjunction-template-000095",
+   "kind": "games",
+   "sentences": [
+    "Hugo walks.",
+    "Lars walks.",
+    "Hugo or Lars walks."
+   ],
+   "sha256": "d6b70beb5bc1a578c361682e2029a61e563e7ac64f292dad4fc623d2fe90b136"
+  },
+  {
+   "key": "disjunction-template-000155",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Finn jumps.",
+    "Max or Finn jumps."
+   ],
+   "sha256": "0db53d3631e01c7a6668aff1fb83191d1f92082f80a33ba8d2489bed9a7ab485"
+  },
+  {
+   "key": "disjunction-template-000156",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Leon jumps.",
+    "Max or Leon jumps."
+   ],
+   "sha256": "b8cae12525b55c5bbb41e36d812ecd4eef86902ec53ad83e6c1277dffb2836ae"
+  },
+  {
+   "key": "disjunction-template-000157",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Luna jumps.",
+    "Max or Luna jumps."
+   ],
+   "sha256": "fc38ece27b754dbf1bcccbdce22a9c5bf536dae8251c27934d7ae59ddfcd5278"
+  },
+  {
+   "key": "disjunction-template-000178",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Max sings.",
+    "Milo or Max sings."
+   ],
+   "sha256": "ad2f81c03d66e368d4cb4edd3fc2b1f64766317fbc02375d583d64b705518289"
+  },
+  {
+   "key": "disjunction-template-000186",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Arlo walks.",
+    "Milo or Arlo walks."
+   ],
+   "sha256": "497388c090134dc1f9b1ca468a281f822e93e2edd26e111d444ddd35ddfd2ee7"
+  },
+  {
+   "key": "disjunction-template-000188",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Otto walks.",
+    "Milo or Otto walks."
+   ],
+   "sha256": "ea0091193a68cea3e08815528bef7dc46dec96853eedd5562cd5bebb97be8b50"
+  },
+  {
+   "key": "disjunction-template-000189",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Tom walks.",
+    "Milo or Tom walks."
+   ],
+   "sha256": "edfbbe0ea93cda2f19618616928ed7ca06b885eced25bf9d270588673146295c"
+  },
+  {
+   "key": "disjunction-template-000194",
+   "kind": "games",
+   "sentences": [
+    "Nils runs.",
+    "Bella runs.",
+    "Nils or Bella runs."
+   ],
+   "sha256": "ad086011d7773aa6361c195aa2d2e1d5830ea3d720a29a149cbd5790440f85e3"
+  },
+  {
+   "key": "disjunction-template-000195",
+   "kind": "games",
+   "sentences": [
+    "Nils runs.",
+    "Omar runs.",
+    "Nils or Omar runs."
+   ],
+   "sha256": "5bcbe26019ee3dc7325cf9c7da5037f000390124377ace9273461c6112daf1e4"
+  },
+  {
+   "key": "disjunction-template-000282",
+   "kind": "games",
+   "sentences": [
+    "Theo sits.",
+    "Ezra sits.",
+    "Theo or Ezra sits."
+   ],
+   "sha256": "ec36e8da4a94c1d520a812b34124d3f037c5f8312f829bed1d1525a339251b56"
+  },
+  {
+   "key": "generic-template-000006",
+   "kind": "games",
+   "sentences": [
+    "A bear swims.",
+    "Every bear swims."
+   ],
+   "sha256": "df8fcfb0022d4e0e7bcfae9ee89b47babb59d9b7aaf0688a0ca927940f6b4de4"
+  },
+  {
+   "key": "generic-template-000009",
+   "kind": "games",
+   "sentences": [
+    "A bird jumps.",
+    "Every bird jumps."
+   ],
+   "sha256": "2ddf43d9520ff5d5affd4058b8f8c40b8b0a1b611ea00ee5b5653d8ed9454e44"
+  },
+  {
+   "key": "generic-template-000033",
+   "kind": "games",
+   "sentences": [
+    "A deer jumps.",
+    "Every deer jumps."
+   ],
+   "sha256": "87ef101743c7a21f6f5bdc63bdd31de36a5a094f9329e17d925b62a504baaa56"
+  },
+  {
+   "key": "generic-template-000034",
+   "kind": "games",
+   "sentences": [
+    "A deer runs.",
+    "Every deer runs."
+   ],
+   "sha256": "ece5b81ffa5c9c6680761191489a4ffe2519411ddfcde024686c6a959761b7e5"
+  },
+  {
+   "key": "generic-template-000036",
+   "kind": "games",
+   "sentences": [
+    "A deer sits.",
+    "Every deer sits."
+   ],
+   "sha256": "a4cbfae0b2480ef0461f0aeb87b649b26d3fd8962844675a614ea4c04e79f7ab"
+  },
+  {
+   "key": "generic-template-000046",
+   "kind": "games",
+   "sentences": [
+    "A dog swims.",
+    "Every dog swims."
+   ],
+   "sha256": "00f29cb642efcd582d1404972183fe164828b5b925db27faee730012301a0931"
+  },
+  {
+   "key": "generic-template-000063",
+   "kind": "games",
+   "sentences": [
+    "A fish walks.",
+    "Every fish walks."
+   ],
+   "sha256": "5dd12679be09c2c63400a8bf53e48fa4d83f087efd7548f5e9c27c2960c79226"
+  },
+  {
+   "key": "generic-template-000100",
+   "kind": "games",
+   "sentences": [
+    "A horse sits.",
+    "Every horse sits."
+   ],
+   "sha256": "0b39f3659810d26e4ba79cb3738c14d3558a8b56830b8737d622ca297fd65ab8"
+  },
+  {
+   "key": "generic-template-000113",
+   "kind": "games",
+   "sentences": [
+    "A mouse jumps.",
+    "Every mouse jumps."
+   ],
+   "sha256": "149c3f8a9f6f6d750734542bbea02d69a38be72e208227bad205e1700f63af05"
+  },
+  {
+   "key": "generic-template-000116",
+   "kind": "games",
+   "sentences": [
+    "A mouse sits.",
+    "Every mouse sits."
+   ],
+   "sha256": "6db6609720a0832e67fa84b27be7c2a905e639e5a39d5b9218305381118cd0f4"
+  },
+  {
+   "key": "generic-template-000119",
+   "kind": "games",
+   "sentences": [
+    "A mouse walks.",
+    "Every mouse walks."
+   ],
+   "sha256": "c641eadce6ae0681b85e3913816c0bf2c274766caffff65c017adaf94b26d4be"
+  },
+  {
+   "key": "generic-template-000135",
+   "kind": "games",
+   "sentences": [
+    "A seal walks.",
+    "Every seal walks."
+   ],
+   "sha256": "4558c49f662f1f22339b404f77c2bd84a49852ba0e3b424eeb10e2a2be3f01be"
+  },
+  {
+   "key": "generic-template-000146",
+   "kind": "games",
+   "sentences": [
+    "A swan runs.",
+    "Every swan runs."
+   ],
+   "sha256": "f9ce56e300ae83d28d08668e64e1144b268cd877a2c1e39443ca33db7c107b27"
+  },
+  {
+   "key": "implies-template-000003",
+   "kind": "games",
+   "sentences": [
+    "Arlo runs.",
+    "Arlo jumps.",
+    "If Arlo runs, Arlo jumps."
+   ],
+   "sha256": "1b885d902f362f689ed72f2b07933f06536e3b0710ff80d4c9e63b64ea61ba57"
+  },
+  {
+   "key": "implies-template-000004",
+   "kind": "games",
+   "sentences": [
+    "Arlo runs.",
+    "Arlo sings.",
+    "If Arlo runs, Arlo sings."
+   ],
+   "sha256": "4b85515721c9119236aa19bccc83d3e20691395b54097c569939076fd1c3c7f9"
+  },
+  {
+   "key": "implies-template-000005",
+   "kind": "games",
+   "sentences": [
+    "Arlo runs.",
+    "Arlo sits.",
+    "If Arlo runs, Arlo sits."
+   ],
+   "sha256": "87629a22e3e22898273538928060cd175364c728dd43f9a114c843a7fdd0454c"
+  },
+  {
+   "key": "implies-template-000006",
+   "kind": "games",
+   "sentences": [
+    "Arlo runs.",
+    "Arlo swims.",
+    "If Arlo runs, Arlo swims."
+   ],
+   "sha256": "0173257d35d7181340927c812eebd5fa300c17f143fd629c246e7ea9fcfcb728"
+  },
+  {
+   "key": "implies-template-000011",
+   "kind": "games",
+   "sentences": [
+    "Arlo sits.",
+    "Arlo runs.",
+    "If Arlo sits, Arlo runs."
+   ],
+   "sha256": "f1c779ea5732a788cf7e590760d314818c59ab72d96303c12323e752802ed0f1"
+  },
+  {
+   "key": "implies-template-000012",
+   "kind": "games",
+   "sentences": [
+    "Arlo sits.",
+    "Arlo swims.",
+    "If Arlo sits, Arlo swims."
+   ],
+   "sha256": "712a4b797b60a737539ab87d8ff231d0b057d455ed8eb147ffd7711fdae201dd"
+  },
+  {
+   "key": "implies-template-000105",
+   "kind": "games",
+   "sentences": [
+    "Hugo walks.",
+    "Hugo runs.",
+    "If Hugo walks, Hugo runs."
+   ],
+   "sha256": "9583d8b71d187b9ee127d41c2a1cf2387847edb8d65acb7d0725ae3424e2e12d"
+  },
+  {
+   "key": "implies-template-000106",
+   "kind": "games",
+   "sentences": [
+    "Hugo walks.",
+    "Hugo swims.",
+    "If Hugo walks, Hugo swims."
+   ],
+   "sha256": "0b5b9bf776f2ffe66969192b4ed6661e2ebf48dc2b8f47dd81876e634296adcb"
+  },
+  {
+   "key": "implies-template-000159",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Max sings.",
+    "If Max jumps, Max sings."
+   ],
+   "sha256": "c9d0d2a84149907e3af2e9e1bfd3e3bf9aa436275c48169d5da01ea2f17672ed"
+  },
+  {
+   "key": "implies-template-000160",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Max sits.",
+    "If Max jumps, Max sits."
+   ],
+   "sha256": "3ba7ce8efbee2617f33fab22a91d6f3b381ed3f1560c95ea1699d9c35e40f64c"
+  },
+  {
+   "key": "implies-template-000161",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Max walks.",
+    "If Max jumps, Max walks."
+   ],
+   "sha256": "a289cfc053516d417489ffde74db3dca06c2e9c01239e197548f437d8019e0ed"
+  },
+  {
+   "key": "implies-template-000182",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Milo swims.",
+    "If Milo sings, Milo swims."
+   ],
+   "sha256": "0b2f98168a65a81bd6c0174053b758a1588b8cfb69cbfeb130ab62d4852b4f1a"
+  },
+  {
+   "key": "implies-template-000190",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Milo jumps.",
+    "If Milo walks, Milo jumps."
+   ],
+   "sha256": "64450ee89eb36a868d83f23b2323b3307d585f01cca137de05c752da60784ef4"
+  },
+  {
+   "key": "implies-template-000191",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Milo sits.",
+    "If Milo walks, Milo sits."
+   ],
+   "sha256": "01cfb280fd44050af5f5256ce25793bf41b8bfb7a9e9e4efdd8c207d8372aae9"
+  },
+  {
+   "key": "not-clause-000033",
+   "kind": "games",
+   "sentences": [
+    "Max jumps.",
+    "Max does not jump."
+   ],
+   "sha256": "0a5de7c4d87716760db22af9ca5ea5165281b04630256f426b67e799357c3161"
+  },
+  {
+   "key": "not-clause-000043",
+   "kind": "games",
+   "sentences": [
+    "Milo sings.",
+    "Milo does not sing."
+   ],
+   "sha256": "336b8b346e5be21eef215f0f37e349bc0b95a64d2a3a6e120770a442ff8d9822"
+  },
+  {
+   "key": "not-clause-000047",
+   "kind": "games",
+   "sentences": [
+    "Milo walks.",
+    "Milo does not walk."
+   ],
+   "sha256": "8780d50b950fdcbf4b5e99fe85d11fc8c234ad43d3c418e42de7d7dd60814f79"
+  },
+  {
+   "key": "not-copula-000015",
+   "kind": "games",
+   "sentences": [
+    "Luna is a bird.",
+    "Luna is not a bird."
+   ],
+   "sha256": "0b2b36a29fc4bd4cf519a72e37730e52a53f302a2b6a97831b026957bba378be"
+  },
+  {
+   "key": "not-copula-000025",
+   "kind": "games",
+   "sentences": [
+    "Milo is a bird.",
+    "Milo is not a bird."
+   ],
+   "sha256": "8240a4ed63cb71a4ba86b229deb23b0d14801a06c4630b4d8729417d3eb67079"
+  },
+  {
+   "key": "not-copula-000035",
+   "kind": "games",
+   "sentences": [
+    "Tom is a bird.",
+    "Tom is not a bird."
+   ],
+   "sha256": "ea170601ff4791343ac2ea61793f0ec771178550ada9f4da921b379639d5180e"
+  },
+  {
+   "key": "preposition-template-000010",
+   "kind": "games",
+   "sentences": [
+    "a bird.",
+    "in the beach.",
+    "a bird in the beach."
+   ],
+   "sha256": "be2f127e5e1a669bdc8cc0f29dcaea6fc51d2c991e1b2e1bbf555b84f7c085c1"
+  },
+  {
+   "key": "preposition-template-000011",
+   "kind": "games",
+   "sentences": [
+    "a bird.",
+    "in the cave.",
+    "a bird in the cave."
+   ],
+   "sha256": "11ddab0be66696f23927dc287db7d1b36b0993363eccb7a3d2330bc3d378df3a"
+  },
+  {
+   "key": "preposition-template-000012",
+   "kind": "games",
+   "sentences": [
+    "a bird.",
+    "in the forest.",
+    "a bird in the forest."
+   ],
+   "sha256": "380221406c1762efcda660cf9e449198f64ecccd347e91a806a7276e5b5e60b1"
+  },
+  {
+   "key": "preposition-template-000013",
+   "kind": "games",
+   "sentences": [
+    "a bird.",
+    "in the hill.",
+    "a bird in the hill."
+   ],
+   "sha256": "c11e2b92af4565ea7bdf2207ef6b7f5f4876a1263d5297e07b9b6e310f182a1f"
+  },
+  {
+   "key": "preposition-template-000014",
+   "kind": "games",
+   "sentences": [
+    "a bird.",
+    "in the island.",
+    "a bird in the island."
+   ],
+   "sha256": "7b99298eaf9744a22b2a1305b7e00658e11ccaf9fc1a24940559770209e6d588"
+  },
+  {
+   "key": "preposition-template-000015",
+   "kind": "games",
+   "sentences": [
+    "a bird.",
+    "in the lake.",
+    "a bird in the lake."
+   ],
+   "sha256": "5a562942c28ab8d039011fed945f3bc5ac7fd85624221334a8d97c5bbae85d93"
+  },
+  {
+   "key": "preposition-template-000016",
+   "kind": "games",
+   "sentences": [
+    "a bird.",
+    "in the meadow.",
+    "a bird in the meadow."
+   ],
+   "sha256": "79e93f004ced1958ce09d735dc34fcc87170c5e9dc35d2fc31f35368299fb960"
+  },
+  {
+   "key": "preposition-template-000017",
+   "kind": "games",
+   "sentences": [
+    "a bird.",
+    "in the pond.",
+    "a bird in the pond."
+   ],
+   "sha256": "1d907220c86f6d5371c1e0c900c75a6f6a0fb60ac43d4cbeb972289fd12afb42"
+  },
+  {
+   "key": "preposition-template-000018",
+   "kind": "games",
+   "sentences": [
+    "a bird.",
+    "in the river.",
+    "a bird in the river."
+   ],
+   "sha256": "f48537f1e55bb50bf1ab318b78da8408926e56df9b7edbd2da47321a1d951de8"
+  },
+  {
+   "key": "preposition-template-000019",
+   "kind": "games",
+   "sentences": [
+    "a bird.",
+    "in the valley.",
+    "a bird in the valley."
+   ],
+   "sha256": "08b8fb5c4994714ea8430671bf43afec0f047a153e16b28102e0c2639b457573"
+  },
+  {
+   "key": "preposition-template-000040",
+   "kind": "games",
+   "sentences": [
+    "a deer.",
+    "in the beach.",
+    "a deer in the beach."
+   ],
+   "sha256": "ee4662b38ca4a03ff46f2c201a079e5acd64e6f4d53570e06f37f42b05f935c0"
+  },
+  {
+   "key": "preposition-template-000041",
+   "kind": "games",
+   "sentences": [
+    "a deer.",
+    "in the cave.",
+    "a deer in the cave."
+   ],
+   "sha256": "964065da961eb4d6392402214f35d9d6ca40641d7f5703a2a493fb5218e3d4e6"
+  },
+  {
+   "key": "preposition-template-000042",
+   "kind": "games",
+   "sentences": [
+    "a deer.",
+    "in the forest.",
+    "a deer in the forest."
+   ],
+   "sha256": "b0c3bf2a80be4fbe08ec3d61ddca54f216988a7e654c9da3a8f3d92e44ac9a67"
+  },
+  {
+   "key": "preposition-template-000043",
+   "kind": "games",
+   "sentences": [
+    "a deer.",
+    "in the hill.",
+    "a deer in the hill."
+   ],
+   "sha256": "5af178f871d243c2f6938d28a5b8024f5bdee7aaa843e429a558c898b1145430"
+  },
+  {
+   "key": "preposition-template-000044",
+   "kind": "games",
+   "sentences": [
+    "a deer.",
+    "in the island.",
+    "a deer in the island."
+   ],
+   "sha256": "401134673f7d362234d5f6cfae39a7ad30cdf3a45facf238d73dd56fb8097384"
+  },
+  {
+   "key": "preposition-template-000045",
+   "kind": "games",
+   "sentences": [
+    "a deer.",
+    "in the lake.",
+    "a deer in the lake."
+   ],
+   "sha256": "8f1f6de9c8224c6f0b241009a9147de0a84ed3e4b8a16b31768d35d0e00bdc69"
+  },
+  {
+   "key": "preposition-template-000046",
+   "kind": "games",
+   "sentences": [
+    "a deer.",
+    "in the meadow.",
+    "a deer in the meadow."
+   ],
+   "sha256": "166cda725486085880c8228191b854fc5ee7d551b34b440bbf23b0cb5657035b"
+  },
+  {
+   "key": "preposition-template-000047",
+   "kind": "games",
+   "sentences": [
+    "a deer.",
+    "in the pond.",
+    "a deer in the pond."
+   ],
+   "sha256": "aca72618f4bbd1a03032d6b1ac25186df7932df0f629f28a2852e671059381b0"
+  },
+  {
+   "key": "preposition-template-000048",
+   "kind": "games",
+   "sentences": [
+    "a deer.",
+    "in the river.",
+    "a deer in the river."
+   ],
+   "sha256": "fb781423fb23b7e117796c1b8f2d33944e54c455f3ba8f4885c0993fa32c1930"
+  },
+  {
+   "key": "preposition-template-000049",
+   "kind": "games",
+   "sentences": [
+    "a deer.",
+    "in the valley.",
+    "a deer in the valley."
+   ],
+   "sha256": "736e97cf306cbadbdae7c089a89a0fcd5ccc047caecf07c9174d26a02ca19f4f"
+  },
+  {
+   "key": "preposition-template-000060",
+   "kind": "games",
+   "sentences": [
+    "a duck.",
+    "in the beach.",
+    "a duck in the beach."
+   ],
+   "sha256": "0082d7d99c6e0e568f2ee2c7fc8fcbe44f0a20e10154b0c8033db25328fdde41"
+  },
+  {
+   "key": "preposition-template-000061",
+   "kind": "games",
+   "sentences": [
+    "a duck.",
+    "in the cave.",
+    "a duck in the cave."
+   ],
+   "sha256": "b781235422424547a956595b1f41b7224ce970546c3cb1e66ac4f51bf6eae058"
+  },
+  {
+   "key": "preposition-template-000062",
+   "kind": "games",
+   "sentences": [
+    "a duck.",
+    "in the forest.",
+    "a duck in the forest."
+   ],
+   "sha256": "05c2d4a4d5874243e6c596bcac59c27a3f4cff4da29ad5a72f4f54befdca467b"
+  },
+  {
+   "key": "preposition-template-000063",
+   "kind": "games",
+   "sentences": [
+    "a duck.",
+    "in the hill.",
+    "a duck in the hill."
+   ],
+   "sha256": "f95a8361bdb4cf918406f5f64ebec3de9d005273e726afe3a3151a6e1e5edd7e"
+  },
+  {
+   "key": "preposition-template-000064",
+   "kind": "games",
+   "sentences": [
+    "a duck.",
+    "in the island.",
+    "a duck in the island."
+   ],
+   "sha256": "b29b60aafb394eec98b691a773df27afb31c25d98bb4ae1f118ace679956e979"
+  },
+  {
+   "key": "preposition-template-000065",
+   "kind": "games",
+   "sentences": [
+    "a duck.",
+    "in the lake.",
+    "a duck in the lake."
+   ],
+   "sha256": "053e826062efe55f84576ddc059bb17112e02fbde0a4c9d8d8a9b4bfef2f3586"
+  },
+  {
+   "key": "preposition-template-000066",
+   "kind": "games",
+   "sentences": [
+    "a duck.",
+    "in the meadow.",
+    "a duck in the meadow."
+   ],
+   "sha256": "d15e2b4850b65f70c02ffc7638243eaa69f8af4e5babb12ab51e1ce33fedc0e2"
+  },
+  {
+   "key": "preposition-template-000067",
+   "kind": "games",
+   "sentences": [
+    "a duck.",
+    "in the pond.",
+    "a duck in the pond."
+   ],
+   "sha256": "ea7eefc24ed9ad3d51f36e20169c7ae7197c0a9bb4476e2d0cfa7d7a9f2b79ed"
+  },
+  {
+   "key": "preposition-template-000068",
+   "kind": "games",
+   "sentences": [
+    "a duck.",
+    "in the river.",
+    "a duck in the river."
+   ],
+   "sha256": "6193551e678a475eaed9c088cf6525d23b7369ec3999d8458e44c2b7f1af5585"
+  },
+  {
+   "key": "preposition-template-000069",
+   "kind": "games",
+   "sentences": [
+    "a duck.",
+    "in the valley.",
+    "a duck in the valley."
+   ],
+   "sha256": "302bfcfb9b6b0428ef17774c85a880b880a06ea834609555d6785d29d2980242"
+  },
+  {
+   "key": "preposition_unary-template-000004",
+   "kind": "games",
+   "sentences": [
+    "the island.",
+    "in the island."
+   ],
+   "sha256": "bd5bd54b7730237b5fcd106810d4ba150552078d28d0298218c2d1ff72f010e5"
+  },
+  {
+   "key": "surface-template-000001",
+   "kind": "games",
+   "sentences": [
+    "a bird.",
+    "indeed.",
+    "indeed a bird."
+   ],
+   "sha256": "193440cc22198f72cacb35ab856207bc8462db2233cfe92d9641b23ffb978323"
+  },
+  {
+   "key": "surface-template-000004",
+   "kind": "games",
+   "sentences": [
+    "a deer.",
+    "indeed.",
+    "indeed a deer."
+   ],
+   "sha256": "3c66e5c1873a477a4363e5738ababe5d6ce67faf684921b76fb963be94afed5c"
+  },
+  {
+   "key": "surface-template-000006",
+   "kind": "games",
+   "sentences": [
+    "a duck.",
+    "indeed.",
+    "indeed a duck."
+   ],
+   "sha256": "021aa30fd723845e5239ad472131f70829305767f73539d407a63960d42bf893"
+  },
+  {
+   "key": "surface_unary-template-000001",
+   "kind": "games",
+   "sentences": [
+    "a bird.",
+    "indeed a bird."
+   ],
+   "sha256": "9bcb79bf63b1f029e2d4e085f052436eb8356566aedb7188d836a203c1367af5"
+  },
+  {
+   "key": "surface_unary-template-000004",
+   "kind": "games",
+   "sentences": [
+    "a deer.",
+    "indeed a deer."
+   ],
+   "sha256": "22e6f7d7b716dcfc0f754bf0aff046e7eb5945f7f660745228e46390046d6113"
+  },
+  {
+   "key": "surface_unary-template-000006",
+   "kind": "games",
+   "sentences": [
+    "a duck.",
+    "indeed a duck."
+   ],
+   "sha256": "5419c28ece20e2833f449212bd4fefaba5bd238ba9dd23ed33f8e3ce64803997"
+  },
+  {
+   "key": "unary_chain-k1-000004",
+   "kind": "games",
+   "sentences": [
+    "Birds sit.",
+    "The birds sit."
+   ],
+   "sha256": "c215b84da15e856c64cb4f11cfc5b4c28cad0b3a28c1f4ffc9eecf9fd527ddf8"
+  },
+  {
+   "key": "unary_chain-k1-000025",
+   "kind": "games",
+   "sentences": [
+    "Foxes jump.",
+    "The foxes jump."
+   ],
+   "sha256": "6659fa288e7c24848f630ad1232dde3e5ae936ee20cd5328b71cc383e9cd087d"
+  },
+  {
+   "key": "unary_chain-k2-000004",
+   "kind": "games",
+   "sentences": [
+    "Birds sit.",
+    "All the birds sit."
+   ],
+   "sha256": "e51a1e3b311d896a9a5bb202eb8864b49c31f604a5cd9d51028bb10ff8d8bd50"
+  },
+  {
+   "key": "unary_chain-k2-000025",
+   "kind": "games",
+   "sentences": [
+    "Foxes jump.",
+    "All the foxes jump."
+   ],
+   "sha256": "4978aae54ca131131bf26a8493cea5a9ba0f2b4af25d5459dd6e01a218400097"
+  },
+  {
+   "key": "unary_chain-k3-000004",
+   "kind": "games",
+   "sentences": [
+    "Birds sit.",
+    "Not all the birds sit."
+   ],
+   "sha256": "e49291dc0e1cb77465eec7d1d50107862976d59c7b930f4aed5ecf545b1a8951"
+  },
+  {
+   "key": "unary_chain-k3-000025",
+   "kind": "games",
+   "sentences": [
+    "Foxes jump.",
+    "Not all the foxes jump."
+   ],
+   "sha256": "e3cb2c43e30deece9db47166433cc2933819d93d298ab1d62f904fe42c4948e8"
+  },
+  {
+   "key": "verb-template-000097",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a bear.",
+    "fears a bear."
+   ],
+   "sha256": "58750304fc20e409310e61850b316717b66e8b9d96ad4a9f9bde792648771d86"
+  },
+  {
+   "key": "verb-template-000098",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a bird.",
+    "fears a bird."
+   ],
+   "sha256": "044d7896a59d2dfd67664daa232d33ccb35f9f70944156b46acd98b9fdbd0450"
+  },
+  {
+   "key": "verb-template-000100",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a crab.",
+    "fears a crab."
+   ],
+   "sha256": "b81e1a651dd7552402433eaf7aeff1c36232cd8c5033e100f5ba6a5dd01b579f"
+  },
+  {
+   "key": "verb-template-000101",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a duck.",
+    "fears a duck."
+   ],
+   "sha256": "cad3f5f328441951e147b174697d1b5694852b9ce56b450d18ddaf13291fe0a8"
+  },
+  {
+   "key": "verb-template-000102",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a fish.",
+    "fears a fish."
+   ],
+   "sha256": "08ba87e3ae0d1e58a388bc64f6fc0c9752772c9896fba433731fc39d378fb9b3"
+  },
+  {
+   "key": "verb-template-000103",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a fox.",
+    "fears a fox."
+   ],
+   "sha256": "1f8b995630b6a91d1f5b55a1c178c5399d462e28aa989a194135b3346d80fa49"
+  },
+  {
+   "key": "verb-template-000104",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a frog.",
+    "fears a frog."
+   ],
+   "sha256": "24fbfc4560821117eda7ec8d30710e8a92845751b5d6f0de044a0eeddf98b824"
+  },
+  {
+   "key": "verb-template-000105",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a goat.",
+    "fears a goat."
+   ],
+   "sha256": "eda77ca127753b189ab2141680c7df85872c103213e71a932a3927737c1438e5"
+  },
+  {
+   "key": "verb-template-000106",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a goose.",
+    "fears a goose."
+   ],
+   "sha256": "bf88e15c69759f3318a60dad4a012a8b29d5dbc8dd6d44c77e4a0919963f6f84"
+  },
+  {
+   "key": "verb-template-000107",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a moth.",
+    "fears a moth."
+   ],
+   "sha256": "0b99a4ec482b03ade8ff739a28e6793d03271e4ffc13593bc3fd7cdf479ade0f"
+  },
+  {
+   "key": "verb-template-000108",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a mouse.",
+    "fears a mouse."
+   ],
+   "sha256": "5934201a87fcd8aaed8370525806b04c98672d950ff212d70ddeb8f1f3cab6ff"
+  },
+  {
+   "key": "verb-template-000109",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a seal.",
+    "fears a seal."
+   ],
+   "sha256": "24690336cc64e37903c087243caabc9fc1811df294ca6f808c0bbad744124501"
+  },
+  {
+   "key": "verb-template-000110",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a shark.",
+    "fears a shark."
+   ],
+   "sha256": "1937f953a7967e4414a5d0e2e3b785bb7461fa59b869e2a7461ba65076f29705"
+  },
+  {
+   "key": "verb-template-000111",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a swan.",
+    "fears a swan."
+   ],
+   "sha256": "5c4a8f333116b0e09eb26a2e3205f1aaefa66b0ca7815d7325b092e0e597026b"
+  },
+  {
+   "key": "verb-template-000112",
+   "kind": "games",
+   "sentences": [
+    "fears.",
+    "a whale.",
+    "fears a whale."
+   ],
+   "sha256": "bdc901076af0108d14f3f5747bcaeba91f865f005506191dc75c21410de902b2"
+  },
+  {
+   "key": "verb-template-000205",
+   "kind": "games",
+   "sentences": [
+    "pats.",
+    "a crab.",
+    "pats a crab."
+   ],
+   "sha256": "72c0ed0643787d2098cf656ac220cd3cdf7c68d1b3b202aa179f9178da3122ec"
+  },
+  {
+   "key": "verb-template-000206",
+   "kind": "games",
+   "sentences": [
+    "pats.",
+    "a deer.",
+    "pats a deer."
+   ],
+   "sha256": "57d8822db7613bb3be3ef24010ff15e2cbb29e7aa205e37d99594ae91341391b"
+  },
+  {
+   "key": "verb-template-000207",
+   "kind": "games",
+   "sentences": [
+    "pats.",
+    "a dog.",
+    "pats a dog."
+   ],
+   "sha256": "d7447a90491bfa04e987834b425c8f3868175647ca7247dcd7fa816175103da5"
+  },
+  {
+   "key": "verb-template-000208",
+   "kind": "games",
+   "sentences": [
+    "pats.",
+    "a fish.",
+    "pats a fish."
+   ],
+   "sha256": "ed7de060a526eedf09a249fbc8ffb0a689f6536d4ea2c8709f28af6fdeef345d"
+  },
+  {
+   "key": "verb-template-000209",
+   "kind": "games",
+   "sentences": [
+    "pats.",
+    "a frog.",
+    "pats a frog."
+   ],
+   "sha256": "1a4b9b9d22835ec86daae70f23c855eba64051c4588c5f1c616001b66206aba6"
+  },
+  {
+   "key": "verb-template-000210",
+   "kind": "games",
+   "sentences": [
+    "pats.",
+    "a goat.",
+    "pats a goat."
+   ],
+   "sha256": "9f44f9edf6ac1800f3a6b63a352a4a6d348f45acaf5056c66559cf1f38b98e72"
+  },
+  {
+   "key": "verb-template-000211",
+   "kind": "games",
+   "sentences": [
+    "pats.",
+    "a goose.",
+    "pats a goose."
+   ],
+   "sha256": "068d0a9e476a32c3e4b54cb4d94675dacc24a078762fbd456f7aabcad4addd42"
+  },
+  {
+   "key": "verb-template-000212",
+   "kind": "games",
+   "sentences": [
+    "pats.",
+    "a moth.",
+    "pats a moth."
+   ],
+   "sha256": "8857f6aeba77a2c2203349cd5749de86bb1695580df2f2ae90554fef45608b45"
+  },
+  {
+   "key": "verb-template-000213",
+   "kind": "games",
+   "sentences": [
+    "pats.",
+    "a seal.",
+    "pats a seal."
+   ],
+   "sha256": "7a39f7c41a6f8affe6742c47f751ac20a2ce35546cce9a96602c90f10f57c3d0"
+  },
+  {
+   "key": "verb-template-000214",
+   "kind": "games",
+   "sentences": [
+    "pats.",
+    "a swan.",
+    "pats a swan."
+   ],
+   "sha256": "9d5c2e995dbe16f8f1ba3e2455f55c515bb7027a61b39dc74b6eab7a8e91255a"
+  },
+  {
+   "key": "verb-template-000215",
+   "kind": "games",
+   "sentences": [
+    "pats.",
+    "a wolf.",
+    "pats a wolf."
+   ],
+   "sha256": "9117a7dd1ad710801d25a976ddca0d28da78e3cc05555e3f5658104b6bfd308a"
+  },
+  {
+   "key": "verb-template-000216",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a bear.",
+    "pulls a bear."
+   ],
+   "sha256": "b4a7380ed6c4ee7ec06f06965b29513e8258f78aaff75ea4db90841a908acb1a"
+  },
+  {
+   "key": "verb-template-000217",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a bird.",
+    "pulls a bird."
+   ],
+   "sha256": "1e957de6cfd44301a1a51347eeceed01659a70f3425825526c973c5309e6fcbc"
+  },
+  {
+   "key": "verb-template-000219",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a crab.",
+    "pulls a crab."
+   ],
+   "sha256": "67b0f8afd875e0f5c551838233b626325751b2b96273d79ccba189c15e3c7c54"
+  },
+  {
+   "key": "verb-template-000220",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a deer.",
+    "pulls a deer."
+   ],
+   "sha256": "e31ee311ace849d8c5c96c170cb4fe1a15242c37304cd3e7724f06dab827b646"
+  },
+  {
+   "key": "verb-template-000221",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a dog.",
+    "pulls a dog."
+   ],
+   "sha256": "0aa16dce0b9e42e4488f7c6c13e5e39216bfc4fb02e4c2e08d955c5da8f74e86"
+  },
+  {
+   "key": "verb-template-000222",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a fish.",
+    "pulls a fish."
+   ],
+   "sha256": "72577232ca7eda2b9ee9bcda745dea39ea0f3b5d6d78909c51585d03a593bddd"
+  },
+  {
+   "key": "verb-template-000223",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a fox.",
+    "pulls a fox."
+   ],
+   "sha256": "9a535e0d4b037a2adf2db294545eed0f4b37104602fdbe37c8c365b3febb72b0"
+  },
+  {
+   "key": "verb-template-000224",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a goat.",
+    "pulls a goat."
+   ],
+   "sha256": "09531e767ac80700442230bb27cc2d1a11df03a6afb698bf638b23aa057034ec"
+  },
+  {
+   "key": "verb-template-000225",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a goose.",
+    "pulls a goose."
+   ],
+   "sha256": "5f749a48845d9deefe9d9376700fdd37be685d384578bec7989a22e016c0c8b1"
+  },
+  {
+   "key": "verb-template-000226",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a horse.",
+    "pulls a horse."
+   ],
+   "sha256": "0061a9c6d4c493cc72bd4d13d74a6ac15ca66b42b94491d427a05df6a30b0e94"
+  },
+  {
+   "key": "verb-template-000227",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a moth.",
+    "pulls a moth."
+   ],
+   "sha256": "139cf360665b630ccd95436563220048054ea1a9c28c1a479d99bb57b16d1bdb"
+  },
+  {
+   "key": "verb-template-000228",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a pig.",
+    "pulls a pig."
+   ],
+   "sha256": "d217e917f5be1fb9ed44ffa97a889ed0d0a02a262b5c347de5896cab9aed13b9"
+  },
+  {
+   "key": "verb-template-000229",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a seal.",
+    "pulls a seal."
+   ],
+   "sha256": "81f464953959944c411ff6c2db5c3a2c4b1165a2fce21950d3027c5dc4f7355c"
+  },
+  {
+   "key": "verb-template-000230",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a shark.",
+    "pulls a shark."
+   ],
+   "sha256": "beeea315fa829e973ce632dd1fb2d65427d97abff588c199c2e173a454998271"
+  },
+  {
+   "key": "verb-template-000231",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a swan.",
+    "pulls a swan."
+   ],
+   "sha256": "54d170811c048957663e8580b026e9e3d2c0cc100c7bc812bc38977c2f61ecde"
+  },
+  {
+   "key": "verb-template-000232",
+   "kind": "games",
+   "sentences": [
+    "pulls.",
+    "a wolf.",
+    "pulls a wolf."
+   ],
+   "sha256": "0ed45f4b0d0a36d1b273f9be12752e1933267cf03c968baee135e9a3e084114c"
+  },
+  {
+   "key": "verb-template-000252",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a bear.",
+    "rescues a bear."
+   ],
+   "sha256": "b1260046354a2889448226103bf8737abb4e7001167ba0ff8db5d1f0df1198ac"
+  },
+  {
+   "key": "verb-template-000253",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a bird.",
+    "rescues a bird."
+   ],
+   "sha256": "99a62ab73a69328443766077867604d19e2ecec6416e1d759d3848eef853051c"
+  },
+  {
+   "key": "verb-template-000255",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a crab.",
+    "rescues a crab."
+   ],
+   "sha256": "f16fca285be7142fea1ab575d279a0ed866bf6dec0420f396f816f021a291b35"
+  },
+  {
+   "key": "verb-template-000256",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a deer.",
+    "rescues a deer."
+   ],
+   "sha256": "d2387dc95a6eb485565e598d80d0cdaccff84277f21976fe11badee18225d086"
+  },
+  {
+   "key": "verb-template-000257",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a dog.",
+    "rescues a dog."
+   ],
+   "sha256": "5474dadb01d391daa2489721cab0f52a8ea889ea452bffb63f6f3ab7ecf08744"
+  },
+  {
+   "key": "verb-template-000258",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a duck.",
+    "rescues a duck."
+   ],
+   "sha256": "0b18259f41a2d07ca93eb94cf75e9004877cad29d77ac387d1bd55932f446618"
+  },
+  {
+   "key": "verb-template-000259",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a fish.",
+    "rescues a fish."
+   ],
+   "sha256": "b2478aa1224ca9cb656a4ad3afb571803f3059b4470c5f2011e1a54a07a7568b"
+  },
+  {
+   "key": "verb-template-000260",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a fox.",
+    "rescues a fox."
+   ],
+   "sha256": "3361b2d11c416e91290ecf10015e359c4924ad57c6234065ca20c9a941689cd1"
+  },
+  {
+   "key": "verb-template-000261",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a frog.",
+    "rescues a frog."
+   ],
+   "sha256": "34301203830b667fab46677e5e1c3642ebec662a86d60b417da8bebf6b4ff291"
+  },
+  {
+   "key": "verb-template-000262",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a goat.",
+    "rescues a goat."
+   ],
+   "sha256": "c9e0f85faf97533f90b7de86ad4d43a0e5cbfcf45ca91cf3a2ced9083e5913c1"
+  },
+  {
+   "key": "verb-template-000263",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a goose.",
+    "rescues a goose."
+   ],
+   "sha256": "d58ac914b185c74bca3519c850bba3e77abd724925730df3a18b1d73830525c4"
+  },
+  {
+   "key": "verb-template-000264",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a moth.",
+    "rescues a moth."
+   ],
+   "sha256": "51f0c59dce944973c82ce61f72576af6663e7aa082a50f7795b980a4ad74ada0"
+  },
+  {
+   "key": "verb-template-000265",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a mouse.",
+    "rescues a mouse."
+   ],
+   "sha256": "feca0c430460da78433a0dc99b63ad5c4573a5093ef2fafba6889a179b78ec33"
+  },
+  {
+   "key": "verb-template-000266",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a pig.",
+    "rescues a pig."
+   ],
+   "sha256": "ecb9f7008425c13cdece3408cfc6025d237184f6c9da3978bd235aae03129c0f"
+  },
+  {
+   "key": "verb-template-000267",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a seal.",
+    "rescues a seal."
+   ],
+   "sha256": "f6e981994e3db0f6639845675659f9e2a0164f477988a38e8d20e2b70b9486f1"
+  },
+  {
+   "key": "verb-template-000268",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a swan.",
+    "rescues a swan."
+   ],
+   "sha256": "c1959f4c06f8dd9f23dc81204c89084f664414deb8a17928da5d9812c2af9f42"
+  },
+  {
+   "key": "verb-template-000269",
+   "kind": "games",
+   "sentences": [
+    "rescues.",
+    "a wolf.",
+    "rescues a wolf."
+   ],
+   "sha256": "76000e396cc2deb59ea81e4c308b257e7fad558a1ff99508bf78ba34fc50e55f"
+  },
+  {
+   "key": "identity:validation:5",
+   "kind": "math",
+   "sentences": [
+    "x is five.",
+    "what is x ?"
+   ],
+   "sha256": "5e5a5b8e6a49294bd015110f19ef526bc1e007155d78eefb60e2f7d76990dff4"
+  },
+  {
+   "key": "alias:validation:17:is",
+   "kind": "math",
+   "sentences": [
+    "y is x.",
+    "x is seventeen.",
+    "what is y ?"
+   ],
+   "sha256": "21e799c2667a9189c5af6de75f6788f90c220272dd7697887bbd85d60c6d6ae8"
+  },
+  {
+   "key": "plus_zero:validation:15:0",
+   "kind": "math",
+   "sentences": [
+    "y is x plus zero.",
+    "x is fifteen.",
+    "what is y ?"
+   ],
+   "sha256": "321d750ed3ad5ebf0ee2dc438060aa988ca508ec54eaa175cab2d2ff5bfd0299"
+  },
+  {
+   "key": "plus_one:validation:0:1",
+   "kind": "math",
+   "sentences": [
+    "y is x plus one.",
+    "x is zero.",
+    "what is y ?"
+   ],
+   "sha256": "629c5b4ad92d5f0c626d7a2c514747432e6ecee65144b4b9e1f46d330c27ca8b"
+  },
+  {
+   "key": "plus_one:validation:6:1",
+   "kind": "math",
+   "sentences": [
+    "x is six.",
+    "y is x plus one.",
+    "what is y ?"
+   ],
+   "sha256": "98733fca768adbd0ea84386ebbd57fea195b94f736a1095138d052fec92c6761"
+  },
+  {
+   "key": "plus_one:validation:8:1",
+   "kind": "math",
+   "sentences": [
+    "y is x plus one.",
+    "x is eight.",
+    "what is y ?"
+   ],
+   "sha256": "0b7d1cb3c70957f11b65e9786765c64bd9412c1b81e6ffd6ac1c011fae136303"
+  },
+  {
+   "key": "plus_one:validation:14:1",
+   "kind": "math",
+   "sentences": [
+    "x is fourteen.",
+    "y is x plus one.",
+    "what is y ?"
+   ],
+   "sha256": "9e4bd78408db2290d77f33566b20d22148ee686fec8c578f6ec67f71507bd7d7"
+  },
+  {
+   "key": "plus_one:validation:15:1",
+   "kind": "math",
+   "sentences": [
+    "y is x plus one.",
+    "x is fifteen.",
+    "what is y ?"
+   ],
+   "sha256": "041de2b3d037bada86358ce7c3bd410aa4bab816fb14ee27cdacdb6bbe7d26e5"
+  },
+  {
+   "key": "plus_one:validation:16:1",
+   "kind": "math",
+   "sentences": [
+    "x is sixteen.",
+    "y is x plus one.",
+    "what is y ?"
+   ],
+   "sha256": "2d2ecacd9d3d0c5fd3ce47d02208bd52171bbc174be80acea5ba600b33429214"
+  },
+  {
+   "key": "plus_k:validation:2:7",
+   "kind": "math",
+   "sentences": [
+    "x is two.",
+    "y is x plus seven.",
+    "what is y ?"
+   ],
+   "sha256": "20d02580f14b02d98b0cad931424e5865100fe5fffe0cd2c58cc966171f92314"
+  },
+  {
+   "key": "plus_k:validation:4:8",
+   "kind": "math",
+   "sentences": [
+    "x is four.",
+    "y is x plus eight.",
+    "what is y ?"
+   ],
+   "sha256": "8c61a1503032684ff6953a55b3bd4008b2ff23c500550cbaa982647c0edc418c"
+  },
+  {
+   "key": "plus_k:validation:7:3",
+   "kind": "math",
+   "sentences": [
+    "x is seven.",
+    "y is x plus three.",
+    "what is y ?"
+   ],
+   "sha256": "bb2d1510be0275c735a4d19f11e64ce5aa51b9b26ba8a063ec53102b34fc571f"
+  },
+  {
+   "key": "plus_k:validation:9:6",
+   "kind": "math",
+   "sentences": [
+    "y is x plus six.",
+    "x is nine.",
+    "what is y ?"
+   ],
+   "sha256": "343a8c467edf2a1c2214cbe6b104156016f89e64b8326bb256d8c11a17c3ffba"
+  },
+  {
+   "key": "distractors:validation:2:7",
+   "kind": "math",
+   "sentences": [
+    "y is x plus seven.",
+    "u is twenty.",
+    "v is nine.",
+    "x is two.",
+    "what is y ?"
+   ],
+   "sha256": "3989d8802d602a6d447621c38e03b5d151ed56992c6738a9a8b98f6ffcc99cef"
+  },
+  {
+   "key": "distractors:validation:4:8",
+   "kind": "math",
+   "sentences": [
+    "x is four.",
+    "v is seventeen.",
+    "u is eighteen.",
+    "y is x plus eight.",
+    "what is y ?"
+   ],
+   "sha256": "963c9d5395c1b22821363233dc39c613a5f4623e70ee10c583569911f1f9dd28"
+  },
+  {
+   "key": "distractors:validation:7:3",
+   "kind": "math",
+   "sentences": [
+    "y is x plus three.",
+    "v is eleven.",
+    "x is seven.",
+    "u is fourteen.",
+    "what is y ?"
+   ],
+   "sha256": "551be686f9ddc4e3750bfc38e4ac97058a50d6f9d724f4a4ea2f01404ecb6c23"
+  },
+  {
+   "key": "distractors:validation:9:6",
+   "kind": "math",
+   "sentences": [
+    "y is x plus six.",
+    "u is eleven.",
+    "x is nine.",
+    "v is five.",
+    "what is y ?"
+   ],
+   "sha256": "7337b3db6a029feb385fe36849e98d442a52b3042a51b58498d1989018ef15c1"
+  },
+  {
+   "key": "depth_two:validation:0:1:3",
+   "kind": "math",
+   "sentences": [
+    "x is zero.",
+    "y is x plus one.",
+    "z is y plus three.",
+    "what is z ?"
+   ],
+   "sha256": "02080a7a77e4b6f9c7b5af5376bf510aa6e8a33406f4fe7720ca6cb8dd4c456a"
+  },
+  {
+   "key": "depth_two:validation:0:2:3",
+   "kind": "math",
+   "sentences": [
+    "z is y plus three.",
+    "y is x plus two.",
+    "x is zero.",
+    "what is z ?"
+   ],
+   "sha256": "58c5592563b4d95723fc8cf743e19cf6011964595c99c1719bf2cadf47df74fc"
+  },
+  {
+   "key": "depth_two:validation:0:2:4",
+   "kind": "math",
+   "sentences": [
+    "z is y plus four.",
+    "y is x plus two.",
+    "x is zero.",
+    "what is z ?"
+   ],
+   "sha256": "29d620e6e1d48dc184d79d887e9f0680830b667980315b3b8669e83ee7b6c04d"
+  },
+  {
+   "key": "depth_two:validation:1:2:1",
+   "kind": "math",
+   "sentences": [
+    "z is y plus one.",
+    "x is one.",
+    "y is x plus two.",
+    "what is z ?"
+   ],
+   "sha256": "cf71a93c45d64b04973b18f08289313e48fe684abb7f8da83693c78bac774aba"
+  },
+  {
+   "key": "depth_two:validation:1:5:5",
+   "kind": "math",
+   "sentences": [
+    "x is one.",
+    "z is y plus five.",
+    "y is x plus five.",
+    "what is z ?"
+   ],
+   "sha256": "823cc5fb96ef5ce0c696d6cde02616144feae0584ceab52b80d8a53e0757b09f"
+  },
+  {
+   "key": "depth_two:validation:2:3:3",
+   "kind": "math",
+   "sentences": [
+    "x is two.",
+    "z is y plus three.",
+    "y is x plus three.",
+    "what is z ?"
+   ],
+   "sha256": "1b98ea7fc4ad0c85f962d106ab38cb476bdc4752208912823498866cb903afd3"
+  },
+  {
+   "key": "depth_two:validation:2:4:1",
+   "kind": "math",
+   "sentences": [
+    "y is x plus four.",
+    "z is y plus one.",
+    "x is two.",
+    "what is z ?"
+   ],
+   "sha256": "c3f46671e98a6c2f3690cb38ee6dd2cea267ae7c65c060364aec2f1ef83b7f6d"
+  },
+  {
+   "key": "depth_two:validation:3:2:3",
+   "kind": "math",
+   "sentences": [
+    "y is x plus two.",
+    "z is y plus three.",
+    "x is three.",
+    "what is z ?"
+   ],
+   "sha256": "67cd955f75cd181cb9d0f676cdffc067d79d54218ab6ea28137edc4fb3e4da46"
+  },
+  {
+   "key": "depth_two:validation:3:3:3",
+   "kind": "math",
+   "sentences": [
+    "x is three.",
+    "z is y plus three.",
+    "y is x plus three.",
+    "what is z ?"
+   ],
+   "sha256": "38b93a858e14a97ffacafb561d8d65cce876257cefbab0ba47683ac218bbc8b9"
+  },
+  {
+   "key": "depth_two:validation:3:4:1",
+   "kind": "math",
+   "sentences": [
+    "z is y plus one.",
+    "x is three.",
+    "y is x plus four.",
+    "what is z ?"
+   ],
+   "sha256": "aa771f220443901d3f0f4bf9616794472f8943f811e47b8a790ac1c6b151aeff"
+  },
+  {
+   "key": "depth_two:validation:3:4:3",
+   "kind": "math",
+   "sentences": [
+    "z is y plus three.",
+    "x is three.",
+    "y is x plus four.",
+    "what is z ?"
+   ],
+   "sha256": "31b31660fe35a57e4b18fcceef2d0df38a149008fd7cd0b32965c83727fc5a03"
+  },
+  {
+   "key": "depth_two:validation:4:2:4",
+   "kind": "math",
+   "sentences": [
+    "x is four.",
+    "y is x plus two.",
+    "z is y plus four.",
+    "what is z ?"
+   ],
+   "sha256": "8c11cc332d9d58ab63d27056eeaed43f7b764a592894973dd512b7550f19bb6b"
+  },
+  {
+   "key": "depth_two:validation:4:3:5",
+   "kind": "math",
+   "sentences": [
+    "z is y plus five.",
+    "x is four.",
+    "y is x plus three.",
+    "what is z ?"
+   ],
+   "sha256": "21a2a7912efcf6808c7735de92ec9eaaaf5d8c03437fee2fb215ad04e2c907b7"
+  },
+  {
+   "key": "depth_two:validation:4:5:2",
+   "kind": "math",
+   "sentences": [
+    "y is x plus five.",
+    "x is four.",
+    "z is y plus two.",
+    "what is z ?"
+   ],
+   "sha256": "4148afc4b204f4809f954a0c77fb6a4853a0d14b78ed6582aedd5336906a26a0"
+  },
+  {
+   "key": "depth_two:validation:5:1:1",
+   "kind": "math",
+   "sentences": [
+    "y is x plus one.",
+    "x is five.",
+    "z is y plus one.",
+    "what is z ?"
+   ],
+   "sha256": "53dd473a13d2e0e59cef57747b944bf46a92106463aab02068a2107db2d5a388"
+  },
+  {
+   "key": "depth_two:validation:5:1:2",
+   "kind": "math",
+   "sentences": [
+    "x is five.",
+    "y is x plus one.",
+    "z is y plus two.",
+    "what is z ?"
+   ],
+   "sha256": "d336d8f29e36450c273acd41c8b3fd40211179c1a9ccc3125db143420a647c1d"
+  },
+  {
+   "key": "depth_two:validation:5:2:2",
+   "kind": "math",
+   "sentences": [
+    "x is five.",
+    "z is y plus two.",
+    "y is x plus two.",
+    "what is z ?"
+   ],
+   "sha256": "1ea73249afa8d22d5a6f866516b5ad93fa19a09b1c6834cadfd1e309b5acad7d"
+  },
+  {
+   "key": "depth_two:validation:5:4:3",
+   "kind": "math",
+   "sentences": [
+    "x is five.",
+    "z is y plus three.",
+    "y is x plus four.",
+    "what is z ?"
+   ],
+   "sha256": "07a1d0f898fed855aee0b1aba6e374daf855de1c8052ef1dbd27fd6f703f5fc8"
+  },
+  {
+   "key": "depth_two:validation:6:1:3",
+   "kind": "math",
+   "sentences": [
+    "z is y plus three.",
+    "x is six.",
+    "y is x plus one.",
+    "what is z ?"
+   ],
+   "sha256": "862e8edb87ef829859013af16467408ca1e373cfa5f302b9b4b2dab0ff5e4a46"
+  },
+  {
+   "key": "depth_two:validation:6:3:1",
+   "kind": "math",
+   "sentences": [
+    "y is x plus three.",
+    "x is six.",
+    "z is y plus one.",
+    "what is z ?"
+   ],
+   "sha256": "88c7fa55c29727e424a3f777899a9346dffd5eda6c6f7bf77bcb9f5fb34cb7d2"
+  },
+  {
+   "key": "depth_two:validation:6:5:3",
+   "kind": "math",
+   "sentences": [
+    "z is y plus three.",
+    "y is x plus five.",
+    "x is six.",
+    "what is z ?"
+   ],
+   "sha256": "0e4c9085a44494963422b8a3d4324d6d996ca98e936cf0fac703e7e03f35f153"
+  },
+  {
+   "key": "depth_two:validation:7:1:2",
+   "kind": "math",
+   "sentences": [
+    "x is seven.",
+    "y is x plus one.",
+    "z is y plus two.",
+    "what is z ?"
+   ],
+   "sha256": "6828263f5b11c757cd8000196eae9b92ea1e226891faf096e410cf716dac73e8"
+  },
+  {
+   "key": "depth_two:validation:7:1:3",
+   "kind": "math",
+   "sentences": [
+    "z is y plus three.",
+    "x is seven.",
+    "y is x plus one.",
+    "what is z ?"
+   ],
+   "sha256": "3806dfb38fae8bcea851aa973f4c26ceda9110b04e6d3bd48c4f4c8b2f4443a6"
+  },
+  {
+   "key": "depth_two:validation:7:2:3",
+   "kind": "math",
+   "sentences": [
+    "y is x plus two.",
+    "z is y plus three.",
+    "x is seven.",
+    "what is z ?"
+   ],
+   "sha256": "114489156e1e044a50812ec7d004bdd23e0eeeba673e50ad98c13e6f39220880"
+  },
+  {
+   "key": "depth_two:validation:7:4:5",
+   "kind": "math",
+   "sentences": [
+    "z is y plus five.",
+    "x is seven.",
+    "y is x plus four.",
+    "what is z ?"
+   ],
+   "sha256": "8ac33aa6c259e909716e07275469cce3018cea95351e96c4bba54c99097f7ecc"
+  },
+  {
+   "key": "depth_two:validation:8:2:1",
+   "kind": "math",
+   "sentences": [
+    "x is eight.",
+    "z is y plus one.",
+    "y is x plus two.",
+    "what is z ?"
+   ],
+   "sha256": "de906cc5f872d34866eae1ee72d153991e07767e5275a88b4ee7a8d7aaf65d36"
+  },
+  {
+   "key": "depth_two:validation:8:4:2",
+   "kind": "math",
+   "sentences": [
+    "x is eight.",
+    "z is y plus two.",
+    "y is x plus four.",
+    "what is z ?"
+   ],
+   "sha256": "1de1386433aa7e5206cea244958c45de36b6033cfb53ced48b8efd6a54e91714"
+  },
+  {
+   "key": "depth_two:validation:8:4:5",
+   "kind": "math",
+   "sentences": [
+    "y is x plus four.",
+    "x is eight.",
+    "z is y plus five.",
+    "what is z ?"
+   ],
+   "sha256": "51d444c85852f6921eaf2091e932dc621ecfe399b8b157208ac2d6ee733c9016"
+  },
+  {
+   "key": "depth_two:validation:8:5:1",
+   "kind": "math",
+   "sentences": [
+    "z is y plus one.",
+    "y is x plus five.",
+    "x is eight.",
+    "what is z ?"
+   ],
+   "sha256": "8dbd1ece1702f23e8c1e0bbe31414a47490182559e55d82312593eec09711171"
+  },
+  {
+   "key": "depth_two:validation:8:5:3",
+   "kind": "math",
+   "sentences": [
+    "z is y plus three.",
+    "x is eight.",
+    "y is x plus five.",
+    "what is z ?"
+   ],
+   "sha256": "f7079d06fdece14554a1dbd8f9b99c122a1ded8bef6e1393bd1ac52a9efcc1b6"
+  },
+  {
+   "key": "depth_two:validation:9:2:1",
+   "kind": "math",
+   "sentences": [
+    "x is nine.",
+    "z is y plus one.",
+    "y is x plus two.",
+    "what is z ?"
+   ],
+   "sha256": "25c9ae4d53513a98d07cf1a744acfd4cfdcdc78fcaf811e1c911f7f08d87c965"
+  },
+  {
+   "key": "depth_two:validation:9:5:2",
+   "kind": "math",
+   "sentences": [
+    "x is nine.",
+    "y is x plus five.",
+    "z is y plus two.",
+    "what is z ?"
+   ],
+   "sha256": "90b8bfc49eda802bb49143578878f3dfe7c4134927fb3369d7cd912cac941dc0"
+  },
+  {
+   "key": "depth_two:validation:10:2:3",
+   "kind": "math",
+   "sentences": [
+    "y is x plus two.",
+    "z is y plus three.",
+    "x is ten.",
+    "what is z ?"
+   ],
+   "sha256": "288cb7200554461060f9a928eb4ebbe096ac7106d104000cdcc4ac172135ed22"
+  }
+ ],
+ "schema": 1,
+ "sha256": "dac3dacc2e1c197e3918d2760237ce720af9709d7f055434d5a725ecaf0bcd4e",
+ "source": "the union of part A validation splits (plan sections 8, 9.1, H11)"
+}

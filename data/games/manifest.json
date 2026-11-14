@@ -1,0 +1,988 @@
+{
+ "command": "python bin/game_corpus.py freeze --seed 20261112 --recipes data/games/recipes --out data/games --written data/games/written",
+ "files": [
+  {
+   "game": "adverb",
+   "path": "adverb/template.jsonl",
+   "recipe": "recipes/adverb.json",
+   "recipe_sha256": "c004039f87b2d2738d4869582ad9429404ef5b354c1d6aa142b106ec21570659",
+   "rows": {
+    "test": 26,
+    "train": 177,
+    "transfer": 100,
+    "validation": 17
+   },
+   "sha256": "12481be07217af859593eddb3b44592cbbd7ff9a59b370d11e5b5086c7ee938b",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 320,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "ask",
+   "path": "ask/template.jsonl",
+   "recipe": "recipes/ask.json",
+   "recipe_sha256": "397e126f3ff19fe8a28bb83fb58a05419faba39b749fb6e633a399117e874bc1",
+   "rows": {
+    "test": 15,
+    "train": 96,
+    "transfer": 56,
+    "validation": 9
+   },
+   "sha256": "f1b3385e7af5e7da30459408190752c6e55afeffce65336a1468e4cf4d638e3d",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 176,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "bind",
+   "path": "bind/template.jsonl",
+   "recipe": "recipes/bind.json",
+   "recipe_sha256": "ade095e2e6717c0d5ee9754b07ff364fa7b5009f5e7993600750a42224601d9d",
+   "rows": {
+    "test": 19,
+    "train": 127,
+    "transfer": 160,
+    "validation": 14
+   },
+   "sha256": "213ce059cfb2ed31328d99834df4218fe9ca1fdd31c4de8b44ab656f1b1fbda1",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 320,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "compound",
+   "path": "compound/template.jsonl",
+   "recipe": "recipes/compound.json",
+   "recipe_sha256": "ddbb4b2001a77ab1fdf2b3bbe2f362b8a4928192ef2be642ccef55c77d66bcf2",
+   "rows": {
+    "test": 15,
+    "train": 270,
+    "transfer": 35
+   },
+   "sha256": "0a3d369bc3621cfc7bc58f413877d6d484629cf7594d0516d1a93527e8298b73",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 320,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "compound_unary",
+   "path": "compound_unary/template.jsonl",
+   "recipe": "recipes/compound_unary.json",
+   "recipe_sha256": "166f2aaf92995d187d79bd49f2e4e7931d148199de0468a67849c8473f36f0c2",
+   "rows": {
+    "test": 1,
+    "train": 19,
+    "transfer": 1
+   },
+   "sha256": "7613edf7635d91b12e8538f139dba1dfc698e9eb621ddcb8db3de5bc1c521bc6",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 21,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "conjunction",
+   "path": "conjunction/predicates.jsonl",
+   "recipe": "recipes/conjunction.json",
+   "recipe_sha256": "da471b3021fd4954087e4b934a0a81a2f76cb22bd605dae6f70ab393c5272630",
+   "rows": {
+    "test": 35,
+    "train": 130,
+    "transfer": 268,
+    "validation": 15
+   },
+   "sha256": "2e78fd595e7e4fddcba61e0895a87c15ccdebc201c09887d0a068e7b373ed522",
+   "tier": "template",
+   "variant": "predicates",
+   "verify": {
+    "accepted": 448,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "conjunction",
+   "path": "conjunction/subjects.jsonl",
+   "recipe": "recipes/conjunction.json",
+   "recipe_sha256": "da471b3021fd4954087e4b934a0a81a2f76cb22bd605dae6f70ab393c5272630",
+   "rows": {
+    "test": 35,
+    "train": 130,
+    "transfer": 268,
+    "validation": 15
+   },
+   "sha256": "c57ceb14c6c7b99eae85ce191f2d4bb9e5f5de93335414f60f2901f68e3bff77",
+   "tier": "template",
+   "variant": "subjects",
+   "verify": {
+    "accepted": 448,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "definite",
+   "path": "definite/template.jsonl",
+   "recipe": "recipes/definite.json",
+   "recipe_sha256": "091f1ad90a8d98b4c29f95136e22e17e6f4d8123b7b3c5eedfcee41206982f67",
+   "rows": {
+    "test": 1,
+    "train": 19,
+    "transfer": 1
+   },
+   "sha256": "91cf168c6a97fa6c991526a053cd326ea459d6d48bb3e597754fea427d7732e1",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 21,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "definite_unary",
+   "path": "definite_unary/template.jsonl",
+   "recipe": "recipes/definite_unary.json",
+   "recipe_sha256": "fb4fbbfd68c2dfe271c53e3ab0670e4d8ddc14abfc2863cf10b96bab4c1b026c",
+   "rows": {
+    "test": 1,
+    "train": 19,
+    "transfer": 1
+   },
+   "sha256": "8e0b89782be94b85ee78a7b1071a44b2e52566ab444c220fd144c36ce8dec661",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 21,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "disjunction",
+   "path": "disjunction/template.jsonl",
+   "recipe": "recipes/disjunction.json",
+   "recipe_sha256": "02aede7d00e5672a600baf8e9d2c715142c55a00e3e370f38e3f4c1fe022680a",
+   "rows": {
+    "test": 31,
+    "train": 152,
+    "transfer": 122,
+    "validation": 15
+   },
+   "sha256": "66c65bcde9f77c42fc93e7dd55565dcb97e87fd21b4fd89e483e7eb1a224fdf0",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 320,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "equal",
+   "path": "equal/template.jsonl",
+   "recipe": "recipes/equal.json",
+   "recipe_sha256": "d1f8b379634e99e915adb875a5f8c05aa72af36dd2b758385e3e079427004d41",
+   "rows": {
+    "test": 13,
+    "train": 250,
+    "transfer": 57
+   },
+   "sha256": "22dfff0f88fdb6e07b3176cda3cf41dbda495b9d3a22b82a49f088882156d93a",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 320,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "generic",
+   "path": "generic/template.jsonl",
+   "recipe": "recipes/generic.json",
+   "recipe_sha256": "6c7fc15d6171d6ec3de901f7822321e7da3f436818ea4c747b5db4b53863007d",
+   "rows": {
+    "test": 16,
+    "train": 91,
+    "transfer": 48,
+    "validation": 13
+   },
+   "sha256": "d82c3f1150115593cd77c9f89bd364cda769bcd339f5b5174ba0ea9d83468488",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 168,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "implies",
+   "path": "implies/template.jsonl",
+   "recipe": "recipes/implies.json",
+   "recipe_sha256": "35cebba295cf019b4cefafa722838ad4b2e87309990114e351260330c343bef7",
+   "rows": {
+    "test": 19,
+    "train": 127,
+    "transfer": 160,
+    "validation": 14
+   },
+   "sha256": "17ddcf24fb75e4a08294eb46f5f6c56ddb77150a417d84f485c774c5d1ebec05",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 320,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "intersection",
+   "path": "intersection/template.jsonl",
+   "recipe": "recipes/intersection.json",
+   "recipe_sha256": "621375c8b9c6640f26c9c3b3caf4ce892bf00da475109fa45bb68488cbbd8371",
+   "rows": {
+    "test": 20,
+    "train": 40,
+    "transfer": 3
+   },
+   "sha256": "ffe67598089510f8eef109c89e0d3157e030bc3fa33c2e067b7108df8855286d",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 63,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "lift",
+   "path": "lift/template.jsonl",
+   "recipe": "recipes/lift.json",
+   "recipe_sha256": "8ae4c780713bcd3dbdce1150c542d7bb3f88114ff5e0eb616c1b8ea893a09942",
+   "rows": {
+    "test": 6,
+    "train": 114,
+    "transfer": 56
+   },
+   "sha256": "39669e035bbbfed2d3c6c43df2b1b64f30b8a82693e22b21242fc6d9fb1a6ac3",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 176,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "lower",
+   "path": "lower/template.jsonl",
+   "recipe": "recipes/lower.json",
+   "recipe_sha256": "62da5052298fcfdf06e6b13025328de66f14b27cfc3b79bb4d52db7dd6cbf8f8",
+   "rows": {
+    "test": 1,
+    "train": 19,
+    "transfer": 1
+   },
+   "sha256": "053eaaff7125f61676c469e7c4c77be6c66b93e980d00e1401425751802eb3b2",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 21,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "lower_unary",
+   "path": "lower_unary/template.jsonl",
+   "recipe": "recipes/lower_unary.json",
+   "recipe_sha256": "e83c77bf5ea05dc373c87328e26bd5308056ea5835710e509ca09fd8e2c6aabf",
+   "rows": {
+    "test": 1,
+    "train": 19,
+    "transfer": 1
+   },
+   "sha256": "d066a2868220d24c45eef1b8f08af54a165929275b0db88c0dd63d0cff6969bb",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 21,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "non",
+   "path": "non/template.jsonl",
+   "recipe": "recipes/non.json",
+   "recipe_sha256": "411212c62664aa4601e0453ed60481d93339d0b340e369e5bdaab049ed56f9fa",
+   "rows": {
+    "test": 1,
+    "train": 19,
+    "transfer": 1
+   },
+   "sha256": "baa2564c4d8d5420af1c972d8dc82eb4241379f7dc5b3a2dea5d3f5badcf0df7",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 21,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "not",
+   "path": "not/clause.jsonl",
+   "recipe": "recipes/not.json",
+   "recipe_sha256": "ed52f35ca704b1d0efa930439c57bcc436059e8a2379d93019b8be131603e18e",
+   "rows": {
+    "test": 7,
+    "train": 26,
+    "transfer": 28,
+    "validation": 3
+   },
+   "sha256": "13755b0fc2077ee8af84ca733da8dc42f19c32933aaebc49fe6b4b5c94d7bc2f",
+   "tier": "template",
+   "variant": "clause",
+   "verify": {
+    "accepted": 64,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "not",
+   "path": "not/copula.jsonl",
+   "recipe": "recipes/not.json",
+   "recipe_sha256": "ed52f35ca704b1d0efa930439c57bcc436059e8a2379d93019b8be131603e18e",
+   "rows": {
+    "test": 2,
+    "train": 19,
+    "transfer": 16,
+    "validation": 3
+   },
+   "sha256": "93ee0f53fda01ccf4c6f5b6306f5654de54d01edd99695b861c948779b4ee849",
+   "tier": "template",
+   "variant": "copula",
+   "verify": {
+    "accepted": 40,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "part",
+   "path": "part/template.jsonl",
+   "recipe": "recipes/part.json",
+   "recipe_sha256": "34ca8c415afd28fb9ed36d9613336a073f1ccb0f158f6332bc7d8a7cdcf7f1b6",
+   "rows": {
+    "test": 13,
+    "train": 265,
+    "transfer": 42
+   },
+   "sha256": "463deb5903b12e1f1b211042e915900cfcb0cbf7d2cd1df389cd9db69309910a",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 320,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "preposition",
+   "path": "preposition/template.jsonl",
+   "recipe": "recipes/preposition.json",
+   "recipe_sha256": "46e4121364af8fa60f702b24b2dd78e5759759853d4119d71b012c316fbae6ca",
+   "rows": {
+    "test": 10,
+    "train": 160,
+    "transfer": 10,
+    "validation": 30
+   },
+   "sha256": "d04d91d1095a1e9cf780c8eec69aa1f85610aa0008834d15050cfc2f0477cdb3",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 210,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "preposition_unary",
+   "path": "preposition_unary/template.jsonl",
+   "recipe": "recipes/preposition_unary.json",
+   "recipe_sha256": "175f6e88cac6c22bbdbad518cc35c7d4711fcfb391be9c122d605bab77c09780",
+   "rows": {
+    "test": 1,
+    "train": 8,
+    "validation": 1
+   },
+   "sha256": "c88e58dc496128578df08a82c8d2f808f83b4f3b0bcd7db8a482b42e1a69aab2",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 10,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "product",
+   "path": "product/template.jsonl",
+   "recipe": "recipes/product.json",
+   "recipe_sha256": "f67c2f2095d04504b8eac1f112f24d8b4311aa9aab96d18bff2f474e047e83cf",
+   "rows": {
+    "test": 10,
+    "train": 190,
+    "transfer": 10
+   },
+   "sha256": "436f30e5bb6be200dea2d0dafc30e6b2ac1bf3d097ce240413b2f4daa6a8060a",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 210,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "sum",
+   "path": "sum/template.jsonl",
+   "recipe": "recipes/sum.json",
+   "recipe_sha256": "4b7f91f357b40abbb65870c64798f0a8d1f1253fab8b47698c8e8304dd67a797",
+   "rows": {
+    "test": 15,
+    "train": 270,
+    "transfer": 35
+   },
+   "sha256": "d6ffd7c6e673249f7a2586b5acd9c49dbba8a4eb0588f955e6486674530e1d8b",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 320,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "surface",
+   "path": "surface/template.jsonl",
+   "recipe": "recipes/surface.json",
+   "recipe_sha256": "05468ed9f53b63f23d2732dc632066aa47f6ca1c7a3496003fd7508698927a7c",
+   "rows": {
+    "test": 1,
+    "train": 16,
+    "transfer": 1,
+    "validation": 3
+   },
+   "sha256": "c700d5f4153f91f7b8c6ce142a74ea9e7c69099b6ca5188d5fe041d2608726ee",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 21,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "surface_unary",
+   "path": "surface_unary/template.jsonl",
+   "recipe": "recipes/surface_unary.json",
+   "recipe_sha256": "2fbcc1438d6207ed6fbe647dacf9ede46dcf161697ff39059f0578bf30cbfb63",
+   "rows": {
+    "test": 1,
+    "train": 16,
+    "transfer": 1,
+    "validation": 3
+   },
+   "sha256": "8dfb93b56db9eb47a05f95946aa82b648e9a01480093e85e4dda937885226912",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 21,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "transpose",
+   "path": "transpose/template.jsonl",
+   "recipe": "recipes/transpose.json",
+   "recipe_sha256": "359becf237cee786603f6d236a4c2a8e9bd69e6fc75b38e661b6c1f28075848c",
+   "rows": {
+    "test": 13,
+    "train": 250,
+    "transfer": 57
+   },
+   "sha256": "ae32315304671ac9771110cf58ab9a88f2613478fd2fbaf792de0fdc2f37552e",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 320,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "unary_chain",
+   "path": "unary_chain/k1.jsonl",
+   "recipe": "recipes/unary_chain.json",
+   "recipe_sha256": "b78bf8d36e8865c8958ef8d2d00a56357c4d6cd13deb9544e543d40a57820b8a",
+   "rows": {
+    "test": 5,
+    "train": 23,
+    "transfer": 18,
+    "validation": 2
+   },
+   "sha256": "6d2131b2b5bfeadbe9f63d0d6c15e5c10b304c0f9a8c32bd115757ca95493cbe",
+   "tier": "template",
+   "variant": "k1",
+   "verify": {
+    "accepted": 48,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "unary_chain",
+   "path": "unary_chain/k2.jsonl",
+   "recipe": "recipes/unary_chain.json",
+   "recipe_sha256": "b78bf8d36e8865c8958ef8d2d00a56357c4d6cd13deb9544e543d40a57820b8a",
+   "rows": {
+    "test": 5,
+    "train": 23,
+    "transfer": 18,
+    "validation": 2
+   },
+   "sha256": "69189f19e197283bdf8cb19172343da5b1cabe4fd25c9466694dff3ef571fc5f",
+   "tier": "template",
+   "variant": "k2",
+   "verify": {
+    "accepted": 48,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "unary_chain",
+   "path": "unary_chain/k3.jsonl",
+   "recipe": "recipes/unary_chain.json",
+   "recipe_sha256": "b78bf8d36e8865c8958ef8d2d00a56357c4d6cd13deb9544e543d40a57820b8a",
+   "rows": {
+    "test": 5,
+    "train": 23,
+    "transfer": 18,
+    "validation": 2
+   },
+   "sha256": "800df2432ca2ab607ca474777ac455427bdf11224c62c3cd6d7ae5825ff17fa0",
+   "tier": "template",
+   "variant": "k3",
+   "verify": {
+    "accepted": 48,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "union",
+   "path": "union/template.jsonl",
+   "recipe": "recipes/union.json",
+   "recipe_sha256": "050d758ec6a7bef0fa620c897209d0af9f91ab99379f5e45d6325b90447017c9",
+   "rows": {
+    "test": 15,
+    "train": 270,
+    "transfer": 35
+   },
+   "sha256": "022910dc27b1a8b676accf3ea62f2856b986196cc29676d85fbbf94e45d30c4b",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 320,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "universal",
+   "path": "universal/template.jsonl",
+   "recipe": "recipes/universal.json",
+   "recipe_sha256": "d27698a8f717a4110f4940519e407a475c6573b1a3b4fb21ca9787fb7f1ce9fe",
+   "rows": {
+    "test": 1,
+    "train": 19,
+    "transfer": 1
+   },
+   "sha256": "b5fd25a541d6a7b2eb4cc90a64bb9c77ca6fe385fb8d5d352d562c631cddd40a",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 21,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "verb",
+   "path": "verb/template.jsonl",
+   "recipe": "recipes/verb.json",
+   "recipe_sha256": "78e90578af64cd3f0702f55604154aea211919c56ad1a72e5acc8f7cf508b7aa",
+   "rows": {
+    "test": 18,
+    "train": 228,
+    "transfer": 15,
+    "validation": 59
+   },
+   "sha256": "f65d8e7dbf9bdf4b38730f87e3120c6c731387a3b7614c1071f4c714f9f1fab0",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 320,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "whole",
+   "path": "whole/template.jsonl",
+   "recipe": "recipes/whole.json",
+   "recipe_sha256": "cb3bbd2eced6b2f40a3666f7f2718620f9f6adab3daccae6ead58745b8d8f19c",
+   "rows": {
+    "test": 13,
+    "train": 262,
+    "transfer": 45
+   },
+   "sha256": "3b83ac46dfcf7bfe69ffa5e77b88b58c2ae19806c389dceebe4d0a638b2814c8",
+   "tier": "template",
+   "variant": "template",
+   "verify": {
+    "accepted": 320,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "conjunction",
+   "path": "conjunction/ability.written.jsonl",
+   "provenance": {
+    "audit_keys": [
+     "conjunction-written-000003",
+     "conjunction-written-000006",
+     "conjunction-written-000008",
+     "conjunction-written-000011"
+    ],
+    "audit_reviewer": "Claude",
+    "audit_status": "pending",
+    "date": "2026-11-12",
+    "model": "gpt-6",
+    "prompt_sha256": "636ab4b01d97e01d7a13338169b14a58bcbb4244e75a82d8bf5da2efa748fbce"
+   },
+   "recipe": "written/conjunction.json",
+   "recipe_sha256": "7380412a5c846208e4c211c51e4822f0e96356f077aeb90c4f2e280f2711df33",
+   "rows": {
+    "test": 1,
+    "train": 1,
+    "transfer": 1
+   },
+   "sha256": "9a9d10f7a304c441536753a1657bac9443305b6ca64580c14a39abd476be04ad",
+   "tier": "written",
+   "variant": "ability",
+   "verify": {
+    "accepted": 3,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "conjunction",
+   "path": "conjunction/arrival.written.jsonl",
+   "provenance": {
+    "audit_keys": [
+     "conjunction-written-000003",
+     "conjunction-written-000006",
+     "conjunction-written-000008",
+     "conjunction-written-000011"
+    ],
+    "audit_reviewer": "Claude",
+    "audit_status": "pending",
+    "date": "2026-11-12",
+    "model": "gpt-6",
+    "prompt_sha256": "636ab4b01d97e01d7a13338169b14a58bcbb4244e75a82d8bf5da2efa748fbce"
+   },
+   "recipe": "written/conjunction.json",
+   "recipe_sha256": "7380412a5c846208e4c211c51e4822f0e96356f077aeb90c4f2e280f2711df33",
+   "rows": {
+    "test": 1,
+    "train": 1,
+    "transfer": 1
+   },
+   "sha256": "1e8088d776c79d22d8e5ea3b42c16feeeaf14c76b020bc623a94f63c46de462e",
+   "tier": "written",
+   "variant": "arrival",
+   "verify": {
+    "accepted": 3,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "conjunction",
+   "path": "conjunction/objects.written.jsonl",
+   "provenance": {
+    "audit_keys": [
+     "conjunction-written-000003",
+     "conjunction-written-000006",
+     "conjunction-written-000008",
+     "conjunction-written-000011"
+    ],
+    "audit_reviewer": "Claude",
+    "audit_status": "pending",
+    "date": "2026-11-12",
+    "model": "gpt-6",
+    "prompt_sha256": "636ab4b01d97e01d7a13338169b14a58bcbb4244e75a82d8bf5da2efa748fbce"
+   },
+   "recipe": "written/conjunction.json",
+   "recipe_sha256": "7380412a5c846208e4c211c51e4822f0e96356f077aeb90c4f2e280f2711df33",
+   "rows": {
+    "train": 2,
+    "transfer": 1
+   },
+   "sha256": "3da55651d75f7b9142b9758499eff34b4d93f7c139b2e63d77aa5d935b00a47b",
+   "tier": "written",
+   "variant": "objects",
+   "verify": {
+    "accepted": 3,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "conjunction",
+   "path": "conjunction/weather.written.jsonl",
+   "provenance": {
+    "audit_keys": [
+     "conjunction-written-000003",
+     "conjunction-written-000006",
+     "conjunction-written-000008",
+     "conjunction-written-000011"
+    ],
+    "audit_reviewer": "Claude",
+    "audit_status": "pending",
+    "date": "2026-11-12",
+    "model": "gpt-6",
+    "prompt_sha256": "636ab4b01d97e01d7a13338169b14a58bcbb4244e75a82d8bf5da2efa748fbce"
+   },
+   "recipe": "written/conjunction.json",
+   "recipe_sha256": "7380412a5c846208e4c211c51e4822f0e96356f077aeb90c4f2e280f2711df33",
+   "rows": {
+    "train": 2,
+    "transfer": 1
+   },
+   "sha256": "7770845c66cd3d312fbb619983e52e374b01baf1dd44dbe13a311b3e11a24df4",
+   "tier": "written",
+   "variant": "weather",
+   "verify": {
+    "accepted": 3,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "not",
+   "path": "not/ability.written.jsonl",
+   "provenance": {
+    "audit_keys": [
+     "not-written-000001",
+     "not-written-000003",
+     "not-written-000009",
+     "not-written-000011"
+    ],
+    "audit_reviewer": "Claude",
+    "audit_status": "pending",
+    "date": "2026-11-12",
+    "model": "gpt-6",
+    "prompt_sha256": "636ab4b01d97e01d7a13338169b14a58bcbb4244e75a82d8bf5da2efa748fbce"
+   },
+   "recipe": "written/not.json",
+   "recipe_sha256": "4387c26705d406b091b22862e55506107439d1cabc5fc74c0c198fc71fbe2be6",
+   "rows": {
+    "train": 2,
+    "transfer": 1
+   },
+   "sha256": "0bbbb0b768c41e379158455745c0fdad4d31f73f42cced6dc6bfaf9fa5a87138",
+   "tier": "written",
+   "variant": "ability",
+   "verify": {
+    "accepted": 3,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "not",
+   "path": "not/future.written.jsonl",
+   "provenance": {
+    "audit_keys": [
+     "not-written-000001",
+     "not-written-000003",
+     "not-written-000009",
+     "not-written-000011"
+    ],
+    "audit_reviewer": "Claude",
+    "audit_status": "pending",
+    "date": "2026-11-12",
+    "model": "gpt-6",
+    "prompt_sha256": "636ab4b01d97e01d7a13338169b14a58bcbb4244e75a82d8bf5da2efa748fbce"
+   },
+   "recipe": "written/not.json",
+   "recipe_sha256": "4387c26705d406b091b22862e55506107439d1cabc5fc74c0c198fc71fbe2be6",
+   "rows": {
+    "train": 2,
+    "transfer": 1
+   },
+   "sha256": "898ee125463dc583023d834c21020bab08cd2a7fb342c2ae7ac9aab69572bb70",
+   "tier": "written",
+   "variant": "future",
+   "verify": {
+    "accepted": 3,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "not",
+   "path": "not/past.written.jsonl",
+   "provenance": {
+    "audit_keys": [
+     "not-written-000001",
+     "not-written-000003",
+     "not-written-000009",
+     "not-written-000011"
+    ],
+    "audit_reviewer": "Claude",
+    "audit_status": "pending",
+    "date": "2026-11-12",
+    "model": "gpt-6",
+    "prompt_sha256": "636ab4b01d97e01d7a13338169b14a58bcbb4244e75a82d8bf5da2efa748fbce"
+   },
+   "recipe": "written/not.json",
+   "recipe_sha256": "4387c26705d406b091b22862e55506107439d1cabc5fc74c0c198fc71fbe2be6",
+   "rows": {
+    "train": 2,
+    "transfer": 1
+   },
+   "sha256": "6e31ac6975668690a0624e72ef17a1900d7a192743956a64e3188a86ddc8874e",
+   "tier": "written",
+   "variant": "past",
+   "verify": {
+    "accepted": 3,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "not",
+   "path": "not/progressive.written.jsonl",
+   "provenance": {
+    "audit_keys": [
+     "not-written-000001",
+     "not-written-000003",
+     "not-written-000009",
+     "not-written-000011"
+    ],
+    "audit_reviewer": "Claude",
+    "audit_status": "pending",
+    "date": "2026-11-12",
+    "model": "gpt-6",
+    "prompt_sha256": "636ab4b01d97e01d7a13338169b14a58bcbb4244e75a82d8bf5da2efa748fbce"
+   },
+   "recipe": "written/not.json",
+   "recipe_sha256": "4387c26705d406b091b22862e55506107439d1cabc5fc74c0c198fc71fbe2be6",
+   "rows": {
+    "train": 2,
+    "transfer": 1
+   },
+   "sha256": "39d8554e9963728128bf3eaa6c89507149cc7a0597fa9841f967fc23d85e8fd1",
+   "tier": "written",
+   "variant": "progressive",
+   "verify": {
+    "accepted": 3,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "unary_chain",
+   "path": "unary_chain/k1.written.jsonl",
+   "provenance": {
+    "audit_keys": [
+     "unary_chain-written-000002",
+     "unary_chain-written-000003",
+     "unary_chain-written-000005",
+     "unary_chain-written-000006"
+    ],
+    "audit_reviewer": "Claude",
+    "audit_status": "pending",
+    "date": "2026-11-12",
+    "model": "gpt-6",
+    "prompt_sha256": "636ab4b01d97e01d7a13338169b14a58bcbb4244e75a82d8bf5da2efa748fbce"
+   },
+   "recipe": "written/unary_chain.json",
+   "recipe_sha256": "7ddd5e1a299a20f155c74260663af62f4988d51a12252eb1f3f509f1a2b60103",
+   "rows": {
+    "train": 3,
+    "transfer": 1
+   },
+   "sha256": "169649d766d5bd081702ee33aee44d56a996af6ebc15f60c3624f5ad184d95a0",
+   "tier": "written",
+   "variant": "k1",
+   "verify": {
+    "accepted": 4,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "unary_chain",
+   "path": "unary_chain/k2.written.jsonl",
+   "provenance": {
+    "audit_keys": [
+     "unary_chain-written-000002",
+     "unary_chain-written-000003",
+     "unary_chain-written-000005",
+     "unary_chain-written-000006"
+    ],
+    "audit_reviewer": "Claude",
+    "audit_status": "pending",
+    "date": "2026-11-12",
+    "model": "gpt-6",
+    "prompt_sha256": "636ab4b01d97e01d7a13338169b14a58bcbb4244e75a82d8bf5da2efa748fbce"
+   },
+   "recipe": "written/unary_chain.json",
+   "recipe_sha256": "7ddd5e1a299a20f155c74260663af62f4988d51a12252eb1f3f509f1a2b60103",
+   "rows": {
+    "train": 3,
+    "transfer": 1
+   },
+   "sha256": "23e9223b329a04f57fb256b9e7633decdc9061a1253af72a7f5634ac49fe7b8e",
+   "tier": "written",
+   "variant": "k2",
+   "verify": {
+    "accepted": 4,
+    "rejected": 0
+   }
+  },
+  {
+   "game": "unary_chain",
+   "path": "unary_chain/k3.written.jsonl",
+   "provenance": {
+    "audit_keys": [
+     "unary_chain-written-000002",
+     "unary_chain-written-000003",
+     "unary_chain-written-000005",
+     "unary_chain-written-000006"
+    ],
+    "audit_reviewer": "Claude",
+    "audit_status": "pending",
+    "date": "2026-11-12",
+    "model": "gpt-6",
+    "prompt_sha256": "636ab4b01d97e01d7a13338169b14a58bcbb4244e75a82d8bf5da2efa748fbce"
+   },
+   "recipe": "written/unary_chain.json",
+   "recipe_sha256": "7ddd5e1a299a20f155c74260663af62f4988d51a12252eb1f3f509f1a2b60103",
+   "rows": {
+    "train": 3,
+    "transfer": 1
+   },
+   "sha256": "99d8f705b483293218c1e10063620aaa3b0dffd605230213ec551403c639ed14",
+   "tier": "written",
+   "variant": "k3",
+   "verify": {
+    "accepted": 4,
+    "rejected": 0
+   }
+  }
+ ],
+ "generator": "bin/game_corpus.py",
+ "schema": 1,
+ "seed": 20261112,
+ "split_rule": "sha256 of the first source's normalized text modulo ten: 0 to 7 train, 8 validation, 9 test; a row with a transfer filler is transfer"
+}

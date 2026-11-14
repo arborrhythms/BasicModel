@@ -1,0 +1,108 @@
+{
+ "schema": 1,
+ "phase": "words",
+ "lesson": 0,
+ "criterion": {
+  "measure": "definition_trust_fraction",
+  "threshold": null,
+  "declared_by": "Alec",
+  "note": "a set fraction of admitted forms have length at least definitionTrust (parts of speech 5b, lesson 0)"
+ },
+ "measure": [
+  "Felix",
+  "Ciao",
+  "cat"
+ ],
+ "fillers": {
+  "name": [
+   {
+    "form": "Felix"
+   },
+   {
+    "form": "Ciao"
+   },
+   {
+    "form": "Bill"
+   },
+   {
+    "form": "Anna"
+   }
+  ],
+  "noun": [
+   {
+    "form": "cat"
+   },
+   {
+    "form": "cow"
+   },
+   {
+    "form": "bee"
+   },
+   {
+    "form": "owl"
+   }
+  ],
+  "verb": [
+   {
+    "third": "sleeps",
+    "plural": "sleep"
+   },
+   {
+    "third": "eats",
+    "plural": "eat"
+   },
+   {
+    "third": "moves",
+    "plural": "move"
+   },
+   {
+    "third": "waits",
+    "plural": "wait"
+   }
+  ]
+ },
+ "heldout": {
+  "name": [
+   {
+    "form": "Nora"
+   }
+  ],
+  "noun": [
+   {
+    "form": "hen"
+   }
+  ],
+  "verb": [
+   {
+    "third": "rests",
+    "plural": "rest"
+   }
+  ]
+ },
+ "variants": {
+  "name": {
+   "slots": {
+    "w": "name"
+   },
+   "sentences": [
+    "{w.form}."
+   ]
+  },
+  "noun": {
+   "slots": {
+    "w": "noun"
+   },
+   "sentences": [
+    "{w.form}."
+   ]
+  },
+  "verb": {
+   "slots": {
+    "w": "verb"
+   },
+   "sentences": [
+    "{w.third}."
+   ]
+  }
+ }
+}

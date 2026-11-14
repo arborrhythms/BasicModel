@@ -1,0 +1,172 @@
+{
+ "schema": 1,
+ "game": "verb",
+ "note": "Template production task. The intended operator is an evaluation label, never a learner constraint; surface acquisition remains unproven.",
+ "fillers": {
+  "noun": [
+   {
+    "form": "dog"
+   },
+   {
+    "form": "bird"
+   },
+   {
+    "form": "horse"
+   },
+   {
+    "form": "mouse"
+   },
+   {
+    "form": "fox"
+   },
+   {
+    "form": "wolf"
+   },
+   {
+    "form": "bear"
+   },
+   {
+    "form": "deer"
+   },
+   {
+    "form": "goat"
+   },
+   {
+    "form": "pig"
+   },
+   {
+    "form": "duck"
+   },
+   {
+    "form": "goose"
+   },
+   {
+    "form": "swan"
+   },
+   {
+    "form": "fish"
+   },
+   {
+    "form": "frog"
+   },
+   {
+    "form": "whale"
+   },
+   {
+    "form": "shark"
+   },
+   {
+    "form": "seal"
+   },
+   {
+    "form": "crab"
+   },
+   {
+    "form": "moth"
+   }
+  ],
+  "verb": [
+   {
+    "third": "chases",
+    "base": "chase"
+   },
+   {
+    "third": "greets",
+    "base": "greet"
+   },
+   {
+    "third": "finds",
+    "base": "find"
+   },
+   {
+    "third": "watches",
+    "base": "watch"
+   },
+   {
+    "third": "carries",
+    "base": "carry"
+   },
+   {
+    "third": "visits",
+    "base": "visit"
+   },
+   {
+    "third": "rescues",
+    "base": "rescue"
+   },
+   {
+    "third": "guides",
+    "base": "guide"
+   },
+   {
+    "third": "pushes",
+    "base": "push"
+   },
+   {
+    "third": "pulls",
+    "base": "pull"
+   },
+   {
+    "third": "lifts",
+    "base": "lift"
+   },
+   {
+    "third": "feeds",
+    "base": "feed"
+   },
+   {
+    "third": "washes",
+    "base": "wash"
+   },
+   {
+    "third": "brushes",
+    "base": "brush"
+   },
+   {
+    "third": "pats",
+    "base": "pat"
+   },
+   {
+    "third": "hugs",
+    "base": "hug"
+   },
+   {
+    "third": "avoids",
+    "base": "avoid"
+   },
+   {
+    "third": "fears",
+    "base": "fear"
+   },
+   {
+    "third": "catches",
+    "base": "catch"
+   },
+   {
+    "third": "cuddles",
+    "base": "cuddle"
+   }
+  ]
+ },
+ "transfer": {
+  "noun": [
+   {
+    "form": "cat"
+   }
+  ]
+ },
+ "variants": {
+  "template": {
+   "slots": {
+    "v": "verb",
+    "n": "noun"
+   },
+   "sources": [
+    "{v.third}.",
+    "a {n.form}."
+   ],
+   "target": "{v.third} a {n.form}.",
+   "limit": 320
+  }
+ }
+}

@@ -1,0 +1,21 @@
+{"document":{"answer":"zero","key":"identity:train:0","pair":[0],"question":1,"questions":[],"sentences":["x is zero.","what is x ?","the answer is zero."],"statement_references":[],"steps":[]},"split":"train"}
+{"document":{"answer":"two","key":"identity:train:2","pair":[2],"question":1,"questions":[],"sentences":["x is two.","what is x ?","the answer is two."],"statement_references":[],"steps":[]},"split":"train"}
+{"document":{"answer":"four","key":"identity:train:4","pair":[4],"question":1,"questions":[],"sentences":["x is four.","what is x ?","the answer is four."],"statement_references":[],"steps":[]},"split":"train"}
+{"document":{"answer":"six","key":"identity:train:6","pair":[6],"question":1,"questions":[],"sentences":["x is six.","what is x ?","the answer is six."],"statement_references":[],"steps":[]},"split":"train"}
+{"document":{"answer":"seven","key":"identity:train:7","pair":[7],"question":1,"questions":[],"sentences":["x is seven.","what is x ?","the answer is seven."],"statement_references":[],"steps":[]},"split":"train"}
+{"document":{"answer":"ten","key":"identity:train:10","pair":[10],"question":1,"questions":[],"sentences":["x is ten.","what is x ?","the answer is ten."],"statement_references":[],"steps":[]},"split":"train"}
+{"document":{"answer":"fourteen","key":"identity:train:14","pair":[14],"question":1,"questions":[],"sentences":["x is fourteen.","what is x ?","the answer is fourteen."],"statement_references":[],"steps":[]},"split":"train"}
+{"document":{"answer":"sixteen","key":"identity:train:16","pair":[16],"question":1,"questions":[],"sentences":["x is sixteen.","what is x ?","the answer is sixteen."],"statement_references":[],"steps":[]},"split":"train"}
+{"document":{"answer":"seventeen","key":"identity:train:17","pair":[17],"question":1,"questions":[],"sentences":["x is seventeen.","what is x ?","the answer is seventeen."],"statement_references":[],"steps":[]},"split":"train"}
+{"document":{"answer":"eighteen","key":"identity:train:18","pair":[18],"question":1,"questions":[],"sentences":["x is eighteen.","what is x ?","the answer is eighteen."],"statement_references":[],"steps":[]},"split":"train"}
+{"document":{"answer":"nineteen","key":"identity:train:19","pair":[19],"question":1,"questions":[],"sentences":["x is nineteen.","what is x ?","the answer is nineteen."],"statement_references":[],"steps":[]},"split":"train"}
+{"document":{"answer":"twenty","key":"identity:train:20","pair":[20],"question":1,"questions":[],"sentences":["x is twenty.","what is x ?","the answer is twenty."],"statement_references":[],"steps":[]},"split":"train"}
+{"document":{"answer":"five","key":"identity:validation:5","pair":[5],"question":1,"questions":[],"sentences":["x is five.","what is x ?"],"statement_references":[],"steps":[]},"split":"validation"}
+{"document":{"answer":"one","key":"identity:test:1","pair":[1],"question":1,"questions":[],"sentences":["x is one.","what is x ?"],"statement_references":[],"steps":[]},"split":"test"}
+{"document":{"answer":"three","key":"identity:test:3","pair":[3],"question":1,"questions":[],"sentences":["x is three.","what is x ?"],"statement_references":[],"steps":[]},"split":"test"}
+{"document":{"answer":"eight","key":"identity:test:8","pair":[8],"question":1,"questions":[],"sentences":["x is eight.","what is x ?"],"statement_references":[],"steps":[]},"split":"test"}
+{"document":{"answer":"nine","key":"identity:test:9","pair":[9],"question":1,"questions":[],"sentences":["x is nine.","what is x ?"],"statement_references":[],"steps":[]},"split":"test"}
+{"document":{"answer":"eleven","key":"identity:test:11","pair":[11],"question":1,"questions":[],"sentences":["x is eleven.","what is x ?"],"statement_references":[],"steps":[]},"split":"test"}
+{"document":{"answer":"twelve","key":"identity:test:12","pair":[12],"question":1,"questions":[],"sentences":["x is twelve.","what is x ?"],"statement_references":[],"steps":[]},"split":"test"}
+{"document":{"answer":"thirteen","key":"identity:test:13","pair":[13],"question":1,"questions":[],"sentences":["x is thirteen.","what is x ?"],"statement_references":[],"steps":[]},"split":"test"}
+{"document":{"answer":"fifteen","key":"identity:test:15","pair":[15],"question":1,"questions":[],"sentences":["x is fifteen.","what is x ?"],"statement_references":[],"steps":[]},"split":"test"}

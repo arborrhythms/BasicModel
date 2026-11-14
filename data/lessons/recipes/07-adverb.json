@@ -1,0 +1,90 @@
+{
+ "schema": 1,
+ "phase": "adverb",
+ "lesson": 7,
+ "criterion": {
+  "measure": "occupant_definiteness",
+  "threshold": null,
+  "declared_by": "Alec",
+  "note": "the adverb argument's class definite (lesson 7)"
+ },
+ "measure": [
+  "quietly",
+  "Felix"
+ ],
+ "fillers": {
+  "name": [
+   {
+    "form": "Felix"
+   },
+   {
+    "form": "Ciao"
+   },
+   {
+    "form": "Bill"
+   },
+   {
+    "form": "Anna"
+   }
+  ],
+  "verb": [
+   {
+    "third": "sleeps",
+    "plural": "sleep"
+   },
+   {
+    "third": "eats",
+    "plural": "eat"
+   },
+   {
+    "third": "moves",
+    "plural": "move"
+   },
+   {
+    "third": "waits",
+    "plural": "wait"
+   }
+  ],
+  "adv": [
+   {
+    "form": "quietly"
+   },
+   {
+    "form": "slowly"
+   },
+   {
+    "form": "gladly"
+   }
+  ]
+ },
+ "heldout": {
+  "name": [
+   {
+    "form": "Nora"
+   }
+  ],
+  "verb": [
+   {
+    "third": "rests",
+    "plural": "rest"
+   }
+  ],
+  "adv": [
+   {
+    "form": "loudly"
+   }
+  ]
+ },
+ "variants": {
+  "manner": {
+   "slots": {
+    "n": "name",
+    "v": "verb",
+    "a": "adv"
+   },
+   "sentences": [
+    "{n.form} {v.third} {a.form}."
+   ]
+  }
+ }
+}

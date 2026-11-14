@@ -1,0 +1,3 @@
+{"game":"not","key":"not-written-000009","sources":["At dusk, Rex is waiting by the gate."],"split":"train","target":"At dusk, Rex is not waiting by the gate.","tier":"written","variant":"progressive"}
+{"game":"not","key":"not-written-000010","sources":["At dusk, Bella is waiting by the gate."],"split":"train","target":"At dusk, Bella is not waiting by the gate.","tier":"written","variant":"progressive"}
+{"game":"not","key":"not-written-000011","sources":["At dusk, Felix is waiting by the gate."],"split":"transfer","target":"At dusk, Felix is not waiting by the gate.","tier":"written","variant":"progressive"}

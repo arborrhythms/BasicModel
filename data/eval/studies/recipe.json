@@ -1,0 +1,326 @@
+{
+ "schema": 1,
+ "counts": {
+  "train": 64,
+  "test": 64
+ },
+ "causal_families": [
+  "identity",
+  "classification",
+  "anaphora",
+  "verb_reuse"
+ ],
+ "rename_alphabet": "abcdefghijklmnopqrstuvwxyz",
+ "rename_prefix": "zu",
+ "determiners": [
+  "a",
+  "the",
+  "A",
+  "The"
+ ],
+ "fillers": {
+  "entity": [
+   {
+    "form": "Zorin"
+   },
+   {
+    "form": "Kelem"
+   },
+   {
+    "form": "Varek"
+   },
+   {
+    "form": "Dorin"
+   },
+   {
+    "form": "Pavin"
+   },
+   {
+    "form": "Sorel"
+   },
+   {
+    "form": "Tavin"
+   },
+   {
+    "form": "Relan"
+   },
+   {
+    "form": "Borin"
+   },
+   {
+    "form": "Cevan"
+   },
+   {
+    "form": "Darek"
+   },
+   {
+    "form": "Eron"
+   },
+   {
+    "form": "Faren"
+   },
+   {
+    "form": "Goran"
+   },
+   {
+    "form": "Harin"
+   },
+   {
+    "form": "Iven"
+   },
+   {
+    "form": "Joren"
+   },
+   {
+    "form": "Kavin"
+   },
+   {
+    "form": "Loran"
+   },
+   {
+    "form": "Meren"
+   },
+   {
+    "form": "Narek"
+   },
+   {
+    "form": "Oren"
+   },
+   {
+    "form": "Peren"
+   },
+   {
+    "form": "Quorin"
+   },
+   {
+    "form": "Rovan"
+   },
+   {
+    "form": "Saren"
+   },
+   {
+    "form": "Toren"
+   },
+   {
+    "form": "Uven"
+   },
+   {
+    "form": "Varen"
+   },
+   {
+    "form": "Woren"
+   },
+   {
+    "form": "Xaren"
+   },
+   {
+    "form": "Yoren"
+   }
+  ],
+  "kind": [
+   {
+    "form": "badger"
+   },
+   {
+    "form": "beaver"
+   },
+   {
+    "form": "bison"
+   },
+   {
+    "form": "camel"
+   },
+   {
+    "form": "ferret"
+   },
+   {
+    "form": "gerbil"
+   },
+   {
+    "form": "hyena"
+   },
+   {
+    "form": "ibex"
+   },
+   {
+    "form": "jackal"
+   },
+   {
+    "form": "lemur"
+   },
+   {
+    "form": "llama"
+   },
+   {
+    "form": "lynx"
+   },
+   {
+    "form": "marten"
+   },
+   {
+    "form": "otter"
+   },
+   {
+    "form": "panda"
+   },
+   {
+    "form": "zebra"
+   }
+  ],
+  "action": [
+   {
+    "third": "smiles",
+    "plural": "smile"
+   },
+   {
+    "third": "laughs",
+    "plural": "laugh"
+   },
+   {
+    "third": "nods",
+    "plural": "nod"
+   },
+   {
+    "third": "waves",
+    "plural": "wave"
+   },
+   {
+    "third": "dances",
+    "plural": "dance"
+   },
+   {
+    "third": "yawns",
+    "plural": "yawn"
+   },
+   {
+    "third": "cheers",
+    "plural": "cheer"
+   },
+   {
+    "third": "snores",
+    "plural": "snore"
+   }
+  ],
+  "verb": [
+   {
+    "third": "admires"
+   },
+   {
+    "third": "annoys"
+   },
+   {
+    "third": "assists"
+   },
+   {
+    "third": "adores"
+   },
+   {
+    "third": "chases"
+   },
+   {
+    "third": "greets"
+   },
+   {
+    "third": "guides"
+   },
+   {
+    "third": "visits"
+   }
+  ]
+ },
+ "families": {
+  "identity": {
+   "slots": {
+    "s": "entity",
+    "t": "entity"
+   },
+   "distinct": [
+    [
+     "s",
+     "t"
+    ]
+   ],
+   "sentences": [
+    "{s.form} is {t.form}.",
+    "Who is {s.form}?"
+   ],
+   "question": 1,
+   "answer": "{t.form}"
+  },
+  "classification": {
+   "slots": {
+    "s": "entity",
+    "n": "kind"
+   },
+   "sentences": [
+    "{s.form} is a {n.form}.",
+    "What is {s.form}?"
+   ],
+   "question": 1,
+   "answer": "{n.form}"
+  },
+  "anaphora": {
+   "slots": {
+    "s": "entity",
+    "v": "action",
+    "w": "action"
+   },
+   "distinct": [
+    [
+     "v",
+     "w"
+    ]
+   ],
+   "sentences": [
+    "{s.form} {v.third}.",
+    "They {w.plural}.",
+    "Who {w.third}?"
+   ],
+   "question": 2,
+   "answer": "{s.form}"
+  },
+  "verb_reuse": {
+   "slots": {
+    "s": "entity",
+    "t": "entity",
+    "v": "verb"
+   },
+   "distinct": [
+    [
+     "s",
+     "t"
+    ]
+   ],
+   "sentences": [
+    "{s.form} {v.third} {t.form}.",
+    "Who {v.third} {t.form}?"
+   ],
+   "question": 1,
+   "answer": "{s.form}"
+  },
+  "mint_bind": {
+   "slots": {
+    "n": "kind",
+    "v": "action",
+    "w": "action"
+   },
+   "distinct": [
+    [
+     "v",
+     "w"
+    ]
+   ],
+   "sentences": [
+    "A {n.form} {v.third}, and the {n.form} {w.third}.",
+    "Which {n.form} {w.third}?"
+   ],
+   "question": null,
+   "answer": null,
+   "expectations": {
+    "first_determiner": "mint",
+    "second_determiner": "bind",
+    "same_referent": true
+   }
+  }
+ }
+}

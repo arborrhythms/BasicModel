@@ -97,9 +97,11 @@ def main():
                 programs=[None if entry is None else dict(actions=entry.actions, word_ids=entry.word_ids,
                     case_values=entry.case_values, case_selected=entry.case_selected)
                     for entry in item['entries']], plans=item.get('reference_plans')) for item in observations]
-            result = original(current, state, sid, active, observations, predictions, wins)
+            # Kept-program views expire at commit; capture their values first.
             record = plain(dict(batch=len(progress), sentence=int(sid), active=active, wins=wins,
-                credit=credit, trials=trials, pool=current._concept_owner().mtm.state()))
+                credit=credit, trials=trials))
+            result = original(current, state, sid, active, observations, predictions, wins)
+            record['pool'] = plain(current._concept_owner().mtm.state())
             with gzip.open(args.out/'keep.jsonl.gz', 'at') as stream:
                 stream.write(json.dumps(record)+'\n')
             keeps.append(record)

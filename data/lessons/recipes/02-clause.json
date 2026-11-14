@@ -1,0 +1,103 @@
+{
+ "schema": 1,
+ "phase": "clause",
+ "lesson": 2,
+ "criterion": {
+  "measure": "occupant_definiteness",
+  "threshold": null,
+  "declared_by": "Alec",
+  "note": "the subject and VP occupant classes are definite (lesson 2)"
+ },
+ "measure": [
+  "Felix",
+  "sleeps",
+  "cows"
+ ],
+ "fillers": {
+  "name": [
+   {
+    "form": "Felix"
+   },
+   {
+    "form": "Ciao"
+   },
+   {
+    "form": "Bill"
+   },
+   {
+    "form": "Anna"
+   }
+  ],
+  "verb": [
+   {
+    "third": "sleeps",
+    "plural": "sleep"
+   },
+   {
+    "third": "eats",
+    "plural": "eat"
+   },
+   {
+    "third": "moves",
+    "plural": "move"
+   },
+   {
+    "third": "waits",
+    "plural": "wait"
+   }
+  ],
+  "plural": [
+   {
+    "initial": "Cows",
+    "inner": "cows"
+   },
+   {
+    "initial": "Bees",
+    "inner": "bees"
+   },
+   {
+    "initial": "Owls",
+    "inner": "owls"
+   }
+  ]
+ },
+ "heldout": {
+  "name": [
+   {
+    "form": "Nora"
+   }
+  ],
+  "verb": [
+   {
+    "third": "rests",
+    "plural": "rest"
+   }
+  ],
+  "plural": [
+   {
+    "initial": "Hens",
+    "inner": "hens"
+   }
+  ]
+ },
+ "variants": {
+  "name": {
+   "slots": {
+    "n": "name",
+    "v": "verb"
+   },
+   "sentences": [
+    "{n.form} {v.third}."
+   ]
+  },
+  "plural": {
+   "slots": {
+    "p": "plural",
+    "v": "verb"
+   },
+   "sentences": [
+    "{p.initial} {v.plural}."
+   ]
+  }
+ }
+}

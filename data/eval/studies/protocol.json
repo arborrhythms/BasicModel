@@ -1,0 +1,34 @@
+{
+ "schema": 1,
+ "config": "data/MM_corpus_lessons.xml",
+ "manifest": "data/eval/studies/manifest.json",
+ "seeds": [0, 1, 2],
+ "updates_after_qualification": 10000,
+ "warmup_updates": 20,
+ "timed_updates": 100,
+ "small_run": {"epochs": 1, "train_documents": 2, "heldout_documents": 2, "batch_size": 1, "learning_rate": 0.001, "seed": null},
+ "thresholds": null,
+ "causal_arms": ["learned_thought", "direct_answer", "equal_actual_compute", "reconstruction_only"],
+ "gates": {
+  "anaphora": {"family": "anaphora", "treatment": "ordinary", "control": "rule_binding_206a0146", "metric": "answer_accuracy"},
+  "verb_reuse": {"family": "verb_reuse", "treatment": "ordinary", "control": "without_reuse", "metric": "answer_accuracy"},
+  "prediction": {"family": null, "treatment": "ordinary", "control": "detached_target", "metric": "prediction_error"},
+  "shuffled_order": {"family": null, "treatment": "ordinary", "control": "shuffled_order", "metric": "answer_accuracy"},
+  "renamed_vocabulary": {"family": null, "treatment": "ordinary", "control": "renamed_vocabulary", "metric": "answer_accuracy"},
+  "mint_bind": {"family": "mint_bind", "treatment": "ordinary", "control": "shuffled_determiners", "metric": "referent_accuracy"}
+ },
+ "routing_catalogs": [
+  {"name": "C0", "structural": ["part", "equal"], "opaque": ["opaque_binary"]},
+  {"name": "C1", "structural": ["part", "equal", "whole", "implies"], "opaque": ["opaque_binary"]},
+  {"name": "C2", "structural": ["part", "equal", "whole", "implies", "not", "generic"], "opaque": ["opaque_binary"]}
+ ],
+ "opaque_implementation": null,
+ "unavailable_controls": {
+  "direct_answer": "The zero attention budget still executes the cutoff/finish drain; it is not a separately specified direct-answer learner.",
+  "equal_actual_compute": "No declared actual-compute matching protocol exists; requested budgets do not establish equal actual work.",
+  "reconstruction_only": "No complete runtime control disables all prediction and answer objectives while preserving the reconstruction learner.",
+  "rule_binding_206a0146": "The historical rule-based binding is not a supported current-runtime mode; its matched-exposure producer is required.",
+  "without_reuse": "No declared verb-reuse training control exists.",
+  "detached_target": "Current observed targets are already detached; the distinct historical comparator must be specified."
+ }
+}

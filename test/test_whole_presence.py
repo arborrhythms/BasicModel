@@ -1,4 +1,5 @@
 """§44 item 74: whole presence bounds its forward contribution and pullback."""
+import hashlib
 from pathlib import Path
 
 import pytest
@@ -18,9 +19,14 @@ def compose(parts, weights, codes):
     return centroid((parts,), whole=native_read(weights, codes))
 
 
+CAPTURE_SHA256 = '20ba5b9649d35a762a7c882e86400a6cc6a5d8235ccfd6f8ae9adb99ce435452'
+
+
 def captured(dtype):
-    path = (Path(__file__).resolve().parents[1] / 'doc/benchmarks/'
-            '2026-10-31-item2-5-completion/addendum-10/native-mean/whole-pullback-1.pt')
+    # The sentence-four whole of item 2.5's native-mean receipt, byte for byte.
+    path = (Path(__file__).resolve().parent / 'fixtures'
+            / '2026-10-31-item2-5-whole-presence' / 'whole-pullback-1.pt')
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == CAPTURE_SHA256
     value = torch.load(path, map_location='cpu', weights_only=False)
     return value['weights'].to(dtype), value['codes'].to(dtype)
 

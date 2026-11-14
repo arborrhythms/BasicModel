@@ -1,18 +1,8 @@
 # What, spacetime, and thinking
 
-> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
-> - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
-> - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded.
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23, [step 2 §71](plans/2026-10-21-step2-one-ltm.md); recorded 2026-10-30):** an LTM1 row is two tagged references with its kind read from the referents, not three. As built at `3718d9d0dc`, `LTM0` still carries `c_plus`/`c_minus`, `source_trust`, `order`, `row_ids`, `origin`, `record_kind`, `polarity` and `witness_count` columns; only `refs`, `grammatical_mode` and the index columns are retired (audit 2026-10-30; decided 2026-11-01, Alec: the unused columns are removed and the row brought to this layout, [thinking spec §32.2](plans/2026-10-27-item2-5-thinking.md) item 17).
-
-
-> **Status:** high-level target design, revised 2026-09-08. This revision
-> integrates the implemented `what()` foundation with the unfinished answer-
-> construction work. It separates faithful input reconstruction from rational
-> output synthesis while retaining one `Data`, `Model`, and `Model.run()`
-> framework. The companion
-> [teaching-modes specification](specs/2026-07-27-teaching-modes-and-next-iteration.md)
-> is aligned with this revision.
+This is the question-answering design (2026-09-08). It separates faithful
+input reconstruction from rational output construction while retaining one
+`Data`, `Model`, and `Model.run()` framework.
 
 ## 1. One question, different authority
 
@@ -22,16 +12,21 @@ reconstruction of the input at all. Its answer depends on which existing
 object is answering:
 
 - `Data.what(question)` retrieves the answer available from the dataset.
-- `Model.what(question)` produces the model's answer from its conceptual
+- `Model.ask(question)` produces the model's answer from its conceptual
   representation and memory.
 - `Model.run()` remains the framework that presents data, runs the model,
   evaluates the result, and optionally trains it.
 
 These are logical interfaces that delegate to the infrastructure already
 owned by `Data` and `Model`; they do not introduce a new execution framework.
-In particular, there is no Teacher class and no separate Student class in the
-target design. `TheData` is the existing `Data` instance, and all learned
-behavior remains on the existing `Model`.
+There is no separate Student class: `TheData` is the existing `Data` instance,
+and all learned behavior remains on the existing `Model`. The model owns its
+data, its error registry (`Model.errors`) and its loss: errors with targets
+are registered there, penalties and reported metrics through
+`Model.record_loss`, and a batch opens without a Teacher (`_open_batch` lets an
+attached Teacher adapter open its lesson only when one is present).
+`bin/Teacher.py` remains an optional adapter for lessons and clean targets; it
+never reads or writes the model's `.where`/`.when` bands.
 
 The current clean reconstruction task supplies the first data case for this
 interface, but reconstruction and response construction are distinct model
@@ -48,19 +43,20 @@ generalizes the response side of the same training loop to:
 - supervised questions whose correct response is determined by the question
   rather than by copying any temporal input.
 
-`Data.what()` and `Model.what()` therefore answer the same question with
+`Data.what()` and `Model.ask()` therefore answer the same question with
 different authority. `Data` can use its data coordinate to retrieve the
 desired answer during learning or evaluation. `Model` must answer using its
 own learned conceptual and memory state. The answer returned by `Data` is a
 training target, not an additional model input.
 
-Conceptually, the run path becomes:
+Conceptually, the run path is:
 
 ```text
 question and input   = Data presentation
 understanding        = Model.forward(input)
 input_reconstruction = Model.reverseReconstruct(understanding)
-model_response       = Model.reverseOutput(understanding, question)
+derivation           = Model.resolveAnswer(understanding, question)
+model_response       = Model.reverseOutput(understanding, derivation)
 
 if learning or evaluation:
     desired_response = Data.what(question)
@@ -74,8 +70,9 @@ if inference:
     the Model response may become the presentation's Data output
 ```
 
-`Model.what()` is the public question-answering delegation over `forward()`
-plus `reverseOutput()`; it is not a direct projection head. The methods identify
+`Model.ask()` is the public question-answering delegation over `forward()`,
+`resolveAnswer()` and `reverseOutput()` (`WholePaths.output_only`); it is not a
+direct projection head. The methods identify
 where existing work is delegated and do not require a second lesson
 controller, scoring API, source oracle, spacetime view hierarchy, or second
 model.
@@ -90,8 +87,9 @@ the cost function compares only the desired and produced `what`.
 The question's coordinate is `where`: the zero-based presentation index in
 `TheData` (for text, the sentence index). The dataset exists all at once, so a
 presentation index is a *position* in the dataset, an absolute `.where`, not a
-time. The model's `.when` is its own clock (`when_time`, advanced once per
-processed batch) and is never carried by a question. `Data.what()` uses `where`
+time. The model's `.when` is its own clock (`when_time`, `Model.present()`),
+advanced once per present sentence, per deposited thought and per produced
+output, and is never carried by a question. `Data.what()` uses `where`
 as an index into the dataset; a question can identify the desired position
 directly or relative to the presented one (`past`/`future` are displacements
 along the dataset):
@@ -118,17 +116,32 @@ its internal coordinates; `Data` never writes the model's `.where`/`.when`.
 Positions name locations, never content, so this adds no target to the model
 context.
 
+Inside the model, symbols carry `.where` and `.when`, and a concept keeps the
+extent of its occurrences and never the clock (decided 2026-10-20). A question
+that asks *when* therefore reads the stamp from an occurrence, where a
+particular event, a concept with few occurrences, lands on a definite time.
+`.when` is model time on one clock, sinusoidally encoded, and learned readers
+see it only as ages or differences.
+
+The same target-free context vector reaches the answer through the question
+conditioner, `Model._question_conditioner`: one zero-initialized, bias-free
+linear map per answer width, kept in the state dict as `question_conditioners`
+so that switching widths discards nothing. It maps the context onto the first
+occupied role of the conceptual answer, the root of the generate walk, as a
+cube translation that leaves the position and time band unchanged. Because it
+starts at zero the answer path starts independent of the question, and the
+answer cost trains it, so temporal question content is used rather than
+merely present.
+
 An implicit lockstep between dataset order and the model clock is not a
-substitute: batch lanes share one `when_time` tick, an epoch wrap re-presents
-the same row much later, and exploration trials do not tick the clock, so
-"one presentation back" in dataset coordinates is not "one tick back" in model
-time.
+substitute: batch lanes share one tick per sentence slot, an epoch wrap
+re-presents the same row much later, thoughts tick the clock too, and the
+paths of one sentence share its tick, so "one presentation back" in dataset
+coordinates is not "one tick back" in model time.
 
 A finer rung of the same `.where` (a location within the datum presented at
-one trial, for text a span within the sentence) is deferred; it is not a
-separate coordinate. A corpus byte address as a coarser rung, and a
-document-boundary bit for `past` questions at a document start, are noted
-follow-ons.
+one trial, for text a span within the sentence) is not a separate coordinate;
+further rungs are [future work](FutureWork.md).
 
 Each stable presentation index reserves both sides of an interaction:
 
@@ -140,7 +153,7 @@ DataPresentation:
 ```
 
 In learning mode, a presentation has an input and a desired output. In
-inference mode, it initially has only an input; `Model.what()` supplies the
+inference mode, it initially has only an input; `Model.ask()` supplies the
 output. Reserving both fields means that recording an inferred output does
 not renumber later sentence coordinates. Generated outputs should retain
 their model provenance so that writing an inference to `TheData` does not
@@ -168,7 +181,7 @@ The same `Model.run()` path performs evaluation and optional learning in each
 case. The question selects the desired response. This matters because the
 input alone does not imply that the correct response is its reconstruction.
 For example, an input may ask for a missing past token, a future sentence, or
-the answer to “what is your name?”. All are `what()` questions; the temporal
+the answer to “what is your name?”. All are *what?* questions; the temporal
 and grammatical content of the question determines what counts as accurate.
 
 Automatic completion of missing past, present, and future content trains the
@@ -179,21 +192,21 @@ may be returned to the caller or recorded as the output side of the
 
 ## 4. One understanding, two downward paths
 
-> **Naming (2026-09-09):** the two downward paths are `Model.reverseReconstruct()`
-> and `Model.reverseOutput()` — each is a dual of `forward()` along the reverse
-> path, one seeded by the analysed input and ending at `InputSpace`, the other
-> seeded by a resolved answer symbol and ending at `OutputSpace`. The Space-level
-> algebraic inverse keeps the name `reverse()`; top-down realization of a
-> generated state is `synthesize()`.
->
-> **Dedicated weights (2026-09-09):** `reverseOutput()` is a true dual of
-> `forward()` with its own parameters. The shared inverse-direction chain is the
-> backbone; each Space applies its own invertible `synthesis_layer` (built on
-> first use at identity, so the answer path starts exactly at the shared
-> inverse) and `OutputSpace` adapts constructed percepts through its
-> `percept_adapter`. `answer_construction` trains these operators;
-> `reverseReconstruct()` never touches them, so reconstruction priority applies
-> only to the genuinely shared parameters.
+The two downward paths are `Model.reverseReconstruct()` and
+`Model.reverseOutput()` (2026-11-10), one seeded by the analysed input and
+ending at `InputSpace`, the other seeded by a resolved answer and ending at
+`OutputSpace`. Both end in one order-zero decoder,
+`BasicModel.reverse(x, field=...)`: reconstruction reverses the input's own
+order-zero field, and output reverses the order-zero field that the generate
+walk and its occurrence writer produce from the thought's conclusion. The
+decoder is shared by construction, so every reconstruction step trains the
+decoder that output uses; what stays separate is the per-call state.
+
+The answer path's own weights are the generate chooser, the question
+conditioner (§2) and, for a tensor output, `OutputSpace`'s `percept_adapter`;
+a checkpoint's retired `synthesis_layer` keys are dropped with a warning. On
+the parameters output shares with reconstruction, its gradient is projected
+against reconstruction's (§5).
 
 Bottom-up processing produces one internal understanding:
 
@@ -213,6 +226,16 @@ concept or P0 summary, should reconstitute the full perceptual field.
 
 After understanding, reconstruction and answer production diverge.
 
+There is no known correct parse, only the parse the forward identified:
+reconstruction follows that identified compose derivation, and no input parse
+is ever imitated as output supervision. Output builds its answer, with a
+possibly entirely different surface, by its own derivation through the
+`<generate>` rules, with no teacher forcing in training or evaluation. Output
+is trained only by supplied answers (and, on data that supervises output, by
+silence where none was asked); input reconstruction targets and compose
+choices never substitute for answer supervision, and a batch with no
+supervised output makes no output update.
+
 ### 4.1 Input reconstruction
 
 Input reconstruction starts from the input's understood symbolic/conceptual
@@ -230,9 +253,15 @@ matrix belonging to the forward operation. It may use the exact forward-local
 carriers needed to invert routing and bindings, but those carriers may not
 cache the pre-analysis surface payload. Their content-bearing state is limited
 to the processed activation of mereonymic parts and wholes. Its purpose is
-fidelity to the presented input. In code, `reverse()` is reserved for this
-reconstruction meaning; it must not also stand ambiguously for answer
-generation.
+fidelity to the presented input. There are two input reconstructions
+through the one decoder (`SentenceField.reconstruct`): the input
+reconstruction reverses the open attention pass's field with no grammar, and
+the order-zero reconstruction runs the generate walk on the sentence's
+untransformed end slots first
+([Training](Training.md#within-sentence-reconstruction-objective)).
+`reverseReconstruct()` names this meaning; the decoder it ends in, `reverse()`,
+is the one output uses too, run on a different field with separate per-call
+state.
 
 ### 4.2 Rational output construction
 
@@ -255,43 +284,35 @@ Input reconstruction decodes the still-interrogative structure. Output
 construction first resolves the binding and decodes the resulting value.
 
 A simple true/false question may resolve in one symbolic operation. A harder
-question may open subquestions and require several iterations before an answer
-symbol exists. In either case, the answer symbol, not the input question
-symbol, is then synthesized downward:
+question may open subquestions and take several thought steps before an
+answer exists. In either case the answer, not the input question, is then
+realized downward:
 
 ```text
-answer symbol
-    -> ConceptualSpace synthesis
-    -> PerceptualSpace synthesis with perceptual context
+answer (the thought's conclusion)
+    -> the generate walk and its occurrence writer (an order-zero field)
+    -> the one decoder, reverse()
     -> OutputSpace
 ```
 
-At a high level, `Model.reverseOutput()` delegates as follows:
+At a high level, the answer is resolved, then realized:
 
 ```text
-derivation = SymbolicSpace.resolve(
-    symbolic_state, question, grammar_context, memory)
-answer_concepts = ConceptualSpace.synthesize(
-    derivation.answer_symbol, derivation.bindings,
-    context=conceptual_state)
-answer_percepts = PerceptualSpace.synthesize(
-    answer_concepts,
-    context=perceptual_context,
-    selections=derivation.synthesis_references)
-response = OutputSpace.forward(answer_percepts)
+derivation = Model.resolveAnswer(understanding, question)
+    # the row's current or recalled completed field (section 8);
+    # the thought controller transforms its ideas
+response   = Model.reverseOutput(understanding, derivation)
+    # condition the root on the question once, then the generate walk,
+    # its occurrence writer, the shared reverse chain and OutputSpace
 ```
 
-Until `derivation.answer_symbol` is resolved, `resolve()` may extend the LTM
-thinking stack rather than call synthesis. Its replayable result also carries
-the grammatical derivation, answer-sentence location, constructed prefix, and
-named conceptual/perceptual bindings used by the next output step.
+The derivation is prepared once and can be realized again without executing
+another query. Its replayable result carries the grammatical derivation, the
+answer's meanings and the sources of its rows.
 
-`reverseOutput()` is the model-level orchestrator for this path. At the space level,
-`forward()` means bottom-up analysis, `reverse()` means input-associated
-inverse reconstruction, and `synthesize()` means top-down realization of a
-generated state. A synthesis operation may share an invertible layer's
-parameters and use its inverse direction, but it receives the generated answer
-carrier and may not silently substitute a cached input-reconstruction carrier.
+`reverseOutput()` is the model-level orchestrator for this path. It may share
+the decoder's parameters, but it receives the generated answer carrier and may
+not silently substitute a cached input-reconstruction carrier.
 
 The active perceptual field is available to output synthesis as context. It
 can prime a name, object, word, grammatical form, or other activated part or
@@ -309,13 +330,22 @@ constraints, and sampling state, not every generated percept as a symbol.
 The two downward paths need separate per-call state. Output synthesis must not
 overwrite the forward carriers needed by reconstruction, and reconstruction
 must not replay an answer's generated carriers. They may share parameters and
-read the same live activations without sharing mutable decode state.
+read the same live activations without sharing mutable decode state. The
+separation is structural: `SubSpace.carrier_like()` builds a fresh carrier
+(`carrier_pure = True`) that shares only parameter-bearing bases with the live
+subspace; every reverse write on a pure carrier (event, activation, recovered
+input, concepts, basis) goes to that carrier, the merge glue never reads
+reconstruction carriers for it, and the answer path runs under
+`_synthesis_guard`, which hides the reconstruction carriers and restores the
+live state afterwards.
 
 `OutputSpace` is consequently a final modality adapter. It may turn constructed
 answer percepts into text, a truth value, a scalar, or an action, but it does
-not decide the answer by projecting directly from the input symbol.
+not decide the answer by projecting directly from the input symbol. A numeric
+output (XOR) is the one exception in form: it reads the path's composed state
+through a single affine head, a modality with no grammar.
 
-### 4.3 Invertibility contract and current gap
+### 4.3 Invertibility contract
 
 Perceptual and conceptual analysis should be primarily invertible before
 quantization, collectively over their active fields. Concept-to-symbol
@@ -330,16 +360,15 @@ fold, nor an individually invertible encoding of all those parts. This is
 acceptable only if the collective processed field supplies the remaining
 information. Use `W0..W3` for whole-source folds alongside `P0..P3`.
 
-The live bridge now replaces the RMS/same-row/mean sequence with addressed
-native-code evidence and one learned affine Sigma/tanh activation per existing
-word-concept candidate/location. It decodes that concept once. Each concept
+The bridge reads addressed native-code evidence through one learned affine
+Sigma/tanh activation per existing word-concept candidate/location. It decodes
+that concept once. Each concept
 has up to eight stable typed P/W references, not one duplicate identity per
 fold. Full processed native fold stacks remain beside the concept event and
 survive symbolic selection; the inverse binder returns terminal P/W states
 without averaging. WHERE/WHEN and prior symbolic content are kept separate
-from the evidence readout. This preserves distinctions the previous RMS
-erased, but retained native state is not proof of collective concept-only
-inversion. Overlapping concept-field formation and its decoder remain work.
+from the evidence readout. Retained native state is not proof of collective
+concept-only inversion.
 
 Several identified parts and wholes should knit into each first-level
 concept at a coherent `.where`; this is not one concept per source. Eight
@@ -361,17 +390,15 @@ learned selector. A diagonal-metric proximal Adam update can make admitted
 connections exactly zero while leaving biases and unused slots unpenalized.
 This explicitly trades some reconstruction accuracy for sparse definitions;
 it does not guarantee independent concepts or a collectively invertible basis.
-Reference admission uses existing concept relationships with stable slots;
-the full field-level migration is not complete. The controlled comparison,
-live cutover, and production acceptance boundary are in
-[specification section 5.6](specs/2026-07-27-teaching-modes-and-next-iteration.md#56-reusable-conceptsfrompercepts-readout-and-sigmal1-comparison).
-Its strong-L1 result demonstrates why reducing input count cannot take
-precedence over preserving useful reconstruction detail.
+Reference admission uses existing concept relationships with stable slots.
+Strong L1 deletes useful references, especially where a concept needs many, so
+sparsity is chosen against a reconstruction tolerance: reducing input count
+cannot take precedence over preserving useful reconstruction detail
+([Training](Training.md)).
 
-The local numerical fixes preserve nonzero effective LDU diagonals even at
-exact zero and hold butterfly pairs touching padding at identity after
-training. Their reasons are documented beside the implementation. Existing
-ergodic sampling before `forward()` and after `reverse()` is compatible with
+The LDU parameterization preserves nonzero effective diagonals even at exact
+zero and holds butterfly pairs touching padding at identity after training.
+Ergodic sampling before `forward()` and after `reverse()` is compatible with
 a paired round trip; both directions must use the same intervening sample.
 The contract is an inverse on the image of valid perceptual analysis, not a
 claim that every imagined concept lies on that image.
@@ -401,7 +428,10 @@ Both branches are built at one parameter version and evaluated before one
 optimizer step. The scalar total remains useful for reporting; its ordinary
 gradient sum is not the update policy on protected perceptual/conceptual
 parameters. Separate autograd traversals identify each branch's contribution
-before reconstruction-priority projection. The framework's gradient
+before the projection that gives reconstruction priority: in each optimizer
+unit the answer gradient loses only its component opposing reconstruction's
+(`GradientProjection.backward`; with `separateChooser=true` the owners are
+separated instead). The framework's gradient
 `backward()` is distinct from the model's representational `reverse()`.
 
 More precisely, let the bottom-up understanding be `h = F_theta(x)`, the
@@ -426,9 +456,9 @@ conceptual operations, and the shared understanding that seeded the reverse.
 It trains the model to preserve and organize enough mereonymic detail to
 reconstruct what it perceived.
 
-`L_answer_construction` flows from `OutputSpace` through perceptual synthesis,
-conceptual synthesis, the serial symbolic derivation (including thinking), and
-then into the shared understanding produced by `forward()`. Useful
+`L_answer_construction` flows from `OutputSpace` through the decoder, the
+generate walk, the serial symbolic derivation (including thinking), and then
+into the shared understanding produced by `forward()`. Useful
 conceptualization is shaped by both input fidelity and correct response, with
 reconstruction taking priority. Inspect the full answer derivative before
 projection; do not detach the answer at the symbolic branch point.
@@ -446,11 +476,11 @@ and synthesis gates may have their own parameters, while the perceptual and
 conceptual coordinate system remains common.
 
 When the same `W` participates in analysis and again as `W^-1` during
-synthesis, answer loss produces both an indirect gradient through
-`F_theta(x)` and a direct gradient through the inverse use. Autograd must
-retain and sum both before priority projection; this is one path with a tied parameter, not two answer
-losses. Because derivatives through an inverse grow unstable near a singular
-matrix, the implementation must monitor conditioning and preserve its
+synthesis, answer loss produces both an indirect gradient through `F_theta(x)`
+and a direct gradient through the inverse use. Autograd must retain and sum
+both before priority projection; this is one path with a tied parameter, not
+two answer losses. Because derivatives through an inverse grow unstable near a
+singular matrix, the implementation must monitor conditioning and preserve its
 invertible parameterization rather than stopping the synthesis gradient.
 
 An exact, fully observed round trip `W^-1 W x = x` has zero reconstruction
@@ -462,16 +492,29 @@ analysis and synthesis, with removed information absent from every carrier.
 The implementation must verify a gradient at the shared understanding rather
 than infer one from reconstruction error. This prevents algebraic
 invertibility from being mistaken for learned understanding.
+`reverseReconstruct()` checks it at run time: an unmasked reconstruction whose
+cost is exactly zero sets `_reconstruction_identity_flag` and warns once that
+the channel carries no learning signal, so a perfect round trip is never
+reported as reconstruction learning. In training, adaptive omission supplies
+the non-cancelling operation: part of each sentence is hidden out of band and
+reconstruction must restore it.
 
-*A superseded passage beginning "For each protected perceptual/conceptual parameter tensor, l" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
+A desired answer text is encoded as a scoring target by the real lexical stem
+(`Model._embed_answer_texts`), not by a separate encoder, and the encoding is
+read-only: it runs under `_synthesis_guard` with `_online_learning_frozen` set
+on every Space, so no word is promoted into the percept store, no live carrier
+or stream changes, and the stem's stash is restored. The detached result has
+the shape of a presented input event and is never a model input.
 
 Serial grammar introduces a separate credit boundary. Continuous answer loss
 can train the chosen operations, their operands, synthesis, and the shared
 understanding. A hard grammatical choice has no ordinary derivative with
-respect to the unchosen policy logits; the existing straight-through,
-two-pass chooser, or policy-loss mechanism must assign that credit from the
-replayable trace. The plan must not claim a differentiable path through a hard
-choice that autograd does not provide.
+respect to the unchosen policy logits; the whole-path comparison assigns that
+credit from the replayable trace, as a score function on the complete path's
+change in $R + A$ when a departure is kept over the greedy path
+([Training](Training.md#what-questions-and-the-two-primary-costs)). The design
+must not claim a differentiable path through a hard choice that autograd does
+not provide.
 
 This resembles human learning. Perception is organized both to recover what
 was experienced and to support useful judgment and action. Repeating a heard
@@ -479,94 +522,45 @@ question and answering it use the same active perceptual and conceptual field,
 but repetition descends from the input understanding while answering first
 resolves a new symbolic intention.
 
-## 6. LTM records inputs and responses
+## 6. The interaction record
 
-LTM records the model's conceptual representation of both sides of an
-interaction:
+The model keeps a chronological record of its question-and-answer
+interactions, `WhatInteractionMemory`, separate from the occurrence stores
+`LTM0` and `LTM1`. Each `LTMSlot` has two independently optional sides:
 
 ```text
 LTMSlot:
-    input:  optional conceptual representation
-    output: optional conceptual representation
+    input:  optional conceptual representation of the question
+    output: optional conceptual representation of the model's response
 ```
 
-The input representation is the existing one-, two-, or three-slot
-representation of the input sentence in conceptual space. The output is the
-model's conceptual representation of its own response. It is not necessarily
-a reconstruction of the input: for `What(past)`, `What(future)`, and ordinary
-question answering, it will normally differ.
+A slot with neither side is invalid. The output is the model's own response,
+not necessarily a reconstruction of the input: for `What(past)`,
+`What(future)` and ordinary question answering it will normally differ.
+During supervised learning the desired `Data` output supplies the loss, but
+the response recorded is the response the model actually made, so the record
+stays a record of the model's experience rather than a hidden route by which
+the desired answer reaches its context. Values are detached when appended. An
+input-only slot opens a question, an output-only slot closes the newest open
+one, and a complete slot leaves the open depth unchanged; **parity**, no
+unmatched input-only slot, is checked at each append.
 
-During supervised learning, the desired `Data` output supplies the loss, but
-the response stored in LTM is the response actually made by the model. This
-keeps memory a record of the model's experience and reasoning rather than a
-hidden route by which the desired answer is copied into its context.
+## 7. Thinking
 
-The two fields are independently optional within each LTM slot. That property
-lets the existing sequential LTM act as a thinking stack:
+All model questions are queries into conceptual space. Thinking does not
+iterate `ask()` over the interaction record: `Model.think()` understands once
+and resolves through the ordinary thought controller, the thought grammar and
+its chooser, under one shared work budget ([Reasoning](Reasoning.md)), and the
+ordinary thought history keeps its own records with its own transitions.
+Internal questions do not use the sentence index known by `TheData`; the model
+cannot supply a data coordinate it does not possess, so they are formed from
+its current conceptual state and memory. Every completed field offers the
+controller an episode, and not thinking is the chooser's free first choice.
+An answer comes only from a concluded, accepted thought; with no conclusion
+the output role is empty and the model is silent
+([Training](Training.md#what-questions-and-the-two-primary-costs)).
 
-- `(input, —)` pushes an unanswered question;
-- `(input, output)` is a complete stimulus/response slot and leaves the
-  stack depth unchanged; and
-- `(—, output)` answers and pops the most recent unanswered question.
-
-A slot with neither input nor output has no meaning. A question without an
-answer in one slot begins the stack of internal dialogue. A later answer
-without a question closes the most recent open question. Stack state is thus
-the imbalance represented by the sequence of LTM slots; it does not require a
-new recursive frame tree, a separate stack object, or an in-place update to
-the opening slot. **Parity** means that there are no unmatched input-only
-slots.
-
-## 7. Thinking is iterative `what()` evaluation
-
-All model questions are queries into conceptual space. When the truth or
-illumination of the relevant conceptual spaces is insufficient, the model
-may think by asking a subquestion through its own `what()` interface.
-Internal subquestions do not use the sentence index known by `TheData`; the
-model cannot supply a data coordinate it does not possess. They are formed
-from the model's current conceptual question and memory.
-
-Thinking is iterative program evaluation, not recursive model evaluation.
-Each iteration appends an LTM slot. The next iteration receives the original
-question together with the enlarged LTM context, so a completed subquestion
-can transform how the still-open question is evaluated.
-
-For the supervised pair:
-
-```text
-Q: what is your name?
-A: Alec
-```
-
-one possible LTM sequence is:
-
-| Iteration | LTM slot | Derived open-question stack |
-|---|---|---|
-| Understand the root but defer its answer | `(what is your name?, —)` | `[what is your name?]` |
-| Ask and answer a subquestion | `(who is asking?, OpenAI)` | `[what is your name?]` |
-| Answer the pending root using the new context | `(—, Alec)` | `[]` |
-
-The second slot is balanced by itself, but its result is now part of LTM and
-therefore part of the context used to answer the root. The output-only third
-slot balances the earlier input-only slot. Once parity is restored, the
-answer requested by `TheData` is available and the ordinary supervised loss
-can be evaluated.
-
-Thinking must conclude. A closure pressure increases with each unbalanced
-iteration. It is supplied to the existing grammar chooser as part of its
-context: as pressure rises, opening another input-only slot becomes less
-favored and producing an output for the most recent unanswered input becomes
-more favored. A finite iteration limit remains a safety boundary. At that
-limit, the model must emit its best-effort answer for the most recent
-unanswered input; `unknown`, `unresolved`, or a failure status cannot be used
-as an escape from answering. The answer may carry low confidence, but it is
-still an output-only slot and therefore restores one level of parity. If more
-than one input remains open, forced best-effort answers continue from the top
-of the stack until parity is restored. The exact monotonic pressure schedule
-remains a specification decision.
-
-*Moved to [DevelopmentHistory](DevelopmentHistory.md#8-context-for-the-grammar-chooser) (2026-10-30): "8. Context for the grammar chooser".*
-## 9. Prediction, supervision, and completion
+## 8. Prediction, supervision, and completion
 
 Prediction and verification remain part of the existing `Model.run()`
 training and evaluation loop. The substantive change is that the question
@@ -582,15 +576,29 @@ inference question          -> no Data output; Model supplies it
 
 The model always receives the temporal or other intent as part of the
 question. It is rewarded for accurately completing the missing `what`, not
-for reproducing the coordinates. If the question cannot yet be answered
-directly, the same supervised presentation may include the iterative thinking
-process described above. Training occurs after thinking returns the LTM stack
-to parity and produces the requested response.
+for reproducing the coordinates. If the question cannot be answered directly,
+the same supervised presentation includes thinking: each path of the sentence
+thinks before its output is generated, and training follows the comparison of
+complete paths.
+
+Resolution is per batch row (`Model._resolve_answer`): each row resolves its
+own question's relation and offset and records its source (identity, recall,
+prediction, cold memory). A present, supervised or inference question
+resolves to the row's current completed field. `What(past, -k)` recalls the
+row's own k-th most recent completed field from a bounded per-row history
+(`Model._recall_sentence_history`, at most 64 detached fields), appended when a
+sentence is admitted and cleared by that row's hard end-of-document reset
+(`dispatch_per_row_reset`). A row whose history is shorter than k is cold and
+stays unresolved. `What(future, +k)` stays unresolved until a conceptual
+predictor exists: the activation predictor forecasts an activation over the
+symbol bank, which primes the next reading, not a completed field that could
+be realized as an answer. An unresolved row leaves the other rows of the
+batch resolved. Training scores only supplied answers; automatic temporal
+targets are evaluation metrics.
 
 This design keeps the existing batching, optimizer, grammar chooser, STM, and
-LTM owners, but it does not preserve the direct SymbolicSpace-to-OutputSpace
-head or the ambiguous use of `reverse()` for both reconstruction and
-generation. Implementation work must complete question-relative target loss,
-split reconstruction state from output-synthesis state, route `Model.what()`
-through rational symbolic decoding, and train both branches jointly rather
-than building a second Teacher/student architecture beside them.
+LTM owners and builds both branches in one model, with no second
+Teacher/student architecture beside it: question-relative target loss,
+separate reconstruction and output state, `Model.ask()` through the thought
+controller and the generate walk, and joint training of the two branches
+under the projection of §5.

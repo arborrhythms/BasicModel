@@ -1,11 +1,5 @@
 # Basic Model
 
-> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
-> - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
-> - Expectation is a **gain field** `c = m⊙a⊙o` with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
-> - Amended 2026-10-29/30 (Alec; [thinking spec §§16, 22](plans/2026-10-27-item2-5-thinking.md), [2.7 record §42](plans/2026-10-27-item2-7-corpus.md)): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are not built.
-
-
 ![BasicModel reference configuration, read from data/BasicModel.xml](diagrams/basicmodel_reference.svg)
 
 ***The Basic Model of Cognition is a neural network of four spaces: real space, perceptual space, conceptual space, and symbolic space.***
@@ -54,9 +48,11 @@ theory framed learning as tabula-rasa perturbation at temperature; the current
 implementation expresses that as initialized weights plus ergodic `bias`/`var`
 buffers driven by gradient energy. See [Ergodic.md](Ergodic.md).
 
-Inputs scale to `[-1, 1]` via global data min/max. The signed range
-represents presence and absence symmetrically. Paraphrasing Augustine,
-*negative is the privation of the positive*.
+Measured inputs scale to `[0, 1]` via global data min/max: a percept is a
+one-sided presence, 0 absent and 1 present, whose opposite is the complement
+`1 - x`, not a negative value. Signed text embeddings and outputs keep
+`[-1, 1]`. Paraphrasing Augustine, *negative is the privation of the
+positive*: absence is the lack of a presence, not a quantity of its own.
 
 Action is a function of perceptual space and our expectation, filtered by
 conceptual projections. Performance errors are defined relative to action,
@@ -70,8 +66,10 @@ attention mechanism treats what and where pathways separately.
 ## Perceptual Space
 
 Perceptual spaces are composed of perceptual prototype vectors, or
-***percepts***.[^1] Percepts that do not correspond to objects are
-*hallucinations*.
+***percepts***.[^1] Expectation adds nothing to what is perceived, so a
+percept is never predicted into existence: a *hallucination* is not a
+percept but a concept conceived without perceptual evidence
+([Philosophy](Philosophy.md#absence-is-inferred-never-perceived)).
 
 Percepts form a Voronoi tessellation using prototype and/or exemplar vectors,
 related via Self Organizing Map connections, operating in parallel as
@@ -144,43 +142,47 @@ necessarily a convex region. Gärdenfors's convexity holds for *natural*
 concepts and is the **order-0 / extensional limit**, cleanest at the grounded
 base; **discontiguous, high-order** objects still live in the same space as
 points, but their extension is **graph-defined** (the things reachable through
-their definition), not a convex region — which is exactly why the
-word$\leftrightarrow$object bridge needs a MetaSymbol ("no convex set is
-specific enough," see [doc/Mereology.md](Mereology.md)). So: **one space of
-points plus a relational graph, with convexity as the basal/extensional
-reading.** The cognitive grounding for the dense-perceptual / sparse-symbolic
-split is in [doc/Architecture.md](Architecture.md) "Cognitive grounding."
+their definition), not a convex region, which is why a word is tied to its
+object by a definition, a stored relation between the two that implies no
+order, and not by a shared region: no convex set is specific enough
+([STM](STM.md#10-ltm-as-the-chain-of-stm-end-states), "Definitions"). So:
+**one space of points plus a relational graph, with convexity as the
+basal/extensional reading.** The cognitive grounding for the
+dense-perceptual / sparse-symbolic split is in
+[doc/Architecture.md](Architecture.md) "Cognitive grounding."
 
-The 2026-07-02 two-phase rework makes the extensional/intensional seam
-OPERATIONAL: the forward is a purely continuous PS/WS$\leftrightarrow$CS pump
-(extension settling) followed by ONE late snap to the order-0 codebook block
--- quantization exactly at the bandwidth seam -- and then the symbolic
-composition over the relational graph (intension). Order-0 concepts ARE
-codebook rows (extension = the atom's position, no edges); order $\ge 1$
-concepts are edge-defined (intension = the sparse graph). Three relational
-primitives carry the graph (Alec 2026-07-02): the sec-4c ORDERED PAIR
-$[whole, part]$ (whole $\Rightarrow$ part / if $\to$ then); the SINGLETON --
-a whole containing exactly one symbolic part, the unit-set $\{x\}$ Lewis
-resisted, here the constructive primitive; and the recursion VINE (ordered
-chains from nested pairs -- order from nesting, since each row is set-like).
-At the storage level, each sparse entry pairs one concept index with one symbol
-index. Repeating the same concept index across entries accumulates its set-like
+The seam between extension and intension is operational in the forward,
+which has one terminal cutover
+([Architecture](Architecture.md#a-symbolic-weights-the-two-phase-forward)).
+At it each order-0 concept reads its membership from the attended percepts
+through its feature definition over basic percepts, which is its extension,
+and each higher order is then composed from the preceding order's symbols
+over the sparse edge-graph, which is intension. An order-0 concept is thus
+defined by its perceptual features, and a concept of order $\ge 1$ by its
+edges to other symbols. Three relational primitives carry the graph (Alec,
+2026-07-02): the ordered pair $[\text{whole}, \text{part}]$ (whole
+$\Rightarrow$ part, if $\to$ then); the singleton, a whole containing exactly
+one symbolic part, the unit set $\{x\}$ that Lewis resisted and here the
+constructive primitive; and the vine, an ordered chain of nested pairs whose
+order comes from the nesting, since each row is set-like. At the storage
+level, each sparse entry pairs one concept index with one symbol index.
+Repeating the same concept index across entries accumulates its set-like
 definition; recursively nesting relation concepts supplies vine order. See the
-relation-table entry contract in [Architecture.md](Architecture.md#relation-table-entry-contract).
-Where the relation does NOT need order (the word/object meta), the read-out
-is typed intersection, not slot order. See doc/Architecture.md sec A; the
-un-ramsified successor (iteration over one untyped square layer, with Kripke
-groundedness as the cycle diagnostic) was sketched separately during earlier
-design work.
+relation-table entry contract in
+[Architecture.md](Architecture.md#relation-table-entry-contract).
 
 ## Symbolic Space
 
 *Symbolic Spaces* are composed of percepts that reference concepts --- a
 subtype of perceptual spaces mapping onto conceptual spaces.
 
-Symbols have no spatial context: zero-dimensional points within perceptual
-space. In humans, perceptual space projects onto a 3D cerebellar subspace
-before symbolic encoding.
+As a reference a symbol has no internal extent: it is a zero-dimensional point
+within perceptual space. It is nevertheless situated (decided 2026-10-20). A
+symbol is the situated side of the index it shares with its concept, this
+activation at this place and time, so it carries `.where` and `.when`; its
+concept is the unsituated fold of its occurrences, which keeps their extent and
+never the clock. In humans, perceptual space projects onto a 3D cerebellar
+subspace before symbolic encoding.
 
 Symbols are independent, permanent, and integral (as references). The
 top-down serial activation differs from bottom-up perceptual activation ---

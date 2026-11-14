@@ -1,7 +1,7 @@
 # Item 1.8: the last architecture round
 
 2026-11-11. The specification of todo item 1.8, the round after item 2.0's
-whole-path round ([specification](2026-11-11-one-pair-per-stage.md)) and
+whole-path round and
 before the optimization items (1.5, 1) and the final housekeeping. Alec
 decided its contents in one conversation on 2026-11-11 and asked for it to
 be written (decision 19). This text consolidates a first writing that grew
@@ -3004,7 +3004,7 @@ d. *What makes the perceived concept the thing that is said* (traced on the
 
 Alec, when it was first handed over: "Now? We have not completed and
 pushed 2.0". So item 2.0 is completed first by its own text
-([whole-path §11](2026-11-11-one-pair-per-stage.md): land the accepted
+(whole-path §11: land the accepted
 round, push, repair its five defects). This text then opens by landing
 those repairs, whose hash is filled in at their review, and builds item
 1.8. Its item 4 moved to that text; the numbering is kept so that the
@@ -10698,4 +10698,1092 @@ outside the merge's needs is changed.
 Return as §26: each conflict and how you resolved it, each port, the
 sweep's result, the failures that remain with their producers, and the
 pushed commit.
+~~~
+
+## 26. Landing and merge return (Codex, 2026-11-14; held for Alec)
+
+### 26.1 Source, merge and ports
+
+The pre-commit `bounded_tests.source_snapshot` was exactly
+`20011b579c034c1a2962d8e784af7be8164f84c5b5184b3ac5527800e7148f46`.
+The accepted round and its specification were committed on main as
+`0a293469c764635d99818a8eeaabdde16087a80a`,
+**Land item 1.8 extension, recall and reduction round**. No receipt or
+ignored file was staged. Fetch returned precisely
+`a0f3bc70b84c8a70d1b4ae0991813a5fbf46d3f5`. Its merge is uncommitted;
+there has been no push and round A has not begun.
+
+The two modify/delete conflicts take main's deletions of
+`doc/plans/2026-10-27-item2-5-thinking.md` and
+`doc/plans/2026-11-05-item2-3-trust.md`. The content conflict in
+`test/fixtures/when-readers-round4a0.json` was a duplicate
+`ScalarPercepts.join` entry: one entry keeps main's
+explanation and the accepted inventory. Main's `_radix_code_events`
+reader name and this round's extension readers are both retained. The
+accepted §23 and §24 text is unchanged. Main's removals of links to the
+retired whole-path plan are retained.
+
+The files Git merged without textual conflicts were checked as follows:
+
+| File | Combined result |
+|---|---|
+| `bin/Forgetting.py` | Keeps the activity pass and invokes main's interval observer after synchronizing the truth view. |
+| `bin/Models.py` | Keeps the accepted close, trust, entry and continuation code; adds main's disabled-by-default interval observer after the outer training cursor advances. |
+| `bin/corpus_lessons.py` | Keeps the accepted activity/relation reads; takes numeric document addresses with external IDs, the held-out callback and shared freeze context, and the stage-protocol CLI. |
+| `data/model.xsd` | Keeps the activity settings and removed retention settings; adds `intervalLogEveryBatches` and `intervalLogFile`. |
+| `test/identity_experiment.py` | Takes main's removal of the forced experiment seed. |
+| `test/operators_run_audit.py` | Keeps all seven departure menus and excludes already consumed rounds from each count. |
+| `test/test_corpus_checkpoint.py` | Keeps the accepted native-layout test and main's two real continuation cases, with the ledger port below. |
+| The 1.8 specification | Keeps §23, §24 and §25 unchanged, plus main's two link removals; Claude's newly supplied round-A text is preserved and has not been built. |
+
+
+`IntervalLog` now reads `TruthLayer.luminosity()` directly, under §17
+point 21. Its function and metric are named `truth_luminosity`; there is
+no origin/kind filter or independent pole fold. Its tests keep the
+read-only, process isolation, failed-probe, forgetting-pass and numerical
+luminosity assertions. The numerical fixture now represents the opposing
+claims as separate signed truths. The forgetting fixture uses the native
+activity report in place of `deleted_by_origin`.
+
+The two new slow checkpoint cases read LTM0 activity and the separately
+saved allocator-owned LTM1 activity in place of the retired surprise and
+access-count ledgers (§17 point 14). All exact checkpoint, next-loss,
+kept-program and final-state assertions remain. Both cases reach and fail
+the next-loss assertion on the merged source and on the accepted
+production source with only this incoming test overlaid. The unmodified
+single-source case also fails that assertion on fetched main. A passive
+observer found that the externally supplied optimizer is not the
+`self._optimizer` read by `save_weights`: the checkpoint's optimizer
+state and manifest are both `None`. This producer predates both sides;
+no learner or checkpoint behavior was changed to make the assertion
+pass.
+
+`prepare_data.py` restored and verified all three declared files:
+MNIST train, MNIST test and the FineWeb shard. All three are ignored.
+Both stopping gates passed (2 passed in 3.44 seconds). The requested
+incoming-suite run completed with 862 passed and 139 failed in
+192.32 seconds; 137 failures are the document-link issue below, and two
+were an initial mistake in the test port's LTM1 tensor path. The corrected
+checkpoint run was 1 passed, 2 failed in 89.35 seconds, with the older
+next-loss failure described above. The exact default sweep completed; its final numbers are in §26.4.
+
+### 26.2 For Alec: the historical receipt links after main's deletions
+
+All 137 failing document-link cases are ignored historical receipt
+prose. Main deletes the plans/specifications they link to. The unchanged
+`test_relative_links_resolve` assertions fail on fetched main with exactly
+the same missing targets when given the same local receipts. They did
+not fail in the accepted round's final sweep. Thus they predate the
+merge on the incoming side, but do not predate both sides as §25 point 4
+requires of failures left over. No receipt was rewritten, no plan
+restored and no assertion skipped.
+
+**Recommendation for Alec:** the current-document audit should discover
+non-ignored repository documentation, including uncommitted documents,
+while these historical receipts keep their original bytes. Concretely,
+there are 52 non-ignored document cases and 890 ignored archive cases;
+137 of the latter fail. The proposal applies to all 890 archive cases,
+including those currently passing, rather than selecting failures. It would
+retire their assertion that historical relative links must resolve in
+today's checkout; it would not claim to have validated those historical
+links against their original source. It needs an explicit decision,
+because §25 requires nothing deselected and taking the plan deletions,
+and the existing audit deliberately includes receipt prose. Otherwise
+leave the audit unchanged and hold the landing for an archive-link
+contract. The merge and round A wait for that decision.
+
+### 26.3 The additional old trial-snapshot assertion
+
+The default sweep also failed
+`test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot`:
+its `_sentence_path_cost` observer saw one call, while the assertion
+requires two. `WholePaths.finish` calls that method again only for an
+attention, compose, candidate or bind departure. A reconstruction-only
+alternative reuses the shared prefix and its path cost. The relevant
+branch and the test assertion are present on both parents.
+
+An unmodified run on fetched main passed in 149.27 seconds, with draws
+`[4, 0, 4, 4]`, `[0, 1, 1, 1]`, and `[0, 0, 0, 0]`: each batch contained
+at least one reading departure, so the batch-level observer saw two
+calls. That passing draw does not dismiss the sweep's failure.
+A separate causal probe selected reconstruction (walk 4) from the native
+legal menu on all four rows of the first batch. It asserted that this
+alternative was already legal on every row, changed no seed or capacity,
+and left the test's assertions intact. Both parents expose the same
+menu, attention and reconstruction. The probe produces the exact
+`1 == 2` failure on fetched main (142.89 seconds) and on the accepted
+source (138.67 seconds). This is an old observation-boundary assumption,
+not a merge change to the trial or its shared snapshot. It is listed
+without repairing or weakening the test, as §25 requires for a failure
+that predates both sides.
+
+### 26.4 Completed default sweep and remaining failures
+
+`env -u RUN_TRAINED -u RUN_SLOW make test` completed all **7,898 selected
+and completed distinct cases**, with nothing deselected: **7,430 passed,
+328 skipped, 139 failed, and one non-strict XPASS**. The raw worker
+records contain 7,433 passes because
+`TestOrthogonalFlags::test_flags_match_expected` is reported four times.
+Native sweep time was **2391.108883000008 seconds**, wrapper
+**2391.6512780189514 seconds**, peak aggregate sweep memory
+**11,710,297,096 bytes**. There were no compilation-cache retries,
+timeouts or stopping-gate aborts. The runner returned 1 for test
+failures and `make` returned 2. The existing warning reports that the
+weekly slow-test record is 43.4 days old.
+
+Both stopping gates pass in this sweep: numeric XOR in
+**0.2555488329962827 seconds**, and the previously named shared class in
+**0.12495033399318345 seconds**. The verbal XOR proof also passes:
+**788.97 native seconds**, **791.784388125001 process seconds**, peak
+**2,572,504,712 bytes**; generated words and parallel-field words each
+recover **four of four** input word multisets. Main's radix time-reader
+fixture correction passes its inventory check in
+**1.0749733340053353 seconds**.
+
+The first sweep attempt was invalidated by my passive receipt observer:
+its relative output path did not exist when the nested runner tests
+changed working directory. That attempt was stopped after
+206.5637788772583 seconds. The observer was given an absolute path; the
+two strict/non-strict nested-runner cases then passed in 9.35 seconds,
+and the complete sweep above was restarted with the exact requested
+command. No production code, seed, assertion or selection was changed
+for that observer repair. The invalid attempt is not counted as a
+completed sweep or as evidence of source failures.
+
+| Remaining failure | Producer and attribution |
+|---|---|
+| 137 cases of `test/test_doc_links.py::test_relative_links_resolve` over ignored historical documents | Main's document restructuring deletes the plans/specifications targeted by those historical links. Every failure, including its exact missing-target list, reproduces on fetched main with the same local artifacts. It is new relative to the accepted round, so it is **not** excused as predating both sides. The contract decision is §26.2; all 52 non-ignored document cases pass. |
+| `test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot` | The observer assumes two `_sentence_path_cost` calls even when a legal later-stage departure reuses the prefix. The identical failure is demonstrated on both parents in §26.3. No production behavior or assertion was changed. |
+| `test/test_sparse_concept_e2e.py::test_interpreted_object_keeps_the_native_features_in_one_row` | `ConceptualSpace.add_concept_feature` collects the admitted basic percept at feature column 0; the old assertion expects part/whole columns 4 and 402. This is the failure already attributed in §14, §23.31 and §24, unchanged by the merge. |
+| `test/test_corpus_checkpoint.py::test_real_next_batch_matches_checkpoint_losses_and_kept_programs[single-source]` and `[mixed-sources]` (the explicit slow run; skipped by the default) | The externally passed optimizer is absent from the checkpoint saved through `self._optimizer`; its saved optimizer state and manifest are `None`. The next-loss failures reproduce on accepted production code, and the unchanged single-source test also fails on fetched main. This is listed in §26.1, not repaired. |
+
+### 26.5 Source and landing status
+
+The tested merged source has **1,155** inputs under the merged
+`bounded_tests.source_snapshot` protocol, SHA-256
+`9d1cdc63f0e1eadadc2e5b2b39eef2ff4bd27ff2682a3a8fdc633b25b5830972`.
+It is unchanged since the corrected checkpoint port and throughout the
+completed sweep. The source ports and resolved merge are staged;
+`git diff --cached --check` passes. The index contains no ignored path,
+receipt path or unresolved conflict. The specification's return and
+Claude's round-A text remain in the working tree.
+
+**Pushed commit: none.** The accepted-round commit is
+`0a293469c764635d99818a8eeaabdde16087a80a`; the pending merge parent is
+`a0f3bc70b84c8a70d1b4ae0991813a5fbf46d3f5`. The merge has not been
+committed or pushed because §26.2 still needs Alec's decision. Round A
+has not begun. No seed or capacity was changed, no retired LTM field or
+writer was restored, and no receipt was committed. Receipts remain
+local and are not linked.
+
+### 26.6 Review of §26 (Claude, 2026-11-14)
+
+**Verified.**
+
+- The landing commit is `0a293469c764635d99818a8eeaabdde16087a80a` on
+  `ab5176e0e2`: 295 files, no receipt and no ignored path. Its tree
+  matches the §23.32 manifest (the landing receipt's
+  `accepted-source.json`, git-ignored) byte for byte in every file but
+  one, `data/corpus/assembly-01/manifest.json`, a git-ignored local file.
+  The accepted round's `source_snapshot` counted ignored files and main's
+  excludes them, so the commit holds 1,069 inputs where §23.32 names
+  1,070.
+- The merge is staged: `MERGE_HEAD` is `a0f3bc70b8`, no path is unmerged
+  or untracked, and only the specification is unstaged. The working
+  tree's source is
+  `9d1cdc63f0e1eadadc2e5b2b39eef2ff4bd27ff2682a3a8fdc633b25b5830972`
+  over 1,155 inputs, as §26.5 says.
+- The merge base is `ab5176e0e2`. 295 files changed on the 1.8 side, 293
+  on main's and 11 on both. Every file changed on one side equals that
+  side's version, except `bin/IntervalLog.py` and
+  `test/test_interval_log.py`, the §17 point 21 port. In the eight source
+  and test files changed on both sides, the merge adds to 1.8 exactly
+  main's changed lines, except in `test/test_corpus_checkpoint.py`, where
+  the surprise and access-count assertions become activity assertions
+  (§17 point 14).
+- The port changes what main's interval log measures. It was the
+  luminosity of provisioned facts; with origins and kinds removed it is
+  the luminosity of the whole truth view, under the new name
+  `truth_luminosity`. Nothing else reads the old name.
+- The document-link counts are right: 942 cases, 52 not ignored and 890
+  ignored (889 receipts under `doc/benchmarks/`, one under
+  `doc/checkpoints/`).
+- The trial-snapshot test (`test/test_operators_final_b.py`, written
+  2026-10-07) builds an unseeded model, so the departures it draws depend
+  on what its worker ran before it. Since the whole-path round,
+  `WholePaths.finish` calls `_sentence_path_cost` a second time only when
+  a row draws a reading departure (`walk` 0 to 3); otherwise it reuses
+  the prefix. The test still asserts two calls. Codex's attribution
+  stands: the merge changed the order the test ran in, not the rule.
+- The slow checkpoint cases. `getOptimizer` returns a new optimizer
+  without keeping it, and `save_weights` writes only `self._optimizer`.
+  `bin/corpus_lessons.py` trains with such an optimizer and saves its
+  stage models the same way, so no model the lesson runner saves carries
+  optimizer state. That this is why the next losses differ is Codex's
+  reading: §26 shows the state missing, not that restoring it makes the
+  losses agree.
+- My runs on the merged tree: both stopping gates pass; `test/test_interval_log.py` and the time-reader
+  inventory of `test/test_operators_round4a0.py` pass;
+  `test/test_doc_links.py` has 805 passed and 137 failed, every failure under
+  `doc/benchmarks/` or `doc/checkpoints/`; `test/test_sparse_concept_e2e.py`
+  keeps its one old failure; the trial-snapshot test passes run alone
+  (77 seconds); and with `RUN_SLOW=1` both slow checkpoint cases fail on
+  the next-loss assertion (46.7 seconds).
+
+**For Alec: the historical links (§26.2).** Codex recommends that the
+link test check only documents git does not ignore (52 today, and any
+new uncommitted document) and no longer the receipts, which keep their
+bytes. My reading: this follows from two decisions already made, that
+receipts stay local and are never linked (`doc/benchmarks/` is
+git-ignored), and that a plan is deleted once its work lands. A test over
+git-ignored files can give two results on two checkouts of one commit,
+and when the 1.8 spec is deleted after 1.8 lands, more receipt links will
+break the same way. If it is taken, the test's exclusion of extracted
+snapshots and its `origins` table go with it, since both name receipt
+paths only.
+
+Alec decided it on 2026-11-14, choosing "Tracked docs only": the link
+test checks only documents git does not ignore.
+
+**Carried into round A's repairs (*default*).**
+
+1. The trial-snapshot test's count is ported to the whole-path rule: two
+   calls when a row of the batch drew a reading departure, one
+   otherwise, and the snapshot equality whenever there are two.
+2. The slow checkpoint continuation fails on main as on the merge. Its
+   cause is found and repaired; the missing optimizer state is a
+   candidate. Certificate: both cases of
+   `test_real_next_batch_matches_checkpoint_losses_and_kept_programs`
+   pass unchanged with `RUN_SLOW=1`.
+
+### 26.7 Codex text: finish the landing (Claude, 2026-11-14; for Alec to paste)
+
+~~~
+Finish the landing of item 1.8
+(doc/plans/2026-11-11-item1-8-last-architecture-round.md: your return §26,
+reviewed in §26.6). Alec decided §26.2: the document-link test checks
+only documents git does not ignore.
+
+1. In test/test_doc_links.py, _markdown_files keeps the doc/**/*.md files,
+   README.md and todo.md that git check-ignore does not report, filtered
+   the way bounded_tests.source_snapshot filters its inputs; an
+   uncommitted document counts. Delete the extracted-snapshot exclusion
+   and the origins table in test_relative_links_resolve, which name
+   receipt paths only; a document's links resolve from its own
+   directory. Update the module docstring to say this. No receipt is
+   rewritten and no deleted plan is restored.
+2. Run test/test_doc_links.py (52 cases on today's tree, all expected to
+   pass) and both stopping gates,
+   test/test_mm_xor.py::TestMMXorConvergence::test_convergence and
+   test/test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class.
+   No new sweep: nothing else has changed since §26.4's.
+3. Commit the merge as "Merge GitHub main into item 1.8", with this test
+   change and the specification as it stands. Push main. Never
+   force-push. Commit no receipt and nothing git ignores.
+4. Go on with round A (§28 with its amendment §28.1). Add to its repairs
+   (§27.4) the two carried in §26.6: port the count in
+   test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot
+   to the whole-path rule (two _sentence_path_cost calls when a row of
+   the batch drew a reading departure, one otherwise, and the snapshot
+   equality whenever there are two); and find and repair the cause of
+   the failing slow continuation, both cases of
+   test/test_corpus_checkpoint.py::test_real_next_batch_matches_checkpoint_losses_and_kept_programs,
+   which must then pass unchanged with RUN_SLOW=1. The optimizer state
+   missing from the saved model is a candidate cause, not a shown one.
+
+Report the landing (link-test count, gate times, the merge commit and the
+pushed main) as the first subsection of §29, ahead of round A's return.
+~~~
+
+## 27. Round A of what remains of 1.8, as it is to be built (Claude, 2026-11-14; from §18.7, §22.7 to §22.9 and §24.6)
+
+Alec chose two rounds (§24.6). This section states the first one once.
+Where §18.7, §22.7, §22.8 or §22.9 differ from it, this section stands. A
+rule marked *default* is Claude's choice where Alec has not spoken. The
+second round, §3.18 and §3.19 rewritten with certificate 68, is not in
+it.
+
+### 27.1 The operators
+
+Alec: "I am thinking we should limit data/complete.grammar by commenting
+the rest." `complete.grammar` keeps the operators below, each with the
+faces it has today unless the table says otherwise, and comments out the
+rest. A layer class that no grammar file declares any longer is deleted
+with its tests, under the rule against legacy paths; one still declared
+by another grammar file stays (*default*).
+
+| Today | In round A | Source |
+|---|---|---|
+| `divide`, `descend` (field) | `focus`: both acts kept as the two candidates of one operator, their effects unchanged (*default*: a rename) | Alec, "attentions operations should be called focus(), unfocus()" |
+| `gloss` | `mint`, unchanged | Alec, "gloss() is better named mint()" |
+| none | `unfocus`: restores the bracket in force before the last `focus`; legal while a focus is in force; the chooser decides when to take it | Alec's fallback, §24.6 |
+| `intersection`, `union` (field and two operands) | stay | the four connectives "collapse to two"; these two names stay (*default*, §22.8 reading 21) |
+| `conjunction`, `disjunction` | commented out | the same |
+| `sum`, `product` | commented out; in their place `add`, `subtract`, `multiply`, `divide`, each computed in the chart: each operand coordinate `a` is mapped by `atanh`, combined, and mapped back by `tanh`, so a result stays in the unit range. A difference floors at zero on each lane (*default*); a quotient by zero is silent (*default*) | Alec, "lets keep the four", "arithmetic can work in tanh-bounded space"; on concept points only, never on codes |
+| `lift` (two operands, `clause="S"`) | `change`: the same rule, kernel (`MeaningAction`) and clause, renamed | Alec, "lets call the operation that lift was doing as change()" |
+| none | `lift` (one operand): raises its operand one order, the mirror of the one-operand `lower`, with the same kind of kernel (*default*) | Alec, "lift and lower are now unary" |
+| `lower` (two operands), `lower_unary` | `lower`, one operand, today's `lower_unary`; admitted only where its operand's row is of order one or more | Alec, "lets keep lower as something that is used for higher-order words" |
+| `definite`, `universal`, `some`, `definite_unary` | commented out, with the rules' `referent` attribute; minting and binding are `mint` and `bind`, chosen at run time like any operator, with the word as cue (*default*) | §22.7: determiners and number words are modifiers, "that decision of which operator is bound is. run-time one" |
+| `adverb` | `modifier`: the same gain (`MeaningAction` with its one shared basis), read from the modifier word and applied to its head, and the same narrowing extension. Every identifier in `bin/`, `test/`, `data/model.xsd` and the grammar files that names the operator is renamed with it: `AdverbLayer`, `apply_adverb`, `unapply_adverb`, `_adverb_log_gain`, `adverb_what`, the `adverbEigEdit` key and its flags. The element-wise product of `ProductLayer.forward` (`left * right`) is kept inside `modifier`'s compose as a commented-out alternative to the gain, with one line saying what it is. Lesson and game names of item 0.5 (`07-adverb`, `data/games/adverb`) keep their names (*default*) | Alec, "which makes it play the role of both adv and adj"; 2026-11-14: "name adverb back to modifier", "I think we should keep the product code inside of modifier, commented out" |
+| `compound`, `compound_unary` | stay in round A, as built: the two-operand rule keeps its name, and round B puts the one-operand `marker` in the place of `compound_unary` (§30.5) | Alec, 2026-11-14: "if marker is a reduce, then it needs to stay compound" |
+| `verb` | stays (*default*): it is more than a name, having its own `LaneKernel` and the verb-phrase clause, so Alec's condition for removing it does not hold | Alec, "If the verb subclass does not do anything beyond provide a new name, we should remove it" |
+| `equal` (compose, generate, thought) | commented out; an identity sentence composes as `part`, and `define` in thought writes the two relations | Alec, "equal can go, isEqual should stay" |
+| `generic` | commented out | Alec, "it doesn't need to exist" |
+| `sign` | compose only: its generate face is commented out (*default* reading of "I think sign() only goes one way") | Alec |
+| `interpret` | stays; its generate face is what Alec calls `name` (*default*: one operator, no new rule) | Alec, "let's use name() and interpret()" |
+| `transpose` | `swap`, unchanged | Alec, "surface, swap (transpose)" |
+| `preposition_unary`, `surface_unary` | commented out | Alec: no one-operand faces |
+| `ask`, `not`, `non`, `bind`, `part`, `whole`, `implies`, `preposition`, `surface` | stay | Alec's list |
+
+**Thought.** `equal` and `gain` leave the thought section (Alec: "drop
+gain, we can set that as expectationGain on the model"; the three
+expectation keys stay as they are, *default*). Three are added: `isWhole`,
+`isPart` with its operands exchanged, as `whole` is `part`'s;
+`non`, the thought face of the existing `NonLayer`; and `define`, which
+writes two relations, `part` each way. Where the raise of a class counted
+equalities, it counts the pairs `define` wrote (§22.8 reading 19). The
+others stay: `ask`, `query`, `part`, `whole`, `not`, `bind`, `isTrue`,
+`exist`, `isPart`, `isEqual`, `infer`, `inferBackward`, `intuit`,
+`implies`.
+
+**Not changed in round A.** A modifier's extension stays the narrowing
+§17 point 4 built. Nothing is built for a modifier's extension: Alec's
+"a small elephant is not a small paperclip" was about which operator the
+chooser will pick for an adjective (§27.6). Nothing forces "a" and "the"
+apart by length; Alec accepted length for that "for now", and it is not
+measured in this round.
+
+### 27.2 A word at several orders, and order read from the block
+
+- When a named concept is raised to a class, the old concept keeps its
+  word and the class gets the same word as a second object (Alec,
+  §22.7). Interpretation reads the highest-order object of a word, with
+  or without a determiner (Alec, §24.6); `lower` takes it down one order.
+- In the stopping gate
+  `test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class`,
+  only the last assertion changes: the old concept keeps its word (Alec's
+  word, §24.6). Its other assertions stand.
+- Order is read from where a concept's row lies: rows lie in their
+  order's block (`order_slice`). A reader that holds a concept's order
+  elsewhere (`ConceptAllocator.reference_orders`) reads the block instead,
+  where the block gives the same answer; nothing beside the vector holds
+  the order. A full block is a capacity error naming its order
+  (*default*); today it spills into a shared tail, where the address no
+  longer gives the order.
+
+### 27.3 Places, one range per modality, and level sets
+
+- **One range per modality.** `install_where_registry` gives each input
+  modality a range of its own in place of the one `input` range: text,
+  the numeric input of a numeric file, and the scalar beside the words,
+  each sized by its configuration. So the range of an address gives the
+  modality, as the block gives the order. The scalar has no place axis,
+  and its range has one address (*default*).
+- **A place on two axes is one address** (*default*). An image's place
+  is its row-major index inside the image's range; the declared shape,
+  28 by 28, decodes it to row and column. The band stays four
+  coordinates wide, and `WhereEncoding.decode_index` already recovers an
+  exact address. No vector is widened. (doc/Spaces.md says each axis is
+  encoded by its own ladder; that sentence is Claude's and is corrected
+  to this.)
+- **A percept is a level at a place.** A numeric reading with a felt
+  value above zero is perceived as a level percept at its place: one
+  basic percept for each pair of place and level met, its level coded as
+  `BasicPercepts.perceive_value` codes the scalar's value. The same level
+  at two places is two percepts, so XOR's two inputs stay distinct. The
+  axis of the percept cube per dimension
+  (`BasicPercepts.numeric_dimension`) goes, so the cube's width no longer
+  grows with the number of dimensions. Zero stays no presence. Alec:
+  "percept activations have a kind there but no magnitude."
+- **One order-zero concept per place** collects the level percepts met
+  at its place, and its for lane is the reading's membership in that
+  collection (`BasicPercepts.read_collection`), not the felt value.
+  `feeling` and `number` are unchanged.
+- **One reader.** `NumericPercepts` stays the one reader for any number
+  of dimensions, and the scalar beside the words uses the same functions
+  for perceiving, collecting and reading a value (§18.7 point 3). Its
+  field's `where` carries each concept's place, in place of today's
+  zeros.
+- **Back from the field.** `NumericPercepts.reverse` returns each
+  dimension's number from the level its concept holds. For two levels it
+  is exact.
+- **The image file.** A new `data/MM_image.xml` (*default* name):
+  numeric, field operators only as in `data/MM_xor.xml`, a 28 by 28 input
+  on two place axes, and its own stated capacities for 784 places and
+  the percepts and concepts they need. `conceptualPi` is false
+  (*default*): promotion of a whole sample's inputs
+  (`FamiliarTier.observe_intersection`) cannot recur for an image, and
+  the learned step that replaces it is the second round. Its inputs come
+  from `image_corpus.load(name, split)` (`bin/image_corpus.py`, on main),
+  whose rows are already of two levels. No existing configuration or
+  fixture is resized.
+- **Not in round A.** A second axis for attention's brackets, the fold
+  ladder and word tiling: the image file has field operators only and no
+  attention. They come when a configuration attends over an image.
+
+### 27.4 Repairs carried from §24
+
+- **Time that grows with the history (§24.3).** Find the read whose cost
+  per sentence grows with the retained rows, and bound it where it
+  arises; what is stored does not change. The lesson's time per block of
+  sixteen sentences is reported against §23.30's.
+- **The lesson's two fields (§24.4).** One attribution, on two or three
+  sentences, of where the field of understanding and the generated
+  idea's field differ: which concepts, on which lane, present against
+  absent or differing in degree, and the producer of the difference. Say
+  whether heard words are meant to be read on the against lane. A
+  defect found is repaired where it arises; a learned difference is
+  reported, not tuned.
+- **Where a trust comes from (§24.5).** The zero trust of a conversation
+  is passed to the closings that write it, in place of the model flag
+  `_conversation_read`.
+
+### 27.5 Certificates
+
+Numbers continue the spec's count; 65 to 67 are §22.9's, rewritten here,
+and 68 is the second round's.
+
+65. One reader. On `data/MM_xor.xml` and `data/MM_image.xml`,
+    `model.numeric_percepts` is a `NumericPercepts` with 2 and 784
+    dimensions, and both outputs come from `OutputSpace.read_field`. An
+    image percept's address decodes to its row and column; an image
+    percept, an XOR percept and a text percept lie in three different
+    ranges.
+66. The XOR proofs hold on level percepts at places, with their bars
+    kept: `test/numeric_xor.py` `certificate()` unchanged, and the
+    stopping gate `test_mm_xor.py::TestMMXorConvergence::test_convergence`.
+    `test_item18_fields.py::test_numeric_native_field_promotes_and_reader_is_stepped`
+    is ported with a record of each changed number.
+67. An image forward and back. On a two-level 28 by 28 input from
+    `image_corpus.load`, `model.forward`, `model.understand` and
+    `model.reverseReconstruct` run in the default sweep, and the
+    reconstruction returns every pixel's number (atol 1e-6). Wall time and
+    peak memory of one forward and one reverse are reported.
+69. The grammar. A test reads `complete.grammar` and finds exactly the
+    operators of §27.1 in each of its three sections. Each renamed
+    operator (`focus`, `mint`, `change`, `modifier`, `swap`) gives the same
+    result as its old name on the same fixed input.
+70. `unfocus`. After `focus` then `unfocus` the bracket equals the one
+    before `focus`; with no focus in force, `unfocus` is not legal.
+71. Arithmetic in the chart. On fixed points, `add`, `subtract`,
+    `multiply` and `divide` return the chart's values; every result lies
+    in the unit range; a difference floors at zero on each lane; a
+    quotient by zero is silent.
+72. `lift` and `lower`, one operand each. `lower` is admitted only on an
+    operand of order one or more; `lift` raises one order; the order of
+    `lower(lift(x))` is the order of `x`.
+73. A word at several orders. After a named concept is raised, the old
+    concept keeps its word, the class has the same word, interpretation
+    reads the class, and `lower` reads the old concept. The stopping
+    gate passes with its last assertion changed as Alec said, and no
+    other.
+74. `define` and `isWhole`. `define` writes two relations, `part` each
+    way; `isWhole(a, b)` equals `isPart(b, a)`; an identity sentence
+    composes as `part`; the raise counts what `define` wrote, and the
+    raised class of the stopping gate is unchanged.
+75. Order from the block. A concept's order read from its block equals
+    the order its definition gives, for every row of a trained fixture;
+    filling an order's block raises a capacity error naming that order.
+
+Then, on the finished source, as before: certificates 11 and 13 (as
+amended by 49), the 160-sentence whole-path lesson, the verbal proof, and
+one default sweep, nothing deselected.
+
+### 27.6 The verb's action, split into two operators (Alec, 2026-11-14)
+
+Alec: "MeaningAction has to be an operator so that verbs can actually
+choose it. Since it encodes NP VP and NP VP NP, we need to split it into
+two binary operations (VP NP that applies the VP, and VP NP that modifies
+the VP)." Asked what the second does, he chose "NP supplies the basis"
+(recommended), and that a phrase made by a preposition, modifying a verb
+phrase, is the same operation (recommended). Earlier, on §27.1: "A
+modifier does not get an extension: rather, I was stating that
+intersection will probably not be chosen for adjective because it does
+not adapt to its argument the way that other operators do."
+
+**The source.** `MeaningAction` (bin/MeaningKernels.py) is the map
+$Q\,\mathrm{diag}(e^{w})\,Q^{\top}$ on each evidence lane. Under the
+meaning layout, `GrammarLayer.__init__` gives it only to the rules named
+`lift` and `adverb`; `verb` and `preposition` get a `LaneKernel`. At
+`lift`, the verb phrase's object is read by reference from the phrase's
+chunk (the `OBJECT` slot of `ChunkJournal`, through `read_identity`) and
+supplies Q through `object_vectors`; with no object, Q is the verb's group
+basis (`VerbGroups`, by the chunk's `VERB` slot); w is read from the verb
+phrase. So one call holds both the sentence and its object.
+
+**The rule.** It replaces the `lift` and `verb` rows of §27.1's table.
+
+1. `change(NP, VP)` applies the verb phrase's action to its subject: the
+   gain read from the phrase, in the basis the phrase carries. A phrase
+   given no basis carries its verb's group basis, as today.
+2. `verb(VP, NP)` gives the verb phrase its basis: the Householder
+   reflections read from the NP's meaning (today's `object_vectors`),
+   confined to the NP's support. The phrase keeps its own gain. Its
+   result carries that basis to `change`, by reference to its source as
+   the chunk's `OBJECT` slot does today (*default*). `verb` gives up its
+   `LaneKernel`. Its name stays `verb` (*default*: Alec has not named it,
+   and the name binds no word to it).
+3. A phrase made by `preposition` modifies a verb phrase by the same
+   `verb` operation: the phrase's meaning supplies the basis. The
+   preposition rule keeps its `LaneKernel`, with its object as head
+   (§17 point 6a), because that is where the preposition's own word
+   enters the phrase's meaning (*Claude's reading*). The option Alec chose
+   said the preposition rule gives up its `LaneKernel`; that was Claude's
+   mistake, since without it "on the mat" and "under the mat" would give
+   a verb phrase the same basis.
+4. `change` and `modifier` keep the gain half of `MeaningAction`, and
+   `modifier` keeps its one shared basis; `verb` takes the basis half. The
+   chooser may bind any word to any of the three.
+5. The sentence of §27.1 on a modifier's extension is withdrawn. There is
+   no extension to build; Alec's remark was about which operator the
+   chooser will pick for an adjective.
+
+**Certificates.**
+
+76. The split keeps today's action. On a fixed transitive input,
+    `change(S, verb(V, O))` equals today's `lift` with O as the chunk's
+    object (the same w, the same Q); on an intransitive input,
+    `change(S, V)` equals today's `lift` with the verb's group basis. Each
+    generate face recovers what today's `lift` reverse recovers.
+77. One reader for both phrases. The basis that `verb(VP, PP)` gives is
+    read from the phrase's meaning by the same reader as for an NP, and
+    two phrases whose meanings differ give different bases.
+78. The `verb` rule has no `LaneKernel`; the preposition rule keeps its
+    own.
+
+## 28. Codex text: round A of what remains of 1.8 (Claude, 2026-11-14; for Alec to paste once §26 is returned)
+
+~~~
+Build round A of what remains of item 1.8
+(doc/plans/2026-11-11-item1-8-last-architecture-round.md). Its rules are
+§27, which states §18.7 and §22.7 to §22.9 once with Alec's answers of
+§24.6; where they differ, §27 stands. §22.7 to §22.9 are records of
+discussion; build from §27. Start from main after the landing of §25.
+Commit and push nothing in this round until Alec says so.
+
+A rule of §27 marked default is Claude's choice where Alec has not
+spoken. Build it as written, list each default you built in your return,
+and say what you found against any.
+
+0. The repairs carried from §24 (§27.4): the read whose cost grows with
+   the history, the attribution of the lesson's two fields, and the
+   trust of a conversation passed to its closings.
+1. The operators (§27.1): complete.grammar as the table says, the rest
+   commented out; renames, the new unfocus, lift, arithmetic in the chart,
+   and the thought faces isWhole, non and define. Certificates 69 to 72
+   and 74.
+2. A word at several orders and order read from the block (§27.2),
+   including the one changed assertion of the stopping gate that Alec
+   allowed. Certificates 73 and 75.
+3. Places and level sets (§27.3): one where range per modality, a place on
+   two axes as one address, level percepts at places, the one reader,
+   reverse from the level, and data/MM_image.xml on image_corpus.load.
+   Certificates 65 to 67.
+4. Tests. Port every test whose contract still holds, keeping its
+   assertions; retire by name, with the part of §27 that retires it, every
+   test of a removed operator or face. Give the counts.
+5. Then, on the finished source: certificates 11 and 13 (as amended by
+   49), the 160-sentence whole-path lesson (explore-1.xml), the verbal
+   proof, and one default sweep, env -u RUN_TRAINED -u RUN_SLOW make test,
+   nothing deselected. A failure that predates the round is listed, not
+   repaired.
+
+For each thing removed or renamed, find its readers yourself and say
+where each went. Something that still has a reader §27 does not account
+for is a design question: stop and write it for Alec with your
+recommendation.
+
+Rules: §3, §7 and the rules of §10's text. Find each cause yourself and
+repair it where it arises; a mechanism added only to pass a gate is not a
+repair. No seed is chosen so that an assertion passes; no fixture is
+resized; what the round retires is deleted, not kept behind a switch; no
+language is named in code. Continue without stopping and record each
+decision you take for Alec; stop only for a design question, written for
+Alec with your recommendation. A failed
+test/test_mm_xor.py::TestMMXorConvergence::test_convergence or
+test/test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class
+(apart from the one assertion of §27.2) stops the round. Keep document
+edits to what this round changes.
+
+Not in the round: the second round (§3.18, §3.19, certificate 68), a
+second axis for attention, the fold ladder and tiling, and a modifier's
+extension that reads its head.
+
+Return as §29: each item with its causes and its certificates, failing
+before and passing after; the defaults you built and what you found
+against any; the readers of each removed or renamed operator; the ports
+and the retirements by name; the lesson's and the proofs' numbers
+written out (receipts stay local and are not linked); the sweep's result;
+the failures that remain, with their producers; and the returned source
+hash.
+~~~
+
+### 28.1 Amendment to the text of §28 (Claude, 2026-11-14; for Alec to paste)
+
+~~~
+Amendment to round A of item 1.8 (§28). Alec, 2026-11-14: "MeaningAction
+has to be an operator so that verbs can actually choose it. Since it
+encodes NP VP and NP VP NP, we need to split it into two binary operations
+(VP NP that applies the VP, and VP NP that modifies the VP)." The rules
+are §27.6 of doc/plans/2026-11-11-item1-8-last-architecture-round.md; they
+replace the lift and verb rows of §27.1's table.
+
+1. change(NP, VP) applies the verb phrase's gain, in the basis the phrase
+   carries, to its subject; a phrase given no basis carries its verb's
+   group basis, as today.
+2. verb(VP, NP) gives the verb phrase its basis from the NP's meaning
+   (MeaningAction's object_vectors and Householder reflections) and keeps
+   the phrase's gain. It gives up its LaneKernel.
+3. A phrase made by preposition modifies a verb phrase through the same
+   verb operation. The preposition rule keeps its LaneKernel, with its
+   object as head.
+4. Certificates 76 to 78 of §27.6 belong to item 1 of round A and are run
+   again on the finished source.
+
+The withdrawn sentence of §27.1 on a modifier's extension builds nothing.
+List the defaults of §27.6 with the others in your return.
+~~~
+
+## 30. Round B of what remains of 1.8, as it is to be built (Claude, 2026-11-14; §3.18 and §3.19 at their last word)
+
+This section states the second round once. §29 is kept for Codex's return
+of round A. Where §3.18, §3.19 or their certificates 26 to 33 and 57 to 62
+differ from this section, this section stands. A rule marked *default* is
+Claude's choice where Alec has not spoken.
+
+### 30.1 Alec's words of 2026-11-14
+
+- On the two-operand selection that tense and aspect were built on
+  (`compound`): first "Keep the selection rule, call it "marker" instead of
+  compound", then: "First, if marker is a reduce, then it needs to stay
+  compound and this needs to be a unary op. The logic I described can go in
+  place of the small learned kernel, but the state before/state after logic
+  is not great. lets just make this a family of learned kernels: hopefully
+  the architecture will be able to decide which family to apply: e.g.
+  tense, aspect, plurality, based on sentence context."
+- "The logic I described": "it could provide a sigmaPi between the percept
+  space's coordinates and the concept space's with several hidden layers to
+  learn transforms between the transformed words, since it will be taught
+  when it is applied (i.e. as a way of learning tense and aspect)."
+- On the trust of an object reached through a read word: "At one for now".
+- On what `expect`'s two matrices run between: "I wanted to say space
+  coordinates, as we talked about before, but that takes each concept
+  individually and is not good for intuition. Let's keep the old form on
+  hand in case we want to revert (Q D Q kind), and stack a sigmaPi with
+  only a moderate hidden layer (full input, full output, so it resembles
+  only few percepts)."
+- On `intuit`: "I think intuit is going to be like expect, a sigmaPi from
+  concepts to concepts with a small-ish hidden layers so that weights do
+  not blow up. It gets taught, so we should only need several middle
+  layers." And on the rules it fires today: "the existing logic can be
+  introduced as implication".
+- On the order of the work: "forget about 1.5 until we finish 1.8"; "we
+  are going in order, except for 0.5 work that happened on a different
+  computer".
+
+Earlier words this round builds on are in §3.18 and §3.19: "the intuit()
+and expect() operations should not be explicit: THEY should be maps from
+one space to the other, and we already have a description of how they are
+taught"; "For expect, both sigma and pi matrices are matrices of their
+own"; "How one object is chosen when a word has several: expectation";
+"symbols should not take the centroid of the percepts that they collect";
+"a class is placed by context, but it is the context after vertical
+token/type propagation"; "The definition store can still be split, just
+flag it in future work".
+
+### 30.2 The stack
+
+One class is built and used three times (*default* name `SigmaPiStack`).
+
+1. *Stages.* It alternates two kinds of stage over values in the unit
+   range. A pi stage gives each of its units the product of its inputs,
+   each raised to a nonnegative exponent. A sigma stage gives each unit
+   one minus the product of one minus each input, each raised to a
+   nonnegative exponent. The first stage is a pi and the last a sigma
+   (*default* arithmetic: the product and the probabilistic sum, since
+   the least and the greatest of `SparseLayer.fold_presence` pass a
+   gradient to one member only).
+2. *Lanes.* An input with two evidence lanes enters as two inputs and an
+   output with two lanes leaves as two outputs. No stage nets a lane
+   against the other.
+3. *Bounded.* Every exponent is clamped to a fixed range (*default* 0 to
+   4, the clamp `MeaningAction` uses), so that "weights do not blow up".
+4. *Nothing at the start.* The last stage's exponents start at zero, so a
+   new stack gives exactly zero and adds nothing.
+5. *No global draw.* Its first weights come from a private generator, as
+   `MeaningCodes.identity_bits` draws, so that building a stack changes no
+   existing model's random numbers.
+6. *Width.* The hidden width and the number of hidden layers are
+   configuration keys of the conceptual space, declared in
+   `data/model.xsd`, each with a default, so no existing configuration or
+   fixture changes.
+
+Checked as a toy (arithmetic in the session's scratch directory, not the
+model and not a receipt): the four sentences of §3.18 (A B gives X, C D
+gives X, A D gives Y, C B gives Y), the last word left out, the map
+taught by the full input. With each word on coordinates of its own, one
+linear map is right in 2 of the 4 cases on all 20 seeds, and one pi stage
+under one sigma stage is right in 4 of 4 on all 20. With overlapping
+random codes the linear map also reaches 4 of 4, so the certificate uses
+coordinates that do not overlap.
+
+### 30.3 `expect`
+
+1. *What it is.* A stack of its own with one hidden layer (Alec: "only a
+   moderate hidden layer"; key `expectHidden`, *default* 64, the hidden
+   width of the predictor it replaces). Its input is the whole observed
+   field, both lanes of `_observed_knowing` over the rows of order zero,
+   and its output is the whole expected field over the same rows,
+   `_expected_knowing` ("full input, full output"). It is sized once, at
+   construction, by the capacity of the order-zero block. *Default:* the
+   rows are those the predictor runs over today; Alec's "pi(percepts) ->
+   concepts" and back is read as the pi stage up to the hidden layer and
+   the sigma stage down.
+2. *Where it runs.* Where `ConceptSpread.open_prediction` runs the
+   predictor now: once, at the open pass.
+3. *What reads it.* Attention's relevance, the compose chooser, retrieval
+   and `ConceptSpread.rule_order` read `_expected_knowing` detached, as
+   now.
+4. *Its teacher is omission.* Where `Omission.stage` hid units of the
+   sentence, the cost is the difference between what the stack expects
+   from the lossy field and the field with the hidden units present, at
+   the rows of order zero. The second is a teacher and is detached. The
+   cost keeps its name, `expectation.concepts`. A sentence with nothing
+   hidden gives `expect` no cost. The teacher it has today, the field the
+   kept path leaves after its thought (`ConceptSpread.complete`), becomes
+   `intuit`'s (§30.4).
+5. *The old form stays on hand.* Alec: "Let's keep the old form on hand
+   in case we want to revert". `Expectation.ActivationPredictor` stays in
+   the source and is built only where the key `expectationMap` is
+   `predictor`; the *default* value is `sigmaPi`. (*Claude's reading:*
+   the form to revert to is the one over the space's coordinates, and the
+   predictor is the built one of that kind. This is the one place where
+   something replaced is kept behind a key.)
+6. *The guard.* "Codes never read a value computed from codes" holds as
+   built: the stack reads activations, its output is not written to the
+   seen ledger, and no cost of it moves a place.
+
+### 30.4 `intuit`
+
+1. *What it is.* A stack of its own "from concepts to concepts": its
+   input is the observed knowing, both lanes, and its output a knowing
+   over the same rows. Keys `intuitHidden` (*default* 64) and
+   `intuitLayers` (*default* 2, for "several middle layers"). A hidden
+   width of zero builds no stack. *Default:* its rows are the rows of
+   every order, so that a token present teaches its type ("explicit
+   membership can be used to teach implicit maps").
+2. *When.* It is evaluated once when the sentence is observed, at the
+   open pass and before any thought. What it gives joins the sentence's
+   knowing where `Intuition.write_knowing` deposits now
+   (`_concept_activations`), so thought, the answer and the output read
+   it.
+3. *Its teachers.* The field the kept path leaves after its thought, at
+   every order, as `ConceptSpread.complete` reads it for the predictor
+   today: the cost is the difference between what the stack gave at
+   observation and what the field became (*default* name
+   `intuition.field`), the second detached. And the gradient of the
+   output cost through the live stack, as `write_knowing` evaluates live
+   today.
+4. *The thought operation.* `intuit` in thought states what the stack
+   gave, with the evidence kind `intuition`, which
+   `ThoughtAnswer.accepted` takes as now.
+5. *The rules it fired.* Alec: "the existing logic can be introduced as
+   implication". The firing of stored relations (`Intuition.extract`,
+   `evaluate`, `execute`, the proofs and their `replay`, and
+   `IntuitionLayer`'s weight for each rule and term) leaves `intuit` and
+   stays in the source as the way a stored implication is applied.
+   *Default:* it is reached through `infer`, the thought operation that
+   applies an implication, whose `ThoughtInference.derive` already takes
+   one firing of a rule; its evidence kind is `inference`.
+   `Intuition.pervade`, `pervasion` and `judge` stay where they are.
+6. *On a numeric file.* On a file with field operators only, the stack is
+   System 1's learned step and the output cost is its only teacher. The
+   promotion of co-present inputs (`FamiliarTier.observe_intersection`)
+   is unchanged where `conceptualPi` is true, so the XOR proofs keep
+   their construction. On `data/MM_image.xml`, where it is false, the
+   stack is what learns (certificate 68).
+
+### 30.5 `marker`
+
+1. *`compound` stays.* The two-operand rule keeps its name and its
+   selection among the head's cases, as built.
+2. *`marker` is a one-operand operator.* It takes the place of
+   `compound_unary` in the compose and generate sections of
+   `data/complete.grammar`. `CompoundUnaryLayer` goes; its tests are
+   ported to `marker` where their contract holds and are retired by name
+   where it does not.
+3. *A family of learned kernels.* Each kernel is a stack from the percept
+   space's coordinates, the operand's form block, to the concept space's
+   coordinates, its meaning block. Keys `markerKernels` (*default* 8),
+   `markerHidden` (*default* 64) and `markerLayers` (*default* 2, for
+   "several hidden layers").
+4. *What an application does* (*default* arithmetic). The form block
+   passes unchanged. The chosen kernel gives, for each coordinate of the
+   meaning on each lane, a raise and a lowering; their difference shifts
+   the meaning in the chart (`cube_chart`), as the context term of
+   `LaneKernel` does now. The reverse reads the same form, computes the
+   same shift and removes it, so it is exact given the kernel. A new
+   kernel is the identity.
+5. *Which kernel.* Each kernel is one candidate of the operator, chosen
+   by the learned chooser from the sentence's context, in compose and in
+   generate. No kernel has a name, a form or a language tied to it; what
+   each comes to do ("tense, aspect, plurality") is learned.
+6. *Taught when applied.* A kernel learns through the costs of the path
+   that applied it, like any kernel.
+7. *No cases.* `marker` reads no case bank and stages no phases.
+   *Default:* `compound` keeps the cases the owner stages for it,
+   including a verb phrase's phases. Alec called "the state before/state
+   after logic" "not great"; whether it leaves `compound` is not decided,
+   and it is reported, not removed.
+
+### 30.6 A word, its objects and trust
+
+1. *An object reached through a read word is at trust one, for now.*
+   Where a read word is given its object by a call of
+   `InterpretLayer.define` that passes no trust, the mapping is at
+   (1, 0), as built, and the object's radius is one: the rise by views of
+   `ConceptTrust.refresh` no longer applies to such an object. Certificate
+   13's .8646647334 becomes one, ported with a record. A stated
+   definition keeps its speaker's trust and a conversation's is zero, as
+   built. What else `ConceptTrust` tracks is traced and reported, and
+   keeps its rule.
+2. *Which object, where a word has several.* Among
+   `InterpretLayer.denotations(word)`, interpretation reads the object
+   whose expected knowing is greatest; where none is expected, the
+   highest order, as round A (§27.2). (*Default* joining of two things
+   Alec said.)
+3. *Recognition of a value.* "What is this?", asked of a felt value with
+   no object named, is answered by `interpret` run backwards (Alec:
+   "Good"): the present reading's class, read from the field with no
+   words (§3.17, "Two directions"), and that class's word by
+   `InterpretLayer.reverse` and `lexical_form`. The binding is accepted
+   under the evidence kind `perception`, which `ReferenceClose` and
+   `ThoughtAnswer.accepted` already carry. This is the part certificate
+   13 was claimed without.
+4. *Symbols.* Nothing is built for "interpret makes all symbols". It
+   needs the split of the definition store into concept rows and symbol
+   rows, which is in FutureWork by Alec's word. As built, the mapping row
+   that `define` writes is the meta-concept, `DefinitionIndex` is the
+   dictionary, and `denotations` is the search among siblings.
+
+### 30.7 Placement by the field, and no form for a symbol
+
+1. The context of placement is the field at every order: what is present
+   and what the folds give from it, a token's types among them
+   (`FieldProjection.close`). Today it is the words observed
+   (`placement_context`).
+2. `place_rows` moves a row relative to rows of its own order only.
+3. A class is placed by its context like any concept. `placement_derived`
+   and the centroid of `derive_class_placements` go.
+4. A row above the basic percept carries no perceptual form. The copy of
+   a base word's code into a class's row (`ConceptIndex.index_part_row`)
+   and a form taken as a centroid of percepts for a row above order zero
+   (`_percept_centroid`) go. A reader that needs a form takes the word's,
+   through the mapping.
+5. The context is the activation before any weighting by likeness of
+   places, so that no place is moved by a value computed from places.
+
+### 30.8 Not in round B
+
+- *The pass up and down through containers* (§3.18 Part A, certificates 26
+  to 33). Expectation is the stack. The fold of a conjunctive definition
+  keeps its arithmetic, so the XOR proofs' fold does not change.
+  (*Default:* Alec's "Yes, all three" of 2026-11-12 was given for that
+  pass and lapses with it.)
+- *Two kinds of row* (§3.19 "The round", certificates 57 to 62):
+  FutureWork, by Alec's word.
+- The trust of a mapping set by success, learned attention acts, the
+  removal of tanh and atanh from `SigmaLayer` and `PiLayer`, and geometry
+  for inclusion: FutureWork.
+- A second axis for attention's brackets, the fold ladder and tiling.
+- Item 1.5.
+
+### 30.9 Certificates
+
+79. *The stack.* On the four sentences of §30.2, with each word on
+    coordinates of its own and a fixed private seed, a stack of one
+    hidden layer expects the left-out word in all four; one linear map
+    does not reach four. A model built with the stacks and one built
+    with their hidden widths at zero draw the same random numbers.
+80. *The gates first.* With `intuit`'s stack built on `data/MM_xor.xml`,
+    certificate 11 (as 66 leaves it) and the stopping gate
+    `test_mm_xor.py::TestMMXorConvergence::test_convergence` hold at
+    their bars. This is measured before the rest of the round is built.
+81. *`expect` restores what was hidden.* On a lesson fixture read with
+    omission, the row of a hidden word is expected above every other
+    absent row once the sentence has been met a stated number of times.
+82. *Its teacher.* With nothing hidden, `expectation.concepts` adds no
+    cost; the teacher carries no gradient; `ActivationPredictor` is
+    built only where `expectationMap` is `predictor`, and that form
+    passes the consumers' test too.
+83. *`intuit` learns from thought.* A conclusion thought has reached a
+    stated number of times is given at observation with thought
+    withheld; a combination not met before is not, and thought still
+    reaches it.
+84. *Once, before thought.* `intuit`'s stack is evaluated once for a
+    sentence, at the open pass.
+85. *The rules are implication's.* A stored implication applied through
+    `infer` gives the supports the old `intuit` gave on the same fixture,
+    each ported number recorded; `intuit` reads no relation row.
+86. *`marker`.* It has one operand; the form block is unchanged; a new
+    kernel is the identity; the reverse is exact given the kernel (atol
+    1e-6); the compose and generate menus hold one candidate for each
+    kernel; it reads no case bank; no anchor names it;
+    `compound_unary` is in no grammar file and `compound` is unchanged.
+87. *A measurement, with no bar.* The six placements of
+    `constituent_corpus.case_corpus` (`test/phase_experiment.py`), with
+    `marker` in the menu: exact answers, and which operator and which
+    kernel the kept trees applied at the marked word.
+88. *Object trust.* An object reached through a read word reads one;
+    certificate 13 holds with its number ported; a stated definition
+    keeps its speaker's trust; a conversation's stays zero.
+89. *Which object.* Of two objects of one word, the expected one is read;
+    with neither expected, the higher order.
+90. *Recognition.* On trained values, a value and "what is this?" with
+    no object named give the value's word.
+91. *Placement.* The context of placement holds the types of a present
+    token; one step moves no row of another order; `placement_derived`
+    and `derive_class_placements` are absent; a row above order zero has
+    no form.
+68. *A measurement, with no bar.* On `data/MM_image.xml` with
+    `image_corpus.load`: accuracy on held-out images after a stated
+    number of presentations, beside the same file with `intuitHidden` at
+    zero. A bar is set after this first measurement.
+
+Then, on the finished source: certificates 11 and 13, the 160-sentence
+whole-path lesson, the verbal proof, both stopping gates and one default
+sweep, nothing deselected.
+
+### 30.10 Risks
+
+- `intuit`'s stack adds to the field every numeric output reads, so it
+  can move the XOR proofs. Certificate 80 is measured first, and a gate
+  that fails stops the round there.
+- Placement by the field moves every place, so a regression can appear
+  anywhere a place is read.
+- The stacks over whole fields grow with the capacity of the order-zero
+  block times the hidden width. The count of their parameters is reported
+  for each configuration.
+- Three defaults carry most of the uncertainty and are reported with what
+  was found against them: the rows `expect` runs over (§30.3 point 1),
+  `infer` as the door to the old rules (§30.4 point 5), and the
+  arithmetic of a `marker` kernel (§30.5 point 4).
+
+## 31. Codex text: finish item 1.8, rounds A and B (Claude, 2026-11-14; for Alec to paste)
+
+~~~
+Finish item 1.8 (doc/plans/2026-11-11-item1-8-last-architecture-round.md).
+Three parts, in order, without waiting for a review between them. Commit
+and push only what part 1 names; after it, commit and push nothing until
+Alec says so.
+
+Part 1, the landing. Do the text of §26.7, items 1 to 3, if it is not
+done: the document-link test checks only documents git does not ignore;
+the merge is committed and main is pushed.
+
+Part 2, round A. Build §27 by the text of §28 with its amendment §28.1,
+and with these changes:
+- compound and compound_unary stay in round A, as §27.1's table now says
+  (Alec, 2026-11-14). Certificate 69 reads the table as it now stands.
+- Two repairs are added to §27.4, from §26.6: port the count in
+  test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot
+  to the whole-path rule (two _sentence_path_cost calls when a row of the
+  batch drew a reading departure, one otherwise, and the snapshot
+  equality whenever there are two); and find and repair the cause of the
+  failing slow continuation, both cases of
+  test/test_corpus_checkpoint.py::test_real_next_batch_matches_checkpoint_losses_and_kept_programs,
+  which must then pass unchanged with RUN_SLOW=1. The optimizer state
+  missing from the saved model is a candidate cause, not a shown one.
+- Item 5 of §28's text (the lesson, the verbal proof and the default
+  sweep) is not run at the end of round A; it is run once, at the end of
+  round B. Round A ends with its certificates, both stopping gates and
+  the test files it touched. If round B stops early, run item 5 on round
+  A's source and say so.
+Write round A's return as §29, as §28 asks, with its source hash, and
+save round A's diff against the merge commit as a local receipt, so that
+round A can be reviewed apart from round B.
+
+Part 3, round B. Its rules are §30; where §3.18, §3.19 or certificates 26
+to 33 and 57 to 62 differ, §30 stands. A rule marked default is Claude's
+choice where Alec has not spoken: build it as written, list it in your
+return, and say what you found against it.
+
+1. The stack (§30.2), and intuit's stack on data/MM_xor.xml. Run
+   certificates 79 and 80 before anything else of the round. If
+   certificate 80 fails, stop and write it for Alec.
+2. expect (§30.3): the stack over the order-zero rows in place of the
+   predictor, taught by omission; ActivationPredictor kept, built only
+   where expectationMap is predictor. Certificates 81 and 82.
+3. intuit (§30.4): the stack from concepts to concepts, evaluated once at
+   the open pass, taught by the field thought leaves and by the output
+   cost; the rules it fired reached through infer. Certificates 83 to 85.
+4. marker (§30.5): the one-operand operator with its family of learned
+   kernels in the place of compound_unary; compound unchanged.
+   Certificates 86 and 87.
+5. A word, its objects and trust (§30.6): an object reached through a
+   read word at trust one; the object chosen by expectation, else the
+   highest order; recognition of a value by interpret run backwards.
+   Certificates 88 to 90.
+6. Placement by the field, and no form for a row above the basic percept
+   (§30.7). Certificate 91.
+7. Certificate 68, the measurement on data/MM_image.xml.
+8. Tests. Port every test whose contract still holds, keeping its
+   assertions; retire by name, with the point of §30 that retires it,
+   every test of something removed. Give the counts.
+9. Then, on the finished source: certificates 11 and 13, the 160-sentence
+   whole-path lesson (explore-1.xml), the verbal proof, both stopping
+   gates, and one default sweep, env -u RUN_TRAINED -u RUN_SLOW make test,
+   nothing deselected. A failure that predates the round is listed, not
+   repaired.
+
+For each thing removed, renamed or moved, find its readers yourself and
+say where each went. Something that still has a reader §30 does not
+account for is a design question: stop and write it for Alec with your
+recommendation.
+
+Rules: §3, §7 and the rules of §10's text. Find each cause yourself and
+repair it where it arises; a mechanism added only to pass a gate is not a
+repair. No seed is chosen so that an assertion passes; no fixture is
+resized; every new key is declared in data/model.xsd with a default; no
+language is named in code, and no marker kernel is named after what it
+comes to do. What the round retires is deleted, not kept behind a switch,
+with the one exception §30.3 point 5 states. Continue without stopping
+and record each decision you take for Alec; stop only for a design
+question or a failed stopping gate
+(test/test_mm_xor.py::TestMMXorConvergence::test_convergence,
+test/test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class).
+Keep document edits to what the rounds change.
+
+Not in the rounds: what §30.8 lists, and item 1.5.
+
+Return round B as §32: each item with its causes and its certificates,
+failing before and passing after; the defaults you built and what you
+found against each, the three of §30.10 first; the readers of each thing
+removed, renamed or moved; the ports and the retirements by name; the
+count of each stack's parameters for each configuration; the
+measurements of certificates 68 and 87; the lesson's and the proofs'
+numbers written out (receipts stay local and are not linked); the
+sweep's result; the failures that remain, with their producers; and the
+returned source hash.
+~~~
+
+### 31.1 Amendment to the text of §31 (Claude, 2026-11-14; for Alec to paste)
+
+~~~
+Amendment to round A of item 1.8 (§31, part 2). Alec, 2026-11-14: "name
+adverb back to modifier" and "I think we should keep the product code
+inside of modifier, commented out." The adverb row of §27.1's table now
+says this:
+
+1. The rename of adverb to modifier covers every identifier in bin/,
+   test/, data/model.xsd and the grammar files that names the operator:
+   AdverbLayer, apply_adverb, unapply_adverb, _adverb_log_gain,
+   adverb_what, the adverbEigEdit key and its flags. List each. Item 0.5's
+   lesson and game names (07-adverb, data/games/adverb) keep their names.
+2. Inside modifier's compose, beside the gain, keep the element-wise
+   product of ProductLayer.forward (left * right) as commented-out code,
+   with one line saying it is the alternative to the gain. It is not
+   reachable by any switch.
+3. Certificate 69's same-result check covers modifier against today's
+   adverb on the same fixed input.
 ~~~

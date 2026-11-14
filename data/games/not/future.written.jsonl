@@ -1,0 +1,3 @@
+{"game":"not","key":"not-written-000000","sources":["Rex will walk tomorrow."],"split":"train","target":"Rex will not walk tomorrow.","tier":"written","variant":"future"}
+{"game":"not","key":"not-written-000001","sources":["Bella will sing tomorrow."],"split":"train","target":"Bella will not sing tomorrow.","tier":"written","variant":"future"}
+{"game":"not","key":"not-written-000002","sources":["Felix will sleep tomorrow."],"split":"transfer","target":"Felix will not sleep tomorrow.","tier":"written","variant":"future"}

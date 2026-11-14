@@ -1,0 +1,4 @@
+{"game":"unary_chain","key":"unary_chain-written-000000","sources":["Dogs wait near the gate."],"split":"train","target":"The dogs wait near the gate.","tier":"written","variant":"k1"}
+{"game":"unary_chain","key":"unary_chain-written-000001","sources":["Birds gather at dusk."],"split":"train","target":"The birds gather at dusk.","tier":"written","variant":"k1"}
+{"game":"unary_chain","key":"unary_chain-written-000002","sources":["Horses rest beneath the trees."],"split":"train","target":"The horses rest beneath the trees.","tier":"written","variant":"k1"}
+{"game":"unary_chain","key":"unary_chain-written-000003","sources":["Cats sleep beside the window."],"split":"transfer","target":"The cats sleep beside the window.","tier":"written","variant":"k1"}

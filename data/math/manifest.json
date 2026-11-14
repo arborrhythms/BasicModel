@@ -1,0 +1,178 @@
+{
+ "beyond_pairs": [
+  [
+   11,
+   2
+  ],
+  [
+   12,
+   3
+  ],
+  [
+   2,
+   11
+  ],
+  [
+   3,
+   12
+  ]
+ ],
+ "command": "python bin/math_chain_corpus.py freeze --seed 20261112 --out data/math",
+ "corrections": [
+  "1: grade order identity, alias, plus zero, plus one, longer chains",
+  "2: worked steps asked as intermediate questions with supplied answers"
+ ],
+ "generator": "bin/math_chain_corpus.py",
+ "grades": [
+  {
+   "description": "every successor fact, in both stated forms; train only",
+   "file": "grade-00.jsonl",
+   "grade": 0,
+   "name": "counting",
+   "rows": {
+    "train": 40
+   },
+   "sha256": "c27cc77e596b8efd8f3c1e1afceb77f66a8533cf333c919c5b1605b8989fb086"
+  },
+  {
+   "description": "x is n. what is x ?",
+   "file": "grade-01.jsonl",
+   "grade": 1,
+   "name": "identity",
+   "rows": {
+    "test": 8,
+    "train": 12,
+    "validation": 1
+   },
+   "sha256": "df118bad483cd8fefe414ebbb774b17d1c541b9db770dfff715154a202bf054c"
+  },
+  {
+   "description": "x is n. y is x. what is y ?",
+   "file": "grade-02.jsonl",
+   "grade": 2,
+   "name": "alias",
+   "rows": {
+    "test": 3,
+    "train": 17,
+    "validation": 1
+   },
+   "sha256": "c313ce9370fd75aec5bbc5e479ec99b512cd7d882e2cec4910695e48686e656e"
+  },
+  {
+   "description": "x is n. y is x plus zero. what is y ?",
+   "file": "grade-03.jsonl",
+   "grade": 3,
+   "name": "plus_zero",
+   "rows": {
+    "test": 2,
+    "train": 18,
+    "validation": 1
+   },
+   "sha256": "e3f8101bf16db5e0ef7beab0f86aaffdfb1e0a850376580728e95047c96d1bcd"
+  },
+  {
+   "description": "x is n. y is x plus one. what is y ?",
+   "file": "grade-04.jsonl",
+   "grade": 4,
+   "name": "plus_one",
+   "rows": {
+    "test": 3,
+    "train": 11,
+    "validation": 6
+   },
+   "sha256": "55529c0b003588b9f5c0ca10eb31d2e28ca1d48014403de7af9ff89335f524b5"
+  },
+  {
+   "description": "x is a. y is x plus b, b from two to ten, a to ten; the held-out pairs only in validation and test, the beyond pairs only in beyond",
+   "file": "grade-05.jsonl",
+   "grade": 5,
+   "name": "plus_k",
+   "rows": {
+    "beyond": 4,
+    "test": 4,
+    "train": 95,
+    "validation": 4
+   },
+   "sha256": "3790b72bcfda9456ed9ae3364ad2833ab9d395554d7b4288b38933aa661f2bc1"
+  },
+  {
+   "description": "plus_k with two unrelated premises",
+   "file": "grade-06.jsonl",
+   "grade": 6,
+   "name": "distractors",
+   "rows": {
+    "beyond": 4,
+    "test": 4,
+    "train": 95,
+    "validation": 4
+   },
+   "sha256": "07a3173f3853991ce4f965d51619057cc35ba5ceb2fe7360a919363813bf732f"
+  },
+  {
+   "description": "x is a. y is x plus b. z is y plus c. what is z ?",
+   "file": "grade-07.jsonl",
+   "grade": 7,
+   "name": "depth_two",
+   "rows": {
+    "test": 42,
+    "train": 200,
+    "validation": 33
+   },
+   "sha256": "d65f0f0480b4dd6e8403eb7667b42f1cf1703ebc1723f313fc3f0dd9b5843695"
+  },
+  {
+   "description": "four names in one chain; test only, deeper than any trained chain",
+   "file": "grade-08.jsonl",
+   "grade": 8,
+   "name": "depth_three",
+   "rows": {
+    "test": 48
+   },
+   "sha256": "da0e5a5efd6a0b8c9ce937e521e0964863a2d2ffdca8d6eddc8ae5993842fae6"
+  }
+ ],
+ "held_out_pairs": [
+  [
+   2,
+   7
+  ],
+  [
+   4,
+   8
+  ],
+  [
+   7,
+   3
+  ],
+  [
+   9,
+   6
+  ]
+ ],
+ "never_direct": "rows are sentences of number words; no digit, numeric code or readout",
+ "number_words": [
+  "zero",
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
+  "ten",
+  "eleven",
+  "twelve",
+  "thirteen",
+  "fourteen",
+  "fifteen",
+  "sixteen",
+  "seventeen",
+  "eighteen",
+  "nineteen",
+  "twenty"
+ ],
+ "schema": 1,
+ "seed": 20261112
+}

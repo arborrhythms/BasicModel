@@ -1260,25 +1260,9 @@ class TestDataTextStorage(unittest.TestCase):
         self.assertIsInstance(data.train_input[0], str)
 
     def test_train_input_tensors_for_numeric(self):
-        """Numeric datasets store tensors in train_input.
-
-        Skipped when the MNIST CSVs are absent or carry only LFS
-        pointers; the loader unpacks the CSV files directly so a
-        missing pull leaves the test data as object-dtype rows."""
-        import os
-        from util import ProjectPaths
-        csv_path = os.path.join(ProjectPaths.DATA_DIR, 'mnist_train.csv')
-        if not os.path.exists(csv_path):
-            self.skipTest(f"mnist_train.csv not present at {csv_path}")
-        try:
-            with open(csv_path, 'r', encoding='utf-8', errors='ignore') as f:
-                head = f.read(64)
-        except OSError:
-            self.skipTest("could not read mnist_train.csv head")
-        if head.startswith('version https://git-lfs'):
-            self.skipTest(
-                "mnist_train.csv is an LFS pointer; run `git lfs pull` "
-                "to materialize the actual CSV data.")
+        """Numeric datasets store tensors in train_input."""
+        from local_data import require_mnist
+        require_mnist()
         data = Models.Data()
         data.load("mnist")
         self.assertIsInstance(data.train_input, torch.Tensor)

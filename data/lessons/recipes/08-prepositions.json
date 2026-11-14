@@ -1,0 +1,108 @@
+{
+ "schema": 1,
+ "phase": "prepositions",
+ "lesson": 8,
+ "criterion": {
+  "measure": "occupant_definiteness",
+  "threshold": null,
+  "declared_by": "Alec",
+  "note": "the preposition argument's class definite (lesson 8)"
+ },
+ "measure": [
+  "in",
+  "box"
+ ],
+ "fillers": {
+  "name": [
+   {
+    "form": "Felix"
+   },
+   {
+    "form": "Ciao"
+   },
+   {
+    "form": "Bill"
+   },
+   {
+    "form": "Anna"
+   }
+  ],
+  "verb": [
+   {
+    "third": "sleeps",
+    "plural": "sleep"
+   },
+   {
+    "third": "eats",
+    "plural": "eat"
+   },
+   {
+    "third": "moves",
+    "plural": "move"
+   },
+   {
+    "third": "waits",
+    "plural": "wait"
+   }
+  ],
+  "prep": [
+   {
+    "form": "in"
+   },
+   {
+    "form": "on"
+   },
+   {
+    "form": "near"
+   }
+  ],
+  "place": [
+   {
+    "form": "box"
+   },
+   {
+    "form": "bed"
+   },
+   {
+    "form": "tree"
+   }
+  ]
+ },
+ "heldout": {
+  "name": [
+   {
+    "form": "Nora"
+   }
+  ],
+  "verb": [
+   {
+    "third": "rests",
+    "plural": "rest"
+   }
+  ],
+  "prep": [
+   {
+    "form": "under"
+   }
+  ],
+  "place": [
+   {
+    "form": "car"
+   }
+  ]
+ },
+ "variants": {
+  "place": {
+   "slots": {
+    "n": "name",
+    "v": "verb",
+    "p": "prep",
+    "l": "place"
+   },
+   "sentences": [
+    "{n.form} {v.third} {p.form} the {l.form}."
+   ],
+   "limit": 60
+  }
+ }
+}

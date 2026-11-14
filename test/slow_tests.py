@@ -97,7 +97,6 @@ DEFAULT_CERTIFICATES = frozenset({
     'test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles',
     'test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]',
     'test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]',
-    'test/test_math_chain_section14.py::test_forced_ordinary_bound_declaratives_open_no_episode',
     'test/test_math_chain.py::test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention',
     'test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path',
     'test/test_grounded_xor.py::test_native_unseeded_xor[0-8]',

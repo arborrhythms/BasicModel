@@ -1,0 +1,122 @@
+{
+ "schema": 1,
+ "game": "product",
+ "note": "Template production task. The intended operator is an evaluation label, never a learner constraint; surface acquisition remains unproven.",
+ "fillers": {
+  "modifier": [
+   {
+    "form": "tiny"
+   },
+   {
+    "form": "huge"
+   },
+   {
+    "form": "giant"
+   },
+   {
+    "form": "miniature"
+   },
+   {
+    "form": "enormous"
+   },
+   {
+    "form": "slight"
+   },
+   {
+    "form": "immense"
+   },
+   {
+    "form": "compact"
+   },
+   {
+    "form": "massive"
+   },
+   {
+    "form": "petite"
+   }
+  ],
+  "noun": [
+   {
+    "form": "dog"
+   },
+   {
+    "form": "bird"
+   },
+   {
+    "form": "horse"
+   },
+   {
+    "form": "mouse"
+   },
+   {
+    "form": "fox"
+   },
+   {
+    "form": "wolf"
+   },
+   {
+    "form": "bear"
+   },
+   {
+    "form": "deer"
+   },
+   {
+    "form": "goat"
+   },
+   {
+    "form": "pig"
+   },
+   {
+    "form": "duck"
+   },
+   {
+    "form": "goose"
+   },
+   {
+    "form": "swan"
+   },
+   {
+    "form": "fish"
+   },
+   {
+    "form": "frog"
+   },
+   {
+    "form": "whale"
+   },
+   {
+    "form": "shark"
+   },
+   {
+    "form": "seal"
+   },
+   {
+    "form": "crab"
+   },
+   {
+    "form": "moth"
+   }
+  ]
+ },
+ "transfer": {
+  "noun": [
+   {
+    "form": "cat"
+   }
+  ]
+ },
+ "variants": {
+  "template": {
+   "slots": {
+    "a": "modifier",
+    "n": "noun"
+   },
+   "sources": [
+    "{n.form}.",
+    "{a.form}."
+   ],
+   "target": "{a.form} {n.form}.",
+   "limit": 320
+  }
+ }
+}

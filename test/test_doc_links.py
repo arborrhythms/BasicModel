@@ -1,11 +1,12 @@
-"""Every relative Markdown link under ``doc/``, ``README.md`` and ``todo.md`` resolves.
+"""Relative links in non-ignored repository Markdown resolve from their document.
 
-Documentation is part of each milestone (mathematical-thinking plan,
-Phase 0): a spec that links a plan, a plan that links a test, or a README
-row that links a document must point at a file that exists. External links
-(``http``/``https``/``mailto``) and pure in-page anchors are not checked.
+Check ``doc/**/*.md``, ``README.md`` and ``todo.md``, including uncommitted
+documents, except paths reported by git check-ignore. Local ignored receipts
+retain their historical bytes. External links (``http``/``https``/``mailto``)
+and pure in-page anchors are not checked.
 """
 import re
+import subprocess
 from pathlib import Path
 from urllib.parse import unquote
 
@@ -16,19 +17,18 @@ _LINK = re.compile(r"\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
 
 
 def _markdown_files():
-    doc = _ROOT / "doc"
-    # Receipts retain extracted executable snapshots as historical evidence.
-    # Their copied root README refers to a documentation tree deliberately
-    # absent from the source archive. Audit receipt prose, not those copies.
-    files = sorted(path for path in doc.rglob("*.md")
-                   if not any((parent / "bin/Models.py").is_file()
-                              and (parent / "data/model.xml").is_file()
-                              for parent in path.parents if doc in parent.parents))
+    files = sorted(path for path in (_ROOT / "doc").rglob("*.md") if path.is_file())
     for name in ("README.md", "todo.md"):
         path = _ROOT / name
         if path.exists():
             files.append(path)
-    return files
+    ignored = subprocess.run(["git", "-C", str(_ROOT), "check-ignore", "--stdin", "-z"],
+        input='\0'.join(str(path.resolve()) for path in files)+'\0',
+        capture_output=True, text=True)
+    if ignored.returncode not in (0, 1):
+        raise RuntimeError('Cannot determine ignored document paths: '+ignored.stderr)
+    excluded = set(ignored.stdout.rstrip('\0').split('\0'))
+    return [path for path in files if str(path.resolve()) not in excluded]
 
 
 def _relative_targets(text):
@@ -50,30 +50,10 @@ def _relative_targets(text):
 def test_relative_links_resolve(path):
     text = path.read_text(encoding="utf-8")
     missing = []
-    # These are byte-preserved snapshots of documents, whose links retain
-    # the original document's home. Audit every target without rewriting
-    # historical evidence or excluding the archived documents.
-    origins = {
-        **{str(snapshot.relative_to(_ROOT)): str(snapshot.parents[2].relative_to(_ROOT) / snapshot.name)
-           for snapshot in (_ROOT / "doc/benchmarks").glob("*/measurement-freezes/*/measurement-tables.md")},
-        "doc/benchmarks/2026-11-09-item2-0-round-5-repair-3/decision-return/spec-section20.md":
-            "doc/plans/2026-11-03-gradient-projection.md",
-        "doc/benchmarks/2026-11-06-item2-3-round-1b/part1-return/README.md":
-            "doc/benchmarks/2026-11-06-item2-3-round-1b/README.md",
-        "doc/benchmarks/2026-11-06-item2-3-round-1b/part1-return/spec-before-completion.md":
-            "doc/plans/2026-11-05-item2-3-trust.md",
-        **{f"doc/benchmarks/2026-10-25-item3-0-retire-mode/repair-04/development/upstream/{name}.md": "doc/FutureWork.md"
-           for name in ("base", "local", "merged", "remote")},
-        **{f"doc/benchmarks/2026-10-25-item3-0-retire-mode/repair-04/publication/FutureWork.{name}.md": "doc/FutureWork.md"
-           for name in ("combined", "conflict")},
-        **{f"doc/benchmarks/2026-10-25-item3-0-stm-chunks/{name}": "doc/plans/2026-10-25-item3-0-step3-stm-chunks.md"
-           for name in ("repair-01/spec-as-received.md", "step3-spec-as-received.md")},
-    }
-    original = _ROOT / origins.get(str(path.relative_to(_ROOT)), str(path.relative_to(_ROOT)))
     for target in _relative_targets(text):
         if not target:
             continue
-        resolved = (original.parent / target).resolve()
+        resolved = (path.parent / target).resolve()
         if not resolved.exists():
             missing.append(target)
     assert not missing, f"{path.relative_to(_ROOT)}: unresolved {missing}"

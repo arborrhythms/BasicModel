@@ -611,10 +611,10 @@ def make_reference_architecture():
 
 
 # ── Grammar operators sheet ────────────────────────────────────────────────────
-# Data for doc/specs/2026-09-20-accessible-mind-subsystems.md. Monochrome and
+# Data for the operator sheet in doc/AccessibleMind.md and doc/Language.md. Monochrome and
 # sans-serif so the sheet prints and takes ink; the blank rows are for the pen.
 
-GO_REV = "2026-11-01 (current as built; decided-not-built marked >)"
+GO_REV = "2026-11-12 (current as built; decided-not-built marked >)"
 
 # (id, title, three body lines, dashed = reducible or derived)
 GO_SUBSYSTEMS = [
@@ -654,10 +654,10 @@ GO_GRAMMARS = [
         "7.5 ONE operation per round: one softmax over every operator × every location, with",
         "the field brackets and bind's locations + a zero-logit dummy; a binary fold shortens by one",
         "STOP is eligible once the stack fits its slots; a fixed round budget, reduction pressure; no DP",
-        "two trials, greedy (argmax, item 8's tie rule) and one sampled departure; both train",
+        "whole paths: an exploit path and explorePaths explore paths, one departure each, compared once on R + A",
         "the face never reads 6; the chooser takes expectation's detached prime as a logit bias",
-        "chooser credit: score function on the trials' detached R + A difference",
-        "gradient: live through the chosen operator's value; separateChooser=true detaches features"]),
+        "chooser credit: score function on the paths' detached R + A difference",
+        "gradient: live through the chosen operator's value; the option separateChooser=true detaches features"]),
     ("<thought>  ·  thinking  (per-model allow-list)", [
         "reads: every subsystem but 1; 7 only through bounded readers (query, ask, isTrue,",
         "isPart, isEqual, infer, intuit, bind); 5: query, ask, intuit; 6: bind, gain; 10: isPart, infer",
@@ -682,10 +682,10 @@ GO_GRAMMARS = [
 
 GO_GRAMMAR_NOTE = (
     "one vocabulary of operator identities; a compose face alone grants no thought permission; "
-    "operators are reconstruction-owned (separateChooser=true keeps the answer's gradient out; "
+    "operators are reconstruction-owned (answer gradient projected by default, out under separateChooser=true; "
     "per-operator dissonance is a read-only diagnostic)   ·   the CLOSING (not an operator) reads 4 "
-    "and 6, writes 7 and 6 (the rows and expectation's two-lane residual), and keeps the strictly "
-    "better trial by R + A")
+    "and 6, writes 7 and 6 (the rows and expectation's two-lane residual), and keeps the "
+    "better path by R + A")
 
 # group -> rows of (operator, faces, operand kind, roles, {subsystem id: access}, note)
 # kind: F = a field (pooled reading over a bracket), S = one identified concept.

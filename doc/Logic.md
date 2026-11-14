@@ -1,11 +1,5 @@
 # Logic
 
-> **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
-> - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
-> - Parthood, subsumption and kind statements ("cats are animals") are **folds** in the meronomy and the taxonomy over symbols, not rows; equality is membership in a singleton; no `REL_PARTOF` row exists.
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23, [step 2 §71](plans/2026-10-21-step2-one-ltm.md); recorded 2026-10-30):** an LTM1 row is two tagged references with its kind read from the referents, not three. As built at `3718d9d0dc`, `LTM0` still carries `c_plus`/`c_minus`, `source_trust`, `order`, `row_ids`, `origin`, `record_kind`, `polarity` and `witness_count` columns; only `refs`, `grammatical_mode` and the index columns are retired (audit 2026-10-30; decided 2026-11-01, Alec: the unused columns are removed and the row brought to this layout, [thinking spec §32.2](plans/2026-10-27-item2-5-thinking.md) item 17).
-
-
 ## Overview
 
 This document defines the logic system at three levels:
@@ -27,15 +21,13 @@ the order-theoretic reading of concept support and intent, DisCoCat gives the
 typed composition route that builds sentence meanings, and the truth operators
 test or accumulate the resulting propositions.
 
-> **Terminology (2026-06-21).**
+> **Terminology.**
 > One noun per-space: **percept** = a PartSpace/WholeSpace thing (dimensionally
 > embedded, EXTENSIONAL; *part* = atom / bottom-up $\sigma$, *whole* = property/region
 > / top-down $\pi$ are its two subtypes); **concept** = a ConceptualSpace relation
 > tying one part-percept $\leftrightarrow$ one whole-percept (the Concept codebook,
 > diachronic); **symbol** = a SymbolSpace thing (0-D, INTENSIONAL, references a
-> concept; the symbol codebook). The Section 2 scalar emission is the *symbol*
-> that migrates to SymbolSpace, while WholeSpace itself holds whole-percepts.
-> Code identifiers below are unchanged (a separate code pass renames them).
+> concept; the symbol codebook). WholeSpace itself holds whole-percepts.
 
 ---
 
@@ -45,24 +37,72 @@ Objects: vector sets $(B, N, D)$ interpreted as RBF / luminosity fields.
 
 ### Operators
 
-- **Union**: `Ops.union` --- as built an elementwise `max` (the RadMax lattice
-  fold exists only under `kind='radial'`; audit 2026-10-30), NOT concatenation. The additive combine that briefly held
-  the `union` name was renamed `chunk` (2026-07-05) and moved to
-  `<PartSpace>` as a structural op (`ChunkLayer`: `left + right`,
-  residual-bearing).
-- **Intersection**: Co-supported regions (as built an elementwise `min` where a
-  zero coordinate is unspecified and yields the other operand; audit 2026-10-30).
-- **Negation (affirming)**: `neg(x) = -x`. Antipodal opposition on hypersphere.
-- **Non (non-affirming)**: `Ops.non` (the `_non_kernel`; `NonLayer` is the
-  grammar-surface form, which complements the leading bivector poles) ---
+- **Union**: `Ops.union` --- an elementwise `max` (the RadMax lattice fold
+  applies only under `kind='radial'`, Section 7), not concatenation. The
+  additive combine is the structural `synthesize` (`SynthesizeLayer`:
+  `left + right`, residual-bearing; its reverse is `analyze`).
+- **Intersection**: `Ops.intersection` --- co-supported regions: an
+  elementwise `min` in which a zero coordinate is unspecified and yields the
+  other operand.
+- **Negation (affirming)**: `Ops.negation` (the `_negation_kernel`):
+  `neg(x) = -x` on signed values, antipodal opposition on the hypersphere;
+  on paired poles (monotonic) it exchanges the two poles.
+- **Non (non-affirming)**: `Ops.non` (the `_non_kernel`) ---
   bitonic returns the triangular residual $1 - |\mathrm{clamp}(x, -1, 1)|$
   (completing the partition of unity
   $\mathrm{true} + \mathrm{false} + \mathrm{non} = 1$); monotonic is
   $\mathrm{relu}(x - \mathrm{threshold})$ when a threshold is supplied,
-  else zero. (`Basis.non` was removed in the 2026-05-01 Step-9 cleanup;
-  only the `*Reverse` methods remain on `Basis`.)
+  else zero.
 
-> **Meronomy reconciliation (2026-06-11; MeronomySpec §3 wins).** The
+These two are signed subsymbolic kernels, not the grammar operators, which
+act on evidence lanes.
+
+### Evidence lanes
+
+Evidence about a concept is kept in two lanes, $(c^+, c^-)$, for and
+against. Their four corners are the tetralemma's (for, against, both,
+neither), and the lanes are never netted into one signed scalar: *both*
+(the region asserted and denied) and *neither* (no evidence) are different
+states that a signed value would confuse.
+
+- **`not`** (`NotLayer`) swaps the two kinds of evidence,
+  $(c^+, c^-) \to (c^-, c^+)$, and is its own inverse.
+- **`non`** (`NonLayer`) removes both the positive and the negative
+  evidence, $(c^+, c^-) \to (0, 0)$, asserting nothing in their place.
+  Alec, 2026-11-12: "non- removes both positive and negative evidence,
+  while not swaps the two types of evidence." The operand survives as an
+  explicit witness in the clause journal, so reconstruction and expectation
+  can read what was removed; a removed dimension receives no expected prime
+  and is spared attenuation. `non` is lossy and has no inverse.
+- **Meet and join** act lane by lane: `intersection` takes the for lanes by
+  min and the against lanes by max, `union` the reverse
+  ([Language](Language.md#grammarlayer-forward--reverse-inventory)).
+- **Heterogeneity tolerance.** Where candidate support is read into
+  attention, `hetTolerance` $\tau \in [0, 1]$ acts on the lanes as
+  $(c^+, c^-) \leftarrow (c^+, c^-) - (1 - \tau)\min(c^+, c^-)$. At
+  $\tau = 1$, the default, nothing changes; at $\tau = 0$ *both* collapses
+  to its net lane while *neither* survives, leaving three corners. No signed
+  scalar appears at any setting.
+
+Stored evidence only accumulates. A later close merges into a stored pair by
+the per-lane maximum, so contrary evidence fills the other lane and never
+lowers the first; trust and gates scale what is read from the pair, and a
+stored pole otherwise changes only when its row is forgotten or an epoch is
+restored.
+
+Operators over the lanes fall into two algebras (2026-10-19). A selection,
+which tense, aspect and the preposition are, is an idempotent meet with no
+inverse: on the mat twice is on the mat. A verb is a group element acting on
+its identity, invertible and not idempotent: ran twice is more than ran
+once. A state ("the box contains apples") is a relation. The modal is the
+second difference, over an identity's alternative timelines: possible holds
+on some timeline, necessary on every one, the actual included, and the two
+are duals in the lanes, necessity being possibility with the complement
+withheld ([Language](Language.md#words-narrow-the-domain-of-discourse-2026-09-28)).
+
+### Sign and parthood
+
+> **Where the sign flip is licensed.** The
 > sign flip `−x` is licensed only at the REFERENCE space-role — downstairs
 > the sign is occupied (form content) or nonexistent (one-sided
 > percepts); only at the reference space-role is it vacant of denotational
@@ -95,7 +135,9 @@ part kernel.) The scalar form satisfies Boole's contrapositive trivially
 
 ---
 
-*Moved to [DevelopmentHistory](DevelopmentHistory.md#2-symbolization) (2026-10-30): "2. Symbolization".*
+*Section 2, the norm-projection reading of symbolization, is retired: a
+symbol is emitted by the codebook lookup that names a prototype row
+([DevelopmentHistory](DevelopmentHistory.md#2-symbolization)).*
 
 ## 3. Symbolic Layer (Scalars in [-1,1])
 
@@ -111,8 +153,8 @@ Let $a, b \in [-1,1]$.
 |----------|---------|-----------|
 | Negation (affirming) | $\operatorname{neg}(a) = -a$ | --- |
 | Non (non-affirming) | $\operatorname{non}(a) = 1 - |a|$ (triangular residual) | $\operatorname{non}(a) = \operatorname{relu}(a - \tau)$ when $\tau$ is supplied, else $0$ ($\tau$ is a plain argument, not learned) |
-| Union | elementwise max as built (soft RadMax only under the radial kind) | $a \cup b = \max(a, b)$ |
-| Intersection | elementwise min as built, a zero coordinate unspecified (soft RadMin only under the radial kind) | $a \cap b = \min(a, b)$ |
+| Union | elementwise max (RadMax under the radial and soft kinds, Section 7) | $a \cup b = \max(a, b)$ |
+| Intersection | elementwise min, a zero coordinate unspecified (RadMin under the radial and soft kinds, Section 7) | $a \cap b = \min(a, b)$ |
 
 ### Parthood as Projection
 
@@ -163,9 +205,8 @@ $\operatorname{part}(\emptyset, \emptyset) = 1$).
 
 - Subsymbolic = geometry
 - Symbolic = order + polarity
-- Symbolization = norm projection
 
-Cleanly separates representation (vectors) from logic (scalars).
+This separates representation (vectors) from logic (order and polarity).
 
 ---
 
@@ -198,19 +239,13 @@ $$
 
 `TruthLayer` is instantiated in `SymbolSubSpace.__init__` (`SymbolSpace` is
 a transparent forwarding container over the held `SymbolSubSpace`
-coordinator, so `symbolSpace.truth_layer` reaches it). `WholeSpace.forward`
-records activations into the TruthLayer governed by the single continuous
-`<truthCriterion>` bar (0 $=$ record every activation, 1 $=$ record none): a
-per-cell activation is recorded when its clamped magnitude clears
-`truthCriterion`. The same knob also gates learned-concept acceptance in
-`ConceptualSpace` (relations admitted into the Concept codebook), so one
-continuous knob governs all truth learning. The
-binary `<accumulateTruth>` / `<truthMinMagnitude>` switches are **retired**.
-Recording now fires wherever `WholeSpace.forward` runs — both normal
-training and the `store_truths` gold-ingestion epoch (which drops
-`truthCriterion` to `0` to capture every provided gold truth, then restores
-it). See [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states) and
-[Params.md](Params.md):
+coordinator, so `symbolSpace.truth_layer` reaches it). The canonical store
+of asserted truths is the unified `LTM0` (`symbolSpace.ltm_store`), and the
+`TruthLayer` is a read model over it: `attach_ltm` binds the store and
+`sync_from_ltm` rematerializes its provisioned and user rows, each nonzero
+evidence pole contributing a flat vector scaled by that pole, the two poles
+kept independent. A source's scalar trust is kept beside the vectors and
+never supplies a pole's magnitude. Its methods:
 
 - **`record(activation, degree)`** --- store `activation * degree`.
 - **`query(activation)`** --- find the closest stored truth; returns
@@ -249,21 +284,6 @@ $a$ are mean and $R$ max pole masses). Keeping *conflict* (the set splits
 on a proposition) distinct from *ignorance* (the set is silent on it) is
 exactly the degeneracy a scalar $a_P - a_N$ collapse loses.
 
-> **Integration with the meronomy.**
-> The absolute truth set (propositions, e.g. `cat <= [animal() & orange() &
-> object()]`) and the `RelativeTruthStore` (relations between two ideas, e.g.
-> `[cats] <= [furry]`) are **the same two structures** the corpus callosum needs for
-> the concept-relation meronomy: a two-code part$\leftrightarrow$whole LUT (absolute) plus relations
-> over concept indices (relative) — both live in the Concept codebook. These
-> **are integrated**, behind `<ltmConsolidation>`: the unified
-> `LTM0` is the canonical store — the part$\leftrightarrow$whole LUT *is* the
-> absolute table; the concept-taxonomy relations *are* the relative table —
-> and `TruthLayer` becomes a compatibility read model over it
-> (`attach_ltm` binds the store; `sync_from_ltm` rematerializes the view).
-> Taxonomy relations are also learned **explicitly from trusted language**
-> ("cats are furry" $\to$ the relation `[cats] <= [furry]`, admitted when
-> trusted).
-
 ### Truth Field
 
 $$
@@ -296,19 +316,25 @@ Parthood and equality are grammar operations over activations:
 
 Together they define a partial order over symbolic activations.
 
+A stated parthood, subsumption or kind relation ("cats are animals") is one
+relation, $\mathrm{Part}(x, y)$: two references with the truth pair, read by
+the types of its arguments, with no relation code stored in a row; equality
+is membership in a singleton (Alec, 2026-10-20/21). `part` and `isPart` read
+the conceptual taxonomy these relations build, never vector containment
+([TaxonomyQueries](TaxonomyQueries.md), [Mereology](Mereology.md)).
+
 ### Truth Accumulation Pipeline
 
-Truth entries arrive as `(text, DoT)` pairs. `store_truths()` stages all texts
-on TheData and runs a standard inference epoch via `runEpoch(split="runtime")`.
-During forward, `WholeSpace.forward()` records each raw symbolic activation
-(degree 1.0). After the epoch, each activation is scaled by its DoT:
+Truth entries arrive as `(text, trust)` pairs. `store_truths()` reads each
+text through the ordinary sentence forward, so its row lands at the sentence
+boundary as any read sentence's does; the landed row then receives its
+effective degree of truth, its user origin and its source text, and the
+`TruthLayer` view is rematerialized. A resubmitted set replaces the previous
+user rows. The stored truth is
 
 $$
 t_i = \text{activation}_i \times \text{DoT}_i
 $$
-
-Two-phase design (encode all, then scale) ensures all truths are encoded in
-the same pipeline context before DoT modulation.
 
 ---
 
@@ -328,7 +354,7 @@ $$
 A disperser ($\text{DoT} < 0$) near an attractor ($\text{DoT} > 0$) naturally
 produces negative field values, flagging the contradiction.
 
-The $d_j$ field check as written is **not implemented**. The live machinery
+The $d_j$ field check is the design reading. The code's check
 is `TruthLayer.consistency()` --- cross-truth contradiction detection
 returning a scalar score (and, with `return_report=True`, the list of
 contradicting index pairs) --- and `TruthLayer._luminosity_without(j)`, the
@@ -348,7 +374,7 @@ $$
 | $v \approx 0$ | no opinion |
 | $v \to -1$ | strong contradiction |
 
-There is no `verify()` method; the nearest live surfaces are
+The code's surfaces for it are
 `TruthLayer.query` (nearest stored truth), `TruthLayer.assess` (the
 paraconsistent support / conflict / ignorance read, Section 5), and
 `TruthGroundedReasoner.evaluate` (posture over a `QuerySpec`;
@@ -374,11 +400,11 @@ closure layer:
 3. **Inject entailments** as new symbolic activations recorded in the
    TruthLayer.
 
-This closure **already exists**: `TruthGroundedReasoner.is_part`
-(`bin/reasoning.py`) walks beam-limited MIN-trust chains --- a chain is only
-as true as its weakest hop --- and `materialize` writes a verified chain's
-conclusion back as a direct lemma (a `REL_PARTOF` row carrying the
-MIN-composed trust), so a later identical query is a direct hit.
+This closure exists as a read: `TruthGroundedReasoner.is_part`
+(`bin/reasoning.py`) searches the conceptual taxonomy within a step and beam
+bound, a chain only as true as its weakest hop, and a missing path is unknown.
+It writes nothing back: `materialize` raises, since query evidence cannot edit
+conceptual definitions or assert world facts.
 `TruthLayer.derive` performs the pairwise transitivity step and
 `extrapolate` generalizes it to all two-argument methods, each derived
 truth recorded with attenuated DoT inherited from its premises. The
@@ -389,25 +415,23 @@ nearest-truth lookups.
 
 ![Ternary Logic Operators](diagrams/ternary_logic.svg)
 
-*The figure is computed from the kernels in `bin/Layers.py` (regenerated 2026-11-01). As built, union is the elementwise max and intersection the minimum with a zero coordinate silent (audit 2026-10-30, Sections 1 and 3). RadMin and RadMax apply under `kind='radial'`, and their LogSumExp forms under `kind='soft'`.*
+*The figure is computed from the kernels in `bin/Layers.py`. Union is the elementwise max and intersection the minimum with a zero coordinate silent (Sections 1 and 3). RadMin and RadMax apply under `kind='radial'`, and their LogSumExp forms under `kind='soft'`.*
 
 RadMin, RadMax, NOT, and NON operate over signed magnitude space `[-1, +1]`.
 Sign = direction of assertion; magnitude = strength; zero = **unknown**.
 $+1$ = True; $0$ = Unknown (no assertion); $-1$ = False. Magnitude ordering:
 $x \subset y$ iff $|x| < |y|$.
 
-> **Kernel kinds (2026-05-29; corrected 2026-11-01).** As built,
+> **Kernel kinds.**
 > `Ops.union` is the elementwise max and `Ops.intersection` the minimum in
-> which a zero coordinate is silent (Sections 1 and 3, audit 2026-10-30);
+> which a zero coordinate is silent (Sections 1 and 3);
 > neither is RadMin or RadMax. The `kind` argument of the lift and lower
 > kernels selects the radial forms, and its default is `kind='strict'`.
 > `kind='radial'` gives the hard forms in the table below. `kind='soft'`
 > gives their LogSumExp forms (`Ops._soft_radmax` / `Ops._soft_radmin`),
 > in which both operands receive softmax-weighted gradient per cell (hard
 > RadMax routes gradient only to the winning operand) and which approach
-> the hard forms as $\tau \to 0$. The 2026-05-29 statement that the soft
-> forms are the default kernels behind `Ops.union` / `Ops.intersection` is
-> withdrawn.
+> the hard forms as $\tau \to 0$.
 
 | Op | Behavior | Ternary truth table |
 |----|----------|---------------------|
@@ -417,7 +441,8 @@ $x \subset y$ iff $|x| < |y|$.
 | **NON** | $1 - |x|$ (triangular residual). Full indeterminacy at $x = 0$, zero at $x = \pm 1$; completes the partition of unity $\mathrm{true} + \mathrm{false} + \mathrm{non} = 1$. Withdraws assertion (vs. NOT which inverts). | input $\to 1 - |\mathrm{input}|$ |
 
 Both RadMin and RadMax are commutative and collapse to zero on sign
-disagreement.
+disagreement. NOT and NON in this table are the signed kernels; the
+grammar's `not` and `non` act on evidence lanes (Section 1).
 
 ---
 
@@ -425,10 +450,9 @@ disagreement.
 
 ![Luminosity: Truth Coherence Measure](diagrams/luminosity.svg)
 
-> **Meronomy reconciliation (2026-06-11; MeronomySpec §3 rev b wins).**
-> There are TWO measures, split as follows. The **truth-set
-> luminosity** — what `Mereology.Luminosity(truth_layer=…)` /
-> `TruthLayer.luminosity` computes — is now the catuṣkoṭi coverage
+> **Two measures.** The **truth-set
+> luminosity**, what `Mereology.Luminosity(truth_layer=...)` /
+> `TruthLayer.luminosity` computes, is the catuskoti coverage
 > measure over the stored codes: per conceptual dimension the signed
 > references split into true/false pole coverage `(T_k, F_k)`
 > (elementwise max of `relu(±row)`), and
@@ -440,9 +464,9 @@ disagreement.
 > — total area weighted by sign, minus the regions where the sign
 > differs (contradictory evidence). It is computed **on the codes**
 > (no decode pullback) and is order-independent. The meet/GLB form
-> below survives only as the **orthogonalization criterion**
-> (`TruthLayer._luminosity_without`) and `darkness()`'s mirror — it is
-> no longer the truth-set measure. (The diagram shows this coverage measure; the meet form is noted beneath it.)
+> below is only the **orthogonalization criterion**
+> (`TruthLayer._luminosity_without`) and `darkness()`'s mirror, not the
+> truth-set measure. (The diagram shows the coverage measure; the meet form is noted beneath it.)
 
 The meet-form coherence scalar (orthogonalization criterion):
 
@@ -458,12 +482,12 @@ removes negative dimensions; L2 norm gives brightness.
 
 Two roles in the model:
 
-1. **Top-down bias** (NOT implemented): the design has concept input scaled
+1. **Top-down bias** (design only): concept input scaled
    by luminosity each conceptual iteration
    (`concept_input * (1 + truthBiasScale * luminosity)`). The
    `<truthBiasScale>` knob is parsed (`architecture.truthBiasScale` $\to$
-   `truth_bias_scale`) but never consumed --- a dead knob today.
-2. **Loss modification** (live): low luminosity increases training loss via
+   `truth_bias_scale`) and never read.
+2. **Loss modification**: low luminosity increases training loss via
    `SymbolSubSpace.truth_modulated_loss`, the multiplicative factor
    $\mathrm{totalLoss} \cdot (1 + w_{lum}(1 - \mathrm{lum}) + w_{univ}(1 - u))$
    (see [Reasoning.md](Reasoning.md) "TruthLoss").
@@ -497,8 +521,7 @@ in `bin/Language.py`.
 ### Supporting measures
 
 - **Consistency** (`isConsistent()`): folds truths into a union via successive
-  `Ops.disjunction` (the thin `Basis.disjunction` wrapper was removed in the
-  2026-05-01 Step-9 cleanup). In bitonic mode, conflicting +/- assertions
+  `Ops.disjunction`. In bitonic mode, conflicting +/- assertions
   cancel.
 - **Grounding** (`ground()`): finds the minimal subset entailing a query.
 - **TruthLoss**: additive penalty for contradictions, measured by overlap with the
@@ -507,14 +530,53 @@ in `bin/Language.py`.
 - **Derive**: pairwise mereological inference via `part()`; generalized by
   `extrapolate()` to all two-argument methods.
 
+### Existence and pervasion (Alec, 2026-11-13)
+
+A question with no open operand asks about a region of order-zero
+conceptual space, and its truth is read from how that region is lit. "A
+yes/no question is a query into conceptual space. We can ask the positive
+or negative form as an existence check within the region of order-0
+conceptual space that is specified by that; the question is true if a
+trusted object exists in that space." Each remembered statement has one
+signed trust $t$ from $-1$ to $1$. It lights the lane for where $t$ is
+above zero and the lane against where it is below, to $\lvert t \rvert$,
+and lights nothing at zero. The brightest statement is taken and none is
+added to another.
+
+A lit region is read in two ways, which are kept apart:
+
+- **Existence.** A trusted object lies in the region. A statement that is
+  only like the claim is what analogy has: "we can do reasoning from
+  analogy wi "the brightest statement in a region", but that is not
+  sufficient for logical pervasion in the geluk sense."
+- **Pervasion.** "For pervasion we need the entire space of the truth
+  claim in conceptual space to be luminous, or have a positive value
+  (non-negative is not contradicted, but unknown, so analogy is not
+  deductively true)." It "is just coverage from a higher order": the
+  region of the claim's subject lies wholly within the region that is its
+  property's extension, by one relation between the two kinds
+  ([Extend](Extend.md#regions-alec-2026-11-13)). Its measure is that
+  relation's trust, and the least along a path of such relations.
+
+The positive and the negative form are each read both ways. A form is
+contradicted to the degree that the other form exists in its region, a
+region lit in part and held false nowhere is unknown, and the two lanes
+are never netted. Where the trust comes from is in
+[Philosophy](Philosophy.md#the-three-sources-of-trust-in-the-model-alec-2026-11-13).
+
+A contradiction changes nothing by itself: "logical contradiction is merely an
+signal that something needs to be fixed, there is no automatic fixing routine
+for inconsistency (but there is a measure of that inconsistency for users of
+WikiOracle)."
+
 ---
 
 ## Semantic Summary
 
 | Operator | Type | Role | Behavior on Contradiction |
 |----------|------|------|---------------------------|
-| Intersection | Binary | Meet, the as-built default | Keeps the lower value; a zero coordinate is silent |
-| Union | Binary | Join, the as-built default | Keeps the higher value |
+| Intersection | Binary | Meet, the default | Keeps the lower value; a zero coordinate is silent |
+| Union | Binary | Join, the default | Keeps the higher value |
 | RadMin | Binary | Radial meet (`kind='radial'`) | Collapses to zero |
 | RadMax | Binary | Radial join (`kind='radial'`) | Collapses to zero |
 | NOT | Unary | Sign-flipping negation | N/A |
@@ -525,8 +587,8 @@ in `bin/Language.py`.
 ## 8. Cross-references
 
 The level-crossing operations (`lift`, `lower`, `intersection`, `union`),
-`Pi`/`Sigma` layer ownership, witness-set / slab-lattice geometry, and `Ops.*`
-namespace inventory have moved out of this document.
+`Pi`/`Sigma` layer ownership, witness-set / slab-lattice geometry, and the
+`Ops.*` namespace inventory are documented elsewhere.
 
 - **`Ops.*` reference**: [Language.md](Language.md).
 - **PiLayer / SigmaLayer ownership** (`forwardPi`/`reversePi`/`forwardSigma`/

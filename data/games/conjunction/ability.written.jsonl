@@ -1,0 +1,3 @@
+{"game":"conjunction","key":"conjunction-written-000009","sources":["Milo can climb the hill.","Rex can cross the bridge."],"split":"train","target":"Milo can climb the hill, and Rex can cross the bridge.","tier":"written","variant":"ability"}
+{"game":"conjunction","key":"conjunction-written-000010","sources":["Luna can climb the hill.","Bella can cross the bridge."],"split":"test","target":"Luna can climb the hill, and Bella can cross the bridge.","tier":"written","variant":"ability"}
+{"game":"conjunction","key":"conjunction-written-000011","sources":["Ciao can climb the hill.","Felix can cross the bridge."],"split":"transfer","target":"Ciao can climb the hill, and Felix can cross the bridge.","tier":"written","variant":"ability"}

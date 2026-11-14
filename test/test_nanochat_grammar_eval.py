@@ -102,6 +102,46 @@ def test_word_distribution_score_uses_final_active_word_per_row():
     assert not torch.equal(predictions[0],predictions[2])
 
 
+def test_candidate_waves_preserve_the_complete_choice_bank(monkeypatch):
+    from contextlib import contextmanager
+    data = SimpleNamespace()
+    sizes, offsets = [], []
+    @contextmanager
+    def runtime_batch(texts):
+        data.train_input = texts
+        sizes.append(len(texts))
+        yield
+    data.runtime_batch = runtime_batch
+    model = SimpleNamespace(conceptualSpaces=[SimpleNamespace(stm=SimpleNamespace(_init_batch=2))],
+        inputSpace=SimpleNamespace(prepInput=lambda texts: texts))
+    def read(texts):
+        counts = [len(text.split()) for text in texts]
+        width = max(counts)
+        active = torch.arange(width)[None] < torch.tensor(counts)[:, None]
+        words = torch.zeros(len(texts), width, 1)
+        for row, text in enumerate(texts):
+            words[row, counts[row]-1, 0] = int(text.split()[-1])
+        model._word_expectation_input = (words,)
+        model.inputSpace._word_active_mask = active
+        model._attention_words = SimpleNamespace(accepted=active)
+    model._lex_embed_stem = read
+    monkeypatch.setattr(gate, '_reset_model', lambda model: None)
+    monkeypatch.setattr(gate, '_validate_candidate_reached', lambda *a, **k: offsets.extend(k['offsets']))
+    def score(model, choices, captured):
+        words, active, accepted = captured
+        assert choices == 4 and words.shape == (8, 3, 1)
+        assert torch.equal(active, accepted)
+        final = active.sum(1)-1
+        assert words[torch.arange(8), final, 0].tolist() == list(range(8))
+        assert active.sum(1).tolist() == [2]*4 + [3]*4
+        return 'complete bank'
+    monkeypatch.setattr(gate, 'word_candidate_scores', score)
+    items = [dict(prefix='one ', candidates=list(map(str, range(4)))),
+             dict(prefix='one two ', candidates=list(map(str, range(4, 8))))]
+    assert gate._score_control_batch(model, data, items, 'intact', 4) == 'complete bank'
+    assert sizes == [2]*4 and offsets == [1]*4 + [2]*4
+
+
 def test_word_gate_matches_full_forward_without_building_unused_answer(monkeypatch):
     from test_mm_xor import _fresh_model
     model, _, data = _fresh_model('data/XOR_grammar.xml')
@@ -169,3 +209,17 @@ def test_checkpoint_prewarm_builds_reducer_and_full_wholes_inventory():
     assert reducer_calls == [True]
     assert codebook.nVectors == 8192
     assert to_calls == [torch.device("cpu")]
+
+
+def test_evaluation_freezes_argument_learning_and_restores_flags_on_error():
+    import pytest
+    space=SimpleNamespace(_online_learning_frozen=False)
+    held=SimpleNamespace(_online_learning_frozen=True)
+    speech=SimpleNamespace(frozen=False)
+    model=SimpleNamespace(inputSpace=space,perceptualSpace=held,conceptualSpace=space,
+        conceptualSpaces=[space],wholeSpace=space,languageSpace=SimpleNamespace(parts_of_speech=speech))
+    with pytest.raises(RuntimeError,match='measurement stopped'):
+        with gate.frozen_online_learning(model):
+            assert space._online_learning_frozen and held._online_learning_frozen and speech.frozen
+            raise RuntimeError('measurement stopped')
+    assert not space._online_learning_frozen and held._online_learning_frozen and not speech.frozen

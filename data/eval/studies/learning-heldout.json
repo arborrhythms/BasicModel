@@ -1,0 +1,8837 @@
+{
+ "rows": [
+  {
+   "answer": "Meren",
+   "controls": {
+    "renamed_answer": "zuo",
+    "renamed_vocabulary": [
+     "zut zubg zuo.",
+     "zuag zubg zut?"
+    ],
+    "shuffled_determiners": [
+     "Quorin is Meren.",
+     "Who is Quorin?"
+    ],
+    "shuffled_order": [
+     "is Quorin Meren.",
+     "Quorin is Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-00368b659c4ec658",
+   "question": 1,
+   "sentences": [
+    "Quorin is Meren.",
+    "Who is Quorin?"
+   ]
+  },
+  {
+   "answer": "Pavin",
+   "controls": {
+    "renamed_answer": "zur",
+    "renamed_vocabulary": [
+     "zud zubg zur.",
+     "zuag zubg zud?"
+    ],
+    "shuffled_determiners": [
+     "Darek is Pavin.",
+     "Who is Darek?"
+    ],
+    "shuffled_order": [
+     "Darek Pavin is.",
+     "Darek Who is?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-00d3de533e10bbef",
+   "question": 1,
+   "sentences": [
+    "Darek is Pavin.",
+    "Who is Darek?"
+   ]
+  },
+  {
+   "answer": "Dorin",
+   "controls": {
+    "renamed_answer": "zue",
+    "renamed_vocabulary": [
+     "zui zubg zue.",
+     "zuag zubg zui?"
+    ],
+    "shuffled_determiners": [
+     "Harin is Dorin.",
+     "Who is Harin?"
+    ],
+    "shuffled_order": [
+     "Dorin is Harin.",
+     "Harin Who is?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-033b62f88368b1b6",
+   "question": 1,
+   "sentences": [
+    "Harin is Dorin.",
+    "Who is Harin?"
+   ]
+  },
+  {
+   "answer": "Pavin",
+   "controls": {
+    "renamed_answer": "zur",
+    "renamed_vocabulary": [
+     "zuj zubg zur.",
+     "zuag zubg zuj?"
+    ],
+    "shuffled_determiners": [
+     "Iven is Pavin.",
+     "Who is Iven?"
+    ],
+    "shuffled_order": [
+     "Pavin Iven is.",
+     "Iven Who is?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-1011d64d2c5277f3",
+   "question": 1,
+   "sentences": [
+    "Iven is Pavin.",
+    "Who is Iven?"
+   ]
+  },
+  {
+   "answer": "Pavin",
+   "controls": {
+    "renamed_answer": "zur",
+    "renamed_vocabulary": [
+     "zux zubg zur.",
+     "zuag zubg zux?"
+    ],
+    "shuffled_determiners": [
+     "Sorel is Pavin.",
+     "Who is Sorel?"
+    ],
+    "shuffled_order": [
+     "Pavin is Sorel.",
+     "Sorel Who is?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-1039f07ee2e7a9e6",
+   "question": 1,
+   "sentences": [
+    "Sorel is Pavin.",
+    "Who is Sorel?"
+   ]
+  },
+  {
+   "answer": "Zorin",
+   "controls": {
+    "renamed_answer": "zuak",
+    "renamed_vocabulary": [
+     "zur zubg zuak.",
+     "zuag zubg zur?"
+    ],
+    "shuffled_determiners": [
+     "Pavin is Zorin.",
+     "Who is Pavin?"
+    ],
+    "shuffled_order": [
+     "Zorin Pavin is.",
+     "Pavin is Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-16c63e6112c8b5a2",
+   "question": 1,
+   "sentences": [
+    "Pavin is Zorin.",
+    "Who is Pavin?"
+   ]
+  },
+  {
+   "answer": "Woren",
+   "controls": {
+    "renamed_answer": "zuah",
+    "renamed_vocabulary": [
+     "zuai zubg zuah.",
+     "zuag zubg zuai?"
+    ],
+    "shuffled_determiners": [
+     "Xaren is Woren.",
+     "Who is Xaren?"
+    ],
+    "shuffled_order": [
+     "is Xaren Woren.",
+     "Who is Xaren?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-1c9cb0a5ad9abd2f",
+   "question": 1,
+   "sentences": [
+    "Xaren is Woren.",
+    "Who is Xaren?"
+   ]
+  },
+  {
+   "answer": "Varen",
+   "controls": {
+    "renamed_answer": "zuad",
+    "renamed_vocabulary": [
+     "zuak zubg zuad.",
+     "zuag zubg zuak?"
+    ],
+    "shuffled_determiners": [
+     "Zorin is Varen.",
+     "Who is Zorin?"
+    ],
+    "shuffled_order": [
+     "is Varen Zorin.",
+     "is Who Zorin?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-20f6a745b6d08cfd",
+   "question": 1,
+   "sentences": [
+    "Zorin is Varen.",
+    "Who is Zorin?"
+   ]
+  },
+  {
+   "answer": "Sorel",
+   "controls": {
+    "renamed_answer": "zux",
+    "renamed_vocabulary": [
+     "zuai zubg zux.",
+     "zuag zubg zuai?"
+    ],
+    "shuffled_determiners": [
+     "Xaren is Sorel.",
+     "Who is Xaren?"
+    ],
+    "shuffled_order": [
+     "Xaren is Sorel.",
+     "Who is Xaren?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-221973fd0227c8de",
+   "question": 1,
+   "sentences": [
+    "Xaren is Sorel.",
+    "Who is Xaren?"
+   ]
+  },
+  {
+   "answer": "Varen",
+   "controls": {
+    "renamed_answer": "zuad",
+    "renamed_vocabulary": [
+     "zuw zubg zuad.",
+     "zuag zubg zuw?"
+    ],
+    "shuffled_determiners": [
+     "Saren is Varen.",
+     "Who is Saren?"
+    ],
+    "shuffled_order": [
+     "is Saren Varen.",
+     "is Saren Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-2a8f4beed09e8f45",
+   "question": 1,
+   "sentences": [
+    "Saren is Varen.",
+    "Who is Saren?"
+   ]
+  },
+  {
+   "answer": "Tavin",
+   "controls": {
+    "renamed_answer": "zuy",
+    "renamed_vocabulary": [
+     "zuu zubg zuy.",
+     "zuag zubg zuu?"
+    ],
+    "shuffled_determiners": [
+     "Relan is Tavin.",
+     "Who is Relan?"
+    ],
+    "shuffled_order": [
+     "Tavin is Relan.",
+     "is Who Relan?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-2c8ffdab5e6ca1bc",
+   "question": 1,
+   "sentences": [
+    "Relan is Tavin.",
+    "Who is Relan?"
+   ]
+  },
+  {
+   "answer": "Dorin",
+   "controls": {
+    "renamed_answer": "zue",
+    "renamed_vocabulary": [
+     "zuw zubg zue.",
+     "zuag zubg zuw?"
+    ],
+    "shuffled_determiners": [
+     "Saren is Dorin.",
+     "Who is Saren?"
+    ],
+    "shuffled_order": [
+     "Saren Dorin is.",
+     "is Saren Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-2d93ea1b3c195fa3",
+   "question": 1,
+   "sentences": [
+    "Saren is Dorin.",
+    "Who is Saren?"
+   ]
+  },
+  {
+   "answer": "Relan",
+   "controls": {
+    "renamed_answer": "zuu",
+    "renamed_vocabulary": [
+     "zut zubg zuu.",
+     "zuag zubg zut?"
+    ],
+    "shuffled_determiners": [
+     "Quorin is Relan.",
+     "Who is Quorin?"
+    ],
+    "shuffled_order": [
+     "Relan Quorin is.",
+     "Who is Quorin?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-2da24f4153b89f38",
+   "question": 1,
+   "sentences": [
+    "Quorin is Relan.",
+    "Who is Quorin?"
+   ]
+  },
+  {
+   "answer": "Darek",
+   "controls": {
+    "renamed_answer": "zud",
+    "renamed_vocabulary": [
+     "zum zubg zud.",
+     "zuag zubg zum?"
+    ],
+    "shuffled_determiners": [
+     "Kelem is Darek.",
+     "Who is Kelem?"
+    ],
+    "shuffled_order": [
+     "is Kelem Darek.",
+     "is Kelem Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-32328d057d21577c",
+   "question": 1,
+   "sentences": [
+    "Kelem is Darek.",
+    "Who is Kelem?"
+   ]
+  },
+  {
+   "answer": "Loran",
+   "controls": {
+    "renamed_answer": "zun",
+    "renamed_vocabulary": [
+     "zul zubg zun.",
+     "zuag zubg zul?"
+    ],
+    "shuffled_determiners": [
+     "Kavin is Loran.",
+     "Who is Kavin?"
+    ],
+    "shuffled_order": [
+     "is Kavin Loran.",
+     "Kavin Who is?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-323c524434cd907b",
+   "question": 1,
+   "sentences": [
+    "Kavin is Loran.",
+    "Who is Kavin?"
+   ]
+  },
+  {
+   "answer": "Harin",
+   "controls": {
+    "renamed_answer": "zui",
+    "renamed_vocabulary": [
+     "zub zubg zui.",
+     "zuag zubg zub?"
+    ],
+    "shuffled_determiners": [
+     "Borin is Harin.",
+     "Who is Borin?"
+    ],
+    "shuffled_order": [
+     "Borin Harin is.",
+     "Borin is Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-36cc6cb88734b64c",
+   "question": 1,
+   "sentences": [
+    "Borin is Harin.",
+    "Who is Borin?"
+   ]
+  },
+  {
+   "answer": "Xaren",
+   "controls": {
+    "renamed_answer": "zuai",
+    "renamed_vocabulary": [
+     "zuq zubg zuai.",
+     "zuag zubg zuq?"
+    ],
+    "shuffled_determiners": [
+     "Oren is Xaren.",
+     "Who is Oren?"
+    ],
+    "shuffled_order": [
+     "Oren is Xaren.",
+     "is Oren Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-3f9d31e9505f77b3",
+   "question": 1,
+   "sentences": [
+    "Oren is Xaren.",
+    "Who is Oren?"
+   ]
+  },
+  {
+   "answer": "Joren",
+   "controls": {
+    "renamed_answer": "zuk",
+    "renamed_vocabulary": [
+     "zud zubg zuk.",
+     "zuag zubg zud?"
+    ],
+    "shuffled_determiners": [
+     "Darek is Joren.",
+     "Who is Darek?"
+    ],
+    "shuffled_order": [
+     "Joren Darek is.",
+     "Darek is Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-3fdb35f3b2292e42",
+   "question": 1,
+   "sentences": [
+    "Darek is Joren.",
+    "Who is Darek?"
+   ]
+  },
+  {
+   "answer": "Goran",
+   "controls": {
+    "renamed_answer": "zuh",
+    "renamed_vocabulary": [
+     "zux zubg zuh.",
+     "zuag zubg zux?"
+    ],
+    "shuffled_determiners": [
+     "Sorel is Goran.",
+     "Who is Sorel?"
+    ],
+    "shuffled_order": [
+     "Goran is Sorel.",
+     "Sorel Who is?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-40f1491839bcc940",
+   "question": 1,
+   "sentences": [
+    "Sorel is Goran.",
+    "Who is Sorel?"
+   ]
+  },
+  {
+   "answer": "Narek",
+   "controls": {
+    "renamed_answer": "zup",
+    "renamed_vocabulary": [
+     "zuah zubg zup.",
+     "zuag zubg zuah?"
+    ],
+    "shuffled_determiners": [
+     "Woren is Narek.",
+     "Who is Woren?"
+    ],
+    "shuffled_order": [
+     "is Woren Narek.",
+     "is Woren Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-41cbcf7058c79757",
+   "question": 1,
+   "sentences": [
+    "Woren is Narek.",
+    "Who is Woren?"
+   ]
+  },
+  {
+   "answer": "Relan",
+   "controls": {
+    "renamed_answer": "zuu",
+    "renamed_vocabulary": [
+     "zuai zubg zuu.",
+     "zuag zubg zuai?"
+    ],
+    "shuffled_determiners": [
+     "Xaren is Relan.",
+     "Who is Xaren?"
+    ],
+    "shuffled_order": [
+     "Xaren is Relan.",
+     "Who Xaren is?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-4551d3ca8bac1157",
+   "question": 1,
+   "sentences": [
+    "Xaren is Relan.",
+    "Who is Xaren?"
+   ]
+  },
+  {
+   "answer": "Borin",
+   "controls": {
+    "renamed_answer": "zub",
+    "renamed_vocabulary": [
+     "zue zubg zub.",
+     "zuag zubg zue?"
+    ],
+    "shuffled_determiners": [
+     "Dorin is Borin.",
+     "Who is Dorin?"
+    ],
+    "shuffled_order": [
+     "Borin is Dorin.",
+     "is Dorin Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-460ea1c8c0f87ad1",
+   "question": 1,
+   "sentences": [
+    "Dorin is Borin.",
+    "Who is Dorin?"
+   ]
+  },
+  {
+   "answer": "Varen",
+   "controls": {
+    "renamed_answer": "zuad",
+    "renamed_vocabulary": [
+     "zuk zubg zuad.",
+     "zuag zubg zuk?"
+    ],
+    "shuffled_determiners": [
+     "Joren is Varen.",
+     "Who is Joren?"
+    ],
+    "shuffled_order": [
+     "Varen is Joren.",
+     "is Joren Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-47b95d6bdfda9966",
+   "question": 1,
+   "sentences": [
+    "Joren is Varen.",
+    "Who is Joren?"
+   ]
+  },
+  {
+   "answer": "Cevan",
+   "controls": {
+    "renamed_answer": "zuc",
+    "renamed_vocabulary": [
+     "zul zubg zuc.",
+     "zuag zubg zul?"
+    ],
+    "shuffled_determiners": [
+     "Kavin is Cevan.",
+     "Who is Kavin?"
+    ],
+    "shuffled_order": [
+     "Kavin is Cevan.",
+     "Who is Kavin?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-5ce00763c7172a40",
+   "question": 1,
+   "sentences": [
+    "Kavin is Cevan.",
+    "Who is Kavin?"
+   ]
+  },
+  {
+   "answer": "Kavin",
+   "controls": {
+    "renamed_answer": "zul",
+    "renamed_vocabulary": [
+     "zuah zubg zul.",
+     "zuag zubg zuah?"
+    ],
+    "shuffled_determiners": [
+     "Woren is Kavin.",
+     "Who is Woren?"
+    ],
+    "shuffled_order": [
+     "Woren Kavin is.",
+     "Who is Woren?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-5d22f2e7e7a8d95c",
+   "question": 1,
+   "sentences": [
+    "Woren is Kavin.",
+    "Who is Woren?"
+   ]
+  },
+  {
+   "answer": "Xaren",
+   "controls": {
+    "renamed_answer": "zuai",
+    "renamed_vocabulary": [
+     "zuaa zubg zuai.",
+     "zuag zubg zuaa?"
+    ],
+    "shuffled_determiners": [
+     "Toren is Xaren.",
+     "Who is Toren?"
+    ],
+    "shuffled_order": [
+     "Xaren Toren is.",
+     "Toren Who is?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-5f9b9abc87dce46f",
+   "question": 1,
+   "sentences": [
+    "Toren is Xaren.",
+    "Who is Toren?"
+   ]
+  },
+  {
+   "answer": "Loran",
+   "controls": {
+    "renamed_answer": "zun",
+    "renamed_vocabulary": [
+     "zui zubg zun.",
+     "zuag zubg zui?"
+    ],
+    "shuffled_determiners": [
+     "Harin is Loran.",
+     "Who is Harin?"
+    ],
+    "shuffled_order": [
+     "is Harin Loran.",
+     "Who Harin is?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-61b8f76dd7b78359",
+   "question": 1,
+   "sentences": [
+    "Harin is Loran.",
+    "Who is Harin?"
+   ]
+  },
+  {
+   "answer": "Goran",
+   "controls": {
+    "renamed_answer": "zuh",
+    "renamed_vocabulary": [
+     "zuak zubg zuh.",
+     "zuag zubg zuak?"
+    ],
+    "shuffled_determiners": [
+     "Zorin is Goran.",
+     "Who is Zorin?"
+    ],
+    "shuffled_order": [
+     "is Goran Zorin.",
+     "is Zorin Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-7035e0dee68ffd91",
+   "question": 1,
+   "sentences": [
+    "Zorin is Goran.",
+    "Who is Zorin?"
+   ]
+  },
+  {
+   "answer": "Uven",
+   "controls": {
+    "renamed_answer": "zuab",
+    "renamed_vocabulary": [
+     "zuq zubg zuab.",
+     "zuag zubg zuq?"
+    ],
+    "shuffled_determiners": [
+     "Oren is Uven.",
+     "Who is Oren?"
+    ],
+    "shuffled_order": [
+     "Uven Oren is.",
+     "Who Oren is?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-74241e7f493aa85b",
+   "question": 1,
+   "sentences": [
+    "Oren is Uven.",
+    "Who is Oren?"
+   ]
+  },
+  {
+   "answer": "Cevan",
+   "controls": {
+    "renamed_answer": "zuc",
+    "renamed_vocabulary": [
+     "zur zubg zuc.",
+     "zuag zubg zur?"
+    ],
+    "shuffled_determiners": [
+     "Pavin is Cevan.",
+     "Who is Pavin?"
+    ],
+    "shuffled_order": [
+     "Pavin Cevan is.",
+     "is Pavin Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-7592029321a6d15a",
+   "question": 1,
+   "sentences": [
+    "Pavin is Cevan.",
+    "Who is Pavin?"
+   ]
+  },
+  {
+   "answer": "Uven",
+   "controls": {
+    "renamed_answer": "zuab",
+    "renamed_vocabulary": [
+     "zup zubg zuab.",
+     "zuag zubg zup?"
+    ],
+    "shuffled_determiners": [
+     "Narek is Uven.",
+     "Who is Narek?"
+    ],
+    "shuffled_order": [
+     "Uven is Narek.",
+     "Narek Who is?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-779e69ed852d751c",
+   "question": 1,
+   "sentences": [
+    "Narek is Uven.",
+    "Who is Narek?"
+   ]
+  },
+  {
+   "answer": "Tavin",
+   "controls": {
+    "renamed_answer": "zuy",
+    "renamed_vocabulary": [
+     "zun zubg zuy.",
+     "zuag zubg zun?"
+    ],
+    "shuffled_determiners": [
+     "Loran is Tavin.",
+     "Who is Loran?"
+    ],
+    "shuffled_order": [
+     "Loran Tavin is.",
+     "is Who Loran?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-7c554219291a4fa6",
+   "question": 1,
+   "sentences": [
+    "Loran is Tavin.",
+    "Who is Loran?"
+   ]
+  },
+  {
+   "answer": "Tavin",
+   "controls": {
+    "renamed_answer": "zuy",
+    "renamed_vocabulary": [
+     "zue zubg zuy.",
+     "zuag zubg zue?"
+    ],
+    "shuffled_determiners": [
+     "Dorin is Tavin.",
+     "Who is Dorin?"
+    ],
+    "shuffled_order": [
+     "Dorin Tavin is.",
+     "is Dorin Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-802aee313deaa212",
+   "question": 1,
+   "sentences": [
+    "Dorin is Tavin.",
+    "Who is Dorin?"
+   ]
+  },
+  {
+   "answer": "Varek",
+   "controls": {
+    "renamed_answer": "zuac",
+    "renamed_vocabulary": [
+     "zui zubg zuac.",
+     "zuag zubg zui?"
+    ],
+    "shuffled_determiners": [
+     "Harin is Varek.",
+     "Who is Harin?"
+    ],
+    "shuffled_order": [
+     "Varek Harin is.",
+     "is Who Harin?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-80f6cc23bc742f57",
+   "question": 1,
+   "sentences": [
+    "Harin is Varek.",
+    "Who is Harin?"
+   ]
+  },
+  {
+   "answer": "Kavin",
+   "controls": {
+    "renamed_answer": "zul",
+    "renamed_vocabulary": [
+     "zuk zubg zul.",
+     "zuag zubg zuk?"
+    ],
+    "shuffled_determiners": [
+     "Joren is Kavin.",
+     "Who is Joren?"
+    ],
+    "shuffled_order": [
+     "Kavin is Joren.",
+     "Who Joren is?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-872ba053f5e89c91",
+   "question": 1,
+   "sentences": [
+    "Joren is Kavin.",
+    "Who is Joren?"
+   ]
+  },
+  {
+   "answer": "Iven",
+   "controls": {
+    "renamed_answer": "zuj",
+    "renamed_vocabulary": [
+     "zuad zubg zuj.",
+     "zuag zubg zuad?"
+    ],
+    "shuffled_determiners": [
+     "Varen is Iven.",
+     "Who is Varen?"
+    ],
+    "shuffled_order": [
+     "is Varen Iven.",
+     "is Varen Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-98ae69f4a8aee9f0",
+   "question": 1,
+   "sentences": [
+    "Varen is Iven.",
+    "Who is Varen?"
+   ]
+  },
+  {
+   "answer": "Peren",
+   "controls": {
+    "renamed_answer": "zus",
+    "renamed_vocabulary": [
+     "zui zubg zus.",
+     "zuag zubg zui?"
+    ],
+    "shuffled_determiners": [
+     "Harin is Peren.",
+     "Who is Harin?"
+    ],
+    "shuffled_order": [
+     "Harin is Peren.",
+     "is Who Harin?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-9b401b168f9c1304",
+   "question": 1,
+   "sentences": [
+    "Harin is Peren.",
+    "Who is Harin?"
+   ]
+  },
+  {
+   "answer": "Dorin",
+   "controls": {
+    "renamed_answer": "zue",
+    "renamed_vocabulary": [
+     "zuc zubg zue.",
+     "zuag zubg zuc?"
+    ],
+    "shuffled_determiners": [
+     "Cevan is Dorin.",
+     "Who is Cevan?"
+    ],
+    "shuffled_order": [
+     "Dorin Cevan is.",
+     "Who Cevan is?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-9e89561c11acf62a",
+   "question": 1,
+   "sentences": [
+    "Cevan is Dorin.",
+    "Who is Cevan?"
+   ]
+  },
+  {
+   "answer": "Goran",
+   "controls": {
+    "renamed_answer": "zuh",
+    "renamed_vocabulary": [
+     "zun zubg zuh.",
+     "zuag zubg zun?"
+    ],
+    "shuffled_determiners": [
+     "Loran is Goran.",
+     "Who is Loran?"
+    ],
+    "shuffled_order": [
+     "Goran Loran is.",
+     "is Who Loran?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-a276480654ae8474",
+   "question": 1,
+   "sentences": [
+    "Loran is Goran.",
+    "Who is Loran?"
+   ]
+  },
+  {
+   "answer": "Oren",
+   "controls": {
+    "renamed_answer": "zuq",
+    "renamed_vocabulary": [
+     "zuf zubg zuq.",
+     "zuag zubg zuf?"
+    ],
+    "shuffled_determiners": [
+     "Eron is Oren.",
+     "Who is Eron?"
+    ],
+    "shuffled_order": [
+     "is Eron Oren.",
+     "Who Eron is?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-a33df4daa9580f21",
+   "question": 1,
+   "sentences": [
+    "Eron is Oren.",
+    "Who is Eron?"
+   ]
+  },
+  {
+   "answer": "Joren",
+   "controls": {
+    "renamed_answer": "zuk",
+    "renamed_vocabulary": [
+     "zub zubg zuk.",
+     "zuag zubg zub?"
+    ],
+    "shuffled_determiners": [
+     "Borin is Joren.",
+     "Who is Borin?"
+    ],
+    "shuffled_order": [
+     "Borin is Joren.",
+     "Who Borin is?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-a3c1ef4c9564c24e",
+   "question": 1,
+   "sentences": [
+    "Borin is Joren.",
+    "Who is Borin?"
+   ]
+  },
+  {
+   "answer": "Iven",
+   "controls": {
+    "renamed_answer": "zuj",
+    "renamed_vocabulary": [
+     "zus zubg zuj.",
+     "zuag zubg zus?"
+    ],
+    "shuffled_determiners": [
+     "Peren is Iven.",
+     "Who is Peren?"
+    ],
+    "shuffled_order": [
+     "Iven is Peren.",
+     "Who Peren is?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-a5f9ed8238101c4e",
+   "question": 1,
+   "sentences": [
+    "Peren is Iven.",
+    "Who is Peren?"
+   ]
+  },
+  {
+   "answer": "Zorin",
+   "controls": {
+    "renamed_answer": "zuak",
+    "renamed_vocabulary": [
+     "zuad zubg zuak.",
+     "zuag zubg zuad?"
+    ],
+    "shuffled_determiners": [
+     "Varen is Zorin.",
+     "Who is Varen?"
+    ],
+    "shuffled_order": [
+     "Zorin Varen is.",
+     "Varen Who is?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-a667f0834c3f3b60",
+   "question": 1,
+   "sentences": [
+    "Varen is Zorin.",
+    "Who is Varen?"
+   ]
+  },
+  {
+   "answer": "Borin",
+   "controls": {
+    "renamed_answer": "zub",
+    "renamed_vocabulary": [
+     "zud zubg zub.",
+     "zuag zubg zud?"
+    ],
+    "shuffled_determiners": [
+     "Darek is Borin.",
+     "Who is Darek?"
+    ],
+    "shuffled_order": [
+     "Borin Darek is.",
+     "Darek is Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-b0871853a11d3371",
+   "question": 1,
+   "sentences": [
+    "Darek is Borin.",
+    "Who is Darek?"
+   ]
+  },
+  {
+   "answer": "Peren",
+   "controls": {
+    "renamed_answer": "zus",
+    "renamed_vocabulary": [
+     "zuu zubg zus.",
+     "zuag zubg zuu?"
+    ],
+    "shuffled_determiners": [
+     "Relan is Peren.",
+     "Who is Relan?"
+    ],
+    "shuffled_order": [
+     "is Relan Peren.",
+     "is Who Relan?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-b3e422bb9e0674d0",
+   "question": 1,
+   "sentences": [
+    "Relan is Peren.",
+    "Who is Relan?"
+   ]
+  },
+  {
+   "answer": "Pavin",
+   "controls": {
+    "renamed_answer": "zur",
+    "renamed_vocabulary": [
+     "zuaj zubg zur.",
+     "zuag zubg zuaj?"
+    ],
+    "shuffled_determiners": [
+     "Yoren is Pavin.",
+     "Who is Yoren?"
+    ],
+    "shuffled_order": [
+     "Yoren Pavin is.",
+     "Yoren is Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-b57f18716a9154b0",
+   "question": 1,
+   "sentences": [
+    "Yoren is Pavin.",
+    "Who is Yoren?"
+   ]
+  },
+  {
+   "answer": "Darek",
+   "controls": {
+    "renamed_answer": "zud",
+    "renamed_vocabulary": [
+     "zuah zubg zud.",
+     "zuag zubg zuah?"
+    ],
+    "shuffled_determiners": [
+     "Woren is Darek.",
+     "Who is Woren?"
+    ],
+    "shuffled_order": [
+     "Woren Darek is.",
+     "Who is Woren?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-b66c69984985d49e",
+   "question": 1,
+   "sentences": [
+    "Woren is Darek.",
+    "Who is Woren?"
+   ]
+  },
+  {
+   "answer": "Harin",
+   "controls": {
+    "renamed_answer": "zui",
+    "renamed_vocabulary": [
+     "zuq zubg zui.",
+     "zuag zubg zuq?"
+    ],
+    "shuffled_determiners": [
+     "Oren is Harin.",
+     "Who is Oren?"
+    ],
+    "shuffled_order": [
+     "is Harin Oren.",
+     "is Oren Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-b8835c181b3c0518",
+   "question": 1,
+   "sentences": [
+    "Oren is Harin.",
+    "Who is Oren?"
+   ]
+  },
+  {
+   "answer": "Kavin",
+   "controls": {
+    "renamed_answer": "zul",
+    "renamed_vocabulary": [
+     "zuq zubg zul.",
+     "zuag zubg zuq?"
+    ],
+    "shuffled_determiners": [
+     "Oren is Kavin.",
+     "Who is Oren?"
+    ],
+    "shuffled_order": [
+     "is Kavin Oren.",
+     "Who is Oren?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-c0286f40bea70d38",
+   "question": 1,
+   "sentences": [
+    "Oren is Kavin.",
+    "Who is Oren?"
+   ]
+  },
+  {
+   "answer": "Narek",
+   "controls": {
+    "renamed_answer": "zup",
+    "renamed_vocabulary": [
+     "zuw zubg zup.",
+     "zuag zubg zuw?"
+    ],
+    "shuffled_determiners": [
+     "Saren is Narek.",
+     "Who is Saren?"
+    ],
+    "shuffled_order": [
+     "is Narek Saren.",
+     "Saren is Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-c7d7f7e92ef03457",
+   "question": 1,
+   "sentences": [
+    "Saren is Narek.",
+    "Who is Saren?"
+   ]
+  },
+  {
+   "answer": "Saren",
+   "controls": {
+    "renamed_answer": "zuw",
+    "renamed_vocabulary": [
+     "zux zubg zuw.",
+     "zuag zubg zux?"
+    ],
+    "shuffled_determiners": [
+     "Sorel is Saren.",
+     "Who is Sorel?"
+    ],
+    "shuffled_order": [
+     "Sorel is Saren.",
+     "Who Sorel is?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-cd237dee1aec3aa2",
+   "question": 1,
+   "sentences": [
+    "Sorel is Saren.",
+    "Who is Sorel?"
+   ]
+  },
+  {
+   "answer": "Pavin",
+   "controls": {
+    "renamed_answer": "zur",
+    "renamed_vocabulary": [
+     "zui zubg zur.",
+     "zuag zubg zui?"
+    ],
+    "shuffled_determiners": [
+     "Harin is Pavin.",
+     "Who is Harin?"
+    ],
+    "shuffled_order": [
+     "is Harin Pavin.",
+     "Who is Harin?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-cfededd7284f0628",
+   "question": 1,
+   "sentences": [
+    "Harin is Pavin.",
+    "Who is Harin?"
+   ]
+  },
+  {
+   "answer": "Toren",
+   "controls": {
+    "renamed_answer": "zuaa",
+    "renamed_vocabulary": [
+     "zug zubg zuaa.",
+     "zuag zubg zug?"
+    ],
+    "shuffled_determiners": [
+     "Faren is Toren.",
+     "Who is Faren?"
+    ],
+    "shuffled_order": [
+     "is Faren Toren.",
+     "Who Faren is?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-d61de0eb5a9878b2",
+   "question": 1,
+   "sentences": [
+    "Faren is Toren.",
+    "Who is Faren?"
+   ]
+  },
+  {
+   "answer": "Meren",
+   "controls": {
+    "renamed_answer": "zuo",
+    "renamed_vocabulary": [
+     "zuad zubg zuo.",
+     "zuag zubg zuad?"
+    ],
+    "shuffled_determiners": [
+     "Varen is Meren.",
+     "Who is Varen?"
+    ],
+    "shuffled_order": [
+     "Varen Meren is.",
+     "is Who Varen?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-d71516761e986a5f",
+   "question": 1,
+   "sentences": [
+    "Varen is Meren.",
+    "Who is Varen?"
+   ]
+  },
+  {
+   "answer": "Varen",
+   "controls": {
+    "renamed_answer": "zuad",
+    "renamed_vocabulary": [
+     "zuj zubg zuad.",
+     "zuag zubg zuj?"
+    ],
+    "shuffled_determiners": [
+     "Iven is Varen.",
+     "Who is Iven?"
+    ],
+    "shuffled_order": [
+     "Iven Varen is.",
+     "Iven Who is?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-d7b33c231bd21b43",
+   "question": 1,
+   "sentences": [
+    "Iven is Varen.",
+    "Who is Iven?"
+   ]
+  },
+  {
+   "answer": "Xaren",
+   "controls": {
+    "renamed_answer": "zuai",
+    "renamed_vocabulary": [
+     "zup zubg zuai.",
+     "zuag zubg zup?"
+    ],
+    "shuffled_determiners": [
+     "Narek is Xaren.",
+     "Who is Narek?"
+    ],
+    "shuffled_order": [
+     "Narek is Xaren.",
+     "is Narek Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-d976fa6040a1d624",
+   "question": 1,
+   "sentences": [
+    "Narek is Xaren.",
+    "Who is Narek?"
+   ]
+  },
+  {
+   "answer": "Iven",
+   "controls": {
+    "renamed_answer": "zuj",
+    "renamed_vocabulary": [
+     "zuu zubg zuj.",
+     "zuag zubg zuu?"
+    ],
+    "shuffled_determiners": [
+     "Relan is Iven.",
+     "Who is Relan?"
+    ],
+    "shuffled_order": [
+     "Iven Relan is.",
+     "Relan is Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-db6aa8017bee13fe",
+   "question": 1,
+   "sentences": [
+    "Relan is Iven.",
+    "Who is Relan?"
+   ]
+  },
+  {
+   "answer": "Darek",
+   "controls": {
+    "renamed_answer": "zud",
+    "renamed_vocabulary": [
+     "zut zubg zud.",
+     "zuag zubg zut?"
+    ],
+    "shuffled_determiners": [
+     "Quorin is Darek.",
+     "Who is Quorin?"
+    ],
+    "shuffled_order": [
+     "Darek Quorin is.",
+     "Quorin Who is?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-dbc669346cc70d80",
+   "question": 1,
+   "sentences": [
+    "Quorin is Darek.",
+    "Who is Quorin?"
+   ]
+  },
+  {
+   "answer": "Faren",
+   "controls": {
+    "renamed_answer": "zug",
+    "renamed_vocabulary": [
+     "zuv zubg zug.",
+     "zuag zubg zuv?"
+    ],
+    "shuffled_determiners": [
+     "Rovan is Faren.",
+     "Who is Rovan?"
+    ],
+    "shuffled_order": [
+     "is Faren Rovan.",
+     "Rovan is Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-dc14b93629b9b1b3",
+   "question": 1,
+   "sentences": [
+    "Rovan is Faren.",
+    "Who is Rovan?"
+   ]
+  },
+  {
+   "answer": "Xaren",
+   "controls": {
+    "renamed_answer": "zuai",
+    "renamed_vocabulary": [
+     "zug zubg zuai.",
+     "zuag zubg zug?"
+    ],
+    "shuffled_determiners": [
+     "Faren is Xaren.",
+     "Who is Faren?"
+    ],
+    "shuffled_order": [
+     "Faren is Xaren.",
+     "Faren Who is?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-e481a682def557d8",
+   "question": 1,
+   "sentences": [
+    "Faren is Xaren.",
+    "Who is Faren?"
+   ]
+  },
+  {
+   "answer": "Loran",
+   "controls": {
+    "renamed_answer": "zun",
+    "renamed_vocabulary": [
+     "zuaa zubg zun.",
+     "zuag zubg zuaa?"
+    ],
+    "shuffled_determiners": [
+     "Toren is Loran.",
+     "Who is Toren?"
+    ],
+    "shuffled_order": [
+     "Loran Toren is.",
+     "is Who Toren?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-e63a7864c9f86dc6",
+   "question": 1,
+   "sentences": [
+    "Toren is Loran.",
+    "Who is Toren?"
+   ]
+  },
+  {
+   "answer": "Pavin",
+   "controls": {
+    "renamed_answer": "zur",
+    "renamed_vocabulary": [
+     "zuad zubg zur.",
+     "zuag zubg zuad?"
+    ],
+    "shuffled_determiners": [
+     "Varen is Pavin.",
+     "Who is Varen?"
+    ],
+    "shuffled_order": [
+     "Varen is Pavin.",
+     "Varen Who is?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-e6710942fe90b9ee",
+   "question": 1,
+   "sentences": [
+    "Varen is Pavin.",
+    "Who is Varen?"
+   ]
+  },
+  {
+   "answer": "Woren",
+   "controls": {
+    "renamed_answer": "zuah",
+    "renamed_vocabulary": [
+     "zut zubg zuah.",
+     "zuag zubg zut?"
+    ],
+    "shuffled_determiners": [
+     "Quorin is Woren.",
+     "Who is Quorin?"
+    ],
+    "shuffled_order": [
+     "Woren is Quorin.",
+     "is Quorin Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-f12ff1c4638163d8",
+   "question": 1,
+   "sentences": [
+    "Quorin is Woren.",
+    "Who is Quorin?"
+   ]
+  },
+  {
+   "answer": "Woren",
+   "controls": {
+    "renamed_answer": "zuah",
+    "renamed_vocabulary": [
+     "zuab zubg zuah.",
+     "zuag zubg zuab?"
+    ],
+    "shuffled_determiners": [
+     "Uven is Woren.",
+     "Who is Uven?"
+    ],
+    "shuffled_order": [
+     "Woren is Uven.",
+     "is Who Uven?"
+    ]
+   },
+   "expectations": {},
+   "family": "identity",
+   "key": "identity-fc81840a09b6768f",
+   "question": 1,
+   "sentences": [
+    "Uven is Woren.",
+    "Who is Uven?"
+   ]
+  },
+  {
+   "answer": "gerbil",
+   "controls": {
+    "renamed_answer": "zubb",
+    "renamed_vocabulary": [
+     "zuc zubg zual zubb.",
+     "zuae zubg zuc?"
+    ],
+    "shuffled_determiners": [
+     "Cevan is a gerbil.",
+     "What is Cevan?"
+    ],
+    "shuffled_order": [
+     "a Cevan gerbil is.",
+     "is Cevan What?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-0236549c0e27a2d7",
+   "question": 1,
+   "sentences": [
+    "Cevan is a gerbil.",
+    "What is Cevan?"
+   ]
+  },
+  {
+   "answer": "zebra",
+   "controls": {
+    "renamed_answer": "zucc",
+    "renamed_vocabulary": [
+     "zuc zubg zual zucc.",
+     "zuae zubg zuc?"
+    ],
+    "shuffled_determiners": [
+     "Cevan is a zebra.",
+     "What is Cevan?"
+    ],
+    "shuffled_order": [
+     "is zebra a Cevan.",
+     "Cevan What is?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-05972ef848755677",
+   "question": 1,
+   "sentences": [
+    "Cevan is a zebra.",
+    "What is Cevan?"
+   ]
+  },
+  {
+   "answer": "gerbil",
+   "controls": {
+    "renamed_answer": "zubb",
+    "renamed_vocabulary": [
+     "zuh zubg zual zubb.",
+     "zuae zubg zuh?"
+    ],
+    "shuffled_determiners": [
+     "Goran is a gerbil.",
+     "What is Goran?"
+    ],
+    "shuffled_order": [
+     "gerbil a is Goran.",
+     "is Goran What?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-07ab8789f27179c6",
+   "question": 1,
+   "sentences": [
+    "Goran is a gerbil.",
+    "What is Goran?"
+   ]
+  },
+  {
+   "answer": "badger",
+   "controls": {
+    "renamed_answer": "zuar",
+    "renamed_vocabulary": [
+     "zuj zubg zual zuar.",
+     "zuae zubg zuj?"
+    ],
+    "shuffled_determiners": [
+     "Iven is a badger.",
+     "What is Iven?"
+    ],
+    "shuffled_order": [
+     "badger is a Iven.",
+     "Iven is What?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-08a9d4a3426b06bd",
+   "question": 1,
+   "sentences": [
+    "Iven is a badger.",
+    "What is Iven?"
+   ]
+  },
+  {
+   "answer": "lemur",
+   "controls": {
+    "renamed_answer": "zubk",
+    "renamed_vocabulary": [
+     "zuac zubg zual zubk.",
+     "zuae zubg zuac?"
+    ],
+    "shuffled_determiners": [
+     "Varek is a lemur.",
+     "What is Varek?"
+    ],
+    "shuffled_order": [
+     "lemur Varek a is.",
+     "is What Varek?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-167d8ff3f9799c2c",
+   "question": 1,
+   "sentences": [
+    "Varek is a lemur.",
+    "What is Varek?"
+   ]
+  },
+  {
+   "answer": "gerbil",
+   "controls": {
+    "renamed_answer": "zubb",
+    "renamed_vocabulary": [
+     "zue zubg zual zubb.",
+     "zuae zubg zue?"
+    ],
+    "shuffled_determiners": [
+     "Dorin is a gerbil.",
+     "What is Dorin?"
+    ],
+    "shuffled_order": [
+     "Dorin is gerbil a.",
+     "What is Dorin?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-1727439ad6c8b3af",
+   "question": 1,
+   "sentences": [
+    "Dorin is a gerbil.",
+    "What is Dorin?"
+   ]
+  },
+  {
+   "answer": "zebra",
+   "controls": {
+    "renamed_answer": "zucc",
+    "renamed_vocabulary": [
+     "zui zubg zual zucc.",
+     "zuae zubg zui?"
+    ],
+    "shuffled_determiners": [
+     "Harin is a zebra.",
+     "What is Harin?"
+    ],
+    "shuffled_order": [
+     "Harin a zebra is.",
+     "What Harin is?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-1cf5e61770f5373b",
+   "question": 1,
+   "sentences": [
+    "Harin is a zebra.",
+    "What is Harin?"
+   ]
+  },
+  {
+   "answer": "badger",
+   "controls": {
+    "renamed_answer": "zuar",
+    "renamed_vocabulary": [
+     "zug zubg zual zuar.",
+     "zuae zubg zug?"
+    ],
+    "shuffled_determiners": [
+     "Faren is a badger.",
+     "What is Faren?"
+    ],
+    "shuffled_order": [
+     "Faren is badger a.",
+     "is Faren What?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-2274d9cf51f75f39",
+   "question": 1,
+   "sentences": [
+    "Faren is a badger.",
+    "What is Faren?"
+   ]
+  },
+  {
+   "answer": "ibex",
+   "controls": {
+    "renamed_answer": "zubf",
+    "renamed_vocabulary": [
+     "zuak zubg zual zubf.",
+     "zuae zubg zuak?"
+    ],
+    "shuffled_determiners": [
+     "Zorin is a ibex.",
+     "What is Zorin?"
+    ],
+    "shuffled_order": [
+     "Zorin ibex a is.",
+     "is Zorin What?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-232a072c93f54184",
+   "question": 1,
+   "sentences": [
+    "Zorin is a ibex.",
+    "What is Zorin?"
+   ]
+  },
+  {
+   "answer": "panda",
+   "controls": {
+    "renamed_answer": "zubr",
+    "renamed_vocabulary": [
+     "zup zubg zual zubr.",
+     "zuae zubg zup?"
+    ],
+    "shuffled_determiners": [
+     "Narek is a panda.",
+     "What is Narek?"
+    ],
+    "shuffled_order": [
+     "a is panda Narek.",
+     "is Narek What?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-24fb5193ca7a7d84",
+   "question": 1,
+   "sentences": [
+    "Narek is a panda.",
+    "What is Narek?"
+   ]
+  },
+  {
+   "answer": "jackal",
+   "controls": {
+    "renamed_answer": "zubh",
+    "renamed_vocabulary": [
+     "zut zubg zual zubh.",
+     "zuae zubg zut?"
+    ],
+    "shuffled_determiners": [
+     "Quorin is a jackal.",
+     "What is Quorin?"
+    ],
+    "shuffled_order": [
+     "Quorin a is jackal.",
+     "is What Quorin?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-26598f4ee4c3c5e2",
+   "question": 1,
+   "sentences": [
+    "Quorin is a jackal.",
+    "What is Quorin?"
+   ]
+  },
+  {
+   "answer": "hyena",
+   "controls": {
+    "renamed_answer": "zube",
+    "renamed_vocabulary": [
+     "zuad zubg zual zube.",
+     "zuae zubg zuad?"
+    ],
+    "shuffled_determiners": [
+     "Varen is a hyena.",
+     "What is Varen?"
+    ],
+    "shuffled_order": [
+     "Varen hyena is a.",
+     "Varen What is?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-28eb422ff67059b6",
+   "question": 1,
+   "sentences": [
+    "Varen is a hyena.",
+    "What is Varen?"
+   ]
+  },
+  {
+   "answer": "ibex",
+   "controls": {
+    "renamed_answer": "zubf",
+    "renamed_vocabulary": [
+     "zue zubg zual zubf.",
+     "zuae zubg zue?"
+    ],
+    "shuffled_determiners": [
+     "Dorin is a ibex.",
+     "What is Dorin?"
+    ],
+    "shuffled_order": [
+     "ibex a is Dorin.",
+     "is What Dorin?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-2b14715ddc3528b7",
+   "question": 1,
+   "sentences": [
+    "Dorin is a ibex.",
+    "What is Dorin?"
+   ]
+  },
+  {
+   "answer": "camel",
+   "controls": {
+    "renamed_answer": "zuau",
+    "renamed_vocabulary": [
+     "zui zubg zual zuau.",
+     "zuae zubg zui?"
+    ],
+    "shuffled_determiners": [
+     "Harin is a camel.",
+     "What is Harin?"
+    ],
+    "shuffled_order": [
+     "a Harin camel is.",
+     "is What Harin?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-2c6eb5a6147b9dc5",
+   "question": 1,
+   "sentences": [
+    "Harin is a camel.",
+    "What is Harin?"
+   ]
+  },
+  {
+   "answer": "panda",
+   "controls": {
+    "renamed_answer": "zubr",
+    "renamed_vocabulary": [
+     "zuy zubg zual zubr.",
+     "zuae zubg zuy?"
+    ],
+    "shuffled_determiners": [
+     "Tavin is a panda.",
+     "What is Tavin?"
+    ],
+    "shuffled_order": [
+     "Tavin a panda is.",
+     "is Tavin What?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-2d14b1d91315056e",
+   "question": 1,
+   "sentences": [
+    "Tavin is a panda.",
+    "What is Tavin?"
+   ]
+  },
+  {
+   "answer": "marten",
+   "controls": {
+    "renamed_answer": "zubn",
+    "renamed_vocabulary": [
+     "zue zubg zual zubn.",
+     "zuae zubg zue?"
+    ],
+    "shuffled_determiners": [
+     "Dorin is a marten.",
+     "What is Dorin?"
+    ],
+    "shuffled_order": [
+     "is a Dorin marten.",
+     "Dorin What is?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-33fe5f561019052f",
+   "question": 1,
+   "sentences": [
+    "Dorin is a marten.",
+    "What is Dorin?"
+   ]
+  },
+  {
+   "answer": "zebra",
+   "controls": {
+    "renamed_answer": "zucc",
+    "renamed_vocabulary": [
+     "zuy zubg zual zucc.",
+     "zuae zubg zuy?"
+    ],
+    "shuffled_determiners": [
+     "Tavin is a zebra.",
+     "What is Tavin?"
+    ],
+    "shuffled_order": [
+     "a zebra is Tavin.",
+     "Tavin is What?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-359042b52f82eab3",
+   "question": 1,
+   "sentences": [
+    "Tavin is a zebra.",
+    "What is Tavin?"
+   ]
+  },
+  {
+   "answer": "ibex",
+   "controls": {
+    "renamed_answer": "zubf",
+    "renamed_vocabulary": [
+     "zuh zubg zual zubf.",
+     "zuae zubg zuh?"
+    ],
+    "shuffled_determiners": [
+     "Goran is a ibex.",
+     "What is Goran?"
+    ],
+    "shuffled_order": [
+     "Goran ibex is a.",
+     "Goran What is?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-3aa9dd34b84d14cf",
+   "question": 1,
+   "sentences": [
+    "Goran is a ibex.",
+    "What is Goran?"
+   ]
+  },
+  {
+   "answer": "zebra",
+   "controls": {
+    "renamed_answer": "zucc",
+    "renamed_vocabulary": [
+     "zud zubg zual zucc.",
+     "zuae zubg zud?"
+    ],
+    "shuffled_determiners": [
+     "Darek is a zebra.",
+     "What is Darek?"
+    ],
+    "shuffled_order": [
+     "is a zebra Darek.",
+     "is Darek What?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-3deaeb408fa01db9",
+   "question": 1,
+   "sentences": [
+    "Darek is a zebra.",
+    "What is Darek?"
+   ]
+  },
+  {
+   "answer": "marten",
+   "controls": {
+    "renamed_answer": "zubn",
+    "renamed_vocabulary": [
+     "zuaa zubg zual zubn.",
+     "zuae zubg zuaa?"
+    ],
+    "shuffled_determiners": [
+     "Toren is a marten.",
+     "What is Toren?"
+    ],
+    "shuffled_order": [
+     "Toren is a marten.",
+     "Toren What is?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-45c6c0e69379ab4c",
+   "question": 1,
+   "sentences": [
+    "Toren is a marten.",
+    "What is Toren?"
+   ]
+  },
+  {
+   "answer": "lemur",
+   "controls": {
+    "renamed_answer": "zubk",
+    "renamed_vocabulary": [
+     "zuak zubg zual zubk.",
+     "zuae zubg zuak?"
+    ],
+    "shuffled_determiners": [
+     "Zorin is a lemur.",
+     "What is Zorin?"
+    ],
+    "shuffled_order": [
+     "a Zorin lemur is.",
+     "What is Zorin?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-48a7a2b77865558b",
+   "question": 1,
+   "sentences": [
+    "Zorin is a lemur.",
+    "What is Zorin?"
+   ]
+  },
+  {
+   "answer": "ferret",
+   "controls": {
+    "renamed_answer": "zuba",
+    "renamed_vocabulary": [
+     "zui zubg zual zuba.",
+     "zuae zubg zui?"
+    ],
+    "shuffled_determiners": [
+     "Harin is a ferret.",
+     "What is Harin?"
+    ],
+    "shuffled_order": [
+     "a ferret Harin is.",
+     "What Harin is?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-4b636e4f1726bc24",
+   "question": 1,
+   "sentences": [
+    "Harin is a ferret.",
+    "What is Harin?"
+   ]
+  },
+  {
+   "answer": "lemur",
+   "controls": {
+    "renamed_answer": "zubk",
+    "renamed_vocabulary": [
+     "zut zubg zual zubk.",
+     "zuae zubg zut?"
+    ],
+    "shuffled_determiners": [
+     "Quorin is a lemur.",
+     "What is Quorin?"
+    ],
+    "shuffled_order": [
+     "is lemur Quorin a.",
+     "Quorin What is?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-50974829ed60fa5e",
+   "question": 1,
+   "sentences": [
+    "Quorin is a lemur.",
+    "What is Quorin?"
+   ]
+  },
+  {
+   "answer": "camel",
+   "controls": {
+    "renamed_answer": "zuau",
+    "renamed_vocabulary": [
+     "zuah zubg zual zuau.",
+     "zuae zubg zuah?"
+    ],
+    "shuffled_determiners": [
+     "Woren is a camel.",
+     "What is Woren?"
+    ],
+    "shuffled_order": [
+     "a camel is Woren.",
+     "What is Woren?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-5bf0e825c63a61c6",
+   "question": 1,
+   "sentences": [
+    "Woren is a camel.",
+    "What is Woren?"
+   ]
+  },
+  {
+   "answer": "camel",
+   "controls": {
+    "renamed_answer": "zuau",
+    "renamed_vocabulary": [
+     "zuai zubg zual zuau.",
+     "zuae zubg zuai?"
+    ],
+    "shuffled_determiners": [
+     "Xaren is a camel.",
+     "What is Xaren?"
+    ],
+    "shuffled_order": [
+     "camel a is Xaren.",
+     "is Xaren What?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-5d2ca3a4d872f33a",
+   "question": 1,
+   "sentences": [
+    "Xaren is a camel.",
+    "What is Xaren?"
+   ]
+  },
+  {
+   "answer": "lynx",
+   "controls": {
+    "renamed_answer": "zubm",
+    "renamed_vocabulary": [
+     "zup zubg zual zubm.",
+     "zuae zubg zup?"
+    ],
+    "shuffled_determiners": [
+     "Narek is a lynx.",
+     "What is Narek?"
+    ],
+    "shuffled_order": [
+     "lynx is Narek a.",
+     "is Narek What?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-5d614531865471fe",
+   "question": 1,
+   "sentences": [
+    "Narek is a lynx.",
+    "What is Narek?"
+   ]
+  },
+  {
+   "answer": "llama",
+   "controls": {
+    "renamed_answer": "zubl",
+    "renamed_vocabulary": [
+     "zum zubg zual zubl.",
+     "zuae zubg zum?"
+    ],
+    "shuffled_determiners": [
+     "Kelem is a llama.",
+     "What is Kelem?"
+    ],
+    "shuffled_order": [
+     "llama is a Kelem.",
+     "What is Kelem?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-5e6a61d6f952f005",
+   "question": 1,
+   "sentences": [
+    "Kelem is a llama.",
+    "What is Kelem?"
+   ]
+  },
+  {
+   "answer": "lemur",
+   "controls": {
+    "renamed_answer": "zubk",
+    "renamed_vocabulary": [
+     "zul zubg zual zubk.",
+     "zuae zubg zul?"
+    ],
+    "shuffled_determiners": [
+     "Kavin is a lemur.",
+     "What is Kavin?"
+    ],
+    "shuffled_order": [
+     "Kavin is a lemur.",
+     "What is Kavin?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-5ee5ca81a583fe11",
+   "question": 1,
+   "sentences": [
+    "Kavin is a lemur.",
+    "What is Kavin?"
+   ]
+  },
+  {
+   "answer": "bison",
+   "controls": {
+    "renamed_answer": "zuat",
+    "renamed_vocabulary": [
+     "zur zubg zual zuat.",
+     "zuae zubg zur?"
+    ],
+    "shuffled_determiners": [
+     "Pavin is a bison.",
+     "What is Pavin?"
+    ],
+    "shuffled_order": [
+     "is a bison Pavin.",
+     "What is Pavin?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-643976598ee7e11f",
+   "question": 1,
+   "sentences": [
+    "Pavin is a bison.",
+    "What is Pavin?"
+   ]
+  },
+  {
+   "answer": "gerbil",
+   "controls": {
+    "renamed_answer": "zubb",
+    "renamed_vocabulary": [
+     "zuk zubg zual zubb.",
+     "zuae zubg zuk?"
+    ],
+    "shuffled_determiners": [
+     "Joren is a gerbil.",
+     "What is Joren?"
+    ],
+    "shuffled_order": [
+     "a gerbil is Joren.",
+     "is What Joren?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-6aa89a56ffd1b58b",
+   "question": 1,
+   "sentences": [
+    "Joren is a gerbil.",
+    "What is Joren?"
+   ]
+  },
+  {
+   "answer": "zebra",
+   "controls": {
+    "renamed_answer": "zucc",
+    "renamed_vocabulary": [
+     "zub zubg zual zucc.",
+     "zuae zubg zub?"
+    ],
+    "shuffled_determiners": [
+     "Borin is a zebra.",
+     "What is Borin?"
+    ],
+    "shuffled_order": [
+     "a zebra is Borin.",
+     "is What Borin?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-6ac723527090de87",
+   "question": 1,
+   "sentences": [
+    "Borin is a zebra.",
+    "What is Borin?"
+   ]
+  },
+  {
+   "answer": "bison",
+   "controls": {
+    "renamed_answer": "zuat",
+    "renamed_vocabulary": [
+     "zuac zubg zual zuat.",
+     "zuae zubg zuac?"
+    ],
+    "shuffled_determiners": [
+     "Varek is a bison.",
+     "What is Varek?"
+    ],
+    "shuffled_order": [
+     "Varek a bison is.",
+     "is What Varek?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-6f2ec988d5b4e964",
+   "question": 1,
+   "sentences": [
+    "Varek is a bison.",
+    "What is Varek?"
+   ]
+  },
+  {
+   "answer": "gerbil",
+   "controls": {
+    "renamed_answer": "zubb",
+    "renamed_vocabulary": [
+     "zun zubg zual zubb.",
+     "zuae zubg zun?"
+    ],
+    "shuffled_determiners": [
+     "Loran is a gerbil.",
+     "What is Loran?"
+    ],
+    "shuffled_order": [
+     "gerbil is Loran a.",
+     "Loran is What?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-6f56bf443d6184bd",
+   "question": 1,
+   "sentences": [
+    "Loran is a gerbil.",
+    "What is Loran?"
+   ]
+  },
+  {
+   "answer": "jackal",
+   "controls": {
+    "renamed_answer": "zubh",
+    "renamed_vocabulary": [
+     "zux zubg zual zubh.",
+     "zuae zubg zux?"
+    ],
+    "shuffled_determiners": [
+     "Sorel is a jackal.",
+     "What is Sorel?"
+    ],
+    "shuffled_order": [
+     "jackal is Sorel a.",
+     "What is Sorel?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-6fe9e2ff0c576e9b",
+   "question": 1,
+   "sentences": [
+    "Sorel is a jackal.",
+    "What is Sorel?"
+   ]
+  },
+  {
+   "answer": "zebra",
+   "controls": {
+    "renamed_answer": "zucc",
+    "renamed_vocabulary": [
+     "zuaa zubg zual zucc.",
+     "zuae zubg zuaa?"
+    ],
+    "shuffled_determiners": [
+     "Toren is a zebra.",
+     "What is Toren?"
+    ],
+    "shuffled_order": [
+     "zebra Toren a is.",
+     "is What Toren?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-7699a1b4bc592853",
+   "question": 1,
+   "sentences": [
+    "Toren is a zebra.",
+    "What is Toren?"
+   ]
+  },
+  {
+   "answer": "marten",
+   "controls": {
+    "renamed_answer": "zubn",
+    "renamed_vocabulary": [
+     "zuai zubg zual zubn.",
+     "zuae zubg zuai?"
+    ],
+    "shuffled_determiners": [
+     "Xaren is a marten.",
+     "What is Xaren?"
+    ],
+    "shuffled_order": [
+     "is Xaren a marten.",
+     "is Xaren What?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-77ed22e305fc1068",
+   "question": 1,
+   "sentences": [
+    "Xaren is a marten.",
+    "What is Xaren?"
+   ]
+  },
+  {
+   "answer": "llama",
+   "controls": {
+    "renamed_answer": "zubl",
+    "renamed_vocabulary": [
+     "zun zubg zual zubl.",
+     "zuae zubg zun?"
+    ],
+    "shuffled_determiners": [
+     "Loran is a llama.",
+     "What is Loran?"
+    ],
+    "shuffled_order": [
+     "Loran is a llama.",
+     "Loran is What?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-84de08dc4740510c",
+   "question": 1,
+   "sentences": [
+    "Loran is a llama.",
+    "What is Loran?"
+   ]
+  },
+  {
+   "answer": "gerbil",
+   "controls": {
+    "renamed_answer": "zubb",
+    "renamed_vocabulary": [
+     "zui zubg zual zubb.",
+     "zuae zubg zui?"
+    ],
+    "shuffled_determiners": [
+     "Harin is a gerbil.",
+     "What is Harin?"
+    ],
+    "shuffled_order": [
+     "a gerbil Harin is.",
+     "What Harin is?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-8551eb21a0763870",
+   "question": 1,
+   "sentences": [
+    "Harin is a gerbil.",
+    "What is Harin?"
+   ]
+  },
+  {
+   "answer": "beaver",
+   "controls": {
+    "renamed_answer": "zuas",
+    "renamed_vocabulary": [
+     "zuak zubg zual zuas.",
+     "zuae zubg zuak?"
+    ],
+    "shuffled_determiners": [
+     "Zorin is a beaver.",
+     "What is Zorin?"
+    ],
+    "shuffled_order": [
+     "a beaver is Zorin.",
+     "is What Zorin?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-8553f6b01a4e9ff5",
+   "question": 1,
+   "sentences": [
+    "Zorin is a beaver.",
+    "What is Zorin?"
+   ]
+  },
+  {
+   "answer": "zebra",
+   "controls": {
+    "renamed_answer": "zucc",
+    "renamed_vocabulary": [
+     "zuak zubg zual zucc.",
+     "zuae zubg zuak?"
+    ],
+    "shuffled_determiners": [
+     "Zorin is a zebra.",
+     "What is Zorin?"
+    ],
+    "shuffled_order": [
+     "a Zorin is zebra.",
+     "What is Zorin?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-8c8ac0a056a04fd3",
+   "question": 1,
+   "sentences": [
+    "Zorin is a zebra.",
+    "What is Zorin?"
+   ]
+  },
+  {
+   "answer": "bison",
+   "controls": {
+    "renamed_answer": "zuat",
+    "renamed_vocabulary": [
+     "zuv zubg zual zuat.",
+     "zuae zubg zuv?"
+    ],
+    "shuffled_determiners": [
+     "Rovan is a bison.",
+     "What is Rovan?"
+    ],
+    "shuffled_order": [
+     "a bison Rovan is.",
+     "What Rovan is?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-8e1c04a2e45b63cd",
+   "question": 1,
+   "sentences": [
+    "Rovan is a bison.",
+    "What is Rovan?"
+   ]
+  },
+  {
+   "answer": "llama",
+   "controls": {
+    "renamed_answer": "zubl",
+    "renamed_vocabulary": [
+     "zuaa zubg zual zubl.",
+     "zuae zubg zuaa?"
+    ],
+    "shuffled_determiners": [
+     "Toren is a llama.",
+     "What is Toren?"
+    ],
+    "shuffled_order": [
+     "llama Toren a is.",
+     "Toren is What?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-8ec1bf6c70f70afb",
+   "question": 1,
+   "sentences": [
+    "Toren is a llama.",
+    "What is Toren?"
+   ]
+  },
+  {
+   "answer": "ibex",
+   "controls": {
+    "renamed_answer": "zubf",
+    "renamed_vocabulary": [
+     "zus zubg zual zubf.",
+     "zuae zubg zus?"
+    ],
+    "shuffled_determiners": [
+     "Peren is a ibex.",
+     "What is Peren?"
+    ],
+    "shuffled_order": [
+     "Peren a is ibex.",
+     "is Peren What?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-901190cd818216b8",
+   "question": 1,
+   "sentences": [
+    "Peren is a ibex.",
+    "What is Peren?"
+   ]
+  },
+  {
+   "answer": "camel",
+   "controls": {
+    "renamed_answer": "zuau",
+    "renamed_vocabulary": [
+     "zuw zubg zual zuau.",
+     "zuae zubg zuw?"
+    ],
+    "shuffled_determiners": [
+     "Saren is a camel.",
+     "What is Saren?"
+    ],
+    "shuffled_order": [
+     "Saren a camel is.",
+     "What is Saren?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-98c0f590128fe91f",
+   "question": 1,
+   "sentences": [
+    "Saren is a camel.",
+    "What is Saren?"
+   ]
+  },
+  {
+   "answer": "lemur",
+   "controls": {
+    "renamed_answer": "zubk",
+    "renamed_vocabulary": [
+     "zuc zubg zual zubk.",
+     "zuae zubg zuc?"
+    ],
+    "shuffled_determiners": [
+     "Cevan is a lemur.",
+     "What is Cevan?"
+    ],
+    "shuffled_order": [
+     "is a Cevan lemur.",
+     "Cevan What is?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-9c4cee6dbb71c776",
+   "question": 1,
+   "sentences": [
+    "Cevan is a lemur.",
+    "What is Cevan?"
+   ]
+  },
+  {
+   "answer": "otter",
+   "controls": {
+    "renamed_answer": "zubq",
+    "renamed_vocabulary": [
+     "zuc zubg zual zubq.",
+     "zuae zubg zuc?"
+    ],
+    "shuffled_determiners": [
+     "Cevan is a otter.",
+     "What is Cevan?"
+    ],
+    "shuffled_order": [
+     "Cevan a is otter.",
+     "Cevan is What?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-a27fc477e33a532e",
+   "question": 1,
+   "sentences": [
+    "Cevan is a otter.",
+    "What is Cevan?"
+   ]
+  },
+  {
+   "answer": "ferret",
+   "controls": {
+    "renamed_answer": "zuba",
+    "renamed_vocabulary": [
+     "zud zubg zual zuba.",
+     "zuae zubg zud?"
+    ],
+    "shuffled_determiners": [
+     "Darek is a ferret.",
+     "What is Darek?"
+    ],
+    "shuffled_order": [
+     "is Darek a ferret.",
+     "is Darek What?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-a57e34979e0b21bd",
+   "question": 1,
+   "sentences": [
+    "Darek is a ferret.",
+    "What is Darek?"
+   ]
+  },
+  {
+   "answer": "llama",
+   "controls": {
+    "renamed_answer": "zubl",
+    "renamed_vocabulary": [
+     "zuo zubg zual zubl.",
+     "zuae zubg zuo?"
+    ],
+    "shuffled_determiners": [
+     "Meren is a llama.",
+     "What is Meren?"
+    ],
+    "shuffled_order": [
+     "is Meren a llama.",
+     "Meren What is?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-a92d41d874d738e4",
+   "question": 1,
+   "sentences": [
+    "Meren is a llama.",
+    "What is Meren?"
+   ]
+  },
+  {
+   "answer": "marten",
+   "controls": {
+    "renamed_answer": "zubn",
+    "renamed_vocabulary": [
+     "zuad zubg zual zubn.",
+     "zuae zubg zuad?"
+    ],
+    "shuffled_determiners": [
+     "Varen is a marten.",
+     "What is Varen?"
+    ],
+    "shuffled_order": [
+     "a is Varen marten.",
+     "Varen What is?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-a9f239cb39df71bf",
+   "question": 1,
+   "sentences": [
+    "Varen is a marten.",
+    "What is Varen?"
+   ]
+  },
+  {
+   "answer": "zebra",
+   "controls": {
+    "renamed_answer": "zucc",
+    "renamed_vocabulary": [
+     "zur zubg zual zucc.",
+     "zuae zubg zur?"
+    ],
+    "shuffled_determiners": [
+     "Pavin is a zebra.",
+     "What is Pavin?"
+    ],
+    "shuffled_order": [
+     "zebra Pavin a is.",
+     "What Pavin is?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-b06870c5dd238b5b",
+   "question": 1,
+   "sentences": [
+    "Pavin is a zebra.",
+    "What is Pavin?"
+   ]
+  },
+  {
+   "answer": "lemur",
+   "controls": {
+    "renamed_answer": "zubk",
+    "renamed_vocabulary": [
+     "zuh zubg zual zubk.",
+     "zuae zubg zuh?"
+    ],
+    "shuffled_determiners": [
+     "Goran is a lemur.",
+     "What is Goran?"
+    ],
+    "shuffled_order": [
+     "is a Goran lemur.",
+     "is Goran What?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-b191d66e0821143f",
+   "question": 1,
+   "sentences": [
+    "Goran is a lemur.",
+    "What is Goran?"
+   ]
+  },
+  {
+   "answer": "otter",
+   "controls": {
+    "renamed_answer": "zubq",
+    "renamed_vocabulary": [
+     "zul zubg zual zubq.",
+     "zuae zubg zul?"
+    ],
+    "shuffled_determiners": [
+     "Kavin is a otter.",
+     "What is Kavin?"
+    ],
+    "shuffled_order": [
+     "otter is Kavin a.",
+     "What is Kavin?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-b50c09d2d699c954",
+   "question": 1,
+   "sentences": [
+    "Kavin is a otter.",
+    "What is Kavin?"
+   ]
+  },
+  {
+   "answer": "panda",
+   "controls": {
+    "renamed_answer": "zubr",
+    "renamed_vocabulary": [
+     "zuai zubg zual zubr.",
+     "zuae zubg zuai?"
+    ],
+    "shuffled_determiners": [
+     "Xaren is a panda.",
+     "What is Xaren?"
+    ],
+    "shuffled_order": [
+     "panda a Xaren is.",
+     "What Xaren is?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-b9ecedcaf38c20f2",
+   "question": 1,
+   "sentences": [
+    "Xaren is a panda.",
+    "What is Xaren?"
+   ]
+  },
+  {
+   "answer": "llama",
+   "controls": {
+    "renamed_answer": "zubl",
+    "renamed_vocabulary": [
+     "zuc zubg zual zubl.",
+     "zuae zubg zuc?"
+    ],
+    "shuffled_determiners": [
+     "Cevan is a llama.",
+     "What is Cevan?"
+    ],
+    "shuffled_order": [
+     "Cevan llama is a.",
+     "is Cevan What?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-bb9bd41e304b6dc5",
+   "question": 1,
+   "sentences": [
+    "Cevan is a llama.",
+    "What is Cevan?"
+   ]
+  },
+  {
+   "answer": "ibex",
+   "controls": {
+    "renamed_answer": "zubf",
+    "renamed_vocabulary": [
+     "zub zubg zual zubf.",
+     "zuae zubg zub?"
+    ],
+    "shuffled_determiners": [
+     "Borin is a ibex.",
+     "What is Borin?"
+    ],
+    "shuffled_order": [
+     "is a Borin ibex.",
+     "Borin What is?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-c1a82b8b41a62d62",
+   "question": 1,
+   "sentences": [
+    "Borin is a ibex.",
+    "What is Borin?"
+   ]
+  },
+  {
+   "answer": "panda",
+   "controls": {
+    "renamed_answer": "zubr",
+    "renamed_vocabulary": [
+     "zuw zubg zual zubr.",
+     "zuae zubg zuw?"
+    ],
+    "shuffled_determiners": [
+     "Saren is a panda.",
+     "What is Saren?"
+    ],
+    "shuffled_order": [
+     "panda is Saren a.",
+     "is What Saren?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-c5a6d95c7ba54fbb",
+   "question": 1,
+   "sentences": [
+    "Saren is a panda.",
+    "What is Saren?"
+   ]
+  },
+  {
+   "answer": "zebra",
+   "controls": {
+    "renamed_answer": "zucc",
+    "renamed_vocabulary": [
+     "zuv zubg zual zucc.",
+     "zuae zubg zuv?"
+    ],
+    "shuffled_determiners": [
+     "Rovan is a zebra.",
+     "What is Rovan?"
+    ],
+    "shuffled_order": [
+     "a zebra is Rovan.",
+     "What is Rovan?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-c62207c79957c6d5",
+   "question": 1,
+   "sentences": [
+    "Rovan is a zebra.",
+    "What is Rovan?"
+   ]
+  },
+  {
+   "answer": "gerbil",
+   "controls": {
+    "renamed_answer": "zubb",
+    "renamed_vocabulary": [
+     "zuq zubg zual zubb.",
+     "zuae zubg zuq?"
+    ],
+    "shuffled_determiners": [
+     "Oren is a gerbil.",
+     "What is Oren?"
+    ],
+    "shuffled_order": [
+     "a gerbil Oren is.",
+     "Oren is What?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-d5f4df8092648361",
+   "question": 1,
+   "sentences": [
+    "Oren is a gerbil.",
+    "What is Oren?"
+   ]
+  },
+  {
+   "answer": "camel",
+   "controls": {
+    "renamed_answer": "zuau",
+    "renamed_vocabulary": [
+     "zuak zubg zual zuau.",
+     "zuae zubg zuak?"
+    ],
+    "shuffled_determiners": [
+     "Zorin is a camel.",
+     "What is Zorin?"
+    ],
+    "shuffled_order": [
+     "is Zorin camel a.",
+     "What Zorin is?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-dda69762b36ac9c4",
+   "question": 1,
+   "sentences": [
+    "Zorin is a camel.",
+    "What is Zorin?"
+   ]
+  },
+  {
+   "answer": "jackal",
+   "controls": {
+    "renamed_answer": "zubh",
+    "renamed_vocabulary": [
+     "zun zubg zual zubh.",
+     "zuae zubg zun?"
+    ],
+    "shuffled_determiners": [
+     "Loran is a jackal.",
+     "What is Loran?"
+    ],
+    "shuffled_order": [
+     "a Loran jackal is.",
+     "Loran What is?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-de89babdd026341b",
+   "question": 1,
+   "sentences": [
+    "Loran is a jackal.",
+    "What is Loran?"
+   ]
+  },
+  {
+   "answer": "beaver",
+   "controls": {
+    "renamed_answer": "zuas",
+    "renamed_vocabulary": [
+     "zux zubg zual zuas.",
+     "zuae zubg zux?"
+    ],
+    "shuffled_determiners": [
+     "Sorel is a beaver.",
+     "What is Sorel?"
+    ],
+    "shuffled_order": [
+     "beaver Sorel a is.",
+     "is What Sorel?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-df26003c59a7c445",
+   "question": 1,
+   "sentences": [
+    "Sorel is a beaver.",
+    "What is Sorel?"
+   ]
+  },
+  {
+   "answer": "lynx",
+   "controls": {
+    "renamed_answer": "zubm",
+    "renamed_vocabulary": [
+     "zuo zubg zual zubm.",
+     "zuae zubg zuo?"
+    ],
+    "shuffled_determiners": [
+     "Meren is a lynx.",
+     "What is Meren?"
+    ],
+    "shuffled_order": [
+     "Meren is lynx a.",
+     "Meren is What?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-dfd6228a9827650b",
+   "question": 1,
+   "sentences": [
+    "Meren is a lynx.",
+    "What is Meren?"
+   ]
+  },
+  {
+   "answer": "ferret",
+   "controls": {
+    "renamed_answer": "zuba",
+    "renamed_vocabulary": [
+     "zuah zubg zual zuba.",
+     "zuae zubg zuah?"
+    ],
+    "shuffled_determiners": [
+     "Woren is a ferret.",
+     "What is Woren?"
+    ],
+    "shuffled_order": [
+     "Woren is a ferret.",
+     "Woren What is?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-f9ce0fdf52df7d01",
+   "question": 1,
+   "sentences": [
+    "Woren is a ferret.",
+    "What is Woren?"
+   ]
+  },
+  {
+   "answer": "panda",
+   "controls": {
+    "renamed_answer": "zubr",
+    "renamed_vocabulary": [
+     "zux zubg zual zubr.",
+     "zuae zubg zux?"
+    ],
+    "shuffled_determiners": [
+     "Sorel is a panda.",
+     "What is Sorel?"
+    ],
+    "shuffled_order": [
+     "is Sorel a panda.",
+     "What Sorel is?"
+    ]
+   },
+   "expectations": {},
+   "family": "classification",
+   "key": "classification-f9ec72a898c5a304",
+   "question": 1,
+   "sentences": [
+    "Sorel is a panda.",
+    "What is Sorel?"
+   ]
+  },
+  {
+   "answer": "Sorel",
+   "controls": {
+    "renamed_answer": "zux",
+    "renamed_vocabulary": [
+     "zux zucb.",
+     "zuz zubu.",
+     "zuag zubv?"
+    ],
+    "shuffled_determiners": [
+     "Sorel yawns.",
+     "They snore.",
+     "Who snores?"
+    ],
+    "shuffled_order": [
+     "yawns Sorel.",
+     "snore They.",
+     "snores Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-03f3a32abb9da868",
+   "question": 2,
+   "sentences": [
+    "Sorel yawns.",
+    "They snore.",
+    "Who snores?"
+   ]
+  },
+  {
+   "answer": "Saren",
+   "controls": {
+    "renamed_answer": "zuw",
+    "renamed_vocabulary": [
+     "zuw zucb.",
+     "zuz zuby.",
+     "zuag zubz?"
+    ],
+    "shuffled_determiners": [
+     "Saren yawns.",
+     "They wave.",
+     "Who waves?"
+    ],
+    "shuffled_order": [
+     "yawns Saren.",
+     "They wave.",
+     "Who waves?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-05706b8eca49f7bf",
+   "question": 2,
+   "sentences": [
+    "Saren yawns.",
+    "They wave.",
+    "Who waves?"
+   ]
+  },
+  {
+   "answer": "Harin",
+   "controls": {
+    "renamed_answer": "zui",
+    "renamed_vocabulary": [
+     "zui zubp.",
+     "zuz zuaw.",
+     "zuag zuax?"
+    ],
+    "shuffled_determiners": [
+     "Harin nods.",
+     "They cheer.",
+     "Who cheers?"
+    ],
+    "shuffled_order": [
+     "Harin nods.",
+     "cheer They.",
+     "Who cheers?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-08878398a202f10f",
+   "question": 2,
+   "sentences": [
+    "Harin nods.",
+    "They cheer.",
+    "Who cheers?"
+   ]
+  },
+  {
+   "answer": "Joren",
+   "controls": {
+    "renamed_answer": "zuk",
+    "renamed_vocabulary": [
+     "zuk zuaz.",
+     "zuz zubi.",
+     "zuag zubj?"
+    ],
+    "shuffled_determiners": [
+     "Joren dances.",
+     "They laugh.",
+     "Who laughs?"
+    ],
+    "shuffled_order": [
+     "dances Joren.",
+     "laugh They.",
+     "laughs Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-0b07ec011df6f4d7",
+   "question": 2,
+   "sentences": [
+    "Joren dances.",
+    "They laugh.",
+    "Who laughs?"
+   ]
+  },
+  {
+   "answer": "Varen",
+   "controls": {
+    "renamed_answer": "zuad",
+    "renamed_vocabulary": [
+     "zuad zuax.",
+     "zuz zuby.",
+     "zuag zubz?"
+    ],
+    "shuffled_determiners": [
+     "Varen cheers.",
+     "They wave.",
+     "Who waves?"
+    ],
+    "shuffled_order": [
+     "Varen cheers.",
+     "They wave.",
+     "waves Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-0bc2c8386fe27518",
+   "question": 2,
+   "sentences": [
+    "Varen cheers.",
+    "They wave.",
+    "Who waves?"
+   ]
+  },
+  {
+   "answer": "Kavin",
+   "controls": {
+    "renamed_answer": "zul",
+    "renamed_vocabulary": [
+     "zul zuaz.",
+     "zuz zubu.",
+     "zuag zubv?"
+    ],
+    "shuffled_determiners": [
+     "Kavin dances.",
+     "They snore.",
+     "Who snores?"
+    ],
+    "shuffled_order": [
+     "Kavin dances.",
+     "snore They.",
+     "Who snores?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-166ff64e2472c779",
+   "question": 2,
+   "sentences": [
+    "Kavin dances.",
+    "They snore.",
+    "Who snores?"
+   ]
+  },
+  {
+   "answer": "Kavin",
+   "controls": {
+    "renamed_answer": "zul",
+    "renamed_vocabulary": [
+     "zul zucb.",
+     "zuz zuby.",
+     "zuag zubz?"
+    ],
+    "shuffled_determiners": [
+     "Kavin yawns.",
+     "They wave.",
+     "Who waves?"
+    ],
+    "shuffled_order": [
+     "Kavin yawns.",
+     "They wave.",
+     "Who waves?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-167d764a9bb27251",
+   "question": 2,
+   "sentences": [
+    "Kavin yawns.",
+    "They wave.",
+    "Who waves?"
+   ]
+  },
+  {
+   "answer": "Loran",
+   "controls": {
+    "renamed_answer": "zun",
+    "renamed_vocabulary": [
+     "zun zubp.",
+     "zuz zuaw.",
+     "zuag zuax?"
+    ],
+    "shuffled_determiners": [
+     "Loran nods.",
+     "They cheer.",
+     "Who cheers?"
+    ],
+    "shuffled_order": [
+     "nods Loran.",
+     "They cheer.",
+     "Who cheers?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-16a6b0734fbe543b",
+   "question": 2,
+   "sentences": [
+    "Loran nods.",
+    "They cheer.",
+    "Who cheers?"
+   ]
+  },
+  {
+   "answer": "Sorel",
+   "controls": {
+    "renamed_answer": "zux",
+    "renamed_vocabulary": [
+     "zux zucb.",
+     "zuz zuay.",
+     "zuag zuaz?"
+    ],
+    "shuffled_determiners": [
+     "Sorel yawns.",
+     "They dance.",
+     "Who dances?"
+    ],
+    "shuffled_order": [
+     "yawns Sorel.",
+     "dance They.",
+     "dances Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-2666cccc8d1b8497",
+   "question": 2,
+   "sentences": [
+    "Sorel yawns.",
+    "They dance.",
+    "Who dances?"
+   ]
+  },
+  {
+   "answer": "Pavin",
+   "controls": {
+    "renamed_answer": "zur",
+    "renamed_vocabulary": [
+     "zur zuaz.",
+     "zuz zubu.",
+     "zuag zubv?"
+    ],
+    "shuffled_determiners": [
+     "Pavin dances.",
+     "They snore.",
+     "Who snores?"
+    ],
+    "shuffled_order": [
+     "dances Pavin.",
+     "snore They.",
+     "Who snores?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-2cb7c05a96802ad6",
+   "question": 2,
+   "sentences": [
+    "Pavin dances.",
+    "They snore.",
+    "Who snores?"
+   ]
+  },
+  {
+   "answer": "Uven",
+   "controls": {
+    "renamed_answer": "zuab",
+    "renamed_vocabulary": [
+     "zuab zuaz.",
+     "zuz zubo.",
+     "zuag zubp?"
+    ],
+    "shuffled_determiners": [
+     "Uven dances.",
+     "They nod.",
+     "Who nods?"
+    ],
+    "shuffled_order": [
+     "Uven dances.",
+     "They nod.",
+     "Who nods?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-351210e3307ad49d",
+   "question": 2,
+   "sentences": [
+    "Uven dances.",
+    "They nod.",
+    "Who nods?"
+   ]
+  },
+  {
+   "answer": "Uven",
+   "controls": {
+    "renamed_answer": "zuab",
+    "renamed_vocabulary": [
+     "zuab zuaz.",
+     "zuz zubs.",
+     "zuag zubt?"
+    ],
+    "shuffled_determiners": [
+     "Uven dances.",
+     "They smile.",
+     "Who smiles?"
+    ],
+    "shuffled_order": [
+     "Uven dances.",
+     "smile They.",
+     "Who smiles?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-3d1614c0bb7c07b7",
+   "question": 2,
+   "sentences": [
+    "Uven dances.",
+    "They smile.",
+    "Who smiles?"
+   ]
+  },
+  {
+   "answer": "Goran",
+   "controls": {
+    "renamed_answer": "zuh",
+    "renamed_vocabulary": [
+     "zuh zuaz.",
+     "zuz zuby.",
+     "zuag zubz?"
+    ],
+    "shuffled_determiners": [
+     "Goran dances.",
+     "They wave.",
+     "Who waves?"
+    ],
+    "shuffled_order": [
+     "Goran dances.",
+     "wave They.",
+     "waves Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-4a8d8b641c4f4e98",
+   "question": 2,
+   "sentences": [
+    "Goran dances.",
+    "They wave.",
+    "Who waves?"
+   ]
+  },
+  {
+   "answer": "Cevan",
+   "controls": {
+    "renamed_answer": "zuc",
+    "renamed_vocabulary": [
+     "zuc zubp.",
+     "zuz zuay.",
+     "zuag zuaz?"
+    ],
+    "shuffled_determiners": [
+     "Cevan nods.",
+     "They dance.",
+     "Who dances?"
+    ],
+    "shuffled_order": [
+     "Cevan nods.",
+     "They dance.",
+     "Who dances?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-4b1bc9d7c1a06ad7",
+   "question": 2,
+   "sentences": [
+    "Cevan nods.",
+    "They dance.",
+    "Who dances?"
+   ]
+  },
+  {
+   "answer": "Kavin",
+   "controls": {
+    "renamed_answer": "zul",
+    "renamed_vocabulary": [
+     "zul zuaz.",
+     "zuz zuby.",
+     "zuag zubz?"
+    ],
+    "shuffled_determiners": [
+     "Kavin dances.",
+     "They wave.",
+     "Who waves?"
+    ],
+    "shuffled_order": [
+     "Kavin dances.",
+     "wave They.",
+     "waves Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-4ba5c350e4c838e0",
+   "question": 2,
+   "sentences": [
+    "Kavin dances.",
+    "They wave.",
+    "Who waves?"
+   ]
+  },
+  {
+   "answer": "Kavin",
+   "controls": {
+    "renamed_answer": "zul",
+    "renamed_vocabulary": [
+     "zul zubp.",
+     "zuz zuay.",
+     "zuag zuaz?"
+    ],
+    "shuffled_determiners": [
+     "Kavin nods.",
+     "They dance.",
+     "Who dances?"
+    ],
+    "shuffled_order": [
+     "nods Kavin.",
+     "They dance.",
+     "dances Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-4ce7d1febf7cc019",
+   "question": 2,
+   "sentences": [
+    "Kavin nods.",
+    "They dance.",
+    "Who dances?"
+   ]
+  },
+  {
+   "answer": "Oren",
+   "controls": {
+    "renamed_answer": "zuq",
+    "renamed_vocabulary": [
+     "zuq zubp.",
+     "zuz zuca.",
+     "zuag zucb?"
+    ],
+    "shuffled_determiners": [
+     "Oren nods.",
+     "They yawn.",
+     "Who yawns?"
+    ],
+    "shuffled_order": [
+     "Oren nods.",
+     "yawn They.",
+     "Who yawns?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-58f6c12c1e1fcf79",
+   "question": 2,
+   "sentences": [
+    "Oren nods.",
+    "They yawn.",
+    "Who yawns?"
+   ]
+  },
+  {
+   "answer": "Uven",
+   "controls": {
+    "renamed_answer": "zuab",
+    "renamed_vocabulary": [
+     "zuab zubv.",
+     "zuz zuaw.",
+     "zuag zuax?"
+    ],
+    "shuffled_determiners": [
+     "Uven snores.",
+     "They cheer.",
+     "Who cheers?"
+    ],
+    "shuffled_order": [
+     "Uven snores.",
+     "cheer They.",
+     "Who cheers?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-5ae8f2051ff80c5c",
+   "question": 2,
+   "sentences": [
+    "Uven snores.",
+    "They cheer.",
+    "Who cheers?"
+   ]
+  },
+  {
+   "answer": "Relan",
+   "controls": {
+    "renamed_answer": "zuu",
+    "renamed_vocabulary": [
+     "zuu zubz.",
+     "zuz zuaw.",
+     "zuag zuax?"
+    ],
+    "shuffled_determiners": [
+     "Relan waves.",
+     "They cheer.",
+     "Who cheers?"
+    ],
+    "shuffled_order": [
+     "waves Relan.",
+     "They cheer.",
+     "Who cheers?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-5e165d0cc845f596",
+   "question": 2,
+   "sentences": [
+    "Relan waves.",
+    "They cheer.",
+    "Who cheers?"
+   ]
+  },
+  {
+   "answer": "Uven",
+   "controls": {
+    "renamed_answer": "zuab",
+    "renamed_vocabulary": [
+     "zuab zubj.",
+     "zuz zubu.",
+     "zuag zubv?"
+    ],
+    "shuffled_determiners": [
+     "Uven laughs.",
+     "They snore.",
+     "Who snores?"
+    ],
+    "shuffled_order": [
+     "Uven laughs.",
+     "They snore.",
+     "Who snores?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-5ebd7d83b9d67c25",
+   "question": 2,
+   "sentences": [
+    "Uven laughs.",
+    "They snore.",
+    "Who snores?"
+   ]
+  },
+  {
+   "answer": "Joren",
+   "controls": {
+    "renamed_answer": "zuk",
+    "renamed_vocabulary": [
+     "zuk zuaz.",
+     "zuz zubu.",
+     "zuag zubv?"
+    ],
+    "shuffled_determiners": [
+     "Joren dances.",
+     "They snore.",
+     "Who snores?"
+    ],
+    "shuffled_order": [
+     "dances Joren.",
+     "They snore.",
+     "Who snores?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-5ed640c34c86e5d4",
+   "question": 2,
+   "sentences": [
+    "Joren dances.",
+    "They snore.",
+    "Who snores?"
+   ]
+  },
+  {
+   "answer": "Harin",
+   "controls": {
+    "renamed_answer": "zui",
+    "renamed_vocabulary": [
+     "zui zubp.",
+     "zuz zuby.",
+     "zuag zubz?"
+    ],
+    "shuffled_determiners": [
+     "Harin nods.",
+     "They wave.",
+     "Who waves?"
+    ],
+    "shuffled_order": [
+     "nods Harin.",
+     "wave They.",
+     "Who waves?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-624b0892dd1805d3",
+   "question": 2,
+   "sentences": [
+    "Harin nods.",
+    "They wave.",
+    "Who waves?"
+   ]
+  },
+  {
+   "answer": "Loran",
+   "controls": {
+    "renamed_answer": "zun",
+    "renamed_vocabulary": [
+     "zun zubp.",
+     "zuz zuca.",
+     "zuag zucb?"
+    ],
+    "shuffled_determiners": [
+     "Loran nods.",
+     "They yawn.",
+     "Who yawns?"
+    ],
+    "shuffled_order": [
+     "nods Loran.",
+     "yawn They.",
+     "Who yawns?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-63978a0728dd24c9",
+   "question": 2,
+   "sentences": [
+    "Loran nods.",
+    "They yawn.",
+    "Who yawns?"
+   ]
+  },
+  {
+   "answer": "Cevan",
+   "controls": {
+    "renamed_answer": "zuc",
+    "renamed_vocabulary": [
+     "zuc zubp.",
+     "zuz zubs.",
+     "zuag zubt?"
+    ],
+    "shuffled_determiners": [
+     "Cevan nods.",
+     "They smile.",
+     "Who smiles?"
+    ],
+    "shuffled_order": [
+     "nods Cevan.",
+     "They smile.",
+     "smiles Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-6748a393966331c3",
+   "question": 2,
+   "sentences": [
+    "Cevan nods.",
+    "They smile.",
+    "Who smiles?"
+   ]
+  },
+  {
+   "answer": "Quorin",
+   "controls": {
+    "renamed_answer": "zut",
+    "renamed_vocabulary": [
+     "zut zubt.",
+     "zuz zuay.",
+     "zuag zuaz?"
+    ],
+    "shuffled_determiners": [
+     "Quorin smiles.",
+     "They dance.",
+     "Who dances?"
+    ],
+    "shuffled_order": [
+     "Quorin smiles.",
+     "dance They.",
+     "dances Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-6c284e33ec09bfc0",
+   "question": 2,
+   "sentences": [
+    "Quorin smiles.",
+    "They dance.",
+    "Who dances?"
+   ]
+  },
+  {
+   "answer": "Woren",
+   "controls": {
+    "renamed_answer": "zuah",
+    "renamed_vocabulary": [
+     "zuah zubj.",
+     "zuz zuaw.",
+     "zuag zuax?"
+    ],
+    "shuffled_determiners": [
+     "Woren laughs.",
+     "They cheer.",
+     "Who cheers?"
+    ],
+    "shuffled_order": [
+     "Woren laughs.",
+     "cheer They.",
+     "Who cheers?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-6ce530ef86dc6811",
+   "question": 2,
+   "sentences": [
+    "Woren laughs.",
+    "They cheer.",
+    "Who cheers?"
+   ]
+  },
+  {
+   "answer": "Oren",
+   "controls": {
+    "renamed_answer": "zuq",
+    "renamed_vocabulary": [
+     "zuq zubz.",
+     "zuz zuaw.",
+     "zuag zuax?"
+    ],
+    "shuffled_determiners": [
+     "Oren waves.",
+     "They cheer.",
+     "Who cheers?"
+    ],
+    "shuffled_order": [
+     "waves Oren.",
+     "They cheer.",
+     "Who cheers?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-6f1cba010105ae13",
+   "question": 2,
+   "sentences": [
+    "Oren waves.",
+    "They cheer.",
+    "Who cheers?"
+   ]
+  },
+  {
+   "answer": "Sorel",
+   "controls": {
+    "renamed_answer": "zux",
+    "renamed_vocabulary": [
+     "zux zuaz.",
+     "zuz zuaw.",
+     "zuag zuax?"
+    ],
+    "shuffled_determiners": [
+     "Sorel dances.",
+     "They cheer.",
+     "Who cheers?"
+    ],
+    "shuffled_order": [
+     "Sorel dances.",
+     "They cheer.",
+     "cheers Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-6fc788458fac3e33",
+   "question": 2,
+   "sentences": [
+    "Sorel dances.",
+    "They cheer.",
+    "Who cheers?"
+   ]
+  },
+  {
+   "answer": "Kavin",
+   "controls": {
+    "renamed_answer": "zul",
+    "renamed_vocabulary": [
+     "zul zucb.",
+     "zuz zubs.",
+     "zuag zubt?"
+    ],
+    "shuffled_determiners": [
+     "Kavin yawns.",
+     "They smile.",
+     "Who smiles?"
+    ],
+    "shuffled_order": [
+     "yawns Kavin.",
+     "They smile.",
+     "Who smiles?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-766497cdd5e56064",
+   "question": 2,
+   "sentences": [
+    "Kavin yawns.",
+    "They smile.",
+    "Who smiles?"
+   ]
+  },
+  {
+   "answer": "Iven",
+   "controls": {
+    "renamed_answer": "zuj",
+    "renamed_vocabulary": [
+     "zuj zubp.",
+     "zuz zubu.",
+     "zuag zubv?"
+    ],
+    "shuffled_determiners": [
+     "Iven nods.",
+     "They snore.",
+     "Who snores?"
+    ],
+    "shuffled_order": [
+     "nods Iven.",
+     "They snore.",
+     "Who snores?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-76b37e970e0fc600",
+   "question": 2,
+   "sentences": [
+    "Iven nods.",
+    "They snore.",
+    "Who snores?"
+   ]
+  },
+  {
+   "answer": "Varek",
+   "controls": {
+    "renamed_answer": "zuac",
+    "renamed_vocabulary": [
+     "zuac zubp.",
+     "zuz zubs.",
+     "zuag zubt?"
+    ],
+    "shuffled_determiners": [
+     "Varek nods.",
+     "They smile.",
+     "Who smiles?"
+    ],
+    "shuffled_order": [
+     "nods Varek.",
+     "smile They.",
+     "Who smiles?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-79c3d27c031dd6cf",
+   "question": 2,
+   "sentences": [
+    "Varek nods.",
+    "They smile.",
+    "Who smiles?"
+   ]
+  },
+  {
+   "answer": "Varen",
+   "controls": {
+    "renamed_answer": "zuad",
+    "renamed_vocabulary": [
+     "zuad zubp.",
+     "zuz zubu.",
+     "zuag zubv?"
+    ],
+    "shuffled_determiners": [
+     "Varen nods.",
+     "They snore.",
+     "Who snores?"
+    ],
+    "shuffled_order": [
+     "nods Varen.",
+     "They snore.",
+     "snores Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-81cd4fe43ff9c429",
+   "question": 2,
+   "sentences": [
+    "Varen nods.",
+    "They snore.",
+    "Who snores?"
+   ]
+  },
+  {
+   "answer": "Meren",
+   "controls": {
+    "renamed_answer": "zuo",
+    "renamed_vocabulary": [
+     "zuo zuax.",
+     "zuz zubs.",
+     "zuag zubt?"
+    ],
+    "shuffled_determiners": [
+     "Meren cheers.",
+     "They smile.",
+     "Who smiles?"
+    ],
+    "shuffled_order": [
+     "cheers Meren.",
+     "They smile.",
+     "Who smiles?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-8874429cdfdfdc2f",
+   "question": 2,
+   "sentences": [
+    "Meren cheers.",
+    "They smile.",
+    "Who smiles?"
+   ]
+  },
+  {
+   "answer": "Joren",
+   "controls": {
+    "renamed_answer": "zuk",
+    "renamed_vocabulary": [
+     "zuk zubp.",
+     "zuz zubi.",
+     "zuag zubj?"
+    ],
+    "shuffled_determiners": [
+     "Joren nods.",
+     "They laugh.",
+     "Who laughs?"
+    ],
+    "shuffled_order": [
+     "Joren nods.",
+     "They laugh.",
+     "Who laughs?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-8928c0bc108d09f0",
+   "question": 2,
+   "sentences": [
+    "Joren nods.",
+    "They laugh.",
+    "Who laughs?"
+   ]
+  },
+  {
+   "answer": "Harin",
+   "controls": {
+    "renamed_answer": "zui",
+    "renamed_vocabulary": [
+     "zui zubp.",
+     "zuz zubi.",
+     "zuag zubj?"
+    ],
+    "shuffled_determiners": [
+     "Harin nods.",
+     "They laugh.",
+     "Who laughs?"
+    ],
+    "shuffled_order": [
+     "Harin nods.",
+     "laugh They.",
+     "Who laughs?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-9170779a59a59606",
+   "question": 2,
+   "sentences": [
+    "Harin nods.",
+    "They laugh.",
+    "Who laughs?"
+   ]
+  },
+  {
+   "answer": "Loran",
+   "controls": {
+    "renamed_answer": "zun",
+    "renamed_vocabulary": [
+     "zun zuax.",
+     "zuz zuby.",
+     "zuag zubz?"
+    ],
+    "shuffled_determiners": [
+     "Loran cheers.",
+     "They wave.",
+     "Who waves?"
+    ],
+    "shuffled_order": [
+     "Loran cheers.",
+     "They wave.",
+     "waves Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-93fe65c347b55760",
+   "question": 2,
+   "sentences": [
+    "Loran cheers.",
+    "They wave.",
+    "Who waves?"
+   ]
+  },
+  {
+   "answer": "Joren",
+   "controls": {
+    "renamed_answer": "zuk",
+    "renamed_vocabulary": [
+     "zuk zubz.",
+     "zuz zubs.",
+     "zuag zubt?"
+    ],
+    "shuffled_determiners": [
+     "Joren waves.",
+     "They smile.",
+     "Who smiles?"
+    ],
+    "shuffled_order": [
+     "waves Joren.",
+     "smile They.",
+     "Who smiles?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-967dac30ca656986",
+   "question": 2,
+   "sentences": [
+    "Joren waves.",
+    "They smile.",
+    "Who smiles?"
+   ]
+  },
+  {
+   "answer": "Joren",
+   "controls": {
+    "renamed_answer": "zuk",
+    "renamed_vocabulary": [
+     "zuk zuaz.",
+     "zuz zuby.",
+     "zuag zubz?"
+    ],
+    "shuffled_determiners": [
+     "Joren dances.",
+     "They wave.",
+     "Who waves?"
+    ],
+    "shuffled_order": [
+     "Joren dances.",
+     "wave They.",
+     "Who waves?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-979c384e367b466f",
+   "question": 2,
+   "sentences": [
+    "Joren dances.",
+    "They wave.",
+    "Who waves?"
+   ]
+  },
+  {
+   "answer": "Varek",
+   "controls": {
+    "renamed_answer": "zuac",
+    "renamed_vocabulary": [
+     "zuac zubp.",
+     "zuz zubu.",
+     "zuag zubv?"
+    ],
+    "shuffled_determiners": [
+     "Varek nods.",
+     "They snore.",
+     "Who snores?"
+    ],
+    "shuffled_order": [
+     "Varek nods.",
+     "snore They.",
+     "Who snores?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-9b141db4044cc41d",
+   "question": 2,
+   "sentences": [
+    "Varek nods.",
+    "They snore.",
+    "Who snores?"
+   ]
+  },
+  {
+   "answer": "Zorin",
+   "controls": {
+    "renamed_answer": "zuak",
+    "renamed_vocabulary": [
+     "zuak zubv.",
+     "zuz zuaw.",
+     "zuag zuax?"
+    ],
+    "shuffled_determiners": [
+     "Zorin snores.",
+     "They cheer.",
+     "Who cheers?"
+    ],
+    "shuffled_order": [
+     "snores Zorin.",
+     "They cheer.",
+     "cheers Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-9b79d303c768e6cc",
+   "question": 2,
+   "sentences": [
+    "Zorin snores.",
+    "They cheer.",
+    "Who cheers?"
+   ]
+  },
+  {
+   "answer": "Meren",
+   "controls": {
+    "renamed_answer": "zuo",
+    "renamed_vocabulary": [
+     "zuo zuax.",
+     "zuz zuby.",
+     "zuag zubz?"
+    ],
+    "shuffled_determiners": [
+     "Meren cheers.",
+     "They wave.",
+     "Who waves?"
+    ],
+    "shuffled_order": [
+     "cheers Meren.",
+     "They wave.",
+     "Who waves?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-9fc6c8dd8b49b58c",
+   "question": 2,
+   "sentences": [
+    "Meren cheers.",
+    "They wave.",
+    "Who waves?"
+   ]
+  },
+  {
+   "answer": "Saren",
+   "controls": {
+    "renamed_answer": "zuw",
+    "renamed_vocabulary": [
+     "zuw zubj.",
+     "zuz zuca.",
+     "zuag zucb?"
+    ],
+    "shuffled_determiners": [
+     "Saren laughs.",
+     "They yawn.",
+     "Who yawns?"
+    ],
+    "shuffled_order": [
+     "laughs Saren.",
+     "yawn They.",
+     "Who yawns?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-a2a55ff2aa64bb9e",
+   "question": 2,
+   "sentences": [
+    "Saren laughs.",
+    "They yawn.",
+    "Who yawns?"
+   ]
+  },
+  {
+   "answer": "Quorin",
+   "controls": {
+    "renamed_answer": "zut",
+    "renamed_vocabulary": [
+     "zut zubp.",
+     "zuz zubi.",
+     "zuag zubj?"
+    ],
+    "shuffled_determiners": [
+     "Quorin nods.",
+     "They laugh.",
+     "Who laughs?"
+    ],
+    "shuffled_order": [
+     "Quorin nods.",
+     "They laugh.",
+     "laughs Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-a405a2cb41a8fb49",
+   "question": 2,
+   "sentences": [
+    "Quorin nods.",
+    "They laugh.",
+    "Who laughs?"
+   ]
+  },
+  {
+   "answer": "Zorin",
+   "controls": {
+    "renamed_answer": "zuak",
+    "renamed_vocabulary": [
+     "zuak zubv.",
+     "zuz zubo.",
+     "zuag zubp?"
+    ],
+    "shuffled_determiners": [
+     "Zorin snores.",
+     "They nod.",
+     "Who nods?"
+    ],
+    "shuffled_order": [
+     "snores Zorin.",
+     "nod They.",
+     "nods Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-a5b14199818a3b41",
+   "question": 2,
+   "sentences": [
+    "Zorin snores.",
+    "They nod.",
+    "Who nods?"
+   ]
+  },
+  {
+   "answer": "Loran",
+   "controls": {
+    "renamed_answer": "zun",
+    "renamed_vocabulary": [
+     "zun zuax.",
+     "zuz zubs.",
+     "zuag zubt?"
+    ],
+    "shuffled_determiners": [
+     "Loran cheers.",
+     "They smile.",
+     "Who smiles?"
+    ],
+    "shuffled_order": [
+     "Loran cheers.",
+     "smile They.",
+     "Who smiles?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-abcecae7eddd09b4",
+   "question": 2,
+   "sentences": [
+    "Loran cheers.",
+    "They smile.",
+    "Who smiles?"
+   ]
+  },
+  {
+   "answer": "Saren",
+   "controls": {
+    "renamed_answer": "zuw",
+    "renamed_vocabulary": [
+     "zuw zucb.",
+     "zuz zubo.",
+     "zuag zubp?"
+    ],
+    "shuffled_determiners": [
+     "Saren yawns.",
+     "They nod.",
+     "Who nods?"
+    ],
+    "shuffled_order": [
+     "Saren yawns.",
+     "nod They.",
+     "Who nods?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-b73a84d5f352cc1d",
+   "question": 2,
+   "sentences": [
+    "Saren yawns.",
+    "They nod.",
+    "Who nods?"
+   ]
+  },
+  {
+   "answer": "Varen",
+   "controls": {
+    "renamed_answer": "zuad",
+    "renamed_vocabulary": [
+     "zuad zubp.",
+     "zuz zubs.",
+     "zuag zubt?"
+    ],
+    "shuffled_determiners": [
+     "Varen nods.",
+     "They smile.",
+     "Who smiles?"
+    ],
+    "shuffled_order": [
+     "nods Varen.",
+     "They smile.",
+     "smiles Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-bea7fe4eefa8b7c5",
+   "question": 2,
+   "sentences": [
+    "Varen nods.",
+    "They smile.",
+    "Who smiles?"
+   ]
+  },
+  {
+   "answer": "Saren",
+   "controls": {
+    "renamed_answer": "zuw",
+    "renamed_vocabulary": [
+     "zuw zucb.",
+     "zuz zubu.",
+     "zuag zubv?"
+    ],
+    "shuffled_determiners": [
+     "Saren yawns.",
+     "They snore.",
+     "Who snores?"
+    ],
+    "shuffled_order": [
+     "yawns Saren.",
+     "snore They.",
+     "Who snores?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-c1104e2ccbb02fb0",
+   "question": 2,
+   "sentences": [
+    "Saren yawns.",
+    "They snore.",
+    "Who snores?"
+   ]
+  },
+  {
+   "answer": "Zorin",
+   "controls": {
+    "renamed_answer": "zuak",
+    "renamed_vocabulary": [
+     "zuak zubv.",
+     "zuz zuby.",
+     "zuag zubz?"
+    ],
+    "shuffled_determiners": [
+     "Zorin snores.",
+     "They wave.",
+     "Who waves?"
+    ],
+    "shuffled_order": [
+     "Zorin snores.",
+     "They wave.",
+     "waves Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-c917710d85438298",
+   "question": 2,
+   "sentences": [
+    "Zorin snores.",
+    "They wave.",
+    "Who waves?"
+   ]
+  },
+  {
+   "answer": "Relan",
+   "controls": {
+    "renamed_answer": "zuu",
+    "renamed_vocabulary": [
+     "zuu zubp.",
+     "zuz zubi.",
+     "zuag zubj?"
+    ],
+    "shuffled_determiners": [
+     "Relan nods.",
+     "They laugh.",
+     "Who laughs?"
+    ],
+    "shuffled_order": [
+     "Relan nods.",
+     "laugh They.",
+     "Who laughs?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-c985c39cbee87d21",
+   "question": 2,
+   "sentences": [
+    "Relan nods.",
+    "They laugh.",
+    "Who laughs?"
+   ]
+  },
+  {
+   "answer": "Saren",
+   "controls": {
+    "renamed_answer": "zuw",
+    "renamed_vocabulary": [
+     "zuw zubj.",
+     "zuz zuay.",
+     "zuag zuaz?"
+    ],
+    "shuffled_determiners": [
+     "Saren laughs.",
+     "They dance.",
+     "Who dances?"
+    ],
+    "shuffled_order": [
+     "laughs Saren.",
+     "dance They.",
+     "Who dances?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-cb8a7bc542885bd5",
+   "question": 2,
+   "sentences": [
+    "Saren laughs.",
+    "They dance.",
+    "Who dances?"
+   ]
+  },
+  {
+   "answer": "Faren",
+   "controls": {
+    "renamed_answer": "zug",
+    "renamed_vocabulary": [
+     "zug zubp.",
+     "zuz zubs.",
+     "zuag zubt?"
+    ],
+    "shuffled_determiners": [
+     "Faren nods.",
+     "They smile.",
+     "Who smiles?"
+    ],
+    "shuffled_order": [
+     "Faren nods.",
+     "smile They.",
+     "smiles Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-cd63b6e4d1abcb40",
+   "question": 2,
+   "sentences": [
+    "Faren nods.",
+    "They smile.",
+    "Who smiles?"
+   ]
+  },
+  {
+   "answer": "Joren",
+   "controls": {
+    "renamed_answer": "zuk",
+    "renamed_vocabulary": [
+     "zuk zubz.",
+     "zuz zubi.",
+     "zuag zubj?"
+    ],
+    "shuffled_determiners": [
+     "Joren waves.",
+     "They laugh.",
+     "Who laughs?"
+    ],
+    "shuffled_order": [
+     "waves Joren.",
+     "laugh They.",
+     "laughs Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-daa0e1fc532488d6",
+   "question": 2,
+   "sentences": [
+    "Joren waves.",
+    "They laugh.",
+    "Who laughs?"
+   ]
+  },
+  {
+   "answer": "Eron",
+   "controls": {
+    "renamed_answer": "zuf",
+    "renamed_vocabulary": [
+     "zuf zucb.",
+     "zuz zuaw.",
+     "zuag zuax?"
+    ],
+    "shuffled_determiners": [
+     "Eron yawns.",
+     "They cheer.",
+     "Who cheers?"
+    ],
+    "shuffled_order": [
+     "yawns Eron.",
+     "They cheer.",
+     "cheers Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-e074bb5821fccc32",
+   "question": 2,
+   "sentences": [
+    "Eron yawns.",
+    "They cheer.",
+    "Who cheers?"
+   ]
+  },
+  {
+   "answer": "Varek",
+   "controls": {
+    "renamed_answer": "zuac",
+    "renamed_vocabulary": [
+     "zuac zubp.",
+     "zuz zuaw.",
+     "zuag zuax?"
+    ],
+    "shuffled_determiners": [
+     "Varek nods.",
+     "They cheer.",
+     "Who cheers?"
+    ],
+    "shuffled_order": [
+     "Varek nods.",
+     "They cheer.",
+     "Who cheers?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-e68876702a0345dd",
+   "question": 2,
+   "sentences": [
+    "Varek nods.",
+    "They cheer.",
+    "Who cheers?"
+   ]
+  },
+  {
+   "answer": "Dorin",
+   "controls": {
+    "renamed_answer": "zue",
+    "renamed_vocabulary": [
+     "zue zubj.",
+     "zuz zuca.",
+     "zuag zucb?"
+    ],
+    "shuffled_determiners": [
+     "Dorin laughs.",
+     "They yawn.",
+     "Who yawns?"
+    ],
+    "shuffled_order": [
+     "Dorin laughs.",
+     "They yawn.",
+     "yawns Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-eacbad90be635a1b",
+   "question": 2,
+   "sentences": [
+    "Dorin laughs.",
+    "They yawn.",
+    "Who yawns?"
+   ]
+  },
+  {
+   "answer": "Eron",
+   "controls": {
+    "renamed_answer": "zuf",
+    "renamed_vocabulary": [
+     "zuf zuaz.",
+     "zuz zuby.",
+     "zuag zubz?"
+    ],
+    "shuffled_determiners": [
+     "Eron dances.",
+     "They wave.",
+     "Who waves?"
+    ],
+    "shuffled_order": [
+     "dances Eron.",
+     "wave They.",
+     "waves Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-ed240f4daa07af1c",
+   "question": 2,
+   "sentences": [
+    "Eron dances.",
+    "They wave.",
+    "Who waves?"
+   ]
+  },
+  {
+   "answer": "Quorin",
+   "controls": {
+    "renamed_answer": "zut",
+    "renamed_vocabulary": [
+     "zut zubp.",
+     "zuz zuay.",
+     "zuag zuaz?"
+    ],
+    "shuffled_determiners": [
+     "Quorin nods.",
+     "They dance.",
+     "Who dances?"
+    ],
+    "shuffled_order": [
+     "Quorin nods.",
+     "dance They.",
+     "dances Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-f2691a9f91014444",
+   "question": 2,
+   "sentences": [
+    "Quorin nods.",
+    "They dance.",
+    "Who dances?"
+   ]
+  },
+  {
+   "answer": "Toren",
+   "controls": {
+    "renamed_answer": "zuaa",
+    "renamed_vocabulary": [
+     "zuaa zuax.",
+     "zuz zubo.",
+     "zuag zubp?"
+    ],
+    "shuffled_determiners": [
+     "Toren cheers.",
+     "They nod.",
+     "Who nods?"
+    ],
+    "shuffled_order": [
+     "cheers Toren.",
+     "nod They.",
+     "nods Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-f51fe360d330961e",
+   "question": 2,
+   "sentences": [
+    "Toren cheers.",
+    "They nod.",
+    "Who nods?"
+   ]
+  },
+  {
+   "answer": "Yoren",
+   "controls": {
+    "renamed_answer": "zuaj",
+    "renamed_vocabulary": [
+     "zuaj zuax.",
+     "zuz zubu.",
+     "zuag zubv?"
+    ],
+    "shuffled_determiners": [
+     "Yoren cheers.",
+     "They snore.",
+     "Who snores?"
+    ],
+    "shuffled_order": [
+     "Yoren cheers.",
+     "snore They.",
+     "Who snores?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-f931bdae2a14045f",
+   "question": 2,
+   "sentences": [
+    "Yoren cheers.",
+    "They snore.",
+    "Who snores?"
+   ]
+  },
+  {
+   "answer": "Rovan",
+   "controls": {
+    "renamed_answer": "zuv",
+    "renamed_vocabulary": [
+     "zuv zuaz.",
+     "zuz zubs.",
+     "zuag zubt?"
+    ],
+    "shuffled_determiners": [
+     "Rovan dances.",
+     "They smile.",
+     "Who smiles?"
+    ],
+    "shuffled_order": [
+     "Rovan dances.",
+     "They smile.",
+     "smiles Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-fa40e3b78424af21",
+   "question": 2,
+   "sentences": [
+    "Rovan dances.",
+    "They smile.",
+    "Who smiles?"
+   ]
+  },
+  {
+   "answer": "Darek",
+   "controls": {
+    "renamed_answer": "zud",
+    "renamed_vocabulary": [
+     "zud zuax.",
+     "zuz zuca.",
+     "zuag zucb?"
+    ],
+    "shuffled_determiners": [
+     "Darek cheers.",
+     "They yawn.",
+     "Who yawns?"
+    ],
+    "shuffled_order": [
+     "cheers Darek.",
+     "yawn They.",
+     "yawns Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-fc047fadbd8e47cd",
+   "question": 2,
+   "sentences": [
+    "Darek cheers.",
+    "They yawn.",
+    "Who yawns?"
+   ]
+  },
+  {
+   "answer": "Loran",
+   "controls": {
+    "renamed_answer": "zun",
+    "renamed_vocabulary": [
+     "zun zubp.",
+     "zuz zuay.",
+     "zuag zuaz?"
+    ],
+    "shuffled_determiners": [
+     "Loran nods.",
+     "They dance.",
+     "Who dances?"
+    ],
+    "shuffled_order": [
+     "nods Loran.",
+     "dance They.",
+     "Who dances?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-fd40b613d256552f",
+   "question": 2,
+   "sentences": [
+    "Loran nods.",
+    "They dance.",
+    "Who dances?"
+   ]
+  },
+  {
+   "answer": "Xaren",
+   "controls": {
+    "renamed_answer": "zuai",
+    "renamed_vocabulary": [
+     "zuai zubj.",
+     "zuz zuby.",
+     "zuag zubz?"
+    ],
+    "shuffled_determiners": [
+     "Xaren laughs.",
+     "They wave.",
+     "Who waves?"
+    ],
+    "shuffled_order": [
+     "laughs Xaren.",
+     "They wave.",
+     "waves Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "anaphora",
+   "key": "anaphora-fe20941f44fb4990",
+   "question": 2,
+   "sentences": [
+    "Xaren laughs.",
+    "They wave.",
+    "Who waves?"
+   ]
+  },
+  {
+   "answer": "Xaren",
+   "controls": {
+    "renamed_answer": "zuai",
+    "renamed_vocabulary": [
+     "zuai zuan zuac.",
+     "zuag zuan zuac?"
+    ],
+    "shuffled_determiners": [
+     "Xaren adores Varek.",
+     "Who adores Varek?"
+    ],
+    "shuffled_order": [
+     "Varek Xaren adores.",
+     "adores Varek Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-02befed03cb899d4",
+   "question": 1,
+   "sentences": [
+    "Xaren adores Varek.",
+    "Who adores Varek?"
+   ]
+  },
+  {
+   "answer": "Xaren",
+   "controls": {
+    "renamed_answer": "zuai",
+    "renamed_vocabulary": [
+     "zuai zuam zuab.",
+     "zuag zuam zuab?"
+    ],
+    "shuffled_determiners": [
+     "Xaren admires Uven.",
+     "Who admires Uven?"
+    ],
+    "shuffled_order": [
+     "Xaren Uven admires.",
+     "Who Uven admires?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-0495b0c84f656355",
+   "question": 1,
+   "sentences": [
+    "Xaren admires Uven.",
+    "Who admires Uven?"
+   ]
+  },
+  {
+   "answer": "Narek",
+   "controls": {
+    "renamed_answer": "zup",
+    "renamed_vocabulary": [
+     "zup zubc zuaa.",
+     "zuag zubc zuaa?"
+    ],
+    "shuffled_determiners": [
+     "Narek greets Toren.",
+     "Who greets Toren?"
+    ],
+    "shuffled_order": [
+     "greets Narek Toren.",
+     "Toren greets Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-061e6b43415936a7",
+   "question": 1,
+   "sentences": [
+    "Narek greets Toren.",
+    "Who greets Toren?"
+   ]
+  },
+  {
+   "answer": "Xaren",
+   "controls": {
+    "renamed_answer": "zuai",
+    "renamed_vocabulary": [
+     "zuai zuap zuy.",
+     "zuag zuap zuy?"
+    ],
+    "shuffled_determiners": [
+     "Xaren annoys Tavin.",
+     "Who annoys Tavin?"
+    ],
+    "shuffled_order": [
+     "annoys Xaren Tavin.",
+     "Who Tavin annoys?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-07546f685f8a20eb",
+   "question": 1,
+   "sentences": [
+    "Xaren annoys Tavin.",
+    "Who annoys Tavin?"
+   ]
+  },
+  {
+   "answer": "Faren",
+   "controls": {
+    "renamed_answer": "zug",
+    "renamed_vocabulary": [
+     "zug zuan zun.",
+     "zuag zuan zun?"
+    ],
+    "shuffled_determiners": [
+     "Faren adores Loran.",
+     "Who adores Loran?"
+    ],
+    "shuffled_order": [
+     "Loran Faren adores.",
+     "Who adores Loran?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-09f94c7a17ffbc0d",
+   "question": 1,
+   "sentences": [
+    "Faren adores Loran.",
+    "Who adores Loran?"
+   ]
+  },
+  {
+   "answer": "Iven",
+   "controls": {
+    "renamed_answer": "zuj",
+    "renamed_vocabulary": [
+     "zuj zuav zur.",
+     "zuag zuav zur?"
+    ],
+    "shuffled_determiners": [
+     "Iven chases Pavin.",
+     "Who chases Pavin?"
+    ],
+    "shuffled_order": [
+     "Iven chases Pavin.",
+     "Who Pavin chases?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-145749516074a916",
+   "question": 1,
+   "sentences": [
+    "Iven chases Pavin.",
+    "Who chases Pavin?"
+   ]
+  },
+  {
+   "answer": "Harin",
+   "controls": {
+    "renamed_answer": "zui",
+    "renamed_vocabulary": [
+     "zui zubc zun.",
+     "zuag zubc zun?"
+    ],
+    "shuffled_determiners": [
+     "Harin greets Loran.",
+     "Who greets Loran?"
+    ],
+    "shuffled_order": [
+     "Harin Loran greets.",
+     "greets Loran Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-207cc2440d6bc272",
+   "question": 1,
+   "sentences": [
+    "Harin greets Loran.",
+    "Who greets Loran?"
+   ]
+  },
+  {
+   "answer": "Tavin",
+   "controls": {
+    "renamed_answer": "zuy",
+    "renamed_vocabulary": [
+     "zuy zuan zus.",
+     "zuag zuan zus?"
+    ],
+    "shuffled_determiners": [
+     "Tavin adores Peren.",
+     "Who adores Peren?"
+    ],
+    "shuffled_order": [
+     "Tavin adores Peren.",
+     "adores Who Peren?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-20d06808cfbcc342",
+   "question": 1,
+   "sentences": [
+    "Tavin adores Peren.",
+    "Who adores Peren?"
+   ]
+  },
+  {
+   "answer": "Joren",
+   "controls": {
+    "renamed_answer": "zuk",
+    "renamed_vocabulary": [
+     "zuk zuan zuaa.",
+     "zuag zuan zuaa?"
+    ],
+    "shuffled_determiners": [
+     "Joren adores Toren.",
+     "Who adores Toren?"
+    ],
+    "shuffled_order": [
+     "Joren adores Toren.",
+     "Who adores Toren?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-211b5f5cbab26154",
+   "question": 1,
+   "sentences": [
+    "Joren adores Toren.",
+    "Who adores Toren?"
+   ]
+  },
+  {
+   "answer": "Xaren",
+   "controls": {
+    "renamed_answer": "zuai",
+    "renamed_vocabulary": [
+     "zuai zubd zuc.",
+     "zuag zubd zuc?"
+    ],
+    "shuffled_determiners": [
+     "Xaren guides Cevan.",
+     "Who guides Cevan?"
+    ],
+    "shuffled_order": [
+     "guides Cevan Xaren.",
+     "Cevan guides Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-296a98edcb00ce05",
+   "question": 1,
+   "sentences": [
+    "Xaren guides Cevan.",
+    "Who guides Cevan?"
+   ]
+  },
+  {
+   "answer": "Uven",
+   "controls": {
+    "renamed_answer": "zuab",
+    "renamed_vocabulary": [
+     "zuab zubc zug.",
+     "zuag zubc zug?"
+    ],
+    "shuffled_determiners": [
+     "Uven greets Faren.",
+     "Who greets Faren?"
+    ],
+    "shuffled_order": [
+     "greets Faren Uven.",
+     "Faren greets Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-2bb827319d8ccf58",
+   "question": 1,
+   "sentences": [
+    "Uven greets Faren.",
+    "Who greets Faren?"
+   ]
+  },
+  {
+   "answer": "Uven",
+   "controls": {
+    "renamed_answer": "zuab",
+    "renamed_vocabulary": [
+     "zuab zuap zuaj.",
+     "zuag zuap zuaj?"
+    ],
+    "shuffled_determiners": [
+     "Uven annoys Yoren.",
+     "Who annoys Yoren?"
+    ],
+    "shuffled_order": [
+     "annoys Yoren Uven.",
+     "Yoren Who annoys?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-2da40241f98e1386",
+   "question": 1,
+   "sentences": [
+    "Uven annoys Yoren.",
+    "Who annoys Yoren?"
+   ]
+  },
+  {
+   "answer": "Faren",
+   "controls": {
+    "renamed_answer": "zug",
+    "renamed_vocabulary": [
+     "zug zuap zuo.",
+     "zuag zuap zuo?"
+    ],
+    "shuffled_determiners": [
+     "Faren annoys Meren.",
+     "Who annoys Meren?"
+    ],
+    "shuffled_order": [
+     "Meren annoys Faren.",
+     "Who Meren annoys?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-2dbba15f435e8136",
+   "question": 1,
+   "sentences": [
+    "Faren annoys Meren.",
+    "Who annoys Meren?"
+   ]
+  },
+  {
+   "answer": "Pavin",
+   "controls": {
+    "renamed_answer": "zur",
+    "renamed_vocabulary": [
+     "zur zuam zuy.",
+     "zuag zuam zuy?"
+    ],
+    "shuffled_determiners": [
+     "Pavin admires Tavin.",
+     "Who admires Tavin?"
+    ],
+    "shuffled_order": [
+     "Tavin admires Pavin.",
+     "Tavin Who admires?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-2fed801e717d8685",
+   "question": 1,
+   "sentences": [
+    "Pavin admires Tavin.",
+    "Who admires Tavin?"
+   ]
+  },
+  {
+   "answer": "Varek",
+   "controls": {
+    "renamed_answer": "zuac",
+    "renamed_vocabulary": [
+     "zuac zubx zuy.",
+     "zuag zubx zuy?"
+    ],
+    "shuffled_determiners": [
+     "Varek visits Tavin.",
+     "Who visits Tavin?"
+    ],
+    "shuffled_order": [
+     "visits Varek Tavin.",
+     "Who Tavin visits?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-33524aa9fcc7c9eb",
+   "question": 1,
+   "sentences": [
+    "Varek visits Tavin.",
+    "Who visits Tavin?"
+   ]
+  },
+  {
+   "answer": "Meren",
+   "controls": {
+    "renamed_answer": "zuo",
+    "renamed_vocabulary": [
+     "zuo zuam zui.",
+     "zuag zuam zui?"
+    ],
+    "shuffled_determiners": [
+     "Meren admires Harin.",
+     "Who admires Harin?"
+    ],
+    "shuffled_order": [
+     "admires Meren Harin.",
+     "admires Harin Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-359079f80a64f729",
+   "question": 1,
+   "sentences": [
+    "Meren admires Harin.",
+    "Who admires Harin?"
+   ]
+  },
+  {
+   "answer": "Loran",
+   "controls": {
+    "renamed_answer": "zun",
+    "renamed_vocabulary": [
+     "zun zuaq zuj.",
+     "zuag zuaq zuj?"
+    ],
+    "shuffled_determiners": [
+     "Loran assists Iven.",
+     "Who assists Iven?"
+    ],
+    "shuffled_order": [
+     "assists Iven Loran.",
+     "Iven assists Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-3ade103df1637f4a",
+   "question": 1,
+   "sentences": [
+    "Loran assists Iven.",
+    "Who assists Iven?"
+   ]
+  },
+  {
+   "answer": "Harin",
+   "controls": {
+    "renamed_answer": "zui",
+    "renamed_vocabulary": [
+     "zui zubx zuad.",
+     "zuag zubx zuad?"
+    ],
+    "shuffled_determiners": [
+     "Harin visits Varen.",
+     "Who visits Varen?"
+    ],
+    "shuffled_order": [
+     "Varen visits Harin.",
+     "Who visits Varen?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-3c4beea70708ede5",
+   "question": 1,
+   "sentences": [
+    "Harin visits Varen.",
+    "Who visits Varen?"
+   ]
+  },
+  {
+   "answer": "Xaren",
+   "controls": {
+    "renamed_answer": "zuai",
+    "renamed_vocabulary": [
+     "zuai zuap zuah.",
+     "zuag zuap zuah?"
+    ],
+    "shuffled_determiners": [
+     "Xaren annoys Woren.",
+     "Who annoys Woren?"
+    ],
+    "shuffled_order": [
+     "annoys Xaren Woren.",
+     "Woren annoys Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-41b7f4838635d18e",
+   "question": 1,
+   "sentences": [
+    "Xaren annoys Woren.",
+    "Who annoys Woren?"
+   ]
+  },
+  {
+   "answer": "Iven",
+   "controls": {
+    "renamed_answer": "zuj",
+    "renamed_vocabulary": [
+     "zuj zuam zun.",
+     "zuag zuam zun?"
+    ],
+    "shuffled_determiners": [
+     "Iven admires Loran.",
+     "Who admires Loran?"
+    ],
+    "shuffled_order": [
+     "Iven admires Loran.",
+     "Who Loran admires?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-46102ad3df8bdf76",
+   "question": 1,
+   "sentences": [
+    "Iven admires Loran.",
+    "Who admires Loran?"
+   ]
+  },
+  {
+   "answer": "Kavin",
+   "controls": {
+    "renamed_answer": "zul",
+    "renamed_vocabulary": [
+     "zul zubd zub.",
+     "zuag zubd zub?"
+    ],
+    "shuffled_determiners": [
+     "Kavin guides Borin.",
+     "Who guides Borin?"
+    ],
+    "shuffled_order": [
+     "Kavin guides Borin.",
+     "Who Borin guides?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-4a350729ce3c6876",
+   "question": 1,
+   "sentences": [
+    "Kavin guides Borin.",
+    "Who guides Borin?"
+   ]
+  },
+  {
+   "answer": "Joren",
+   "controls": {
+    "renamed_answer": "zuk",
+    "renamed_vocabulary": [
+     "zuk zuav zue.",
+     "zuag zuav zue?"
+    ],
+    "shuffled_determiners": [
+     "Joren chases Dorin.",
+     "Who chases Dorin?"
+    ],
+    "shuffled_order": [
+     "Joren chases Dorin.",
+     "chases Who Dorin?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-4c854e13767ee861",
+   "question": 1,
+   "sentences": [
+    "Joren chases Dorin.",
+    "Who chases Dorin?"
+   ]
+  },
+  {
+   "answer": "Tavin",
+   "controls": {
+    "renamed_answer": "zuy",
+    "renamed_vocabulary": [
+     "zuy zuap zup.",
+     "zuag zuap zup?"
+    ],
+    "shuffled_determiners": [
+     "Tavin annoys Narek.",
+     "Who annoys Narek?"
+    ],
+    "shuffled_order": [
+     "annoys Tavin Narek.",
+     "Who annoys Narek?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-54ccc839c142a8df",
+   "question": 1,
+   "sentences": [
+    "Tavin annoys Narek.",
+    "Who annoys Narek?"
+   ]
+  },
+  {
+   "answer": "Yoren",
+   "controls": {
+    "renamed_answer": "zuaj",
+    "renamed_vocabulary": [
+     "zuaj zuam zui.",
+     "zuag zuam zui?"
+    ],
+    "shuffled_determiners": [
+     "Yoren admires Harin.",
+     "Who admires Harin?"
+    ],
+    "shuffled_order": [
+     "admires Yoren Harin.",
+     "admires Who Harin?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-54fb55c412467c73",
+   "question": 1,
+   "sentences": [
+    "Yoren admires Harin.",
+    "Who admires Harin?"
+   ]
+  },
+  {
+   "answer": "Meren",
+   "controls": {
+    "renamed_answer": "zuo",
+    "renamed_vocabulary": [
+     "zuo zuav zuv.",
+     "zuag zuav zuv?"
+    ],
+    "shuffled_determiners": [
+     "Meren chases Rovan.",
+     "Who chases Rovan?"
+    ],
+    "shuffled_order": [
+     "Meren Rovan chases.",
+     "Who Rovan chases?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-57827939a2aa6c0f",
+   "question": 1,
+   "sentences": [
+    "Meren chases Rovan.",
+    "Who chases Rovan?"
+   ]
+  },
+  {
+   "answer": "Faren",
+   "controls": {
+    "renamed_answer": "zug",
+    "renamed_vocabulary": [
+     "zug zuam zue.",
+     "zuag zuam zue?"
+    ],
+    "shuffled_determiners": [
+     "Faren admires Dorin.",
+     "Who admires Dorin?"
+    ],
+    "shuffled_order": [
+     "Faren admires Dorin.",
+     "Dorin admires Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-5bbfcd5288bb5f40",
+   "question": 1,
+   "sentences": [
+    "Faren admires Dorin.",
+    "Who admires Dorin?"
+   ]
+  },
+  {
+   "answer": "Goran",
+   "controls": {
+    "renamed_answer": "zuh",
+    "renamed_vocabulary": [
+     "zuh zubd zum.",
+     "zuag zubd zum?"
+    ],
+    "shuffled_determiners": [
+     "Goran guides Kelem.",
+     "Who guides Kelem?"
+    ],
+    "shuffled_order": [
+     "Goran Kelem guides.",
+     "Kelem Who guides?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-5e0822b34562363f",
+   "question": 1,
+   "sentences": [
+    "Goran guides Kelem.",
+    "Who guides Kelem?"
+   ]
+  },
+  {
+   "answer": "Woren",
+   "controls": {
+    "renamed_answer": "zuah",
+    "renamed_vocabulary": [
+     "zuah zubx zux.",
+     "zuag zubx zux?"
+    ],
+    "shuffled_determiners": [
+     "Woren visits Sorel.",
+     "Who visits Sorel?"
+    ],
+    "shuffled_order": [
+     "visits Woren Sorel.",
+     "Sorel visits Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-5e75c965a48613bf",
+   "question": 1,
+   "sentences": [
+    "Woren visits Sorel.",
+    "Who visits Sorel?"
+   ]
+  },
+  {
+   "answer": "Darek",
+   "controls": {
+    "renamed_answer": "zud",
+    "renamed_vocabulary": [
+     "zud zuam zur.",
+     "zuag zuam zur?"
+    ],
+    "shuffled_determiners": [
+     "Darek admires Pavin.",
+     "Who admires Pavin?"
+    ],
+    "shuffled_order": [
+     "admires Darek Pavin.",
+     "Who Pavin admires?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-5f138f4ae417ff4a",
+   "question": 1,
+   "sentences": [
+    "Darek admires Pavin.",
+    "Who admires Pavin?"
+   ]
+  },
+  {
+   "answer": "Quorin",
+   "controls": {
+    "renamed_answer": "zut",
+    "renamed_vocabulary": [
+     "zut zuan zuo.",
+     "zuag zuan zuo?"
+    ],
+    "shuffled_determiners": [
+     "Quorin adores Meren.",
+     "Who adores Meren?"
+    ],
+    "shuffled_order": [
+     "Quorin Meren adores.",
+     "Who Meren adores?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-62728ee372ba7af3",
+   "question": 1,
+   "sentences": [
+    "Quorin adores Meren.",
+    "Who adores Meren?"
+   ]
+  },
+  {
+   "answer": "Goran",
+   "controls": {
+    "renamed_answer": "zuh",
+    "renamed_vocabulary": [
+     "zuh zuan zue.",
+     "zuag zuan zue?"
+    ],
+    "shuffled_determiners": [
+     "Goran adores Dorin.",
+     "Who adores Dorin?"
+    ],
+    "shuffled_order": [
+     "Goran Dorin adores.",
+     "Dorin Who adores?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-65777fc7f2e3f6d7",
+   "question": 1,
+   "sentences": [
+    "Goran adores Dorin.",
+    "Who adores Dorin?"
+   ]
+  },
+  {
+   "answer": "Goran",
+   "controls": {
+    "renamed_answer": "zuh",
+    "renamed_vocabulary": [
+     "zuh zubc zup.",
+     "zuag zubc zup?"
+    ],
+    "shuffled_determiners": [
+     "Goran greets Narek.",
+     "Who greets Narek?"
+    ],
+    "shuffled_order": [
+     "greets Goran Narek.",
+     "Narek greets Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-6ee7de9eb568728b",
+   "question": 1,
+   "sentences": [
+    "Goran greets Narek.",
+    "Who greets Narek?"
+   ]
+  },
+  {
+   "answer": "Yoren",
+   "controls": {
+    "renamed_answer": "zuaj",
+    "renamed_vocabulary": [
+     "zuaj zubd zuad.",
+     "zuag zubd zuad?"
+    ],
+    "shuffled_determiners": [
+     "Yoren guides Varen.",
+     "Who guides Varen?"
+    ],
+    "shuffled_order": [
+     "Yoren guides Varen.",
+     "Who guides Varen?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-73ca7af66b79eb3d",
+   "question": 1,
+   "sentences": [
+    "Yoren guides Varen.",
+    "Who guides Varen?"
+   ]
+  },
+  {
+   "answer": "Eron",
+   "controls": {
+    "renamed_answer": "zuf",
+    "renamed_vocabulary": [
+     "zuf zubc zuo.",
+     "zuag zubc zuo?"
+    ],
+    "shuffled_determiners": [
+     "Eron greets Meren.",
+     "Who greets Meren?"
+    ],
+    "shuffled_order": [
+     "Meren Eron greets.",
+     "greets Meren Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-73ead7a6e2e0350f",
+   "question": 1,
+   "sentences": [
+    "Eron greets Meren.",
+    "Who greets Meren?"
+   ]
+  },
+  {
+   "answer": "Iven",
+   "controls": {
+    "renamed_answer": "zuj",
+    "renamed_vocabulary": [
+     "zuj zubc zuk.",
+     "zuag zubc zuk?"
+    ],
+    "shuffled_determiners": [
+     "Iven greets Joren.",
+     "Who greets Joren?"
+    ],
+    "shuffled_order": [
+     "Iven greets Joren.",
+     "greets Joren Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-875a02b0b7121658",
+   "question": 1,
+   "sentences": [
+    "Iven greets Joren.",
+    "Who greets Joren?"
+   ]
+  },
+  {
+   "answer": "Joren",
+   "controls": {
+    "renamed_answer": "zuk",
+    "renamed_vocabulary": [
+     "zuk zuav zup.",
+     "zuag zuav zup?"
+    ],
+    "shuffled_determiners": [
+     "Joren chases Narek.",
+     "Who chases Narek?"
+    ],
+    "shuffled_order": [
+     "chases Narek Joren.",
+     "Who chases Narek?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-88a38d92267d77ad",
+   "question": 1,
+   "sentences": [
+    "Joren chases Narek.",
+    "Who chases Narek?"
+   ]
+  },
+  {
+   "answer": "Pavin",
+   "controls": {
+    "renamed_answer": "zur",
+    "renamed_vocabulary": [
+     "zur zubc zux.",
+     "zuag zubc zux?"
+    ],
+    "shuffled_determiners": [
+     "Pavin greets Sorel.",
+     "Who greets Sorel?"
+    ],
+    "shuffled_order": [
+     "Pavin Sorel greets.",
+     "Who Sorel greets?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-8f4dd1c378225ca5",
+   "question": 1,
+   "sentences": [
+    "Pavin greets Sorel.",
+    "Who greets Sorel?"
+   ]
+  },
+  {
+   "answer": "Quorin",
+   "controls": {
+    "renamed_answer": "zut",
+    "renamed_vocabulary": [
+     "zut zubx zuak.",
+     "zuag zubx zuak?"
+    ],
+    "shuffled_determiners": [
+     "Quorin visits Zorin.",
+     "Who visits Zorin?"
+    ],
+    "shuffled_order": [
+     "Quorin visits Zorin.",
+     "visits Who Zorin?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-a40d424af3edf9ef",
+   "question": 1,
+   "sentences": [
+    "Quorin visits Zorin.",
+    "Who visits Zorin?"
+   ]
+  },
+  {
+   "answer": "Varek",
+   "controls": {
+    "renamed_answer": "zuac",
+    "renamed_vocabulary": [
+     "zuac zubc zug.",
+     "zuag zubc zug?"
+    ],
+    "shuffled_determiners": [
+     "Varek greets Faren.",
+     "Who greets Faren?"
+    ],
+    "shuffled_order": [
+     "Varek Faren greets.",
+     "greets Who Faren?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-a5e19158bb4e4f6a",
+   "question": 1,
+   "sentences": [
+    "Varek greets Faren.",
+    "Who greets Faren?"
+   ]
+  },
+  {
+   "answer": "Meren",
+   "controls": {
+    "renamed_answer": "zuo",
+    "renamed_vocabulary": [
+     "zuo zubx zuq.",
+     "zuag zubx zuq?"
+    ],
+    "shuffled_determiners": [
+     "Meren visits Oren.",
+     "Who visits Oren?"
+    ],
+    "shuffled_order": [
+     "Meren visits Oren.",
+     "Who visits Oren?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-a5fe1d671eb180db",
+   "question": 1,
+   "sentences": [
+    "Meren visits Oren.",
+    "Who visits Oren?"
+   ]
+  },
+  {
+   "answer": "Uven",
+   "controls": {
+    "renamed_answer": "zuab",
+    "renamed_vocabulary": [
+     "zuab zuav zuah.",
+     "zuag zuav zuah?"
+    ],
+    "shuffled_determiners": [
+     "Uven chases Woren.",
+     "Who chases Woren?"
+    ],
+    "shuffled_order": [
+     "Woren chases Uven.",
+     "chases Who Woren?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-ac636665dbbd1974",
+   "question": 1,
+   "sentences": [
+    "Uven chases Woren.",
+    "Who chases Woren?"
+   ]
+  },
+  {
+   "answer": "Varek",
+   "controls": {
+    "renamed_answer": "zuac",
+    "renamed_vocabulary": [
+     "zuac zuam zug.",
+     "zuag zuam zug?"
+    ],
+    "shuffled_determiners": [
+     "Varek admires Faren.",
+     "Who admires Faren?"
+    ],
+    "shuffled_order": [
+     "Varek Faren admires.",
+     "Faren Who admires?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-af1ea53cab091141",
+   "question": 1,
+   "sentences": [
+    "Varek admires Faren.",
+    "Who admires Faren?"
+   ]
+  },
+  {
+   "answer": "Woren",
+   "controls": {
+    "renamed_answer": "zuah",
+    "renamed_vocabulary": [
+     "zuah zuam zut.",
+     "zuag zuam zut?"
+    ],
+    "shuffled_determiners": [
+     "Woren admires Quorin.",
+     "Who admires Quorin?"
+    ],
+    "shuffled_order": [
+     "admires Quorin Woren.",
+     "admires Quorin Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-b1168c141e9eb78c",
+   "question": 1,
+   "sentences": [
+    "Woren admires Quorin.",
+    "Who admires Quorin?"
+   ]
+  },
+  {
+   "answer": "Xaren",
+   "controls": {
+    "renamed_answer": "zuai",
+    "renamed_vocabulary": [
+     "zuai zuav zuq.",
+     "zuag zuav zuq?"
+    ],
+    "shuffled_determiners": [
+     "Xaren chases Oren.",
+     "Who chases Oren?"
+    ],
+    "shuffled_order": [
+     "chases Oren Xaren.",
+     "chases Oren Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-b6ed74c7dd1211d5",
+   "question": 1,
+   "sentences": [
+    "Xaren chases Oren.",
+    "Who chases Oren?"
+   ]
+  },
+  {
+   "answer": "Woren",
+   "controls": {
+    "renamed_answer": "zuah",
+    "renamed_vocabulary": [
+     "zuah zubc zug.",
+     "zuag zubc zug?"
+    ],
+    "shuffled_determiners": [
+     "Woren greets Faren.",
+     "Who greets Faren?"
+    ],
+    "shuffled_order": [
+     "Faren Woren greets.",
+     "greets Who Faren?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-b8c7f7a57772ce07",
+   "question": 1,
+   "sentences": [
+    "Woren greets Faren.",
+    "Who greets Faren?"
+   ]
+  },
+  {
+   "answer": "Xaren",
+   "controls": {
+    "renamed_answer": "zuai",
+    "renamed_vocabulary": [
+     "zuai zuap zuq.",
+     "zuag zuap zuq?"
+    ],
+    "shuffled_determiners": [
+     "Xaren annoys Oren.",
+     "Who annoys Oren?"
+    ],
+    "shuffled_order": [
+     "annoys Oren Xaren.",
+     "Oren Who annoys?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-b8d82117676028a2",
+   "question": 1,
+   "sentences": [
+    "Xaren annoys Oren.",
+    "Who annoys Oren?"
+   ]
+  },
+  {
+   "answer": "Quorin",
+   "controls": {
+    "renamed_answer": "zut",
+    "renamed_vocabulary": [
+     "zut zuav zuc.",
+     "zuag zuav zuc?"
+    ],
+    "shuffled_determiners": [
+     "Quorin chases Cevan.",
+     "Who chases Cevan?"
+    ],
+    "shuffled_order": [
+     "chases Quorin Cevan.",
+     "Cevan Who chases?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-c043ef32c23ba772",
+   "question": 1,
+   "sentences": [
+    "Quorin chases Cevan.",
+    "Who chases Cevan?"
+   ]
+  },
+  {
+   "answer": "Oren",
+   "controls": {
+    "renamed_answer": "zuq",
+    "renamed_vocabulary": [
+     "zuq zuav zul.",
+     "zuag zuav zul?"
+    ],
+    "shuffled_determiners": [
+     "Oren chases Kavin.",
+     "Who chases Kavin?"
+    ],
+    "shuffled_order": [
+     "Oren chases Kavin.",
+     "Who Kavin chases?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-c6f310eda4542dea",
+   "question": 1,
+   "sentences": [
+    "Oren chases Kavin.",
+    "Who chases Kavin?"
+   ]
+  },
+  {
+   "answer": "Darek",
+   "controls": {
+    "renamed_answer": "zud",
+    "renamed_vocabulary": [
+     "zud zubd zuac.",
+     "zuag zubd zuac?"
+    ],
+    "shuffled_determiners": [
+     "Darek guides Varek.",
+     "Who guides Varek?"
+    ],
+    "shuffled_order": [
+     "Varek guides Darek.",
+     "Who guides Varek?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-c724a9bc76f939f5",
+   "question": 1,
+   "sentences": [
+    "Darek guides Varek.",
+    "Who guides Varek?"
+   ]
+  },
+  {
+   "answer": "Darek",
+   "controls": {
+    "renamed_answer": "zud",
+    "renamed_vocabulary": [
+     "zud zuaq zul.",
+     "zuag zuaq zul?"
+    ],
+    "shuffled_determiners": [
+     "Darek assists Kavin.",
+     "Who assists Kavin?"
+    ],
+    "shuffled_order": [
+     "assists Kavin Darek.",
+     "assists Kavin Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-c72c058c32d602e3",
+   "question": 1,
+   "sentences": [
+    "Darek assists Kavin.",
+    "Who assists Kavin?"
+   ]
+  },
+  {
+   "answer": "Cevan",
+   "controls": {
+    "renamed_answer": "zuc",
+    "renamed_vocabulary": [
+     "zuc zubx zuh.",
+     "zuag zubx zuh?"
+    ],
+    "shuffled_determiners": [
+     "Cevan visits Goran.",
+     "Who visits Goran?"
+    ],
+    "shuffled_order": [
+     "Cevan Goran visits.",
+     "visits Goran Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-d23618dc2987a2b3",
+   "question": 1,
+   "sentences": [
+    "Cevan visits Goran.",
+    "Who visits Goran?"
+   ]
+  },
+  {
+   "answer": "Dorin",
+   "controls": {
+    "renamed_answer": "zue",
+    "renamed_vocabulary": [
+     "zue zuap zuaj.",
+     "zuag zuap zuaj?"
+    ],
+    "shuffled_determiners": [
+     "Dorin annoys Yoren.",
+     "Who annoys Yoren?"
+    ],
+    "shuffled_order": [
+     "Dorin annoys Yoren.",
+     "Who Yoren annoys?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-d5ff39cff75f4434",
+   "question": 1,
+   "sentences": [
+    "Dorin annoys Yoren.",
+    "Who annoys Yoren?"
+   ]
+  },
+  {
+   "answer": "Pavin",
+   "controls": {
+    "renamed_answer": "zur",
+    "renamed_vocabulary": [
+     "zur zuam zut.",
+     "zuag zuam zut?"
+    ],
+    "shuffled_determiners": [
+     "Pavin admires Quorin.",
+     "Who admires Quorin?"
+    ],
+    "shuffled_order": [
+     "Quorin admires Pavin.",
+     "admires Who Quorin?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-dac1958b61757b58",
+   "question": 1,
+   "sentences": [
+    "Pavin admires Quorin.",
+    "Who admires Quorin?"
+   ]
+  },
+  {
+   "answer": "Xaren",
+   "controls": {
+    "renamed_answer": "zuai",
+    "renamed_vocabulary": [
+     "zuai zuaq zue.",
+     "zuag zuaq zue?"
+    ],
+    "shuffled_determiners": [
+     "Xaren assists Dorin.",
+     "Who assists Dorin?"
+    ],
+    "shuffled_order": [
+     "assists Dorin Xaren.",
+     "assists Dorin Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-dae4043cca1d5e75",
+   "question": 1,
+   "sentences": [
+    "Xaren assists Dorin.",
+    "Who assists Dorin?"
+   ]
+  },
+  {
+   "answer": "Joren",
+   "controls": {
+    "renamed_answer": "zuk",
+    "renamed_vocabulary": [
+     "zuk zuav zut.",
+     "zuag zuav zut?"
+    ],
+    "shuffled_determiners": [
+     "Joren chases Quorin.",
+     "Who chases Quorin?"
+    ],
+    "shuffled_order": [
+     "Joren chases Quorin.",
+     "chases Quorin Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-e238c3f1ad9194f6",
+   "question": 1,
+   "sentences": [
+    "Joren chases Quorin.",
+    "Who chases Quorin?"
+   ]
+  },
+  {
+   "answer": "Uven",
+   "controls": {
+    "renamed_answer": "zuab",
+    "renamed_vocabulary": [
+     "zuab zuap zus.",
+     "zuag zuap zus?"
+    ],
+    "shuffled_determiners": [
+     "Uven annoys Peren.",
+     "Who annoys Peren?"
+    ],
+    "shuffled_order": [
+     "Peren annoys Uven.",
+     "annoys Peren Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-e4206e705dcc68d2",
+   "question": 1,
+   "sentences": [
+    "Uven annoys Peren.",
+    "Who annoys Peren?"
+   ]
+  },
+  {
+   "answer": "Dorin",
+   "controls": {
+    "renamed_answer": "zue",
+    "renamed_vocabulary": [
+     "zue zuan zuai.",
+     "zuag zuan zuai?"
+    ],
+    "shuffled_determiners": [
+     "Dorin adores Xaren.",
+     "Who adores Xaren?"
+    ],
+    "shuffled_order": [
+     "Xaren adores Dorin.",
+     "adores Who Xaren?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-e5986414cd6ecd37",
+   "question": 1,
+   "sentences": [
+    "Dorin adores Xaren.",
+    "Who adores Xaren?"
+   ]
+  },
+  {
+   "answer": "Darek",
+   "controls": {
+    "renamed_answer": "zud",
+    "renamed_vocabulary": [
+     "zud zuan zum.",
+     "zuag zuan zum?"
+    ],
+    "shuffled_determiners": [
+     "Darek adores Kelem.",
+     "Who adores Kelem?"
+    ],
+    "shuffled_order": [
+     "Darek adores Kelem.",
+     "Kelem adores Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-e7062254ee786c73",
+   "question": 1,
+   "sentences": [
+    "Darek adores Kelem.",
+    "Who adores Kelem?"
+   ]
+  },
+  {
+   "answer": "Joren",
+   "controls": {
+    "renamed_answer": "zuk",
+    "renamed_vocabulary": [
+     "zuk zuam zuo.",
+     "zuag zuam zuo?"
+    ],
+    "shuffled_determiners": [
+     "Joren admires Meren.",
+     "Who admires Meren?"
+    ],
+    "shuffled_order": [
+     "admires Joren Meren.",
+     "Meren Who admires?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-f0c80bb5ce0130db",
+   "question": 1,
+   "sentences": [
+    "Joren admires Meren.",
+    "Who admires Meren?"
+   ]
+  },
+  {
+   "answer": "Cevan",
+   "controls": {
+    "renamed_answer": "zuc",
+    "renamed_vocabulary": [
+     "zuc zuam zuah.",
+     "zuag zuam zuah?"
+    ],
+    "shuffled_determiners": [
+     "Cevan admires Woren.",
+     "Who admires Woren?"
+    ],
+    "shuffled_order": [
+     "Woren admires Cevan.",
+     "admires Woren Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-f16ce5412366f397",
+   "question": 1,
+   "sentences": [
+    "Cevan admires Woren.",
+    "Who admires Woren?"
+   ]
+  },
+  {
+   "answer": "Faren",
+   "controls": {
+    "renamed_answer": "zug",
+    "renamed_vocabulary": [
+     "zug zubd zui.",
+     "zuag zubd zui?"
+    ],
+    "shuffled_determiners": [
+     "Faren guides Harin.",
+     "Who guides Harin?"
+    ],
+    "shuffled_order": [
+     "guides Harin Faren.",
+     "Harin guides Who?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-f1dc5d6babf6d523",
+   "question": 1,
+   "sentences": [
+    "Faren guides Harin.",
+    "Who guides Harin?"
+   ]
+  },
+  {
+   "answer": "Quorin",
+   "controls": {
+    "renamed_answer": "zut",
+    "renamed_vocabulary": [
+     "zut zubx zux.",
+     "zuag zubx zux?"
+    ],
+    "shuffled_determiners": [
+     "Quorin visits Sorel.",
+     "Who visits Sorel?"
+    ],
+    "shuffled_order": [
+     "Sorel visits Quorin.",
+     "visits Who Sorel?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-f78f68c905e40266",
+   "question": 1,
+   "sentences": [
+    "Quorin visits Sorel.",
+    "Who visits Sorel?"
+   ]
+  },
+  {
+   "answer": "Sorel",
+   "controls": {
+    "renamed_answer": "zux",
+    "renamed_vocabulary": [
+     "zux zuam zuad.",
+     "zuag zuam zuad?"
+    ],
+    "shuffled_determiners": [
+     "Sorel admires Varen.",
+     "Who admires Varen?"
+    ],
+    "shuffled_order": [
+     "Varen Sorel admires.",
+     "Varen Who admires?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-fc2c7f6579f11aad",
+   "question": 1,
+   "sentences": [
+    "Sorel admires Varen.",
+    "Who admires Varen?"
+   ]
+  },
+  {
+   "answer": "Peren",
+   "controls": {
+    "renamed_answer": "zus",
+    "renamed_vocabulary": [
+     "zus zuan zug.",
+     "zuag zuan zug?"
+    ],
+    "shuffled_determiners": [
+     "Peren adores Faren.",
+     "Who adores Faren?"
+    ],
+    "shuffled_order": [
+     "Faren adores Peren.",
+     "Who adores Faren?"
+    ]
+   },
+   "expectations": {},
+   "family": "verb_reuse",
+   "key": "verb_reuse-fd0dff167319ca34",
+   "question": 1,
+   "sentences": [
+    "Peren adores Faren.",
+    "Who adores Faren?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zucc zubp, zuao zubw zucc zubz.",
+     "zuaf zucc zubz?"
+    ],
+    "shuffled_determiners": [
+     "A zebra nods, and the zebra waves.",
+     "Which zebra waves?"
+    ],
+    "shuffled_order": [
+     "waves A nods, the and zebra zebra.",
+     "waves zebra Which?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-09af68b6a36b6ac8",
+   "question": null,
+   "sentences": [
+    "A zebra nods, and the zebra waves.",
+    "Which zebra waves?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubb zucb, zuao zubw zubb zubj.",
+     "zuaf zubb zubj?"
+    ],
+    "shuffled_determiners": [
+     "the gerbil yawns, and A gerbil laughs.",
+     "Which gerbil laughs?"
+    ],
+    "shuffled_order": [
+     "yawns and A, gerbil the gerbil laughs.",
+     "Which laughs gerbil?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-0b018fbe060b21ae",
+   "question": null,
+   "sentences": [
+    "A gerbil yawns, and the gerbil laughs.",
+    "Which gerbil laughs?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zuau zuax, zuao zubw zuau zuaz.",
+     "zuaf zuau zuaz?"
+    ],
+    "shuffled_determiners": [
+     "A camel cheers, and the camel dances.",
+     "Which camel dances?"
+    ],
+    "shuffled_order": [
+     "dances A cheers, camel and the camel.",
+     "camel Which dances?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-0d30598e01c05d65",
+   "question": null,
+   "sentences": [
+    "A camel cheers, and the camel dances.",
+    "Which camel dances?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zuba zubv, zuao zubw zuba zuaz.",
+     "zuaf zuba zuaz?"
+    ],
+    "shuffled_determiners": [
+     "A ferret snores, and the ferret dances.",
+     "Which ferret dances?"
+    ],
+    "shuffled_order": [
+     "the A and, snores ferret dances ferret.",
+     "ferret Which dances?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-13249d3a7fe57944",
+   "question": null,
+   "sentences": [
+    "A ferret snores, and the ferret dances.",
+    "Which ferret dances?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zuba zucb, zuao zubw zuba zubp.",
+     "zuaf zuba zubp?"
+    ],
+    "shuffled_determiners": [
+     "the ferret yawns, and A ferret nods.",
+     "Which ferret nods?"
+    ],
+    "shuffled_order": [
+     "ferret ferret A, yawns and nods the.",
+     "ferret nods Which?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-13fc4c7dc47068a5",
+   "question": null,
+   "sentences": [
+    "A ferret yawns, and the ferret nods.",
+    "Which ferret nods?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubh zubt, zuao zubw zubh zubv.",
+     "zuaf zubh zubv?"
+    ],
+    "shuffled_determiners": [
+     "the jackal smiles, and A jackal snores.",
+     "Which jackal snores?"
+    ],
+    "shuffled_order": [
+     "A smiles the, jackal jackal and snores.",
+     "snores Which jackal?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-1c2cfcee54c4dc9e",
+   "question": null,
+   "sentences": [
+    "A jackal smiles, and the jackal snores.",
+    "Which jackal snores?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zuba zubj, zuao zubw zuba zubt.",
+     "zuaf zuba zubt?"
+    ],
+    "shuffled_determiners": [
+     "A ferret laughs, and the ferret smiles.",
+     "Which ferret smiles?"
+    ],
+    "shuffled_order": [
+     "the ferret and, A ferret smiles laughs.",
+     "ferret Which smiles?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-1cbd288b857df62d",
+   "question": null,
+   "sentences": [
+    "A ferret laughs, and the ferret smiles.",
+    "Which ferret smiles?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubf zucb, zuao zubw zubf zubt.",
+     "zuaf zubf zubt?"
+    ],
+    "shuffled_determiners": [
+     "the ibex yawns, and A ibex smiles.",
+     "Which ibex smiles?"
+    ],
+    "shuffled_order": [
+     "smiles and the, ibex A yawns ibex.",
+     "smiles Which ibex?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-22062e0ba319f63d",
+   "question": null,
+   "sentences": [
+    "A ibex yawns, and the ibex smiles.",
+    "Which ibex smiles?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zube zubp, zuao zubw zube zubj.",
+     "zuaf zube zubj?"
+    ],
+    "shuffled_determiners": [
+     "the hyena nods, and A hyena laughs.",
+     "Which hyena laughs?"
+    ],
+    "shuffled_order": [
+     "and nods hyena, A the laughs hyena.",
+     "Which hyena laughs?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-2697e9749cea8d0a",
+   "question": null,
+   "sentences": [
+    "A hyena nods, and the hyena laughs.",
+    "Which hyena laughs?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zuba zubt, zuao zubw zuba zuax.",
+     "zuaf zuba zuax?"
+    ],
+    "shuffled_determiners": [
+     "A ferret smiles, and the ferret cheers.",
+     "Which ferret cheers?"
+    ],
+    "shuffled_order": [
+     "and the A, cheers ferret ferret smiles.",
+     "Which ferret cheers?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-27ac66ee472c1ec6",
+   "question": null,
+   "sentences": [
+    "A ferret smiles, and the ferret cheers.",
+    "Which ferret cheers?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubq zubp, zuao zubw zubq zuaz.",
+     "zuaf zubq zuaz?"
+    ],
+    "shuffled_determiners": [
+     "A otter nods, and the otter dances.",
+     "Which otter dances?"
+    ],
+    "shuffled_order": [
+     "A nods dances, otter and the otter.",
+     "Which dances otter?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-2bec6967f073594c",
+   "question": null,
+   "sentences": [
+    "A otter nods, and the otter dances.",
+    "Which otter dances?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zuat zubt, zuao zubw zuat zubp.",
+     "zuaf zuat zubp?"
+    ],
+    "shuffled_determiners": [
+     "the bison smiles, and A bison nods.",
+     "Which bison nods?"
+    ],
+    "shuffled_order": [
+     "the bison smiles, A bison and nods.",
+     "nods bison Which?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-338d42e4614ab8fd",
+   "question": null,
+   "sentences": [
+    "A bison smiles, and the bison nods.",
+    "Which bison nods?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubl zubv, zuao zubw zubl zubz.",
+     "zuaf zubl zubz?"
+    ],
+    "shuffled_determiners": [
+     "the llama snores, and A llama waves.",
+     "Which llama waves?"
+    ],
+    "shuffled_order": [
+     "snores waves A, llama llama and the.",
+     "Which waves llama?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-33b583c507d0927f",
+   "question": null,
+   "sentences": [
+    "A llama snores, and the llama waves.",
+    "Which llama waves?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubf zubz, zuao zubw zubf zubv.",
+     "zuaf zubf zubv?"
+    ],
+    "shuffled_determiners": [
+     "the ibex waves, and A ibex snores.",
+     "Which ibex snores?"
+    ],
+    "shuffled_order": [
+     "ibex A waves, and ibex the snores.",
+     "ibex snores Which?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-352ae2adf7145f08",
+   "question": null,
+   "sentences": [
+    "A ibex waves, and the ibex snores.",
+    "Which ibex snores?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubh zucb, zuao zubw zubh zuaz.",
+     "zuaf zubh zuaz?"
+    ],
+    "shuffled_determiners": [
+     "the jackal yawns, and A jackal dances.",
+     "Which jackal dances?"
+    ],
+    "shuffled_order": [
+     "A jackal yawns, the dances jackal and.",
+     "dances jackal Which?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-3a5ca9ecac5dca3f",
+   "question": null,
+   "sentences": [
+    "A jackal yawns, and the jackal dances.",
+    "Which jackal dances?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubl zucb, zuao zubw zubl zubz.",
+     "zuaf zubl zubz?"
+    ],
+    "shuffled_determiners": [
+     "A llama yawns, and the llama waves.",
+     "Which llama waves?"
+    ],
+    "shuffled_order": [
+     "llama llama yawns, and A waves the.",
+     "Which llama waves?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-4c697e7c56f79874",
+   "question": null,
+   "sentences": [
+    "A llama yawns, and the llama waves.",
+    "Which llama waves?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubk zuaz, zuao zubw zubk zubp.",
+     "zuaf zubk zubp?"
+    ],
+    "shuffled_determiners": [
+     "the lemur dances, and A lemur nods.",
+     "Which lemur nods?"
+    ],
+    "shuffled_order": [
+     "dances A lemur, lemur nods the and.",
+     "Which lemur nods?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-4e270fe414ad21e9",
+   "question": null,
+   "sentences": [
+    "A lemur dances, and the lemur nods.",
+    "Which lemur nods?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubl zuax, zuao zubw zubl zubz.",
+     "zuaf zubl zubz?"
+    ],
+    "shuffled_determiners": [
+     "A llama cheers, and the llama waves.",
+     "Which llama waves?"
+    ],
+    "shuffled_order": [
+     "the llama and, cheers llama A waves.",
+     "llama waves Which?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-54c042fa09a8ff98",
+   "question": null,
+   "sentences": [
+    "A llama cheers, and the llama waves.",
+    "Which llama waves?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubb zuaz, zuao zubw zubb zubj.",
+     "zuaf zubb zubj?"
+    ],
+    "shuffled_determiners": [
+     "the gerbil dances, and A gerbil laughs.",
+     "Which gerbil laughs?"
+    ],
+    "shuffled_order": [
+     "A gerbil laughs, and gerbil the dances.",
+     "Which laughs gerbil?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-56141be571119506",
+   "question": null,
+   "sentences": [
+    "A gerbil dances, and the gerbil laughs.",
+    "Which gerbil laughs?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubk zubj, zuao zubw zubk zubv.",
+     "zuaf zubk zubv?"
+    ],
+    "shuffled_determiners": [
+     "the lemur laughs, and A lemur snores.",
+     "Which lemur snores?"
+    ],
+    "shuffled_order": [
+     "laughs lemur and, snores A lemur the.",
+     "snores Which lemur?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-58105aa805df8ce8",
+   "question": null,
+   "sentences": [
+    "A lemur laughs, and the lemur snores.",
+    "Which lemur snores?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubf zuaz, zuao zubw zubf zubj.",
+     "zuaf zubf zubj?"
+    ],
+    "shuffled_determiners": [
+     "the ibex dances, and A ibex laughs.",
+     "Which ibex laughs?"
+    ],
+    "shuffled_order": [
+     "laughs ibex dances, A and the ibex.",
+     "laughs Which ibex?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-5852ad66789ae223",
+   "question": null,
+   "sentences": [
+    "A ibex dances, and the ibex laughs.",
+    "Which ibex laughs?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubr zubz, zuao zubw zubr zucb.",
+     "zuaf zubr zucb?"
+    ],
+    "shuffled_determiners": [
+     "the panda waves, and A panda yawns.",
+     "Which panda yawns?"
+    ],
+    "shuffled_order": [
+     "yawns A panda, the waves panda and.",
+     "Which yawns panda?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-5a8a5a3e3c021f68",
+   "question": null,
+   "sentences": [
+    "A panda waves, and the panda yawns.",
+    "Which panda yawns?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zuar zuax, zuao zubw zuar zubv.",
+     "zuaf zuar zubv?"
+    ],
+    "shuffled_determiners": [
+     "the badger cheers, and A badger snores.",
+     "Which badger snores?"
+    ],
+    "shuffled_order": [
+     "badger A and, badger snores cheers the.",
+     "Which badger snores?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-5b6f1dca61f74cc2",
+   "question": null,
+   "sentences": [
+    "A badger cheers, and the badger snores.",
+    "Which badger snores?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubr zucb, zuao zubw zubr zubv.",
+     "zuaf zubr zubv?"
+    ],
+    "shuffled_determiners": [
+     "the panda yawns, and A panda snores.",
+     "Which panda snores?"
+    ],
+    "shuffled_order": [
+     "A snores panda, the and panda yawns.",
+     "snores Which panda?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-5e2a9ba37c86cb45",
+   "question": null,
+   "sentences": [
+    "A panda yawns, and the panda snores.",
+    "Which panda snores?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubm zubz, zuao zubw zubm zubv.",
+     "zuaf zubm zubv?"
+    ],
+    "shuffled_determiners": [
+     "the lynx waves, and A lynx snores.",
+     "Which lynx snores?"
+    ],
+    "shuffled_order": [
+     "the and A, waves lynx snores lynx.",
+     "Which lynx snores?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-6404579dc7e28c15",
+   "question": null,
+   "sentences": [
+    "A lynx waves, and the lynx snores.",
+    "Which lynx snores?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubm zubv, zuao zubw zubm zubj.",
+     "zuaf zubm zubj?"
+    ],
+    "shuffled_determiners": [
+     "A lynx snores, and the lynx laughs.",
+     "Which lynx laughs?"
+    ],
+    "shuffled_order": [
+     "A the snores, lynx and laughs lynx.",
+     "Which laughs lynx?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-6a4893b516a5d4c5",
+   "question": null,
+   "sentences": [
+    "A lynx snores, and the lynx laughs.",
+    "Which lynx laughs?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubm zuax, zuao zubw zubm zuaz.",
+     "zuaf zubm zuaz?"
+    ],
+    "shuffled_determiners": [
+     "the lynx cheers, and A lynx dances.",
+     "Which lynx dances?"
+    ],
+    "shuffled_order": [
+     "cheers the lynx, and dances A lynx.",
+     "lynx Which dances?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-7043a7175456d49c",
+   "question": null,
+   "sentences": [
+    "A lynx cheers, and the lynx dances.",
+    "Which lynx dances?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubf zubt, zuao zubw zubf zuaz.",
+     "zuaf zubf zuaz?"
+    ],
+    "shuffled_determiners": [
+     "the ibex smiles, and A ibex dances.",
+     "Which ibex dances?"
+    ],
+    "shuffled_order": [
+     "ibex smiles A, ibex the and dances.",
+     "ibex Which dances?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-74f682390a2c3a42",
+   "question": null,
+   "sentences": [
+    "A ibex smiles, and the ibex dances.",
+    "Which ibex dances?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zube zubp, zuao zubw zube zuax.",
+     "zuaf zube zuax?"
+    ],
+    "shuffled_determiners": [
+     "A hyena nods, and the hyena cheers.",
+     "Which hyena cheers?"
+    ],
+    "shuffled_order": [
+     "nods the and, A hyena cheers hyena.",
+     "Which cheers hyena?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-7ec03704e75c00e0",
+   "question": null,
+   "sentences": [
+    "A hyena nods, and the hyena cheers.",
+    "Which hyena cheers?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zuat zucb, zuao zubw zuat zubp.",
+     "zuaf zuat zubp?"
+    ],
+    "shuffled_determiners": [
+     "A bison yawns, and the bison nods.",
+     "Which bison nods?"
+    ],
+    "shuffled_order": [
+     "nods A bison, and bison yawns the.",
+     "Which nods bison?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-8252d3169a62a992",
+   "question": null,
+   "sentences": [
+    "A bison yawns, and the bison nods.",
+    "Which bison nods?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubl zubz, zuao zubw zubl zuaz.",
+     "zuaf zubl zuaz?"
+    ],
+    "shuffled_determiners": [
+     "A llama waves, and the llama dances.",
+     "Which llama dances?"
+    ],
+    "shuffled_order": [
+     "and the waves, dances llama llama A.",
+     "dances Which llama?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-835085cc8896d83b",
+   "question": null,
+   "sentences": [
+    "A llama waves, and the llama dances.",
+    "Which llama dances?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubn zubp, zuao zubw zubn zubv.",
+     "zuaf zubn zubv?"
+    ],
+    "shuffled_determiners": [
+     "the marten nods, and A marten snores.",
+     "Which marten snores?"
+    ],
+    "shuffled_order": [
+     "snores nods the, A marten marten and.",
+     "Which marten snores?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-843e685f0b1131e3",
+   "question": null,
+   "sentences": [
+    "A marten nods, and the marten snores.",
+    "Which marten snores?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zuba zuaz, zuao zubw zuba zubp.",
+     "zuaf zuba zubp?"
+    ],
+    "shuffled_determiners": [
+     "A ferret dances, and the ferret nods.",
+     "Which ferret nods?"
+    ],
+    "shuffled_order": [
+     "A dances and, ferret the ferret nods.",
+     "ferret nods Which?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-8d4dcb0de59049e8",
+   "question": null,
+   "sentences": [
+    "A ferret dances, and the ferret nods.",
+    "Which ferret nods?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubh zubz, zuao zubw zubh zubp.",
+     "zuaf zubh zubp?"
+    ],
+    "shuffled_determiners": [
+     "A jackal waves, and the jackal nods.",
+     "Which jackal nods?"
+    ],
+    "shuffled_order": [
+     "the nods and, waves jackal A jackal.",
+     "nods Which jackal?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-8e877e89dc9596d4",
+   "question": null,
+   "sentences": [
+    "A jackal waves, and the jackal nods.",
+    "Which jackal nods?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubh zubv, zuao zubw zubh zuax.",
+     "zuaf zubh zuax?"
+    ],
+    "shuffled_determiners": [
+     "the jackal snores, and A jackal cheers.",
+     "Which jackal cheers?"
+    ],
+    "shuffled_order": [
+     "jackal cheers and, A jackal snores the.",
+     "Which cheers jackal?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-91aa67413b501100",
+   "question": null,
+   "sentences": [
+    "A jackal snores, and the jackal cheers.",
+    "Which jackal cheers?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zucc zubt, zuao zubw zucc zuax.",
+     "zuaf zucc zuax?"
+    ],
+    "shuffled_determiners": [
+     "the zebra smiles, and A zebra cheers.",
+     "Which zebra cheers?"
+    ],
+    "shuffled_order": [
+     "zebra smiles zebra, cheers the A and.",
+     "cheers zebra Which?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-9280f8cdd2391ff5",
+   "question": null,
+   "sentences": [
+    "A zebra smiles, and the zebra cheers.",
+    "Which zebra cheers?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zube zuax, zuao zubw zube zubj.",
+     "zuaf zube zubj?"
+    ],
+    "shuffled_determiners": [
+     "the hyena cheers, and A hyena laughs.",
+     "Which hyena laughs?"
+    ],
+    "shuffled_order": [
+     "hyena cheers hyena, and laughs A the.",
+     "laughs hyena Which?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-9a0713c501fd8dfd",
+   "question": null,
+   "sentences": [
+    "A hyena cheers, and the hyena laughs.",
+    "Which hyena laughs?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zuba zubt, zuao zubw zuba zubz.",
+     "zuaf zuba zubz?"
+    ],
+    "shuffled_determiners": [
+     "A ferret smiles, and the ferret waves.",
+     "Which ferret waves?"
+    ],
+    "shuffled_order": [
+     "ferret smiles ferret, the waves and A.",
+     "waves ferret Which?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-9b98ae87081e6648",
+   "question": null,
+   "sentences": [
+    "A ferret smiles, and the ferret waves.",
+    "Which ferret waves?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubr zubp, zuao zubw zubr zubv.",
+     "zuaf zubr zubv?"
+    ],
+    "shuffled_determiners": [
+     "the panda nods, and A panda snores.",
+     "Which panda snores?"
+    ],
+    "shuffled_order": [
+     "snores panda A, and nods panda the.",
+     "Which panda snores?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-a0e4456adf291712",
+   "question": null,
+   "sentences": [
+    "A panda nods, and the panda snores.",
+    "Which panda snores?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubr zubt, zuao zubw zubr zubz.",
+     "zuaf zubr zubz?"
+    ],
+    "shuffled_determiners": [
+     "the panda smiles, and A panda waves.",
+     "Which panda waves?"
+    ],
+    "shuffled_order": [
+     "the and panda, A smiles panda waves.",
+     "panda waves Which?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-a1767f0dde2d0aad",
+   "question": null,
+   "sentences": [
+    "A panda smiles, and the panda waves.",
+    "Which panda waves?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubq zubj, zuao zubw zubq zubv.",
+     "zuaf zubq zubv?"
+    ],
+    "shuffled_determiners": [
+     "A otter laughs, and the otter snores.",
+     "Which otter snores?"
+    ],
+    "shuffled_order": [
+     "the laughs and, otter A snores otter.",
+     "otter snores Which?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-a2b30b60d05f2aa3",
+   "question": null,
+   "sentences": [
+    "A otter laughs, and the otter snores.",
+    "Which otter snores?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zucc zubz, zuao zubw zucc zubp.",
+     "zuaf zucc zubp?"
+    ],
+    "shuffled_determiners": [
+     "the zebra waves, and A zebra nods.",
+     "Which zebra nods?"
+    ],
+    "shuffled_order": [
+     "A zebra waves, nods zebra and the.",
+     "zebra Which nods?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-a5312cb28b24eb68",
+   "question": null,
+   "sentences": [
+    "A zebra waves, and the zebra nods.",
+    "Which zebra nods?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubm zuax, zuao zubw zubm zubt.",
+     "zuaf zubm zubt?"
+    ],
+    "shuffled_determiners": [
+     "the lynx cheers, and A lynx smiles.",
+     "Which lynx smiles?"
+    ],
+    "shuffled_order": [
+     "lynx lynx and, the A cheers smiles.",
+     "Which lynx smiles?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-a7b8b4bcb8b7a3c3",
+   "question": null,
+   "sentences": [
+    "A lynx cheers, and the lynx smiles.",
+    "Which lynx smiles?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubb zubt, zuao zubw zubb zubz.",
+     "zuaf zubb zubz?"
+    ],
+    "shuffled_determiners": [
+     "A gerbil smiles, and the gerbil waves.",
+     "Which gerbil waves?"
+    ],
+    "shuffled_order": [
+     "and gerbil smiles, the waves A gerbil.",
+     "gerbil Which waves?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-a81f5f20d40de69e",
+   "question": null,
+   "sentences": [
+    "A gerbil smiles, and the gerbil waves.",
+    "Which gerbil waves?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubl zubz, zuao zubw zubl zuax.",
+     "zuaf zubl zuax?"
+    ],
+    "shuffled_determiners": [
+     "the llama waves, and A llama cheers.",
+     "Which llama cheers?"
+    ],
+    "shuffled_order": [
+     "cheers the and, waves llama A llama.",
+     "llama cheers Which?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-af4fb8980edea575",
+   "question": null,
+   "sentences": [
+    "A llama waves, and the llama cheers.",
+    "Which llama cheers?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubr zuaz, zuao zubw zubr zubt.",
+     "zuaf zubr zubt?"
+    ],
+    "shuffled_determiners": [
+     "A panda dances, and the panda smiles.",
+     "Which panda smiles?"
+    ],
+    "shuffled_order": [
+     "dances panda the, panda A smiles and.",
+     "panda smiles Which?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-b4bda85dcc9a16df",
+   "question": null,
+   "sentences": [
+    "A panda dances, and the panda smiles.",
+    "Which panda smiles?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zuas zucb, zuao zubw zuas zubz.",
+     "zuaf zuas zubz?"
+    ],
+    "shuffled_determiners": [
+     "the beaver yawns, and A beaver waves.",
+     "Which beaver waves?"
+    ],
+    "shuffled_order": [
+     "A beaver the, yawns waves beaver and.",
+     "beaver Which waves?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-bf8bd8ccd2140895",
+   "question": null,
+   "sentences": [
+    "A beaver yawns, and the beaver waves.",
+    "Which beaver waves?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubf zubp, zuao zubw zubf zubz.",
+     "zuaf zubf zubz?"
+    ],
+    "shuffled_determiners": [
+     "A ibex nods, and the ibex waves.",
+     "Which ibex waves?"
+    ],
+    "shuffled_order": [
+     "and ibex ibex, the waves nods A.",
+     "waves Which ibex?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-c1aa12800acb916a",
+   "question": null,
+   "sentences": [
+    "A ibex nods, and the ibex waves.",
+    "Which ibex waves?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zuba zubp, zuao zubw zuba zubj.",
+     "zuaf zuba zubj?"
+    ],
+    "shuffled_determiners": [
+     "the ferret nods, and A ferret laughs.",
+     "Which ferret laughs?"
+    ],
+    "shuffled_order": [
+     "ferret A ferret, the laughs nods and.",
+     "laughs Which ferret?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-c53bdcd246c2ce51",
+   "question": null,
+   "sentences": [
+    "A ferret nods, and the ferret laughs.",
+    "Which ferret laughs?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zuba zubv, zuao zubw zuba zubp.",
+     "zuaf zuba zubp?"
+    ],
+    "shuffled_determiners": [
+     "the ferret snores, and A ferret nods.",
+     "Which ferret nods?"
+    ],
+    "shuffled_order": [
+     "ferret A snores, and the ferret nods.",
+     "ferret nods Which?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-c5bd21c8b7d79fe5",
+   "question": null,
+   "sentences": [
+    "A ferret snores, and the ferret nods.",
+    "Which ferret nods?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zuar zubp, zuao zubw zuar zubz.",
+     "zuaf zuar zubz?"
+    ],
+    "shuffled_determiners": [
+     "A badger nods, and the badger waves.",
+     "Which badger waves?"
+    ],
+    "shuffled_order": [
+     "badger waves and, nods badger A the.",
+     "badger Which waves?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-cc274ba762bd718b",
+   "question": null,
+   "sentences": [
+    "A badger nods, and the badger waves.",
+    "Which badger waves?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zuau zuaz, zuao zubw zuau zubv.",
+     "zuaf zuau zubv?"
+    ],
+    "shuffled_determiners": [
+     "A camel dances, and the camel snores.",
+     "Which camel snores?"
+    ],
+    "shuffled_order": [
+     "camel snores camel, the and A dances.",
+     "snores camel Which?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-ce0a64e4741b0b22",
+   "question": null,
+   "sentences": [
+    "A camel dances, and the camel snores.",
+    "Which camel snores?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubn zubz, zuao zubw zubn zucb.",
+     "zuaf zubn zucb?"
+    ],
+    "shuffled_determiners": [
+     "the marten waves, and A marten yawns.",
+     "Which marten yawns?"
+    ],
+    "shuffled_order": [
+     "and A marten, the yawns waves marten.",
+     "yawns marten Which?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-ce7243cb9d4374eb",
+   "question": null,
+   "sentences": [
+    "A marten waves, and the marten yawns.",
+    "Which marten yawns?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zuau zubv, zuao zubw zuau zubj.",
+     "zuaf zuau zubj?"
+    ],
+    "shuffled_determiners": [
+     "A camel snores, and the camel laughs.",
+     "Which camel laughs?"
+    ],
+    "shuffled_order": [
+     "and laughs camel, the A camel snores.",
+     "laughs camel Which?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-d43045190fd91298",
+   "question": null,
+   "sentences": [
+    "A camel snores, and the camel laughs.",
+    "Which camel laughs?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zuas zubj, zuao zubw zuas zubt.",
+     "zuaf zuas zubt?"
+    ],
+    "shuffled_determiners": [
+     "A beaver laughs, and the beaver smiles.",
+     "Which beaver smiles?"
+    ],
+    "shuffled_order": [
+     "smiles and laughs, A beaver beaver the.",
+     "beaver Which smiles?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-d45bfcc078a34ec4",
+   "question": null,
+   "sentences": [
+    "A beaver laughs, and the beaver smiles.",
+    "Which beaver smiles?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubl zuax, zuao zubw zubl zucb.",
+     "zuaf zubl zucb?"
+    ],
+    "shuffled_determiners": [
+     "the llama cheers, and A llama yawns.",
+     "Which llama yawns?"
+    ],
+    "shuffled_order": [
+     "llama A and, cheers the llama yawns.",
+     "Which yawns llama?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-dec347b812f8a8a6",
+   "question": null,
+   "sentences": [
+    "A llama cheers, and the llama yawns.",
+    "Which llama yawns?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubk zucb, zuao zubw zubk zubj.",
+     "zuaf zubk zubj?"
+    ],
+    "shuffled_determiners": [
+     "the lemur yawns, and A lemur laughs.",
+     "Which lemur laughs?"
+    ],
+    "shuffled_order": [
+     "laughs yawns the, lemur and A lemur.",
+     "Which laughs lemur?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-ede0528796c17cf5",
+   "question": null,
+   "sentences": [
+    "A lemur yawns, and the lemur laughs.",
+    "Which lemur laughs?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubq zubv, zuao zubw zubq zuax.",
+     "zuaf zubq zuax?"
+    ],
+    "shuffled_determiners": [
+     "A otter snores, and the otter cheers.",
+     "Which otter cheers?"
+    ],
+    "shuffled_order": [
+     "the A snores, otter cheers otter and.",
+     "cheers otter Which?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-f00d6797ffb4fd9a",
+   "question": null,
+   "sentences": [
+    "A otter snores, and the otter cheers.",
+    "Which otter cheers?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubk zubt, zuao zubw zubk zucb.",
+     "zuaf zubk zucb?"
+    ],
+    "shuffled_determiners": [
+     "A lemur smiles, and the lemur yawns.",
+     "Which lemur yawns?"
+    ],
+    "shuffled_order": [
+     "the yawns A, and smiles lemur lemur.",
+     "yawns Which lemur?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-f04f5403f0cd929d",
+   "question": null,
+   "sentences": [
+    "A lemur smiles, and the lemur yawns.",
+    "Which lemur yawns?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zuas zuaz, zuao zubw zuas zubv.",
+     "zuaf zuas zubv?"
+    ],
+    "shuffled_determiners": [
+     "the beaver dances, and A beaver snores.",
+     "Which beaver snores?"
+    ],
+    "shuffled_order": [
+     "snores beaver dances, the and A beaver.",
+     "beaver Which snores?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-f3a83a3f7367ed04",
+   "question": null,
+   "sentences": [
+    "A beaver dances, and the beaver snores.",
+    "Which beaver snores?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zube zubt, zuao zubw zube zubj.",
+     "zuaf zube zubj?"
+    ],
+    "shuffled_determiners": [
+     "A hyena smiles, and the hyena laughs.",
+     "Which hyena laughs?"
+    ],
+    "shuffled_order": [
+     "laughs A the, and hyena smiles hyena.",
+     "laughs Which hyena?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-f892a327d952cb82",
+   "question": null,
+   "sentences": [
+    "A hyena smiles, and the hyena laughs.",
+    "Which hyena laughs?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zubf zubp, zuao zubw zubf zubv.",
+     "zuaf zubf zubv?"
+    ],
+    "shuffled_determiners": [
+     "the ibex nods, and A ibex snores.",
+     "Which ibex snores?"
+    ],
+    "shuffled_order": [
+     "nods ibex and, ibex snores the A.",
+     "snores ibex Which?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-f9117fce9608a692",
+   "question": null,
+   "sentences": [
+    "A ibex nods, and the ibex snores.",
+    "Which ibex snores?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zuar zubv, zuao zubw zuar zuax.",
+     "zuaf zuar zuax?"
+    ],
+    "shuffled_determiners": [
+     "A badger snores, and the badger cheers.",
+     "Which badger cheers?"
+    ],
+    "shuffled_order": [
+     "cheers A and, the snores badger badger.",
+     "badger cheers Which?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-f9cae26cc69435e3",
+   "question": null,
+   "sentences": [
+    "A badger snores, and the badger cheers.",
+    "Which badger cheers?"
+   ]
+  },
+  {
+   "answer": null,
+   "controls": {
+    "renamed_answer": null,
+    "renamed_vocabulary": [
+     "zua zuat zubj, zuao zubw zuat zubp.",
+     "zuaf zuat zubp?"
+    ],
+    "shuffled_determiners": [
+     "the bison laughs, and A bison nods.",
+     "Which bison nods?"
+    ],
+    "shuffled_order": [
+     "bison A bison, the and nods laughs.",
+     "bison nods Which?"
+    ]
+   },
+   "expectations": {
+    "first_determiner": "mint",
+    "same_referent": true,
+    "second_determiner": "bind"
+   },
+   "family": "mint_bind",
+   "key": "mint_bind-fbba9a6b1a844a49",
+   "question": null,
+   "sentences": [
+    "A bison laughs, and the bison nods.",
+    "Which bison nods?"
+   ]
+  }
+ ],
+ "schema": 1
+}
