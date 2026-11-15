@@ -21138,7 +21138,7 @@ class BasicModel(BaseModel):
                         prime[b] = (signal[:, None]*keys).sum(0)/signal.abs().sum().clamp_min(1.)
                 reducer._expectation_prime = prime.detach()
             source_leaf_mask = self.inputSpace._ar_grammar_leaf_mask
-            if source_leaf_mask is None:
+            if source_leaf_mask is None and greedy_walk is not None:
                 # No row-wide read has admitted the other sentences. Keep
                 # their leaves closed until their own walk publishes them.
                 source_leaf_mask = torch.zeros_like(active)

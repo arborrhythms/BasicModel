@@ -109,3 +109,35 @@ def test_expectation_preserves_the_kept_prefix_and_row_candidate_bank(monkeypatc
     assert targets.tolist() == [[0, -1, 2, -1]]
     assert kwargs['lanes'].tolist() == [[[0., 1.], [0., 0.], [1., 0.], [0., 0.]]]
     assert torch.equal(model._word_expectation_mask, earlier | current)
+
+
+def test_ordinary_composition_keeps_its_unrestricted_leaf_mask(monkeypatch):
+    """Exercise the zero-attention control at the native lesson capacity."""
+    import inspect
+    import ModelAttention
+    from Models import BasicModel
+    from attention_thinking_certificate import lesson
+    from reading_fixtures import use_eager_reading
+
+    use_eager_reading(monkeypatch)
+    stage = ModelAttention.stage_input
+    def ordinary(model):
+        model.attention_budget = 0
+        return stage(model)
+    monkeypatch.setattr(ModelAttention, 'stage_input', ordinary)
+
+    class ReachedComposition(Exception):
+        pass
+
+    restore = BasicModel._restore_sentence_state
+    def restoring(model, *args, **kwargs):
+        caller = inspect.currentframe().f_back.f_code.co_name
+        if caller == 'start_compose':
+            assert model._attention_open is None
+            assert model.inputSpace._ar_grammar_leaf_mask is None
+            raise ReachedComposition
+        return restore(model, *args, **kwargs)
+    monkeypatch.setattr(BasicModel, '_restore_sentence_state', restoring)
+    observer = SimpleNamespace(reference_seconds=0., records=[], calls=[], actions=[], costs=[])
+    with pytest.raises(ReachedComposition):
+        lesson(observer)
