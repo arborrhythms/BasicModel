@@ -1192,10 +1192,12 @@ on the merged source before any text for Codex is written. A rule marked
    the forecast and comparison made for each word while composing
    (`forecast_percept`, `observe_percept`), and the word forecast staged
    for the sentence (`stage_expectation`).
-3. *Default:* narrowing follows surprise. A span that reads as expected
-   may be taken as one unit; a span that surprises is where the walk
-   divides or enters the parts. This is FutureWork's "dynamic stop", and
-   it is Claude's inference from Alec's rule, not his word.
+3. A look's surprise is a signal to the chooser of the next act (Alec:
+   "Sounds like a good cue, so I would provide it surprise as a signal
+   to the attention algorithm."). Nothing is ruled: whether a span read
+   as expected is taken as one unit, and a surprising one divided, is
+   what the chooser learns from the signal. This is the direction of
+   FutureWork's "dynamic stop".
 
 **B. The walk is taken as the words are read.**
 
@@ -1206,14 +1208,20 @@ on the merged source before any text for Codex is written. A rule marked
 5. What has been understood so far is part of what the chooser of the
    next look reads: the state of the words already composed, and a
    thought's goal where there is one.
-6. A word may be read out of its order, a stretch taken as one unit, or
-   a word passed over. A word that is not read is stood for by what
-   `expect` gives for its span. *Open:* in what order the grammar
-   composes words that were read out of order.
+6. Reading the words in order is taught first (Alec: "We should teach
+   reading words in order as a preliminary to reading"). So the lessons
+   begin with a stage in which the walk takes the words in their order,
+   and the walk is free only after it. A stretch may be taken as one
+   unit and a word passed over; a word that is not read is stood for by
+   what `expect` gives for its span. *Default:* the grammar composes
+   words in the order they were read, and composing words read out of
+   their order is not built until a lesson calls for it.
 7. A presentation may hold several sentences. The walk's state and its
    allowance belong to the presentation, and a sentence's close is
-   reached inside it. *Open:* whether the allowance grows with the
-   length of what is presented (§11's note on a packed row).
+   reached inside it. The allowance grows with the length of what is
+   presented (Alec: "thats reasonable"); *default:* in proportion to
+   its words, at the rate `attentionBudget` gives a single sentence
+   today.
 8. Attention finds the word spans, with the first open look; the search
    of the text for each word's bytes in `stage_input` goes.
 9. `unfocus` (the 1.8 specification, §27.1) is built here, on the
@@ -1228,7 +1236,11 @@ on the merged source before any text for Codex is written. A rule marked
     generate walk, is a fixed tensor with a mask, and a choice is
     applied by selecting among results. Thought's record of its steps is
     written as rows and read on the host only for a proof or a report.
-    Decoding and publication happen at the kept close.
+    Alec: "why decoded? all can stay tensors, if possible, but
+    throughout the sentence is a reasonable first step." So the first
+    step is tensors from the first look to the kept close, and the aim
+    is that nothing is decoded at the close either: what the close
+    writes to memory is written from the tensors (rule 12).
 11. Capacities are the model's own, with a stated rule for a full one;
     no fixture is shrunk to fit.
 12. Memory's tables beside its rows are tensors, and a new word, concept
@@ -1268,11 +1280,15 @@ on the merged source before any text for Codex is written. A rule marked
 - Item 1.5 (lookups as one product, folds as scatters, the percept pass
   once for a sentence) overlaps rules 10 to 13 and is planned with them.
 
-### 12.5 For Alec
+### 12.5 Alec's answers (2026-11-14)
 
-- Whether narrowing follows surprise (rule 3).
-- The order of composing when words are read out of order (rule 6).
-- Whether a presentation's allowance grows with its length (rule 7).
-- Whether tensor records at the sentence's boundary, decoded at the kept
-  close, are as you want them (rule 10; the laptop asked this in §10
-  and recommends yes).
+- *Does narrowing follow surprise?* "Sounds like a good cue, so I would
+  provide it surprise as a signal to the attention algorithm." (rule 3)
+- *In what order are words composed when read out of order?* "We should
+  teach reading words in order as a preliminary to reading" (rule 6;
+  the order of composing is Claude's default there).
+- *Does a presentation's allowance grow with its length?* "thats
+  reasonable." (rule 7)
+- *Tensor records, decoded at the kept close?* "why decoded? all can
+  stay tensors, if possible, but throughout the sentence is a reasonable
+  first step." (rule 10)
