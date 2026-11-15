@@ -862,16 +862,207 @@ The unchanged-source census is complete: [inventory by phase and function](2026-
 
 The first sentence's detailed observer and the sixteen-sentence count-only observer reproduce original parameter, optimizer and RNG hashes exactly. The sentence-owned count-only observer reproduces all sixteen `94f2b03d9e` records exactly. No counter/AST/profiler time is used as a normal sentence timing. Host API calls include implicit `int`/`float` conversions; `cpu` on this CPU run may be a no-op. Public tensor calls, dispatcher calls and host-read calls are separate, overlapping counting levels, never summed.
 
-| Count over sixteen sentences, staging through kept close/update | Before ownership | Sentence owned, before host optimizations |
-| --- | ---: | ---: |
-| Public tensor API calls | 38,265,704 | 37,509,006 |
-| Tensor dispatcher operations | 42,981,464 | 42,158,992 |
-| Host-read API calls | 2,950,321 | 2,945,330 |
-| Scalar dispatcher reads | 2,333,771 | 2,329,329 |
-| Dynamic `nonzero` operations | 31,870 | 31,870 |
+| Count over sixteen sentences, staging through kept close/update | Before ownership | Sentence owned, before host optimizations | Final |
+| --- | ---: | ---: | ---: |
+| Public tensor API calls | 38,265,704 | 37,509,006 | 37,381,989 |
+| Tensor dispatcher operations | 42,981,464 | 42,158,992 | 41,872,048 |
+| Host-read API calls | 2,950,321 | 2,945,330 | 2,945,330 |
+| Scalar dispatcher reads | 2,333,771 | 2,329,329 | 2,329,329 |
+| Dynamic `nonzero` operations | 31,870 | 31,870 | 31,870 |
 
 The first sentence alone has 1,145,468 public tensor calls, 1,424,926 dispatcher operations and 164,454 host API reads. Thought accounts for 102,437 of those reads, preparation/orchestration 28,523, close 22,373, generation 10,964, a word's step 120, the two walks 28 and restoration 9. `ConceptSpread.rule_order` alone accounts for 92,994 thought reads; it remains excluded by §5. The other dominant read owners are `MereologicalCodes` and `Memory`, both reserved for rounds A/B.
 
 A separate cProfile-only pass, without the API/loop instrumentation, ranks the permitted candidates. On the original first sentence `_freeze_metadata` runs 138,954 times (0.180492 seconds inclusive), and `SentenceCompose.pack` 33,321 times (0.252057 seconds inclusive). These measured counts replace the supplied estimates. After sentence ownership, pack drops to 31,255 calls / 0.236066 seconds; metadata remains 138,954 / 0.180138. `ThoughtFeatures.semantic_metadata.field` takes 0.058314 seconds. These are profiled function costs, not additive whole-sentence timings.
 
-The ownership implementation is commit `94f2b03d9e`. The inventory and exact host optimization commits and final measurements follow below.
+### Local host changes and their certificates
+
+Three local changes follow the ownership change. Each native lesson,
+packed-row and gate replay is compared with `94f2b03d9e`, with exact
+chooser traces, registered costs, parameters, optimizer state and RNG.
+All comparisons pass. The fixed-input tests additionally load the actual
+original functions from Git `3926005f12`; these are equality witnesses,
+not assertions intended to fail on the correct original implementation.
+
+| Change | Cause and repair | Fixed-input certificate | First-sentence inclusive seconds, immediately before → after |
+| --- | --- | --- | ---: |
+| `Meaning._freeze_metadata` | Native immutable scalars and containers repeatedly enter the generic `Mapping` ABC checks. Fast paths for exact built-in types avoid that dispatch; subclasses still follow the original precedence. | 20 cases: values and types, mutable ownership, rejected values and exact error messages, a scalar subclass that is also a mapping. | 0.180138 → 0.158280 |
+| `ThoughtFeatures.semantic_metadata.field` | Every UTF-8 byte constructs a tensor and writes individual bit positions. Build the same byte-bit representation in Python, then construct one tensor per field. JSON, aliases, truncation and overflow remain identical. | 20 cases over float32/64/16/bfloat16, Unicode, typed aliases, excluded bindings, nested values and overflow; output bytes, dtype, device and grad status match. | 0.057899 → 0.022468 |
+| `SentenceCompose.pack` | Protected storage repeatedly reads `_base`, checks `Parameter`, and converts an already immutable shape to a tuple. Reuse the storage decision and shape, retaining weak lifetime, copies and mutation checks. | Four cases: listed/unlisted parameters and buffer views survive mutation; unprotected scratch retains the same rejection. | 0.236047 → 0.231161 |
+
+The metadata change was taken first because its generic dispatch was a
+large, simple removable cost. The inventory then exposed the per-byte
+tensor construction; it produced the largest measured local saving.
+The saved-value bookkeeping change was last. This is the actual order;
+the realized savings were not known in advance. Function costs overlap
+and must not be added to estimate a whole-run gain. Final profiled costs
+are 0.156729, 0.022373 and 0.231161 seconds respectively. Metadata still
+has 138,954 calls, field construction 616, and pack 31,255 on this sentence.
+
+Text preparation is left as prepared by item 1. Its `stage_input` self
+time is about 0.000171 seconds; the 0.094907 seconds inclusive includes
+its callees. A vocabulary cache would introduce invalidation/ownership
+work with no demonstrated substantial saving here. Python metadata,
+JSON, alias tables and saved-tensor ownership are still host work; these
+repairs reduce their cost rather than claiming they became a graph.
+
+Final review found an ordinary-composition regression in the initial
+ownership implementation: when no attention walk was staged, replacing
+a `None` grammar mask with all-false would close ordinary leaves. The
+empty mask is now installed only when a sentence walk actually exists.
+The new fifth ownership case fails on `94f2b03d9e` and passes after
+`40e016be91`; all five ownership cases pass in 4.18 seconds. This added
+control case disables attention without changing the native corpus or
+capacities; none of the measured lesson/gate fixtures is altered.
+
+The broader unchanged attention/expectation/compose/thought/closing-gradient
+suite plus new tests passed **128 tests, with one existing slow compile
+case skipped**, in 47.77 seconds before that final guard correction.
+After the correction, the five ownership tests and all native lesson,
+packed and gate certificates were rerun. All pass. The final sixteen
+counter-observed parameter/optimizer/RNG records also exactly match the
+ownership reference. The gate comparison still exactly matches all 51
+original `3926005f12` records.
+
+### Work and seconds before and after
+
+| Sixteen native lessons | Walks | Evaluated rounds | Primary sentence rounds | Forecasts |
+| --- | ---: | ---: | ---: | ---: |
+| `3926005f12`, before §7's inert-tail ending | 35 | 1,120 | 512 | 16 staged |
+| Accepted §7 / unchanged §9 | 35 | 430 | 197 | 16 staged |
+| Sentence owned and final | 19 | 233 | 197 | 16 sentence owned |
+
+The final primary round counts are
+`13,14,13,11,13,11,13,11,13,11,13,11,13,11,13,13`.
+Sentences 2, 4 and 10 also take real attention departures (36 additional
+rounds). Thus "one walk" means one primary walk per sentence, with no
+duplicated staging walk; it does not discard exploration. On the packed
+row, total spent at the four path costs is `12,25,32,32`, including
+non-bracket reads. Accepted words by sentence are `2,3,2,0`; forecast
+targets retain the kept prefix and grow `2,5,7,7`. This is the authorized
+shared-budget choice, not a fresh budget for the final sentence.
+
+| Serial CPU observation, seconds | Sixteen lesson `runBatch` calls | Packed document `runBatch` | Both gates, driver |
+| --- | ---: | ---: | ---: |
+| Before ownership, §9 complete registry | 70.732232 | 5.781457 | 1.009343 |
+| Sentence ownership (`94f2b03d9e`) | 69.342439 | 5.768452 | 1.009122 |
+| Metadata fast paths (`6471da2415`) | 69.950676 | 5.593162 | 1.004184 |
+| Byte feature construction (`87dd7c10c2`) | 69.459291 | 5.650377 | 1.004086 |
+| Saved-value bookkeeping (`e0103c3980`) | 70.454726 | 5.569169 | 0.997807 |
+| Final ordinary-composition guard (`40e016be91`) | 70.150731 | 5.588761 | 1.010076 |
+
+These are single observations, with no concurrent benchmark. Lesson and
+packed timings exclude the observer's reference-kernel checks; gate
+timings use the whole driver, matching the prior report. The ownership
+observer adds its forecast/meter audits. The count and profile runs are
+separate and are not used as runtime measurements. The final result is
+about **0.23 sentences/second, or 4.38 seconds/sentence**. Whole-run time
+is effectively unchanged; the local savings do not establish an overall
+speedup or improved learned quality.
+
+The previous final count pass recorded 37,381,997 public API calls;
+the last pass records 37,381,989. The eight-call difference comprises
+eight fewer property accesses, four fewer `detach` calls and four more
+`clone` calls. Dispatcher, scalar-read, host-read and `nonzero` counts
+are identical, as are all model/optimizer/RNG records. These are observed
+API totals, not a claim that Python lifetime bookkeeping has an invariant
+call count. No saving is attributed to that tiny difference. The host
+optimizations themselves leave 2,945,330 host API reads; most of the
+large remaining sources belong to the reserved A/B files.
+
+### Fullgraph result and design question for Alec
+
+**The whole sentence is not fullgraph-clean.** A new probe attempts the
+native first lesson's `_run_sentence_word_bricks` with
+`torch.compile(backend='eager', fullgraph=True, dynamic=True)` and
+`TORCH_LOGS=graph_breaks,recompiles`. Both the unchanged pre-round source
+and final source fail capture at `if not bool(present.any())` in that
+method (final line 21011), with a data-dependent `Eq(u0, 1)` guard error.
+The eager backend tests capture only; this is no accelerator execution
+or MPS measurement. No graph is produced, so there is no successful
+whole-sentence recompilation or accelerator-speed certificate to report.
+
+Removing that first Python choice alone is insufficient. The inventory
+also finds Python meaning roles/references/bindings, registry/table
+lookups, variable menus and thought step records. Some numerical choices
+can become tensor control flow with equal results. Representing these
+Python objects inside a device graph requires an agreed data boundary;
+most dominant owners are excluded from this round. The inventory's
+removal classes are conservative proposals, not certificates for rewrites
+that have not been built.
+
+**Question for Alec:** after A/B lands, should the sentence boundary use
+tensor records for meanings, references, bindings, registry addresses,
+menus and thought steps, with decoding/publication at the kept close?
+**Recommendation:** yes. Establish that representation and its capacity
+and overflow rules against the merged owners, then move choices and
+loops onto the device while preserving ordering, RNG and gradients.
+Use the model's native capacities; do not shrink fixtures or assume a
+new arbitrary bound. Until that design is agreed, the safe result here
+is sentence-owned attention plus the certified local host reductions.
+No excluded owner is edited to bypass the boundary. A trained-model
+quality benchmark should accompany the next performance comparison;
+the current early-training replay certifies mechanics, not mature quality.
+
+### Evidence, edit boundary and local commits
+
+The compact [certificate receipt](2026-11-14-attention-block-certificate.json)
+records source digests, exact comparisons, counts, timings and hashes of
+the raw evidence. Raw artifacts remain in ignored `output/attention-block/`.
+The stream remains §7's original `initial-rng.pt`, SHA-256
+`b4f4d373fb74a4c57d8c6f8d16338a4c319bc1edac8a668527f8ea98dadd4745`.
+Its recorded `PYTHONHASHSEED=1521266424` is replayed, not newly selected.
+The environment is CPU/eager, one thread for Torch/OMP/MKL/OpenBLAS/
+VECLIB/NUMEXPR/Inductor, Python 3.12.13 and Torch 2.15.0 on the M2 laptop.
+
+Reproduce with `.venv/bin/python`, the saved
+`output/attention-thinking/environment.json`, and `PYTHONPATH=bin:test`:
+
+```sh
+python test/attention_block_certificate.py lesson \
+  --replay output/attention-thinking/base-lesson \
+  --compare output/attention-block/owned-v3-lesson \
+  --report-base output/attention-thinking/base-complete-lesson \
+  --output output/attention-block/recheck-lesson
+python test/sentence_host_inventory.py --source "$PWD" \
+  --replay output/attention-thinking/base-lesson \
+  --output output/attention-block/recheck-counts
+python test/attention_block_compile_probe.py \
+  --replay output/attention-thinking/base-lesson \
+  --output output/attention-block/recheck-fullgraph
+```
+
+Use the certificate's `packed` and `gates` modes with the corresponding
+ownership references. `--detail` gives the first-sentence inventory;
+`--profile` gives the separate cProfile-only pass. Outputs must be new
+directories. The original corpus/fixtures and saved stream are required;
+there is no generated substitute fixture.
+
+Production edits inside §5 are `ModelAttention.py` and, in `Models.py`,
+the sentence owner plus `_sentence_path_cost`, which must consume its
+single shared forecast. All are for item 1. The additional production
+edits outside §5 are exactly `Meaning.py`, `ThoughtFeatures.py` and
+`SentenceCompose.py`, the independent item-3 repairs explained above;
+none is in A/B's supplied modified-file list. No other production file
+is edited in this round.
+
+New files outside the production edit list are the ownership and host
+fixed-input tests, `attention_block_certificate.py`,
+`sentence_host_inventory.py`, `attention_host_report.py`, and
+`attention_block_compile_probe.py`; each supplies the requested replay,
+inventory or capture evidence. This §10, the two host-inventory appendices
+and the compact certificate receipt are the requested report artifacts.
+No existing test assertion or fixture is changed.
+
+| Work | Local commit on `performance` |
+| --- | --- |
+| Sentence ownership and forecast sharing | `94f2b03d9e` |
+| Unchanged-source inventory and reporting tools | `27fde08df9` |
+| Metadata dispatch reduction | `6471da2415` |
+| Byte feature construction | `87dd7c10c2` |
+| Saved-value bookkeeping | `e0103c3980` |
+| Ordinary-composition mask guard and regression | `40e016be91` |
+
+The final report/probe/receipt commit follows these implementation commits.
+This round is committed locally on `performance`; no push is made and
+`main` is unchanged. The remaining full-sentence graph work is the design
+question above, not a completed compile claim.
