@@ -1066,3 +1066,213 @@ The final report/probe/receipt commit follows these implementation commits.
 This round is committed locally on `performance`; no push is made and
 `main` is unchanged. The remaining full-sentence graph work is the design
 question above, not a completed compile claim.
+
+## 11. Review of §7, §9 and §10 (Claude, 2026-11-14)
+
+**Accepted as built.** The branch is merged after item 1.8's rounds A and
+B are on main (Alec: "we can wait to integrate performance until after
+1.8 integration").
+
+**Verified on the first machine.**
+
+- *§7, at `a0ddd14125`.* The lesson certificate replayed independently:
+  the first sixteen lesson sentences on `3926005f12`, then on the branch
+  from the same stream. Every batch matched exactly. 134 tests passed
+  with both stopping gates.
+- *§9 and §10, at `685c05d529`.* Both stopping gates, the ownership and
+  host-work tests, the step and handoff tests, the whole-path tests,
+  `test_where_attention_handoff.py` and the document links: 145 passed,
+  1 skipped. The sentence-owned lesson replayed from another stream:
+  sixteen sentences take sixteen primary walks and five departure
+  replays, 21 walks and 324 rounds, with no staging walk. The laptop's
+  exact comparisons rest on its own saved references and are not
+  replayed here.
+- In `bin/Models.py` the changes are in `_run_sentence_word_bricks` and
+  `_sentence_path_cost`. `bin/Meaning.py`, `bin/ThoughtFeatures.py` and
+  `bin/SentenceCompose.py` are outside §5's list and outside the files
+  rounds A and B had modified.
+
+**What the branch establishes.**
+
+1. *The walk needed a third of its budget* (§7): 11 to 14 rounds of 32.
+2. *One primary walk for a sentence* (§10): 19 walks and 233 rounds for
+   sixteen sentences, where main takes 35 and 1,120. This changes
+   results, on Alec's word to the laptop: "in general Id expect this to
+   change things". A row's sentences share one allowance, and the words
+   kept from earlier sentences stay the prefix of the word forecast.
+3. *Why the staging walk and the sentence's differed* (§9): the clock
+   advances between them, and the word forecast reads time relative to
+   the present; a packed row's staging walk reserves progress for every
+   pending word of the row and so takes no field act; and the last
+   sentence of a packed row can find the shared allowance spent.
+4. *The walk is called from the loop over words and still finishes
+   before the first word* (§7): restoring the sentence publishes every
+   word's poles, and the candidate field is built from all the words.
+5. *Where a sentence reads the host* (§10, first lesson sentence):
+   thought 102,437 reads, preparation 28,523, the close 22,373, the
+   generate walks 10,964, a word's step 120, the walk 28. Of thought's,
+   92,994 are one function, `ConceptSpread.rule_order`.
+6. *The sentence does not capture as one graph.* The first stop is a
+   Python choice on a tensor in `_run_sentence_word_bricks`; behind it
+   are meanings, lookups, menus and thought's records held as Python
+   objects.
+7. *The time is unchanged,* about 4.4 seconds for a sentence on the
+   processor. The walk was two percent of it.
+
+**Notes for the merge.**
+
+- With one walk for a sentence, a packed row's last sentence can be left
+  with no accepted word (§10: accepted words `2, 3, 2, 0`). That follows
+  from the shared allowance and is what was authorized; whether a row's
+  allowance should grow with its sentences is a question for round C.
+- `finish_narrowing` draws random numbers it discards, to keep the
+  stream equal to main's on a departure. Since §10 no longer equals
+  main, they serve nothing. *Default:* they go at the merge.
+- `_captured_narrowing` works around two behaviors of the compiler's
+  conditional and is the part most likely to break on another version of
+  the library. `WhereEncoding.decode` has a branch for one device.
+- `advance_narrowing` and `narrowing_stable` run only in tests until
+  round C lets a word be composed before the walk is finished.
+- `bin/Layers.py` (`SparseLayer.fold_presence`), `bin/Spaces.py`,
+  `bin/Models.py` and `bin/ModelAttention.py` are also edited by rounds A
+  and B, and are where the merge will conflict.
+- `test_where_attention_handoff.py::test_mereology_raise_enables_conceptual_refinement`
+  fails on the laptop on main and on the branch and passes on the first
+  machine. It compares at a tolerance a clock tick can cross. It is a
+  test of main to repair.
+
+## 12. Round C of item 1.8: the sentence as one block (Claude, 2026-11-14; a draft that anticipates rounds A and B)
+
+This is written before rounds A and B are merged, so that round C can
+start when they are. It names today's code; the names are checked again
+on the merged source before any text for Codex is written. A rule marked
+*default* is Claude's choice where Alec has not spoken.
+
+### 12.1 Alec's words
+
+- "we should have "time to think" about the input, defined as the field
+  of awareness (.where on the input ) presented at one time. For a
+  sentence, that thinking looks like a serial thought loop over words.
+  For an arbitrary input, such as an image or xor, it looks like multiple
+  attentional opportunities in a loop. ... For some stimuli, the
+  examination might conclude without any looping at all."
+- "I am optimistic that it would be a gateway to speed-reading and
+  multiple-sentence reads, so in the future we can provide a page of
+  text and it can decide where to spend its attention on the corpus; it
+  may not be a linear read of words."
+- "I would say that expectation of the percepts is baked into
+  attention(): every time we look in a new place, we have an expectation
+  about what we will perceive there, and what we will conceive about
+  it." And, of a look wider than a word: "yes, we expect the whole .where
+  span".
+- "The goal of one compiled block on GPU per sentence seems like the
+  best optimization potential."
+- On what a block of text needs: "we can depend on a built vocabulary
+  table, after some amount of training"; the word spans are "something
+  that attention will do, possibly in conjunction with the first open
+  sentence attention"; memory writes "should be tensors"; new things
+  "can happen in virtue of memory pre-allocation".
+- "batching is easy when we have a bigger GPU"; speeding up the sentence
+  breaks "can wait or be skipped".
+- "Id like all of this to be done as performance work. whatever can
+  happen on the performance thread before 1.8 can happen now ... and the
+  rest should be scheduled for part C".
+
+### 12.2 The rules
+
+**A. A look carries its expectation.**
+
+1. Each step of the walk (`narrow_step`) that looks at a bracket first
+   forecasts what will be perceived and what will be conceived over the
+   bracket's whole span, and then reads it. The difference is that
+   look's surprise. The forecast is round B's `expect` (§30.3 of the
+   1.8 specification), read for the rows the span can hold.
+2. This takes the place of three things done apart today: the prior
+   computed once before the walk (`BracketKeys._codebook_retrieval_prior`),
+   the forecast and comparison made for each word while composing
+   (`forecast_percept`, `observe_percept`), and the word forecast staged
+   for the sentence (`stage_expectation`).
+3. *Default:* narrowing follows surprise. A span that reads as expected
+   may be taken as one unit; a span that surprises is where the walk
+   divides or enters the parts. This is FutureWork's "dynamic stop", and
+   it is Claude's inference from Alec's rule, not his word.
+
+**B. The walk is taken as the words are read.**
+
+4. The first composition no longer asks for every word. The pole slab
+   (`_pushed_word_slab`, `commit_word_reference_slab`) and the candidate
+   field (`SentenceField`) take the words whose readings are settled
+   (`narrowing_stable`), and the rest join as the walk reaches them.
+5. What has been understood so far is part of what the chooser of the
+   next look reads: the state of the words already composed, and a
+   thought's goal where there is one.
+6. A word may be read out of its order, a stretch taken as one unit, or
+   a word passed over. A word that is not read is stood for by what
+   `expect` gives for its span. *Open:* in what order the grammar
+   composes words that were read out of order.
+7. A presentation may hold several sentences. The walk's state and its
+   allowance belong to the presentation, and a sentence's close is
+   reached inside it. *Open:* whether the allowance grows with the
+   length of what is presented (§11's note on a packed row).
+8. Attention finds the word spans, with the first open look; the search
+   of the text for each word's bytes in `stage_input` goes.
+9. `unfocus` (the 1.8 specification, §27.1) is built here, on the
+   stepped walk: it restores the bracket in force before the last
+   `focus`.
+
+**C. A step is tensor code.**
+
+10. A meaning's roles, references and bindings are integer tensors with
+    masks. Rows, definitions, times and the work budget are read from
+    tensors. A menu, for a step of composing, of thought and of the
+    generate walk, is a fixed tensor with a mask, and a choice is
+    applied by selecting among results. Thought's record of its steps is
+    written as rows and read on the host only for a proof or a report.
+    Decoding and publication happen at the kept close.
+11. Capacities are the model's own, with a stated rule for a full one;
+    no fixture is shrunk to fit.
+12. Memory's tables beside its rows are tensors, and a new word, concept
+    or class is written into the next free row of its block (round A's
+    order blocks, §29.5).
+13. `ConceptSpread.rule_order`, 92,994 of a sentence's 102,437 thought
+    reads, becomes one sort on the device. After round B its reader is
+    `infer` (§30.4).
+14. Then `_run_sentence_word_bricks` is captured as one graph for a
+    sentence. Widening the batch and the sentence breaks are not in
+    round C.
+
+### 12.3 Certificates, in outline
+
+- The capture probe of this branch (`test/attention_block_compile_probe.py`)
+  passes: one graph for a sentence, no graph break and no recompilation
+  across the lengths and batch sizes met.
+- The inventory of this branch, taken again: reads back to the host and
+  calls into the tensor library for the sixteen lesson sentences, before
+  and after.
+- Where a rule keeps results equal (10 to 13), the replays of §7 and §10
+  match exactly. Where it changes them (1 to 9), both stopping gates
+  hold and the lesson is measured on a trained model (Alec, to the
+  laptop: better quality benchmarks need a more highly trained model).
+- A look's forecast covers its whole span; a span read as expected is
+  taken without entering it; a word passed over is stood for by its
+  forecast; a sentence of known words is read in fewer looks than it has
+  words.
+
+### 12.4 Order, and what waits on what
+
+- Rules 10 to 13 can be built first on the merged main with results
+  equal, in the files rounds A and B have finished with; rule 14 follows
+  them.
+- Rules 1 to 3 wait for round B's `expect`. Rules 4 to 9 change the
+  sentence driver and follow the merge of this branch.
+- Item 1.5 (lookups as one product, folds as scatters, the percept pass
+  once for a sentence) overlaps rules 10 to 13 and is planned with them.
+
+### 12.5 For Alec
+
+- Whether narrowing follows surprise (rule 3).
+- The order of composing when words are read out of order (rule 6).
+- Whether a presentation's allowance grows with its length (rule 7).
+- Whether tensor records at the sentence's boundary, decoded at the kept
+  close, are as you want them (rule 10; the laptop asked this in §10
+  and recommends yes).
