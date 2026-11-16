@@ -37,7 +37,10 @@ def test_natural_relation_words_have_no_bootstrap_operator_assignment(filename):
     forms = {surface.strip().casefold(): node.tag
              for node in anchors for surface in (node.text or "").split(",")}
     assert forms["partof"] == "part" and forms["wholeof"] == "whole"
-    assert forms["isequal"] == "equal"
+    if filename == 'complete.grammar':
+        assert 'isequal' not in forms  # §27.1 retires this compose anchor.
+    else:
+        assert forms["isequal"] == "equal"
     assert not {"has", "contains", "includes", "belongs", "equals", "is"}.intersection(forms)
 
 

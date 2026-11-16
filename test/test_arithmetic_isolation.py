@@ -55,7 +55,7 @@ def test_renamed_native_vocabulary_preserves_checked_relation_answers(monkeypatc
     from test_cs_symbol_table import _cs
     from order_fixtures import force_order
     def world(prefix, names):
-        cs = _cs()
+        cs = _cs(order_limit=2)
         for _ in range(prefix):
             cs.new_concept()
         grammar = Grammar()

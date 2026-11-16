@@ -13,8 +13,9 @@ from Understanding import Reading
 from test_query_vp_boundaries import _world
 
 
-def _program_owner(monkeypatch, *, face="part", interrogative=False):
-    cs, grammar, _legacy_registry, a, b, _context = _world(capacity=160)
+def _program_owner(monkeypatch, *, face="part", interrogative=False, order_limit=None):
+    cs, grammar, _legacy_registry, a, b, _context = _world(
+        capacity=160, order_limit=order_limit, reserve_grammar=True)
     with torch.no_grad():
         cs.similarity_codebook.W.copy_(cs.similarity_codebook.W.sigmoid())
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
@@ -76,7 +77,7 @@ def _program_owner(monkeypatch, *, face="part", interrogative=False):
 
 
 @pytest.mark.parametrize(
-    "face,order", [("part", (0, 1)), ("whole", (1, 0)), ("equal", (0, 1))])
+    "face,order", [("part", (0, 1)), ("whole", (1, 0))])
 @pytest.mark.parametrize("interrogative", [False, True])
 def test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode(
         monkeypatch, face, order, interrogative):
@@ -114,7 +115,7 @@ def test_changed_part_operand_remains_distinguishable_when_folded_root_is_identi
     torch.testing.assert_close(left.roles[1:], right.roles[1:])
 
 
-@pytest.mark.parametrize("face", ["part", "equal"])
+@pytest.mark.parametrize("face", ["part"])
 def test_unreduced_lexical_relation_keeps_signed_operands_and_native_vp(
         monkeypatch, face):
     """A three-slot lexical relation is still one selected meaning.

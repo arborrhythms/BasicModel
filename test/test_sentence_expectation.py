@@ -110,7 +110,7 @@ def test_streaming_and_packed_boundary_use_same_full_roles(monkeypatch, consolid
     from reading_fixtures import finish_reading
     from test_clause_acceptance import SentenceFixture
     f = SentenceFixture(monkeypatch)
-    entries = [f.program(('lift', 'cat', ('verb', verb, obj)))
+    entries = [f.program(('change', 'cat', ('verb', verb, obj)))
                for verb, obj in (('chases', 'mouse'), ('catches', 'bird'))]
     meanings = [finish_reading(f.language, entry, registry=f.registry).meaning
                 for entry in entries]

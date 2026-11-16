@@ -132,6 +132,14 @@ def apply_thought_effect(model, result, *, row, work, effect_round=None):
     if descriptor is None:
         raise ValueError('thought effect has no declared operator contract')
     kind = descriptor.effect_kind
+    if descriptor.effect_forms:
+        form = result.evidence.get('effect_form')
+        if form is None and result.incomplete:
+            return
+        forms = dict(descriptor.effect_forms)
+        if form not in forms:
+            raise ValueError('thought result has no declared effect form')
+        kind = forms[form]
     effect_round = effect_round or EffectRound(
         OperatorEffects(descriptor.read_scope, descriptor.write_scope), 'thought')
     if kind == 'gain':
@@ -157,7 +165,9 @@ def apply_thought_effect(model, result, *, row, work, effect_round=None):
         # Anticipation can retrieve serial frames and form an estimate, but
         # cannot change the input's order-0 field or its reading attention.
         return
-    if kind == 'intuition':
+    if kind == 'implication':
+        if not result.evidence.get('knowing'):
+            return
         effect_round.claim(S.KNOWING)
         from Intuition import write_knowing
         write_knowing(model, result.evidence, row)

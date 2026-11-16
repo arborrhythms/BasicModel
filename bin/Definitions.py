@@ -70,14 +70,6 @@ class DefinitionIndex:
         # result and the store's activity must be independent of cache state.
         if float(store.effective_plus[row]) < definition_threshold():
             return
-        # A named class and its witnesses can all have object-typed handles.
-        # The witnessed members of this word's own class denote their parent
-        # through the word, even after this derived index is rebuilt.
-        for parent in store.wholes(obj):
-            if allocator.relate_idx.get(('part-base', parent)) == (store.SYMBOL, word):
-                membership = store.find(obj, parent)
-                if bool(store.effective_plus[membership] > 0):
-                    return
         if (word, obj) in self._rows and self._rows[word, obj] != row:
             raise ValueError('duplicate word DEF object row')
         self._rows[word, obj] = row

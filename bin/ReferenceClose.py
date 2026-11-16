@@ -352,22 +352,9 @@ class ReferenceClose(nn.Module):
         Every retained idea counts, irrespective of native order, reference
         resolution or how it was produced. Reads do not create observations.
         """
-        from itertools import combinations
-        from IdentityRows import coordinates
-        observed = []
-        for row in range(len(self.store)):
-            # An idea need not be an identity region. Count its positive
-            # conceptual coordinates without applying the identity chart's
-            # bounds to arbitrary kept ideas (including perceptual readings).
-            value = coordinates(self.components.owner, self.store.slots[row], region=False)
-            observed.append(set((value >= .3).nonzero().flatten().tolist()))
-        counts = {}
-        for members in observed:
-            for coordinate in members:
-                counts[coordinate] = counts.get(coordinate, 0) + 1
-        return tuple((x, y) for x, y in combinations(sorted(
-            coordinate for coordinate, count in counts.items() if count >= 8), 2)
-            if not any(x in members and y in members for members in observed))
+        derived = getattr(self.components.owner.similarity_codebook, 'mereology', None)
+        start = 0 if derived is None else derived.percept_event_width
+        return self.store.coordinate_exclusions(start)
 
     def exclusion_query(self):
         """Read observed exclusion once, for grouping or a bind's candidates."""
@@ -390,7 +377,13 @@ class ReferenceClose(nn.Module):
         """
         from IdentityRows import point
         from MemoryLink import Occurrence, member_order
+        from functools import cache
         owner, pool = self.components.owner, self.components.owner.mtm
+        @cache
+        def current_value(token):
+            # Several retained uses can name one unchanged live collection.
+            # This working read lasts only for this interpretation.
+            return self.token_value(token)
         def contracts(identity, members):
             result = set()
             for member in members:
@@ -402,12 +395,13 @@ class ReferenceClose(nn.Module):
                         concept=identity if isinstance(identity, int) else None))
                 result.add((metadata.get('member_kind', 'reference'), order))
             return result
+        @cache
         def baseline(identity):
             if isinstance(identity, int):
                 return point(self.components.owner, identity)
             if identity in self.components.owner.mtm.entries:
                 index = self.store.location(identity)
-                return self.store.point_of_row(identity) if isinstance(index, int) else self.token_value(identity)
+                return self.store.point_of_row(identity) if isinstance(index, int) else current_value(identity)
             return None
         groups = {}
         for address, (location, original) in records.items():
@@ -491,7 +485,7 @@ class ReferenceClose(nn.Module):
         result = {}
         for identity, members in groups.items():
             native = baseline(identity)
-            current = [self.token_value(x['token']) for x in members if x['token'] is not None]
+            current = [current_value(x['token']) for x in members if x['token'] is not None]
             if current:
                 # Revision may group several tokens on read. Join their current
                 # states; a historical occurrence must not resurrect old state.
@@ -543,7 +537,7 @@ class ReferenceClose(nn.Module):
             (site.get('source_node', node),), preview=True)
         return closing.occurrence_order(target, context=prepared)
 
-    def score(self, content, predicate, cue, role, individuals, *, stream=None, asserted=(), where=None, when=None, coordinate_read=None, member_order=None):
+    def score(self, content, predicate, cue, role, individuals, *, stream=None, asserted=(), where=None, when=None, coordinate_read=None, member_order=None, percept_collections=()):
         """Meet content and form, native expectation, then recency and roles."""
         from IdentityRows import form_region
         coordinate_read = self.coordinates if coordinate_read is None else coordinate_read
@@ -553,15 +547,26 @@ class ReferenceClose(nn.Module):
         constraints = (content, *(self.coordinates(value) for value in asserted))
         choices, features = [], []
         for identity,candidate in individuals.items():
+            if percept_collections and not (isinstance(identity, tuple) and identity[:1] == ('bp',)):
+                continue
             if member_order is not None:
                 from MemoryLink import candidate_eligible
                 if not candidate_eligible(self.components.owner, identity, candidate,
-                        kind='reference', order=member_order, stream=stream, allow_promotion=False):
+                        kind='percept' if percept_collections or member_order == -1 else 'reference',
+                        order=-1 if percept_collections else member_order, stream=stream, allow_promotion=False):
                     continue
             value = coordinate_read(candidate['content']).to(content)
             if any(contradicts(own, value) for own in constraints):
                 continue
-            candidate_coverage,request_coverage = meet_ratios(content,value)
+            if percept_collections:
+                # A collection describes its basic percepts by membership,
+                # not by overlap between its bounds and a reading's code.
+                from PerceptCollections import read_collection
+                membership = torch.stack([read_collection(self.components.owner,
+                    value.reshape(1,1,-1), edges)[0,0,0] for edges in percept_collections]).amax()
+                candidate_coverage = request_coverage = membership
+            else:
+                candidate_coverage,request_coverage = meet_ratios(content,value)
             if not bool((candidate_coverage == 1) | (request_coverage == 1)):
                 continue
             form = (content.sum()*0 if region is None else meet_ratios(region.to(value),value)[0])
@@ -647,7 +652,24 @@ class ReferenceClose(nn.Module):
         if ('referent', role) not in open_slots(meaning):
             raise ValueError('bind requires one open referent site')
         site = dict(dict(bindings(meaning).get('_reference_sites', ())).get(role, ()))
-        content = self.coordinates(meaning.roles[role] if site.get('content') is None else
+        owner = self.components.owner
+        forward = dict(bindings(meaning).get('_forward_references', ())).get(role)
+        collections = ()
+        if forward is not None:
+            order = site.get('member_order')
+            references = (owner.interpret.preferred(forward, batch=stream,
+                order=order if order is not None and order >= 0 else None)
+                if forward in owner.definitions.word_ids else (forward,))
+            rows = [owner._csw_row_of(reference) for reference in references
+                if 'percept_collection' in owner._concept_allocator.symbol_types.get(reference, ())]
+            rows = [row for row in rows if row is not None and
+                (site.get('member_order') is None or owner._row_order(row) == site['member_order'])]
+            if rows:
+                from PerceptCollections import definitions
+                features = definitions(owner)
+                collections = tuple(features[row] for row in rows if row in features)
+        coordinate_read = (lambda point: point.detach()) if collections or site.get('member_order') == -1 else self.coordinates
+        content = coordinate_read(meaning.roles[role] if site.get('content') is None else
                                    meaning.roles.new_tensor(site['content']))
         predicate = site.get('predicate')
         predicate = self.predicate_coordinates(meaning.roles[1] if predicate is None else
@@ -667,15 +689,15 @@ class ReferenceClose(nn.Module):
             individuals[identity] = dict(value=record['mention_value'],content=record['mention_value'],
                 role=role,position=record['position'],occurrences=(),perception=True,
                 token=record.get('token'))
-        coordinate_read = None
         choices, features, logits = self.score(content, predicate, cue,
             site.get('role', role), individuals, stream=stream,coordinate_read=coordinate_read,
-            member_order=site.get('member_order'))
+            member_order=site.get('member_order'),percept_collections=collections)
         base = dict(binding_role=role, reverse_leaves=tuple(site.get('leaves', ())),
                     binding_candidates=choices, witnesses=(),
                     binding_occurrence=binding_occurrence)
         plan = dict(meaning=meaning, role=role, records=records, individuals=individuals,
             candidates=choices, features=features, cue=cue, base=base,
+            stream=stream,
             forward_identity=dict(bindings(meaning).get('_forward_references', ())).get(role))
         result = self.finish_thought_bind(plan, logits=logits)
         if decisions is not None:
@@ -739,6 +761,7 @@ class ReferenceClose(nn.Module):
                         incomplete=('pending_antecedent',))
         point = individuals[identity]['value'].detach().to(meaning.roles)
         witnesses = tuple(('sym', context['identity']) if isinstance(context.get('identity'), int)
+                          else location if isinstance(location, tuple) and location[:1] == ('bp',)
                           else self.store.occurrence_of(location)
                           for location, context in records.values()
                           if (context.get('identity') == identity or
@@ -753,6 +776,21 @@ class ReferenceClose(nn.Module):
             support_true=probability, support_false=1-probability,
             reference_cost=float(self.choice_cost(features, logits, index).detach()),
             incomplete=())
+        if isinstance(identity, tuple) and identity[:1] == ('bp',):
+            # The perceived member stays in MTM. Recognition concludes with
+            # its class, before any answer or retained-thought writer reads it.
+            owner = self.components.owner
+            from FieldProjection import stimulate
+            field = stimulate(owner, point[None, None])
+            classes = owner.interpret.recognized_objects(field, batch=0, position=0)
+            chosen = owner.interpret.preferred_objects(classes, batch=plan.get('stream'))
+            if not chosen:
+                return dict(base, meaning=meaning, value=meaning, support_true=0., support_false=0.,
+                            reference_cost=1., incomplete=('no_perceived_class',))
+            concept = chosen[0]
+            evidence['reference'] = ('sym', concept)
+            evidence['binding_value'] = owner.similarity_codebook.lookup_rows(
+                owner._csw_row_of(concept)).detach().to(point)
         result = fill(meaning, evidence, witnesses=witnesses,
                       operation='bind', slots=(('referent', role),))
         result = with_slots(result, open_slots(result), pair=(probability, 1-probability))
@@ -998,7 +1036,7 @@ class ReferenceClose(nn.Module):
             # referent supplies its order. A named member already has a read
             # concept, whose order must agree before the choice is offered.
             order = (None if concept is None else
-                member_order(self.components.owner, Occurrence((), concept=concept)))
+                member_order(self.components.owner, Occurrence((), concept=concept), stream=stream))
             mode, role = request['mode'], request.get('role', 0)
             content = self.coordinates(node.point)
             predicate = self.predicate_coordinates(request.get('predicate'))
@@ -1092,7 +1130,7 @@ class ReferenceClose(nn.Module):
                 entry = pool.entries.get(pool.token_of(candidate.get('token') or selected))
                 if isinstance(selected, int) and candidate.get('token') is None:
                     selected_order = member_order(self.components.owner,
-                        Occurrence((), concept=selected))
+                        Occurrence((), concept=selected), stream=stream)
                 else:
                     selected_order = (entry.refinement.get('member_order') if entry is not None
                                       else candidate.get('member_order'))
@@ -1102,7 +1140,7 @@ class ReferenceClose(nn.Module):
                 local = isinstance(selected, tuple) and selected[:1] == ('new',)
                 if selected_order is None and not local:
                     selected_order = member_order(self.components.owner,
-                        Occurrence(selected, concept=selected if isinstance(selected, int) else None))
+                        Occurrence(selected, concept=selected if isinstance(selected, int) else None), stream=stream)
                 if selected_order is None:
                     raise RuntimeError('a selected introduction has no member order')
             items.append(dict(**site, mode=mode, content=content, predicate=predicate,
@@ -1257,7 +1295,7 @@ class ReferenceClose(nn.Module):
                 individuals[token].get('member_order'))
             if order is None:
                 order = member_order(self.components.owner,
-                    Occurrence((), concept=request['forward_identity']))
+                    Occurrence((), concept=request['forward_identity']), stream=stream)
             choices, phi, logits = self.score(content, predicate, cue, request.get('role', 0),
                 menu, stream=stream, asserted=asserted.get(request['forward_identity'], ()),
                 member_order=order)
@@ -1374,7 +1412,7 @@ class ReferenceClose(nn.Module):
             # A lexical name reads its admitted symbol (or its word while
             # pending). Only a compose bind selected a particular retained
             # member whose occurrence must survive later denotation changes.
-            native = self.address(retained_reference(self.components.owner, reference)
+            native = self.address(retained_reference(self.components.owner, reference, stream=plan.get('stream'))
                                   if request.get('compose_bind') else reference)
             source = (term.reference if item.get('own_object') and not item.get('anonymous')
                       else -1)
@@ -1553,7 +1591,8 @@ class ReferenceClose(nn.Module):
                 order = None if entry is None else entry.refinement.get('member_order')
                 if order is None:
                     order = member_order(self.components.owner,
-                        Occurrence(reference, concept=reference if isinstance(reference, int) else None))
+                        Occurrence(reference, concept=reference if isinstance(reference, int) else None),
+                        stream=plan.get('stream'))
                 item['member_order'] = order
             uses.append((reference, occurrence, kind, value, reading, where, order))
         from ChainRead import envelope
@@ -1929,7 +1968,7 @@ class ReferenceClose(nn.Module):
                 timeline = (mtm.alternative(token, when=when,
                             before=record.get('before') if role == 0 else None)
                             if alternative else 0)
-                is_action = role == 0 and record.get('operation') == 'lift'
+                is_action = role == 0 and record.get('operation') == 'change'
                 basis = record.get('basis')
                 if is_action and basis is None and verb_action is not None:
                     basis = verb_action.groups.assignments.get(int(verb), -1)

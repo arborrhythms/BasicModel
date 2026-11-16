@@ -35,15 +35,15 @@ def test_saved_stage_reproduces_criteria_and_operator_column(phase, phase_regist
 def test_undeclared_unavailable_and_empty_criteria_do_not_pass():
     from eval_lessons import criterion_reading, require_criteria
     readings=dict(trust=dict(admitted_words=4,stable_word_fraction=.75,named_words=0,
-        denoting_word_fraction=0,operations={'lift':dict(measurable=True,definiteness=[.8,.9])}),
+        denoting_word_fraction=0,operations={'change':dict(measurable=True,definiteness=[.8,.9])}),
         answers=[dict(text_correct=True),dict(text_correct=False)])
     result=criterion_reading(dict(measure='definition_trust_fraction',threshold=None),readings)
     assert result['value']==.75 and result['status']=='undeclared' and not result['passed']
     result=criterion_reading(dict(measure='denotation_fraction',threshold=.5),readings)
     assert result['value'] is None and result['status']=='unavailable'
-    result=criterion_reading(dict(measure='occupant_definiteness_and_answers',threshold=.6),readings,operations=['lift'])
+    result=criterion_reading(dict(measure='occupant_definiteness_and_answers',threshold=.6),readings,operations=['change'])
     assert result['value']==.5 and not result['passed']
-    result=criterion_reading(dict(measure='occupant_definiteness',threshold=.8),readings,operations=['lift'])
+    result=criterion_reading(dict(measure='occupant_definiteness',threshold=.8),readings,operations=['change'])
     assert result['passed']
     require_criteria([result])
     for values in ([], [dict(result,passed=False)]):

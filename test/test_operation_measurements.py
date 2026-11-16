@@ -19,12 +19,17 @@ def operation_fixture(monkeypatch):
     import Language
     from ClauseRow import attach_clause_index
     from Memory import LTM0
-    from PartsOfSpeech import PartsOfSpeech,formal_arguments
+    from PartsOfSpeech import PartsOfSpeech,formal_arguments,order_reservations
     grammar=Language.Grammar();grammar.load_from_grammar_file('complete.grammar')
     monkeypatch.setattr(Language.TheGrammar,'rules_upward',grammar.rules_upward)
     monkeypatch.setattr(Language.TheGrammar,'ws_start_patterns',grammar.ws_start_patterns)
     monkeypatch.setattr(Language.TheGrammar,'_ensure_configured',lambda:None)
-    owner,bank,_,alloc = paired_fixture(meaning_pairs=4, capacity=160)
+    owner,bank,_,alloc = paired_fixture(meaning_pairs=4, capacity=160,
+        order_reservations=order_reservations(grammar))
+    from util import TheXMLConfig
+    monkeypatch.setitem(TheXMLConfig.data['architecture']['data'], 'dataType', 'embedding')
+    monkeypatch.setitem(TheXMLConfig.data['PartSpace'], 'nDim', bank.mereology.percept_event_width)
+    monkeypatch.setitem(TheXMLConfig.data['ConceptualSpace'], 'nDim', owner.nDim)
     binary = tuple(rule for rule in grammar.rules_upward if rule.arity == 2)
     unary = tuple(rule for rule in grammar.rules_upward if rule.arity == 1)
     def operation(rule):
@@ -32,7 +37,7 @@ def operation_fixture(monkeypatch):
         cls = Language.GRAMMAR_LAYER_CLASSES[rule.method_name]
         if issubclass(cls, Language.MarkerUnaryLayer):
             return cls(Language.GRAMMAR_LAYER_CLASSES[cls.marker_base](owner.nDim, owner.nDim))
-        return cls(owner.nDim, owner.nDim) if rule.method_name in ('lift','verb','lower','surface','sum','implies') else cls()
+        return cls(owner.nDim, owner.nDim) if rule.method_name in ('change','verb','lower','surface','sum','implies') else cls()
     language=SimpleNamespace(parts_of_speech=PartsOfSpeech(formal_arguments(grammar.rules_upward)),
         _compose_binary_rules=binary, _compose_unary_rules=unary,
         _tree_layer=lambda arity: SimpleNamespace(ops=tuple(map(operation,binary)), unary_ops=tuple(map(operation,unary))))

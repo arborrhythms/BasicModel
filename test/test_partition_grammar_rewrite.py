@@ -40,7 +40,7 @@ _POST_REWRITE_GRAMMAR = {
         'intersection(S, S)',
         'join(S, S)',
         'lower(S, S)',
-        'lift(S, S)',
+        'change(S, S)',
     ],
     # Phase-A note: the previous subsymbolic-space_role entries have been removed from this
     # fixture. They were originally included to verify the old "silently
@@ -87,7 +87,7 @@ GOLDEN_CANONICALS = [
     'S -> intersection(S, S)',
     'S -> join(S, S)',
     'S -> lower(S, S)',
-    'S -> lift(S, S)',
+    'S -> change(S, S)',
 ]
 
 # ---------------------------------------------------------------------------

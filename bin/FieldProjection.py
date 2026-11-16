@@ -52,6 +52,32 @@ def close(owner, rows, evidence):
     return torch.stack([done[int(row)] for row in rows]) if rows else evidence
 
 
+def close_bracket(owner, field, bracket):
+    """Add the definition read over the union of a bracket's readings.
+
+    Located readings stay intact. The derived reading belongs to the
+    containing bracket; a definition does not move its members' locations.
+    """
+    from dataclasses import replace
+    if field.concept_ids.ndim != 1:
+        raise ValueError('bracket closure requires shared concept identities')
+    bracket = torch.as_tensor(bracket, device=field.where.device, dtype=field.where.dtype)
+    if bracket.shape != (field.evidence.shape[1], 2):
+        raise ValueError('a bracket has two endpoints for each stream')
+    inside = ((field.where[..., 0] >= bracket[:, None, 0]) &
+              (field.where[..., 1] <= bracket[:, None, 1]) &
+              (field.where[..., 1] > field.where[..., 0]))
+    joined = reduce(field.evidence, operation='union', dim=2, mask=inside[None])
+    rows = [owner._csw_row_of(int(cid)) for cid in field.concept_ids]
+    folded = close(owner, rows, joined[:, :, None])
+    start = torch.where(inside, field.when[..., 0], torch.iinfo(field.when.dtype).max).amin(1)
+    end = torch.where(inside, field.when[..., 1], torch.iinfo(field.when.dtype).min).amax(1)
+    when = torch.where(inside.any(1)[:, None], torch.stack((start, end), -1), 0)
+    return replace(field, evidence=torch.cat((field.evidence, folded), 2),
+        where=torch.cat((field.where, bracket[:, None]), 1),
+        when=torch.cat((field.when, when[:, None]), 1))
+
+
 def stimulate(owner, point, *, where=None, when=None):
     """Candidate coverage on each lane, then upward definition closure."""
     if point.ndim == 2:
@@ -107,4 +133,10 @@ def key(owner, field):
     weights = field.evidence.amax(-1) * valid[:, None, None]
     mass = weights.sum(0)[...,None]
     value = torch.einsum('cbe,cd->bed', weights, codes)
-    return value / torch.where(mass > 0, mass, 1.)
+    centroid = value / torch.where(mass > 0, mass, 1.)
+    if len(codes):
+        # Matmul and sum accumulate in different orders. Roundoff must not
+        # take a convex combination beyond its input coordinates (notably
+        # the exact membership rails consumed by the identity chart).
+        centroid = centroid.clamp(codes.amin(0), codes.amax(0))
+    return torch.where(mass > 0, centroid, 0.)

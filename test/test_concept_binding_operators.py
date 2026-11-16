@@ -51,7 +51,7 @@ def test_free_lift_inverse_searches_both_operands_from_the_bank(tmp_path):
     try:
         language=model.languageSpace
         binary=language._tree_layer(2)
-        index=list(binary.op_names).index('lift')
+        index=list(binary.op_names).index('change')
         op=getattr(binary.ops[index],'gl',binary.ops[index])
         dimension=model.conceptualSpace.stm.concept_dim
         codes=torch.arange(1,1+3*dimension,dtype=torch.float32).reshape(1,3,dimension)/(3*dimension+1)

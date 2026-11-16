@@ -17,7 +17,7 @@ def test_first_and_later_words_keep_the_same_grad_carry_contract(tmp_path, monke
     original = model._run_sentence_word_bricks
     seen = []
 
-    def driver(*args):
+    def driver(*args, **kwargs):
         compose = args[-1]
 
         def checked(payload, index, unused, lang, stm):
@@ -28,7 +28,7 @@ def test_first_and_later_words_keep_the_same_grad_carry_contract(tmp_path, monke
             seen.append((model._sentence_trial, int(index)))
             return compose(payload, index, unused, lang, stm)
 
-        return original(*args[:-1], checked)
+        return original(*args[:-1], checked, **kwargs)
 
     monkeypatch.setattr(model, '_run_sentence_word_bricks', driver)
     try:

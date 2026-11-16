@@ -119,7 +119,7 @@ def test_inactive_dictionary_row_cannot_poison_byte_loss_or_its_gradient(tmp_pat
         model.symbolSpace.soft_reset()
 
 
-@pytest.mark.parametrize("name", ["lift"])
+@pytest.mark.parametrize("name", ["change"])
 @pytest.mark.parametrize("side", ["left", "right"])
 def test_tied_affine_inverse_uses_the_retained_operand(tmp_path, name, side):
     model = _model(tmp_path)
@@ -131,7 +131,7 @@ def test_tied_affine_inverse_uses_the_retained_operand(tmp_path, name, side):
         # This isolated affine certificate supplies only numerical content,
         # with no positional coordinates; keep all original inverse equalities.
         op.percept_band = None
-        inner = op._sigma if name == "lift" else op._pi
+        inner = op._sigma if name == "change" else op._pi
         width = int(model.conceptualSpace.stm.concept_dim)
         with torch.no_grad():
             inner.layer.biasWeight.fill_(.13)
@@ -313,10 +313,10 @@ def test_unavailable_inverse_is_explicit_without_candidates(tmp_path):
 
 
 def test_noninvertible_compose_transform_uses_the_bounded_candidate_path(tmp_path):
-    from Language import LiftLayer
+    from Language import ChangeLayer
     model = _model(tmp_path)
     try:
-        op = LiftLayer(nInput=2, nOutput=2, invertible=False)
+        op = ChangeLayer(nInput=2, nOutput=2, invertible=False)
         # The relative residual selects one hard candidate pair.
         basis = torch.tensor([[[.49, .51], [.52, .50]]])
         parent = op.compose(basis[:,0], basis[:,1]).detach().requires_grad_()
@@ -338,15 +338,15 @@ def test_noninvertible_compose_transform_uses_the_bounded_candidate_path(tmp_pat
         model.symbolSpace.soft_reset()
 
 
-def test_adverb_uses_its_own_bounded_inverse_and_shared_parameters(tmp_path):
+def test_modifier_uses_its_own_bounded_inverse_and_shared_parameters(tmp_path):
     model = _model(tmp_path)
     try:
         binary = model.languageSpace._tree_layer(2)
-        index = list(binary.op_names).index("adverb")
+        index = list(binary.op_names).index("modifier")
         op = getattr(binary.ops[index], "gl", binary.ops[index])
         width = int(model.conceptualSpace.stm.concept_dim)
         with torch.no_grad():
-            op._adv_edit.weight.copy_(torch.eye(width) * .9)
+            op._modifier_edit.weight.copy_(torch.eye(width) * .9)
         left = torch.linspace(.45, .65, width).reshape(1, width)
         right = torch.linspace(.2, .4, width).reshape(1, width)
         left, right = op.content_operand(left), op.content_operand(right)
@@ -356,7 +356,7 @@ def test_adverb_uses_its_own_bounded_inverse_and_shared_parameters(tmp_path):
             parent, torch.tensor([index]), torch.tensor([True]), right)
         torch.testing.assert_close(a, left, atol=2e-4, rtol=2e-4)
         torch.testing.assert_close(b, right)
-        gradients = torch.autograd.grad(a.sum(), (parent, op._adv_edit.weight))
+        gradients = torch.autograd.grad(a.sum(), (parent, op._modifier_edit.weight))
         assert all(g.isfinite().all() and g.abs().sum() > 0 for g in gradients)
     finally:
         model.End()
@@ -387,10 +387,10 @@ def test_masked_candidate_values_do_not_poison_hard_pair(tmp_path):
 
 
 def test_inactive_batch_row_does_not_poison_the_selected_inverse_gradient(tmp_path):
-    from Language import LiftLayer
+    from Language import ChangeLayer
     model = _model(tmp_path)
     try:
-        op = LiftLayer(nInput=2, nOutput=2)
+        op = ChangeLayer(nInput=2, nOutput=2)
         parent = torch.tensor([[.2, .5], [float("nan"), float("nan")]])
         left, right = model.languageSpace.reverse_binary_step(
             parent, torch.tensor([0, 0]), torch.tensor([True, False]), ops=[op])

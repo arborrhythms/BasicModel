@@ -1,3 +1,4 @@
+from action_fixtures import action_with_basis
 """Focused persistence tests for host-side learned structure.
 
 Concept ids, relation records and word-keyed mereology registries are plain
@@ -31,6 +32,12 @@ def _allocator():
 
 
 def _model_with(cs, ws):
+    if not hasattr(cs, 'nVectors'):
+        cs.nVectors = cs._concept_allocator.layer().nOutput
+    if not hasattr(cs, '_order_caps'):
+        cs._order_caps = lambda: (4, 4)
+    if not hasattr(cs, 'order_slice'):
+        cs.order_slice = lambda order: (4*order, 4*(order+1))
     if not hasattr(cs, 'definitions'):
         cs.definitions = cs._concept_allocator.definitions
     from Memory import MediumTermMemory
@@ -62,8 +69,8 @@ def test_integrated_checkpoint_restores_allocator_and_identity_caches(tmp_path):
     alloc.identity[word] = (7, 41)
 
     layer = alloc.layer()
-    layer.assign_row(("snap", word), capacity=4, base=0)
-    layer.assign_row(("pool", meta), capacity=4, base=4)
+    layer.assign_row(("shared", word), capacity=4, base=0)
+    layer.assign_row(("shared", meta), capacity=4, base=4)
     layer.add_edge(5, 2, weight=0.4)
     with torch.no_grad():
         layer.values[0] = 0.625
@@ -176,14 +183,14 @@ def test_verb_group_metadata_survives_native_weight_restore(tmp_path):
     from IndependentComponents import _unpack_state
     from MeaningKernels import MeaningAction
     source = _model_with(types.SimpleNamespace(_concept_allocator=_allocator()), types.SimpleNamespace())
-    source.action = MeaningAction(8, capacity=2)
+    source.action = action_with_basis(8, capacity=2)
     for occurrence in range(3):
         source.action.groups.observe(7, occurrence, (.2, .3), .2)
     source.action.groups.observe(8, 4, (.2, .3), .2)
     path = tmp_path / 'verb-groups.ckpt'
     source.save_weights(path)
     target = _model_with(types.SimpleNamespace(_concept_allocator=_allocator()), types.SimpleNamespace())
-    target.action = MeaningAction(8, capacity=2)
+    target.action = action_with_basis(8, capacity=2)
     assert target.load_weights(path, require_match=True)
     assert _unpack_state(target.action.groups.get_extra_state()) == _unpack_state(source.action.groups.get_extra_state())
     # The first swap freeze's dictionary is a supported input envelope.

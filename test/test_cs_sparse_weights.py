@@ -26,7 +26,7 @@ from test_basicmodel import _populate_test_config
 _D = 8
 
 
-def _cs(nS=64, order=3, dim=_D, *, batch_size=1):
+def _cs(nS=64, order=3, dim=_D, *, batch_size=1, order_limit=None, order_reservations=()):
     nP = 4
     _populate_test_config(
         inputDim=dim, perceptDim=dim, conceptDim=dim, symbolDim=dim,
@@ -36,7 +36,9 @@ def _cs(nS=64, order=3, dim=_D, *, batch_size=1):
     )
     from util import TheXMLConfig
     TheXMLConfig.data['architecture']['training']['batchSize'] = batch_size
-    cs = Spaces.ConceptualSpace([nP, dim], [nS, dim], [nS, dim])
+    cs = Spaces.ConceptualSpace([nP, dim], [nS, dim], [nS, dim],
+        order_limit=max(1, order) if order_limit is None else order_limit,
+        order_reservations=order_reservations)
     object.__setattr__(cs, "_symbolic_order", order)
     object.__setattr__(cs, "_serial", False)
     return with_definitions(cs)
@@ -69,19 +71,19 @@ def _field_forward(cs, evidence, dictionary):
     return cs.cs_forward_content(cs._compose_order0(evidence), dictionary)
 
 def test_order_slice_taper_contract():
-    """dual-towers rev 2: per-order TAPER caps [base, base>>1, ..], base
-    halved until sum(caps) <= nVectors; contiguous cumulative blocks."""
-    cs = _cs(nS=64, order=3)                         # base 64 -> 32
-    assert cs._order_caps() == (32, 16, 8, 4)        # sum 60 <= 64
-    assert cs.order_slice(0) == (0, 32)              # the snap block
-    assert cs.order_slice(1) == (32, 48)
-    assert cs.order_slice(2) == (48, 56)
-    assert cs.order_slice(3) == (56, 60)
-    assert cs.order_slice(9) == cs.order_slice(3)    # clamped to the taper
-    cs2 = _cs(nS=16, order=1)                        # base 16 -> 8
-    assert cs2._order_caps() == (8, 4)
-    assert cs2.order_slice(0) == (0, 8)
-    assert cs2.order_slice(1) == (8, 12)
+    """The taper partitions the whole inventory; there is no overflow tail."""
+    cs = _cs(nS=64, order=3)
+    assert cs._order_caps() == (35, 17, 8, 4)
+    assert cs.order_slice(0) == (0, 35)
+    assert cs.order_slice(1) == (35, 52)
+    assert cs.order_slice(2) == (52, 60)
+    assert cs.order_slice(3) == (60, 64)
+    with pytest.raises(Spaces.ConceptRowCapacityError, match='order 9'):
+        cs.order_slice(9)
+    cs2 = _cs(nS=16, order=1)
+    assert cs2._order_caps() == (11, 5)
+    assert cs2.order_slice(0) == (0, 11)
+    assert cs2.order_slice(1) == (11, 16)
 
 
 # -- the shared untyped square store (v3) --------------------------------------
@@ -108,9 +110,10 @@ def test_shared_untyped_square_store():
     assert s1 is cs._sparse_families(2)[1]           # ONE shared store
     assert (s1.nOutput, s1.nInput) == (16, 34)       # [S+1 inputs x S outputs]
     assert s1.roles is None                          # untyped: no role blocks
-    cs.add_concept_edge(8, 2)                        # order-1 row <- snap col
-    cs.add_concept_edge(8, 16)                       # bias: col nVectors -> S
-    assert (16, 0.0) in cs.concept_weights(8)        # read back as nVectors
+    row = cs.order_slice(1)[0]
+    cs.add_concept_edge(row, 2)                      # order-1 row <- snap col
+    cs.add_concept_edge(row, 16)                     # bias: col nVectors -> S
+    assert (16, 0.0) in cs.concept_weights(row)       # read back as nVectors
     try:
         cs.add_concept_edge(9, 9)
         assert False, "self-edge must raise (the Quine atom)"
@@ -127,7 +130,7 @@ def test_any_edge_on_snap_row_fails_loud():
     cs = _cs(nS=16, order=1)                         # n_snap = 8
     for row in (0, 7):
         try:
-            cs.add_concept_edge(row, 9)
+            cs.add_concept_edge(row, cs.order_slice(1)[0])
             assert False, "snap-row edges must raise (codebook rows, not edges)"
         except ValueError:
             pass
@@ -177,7 +180,7 @@ def test_membership_read_is_input_dependent_and_differentiable():
     with torch.no_grad():
         primitive.members[:, 48:50] = torch.tensor([[.2, .8], [.7, .3]])
     read = cs.cs_read_memberships(native, extents)
-    assert read.shape == (8, 1, 1, 2)
+    assert read.shape == (cs._order_caps()[0], 1, 1, 2)
     assert bool((read[0] > 0).all()) and bool((read[0] < 1).all())
     read[..., 0].sum().backward()
     assert primitive.members.grad is not None and primitive.members.grad.abs().sum() > 0
@@ -203,25 +206,27 @@ def test_membership_read_never_updates_the_dictionary():
 def test_cs_decode_scales_dictionary_atoms():
     cs = _cs()
     what = torch.randn(64, _D)
-    a = torch.zeros(16, 2, 1, 2)
+    start, end = cs.order_slice(1)
+    a = torch.zeros(end-start, 2, 1, 2)
     a[0, 0, 0, 0] = .8
     a[1, 1, 0, 1] = .7
     code = cs.cs_decode(1, a, what)
-    assert code.shape == (2, 32, _D)
-    torch.testing.assert_close(code[0, 0], .8 * what[32])
-    torch.testing.assert_close(code[1, 3], -.7 * what[33])
+    assert code.shape == (2, 2*(end-start), _D)
+    torch.testing.assert_close(code[0, 0], .8 * what[start])
+    torch.testing.assert_close(code[1, 3], -.7 * what[start+1])
     assert code[0, 10].count_nonzero() == 0
 
 
 def test_forward_content_shape_and_stacking():
     cs = _cs(nS=16, order=1)
-    a0 = _evidence(torch.rand(8, 2))
+    capacity = cs._order_caps()[0]
+    a0 = _evidence(torch.rand(capacity, 2))
     row = _mint_row(cs, 1, 101)
     cs.add_concept_edge(row, 0, 2.)
     content, a = cs.cs_forward_content(a0, torch.randn(16, _D))
-    assert content.shape == (2, 24, _D)
-    assert a.shape == (12, 2, 1, 2)
-    torch.testing.assert_close(a[:8], a0)
+    assert content.shape == (2, 2*cs.nVectors, _D)
+    assert a.shape == (cs.nVectors, 2, 1, 2)
+    torch.testing.assert_close(a[:capacity], a0)
     torch.testing.assert_close(a[row, :, 0, 0], 1 - (1 - a0[0, :, 0, 0]).square())
     assert a[row + 1:].count_nonzero() == 0
 

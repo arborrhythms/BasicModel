@@ -135,13 +135,28 @@ class InterpretLayer(GrammarLayer):
             *(word for word in self._pending if self.no_object(word)))))
 
     def denotations(self, word):
-        """Keep definitions, reading a witnessed raised parent over its base."""
-        from Spaces import _concept_alloc_of
-        from Memory import SYMBOL
-        alloc = _concept_alloc_of(self.owner)
-        objects = self.owner.definitions.objects(int(word))
-        return tuple(cid for cid in objects if alloc.relate_idx.get(
-            ('part-kind', (SYMBOL, cid), alloc.order_of(cid)+1)) not in objects)
+        """All admitted objects of the word, without discarding lower orders."""
+        return self.owner.definitions.objects(int(word))
+
+    def preferred(self, word, *, batch=0, order=None):
+        return self.preferred_objects(self.denotations(word), batch=batch, order=order)
+
+    def preferred_objects(self, candidates, *, batch=0, order=None):
+        """Choose within the highest expected order, or the highest order."""
+        cs = self.owner
+        if order is not None:
+            matching = tuple(cid for cid in candidates if cs._concept_source_order(cid) == int(order))
+            candidates = matching or candidates
+        if not candidates:
+            return ()
+        expected = getattr(cs, '_expected_knowing', None)
+        def key(cid):
+            row = cs._csw_row_of(cid)
+            value = (float(expected[int(batch), row, 0].detach()) if row is not None
+                     and batch is not None and torch.is_tensor(expected) and 0 <= int(batch) < len(expected)
+                     and row < expected.shape[1] else 0.)
+            return value > 0, cs._concept_source_order(cid), value, -cid
+        return (max(candidates, key=key),)
 
     def remembered_objects(self, word):
         """Names retained in the concepts, independent of live definition rows."""
@@ -161,6 +176,52 @@ class InterpretLayer(GrammarLayer):
             value = self.owner.definitions.description(words[0])
         forms = value['forms']
         return forms[0] if len(forms) == 1 else None
+
+    def recognized_objects(self, field, *, batch=0, position=None):
+        """Read a percept's fully present classes, without a word or code search."""
+        ids = field.concept_ids if field.concept_ids.ndim == 1 else field.concept_ids[:, batch]
+        evidence = field.evidence[:, batch, :, 0]
+        presence = evidence.amax(-1) if position is None else evidence[:, position]
+        objects = self.owner.definitions.object_ids
+        return tuple(int(cid) for cid, value in zip(ids.tolist(), presence.detach())
+                     if cid in objects and float(value) >= 1. and self.lexical_form(cid) is not None)
+
+    def lexical_atoms(self, rows, atoms, *, word_ids=None, stream=None):
+        """Read a higher-order object's word form into an ephemeral lexical view.
+
+        Concept rows keep only their own meaning. An observed word may name
+        the chosen form explicitly; a free read requires its unique mapping.
+        Order-zero percept collections retain their own native coordinates.
+        """
+        owner = self.owner
+        derived = getattr(owner.similarity_codebook, 'mereology', None)
+        if derived is None:
+            return atoms
+        rows = torch.as_tensor(rows, device=atoms.device, dtype=torch.long)
+        if tuple(rows.shape) != tuple(atoms.shape[:-1]):
+            raise ValueError('lexical rows must align with their atom bank')
+        if word_ids is not None and tuple(word_ids.shape) != tuple(rows.shape):
+            raise ValueError('observed lexical identities must align with their rows')
+        words = None if word_ids is None else word_ids.detach().reshape(-1).tolist()
+        mapped = []
+        for index, row in enumerate(rows.detach().reshape(-1).tolist()):
+            word_row = None
+            if row >= 0 and owner._row_order(row) > 0:
+                identity = owner.concept_id_at_row(row)
+                candidates = (self.owner.definitions.words(identity) if words is None and identity is not None
+                              else () if words is None else (words[index],))
+                if len(candidates) == 1 and candidates[0] > 0:
+                    word_row = owner._csw_row_of(candidates[0])
+            mapped.append(-1 if word_row is None else word_row)
+        mapped = rows.new_tensor(mapped).reshape(rows.shape)
+        if not bool((mapped >= 0).any()):
+            return atoms
+        options = (dict(streams=True) if rows.ndim > 1 and stream is None else
+                   {} if stream is None else dict(stream=stream))
+        forms = owner.similarity_codebook.lookup_rows(mapped.clamp_min(0), **options)
+        width = derived.percept_event_width
+        form = torch.where((mapped >= 0)[..., None], forms[..., :width], atoms[..., :width])
+        return torch.cat((form, atoms[..., width:]), -1)
 
     def _preflight(self, *, inventory=True, word=None):
         from Spaces import _concept_alloc_of
@@ -271,11 +332,11 @@ class InterpretLayer(GrammarLayer):
             obj = None if case is None else cs.concept_id_at_row(case)
             try:
                 self._preflight(inventory=False)
+                cs._preflight_concept_row(0, context='word admission')
             except RuntimeError:
                 return None
             word = alloc.new_concept()
             alloc.symbol_types.setdefault(word, set()).add('word')
-            alloc.reference_orders[word] = 0
             for part in parts:
                 cs.add_part(word, part)
             for whole in wholes:
@@ -306,7 +367,6 @@ class InterpretLayer(GrammarLayer):
         # definition may supply one; interpretation cannot invent it.
         word = alloc.new_concept()
         alloc.symbol_types.setdefault(word, set()).add('word')
-        alloc.reference_orders[word] = 0
         for part in parts:
             cs.add_part(word, part)
         for whole in wholes:
@@ -379,13 +439,15 @@ class InterpretLayer(GrammarLayer):
             raise ValueError('a definition cannot name a word as its object')
         if getattr(cs, '_online_learning_frozen', False):
             return index.row(word, obj)
-        if word == obj or any(cid not in alloc.placement or cid in alloc.retired for cid in (word, obj)):
+        if word == obj or any(cid not in alloc.symbols or cid in alloc.retired for cid in (word, obj)):
             raise ValueError('definition requires distinct, live native identities')
         pair = ((1. if trust is None else float(trust), 0.) if evidence is None
                 else tuple(float(pole) for pole in evidence))
         import math
         if len(pair) != 2 or any(not math.isfinite(pole) or not 0 <= pole <= 1 for pole in pair):
             raise ValueError('definition evidence must be two poles in [0, 1]')
+        if trust is None and evidence is None:
+            cs.similarity_codebook.trust.read_object(obj)
         row = store.find(obj, word)
         if row is not None and obj in alloc.named_identities.get(word, ()):
             alloc.named_identities.setdefault(word, set()).add(obj)
@@ -401,7 +463,6 @@ class InterpretLayer(GrammarLayer):
         self._description_revision += 1
         alloc.symbol_types.setdefault(word, set()).add('word')
         alloc.symbol_types.setdefault(obj, set()).add('object')
-        alloc.reference_orders.setdefault(word, 0)
         # A definition is an inner semantic relation. Its containing sentence,
         # when present, owns the percept clock stamp.
         alloc.named_identities.setdefault(word, set()).add(obj)
@@ -461,7 +522,7 @@ class InterpretLayer(GrammarLayer):
         options.append((value, identity, scope.bitwise_and(1) != 0, active & ~eligible, found))
         return options
 
-    def forward(self, word, *, order=None, occurrence=None, selected=None,
+    def forward(self, word, *, order=None, occurrence=None, selected=None, batch=0,
                 object_atoms=None, presence=None, evidence=None, binding=None):
         if binding is not None:
             return self.bind(word, **binding)
@@ -474,7 +535,7 @@ class InterpretLayer(GrammarLayer):
         from Spaces import _concept_alloc_of
         cs, word = self.owner, int(word)
         alloc, index = _concept_alloc_of(cs), cs.definitions
-        candidates = index.objects(word) if order is not None else self.denotations(word)
+        candidates = self.preferred(word, batch=batch, order=order)
         frozen = getattr(cs, '_online_learning_frozen', False)
         if self.no_object(word):
             return word
@@ -497,9 +558,14 @@ class InterpretLayer(GrammarLayer):
             return None
         else:
             raise ValueError('interpret requires an admitted word')
+        # Selecting the association is a relation read, not new testimony.
+        # Index/cache inspection alone remains free of activity effects.
+        row = index.row(word, obj)
+        if row is not None:
+            from MemoryActivity import accessed
+            accessed(cs._closed_clause_store().parts, row)
         if frozen:
             return obj
-        self.define(word, obj)
         if occurrence is not None:
             seen = alloc.testimony_seen.setdefault(obj, set())
             token = tuple(occurrence)
@@ -510,10 +576,10 @@ class InterpretLayer(GrammarLayer):
                     seen.add(token)
         return obj
 
-    def referent(self, word):
+    def referent(self, word, *, batch=0):
         """Resolve a word without learning, opening a token, or reading MTM."""
         word = int(word)
-        objects = self.denotations(word)
+        objects = self.preferred(word, batch=batch)
         if objects:
             return objects[0]
         remembered = self.remembered_objects(word)
@@ -525,7 +591,7 @@ class InterpretLayer(GrammarLayer):
             raise ValueError(f'ambiguous identity reading for word {word} {form}: denotations {list(remembered)}')
         return remembered[0] if remembered else word
 
-    def reading(self, word):
+    def reading(self, word, *, batch=0):
         """Identify a read site's object, retaining an objectless name in MTM.
 
         The grammar's forward operation remains a choice in thought. This
@@ -537,7 +603,7 @@ class InterpretLayer(GrammarLayer):
             if row is None:
                 raise RuntimeError('an identified word has no conceptual row')
             return word, row, self.owner._concept_source_order(word)
-        obj = self.referent(word)
+        obj = self.referent(word, batch=batch)
         if self.denotations(word):
             return obj, self.owner._csw_row_of(obj), self.owner._concept_source_order(obj)
         row = self.owner._csw_row_of(word)

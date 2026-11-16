@@ -181,9 +181,8 @@ def test_unary_bind_keeps_the_objectless_word_site(monkeypatch):
     f = native(monkeypatch)
     word = f.cs.interpret.lookup_word([101], (), form='m')
     from Spaces import _concept_alloc_of
-    force_order(f.cs, word, 1)
     f.words['m'] = word, word
-    program = replace(f.program(('definite_unary', 'm')), close_references=True,
+    program = replace(f.program(('bind', 'm')), close_references=True,
                       leaf_orders=torch.tensor([f.cs._concept_source_order(word)]))
     clause = finish_clause(f.language, record_reading(f.language, program), registry=f.registry)
     assert clause.reference_request['forward_identity'] == word

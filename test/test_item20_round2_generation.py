@@ -10,12 +10,17 @@ from test_meaning_kernels import paired
 
 def proposal(kind):
     from DecompositionChooser import DecompositionChooser
-    from Language import LanguageSpace, LiftLayer, VerbLayer, AdverbLayer
+    from Language import LanguageSpace, ChangeLayer, VerbLayer, ModifierLayer
     from Generative import propose_actions, verb_groups
-    lift = (AdverbLayer if kind == 'adverb' else LiftLayer)(12, 12).double()
+    lift = (ModifierLayer if kind == 'modifier' else ChangeLayer)(12, 12).double()
     vp = VerbLayer(12, 12).double()
+    if kind != 'modifier':
+        lift.meaning_action.bind_basis(vp.meaning_basis)
     with torch.no_grad():
-        for index, parameter in enumerate(lift.meaning_action.parameters()):
+        parameters = list(lift.meaning_action.parameters())
+        if kind != 'modifier':
+            parameters.extend(vp.meaning_basis.parameters())
+        for index, parameter in enumerate(parameters):
             parameter.add_((torch.arange(parameter.numel(), dtype=parameter.dtype)
                             .reshape_as(parameter) + index + 1) / 300)
     words = torch.tensor([[[.8,.1,.1,.1,.15,.25,.35,.45,.2,.3,.4,.5],
@@ -45,7 +50,7 @@ def proposal(kind):
     return language, words, right, parent, bank, groups, structure
 
 
-@pytest.mark.parametrize('kind', ['object', 'group', 'adverb'])
+@pytest.mark.parametrize('kind', ['object', 'group', 'modifier'])
 def test_free_candidate_checks_its_own_action_basis(paired, kind):
     from Generative import native_recompose, candidate_action_context, absolute_residual, EXACT_RESIDUAL_TOLERANCE
     language, words, right, parent, bank, groups, structure = proposal(kind)
@@ -57,7 +62,7 @@ def test_free_candidate_checks_its_own_action_basis(paired, kind):
         form, lanes = absolute_residual(parent, value, 4, numeric=False)
         return float(torch.cat((form[:, None], lanes), -1).max().detach())
     assert residual(after) <= EXACT_RESIDUAL_TOLERANCE
-    if kind == 'adverb':
+    if kind == 'modifier':
         torch.testing.assert_close(after, before, rtol=0, atol=0)
     else:
         assert residual(before) > EXACT_RESIDUAL_TOLERANCE

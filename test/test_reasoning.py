@@ -267,17 +267,10 @@ class TestExtrapolate(unittest.TestCase):
         if truth_layer is None:
             self.skipTest("No TruthLayer available")
         D = truth_layer.nDim
-        # Two consistent truths. Seed locally so the parthood scores
-        # don't randomly land at zero -- when ``t1.dot(t2) <= 0`` the
-        # clamped cosine projection collapses to 0 and no candidates
-        # are produced. This is a property of the kernel, not a
-        # regression: seed for stability.
-
-        t1 = torch.randn(D)
-        t2 = torch.randn(D)
-        # Force a positive correlation so part(t1, t2) > 0.
-        if (t1 * t2).sum() <= 0:
-            t2 = t1 + 0.1 * t2
+        # The allocated meaning lanes use the unit cube. These are two
+        # positive, consistent claims; no random stream is selected.
+        t1 = torch.rand(D)
+        t2 = torch.rand(D)
         truth_layer.record(t1, degree=0.8)
         truth_layer.record(t2, degree=0.7)
         with warnings.catch_warnings():

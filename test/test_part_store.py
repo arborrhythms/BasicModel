@@ -11,7 +11,7 @@ def test_taxonomy_and_nested_relations_share_symbol_rows():
     x, y, z = (alloc.new_concept() for _ in range(3))
     alloc.add(y, 'part', ('sym', x))
     inner = alloc.parts.find(x, y)
-    assert inner in alloc.placement
+    assert inner in alloc.symbols
     outer = alloc.parts.add((RELATION, inner), (SYMBOL, z), truth_plus=.7, truth_minus=.2)
     assert alloc.parts.refs[outer].tolist() == [inner, z]
     assert ('sym', x) in alloc.refs(y, 'part')

@@ -29,20 +29,26 @@ def full_store():
 
 
 
-def test_trigger_interval_and_age_select_oldest_without_moving_addresses():
+@pytest.mark.parametrize('boundary', ['document_boundary', 'epoch_boundary'])
+def test_trigger_interval_and_age_select_oldest_without_moving_addresses(boundary):
     store = full_store()
+    closed = {boundary: True}
     ids = torch.tensor([store.row_name(row) for row in range(len(store))])
     assert forget(store, config()) is None
     assert forget(store, config(), document_boundary=True, open_sentence=True) is None
     assert forget(store, config(), document_boundary=True, stateless=True) is None
-    report = forget(store, config(), document_boundary=True)
+    report = forget(store, config(), **closed)
     assert report['before'] == 8 and report['after'] == 5
     torch.testing.assert_close(torch.tensor([store.row_name(row) for row in range(len(store))]), ids[3:])
     for i in range(8, 11):
         append(store, i)
-    assert forget(store, config(min_interval=10), document_boundary=True) is None
+    # Capacity pressure overrides the interval at either closed boundary.
+    assert forget(store, config(min_interval=10), **closed)['after'] == 5
+    # An unpressured periodic pass still waits for the completed sentences.
+    periodic = config(min_interval=10, at_epoch=True)
+    assert forget(store, periodic, epoch_boundary=True) is None
     store.forget_sentences.add_(10)
-    assert forget(store, config(min_interval=10), document_boundary=True)['after'] == 5
+    assert forget(store, periodic, epoch_boundary=True)['after'] == 5
 
 
 
@@ -223,14 +229,26 @@ def test_automatic_hook_runs_after_backward_and_honors_serving_mode(monkeypatch,
 
 def test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads(
         tmp_path, monkeypatch, eager_reading, capsys):
+    _model_turnover(tmp_path, monkeypatch, capsys, declared=True)
+
+
+from ClauseRow import ClauseCapacityError
+
+
+@pytest.mark.xfail(strict=False, raises=ClauseCapacityError, reason='baseline, item 1.8 §43')
+def test_unforced_grammar_turnover_reports_its_retained_occurrences(
+        tmp_path, monkeypatch, eager_reading, capsys):
+    _model_turnover(tmp_path, monkeypatch, capsys, declared=False)
+
+
+def _model_turnover(tmp_path, monkeypatch, capsys, *, declared):
     from Models import BaseModel, BasicModel
     from What import What
     from test_compiled_word_chunk import _tiny_canonical_model
     restore = BaseModel.load_weights
-    # Eight closings can write 24 rows; their cover needs row 25. Alec chose
-    # 32 at construction (seven spare); capacity never changes at runtime.
-    # Keep the original absolute
-    # forgetting thresholds: start at eight, retain six.
+    # Alec's §44.2 port supplies completed clauses to the memory mechanism.
+    # The separate unforced case still reports the full grammar's writes.
+    # Keep the original capacity and thresholds: start at eight, retain six.
     settings = dict(forgetHighWater=8/32, forgetLowWater=6/32,
                     forgetMinInterval=256, forgetting=True)
     # Isolate document turnover from conceived absences. Their separate
@@ -242,27 +260,48 @@ def test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads(
     assert type(model) is BasicModel
     model._tensor_peer_while_eager = True
     model.stateless = False
-    # Single-word documents exercise memory turnover independently of
-    # random initial grammar choices. This is a mechanism certificate.
-    # These are known words in this memory-turnover fixture. Pending name
-    # acquisition has its own certificates and also writes mention records.
+    # These are known words. The declared-clause arm tests memory turnover;
+    # it makes no claim that the untrained parser learned those clauses.
     from test_definition_rows import admit
-    for word in ('cat', 'dog', 'bird', 'horse'):
-        admit(model, word)
+    words = {word: admit(model, word) for word in ('cat', 'dog', 'bird', 'horse')}
     data = model.inputSpace.data
     monkeypatch.setattr(data, 'has_supervised_outputs', False)
     store = model.symbolSpace.ltm_store
     assert store.capacity == 32
     counters = ('forget_passes', 'forget_sentences', 'forget_last_sentence')
+    retained_reads = []
     def document(name, sentences):
         data.source_addresses = {'validation': [dict(document=name, document_key=name,
             sentence=i, split='validation') for i in range(len(sentences))]}
-        inputs = model.inputSpace.prepPackedInput([sentences])
         model._thought_document_ends = (True,)
         with torch.no_grad():
-            model.runBatch(train=False, batchSize=1, split='validation',
-                batch_override=(inputs, torch.empty(1, 0)), source_rows=[list(range(len(sentences)))],
-                questions=(What.present(0, split='validation'),))
+            if declared:
+                from ClauseRow import Clause, Composition
+                from Extension import ConceptSet, Node
+                from Models import _append_observed_meaning
+                owner = model._concept_owner()
+                for text in sentences:
+                    word, obj = words[text]
+                    point = owner.similarity_codebook.lookup_rows(owner._csw_row_of(obj)).detach().clone()
+                    extension = (Node(ConceptSet(torch.tensor([obj], device=point.device),
+                        point.new_tensor([[1., 0.]])), reference=('sym', obj)),)
+                    meaning = replace(ConceptualMeaning.from_description(point),
+                        role_refs=(('sym', obj), None, None), extension=extension)
+                    clause = Clause(meaning, point=point, evidence=(1., 0.),
+                        composition=Composition(point, reference=obj, word_id=word, extension=meaning.extension))
+                    row = _append_observed_meaning(store, clause, trust=1., stream=0)
+                    retained_reads.append(store.meaning_of(row))
+                    # This fixture is the presentation caller. As in the
+                    # native sentence loop, the count is per presentation,
+                    # independently of how many rows that close writes.
+                    store.forget_sentences.add_(1)
+                    model._advance_when_time()
+                model._end_step()
+            else:
+                inputs = model.inputSpace.prepPackedInput([sentences])
+                model.runBatch(train=False, batchSize=1, split='validation',
+                    batch_override=(inputs, torch.empty(1, 0)), source_rows=[list(range(len(sentences)))],
+                    questions=(What.present(0, split='validation'),))
         model._thought_document_ends = ()
         model.flush_word_buffers()
         model.dispatch_packed_soft_reset([True])
@@ -287,10 +326,18 @@ def test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads(
         model.save_weights(str(checkpoint))
         document('second', ['dog', 'cat'])
         assert int(store.forget_sentences) == int(snapshot['forget_sentences']) + 2
-        assert int(store.forget_passes) == 1  # The configured interval still applies.
-        assert len(store) > occupancy
+        # The new rows cross high water, which now overrides the interval.
+        assert int(store.forget_passes) == 2
+        second_report = store.last_forgetting_report
+        assert second_report['before'] > occupancy
+        assert len(store) == second_report['after']
         assert any(store.row_name(row) not in addresses.tolist() for row in range(len(store)))
-        assert model._last_sentence_field is not None
+        if declared:
+            assert retained_reads[-1] is not None
+            # The field survives in the entry, not as a second stored tree.
+            assert store.episodic_concepts[len(store)-1].eq(words['cat'][1]).any()
+        else:
+            assert model._last_sentence_field is not None
     finally:
         model.End()
     fresh = tmp_path/'fresh'

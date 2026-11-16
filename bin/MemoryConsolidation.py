@@ -37,21 +37,13 @@ def _preflight(owner, plans):
     from Spaces import _concept_alloc_of
     alloc = _concept_alloc_of(owner)
     owner._preflight_concept_allocation(len(plans), context='memory consolidation')
-    caps = owner._order_caps()
     occupied = set(alloc.layer()._tensor_row_keys)
     for order, _ in plans:
-        if getattr(owner, '_concept_binding', 'mixing') == 'aligned':
-            pools = ((0, int(owner.nVectors)),)
-        elif order == 0:
-            pools = ((0, caps[0]), (sum(caps), int(owner.nVectors)-sum(caps)))
-        else:
-            rung = min(order, len(caps)-1)
-            pools = ((sum(caps[:rung]), caps[rung]),
-                     (sum(caps), int(owner.nVectors)-sum(caps)))
-        row = next((base+i for base, count in pools for i in range(count)
-                    if base+i not in occupied), None)
+        start, end = owner.order_slice(order)
+        row = next((row for row in range(start, end) if row not in occupied), None)
         if row is None:
-            raise RuntimeError('memory consolidation exceeds the concept row pool')
+            from Spaces import ConceptRowCapacityError
+            raise ConceptRowCapacityError(f'concept order {order} capacity exhausted before memory consolidation')
         occupied.add(row)
 
 
@@ -94,8 +86,7 @@ def consolidate(owner, store, *, context=None, key=None, batch=0, rows=None, wri
     try:
         promoted = []
         for index,(order,value) in zip(sources,plans):
-            symbol = owner.new_concept()
-            alloc.reference_orders[symbol] = order
+            symbol = owner.new_concept(order=order)
             alloc.symbol_types.setdefault(symbol,set()).update(('concept','object'))
             seat = owner._csw_concept_row(order,symbol)
             if seat is None:
@@ -103,6 +94,8 @@ def consolidate(owner, store, *, context=None, key=None, batch=0, rows=None, wri
             derived = getattr(owner.similarity_codebook,'mereology',None)
             if derived is not None:
                 derived.remember_content(seat,value)
+                if order > 0:
+                    value[:derived.percept_event_width] = 0.
                 derived.placement[seat].zero_()
                 derived.placement_witnesses[seat] = 0
                 derived.placement_dirty[seat] = True

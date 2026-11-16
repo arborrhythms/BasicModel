@@ -73,7 +73,7 @@ def test_compose_audit_uses_held_rule_ids_and_names_with_positions():
         named_compose_sequence(language, [99], [2], [0])
 
 
-@pytest.mark.parametrize('filename', ['complete.grammar', 'XOR_grammar.xml', 'MM_grammar.xml'])
+@pytest.mark.parametrize('filename', ['XOR_grammar.xml', 'MM_grammar.xml'])
 def test_fixture_rules_select_probabilistic_disjunction(filename):
     from pathlib import Path
     import xml.etree.ElementTree as ET

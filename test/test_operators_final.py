@@ -79,43 +79,40 @@ def test_determiner_marker_has_no_content_and_binding_uses_an_address():
     torch.testing.assert_close(bound[0], kind)
 
 
-def test_determined_sentences_keep_distinct_occurrences_and_universal_stays_high(monkeypatch):
+def test_sentences_keep_distinct_occurrences(monkeypatch):
     from test_clause_acceptance import SentenceFixture
     f = SentenceFixture(monkeypatch)
-    clause = f.clause(('lift', ('lower', 'a', 'cat'), 'sleeps'))
+    f.noun('cat', order=1)
+    clause = f.clause(('change', ('lower_unary', 'cat'), 'sleeps'))
     writes_a, writes_b = {}, {}
     a = f.store.write_clause(clause,   written_rows=writes_a)
     b = f.store.write_clause(clause,   written_rows=writes_b)
-    assert id(clause.children[0]) not in writes_a and id(clause.children[0]) not in writes_b
+    assert all(key not in writes_a and key not in writes_b
+               for child in clause.children for key in (id(child),))
     assert f.store.occurrence_of(a) != f.store.occurrence_of(b)
     torch.testing.assert_close(f.store.slots[a], f.store.slots[b])
     assert len(f.store) == 2
-    universal = next(r for r in f.grammar.rules_upward if r.determiner_mode == 'kind')
-    from ReferenceContext import binding_spec
-    assert not hasattr(universal, 'order_delta') and binding_spec(universal, 'argin2', 2) == (1, 'kind')
-    renamed = universal._replace(method_name='opaque')
-    assert renamed.determiner_mode == 'kind'
 
 
 def test_definition_sentence_joins_identities_beside_the_interpret_definition(monkeypatch):
     from test_clause_acceptance import SentenceFixture
     f = SentenceFixture(monkeypatch)
-    clause = f.clause(('equal', 'bachelor', 'unmarried-man'))
+    clause = f.clause(('part', 'bachelor', 'unmarried-man'))
     first = f.store.write_clause(clause, )
     assert len(f.store) == 0 and first[0] == 'sym'
     row = f.store.row(first)
     assert row['refs'].tolist() == [f.noun('bachelor'), f.noun('unmarried-man')]
-    assert row['readings'] == ('equality',)
+    assert row['readings'] == ()  # one Part direction is not an equality
     assert f.noun('bachelor') != f.noun('unmarried-man')
     assert f.cs.definitions.objects(f.words['bachelor'][0]) == (f.noun('bachelor'),)
-    assert f.registry.operation_spec('equal').predicate_identity == 'operation:equal'
+    assert f.registry.operation_spec('define').predicate_identity == 'operation:define'
     import Queries
     assert not hasattr(Queries, 'GrammaticalQueryRegistry')
 
 
 def test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement():
-    from Language import LiftLayer, _BinaryGrammarOpAdapter
-    layer = LiftLayer(8, 8)
+    from Language import ChangeLayer, _BinaryGrammarOpAdapter
+    layer = ChangeLayer(8, 8)
     layer.meaning_layout = (4, 8)
     op = _BinaryGrammarOpAdapter(layer)
     a = torch.tensor([[.1, .2, .3, .4, .6, .7, .8, .9]])
@@ -130,32 +127,38 @@ def test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement(
     torch.testing.assert_close(changed[:, 4:], a[:, 4:] * .7)
 
 
-def test_determiner_lowering_keeps_order_without_minting_a_composing_argument(monkeypatch):
+def test_unary_lowering_reads_existing_order_without_minting_a_composing_argument(monkeypatch):
     from test_clause_acceptance import SentenceFixture
-    from reading_fixtures import finish_reading
     from Language import LanguageSpace
     f = SentenceFixture(monkeypatch)
-    program = f.program(('lift', ('lower', 'a', 'cat'), 'sleeps'))
-    before = len(f.cs.definitions._store())
+    source = f.noun('cat', order=2)
+    word = f.words['cat'][0]
+    member = f.cs.new_concept(order=1)
+    f.cs.interpret.define(word, member)
+    program = f.program(('change', ('lower_unary', 'cat'), 'sleeps'))
+    before = len(f.cs.definitions._store()), len(f.cs._concept_allocator.symbols)
     refs, orders = LanguageSpace.resolve_lexical_references(f.language, f.cs,
         program.word_rows, program.concept_ids, program.actions,
-        leaf_orders=torch.tensor([0, 2, 0]), admit=True)
-    assert len(f.cs.definitions._store()) == before
-    # The source kind remains available to the close's inline lowering;
-    # the member-order request does not allocate an individual column.
-    assert refs[1] == program.concept_ids[1] and orders[1] == 1
-    reading = replace(program, reference_ids=refs, reference_orders=orders,
-                      leaf_orders=torch.tensor([0, 2, 0]))
-    clause = finish_reading(f.language, reading, registry=f.registry)
+        leaf_orders=torch.tensor([2, 0]), admit=True)
+    assert (len(f.cs.definitions._store()), len(f.cs._concept_allocator.symbols)) == before
+    assert program.concept_ids[0] == source
+    assert refs[0] == member and orders[0] == 1
+    from chunk_fixtures import record
+    from ClauseJournal import finish_clause
+    reading, _, _ = record(f, ('change', ('lower_unary', 'cat'), 'sleeps'))
+    clause = finish_clause(f.language, reading, registry=f.registry)
     assert clause.order == 0 and clause.children[0].order == 1
     written = {}
-    row = f.store.write_clause(clause,
-                               written_rows=written)
-    assert id(clause.children[0]) not in written
-    assert f.store.row(row)['order'] == 0 and len(f.store) == 1
-    assert not len(f.store.parts) - before
-    root = f.store.raw_meaning_of(row).role_refs[0]
-    assert root == ('sym', f.noun('cat'))
+    row = f.store.write_clause(clause, written_rows=written)
+    # The native lowered participant has its own occurrence. The removed
+    # binary determiner's inline-only child is no longer this contract.
+    child = written[id(clause.children[0])]
+    assert f.store.row(row)['order'] == f.store.row(child)['order'] == 1
+    assert len(f.store) == 2
+    assert len(f.store.parts) == before[0]
+    assert f.store.raw_meaning_of(child).role_refs[0] == ('sym', member)
+    assert f.store.raw_meaning_of(row).role_refs[0] == f.store.occurrence_of(child)
+    assert (len(f.cs.definitions._store()), len(f.cs._concept_allocator.symbols)) == before
     assert not f.cs.components.individual_ids
 
 

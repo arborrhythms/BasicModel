@@ -1,3 +1,4 @@
+from action_fixtures import action_with_basis
 """Retained truth and learning survive an activity boundary (§17.14, 21)."""
 import copy
 from dataclasses import replace
@@ -132,7 +133,7 @@ def test_verb_group_boundary_forgets_witnesses_but_keeps_the_learned_basis():
     resolver, store, atoms = fixture()
     model = model_for(resolver.components.owner, store)
     occurrence = write(store, atoms[0], 'event')
-    action = MeaningAction(4)
+    action = action_with_basis(4)
     action.groups.used = 1
     action.groups.assignments[7] = 0
     action.groups.witnesses[8] = [occurrence]

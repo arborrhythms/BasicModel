@@ -80,14 +80,14 @@ def test_native_understanding_retains_field_and_native_percept_evidence():
 
 
 def test_parallel_field_never_dispatches_grammar_lift_or_lower(monkeypatch):
-    from Language import LiftLayer, LowerLayer
+    from Language import ChangeLayer, LowerLayer
     model, _, _, _ = _build_model(str(ROOT / 'data/XOR_symbols.xml'))
 
     def forbidden(*args, **kwargs):
         raise AssertionError('parallel field dispatched the grammar')
 
     monkeypatch.setattr(model.languageSpace, 'forward', forbidden)
-    for operator in (LiftLayer, LowerLayer):
+    for operator in (ChangeLayer, LowerLayer):
         monkeypatch.setattr(operator, 'forward', forbidden)
         monkeypatch.setattr(operator, 'reverse', forbidden)
     model.forward(_bytes(['01']))

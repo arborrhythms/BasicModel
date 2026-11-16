@@ -95,7 +95,7 @@ def test_required_evidence_read_of_true_and_false_is_both(monkeypatch):
     from test_clause_acceptance import SentenceFixture
     from reading_fixtures import finish_reading
     fixture = SentenceFixture(monkeypatch)
-    program = replace(fixture.program(('sum', 'A', 'B')),
+    program = replace(fixture.program(('add', 'A', 'B')),
         leaf_evidence=torch.tensor([[1., 0.], [0., 1.]]))
     clause = finish_reading(fixture.language, program, registry=fixture.registry)
     row = fixture.store.write_clause(clause)

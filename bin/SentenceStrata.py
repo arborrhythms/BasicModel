@@ -41,7 +41,8 @@ class Tree:
         matches = [(kind, index) for kind, rules in (
             (1, self.language._compose_binary_rules), (2, self.language._compose_unary_rules))
             for index, rule in enumerate(rules)
-            if operation_name(rule) == seat.name and rule.canonical == data['_interface']]
+            if (operation_name(rule) == seat.name and rule.canonical == data['_interface']
+                and rule.kernel_index == data.get('_kernel'))]
         if len(matches) != 1:
             raise ValueError('the operator seat has no unique declared execution interface')
         kind, index = matches[0]
@@ -233,6 +234,7 @@ class SentenceStrata(nn.Module):
                 concept = language.parts_of_speech.seats[operation_name(rule)].concept
                 point = program.operation_values[at, 2]
                 data['_interface'] = rule.canonical
+                data['_kernel'] = rule.kernel_index
             if concept not in (-1, 0): data['_identity'] = ('sym', concept)
             meaning = replace(ConceptualMeaning.from_description(point), bindings=data)
             row = store.append_meaning(meaning, name=self._clock)

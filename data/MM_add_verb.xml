@@ -70,13 +70,14 @@
   </PartSpace>
 
   <ConceptualSpace>
+    <!-- Item 1.8: preserve the form width; allocate the declared meaning lanes. -->
     <nInput>8</nInput>
-    <nInputDim>64</nInputDim>
+    <nInputDim>0</nInputDim>
     <nVectors>8</nVectors>
     <stmCapacity>8</stmCapacity>
-    <nDim>64</nDim>
+    <nDim>192</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>64</nOutputDim>
+    <nOutputDim>192</nOutputDim>
 
     <invertible>true</invertible>
   </ConceptualSpace>
@@ -90,7 +91,7 @@
          serial loop is byte-grained (8 per-percept ideas, not 2 word-objects). -->
     <analysis>meronomy</analysis>
     <nInput>8</nInput>
-    <nInputDim>64</nInputDim>
+    <nInputDim>192</nInputDim>
     <nVectors>4096</nVectors>
     <nDim>64</nDim>
     <nOutput>64</nOutput>
@@ -102,7 +103,7 @@
 
   <OutputSpace>
     <nInput>8</nInput>
-    <nInputDim>64</nInputDim>
+    <nInputDim>192</nInputDim>
     <nVectors>1</nVectors>
     <nDim>1</nDim>
     <nOutput>16</nOutput>

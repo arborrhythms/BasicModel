@@ -322,24 +322,3 @@ def search_cases(bank, parent, *, allowed_ids=None):
     head = codes[rows,best % count] * credit
     return (torch.where(available[:, None], modifier, 0.),
             torch.where(available[:, None], head, 0.), available)
-
-
-def inverse_unary(bank, parent, operation, *, whole_bank=None):
-    """Search a one-operand face without a saved marker or compose witness."""
-    candidates = bank.codes if bank.codes.ndim == 3 else bank.codes[None].expand(parent.shape[0], -1, -1)
-    ids = bank.ids[None].expand(parent.shape[0], -1)
-    view = bank.view(ids)
-    valid = (ids > 0) & (view.weights > 0).any(-1).any(-1)
-    if bank.eligible is not None:
-        valid = valid & bank.eligible
-    folded = operation.compose(candidates, case_view=view)
-    source = parent
-    if whole_bank is not None:
-        from FormCentroids import unary
-        source = unary(source, whole_bank)
-    error = ((folded - source[:, None]).square().mean(-1) /
-             source.square().mean(-1).clamp_min(torch.finfo(source.dtype).tiny)[:, None])
-    index = error.masked_fill(~valid, torch.inf).argmin(-1)
-    result = candidates.gather(1, index[:, None, None].expand(-1, 1, parent.shape[-1]))[:, 0]
-    available = valid.any(-1)
-    return torch.where(available[:, None], result, 0.), available

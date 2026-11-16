@@ -18,11 +18,11 @@ os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
 import torch
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "bin"))
 
-from Language import LiftLayer, LowerLayer, PrepositionLayer
+from Language import ChangeLayer, LowerLayer, PrepositionLayer
 from Spaces import event_when_encoding, _WHEN_PERIOD
 
 # 2026-07-04 encoding pass: .when is the 4-dim start ladder; built through
-# the one construction seam so LiftLayer/tense share omega pairs.
+# the one construction seam so ChangeLayer/tense share omega pairs.
 _NWHAT, _NWHERE, _NWHEN = 4, 2, 4
 _ENC = event_when_encoding(_NWHEN)
 
@@ -60,7 +60,7 @@ class TestLiftLowerWhen(unittest.TestCase):
         # the whole event through their inner layer; nothing is copied
         # through or shifted around the fold.
         width = _NWHAT + _NWHERE + _NWHEN
-        lift, lower = LiftLayer(nInput=width), LowerLayer(nInput=width)
+        lift, lower = ChangeLayer(nInput=width), LowerLayer(nInput=width)
         T = _WHEN_PERIOD // 8
         ev = self._point_event(t=T)
         out = lift.compose(ev, ev)
@@ -73,7 +73,7 @@ class TestLiftLowerWhen(unittest.TestCase):
     def test_content_only_operand_passes_through_legacy_fold(self):
         # No where/when tail: width == nInput -> legacy binary sigma fold,
         # output is content-width (unchanged contract for the SS-space_role route).
-        lift = LiftLayer(nInput=_NWHAT)
+        lift = ChangeLayer(nInput=_NWHAT)
         a = (1 + torch.randn(1, 1, _NWHAT).tanh()) / 2
         out = lift.compose(a, a)
         self.assertEqual(out.shape[-1], _NWHAT)

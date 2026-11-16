@@ -227,14 +227,25 @@ def test_reference_closing_reads_surface_meaning_and_never_mints_a_relation_addr
     from reading_fixtures import record_reading
     from ClauseJournal import finish_clause
     from ReferenceClose import constituents
+    # The complete menu no longer has implicit determiner binding. The
+    # retained grammar still declares definite_unary's same closing contract.
+    from pathlib import Path
+    import Language
+    grammar=Path(__file__).parent/'fixtures/2026-10-25-stm-repair/original-complete.grammar'
+    retained=Language.Grammar()
+    retained.load_from_grammar_file(str(grammar))
     f=SentenceFixture(monkeypatch,native_cube=True)
-    entry=f.program(('lower_unary',('surface','marker','object')))
+    f.unary += (next(rule for rule in retained.rules_upward
+                     if rule.method_name == 'definite_unary'),)
+    f.language._compose_unary_rules = f.unary
+    f.noun('object', order=1)
+    entry=f.program(('definite_unary',('surface','marker','object')))
     entry=record_reading(f.language,replace(entry,close_references=True,
         leaf_orders=torch.tensor([0,1])))
     clause=finish_clause(f.language,entry,registry=f.registry)
     member,=constituents(clause)
     torch.testing.assert_close(member.point,entry.leaves[1],rtol=0,atol=0)
-    relation=f.program(('lower_unary',('part','object','kind')))
+    relation=f.program(('definite_unary',('part','object','kind')))
     relation=record_reading(f.language,replace(relation,close_references=True,
         leaf_orders=torch.zeros(2,dtype=torch.long)))
     closed=finish_clause(f.language,relation,registry=f.registry)

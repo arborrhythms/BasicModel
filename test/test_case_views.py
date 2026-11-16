@@ -130,36 +130,6 @@ def test_case_flow_retains_the_selected_head_through_two_parse_steps(monkeypatch
     assert not state[2].any()
 
 
-def test_absent_marker_face_shares_the_test_and_retains_one_form(monkeypatch):
-    from test_meaning_kernels import paired
-    paired.__wrapped__(monkeypatch)
-    from Language import CompoundLayer, CompoundUnaryLayer
-    from CaseSelection import CaseBank, inverse_unary
-    base = CompoundLayer().double()
-    unary = CompoundUnaryLayer(base).double()
-    codes = torch.zeros(3, 12, dtype=torch.float64)
-    codes[:, :4] = torch.tensor([[.2, .3, .4, .5], [.5, .4, .3, .2], [.1, .6, .2, .7]])
-    codes[1, 4] = codes[1, 8] = 1.
-    codes[2, 5] = codes[2, 9] = 1.
-    codes[0, 4:] = (codes[1, 4:]+codes[2, 4:])/2
-    weights = torch.zeros(3, 3, 2, dtype=torch.float64)
-    weights[0, 1:] = 1.
-    bank = CaseBank(torch.tensor([11, 12, 13]), codes, weights, torch.zeros_like(weights))
-    cases = bank.view(torch.tensor([11]))
-    with torch.no_grad():
-        base.meaning_kernel.bias.fill_(.03)
-    first = unary.select_view(codes[:1], cases)
-    second = unary.select_view(codes[:1], first)
-    torch.testing.assert_close(first.fold(meaning_start=4), second.fold(meaning_start=4), rtol=0, atol=0)
-    value = unary.compose(codes[:1], case_view=cases)
-    torch.testing.assert_close(value[:, :4], codes[:1, :4], rtol=0, atol=0)
-    restored, available = inverse_unary(bank, value, unary)
-    assert available.tolist() == [True] and restored.shape == value.shape
-    torch.testing.assert_close(restored, codes[:1], rtol=0, atol=0)
-    assert unary.meaning_kernel is base.meaning_kernel
-    assert len(tuple(unary.parameters())) == len(tuple(base.parameters()))
-
-
 def test_retained_case_inverse_recovers_form_without_inventing_discarded_content(monkeypatch):
     from types import SimpleNamespace
     from test_meaning_kernels import paired
@@ -181,7 +151,7 @@ def test_accessible_event_stages_before_change_after_with_bilateral_memberships(
     from test_modal_timelines import fixture, recording, close
     from CaseSelection import CaseBank, stage_event_cases
     f, action, modifier = fixture(monkeypatch)
-    _, frame, row, _ = close(f, recording(f, ('lift', ('lower_unary', 'subject'), 'move')),
+    _, frame, row, _ = close(f, recording(f, ('change', ('lower_unary', 'subject'), 'move')),
         actions=(action, modifier), evidence=(.8, .2))
     token, entry = next(iter(f.cs.mtm.entries.items()))
     event = entry.events[0]
@@ -210,7 +180,7 @@ def test_phase_question_uses_selected_content_and_never_the_event_clock(monkeypa
     from Queries import ThoughtLTMCapability
     from QueryWork import QueryWorkBudget
     f, action, modifier = fixture(monkeypatch)
-    _, frame, row, _ = close(f, recording(f, ('lift', ('lower_unary', 'subject'), 'move')),
+    _, frame, row, _ = close(f, recording(f, ('change', ('lower_unary', 'subject'), 'move')),
         actions=(action, modifier), evidence=(.8, .2))
     token, entry = next(iter(f.cs.mtm.entries.items()))
     event = entry.events[0]
@@ -275,9 +245,9 @@ def test_close_transports_phase_content_as_a_query_constituent(monkeypatch):
     from ThoughtClosing import closing_question
     from ThoughtReferences import bindings, validate_local_references
     f, action, modifier = fixture(monkeypatch)
-    _, frame, row, _ = close(f, recording(f, ('lift', ('lower_unary', 'subject'), 'move')),
+    _, frame, row, _ = close(f, recording(f, ('change', ('lower_unary', 'subject'), 'move')),
         actions=(action, modifier), evidence=(1., 0.))
-    program = recording(f, ('lift', ('bind', 'subject'), 'move'), (frame,))
+    program = recording(f, ('change', ('bind', 'subject'), 'move'), (frame,))
     values = torch.zeros(len(program.actions), 8)
     selected = torch.zeros(len(program.actions), dtype=torch.bool)
     root = len(program.actions)-1
@@ -295,20 +265,17 @@ def test_close_transports_phase_content_as_a_query_constituent(monkeypatch):
     assert all(event.case_value is None for entry in f.cs.mtm.entries.values() for event in entry.events)
 
 
-def test_implicit_selection_uses_current_content_and_explicit_selection_uses_its_object(monkeypatch):
+def test_explicit_selection_uses_its_object_independently_of_current_reference(monkeypatch):
     from test_meaning_kernels import paired
     paired.__wrapped__(monkeypatch)
-    from Language import CompoundLayer, CompoundUnaryLayer
+    from Language import CompoundLayer
     base = CompoundLayer().double()
-    unary = CompoundUnaryLayer(base).double()
     codes = torch.zeros(1, 3, 12, dtype=torch.float64)
     for i in range(3):
         codes[0, i, 4+i] = codes[0, i, 8+i] = 1.
     cases = CaseView(codes, torch.ones(1, 3, 2, dtype=torch.float64),
         torch.ones(1, 12, dtype=torch.float64), torch.zeros(1, dtype=torch.bool), codes[:, 2])
-    current = unary.compose(codes.mean(1), case_view=cases)
     referred = base.compose(codes[:, 0], codes.mean(1), case_view=cases)
-    torch.testing.assert_close(current[:, 4:], codes[:, 2, 4:], rtol=0, atol=0)
     torch.testing.assert_close(referred[:, 4:], codes[:, 0, 4:], rtol=0, atol=0)
     changed = cases._replace(reference=codes[:, 1])
-    torch.testing.assert_close(unary.compose(codes.mean(1), case_view=changed)[:, 4:], codes[:, 1, 4:], rtol=0, atol=0)
+    torch.testing.assert_close(base.compose(codes[:, 0], codes.mean(1), case_view=changed)[:, 4:], codes[:, 0, 4:], rtol=0, atol=0)

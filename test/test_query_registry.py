@@ -38,7 +38,7 @@ def test_checked_operations_share_grammar_owned_identity_and_explicit_roles():
     assert registry.descriptors['part'].write_target is Mind.SERIAL
     assert set(registry.descriptors['part'].write_scope) == {
         Mind.SERIAL, Mind.SYMBOLIC, Mind.KNOWING}
-    assert registry.descriptors['gain'].evidence_kind == 'gain'
+    assert 'gain' not in registry.descriptors  # §27.1 retires the thought face.
     assert registry.descriptors['ask'].result_kind == 'subgoal'
     assert 'isPart' in registry.executable_operation_ids
     for descriptor in registry.descriptors.values():

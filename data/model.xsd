@@ -136,14 +136,14 @@
            smaller mutually-exclusive category set the grammatical operations
            mandate. Inspection-only for now (rule choice unchanged). Default
            false. -->
-      <!-- Legacy/direct LiftLayer adverb helper flag. The live AdverbLayer
+      <!-- Legacy/direct LiftLayer modifier helper flag. The live ModifierLayer
            grammar op force-builds the same zero-init eigenmodifier; this knob
            only affects ordinary LiftLayer instances. When true for plain
-           LiftLayer, an adverb modifies a composed VP as a SPARSE eigenvalue
+           LiftLayer, an modifier modifies a composed VP as a SPARSE eigenvalue
            edit of the verb, masked by the VP's own eigen-signature:
            a2 = atanh(vp) + p_vp (.) delta_adv. Default false leaves plain
            LiftLayer's sigma fold byte-identical. -->
-      <xs:element name="adverbEigEdit" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="modifierEigEdit" type="xs:boolean" minOccurs="0" default="false"/>
       <!-- Mereological order-raising (doc/specs/mereological-order-raising.md).
            When true, perception's autobind hook builds a meronymic lattice over
            the two towers and raises mereological nodes as attention requires by
@@ -694,6 +694,7 @@
       <xs:enumeration value="queries"/>
       <xs:enumeration value="sequences"/>
       <xs:enumeration value="mnist"/>
+      <xs:enumeration value="images"/>
       <xs:enumeration value="tomatoes"/>
       <xs:enumeration value="text"/>
       <xs:enumeration value="curriculum"/>
@@ -751,6 +752,7 @@
       <xs:element name="dataType" type="dataTypeEnum"/>
       <xs:element name="conceptLessons" type="xs:string"/>
       <xs:element name="dataset" type="datasetEnum"/>
+      <xs:element name="imageCorpus" type="xs:string" default="shapes" minOccurs="0"/>
       <xs:element name="numShards" type="xs:positiveInteger"/>
       <xs:element name="maxDocs" type="xs:positiveInteger"/>
       <!-- Whole-sentence admission ceiling. Records above the limit are
@@ -1149,6 +1151,13 @@
       <xs:element name="nInputDim" type="xs:integer" minOccurs="0"/>
       <xs:element name="nOutputDim" type="xs:integer" minOccurs="0"/>
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- Free rows per order, before grammar reservations; fixed at construction. -->
+      <xs:element name="orderAllocation" default="geometric" minOccurs="0">
+        <xs:simpleType><xs:union>
+          <xs:simpleType><xs:restriction base="xs:string"><xs:enumeration value="geometric"/></xs:restriction></xs:simpleType>
+          <xs:simpleType><xs:list itemType="xs:nonNegativeInteger"/></xs:simpleType>
+        </xs:union></xs:simpleType>
+      </xs:element>
       <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
       <!-- DEPRECATED QKV legacy alias; inert. See attentionModeEnum. -->
@@ -1187,6 +1196,20 @@
       <xs:element name="verbGroups" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="verbBasisReflections" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="verbGroupFit" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Pair count: Pi/Sigma, repeated; width zero disables the stack. -->
+      <xs:element name="expectationMap" default="sigmaPi" minOccurs="0">
+        <xs:simpleType><xs:restriction base="xs:string">
+          <xs:enumeration value="sigmaPi"/><xs:enumeration value="predictor"/>
+        </xs:restriction></xs:simpleType>
+      </xs:element>
+      <xs:element name="expectHidden" type="xs:nonNegativeInteger" default="64" minOccurs="0"/>
+      <xs:element name="expectLayers" type="xs:positiveInteger" default="1" minOccurs="0"/>
+      <xs:element name="markerKernels" type="xs:positiveInteger" default="8" minOccurs="0"/>
+      <xs:element name="markerHidden" type="xs:positiveInteger" default="64" minOccurs="0"/>
+      <!-- The configured depth counts Pi/Sigma pairs, as for intuition. -->
+      <xs:element name="markerLayers" type="xs:positiveInteger" default="2" minOccurs="0"/>
+      <xs:element name="intuitHidden" type="xs:nonNegativeInteger" default="64" minOccurs="0"/>
+      <xs:element name="intuitLayers" type="xs:positiveInteger" default="2" minOccurs="0"/>
       <!-- <definitionFreeSize> (snap contract sec 5, 2026-07-06): symbols a
            concept definition may use for free (genus + differentia = 2);
            the rank-ordered L0 penalty shrinks only the surplus past this.

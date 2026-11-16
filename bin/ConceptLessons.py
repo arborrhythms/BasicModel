@@ -53,7 +53,7 @@ def teach_concept_lessons(model):
         # This lesson supplies a definition over native percept memberships.
         # That testimony witnesses zero before the storage row is requested;
         # an arbitrary row request itself still cannot assign an order.
-        alloc.reference_orders[concept] = 0
+        cs._declare_concept_row(0, concept)
         alloc.settle(concept)
         row = cs._csw_concept_row(alloc.order_of(concept), concept)
         for feature in item['features']:

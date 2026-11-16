@@ -12,7 +12,7 @@ import time
 import torch
 from torch.nn import functional as F
 
-PROTOCOL = dict(seed=None, retries=0, chains=[1, 2, 3, 5], operators=['lift', 'lower'],
+PROTOCOL = dict(seed=None, retries=0, chains=[1, 2, 3, 5], operators=['change', 'lower'],
     max_updates=10000, learning_rate=.01, convergence_ce=.001, convergence_consecutive=5,
     plateau_min_updates=1000, plateau_window=200, plateau_ce_range=1e-6,
     work_limit=32, candidate_limit=16,

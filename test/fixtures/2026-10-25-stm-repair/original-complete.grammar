@@ -94,11 +94,10 @@
 
     <compose>
       <!-- Typed attention candidates; no predefined surface or generate face. -->
-      <rule operands="field">F = divide.forward(F)</rule>
-      <rule operands="field">F = descend.forward(F)</rule>
-      <rule operands="field">F = gloss.forward(F)</rule>
-      <rule operands="field">F = and.forward(F)</rule>
-      <rule operands="field">F = or.forward(F)</rule>
+      <rule operands="field">F = focus.forward(F)</rule>
+      <rule operands="field">F = mint.forward(F)</rule>
+      <rule operands="field">F = intersection.forward(F)</rule>
+      <rule operands="field">F = union.forward(F)</rule>
 
       <rule>interpret_argout1 = interpret.forward(interpret_argin1)</rule>
       <!-- Relations R (the relation family): part / whole / equal are
@@ -153,13 +152,13 @@
       <rule>sum_argout1 = sum.forward(sum_argin1, sum_argin2)</rule>
       <rule>product_argout1 = product.forward(product_argin1, product_argin2)</rule>
 
-      <!-- Composition / projection. verb = VP spectral operator; adverb =
+      <!-- Composition / projection. verb = VP spectral operator; modifier =
            VP eigenmodifier; lift composes the sentence at its subject order;
            lower = DET: mint, bind an address, or retain the kind. -->
-      <rule clause="S">lift_argout1 = lift.forward(lift_argin1, lift_argin2)</rule>
+      <rule clause="S">change_argout1 = change.forward(change_argin1, change_argin2)</rule>
       <rule clause="VP">verb_argout1 = verb.forward(verb_argin1, verb_argin2)</rule>
       <rule>compound_argout1 = compound.forward(compound_argin1, compound_argin2)</rule>
-      <rule>adverb_argout1 = adverb.forward(adverb_argin1, adverb_argin2)</rule>
+      <rule>modifier_argout1 = modifier.forward(modifier_argin1, modifier_argin2)</rule>
       <rule reference="argin2" head="argin2" referent="mint">lower_argout1 = lower.forward(lower_argin1, lower_argin2)</rule>
       <rule implementation="lower" reference="argin2" head="argin2" referent="bind">definite_argout1 = definite.forward(definite_argin1, definite_argin2)</rule>
       <rule implementation="lower" reference="argin2" head="argin2" referent="kind">universal_argout1 = universal.forward(universal_argin1, universal_argin2)</rule>
@@ -175,7 +174,7 @@
            meaning while retaining both operands in the numerical carrier.
            Which spans are markers is learned by the ordinary grammar MLP. -->
       <rule head="argin2">surface_argout1 = surface.forward(surface_argin1, surface_argin2)</rule>
-      <rule>transpose_argout1, transpose_argout2 = transpose.forward(transpose_argin1, transpose_argin2)</rule>
+      <rule>swap_argout1, swap_argout2 = swap.forward(swap_argin1, swap_argin2)</rule>
       <rule>lower_unary_argout1 = lower_unary.forward(lower_unary_argin1)</rule>
       <rule>definite_unary_argout1 = definite_unary.forward(definite_unary_argin1)</rule>
       <rule>preposition_unary_argout1 = preposition_unary.forward(preposition_unary_argin1)</rule>
@@ -226,17 +225,17 @@
       <rule>sum_argin1, sum_argin2 = sum.reverse(sum_argout1)</rule>
       <rule>product_argin1, product_argin2 = product.reverse(product_argout1)</rule>
 
-      <rule>lift_argin1, lift_argin2 = lift.reverse(lift_argout1)</rule>
+      <rule>change_argin1, change_argin2 = change.reverse(change_argout1)</rule>
       <rule>verb_argin1, verb_argin2 = verb.reverse(verb_argout1)</rule>
       <rule>compound_argin1, compound_argin2 = compound.reverse(compound_argout1)</rule>
-      <rule>adverb_argin1, adverb_argin2 = adverb.reverse(adverb_argout1)</rule>
+      <rule>modifier_argin1, modifier_argin2 = modifier.reverse(modifier_argout1)</rule>
       <rule referent="mint">lower_argin1, lower_argin2 = lower.reverse(lower_argout1)</rule>
       <rule implementation="lower" referent="bind">definite_argin1, definite_argin2 = definite.reverse(definite_argout1)</rule>
 
       <rule>preposition_argin1, preposition_argin2 = preposition.reverse(preposition_argout1)</rule>
 
       <rule>surface_argin1, surface_argin2 = surface.reverse(surface_argout1)</rule>
-      <rule>transpose_argin1, transpose_argin2 = transpose.reverse(transpose_argout1, transpose_argout2)</rule>
+      <rule>swap_argin1, swap_argin2 = swap.reverse(swap_argout1, swap_argout2)</rule>
       <rule>lower_unary_argin1 = lower_unary.reverse(lower_unary_argout1)</rule>
       <rule>definite_unary_argin1 = definite_unary.reverse(definite_unary_argout1)</rule>
       <rule>preposition_unary_argin1 = preposition_unary.reverse(preposition_unary_argout1)</rule>

@@ -9,7 +9,8 @@ def code(owner, value):
     """The felt value in the part and whole towers' own scalar coordinates."""
     basic = owner.basic_percepts
     point = owner.similarity_codebook.W.new_zeros(owner.similarity_codebook.W.shape[-1])
-    felt = feeling(torch.tensor(float(value), device=point.device, dtype=torch.float64)).to(point)
+    dtype = torch.float32 if point.device.type == 'mps' else torch.float64
+    felt = feeling(torch.tensor(float(value), device=point.device, dtype=dtype)).to(point)
     point[basic.identity_width-1] = felt
     point[basic.width-1] = felt
     return point
@@ -25,7 +26,8 @@ def perceive(owner, value):
     point = code(owner, value)
     if not bool(point.any()):
         return None
-    return owner.basic_percepts.perceive_value(point[owner.basic_percepts.identity_width-1])
+    return owner.basic_percepts.perceive_value(point[owner.basic_percepts.identity_width-1],
+        place=owner.where_registry.slices['scalar'][0])
 
 
 def concepts(owner):
@@ -57,7 +59,7 @@ def commit(model, sid, active):
 
 
 def reading(owner, points):
-    """One unplaced reading through the text modality's concept reader."""
+    """One scalar-place reading through the text modality's concept reader."""
     from PerceptField import PerceptField
     basic = owner.basic_percepts
     matrix = owner._concept_allocator.layer(0).features
@@ -68,15 +70,16 @@ def reading(owner, points):
                           dtype=torch.bool, device=points.device)
     boundaries = boundaries * native[None, :, None, None, None]
     values = torch.minimum(boundaries[0], boundaries[1])
-    where = torch.zeros(B, E, 2, device=points.device, dtype=torch.long)
+    where = owner.where_registry.intervals('scalar', torch.zeros(B, E, device=points.device, dtype=torch.long))
+    when = torch.zeros_like(where)
     perception = PerceptField(tuple(('bp', row) for row in rows), values,
-        values[..., None, :], where, where, where, boundaries=boundaries)
+        values[..., None, :], where, where, when, boundaries=boundaries)
     names = ('_percept_field', '_cs_field_where', '_cs_field_when', '_cs_field_caps',
              '_cs_field_rows', '_cs_field_concept_ids', '_cs_order0_raw')
     previous = {name: owner.__dict__.get(name) for name in names}
     try:
         evidence = owner.cs_read_percept_field(perception)
-        return ConceptualField(owner._cs_field_concept_ids, evidence, where, where, None)
+        return ConceptualField(owner._cs_field_concept_ids, evidence, where, when, None)
     finally:
         for name, value in previous.items():
             if value is None:
@@ -145,7 +148,8 @@ def join(model, sid, field):
         reference = ('bp', percept)
         key = pool.open(reference, kind=None, when=0, value=point, pending=False)
         entry = pool.entries[key]
-        pool.entries[key] = replace(entry, refinement=dict(entry.refinement,
+        pool._release_id(entry)
+        pool.entries[key] = replace(entry, transient=None, refinement=dict(entry.refinement,
             members=((reference, reference),), promoted_percept=percept))
         pool.record_link(key, reference, batch, kind='percept', order=-1)
         model._scalar_present[batch] = dict(candidate=key, occurrence=reference, percept=percept, point=point)
@@ -162,5 +166,5 @@ def join(model, sid, field):
                 if cid >= 0:
                     evidence[ids.index(cid), batch, target] = source.evidence[index, batch]
     return ConceptualField(field.concept_ids.new_tensor(ids), evidence,
-        torch.nn.functional.pad(field.where, (0, 0, 0, 1)),
-        torch.nn.functional.pad(field.when, (0, 0, 0, 1)), None)
+        torch.cat((field.where, scalar.where), 1),
+        torch.cat((field.when, scalar.when), 1), None)

@@ -134,14 +134,14 @@ class ForcedGrammar:
                     # Force their ordinary surface attachment; leaving them
                     # on the stack would fabricate extra equality operands.
                     operation = 'surface'
-                elif depth > 1 and 'the' in left:
-                    operation = 'definite'
                 elif self.word >= last and depth > 1:
                     if right.intersection({'.','?'}): operation = 'verb'
                     elif 'is' in left: operation = 'surface'
                     elif 'plus' in left: operation = 'verb'
-                    elif 'plus' in right: operation = 'lift'
-                    else: operation = 'equal'
+                    elif 'plus' in right: operation = 'change'
+                    # §27.1: identity sentences compose as part; define in
+                    # thought establishes the two directions of identity.
+                    else: operation = 'part'
                 elif self.word >= last and depth == 1 and question:
                     prior = context.get('previous_unary')
                     ask = next(i for i,r in enumerate(language._compose_unary_rules) if r.method_name=='ask')
@@ -162,10 +162,8 @@ class ForcedGrammar:
                     ops = data['unary_ops' if unary else 'binary_ops']
                     refs = data['unary_refs' if unary else 'binary_refs'][b,0]
                     offset = nb if unary else 0
-                    def name(rule):
-                        return 'definite' if getattr(rule,'determiner_mode',None)=='bind' else rule.method_name
                     candidates = [offset+i for i,op in enumerate(ops)
-                                  if name(rules[op]) == operation and bool(allowed[offset+i])]
+                                  if rules[op].method_name == operation and bool(allowed[offset+i])]
                     def rank(action):
                         identities = refs[action-offset].tolist()
                         score = 0

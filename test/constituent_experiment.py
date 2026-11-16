@@ -63,7 +63,7 @@ def run(args):
         corpus_sha256={name:digest(DEST/name) for name in
             ('train.text.jsonl','train.lessons.json','train.labels.jsonl','eval.text.jsonl','eval.labels.jsonl')},
         family_order=FAMILY_ORDER, within_family='seeded permutation of the unchanged counterbalanced cases',
-        nested_marker_pattern=None, untargeted_legal_actions=['transpose', 'unary faces'],
+        nested_marker_pattern=None, untargeted_legal_actions=['swap', 'unary faces'],
         targets='annotation labels actual student states; no teacher trajectory',
         pilot_gate='both raw mean wait and fold CEs on first-batch student states decrease by more than 1e-5 nats',
         pilot_state='disposable; full run restarts the same order-trained checkpoint and seed')

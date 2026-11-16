@@ -43,8 +43,7 @@ def test_order_boundary_membership_follows_one_rule():
     from test_orders_learned import equality_fixture
     owner, _, alloc = equality_fixture()
     from ConceptIndex import taxonomy_children
-    concrete, whole, kind = (alloc.new_concept() for _ in range(3))
-    alloc.reference_orders.update({concrete: 0, whole: 0, kind: 1})
+    concrete, whole, kind = (owner.new_concept(order=order) for order in (0, 0, 1))
     alloc.parts.add(concrete, whole)
     assert ('sym', concrete) not in alloc.refs(whole, 'part')
     alloc.parts.add(concrete, whole, truth_plus=1.)
@@ -64,17 +63,21 @@ def test_order_boundary_membership_follows_one_rule():
 def test_fold_and_cover_read_only_recorded_class_members():
     from DefinitionFold import examples
     from FamiliarTier import class_members
-    from test_definition_fold import fixture
-    owner, _, alloc, whole, _, source, witness, field = fixture()
+    from ConceptIndex import index_part_row
+    from test_familiar_tier import placed_fixture
+    owner, _, alloc, _, (source, _, peer_row) = placed_fixture()
     member = owner.concept_id_at_row(source)
-    alloc.reference_orders.update({member: 1, whole: 1})
-    alloc.parts.add(member, whole, truth_plus=1.)
-    assert not examples(owner, field) and not class_members(owner, whole)
+    peer = owner.concept_id_at_row(peer_row)
+    alloc.parts.add(member, peer, truth_plus=1.)
+    field = torch.zeros(owner.nVectors, 1, 2, 2)
+    field[source, 0, 0, 0] = .6
+    assert not examples(owner, field) and not class_members(owner, peer)
     assert not class_members(owner, member)
-    alloc.reference_orders[whole] = 2
+    whole = index_part_row(owner, member, peer)
+    witness = alloc.parts.find(member, whole)
+    alloc.parts.add(member, whole, truth_minus=.8)
     assert [e.witness for e in examples(owner, field)] == [witness]
     assert class_members(owner, whole)[source] > 0
-    del alloc.reference_orders[whole]
     alloc.parts.truth_plus[witness] = 0
     example, = examples(owner, field)
     assert example.member == (SYMBOL, member) and example.evidence[0] == 0 and example.evidence[1] > 0
@@ -116,7 +119,7 @@ def test_a_previously_named_shared_concept_denotes_its_raised_class():
     parent = owner.interpret.forward(name)
     assert alloc.order_of(parent) == 2 and alloc.order_of(shared) == 1
     assert set(alloc.refs(parent, 'part')) == {('sym', member) for member in members}
-    assert 'word' not in alloc.symbol_types[shared]
+    assert name in owner.definitions.words(shared)
 
 
 def test_raise_count_rejects_one_and_obeys_a_larger_count(monkeypatch):
@@ -285,7 +288,8 @@ def test_ambiguous_pointer_identity_across_time_is_empty(tmp_path):
             assert parent is None and owner.interpret.denotations(word) == (identity,)
         else:
             assert parent is not None and alloc.order_of(parent) == 2
-            assert owner.interpret.denotations(word) == (parent,)
+            assert set(owner.interpret.denotations(word)) == {identity, parent}
+            assert owner.interpret.forward(word) == parent
             members = {cid for tag, cid in alloc.refs(parent, 'part') if tag == 'sym'}
             assert members == {cid for _, cid in relata}
             assert all(alloc.order_of(cid) + 1 == alloc.order_of(parent) for cid in members)
@@ -317,7 +321,7 @@ def test_pointer_identity_across_time_keeps_bound_predicate(monkeypatch, tmp_pat
     antecedent = Clause(ConceptualMeaning.from_description(point), point=point, order=1,
         composition=Composition(point, (Composition(cat_point, reference=cat, order=1),
                                         Composition(asleep, reference=sleeps)),
-                                operation='lift', formal_name='lift', head_role=2, order=1))
+                                operation='change', formal_name='change', head_role=2, order=1))
     first = f.store.write_clause(antecedent,
                                  )
     address = f.store.occurrence_of(first)
@@ -329,7 +333,7 @@ def test_pointer_identity_across_time_keeps_bound_predicate(monkeypatch, tmp_pat
     value = torch.maximum(point, predicate)
     clause = Clause(ConceptualMeaning.from_description(value), point=value, children=(mention,),
         composition=Composition(value, (term, Composition(predicate, reference=black)),
-                                operation='lift', formal_name='lift', head_role=2))
+                                operation='change', formal_name='change', head_role=2))
     resolver = f.cs.components.reference_close
     plan = resolver.preview(clause, recall(resolver, (SituationFrame.from_row(f.store.row(first)),)))
     item, = plan['items']
@@ -365,7 +369,7 @@ def _sign_equation(f, form, label, position):
         ids.append(identity); words.append(word); rows.append(row); orders.append(order)
         values.append(owner.similarity_codebook.lookup_rows(row).detach())
     sign = next(i for i,r in enumerate(f.unary) if r.method_name == 'sign')
-    equal = next(i for i,r in enumerate(f.binary) if r.method_name == 'equal')
+    equal = next(i for i,r in enumerate(f.binary) if r.method_name == 'part')
     encoded = f.operation(f.unary[sign]).compose(values[0])
     torch.testing.assert_close(f.cs.sign.reverse(encoded), values[0])
     end = f.operation(f.binary[equal]).compose(encoded, values[1])
@@ -453,7 +457,7 @@ def test_sign_names_absorbs_and_preserves_the_null_concept(monkeypatch, tmp_path
     assert all(owner.mtm.entries[owner.mtm.token_of(ref)].symbol==target for ref in (one,two))
     assert not any((SYMBOL, null) in alloc.parts.references(i) or (SYMBOL, first) in alloc.parts.references(i)
                    for i in alloc.parts.indices().tolist())
-    assert null not in alloc.reference_orders and alloc.settle(null) is None
+    assert alloc.seated_order(null) is None and alloc.settle(null) is None
     with pytest.raises(ValueError,match='no order'):
         alloc.order_of(null)
     for name,obj in ((first,null),(null,target)):
@@ -548,8 +552,7 @@ def test_ltm0_amended_row_reads_referents_and_discards_retired_columns(tmp_path)
     store = LTM0(previous.nDim,capacity=previous.capacity,percept_width=previous.percept_width,
                  relation_capacity=previous.parts.capacity,episodic_concepts=previous.episodic_capacity)
     attach_clause_index(SimpleNamespace(),store,owner)
-    identity = alloc.new_concept()
-    alloc.reference_orders[identity] = 2
+    identity = owner.new_concept(order=2)
     idea = replace(ConceptualMeaning.from_description(store.slots.new_ones(store.nDim)),
                    role_refs=(('sym',identity),None,None))
     row = store.append_meaning(idea,evidence=(.6,.3))
@@ -582,10 +585,11 @@ def test_serial_concept_expectation_does_not_select_a_concept():
     from ConceptSpread import open_prediction, rule_order
     from test_orders_learned import equality_fixture
     owner,_,_=equality_fixture()
-    owner._expected_knowing.fill_(1.)
     model=SimpleNamespace(_concept_owner=lambda:owner,word_brackets=True,serial_object_meta=True)
     open_prediction(model,torch.tensor([True]))
-    assert model._concept_prediction.rows.numel() == 0 and rule_order(owner,0)==()
+    assert model._concept_prediction.rows.tolist() == list(range(owner._order_caps()[0]))
+    assert not model._concept_prediction.value.any()
+    assert rule_order(owner,0)==tuple(range(owner.nVectors))
     torch.testing.assert_close(owner.relevance_weights(batch=1), (1+owner._desire[:1]).clamp_min(0))
 
 
@@ -675,7 +679,7 @@ def test_kept_event_retains_its_determination_and_shift(monkeypatch):
     from test_clause_acceptance import SentenceFixture
 
     f = SentenceFixture(monkeypatch)
-    tree = ('equal', ('non', ('definite_unary', 'left')), 'right')
+    tree = ('part', ('non', ('bind', 'left')), 'right')
     reading = record_reading(f.language, f.program(tree))
     actions = torch.tensor([[0, 0, 0, 0, 0, 0], [1, 0, 0, -1, -1, 0],
                             [1, 0, 0, -1, -1, 0], [0, 0, 0, 0, 0, 0],
@@ -788,7 +792,7 @@ def test_no_op_keeps_the_form_then_binds_and_acquires_a_kind(monkeypatch, tmp_pa
         f.noun(form)
     before = owner.null_concept_read()
     owner.interpret.mandatory = False
-    reading = _optional_reading(f, ('lift', ('lower', ('interpret', 'The'), ('interpret', 'dog')),
+    reading = _optional_reading(f, ('change', ('surface', ('interpret', 'The'), ('interpret', 'dog')),
                                    ('verb', ('interpret', 'went'), 'woof')))
     decisions = leaf_readings(f.language, reading.actions, len(reading.leaves), forced=False)
     assert decisions == ('symbol', 'symbol', 'symbol', 'no_op')
@@ -960,9 +964,9 @@ def test_optional_interpretation_keeps_the_pending_definition_path(monkeypatch):
     from chunk_fixtures import context
     from order_fixtures import force_order
     f = SentenceFixture(monkeypatch)
-    force_order(f.cs, f.noun('kind'), 1)
+    f.noun('kind', order=1)
     f.cs.interpret.mandatory = False
-    reading = _optional_reading(f, ('equal', ('interpret', 'Name'), ('interpret', 'kind')))
+    reading = _optional_reading(f, ('part', ('interpret', 'Name'), ('interpret', 'kind')))
     clause = finish_clause(f.language, reading, registry=f.registry)
     resolver = f.cs.components.reference_close
     plan = resolver.preview(clause, context(resolver, ()))

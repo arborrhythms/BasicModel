@@ -28,6 +28,7 @@ def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capa
     keep_existing_references(monkeypatch)
     from test_mm_xor import _fresh_model
     model, _, _ = _fresh_model(f'data/{config}.xml')
+    constructed = set(model._concept_owner()._concept_allocator.layer()._tensor_row_keys)
     admitted = []
     stage = model._stage_reading_word_concepts
     def observe_admission():
@@ -36,7 +37,7 @@ def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capa
         rows = model.inputSpace._ar_grammar_object_rows
         word_rows = set(rows[rows >= 0].tolist())
         assert len(word_rows) == 4
-        assert set(owner._concept_allocator.layer()._tensor_row_keys) == word_rows | {owner._csw_row_of(cid) for cid in (*owner._concept_allocator.formal_arguments.values(), *owner._concept_allocator.operator_concepts.values())}
+        assert set(owner._concept_allocator.layer()._tensor_row_keys) == word_rows | constructed
         admitted.append(word_rows)
     model._stage_reading_word_concepts = observe_admission
     try:
@@ -55,6 +56,12 @@ def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capa
         # zero. Covers and these arguments are concepts, never letter words.
         for row in set(owner._concept_allocator.layer()._tensor_row_keys) - word_rows:
             cid = owner.concept_id_at_row(row)
+            if owner.is_frozen(cid):
+                # §27.2 seats the grammar's fixed thought identities during
+                # construction; none is a letter admitted by this reading.
+                assert row in constructed
+                assert 'word' not in owner._concept_allocator.symbol_types.get(cid, ())
+                continue
             assert 'concept' in owner._concept_allocator.symbol_types.get(cid, ())
             for tag, identity in owner.concept_parts(cid):
                 assert tag in ('sym', 'occ')

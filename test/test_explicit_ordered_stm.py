@@ -2,8 +2,8 @@
 
 The production grammar can enumerate order-changing rules directly:
 
-    S4 = lift(NP3, VP1)
-    S5 = lift(NP4, MP1)
+    S4 = change(NP3, VP1)
+    S5 = change(NP4, MP1)
 
 STM therefore needs exact typed admissibility over ``(category, order)``
 rather than Kleene inference.
@@ -23,8 +23,8 @@ def _ordered_grammar():
     from Language import Grammar
     g = Grammar()
     g.rules = [
-        g._parse_rule("S4", "lift(NP3, VP1)", space_role='SS'),
-        g._parse_rule("S5", "lift(NP4, MP1)", space_role='SS'),
+        g._parse_rule("S4", "change(NP3, VP1)", space_role='SS'),
+        g._parse_rule("S5", "change(NP4, MP1)", space_role='SS'),
     ]
     g._configured = True
     Language.TheGrammar = g

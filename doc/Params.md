@@ -260,7 +260,7 @@ before it goes. See [STM](STM.md#10-ltm-as-the-chain-of-stm-end-states),
 | `forgetting` | bool | `true` | Enable LTM retention and boundary concept reclamation. Capacity warnings remain visible. |
 | `forgetHighWater` | float | `0.9` | Occupancy fraction that triggers a document-boundary pass. |
 | `forgetLowWater` | float | `0.7` | Target occupancy fraction; protected roots and gradual detail loss can prevent reaching it. |
-| `forgetMinInterval` | int | `256` | Minimum completed sentence presentations between passes. |
+| `forgetMinInterval` | int | `256` | Minimum completed sentence presentations between unpressured passes. High-water pressure in either LTM table overrides it at a closed boundary. |
 | `forgetAtEpoch` | bool | `false` | Also consider retention at a completed training epoch, subject to the interval. |
 | `forgetTrustWeight` | float | `1.0` | Weight of the row's trust, the larger of its two evidence lanes, $\max(t^+, t^-)$. |
 | `forgetUtilityWeight` | float | `1.0` | Weight of the row's stored surprise in $[0, 1]$; a row whose surprise is unknown counts as 1. |

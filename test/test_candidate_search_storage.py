@@ -14,7 +14,7 @@ def previous():
     return module._bounded_binary_reconstruction
 
 
-@pytest.mark.parametrize('operator',['ConjunctionLayer','DisjunctionLayer','SumLayer','ProductLayer','AdverbLayer'])
+@pytest.mark.parametrize('operator',['ConjunctionLayer','DisjunctionLayer','SumLayer','ProductLayer','ModifierLayer'])
 @pytest.mark.parametrize('dtype',[torch.float32,torch.float64])
 def test_chosen_pair_preserves_values_eligibility_gradients_and_optimizer_step(paired,operator,dtype):
     import Language
@@ -44,10 +44,10 @@ def test_chosen_pair_preserves_values_eligibility_gradients_and_optimizer_step(p
         loss=(left.square()+right_value*.3).sum()+details['logits'].square().sum()
         gradients=torch.autograd.grad(loss,parameters,allow_unused=True)
         # §50 item106 / item65: the joint-residual chooser is fixed, and
-        # only Product and Adverb among these operators own parameters.
+        # only Product and Modifier among these operators own parameters.
         assert not list(chooser.parameters())
         trainable=list(operator_copy.parameters())
-        assert bool(trainable) == (operator in ('ProductLayer','AdverbLayer'))
+        assert bool(trainable) == (operator in ('ProductLayer','ModifierLayer'))
         if trainable:
             optimizer=torch.optim.SGD(trainable,lr=.01,momentum=.9)
             for parameter,gradient in zip(trainable,gradients[1:]):

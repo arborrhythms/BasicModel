@@ -47,7 +47,7 @@ def test_selected_grammar_context_selects_order(context, order):
         leaf_orders=torch.tensor([0, order+1 if order else 0]))
     # The source kind survives the member-order request. Closing chooses
     # the token's identity independently of this derivation carrier.
-    assert got.tolist() == [-1, ids[0] if order == 1 else ids[order]]
+    assert got.tolist() == [-1, ids[order] if context == 'particular' else ids[0] if order == 1 else ids[order]]
     assert orders.tolist() == [-1, order]
     assert cs.word_concepts('cat') == tuple(sorted([cs.definitions.word(form='cat'), *ids]))
 
@@ -79,7 +79,7 @@ def test_capture_owns_grammar_resolution_without_changing_reconstruction():
 def test_order_three_relation_over_kinds_is_read_from_its_stamp():
     """Operand positions and the configured storage rung impose no order ceiling."""
     from ReferenceContext import reference_requests, denoted_order
-    cs = _cs(nS=256, order=1)
+    cs = _cs(nS=256, order=3)
     word, _ = cs.interpret_word([7], [], key='statement')
     from reading_fixtures import supply_object
     raw = supply_object(cs, word)

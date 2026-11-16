@@ -1,6 +1,10 @@
 """Fixed-shape grammatical clause scope carried beside the numerical STM."""
 import torch
 from torch import nn
+from ClauseRow import predicate_identity
+
+
+_RELATIVE_PREDICATES = tuple(predicate_identity(name) for name in ('part', 'implies'))
 
 
 class ClauseScope(nn.Module):
@@ -64,9 +68,15 @@ class ClauseScope(nn.Module):
     def slots(cls, state, depth):
         occupied = torch.arange(state.shape[1], device=state.device)[None] < depth[:, None]
         relative = ((state[..., 0].bitwise_and(cls.RELATIVE) != 0) & occupied).any(-1)
-        # Two slots are an unfinished subject/predicate phrase. The existing
-        # one-or-three row contract cannot admit that partial form.
-        return torch.where(relative & (depth != 2), 3, 1)
+        # A nested relative operand does not give its siblings a predicate.
+        # A three-root close needs the selected middle predicate that the
+        # journal will read; other forests must continue composing to one.
+        middle = state[:, min(1, state.shape[1]-1), 1]
+        predicate = torch.zeros_like(depth, dtype=torch.bool)
+        for identity in _RELATIVE_PREDICATES:
+            predicate |= middle == identity
+        complete = ((depth == 1) & relative) | ((depth >= 3) & predicate)
+        return torch.where(complete, 3, 1)
 
     @staticmethod
     def reset(state, active):

@@ -15,8 +15,8 @@ def test_repeated_occurrences_keep_direct_counts_through_unary_and_clause(compil
     grammar = Grammar()
     grammar.load_from_grammar_file('complete.grammar')
     rules = {operation_name(rule): rule for rule in grammar.rules_upward if operation_name(rule)}
-    binary = tuple(rules[name] for name in ('intersection', 'compound', 'lift'))
-    unary = (rules['compound_unary'],)
+    binary = tuple(rules[name] for name in ('intersection', 'compound', 'change'))
+    unary = (rules['marker'],)
     _, parts, ids = argument_inventory(formal_arguments((*binary, *unary)), count=3)
     # Arbitrary, distinct prior geometric scores expose a wrong occurrence gather.
     # The same word occurs twice; its second occurrence is not another word type.
@@ -69,8 +69,8 @@ def test_repeated_occurrences_keep_direct_counts_through_unary_and_clause(compil
     parts.observe_kept(program, binary, unary)
     delta = {word: Counter(arg for member, arg in events if member == word) for word in ids}
     assert delta[ids[0]] == Counter({'compound_argin1':1})
-    assert delta[ids[1]] == Counter({'intersection_argin1':1, 'intersection_argin2':1, 'intersection_argout1':2, 'compound_argin2':2, 'compound_argout1':2, 'compound_unary_argin1':2, 'compound_unary_argout1':2, 'lift_argin1':2})
-    assert delta[ids[2]] == Counter({'lift_argin2':1})
+    assert delta[ids[1]] == Counter({'intersection_argin1':1, 'intersection_argin2':1, 'intersection_argout1':2, 'compound_argin2':2, 'compound_argout1':2, 'marker_argin1':2, 'marker_argout1':2, 'change_argin1':2})
+    assert delta[ids[2]] == Counter({'change_argin2':1})
     increments = Counter(arg for _, arg in events)
     assert view_counts(parts) == {arg: initial[arg] + increments[arg] for arg in parts.arguments}
     # Clause completion clears both occurrences before the final unary call.

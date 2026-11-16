@@ -36,7 +36,7 @@ def test_retired_field_names_fail_at_parser(old,new):
         Grammar().configure({'compose':{'rule':{'_':f'F = {old}.forward(F)','operands':'field'}}})
 
 
-def test_numeric_scale_order_and_fixed_code():
+def test_numeric_scale_order_and_level_code():
     from NumericPercepts import feeling,number
     from BasicPercepts import BasicPercepts
     from Layers import Ops
@@ -45,13 +45,14 @@ def test_numeric_scale_order_and_fixed_code():
     assert felt[0] == 0 and felt[-1] == 1
     assert torch.all(felt[1:]>felt[:-1])
     torch.testing.assert_close(number(felt[:-1]).float(),values[:-1],atol=1e-5,rtol=1e-5)
-    basic = BasicPercepts(None,4,0,4)
-    row = basic.numeric_dimension(2)
-    codes = felt[:,None]*basic.code(row)
-    assert len(basic.index) == 1
-    assert codes[:,:2].count_nonzero() == 0 and codes[:,3:].count_nonzero() == 0
-    assert bool(Ops.partOf(codes[1],codes[2]))
-    assert not bool(Ops.partOf(codes[2],codes[1]))
+    basic = BasicPercepts(None,4,4,8)
+    basic.bind(None)
+    rows = [basic.perceive_value(value, place=0) for value in felt[1:]]
+    codes = basic.lookup_rows(rows)
+    assert len(basic.index) == len(rows)
+    assert codes[:,:3].count_nonzero() == 0 and codes[:,4:7].count_nonzero() == 0
+    assert bool(Ops.partOf(codes[0],codes[1]))
+    assert not bool(Ops.partOf(codes[1],codes[0]))
 
 
 def test_numeric_native_field_promotes_and_reader_is_stepped():
@@ -70,7 +71,7 @@ def test_numeric_native_field_promotes_and_reader_is_stepped():
     assert set(matrix._cols) == set(model.numeric_percepts.rows)
     field = model._numeric_field
     location = (field.concept_ids == owner.concept_id_at_row(row)).nonzero().item()
-    torch.testing.assert_close(field.evidence[location,:,0,0],torch.tensor([0.,0.,0.,.4093839]))
+    torch.testing.assert_close(field.evidence[location,:,-1,0],torch.tensor([0.,0.,0.,1.]))
     torch.testing.assert_close(model.numeric_percepts.reverse(field),values,atol=1e-6,rtol=1e-6)
     before = parameter.detach().clone()
     output.square().sum().add((output-1).square().sum()).backward()
@@ -138,7 +139,7 @@ def test_intersection_writer_preserves_against_lane_and_examination_proposal_rul
     from FieldProjection import close,inventory
     model,*_=_build_model('data/MM_xor.xml')
     owner=model._concept_owner();a,b=model.numeric_percepts.rows
-    model.grammar_phases=GrammarPhases(True,False,False,frozenset(('intersection','divide')))
+    model.grammar_phases=GrammarPhases(True,False,False,frozenset(('intersection','focus')))
     lanes=((a,0),(b,1))
     assert observe_intersection(owner,lanes) is None
     for _ in range(owner.concept_mint_count):

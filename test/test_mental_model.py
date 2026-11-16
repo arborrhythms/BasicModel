@@ -67,8 +67,8 @@ class TestBasicModelForwardReverse(unittest.TestCase):
         # (Alec: equality is a query, not parse structure) -- it must NOT
         # appear as a parse method any more.
         self.assertNotIn('isEqual', Language.TheGrammar.s_methods)
-        self.assertIn('conjunction', Language.TheGrammar.s_methods)
-        self.assertIn('disjunction', Language.TheGrammar.s_methods)
+        self.assertIn('sign', Language.TheGrammar.s_methods)
+        self.assertIn('interpret', Language.TheGrammar.s_methods)
         self.assertNotIn('exist', Language.TheGrammar.s_methods)
 
     def test_subspace_words_clearable(self):
@@ -112,9 +112,9 @@ class TestBasicModelGrammarConfiguration(unittest.TestCase):
     # the additive left+right op moved to <PartSpace> as 'chunk'.
     REQUIRED_OPS = {
         'non', 'not',
-        'conjunction', 'disjunction',
+        'add', 'multiply',
         'intersection', 'union',
-        'lift', 'lower',
+        'change', 'lower_unary', 'lift',
     }
 
     def setUp(self):

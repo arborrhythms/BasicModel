@@ -9,7 +9,7 @@ Contract verified here:
   * ``PiLayer(butterfly=True, N=8)`` works; same identity-init / roundtrip
     holds with the pi-style per-pair semantics.
   * ``SigmaLayer(butterfly=True, N=8)`` works similarly with sigma-style pair op.
-  * ``LiftLayer`` / ``LowerLayer`` delegate ``_butterfly_pair_op`` to their
+  * ``ChangeLayer`` / ``LowerLayer`` delegate ``_butterfly_pair_op`` to their
     internal sigma / pi instances.
 
 Acceptance signal: this file passes, and the XOR convergence test
@@ -37,7 +37,7 @@ from Layers import (
     GrammarLayer,
     PiLayer,
     SigmaLayer,
-    LiftLayer,
+    ChangeLayer,
     LowerLayer,
 )
 
@@ -315,14 +315,14 @@ class TestSigmaLayerButterfly(unittest.TestCase):
 
 
 class TestLiftLowerButterflyDelegation(unittest.TestCase):
-    """LiftLayer's ``_butterfly_pair_op`` delegates to ``self._sigma``;
+    """ChangeLayer's ``_butterfly_pair_op`` delegates to ``self._sigma``;
     LowerLayer's delegates to ``self._pi``. Construction validates the
     delegation exists; identity-init still holds at the cascade level."""
 
     def test_lift_butterfly_constructs(self):
         N_slots, D = 8, 3
         N = N_slots * D
-        layer = LiftLayer(nInput=D, nOutput=D, invertible=True,
+        layer = ChangeLayer(nInput=D, nOutput=D, invertible=True,
                           butterfly=True, N=N)
         self.assertTrue(layer.butterfly)
 
@@ -331,13 +331,13 @@ class TestLiftLowerButterflyDelegation(unittest.TestCase):
         N_slots, D = 8, 3
         N = N_slots * D
         B = 2
-        layer = LiftLayer(nInput=D, nOutput=D, invertible=True,
+        layer = ChangeLayer(nInput=D, nOutput=D, invertible=True,
                           butterfly=True, N=N)
         x = torch.tanh(torch.randn(B, N_slots, D) * 0.1)
         y = layer.forward_butterfly(x)
         err = (y - x).abs().max().item()
         self.assertLess(err, 1e-5,
-                        f"LiftLayer butterfly identity-init failed: err={err}")
+                        f"ChangeLayer butterfly identity-init failed: err={err}")
 
     def test_lower_butterfly_constructs(self):
         layer = LowerLayer(nInput=3, nOutput=3)

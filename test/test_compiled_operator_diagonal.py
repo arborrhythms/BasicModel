@@ -35,7 +35,7 @@ def test_free_candidate_search_compiles_backward_through_native_operators(tmp_pa
     try:
         language=model.languageSpace
         binary=language._tree_layer(2)
-        index=list(binary.op_names).index('lift')
+        index=list(binary.op_names).index('change')
         op=getattr(binary.ops[index],'gl',binary.ops[index])
         width=model.conceptualSpace.stm.concept_dim
         codes=(torch.arange(1,1+6*width,dtype=torch.float32).reshape(2,3,width)/(7*width)).requires_grad_()

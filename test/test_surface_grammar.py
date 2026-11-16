@@ -155,7 +155,7 @@ def assert_selected_wording(model, curriculum):
     mistakes = []
     for row, program in zip(evaluation, readings_for[id(observed)]):
         meaning = model.languageSpace.program_meaning(program, model.grammatical_thoughts)
-        if row["form"] == "lift":
+        if row["form"] == "change":
             if meaning is not None:
                 mistakes.append((row["text"], "invented relation"))
             continue

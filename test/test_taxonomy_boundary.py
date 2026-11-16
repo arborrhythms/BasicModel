@@ -10,7 +10,7 @@ from order_fixtures import force_order
 
 
 def _chain():
-    cs = _cs()
+    cs = _cs(order_limit=2)
     a, b, c = (("sym", cs.new_concept()) for _ in range(3))
     force_order(cs, a[1], 0)
     cs.add_whole(a[1], b)
@@ -50,6 +50,8 @@ def test_model_taxonomy_entries_skip_global_vector_proposal_setup(monkeypatch, t
         for ref in (a, b):
             force_order(cs, ref[1], 0)
             cs._csw_concept_row(0, ref[1])
+        from test_thought_model_fixture import trusted_premises
+        trusted_premises(cs, a, b)
         cs.add_whole(a[1], b)
         def forbidden(*args, **kwargs):
             raise AssertionError("taxonomy query must not build/read the vector proposal route")

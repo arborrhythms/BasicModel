@@ -20,7 +20,7 @@ def predicate_identity(name):
     The tag is disjoint from concept IDs and occurrence-addressed LTM rows.
     """
     import hashlib
-    name = 'part' if name in ('whole', 'equal', 'generic') else str(name)
+    name = 'part' if name in ('whole', 'equal', 'define', 'generic') else str(name)
     return (1 << 61) | (int.from_bytes(hashlib.sha256(name.encode()).digest()[:8], 'big') & ((1 << 61) - 1))
 
 
@@ -109,7 +109,7 @@ class Clause:
         if len(self.evidence) != 2 or any(not math.isfinite(float(x)) or not 0 <= float(x) <= 1
                                         for x in self.evidence):
             raise ValueError('clause evidence requires two finite poles in [0, 1]')
-        if self.relation not in (None, 'part', 'whole', 'equal', 'implies'):
+        if self.relation not in (None, 'part', 'whole', 'equal', 'define', 'implies'):
             raise ValueError('unknown clause relation')
         if len(self.refs) != 3:
             raise ValueError('a clause has three reference slots')
@@ -460,17 +460,6 @@ class ClauseRows:
             return pair, from_trust
         def idea_count(pair):
             return max(1, sum(pole * closing.source_trust > 0 for pole in pair))
-        def event_point(value, record, kind):
-            if value.identity is None or value.identity.get('event') is None:
-                return None
-            point = value.identity['result']
-            from IdentityRows import carrier
-            # The statement and the participant's resulting state can be
-            # different ideas even when the statement now closes as LTM0.
-            if kind == OCCURRENCE and torch.equal(carrier(owner, point),
-                                                  carrier(owner, record['value'].point)):
-                return None
-            return point
         def reserve(record, sentence=False, force=False, pair=(0., 0.)):
             nonlocal needed
             term = record['value']
@@ -481,17 +470,14 @@ class ClauseRows:
                     and not (forced_occurrence and previous != OCCURRENCE)):
                 return previous
             ref, children = record['reference'], record['children']
-            assertion = term.operation in closing._assertions and len(children) == 2
             if (not sentence and not force and ref is not None
-                    and (not children or term.operation not in (*closing._assertions, 'lift', 'verb'))):
+                    and (not children or term.operation not in (*closing._assertions, 'change', 'verb'))):
                 result = ref[0]
-            elif not assertion or not children or forced_occurrence:
+            elif closing.entry_kind(record, sentence=sentence, force=force) == OCCURRENCE:
                 from IdentityRows import carrier
                 carrier(owner, term.point)
                 needed += idea_count(pair)
                 result = OCCURRENCE
-            elif len(children) == 1:
-                result = reserve(children[0], sentence=sentence, pair=pair)
             else:
                 for child in children:
                     reserve(child)
@@ -511,7 +497,7 @@ class ClauseRows:
                 # request still names the phrase's own located occurrence.
                 if record.get('mention') and entry_kind != OCCURRENCE:
                     needed += 1
-                if event_point(value, record, entry_kind) is not None:
+                if closing.event_point(value, entry_kind) is not None:
                     needed += idea_count(pair)
         if len(self) + needed > self.capacity:
             raise ClauseCapacityError(f'LTM0 construction capacity exhausted before close: '
@@ -543,7 +529,7 @@ class ClauseRows:
             row = location(entry)
             rows[id(value)] = row
             occurrences[id(value)] = self.occurrence_of(row)
-            point = event_point(value, record, entry[0])
+            point = closing.event_point(value, entry[0])
             if point is not None:
                 compacted = replace(ConceptualMeaning.from_description(point),
                     bindings={'_relations': (entry[1],)} if entry[0] == RELATION else {},

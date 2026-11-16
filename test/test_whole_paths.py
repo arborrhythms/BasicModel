@@ -416,7 +416,7 @@ def test_output_departure_runs_only_the_last_stage(monkeypatch):
     monkeypatch.setattr(WholePaths, 'output', output)
     draw = dict(walk=torch.tensor([6]), reconstruction_round=torch.tensor([-1]),
                 thought_round=torch.tensor([-1]), output_round=torch.tensor([0]))
-    path = finish(model, (), 0, active, base=base, draw=draw)
+    path = finish(model, (), 0, active, base=base, draw=draw, trust=1.)
     assert len(calls) == 1 and path.observation['record'] is base.observation['record']
     assert path.parts.tolist() == [[2.,0.,1.]]
 
@@ -605,7 +605,7 @@ def test_thought_preview_keeps_scored_reference_arrivals_unchanged():
     observation = dict(clauses=(clause,), reference_plans=(plan,), entries=(entry,))
     assert plan['arrival_count'] == 0
     for _ in range(2):
-        assert fields(model, observation, 0)[0] is not None
+        assert fields(model, observation, 0, trust=1.)[0] is not None
         assert view.reference == word
         assert len(resolver._arrival_constituents(clause)[1]) == plan['arrival_count']
         assert 'prepared_root' not in plan and 'written_node' not in plan['items'][0]

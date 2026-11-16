@@ -54,8 +54,8 @@ def test_substitution_requires_the_returned_premise_and_keeps_its_witness():
     assert integrate(goal, step, (first, read(operand, value, binding))) is goal
     # Equal cached vectors and isomorphic descriptions are not declared relations.
     first.evidence['evaluation_values'] = {compound: torch.ones(3), rewritten: torch.ones(3)}
-    first.evidence['evaluations'] = {compound: dict(kind='lift', identity=operand),
-                                   rewritten: dict(kind='lift', identity=value)}
+    first.evidence['evaluations'] = {compound: dict(kind='change', identity=operand),
+                                   rewritten: dict(kind='change', identity=value)}
     assert integrate(goal, step, (first, read(operand, value, binding))) is goal
 
 
@@ -200,7 +200,7 @@ def test_concluded_relation_keeps_its_occurrence_argument(monkeypatch, role):
 def test_empty_query_keeps_a_closed_equality_on_the_semantic_chain_path(monkeypatch):
     from test_item6_2_thinking import world, run
     model, registry, store, (a, b, c) = world()
-    root = registry.form('equal', a, a)
+    root = registry.form('define', a, a)
     selected = []
     def choose(_root, active, actions, **kwargs):
         if selected:

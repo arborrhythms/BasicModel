@@ -215,8 +215,32 @@ class VerbGroups(nn.Module):
         self.reports = []
 
 
+class MeaningBasis(nn.Module):
+    """The verb phrase's reflections, read from its object's meaning."""
+    def __init__(self, width, *, reflections=4):
+        super().__init__()
+        if width <= 0 or width % 2 or reflections < 2 or reflections % 2:
+            raise ValueError('a meaning basis requires paired lanes and reflections')
+        size = width // 2
+        vectors = torch.zeros(reflections, size, width)
+        for i in range(reflections):
+            vectors[i, (i // 2) % size, (i // 2) % size] = 1
+            vectors[i, (i // 2) % size, size + (i // 2) % size] = 1
+        self.vectors = nn.Parameter(vectors)
+
+    def read(self, meaning):
+        size = self.vectors.shape[1]
+        support = meaning.unflatten(-1, (2, size)).ne(0).any(-2)
+        vectors = F.linear(meaning, self.vectors.flatten(0, 1)).unflatten(-1, self.vectors.shape[:2])
+        return vectors * support[..., None, :], support
+
+    def forward(self, meaning):
+        vectors, support = self.read(meaning)
+        return householder(vectors), support
+
+
 class MeaningAction(nn.Module):
-    """A diagonal group action in an object or group basis, on each lane."""
+    """Gain on each lane, in a carried phrase basis or the verb's group basis."""
     def __init__(self, width, *, capacity=24, reflections=4, fit=.1, modifier=False):
         super().__init__()
         if width <= 0 or width % 2:
@@ -224,13 +248,21 @@ class MeaningAction(nn.Module):
         size = width // 2
         self.readout = nn.Parameter(torch.zeros(size, width))
         self.groups = VerbGroups(size, 1 if modifier else capacity, reflections, fit)
-        # Paired readouts initialize Q(object) to I without consuming RNG.
-        vectors = torch.zeros(reflections, size, width)
-        for i in range(reflections):
-            vectors[i, (i // 2) % size, (i // 2) % size] = 1
-            vectors[i, (i // 2) % size, size + (i // 2) % size] = 1
-        self.object_vectors = nn.Parameter(vectors)
+        # The verb operator owns the object basis. Change reads that same
+        # module through the phrase's retained source reference.
+        object.__setattr__(self, 'object_basis', None)
         self.modifier = modifier
+
+    def bind_basis(self, basis):
+        object.__setattr__(self, 'object_basis', basis)
+
+    def _carried_object(self, value, present):
+        if value is not None and self.object_basis is None:
+            if present is None:
+                raise ValueError('an object basis requires the verb operator that owns it')
+            torch._assert_async(~present.any(), 'a phrase carries an undeclared object basis')
+            return None, None
+        return value, present
 
     def spectrum(self, verb):
         raw = F.linear(verb, self.readout)
@@ -245,10 +277,7 @@ class MeaningAction(nn.Module):
             q = self.groups(torch.zeros((), dtype=torch.long, device=value.device))
         support = torch.ones_like(value[..., :size], dtype=torch.bool)
         if object_value is not None:
-            support = object_value.unflatten(-1, (2, size)).ne(0).any(-2)
-            vectors = F.linear(object_value, self.object_vectors.flatten(0, 1)).unflatten(
-                -1, self.object_vectors.shape[:2])
-            object_q = householder(vectors * support[..., None, :])
+            object_q, support = self.object_basis(object_value)
             if object_present is None:
                 q = object_q
             else:
@@ -270,13 +299,8 @@ class MeaningAction(nn.Module):
             selected = householder_action(chart, vectors, transpose=transpose)
             result = torch.where((group >= 0)[..., None, None], selected, chart)
         if object_value is not None:
-            support = object_value.unflatten(-1, (2, self.readout.shape[0])).ne(0).any(-2)
-            # Keep the weight pullback in its parameter's native layout.
-            # einsum's permuted gradient disagrees with the unused branch
-            # of a compiled conditional inverse in the free walk.
-            vectors = F.linear(object_value, self.object_vectors.flatten(0, 1)).unflatten(
-                -1, self.object_vectors.shape[:2])
-            selected = householder_action(chart, vectors * support[..., None, :], transpose=transpose)
+            vectors, _ = self.object_basis.read(object_value)
+            selected = householder_action(chart, vectors, transpose=transpose)
             result = selected if object_present is None else torch.where(
                 object_present[..., None, None], selected, result)
         return result
@@ -284,6 +308,7 @@ class MeaningAction(nn.Module):
     def forward(self, value, verb, *, object_value=None, group=None,
                 object_present=None, inverse=False):
         from Layers import cube_chart, cube_unchart
+        object_value, object_present = self._carried_object(object_value, object_present)
         # Unknown groups and absent objects have exactly the identity basis.
         # Eager evaluation need not build a dense matrix for that masked path.
         # The compiled path retains the tensor-only general expression.

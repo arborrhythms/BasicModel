@@ -59,7 +59,7 @@ def test_later_ball_mention_preserves_the_boxs_key_members_and_count(monkeypatch
             torch.tensor([True, True, False])), point=point+pred, order=2,
             children=(child,), refs=(('clause', 0), -1, -1),
             composition=Composition(point+pred, (child.composition,
-                Composition(pred, reference=words[predicate])), operation='lift', order=2))
+                Composition(pred, reference=words[predicate])), operation='change', order=2))
 
     # y is x plus two: x is nested under the right-hand expression.
     x = described(pending_content, words['x'])

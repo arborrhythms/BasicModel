@@ -35,7 +35,6 @@ def _move(bank, rows):
     with torch.no_grad():
         bank.mereology.placement[rows] = torch.tensor([[.2, .8], [.7, .3]])
         bank.mereology.placement_witnesses[rows] = 1
-        bank.mereology.placement_valid[rows] = True
         bank.mereology.placement_dirty[rows] = True
 
 

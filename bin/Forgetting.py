@@ -88,12 +88,15 @@ def forget(store, config=None, *, document_boundary=False, epoch_boundary=False,
     if (not config.enabled or stateless or open_sentence or torch.compiler.is_compiling()
             or not (document_boundary or epoch_boundary)):
         return None
-    pressure=(len(store)>=math.ceil(config.high_water*store.capacity)
-              or bool(store.forget_pending))
+    high_water=len(store)>=math.ceil(config.high_water*store.capacity)
+    pressure=high_water or bool(store.forget_pending)
     parts_pressure=len(store.parts)>=math.ceil(config.high_water*store.parts.capacity)
     if not (pressure or parts_pressure or bool(store.forget_pending) or (epoch_boundary and config.at_epoch)):
         return None
-    if int(store.forget_passes) and int(store.forget_sentences-store.forget_last_sentence)<config.min_interval:
+    # A sentence may retain several rows. The elapsed sentence interval
+    # therefore cannot postpone a capacity-driven pass at a closed boundary.
+    if (not (high_water or parts_pressure) and int(store.forget_passes)
+            and int(store.forget_sentences-store.forget_last_sentence)<config.min_interval):
         return None
     from Memory import OCCURRENCE
     from MemoryActivity import decay

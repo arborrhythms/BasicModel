@@ -8,6 +8,21 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 @contextmanager
+def order_allocation(name, shares):
+    """Declare the unchanged inventory's free row counts before construction."""
+    tree = ET.parse(ROOT/'data'/name)
+    section = tree.find('ConceptualSpace')
+    allocation = section.find('orderAllocation')
+    if allocation is None:
+        allocation = ET.SubElement(section, 'orderAllocation')
+    allocation.text = ' '.join(str(value) for value in shares)
+    with tempfile.TemporaryDirectory(prefix='order-allocation-') as directory:
+        path = Path(directory)/Path(name).name
+        tree.write(path, encoding='unicode')
+        yield str(path)
+
+
+@contextmanager
 def parallel_concepts(*, wide=False):
     """Keep the mixing path, with the tested sparse order and optional wider geometry.
 
@@ -50,6 +65,20 @@ def small_retained(name, *, concept_rows=None):
             node.text = '256'
     if concept_rows is not None:
         tree.find('ConceptualSpace/nVectors').text = str(concept_rows)
+    if tree.findtext('SymbolSpace/language/grammar') == 'complete.grammar':
+        # Alec's missing-width allocation applies to these small forms too;
+        # reducing the form must not erase marker's declared meaning lanes.
+        form = int(tree.findtext('PartSpace/nDim'))
+        width = form + int(tree.findtext('ConceptualSpace/meaningWidth', '128'))
+        for path in ('ConceptualSpace/nDim', 'ConceptualSpace/nOutputDim',
+                     'WholeSpace/nInputDim', 'OutputSpace/nInputDim'):
+            node = tree.find(path)
+            if node is not None:
+                node.text = str(width)
+        node = tree.find('ConceptualSpace/nInputDim')
+        if node is not None:
+            node.text = (str(width) if tree.findtext('architecture/conceptBinding') == 'aligned'
+                         else '0')
     with tempfile.TemporaryDirectory(prefix='retained-smoke-') as directory:
         path = Path(directory)/Path(name).name
         tree.write(path, encoding='unicode')

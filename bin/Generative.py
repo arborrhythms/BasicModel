@@ -71,7 +71,7 @@ class ActionCandidates(NamedTuple):
 
 def candidate_action_context(op, right, action_candidates=None):
     op = getattr(op, 'gl', op)
-    if (getattr(op, 'meaning_action', None) is None or op.rule_name == 'adverb'
+    if (getattr(op, 'meaning_action', None) is None or op.rule_name == 'modifier'
             or action_candidates is None):
         return None
     return action_candidates.context(right, op.meaning_layout[0])
@@ -90,7 +90,7 @@ def propose_actions(language, basis, valid, *, groups=None, terminal_valid=None,
     binary = language._generate_binary_ops
     actions = [getattr(op, 'gl', op) for op in binary
                if getattr(getattr(op, 'gl', op), 'meaning_action', None) is not None
-               and getattr(getattr(op, 'gl', op), 'rule_name', None) != 'adverb']
+               and getattr(getattr(op, 'gl', op), 'rule_name', None) != 'modifier']
     if not actions or basis is None or basis.shape[1] == 0:
         return None
     width = actions[0].meaning_layout[0]
@@ -318,6 +318,7 @@ def lexical_candidates(owner,root,*,limit,chunk_size=256,retain_bytes=True):
     for start in range(0,len(rows),chunk_size):
         ids=selected.new_tensor(rows[start:start+chunk_size])[None].expand(B,-1)
         codes=owner.similarity_codebook.lookup_rows(ids,streams=True).detach()
+        codes=owner.interpret.lexical_atoms(ids,codes)
         weights=torch.ones_like(ids,dtype=root.dtype) if heat is None else heat.gather(1,ids)
         scores=readback_scores(root,codes,weights,meaning_start=width)
         candidates=torch.cat((selected,ids),1)
@@ -327,6 +328,7 @@ def lexical_candidates(owner,root,*,limit,chunk_size=256,retain_bytes=True):
         chunks+=1
     valid=selected>=0
     codes=owner.similarity_codebook.lookup_rows(selected.clamp_min(0),streams=True).detach()
+    codes=owner.interpret.lexical_atoms(selected,codes)
     codes=torch.where(valid[...,None],codes,0.)
     weights=torch.ones_like(best) if heat is None else heat.gather(1,selected.clamp_min(0))
     weights=torch.where(valid,weights,0.)

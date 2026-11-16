@@ -95,13 +95,13 @@ def corpus():
             left = np(kind, definite, other if family in ('np', 'intransitive') else None)
             tree = left
             if family == 'intransitive':
-                tree = ['lift', left, word(('runs', 'sleeps')[(kind+distance+definite) % 2])]
+                tree = ['change', left, word(('runs', 'sleeps')[(kind+distance+definite) % 2])]
             elif family == 'transitive':
                 verb = word(('chases', 'sees')[(kind+definite) % 2])
-                tree = ['lift', left, ['verb', verb, np(other, not definite)]]
+                tree = ['change', left, ['verb', verb, np(other, not definite)]]
             elif family == 'preposition':
                 copula, prep = word('is'), word(('on', 'near')[(kind+definite) % 2])
-                tree = ['lift', left, ['surface', copula,
+                tree = ['change', left, ['surface', copula,
                     ['preposition', prep, np(other, not definite)]]]
             split = 'eval' if distance == 3 else 'train'
             key = f'4e:{family}:{kind}:{distance}:{int(definite)}'

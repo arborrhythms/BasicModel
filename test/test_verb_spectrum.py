@@ -24,7 +24,7 @@ import torch
 from torch import nn
 
 from util import TheXMLConfig
-from Language import OperationSelectionLayer, LiftLayer, VerbLayer
+from Language import OperationSelectionLayer, ChangeLayer, VerbLayer
 
 _D = 8
 
@@ -55,7 +55,7 @@ def _strong_spectrum(lyr, seed=1):
 
 def test_flag_off_is_noop():
     _set_flag(False)
-    lyr = LiftLayer(nInput=_D, nOutput=_D)
+    lyr = ChangeLayer(nInput=_D, nOutput=_D)
     assert lyr._verb_spectrum is False
     assert lyr._verb_spec is None
     np_, verb = _np_and_verb()
@@ -66,7 +66,7 @@ def test_flag_off_is_noop():
 def test_flag_on_builds_projection():
     _set_flag(True)
     try:
-        lyr = LiftLayer(nInput=_D, nOutput=_D)
+        lyr = ChangeLayer(nInput=_D, nOutput=_D)
         assert lyr._verb_spectrum is True
         assert lyr._verb_spec is not None
     finally:
@@ -77,7 +77,7 @@ def test_untrained_is_identity():
     """Zero-init => w_v = 0 => e^0 = 1 => apply_verb is the identity until trained."""
     _set_flag(True)
     try:
-        lyr = LiftLayer(nInput=_D, nOutput=_D)
+        lyr = ChangeLayer(nInput=_D, nOutput=_D)
         np_, verb = _np_and_verb()
         assert torch.allclose(lyr.apply_verb(np_, verb), np_, atol=1e-5)
     finally:
@@ -89,7 +89,7 @@ def test_roundtrip_exact_and_nontrivial():
     it exactly (invertible by construction)."""
     _set_flag(True)
     try:
-        lyr = _strong_spectrum(LiftLayer(nInput=_D, nOutput=_D))
+        lyr = _strong_spectrum(ChangeLayer(nInput=_D, nOutput=_D))
         np_, verb = _np_and_verb()
         vp = lyr.apply_verb(np_, verb)
         assert float((vp - np_).abs().max()) > 0.05            # the verb acted
@@ -103,7 +103,7 @@ def test_per_verb_differentiation():
     """Two different verb codes produce different operators on the same NP."""
     _set_flag(True)
     try:
-        lyr = _strong_spectrum(LiftLayer(nInput=_D, nOutput=_D))
+        lyr = _strong_spectrum(ChangeLayer(nInput=_D, nOutput=_D))
         np_, verb_a = _np_and_verb(seed=0)
         _n, verb_b = _np_and_verb(seed=7)
         assert not torch.allclose(
@@ -116,7 +116,7 @@ def test_spectrum_is_sparse():
     """w_v is soft-thresholded -> the verb touches few eigs (some w exactly 0)."""
     _set_flag(True)
     try:
-        lyr = _strong_spectrum(LiftLayer(nInput=_D, nOutput=_D))
+        lyr = _strong_spectrum(ChangeLayer(nInput=_D, nOutput=_D))
         _n, verb = _np_and_verb()
         w = lyr._verb_spectrum_w(verb)
         assert float((w.abs() < 1e-9).float().mean()) > 0.0

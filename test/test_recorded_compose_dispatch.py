@@ -42,7 +42,7 @@ def test_recorded_dispatch_preserves_values_and_gradients_for_mixed_rows(tmp_pat
         language = model.languageSpace
         binary = language._tree_layer(2)
         names = list(binary.op_names)
-        selected = torch.tensor([names.index("sum"), names.index("lift"), 0])
+        selected = torch.tensor([names.index("sum"), names.index("change"), 0])
         valid = torch.tensor([True, True, False])
         # The actual replay supplies two views of the same stack storage.
         torch.manual_seed(461)

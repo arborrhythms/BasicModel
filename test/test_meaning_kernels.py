@@ -1,3 +1,4 @@
+from action_fixtures import action_with_basis
 """Paired-block grammar certificates; fixed operations, no learning claim."""
 from order_fixtures import force_order
 import copy
@@ -47,14 +48,14 @@ def test_scalar_group_lookup_inside_nested_decoder_control_flow():
 
 def test_inverse_action_compiles_through_nested_control_flow_with_its_gradient():
     from CompilerEffects import compile_inductor
-    action = MeaningAction(4).double()
+    action = action_with_basis(4).double()
     # The loop's reverse pass carries a basis gradient with this layout.
     # Give the fixture's parameter the same strides, as while_loop requires.
-    action.object_vectors = torch.nn.Parameter(
-        action.object_vectors.permute(2, 0, 1).contiguous().permute(1, 2, 0))
+    action.object_basis.vectors = torch.nn.Parameter(
+        action.object_basis.vectors.permute(2, 0, 1).contiguous().permute(1, 2, 0))
     with torch.no_grad():
         action.readout.fill_(.3)
-        action.object_vectors[0, 1, 0] = .2
+        action.object_basis.vectors[0, 1, 0] = .2
     value = torch.tensor([[.2, .4, .3, .6]], dtype=torch.float64, requires_grad=True)
     verb = torch.tensor([[.3, .6, .2, .4]], dtype=torch.float64, requires_grad=True)
 
@@ -72,7 +73,7 @@ def test_inverse_action_compiles_through_nested_control_flow_with_its_gradient()
         return torch.while_loop(lambda i, x: i < 1, body, (torch.tensor(0), value))[1]
 
     expected = chosen(value, verb)
-    leaves = (value, verb, action.readout, action.object_vectors)
+    leaves = (value, verb, action.readout, action.object_basis.vectors)
     expected_grad = torch.autograd.grad(expected.sum(), leaves)
     actual = torch.compile(run, backend=compile_inductor, fullgraph=True)(value, verb)
     actual_grad = torch.autograd.grad(actual.sum(), leaves)
@@ -82,7 +83,7 @@ def test_inverse_action_compiles_through_nested_control_flow_with_its_gradient()
 
 
 def test_inverse_action_reports_an_unsuccessful_solve(monkeypatch):
-    action = MeaningAction(4)
+    action = action_with_basis(4)
     solve = torch.linalg.solve_ex
     def unsuccessful(*args, **kwargs):
         value, info = solve(*args, **kwargs)
@@ -94,8 +95,8 @@ def test_inverse_action_reports_an_unsuccessful_solve(monkeypatch):
 
 
 def test_an_explicit_numerical_width_does_not_inherit_a_paired_layout(paired):
-    from Language import LiftLayer
-    op = LiftLayer(3, 3)
+    from Language import ChangeLayer
+    op = ChangeLayer(3, 3)
     assert op.meaning_layout is None and not hasattr(op, 'meaning_action')
     a, b = torch.full((1, 3), .2), torch.full((1, 3), .3)
     folded = op.compose(a, b)
@@ -114,7 +115,7 @@ def test_grammatical_heads_start_exact_and_lanes_are_independent(paired):
         torch.testing.assert_close(result[:4], (a[:4]*3+b[:4])/4)
         assert torch.equal(result[4:], (a, b)[op.meaning_head_role][4:])
         with torch.no_grad():
-            op.meaning_kernel.context.fill_(.02)
+            (op.meaning_basis.vectors if isinstance(op, VerbLayer) else op.meaning_kernel.context).fill_(.02)
         changed = b.clone()
         changed[4:8] = .3
         x = op.compose_blocks(op.compose, a, b)
@@ -196,7 +197,7 @@ def test_journal_leaf_counts_drive_the_structural_face(paired):
 
 @pytest.mark.parametrize('compiled', (False, True))
 def test_action_keeps_absence_and_inverts_on_each_lane(compiled):
-    action = MeaningAction(8, capacity=2).double()
+    action = action_with_basis(8, capacity=2).double()
     subject = torch.tensor([.2, 0., .4, .7, 0., .3, .6, 0.], dtype=torch.float64)
     verb = torch.full((8,), .2, dtype=torch.float64)
     apply = torch.compile(action, backend='eager', fullgraph=True) if compiled else action
@@ -205,7 +206,7 @@ def test_action_keeps_absence_and_inverts_on_each_lane(compiled):
     assert action.readout.grad.abs().sum() > 0
     with torch.no_grad():
         action.readout.fill_(.15)
-        action.object_vectors[0, :, :] += .05
+        action.object_basis.vectors[0, :, :] += .05
     obj = torch.tensor([.3, 0., .2, 0., .3, 0., .2, 0.], dtype=torch.float64)
     result = apply(subject, verb, object_value=obj)
     assert torch.equal(result[subject == 0], subject[subject == 0])
@@ -215,7 +216,7 @@ def test_action_keeps_absence_and_inverts_on_each_lane(compiled):
 
 
 def test_disjoint_objects_confine_different_actions():
-    action = MeaningAction(8, capacity=2).double()
+    action = action_with_basis(8, capacity=2).double()
     subject = torch.full((8,), .3, dtype=torch.float64)
     verb = torch.full((8,), .2, dtype=torch.float64)
     with torch.no_grad():
@@ -269,9 +270,9 @@ def test_free_search_scores_meaning_and_centroid_and_trains_inverse(paired):
 
 
 def test_versioned_swap_drops_form_parameters_and_keeps_new_checkpoints(paired):
-    from Language import LiftLayer, SurfaceLayer
+    from Language import ChangeLayer, SurfaceLayer
     from GrammarCheckpoint import align, catalog
-    model = torch.nn.ModuleDict(dict(lift=LiftLayer(12, 12), surface=SurfaceLayer(12, 12)))
+    model = torch.nn.ModuleDict(dict(lift=ChangeLayer(12, 12), surface=SurfaceLayer(12, 12)))
     current = model.state_dict()
     assert not any('_sigma' in key or 'marker_map' in key for key in current)
     old = dict(current)
@@ -308,7 +309,7 @@ def test_direct_paired_reverses_reject_a_retired_split(paired):
 
 
 def test_unknown_basis_eager_and_fullgraph_have_the_same_action_pullback():
-    action = MeaningAction(8, capacity=2).double()
+    action = action_with_basis(8, capacity=2).double()
     with torch.no_grad():
         action.readout.fill_(.1)
     before = torch.linspace(.1, .8, 16, dtype=torch.float64).reshape(2, 8).requires_grad_()
@@ -483,12 +484,12 @@ def test_selected_walk_matches_live_gradients_and_steps_only_used_parameters(pai
 def test_sign_and_verb_reflection_keep_the_parameter_pullback_at_small_object_scales(dtype, exponent, inverse):
     from MeaningKernels import LaneKernel, MeaningAction
     sign = LaneKernel(32).to(dtype)
-    verb = MeaningAction(32).to(dtype)
+    verb = action_with_basis(32).to(dtype)
     with torch.no_grad():
         verb.readout.fill_(.04)
     head = torch.linspace(.15, .85, 32, dtype=dtype)
     subject = torch.linspace(.01, .95, 32, dtype=dtype)
-    parameters = (verb.readout, verb.object_vectors, sign.log_scale, sign.bias)
+    parameters = (verb.readout, verb.object_basis.vectors, sign.log_scale, sign.bias)
     def evaluation(object_scale):
         point = verb(sign(head), subject, object_value=torch.full_like(head, object_scale), inverse=inverse)
         loss = (point - .4).square().mean()

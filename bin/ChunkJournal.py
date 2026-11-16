@@ -131,8 +131,9 @@ class ChunkJournal(nn.Module):
                 getattr(rule,'relation_kind',None) == 'equal',
                 getattr(rule,'relation_kind',None) in ('part','whole','equal'),
                 getattr(rule,'relation_kind',None) in ('part','whole'),
-                rule.method_name == 'adverb',
-            ) for rule in rules] or [(0,)*9], dtype=torch.long)
+                rule.method_name == 'modifier',
+                bool(getattr(rule, 'order_delta', 0)),
+            ) for rule in rules] or [(0,)*10], dtype=torch.long)
         self.register_buffer('binary',table(binary),persistent=False)
         self.register_buffer('unary',table(unary),persistent=False)
 
@@ -196,10 +197,10 @@ class ChunkJournal(nn.Module):
         rule = self.rule(selected)
         left,right = self.operands(scope,selected)
         active = selected.applied & ((selected.kind == 1) | (selected.kind == 2))
-        # Determination opens an individual only when its looked-up member
-        # order is one. An order-zero event stays an event; allocating a
-        # token there would leave a later bind without a closing introduction.
-        bind,determined = active & rule[:,2].bool(), active & rule[:,1].bool() & selected.order.eq(1)
+        # A transition into order one opens the same working identity as an
+        # order-one shift. Order zero remains an event, without a token.
+        bind = active & rule[:,2].bool()
+        determined = active & (rule[:,1].bool() | rule[:,9].bool()) & selected.order.eq(1)
         pair = active & (selected.kind == 1) & ~bind
         head = torch.where((rule[:,0] == 2)[:,None],right,left)
         # A headless result has no identity to refresh or offer to bind.
@@ -385,7 +386,7 @@ def capture(owner, state, scope, records, values, *, batch, positions, columns, 
                     source = pos.get(-int(shifted[SOURCE-2])-1)
                     if source is not None:
                         leaves[source] = index+1
-        elif identity in alloc.placement and identity not in alloc.retired:
+        elif identity in alloc.symbols and identity not in alloc.retired:
             # A durable symbol can be recalled without a current MTM token.
             # Its first bind in this journal is a use, not an introduction;
             # the closing must keep that symbol even if its chunk is evicted.

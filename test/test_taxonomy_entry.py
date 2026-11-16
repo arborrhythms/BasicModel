@@ -117,6 +117,8 @@ def test_actual_model_entry_and_checkpoint_keep_taxonomy_identity(tmp_path):
                 for base in bases)
         for ref in (a, b):
             cs._csw_concept_row(cs._concept_source_order(ref[1]), ref[1])
+        from test_thought_model_fixture import trusted_premises
+        trusted_premises(cs, a, b)
         relation = cs._concept_allocator.parts.add(a[1], b[1], truth_plus=1.)
         spec = QuerySpec.from_surface("isPart", a, b)
         before = source.reason_about(spec, spaces=[])

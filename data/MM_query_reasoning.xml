@@ -87,13 +87,14 @@
   </PartSpace>
 
   <ConceptualSpace>
+    <!-- Item 1.8: preserve the form width; allocate the declared meaning lanes. -->
     <nInput>8</nInput>
-    <nInputDim>1024</nInputDim>
+    <nInputDim>0</nInputDim>
     <nVectors>64</nVectors>
     <stmCapacity>8</stmCapacity>
-    <nDim>1024</nDim>
+    <nDim>1152</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>1024</nOutputDim>
+    <nOutputDim>1152</nOutputDim>
 
     <invertible>true</invertible>
   </ConceptualSpace>
@@ -102,7 +103,7 @@
     <lexer>raw</lexer>
     <analysis>meronomy</analysis>
     <nInput>8</nInput>
-    <nInputDim>1024</nInputDim>
+    <nInputDim>1152</nInputDim>
     <nVectors>512</nVectors>
     <nDim>1024</nDim>
     <nOutput>1024</nOutput>
@@ -117,7 +118,7 @@
 
   <OutputSpace>
     <nInput>8</nInput>
-    <nInputDim>1024</nInputDim>
+    <nInputDim>1152</nInputDim>
     <nVectors>1</nVectors>
     <nDim>1</nDim>
     <nOutput>1</nOutput>

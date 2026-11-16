@@ -43,6 +43,12 @@ class SymbolEntries(nn.Module):
 
     def stage_words(self, name, value):
         target = getattr(self, name)
+        if target.requires_grad:
+            # An earlier sentence can still own a gather of this bank. A
+            # refreshed bank keeps its fixed contiguous shape, but cannot
+            # overwrite storage saved by that sentence's backward pass.
+            target = torch.empty_like(target)
+            setattr(self, name, target)
         fill = 0 if target.is_floating_point() else -1
         if value is None:
             target.detach_()
@@ -66,6 +72,71 @@ class SymbolEntries(nn.Module):
             return None
         batch, count = extent
         return getattr(self, name)[:batch, self.prepend if words else 0:self.prepend+count]
+
+
+def refresh_words(model, sentence):
+    """Resolve this sentence's staged names after the preceding kept close.
+
+    Word perception can stage a whole packed batch. Its temporary object
+    addresses must not outlive promotion or reuse of an MTM seat. Read the
+    lexical identity and current token instead of retaining an alias table.
+    """
+    source, owner = model.inputSpace, model._concept_owner()
+    words, references = word_view(source, 'concept_ids'), word_view(source, 'object_ids')
+    if not (owner.interpret.mandatory and torch.is_tensor(words)
+            and torch.is_tensor(references)):
+        return
+    rows, orders = word_view(source, 'object_rows'), word_view(source, 'object_orders')
+    grammar_rows = getattr(source, '_ar_grammar_object_rows', None)
+    mixing = torch.is_tensor(grammar_rows)
+    positions = ((source._packed_sentence_ids == sentence) & (words > 0)
+                 & (references > 0)).nonzero().tolist()
+    changed = []
+    for batch, column in positions:
+        word = int(words[batch, column])
+        identity = owner.interpret.referent(word, batch=batch)
+        if identity == word:
+            token = owner.mtm.entries.get(('name', word))
+            if token is not None:
+                identity = token.symbol if token.symbol is not None else token.transient
+        if identity is None or identity == int(references[batch, column]):
+            continue
+        row = owner._csw_row_of(identity)
+        if row is None:
+            row = owner._csw_row_of(word)
+        order = owner._row_order(row)
+        references[batch, column] = identity
+        if torch.is_tensor(rows):
+            rows[batch, column], orders[batch, column] = row, order
+        if mixing:
+            grammar_rows[batch, column] = row
+            source._ar_grammar_object_orders[batch, column] = order
+            source._ar_grammar_object_ids[batch, column] = owner.concept_id_at_row(row)
+        changed.append((batch, column, row))
+    if not changed:
+        return
+
+    def codes(selected, word_ids=None):
+        values = owner.similarity_codebook.lookup_rows(selected.clamp_min(0), streams=True)
+        values = owner.interpret.lexical_atoms(selected, values, word_ids=word_ids)
+        return torch.where(selected[..., None] >= 0, values, 0.)
+
+    if mixing:
+        source._ar_grammar_object_atoms = codes(grammar_rows, words)
+    elif torch.is_tensor(rows):
+        source._ar_word_object_atoms = codes(rows, words)
+    bank = lookup_view(source, 'lookup_rows')
+    if torch.is_tensor(bank):
+        # Aligned perception's bank is WORD followed by OBJECT; mixing has
+        # the one object bank. Both keep their construction-time extents.
+        offset = 0 if mixing else bank.shape[1] // 2
+        for batch, column, row in changed:
+            bank[batch, offset + column] = row
+        lexical = torch.full_like(bank, -1)
+        lexical[:, :words.shape[1]] = words
+        if not mixing:
+            lexical[:, offset:offset+words.shape[1]] = words
+        source.symbol_entries.stage_words('lookup_atoms', codes(bank, lexical))
 
 
 def symbolize(owner, store, key, token, timeline=0):
@@ -158,6 +229,9 @@ def stage(model, state, present):
     stamp = model.when_encoding.encode(model.present()).to(state[0])
     for field in (*WORD_FIELDS, *LOOKUP_FIELDS):
         value = getattr(entries, field)
+        if value.requires_grad:
+            value = value.clone()
+            setattr(entries, field, value)
         value[:, :entries.prepend].fill_(0 if value.is_floating_point() else -1)
     entries.timelines.zero_()
     staged = torch.zeros_like(state[chunks.READ], dtype=torch.bool)
@@ -184,7 +258,7 @@ def stage(model, state, present):
             row = owner._csw_row_of(identity) if token.symbol is not None else None
             order = (token.order if token.order is not None else owner._row_order(row) if row is not None
                      else token.refinement['member_order'] if 'member_order' in token.refinement
-                     else owner._concept_source_order(owner.interpret.referent(key[1])) if key[0] == 'name'
+                     else owner._concept_source_order(owner.interpret.referent(key[1], batch=b)) if key[0] == 'name'
                      else owner._concept_source_order(token.occurrences[0]))
             value = symbolize(owner, store, key, token, timeline).to(state[0])
             where = token.where.to(value)

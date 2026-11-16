@@ -12,8 +12,10 @@ def test_where_ranges_are_fixed_and_owned_by_the_model(tmp_path):
     first, _ = grounded_model(tmp_path)
     layout = first.where_registry
     inputs, parts, wholes, symbols = [layout.slices[key] for key in
-                                      ('input', 'parts', 'wholes', 'symbols')]
-    assert inputs[0] == 0 and inputs[1] == parts[0]
+                                      ('text', 'parts', 'wholes', 'symbols')]
+    assert inputs[0] == 0 and inputs[1] == layout.slices['numeric'][0]
+    assert layout.slices['numeric'][1] == layout.slices['scalar'][0]
+    assert layout.slices['scalar'][1] == parts[0]
     assert parts[1] == wholes[0] and wholes[1] == symbols[0]
     assert first.perceptualSpace.subspace.what.where_offset == parts[0]
     assert first.wholeSpace.subspace.what.where_offset == wholes[0]
@@ -35,14 +37,14 @@ def test_where_ranges_are_fixed_and_owned_by_the_model(tmp_path):
 
 def test_input_occurrences_and_thought_symbols_use_their_own_ranges():
     from WhereRegistry import WhereRegistry
-    registry = WhereRegistry([('input', 256), ('parts', 64), ('wholes', 8),
+    registry = WhereRegistry([('text', 256), ('parts', 64), ('wholes', 8),
                               ('symbols', 128)])
     rows = torch.tensor([[12, 12, -1]])
     positions = torch.tensor([[0, 1, 2]])
-    where = registry.intervals('input', torch.where(rows >= 0, positions, -1))
+    where = registry.intervals('text', torch.where(rows >= 0, positions, -1))
     assert where[0, 0, 1] <= where[0, 1, 0]
     assert where.dtype == torch.int64
-    assert where[0, 0, 0] == registry.slices['input'][0]
+    assert where[0, 0, 0] == registry.slices['text'][0]
     assert where[0, 2].tolist() == [-1., -1.]
     thought = registry.intervals('symbols', rows)
     assert thought[0, 0, 0] == registry.slices['symbols'][0] + 12
@@ -104,7 +106,7 @@ def test_model_owns_one_ladder_across_all_spaces(tmp_path):
 
 def test_large_registry_addresses_roundtrip_through_both_phases():
     from WhereRegistry import WhereRegistry
-    registry = WhereRegistry([('input', 8192), ('parts', 400_000),
+    registry = WhereRegistry([('text', 8192), ('parts', 400_000),
                               ('wholes', 400_000), ('symbols', 512_000_000)])
     encoding = registry.encoding
     addresses = torch.tensor([0, 8191, 8192, 2**24 + 1, 2**28 - 1,
@@ -119,7 +121,7 @@ def test_large_registry_addresses_roundtrip_through_both_phases():
 def test_copy_preserves_the_single_registry_ladder():
     import copy
     from WhereRegistry import WhereRegistry
-    registry = WhereRegistry([('input', 32), ('parts', 512), ('symbols', 1024)])
+    registry = WhereRegistry([('text', 32), ('parts', 512), ('symbols', 1024)])
     ladder, copied = copy.deepcopy((registry.encoding, registry))
     assert copied.encoding is ladder
     assert ladder is not registry.encoding

@@ -62,7 +62,7 @@ def protected_concepts(owner, store, retained=()):
     protected.update(_integers(tuple(alloc.relate_idx)))
     for name in ('_recognized_words', '_words_concept_id', '_priming_bridge', '_frozen_named'):
         protected.update(_integers(getattr(owner, name, None)))
-    for cid in alloc.placement:
+    for cid in alloc.symbols:
         for _, ref in alloc.records(cid):
             if isinstance(ref, tuple) and ref[0] == 'sym':
                 protected.add(int(ref[1]))
@@ -104,7 +104,7 @@ def protected_concepts(owner, store, retained=()):
             cid = owner.concept_id_at_row(row)
             if cid is not None:
                 protected.add(cid)
-    return protected & set(alloc.placement)
+    return protected & set(alloc.symbols)
 
 
 def _definition_rows(layer):
@@ -153,7 +153,7 @@ def _unused_mint(alloc, layer, cid, row, definitions, sparse_rows):
     """
     if not 0 < cid < alloc.next_id or alloc.records(cid) or row in sparse_rows:
         return False
-    if (cid in alloc.raised or cid in alloc.singletons or cid in alloc.reference_orders
+    if (cid in alloc.raised or cid in alloc.singletons or alloc.symbol_types.get(cid)
             or cid in alloc.testimony_seen or cid in alloc.testimony_current
             or cid in alloc.relate_idx.values()):
         return False
@@ -233,7 +233,7 @@ def reclaim_concepts(owner, store=None, *, retained=(), model=None):
         for row, column in matrix._index:
             sparse_rows.add(row)
             sparse_rows.add(column % (layer.nOutput + 1) if matrix._paired_sources else column)
-    for cid in sorted(alloc.placement):
+    for cid in sorted(alloc.symbols):
         seats = owner._csw_rows_of(cid)
         if len(seats) != 1:
             continue
@@ -280,12 +280,12 @@ def reclaim_concepts(owner, store=None, *, retained=(), model=None):
         alloc.form_regions = {key: value for key, value in alloc.form_regions.items() if cid not in (key, value)}
         alloc.raised.discard(cid)
         alloc.singletons.discard(cid)
-        alloc.reference_orders.pop(cid, None)
         alloc.testimony_seen.pop(cid, None)
         alloc.testimony_current.pop(cid, None)
         if cid < alloc.next_id:
             alloc.reclaimed_seats += 1
         _clear_code_moments(model, owner.similarity_codebook.W, row)
+        owner.similarity_codebook.trust.retire(row)
         owner.similarity_codebook.W[row].zero_()
         if model is not None:
             model.outputSpace.retire_field_row(row)

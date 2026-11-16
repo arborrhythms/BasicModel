@@ -9,5 +9,11 @@
   ],
   "recognition_question": "what is this?",
   "untrained_values": [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 10.0],
-  "absence": {"text": "zero", "scalar": null}
+  "absence": {"text": "zero", "scalar": null},
+  "recognition_grammar": {
+    "text": "what is this ?",
+    "waits": true,
+    "tree": ["surface", 0, ["surface", 1, ["verb", ["bind.open", ["lower", 2]], 3]]],
+    "generation": {"form": "concept", "roots": [0]}
+  }
 }

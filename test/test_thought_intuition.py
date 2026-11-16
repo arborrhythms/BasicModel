@@ -10,6 +10,7 @@ from Intuition import Idea, Term, read, evaluate, selected, encode
 from ConceptSpread import Prediction, loss
 from ThoughtReferences import bindings
 from test_thought_infer import setup, invoke, idea
+from test_item18_intuit import search
 
 
 def test_three_rule_union_not_first_and_one_candidate_per_firing():
@@ -19,7 +20,7 @@ def test_three_rule_union_not_first_and_one_candidate_per_firing():
                        (refs[1], refs[2], (.7, .4))):
         store.append_relation(a[1], b[1], truth_plus=pair[0], truth_minus=pair[1])
     owner._expected_knowing[0, [owner._csw_row_of(ref[1]) for ref in refs], 0] = 1
-    result = invoke(model, registry, registry.form('intuit', idea(registry, refs[0])))
+    result = invoke(model, registry, search(model, registry, idea(registry, refs[0])))
     meaning = result.evidence['meaning']
     from Intuition import held_terms
     terms = held_terms(meaning)
@@ -113,14 +114,13 @@ def test_predictor_target_and_consumers_detach_and_predictor_trains():
     context = torch.full((1,4), .2, requires_grad=True)
     prediction = predictor(keys, context, knowing).sigmoid()
     target = torch.full_like(prediction, .9, requires_grad=True)
-    record = Prediction(keys, context, knowing, prediction.detach(), torch.arange(3),
-        torch.tensor([True]), target, torch.ones(1,3,dtype=torch.bool))
+    record = Prediction(prediction, torch.arange(3), torch.tensor([True]), target)
     model = SimpleNamespace(_concept_prediction=record,
         _concept_owner=lambda:SimpleNamespace(concept_predictor=predictor))
     loss(model).sum().backward()
     assert target.grad is None and knowing.grad is None and keys.grad is None and context.grad is None
     assert sum(p.grad.abs().sum() for p in predictor.parameters()) > 0
-    assert not record.value.requires_grad
+    assert record.value.requires_grad  # The one open evaluation owns the expectation cost.
 
 
 def test_sparse_capacity_and_storage_are_fixed_and_exhaustion_is_atomic():
@@ -153,7 +153,7 @@ def test_firing_metadata_reaches_chooser_and_choice_loss_reaches_its_parameters(
     from ThoughtReferences import with_slots
     model, registry, store, refs = setup()
     root = idea(registry, refs[0])
-    low = with_slots(registry.form('intuit', root), (), pair=(.1, .2))
+    low = with_slots(search(model, registry, root), (), pair=(.1, .2))
     high = with_slots(low, (), pair=(.9, .2))
     chooser = model.shared_grammar
     # Supply an active candidate-content path; this is a wiring probe,
@@ -182,14 +182,14 @@ def test_prepended_candidate_enters_by_working_value():
         lookup_atoms=torch.stack((value, torch.zeros_like(value)))[None])
     object.__setattr__(owner, '_model', SimpleNamespace(inputSpace=SimpleNamespace(symbol_entries=entries),
                                                       symbolSpace=model.symbolSpace))
-    result = invoke(model, registry, registry.form('intuit', idea(registry, refs[0])))
+    result = invoke(model, registry, search(model, registry, idea(registry, refs[0])))
     from Intuition import held_terms
     terms = held_terms(result.evidence['meaning'])
     assert terms
     assert any(plan.observed is not None and torch.equal(plan.observed, value) for plan in terms[0].knowing)
 
 
-def test_intuit_reaches_completed_field_without_serial_grammar_options(monkeypatch):
+def test_infer_reaches_completed_field_without_serial_grammar_options(monkeypatch):
     from Language import Grammar
     from Queries import GrammaticalThoughtRegistry
     from test_item6_2_thinking import run
@@ -198,7 +198,7 @@ def test_intuit_reaches_completed_field_without_serial_grammar_options(monkeypat
     model._end_finished_selected_thought_episodes()
     grammar = Grammar()
     grammar.configure({'Symbolic': {'thought': {'rule': [
-        'intuit_argout1 = intuit.thought(intuit_argin1)']}}})
+        'infer_argout1 = infer.thought(infer_argin1, infer_argin2)']}}})
     registry = GrammaticalThoughtRegistry.install(model._concept_owner(), grammar)
     owner = model._concept_owner()
     store.append_relation(refs[0][1], refs[1][1], truth_plus=.8, truth_minus=.2)
@@ -207,7 +207,7 @@ def test_intuit_reaches_completed_field_without_serial_grammar_options(monkeypat
     with torch.no_grad():
         for ref, value in zip(refs, (.7,.5,.3)):
             owner.similarity_codebook.W[owner._csw_row_of(ref[1])].fill_(value)
-    assert registry.executable_operation_ids == ('intuit',)
+    assert registry.executable_operation_ids == ('infer',)
     assert not grammar.rules_upward and not grammar.rules_downward
     object.__setattr__(model, 'grammatical_thoughts', registry)
     model.symbolSpace.grammatical_thoughts = registry
@@ -216,7 +216,7 @@ def test_intuit_reaches_completed_field_without_serial_grammar_options(monkeypat
         if selected:
             assert None in actions
             return None
-        action = next(action for action in actions if action is not None and action.semantic_id == 'intuit')
+        action = next(action for action in actions if action is not None and action.semantic_id == 'infer')
         selected.append(action)
         return action
     monkeypatch.setattr(model, '_choose_selected_thought_action', choose)
@@ -282,7 +282,7 @@ def test_pervasion_requires_a_property_relation_and_its_result_persists(semantic
     work = QueryWorkBudget(256)
     assert pervasion(owner, unrelated, work=work) is None and work.spent == 0
     ordinary = execute(owner, unrelated, (), row=0, work=work, premise=(1.,)*4)
-    assert ordinary['evidence_kind'] == 'intuition'
+    assert ordinary['evidence_kind'] == 'inference'
     assert int(ordinary['meaning'].role_mask.sum()) == 1
     assert write(model, ordinary['meaning'], row=0) is not None
 
@@ -317,11 +317,13 @@ def test_output_ownership_excludes_understanding_and_expectation():
     model, registry, store, refs = setup()
     owner = model._concept_owner()
     model.conceptualSpaces = torch.nn.ModuleList([owner])
-    parameters = list(owner.concept_predictor.parameters()) + list(owner.intuition.parameters())
+    parameters = (list(owner.expect_stack.parameters()) + list(owner.intuit_stack.parameters())
+                  + list(owner.intuition.parameters()))
     optimizer = SimpleNamespace(param_groups=[dict(params=parameters)])
     groups = BasicModel.objective_parameter_groups(model, optimizer)
     assert {id(p) for p in owner.intuition.parameters()} <= {id(p) for p in groups['output']}
-    assert {id(p) for p in owner.concept_predictor.parameters()} <= {id(p) for p in groups['expectation']}
+    assert {id(p) for p in owner.expect_stack.parameters()} <= {id(p) for p in groups['expectation']}
+    assert {id(p) for p in owner.intuit_stack.parameters()} <= {id(p) for p in groups['output']}
     root = Idea(observed=torch.full((owner.outputShape[-1],), .5))
     term = seed(owner, Term(('sym',99),root,root,(.8,.2),idea(registry,refs[1]),(root,),(1.,)*4),QueryWorkBudget(256))
     value = selected(owner,term)[0].roles.sum()
@@ -459,7 +461,7 @@ def test_answer_adapter_reads_live_reference_plan_and_credits_fired_weights_and_
     live = live_meaning(model, conclusion)
     _, view = bound_view(((), tuple(language), ()), observation, 0, 0, live)
     value = read(None, 0, torch.tensor([True]), view, model.errors)[0]
-    request=registry.form('intuit',idea(registry,refs[0]))
+    request=search(model,registry,idea(registry,refs[0]))
     logits=model.shared_grammar.thought_logits(conclusion,(None,request))
     policy=-logits.log_softmax(-1)[0,1]*value.detach()
     (model.errors.total().sum()+policy).backward()
@@ -592,8 +594,9 @@ def test_returned_intuition_proof_does_not_certify_an_unchanged_parent(source_pa
     def choose(root, active, actions, **kwargs):
         if chosen and None in actions:
             return None
-        operation = 'ask' if not chosen else 'intuit'
-        value = next(action for action in actions if action is not None and action.semantic_id == operation)
+        operation = 'ask' if not chosen else 'infer'
+        value = next(action for action in actions if action is not None and action.semantic_id == operation
+                     and (operation != 'infer' or action.open_roles == ('argin2',)))
         chosen.append(operation)
         return value
     monkeypatch.setattr(model, '_choose_selected_thought_action', choose)
@@ -601,7 +604,7 @@ def test_returned_intuition_proof_does_not_certify_an_unchanged_parent(source_pa
     # (§3.6). The next attempt exhausts the same work budget; the caller and
     # the empty proof retain their own propositions.
     result = run(model, goal, work_budget=13)
-    assert chosen == ['ask', 'intuit', 'intuit'] and result.work.spent == 13
+    assert chosen == ['ask', 'infer', 'infer'] and result.work.spent == 13
     assert result.meaning.role_refs == goal.role_refs and open_slots(result.meaning)
     assert evidence_pair(result.meaning) == source_pair
     returned = next(record for record in result.records if record.kind == 'return')
@@ -703,13 +706,14 @@ def test_nested_return_keeps_empty_proof_off_known_referent_fallback(dtype, monk
         role_refs=(None, None, known), sentence_kind='relation',
         bindings=dict(_chain_view=True, _unresolved_operands=((2, known),))),
         (('referent', 0), ('referent', 1)), pair=source_pair, source_evidence=source_pair)
-    sequence = ('ask', 'ask', 'bind', 'intuit')
+    sequence = ('ask', 'ask', 'bind', 'infer')
     chosen = []
     def choose(root, active, actions, **kwargs):
         assert len(chosen) < len(sequence), ('unexpected extra thought', chosen, kwargs['work'].spent)
         operation = sequence[len(chosen)]
         selected = next(action for action in actions
-                        if action is not None and action.semantic_id == operation)
+                        if action is not None and action.semantic_id == operation
+                            and (operation != 'infer' or action.open_roles == ('argin2',)))
         chosen.append(operation)
         return selected
     monkeypatch.setattr(model, '_choose_selected_thought_action', choose)

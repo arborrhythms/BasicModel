@@ -55,7 +55,7 @@ class Path:
     attention_words: object = None
 
 
-def fields(model, observation, sid):
+def fields(model, observation, sid, *, trust):
     """Resolve the scored reference plan without creating an occurrence."""
     from ThoughtClosing import closing_question
     from TimelineRead import request, phase_request
@@ -119,7 +119,7 @@ def fields(model, observation, sid):
         when = model.when_encoding.encode(model._sentence_ticks[int(sid)]).to(meaning.roles)
         result.append(SentenceEndState(meaning, where=clause.where, when=when, query=query,
             order=clause.order, evidence=clause.evidence,
-            trust=model.conceptualSpace._incoming_trust_multiplier()))
+            trust=trust))
     return result
 
 
@@ -182,7 +182,7 @@ def answer_cost(model, construction, thoughts, questions, active, registry, *, s
 
 
 @trial_activity()
-def finish(model, state, sid, active, *, base=None, draw=None):
+def finish(model, state, sid, active, *, trust, base=None, draw=None):
     """Run only the suffix after this path's departure, ending before a write."""
     if base is not None and not bool((draw['walk'] >= 0).any()):
         from WalkTrials import _copy_containers
@@ -230,10 +230,13 @@ def finish(model, state, sid, active, *, base=None, draw=None):
                     order_zero_reverse=model._sentence_order_zero_reverse,
                     input_reconstruction=model._input_reconstructions[int(sid)])
                 residual(registry, model._sentence_generation.trace, active, 'reconstruction')
+        observation['incoming_trust'] = float(trust)
         # Reconstruction has its own operated field. Questions and the
         # answer reader start from what this sentence understood.
         if reading or regeneration:
             publish(model, observation['record'].understanding_field)
+        if observation.get('intuition_teacher') is not None:
+            model._intuition_teacher = observation['intuition_teacher']
         model._sentence_close_errors = registry
         supervised = model.inputSpace.data.has_supervised_outputs
         thinking = Thinking(None if base is None else base.thinking,
@@ -245,7 +248,7 @@ def finish(model, state, sid, active, *, base=None, draw=None):
             if base is not None:
                 ThoughtTrialState.keep([base.before_output, before], rethink_rows.long())
                 publish(model, observation['record'].understanding_field)
-            preview = fields(model, observation, sid)
+            preview = fields(model, observation, sid, trust=observation['incoming_trust'])
             if base is not None:
                 preview = [value if bool(rethink_rows[row]) else base.observation['thought_fields'][row]
                            for row, value in enumerate(preview)]
@@ -365,7 +368,7 @@ def think_kept(model, paths, selected, sid, active):
         ready_mask = active & (selected == index)
         if not bool(ready_mask.any()):
             continue
-        preview = fields(model, path.observation, sid)
+        preview = fields(model, path.observation, sid, trust=path.observation['incoming_trust'])
         inputs = {row: field.query if field.query is not None else field.meaning
                   for row, field in enumerate(preview) if field is not None}
         ready = tuple(row for row, field in enumerate(preview) if field is not None and bool(ready_mask[row]))

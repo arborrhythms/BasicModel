@@ -68,8 +68,12 @@ def install_where_registry(model):
         word_capacity = int(model.perceptualSpace.outputShape[0])
         part_capacity = int(TheXMLConfig.get('architecture.serialResidualPartCapacity', default=16))
         input_extent = max(input_extent, word_capacity * part_capacity)
+    from math import prod
+    numeric_extent = prod(model.inputSpace.inputShape) if model.inputSpace.model_type == 'numeric' else 0
     registry = WhereRegistry((
-        ('input', input_extent),
+        ('text', input_extent),
+        ('numeric', numeric_extent),
+        ('scalar', 1),
         ('parts', capacity(parts)),
         ('wholes', capacity(whole)),
         ('symbols', 2 * max(capacity(symbols), int(model.conceptualSpaces[0].nVectors))),

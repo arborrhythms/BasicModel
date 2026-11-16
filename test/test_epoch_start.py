@@ -92,7 +92,9 @@ def test_other_order_active_definition_does_not_hide_remembered_identity():
     now=write(store,points[1],'again')
     token=owner.mtm.open(now,kind=None,value=points[1],when=1,reading=word)
     assert promote_identity(owner,token,word=word)==known
+    assert owner.definitions.objects(word)==tuple(sorted((known,other)))
     assert owner.interpret.denotations(word)==tuple(sorted((known,other)))
+    assert owner.interpret.referent(word)==other
 
 
 

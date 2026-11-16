@@ -110,14 +110,21 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             handle = 0 if program.identity_leaves is None else int(program.identity_leaves[word])
             named = handle > 0 and int(program.identity_origins[handle-1, 0]) == 6
             addressed = handle in local_uses and int(program.identity_origins[handle - 1, 0]) == 4
-            if stack[-1]['order'] == 1 or named or addressed:
+            owner = getattr(registry, 'space', None)
+            # An objectless lexical reference remains a binding request at
+            # order zero. Its physical word row does not stand in for the
+            # order of an object which has not been resolved yet.
+            unbound = owner is not None and owner.interpret.no_object(int(refs[word]))
+            if stack[-1]['order'] == 1 or named or addressed or unbound:
                 stack[-1]['close_request'] = dict(mode='bind', leaves=(word,),
                     cue=values[word], content=values[word],
                     **forward_fields(word), leaf=True)
+                if unbound:
+                    stack[-1]['close_request']['interpret_leaf'] = True
                 if addressed:
                     stack[-1]['close_request']['addressed_introduction'] = True
             if program.identity_leaves is not None:
-                stack[-1]['identity_handle'] = handle if stack[-1]['order'] == 1 or named or addressed else 0
+                stack[-1]['identity_handle'] = handle if stack[-1]['order'] == 1 or named or addressed or unbound else 0
                 if named:
                     stack[-1]['close_request']['reading_identity'] = handle
                 if stack[-1]['identity_handle']:
@@ -167,7 +174,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     # Implicit non-individual operands already used their
                     # typed concept in compose. Keep that reference beside
                     # the journal's point without reviving formation choices.
-                    if binding and binding_order != 1 and chosen_antecedent:
+                    if binding and (binding_order != 1 or getattr(rule, 'order_delta', 0) == -1) and chosen_antecedent:
                         selected['ref'] = reference
                     continue
                 if (getattr(program, 'close_references', False) and binding_order == 1
@@ -390,7 +397,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             if not current['children']:
                 return
             rule = current['rule']
-            if rule.method_name == 'adverb':
+            if rule.method_name == 'modifier':
                 attached(current['children'][0])
                 modifiers.append(frames[current['identity_action'],1])
             elif current is semantic and getattr(rule, 'clause_form', None) == 'S':

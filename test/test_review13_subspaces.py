@@ -6,11 +6,12 @@ import torch
 from torch import nn
 
 
-def fixture(*, meaning_pairs=1, batch_size=1, property_width=0, capacity=32):
+def fixture(*, meaning_pairs=1, batch_size=1, property_width=0, capacity=32, order_reservations=()):
     from test_cs_sparse_weights import _cs
     from Spaces import Codebook, _concept_alloc_of
     width = 3 + property_width
-    cs = _cs(nS=capacity, order=0, batch_size=batch_size, dim=width+2*meaning_pairs)
+    cs = _cs(nS=capacity, order=0, order_limit=2, order_reservations=order_reservations,
+             batch_size=batch_size, dim=width+2*meaning_pairs)
     ps = Codebook()
     ps.W = nn.Parameter(torch.zeros(16, width))
     with torch.no_grad():
@@ -96,6 +97,7 @@ def test_close_placement_is_confined_to_detached_context_coordinates():
     reading = SimpleNamespace(word_rows=torch.tensor([a,b]), concept_ids=None)
     cs._sentence_seen_rows[0, :2] = torch.tensor([a,b])
     cs.prime_seen(torch.tensor([[a,b]]))
+    cs._observed_knowing[0, [a,b], 0] = 1.
     cb.mereology.observe_close(reading)
     codes = cb.lookup_rows(torch.tensor([a,b]))
     torch.testing.assert_close(codes[:,:3], ps.W[[4,7]])
@@ -110,6 +112,7 @@ def test_close_placement_is_confined_to_detached_context_coordinates():
          sentence_kind='idea', role_refs=(('sym', part), None, None)),
         evidence=(0.,0.))
     cs.prime_seen(torch.tensor([[a,b]]))
+    cs._observed_knowing[0, [a,b], 0] = 1.
     cb.mereology.observe_close(reading)
     torch.testing.assert_close(cb.lookup_rows(a)[:3], ps.W[4])
     torch.testing.assert_close(cb.lookup_rows(a)[3:].reshape(2,-1).norm(dim=-1), torch.tensor([radius, 0.]))

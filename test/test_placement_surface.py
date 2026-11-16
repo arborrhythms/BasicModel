@@ -25,6 +25,7 @@ def lesson(monkeypatch):
     # Five already placed, inactive symbols supply the specified negatives.
     derived.place_rows(rows[2:], torch.zeros(len(cb.W)), b'background')
     cs._sentence_seen_rows[0, :2] = torch.tensor(rows[:2])
+    cs._observed_knowing[0, rows[:2], 0] = 1.
     return cs, derived, rows, reading
 
 
@@ -63,7 +64,7 @@ def test_prediction_and_placement_reads_never_write_each_other(monkeypatch):
     cs.prime_seen(torch.tensor([[a]]))
     stored,seen=cs._expected_knowing.clone(),cs._priming_seen.clone()
     context=cs.placement_context(0)
-    torch.testing.assert_close(context,(seen[0]-1).clamp_min(0),rtol=0,atol=0)
+    torch.testing.assert_close(context,cs._observed_knowing[0].amax(-1),rtol=0,atol=0)
     assert stored[0,b,1]==.8 and seen[0,b]==1
     first,second=cs.relevance_weights(batch=1),cs.relevance_weights(batch=1)
     assert torch.equal(first,second) and torch.equal(stored,cs._expected_knowing)
@@ -103,7 +104,7 @@ def test_unchanged_forward_reuses_edges_bridge_forms_and_witnesses(monkeypatch):
         __import__('PartRead')
 
 
-def test_promotion_folds_form_and_takes_one_context_step(monkeypatch):
+def test_promotion_uses_its_order_context_and_has_no_higher_order_form(monkeypatch):
     import weakref
     from ClauseRow import attach_clause_index
     from Memory import LTM0
@@ -142,11 +143,10 @@ def test_promotion_folds_form_and_takes_one_context_step(monkeypatch):
     symbol = cs.mtm.entries[addresses[0]].symbol
     row = cs._csw_row_of(symbol)
     cb.lookup_rows(row)
-    expected_form = (torch.stack(values)[:,:3] * torch.tensor([1.,.5,.25])[:,None]).sum(0)/1.75
-    torch.testing.assert_close(cb.W[row,:3], expected_form)
+    assert not cb.W[row,:3].any()
     q = F.normalize(identity_code(derived.content_key(row), derived.meaning_pairs,
                                  derived.meaning_ones), dim=0)
-    positives = (context > 0) & placed
+    positives = (context > 0) & placed & derived.same_order(row)
     negatives = derived._negatives(row, context, placed, key)
     expected = derived.placement_step(q, before_codes[positives], context[positives], before_codes[negatives])
     torch.testing.assert_close(derived.placement[row], expected)

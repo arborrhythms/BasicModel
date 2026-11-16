@@ -29,6 +29,9 @@ def concept(cs, *, part=10, magnitude=.5, edges=True):
 def test_smaller_exact_redundancy_frees_seat_but_never_reuses_handle():
     cs = _cs(4)
     weak, row = concept(cs, magnitude=.1)
+    cs.similarity_codebook.trust.read_object(weak)
+    with torch.no_grad():
+        cs.similarity_codebook.W[row].fill_(.1)
     strong, _ = concept(cs, magnitude=.9)
     with pytest.warns(RuntimeWarning, match='maximum preallocation'):
         unique, _ = concept(cs, part=11, magnitude=0.)
@@ -37,10 +40,15 @@ def test_smaller_exact_redundancy_frees_seat_but_never_reuses_handle():
     assert report['retired'] == (weak,) and report['reclaimed'] == 1
     assert cs._csw_row_of(strong) is not None and cs._csw_row_of(unique) is not None
     assert cs._csw_row_of(weak) is None and weak in cs._concept_allocator.retired
+    assert not cs.similarity_codebook.trust.read_objects[row]
+    state = copy.deepcopy(cs.similarity_codebook.trust.state_dict())
+    cs.similarity_codebook.trust.load_state_dict(state)
+    assert not cs.similarity_codebook.trust.read_objects[row]
     with pytest.warns(RuntimeWarning, match='maximum preallocation'):
         new, new_row = concept(cs, part=12)
     assert new > unique and new != weak and new_row == row
     assert cs.concept_id_at_row(row) == new
+    assert not cs.similarity_codebook.trust.read_objects[row]
     assert cs._csw_row_of(weak) is None
     assert cs._concept_allocator.reclaimed_seats == 1
     with pytest.raises(ValueError, match='retired concept'):
@@ -78,10 +86,8 @@ def test_unused_mints_are_reclaimed_by_magnitude_without_erasing_defined_or_refe
     for cid in ids:
         force_order(cs, cid, 0)
     rows = [cs._csw_concept_row(0, cid) for cid in ids]
-    # These are abandoned reservations, not retained order testimony. The
-    # fixture withdraws the setup witness before testing unused-seat reclaim.
-    for cid in ids:
-        cs._concept_allocator.reference_orders.pop(cid)
+    # These are abandoned reservations with no definitions or references.
+    # Their block remains their order until their row is reclaimed.
     large, small, referenced, defined, posted, edge_source, edge_target, feature, witnessed = ids
     layer = cs._concept_allocator.layer()
     for row in rows:
@@ -123,15 +129,16 @@ def test_incoming_sparse_edge_or_record_prevents_recycling():
     assert cs._csw_row_of(first) == row
 
 
-def test_different_order_or_definition_never_merges():
+@pytest.mark.parametrize('different_order', (True, False))
+def test_different_order_or_definition_never_merges(different_order):
     cs = _cs(8)
     first, _ = concept(cs, magnitude=.1)
-    second, _ = concept(cs, magnitude=.9)
-    force_order(cs, second, 1)
-    with pytest.warns(RuntimeWarning, match='no safely redundant'):
-        assert reclaim_concepts(cs)['reclaimed'] == 0
-    force_order(cs, second, 0)
-    cs.add_part(second, 11)
+    if different_order:
+        second = cs.new_concept(order=1)
+        cs.add_part(second, ('sym', first))
+        assert cs._concept_allocator.order_of(second) == 1
+    else:
+        second, _ = concept(cs, part=11, magnitude=.9)
     with pytest.warns(RuntimeWarning, match='no safely redundant'):
         assert reclaim_concepts(cs)['reclaimed'] == 0
 
@@ -141,17 +148,20 @@ def test_exact_physical_preallocation_warns_even_for_external_handles():
     with warnings.catch_warnings(record=True) as seen:
         warnings.simplefilter('always')
         for index in range(4):
-            force_order(cs, 1000 + index, 0)
-            assert cs._csw_concept_row(0, 1000 + index) == index
+            order = cs._row_order(index)
+            force_order(cs, 1000 + index, order)
+            assert cs._csw_concept_row(order, 1000 + index) == index
         warn_capacity(cs)
     assert sum('maximum preallocation' in str(w.message) for w in seen) == 1
 
 
 def test_equal_descriptions_do_not_merge_distinct_individuals():
     cs = _cs(8)
-    first, _ = concept(cs, magnitude=.1)
-    second, _ = concept(cs, magnitude=.9)
-    cs._concept_allocator.reference_orders.update({first: 1, second: 1})
+    first, second = (cs.new_concept(order=1) for _ in range(2))
+    cs._concept_allocator.individuals.update((first, second))
+    with torch.no_grad():
+        for cid, magnitude in ((first, .1), (second, .9)):
+            cs.similarity_codebook.W[cs._csw_row_of(cid)].fill_(magnitude)
     with pytest.warns(RuntimeWarning, match='no safely redundant'):
         assert reclaim_concepts(cs)['reclaimed'] == 0
 

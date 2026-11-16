@@ -93,7 +93,7 @@ def record_reading(language, entry):
                 operations[kind,local]=cls(base)
             else:
                 operations[kind, local] = (cls(width, width) if name in
-                    ('lift', 'verb', 'lower', 'surface', 'preposition', 'sum', 'implies') else cls())
+                    ('change', 'verb', 'lower', 'surface', 'preposition', 'sum', 'implies') else cls())
         arguments = [value.reshape(1,1,-1) for value,_ in operands]
         if field_bind:
             arguments.append(torch.zeros_like(arguments[0]))
@@ -148,7 +148,7 @@ def field_text_config(*, examine):
         symbolic = grammar.getroot().find('Symbolic')
         symbolic.clear()
         compose = ET.SubElement(symbolic, 'compose')
-        names = ('divide', 'descend', 'gloss') if examine else ()
+        names = ('focus', 'mint') if examine else ()
         for name in (*names, 'intersection', 'union', 'not'):
             ET.SubElement(compose, 'rule', operands='field').text = f'F = {name}.forward(F)'
         grammar_path = Path(directory) / 'field.grammar'
@@ -194,7 +194,7 @@ def force_absolute_reading(model):
     unary = layer.chooser.score_unary
     binary_names = [rule.method_name for rule in model.languageSpace._compose_binary_rules]
     unary_names = [rule.method_name for rule in model.languageSpace._compose_unary_rules]
-    allowed = ('lift', 'conjunction', 'disjunction', 'sum')
+    allowed = ('change', 'conjunction', 'disjunction', 'sum')
     def binary_scores(*args, **kwargs):
         stop, scores = binary(*args, **kwargs)
         mask = torch.tensor([name in allowed for name in binary_names], device=scores.device, dtype=torch.bool)
@@ -330,6 +330,7 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
     state = stm, tuple(lang), None
     active = torch.tensor([active], dtype=torch.bool)
     view = owner._sentence_observation(state, sid, active)
+    view['incoming_trust'] = trust
     # This fixture supplies conceptual leaves explicitly. Extend their actual
     # placed evidence through the same kept program used by a normal trial.
     from Understanding import ConceptualField

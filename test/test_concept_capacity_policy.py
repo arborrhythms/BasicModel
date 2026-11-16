@@ -26,7 +26,7 @@ from test_basicmodel import _populate_test_config
 _D = 8
 
 
-def _cs(n_vectors=16):
+def _cs(n_vectors=16, *, allocation='geometric', reservations=()):
     n_slots = 4
     _populate_test_config(
         inputDim=_D, perceptDim=_D, conceptDim=_D, symbolDim=_D,
@@ -35,11 +35,34 @@ def _cs(n_vectors=16):
         nSymbols=n_vectors, nWords=n_vectors, nOutput=n_vectors,
         nWhere=0, nWhen=0,
     )
+    from util import TheXMLConfig
+    TheXMLConfig.set('ConceptualSpace.orderAllocation', allocation)
     cs = ConceptualSpace(
-        [n_slots, _D], [n_vectors, _D], [n_slots, _D])
+        [n_slots, _D], [n_vectors, _D], [n_slots, _D],
+        order_reservations=reservations)
     object.__setattr__(cs, "_concept_binding", "aligned")
     object.__setattr__(cs, "_serial", True)
     return with_definitions(cs)
+
+
+def test_declared_shares_seat_orders_without_changing_the_inventory():
+    from util import TheXMLConfig
+    cs = _cs(16, allocation='5 4 1', reservations=(2, 3, 1))
+    assert cs.nVectors == 16 and cs._order_caps() == (7, 7, 2)
+    for order, bounds in enumerate(((0, 7), (7, 14), (14, 16))):
+        assert cs.order_slice(order) == bounds
+        concept = cs.new_concept(order=order)
+        row = cs._csw_concept_row(order, concept)
+        assert bounds[0] <= row < bounds[1]
+        assert cs._row_order(row) == order
+    TheXMLConfig.set('ConceptualSpace.orderAllocation', '10 0 0')
+    assert cs._order_caps() == (7, 7, 2)
+
+
+@pytest.mark.parametrize('allocation', ['4 4', '8 8 0', '-1 17', '8.0 8'])
+def test_invalid_declared_shares_fail_at_construction(allocation):
+    with pytest.raises(ValueError, match='orderAllocation'):
+        _cs(16, allocation=allocation)
 
 
 def _property_ws(spans=None):
@@ -55,7 +78,7 @@ def _allocator_snapshot(cs):
     layer = alloc.layer()
     return {
         "next_id": int(alloc.next_id),
-        "placement": dict(alloc.placement),
+        "placement": dict(alloc.symbols),
         "definitions": dict(cs.definitions._rows),
         "relate_idx": dict(alloc.relate_idx),
         "constituents": {
@@ -72,7 +95,7 @@ def _assert_snapshot_equal(before, after):
 
 def test_explicit_word_row_capacity_failure_is_atomic():
     cs = _cs(8)
-    for row in range(8):
+    for row in range(cs._order_caps()[0]):
         force_order(cs, 1000 + row, 0)
         assert cs._csw_concept_row(0, 1000 + row) == row
     before = _allocator_snapshot(cs)
@@ -86,16 +109,17 @@ def test_explicit_word_row_capacity_failure_is_atomic():
 def test_automatic_capacity_mode_reuses_known_identity_without_recycling():
     cs = _cs(8)
     known = cs.interpret_word([10], (0,), key='known')
-    for row in range(1, 8):
+    for row in range(1, cs._order_caps()[0]):
         force_order(cs, 1000 + row, 0)
         assert cs._csw_concept_row(0, 1000 + row) == row
-    cs.retire_concept(1007)
+    retired = 1000 + cs._order_caps()[0] - 1
+    cs.retire_concept(retired)
     assert cs.interpret_word([10], (0,), key='known') == known
     before = _allocator_snapshot(cs)
     with pytest.raises(RuntimeError, match='capacity'):
         cs.interpret_word([20], (0,), key='unseen')
     _assert_snapshot_equal(before, _allocator_snapshot(cs))
-    assert 1007 in cs._concept_allocator.retired
+    assert retired in cs._concept_allocator.retired
     before = _allocator_snapshot(cs)
     with pytest.raises(RuntimeError, match='capacity'):
         cs.interpret_word([10, 11], (0,), key='known')
@@ -126,7 +150,7 @@ def test_serial_property_autobind_does_not_persist_sentence_chain():
 @pytest.mark.parametrize("remaining", [1, 2])
 def test_rejected_word_does_not_consume_location_fallback_rows(remaining):
     cs = _cs(8)
-    for row in range(8 - remaining):
+    for row in range(cs._order_caps()[0] - remaining):
         force_order(cs, 1000 + row, 0)
         cs._csw_concept_row(0, 1000 + row)
     store = cs.definitions._store()
@@ -140,12 +164,12 @@ def test_rejected_word_does_not_consume_location_fallback_rows(remaining):
         tile_spans=None, percept_store=None, ws=_property_ws(spans))
     _assert_snapshot_equal(before, _allocator_snapshot(cs))
     assert cs.definitions.word(form='new') is None
-    assert len(cs._concept_allocator.layer()._tensor_rows) == 8 - remaining
+    assert len(cs._concept_allocator.layer()._tensor_rows) == cs._order_caps()[0] - remaining
 
 
 def test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span():
     cs = _cs(8)
-    for row in range(8):
+    for row in range(cs._order_caps()[0]):
         force_order(cs, 1000 + row, 0)
         cs._csw_concept_row(0, 1000 + row)
     before = _allocator_snapshot(cs)

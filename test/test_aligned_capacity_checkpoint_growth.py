@@ -41,6 +41,10 @@ class _ConceptHost(nn.Module):
             object.__setattr__(self, "_concept_allocator", allocator)
 
 
+    def _order_caps(self):
+        return (self._concept_allocator.layer().nOutput,)
+
+
 class _WholeHost(nn.Module):
     def __init__(self, codebook):
         super().__init__()

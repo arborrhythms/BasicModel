@@ -66,18 +66,8 @@ def test_update_has_one_promotion_after_placement_and_no_close_observer():
              and isinstance(node.func, ast.Attribute) and node.func.attr == 'promote_candidates']
     assert len(calls) == 1
     assert 'if bool(active.any()):' in text
-    assert (text.index('consolidate(owner') < text.index('mtm.promote_candidates')
-            < text.index('refresh(self._concept_owner())')
-            < text.index('condition(self._concept_owner(), observed_members)'))
-    refresh_calls = [node for node in ast.walk(tree) if isinstance(node, ast.Call)
-                     and isinstance(node.func, ast.Name) and node.func.id == 'refresh']
-    assert len(refresh_calls) == 1
-    from ConceptHierarchy import refresh
-    refresh_tree = ast.parse(textwrap.dedent(inspect.getsource(refresh)))
-    derivations = [node for node in ast.walk(refresh_tree) if isinstance(node, ast.Call)
-                   and isinstance(node.func, ast.Attribute)
-                   and node.func.attr == 'derive_class_placements']
-    assert len(derivations) == 1
+    assert text.index('consolidate(owner') < text.index('mtm.promote_candidates')
+    assert 'derive_class_placements' not in text and 'condition(' not in text
     assert 'SerialConcepts' not in text
 
 
@@ -92,9 +82,9 @@ def test_prime_boundary_joins_lexical_and_open_field_rows_in_one_step(monkeypatc
     model.inputSpace._packed_sentence_slot_mask = torch.tensor([[True]])
     calls = []
     predict=ConceptSpread.open_prediction
-    def step(model,active):
+    def step(model,active,**kwargs):
         calls.append('prediction')
-        return predict(model,active)
+        return predict(model,active,**kwargs)
     monkeypatch.setattr(ConceptSpread,'open_prediction',step)
     prime = cs.prime_seen
     class ReachedReconstructionBank(Exception):

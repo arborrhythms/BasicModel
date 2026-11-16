@@ -7,6 +7,14 @@ from ThoughtReferences import bindings, evidence_pair, open_slots, with_slots
 
 def derive(context, arguments):
     from ThoughtChunks import read
+    if len(arguments) == 1:
+        reference = arguments['argin1']
+        if reference[0] != 'chunk':
+            raise ValueError('implication search requires an addressed premise')
+        premise = read(context.stm, reference[1], context.row)
+        frames = context.ltm.implication_rules(max_records=context.max_records, work=context.work)
+        return context.conceptual_space.implication(premise, frames,
+            row=context.row, work=context.work, premise=reference[1])
     refs = [arguments[role] for role in ('argin1', 'argin2')]
     if getattr(context, 'intuition_rule', None) is not None:
         if refs[0][0] != 'chunk' or refs[1] != context.intuition_rule:

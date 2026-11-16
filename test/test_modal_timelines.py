@@ -1,3 +1,4 @@
+from action_fixtures import action_with_basis
 """Fixed-operation timeline certificates; no claim of learned modal attachment."""
 from chunk_fixtures import context as chunk_context
 from copy import deepcopy
@@ -116,7 +117,7 @@ def test_timeline_checkpoint_copies_and_validates_the_whole_pool_atomically():
 
 def test_equal_time_teacher_uses_only_defined_coordinates_once_and_defers_its_graph():
     p = pool()
-    action = MeaningAction(8, modifier=True)
+    action = action_with_basis(8, modifier=True)
     actual = torch.tensor([.2, .3, 0., .4, .2, .3, 0., .4])
     after = torch.tensor([.3, .4, .8, .5, .3, .4, .8, .5])
     modifier = torch.full((8,), .2)
@@ -140,7 +141,7 @@ def test_equal_time_teacher_uses_only_defined_coordinates_once_and_defers_its_gr
 
 def test_a_modifier_without_an_equal_time_alternative_teaches_nothing():
     p = pool()
-    action = MeaningAction(8, modifier=True)
+    action = action_with_basis(8, modifier=True)
     p.event(address(1), address(2), verb=12, role=0, when=7, before=torch.full((8,), .2))
     assert observe(action, p, (address(1),)) == []
     branch = p.alternative(address(1), when=8)
@@ -154,15 +155,15 @@ def recording(f, tree, frames=()):
     from chunk_fixtures import record
     branches,number = [],0
     def modal(node):
-        return isinstance(node,tuple) and (node[0] == 'adverb' or any(modal(child) for child in node[1:]))
+        return isinstance(node,tuple) and (node[0] == 'modifier' or any(modal(child) for child in node[1:]))
     def visit(node,alternative=False):
         nonlocal number
         if not isinstance(node,tuple):
             return
         name,*children = node
         for index,child in enumerate(children):
-            visit(child,alternative or (name == 'adverb' and index == 0) or
-                  (name == 'lift' and index == 0 and len(children)>1 and modal(children[1])))
+            visit(child,alternative or (name == 'modifier' and index == 0) or
+                  (name == 'change' and index == 0 and len(children)>1 and modal(children[1])))
         if name == 'bind':
             if alternative:
                 branches.append(number)
@@ -176,16 +177,18 @@ def fixture(monkeypatch):
     from types import SimpleNamespace
     from test_clause_acceptance import SentenceFixture
     f = SentenceFixture(monkeypatch)
-    verb, modifier = MeaningAction(8,capacity=2), MeaningAction(8,modifier=True)
+    verb, modifier = action_with_basis(8,capacity=2), action_with_basis(8,modifier=True)
     with torch.no_grad():
         verb.readout.fill_(.2)
         modifier.readout.fill_(.15)
     for word,value in (('subject',.2),('move',.3),('shift',.4)):
-        symbol=f.noun(word)
+        symbol=f.noun(word, order=int(word == 'subject'))
         with torch.no_grad():
             f.cs.similarity_codebook.W[f.cs._csw_row_of(symbol)].fill_(value)
-    f.ops['lift']=SimpleNamespace(compose=lambda a,b:verb(a,b))
-    f.ops['adverb']=SimpleNamespace(compose=lambda a,b:modifier(a,b))
+    from chunk_fixtures import higher_word
+    higher_word(f, 'subject')
+    f.ops['change']=SimpleNamespace(compose=lambda a,b:verb(a,b))
+    f.ops['modifier']=SimpleNamespace(compose=lambda a,b:modifier(a,b))
     f.ops['lower_unary']=SimpleNamespace(compose=lambda a:a)
     return f,verb,modifier
 
@@ -217,7 +220,16 @@ def close(f, program, frames=(), *, position=0, actions=(None,None), question=Fa
 def test_modal_bracketings_write_only_an_idea_and_preserve_the_actual(monkeypatch,post):
     f,verb,modifier=fixture(monkeypatch)
     subject=('lower_unary','subject')
-    tree=('adverb',('lift',subject,'move'),'shift') if post else ('lift',subject,('adverb','move','shift'))
+    subject_value=f.registry._payload(('sym',f.words['subject'][1])).detach().clone()
+    # The current kind and the existing member chosen one order down are
+    # distinct readings. A modal event uses that selected member's point.
+    wid, kind=f.words['subject']
+    member, = (cid for cid in f.cs.definitions.objects(wid)
+               if f.cs._concept_source_order(cid) == f.cs._concept_source_order(kind)-1)
+    event_subject=f.registry._payload(('sym',member)).detach().clone()
+    move_value=f.registry._payload(('sym',f.words['move'][1])).detach().clone()
+    shift_value=f.registry._payload(('sym',f.words['shift'][1])).detach().clone()
+    tree=('modifier',('change',subject,'move'),'shift') if post else ('change',subject,('modifier','move','shift'))
     program=recording(f,tree)
     clause,frame,row,written=close(f,program,actions=(verb,modifier))
     pool=f.cs.mtm
@@ -227,10 +239,9 @@ def test_modal_bracketings_write_only_an_idea_and_preserve_the_actual(monkeypatc
     assert not entry.events and len(entry.timelines)==2
     assert len(entry.timelines[1].events)==1
     assert not any(f.store.order_of_row(f.store.location(event.occurrence))==0 for event in entry.timelines[1].events)
-    torch.testing.assert_close(f.cs.mtm.value_of(entry),torch.full((8,),.2))
-    subject_value=torch.full((8,),.2)
-    expected=(modifier(verb(subject_value,torch.full((8,),.3)),torch.full((8,),.4)) if post else
-              verb(subject_value,modifier(torch.full((8,),.3),torch.full((8,),.4))))
+    torch.testing.assert_close(f.cs.mtm.value_of(entry),subject_value)
+    expected=(modifier(verb(event_subject,move_value),shift_value) if post else
+              verb(event_subject,modifier(move_value,shift_value)))
     torch.testing.assert_close(f.cs.mtm.value_of(entry, timeline=1),expected)
     assert pool.token_of(entry.timelines[1].events[0].occurrence)==token
     assert any(pool.token_of(use)==token for use in entry.occurrences)
@@ -240,7 +251,7 @@ def test_modal_bracketings_write_only_an_idea_and_preserve_the_actual(monkeypatc
 def test_second_modal_acts_on_the_open_branch_and_bind_still_reads_actual(monkeypatch,post):
     f,verb,modifier=fixture(monkeypatch)
     def tree(subject):
-        return ('adverb',('lift',subject,'move'),'shift') if post else ('lift',subject,('adverb','move','shift'))
+        return ('modifier',('change',subject,'move'),'shift') if post else ('change',subject,('modifier','move','shift'))
     _,frame,_,_=close(f,recording(f,tree(('lower_unary','subject'))),actions=(verb,modifier))
     token,entry=next(iter(f.cs.mtm.entries.items()))
     before=f.cs.mtm.value_of(entry, timeline=1).clone()
@@ -265,14 +276,14 @@ def test_fixed_query_reads_event_order_and_never_asserts_the_question(monkeypatc
     from Queries import ThoughtLTMCapability
     from QueryWork import QueryWorkBudget
     f,verb,modifier=fixture(monkeypatch)
-    actual=('lift',('lower_unary','subject'),'move')
+    actual=('change',('lower_unary','subject'),'move')
     _,first,actual_row,_=close(f,recording(f,actual),evidence=(.8,0.))
     subject=('bind','subject')
-    tree=('adverb',('lift',subject,'move'),'shift') if post else ('lift',subject,('adverb','move','shift'))
+    tree=('modifier',('change',subject,'move'),'shift') if post else ('change',subject,('modifier','move','shift'))
     _,second,idea_row,_=close(f,recording(f,tree,(first,)),(first,),position=1,evidence=(.7,0.))
     token,entry=next(iter(f.cs.mtm.entries.items()))
     reader=ThoughtLTMCapability(store=lambda:f.store,equal=lambda a,b:1.,tau_id=.9)
-    for n,query_tree,expected in ((2,('lift',subject,'move'),actual_row),(3,tree,idea_row)):
+    for n,query_tree,expected in ((2,('change',subject,'move'),actual_row),(3,tree,idea_row)):
         c,_,row,written=close(f,recording(f,query_tree,(second,)),(second,),position=n,question=True)
         question=closing_question(c.meaning,c,store=f.store,written_rows=written)
         assert bindings(question)['_query_event'][2] == c.order
@@ -301,7 +312,7 @@ def test_some_every_include_actual_and_use_both_lanes(monkeypatch):
     from Queries import ThoughtLTMCapability
     from QueryWork import QueryWorkBudget
     f,_,_=fixture(monkeypatch)
-    _,frame,row,_=close(f,recording(f,('lift',('lower_unary','subject'),'move')),evidence=(.8,.2))
+    _,frame,row,_=close(f,recording(f,('change',('lower_unary','subject'),'move')),evidence=(.8,.2))
     token,entry=next(iter(f.cs.mtm.entries.items()))
     # Open an alternative at the same subject value with no event yet.
     branch=f.cs.mtm.alternative(token,when=10)
@@ -323,10 +334,10 @@ def test_some_every_include_actual_and_use_both_lanes(monkeypatch):
 def test_promotion_folds_only_actual_events_and_document_end_keeps_ideas(monkeypatch):
     from MemoryConsolidation import consolidate
     f,verb,modifier=fixture(monkeypatch)
-    _,frame,actual_row,_=close(f,recording(f,('lift',('lower_unary','subject'),'move')),evidence=(1.,0.))
+    _,frame,actual_row,_=close(f,recording(f,('change',('lower_unary','subject'),'move')),evidence=(1.,0.))
     token,entry=next(iter(f.cs.mtm.entries.items()))
     actual_value=f.store.slots[actual_row].clone()
-    tree=('lift',('bind','subject'),('adverb','move','shift'))
+    tree=('change',('bind','subject'),('modifier','move','shift'))
     ideas=[]
     for position in (1,2):
         _,frame,row,_=close(f,recording(f,tree,(frame,)),(frame,),position=position)
@@ -357,8 +368,8 @@ def test_post_attachment_rolls_back_resolution_and_preserves_pathwise_derivative
     from types import SimpleNamespace
     from chunk_fixtures import Walk,choice,value
     from ChunkJournal import RESOLVED
-    walk=Walk((SimpleNamespace(method_name='lift',clause_form='S',head_role=2),
-               SimpleNamespace(method_name='adverb',head_role=1),
+    walk=Walk((SimpleNamespace(method_name='change',clause_form='S',head_role=2),
+               SimpleNamespace(method_name='modifier',head_role=1),
                SimpleNamespace(method_name='bind',head_role=1)),())
     def run(first,scale,modifier):
         state=walk.empty(first,16)
@@ -386,11 +397,11 @@ def test_post_attachment_rolls_back_resolution_and_preserves_pathwise_derivative
 
 def test_post_attachment_preserves_a_later_independent_actual_write(monkeypatch):
     f,verb,modifier=fixture(monkeypatch)
-    tree=('adverb',('lift',('lower_unary','subject'),'move'),
-                    ('lift',('bind','subject'),'move'))
+    tree=('modifier',('change',('lower_unary','subject'),'move'),
+                    ('change',('bind','subject'),'move'))
     program=recording(f,tree)
     lifts=[i for i,(kind,op,_) in enumerate(program.actions.tolist())
-           if kind==1 and f.binary[op].method_name=='lift']
+           if kind==1 and f.binary[op].method_name=='change']
     expected=program.operation_values[lifts[-1],2]
     close(f,program,actions=(verb,modifier))
     entry=next(iter(f.cs.mtm.entries.values()))
@@ -404,7 +415,7 @@ def test_retained_idea_keeps_its_subject_reference_after_token_expiry(monkeypatc
     from Queries import ThoughtLTMCapability
     from QueryWork import QueryWorkBudget
     f,_,_=fixture(monkeypatch)
-    _,frame,row,_=close(f,recording(f,('lift',('lower_unary','subject'),('adverb','move','shift'))),
+    _,frame,row,_=close(f,recording(f,('change',('lower_unary','subject'),('modifier','move','shift'))),
                          evidence=(.9,0.))
     token,entry=next(iter(f.cs.mtm.entries.items()))
     query=replace(ConceptualMeaning.from_description(f.store.slots[row]),
@@ -431,10 +442,10 @@ def test_retained_idea_keeps_its_subject_reference_after_token_expiry(monkeypatc
 @pytest.mark.parametrize('modal',(False,True))
 def test_bound_idea_has_both_value_and_retained_identity_reference(monkeypatch,modal):
     f,_,_=fixture(monkeypatch)
-    _,frame,_,_=close(f,recording(f,('lift',('lower_unary','subject'),'move')))
+    _,frame,_,_=close(f,recording(f,('change',('lower_unary','subject'),'move')))
     token,entry=next(iter(f.cs.mtm.entries.items()))
-    vp=('adverb','move','shift') if modal else 'move'
-    program=recording(f,('lift',('bind','subject'),vp),(frame,))
+    vp=('modifier','move','shift') if modal else 'move'
+    program=recording(f,('change',('bind','subject'),vp),(frame,))
     bind=next(i for i,(kind,op,_) in enumerate(program.actions.tolist())
               if kind==1 and f.binary[op].method_name=='bind')
     torch.testing.assert_close(program.operation_values[bind,1],f.cs.mtm.value_of(entry))
@@ -450,8 +461,10 @@ def test_bound_idea_has_both_value_and_retained_identity_reference(monkeypatch,m
 
 def test_modal_object_role_keeps_its_own_state(monkeypatch):
     f,_,_=fixture(monkeypatch)
-    f.noun('object')
-    tree=('lift',('lower_unary','subject'),('adverb',('verb','move',('lower_unary','object')),'shift'))
+    from chunk_fixtures import higher_word
+    f.noun('object', order=1)
+    higher_word(f, 'object')
+    tree=('change',('lower_unary','subject'),('modifier',('verb','move',('lower_unary','object')),'shift'))
     close(f,recording(f,tree))
     objects=[entry for entry in f.cs.mtm.entries.values()
              if any(event.role==2 for timeline in entry.timelines for event in timeline.events)]

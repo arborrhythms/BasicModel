@@ -70,7 +70,7 @@ def operator_groups(model, optimizer):
                 group = tuple(p for p in matrix.parameters() if id(p) in available)
                 if group:
                     groups[f'definitions.{index}.{number}'] = group
-        for name in ('intuition', 'concept_predictor'):
+        for name in ('intuition', 'intuit_stack', 'expect_stack', 'concept_predictor'):
             module = getattr(space, name, None)
             if module is not None:
                 groups[f'{name}.{index}'] = tuple(p for p in module.parameters() if id(p) in available)

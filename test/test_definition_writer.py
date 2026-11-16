@@ -118,11 +118,11 @@ def test_old_definition_checkpoint_raises_before_any_allocator_mutation(monkeypa
     saved['placement'] = {}
     saved['word_forms'] = {}
     alloc = f.cs._concept_allocator
-    placement, forms = dict(alloc.placement), deepcopy(alloc.word_forms)
+    placement, forms = dict(alloc.symbols), deepcopy(alloc.word_forms)
     rows = {name: value.clone() for name, value in alloc.parts.state_dict().items()}
     with pytest.raises(ValueError, match='named_identities'):
         model._restore_allocator_extras(f.cs, saved)
-    assert alloc.placement == placement and alloc.word_forms == forms
+    assert alloc.symbols == placement and alloc.word_forms == forms
     for name, value in rows.items():
         torch.testing.assert_close(alloc.parts.state_dict()[name], value, rtol=0, atol=0)
 

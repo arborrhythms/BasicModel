@@ -33,6 +33,8 @@ def native(monkeypatch):
     object.__setattr__(f.cs, '_model', model)
     object.__setattr__(model, 'grammatical_thoughts', f.registry)
     frames = []
+    model.languageSpace.verb_action = lambda: None
+    model.languageSpace.modifier_action = lambda: None
     model.symbolSpace.ltm_store = f.store
     model.symbolSpace.grammatical_thoughts = f.registry
     model.symbolSpace.expectation = SimpleNamespace(situation_references=lambda row: tuple(frames))
@@ -90,7 +92,7 @@ def occurrence(f, content, predicate, *, mode='mint', role=0, training=False, id
     verb = Composition(predicate, reference=predicates[key], order=0)
     point = torch.maximum(content, predicate)
     tree = Composition(point, (term, verb),
-                       operation='lift' if role == 0 else 'verb', order=1)
+                       operation='change' if role == 0 else 'verb', order=1)
     clause = Clause(ConceptualMeaning.from_description(point), point=point, order=1,
                     children=(constituent,), composition=tree, evidence=(1., 0.))
     row, plan = keep(f, clause, training=training)
@@ -137,18 +139,22 @@ VERBS = sorted({row[3]['words'][2] for row in corpus()
 
 
 @pytest.mark.parametrize('kind,other', PAIRS)
-def test_g1_definite_generator_referent_with_distractor(monkeypatch, kind, other):
+def test_g1_runtime_bind_generator_referent_with_distractor(monkeypatch, kind, other):
     from ClauseJournal import finish_clause
     f = native(monkeypatch)
     target, _ = occurrence(f, f.atoms[kind], f.atoms[4])
     occurrence(f, f.atoms[other], f.atoms[5])
     expected = f.identities[target]
-    # The same unary definite rule emits the close request. An unresolved
-    # instance becomes the identical bind site in a thought episode.
-    program = f.program(('lift', ('definite_unary', KINDS[kind]), VERBS[0]))
-    program = replace(program, leaves=torch.stack((f.atoms[kind], f.atoms[4])),
-        leaf_orders=torch.tensor([1, 0]), close_references=True)
-    clause = finish_clause(f.language, record_reading(f.language, program), registry=f.registry)
+    # Runtime bind emits the close request (§27.1). Its unresolved choice
+    # becomes the identical bind site in a thought episode.
+    from chunk_fixtures import record
+    for word, point, order in ((KINDS[kind], f.atoms[kind], 1), (VERBS[0], f.atoms[4], 0)):
+        obj = f.noun(word, order=order)
+        with torch.no_grad():
+            f.cs.similarity_codebook.W[f.cs._csw_row_of(obj)].copy_(point)
+    program, _, _ = record(f, ('change', ('bind', KINDS[kind]), VERBS[0]),
+                           dummy_binds=(0,), leaf_orders=(1, 0))
+    clause = finish_clause(f.language, program, registry=f.registry)
     from ReferenceClose import constituents
     node = constituents(clause)[0]
     assert node.reference_request['mode'] == 'bind'
@@ -172,11 +178,10 @@ def test_g2_generated_leaf_without_object_uses_same_resolver(monkeypatch, kind, 
     # §50 item 101 / §52 item 111: the new word's description is a part
     # of this retained individual, distinct from the distractor.
     from test_reference_close import known_concept
-    # The generated description below is explicitly order one. Its two
-    # candidate readings must carry identities of that same order, rather
-    # than anonymous order-zero occurrences of otherwise matching content.
-    target_identity = known_concept(f.cs, f.atoms[kind]+f.atoms[7], order=1)
-    distractor_identity = known_concept(f.cs, f.atoms[other], order=1)
+    # An objectless word is order zero by its row (§27.2). The candidates
+    # must have that same order, as the original test required.
+    target_identity = known_concept(f.cs, f.atoms[kind]+f.atoms[7], order=0)
+    distractor_identity = known_concept(f.cs, f.atoms[other], order=0)
     target, _ = occurrence(f, f.atoms[kind]+f.atoms[7], f.atoms[4], identity=target_identity)
     occurrence(f, f.atoms[other], f.atoms[5], identity=distractor_identity)
     expected = f.identities[target]
@@ -186,21 +191,20 @@ def test_g2_generated_leaf_without_object_uses_same_resolver(monkeypatch, kind, 
     from Spaces import _concept_alloc_of
     assert word in _concept_alloc_of(f.cs).word_forms[marker]
     assert word in f.cs.word_concepts(marker)
-    force_order(f.cs, word, 1)
     f.words[marker] = word, word
-    program = f.program(('lift', marker, VERBS[0]))
+    program = f.program(('change', marker, VERBS[0]))
     program = replace(program, leaves=torch.stack((f.atoms[7], f.atoms[4])),
                       leaf_orders=torch.tensor([f.cs._concept_source_order(word), 0]),
                       close_references=True)
     program = record_reading(f.language, program)
-    assert f.cs._concept_source_order(word) == 1
+    assert f.cs._concept_source_order(word) == 0
     requests = reference_requests(f.language, program.actions,
         leaf_orders=program.leaf_orders)
     assert 0 not in requests
     clause = finish_clause(f.language, program, registry=f.registry)
     from ReferenceClose import constituents
     nodes = constituents(clause)
-    assert len(nodes) == 1 and nodes[0].reference_request['mode'] == 'bind' and nodes[0].order == 1
+    assert len(nodes) == 1 and nodes[0].reference_request['mode'] == 'bind' and nodes[0].order == 0
     torch.testing.assert_close(nodes[0].point, f.atoms[7], rtol=0, atol=0)
     # Commit while the antecedents are outside the current situation, then
     # cue them. The real closing must open the NP, not invent a missing
@@ -234,7 +238,7 @@ def test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open(monkeypatc
                               mode='mint' if witness == 0 else 'bind', training=True)
     assert 2 in f.resolver.expected_roles(f.atoms[4])
     expected = f.identities[target] if accessible else None
-    program = f.program(('lift', KINDS[(kind+1) % len(KINDS)], VERBS[0]))
+    program = f.program(('change', KINDS[(kind+1) % len(KINDS)], VERBS[0]))
     program = replace(program, leaves=torch.stack((f.atoms[(kind+1) % 4], f.atoms[4])),
                       leaf_orders=torch.zeros(2, dtype=torch.long))
     program = record_reading(f.language, program)
@@ -371,9 +375,8 @@ def test_selected_open_formation_keeps_one_site_and_its_objectless_cue(monkeypat
     f = native(monkeypatch)
     word = f.cs.interpret.lookup_word([101], (), form='m')
     from Spaces import _concept_alloc_of
-    force_order(f.cs, word, 1)
     f.words['m'] = word, word
-    program = f.program(('lift', 'm', VERBS[0]))
+    program = f.program(('change', 'm', VERBS[0]))
     program = replace(program, binding_choices=True,
         leaf_orders=torch.tensor([f.cs._concept_source_order(word), 0]))
     program = record_reading(f.language, program)
@@ -394,7 +397,7 @@ def test_pending_subject_keeps_its_composed_predicate_when_stored(monkeypatch):
     f = native(monkeypatch)
     word = f.cs.interpret.lookup_word([101], (), form='m')
     f.words['m'] = word, word
-    program = f.program(('lift', 'm', ('verb', VERBS[0], KINDS[0])))
+    program = f.program(('change', 'm', ('verb', VERBS[0], KINDS[0])))
     program = replace(program, binding_choices=True,
         leaf_orders=torch.zeros(3, dtype=torch.long))
     program = record_reading(f.language, program)
@@ -417,7 +420,7 @@ def test_pending_subject_keeps_its_composed_predicate_when_stored(monkeypatch):
 def test_pending_name_stays_the_word_after_an_object_is_admitted(monkeypatch):
     from ClauseJournal import finish_clause
     f = native(monkeypatch)
-    program = f.program(('lift', KINDS[0], VERBS[0]))
+    program = f.program(('change', KINDS[0], VERBS[0]))
     word, obj = f.words[KINDS[0]]
     assert word != obj
     program = replace(program, binding_choices=True,

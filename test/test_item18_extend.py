@@ -86,11 +86,6 @@ def test_36_determiners_read_the_stored_members_and_mtm(monkeypatch):
     torch.testing.assert_close(key(owner,field)[0,0], codes.mean(0))
 
 
-def test_36_some_is_declared_in_the_complete_grammar():
-    from Language import Grammar
-    grammar=Grammar(); grammar.load_from_grammar_file('complete.grammar')
-    assert any(rule.surface_name == 'some' for rule in grammar.rules_upward)
-    assert any(rule.surface_name == 'some' for rule in grammar.rules_downward)
 
 
 def test_36_definite_reads_the_held_identity_and_both_its_lanes(monkeypatch):
@@ -104,7 +99,9 @@ def test_36_definite_reads_the_held_identity_and_both_its_lanes(monkeypatch):
     kinds=[index_part_row(f.cs,(SYMBOL,cid),(SYMBOL,common)) for cid in members]
     assert len(set(kinds)) == 1
     kind=kinds[0]
-    rule=next(r for r in f.binary if r.surface_name == 'definite')
+    # Isolated operator coverage: §27.1 removes this declaration from
+    # complete, while historical grammar declarations still retain its layer.
+    rule=SimpleNamespace(surface_name='definite',method_name='lower',head_role=2)
     op=f.operation(rule)
     source=ConceptSet(torch.tensor([kind]),torch.tensor([[1.,0.]]))
     reference=('sym',members[1])
@@ -121,13 +118,13 @@ def test_35_native_compose_journal_extends_in_order_without_stimulate(monkeypatc
     from test_clause_acceptance import SentenceFixture
     from Extension import reading
     from Understanding import ConceptualField
-    from Language import AdverbLayer
+    from Language import ModifierLayer
     import FieldProjection
     f=SentenceFixture(monkeypatch)
-    f.ops['adverb']=AdverbLayer(f.cs.nDim,f.cs.nDim)
-    program=f.program(('verb',('adverb','subject','modifier'),'predicate'))
+    f.ops['modifier']=ModifierLayer(f.cs.nDim,f.cs.nDim)
+    program=f.program(('verb',('modifier','subject','modifier'),'predicate'))
     calls=[]
-    for name in ('adverb','verb'):
+    for name in ('modifier','verb'):
         op=f.ops[name]
         original=op.compose_extend
         def checked(*args,_name=name,_original=original,**kwargs):
@@ -144,7 +141,7 @@ def test_35_native_compose_journal_extends_in_order_without_stimulate(monkeypatc
                       [[[1.,0.],[0.,0.],[1.,0.]]]]),
         torch.tensor([[[0,7],[8,16],[17,26]]]),torch.tensor([[[0,1],[0,1],[0,1]]]),None)
     root,=reading(model,program,field,0,torch.arange(3))
-    assert calls == ['adverb','verb']
+    assert calls == ['modifier','verb']
     torch.testing.assert_close(root.field.values[:,0],torch.tensor([.7,0.,0.]))
 
 
@@ -225,7 +222,7 @@ def test_39_sentence_object_is_the_generated_operand_and_not_the_witness_row(mon
     from ThoughtReferences import fill,with_slots,open_slots
     from Understanding import ConceptualField
     f=SentenceFixture(monkeypatch)
-    clause=f.clause(('lift','I',('verb','ate','rice')))
+    clause=f.clause(('change','I',('verb','ate','rice')))
     subject,predicate,obj=(f.noun(word) for word in ('I','ate','rice'))
     # The predicate's declared extension includes the object. Nothing is
     # inferred from a cosine or from a surface word in the implementation.
@@ -236,9 +233,9 @@ def test_39_sentence_object_is_the_generated_operand_and_not_the_witness_row(mon
     binary=tuple(r for r in f.grammar.rules_downward if ',' in r.lhs and r.space_role == 'CS')
     unary=tuple(r for r in f.grammar.rules_downward if ',' not in r.lhs)
     f.language._generate_binary_rules=binary;f.language._generate_unary_rules=unary
-    f.language._generate_binary_ops=tuple(f.operation(r) if r.method_name in ('lift','verb') else None for r in binary)
+    f.language._generate_binary_ops=tuple(f.operation(r) if r.method_name in ('change','verb') else None for r in binary)
     f.language._generate_unary_ops=(None,)*len(unary)
-    lift=next(i for i,r in enumerate(binary) if r.method_name == 'lift')
+    lift=next(i for i,r in enumerate(binary) if r.method_name == 'change')
     verb=next(i for i,r in enumerate(binary) if r.method_name == 'verb')
     stop=len(binary)+len(unary)
     # A controlled independent generate trace. Certificate 37 separately
@@ -334,9 +331,8 @@ def test_40_pervasion_comes_from_the_kind_relation_not_the_members():
     from QueryWork import QueryWorkBudget
     from order_fixtures import force_order
     from Memory import SYMBOL
-    owner,(member,kind,property_kind)=_world()
+    owner,(member,kind,property_kind)=_world((0,1,1))
     alloc=owner._concept_allocator
-    force_order(owner,kind,1);force_order(owner,property_kind,1)
     for cid in (kind,property_kind):
         alloc.symbol_types.setdefault(cid,set()).add('class')
     alloc.parts.add(member,kind,truth_plus=.8)
@@ -404,7 +400,7 @@ def test_37_recalled_idea_extends_without_its_stm_sentence(named_scalar_model):
     torch.testing.assert_close(result.aligned(ids),expected.aligned(ids))
 
 
-@pytest.mark.parametrize('operation,trust', [('part',.7),('equal',.7),('part',-.6),('equal',-.6)])
+@pytest.mark.parametrize('operation,trust', [('part',.7),('part',-.6)])
 def test_56_kept_relative_tree_closes_in_both_relation_stores(monkeypatch,operation,trust):
     from test_clause_acceptance import SentenceFixture
     from reading_fixtures import record_reading
@@ -417,10 +413,11 @@ def test_56_kept_relative_tree_closes_in_both_relation_stores(monkeypatch,operat
     from order_fixtures import force_order
     from Memory import SYMBOL
     f=SentenceFixture(monkeypatch)
+    f.noun('cats', order=1)
+    f.noun('furry-things', order=1)
     program=record_reading(f.language,f.program((operation,'cats','furry-things')))
     kind,prop=map(int,program.concept_ids)
     for cid in (kind,prop):
-        force_order(f.cs,cid,1)
         f.cs._concept_allocator.symbol_types.setdefault(cid,set()).add('class')
     strata=SentenceStrata(1,8,8,f.cs.nDim,relation_capacity=f.store.parts.capacity)
     program=strata.capture(program,f.language,0)
@@ -476,10 +473,9 @@ def test_40_question_form_applies_to_the_higher_order_proof(form, expected):
     from QueryWork import QueryWorkBudget
     from Memory import STM0
     from Meaning import ConceptualMeaning
-    owner,(member,kind,prop)=_world()
+    owner,(member,kind,prop)=_world((0,1,1))
     alloc=owner._concept_allocator
     for cid in (kind,prop):
-        force_order(owner,cid,1)
         alloc.symbol_types.setdefault(cid,set()).add('class')
     alloc.parts.add(member,kind,truth_plus=.8)
     alloc.parts.add(kind,prop,truth_plus=.6,truth_minus=.2)

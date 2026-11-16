@@ -53,7 +53,7 @@ def _build_model():
         os.path.join(_DATA_DIR, 'MentalModel.xml'))
     layer = model.symbolSpace.languageLayer.operation_layer
     absolute = next(i for i, rule in enumerate(model.languageSpace._compose_binary_rules)
-                    if rule.method_name == 'lift')
+                    if rule.method_name == 'change')
     def binary(x, candidate, *_a, **_k):
         scores = x.new_full(candidate.shape[:-1], -1e6)
         if scores.shape[-1]:
@@ -296,11 +296,16 @@ def test_relative_mask_sees_cs_role_rules():
 
 def test_relative_sentence_reduces_to_depth_three():
     """A relative sentence's STM stops at depth 3 with non-zero
-    ``[predicate, idea1, idea2]`` slots."""
+    ``[idea2, predicate, idea1]`` slots."""
     model = _build_model()
     B, dim = _seed_stm(model, depths=[5, 5])
     rel_id = _forward_relative_rule_id()
     _set_current_rules(model, rel_id, B, per_row=True)
+    # The three-root contract needs its selected predicate. A nested
+    # relative flag alone cannot turn unrelated roots into a relation (§39).
+    # Two forced binary folds above it leave this predicate in the middle.
+    from ClauseRow import predicate_identity
+    model.conceptualSpace.stm._clause_state[:, 3, 1] = predicate_identity('part')
 
     S, post_depth = model._stm_reduce_to_single_S()
 
@@ -313,10 +318,8 @@ def test_relative_sentence_reduces_to_depth_three():
             assert buf[b, slot].abs().sum() > 0, (
                 f"relative row {b} slot {slot} "
                 f"(of the depth-3 relative end-state) is unexpectedly zero")
-    # Newest-at-slot-0 convention: the end-state is stored newest-first, so
-    # the predicate (oldest constituent) is at the LAST slot ``depth-1``
-    # (== slot 2 here). ``S`` is read per-row at slot ``depth-1`` and so
-    # carries the predicate for every relative row.
+    # Newest-at-slot-0 convention: S is the oldest surviving constituent;
+    # the selected predicate is the middle constituent of the relation.
     assert torch.equal(S, buf[:, 2, :])
     assert S.shape == (B, dim)
 

@@ -41,7 +41,7 @@ def _cs_active(nS=64, order=3):
         nInput=nP, nPercepts=nP, nConcepts=nS, nSymbols=nS,
         nWords=nS, nOutput=nS, nWhere=0, nWhen=0,
     )
-    cs = Spaces.ConceptualSpace([nP, _D], [nS, _D], [nS, _D])
+    cs = Spaces.ConceptualSpace([nP, _D], [nS, _D], [nS, _D], order_limit=order)
     object.__setattr__(cs, "_symbolic_order", order)
     object.__setattr__(cs, "_serial", False)
     return with_definitions(cs)
@@ -75,8 +75,11 @@ def test_interpreted_object_keeps_the_native_features_in_one_row():
     assert set(cs.concept_parts(A)) == {1, 2}       # the reference store
     assert cs.concept_wholes(A) == [int(WORD)]
     features = Spaces._concept_alloc_of(cs).layer().features
-    assert {col for row, col in features._index if row == a_row} == {4, 4 * int(WORD) + 2}
-    assert Spaces._concept_alloc_of(cs).layer().feature_groups[a_row, 4] == (1, 2)
+    # §3.10 collects basic percepts: the part run and its whole belong to
+    # that percept, rather than separate columns on the concept.
+    percept = cs.basic_percepts.words[A]
+    assert {col for row, col in features._index if row == a_row} == {2 * percept}
+    assert cs.basic_percepts.occurrences[percept] == ((1, 2), (int(WORD),))
     b_row = cs._csw_concept_row(0, B)
     assert A == B and b_row == a_row == cs._csw_row_of(A)
     assert not cs.definitions.objects(A), "native form features do not invent an object"
@@ -108,11 +111,17 @@ def test_population_inactive_is_noop():
 
 def test_order_block_overflow_is_safe():
     cs = _cs_active(nS=8, order=3)                     # order 0 cap = 4
+    from Spaces import ConceptRowCapacityError
     from order_fixtures import force_order
-    for cid in range(100, 106): force_order(cs, cid, 0)
-    rows = [cs._csw_concept_row(0, c) for c in range(100, 106)]
-    assert rows[:4] == [0, 1, 2, 3]                    # fills the block
-    assert rows[4] is None and rows[5] is None         # overflow -> None (safe)
+    capacity = cs._order_caps()[0]
+    for cid in range(100, 100+capacity): force_order(cs, cid, 0)
+    rows = [cs._csw_concept_row(0, c) for c in range(100, 100+capacity)]
+    assert rows == list(range(capacity))             # fills the fixed block
+    before = cs._concept_allocator.next_id
+    for cid in (100+capacity, 101+capacity):
+        with pytest.raises(ConceptRowCapacityError, match='capacity exhausted'):
+            force_order(cs, cid, 0)
+    assert cs._concept_allocator.next_id == before   # no identity escapes
 
 
 # -- the forward glue ---------------------------------------------------------
@@ -196,8 +205,8 @@ def test_getparameters_byte_identical_when_inactive():
         nWords=64, nOutput=64, nWhere=0, nWhen=0)
     cs = with_definitions(Spaces.ConceptualSpace([nP, _D], [64, _D], [64, _D]))
     # No admitted word: forced interpret now activates feature parameters.
-    expected = (*cs.params, *cs.components.parameters(), *cs.concept_predictor.parameters(),
-                *cs.intuition.parameters())
+    expected = (*cs.params, *cs.components.parameters(), *cs.expect_stack.parameters(),
+                *cs.intuition.parameters(), *cs.intuit_stack.parameters())
     assert [id(p) for p in cs.getParameters()] == list(dict.fromkeys(map(id, expected)))
 
 

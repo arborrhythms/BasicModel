@@ -79,7 +79,10 @@ def test_closing_uses_the_ordered_object_parent_and_deduplicates_it():
     from Meaning import ConceptualMeaning
     cs, interpret = _operator()
     first = witness_object(cs, interpret.lookup_word([7], [1], form='cat'), point=torch.full((8,), .3))
-    second = witness_object(cs, interpret.lookup_word([8], [1], form='animal'), point=torch.full((8,), .7))
+    second = cs.new_concept(order=1)
+    with torch.no_grad():
+        cs.similarity_codebook.W[cs._csw_row_of(second)].fill_(.7)
+    interpret.define(interpret.lookup_word([8], [1], form='animal'), second)
     predicate = interpret.forward(interpret.lookup_word([9], [1], form='part'))
     store = LTM0(8, capacity=16)
     model = SimpleNamespace()
@@ -115,10 +118,10 @@ def test_failed_closing_does_not_leave_a_taxonomy_prefix():
     # A missing concept can retain its owned point under the layout. Use
     # actual relation exhaustion to test the transaction's no-prefix guard.
     alloc.next_id = store.parts.capacity
-    before = alloc.next_id, dict(alloc.placement), alloc.records(right)
+    before = alloc.next_id, dict(alloc.symbols), alloc.records(right)
     with pytest.raises(OverflowError, match='LTM1'):
         store.write_clause(bad)
-    assert before == (alloc.next_id, dict(alloc.placement), alloc.records(right))
+    assert before == (alloc.next_id, dict(alloc.symbols), alloc.records(right))
     assert not len(store)
 
 
@@ -129,24 +132,27 @@ def test_failed_closing_does_not_leave_a_taxonomy_prefix():
 def test_closing_binds_subject_form_to_particular_without_widening_compose_access(monkeypatch):
     from reading_fixtures import resolve_reading_references
     f = SentenceFixture(monkeypatch)
-    entry = replace(f.program(('lift', ('lower', 'the', 'cat'), 'runs')),
-                    leaf_orders=torch.tensor([0, 2, 0]))
-    entry = resolve_reading_references(f.language, entry, forced={1: -1})
-    clause = finish_reading(f.language, entry, registry=f.registry)
+    from chunk_fixtures import record, higher_word
+    from ClauseJournal import finish_clause
+    member_id = f.noun('cat', order=1)
+    higher_word(f, 'cat')
+    entry, _, _ = record(f, ('change', ('lower_unary', 'cat'), 'runs'), leaf_orders=(2,0))
+    clause = finish_clause(f.language, entry, registry=f.registry)
     written = {}
     f.store.write_clause(clause, written_rows=written)
     member = clause.children[0]
     occurrence = f.store.occurrence_of(written[id(member)])
     assert member.order == 1
     retained = f.store.raw_meaning_of(written[id(member)]).role_refs[0]
-    assert retained == ('sym', f.words['cat'][0])
-    assert f.store.order_of_row(written[id(member)]) == f.cs._concept_source_order(retained[1]) == 0
+    assert retained == ('sym', member_id)
+    assert f.store.order_of_row(written[id(member)]) == f.cs._concept_source_order(retained[1]) == 1
     root = written[id(clause)]
     assert f.store.meaning_of(root).role_refs[0] == occurrence
     # The identity is the occurrence. Composing the particular adds no DEF
     # or inventory object to any of the three existing lexical words.
-    for word in ('cat', 'the', 'runs'):
-        assert set(f.cs.word_concepts(word)) == set(f.words[word])
+    for word in ('cat', 'runs'):
+        expected = set(f.words[word]) | ({member_id} if word == 'cat' else set())
+        assert set(f.cs.word_concepts(word)) == expected
     assert f.cs.interpret.forward(f.words['cat'][0]) == f.noun('cat')
 
 
@@ -156,7 +162,7 @@ def test_referenced_phrase_admission_is_atomic(monkeypatch, invalid):
     from Memory import LTM0
     from Meaning import ConceptualMeaning
     f = SentenceFixture(monkeypatch)
-    clause = f.clause(('part', 'cat', ('lift', 'chases', 'mouse')))
+    clause = f.clause(('part', 'cat', ('change', 'chases', 'mouse')))
     assert clause.refs[2] == ('clause', 0)
     if invalid == 'width':
         child = clause.children[0]
@@ -170,7 +176,7 @@ def test_referenced_phrase_admission_is_atomic(monkeypatch, invalid):
         # owner rather than the unrelated narrowed occurrence pool.
         f.cs._concept_allocator.next_id = f.store.parts.capacity
     alloc = _concept_alloc_of(f.cs)
-    before = alloc.next_id, copy.deepcopy(alloc.placement), copy.deepcopy(alloc.relate_idx)
+    before = alloc.next_id, copy.deepcopy(alloc.symbols), copy.deepcopy(alloc.relate_idx)
     if invalid == 'width':
         # The layout's documented _fit accepts an operand width and keeps
         # exactly the store-width leading coordinates, without a new row shape.
@@ -180,14 +186,14 @@ def test_referenced_phrase_admission_is_atomic(monkeypatch, invalid):
     else:
         with pytest.raises(OverflowError, match='LTM1'):
             f.store.write_clause(clause)
-        assert before == (alloc.next_id, alloc.placement, alloc.relate_idx)
+        assert before == (alloc.next_id, alloc.symbols, alloc.relate_idx)
         assert len(f.store) == 0
 
 
 def test_selected_anaphor_form_binds_to_its_own_end_particular(monkeypatch):
     f = SentenceFixture(monkeypatch)
     prior = f.store.write_clause(f.clause('cat'))
-    entry = f.program(('lift', 'he', 'rests'))
+    entry = f.program(('change', 'he', 'rests'))
     refs = entry.concept_ids.clone()
     from Occurrence import operand_name
     refs[0] = operand_name(f.store.row_name(prior))

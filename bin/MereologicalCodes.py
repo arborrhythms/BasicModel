@@ -1,13 +1,10 @@
 """One index pairs a perceptual form with a conceptual meaning.
 
 The cached representation is [form | meaning]. Perception reconstruction alone
-writes native prototypes and evidence; the sentence read detaches them. Order-zero
-meaning is placed at kept closes from the registered priming surface;
+writes native prototypes and evidence; the sentence read detaches them. Meaning at each order
+is placed at kept closes from the observed field and its definitions;
 the for lane reads its close-owned trust radius. Letters need no conceptual row.
 """
-import math
-
-CLASS_CONTIGUITY_COSINE = math.cos(math.radians(15.))
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -20,6 +17,8 @@ def placement_step(q, context, weights, negatives, *, rate=.1, negative_weight=1
         gradient += ((q < context).to(q) * (weights / context.sum(-1).clamp_min(1e-12))[:, None]).sum(0)
     if len(negatives):
         gradient -= negative_weight * ((q < negatives).to(q) / negatives.sum(-1).clamp_min(1e-12)[:, None]).sum(0)
+    if not bool(gradient.any()):
+        return q
     return F.normalize((q + rate * gradient).clamp_min(0), dim=-1)
 
 
@@ -55,11 +54,9 @@ class MereologicalCodes(nn.Module):
         # One direction, count, dirty flag and immutable minted-content key per
         # constructed codebook seat; meanings reserve half their bipolar width.
         count = len(initial)
-        self.register_buffer('placement_version', torch.tensor(1, dtype=torch.long, device=initial.device))
+        self.register_buffer('placement_version', torch.tensor(2, dtype=torch.long, device=initial.device))
         self.register_buffer('placement', initial.new_zeros(count, self.meaning_pairs))
         self.register_buffer('placement_witnesses', torch.zeros(count, dtype=torch.long, device=initial.device))
-        self.register_buffer('placement_derived', torch.zeros(count, dtype=torch.bool, device=initial.device))
-        self.register_buffer('placement_valid', torch.zeros(count, dtype=torch.bool, device=initial.device))
         self.register_buffer('placement_dirty', torch.zeros(count, dtype=torch.bool, device=initial.device), persistent=False)
         self.register_buffer('placement_keys', torch.zeros(count, 32, dtype=torch.uint8, device=initial.device))
         self.register_buffer('placement_keyed', torch.zeros(count, dtype=torch.bool, device=initial.device))
@@ -113,9 +110,17 @@ class MereologicalCodes(nn.Module):
         return placement_step(q, context, weights, negatives,
                               rate=self.placement_rate, negative_weight=self.negative_weight)
 
+    def same_order(self, row):
+        """A physical block fixes the order of every constructed seat."""
+        order = self.owner._row_order(int(row))
+        caps = self.owner._order_caps()
+        start = sum(caps[:order])
+        rows = torch.arange(len(self.placement), device=self.placement.device)
+        return (rows >= start) & (rows < start + caps[order])
+
     def _negatives(self, row, excess, placed, key):
         import hashlib
-        eligible = ((excess == 0) & placed).nonzero().flatten()
+        eligible = ((excess == 0) & placed & self.same_order(row)).nonzero().flatten()
         eligible = eligible[eligible != row]
         generator = torch.Generator(device='cpu')
         generator.manual_seed(int.from_bytes(hashlib.sha256(key).digest()[:8], 'little'))
@@ -136,48 +141,13 @@ class MereologicalCodes(nn.Module):
         codes = self.placement.detach().clone()
         placed = self.placement_witnesses > 0
         for row in rows:
-            if bool(self.placement_derived[row]):
-                continue
             q = codes[row] if placed[row] else F.normalize(identity_code(
                 self.content_key(row), self.meaning_pairs, self.meaning_ones, like=codes), dim=0)
-            selected = (context > 0) & placed
+            selected = (context > 0) & placed & self.same_order(row)
             selected[row] = False
             negatives = self._negatives(row, context, placed, key)
             self.placement[row].copy_(self.placement_step(q, codes[selected], context[selected], codes[negatives]))
             self.placement_witnesses[row] += 1
-            self.placement_dirty[row] = True
-
-    @torch.no_grad()
-    def derive_class_placements(self):
-        """Place raised classes at their members' evidence-weighted centroids."""
-        from Priming import part_edges
-        edges = part_edges(self.owner, authority=False)
-        rows = self.placement_derived.nonzero().flatten().tolist()
-        allocator = self.owner._concept_allocator
-        # Members may themselves be classes. Lower orders are derived first.
-        rows.sort(key=lambda row: allocator.order_of(self.owner.concept_id_at_row(row)))
-        # Class-location contiguity keeps the former construction threshold.
-        # It is no longer changed by the retired diffusion controller.
-        threshold = CLASS_CONTIGUITY_COSINE
-        for row in rows:
-            members = weights = None
-            if edges is not None:
-                src, dst, weight = edges
-                selected = (dst == row) & (weight > 0)
-                members, weights = src[selected], weight[selected]
-                # A deferred/unplaced member cannot supply a location yet.
-                if not bool((self.placement_witnesses[members] > 0).all()):
-                    members, weights = members[:0], weights[:0]
-            count = 0 if members is None else len(members)
-            self.placement_witnesses[row] = count
-            if count:
-                codes = self.placement[members]
-                centroid = F.normalize((codes * weights[:, None]).sum(0), dim=0)
-                self.placement[row].copy_(centroid)
-                self.placement_valid[row] = ((codes @ centroid) >= threshold).all()
-            else:
-                self.placement[row].zero_()
-                self.placement_valid[row] = False
             self.placement_dirty[row] = True
 
     @torch.no_grad()
@@ -186,28 +156,23 @@ class MereologicalCodes(nn.Module):
         if reading is None:
             return None
         context = self.owner.placement_context(batch)
-        rows = self.owner._sentence_seen_rows[int(batch)]
-        self.place_rows(rows[rows >= 0].tolist(), context, self.reading_key(reading))
+        rows = (context > 0).nonzero().flatten()
+        self.place_rows(rows.tolist(), context, self.reading_key(reading))
         return context
 
     def placement_extras(self):
-        return dict(version=1, placement=self.placement.detach().cpu().clone(),
+        return dict(version=2, placement=self.placement.detach().cpu().clone(),
                     witnesses=self.placement_witnesses.detach().cpu().clone(),
-                    derived=self.placement_derived.detach().cpu().clone(),
-                    valid=self.placement_valid.detach().cpu().clone(),
                     keys=self.placement_keys.detach().cpu().clone(),
                     keyed=self.placement_keyed.detach().cpu().clone())
 
     @torch.no_grad()
     def load_placement_extras(self, saved):
-        if not isinstance(saved, dict) or saved.get('version') != 1:
-            raise ValueError('item 3.0 placement checkpoint version 1 is required')
+        if not isinstance(saved, dict) or saved.get('version') not in (1, 2):
+            raise ValueError('placement checkpoint version 1 or 2 is required')
         pairs = (('placement', self.placement), ('witnesses', self.placement_witnesses),
                  ('keys', self.placement_keys), ('keyed', self.placement_keyed))
-        # Earlier version-1 checkpoints predate class placement. Their native
-        # raise records supply the new flags; no constructed column is resized.
-        flags = (('derived', self.placement_derived), ('valid', self.placement_valid))
-        pairs += tuple((key, target) for key, target in flags if key in saved)
+        self._retired_flags(saved, ('derived', 'valid'))
         for key, target in pairs:
             value = saved.get(key)
             if not torch.is_tensor(value) or value.shape != target.shape or value.dtype != target.dtype:
@@ -215,8 +180,6 @@ class MereologicalCodes(nn.Module):
         self._validate_placement(saved['placement'], saved['witnesses'])
         for key, target in pairs:
             target.copy_(saved[key])
-        if 'derived' not in saved or 'valid' not in saved:
-            self._restore_class_placements()
         self.placement_dirty.fill_(True)
         self._form_valid.zero_()
 
@@ -235,38 +198,34 @@ class MereologicalCodes(nn.Module):
             layout = state.get(prefix+'_form_layout')
             if layout is None or not torch.equal(layout.to(self._form_layout), self._form_layout):
                 raise ValueError('checkpoint form subspaces differ from the constructed layout')
-        if int(state.get(prefix+'placement_version', -1)) != 1:
-            raise ValueError('item 3.0 placement checkpoint version 1 is required')
+        if int(state.get(prefix+'placement_version', -1)) not in (1, 2):
+            raise ValueError('placement checkpoint version 1 or 2 is required')
         for name in ('placement', 'placement_witnesses', 'placement_keys', 'placement_keyed'):
             value = state.get(prefix+name)
             expected = getattr(self, name)
             if value is None or value.shape != expected.shape or value.dtype != expected.dtype:
                 raise ValueError('placement checkpoint differs from constructed column: '+name)
         self._validate_placement(state[prefix+'placement'], state[prefix+'placement_witnesses'])
-        legacy = any(prefix+name not in state for name in ('placement_derived', 'placement_valid'))
-        for name in ('placement_derived', 'placement_valid'):
-            value = state.get(prefix+name)
-            if value is None:
-                state[prefix+name] = torch.zeros_like(getattr(self, name))
-            elif value.shape != self.placement_witnesses.shape or value.dtype != torch.bool:
-                raise ValueError('placement checkpoint differs from constructed column: '+name)
+        names = tuple(prefix+name for name in ('placement_derived', 'placement_valid'))
+        self._retired_flags(state, names)
+        for name in names:
+            state.pop(name, None)
+        state[prefix+'placement_version'] = self.placement_version.clone().fill_(2)
         super()._load_from_state_dict(state, prefix, *args, **kwargs)
-        if legacy:
-            self._restore_class_placements()
         self.placement_dirty.fill_(True)
         self._form_valid.zero_()
         self._form_revision = None
 
-    @torch.no_grad()
-    def _restore_class_placements(self):
-        self.placement_derived.zero_()
-        self.placement_valid.zero_()
-        from Priming import part_edges
-        self.owner._priming_edge_revision = None
-        edges = part_edges(self.owner, authority=False)
-        if edges is not None:
-            self.placement_derived[edges[1]] = True
-        self.derive_class_placements()
+    def _retired_flags(self, saved, names):
+        """Old class flags have no reader; retain their learned directions."""
+        import warnings
+        present = [name for name in names if name in saved]
+        for name in present:
+            value = saved[name]
+            if not torch.is_tensor(value) or value.shape != self.placement_witnesses.shape or value.dtype != torch.bool:
+                raise ValueError('placement checkpoint differs from constructed column: '+name)
+        if present:
+            warnings.warn('discarding retired class placement flags; all orders now use field context', UserWarning)
 
     def _form_sources(self):
         from Spaces import _concept_alloc_of
@@ -322,7 +281,7 @@ class MereologicalCodes(nn.Module):
         for row in map(int, rows):
             if not bool(placed[row]):
                 continue
-            selected = (excess > 0) & placed
+            selected = (excess > 0) & placed & self.same_order(row)
             selected[row] = False
             positives = meet_ratios(self.placement[row], self.placement[selected])[0]
             weights = excess[selected]
@@ -382,6 +341,15 @@ class MereologicalCodes(nn.Module):
         return audit(self.owner.basic_percepts, before=before, after=after)
 
     @torch.no_grad()
+    def positive_directions(self, rows):
+        """The one direction read for a derived for-lane value."""
+        return F.normalize(self.placement[rows], dim=-1)
+
+    def positive_codes(self, rows):
+        """The for-lane cache is derived from placement and its trusted radius."""
+        return self.positive_directions(rows) * self.owner.similarity_codebook.trust.lengths[rows, 0, None]
+
+    @torch.no_grad()
     def derive(self, indices, b=0):
         owner = self.owner
         cached = owner.similarity_codebook.W
@@ -401,7 +369,8 @@ class MereologicalCodes(nn.Module):
                     ('concept' in alloc.symbol_types.get(cid, ()) or cid in alloc.individuals
                      or cid in alloc.form_regions.values())):
                 retained.add(row)
-        needed = [row for row in unique if row not in retained and not bool(self._form_valid[row])]
+        basic = {row for row in unique if owner._row_order(row) == 0}
+        needed = [row for row in unique if row in basic and row not in retained and not bool(self._form_valid[row])]
         if needed:
             for row, edges in self._definitions(needed).items():
                 # Positive written definitions own their weighted centroid.
@@ -415,20 +384,21 @@ class MereologicalCodes(nn.Module):
                 self._forms[row].copy_(form)
                 self._form_valid[row] = True
             self.form_rows_derived += len(needed)
-        for row in unique:
+        for row in basic:
             out[row_index[row], :self.percept_width] = (
                 cached[row, :self.percept_width] if row in retained else self._forms[row])
             self._form_valid[row] = True
+        for row in set(unique) - basic:
+            self._forms[row].zero_()
+            self._form_valid[row] = True
         from PerceptCollections import definitions, code
         collections = definitions(owner)
-        for row in unique:
+        for row in basic:
             if row in collections:
                 out[row_index[row], :self.percept_width] = code(owner, row)[:self.percept_width]
         if unique and self.meaning_pairs:
             start, k = self.percept_event_width, self.meaning_pairs
-            trust = owner.similarity_codebook.trust
-            directions = F.normalize(self.placement[unique], dim=-1)
-            out[:, start:start+k] = directions * trust.lengths[unique, 0, None]
+            out[:, start:start+k] = self.positive_codes(unique)
             out[:, start+k:start+2*k] = cached[unique][:, start+k:start+2*k]
         # Bands remain zero. Placement supplies only for evidence; written
         # against evidence keeps its own magnitude and direction.

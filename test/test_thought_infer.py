@@ -380,7 +380,7 @@ def test_worked_token_property_line_queries_backward_and_forward_then_replays(mo
                             and pattern.role_refs[2] == kind)):
                     selected.append(action)
                     return action
-            if step in (1, 3) and action.semantic_id == 'infer':
+            if step in (1, 3) and action.semantic_id == 'infer' and not action.open_roles:
                 premise = resident.get(request.role_refs[0][1])
                 rule = resident.get(request.role_refs[2][1])
                 direction = bindings(request).get('_infer_direction')

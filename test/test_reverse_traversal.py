@@ -74,7 +74,7 @@ def test_tied_binary_reverse_recomposes_the_parent(tmp_path):
     names = list(binary.op_names)
     D = int(m.conceptualSpace.stm.concept_dim)
     torch.manual_seed(0)
-    for name in ("lift", "lower"):
+    for name in ("change", "lower"):
         if name not in names:
             continue
         idx = names.index(name)

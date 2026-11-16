@@ -20,7 +20,7 @@ def _inherit_forms(cs, source, target):
 def _available(cs, values):
     alloc = _concept_alloc_of(cs)
     values = tuple(dict.fromkeys(map(int, values)))
-    if any(cid not in alloc.placement or cid in alloc.retired for cid in values):
+    if any(cid not in alloc.symbols or cid in alloc.retired for cid in values):
         raise ValueError('taxonomy requires existing native concepts')
     return values
 
@@ -64,27 +64,19 @@ def index_part_row(cs, part, whole):
     key = ('part-kind', whole_ref, order)
     parent = alloc.relate_idx.get(key)
     if parent is None:
+        cs._preflight_concept_row(order, context='class raising')
         parent = cs.new_concept()
         alloc.relate_idx[key] = parent
         alloc.relate_idx['part-base', parent] = whole_ref
     alloc.parts.add(part_ref, (SYMBOL, parent), truth_plus=1.)
-    alloc.reference_orders[parent] = order
     alloc.singletons.add(parent)
     alloc.raised.add(parent)
     alloc.settle(parent)
     if whole_ref[0] == SYMBOL:
         _inherit_forms(cs, whole_ref[1], parent)
     destination = cs._csw_concept_row(order, parent)
-    meaning = getattr(cs.similarity_codebook, 'mereology', None)
-    if meaning is not None:
-        meaning.placement_derived[destination] = True
-        meaning.placement_valid[destination] = False
-        # Admission can allocate the destination after the relation is written.
-        cs._priming_edge_revision = None
-    source = cs._csw_row_of(whole_ref[1]) if whole_ref[0] == SYMBOL else None
-    if source is not None:
-        with torch.no_grad():
-            cs.similarity_codebook.W[destination].copy_(cs.similarity_codebook.W[source])
+    # The class has its own place. Its word supplies form through the mapping.
+    cs._priming_edge_revision = None
     from FamiliarTier import class_members
     cs.cover_members(parent, class_members(cs, parent))
     return int(parent)
@@ -100,7 +92,7 @@ def taxonomy_children(cs, cid):
 
 def taxonomy_parents(cs, cid):
     alloc = _concept_alloc_of(cs)
-    return [parent for parent in alloc.placement if cid in taxonomy_children(cs, parent)]
+    return [parent for parent in alloc.symbols if cid in taxonomy_children(cs, parent)]
 
 
 @torch.no_grad()

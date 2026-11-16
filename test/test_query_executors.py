@@ -77,10 +77,10 @@ def test_part_and_converse_executor_read_native_taxonomy_without_writes():
 def test_removed_quantize_raises_without_symbol_snapping():
     cs=_cs()
     cs.new_concept()
-    before=dict(cs._concept_allocator.placement)
+    before=dict(cs._concept_allocator.symbols)
     with pytest.raises(ValueError,match='retired'):
         Grammar().configure({'thought':{'rule':'quantize_argout1 = quantize.thought(quantize_argin1)'}})
-    assert cs._concept_allocator.placement==before
+    assert cs._concept_allocator.symbols==before
 
 
 def test_query_does_not_fill_an_unconstrained_name_from_a_held_row():

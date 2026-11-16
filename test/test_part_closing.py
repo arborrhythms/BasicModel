@@ -35,7 +35,7 @@ def test_word_composition_is_not_a_definition_without_an_object_argument(monkeyp
 
 def test_absolute_close_keeps_one_idea_without_derivation_pairs(monkeypatch):
     f = SentenceFixture(monkeypatch)
-    clause = f.clause(('lift', 'a', ('verb', 'v', 'b')))
+    clause = f.clause(('change', 'a', ('verb', 'v', 'b')))
     before = len(f.store.parts)
     row = f.store.write_clause(clause, evidence=(.9, 0.))
     assert isinstance(row, int)
@@ -49,7 +49,7 @@ def test_absolute_close_keeps_one_idea_without_derivation_pairs(monkeypatch):
 
 def test_complete_idea_capacity_failure_has_no_prefix(monkeypatch):
     f = SentenceFixture(monkeypatch)
-    clause = f.clause(('lift', 'a', ('verb', 'v', 'b')))
+    clause = f.clause(('change', 'a', ('verb', 'v', 'b')))
     alloc = f.cs._concept_allocator
     f.store.count.fill_(f.store.capacity)
     before = alloc.next_id, len(alloc.parts), len(f.store)
@@ -140,7 +140,6 @@ def test_unseated_native_argument_does_not_acquire_the_working_value_at_close(mo
     alloc = f.cs._concept_allocator
     word = alloc.new_concept()
     alloc.symbol_types[word] = {'word'}
-    force_order(f.cs, word, 0)
     assert f.cs._csw_row_of(word) is None
     left = Composition(f.registry._payload(('sym', participant)), reference=participant)
     right = Composition(torch.eye(8)[3], reference=word)
@@ -191,13 +190,14 @@ def test_lower_word_alias_does_not_double_count_kept_occupations(monkeypatch):
     words = [f.cs.interpret.lookup_word([91+i], [], form=f'leaf-{i}') for i in range(3)]
     leaves = [Composition(f.registry._payload(('sym', word)), reference=word,
                           word_id=word) for word in words]
-    lower = Composition(leaves[1].point, tuple(leaves[:2]), operation='lower',
-                        formal_name='lower', head_role=2, order=1)
+    lower = Composition(leaves[1].point, (leaves[1],), operation='lower',
+                        formal_name='lower', head_role=1, order=1)
     root = Composition(torch.maximum(lower.point, leaves[2].point), (lower, leaves[2]),
                        operation='intersection', formal_name='intersection')
     operations = {operation_name(rule): i for i, rule in enumerate(f.binary)}
+    unary = {operation_name(rule): i for i, rule in enumerate(f.unary)}
     program = SimpleNamespace(word_ids=torch.tensor(words), actions=torch.tensor([
-        (0, -1, 0), (0, -1, 1), (1, operations['lower'], 0),
+        (0, -1, 1), (2, unary['lower'], 0),
         (0, -1, 2), (1, operations['intersection'], 0)]))
     parts = f.language.parts_of_speech
     parts.observe_kept(program, f.binary, f.unary)
@@ -269,7 +269,7 @@ def test_pronoun_at_occurrence_closes_verb_over_antecedent_kind_without_seating(
     value = torch.maximum(point, predicate)
     clause = Clause(ConceptualMeaning.from_description(value), point=value, children=(np,),
         composition=Composition(value, (term, Composition(predicate, reference=verb)),
-                                operation='lift', formal_name='lift', head_role=2))
+                                operation='change', formal_name='change', head_role=2))
     resolver = f.cs.components.reference_close
     from chunk_fixtures import recall
     plan = resolver.preview(clause, recall(resolver, (SituationFrame.from_row(f.store.row(first)),)))

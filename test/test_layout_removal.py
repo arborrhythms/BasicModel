@@ -16,7 +16,7 @@ from RowTime import encoder
 from part_fixtures import native_store, symbol
 
 
-def tree(point, left, right, operation='lift'):
+def tree(point, left, right, operation='change'):
     return Composition(point, (left, right), operation=operation)
 
 
@@ -245,6 +245,7 @@ def test_close_placement_updates_meaning_and_addressed_read_finds_idea(monkeypat
     before = derived.placement.clone()
     cs._sentence_seen_rows[0, :2] = torch.tensor([a,b])
     cs.prime_seen(torch.tensor([[a,b]]))
+    cs._observed_knowing[0,[a,b],0] = 1.
     derived.observe_close(reading)
     target = identity_code(b'p', derived.meaning_pairs,
                            derived.meaning_ones, like=before)

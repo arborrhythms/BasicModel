@@ -30,7 +30,6 @@ def place(bank, row, pair):
     with torch.no_grad():
         bank.mereology.placement[row] = torch.tensor(pair)
         bank.mereology.placement_witnesses[row] = 1
-        bank.mereology.placement_valid[row] = True
         bank.mereology.placement_dirty[row] = True
 
 

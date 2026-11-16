@@ -8,11 +8,11 @@ import torch
 from test_cs_symbol_table import _cs
 
 
-def _world():
-    cs = _cs()
+def _world(orders=(0, 1, 2)):
+    cs = _cs(order_limit=max(orders))
     from order_fixtures import force_order
     identities = tuple(cs.new_concept() for _ in range(3))
-    for order, identity in enumerate(identities):
+    for order, identity in zip(orders, identities):
         force_order(cs, identity, order)
         row = cs._csw_concept_row(order, identity)
         with torch.no_grad():

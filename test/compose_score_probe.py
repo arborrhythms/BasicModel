@@ -187,7 +187,7 @@ def observe_score_function(result):
                 torch.testing.assert_close(actual, expected, atol=2e-6, rtol=2e-5)
                 names = [] if entry['walk']=='narrowing' else entry['action_names']
                 if entry['walk']=='narrowing':
-                    names=['divide','descend','gloss','and','or','not'] * (entry['original'].shape[-1]//6)+['STOP']
+                    names=['divide','descend','mint','and','or','not'] * (entry['original'].shape[-1]//6)+['STOP']
                 # Central difference of the very same mean-reduced surrogate.
                 z = entry['original'][row].double()
                 plus, minus = z.clone(), z.clone()

@@ -93,9 +93,10 @@ def test_sparse_activity_at_8192_positions_never_crosses_the_native_inventory():
         torch.tensor([[[8191, 8192]]]), torch.tensor([[[1, 2]]]), None)
     cs = NS(_concept_allocator=NS(layer=lambda _: NS(_tensor_row_keys={0: 41})),
         cs_percept_attribution=lambda field, **kw: (torch.tensor([0]), field[..., :1], None),
-        basic_percepts=NS(numeric_axes={}, is_value=lambda _row: False, occurrences=[((a,), ())]))
+        basic_percepts=NS(is_value=lambda _row: False, occurrences=[((a,), ())]))
     ps = NS(percept_store=radix, subspace=NS(nWhat=3, nWhere=0, nWhen=0), _radix_where_indices=[])
     model = NS(_concept_owner=lambda: cs, perceptualSpace=ps,
+               where_registry=NS(slices={'text': (0, 8192)}),
                wholeSpace=NS(subspace=NS(what=NS(primitive_properties=primitive))))
     shapes = set()
     class Allocations(TorchDispatchMode):
@@ -166,11 +167,12 @@ def test_native_word_and_observed_promoted_part_have_the_same_byte_events():
         torch.tensor([[[0, 3]]]), torch.tensor([[[1, 2]]]), None)
     cs = NS(_concept_allocator=NS(layer=lambda _: NS(_tensor_row_keys={0: 41})),
         cs_percept_attribution=lambda evidence, **kw: (torch.tensor([0]), evidence[..., :1], None),
-        basic_percepts=NS(numeric_axes={}, is_value=lambda _row: False, occurrences=[((word,), ())]))
+        basic_percepts=NS(is_value=lambda _row: False, occurrences=[((word,), ())]))
     ps = NS(percept_store=radix, subspace=NS(nWhat=4, nWhere=0, nWhen=0), _radix_where_indices=[],
         _forward_input={'native_indices': torch.tensor([[word]]), 'native_part_spans': field.where},
         _radix_part_events=lambda ids, offsets: radix._basis.lookup_rows(ids))
     model = NS(_concept_owner=lambda: cs, perceptualSpace=ps,
+        where_registry=NS(slices={'text': (0, 8)}),
         wholeSpace=NS(subspace=NS(what=NS(primitive_properties=PrimitiveProperties(0)))))
     activity = reverse(model, NS(carrier_like=NS), field)._radix_activity
     expected = radix._basis.lookup_rows(torch.tensor([letters]))

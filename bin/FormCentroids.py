@@ -309,7 +309,15 @@ def candidates(whole_space, bank, *, owner=None):
         support = primitive_support(bank.bytes, bank.byte_valid)
     if owner is not None:
         basic = owner.basic_percepts
-        rows = bank.rows.new_tensor([[basic.words.get(owner.concept_id_at_row(int(row)), -1)
+        def percept(row):
+            if row < 0:
+                return -1
+            identity = owner.concept_id_at_row(row)
+            if owner._row_order(row) > 0:
+                words = owner.definitions.words(identity) if identity is not None else ()
+                identity = words[0] if len(words) == 1 else None
+            return basic.words.get(identity, -1)
+        rows = bank.rows.new_tensor([[percept(int(row))
             for row in stream] for stream in bank.rows.cpu().tolist()])
         weights, codes = basic.word_weights(support.to(bank.codes), rows)
         return BasicCandidateWholes(bank.codes[..., :bank.meaning_start].detach(),

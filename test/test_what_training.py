@@ -191,6 +191,8 @@ def _same_input_two_questions(m):
 @pytest.fixture(scope="module")
 def synth_config_path(tmp_path_factory):
     src = (_DATA / "MM_text.xml").read_text()
+    src = src.replace('<ConceptualSpace>',
+        '<ConceptualSpace>\n    <orderAllocation>3 4 1</orderAllocation>', 1)
     patched = src.replace(
         "<architecture>",
         "<architecture>\n    <answerSynthesis>true</answerSynthesis>", 1)
@@ -277,6 +279,9 @@ def synth_discourse_config_path(tmp_path_factory):
     # Prediction observes native bracket closings; the non-bracket observer
     # was retired with Item 4.
     src = (_DATA / "MM_text.xml").read_text()
+    # The same eight free rows seat three forms and four promoted objects.
+    src = src.replace('<ConceptualSpace>',
+        '<ConceptualSpace>\n    <orderAllocation>3 4 1</orderAllocation>', 1)
     patched = src.replace(
         "<architecture>",
         "<architecture>\n    <answerSynthesis>true</answerSynthesis>\n"

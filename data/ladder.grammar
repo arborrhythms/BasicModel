@@ -92,9 +92,8 @@
 
     <compose>
       <!-- Typed attention candidates; no predefined surface or generate face. -->
-      <rule operands="field">F = divide.forward(F)</rule>
-      <rule operands="field">F = descend.forward(F)</rule>
-      <rule operands="field">F = gloss.forward(F)</rule>
+      <rule operands="field">F = focus.forward(F)</rule>
+      <rule operands="field">F = mint.forward(F)</rule>
       <rule operands="field">F = intersection.forward(F)</rule>
       <rule operands="field">F = union.forward(F)</rule>
 
@@ -145,14 +144,13 @@
            carries no meaning of its own (a whitespace unit); folds it away. -->
       <rule>null_argout1 = null.forward(null_argin1)</rule>
 
-      <!-- Composition / projection. verb = VP spectral operator; adverb =
+      <!-- Composition / projection. verb = VP spectral operator; modifier =
            VP eigenmodifier; lift remains the generic order-raising fold;
            lower = DET. -->
-      <rule>lift_argout1 = lift.forward(lift_argin1, lift_argin2)</rule>
+      <rule>change_argout1 = change.forward(change_argin1, change_argin2)</rule>
       <rule>verb_argout1 = verb.forward(verb_argin1, verb_argin2)</rule>
       <rule>compound_argout1 = compound.forward(compound_argin1, compound_argin2)</rule>
-      <rule>compound_unary_argout1 = compound_unary.forward(compound_unary_argin1)</rule>
-      <rule>adverb_argout1 = adverb.forward(adverb_argin1, adverb_argin2)</rule>
+      <rule>modifier_argout1 = modifier.forward(modifier_argin1, modifier_argin2)</rule>
       <rule>lower_argout1 = lower.forward(lower_argin1, lower_argin2)</rule>
 
       <!-- Preposition (PP): refines the NP or VP via a .where relation.
@@ -204,11 +202,10 @@
       <rule>synthesize_argin1, synthesize_argin2 = synthesize.analyze(synthesize_argout1)</rule>
       <rule>null_argin1 = null.reverse(null_argout1)</rule>
 
-      <rule>lift_argin1, lift_argin2 = lift.reverse(lift_argout1)</rule>
+      <rule>change_argin1, change_argin2 = change.reverse(change_argout1)</rule>
       <rule>verb_argin1, verb_argin2 = verb.reverse(verb_argout1)</rule>
       <rule>compound_argin1, compound_argin2 = compound.reverse(compound_argout1)</rule>
-      <rule>compound_unary_argin1 = compound_unary.reverse(compound_unary_argout1)</rule>
-      <rule>adverb_argin1, adverb_argin2 = adverb.reverse(adverb_argout1)</rule>
+      <rule>modifier_argin1, modifier_argin2 = modifier.reverse(modifier_argout1)</rule>
       <rule>lower_argin1, lower_argin2 = lower.reverse(lower_argout1)</rule>
 
       <rule>preposition_argin1, preposition_argin2 = preposition.reverse(preposition_argout1)</rule>

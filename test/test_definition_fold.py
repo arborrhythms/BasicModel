@@ -68,9 +68,8 @@ def test_named_and_unnamed_classes_share_the_teacher_and_opposite_edges_keep_ada
     optimizer=torch.optim.Adam([matrix.values],lr=.01)
     matrix.values.sum().backward();optimizer.step();optimizer.zero_grad()
     old=optimizer.state[matrix.values]['exp_avg'].clone()
-    word=cs.new_concept()
+    word=cs.new_concept(order=0)
     alloc.symbol_types[word]={'word'}
-    alloc.reference_orders[word]=0
     word_row=cs._csw_concept_row(0,word)
     basic_feature(cs, word_row, "ps", 4, 1.)
     from definition_fixtures import agreeing_views

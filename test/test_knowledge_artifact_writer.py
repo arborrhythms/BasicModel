@@ -30,7 +30,7 @@ def _tiny_grammar():
     from Language import Grammar
     g = Grammar()
     g.rules = [
-        g._parse_rule("S4", "lift(NP3, VP1)", space_role='SS'),
+        g._parse_rule("S4", "change(NP3, VP1)", space_role='SS'),
         g._parse_rule("NP3", "lower(DET, NP4)", space_role='SS'),
     ]
     g._configured = True
@@ -49,7 +49,7 @@ def test_grammar_signatures_to_serializable_returns_list_of_dicts():
 
 
 def test_grammar_signatures_lift_rule_fields():
-    """First rule (``S4 = lift(NP3, VP1)``) serializes with correct fields."""
+    """First rule (``S4 = change(NP3, VP1)``) serializes with correct fields."""
     from embed import grammar_signatures_to_serializable
     g = _tiny_grammar()
     sigs = grammar_signatures_to_serializable(g)
@@ -58,7 +58,7 @@ def test_grammar_signatures_lift_rule_fields():
     assert s['lhs_order'] == 4
     assert s['rhs_categories'] == ['NP', 'VP']
     assert s['rhs_orders'] == [3, 1]
-    assert s['op_name'] == 'lift'
+    assert s['op_name'] == 'change'
     assert 'order_delta' not in s
 
 
@@ -138,7 +138,7 @@ def test_taxonomy_has_root_node_at_ref_id_zero():
     assert int(parent[0].item()) == -1
     # And no other node has parent == -1
     for i in range(1, parent.shape[0]):
-        assert int(parent[i].item()) != -1, \
+        assert int(parent[i].item()) != -1,\
             f"node {i} has parent -1 but isn't the root"
 
 
@@ -151,7 +151,7 @@ def test_taxonomy_class_nodes_under_root():
     parent = tax['parent']
     for cat in ('S', 'NP', 'VP', 'DET'):
         rid = names[cat]
-        assert int(parent[rid].item()) == 0, \
+        assert int(parent[rid].item()) == 0,\
             f"{cat!r}'s parent is not the root"
 
 
@@ -434,14 +434,14 @@ def test_save_and_load_artifact_round_trips_knowledge(tmp_path):
                 'taxonomy', 'grammar'):
         assert key in rt
     # One concrete tensor round-trips
-    assert rt['word_table']['ref_ids'].tolist() == \
+    assert rt['word_table']['ref_ids'].tolist() ==\
         ks['word_table']['ref_ids'].tolist()
     # One nested dict round-trips
-    assert rt['taxonomy']['taxonomy_names'] == \
+    assert rt['taxonomy']['taxonomy_names'] ==\
         ks['taxonomy']['taxonomy_names']
     # The current grammar schema and its signatures round-trip.
     assert rt['grammar']['version'] == ks['grammar']['version'] == 2
-    assert rt['grammar']['rule_order_signatures'] == \
+    assert rt['grammar']['rule_order_signatures'] ==\
         ks['grammar']['rule_order_signatures']
 
 
@@ -593,11 +593,11 @@ def test_extend_artifact_grows_capacity_when_exhausted(tmp_path):
     ])
     after = load_artifact(path)['knowledge']
     assert int(after['reference_codebook']['v_ref_live']) == v_live + n_new
-    assert after['reference_codebook']['references'].shape[0] >= \
+    assert after['reference_codebook']['references'].shape[0] >=\
         v_live + n_new
     # Original v_live rows preserved
     for i in range(v_live):
-        assert float(after['reference_codebook']['references'][i].item()) == \
+        assert float(after['reference_codebook']['references'][i].item()) ==\
             float(initial['reference_codebook']['references'][i].item())
 
 

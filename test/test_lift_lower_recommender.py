@@ -18,7 +18,7 @@ _DATA = os.path.join(os.path.dirname(_BIN), "data")
 init_config(path=os.path.join(_DATA, "model.xml"),
             defaults_path=os.path.join(_DATA, "model.xml"))
 
-from Language import LiftLayer, LowerLayer
+from Language import ChangeLayer, LowerLayer
 
 
 class _StubBasis:
@@ -52,7 +52,7 @@ class TestLiftLowerRecommender(unittest.TestCase):
         self.assertLess(float((l0 - r0).abs().max()), 1e-5)
 
     def test_lift_reverse_uses_recommender_with_basis(self):
-        lift = LiftLayer(nInput=self.D)
+        lift = ChangeLayer(nInput=self.D)
         lift.eval()
         self._check(lift)
 

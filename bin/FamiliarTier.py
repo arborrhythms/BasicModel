@@ -7,13 +7,11 @@ from Memory import NULL_CONCEPT
 
 
 def kept_close(method):
-    """Batch class locations after every active stream's placement work."""
+    """Scope promotion to active streams and defer the kept word views."""
     @wraps(method)
     def boundary(model, state, sid, active, *args, **kwargs):
         owner = model._concept_owner()
-        previous = getattr(owner, '_coverage_deferred', False)
         streams = getattr(owner, '_mtm_active_streams', None)
-        owner._coverage_deferred = True
         owner._mtm_active_streams = set(active.nonzero().flatten().tolist())
         try:
             from ConceptTrust import defer_word_views
@@ -23,7 +21,6 @@ def kept_close(method):
                 commit(model, sid, active)
                 return result
         finally:
-            owner._coverage_deferred = previous
             owner._mtm_active_streams = streams
     return boundary
 
@@ -78,7 +75,9 @@ def witnessed_match(owner, order, support, *, literal_key=None):
         members = witnessed_support(owner, cid)
         if set(members) != set(support):
             continue
-        code = owner.similarity_codebook.lookup_rows([row])[0]
+        # The class's chart position is learned from its context, not the
+        # centroid of its members. Familiarity compares the two witnesses.
+        code = centroid(owner, members)
         if float(torch.nn.functional.cosine_similarity(value, code, dim=0)) >= owner.concept_match_cos:
             return cid
     return None
@@ -399,7 +398,7 @@ def class_members(owner, cid):
 
 @torch.no_grad()
 def cover_members(owner, cid, members, *, conjunctive=False):
-    """The same sigma, location and form initialization for every raise."""
+    """The same definition fold for every raise; location is learned from context."""
     from MemoryConsolidation import _fold
     if cid == NULL_CONCEPT:
         return
@@ -413,16 +412,14 @@ def cover_members(owner, cid, members, *, conjunctive=False):
     if not conjunctive:
         owner._populate_concept_weights(cid, witness=(members, ()))
     derived = getattr(owner.similarity_codebook, 'mereology', None)
-    if derived is not None:
-        derived.placement_derived[destination] = True
-        derived.placement_valid[destination] = False
-        owner._priming_edge_revision = None
-        if not getattr(owner, '_coverage_deferred', False):
-            derived.derive_class_placements()
+    owner._priming_edge_revision = None
     value = (owner.similarity_codebook.lookup_rows(list(members)).amax(0) if conjunctive
              else _fold(owner, None, list(members), members=members))
     if value is not None:
+        value = value.clone()
         width = len(value) if derived is None else derived.percept_width
+        if derived is not None and order > 0:
+            value[:derived.percept_event_width] = 0.
         owner.similarity_codebook.W[destination, :width].copy_(value[:width])
         if derived is not None:
             derived._form_valid[destination] = False
@@ -459,24 +456,28 @@ def commit_read_words(owner, reading, *, batch, document, position, clause=None,
         if term is not None and len(term.leaves) == 1 and isinstance(location, int):
             retained[term.leaves[0]] = location
     for index, word in enumerate(reading.word_ids.tolist()):
+        basic = owner.basic_percepts
+        point = None
+        if word > 0 and word in basic.words:
+            from torch.nn.functional import pad
+            point = basic.code(basic.words[word])
+            point = pad(point, (0, owner.similarity_codebook.W.shape[-1]-point.numel()))
         if word > 0:
             # A kept lexical occurrence contributes independently of whether
             # its interpretation already has an object.
             from ConceptTrust import observe
-            value = reading.leaves[index].detach()
+            # The leaf already denotes its object. A lexical witness is its
+            # word's basic percept, without a placed meaning or radius.
+            value = reading.leaves[index].detach() if point is None else point
             observe(owner, word, value)
         if word > 0 and word in owner.basic_percepts.words:
             from MemoryLink import Occurrence
-            basic = owner.basic_percepts
             percept = basic.words[word]
             root = (written or {}).get('root_occurrence')
             location = retained.get(index)
             address = store.occurrence_of(location) if location is not None else root
             if address is None:
                 raise ValueError('a kept basic percept requires its sentence occurrence')
-            from torch.nn.functional import pad
-            point = basic.code(percept)
-            point = pad(point, (0, owner.similarity_codebook.W.shape[-1]-point.numel()))
             selected = Ellipsis if link_choices is None else link_choices.get(('percept', index), Ellipsis)
             owner.link(Occurrence(address, concept=('bp', percept), kind='percept', order=-1, selected=selected), {},
                 value=point, when=pool.closes.get(batch, 0)+1, stream=batch,
@@ -489,9 +490,9 @@ def commit_read_words(owner, reading, *, batch, document, position, clause=None,
         if key is None or not pool.entries[key].pending or pool.entries[key].order is not None:
             continue
         from MemoryLink import Occurrence, member_order
-        order = member_order(owner, Occurrence((), concept=word))
+        order = member_order(owner, Occurrence((), concept=word), stream=batch)
         value = reading.leaves[index]
-        referent = owner.interpret.referent(word)
+        referent = owner.interpret.referent(word, batch=batch)
         meaning = replace(ConceptualMeaning.from_description(value), bindings={
             '_identity': None if referent == word else ('sym', referent), '_forward_references': ((0,word),),
             '_open_references': (('referent',0),)})
@@ -509,7 +510,7 @@ def commit_read_words(owner, reading, *, batch, document, position, clause=None,
             where=None if reading.symbol_where is None else reading.symbol_where[index])
         owner.__dict__.setdefault('_field_activated_references', {}).setdefault(batch, set()).add(occurrence)
         if word in owner._concept_allocator.named_identities and pool.reading_of(key) == word:
-            promote_identity(owner, key, word=word)
+            promote_identity(owner, key, word=word, stream=batch)
     return occurrences
 
 
@@ -517,7 +518,7 @@ class IdentityPromotionCapacityError(RuntimeError):
     """The occurrence requires an identity in a fully occupied concept region."""
 
 
-def resolve_known_reference(owner, key, order):
+def resolve_known_reference(owner, key, order, *, stream=None):
     """Finish a pending name's old path when a kept use reads its definition."""
     pool = owner.mtm
     entry = pool.entries[key]
@@ -529,12 +530,12 @@ def resolve_known_reference(owner, key, order):
     if word not in owner._concept_allocator.named_identities:
         return
     if (order == entry.refinement.get('member_order', order) + 1
-            and owner._concept_source_order(owner.interpret.referent(word)) == order):
-        promote_identity(owner, key, word=word)
+            and owner._concept_source_order(owner.interpret.referent(word, batch=stream)) == order):
+        promote_identity(owner, key, word=word, stream=stream)
 
 
 @torch.no_grad()
-def promote_identity(owner, key, *, word=None, trust=None, evidence=None):
+def promote_identity(owner, key, *, word=None, trust=None, evidence=None, stream=None):
     """A kept definition or recurrent mention supplies an object's witness."""
     pool, alloc = owner.mtm, owner._concept_allocator
     entry = pool.entries[key]
@@ -552,7 +553,7 @@ def promote_identity(owner, key, *, word=None, trust=None, evidence=None):
         -1 if index is None else owner._concept_source_order(origin))
     reading = pool.reading_of(origin)
     if 'word' in alloc.symbol_types.get(reading, ()):
-        denotation = owner.interpret.referent(reading)
+        denotation = owner.interpret.referent(reading, batch=stream)
         if owner._concept_source_order(denotation) == member_order:
             reading = denotation
     constituent = (('sym', reading) if reading is not None else
@@ -614,7 +615,6 @@ def promote_identity(owner, key, *, word=None, trust=None, evidence=None):
     # or caller order is supplied to this operation.
     from Memory import OCCURRENCE
     alloc.store_of(cid).add_constituent(cid, 'part', constituent)
-    alloc.reference_orders[cid] = member_order + 1
     alloc.settle(cid)
     row = owner._csw_concept_row(alloc.order_of(cid), cid)
     if row is None:
@@ -628,9 +628,17 @@ def promote_identity(owner, key, *, word=None, trust=None, evidence=None):
     actual = dict.fromkeys(event.occurrence for event in entry.events if event.role == 0)
     locations = (store.location(address) for address in actual)
     members = [index for index in locations if isinstance(index, int)]
-    form = _fold(owner, store, members)
+    derived = getattr(owner.similarity_codebook, 'mereology', None)
     current = pool.value_of(key)
-    value = current if form is None else form
+    if derived is None or alloc.order_of(cid) == 0:
+        form = _fold(owner, store, members)
+    else:
+        # An actual event fold supplied only form, never either meaning lane.
+        # Above order zero that form is empty; no event still uses current.
+        form = current.new_zeros(current.shape) if members and bool(store.trust[members].abs().any()) else None
+    value = (current if form is None else form).clone()
+    if derived is not None and alloc.order_of(cid) > 0:
+        value[:derived.percept_event_width] = 0.
     owner.similarity_codebook.W[row].copy_(value.to(owner.similarity_codebook.W))
     owner.similarity_codebook.trust.remember(cid, current)
     from ConceptTrust import observe
@@ -638,7 +646,6 @@ def promote_identity(owner, key, *, word=None, trust=None, evidence=None):
         location = store.location(address)
         if isinstance(location, int):
             observe(owner, cid, store.slots[location])
-    derived = getattr(owner.similarity_codebook, 'mereology', None)
     if derived is not None:
         derived.remember_content(row, current)
         from Occurrence import sentence_key
@@ -903,7 +910,6 @@ def promote_candidates(owner):
         derived = alloc.settle(cid)
         if derived != order:
             raise ValueError(f'MTM candidate {key!r} derives order {derived}, expected {order}')
-        alloc.reference_orders[cid] = derived
         row = owner._csw_concept_row(derived, cid)
         if row is None:
             raise RuntimeError('candidate promotion exceeds the constructed inventory')

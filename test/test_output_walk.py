@@ -92,7 +92,7 @@ def _independent_split(m, rule, event):
 
 def test_walk_unreduces_an_independently_selected_parent_and_emits_its_constituents():
     m = _model()
-    for rule in ('lift',):
+    for rule in ('change',):
         event,gl,cw,live=_stamped_event(m,rule)
         event,bank=_independent_split(m,rule,event)
         out,n_emitted,truncated,_cost=m._output_generate_walk(event,8,basis=bank, basis_valid=torch.ones(bank.shape[:2],dtype=torch.bool))
@@ -109,7 +109,7 @@ def test_walk_unreduces_an_independently_selected_parent_and_emits_its_constitue
 def test_walk_emits_terminals_in_order_and_reports_no_truncation():
     m = _model()
     _stop(m)
-    event, gl, cw, live = _stamped_event(m, "lift")
+    event, gl, cw, live = _stamped_event(m, "change")
     event[0, 1, cw] = 0.0                                   # no rule stamp on top
     out, n_emitted, truncated, _cost = m._output_generate_walk(event, budget=8,
         basis=event[:, :live], basis_valid=torch.ones(1, live, dtype=torch.bool))
@@ -120,7 +120,7 @@ def test_walk_emits_terminals_in_order_and_reports_no_truncation():
 def test_walk_reports_truncation_when_work_is_pending():
     """An unresolved top stays pending without an implicit terminal emit."""
     m = _model()
-    event,gl,cw,live=_stamped_event(m,'lift',N=2)
+    event,gl,cw,live=_stamped_event(m,'change',N=2)
     language=m.languageSpace
     _prefer(m,len(language._generate_binary_ops)+list(language._generate_unary_names).index('null'))
     # No lexical terminal is available. Approximate native emission now
@@ -139,7 +139,7 @@ def test_walk_reports_truncation_when_work_is_pending():
 def test_walk_compiles_fullgraph_and_matches_eager():
     m = _model()
     _stop(m)
-    event, gl, cw, live = _stamped_event(m, "lift")
+    event, gl, cw, live = _stamped_event(m, "change")
     basis = dict(basis=event[:, :live], basis_valid=torch.ones(1, live, dtype=torch.bool))
     eager = m._output_generate_walk(event, budget=8, **basis)
     torch.testing.assert_close(eager[0][:, :live], event[:, :live])
@@ -158,8 +158,8 @@ def test_walk_compiles_fullgraph_and_matches_eager():
 
 def test_walk_handles_mixed_output_lengths_per_row():
     m=_model()
-    e0,gl,cw,live=_stamped_event(m,'lift')
-    e0,bank=_independent_split(m,'lift',e0)
+    e0,gl,cw,live=_stamped_event(m,'change')
+    e0,bank=_independent_split(m,'change',e0)
     e1=e0.clone();e1[:,1]=bank[:,0]
     event=torch.cat((e0,e1),0)
     out,n_emitted,truncated,_cost=m._output_generate_walk(event,8,basis=bank.expand(2,-1,-1),basis_valid=torch.ones(2,2,dtype=torch.bool))
@@ -174,7 +174,7 @@ def test_walk_is_invariant_to_reconstruction_only_state():
     (contract 5): changing the reconstruction results leaves it unchanged."""
     m = _model()
     _stop(m)
-    event, gl, cw, live = _stamped_event(m, "lift")
+    event, gl, cw, live = _stamped_event(m, "change")
     basis = dict(basis=event[:, :live], basis_valid=torch.ones(1, live, dtype=torch.bool))
     base = m._output_generate_walk(event, budget=8, **basis)
     torch.testing.assert_close(base[0][:, :live], event[:, :live])
@@ -193,7 +193,7 @@ def test_free_generate_policy_has_no_numerical_credit(monkeypatch, eager_reading
     m=_model()
     try:
         language=m.languageSpace
-        event,gl,cw,live=_stamped_event(m,'lift')
+        event,gl,cw,live=_stamped_event(m,'change')
         _stop(m)
         m.zero_grad(set_to_none=True)
         deterministic=m._output_generate_walk(event,8,basis_valid=torch.ones(event.shape[0],live,dtype=torch.bool),basis=event[:,:live])
@@ -216,9 +216,9 @@ def test_generate_policy_decides_an_unstamped_top(monkeypatch):
     m = _model()
     language = m.languageSpace
     names = list(language._generate_binary_names)
-    event, gl, cw, live = _stamped_event(m, "lift")
+    event, gl, cw, live = _stamped_event(m, "change")
     event[0, 1, cw] = 0.0                                   # unstamped top
-    _prefer(m, names.index("lift"))
+    _prefer(m, names.index("change"))
     out, n_emitted, truncated, cost = m._output_generate_walk(event, budget=1, basis=event[:, :live],basis_valid=torch.ones(event.shape[0],live,dtype=torch.bool))
     assert n_emitted.tolist() == [0] and bool(truncated.all())
     assert cost.shape == (1, 3) and (cost > 0).any()  # The pending frontier has residual, not imitation loss.
@@ -678,7 +678,7 @@ def test_reverseoutput_evaluation_uses_its_policy_with_input_trace_present(monke
             stopped = m.reverseOutput(u, derivation)
             words = stopped.concepts.clone()
             stop_truncated = m._output_truncated.clone()
-            _prefer(m, list(m.languageSpace._generate_binary_names).index("lift"))
+            _prefer(m, list(m.languageSpace._generate_binary_names).index("change"))
             expanded = m.reverseOutput(u, derivation)
         assert not torch.equal(words, expanded.concepts)
         assert not bool(stop_truncated.any())

@@ -464,12 +464,13 @@ still allows perceptual space to have basic-level perceptual objects on a
 modal basis."
 
 - **Each modality has its own perceptual space.** A modality declares how
-  many place axes it has. Each axis is an interval of `.where`, encoded by
-  the same two-rung ladder that text uses for its one axis.
+  many place axes it has. A place has one address in the modality's range,
+  encoded by the same four-coordinate ladder as text. An image uses its
+  row-major address; its declared shape recovers the row and column.
 
   | Modality | Place axes | Place shape |
   |---|---|---|
-  | the scalar beside the words | 0 | no place |
+  | the scalar beside the words | 0 | one address |
   | text | 1 | positions in a sentence |
   | XOR | 1 | two positions |
   | an image | 2 | 28 by 28; parts and wholes are boxes |
@@ -489,7 +490,8 @@ modal basis."
   will include a .where in a range that can uniquely identify the modality
   and order of a percept." The model's places are one address space,
   divided into fixed, disjoint ranges (`WhereRegistry`), and every muxed
-  vector carries its address in its band. The ranges are the input, the
+  vector carries its address in its band. The input ranges are text,
+  numeric and scalar; the other ranges are the
   part rows, the whole rows, the symbols and the live conceptual slots. A
   symbol's address is its concept's row, two addresses to a row, one for
   each lane; rows lie in their order's block, so the range gives the order

@@ -38,7 +38,8 @@ def _annotation_tree(language, tree, count):
         modification = arity == 2 and node[0] == 'modification'
         if modification and not any(name in rules[2] for name in MODIFICATION_OPERATORS):
             raise ValueError('modification bracket has no declared modification operator')
-        if not modification and node[0] not in rules[arity]:
+        open_bind = arity == 1 and node[0] == 'bind.open' and 'bind' in rules[2]
+        if not modification and not open_bind and node[0] not in rules[arity]:
             raise ValueError(f"grammar lesson uses undeclared {arity}-ary form {node[0]!r}")
         children = tuple(validate(child) for child in node[1:])
         result = (node[0], *children)
@@ -94,6 +95,8 @@ def compose_examples(language, program, tree, *, variables=()):
         reduce()
         node, value = stack[-1]
         parent = parents.get((node,))
+        if parent is not None and parent[0] == 'bind.open':
+            raise ValueError('open field bindings require student-state lessons (waits=True)')
         target = -1 if parent is None else rules[1][parent[0]]
         unary.append((value.detach(), target))
         if target >= 0:
@@ -142,16 +145,21 @@ class ComposeLessonStates:
         payload = detached_state(dict(window=window, kwargs=kwargs))
         for row in route['valid'].nonzero().flatten().tolist():
             key = int(slot[row] if torch.is_tensor(slot) and slot.ndim else slot)
-            self.rounds[row, key] = dict(payload, row=row,
+            references = kwargs.get('reference_data') or {}
+            dummies = references.get('binary_bind_dummy', ())
+            bound = bool(route.get('bind', torch.zeros_like(route['valid']))[row])
+            open_bind = bound and bool(dummies) and bool(dummies[int(route['action'][row]) % len(dummies)])
+            self.rounds[row, key] = dict(payload, row=row, open_bind=open_bind,
                 depth=int(kwargs['load_depth'][row]),
-                kind=int(route['kind'][row]), position=int(route['position'][row]), slot=key,
+                kind=int(route['kind'][row]), position=int(route['position'][row]),
+                operation=int(route['op'][row]), slot=key,
                 stack_arity=1 if bool(route.get('bind', torch.zeros_like(route['valid']))[row]) else 2,
                 observed_probabilities=route['probabilities'][row].detach().clone())
 
     def sentence(self, row, positions, *, width, closing_base, closing_width, attempted):
         positions = positions.tolist()
         source = {position: index for index, position in enumerate(sorted(positions))}
-        stack, states = [], []
+        stack, states, operations = [], [], {}
         def visit(slot):
             if slot >= attempted.shape[1] or not bool(attempted[row, slot]):
                 return
@@ -160,7 +168,13 @@ class ComposeLessonStates:
                 raise ValueError(f'constituent lesson missed student round {row}:{slot}')
             if state['depth'] != len(stack):
                 raise ValueError('constituent lesson provenance differs from the student stack')
-            states.append(dict(state, spans=tuple(stack[-2:])))
+            states.append(dict(state, spans=tuple(stack[-2:]),
+                               operations={span: tuple(ops) for span, ops in operations.items()}))
+            if state.get('open_bind', False):
+                operations.setdefault(stack[-1], []).append(('open', state['operation']))
+            elif state['kind'] == 2:
+                span = stack[-2:][state['position']]
+                operations.setdefault(span, []).append((1, state['operation']))
             if state['kind'] == 1 and state['stack_arity'] == 2:
                 right, left = stack.pop(), stack.pop()
                 stack.append(left + right)
@@ -185,13 +199,16 @@ def constituent_examples(language, program, tree):
     leaves. An incorrect fold cannot be undone by a replacement teacher trace.
     """
     root, _, rules = _annotation_tree(language, tree, len(program.leaves))
-    parents = {}
+    parents, unary = {}, {}
     def spans(node):
         if node[0] == 'leaf':
             return (node[1],)
         children = tuple(spans(child) for child in node[1:])
-        if len(children) != 2:
-            raise ValueError('constituent brackets require binary annotations')
+        if len(children) == 1:
+            target = (('open', rules[2]['bind']) if node[0] == 'bind.open'
+                      else (1, rules[1][node[0]]))
+            unary.setdefault(children[0], []).append(target)
+            return children[0]
         parents[children] = (tuple(rules[2][name] for name in MODIFICATION_OPERATORS if name in rules[2])
                              if node[0] == 'modification' else rules[2][node[0]])
         return sum(children, ())
@@ -199,7 +216,29 @@ def constituent_examples(language, program, tree):
     states = getattr(program, 'student_states', None)
     if states is None:
         raise ValueError('constituent lessons require captured student states')
-    return [dict(state, target=parents.get(state['spans'], -1)) for state in states]
+    result = []
+    for state in states:
+        target = parents.get(state['spans'], -1)
+        for position in reversed(range(len(state['spans']))):
+            span = state['spans'][position]
+            goals = unary.get(span, ())
+            applied = state.get('operations', {}).get(span, ())
+            cursor = 0
+            for operation in applied:
+                if cursor < len(goals) and operation == goals[cursor]:
+                    cursor += 1
+            if cursor == len(goals):
+                continue
+            kind, operation = goals[cursor]
+            if kind == 'open':
+                if position != len(state['spans']) - 1:
+                    continue  # The native field operand binds the newest chunk.
+                target = dict(operation=operation, reference='open')
+            else:
+                target = dict(operation=operation, arity=1, position=position)
+            break
+        result.append(dict(state, target=target))
+    return result
 
 
 def score_student_state(layer, state):
@@ -222,7 +261,18 @@ def student_target_actions(layer, state):
     references = state['kwargs'].get('reference_data')
     menu = (tuple(range(layer.r_reduce)) if references is None else
             references.get('binary_ops', tuple(range(layer.r_reduce))))
-    targets = target_operations(state['target'])
+    target = state['target']
+    if isinstance(target, dict):
+        # The lesson names the existing off-stack open alternative. No
+        # reference is installed in the student's reading or native menu.
+        if target.get('arity') == 1:
+            unary = (tuple(range(layer.r_apply)) if references is None else references['unary_ops'])
+            offset = (state['window'].shape[1]-1) * len(menu) + target['position'] * len(unary)
+            return [offset + index for index, operation in enumerate(unary) if operation == target['operation']]
+        dummies = () if references is None else references.get('binary_bind_dummy', ())
+        return [index for index, operation in enumerate(menu)
+                if operation == target['operation'] and index < len(dummies) and dummies[index]]
+    targets = target_operations(target)
     return [index for index, operation in enumerate(menu) if operation in targets]
 
 
@@ -311,15 +361,16 @@ def generate_loss(language, programs, lessons, registry, word_code, *, errors=No
             continue
         if program is None:
             raise ValueError("generation lesson requires owned input operands")
-        indices = supplied["operands"]
-        if len(indices) != 2 or any(type(i) is not int or not 0 <= i < len(program.leaves) for i in indices):
-            raise ValueError("generation lesson requires two valid source operands")
-        refs = tuple(("sym", int(program.concept_ids[i])) for i in indices)
-        meaning = registry.form(supplied["form"], *refs)
-        # The supplied form is canonical, so these are explicitly labelled
-        # NP1/NP2 source positions, never inferred from the student's parse.
-        roles = (program.leaves[indices[0]].detach(), meaning.roles[1].detach(),
-                 program.leaves[indices[1]].detach())
+        concept = supplied['form'] == 'concept'
+        if not concept:
+            indices = supplied["operands"]
+            if len(indices) != 2 or any(type(i) is not int or not 0 <= i < len(program.leaves) for i in indices):
+                raise ValueError("generation lesson requires two valid source operands")
+            refs = tuple(("sym", int(program.concept_ids[i])) for i in indices)
+            meaning = registry.form(supplied["form"], *refs)
+            # Explicitly labelled source operands, never the student's parse.
+            roles = (program.leaves[indices[0]].detach(), meaning.roles[1].detach(),
+                     program.leaves[indices[1]].detach())
         words = supplied["text"].split()
         codes = [word_code(word) if word_code_by_stream is None else word_code_by_stream(word,b)
                  for word in words]
@@ -327,6 +378,10 @@ def generate_loss(language, programs, lessons, registry, word_code, *, errors=No
             # An answer-only word is not admitted by reading its label. It
             # becomes teachable after ordinary input has introduced it.
             continue
+        if concept:
+            if len(codes) != 1:
+                raise ValueError('a concept generation lesson names one existing word')
+            roles = (codes[0].detach(),)
         leaves = [code.detach().to(roles[0]) for code in codes]
         order = []
 
@@ -348,7 +403,7 @@ def generate_loss(language, programs, lessons, registry, word_code, *, errors=No
             return (parent, action, op, children)
 
         roots = tuple(tree(node) for node in supplied["roots"])
-        if len(roots) != 3 or order != list(range(len(words))):
+        if len(roots) != len(roles) or order != list(range(len(words))):
             raise ValueError("generation roots must cover every output word once, in order")
 
         def teach(node, parent):

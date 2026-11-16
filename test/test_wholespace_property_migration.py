@@ -69,7 +69,7 @@ def _small_property_model(
     if symbolic_lift:
         grammar = root.find("SymbolSpace/language/grammar")
         assert grammar is not None
-        ET.SubElement(grammar.find("compose"), "S").text = "S = lift(S, S)"
+        ET.SubElement(grammar.find("compose"), "S").text = "S = change(S, S)"
     for section in ("ConceptualSpace", "WholeSpace"):
         active = root.find(f"{section}/activeVectors")
         if active is not None:
@@ -249,7 +249,7 @@ def test_symbolspace_and_grammar_use_conceptual_not_property_width(tmp_path):
 
     lift = next(op for rule, op in zip(model.languageSpace._compose_binary_rules,
                                       model.languageSpace._tree_layer(2).ops)
-                if rule.method_name == 'lift').gl
+                if rule.method_name == 'change').gl
     assert lift.nInput == cs.subspace.muxedSize          # opaque concept event (2026-09-13)
     assert lift.nOutput == cs.subspace.muxedSize
     assert lift.nInput != ws.subspace.nWhat

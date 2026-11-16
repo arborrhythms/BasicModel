@@ -136,7 +136,7 @@ def test_native_train_keeps_last_grounding_and_recognizes_it_across_ten_epochs(t
         if first:
             same_state(history,(store.state_dict(),
                                 store.parts.state_dict(),owner.mtm.state()))
-            baseline.update(alloc.placement)
+            baseline.update(alloc.symbols)
         same_state(optimizer_state,model._optimizer.state_dict())
         same_state(parameters,dict(model.named_parameters()))
         starts.append((len(store),len(store.parts)))
@@ -174,7 +174,7 @@ def test_native_train_keeps_last_grounding_and_recognizes_it_across_ten_epochs(t
     def observed_epoch(*args, **kw):
         result = run(*args, **kw)
         if kw.get('optimizer') is not None:
-            symbols = set(alloc.placement) - baseline - set(alloc.parts.indices().tolist())
+            symbols = set(alloc.symbols) - baseline - set(alloc.parts.indices().tolist())
             records = grounded(store,symbols)
             assert len(store) > 0
             reports.append(dict(epoch=len(reports)+1, minted=sorted(symbols-seen),
@@ -219,8 +219,7 @@ def test_native_train_keeps_last_grounding_and_recognizes_it_across_ten_epochs(t
                 instance.symbolSpace.soft_reset()
 
 
-@pytest.mark.parametrize('older_unstamped_class', [False, True])
-def test_later_candidate_reads_a_promoted_classes_order_after_epoch_withdrawal(older_unstamped_class):
+def test_later_candidate_reads_a_promoted_classes_order_after_epoch_withdrawal():
     from FamiliarTier import observe_candidate
     from test_attention_promotion import _close
     from test_familiar_tier import placed_fixture
@@ -239,12 +238,10 @@ def test_later_candidate_reads_a_promoted_classes_order_after_epoch_withdrawal(o
     lower = promote(1,{a:2.,b:1.})
     assert alloc.order_of(lower) == 1
     lower_row = cs._csw_row_of(lower)
-    assert alloc.reference_orders[lower] == 1
-    if older_unstamped_class:
-        del alloc.reference_orders[lower]
+    assert cs._row_order(lower_row) == 1
     begin(model)
     upper = promote(1,{lower_row:2.,c:1.})
-    assert alloc.order_of(lower) == 1 and alloc.reference_orders[upper] == 2
+    assert alloc.order_of(lower) == 1 and cs._row_order(cs._csw_row_of(upper)) == 2
     assert store.parts.find((SYMBOL,lower),(SYMBOL,upper)) is not None
     begin(model)
     assert alloc.order_of(lower) == 1 and alloc.order_of(upper) == 2

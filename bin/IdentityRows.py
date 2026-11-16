@@ -83,8 +83,7 @@ def mint(owner, content, *, form=None):
     content = carrier(owner, content)
     witnessed_content = content.clone()
     alloc = allocator(owner)
-    identity = owner.new_concept()
-    alloc.reference_orders[identity] = 1
+    identity = owner.new_concept(order=1)
     alloc.settle(identity)
     row = owner._csw_concept_row(1, identity)
     if row is None:
@@ -92,7 +91,7 @@ def mint(owner, content, *, form=None):
     derived = getattr(owner.similarity_codebook, 'mereology', None)
     if derived is not None:
         derived.remember_content(row, content)
-        content[derived.percept_width:] = 0
+        content.zero_()  # An order-one row has a placed meaning and no form.
         derived.placement_dirty[row] = True
     owner.similarity_codebook.W[row].copy_(content)
     if form is None:

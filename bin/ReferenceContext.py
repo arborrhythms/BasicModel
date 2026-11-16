@@ -87,6 +87,12 @@ def denoted_order(rule, operand_orders, operand_ids, alloc):
     name = getattr(rule, 'method_name', None) or getattr(rule, 'rule_name', None)
     relation = getattr(rule, 'relation_kind', None)
     head = int(getattr(rule, 'head_role', 0) or 0)
+    delta = int(getattr(rule, 'order_delta', 0) or 0)
+    if delta:
+        order = orders[0]
+        if torch.is_tensor(order):
+            return torch.where(order >= max(0, -delta), order + delta, -1)
+        return order + delta if order >= max(0, -delta) else -1
 
     def lower(order, *, kind=False):
         if torch.is_tensor(order):
@@ -114,7 +120,7 @@ def denoted_order(rule, operand_orders, operand_ids, alloc):
         return lower(orders[head-1 if head and head <= len(orders) else -1], kind=True)
     if len(orders) == 1:
         return orders[0]
-    if getattr(rule, 'clause_form', None) == 'S' or name == 'lift':
+    if getattr(rule, 'clause_form', None) == 'S' or name == 'change':
         subject = orders[0]
         vp = identities[1] if len(identities) > 1 else None
         timeline = vp.timeline if isinstance(vp, OrderReference) else False
@@ -248,6 +254,18 @@ def binding_spec(rule, role, stamp, *, implicit=False):
     return (denoted_order(rule, (stamp,), (), None) if requested else None), mode
 
 
+def resolve_highest(value, identity, types):
+    """Interpret the highest defined object of each word in the staged slab."""
+    if types is None:
+        return value, identity
+    source = identity[:, :, None] == types.sources[:, None, :]
+    associated = (identity[:, :, None, None] == types.identities[:, None]).any(-1)
+    matching = (source | associated)[..., None] & (identity > 0)[:, :, None, None]
+    matching = matching & (types.identities[:, None] > 0)
+    highest = torch.where(matching, types.orders[None, None, None, :], -1).amax((-2, -1))
+    return resolve_order(value, identity, highest, types)
+
+
 def resolve_order(value, identity, order, types):
     """Select an existing grammar-requested type before its numerical use.
 
@@ -370,6 +388,12 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
 
     def symbolic_options(value, ids, scope, pos, stamp, rule, role, valid):
         order, mode = binding_spec(rule, role, stamp, implicit=interpreter is not None)
+        if int(getattr(rule, 'order_delta', 0) or 0) == -1:
+            # Unary lower reads the word's existing object one block down.
+            # Order one is an ordinary concept order here, not a request
+            # for an occurrence to be bound at the closing.
+            value, ids = resolve_order(value, ids, order, getattr(bank, 'types', None))
+            return [(value, ids, scope.bitwise_and(1) != 0, valid)]
         if chunk_state is not None and order is not None:
             # Determination supplies an object, never a reference alternative.
             # Explicit bind is the sole compose operation that chooses one.
@@ -657,12 +681,11 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
                 if bank.types is not None:
                     # Reuse the staged lexical points. Interpretation can
                     # read a known object without an earlier MTM mention.
-                    for order in bank.types.orders.unbind():
-                        point, identity = resolve_order(window, identities, order, bank.types)
-                        admitted = identity != identities
-                        options.append((point, identity, torch.zeros_like(active),
-                                        active & interpretable & admitted))
-                        lexical_found |= admitted
+                    point, identity = resolve_highest(window, identities, bank.types)
+                    admitted = identity != identities
+                    options.append((point, identity, torch.zeros_like(active),
+                                    active & interpretable & admitted))
+                    lexical_found |= admitted
                 elif bank.associations is not None and bank.associations.numel() and bank.ids.shape[1]:
                     available = ((identities[...,None,None] == bank.associations[:,0]) &
                                  (bank.ids[:,None,:,None] == bank.associations[:,1])).any(-1) & bank.valid[:,None]
@@ -679,6 +702,9 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
         else:
             options = propose(window, identities, flags, positions, orders, rule, 'argin1', active)
         for operand in options:
+            delta = int(getattr(rule, 'order_delta', 0) or 0)
+            if delta:
+                operand = (*operand[:3], operand[3] & (orders >= max(0, -delta)))
             unary_ops.append(operation)
             values.append(operand[0])
             own_values.append(operand[0])

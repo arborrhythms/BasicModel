@@ -8,7 +8,7 @@ def test_completed_native_forest_has_exact_leaves_and_live_source_pullback(monke
     import util
     from data import TheData
     from Models import BaseModel
-    from Language import SurfaceLayer, SurfaceUnaryLayer, TransposeLayer
+    from Language import SurfaceLayer, SurfaceUnaryLayer, SwapLayer
     from DerivationReconstruction import reconstruct, certified_map
     monkeypatch.setattr(util,'TheCompileBackend','none')
     TheData.processLM({s:dict(text=['.'] if s=='train' else [],label=[])
@@ -19,7 +19,7 @@ def test_completed_native_forest_has_exact_leaves_and_live_source_pullback(monke
         for dtype in (torch.float32,torch.float64):
             surface=SurfaceLayer(D,D).to(dtype)
             absorb=SurfaceUnaryLayer(surface).to(dtype)
-            transpose=TransposeLayer(D,D)
+            transpose=SwapLayer(D,D)
             assert certified_map(surface) and certified_map(absorb)
             width=surface.meaning_layout[0]
             assert width>=model._readback_percept_width and D>width

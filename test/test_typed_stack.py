@@ -137,7 +137,7 @@ def _three_rule_list():
     return [
         {'lhs_category': 'S', 'lhs_order': 4,
          'rhs_categories': ['NP', 'VP'], 'rhs_orders': [3, 1],
-         'op_name': 'lift'},
+         'op_name': 'change'},
         {'lhs_category': 'NP', 'lhs_order': 3,
          'rhs_categories': ['DET', 'NP'], 'rhs_orders': [0, 4],
          'op_name': 'lower'},

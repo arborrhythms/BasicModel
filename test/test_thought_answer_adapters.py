@@ -70,7 +70,7 @@ def _open_goal(model, registry, part, whole):
     model.symbolSpace.ltm_store = store
     store.append_relation(part[1], whole[1], truth_plus=1.)
     model.conceptualSpace._concept_allocator.singletons.add(whole[1])
-    content = registry.form('equal', part, whole)
+    content = registry.form('define', part, whole)
     content = replace(content, role_refs=(None, content.role_refs[1], whole),
                       role_mask=torch.tensor([False, True, True]), bindings={'_equality': True})
     return with_slots(content, (('referent', 0),), pair=(0., 0.), source_evidence=(0., 0.))
@@ -164,7 +164,8 @@ def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch
     def generate(idea, **kwargs):
         model._adapter_words = idea
         return SimpleNamespace(words=idea, truncated=torch.zeros(len(idea), dtype=torch.bool),
-            field=idea, realization_field=None, texts=lambda surface: ())
+            field=idea, realization_field=None, reconstruction_field=None,
+            texts=lambda surface: ())
     model.generate = generate
     model.reverse = lambda carrier, *, field: SimpleNamespace(
         materialize=lambda: field, _reconstruction_percepts=field)

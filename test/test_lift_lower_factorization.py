@@ -1,7 +1,7 @@
 """Lift/Lower factorization acceptance (Phase 3, 2026-05-18 owner-ratified).
 
 Phase 3 design (doc/plans/2026-05-18-two-loop-pipeline-architecture.md §D7):
-LiftLayer and LowerLayer become elementwise-gate-then-internal-sigma/pi
+ChangeLayer and LowerLayer become elementwise-gate-then-internal-sigma/pi
 operators at the S space_role.  The gate is the elementwise product of the two
 operands at the C-space_role:
 
@@ -9,7 +9,7 @@ operands at the C-space_role:
     left_c  = cb.reverse(left, project=True)
     right_c = cb.reverse(right, project=True)
     gated   = left_c * right_c
-    out_c   = self._sigma(gated)    # LiftLayer; own internal SigmaLayer
+    out_c   = self._sigma(gated)    # ChangeLayer; own internal SigmaLayer
                                      #   (or self._pi for LowerLayer)
     return cb.forward(out_c)
 
@@ -17,7 +17,7 @@ Lift's gating operand is VP (predication); Lower's gating operand is ADJ
 (attribution).  Both layers own their internal SigmaLayer / PiLayer (NOT
 borrowed from PartSpace.sigma / ConceptualSpace.pi); the layers
 train independently.  When constructed parameter-free
-(``LiftLayer()`` / ``LowerLayer()``), forward falls back to the static
+(``ChangeLayer()`` / ``LowerLayer()``), forward falls back to the static
 lattice kernel (``Ops._lower_kernel`` for lift / ``Ops._lift_kernel`` for
 lower) for the standalone-test harness path.
 
@@ -77,7 +77,7 @@ def _random_bivec(shape, seed=0):
 
 
 class TestRawGateRetired(unittest.TestCase):
-    """LiftLayer / LowerLayer no longer carry a ``raw_gate`` parameter."""
+    """ChangeLayer / LowerLayer no longer carry a ``raw_gate`` parameter."""
 
 
     def test_lower_layer_no_raw_gate(self):
@@ -125,8 +125,8 @@ class TestLiftLowerFactorization(unittest.TestCase):
             cls.model = _fresh_model()
 
     def _make_lift(self):
-        from Layers import LiftLayer
-        return LiftLayer(wholeSpace=self.model.wholeSpace,
+        from Layers import ChangeLayer
+        return ChangeLayer(wholeSpace=self.model.wholeSpace,
                          perceptualSpace=self.model.perceptualSpace)
 
     def _make_lower(self):
@@ -213,10 +213,10 @@ class TestLiftLowerFactorization(unittest.TestCase):
                          "are independent learnable maps.")
 
     def test_lift_has_internal_sigma_trainable(self):
-        """Wired LiftLayer owns an internal ``_sigma`` with trainable params."""
+        """Wired ChangeLayer owns an internal ``_sigma`` with trainable params."""
         lift = self._make_lift()
         self.assertIsNotNone(lift._sigma,
-                             "Wired LiftLayer must own an internal SigmaLayer.")
+                             "Wired ChangeLayer must own an internal SigmaLayer.")
         # The internal sigma's params must be trainable.
         from Layers import SigmaLayer
         self.assertIsInstance(lift._sigma, SigmaLayer)
@@ -235,17 +235,17 @@ class TestLiftLowerFactorization(unittest.TestCase):
         """Stage 4 (2026-05-27): the parameter-free static-lattice
         fallback (``Ops._lower_kernel`` for lift) is retired.  Lift
         is now a self-contained binary GrammarLayer with its own
-        internal SigmaLayer; ``LiftLayer(nInput=D, nOutput=D)``
+        internal SigmaLayer; ``ChangeLayer(nInput=D, nOutput=D)``
         suffices to run forward / reverse.
 
         Replaces the prior ``test_lift_fallback_uses_static_lattice_kernel``
         which exercised the retired Phase-3 fallback.
         """
-        from Layers import LiftLayer
+        from Layers import ChangeLayer
         B = 1
         V_S = 2
         D = 10
-        layer = LiftLayer(nInput=D, nOutput=D)
+        layer = ChangeLayer(nInput=D, nOutput=D)
         torch.manual_seed(31)
         NP = torch.rand(B, V_S, D) * 0.9 + 0.05
         torch.manual_seed(32)
@@ -253,10 +253,10 @@ class TestLiftLowerFactorization(unittest.TestCase):
         with torch.no_grad():
             out = layer.forward(VP, NP)
         self.assertEqual(out.shape, NP.shape,
-                         "Stage 4 LiftLayer.forward returns a single "
+                         "Stage 4 ChangeLayer.forward returns a single "
                          "tensor matching the operand shape.")
         self.assertTrue(torch.isfinite(out).all(),
-                        "Stage 4 LiftLayer.forward must produce finite "
+                        "Stage 4 ChangeLayer.forward must produce finite "
                         "values (fail-loud numerical contract).")
 
     def test_lower_self_contained_no_substrate_fallback(self):

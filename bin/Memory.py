@@ -1650,6 +1650,11 @@ class MediumTermMemory(MemoryStore):
         def address(value):
             return (isinstance(value, tuple) and len(value) == 3 and value[0] == 'ltm'
                     and isinstance(value[1], str) and type(value[2]) is int)
+        def percept(value):
+            return (state['version'] >= 13 and isinstance(value, tuple) and len(value) == 2
+                    and value[0] == 'bp' and type(value[1]) is int and value[1] >= 0)
+        def occurrence(value):
+            return address(value) or percept(value)
         def named(value):
             return (state['version'] >= 10 and isinstance(value, tuple) and len(value) == 2
                     and value[0] == 'name' and type(value[1]) is int and value[1] > 0)
@@ -1667,11 +1672,13 @@ class MediumTermMemory(MemoryStore):
                     'when', 'native', *required)) <= record.keys():
                 raise ValueError('incomplete identity checkpoint entry')
             key, uses = record['key'], tuple(record['occurrences'])
-            collection = isinstance(key, tuple) and len(key) in (3, 4) and key[0] == 'collection' and sentence(key[2])
+            collection = (isinstance(key, tuple) and len(key) in (3, 4) and key[0] == 'collection'
+                          and (sentence(key[2]) or percept(key[2])))
             candidate = (isinstance(key, tuple) and len(key) == 2 and key[0] == 'candidate'
                          and type(key[1]) is int and 0 <= key[1] < counter)
             if (key in entries or (candidate and uses) or (not candidate and
-                    (not (address(key) or named(key) or collection) or not all(map(sentence if collection else address, uses))
+                    (not (occurrence(key) or named(key) or collection)
+                     or not all((sentence(use) or percept(use)) if collection else occurrence(use) for use in uses)
                      or (not named(key) and not collection and key not in uses)
                      or len(set(uses)) != len(uses)))):
                 raise ValueError('invalid identity checkpoint membership')
@@ -1733,6 +1740,9 @@ class MediumTermMemory(MemoryStore):
             refinement = record.get('refinement', {})
             if not isinstance(refinement, dict):
                 raise ValueError('invalid identity checkpoint refinement')
+            if percept(key) and (refinement.get('promoted_percept') != key[1]
+                                or record.get('transient') is not None):
+                raise ValueError('a retained basic percept requires its native reference, not a transient identity')
             for member in refinement.get('members', ()):
                 if (not isinstance(member, (tuple, list)) or len(member) != 2 or member[0] not in uses
                         or not (symbol(member[1]) or isinstance(member[1], tuple) and len(member[1]) == 2
@@ -1746,7 +1756,7 @@ class MediumTermMemory(MemoryStore):
             if not symbol(record.get('symbol')):
                 raise ValueError('invalid identity checkpoint promoted symbol')
         for mention, token, reading in state['names']:
-            if (not (address(mention) or named(mention)) or not (address(token) or named(token))
+            if (not (occurrence(mention) or named(mention)) or not (occurrence(token) or named(token))
                     or not symbol(reading) or mention in names or token not in entries
                     or (mention not in entries[token].occurrences and not (named(mention) and reading == mention[1]))):
                 raise ValueError('invalid identity checkpoint name')
@@ -1789,7 +1799,7 @@ class MediumTermMemory(MemoryStore):
 class IdeaRows(ClauseRows, EntryRead, MemoryStore, Layer):
     """The common idea read; durability and working syntax have separate owners."""
     columns = ('slots', 'episodic_concepts', 'episodic_values', 'trust', 'referent', 'activity')
-    caches = ()
+    caches = ('_observation_revision', '_coordinate_counts', '_coordinate_joint')
     auxiliary = {'count': 'occupied seats', 'model_clock': 'next occurrence time',
         'percept_layout': 'construction geometry', 'truth_schema': 'checkpoint layout',
         'forget_passes': 'pass count', 'forget_sentences': 'kept sentence count',
@@ -1826,15 +1836,52 @@ class IdeaRows(ClauseRows, EntryRead, MemoryStore, Layer):
         import weakref
         object.__setattr__(self,'parts',LTM1(relation_capacity))
         self.parts._occurrence_store = weakref.ref(self)
+        self.clear_caches()
 
     def __len__(self):
         return int(self.count)
 
     def clear_caches(self):
-        pass
+        for name in self.caches:
+            setattr(self, name, None)
 
     def rebuild_caches(self):
-        pass
+        self._ensure_observations()
+
+    @property
+    def _idea_revision(self):
+        return id(self.slots), self.slots._version, len(self)
+
+    def _ensure_observations(self):
+        if self._observation_revision == self._idea_revision:
+            return
+        support = (self.slots[:len(self)].detach() >= .3).float()
+        self._coordinate_counts = support.sum(0)
+        self._coordinate_joint = support.T @ support
+        self._observation_revision = self._idea_revision
+
+    def coordinate_exclusions(self, start=0):
+        """Eight retained occurrences on each side, with no joint occurrence.
+
+        Counts are derived from immutable rows. Native appends update them;
+        compaction or restoration invalidates them for one batched rebuild.
+        """
+        self._ensure_observations()
+        eligible = self._coordinate_counts >= 8
+        eligible[:int(start)] = False
+        pairs = (eligible[:, None] & eligible[None, :]
+                 & (self._coordinate_joint == 0)).triu(1)
+        return tuple(map(tuple, pairs.nonzero().tolist()))
+
+    def _append_cache_state(self):
+        return self._observation_revision == self._idea_revision
+
+    def _append_cached(self, row, valid):
+        if valid:
+            support = (self.slots[row].detach() >= .3).float()
+            self._coordinate_counts.add_(support)
+            self._coordinate_joint.add_(support[:, None] * support[None, :])
+            self._observation_revision = self._idea_revision
 
     def validate_referents(self, state, prefix, names):
         count = int(state[prefix+'count'])
@@ -1992,10 +2039,12 @@ class IdeaRows(ClauseRows, EntryRead, MemoryStore, Layer):
         first=len(self)
         for value in values:
             row=len(self)
+            cache = self._append_cache_state()
             self._write_point(row,meaning.roles[int(occupied[0])])
             self.trust[row]=value
             self.referent[row]=self.referent.new_tensor(reference)
             self.count.fill_(row+1)
+            self._append_cached(row, cache)
             if entry is not None:
                 for name,data in zip(('episodic_concepts','episodic_values'),entry):
                     getattr(self,name)[row].copy_(data.detach())
@@ -2105,6 +2154,7 @@ class IdeaRows(ClauseRows, EntryRead, MemoryStore, Layer):
 class LTM0(IdeaRows):
     """One immutable signed claim, typed referent and flat extension per time."""
     address_domain='time-v1'
+    caches = (*IdeaRows.caches, '_time_index_revision', '_row_times', '_rows_by_time')
 
     def __init__(self,nDim,capacity=1024,content_width=None,*,percept_width=None,
                  relation_capacity=8192,read_capacity=None,episodic_concepts=0):
@@ -2116,19 +2166,36 @@ class LTM0(IdeaRows):
             raise ValueError('LTM0 requires the native percept time band')
 
     def row_name(self,row):
-        from RowTime import encoder
-        return int(encoder().decode_index(self.entry_time(int(row))))
+        self._ensure_time_index()
+        return self._row_times[int(row)]
 
     def index_of_row(self,reference):
-        # Time order is the index. Compaction keeps it; no durable duplicate
-        # time/name column or concept-to-row posting is needed.
-        reference=int(reference)
-        lo,hi=0,len(self)
-        while lo<hi:
-            mid=(lo+hi)//2
-            if self.row_name(mid)<reference: lo=mid+1
-            else: hi=mid
-        return lo if lo<len(self) and self.row_name(lo)==reference else None
+        self._ensure_time_index()
+        return self._rows_by_time.get(int(reference))
+
+    def _ensure_time_index(self):
+        if self._time_index_revision == self._idea_revision:
+            return
+        from RowTime import encoder
+        self._row_times = encoder().decode_index(self.time[:len(self)]).tolist()
+        self._rows_by_time = {int(time): row for row, time in enumerate(self._row_times)}
+        self._time_index_revision = self._idea_revision
+
+    def rebuild_caches(self):
+        super().rebuild_caches()
+        self._ensure_time_index()
+
+    def _append_cache_state(self):
+        return super()._append_cache_state(), self._time_index_revision == self._idea_revision
+
+    def _append_cached(self, row, valid):
+        super()._append_cached(row, valid[0])
+        if valid[1]:
+            # next_time has just advanced the clock past the written row.
+            time = int(self.model_clock) - 1
+            self._row_times.append(time)
+            self._rows_by_time[time] = row
+            self._time_index_revision = self._idea_revision
 
     @torch.no_grad()
     def _write_point(self,row,point):
@@ -2209,6 +2276,7 @@ class LTM0(IdeaRows):
     def _load_from_state_dict(self,state,prefix,*args,**kwargs):
         self.prepare_checkpoint(state,prefix)
         super()._load_from_state_dict(state,prefix,*args,**kwargs)
+        self.clear_caches()
 
 
 
@@ -2299,7 +2367,7 @@ class LTM1(MemoryStore, nn.Module):
         def endpoint(kind, value):
             if kind == RELATION:
                 return max(float(self.effective_plus[value]), float(self.effective_minus[value]))
-            if kind == SYMBOL and owner is not None and value in owner._concept_allocator.placement:
+            if kind == SYMBOL and owner is not None and value in owner._concept_allocator.symbols:
                 return positive_length(owner, value)
             return 1.
         for row in self.relation_order[:len(self)].tolist():

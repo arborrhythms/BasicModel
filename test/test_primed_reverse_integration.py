@@ -10,7 +10,7 @@ priming decays, and a sentence boundary clears it.
 
 Test fixture uses the standard 2-rule grammar:
 
-    S4  = lift(NP3, VP1)
+    S4  = change(NP3, VP1)
     NP3 = lower(DET, NP4)
 
 To exercise priming **decisively**, we extend the reference codebook
@@ -32,7 +32,7 @@ def _tiny_grammar():
     from Language import Grammar
     g = Grammar()
     g.rules = [
-        g._parse_rule("S4", "lift(NP3, VP1)", space_role='SS'),
+        g._parse_rule("S4", "change(NP3, VP1)", space_role='SS'),
         g._parse_rule("NP3", "lower(DET, NP4)", space_role='SS'),
     ]
     g._configured = True

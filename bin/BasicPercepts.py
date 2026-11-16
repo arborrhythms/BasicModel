@@ -22,7 +22,7 @@ class BasicPercepts(nn.Module):
         self.index = {}
         self.words = {}
         self.selectors = {}
-        self.numeric_axes = {}
+        self.register_buffer('places', torch.full((self.capacity,), -1, dtype=torch.long))
         # Native values are endpoints, not concepts or learned codes. Negative
         # references below the fixed-axis namespace address this bounded table.
         self.register_buffer('value_codes', torch.zeros(self.capacity))
@@ -56,7 +56,7 @@ class BasicPercepts(nn.Module):
         return result
 
     @torch.no_grad()
-    def perceive_value(self, value):
+    def perceive_value(self, value, *, place=None):
         """Admit the exact value as both its tightest part and its whole."""
         value = torch.as_tensor(value, device=self.codes.device, dtype=self.codes.dtype)
         if value.ndim or not bool((value > 0) & (value <= 1)):
@@ -71,7 +71,7 @@ class BasicPercepts(nn.Module):
             self.value_codes[seat] = value
             self.value_count += 1
         reference = -self.identity_width - 1 - seat
-        row = self.reserve((reference,), (reference,))
+        row = self.reserve((reference,), (reference,), place=place)
         self.promote(row)
         return row
 
@@ -102,31 +102,23 @@ class BasicPercepts(nn.Module):
         alternatives = reduce(boundaries, operation='union', dim=1, weights=weights[None, :, None, None])
         return reduce(alternatives, operation='intersection', dim=0)
 
-    def numeric_dimension(self, axis):
-        """One fixed native atom per numeric dimension, independent of values."""
-        axis = int(axis)
-        if not 0 <= axis < self.identity_width:
-            raise ValueError('numeric dimension exceeds the declared percept cube')
-        row = self.reserve((-axis-1,), ())
-        self.numeric_axes[row] = axis
-        self.promote(row)
-        return row
-
     def bind(self, whole):
         object.__setattr__(self, 'whole', whole)
 
-    def reserve(self, parts, wholes, *, word=None):
+    def reserve(self, parts, wholes, *, word=None, place=None):
         parts, wholes = tuple(map(int, parts)), tuple(dict.fromkeys(map(int, wholes)))
         if not parts:
             raise ValueError('a basic percept needs identity parts')
-        key = parts, wholes
+        key = (parts, wholes) if place is None else (parts, wholes, int(place))
         row = self.index.get(key)
         if row is None:
             row = len(self.index)
             if row >= self.capacity:
                 raise OverflowError('BasicPercepts capacity exhausted')
             self.index[key] = row
-            self.occurrences[row] = key
+            self.occurrences[row] = parts, wholes
+            if place is not None:
+                self.places[row] = int(place)
             self.revision += 1
         if word is not None:
             self.words[int(word)] = row
@@ -147,17 +139,13 @@ class BasicPercepts(nn.Module):
                      if set(features) <= set(self.occurrences[row][1]))
 
     def subspace_bounds(self, row):
-        if int(row) in self.numeric_axes:
-            code = self.codes.new_zeros(self.width)
-            code[self.numeric_axes[int(row)]] = 1.
-            return code[:self.identity_width], code[self.identity_width:]
         parts, wholes = self.occurrences[int(row)]
         ids = torch.tensor(parts, device=self.codes.device, dtype=torch.long)
         identity = self.part_codes(ids).amax(0)
         if not self.property_width:
             return identity, identity.new_empty(0)
         if wholes:
-            if self.whole is None:
+            if self.whole is None and any(reference >= -self.identity_width for reference in wholes):
                 raise ValueError('basic percept property read requires its WholeSpace')
             ids = torch.tensor(wholes, device=self.codes.device, dtype=torch.long)
             properties = self.whole_codes(ids).amin(0)
@@ -315,20 +303,23 @@ class BasicPercepts(nn.Module):
 
     def get_extra_state(self):
         from IndependentComponents import _pack_state
-        return _pack_state(dict(version=1, occurrences=tuple(self.occurrences[:len(self.index)]), words=self.words, selectors=tuple(self.selectors.items()), numeric_axes=self.numeric_axes))
+        return _pack_state(dict(version=2, occurrences=tuple(self.occurrences[:len(self.index)]), words=self.words, selectors=tuple(self.selectors.items()), places=self.places[:len(self.index)].tolist()))
 
     def set_extra_state(self, state):
         from IndependentComponents import _unpack_state
         state = _unpack_state(state)
-        if state.get('version') != 1 or len(state['occurrences']) > self.capacity:
+        if state.get('version') not in (1, 2) or len(state['occurrences']) > self.capacity:
             raise ValueError('basic percept checkpoint disagrees with construction')
+        if state.get('numeric_axes'):
+            raise ValueError('fixed numeric axes have no level witnesses; an old numeric checkpoint cannot be imported')
         self.occurrences[:] = [None] * self.capacity
         self.index = {}
-        for parts, wholes in state['occurrences']:
-            self.reserve(parts, wholes)
+        places = state.get('places', [-1] * len(state['occurrences']))
+        self.places.fill_(-1)
+        for (parts, wholes), place in zip(state['occurrences'], places):
+            self.reserve(parts, wholes, place=None if place < 0 else place)
         self.words = dict(state['words'])
         self.selectors = dict(state['selectors'])
-        self.numeric_axes = dict(state.get('numeric_axes', {}))
         if state.get('scalar_state') is not None:
             import warnings
             warnings.warn('retired scalar sidecar cannot supply perceptual witnesses; relearn its definitions')
@@ -337,4 +328,5 @@ class BasicPercepts(nn.Module):
         # Older checkpoints did not yet have value-bearing native endpoints.
         state.setdefault(prefix+'value_codes', torch.zeros_like(self.value_codes))
         state.setdefault(prefix+'value_count', torch.zeros_like(self.value_count))
+        state.setdefault(prefix+'places', torch.full_like(self.places, -1))
         super()._load_from_state_dict(state, prefix, *args, **kwargs)

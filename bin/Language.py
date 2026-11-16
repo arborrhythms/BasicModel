@@ -42,7 +42,7 @@ from collections import namedtuple as _namedtuple
 # stays in Layers.py (PiLayer / SigmaLayer / EqualLayer / TrueLayer /
 # FalseLayer / SwapLayer / CopyLayer / AreaLayer / LuminosityLayer /
 # IsaPartLayer also derive from it and stay). The grammar rule operator
-# classes (NotLayer, NonLayer, IntersectionLayer, UnionLayer, LiftLayer,
+# classes (NotLayer, NonLayer, IntersectionLayer, UnionLayer, ChangeLayer,
 # LowerLayer, ConjunctionLayer, DisjunctionLayer,
 # IsEqualLayer, PartLayer) physically live in this module
 # below, after the Grammar singleton.
@@ -483,9 +483,9 @@ class Grammar:
          'operand_kinds', 'effect_writes', 'relation_kind', 'scope_transparent',
          'polarity_effect', 'same_reference_idempotent',
          'effect_reads', 'field_eligible', 'case_head_role',
-         'footprint_reads', 'footprint_writes', 'determiner_mode', 'substrate', 'mandatory', 'semantic_operand'],
+         'footprint_reads', 'footprint_writes', 'determiner_mode', 'substrate', 'mandatory', 'semantic_operand', 'order_delta', 'kernel_index'],
     )
-    RuleDef.__new__.__defaults__ = (0, 0, False, None, None, (), (), None, 0, None, None, (), (), None, False, None, False, (), False, 0, (), (), None, False, False, None)
+    RuleDef.__new__.__defaults__ = (0, 0, False, None, None, (), (), None, 0, None, None, (), (), None, False, None, False, (), False, 0, (), (), None, False, False, None, 0, None)
 
     @staticmethod
     def _declared_rule(rule):
@@ -498,7 +498,7 @@ class Grammar:
         implementation = implementation or {'pi': PiLayer, 'sigma': SigmaLayer}.get(rule.method_name, GrammarLayer)
         fields = ('clause_form', 'head_role', 'relation_kind', 'scope_transparent',
                   'polarity_effect', 'same_reference_idempotent',
-                  'predicate_identity', 'field_eligible', 'case_head_role', 'determiner_mode', 'reference_modes', 'substrate', 'mandatory', 'semantic_operand')
+                  'predicate_identity', 'field_eligible', 'case_head_role', 'determiner_mode', 'reference_modes', 'substrate', 'mandatory', 'semantic_operand', 'order_delta')
         from Queries import THOUGHT_EXECUTORS
         from AccessibleMind import OperatorEffects, OperatorFootprint
         descriptor = THOUGHT_EXECUTORS.get(rule.method_name)
@@ -2906,7 +2906,7 @@ class ProductLayer(GrammarLayer):
 # ownership: SyntacticLayer constructs them via the chart's eager
 # build, and they'd point back at SyntacticLayer). Pattern:
 #
-#     out = LiftLayer().forward(left, right, layer=syntactic_layer,
+#     out = ChangeLayer().forward(left, right, layer=syntactic_layer,
 #                               subspace=subspace)
 #
 # Existing `_RULE_METHODS` dispatch in SyntacticLayer.project still
@@ -2954,8 +2954,8 @@ def _make_lex_gate(n_in, rank, seed, bias=1.4722):
     init (small weight, bias at atanh(0.9): near-identity gates that
     already differ per word) comes from a LOCAL generator.
 
-    ``bias`` (default ``atanh(0.9)``): the constant bias fill. The adverb
-    eigenvalue edit (``LiftLayer._adv_edit``) passes ``bias=0.0`` so an
+    ``bias`` (default ``atanh(0.9)``): the constant bias fill. The modifier
+    eigenvalue edit (``ChangeLayer._modifier_edit``) passes ``bias=0.0`` so an
     untrained edit is ``tanh(0) ~= 0`` -- the residual barely perturbs the
     sigma fold until training shapes it.
     """
@@ -2972,7 +2972,7 @@ def _make_lex_gate(n_in, rank, seed, bias=1.4722):
 
 
 
-class LiftLayer(GrammarLayer):
+class ChangeLayer(GrammarLayer):
     """Binary CS grammar op backed by an internal invertible ``SigmaLayer``.
 
     ``gate`` optionally selects a lexical low-rank slice; grammar theory lives
@@ -2980,8 +2980,8 @@ class LiftLayer(GrammarLayer):
     """
     head_role = 2
     inverse_kind = 'fold'
-    rule_name  = "lift"
-    predicate_identity = 'lift'
+    rule_name  = "change"
+    predicate_identity = 'change'
     arity      = 2
     invertible = True
     space_role       = 'CS'
@@ -3001,8 +3001,8 @@ class LiftLayer(GrammarLayer):
                  invertible=True, nonlinear=True,
                  butterfly=False, N=None,
                  force_verb_spectrum=False,
-                 force_adverb_eig_edit=False):
-        """Initialize LiftLayer.
+                 force_modifier_eig_edit=False):
+        """Initialize ChangeLayer.
 
         ``nInput`` / ``nOutput`` size the internal SigmaLayer; both
         default to the symbol codebook width when ``wholeSpace`` is
@@ -3024,7 +3024,7 @@ class LiftLayer(GrammarLayer):
         """
         # Resolve operand width: prefer explicit ``nInput`` / ``nOutput``;
         # else fall back to the symbol codebook width for the legacy
-        # ``LiftLayer(wholeSpace=ws)`` call shape.
+        # ``ChangeLayer(wholeSpace=ws)`` call shape.
         if nInput is None:
             if wholeSpace is not None:
                 nInput = int(wholeSpace.subspace.what.nDim)
@@ -3038,7 +3038,7 @@ class LiftLayer(GrammarLayer):
         # ([what | where | when]) from a content-only operand.
         object.__setattr__(self, '_content_width', int(nInput))
         # Back-references kept for back-compat with the
-        # ``LiftLayer(wholeSpace=...)`` legacy construction path.
+        # ``ChangeLayer(wholeSpace=...)`` legacy construction path.
         # They are NOT consulted by ``forward`` / ``reverse`` -- the
         # binary fold runs entirely through ``self._sigma``.
         object.__setattr__(self, 'wholeSpace', wholeSpace)
@@ -3067,31 +3067,31 @@ class LiftLayer(GrammarLayer):
             self._lex_gate = _make_lex_gate(
                 int(nInput), min(int(nInput), int(nOutput)), seed=0x11F7)
             # Eigen mechanisms (both eig-based, confirmed 2026-06-20): the VERB is
-            # the eig-spectrum OPERATOR (<verbSpectrum>, below); the ADVERB is the
-            # eigenmodifier (<adverbEigEdit>). What was removed is the verbEigEdit
+            # the eig-spectrum OPERATOR (<verbSpectrum>, below); the MODIFIER is the
+            # eigenmodifier (<modifierEigEdit>). What was removed is the verbEigEdit
             # RESIDUAL (a sparse edit on top of the symmetric sigma fold) -- it is
-            # now the adverb.
+            # now the modifier.
             #
-            # ADVERB sparse eigenvalue edit. When <adverbEigEdit> is on, or
-            # AdverbLayer forces this helper, an adverb modifies a composed VP
+            # MODIFIER sparse eigenvalue edit. When <modifierEigEdit> is on, or
+            # ModifierLayer forces this helper, an modifier modifies a composed VP
             # through a sparse eigenvalue edit of the verb, masked by the VP's
-            # OWN eigen-signature (no learned mask). The only per-adverb
-            # parameter is the edit projection δ_adv(ADV_code). Plain LiftLayer
+            # OWN eigen-signature (no learned mask). The only per-modifier
+            # parameter is the edit projection δ_adv(ADV_code). Plain ChangeLayer
             # still builds it ONLY when flagged so flag-off is byte-identical.
             # Zero-init -> edit ~0.
-            self._adverb_eig_edit = (
-                bool(force_adverb_eig_edit)
+            self._modifier_eig_edit = (
+                bool(force_modifier_eig_edit)
                 or bool(TheXMLConfig.get(
-                    "architecture.adverbEigEdit", default=False)))
-            if self._adverb_eig_edit:
-                self._adv_edit = _make_lex_gate(
+                    "architecture.modifierEigEdit", default=False)))
+            if self._modifier_eig_edit:
+                self._modifier_edit = _make_lex_gate(
                     int(nInput), int(nOutput), seed=0x5EED, bias=0.0)
                 with torch.no_grad():
-                    self._adv_edit.weight.zero_()
-                self._adv_shift = nn.Parameter(torch.zeros_like(self._adv_edit.weight))
+                    self._modifier_edit.weight.zero_()
+                self._modifier_shift = nn.Parameter(torch.zeros_like(self._modifier_edit.weight))
             else:
-                self._adv_edit = None
-                self.register_parameter('_adv_shift', None)
+                self._modifier_edit = None
+                self.register_parameter('_modifier_shift', None)
 
             # VERB eig-spectrum OPERATOR (Stage 1; doc/old/2026-06-20-idea-
             # decoder.md "VP parameterization"). When <verbSpectrum> is on, the
@@ -3103,7 +3103,7 @@ class LiftLayer(GrammarLayer):
             # (w=0 -> e^0=1), so the verb is a non-destructive spectral reshaping.
             # (Follow-ons: NP-conditional Q via Householder-from-NP; verb
             # identification on reverse.) Built ONLY when flagged, or when
-            # VerbLayer forces this helper, so plain LiftLayer stays flag-off
+            # VerbLayer forces this helper, so plain ChangeLayer stays flag-off
             # byte-identical.
             self._verb_spectrum = (
                 bool(force_verb_spectrum)
@@ -3122,17 +3122,17 @@ class LiftLayer(GrammarLayer):
             # Zero-width construction (parameter-free harness probe).
             self._sigma = None
             self._lex_gate = None
-            self._adverb_eig_edit = False
-            self._adv_edit = None
+            self._modifier_eig_edit = False
+            self._modifier_edit = None
             self._verb_spectrum = False
             self._verb_spec = None
-            self.register_parameter('_adv_shift', None)
+            self.register_parameter('_modifier_shift', None)
             self.register_parameter('_verb_shift', None)
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
         # Old gain-only checkpoints are the zero-translation special case.
-        for name in ('_verb_shift', '_adv_shift'):
+        for name in ('_verb_shift', '_modifier_shift'):
             value = getattr(self, name, None)
             if value is not None and prefix + name not in state_dict:
                 state_dict[prefix + name] = torch.zeros_like(value)
@@ -3143,15 +3143,15 @@ class LiftLayer(GrammarLayer):
     def _butterfly_pair_op(self, x_pair, W_node):
         """Delegate per-pair op to the internal SigmaLayer.
 
-        The cascade weight ``W_node`` is supplied by the LiftLayer's
+        The cascade weight ``W_node`` is supplied by the ChangeLayer's
         own ``butterfly_W`` (inherited from GrammarLayer); the inner
         sigma contributes only the atanh / tanh nonlinearity around
-        the einsum. This keeps LiftLayer's invertibility contract on
+        the einsum. This keeps ChangeLayer's invertibility contract on
         the cascade while reusing sigma's per-pair kernel.
         """
         if self._sigma is None:
             raise RuntimeError(
-                "LiftLayer._butterfly_pair_op: no internal sigma "
+                "ChangeLayer._butterfly_pair_op: no internal sigma "
                 "(zero-width construction).")
         return self._sigma._butterfly_pair_op(x_pair, W_node)
 
@@ -3159,7 +3159,7 @@ class LiftLayer(GrammarLayer):
         """Reverse of ``_butterfly_pair_op``; delegate to inner sigma."""
         if self._sigma is None:
             raise RuntimeError(
-                "LiftLayer._butterfly_pair_op_reverse: no internal sigma.")
+                "ChangeLayer._butterfly_pair_op_reverse: no internal sigma.")
         return self._sigma._butterfly_pair_op_reverse(y_pair, W_inv_node)
 
     def forward_butterfly(self, x):
@@ -3171,7 +3171,7 @@ class LiftLayer(GrammarLayer):
         """
         if not self.butterfly:
             raise RuntimeError(
-                "LiftLayer.forward_butterfly: butterfly mode not enabled "
+                "ChangeLayer.forward_butterfly: butterfly mode not enabled "
                 "at construction.")
         return self._butterfly_forward(x)
 
@@ -3179,7 +3179,7 @@ class LiftLayer(GrammarLayer):
         """Inverse of ``forward_butterfly``."""
         if not self.butterfly:
             raise RuntimeError(
-                "LiftLayer.reverse_butterfly: butterfly mode not enabled.")
+                "ChangeLayer.reverse_butterfly: butterfly mode not enabled.")
         return self._butterfly_reverse(y)
 
     def lexical_gate(self, code):
@@ -3219,7 +3219,7 @@ class LiftLayer(GrammarLayer):
             return self.compose_blocks(None, left, right)
         if self._sigma is None:
             raise RuntimeError(
-                "LiftLayer was constructed without operand-width "
+                "ChangeLayer was constructed without operand-width "
                 "information; cannot run forward. Pass nInput / "
                 "nOutput, or supply a wholeSpace whose subspace "
                 "carries a non-empty codebook.")
@@ -3227,24 +3227,24 @@ class LiftLayer(GrammarLayer):
         # (Alec, 2026-09-13); no split, no .when shift.
         return self._sigma.compose(left, right, gate=gate)
 
-    def apply_adverb(self, vp_content, adv_what):
-        """Multiply the verb's chart coordinates by the adverb's gain."""
-        if not getattr(self, '_adverb_eig_edit', False) or self._adv_edit is None:
+    def apply_modifier(self, vp_content, modifier_what):
+        """Multiply the verb's chart coordinates by the modifier's gain."""
+        if not getattr(self, '_modifier_eig_edit', False) or self._modifier_edit is None:
             return vp_content
-        gain = self._adverb_log_gain(adv_what)
-        shift = torch.tanh(F.linear(adv_what.to(self._adv_shift), self._adv_shift))
+        gain = self._modifier_log_gain(modifier_what)
+        shift = torch.tanh(F.linear(modifier_what.to(self._modifier_shift), self._modifier_shift))
         return self._verb_rail_transform(vp_content, gain, shift)
 
-    def _adverb_log_gain(self, adverb):
-        raw = torch.tanh(self._adv_edit(adverb.to(self._adv_edit.weight.dtype)))
+    def _modifier_log_gain(self, modifier):
+        raw = torch.tanh(self._modifier_edit(modifier.to(self._modifier_edit.weight.dtype)))
         sparse = torch.sign(raw) * (raw.abs() - .1).clamp_min(0)
         return raw + (sparse - raw).detach()
 
-    def unapply_adverb(self, value, adverb):
-        if not getattr(self, '_adverb_eig_edit', False) or self._adv_edit is None:
+    def unapply_modifier(self, value, modifier):
+        if not getattr(self, '_modifier_eig_edit', False) or self._modifier_edit is None:
             return value
-        gain = self._adverb_log_gain(adverb)
-        shift = torch.tanh(F.linear(adverb.to(self._adv_shift), self._adv_shift))
+        gain = self._modifier_log_gain(modifier)
+        shift = torch.tanh(F.linear(modifier.to(self._modifier_shift), self._modifier_shift))
         return self._verb_rail_transform(value, -gain, -shift * torch.exp(-gain))
 
     def _verb_spectrum_w(self, verb_what):
@@ -3337,7 +3337,7 @@ class LiftLayer(GrammarLayer):
             self.raise_no_inverse('a meaning action needs its operator or the candidate search')
         if self._sigma is None:
             raise RuntimeError(
-                "LiftLayer was constructed without operand-width "
+                "ChangeLayer was constructed without operand-width "
                 "information; cannot run reverse.")
         W = _active_basis_prototypes(basis)
         if W is not None and torch.is_tensor(W) and W.dim() == 2:
@@ -3362,9 +3362,9 @@ class LiftLayer(GrammarLayer):
         """Binary GrammarLayer compose entry -- routes to ``forward``."""
         return self.forward(left, right, gate=gate)
 
-    def generate(self, parent, gate=None):
+    def generate(self, parent, gate=None, **kwargs):
         """Binary GrammarLayer generate entry -- routes to ``reverse``."""
-        return self.reverse(parent, gate=gate)
+        return self.reverse(parent, gate=gate, **kwargs)
 
 
 class CompoundLayer(GrammarLayer):
@@ -3451,14 +3451,8 @@ class CompoundLayer(GrammarLayer):
         return self.reverse(parent, case_bank=case_bank)
 
 
-class VerbLayer(LiftLayer):
-    """Subtype a verb (argin1) by its object (argin2), using the object's learned gain.
-
-    The first operand is the verb head; its object is retained by reference
-    when the phrase closes. This is the catalogue §5.6 gain implementation.
-    The numerical helper also serves NP transformation experiments; that
-    use does not reverse the grammatical head and object roles.
-    """
+class VerbLayer(ChangeLayer):
+    """Give a phrase the basis of its object's meaning, preserving its gain."""
     head_role = 1
     inverse_kind = 'gain'
     witness_inverse = 'unapply_verb'
@@ -3489,7 +3483,7 @@ class VerbLayer(LiftLayer):
         # (Alec, 2026-09-13); no split, no .when shift.
         return self.apply_verb(left, right)
 
-    def reverse(self, parent, verb_what=None, basis=None, gate=None, **kwargs):
+    def reverse(self, parent, verb_what=None, basis=None, gate=None, object_what=None, **kwargs):
         """Exact inverse of :meth:`forward` -- REQUIRES the verb operand.
 
         ``unapply_verb`` strips the verb's log-eigenvalue spectrum from the
@@ -3500,7 +3494,9 @@ class VerbLayer(LiftLayer):
         dispatcher gates on ``reverse_required_kwargs``.
         """
         if self.meaning_layout is not None and parent.shape[-1] == self.meaning_layout[1]:
-            self.raise_no_inverse('the verb head alone cannot recover its object; supply the candidate search')
+            if object_what is None:
+                self.raise_no_inverse('the phrase reverse requires its object')
+            return self.reverse_blocks(parent, object_what, counts=kwargs.get('counts', (1, 1)))
         if self._sigma is None:
             raise RuntimeError(
                 "VerbLayer was constructed without operand-width "
@@ -3512,42 +3508,47 @@ class VerbLayer(LiftLayer):
         return self.unapply_verb(parent, verb_what), verb_what
 
 
-class AdverbLayer(LiftLayer):
-    """Multiplicative modifier, exactly invertible given its adverb operand."""
+class ModifierLayer(ChangeLayer):
+    """Multiplicative modifier, exactly invertible given its modifier operand."""
     inverse_kind = 'gain'
-    witness_inverse = 'unapply_adverb'
+    witness_inverse = 'unapply_modifier'
     clause_form = None
-    head_role = 1  # apply_adverb(vp_content, adv_what)
-    rule_name = "adverb"
-    predicate_identity = 'adverb'
+    head_role = 1  # apply_modifier(vp_content, modifier_what)
+    rule_name = "modifier"
+    predicate_identity = 'modifier'
     arity = 2
     invertible = True
     lossy = False
     space_role = 'CS'
     event_aware = True
-    reverse_required_kwargs = ('adverb_what',)
+    reverse_required_kwargs = ('modifier_what',)
 
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault("force_adverb_eig_edit", True)
+        kwargs.setdefault("force_modifier_eig_edit", True)
         super().__init__(*args, **kwargs)
+
+    def compose(self, left, right, gate=None):
+        # Element-wise product is the alternative to the gain.
+        # return left * right
+        return self.forward(left, right, gate=gate)
 
     def forward(self, left, right, gate=None):
         if self.meaning_layout is not None and left.shape[-1] == self.meaning_layout[1]:
             return self.compose_blocks(None, left, right)
         if self._sigma is None:
             raise RuntimeError(
-                "AdverbLayer was constructed without operand-width "
+                "ModifierLayer was constructed without operand-width "
                 "information; cannot run forward.")
         # The event is opaque here: concepts are full-width codes
         # (Alec, 2026-09-13); no split, no .when shift.
-        return self.apply_adverb(left, right)
+        return self.apply_modifier(left, right)
 
-    def reverse(self, parent, adverb_what=None, basis=None, gate=None, **kwargs):
-        if adverb_what is None:
-            self.raise_no_inverse('adverb reverse requires its modifier operand')
+    def reverse(self, parent, modifier_what=None, basis=None, gate=None, **kwargs):
+        if modifier_what is None:
+            self.raise_no_inverse('modifier reverse requires its modifier operand')
         if self.meaning_layout is not None and parent.shape[-1] == self.meaning_layout[1]:
-            return self.reverse_blocks(parent, adverb_what, counts=kwargs.get('counts', (1, 1)))
-        return self.unapply_adverb(parent, adverb_what), adverb_what
+            return self.reverse_blocks(parent, modifier_what, counts=kwargs.get('counts', (1, 1)))
+        return self.unapply_modifier(parent, modifier_what), modifier_what
 
 
 class LowerLayer(GrammarLayer):
@@ -3791,13 +3792,37 @@ class LowerUnaryLayer(MarkerUnaryLayer):
     marker_base = 'lower'
     rule_name = 'lower_unary'
     predicate_identity = 'lower'
-    determiner_mode = 'mint'
+    order_delta = -1
     reference_modes = (('argin1', 'particular'),)
+
+
+class LiftLayer(MarkerUnaryLayer):
+    """Raise one order through the inverse of lower's absent-marker kernel."""
+    marker_base = 'lower'
+    rule_name = predicate_identity = 'lift'
+    order_delta = 1
+    meaning_inverse = True
+
+    def compose(self, value):
+        if self.meaning_layout is not None and value.shape[-1] == self.meaning_layout[1]:
+            return self.compose_blocks(None, value)
+        return super().reverse(value)
+
+    forward = compose
+
+    def reverse(self, parent):
+        if self.meaning_layout is not None and parent.shape[-1] == self.meaning_layout[1]:
+            width = self.meaning_layout[0]
+            return torch.cat((parent[..., :width], self.meaning_kernel(parent[..., width:])), -1)
+        return super().compose(parent)
+
+    generate = reverse
 
 
 class DefiniteUnaryLayer(LowerUnaryLayer):
     rule_name = 'definite_unary'
     determiner_mode = 'bind'
+    order_delta = 0
 
 
 class PrepositionUnaryLayer(MarkerUnaryLayer):
@@ -3814,69 +3839,97 @@ class SurfaceUnaryLayer(MarkerUnaryLayer):
     semantic_operand = 0
 
 
-class CompoundUnaryLayer(MarkerUnaryLayer):
-    """The same case selection with the unfiltered head as its implicit object."""
-    marker_base = 'compound'
-    rule_name = 'compound_unary'
-    predicate_identity = 'compound'
-    case_head_role = 1
-    inverse_kind = 'case_search'
-    invertible = False
-    lossy = True
+class MarkerLayer(GrammarLayer):
+    """One grammatical identity, with a fixed family of learned candidates."""
+    rule_name = predicate_identity = 'marker'
+    arity = 1
+    head_role = 1
+    inverse_kind = 'unary'
+    invertible = True
+    lossy = False
+    space_role = 'CS'
+    preserves_form = True
 
-    def __init__(self, base):
-        super().__init__(base)
+    def __init__(self):
+        super().__init__()
         if self.meaning_layout is None:
-            self.inverse_kind, self.invertible, self.lossy = 'identity', True, False
+            raise ValueError('marker requires declared form and meaning blocks')
+        count = int(TheXMLConfig.space('ConceptualSpace', 'markerKernels', 8))
+        hidden = int(TheXMLConfig.space('ConceptualSpace', 'markerHidden', 64))
+        pairs = int(TheXMLConfig.space('ConceptualSpace', 'markerLayers', 2))
+        if count <= 0:
+            raise ValueError('markerKernels must be positive')
+        self.candidates = nn.ModuleList(_MarkerKernel(self.meaning_layout, index, hidden, pairs)
+                                        for index in range(count))
 
-    def compose(self, value, *, case_view=None):
-        if self.meaning_layout is None:
-            return value
-        return self.compose_blocks(None, value, case_view=case_view)
+    def compose(self, value):
+        raise ValueError('marker requires a kernel selected by its grammar chooser')
+
+    forward = reverse = generate = compose
+
+
+class _MarkerKernel(GrammarLayer):
+    """The selected member; its unchanged form supplies its inverse's shift."""
+    rule_name = predicate_identity = 'marker'
+    arity = 1
+    head_role = 1
+    inverse_kind = 'unary'
+    invertible = True
+    lossy = False
+    space_role = 'CS'
+    routing_kind = 'structural'
+    preserves_form = True
+
+    def __init__(self, layout, index, hidden, pairs):
+        super().__init__(layout[1], layout[1])
+        from SigmaPiStack import SigmaPiStack
+        self.meaning_layout = layout
+        self.kernel_index = index
+        self.stack = SigmaPiStack(layout[0], 2*(layout[1]-layout[0]),
+                                 hidden=hidden, pairs=pairs, seed=index)
+
+    def content_operand(self, value):
+        return value
+
+    def transform(self, value, *, inverse=False):
+        from MeaningKernels import exact_initial
+        width = self.meaning_layout[0]
+        form, meaning = value[..., :width], value[..., width:]
+        raise_by, lower_by = self.stack(form).chunk(2, -1)
+        shift = raise_by-lower_by
+        result = cube_unchart(cube_chart(meaning) + (-shift if inverse else shift))
+        # An untrained member is exactly identity, including boundary values.
+        result = exact_initial(meaning, result, shift == 0)
+        return torch.cat((form, result), -1)
+
+    def compose(self, value):
+        return self.transform(value)
 
     forward = compose
 
-    def select_view(self, value, view):
-        width = self.meaning_layout[0]
-        object_value = (torch.nn.functional.pad(view.origin(meaning_start=width), (width, 0))
-                        if view.reference is None else view.reference)
-        return self.base.select_view(object_value, view)
-
-    def compose_case_meaning(self, value, *, view=None):
-        if view is None:
-            return value
-        selected = self.select_view(value, view)
-        folded = selected.fold(meaning_start=self.meaning_layout[0])
-        known = (view.weights > 0).any(-1).any(-1)
-        # A chosen unary face can carry one position while its selected case
-        # view is per stream. Restore that axis; never broadcast B against B.
-        while folded.ndim < value.ndim:
-            folded = folded.unsqueeze(-2)
-            known = known.unsqueeze(-1)
-        return torch.where(known[..., None], folded, value)
+    def compose_blocks(self, kernel, *operands, **kwargs):
+        return self.compose(*operands)
 
     def compose_from_grammar_context(self, operands, *, context):
-        from FormCentroids import selected
-        return self.compose_blocks(self.compose, *operands,
-            case_view=context.case_unary_view,
-            whole=selected(context.form_context, 1, operands[0], self))
+        return self.compose(*operands)
 
-    def reverse(self, parent):
-        if self.meaning_layout is None:
-            return parent
-        self.raise_no_inverse('case selection requires a candidate search')
+    def reverse(self, value):
+        return self.transform(value, inverse=True)
 
     generate = reverse
 
+    def generate_from_grammar_context(self, result, *, context):
+        return self.generate(result)
 
-class TransposeLayer(GrammarLayer):
+
+class SwapLayer(GrammarLayer):
     """Exact 2 -> 2 rewrite of the two newest constituents."""
-    rule_name = 'transpose'
-    predicate_identity = 'transpose'
+    rule_name = 'swap'
+    predicate_identity = 'swap'
     arity = 2
     preserves_pair = True
-    operation_identity = inverse_identity = 'transpose'
-    inverse_kind = 'transpose'
+    operation_identity = inverse_identity = 'swap'
+    inverse_kind = 'swap'
     invertible = True
     lossy = False
     space_role = 'CS'
@@ -3958,6 +4011,32 @@ class _SearchedBinaryLayer(GrammarLayer):
                  left_priming=None, right_priming=None):
         return self.reverse(parent, basis=basis, left_rows=left_rows, right_rows=right_rows,
                             left_priming=left_priming, right_priming=right_priming)
+
+
+class ChartArithmeticLayer(_SearchedBinaryLayer):
+    """Arithmetic on concept points; every coordinate stays in the unit chart."""
+    space_role = 'CS'
+    reads_activation = False
+
+    def kernel(self, left, right):
+        from MeaningCodes import compose
+        return compose(self.rule_name, left, right)
+
+
+class AddLayer(ChartArithmeticLayer):
+    rule_name = meaning_rule = predicate_identity = 'add'
+
+
+class SubtractLayer(ChartArithmeticLayer):
+    rule_name = meaning_rule = predicate_identity = 'subtract'
+
+
+class MultiplyLayer(ChartArithmeticLayer):
+    rule_name = meaning_rule = predicate_identity = 'multiply'
+
+
+class DivideLayer(ChartArithmeticLayer):
+    rule_name = meaning_rule = predicate_identity = 'divide'
 
 
 class ConjunctionLayer(_SearchedBinaryLayer):
@@ -4537,20 +4616,17 @@ class BracketOperation(GrammarLayer):
         raise RuntimeError('bracket operations have no generate face')
 
 
-class DivideLayer(BracketOperation):
-    bracket_action = 0
+class FocusLayer(BracketOperation):
+    bracket_action = (0, 1)
 
 
-class DescendLayer(BracketOperation):
-    bracket_action = 1
-
-
-class GlossLayer(BracketOperation):
+class MintLayer(BracketOperation):
     bracket_action = 2
 
 
 GRAMMAR_LAYER_CLASSES = {
-    'divide': DivideLayer, 'descend': DescendLayer, 'gloss': GlossLayer,
+    'focus': FocusLayer, 'mint': MintLayer,
+    'add': AddLayer, 'subtract': SubtractLayer, 'multiply': MultiplyLayer, 'divide': DivideLayer,
     'interpret':    InterpretLayer,
     'sign':         SignLayer,
     'bind':         BindLayer,
@@ -4561,17 +4637,18 @@ GRAMMAR_LAYER_CLASSES = {
     'synthesize':   SynthesizeLayer,
     'sum':          SumLayer,
     'product':      ProductLayer,
-    'lift':         LiftLayer,
+    'change':         ChangeLayer,
+    'lift':          LiftLayer,
     'verb':         VerbLayer,
     'compound':     CompoundLayer,
-    'adverb':       AdverbLayer,
+    'modifier':       ModifierLayer,
     'lower':        LowerLayer,
-    'transpose': TransposeLayer,
+    'swap': SwapLayer,
     'lower_unary': LowerUnaryLayer,
     'definite_unary': DefiniteUnaryLayer,
     'preposition_unary': PrepositionUnaryLayer,
     'surface_unary': SurfaceUnaryLayer,
-    'compound_unary': CompoundUnaryLayer,
+    'marker':       MarkerLayer,
     'surface':      SurfaceLayer,
     'preposition':  PrepositionLayer,
     'conjunction':  ConjunctionLayer,
@@ -4705,11 +4782,11 @@ _OPERATOR_SURFACE_SCHEMAS = {
     'whole':        T3_BINARY_DIRECTIONAL,
     'queryPart':    T3_BINARY_DIRECTIONAL,
     'assertPart':   T3_BINARY_DIRECTIONAL,
-    # lift / lower / verb / adverb: T3/T4 -- modifier marker or bare; the
+    # lift / lower / verb / modifier: T3/T4 -- modifier marker or bare; the
     # bare (T4) default is kept so they round-trip without a marker.
-    'lift':         T4_BINARY_JUXTAPOSE,
+    'change':         T4_BINARY_JUXTAPOSE,
     'verb':         T4_BINARY_JUXTAPOSE,
-    'adverb':       T4_BINARY_JUXTAPOSE,
+    'modifier':       T4_BINARY_JUXTAPOSE,
     'lower':        T4_BINARY_JUXTAPOSE,
     # PREPOSITION (T3): a learned PRE marker (that / to / in / because /
     # when) heads the phrase; the marker does NOT select the op (it is
@@ -4753,7 +4830,7 @@ def _bind_moved_ops_singletons():
         ('disjunction', Ops._disjunction_kernel, DisjunctionLayer),
         ('min', torch.minimum, MinLayer),
         ('max', torch.maximum, MaxLayer),
-        ('lift',        Ops._lift_kernel,        LiftLayer),
+        ('change',        Ops._lift_kernel,        ChangeLayer),
         ('lower',       Ops._lower_kernel,       LowerLayer),
         ('part',        Ops._part_kernel,        PartLayer),
     )
@@ -5650,7 +5727,7 @@ class LanguageLayer(Layer):
 
         # Reverse only when a FAITHFUL inverse is available. Two ways an op
         # opts out: (1) it declares ``reverse_dispatchable = False`` because
-        # no inverse exists at all (a lossy op, e.g. AdverbLayer); (2) it
+        # no inverse exists at all (a lossy op, e.g. ModifierLayer); (2) it
         # declares ``reverse_required_kwargs`` naming operands the reverse
         # path could not recover (VerbLayer needs ``verb_what``). Either way
         # the rule RAISES the inventory error (fabricating a split would
@@ -6417,7 +6494,7 @@ class MLPTransformChooser(TransformChooser):
             what_ctx, batch=B, device=x_score.device, dtype=x_score.dtype)
         if what_bias is not None:
             copy_score = copy_score + what_bias[:, None, :self.n_copy]
-            if reduce_score.shape[-1] > 0:
+            if reduce_score.shape[1] > 0 and reduce_score.shape[-1] > 0:
                 reduce_score = reduce_score + what_bias.index_select(-1, indices)[:, None]
         return copy_score, reduce_score
 
@@ -6609,7 +6686,8 @@ class OperationSelectionLayer(nn.Module):
 
     @staticmethod
     def _distinct_departures(x, depth, candidates, logits, reference, n_binary, n_unary,
-                             r_reduce, r_apply, stop_exact=None, reference_ids=None, pair_rewrites=(), field_binds=()):
+                             r_reduce, r_apply, stop_exact=None, reference_ids=None, pair_rewrites=(), field_binds=(),
+                             order_deltas=None):
         """One representative of each distinct numerical next state.
 
         Exact equality is the value criterion; no tolerance, target, or
@@ -6629,11 +6707,15 @@ class OperationSelectionLayer(nn.Module):
         unary = (ids >= n_binary) & (ids < n_binary + n_unary)
         position = torch.where(binary | transpose, ids // max(1, r_reduce),
             (ids - n_binary) // max(1, r_apply)).clamp(0, N - 1)
+        order_state = (None if order_deltas is None else
+            (torch.arange(N, device=x.device)[None] == position[:, None]) * order_deltas[:, None])
         if A > 128 and not any(pair_rewrites) and not any(field_binds) and not torch.compiler.is_compiling() and not bool(torch.isnan(x).any()):
             counts, category, positions, payload, unchanged = OperationSelectionLayer._compact_departure_groups(
                 x, depth, candidates, binary, unary, position)
             if reference_ids is not None:
                 unchanged = unchanged & (reference_ids == -1).all(-1)
+            if order_state is not None:
+                unchanged = unchanged & ~order_state.any(-1)[None]
             allowed = torch.isfinite(logits) & ~(unary[None] & unchanged)
             if stop_exact is not None:
                 allowed &= ~((ids == A-1)[None] & stop_exact[:, None])
@@ -6644,6 +6726,8 @@ class OperationSelectionLayer(nn.Module):
                         positions[row, :, None], content_group[:, None])
                 if reference_ids is not None:
                     keys += (reference_ids[row],)
+                if order_state is not None:
+                    keys += (order_state,)
                 _, group = torch.unique(torch.cat(keys, -1), dim=0, return_inverse=True)
                 permitted = allowed[row] & (group != group[reference[row].clamp(0, A-1)])
                 first = torch.full_like(ids, A).scatter_reduce(0, group,
@@ -6669,6 +6753,8 @@ class OperationSelectionLayer(nn.Module):
         unary = unary | field
         allowed = torch.isfinite(logits)
         unchanged = (states == x[:, None]).all(-1).all(-1)
+        if order_state is not None:
+            unchanged = unchanged & ~order_state.any(-1)[None]
         if reference_ids is not None:
             # Equal content can denote two different individuals. Reference
             # changes remain choices even when an identity unary copies x.
@@ -6680,6 +6766,8 @@ class OperationSelectionLayer(nn.Module):
         ref_state = states.gather(1, reference[:, None, None, None].expand(B, 1, N, D))
         ref_count = counts.gather(1, reference[:, None])
         same_reference = (states == ref_state).all(-1).all(-1) & (counts == ref_count)
+        if order_state is not None:
+            same_reference &= (order_state[None] == order_state[reference][:, None]).all(-1)
         if reference_ids is not None:
             ref_ids = reference_ids.gather(1, reference[:, None, None].expand(B, 1, 2))
             same_reference = same_reference & (reference_ids == ref_ids).all(-1)
@@ -6693,6 +6781,8 @@ class OperationSelectionLayer(nn.Module):
                 _, content_group = torch.unique(states[row].flatten(1), dim=0,
                                                  return_inverse=True)
                 keys = (content_group[:, None], counts[row, :, None])
+                if order_state is not None:
+                    keys += (order_state,)
                 if reference_ids is not None:
                     keys += (reference_ids[row],)
                 _, group = torch.unique(torch.cat(keys, -1), dim=0, return_inverse=True)
@@ -6704,6 +6794,8 @@ class OperationSelectionLayer(nn.Module):
         for first in range(0, A, 16):
             same = (states[:, first:first + 16, None] == states[:, None]).all(-1).all(-1)
             same = same & (counts[:, first:first + 16, None] == counts[:, None])
+            if order_state is not None:
+                same &= (order_state[first:first+16, None] == order_state[None]).all(-1)[None]
             if reference_ids is not None:
                 same = same & (reference_ids[:, first:first + 16, None] == reference_ids[:, None]).all(-1)
             earlier = ids[None] < ids[first:first + 16, None]
@@ -7000,8 +7092,15 @@ class OperationSelectionLayer(nn.Module):
             reference_ids = torch.cat((reference_data['binary_choices'].reshape(B, nb, 2),
                 reference_data['unary_choices'].reshape(B, nu, 2),
                 torch.full((B, 1, 2), -1, device=x.device, dtype=torch.long)), 1)
+        deltas = tuple(int(getattr(getattr(op, 'gl', op), 'order_delta', 0) or 0)
+                       for op in self.unary_ops)
+        order_deltas = (torch.cat((torch.zeros(nb, device=x.device, dtype=torch.long),
+            torch.tensor(deltas, device=x.device).index_select(0, ui).repeat(N),
+            torch.zeros(1, device=x.device, dtype=torch.long))) if any(deltas) else None)
         departure_eligible = self._distinct_departures(x, depth, candidates, logits, reference,
-            nb, nu, r_reduce, r_apply, stop_exact=stop_exact, reference_ids=reference_ids, pair_rewrites=pair_rewrites, field_binds=reference_data.get('binary_bind',()) if reference_data is not None else ())
+            nb, nu, r_reduce, r_apply, stop_exact=stop_exact, reference_ids=reference_ids,
+            pair_rewrites=pair_rewrites, field_binds=reference_data.get('binary_bind',()) if reference_data is not None else (),
+            order_deltas=order_deltas)
         action, probabilities, has_choice, proposal_inverse = self.select_logits(logits, structural=flags,
             masked_action=masked_action,replay_action=replay_action,sample=sample, departure_eligible=departure_eligible,
             alternative_logits=alternative_logits, return_proposal=True)
@@ -7874,6 +7973,9 @@ def build_space_syntactic_layer(space, word_space, *, space_role,
             # one, the host space's existing instance should already be
             # in builtin_layers; if it isn't, skip rather than fail.
             continue
+    change, verb = host_layers.get('change'), host_layers.get('verb')
+    if change is not None and verb is not None and hasattr(verb, 'meaning_basis'):
+        change.meaning_action.bind_basis(verb.meaning_basis)
     layer = SyntacticLayer(
         space_role=space_role, word_space=word_space,
         host_layers=host_layers, host_space=space)
@@ -8470,7 +8572,7 @@ class SymbolSubSpace(SubSpace):
 
         # Back-references to the three Spaces. Used post-2026-05-12 by
         # the grammar's lift/lower wiring to pass perceptual / conceptual
-        # references to LiftLayer / LowerLayer at construction time, so
+        # references to ChangeLayer / LowerLayer at construction time, so
         # those layers can route the substrate sigma/pi after gating.
         # ``object.__setattr__`` bypasses nn.Module's submodule
         # registration so we don't create cycles (each Space is already
@@ -10028,7 +10130,7 @@ class SymbolSubSpace(SubSpace):
         """L1 penalty on every per-rule ``raw_gate`` Parameter owned by
         this SymbolSpace's per-space SyntacticLayers.
 
-        Post-2026-05-12: LiftLayer and LowerLayer no longer carry a
+        Post-2026-05-12: ChangeLayer and LowerLayer no longer carry a
         learnable ``raw_gate`` -- VP's codebook activation now supplies
         the gate via elementwise multiplication. So this loss is a
         no-op for the rewritten lift/lower layers. The method is kept
@@ -10045,14 +10147,14 @@ class SymbolSubSpace(SubSpace):
             if raw is not None and torch.is_tensor(raw):
                 term = torch.tanh(raw).abs().sum()
                 total = term if total is None else total + term
-            # Adverb eigenvalue edit: an L1 pull on the per-adverb edit
+            # Modifier eigenvalue edit: an L1 pull on the per-modifier edit
             # projection encourages a sparse expression over the eigs (the
             # primary sparsity is the in-forward soft-threshold; this is the
-            # additional training pressure). Only present when <adverbEigEdit>
+            # additional training pressure). Only present when <modifierEigEdit>
             # built it, so this is naturally gated.
-            adv_edit = getattr(layer, '_adv_edit', None)
-            if adv_edit is not None and hasattr(adv_edit, 'weight'):
-                term = torch.tanh(adv_edit.weight).abs().sum()
+            modifier_edit = getattr(layer, '_modifier_edit', None)
+            if modifier_edit is not None and hasattr(modifier_edit, 'weight'):
+                term = torch.tanh(modifier_edit.weight).abs().sum()
                 total = term if total is None else total + term
         if total is None:
             return None
@@ -10158,8 +10260,9 @@ class SymbolSubSpace(SubSpace):
                 space_role, _dispatch_method_name_for_rule(rule))
             if layer is None:
                 continue
-            by_space_role_arity.setdefault((space_role, arity), []).append(
-                (rule_id, layer, rule_name))
+            for candidate in getattr(layer, 'candidates', (layer,)):
+                by_space_role_arity.setdefault((space_role, arity), []).append(
+                    (rule_id, candidate, rule_name))
 
         # plan \xa76: collapse CS and SS into a single reduction space_role in CS.
         # Instead of attaching one layer per (space_role, arity), aggregate every
@@ -10217,7 +10320,8 @@ class SymbolSubSpace(SubSpace):
                                      'field_action', getattr(GRAMMAR_LAYER_CLASSES.get(rule.method_name), 'bracket_action', None))
                              for rule in TheGrammar.rules_upward)
         router.operation_layer.attention_operations = tuple(dict.fromkeys(
-            value for value in declarations if value is not None))
+            value for declaration in declarations if declaration is not None
+            for value in (declaration if isinstance(declaration, tuple) else (declaration,))))
 
         # plan \xa76: plumb the conceptual-reduction round floor onto the
         # router. bindingDepth lives on the model (Models.py), not on
@@ -10446,7 +10550,7 @@ class SymbolSubSpace(SubSpace):
                 builtin_layers['sigma'] = sigma_percept
                 builtin_layers['pi'] = sigma_percept  # legacy alias
             # Stage 4 (2026-05-27 doc/plans/2026-05-26-two-loop-pi-
-            # sigma-substrate.md): LiftLayer / LowerLayer are binary
+            # sigma-substrate.md): ChangeLayer / LowerLayer are binary
             # GrammarLayer ops at the CS space_role (STM-pair composition).
             # When the active grammar declares them inside <concepts>
             # (rule.space_role == 'CS'), build them here so they bind at the
@@ -10470,9 +10574,9 @@ class SymbolSubSpace(SubSpace):
             _cs_sub = getattr(conceptualSpace, 'subspace', None)
             concept_width = int(getattr(_cs_sub, 'muxedSize', 0)
                                 or getattr(_cs_sub, 'nWhat', 0) or 0)
-            if 'lift' in grammar_C_methods:
-                from Layers import LiftLayer
-                builtin_layers['lift'] = LiftLayer(
+            if 'change' in grammar_C_methods:
+                from Layers import ChangeLayer
+                builtin_layers['change'] = ChangeLayer(
                     nInput=concept_width, nOutput=concept_width,
                     wholeSpace=wholeSpace,
                     conceptualSpace=conceptualSpace)
@@ -10481,8 +10585,8 @@ class SymbolSubSpace(SubSpace):
                     nInput=concept_width, nOutput=concept_width,
                     wholeSpace=wholeSpace,
                     conceptualSpace=conceptualSpace)
-            if 'adverb' in grammar_C_methods:
-                builtin_layers['adverb'] = AdverbLayer(
+            if 'modifier' in grammar_C_methods:
+                builtin_layers['modifier'] = ModifierLayer(
                     nInput=concept_width, nOutput=concept_width,
                     wholeSpace=wholeSpace,
                     conceptualSpace=conceptualSpace)
@@ -10516,7 +10620,7 @@ class SymbolSubSpace(SubSpace):
             # ``Fusion(S, S)`` / ``Contiguous(S)`` should migrate to
             # ``disjunction(S, S)``.
             # Lift / Lower wiring: per Stage 4 of doc/plans/
-            # 2026-05-26-two-loop-pi-sigma-substrate.md, LiftLayer
+            # 2026-05-26-two-loop-pi-sigma-substrate.md, ChangeLayer
             # and LowerLayer are first-class binary GrammarLayer ops
             # at the CS space_role with their own internal SigmaLayer /
             # PiLayer (no substrate borrow).  This SS-space_role branch is
@@ -10543,9 +10647,9 @@ class SymbolSubSpace(SubSpace):
             # ``cls()`` below would mis-build them. They are wired first
             # and the loop's ``if name in builtin_layers`` guard skips
             # them.
-            if 'lift' in grammar_S_methods:
-                from Layers import LiftLayer
-                builtin_layers['lift'] = LiftLayer(
+            if 'change' in grammar_S_methods:
+                from Layers import ChangeLayer
+                builtin_layers['change'] = ChangeLayer(
                     nInput=concept_width, nOutput=concept_width,
                     wholeSpace=space,
                     conceptualSpace=conceptualSpace)
@@ -10554,8 +10658,8 @@ class SymbolSubSpace(SubSpace):
                     nInput=concept_width, nOutput=concept_width,
                     wholeSpace=space,
                     conceptualSpace=conceptualSpace)
-            if 'adverb' in grammar_S_methods:
-                builtin_layers['adverb'] = AdverbLayer(
+            if 'modifier' in grammar_S_methods:
+                builtin_layers['modifier'] = ModifierLayer(
                     nInput=concept_width, nOutput=concept_width,
                     wholeSpace=space,
                     conceptualSpace=conceptualSpace)
@@ -11124,7 +11228,7 @@ class LanguageSpace(nn.Module):
         # a later global grammar reconfiguration cannot relabel an already
         # completed sentence.  This is metadata only: the SymbolSubSpace
         # language layer remains the sole owner of compose parameters.
-        def snapshot_compose_rules(rule_ids):
+        def snapshot_compose_rules(rule_ids, arity):
             rules = tuple(TheGrammar.rules_upward)
             # A non-output LanguageSpace can legitimately be assembled from a
             # small chooser harness with synthetic local rule IDs.  It has no
@@ -11134,12 +11238,15 @@ class LanguageSpace(nn.Module):
             # actual dispatcher cannot resolve one.
             if any(rule_id < 0 or rule_id >= len(rules) for rule_id in rule_ids):
                 return ()
-            return tuple(rules[rule_id] for rule_id in rule_ids)
+            operations = layer.operation_layer
+            ops = operations.ops if arity == 2 else operations.unary_ops
+            return tuple(rules[rule_id]._replace(kernel_index=getattr(getattr(op, 'gl', op), 'kernel_index', None))
+                         for rule_id, op in zip(rule_ids, ops))
 
         object.__setattr__(
-            self, "_compose_unary_rules", snapshot_compose_rules(unary_ids))
+            self, "_compose_unary_rules", snapshot_compose_rules(unary_ids, 1))
         object.__setattr__(
-            self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
+            self, "_compose_binary_rules", snapshot_compose_rules(binary_ids, 2))
         from ClauseScope import ClauseScope
         self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
         from ChunkJournal import ChunkJournal
@@ -11225,7 +11332,9 @@ class LanguageSpace(nn.Module):
                 raise ValueError(f"unresolved generate rule: {rule.canonical}")
             resolved[identity] = op
             if not getattr(op, 'preserves_pair', False):
-                catalog[arity].append((rule.space_role, offset, rule, op))
+                for candidate in getattr(op, 'candidates', (op,)):
+                    selected_rule = rule._replace(kernel_index=getattr(candidate, 'kernel_index', None))
+                    catalog[arity].append((rule.space_role, offset, selected_rule, candidate))
         # A compose-only grammar declares the same operators' generate
         # faces implicitly. It must still reconstruct, including numeric
         # answer configurations with no output loop. No recorded choice is
@@ -11243,7 +11352,8 @@ class LanguageSpace(nn.Module):
                     identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
                     resolved[identity] = op
                     if not getattr(op, 'preserves_pair', False):
-                        catalog[arity].append((rule.space_role, rid-len(TheGrammar.rules_upward), rule, op))
+                        selected_rule = rule._replace(kernel_index=getattr(op, 'kernel_index', None))
+                        catalog[arity].append((rule.space_role, rid-len(TheGrammar.rules_upward), selected_rule, op))
         # Non-owning views: no copied weights, state-dict aliases, parameter
         # adoption or RNG consumption. The host keeps its checkpoint identity.
         object.__setattr__(self, "_generation_resolved", resolved)
@@ -11328,6 +11438,8 @@ class LanguageSpace(nn.Module):
         import hashlib
         key = repr((rule.space_role, _dispatch_method_name_for_rule(rule),
                     arity, rule.width_min, rule.width_max))
+        if getattr(rule, 'kernel_index', None) is not None:
+            key += repr(('kernel', rule.kernel_index))
         # Definite/kind aliases share lower's numerical host, but express
         # different identity operations. Keep the established mint key for
         # old checkpoints; new semantic alternatives receive separate rows.
@@ -11451,7 +11563,7 @@ class LanguageSpace(nn.Module):
         layer = self._tree_layer(2)
         for wrapped in (() if layer is None else layer.ops):
             op = getattr(wrapped, 'gl', wrapped)
-            if op.rule_name == 'lift':
+            if op.rule_name == 'change':
                 return getattr(op, 'meaning_action', None)
         return None
 
@@ -11459,8 +11571,16 @@ class LanguageSpace(nn.Module):
         layer = self._tree_layer(2)
         for wrapped in (() if layer is None else layer.ops):
             op = getattr(wrapped, 'gl', wrapped)
-            if op.rule_name == 'adverb':
+            if op.rule_name == 'modifier':
                 return getattr(op, 'meaning_action', None)
+        return None
+
+    def phrase_basis(self):
+        layer = self._tree_layer(2)
+        for wrapped in (() if layer is None else layer.ops):
+            op = getattr(wrapped, 'gl', wrapped)
+            if op.rule_name == 'verb':
+                return getattr(op, 'meaning_basis', None)
         return None
 
     def stage_verb_groups(self, resolver, words, like):
@@ -11578,8 +11698,7 @@ class LanguageSpace(nn.Module):
             from dataclasses import replace
             import CaseFlow
             structural_context = replace(structural_context,
-                case_view=CaseFlow.view(case_state, self._reference_bank.cases, source[:, 1:]),
-                case_unary_view=CaseFlow.view(case_state, self._reference_bank.cases, source))
+                case_view=CaseFlow.view(case_state, self._reference_bank.cases, source[:, 1:]))
         form_bank = getattr(self, '_form_wholes', None)
         if structural_context is not None and form_bank is not None and form_spans is not None:
             from dataclasses import replace
@@ -11762,7 +11881,7 @@ class LanguageSpace(nn.Module):
                 continue
             if order < 0:
                 continue
-            if order == 1:
+            if order == 1 and mode != 'particular':
                 # The token's identity is its location. Its derivation still
                 # names the admitted kind; lowering changes order, not that
                 # source reference. The close resolves the separate request.
@@ -12314,8 +12433,9 @@ class LanguageSpace(nn.Module):
             if basis is None and left_basis is None and right_basis is None:
                 has_kernel = getattr(op, 'meaning_kernel', None) is not None
                 has_action = getattr(op, 'meaning_action', None) is not None
+                has_basis = getattr(op, 'meaning_basis', None) is not None
                 if (reference is not None and not callable(getattr(op, 'compose_case_meaning', None))
-                        and (has_kernel or has_action or op.meaning_rule == 'sum')):
+                        and (has_kernel or has_action or has_basis or op.meaning_rule == 'sum')):
                     right_known = has_action or op.meaning_head_role == 0
                     from Generative import candidate_action_context
                     left, right = op.reverse_blocks(parent, ref, reference_right=right_known,
@@ -12635,7 +12755,8 @@ class LanguageSpace(nn.Module):
             hard_left, hard_right = recover_lanes(getattr(op, 'meaning_rule', None),
                 parent, hard_left, hard_right, form_width)
             if (not callable(getattr(op, 'compose_case_meaning', None)) and
-                    (getattr(op, 'meaning_kernel', None) is not None or getattr(op, 'meaning_action', None) is not None)):
+                    (getattr(op, 'meaning_kernel', None) is not None or getattr(op, 'meaning_action', None) is not None
+                     or getattr(op, 'meaning_basis', None) is not None)):
                 fraction, selected_whole = fit(parent[..., :form_width], hard_left, hard_right, whole_bank)
                 right_known = op.meaning_head_role == 0 or getattr(op, 'meaning_action', None) is not None
                 left, right = op.reverse_blocks(parent, hard_right if right_known else hard_left,
@@ -12794,21 +12915,15 @@ class LanguageSpace(nn.Module):
             content = op.content_operand(x) if hasattr(op, 'content_operand') else x
             if not getattr(op, 'reverse_dispatchable', True):
                 continue
-            if (getattr(op, 'meaning_layout', None) is not None
-                    and callable(getattr(op, 'compose_case_meaning', None))):
-                if case_bank is not None:
-                    from CaseSelection import inverse_unary
-                    value, found = inverse_unary(case_bank, content, op, whole_bank=whole_bank)
-                    result = torch.where((selected & found)[:, None], value, result)
-                    available = available | (selected & found)
-                continue
             source = content
-            if whole_bank is not None and getattr(op, 'meaning_layout', None) is not None:
+            if (whole_bank is not None and getattr(op, 'meaning_layout', None) is not None
+                    and not getattr(op, 'preserves_form', False)):
                 from FormCentroids import unary
                 source = unary(content, whole_bank)
             if getattr(op, 'meaning_layout', None) is not None and x.shape[-1] == op.meaning_layout[1] and getattr(op, 'meaning_kernel', None) is not None:
                 width = op.meaning_layout[0]
-                value = torch.cat((source[..., :width], op.meaning_kernel(source[..., width:], inverse=True)), -1)
+                value = torch.cat((source[..., :width], op.meaning_kernel(source[..., width:],
+                    inverse=not getattr(op, 'meaning_inverse', False))), -1)
             else:
                 value = op.generate(source)
             result = torch.where(selected[:, None], value, result)

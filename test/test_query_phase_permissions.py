@@ -152,7 +152,7 @@ def test_nested_resolution_cannot_override_an_active_sentence_phase(monkeypatch)
     monkeypatch.setattr(
         model,
         "_forward_per_stage",
-        lambda *args: model.resolveAnswer(_understanding(True), What.inference(0)),
+        lambda *args, **kwargs: model.resolveAnswer(_understanding(True), What.inference(0)),
     )
     with pytest.raises(RuntimeError, match="sentence|boundary|query"):
         model.forward(torch.ones(1, 1, 8))
@@ -174,7 +174,7 @@ def test_legacy_query_entries_are_masked_inside_forward(monkeypatch, entry):
     model.reasoning_iterations = model.attention_budget = 0
     assert getattr(model, entry)(None) is None
     monkeypatch.setattr(
-        model, "_forward_per_stage", lambda *args: getattr(model, entry)(None)
+        model, "_forward_per_stage", lambda *args, **kwargs: getattr(model, entry)(None)
     )
     with pytest.raises(RuntimeError, match="sentence|query|queries"):
         model.forward(torch.zeros(1, 1, 8))
@@ -314,7 +314,7 @@ def test_nested_sentence_restores_the_outer_completed_boundary(monkeypatch):
     model = _model()
     calls = []
 
-    def forward(*args):
+    def forward(*args, **kwargs):
         calls.append("forward")
         model._assert_query_boundary(0)
 
@@ -375,7 +375,7 @@ def test_compiled_input_cannot_execute_queries_during_trace_or_eager_island(
         model.conceptualSpace, model=model,
         boundary=model._assert_query_boundary)
 
-    def body(value):
+    def body(value, **kwargs):
         signature.invoke(context, torch.ones(8), torch.ones(8))
         return value.sin()
 

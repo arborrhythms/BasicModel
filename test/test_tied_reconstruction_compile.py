@@ -114,7 +114,7 @@ def _supplied_inverse_fixture(model, monkeypatch):
     """
     language = model.languageSpace
     binary = language._tree_layer(2)
-    index = list(binary.op_names).index('lift')
+    index = list(binary.op_names).index('change')
     op = getattr(binary.ops[index], 'gl', binary.ops[index])
     monkeypatch.setattr(op, 'percept_band', None)  # numerical content only
     width = int(model.conceptualSpace.stm.concept_dim)

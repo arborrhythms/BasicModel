@@ -24,6 +24,8 @@ def named_scalar_model(tmp_path, monkeypatch, eager_reading):
     try:
         yield model, objects
     finally:
+        from assessment_support import record
+        record(model, dict(word='alpha', words=['alpha', 'beta', 'gamma']), scalar=1.)
         model.End()
         model.symbolSpace.soft_reset()
 

@@ -29,7 +29,7 @@ from test_basicmodel import _populate_test_config
 _D = 8
 
 
-def _cs(nS=64):
+def _cs(nS=64, *, order_limit=None, order_reservations=()):
     nP = 4
     _populate_test_config(
         inputDim=_D, perceptDim=_D, conceptDim=_D, symbolDim=_D,
@@ -37,7 +37,8 @@ def _cs(nS=64):
         nInput=nP, nPercepts=nP, nConcepts=nS, nSymbols=nS,
         nWords=nS, nOutput=nS, nWhere=0, nWhen=0,
     )
-    return with_definitions(Spaces.ConceptualSpace([nP, _D], [nS, _D], [nS, _D]))
+    return with_definitions(Spaces.ConceptualSpace([nP, _D], [nS, _D], [nS, _D],
+        order_limit=order_limit, order_reservations=order_reservations))
 
 
 def test_new_symbol_starts_empty():

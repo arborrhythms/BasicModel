@@ -35,11 +35,11 @@
     "whole"
   ],
   "rules": {
-    "adverb": "adverb",
+    "adverb": "modifier",
     "ask": "ask",
     "bind": "bind",
     "compound": "compound",
-    "compound_unary": "compound_unary",
+    "compound_unary": "marker",
     "conjunction": "conjunction",
     "definite": "lower",
     "definite_unary": "definite_unary",
@@ -48,7 +48,7 @@
     "generic": "generic",
     "implies": "implies",
     "intersection": "intersection",
-    "lift": "lift",
+    "lift": "change",
     "lower": "lower",
     "lower_unary": "lower_unary",
     "non": "non",
@@ -60,16 +60,15 @@
     "sum": "sum",
     "surface": "surface",
     "surface_unary": "surface_unary",
-    "transpose": "transpose",
+    "transpose": "swap",
     "union": "union",
     "universal": "lower",
     "verb": "verb",
     "whole": "whole"
   },
   "no_surface": [
-    "divide",
-    "descend",
-    "gloss",
+    "focus",
+    "mint",
     "interpret",
     "sign"
   ],

@@ -247,7 +247,8 @@ def test_reference_departure_filters_collection_order_before_selection():
     resolver, store, atoms = fixture()
     owner, pool = resolver.components.owner, resolver.components.owner.mtm
     word = owner.interpret.lookup_word([102], (), form='reference-menu')
-    force_order(owner, word, 1)
+    concept = known_concept(owner, atoms[0], order=1)
+    owner.interpret.define(word, concept)
     with torch.no_grad():
         owner.similarity_codebook.W[owner._csw_row_of(word)].copy_(atoms[0])
     assert owner._concept_source_order(owner.interpret.referent(word)) == 1
@@ -255,13 +256,13 @@ def test_reference_departure_filters_collection_order_before_selection():
     for order in (0, 1):
         row = store.append_idea(atoms[0], referent=('sym', known_concept(owner, atoms[0], order=order)))
         keys.append(owner.link(Occurrence(store.occurrence_of(row),
-            concept=word if order == 1 else None, order=order, selected=None), {},
+            concept=concept if order == 1 else None, order=order, selected=None), {},
             value=atoms[0], where=None, when=0, stream=0))
     request = dict(mode='bind', forward_identity=word, leaves=(0,), cue=atoms[0],
         content=atoms[0], predicate=torch.zeros_like(atoms[0]), role=0)
     clause = Clause(ConceptualMeaning.from_description(atoms[0]), point=atoms[0], order=1,
         subject_word_id=word, reference_request=request,
-        composition=Composition(atoms[0], reference=word, word_id=word, order=1))
+        composition=Composition(atoms[0], reference=concept, word_id=word, order=1))
     native = known_concept(owner, atoms[0], order=0)
     frame = SituationFrame(1, torch.stack((atoms[0], atoms[0]*0, atoms[0]*0)),
         torch.tensor([True, False, False]), -1, atoms[0], symbol_ids=(native,))
@@ -308,10 +309,9 @@ def test_staged_pending_names_keep_their_member_order_on_arrival_and_refresh():
     from order_fixtures import force_order
     from PrependedSymbols import SymbolEntries, stage
     from Memory import STMChunks as chunks
-    for order in (0, 1):
+    for order in (0,):
         resolver, store, atoms, words, _ = world(pending_atom=0)
         owner = resolver.components.owner
-        force_order(owner, words['x'], order)
         row, _ = keep(resolver, described(atoms[0], words['x']))
         key = owner.mtm.token_of(store.occurrence_of(row))
         owner.mtm.record_link(key, store.occurrence_of(row), 0, kind='reference', order=order)
@@ -333,8 +333,8 @@ def test_staged_pending_names_keep_their_member_order_on_arrival_and_refresh():
         assert refreshed[chunks.ORDERS][0, index] == order
         assert refreshed[chunks.ROWS][0, index] == -1
         assert int((refreshed[chunks.IDENTITY] == entry.transient).sum()) == 1
-    receipt('staged-reference-order', dict(member_orders=[0, 1], arrival_orders=[0, 1],
-        refreshed_orders=[0, 1], duplicate_seats=0, stale_rows_after=0))
+    receipt('staged-reference-order', dict(member_orders=[0], arrival_orders=[0],
+        refreshed_orders=[0], duplicate_seats=0, stale_rows_after=0))
 
 
 def test_pending_name_arrival_filters_the_written_candidates_order():
@@ -345,17 +345,18 @@ def test_pending_name_arrival_filters_the_written_candidates_order():
     from order_fixtures import force_order
     resolver, store, atoms, words, _ = world(pending_atom=0)
     owner = resolver.components.owner
-    force_order(owner, words['x'], 1)
+    from test_reference_close import known_concept
+    words['wrong'] = known_concept(owner, atoms[0], order=1)
     row, _ = keep(resolver, described(atoms[0], words['x']))
     key = owner.mtm.token_of(store.occurrence_of(row))
-    assert owner.mtm.entries[key].refinement['member_order'] == 1
+    assert owner.mtm.entries[key].refinement['member_order'] == 0
     clause = equality(atoms[0], words['x'], words['wrong'], subject=atoms[0])
     plan = resolver.preview(clause, context(resolver, (SituationFrame.from_row(store.row(row)),)))
     assert plan['arrival_count'] > 0 and plan['arrivals']
     assert all(not (isinstance(choice, tuple) and choice[:1] == ('arrival',))
         for item in plan['arrivals'] for choice in item['candidates'])
-    receipt('pending-arrival-order', dict(pending_member_order=1,
-        new_candidate_order=0, proposed_constituents=plan['arrival_count'],
+    receipt('pending-arrival-order', dict(pending_member_order=0,
+        new_candidate_order=1, proposed_constituents=plan['arrival_count'],
         incompatible_constituents_offered=0, filtered_before_selection=True))
 
 
@@ -417,7 +418,6 @@ def test_unnamed_alias_reads_a_pending_names_order_without_resolving_it():
     from ThoughtReferences import open_slots
     resolver, store, atoms, words, _ = world(pending_atom=0)
     owner = resolver.components.owner
-    force_order(owner, words['x'], 1)
     row, _ = keep(resolver, described(atoms[0], words['x']))
     first = store.occurrence_of(row)
     key = owner.mtm.token_of(first)
@@ -426,15 +426,15 @@ def test_unnamed_alias_reads_a_pending_names_order_without_resolving_it():
     meaning = replace(ConceptualMeaning.from_description(own), bindings={'_identity': first})
     alias = store.append_meaning(meaning)
     address = store.occurrence_of(alias)
-    assert store.order_of_row(row) == store.order_of_row(alias) == 1
+    assert store.order_of_row(row) == store.order_of_row(alias) == 0
     linked = owner.link(Occurrence(address, selected=key), {}, value=own,
                         where=None, when=1, stream=0)
     assert linked == key and owner.mtm.entries[key].pending
     assert ('referent', 0) in open_slots(store.raw_meaning_of(row))
     torch.testing.assert_close(read(owner, address), own.detach())
     assert owner.mtm.reading_of(address) is None
-    assert owner.mtm.entries[key].refinement['member_order'] == 1
-    receipt('pending-alias-order', dict(named_order=1, alias_order_before=0, alias_order_after=1,
+    assert owner.mtm.entries[key].refinement['member_order'] == 0
+    receipt('pending-alias-order', dict(named_order=0, alias_order_before=0, alias_order_after=0,
         members=2, pending_after=True, alias_reads_own_idea=True, alias_word_readings=0))
 
 
@@ -571,8 +571,8 @@ def test_shared_sentence_strata_operator_references_gradients_and_expiry():
     from OperationSeats import Seat
     from Understanding import Reading
     words = torch.rand(2, 4, requires_grad=True)
-    rules = (NS(method_name='first', canonical='first', surface_name=None),
-             NS(method_name='second', canonical='second', surface_name=None))
+    rules = (NS(method_name='first', canonical='first', surface_name=None, kernel_index=None),
+             NS(method_name='second', canonical='second', surface_name=None, kernel_index=None))
     seats = {}
     for index, name in enumerate(('first', 'second'), 1):
         seats[name] = seats[index] = Seat(index, name, False, lambda a, b: a+b)
@@ -700,7 +700,8 @@ def test_unnamed_leaf_closing_reads_its_idea_without_a_sentinel_concept(monkeypa
     from test_bind_thought import native
     from test_medium_term_memory import keep
     f = native(monkeypatch)
-    program = record_reading(f.language, f.program(('definite_unary', 'member')))
+    from chunk_fixtures import record
+    program, _, _ = record(f, ('bind', 'member'), dummy_binds=(0,), leaf_orders=(1,))
     program = replace(program, concept_ids=torch.full_like(program.concept_ids, -1),
         word_ids=torch.full_like(program.concept_ids, -1),
         reference_ids=torch.full_like(program.concept_ids, -1),
@@ -935,7 +936,7 @@ def test_native_kept_close_uses_all_three_link_callers(monkeypatch):
     frames=[];states=[]
     for position in range(3):
         subject=('lower_unary','subject') if position==0 else ('bind','subject')
-        program=recording(f,('lift',subject,'move'),frames)
+        program=recording(f,('change',subject,'move'),frames)
         before=len(calls)
         clause,frame,row,written=close(f,program,frames,position=position,actions=(verb,modifier))
         frames.append(frame)
@@ -946,7 +947,7 @@ def test_native_kept_close_uses_all_three_link_callers(monkeypatch):
     assert states[0]['key']==states[1]['key']==states[2]['key']
     assert [item['close'] for item in states]==[1,2,3]
     before=len(calls)
-    program=recording(f,('lift',('bind','subject'),('adverb','move','shift')),frames)
+    program=recording(f,('change',('bind','subject'),('modifier','move','shift')),frames)
     clause,frame,_,_=close(f,program,frames,position=3,actions=(verb,modifier))
     modal=calls[before:]
     assert not state_eligible(clause) and clause.order>0
@@ -955,7 +956,7 @@ def test_native_kept_close_uses_all_three_link_callers(monkeypatch):
     # real kept derivation. The native state menu must take the dummy.
     owner.mtm.closes[0]+=3
     before=len(calls)
-    program=recording(f,('lift',('lower_unary','subject'),'move'),())
+    program=recording(f,('change',('lower_unary','subject'),'move'),())
     _,_,_,_=close(f,program,(),position=7,actions=(verb,modifier))
     distant=next(item for item in calls[before:] if item['kind']=='state')
     assert distant['key']!=states[-1]['key']

@@ -87,7 +87,7 @@ def candidates(registry, root, active, current, records, descriptions=()):
         # A query can supply both operands while the episode's root is
         # still open. The registry has already checked their concepts.
         requests = [item for item in requests if item.semantic_id in allowed or
-                    (item.semantic_id == 'equal' and not item.open_roles
+                    (item.semantic_id in ('equal', 'define') and not item.open_roles
                      and not has_open_slots(item.request))]
     if 'infer' in registry.executable_operation_ids:
         from ThoughtChunks import held
@@ -97,6 +97,9 @@ def candidates(registry, root, active, current, records, descriptions=()):
             from Intuition import held_terms
             terms = held_terms(premise)
             if not terms:
+                request = registry.form('infer', premise, open_roles=('argin2',))
+                requests.append(ThoughtOperationCandidate(registry.operation_spec('infer'),
+                    request, ('argin2',)))
                 continue
             for term, pair in zip(terms, bindings(premise)['_intuition_firings'], strict=True):
                 request = registry.form('infer', premise, premise)
@@ -203,10 +206,10 @@ def integrate(registry, goal, result, records, *, work=None):
     """Compose witnesses already read into serial slots; never search LTM here."""
     if result is None:
         return goal
-    if (result.semantic_id == 'intuit' and not result.evidence.get('intuition_derivation')
-            and not result.evidence.get('pervasion_derivation')):
-        # The zero field records that no rule fired. It is not a consequent
-        # that can replace the question and remove its unresolved references.
+    if (result.semantic_id in ('infer', 'intuit')
+            and not (result.support_true or result.support_false)
+            and not result.evidence.get('derivation')):
+        # An empty learned field or rule search supplies no conclusion.
         return goal
     if result.semantic_id in ('infer', 'intuit'):
         return result.evidence.get('meaning', goal)
@@ -337,7 +340,7 @@ def write(model, meaning, *, row, _active=None, _bound=None):
     read_binding = read_result and any(
         kind == 'referent' for kind, _role in data.get('_bound_roles', ()))
     if (int(meaning.role_mask.sum()) > 1 and (has_open_slots(meaning) or not read_binding)
-            and operation(meaning) in ('part', 'equal', 'implies')):
+            and operation(meaning) in ('part', 'equal', 'define', 'implies')):
         from ClauseRow import Clause, Composition, predicate_identity
         active, clauses = set(), {}
         def clause(value):
@@ -351,7 +354,7 @@ def write(model, meaning, *, row, _active=None, _bound=None):
             store._validate_local_references(value)
             children = [clause(child) for child in value.constituents]
             name = operation(value)
-            if name in ('part', 'equal', 'implies'):
+            if name in ('part', 'equal', 'define', 'implies'):
                 refs = []
                 for role in (0, 2):
                     reference = value.role_refs[role]
@@ -492,7 +495,7 @@ def write(model, meaning, *, row, _active=None, _bound=None):
         data.pop('_chain_view', None)
         if identity is not None:
             from MemoryLink import retained_reference
-            data['_identity'] = retained_reference(owner, identity)
+            data['_identity'] = retained_reference(owner, identity, stream=row)
         from Meaning import ConceptualMeaning
         meaning = replace(ConceptualMeaning.from_description(point), bindings=data,
             scope=meaning.scope, polarity=meaning.polarity)

@@ -130,7 +130,10 @@ def test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats(monke
     from test_mm_xor import _fresh_model, _PROJECT
     from PartClosing import PartClosing
     from reading_fixtures import capture_readings
-    model, _, _ = _fresh_model(str(Path(_PROJECT)/'data/MM_grammar.xml'))
+    from configuration_fixtures import order_allocation
+    # Four words and their four supplied objects use the eight free seats.
+    with order_allocation('MM_grammar.xml', (8, 0, 0)) as path:
+        model, _, _ = _fresh_model(path)
     constructed_vectors = model._concept_owner().nVectors
     chooser = model.languageSpace._tree_layer(2).chooser
     part = next(i for i, rule in enumerate(model.languageSpace._compose_binary_rules)

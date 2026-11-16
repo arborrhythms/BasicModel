@@ -90,7 +90,7 @@ def test_normal_controller_selects_a_catalog_operation_not_used_by_the_parse(mon
     def choose(_root, _active, actions, **_kwargs):
         choices.append(actions)
         if len(choices) == 1:
-            return next(a for a in actions if a is not None and a.semantic_id == 'equal')
+            return next(a for a in actions if a is not None and a.semantic_id == 'define')
         assert None in actions
         return None
     monkeypatch.setattr(model, '_choose_selected_thought_action', choose)
@@ -98,8 +98,8 @@ def test_normal_controller_selects_a_catalog_operation_not_used_by_the_parse(mon
         result = model.run_selected_thought(question, work_budget=16)
     assert result.meaning.role_refs == question.role_refs
     executed = [r.result for r in memory.thought_history() if r.result is not None]
-    assert executed[0].semantic_id == 'equal'
-    assert 'equal' in [a.semantic_id for a in choices[0] if a is not None]
+    assert executed[0].semantic_id == 'define'
+    assert 'define' in [a.semantic_id for a in choices[0] if a is not None]
     assert 0. <= executed[0].support_true <= 1.
     memory.end_what_episode()
 
@@ -110,7 +110,7 @@ def test_catalog_refinement_preserves_selected_polarity_and_semantic_metadata(mo
     question = registry.form('part', part, whole, polarity=False,
         bindings={'variable': 'whole'}, scope={'place': 'workshop'})
     actions = registry.controller_candidates(question, question, question)
-    selected = next(a for a in actions if a.semantic_id == 'equal')
+    selected = next(a for a in actions if a.semantic_id == 'define')
     assert selected.request.polarity is False
     assert selected.request.bindings == question.bindings
     assert selected.request.scope == question.scope
@@ -119,7 +119,7 @@ def test_catalog_refinement_preserves_selected_polarity_and_semantic_metadata(mo
         context = model._thought_grammar_context(selected.request, row=0,
             work=QueryWorkBudget(16), continuation=None)
         result = registry.execute(selected.request, context)
-    assert result.semantic_id == 'equal' and result.request.polarity is False
+    assert result.semantic_id == 'define' and result.request.polarity is False
     assert result.request.scope == question.scope
 
 
@@ -230,7 +230,7 @@ def test_what_subgoal_descends_executes_returns_and_causally_carries_evidence(mo
 
     from meaning_fixtures import unsupported
     store._concept_owner()._concept_allocator.singletons.add(whole[1])
-    inner = registry.form('equal', part, whole)
+    inner = registry.form('define', part, whole)
     inner = unsupported(replace(inner, role_refs=(None,inner.role_refs[1],whole),
         role_mask=torch.tensor([False,True,True]), bindings={'_equality':True}), (('referent',0),))
     prior = memory.begin_thought_episode(inner, work_budget=2)
@@ -387,7 +387,7 @@ def test_completed_unary_concept_program_enters_the_normal_controller(
 def test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit():
     from whole_path_fixtures import thought_surrogate as surrogate
     model, registry, memory, part, whole = _world()
-    question = registry.form('equal', part, whole)
+    question = registry.form('define', part, whole)
     chooser = model._selected_thought_chooser(question)
     with torch.no_grad():
         for parameter in chooser.parameters():
@@ -529,7 +529,7 @@ def test_normal_boundary_refuses_unproved_semantic_meaning_as_its_answer_seed(mo
     derivation = model.resolveAnswer(
         Understanding(sentence_states=(__import__("Understanding").SentenceEndState(
             ConceptualMeaning.from_description(_leaves[0]),
-            query=registry.form("equal", _part, _part)),)), WhatQuestion.present(0))
+            query=registry.form("define", _part, _part)),)), WhatQuestion.present(0))
 
     selected = derivation.selected_thoughts[0][1]
     assert selected.meaning.role_mask.any()
@@ -658,20 +658,20 @@ def test_normal_boundary_retains_the_unproved_controller_selected_operation(monk
         choices.append(actions)
         if len(choices) == 1:
             return next(action for action in actions
-                        if action is not None and action.semantic_id == "equal")
+                        if action is not None and action.semantic_id == "define")
         return None
 
     monkeypatch.setattr(model, "_choose_selected_thought_action", choose)
     derivation = model.resolveAnswer(
         Understanding(sentence_states=(__import__("Understanding").SentenceEndState(
             ConceptualMeaning.from_description(_leaves[0]),
-            query=registry.form("equal", _part, _part)),)), WhatQuestion.present(0))
+            query=registry.form("define", _part, _part)),)), WhatQuestion.present(0))
 
     selected = derivation.selected_thoughts[0][1]
-    assert registry.signature_for(selected.meaning).operation.semantic_id == "equal"
+    assert registry.signature_for(selected.meaning).operation.semantic_id == "define"
     assert not derivation.conceptual_answer.any()
     assert not derivation.resolved and derivation.answer_meanings == ((),)
-    assert derivation.grammar_trace[1]["semantic_id"] == "equal"
+    assert derivation.grammar_trace[1]["semantic_id"] == "define"
 
 
 def test_selected_program_precedes_the_legacy_surface_reasoner(monkeypatch):

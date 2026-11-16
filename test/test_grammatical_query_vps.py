@@ -90,13 +90,13 @@ def test_open_taxonomy_roles_use_the_same_vp_without_fabricating_an_operand():
 
 def test_forming_candidates_does_not_mint_or_write_memory_after_setup():
     cs, registry, a, b, context = _world()
-    placement = dict(cs._concept_allocator.placement)
+    placement = dict(cs._concept_allocator.symbols)
     named = dict(cs._frozen_named)
     records = tuple(cs._concept_allocator._layers[0].constituents(a[1]))
     registry.form('part', a, b)
     registry.form('whole', b, a)
     registry.form('isPart', b, open_roles=('argin1',))
-    assert cs._concept_allocator.placement == placement
+    assert cs._concept_allocator.symbols == placement
     assert cs._frozen_named == named
     assert tuple(cs._concept_allocator._layers[0].constituents(a[1])) == records
 
@@ -142,7 +142,7 @@ def test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation():
     # Named VPs do not retire through the normal frozen-concept lifecycle.
     # Simulate a missing native record in an incomplete structural restore.
     cs._concept_allocator.drop(question.role_refs[1][1])
-    placement = dict(cs._concept_allocator.placement)
+    placement = dict(cs._concept_allocator.symbols)
     with pytest.raises(ValueError, match='unavailable|retired|VP'):
         registry.form('exist', a)
-    assert cs._concept_allocator.placement == placement
+    assert cs._concept_allocator.symbols == placement

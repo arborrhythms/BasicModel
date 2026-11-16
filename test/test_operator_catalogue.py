@@ -51,13 +51,13 @@ def test_sum_is_a_mean_and_witness_inverse_is_exact():
     torch.testing.assert_close(b,right)
 
 
-def test_adverb_is_a_repeatable_gain_with_an_exact_witness_inverse():
-    from Language import AdverbLayer
+def test_modifier_is_a_repeatable_gain_with_an_exact_witness_inverse():
+    from Language import ModifierLayer
     from Layers import cube_chart, cube_unchart
-    op = AdverbLayer(nInput=4, nOutput=4)
+    op = ModifierLayer(nInput=4, nOutput=4)
     with torch.no_grad():
-        op._adv_edit.weight.copy_(torch.eye(4)*.5)
-        op._adv_edit.bias.zero_()
+        op._modifier_edit.weight.copy_(torch.eye(4)*.5)
+        op._modifier_edit.bias.zero_()
     verb = torch.tensor([[.6, .35, .5, .7]], requires_grad=True)
     modifier = torch.ones(1,4)
     once = op.compose(verb,modifier)
@@ -68,11 +68,11 @@ def test_adverb_is_a_repeatable_gain_with_an_exact_witness_inverse():
     expected = cube_unchart(chart*gain.square())
     torch.testing.assert_close(twice, expected)
     assert ((twice-.5).abs()[verb!=.5] > (once-.5).abs()[verb!=.5]).all()
-    recovered, witness = op.reverse(once, adverb_what=modifier)
+    recovered, witness = op.reverse(once, modifier_what=modifier)
     torch.testing.assert_close(recovered, verb)
     torch.testing.assert_close(witness, modifier)
     once.sum().backward()
-    assert op._adv_edit.weight.grad.norm() > 0
+    assert op._modifier_edit.weight.grad.norm() > 0
 
 
 def test_declared_implementation_and_predicate_survive_rule_rename():
@@ -221,7 +221,7 @@ def test_verb_head_does_not_erase_its_object_in_the_clause_journal(monkeypatch):
     by_name={rule.method_name:rule for rule in grammar.rules_upward}
     # Exercise the required head even against the old unheaded declaration.
     verb=by_name['verb']._replace(head_role=1)
-    owner=SimpleNamespace(_compose_binary_rules=(verb, by_name['lift']), _compose_unary_rules=())
+    owner=SimpleNamespace(_compose_binary_rules=(verb, by_name['change']), _compose_unary_rules=())
     leaves=torch.eye(4)[:3]
     vp=leaves[1] + .25*leaves[2]
     point=.5*(leaves[0]+vp)
@@ -251,17 +251,17 @@ def test_selected_exclusion_cannot_be_recovered_as_negation(monkeypatch):
     assert owner.program_meaning(entry,registry) is None
 
 
-def test_equality_question_uses_a_declared_formula_identity_without_an_inventory_row():
+def test_definition_question_uses_a_declared_formula_identity_without_an_inventory_row():
     from test_grammatical_query_vps import _world
     from ClauseRow import predicate_identity, predicate_point
     cs,registry,a,b,_context=_world()
-    question=registry.form('equal',a,b)
-    descriptor=registry.descriptors['equal']
-    assert descriptor.predicate_name == 'operation:equal'
+    question=registry.form('define',a,b)
+    descriptor=registry.descriptors['define']
+    assert descriptor.predicate_name == 'operation:define'
     assert descriptor.relation_directions == ((0,2),(2,0))
     assert question.role_refs[1] == ('sym',predicate_identity(descriptor.predicate_name))
     assert cs._csw_row_of(question.role_refs[1][1]) is None
     torch.testing.assert_close(question.roles[1],predicate_point(descriptor.predicate_name,question.roles))
-    assert registry.clause_reference('equal') == registry.clause_reference('part')
-    assert registry.signature_for(question).operation.semantic_id == 'equal'
-    assert not any('conceptual-identity:equal' in name for name in cs._frozen_named)
+    assert registry.clause_reference('define') == registry.clause_reference('part')
+    assert registry.signature_for(question).operation.semantic_id == 'define'
+    assert not any('conceptual-definition:define' in name for name in cs._frozen_named)

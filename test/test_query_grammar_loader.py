@@ -20,6 +20,7 @@ def test_full_file_loading_preserves_structural_thought_contracts(filename):
     grammar.load_from_grammar_file(filename)
     operations = {operation.semantic_id: operation
                   for operation in grammar.thought_operations}
-    assert {'part', 'equal'}.issubset(operations)
+    identity = 'define' if filename == 'complete.grammar' else 'equal'
+    assert {'part', identity}.issubset(operations)
     assert operations['part'].operand_roles == ('argin1', 'argin2')
-    assert operations['equal'].result_role == 'argout1'
+    assert operations[identity].result_role == 'argout1'

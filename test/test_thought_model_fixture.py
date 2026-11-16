@@ -69,6 +69,24 @@ def model_for(cs, store=None):
     return force_requested_thought(model)
 
 
+def trusted_premises(cs, *references):
+    """The taxonomy fixtures supply unit-trust premises on a tracked chart.
+
+    Their previous form-only chart returned one for every untracked concept.
+    Added meaning lanes require that same premise trust to be explicit.
+    """
+    import torch
+    bank = cs.similarity_codebook
+    trust = bank.trust
+    assert trust.tracked
+    with torch.no_grad():
+        for _, identity in references:
+            row = cs._csw_row_of(identity)
+            bank.W[row, trust.start:trust.start+2*trust.width] = 0.
+            bank.W[row, trust.start] = 1.
+            trust.capture(row)
+
+
 def thought_config(tmp_path):
     import xml.etree.ElementTree as ET
     from test_ltm_consolidation import _ON_CONFIG
@@ -78,6 +96,12 @@ def thought_config(tmp_path):
     grammar.clear()
     grammar.text = 'complete.grammar'
     document.find('ConceptualSpace/nVectors').text = '64'
+    # Adding the complete grammar also requires its marker's meaning lanes;
+    # the underlying consolidation fixture otherwise has only form columns.
+    form = int(document.findtext('PartSpace/nDim'))
+    width = form + int(document.findtext('ConceptualSpace/meaningWidth', '128'))
+    document.find('ConceptualSpace/nDim').text = str(width)
+    ET.SubElement(document.find('WholeSpace'), 'nInputDim').text = str(width)
     ET.SubElement(document.find('architecture'), 'conceptIndexRead').text = 'true'
     path = tmp_path / 'thought-model.xml'
     document.write(path)

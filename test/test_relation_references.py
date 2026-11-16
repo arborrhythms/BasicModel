@@ -9,7 +9,7 @@ from test_clause_acceptance import SentenceFixture
 
 def test_unindexed_predicate_over_a_relation_closes_as_an_idea(monkeypatch):
     f = SentenceFixture(monkeypatch)
-    entry = f.program(('lift', 'he', ('verb', ('part', 'cat', 'animal'), 'said')))
+    entry = f.program(('change', 'he', ('verb', ('part', 'cat', 'animal'), 'said')))
     entry = replace(entry, concept_ids=torch.full_like(entry.concept_ids, -1),
                     word_ids=torch.full_like(entry.word_ids, -1))
     clause = finish_reading(f.language, entry, registry=f.registry)
@@ -27,7 +27,7 @@ def test_unindexed_predicate_over_a_relation_closes_as_an_idea(monkeypatch):
 
 def test_nested_relation_forest_closes_as_an_idea_without_asserting_children(monkeypatch):
     f = SentenceFixture(monkeypatch)
-    entry = f.program(('lift', 'he', ('verb', ('part', 'cat', 'animal'), 'said')))
+    entry = f.program(('change', 'he', ('verb', ('part', 'cat', 'animal'), 'said')))
     refs = entry.concept_ids.clone()
     refs[3] = -1
     words = entry.word_ids.clone(); words[3] = -1

@@ -7,6 +7,7 @@ from torch import nn
 
 FIXED_OPERATIONS = frozenset(('interpret', 'sign', 'bind', 'part', 'whole',
     'equal', 'generic', 'implies', 'assertPart'))
+CLASS_CONTIGUITY_COSINE = math.cos(math.radians(15.))
 
 
 def operation_name(rule):
@@ -29,6 +30,13 @@ def formal_arguments(rules):
     return tuple(sorted(arguments))
 
 
+def order_reservations(grammar):
+    """The fixed grammar seats, grouped by their declared concept order."""
+    return (sum(operation.predicate_identity is None for operation in grammar.thought_operations),
+            len(formal_arguments(grammar.rules_upward)),
+            len(operation_names(grammar.rules_upward)))
+
+
 def flow_mask(rule):
     """§2b: input-role bits whose words occupy a single result.
 
@@ -36,11 +44,12 @@ def flow_mask(rule):
     results retain every lexical occurrence; clauses retain none.
     """
     name = rule.method_name
-    if name in ('intersection', 'union', 'conjunction', 'disjunction', 'product', 'sum'):
+    if name in ('intersection', 'union', 'conjunction', 'disjunction', 'product', 'sum',
+                'add', 'subtract', 'multiply', 'divide'):
         return 3
     if name in ('not', 'non'):
         return 1
-    if (name in ('lift', 'equal', 'part', 'whole', 'implies', 'generic', 'ask',
+    if (name in ('change', 'equal', 'part', 'whole', 'implies', 'generic', 'ask',
                  'assertPart', 'isEqual', 'isPart')
             or getattr(rule, 'clause_form', None) in ('S', 'implies')):
         return 0
@@ -85,10 +94,8 @@ class PartsOfSpeech(nn.Module):
                 saved = _concept_alloc_of(space).formal_arguments
                 if any(saved.get(name) != cid for name, cid in self.concepts.items()):
                     raise ValueError('argument concepts cannot move between unrelated concept owners')
-        # Reserve the complete declaration before seating either inventory.
-        # Their shared higher-order region must not move halfway through bind.
-        object.__setattr__(space, '_formal_reservation', max(
-            int(getattr(space, '_formal_reservation', 0)), len(self.arguments)+len(self.operations)))
+        # Construction reserves the grammar's seats in their order blocks.
+        # Binding fills those fixed slices without moving their boundaries.
         self.concepts = space.prebuild_formal_arguments(self.arguments)
         self._space = weakref.ref(space)
         from OperationSeats import OperationSeats
@@ -175,7 +182,6 @@ class PartsOfSpeech(nn.Module):
     def operation(self, name):
         """Definiteness is separability times evidence; tightness remains radius."""
         from ConceptHierarchy import can_observe
-        from MereologicalCodes import CLASS_CONTIGUITY_COSINE
         key = self.revision
         if getattr(self, '_measurement_revision', None) != key:
             self._measurement_cache = {}
@@ -301,6 +307,9 @@ class PartsOfSpeech(nn.Module):
             concept = self.seats[name].concept
             value = torch.stack(values).mean(0)
             row = self.owner._csw_row_of(concept)
+            derived = getattr(self.owner.similarity_codebook, 'mereology', None)
+            if derived is not None and self.owner._row_order(row) > 0:
+                value[:derived.percept_event_width] = 0.
             self.owner.similarity_codebook.W[row].copy_(value)
             observe(self.owner, concept, value)
             for argument in self.arguments:
@@ -315,8 +324,15 @@ class PartsOfSpeech(nn.Module):
 
     def get_extra_state(self):
         from IndependentComponents import _pack_state
-        return _pack_state(dict(version=self.VERSION, arguments=self.arguments,
-            concepts=self.concepts, operations=self.operations, uses=dict(self.uses)))
+        from sys import intern
+        # Pickle records string aliases. Canonical names make this tensor
+        # depend on the grammar and counts, not how a restore allocated its
+        # equal strings. The existing checkpoint schema stays unchanged.
+        return _pack_state(dict(version=self.VERSION,
+            arguments=tuple(intern(name) for name in self.arguments),
+            concepts={intern(name): value for name, value in sorted(self.concepts.items())},
+            operations=tuple(intern(name) for name in self.operations),
+            uses={intern(name): count for name, count in sorted(self.uses.items())}))
 
     def set_extra_state(self, value):
         from IndependentComponents import _unpack_state

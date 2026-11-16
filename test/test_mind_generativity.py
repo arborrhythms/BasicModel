@@ -19,7 +19,7 @@ def test_current_grammar_recovery_by_depth_training_and_chain_length(tmp_path):
     model = _native_answer_model(tmp_path, True)
     language = model.languageSpace
     try:
-        op_index = list(language._generate_binary_names).index('lift')
+        op_index = list(language._generate_binary_names).index('change')
         op = language._generate_binary_ops[op_index]
         # Unallocated rows no longer invent distinct word codes. Populate
         # the five leaves with actual forms through the existing admission.

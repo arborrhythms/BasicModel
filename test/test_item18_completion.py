@@ -208,8 +208,8 @@ def test_separate_selection_credit_cannot_train_its_input_or_decoder(departure):
 def test_thought_faces_have_exact_ltm_method_grants():
     from Queries import THOUGHT_EXECUTORS
     expected = dict(bind=('bind_reference',), isPart=('relation_evidence',),
-        isEqual=('relation_evidence',), infer=('relation_evidence',),
-        intuit=('intuition_rules',), isTrue=('end_evidence','truth_evidence','resolve_description'),
+        isEqual=('relation_evidence',), infer=('relation_evidence','implication_rules'),
+        intuit=(), isTrue=('end_evidence','truth_evidence','resolve_description'),
         query=('query','resolve_description'), ask=('best_match','resolve_description'))
     for name, descriptor in THOUGHT_EXECUTORS.items():
         assert dict(descriptor.method_grants).get('ltm', ()) == expected.get(name, ())

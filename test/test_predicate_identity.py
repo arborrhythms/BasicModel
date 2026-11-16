@@ -18,7 +18,7 @@ from test_sentence_identity import inventory
 def test_closing_and_registry_share_predicate(monkeypatch, relation, component):
     f = SentenceFixture(monkeypatch)
     tree = (('part', 'cat', 'animal') if relation == 'part' else
-            ('implies', ('lift', 'cat', 'runs'), ('lift', 'dog', 'sleeps')))
+            ('implies', ('change', 'cat', 'runs'), ('change', 'dog', 'sleeps')))
     clause = f.clause(tree)
     written = {}
     row = f.store.write_clause(clause, written_rows=written)
@@ -42,7 +42,7 @@ def test_registry_allocates_no_inventory_rows_for_part_or_implies(monkeypatch):
     for relation in ('part', 'implies'):
         reference = f.registry.clause_reference(relation)
         assert f.cs._csw_row_of(reference[1]) is None
-        assert reference[1] not in f.cs._concept_allocator.placement
+        assert reference[1] not in f.cs._concept_allocator.symbols
     assert 'grammatical-vp:conceptual-taxonomy:part' not in f.cs._frozen_named
     assert 'clause:implies' not in f.cs._frozen_named
 
@@ -57,7 +57,7 @@ def test_full_inventory_still_installs_and_forms_part_question():
             cs._csw_concept_row(0, cid)
             operands.append(('sym', cid))
         except RuntimeError as error:
-            assert 'concept inventory exhausted' in str(error)
+            assert 'concept order 0 capacity exhausted' in str(error)
             break
     assert len(operands) >= 2
     grammar = Grammar()
@@ -76,8 +76,8 @@ def test_full_inventory_still_installs_and_forms_part_question():
 @pytest.mark.parametrize('use_registry', [False, True])
 def test_first_three_slot_predicate_occurrence(monkeypatch, relation, use_registry):
     f = SentenceFixture(monkeypatch)
-    left = f.store.write_clause(f.clause(('lift', 'cat', 'runs')))
-    right = f.store.write_clause(f.clause(('lift', 'dog', 'sleeps')))
+    left = f.store.write_clause(f.clause(('change', 'cat', 'runs')))
+    right = f.store.write_clause(f.clause(('change', 'dog', 'sleeps')))
     reference = f.registry.clause_reference(relation)
     point = f.registry._payload(reference)
     leaves = torch.stack((f.store.slots[left], point, f.store.slots[right]))

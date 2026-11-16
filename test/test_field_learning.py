@@ -45,7 +45,7 @@ def test_boundary_candidates_keep_bracket_semantics_and_do_not_veto():
     row = _mint_row(cs, 0, 101)
     cs.add_concept_edge(row, 0, 1., conjunctive=True)
     # An unwritten source outside the bound field must not veto this pattern.
-    cs.add_concept_edge(row, 60, 0., conjunctive=True)
+    cs.add_concept_edge(row, cs.order_slice(0)[1] - 1, 0., conjunctive=True)
     native, extents = binary_features(cs, torch.tensor([[49, 48]]))
     before = cs.cs_read_memberships(native, extents)
     assert float(before[row, 0, 0, 0]) == 1.

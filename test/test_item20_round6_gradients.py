@@ -73,6 +73,7 @@ def test_knowing_deposit_keeps_the_selected_intuition_weights_live():
     radix.activity_decoder = NativeDecode(radix.capacity, 8, 8)
     feature(owner, row, 'ps', native, 1.)
     decoder_model = NS(_concept_owner=lambda: owner,
+        where_registry=NS(slices={'text': (0, 8)}),
         perceptualSpace=NS(percept_store=radix, subspace=NS(nWhat=radix.dim, nWhere=0, nWhen=0), _radix_where_indices=[]),
         wholeSpace=NS(subspace=NS(what=NS(primitive_properties=PrimitiveProperties(0)))))
     field = ConceptualField(torch.tensor([refs[1][1]]), carrier._concept_activations,
@@ -122,8 +123,12 @@ def test_order_zero_decode_reaches_the_grammar_inverse_and_selected_definition(m
     from WalkTrials import generate_credit
     from util import TheXMLConfig
     cs = _cs(dim=12)
-    rows = [_mint_row(cs, 0, cid) for cid in (101, 102)]
     radix = cs.basic_percepts.native
+    # These terminals are admitted lexical identities, not anonymous rows
+    # made spellable only by a mocked surface method.
+    ids = [cs.interpret.lookup_word([radix.insert(raw)], (), form=raw.decode())
+           for raw in (b'a', b'b')]
+    rows = [cs._csw_row_of(cid) for cid in ids]
     for row, raw in zip(rows, (b'a', b'b')):
         feature(cs, row, 'ps', radix.insert(raw), 1.)
     feature(cs, rows[0], 'ps', radix.get_id(b'b'), .5)
@@ -150,16 +155,21 @@ def test_order_zero_decode_reaches_the_grammar_inverse_and_selected_definition(m
     bank = PrimedSymbols(torch.tensor([rows]), codes, torch.ones(1, 2), torch.ones(1, 2, dtype=torch.bool),
         torch.tensor([[[97], [98]]]), torch.ones(1, 2, 1, dtype=torch.bool), meaning_start=4)
     model = NS(_concept_owner=lambda: cs, conceptualSpace=cs, languageSpace=language, _synthesis_guard=nullcontext,
+        where_registry=NS(slices={'text': (0, 8)}),
         perceptualSpace=NS(percept_store=radix, subspace=NS(nWhat=12, nWhere=0, nWhen=0), _radix_where_indices=[]),
         wholeSpace=NS(subspace=NS(what=NS(primitive_properties=PrimitiveProperties(0)))))
-    model.reverse = lambda carrier, *, field: reverse(model, NS(carrier_like=NS), field)
+    def native_reverse(carrier, *, field):
+        result = reverse(model, NS(carrier_like=NS), field)
+        result._reconstruction_percepts = result._radix_activity.percepts
+        return result
+    model.reverse = native_reverse
     left, right = language.reverse_binary_step(parent, torch.tensor([0]), torch.tensor([True]),
         ops=(op,), basis=codes, basis_valid=bank.valid)
     proposal = generated(model, torch.stack((left, right), 1), torch.tensor([2]),
         torch.tensor([False]), bank, (torch.tensor([[0, 1, 1]]),),
         when=torch.tensor([[[1, 2]]]), depths=torch.tensor([1]))
-    decoded = realize(model, proposal)._radix_activity.percepts
-    field = ConceptualField(torch.tensor([101, 102]),
+    decoded = realize(model, proposal)._reconstruction_percepts
+    field = ConceptualField(torch.tensor(ids),
         torch.stack((torch.eye(2), torch.zeros(2, 2)), -1)[:, None],
         torch.tensor([[[0, 1], [2, 3]]]), torch.tensor([[[1, 2], [1, 2]]]), None)
     observed = model.reverse(None, field=field)._radix_activity.percepts

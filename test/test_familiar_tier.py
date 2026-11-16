@@ -25,7 +25,7 @@ def placed_fixture():
     return cs, cb, alloc, store, (a,b,base)
 
 
-def test_symbol_and_promoted_occurrence_members_have_the_same_three_initializers():
+def test_symbol_and_promoted_occurrence_members_have_the_same_definition():
     from Meaning import ConceptualMeaning
     cs, cb, alloc, store, (a,b,base) = placed_fixture()
     ids = [cs.concept_id_at_row(row) for row in (a,b,base)]
@@ -42,9 +42,8 @@ def test_symbol_and_promoted_occurrence_members_have_the_same_three_initializers
     left,right = cs._csw_row_of(first),cs._csw_row_of(second)
     assert dict(cs.concept_weights(left)) == dict(cs.concept_weights(right)) == {a:1.,b:1.}
     torch.testing.assert_close(cb.lookup_rows(left),cb.lookup_rows(right))
-    torch.testing.assert_close(cb.W[left,:3],(cb.lookup_rows(a)[:3]+cb.lookup_rows(b)[:3])/2)
-    torch.testing.assert_close(cb.mereology.placement[left],F.normalize(cb.mereology.placement[[a,b]].sum(0),dim=0))
-    assert cb.mereology.placement_valid[[left,right]].all()
+    assert not cb.W[[left,right],:3].any()
+    assert not cb.mereology.placement_witnesses[[left,right]].any()
 
 
 def test_transient_occurrence_is_deferred_and_covered_when_its_symbol_arrives():
@@ -60,9 +59,9 @@ def test_transient_occurrence_is_deferred_and_covered_when_its_symbol_arrives():
     pointers = cb.W.data_ptr(),cb.mereology.placement.data_ptr()
     cs.mtm.promote(key, cs.concept_id_at_row(b))
     assert dict(cs.concept_weights(row)) == {b:1.}
-    torch.testing.assert_close(cb.lookup_rows(row)[:3],cb.lookup_rows(b)[:3])
-    torch.testing.assert_close(cb.mereology.placement[row],cb.mereology.placement[b])
-    assert cb.mereology.placement_witnesses[row] == 1
+    assert not cb.lookup_rows(row)[:3].any()
+    assert not cb.mereology.placement[row].any()
+    assert cb.mereology.placement_witnesses[row] == 0
     assert pointers == (cb.W.data_ptr(),cb.mereology.placement.data_ptr())
 
 
@@ -238,7 +237,7 @@ def test_candidate_count_tracks_observations_when_the_open_read_crosses_its_hori
     assert pool.entries[key].readings == ((0,4,1.,0.),)
 
 
-def test_candidate_promotion_uses_weighted_centroid_placement_and_form():
+def test_candidate_promotion_keeps_weighted_definition_and_no_inherited_place_or_form():
     from FamiliarTier import observe_candidate
     from test_attention_promotion import _close
     cs, cb, alloc, store, (a,b,_) = placed_fixture()
@@ -247,18 +246,17 @@ def test_candidate_promotion_uses_weighted_centroid_placement_and_form():
         key = observe_candidate(cs, 1, {a:2.,b:1.})
         _close(cs)
     pointers = cb.W.data_ptr(), cb.mereology.placement.data_ptr()
-    expected_form = (cb.lookup_rows(a)[:3]*2+cb.lookup_rows(b)[:3])/3
-    expected_place = F.normalize(cb.mereology.placement[a]*2+cb.mereology.placement[b],dim=0)
     symbol, = cs.mtm.promote_candidates(cs)
     row = cs._csw_row_of(symbol)
     assert cs.mtm.entries[key].symbol == symbol
-    torch.testing.assert_close(cb.lookup_rows(row)[:3], expected_form)
-    torch.testing.assert_close(cb.mereology.placement[row], expected_place)
-    assert cb.mereology.placement_witnesses[row] == 2 and cb.mereology.placement_valid[row]
+    assert dict(cs.concept_weights(row)) == {a:2.,b:1.}
+    assert not cb.lookup_rows(row)[:3].any()
+    assert not cb.mereology.placement[row].any()
+    assert cb.mereology.placement_witnesses[row] == 0
     assert pointers == (cb.W.data_ptr(),cb.mereology.placement.data_ptr())
 
 
-def test_kept_close_restricts_promotion_to_active_streams_and_defers_coverage():
+def test_kept_close_restricts_promotion_to_active_streams():
     from FamiliarTier import kept_close, observe_candidate
     from test_attention_promotion import _fixture, _close
     cs, rows = _fixture()
@@ -269,13 +267,13 @@ def test_kept_close_restricts_promotion_to_active_streams_and_defers_coverage():
     model = SimpleNamespace(_concept_owner=lambda:cs)
     @kept_close
     def update(model, state, sid, active):
-        assert cs._coverage_deferred
+        assert cs._mtm_active_streams == set(active.nonzero().flatten().tolist())
         return cs.mtm.promote_candidates(cs)
     assert update(model, None, 0, torch.tensor([False,False])) == []
     assert len(update(model, None, 0, torch.tensor([True,False]))) == 1
     pending = [entry for entry in cs.mtm.entries.values() if entry.symbol is None]
     assert len(pending) == 1 and set(pending[0].support) == {rows[2][1], rows[3][1]}
-    assert not cs._coverage_deferred and cs._mtm_active_streams is None
+    assert cs._mtm_active_streams is None
 
 
 def test_prepend_carries_candidates_with_live_gradient_and_rejects_recycled_transients():
@@ -478,7 +476,8 @@ def test_mixing_keeps_lexical_witnesses_across_ten_presentations(monkeypatch, ea
                     point = program.leaves[site]
                     row = store.append_meaning(ConceptualMeaning.from_description(point), )
                     from ConceptTrust import observe
-                    observe(owner, word, point)
+                    percept = owner.basic_percepts.code(owner.basic_percepts.words[word])
+                    observe(owner, word, torch.nn.functional.pad(percept, (0, point.numel()-percept.numel())))
                     reading = None if program.word_ids is None else int(program.word_ids[site])
                     owner.mtm.bind(key, store.occurrence_of(row), kind=None, when=1,
                                    value=point, reading=reading)
@@ -486,8 +485,11 @@ def test_mixing_keeps_lexical_witnesses_across_ten_presentations(monkeypatch, ea
             assert all(n <= 1 for n in promotions.values()), (presentation, promotions)
         assert witnesses == [words] * 40
         assert dict(promotions) == {word: 1 for word in words}, promotions
-        objects = [owner.interpret.denotations(word) for word in words]
-        assert all(len(ids) == 1 for ids in objects)
+        objects = [owner.interpret.preferred(word) for word in words]
+        assert all(len(ids) == 1 for ids in objects), [(word,
+            float(owner.similarity_codebook.trust.lengths[owner._csw_row_of(word),0]),
+            [(obj, float(owner.similarity_codebook.trust.lengths[owner._csw_row_of(obj),0]))
+             for obj in owner.interpret.remembered_objects(word)]) for word in words]
         assert objects[0] != objects[1]
     finally:
         model.End()

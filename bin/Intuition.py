@@ -317,10 +317,10 @@ def execute(owner, meaning, frames, *, row, work, premise):
         _intuition_terms=tuple(pack_term(term) for term in terms),
         _intuition_firings=tuple(tuple(map(float, pair)) for pair in pairs),
         _intuition_field=tuple(tuple(row) for row in field.detach().tolist()),
-        _evidence_kind='intuition')), (), pair=pair)
+        _evidence_kind='inference')), (), pair=pair)
     return dict(value=value, meaning=result, support_true=float(pair[0]), support_false=float(pair[1]),
         witnesses=tuple(term.rule for term in terms), sources=tuple(term.rule for term in terms),
-        firings=tuple(tuple(map(float, pair)) for pair in pairs), evidence_kind='intuition',
+        firings=tuple(tuple(map(float, pair)) for pair in pairs), evidence_kind='inference',
         intuition_derivation=tuple(proofs), knowing=tuple(knowing), incomplete=())
 
 
@@ -364,6 +364,12 @@ def write_knowing(model, evidence, row):
             pair = torch.minimum(live, code[:, None]).sum(0) / code.sum().clamp_min(1e-12)
             additions[int(slots[0]), row] = pair * locations[:, None]
     carrier._concept_activations = torch.maximum(existing, additions)
+    teacher = getattr(model, '_intuition_teacher', None)
+    if teacher is not None:
+        from IntuitionField import observed
+        from SentenceField import knowing
+        target, _ = observed(space, replace(knowing(model), evidence=additions.detach()))
+        model._intuition_teacher = torch.maximum(teacher, target)
 
 
 def operand(rule, slot):

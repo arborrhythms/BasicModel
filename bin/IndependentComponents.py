@@ -346,8 +346,8 @@ class IndependentComponents(nn.Module):
         alloc = _concept_alloc_of(owner)
         layer = alloc.layer()
         revision = (id(layer._tensor_row_keys), len(layer._tensor_row_keys),
-                    getattr(layer, '_record_revision', 0), id(alloc.reference_orders),
-                    len(alloc.reference_orders), len(alloc.retired))
+                    getattr(layer, '_record_revision', 0), owner._order_caps(),
+                    len(alloc.retired))
         if revision != self._basis_revision:
             rows = sorted(row for row in layer._tensor_row_keys if owner._order0_inventory_row(row))
             if len(rows) > self.capacity:
@@ -433,9 +433,8 @@ class IndependentComponents(nn.Module):
         except RuntimeError:
             self.admission_drops += 1
             return None
-        identity = owner.new_concept()
+        identity = owner.new_concept(order=1)
         alloc = _concept_alloc_of(owner)
-        alloc.reference_orders[identity] = 1
         alloc.settle(identity)
         if owner._csw_concept_row(1, identity) is None:
             raise RuntimeError('component inventory changed after allocation preflight')

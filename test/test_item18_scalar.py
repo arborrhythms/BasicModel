@@ -40,7 +40,7 @@ def test_scalar_boxes_are_counted_native_definitions(tmp_path,monkeypatch):
     assert reconstruct(owner,value=1.5)==()
 
 
-def test_scalar_joins_the_actual_glance_without_a_place(tmp_path,monkeypatch,eager_reading):
+def test_scalar_joins_the_actual_glance_in_its_modality_range(tmp_path,monkeypatch,eager_reading):
     from test_compiled_word_chunk import _tiny_canonical_model
     model = _tiny_canonical_model(tmp_path,monkeypatch,batch_size=1)
     model._tensor_peer_while_eager = True
@@ -49,7 +49,7 @@ def test_scalar_joins_the_actual_glance_without_a_place(tmp_path,monkeypatch,eag
     try:
         model.forward(source)
         field = model._sentence_open_fields[0]
-        assert not field.where[0,-1].any()
+        assert tuple(field.where[0,-1].tolist()) == model.where_registry.slices['scalar']
         owner = model._concept_owner()
         percept = model._scalar_present[0]['percept']
         assert owner.basic_percepts.occurrences[percept][1]
@@ -110,7 +110,8 @@ def test_scalar_only_presentation_closes_and_reconstructs_its_modalities(tmp_pat
         result = model.reconstructModalities(understanding)
         assert result['scalar'][0]['number'] == pytest.approx(1.)
         assert result['scalar'][0]['words'] == ('one',)
-        assert not understanding.reconstruction_carriers['scalar_field'].where.any()
+        scalar_field = understanding.reconstruction_carriers['scalar_field']
+        assert tuple(scalar_field.where[0, -1].tolist()) == model.where_registry.slices['scalar']
     finally:
         model.End()
         model.symbolSpace.soft_reset()

@@ -23,7 +23,7 @@ if _TEST not in sys.path:
 
 
 def _polymorphic_signature():
-    """``S* = lift(NP*, VP1)`` serialized form. LHS variable +0; RHS[0]
+    """``S* = change(NP*, VP1)`` serialized form. LHS variable +0; RHS[0]
     variable +0; RHS[1] constant +1."""
     return {
         'lhs_category': 'S',
@@ -32,7 +32,7 @@ def _polymorphic_signature():
         'rhs_categories': ['NP', 'VP'],
         'rhs_orders': [0, 1],
         'rhs_order_kinds': ['variable', 'constant'],
-        'op_name': 'lift',
+        'op_name': 'change',
     }
 
 
@@ -140,7 +140,7 @@ def test_legacy_signature_without_kinds_treats_as_constants():
         # no lhs_order_kind / rhs_order_kinds
         'rhs_categories': ['NP', 'VP'],
         'rhs_orders': [3, 1],
-        'op_name': 'lift',
+        'op_name': 'change',
     }
     assert is_rule_admissible(
         sig, left_cat='NP', left_order=3,

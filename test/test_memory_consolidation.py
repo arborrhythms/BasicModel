@@ -192,7 +192,7 @@ def test_event_without_factored_refs_uses_the_captured_verb_reading(monkeypatch)
     from test_identity_threading import recorded_identity_reading
     from ClauseJournal import finish_clause
     f = SentenceFixture(monkeypatch)
-    entry, _, _ = recorded_identity_reading(f, ('lift', ('lower_unary', 'subject'), 'action'))
+    entry, _, _ = recorded_identity_reading(f, ('change', ('bind', 'subject'), 'action'))
     clause = finish_clause(f.language, entry, registry=f.registry)
     verb = native(f.cs, torch.ones(8)*.25)
     from Spaces import _concept_alloc_of
@@ -292,10 +292,14 @@ def test_capacity_eviction_during_close_drops_only_the_evicted_tokens_history(mo
     f.cs.mtm = MediumTermMemory(capacity=2,n_vectors=f.cs.nVectors)
     import weakref
     f.cs.mtm._owner = weakref.ref(f.cs)
-    tree = ('sum',
-        ('lift', ('lower_unary', 'subject'), ('verb', 'move', ('lower', 'd', 'place'))),
-        ('lift', ('lower_unary', 'alias'), ('verb', 'affect', ('lower', 'd', 'target'))))
-    entry, _, _ = recorded_identity_reading(f, tree)
+    from chunk_fixtures import higher_word
+    for name in ('subject','alias','place','target'):
+        f.noun(name, order=1)
+        higher_word(f, name)
+    tree = ('add',
+        ('change', ('lower_unary', 'subject'), ('verb', 'move', ('lower_unary', ('surface', 'd', 'place')))),
+        ('change', ('lower_unary', 'alias'), ('verb', 'affect', ('lower_unary', ('surface', 'd', 'target')))))
+    entry, _, _ = recorded_identity_reading(f, tree, dummy_binds=(0,1,2,3))
     resolver = f.cs.components.reference_close
     clause = finish_clause(f.language, entry, registry=f.registry)
     plan = resolver.preview(clause, chunk_context(resolver, ()))

@@ -17,12 +17,12 @@ Coverage:
     - lower(x, y, mode='AND', kind='smooth') = elementwise product
     - lower(x, y, mode='AND', kind='radial') = RadMin (same-sign min magnitude)
     - lower((l, u), (l, u), mode='AND') = (max ℓ, min u) (region form)
-    - lift(x, y, mode='OR', kind='strict')  = elementwise max (default)
-    - lift(x, y, mode='OR', kind='smooth')  = arithmetic mean
-    - lift(x, y, mode='OR', kind='radial')  = RadMax (same-sign max magnitude
+    - change(x, y, mode='OR', kind='strict')  = elementwise max (default)
+    - change(x, y, mode='OR', kind='smooth')  = arithmetic mean
+    - change(x, y, mode='OR', kind='radial')  = RadMax (same-sign max magnitude
                                               with zero passthrough)
     - lift((l, u), (l, u), mode='OR') = (min ℓ, max u) (region form)
-    - lift(x, mode='NOT') / lower(x, mode='NOT') self-inverse
+    - change(x, mode='NOT') / lower(x, mode='NOT') self-inverse
     - point auto-promotes to degenerate region containing origin
     - inverse=True for AND/OR matches intersectionReverse / unionReverse
     - Ops.conjunction / Ops.disjunction are thin forwarders to Ops.lower /
@@ -104,31 +104,31 @@ class TestLowerAND(unittest.TestCase):
 
 
 class TestLiftOR(unittest.TestCase):
-    """Ops.lift(..., mode='OR') -- synthesis / union."""
+    """Ops.change(..., mode='OR') -- synthesis / union."""
 
     def test_point_form_default_kind_is_strict_max(self):
         x = torch.tensor([0.5, -0.3, 0.8, 0.0])
         y = torch.tensor([0.4,  0.6, -0.2, 0.9])
-        out = Ops.lift(x, y, mode='OR')
+        out = Ops.change(x, y, mode='OR')
         self.assertTrue(torch.allclose(out, torch.max(x, y)))
 
     def test_point_form_kind_strict_is_max(self):
         x = torch.tensor([0.5, -0.3, 0.8, 0.0])
         y = torch.tensor([0.4,  0.6, -0.2, 0.9])
-        out = Ops.lift(x, y, mode='OR', kind='strict')
+        out = Ops.change(x, y, mode='OR', kind='strict')
         self.assertTrue(torch.allclose(out, torch.max(x, y)))
 
     def test_point_form_is_arithmetic_mean(self):
         x = torch.tensor([0.5, -0.3, 0.8, 0.0])
         y = torch.tensor([0.4,  0.6, -0.2, 0.9])
-        out = Ops.lift(x, y, mode='OR', kind='smooth')
+        out = Ops.change(x, y, mode='OR', kind='smooth')
         self.assertTrue(torch.allclose(out, (x + y) / 2))
 
     def test_point_form_kind_radial_is_radmax(self):
         # RadMax: same-sign max magnitude with zero passthrough.
         x = torch.tensor([0.5, -0.3, 0.8, 0.0, 0.7])
         y = torch.tensor([0.4,  0.6, -0.2, 0.9, 0.2])
-        out = Ops.lift(x, y, mode='OR', kind='radial')
+        out = Ops.change(x, y, mode='OR', kind='radial')
         same_sign = (x * y > 0).float()
         max_mag = torch.max(x.abs(), y.abs())
         core = same_sign * torch.sign(x) * max_mag
@@ -142,7 +142,7 @@ class TestLiftOR(unittest.TestCase):
         u1 = torch.tensor([ 0.3, 0.8])
         l2 = torch.tensor([-0.5, -0.1])
         u2 = torch.tensor([ 0.5, 0.6])
-        out_l, out_u = Ops.lift((l1, u1), (l2, u2), mode='OR')
+        out_l, out_u = Ops.change((l1, u1), (l2, u2), mode='OR')
         self.assertTrue(torch.equal(out_l, torch.minimum(l1, l2)))
         self.assertTrue(torch.equal(out_u, torch.maximum(u1, u2)))
 
@@ -152,7 +152,7 @@ class TestLiftOR(unittest.TestCase):
         l2 = torch.tensor([-0.5, -0.1])
         u2 = torch.tensor([ 0.5, 0.6])
         for kind in ('strict', 'smooth', 'radial'):
-            out_l, out_u = Ops.lift((l1, u1), (l2, u2), mode='OR', kind=kind)
+            out_l, out_u = Ops.change((l1, u1), (l2, u2), mode='OR', kind=kind)
             self.assertTrue(torch.equal(out_l, torch.minimum(l1, l2)))
             self.assertTrue(torch.equal(out_u, torch.maximum(u1, u2)))
 
@@ -162,7 +162,7 @@ class TestNOT(unittest.TestCase):
 
     def test_lift_not_is_sign_flip_default(self):
         x = torch.tensor([0.5, -0.3, 0.0, 0.9])
-        out = Ops.lift(x, mode='NOT')
+        out = Ops.change(x, mode='NOT')
         self.assertTrue(torch.allclose(out, -x))
 
     def test_lower_not_is_sign_flip_default(self):
@@ -172,19 +172,19 @@ class TestNOT(unittest.TestCase):
 
     def test_lift_not_self_inverse(self):
         x = torch.tensor([0.5, -0.3, 0.7])
-        twice = Ops.lift(Ops.lift(x, mode='NOT'), mode='NOT')
+        twice = Ops.change(Ops.change(x, mode='NOT'), mode='NOT')
         self.assertTrue(torch.allclose(twice, x))
 
     def test_lift_not_inverse_true_equals_forward(self):
         x = torch.tensor([0.2, -0.7, 0.4])
-        fwd = Ops.lift(x, mode='NOT')
-        inv = Ops.lift(x, mode='NOT', inverse=True)
+        fwd = Ops.change(x, mode='NOT')
+        inv = Ops.change(x, mode='NOT', inverse=True)
         self.assertTrue(torch.allclose(fwd, inv))
 
     def test_lift_not_monotonic_paired_index_flip(self):
         # Bivector layout: (aP, aN) per concept. NOT swaps pairs.
         x = torch.tensor([0.9, 0.0, 0.0, 0.7])  # concept 0 = +0.9; concept 1 = -0.7
-        out = Ops.lift(x, mode='NOT', monotonic=True)
+        out = Ops.change(x, mode='NOT', monotonic=True)
         expected = torch.tensor([0.0, 0.9, 0.7, 0.0])
         self.assertTrue(torch.allclose(out, expected))
 
@@ -196,7 +196,7 @@ class TestInverse(unittest.TestCase):
         x = torch.tensor([0.4, 0.5])
         y = torch.tensor([0.2, 0.3])
         with self.assertRaises(NotImplementedError):
-            Ops.lift(x, y, mode='OR', inverse=True)
+            Ops.change(x, y, mode='OR', inverse=True)
 
     def test_lower_and_inverse_requires_W(self):
         x = torch.tensor([0.4, 0.5])
@@ -247,7 +247,7 @@ class TestModeRouting(unittest.TestCase):
         y = torch.tensor([0.4,  0.6])
         # lift(mode='AND') == lower(mode='AND')
         self.assertTrue(torch.allclose(
-            Ops.lift(x, y, mode='AND'),
+            Ops.change(x, y, mode='AND'),
             Ops.lower(x, y, mode='AND'),
         ))
 
@@ -257,7 +257,7 @@ class TestModeRouting(unittest.TestCase):
         # lower(mode='OR') == lift(mode='OR')
         self.assertTrue(torch.allclose(
             Ops.lower(x, y, mode='OR'),
-            Ops.lift(x, y, mode='OR'),
+            Ops.change(x, y, mode='OR'),
         ))
 
 
@@ -291,13 +291,13 @@ class TestConjunctionDisjunctionForwarders(unittest.TestCase):
 
     def test_disjunction_monotonic_equals_lift_strict(self):
         out_disj = Ops.union(self.x, self.y, monotonic=True)
-        out_lift = Ops.lift(self.x, self.y, mode='OR', kind='strict')
+        out_lift = Ops.change(self.x, self.y, mode='OR', kind='strict')
         self.assertTrue(torch.equal(out_disj, out_lift))
 
     def test_disjunction_bitonic_equals_lift_strict(self):
         # The maximum is closed over the cube, including its rails.
         out_disj = Ops.union(self.x, self.y, monotonic=False)
-        out_lift = Ops.lift(self.x, self.y, mode='OR', kind='strict')
+        out_lift = Ops.change(self.x, self.y, mode='OR', kind='strict')
         self.assertTrue(torch.equal(out_disj, out_lift))
 
     def test_conjunction_monotonic_matches_torch_min(self):
@@ -324,7 +324,7 @@ class TestConjunctionDisjunctionForwarders(unittest.TestCase):
     def test_lift_radial_matches_pre_step2_radmax(self):
         # 2026-05-29: was test_disjunction_bitonic_matches_pre_step2_radmax.
         # Same pivot as test_lower_radial_matches_pre_step2_radmin.
-        out = Ops.lift(self.x, self.y, mode='OR', kind='radial')
+        out = Ops.change(self.x, self.y, mode='OR', kind='radial')
         same_sign = (self.x * self.y > 0).float()
         max_mag = torch.max(self.x.abs(), self.y.abs())
         core = same_sign * torch.sign(self.x) * max_mag

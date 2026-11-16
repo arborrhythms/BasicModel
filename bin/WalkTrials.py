@@ -127,7 +127,7 @@ class ThoughtTrialState:
                 (model,('expectation_gain', '_answer_attention_obs', '_last_answer_construction',
                         '_last_output_comparison', '_last_output_walk_trace',
                         '_sentence_answer_cost', '_sentence_answer_predictions',
-                        '_sentence_answer_raw_cost'))]
+                        '_sentence_answer_raw_cost', '_intuition_teacher'))]
         if stm is not None:
             owners.append((stm, tuple('_live_' + name for name in STMChunks.FIELDS) +
                            ('_thought_contents', '_active_batch', '_max_depth_host')))

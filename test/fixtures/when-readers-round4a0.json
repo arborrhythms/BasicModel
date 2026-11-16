@@ -102,6 +102,18 @@
       "reads": "absolute"
     },
     {
+      "file": "bin/FieldProjection.py",
+      "function": "close_bracket",
+      "attributes": [
+        "when"
+      ],
+      "role": "definition read over a bracket",
+      "previous_absolute_time": false,
+      "now": "Carries the minimum start and maximum end of the readings inside the bracket to their definition read; no learned scorer receives the absolute time.",
+      "line": 55,
+      "reads": "absolute"
+    },
+    {
       "file": "bin/FieldReverse.py",
       "function": "reverse",
       "attributes": [
@@ -113,6 +125,18 @@
       "previous_absolute_time": false,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
       "line": 69,
+      "reads": "absolute"
+    },
+    {
+      "file": "bin/IntuitionField.py",
+      "function": "read",
+      "attributes": [
+        "when"
+      ],
+      "role": "learned field statement",
+      "previous_absolute_time": false,
+      "now": "Transports the computed field time to its stated meaning; absolute time is not input to a learned scorer.",
+      "line": 66,
       "reads": "absolute"
     },
     {

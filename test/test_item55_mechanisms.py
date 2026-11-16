@@ -47,6 +47,14 @@ def _serial_read(tmp_path, clock=0, offset=0):
         return result
     patches.setattr(ThoughtStream,'write',thought_write)
     patches.setattr(store,'append_meaning',append)
+    import RowTime
+    issued = []
+    next_time = RowTime.next_time
+    def issue_time(*args, **kwargs):
+        result = next_time(*args, **kwargs)
+        issued.append(int(RowTime.encoder().decode_index(result)))
+        return result
+    patches.setattr(RowTime, 'next_time', issue_time)
     try:
         programs = []
         for text in ('cat sat','cat ran'):
@@ -75,6 +83,7 @@ def _serial_read(tmp_path, clock=0, offset=0):
             omissions=tuple(omission_rows), forecasts=tuple(omission_rows),
             semantics=referents,
             initial_rows=initial_rows, initial_clock=initial_clock, count=len(store),
+            issued=tuple(issued),
             content=store.slots[:len(store)].detach().clone(), answer=answer.detach().clone())
     finally:
         patches.undo()
@@ -120,6 +129,8 @@ def _stream_code_banks(tmp_path,monkeypatch):
                 owner._sentence_seen_rows[0].fill_(-1)
                 owner._sentence_seen_rows[0, :2] = torch.tensor([row,other_row])
                 owner.prime_seen(torch.tensor([[row,other_row]]))
+                owner._observed_knowing.zero_()
+                owner._observed_knowing[0,[row,other_row],0] = 1.
                 book.mereology.observe_close(SimpleNamespace(
                     word_rows=torch.tensor([row,other_row]), concept_ids=torch.tensor([cid,other])))
             assert int(book.mereology.placement_witnesses[row]) == 2
@@ -169,8 +180,13 @@ def test_clock_independence(tmp_path):
         # row stores use the same model clock and carry its percept stamp.
         stamped = stamps.ne(0).any(-1)
         times = encoder().decode_index(stamps[stamped])
-        assert times.numel() and int(value['rows']['model_clock']) == max(
-            value['initial_clock'], int(times.max())+1)
+        # A kept MTM event also issues a time without requiring a durable
+        # row. Verify the clock against every producer, not only row writes.
+        issued = value['issued']
+        assert times.numel() and issued
+        assert issued == tuple(sorted(set(issued)))
+        assert set(times.tolist()) <= set(issued)
+        assert int(value['rows']['model_clock']) == issued[-1]+1
         if baseline is None:
             baseline = value
             continue
@@ -252,7 +268,7 @@ def test_preposition_idempotence(monkeypatch):
         assert torch.equal(leaf,marker.expand_as(phrase)) and torch.equal(back,phrase)
     from test_clause_acceptance import SentenceFixture
     fixture=SentenceFixture(monkeypatch)
-    for phrase in (('lower','a','cat'),('verb','chased',('lower','a','cat'))):
+    for phrase in (('surface','a','cat'),('verb','chased',('surface','a','cat'))):
         once=('preposition','in',phrase)
         first=fixture.clause(once)
         second=fixture.clause(('preposition','in',once))
@@ -266,7 +282,7 @@ def test_preposition_idempotence(monkeypatch):
 def test_surface_inverses(tmp_path, monkeypatch):
     from Language import (SurfaceLayer, LowerLayer, PrepositionLayer, MarkerUnaryLayer,
         LowerUnaryLayer, DefiniteUnaryLayer, PrepositionUnaryLayer, SurfaceUnaryLayer,
-        TransposeLayer, OperationSelectionLayer, _BinaryGrammarOpAdapter)
+        SwapLayer, OperationSelectionLayer, _BinaryGrammarOpAdapter)
     left,right = torch.rand(2,8),torch.rand(2,8)
     surface = SurfaceLayer(8,8)
     parent = surface.compose(left,right)
@@ -295,7 +311,7 @@ def test_surface_inverses(tmp_path, monkeypatch):
         if not isinstance(base,SurfaceLayer):
             a,b = base.reverse(base.compose(left,right),marker=left)
             assert torch.equal(a,left) and torch.equal(b,right)
-    transpose = TransposeLayer()
+    transpose = SwapLayer()
     a,b = transpose.reverse(*transpose.compose(left,right))
     assert torch.equal(a,left) and torch.equal(b,right)
     layer = OperationSelectionLayer(d_model=8,ops=[_BinaryGrammarOpAdapter(transpose)],chooser='mlp')
@@ -311,9 +327,9 @@ def test_surface_inverses(tmp_path, monkeypatch):
     from GrammarLessons import ComposeLessonStates
     lesson = ComposeLessonStates()
     lesson.record(3,slab[:1],dict(load_depth=torch.tensor([2])),
-        dict(valid=torch.tensor([True]),kind=torch.tensor([3]),position=torch.tensor([0]),probabilities=torch.ones(1,1)))
+        dict(valid=torch.tensor([True]),kind=torch.tensor([3]),op=torch.tensor([0]),position=torch.tensor([0]),probabilities=torch.ones(1,1)))
     lesson.record(4,slab[:1].flip(1),dict(load_depth=torch.tensor([2])),
-        dict(valid=torch.tensor([True]),kind=torch.tensor([0]),position=torch.tensor([0]),probabilities=torch.ones(1,1)))
+        dict(valid=torch.tensor([True]),kind=torch.tensor([0]),op=torch.tensor([0]),position=torch.tensor([0]),probabilities=torch.ones(1,1)))
     attempted = torch.zeros(1,6,dtype=torch.bool);attempted[:,3:5]=True
     states = lesson.sentence(0,torch.tensor([0,1]),width=2,closing_base=6,closing_width=0,attempted=attempted)
     assert states[0]['spans'] == ((0,),(1,)) and states[1]['spans'] == ((1,),(0,))
@@ -347,7 +363,7 @@ def _native_step_comparison(tmp_path, monkeypatch):
     import SentenceCredit
     from test_compiled_word_chunk import _tiny_canonical_model
     from ReferenceContext import reference_requests
-    for extra in ('transpose','preposition_unary','question'):
+    for extra in ('swap','question'):
         with monkeypatch.context() as patch:
             torch.manual_seed(20261010)
             paired=extra!='question'
@@ -370,20 +386,20 @@ def _native_step_comparison(tmp_path, monkeypatch):
                 slot = int(kwargs['lesson_slot'].flatten()[0])
                 width = model.inputSpace._word_active_mask.shape[1]
                 name = (extra if model._sentence_trial == 'explore' and slot == 6
-                                    else 'sum' if slot >= 3*width and bool((state[1]>1).any())
+                                    else 'add' if slot >= 3*width and bool((state[1]>1).any())
                                     else None)
                 if paired and name == extra:
                     assert state[1].tolist() == [3]
                 selected['names']=[name]*batch
                 if not paired:
-                    if slot==3:selected['names']=['transpose','surface','surface']
+                    if slot==3:selected['names']=['swap','surface','surface']
                     elif slot==4:selected['names']=['surface']*batch
                     elif slot>=3*width:
                         closing=slot-3*width
                         if closing==0:
                             assert state[1].tolist()==[3]*batch
                             assert not torch.equal(state[0][0,0],state[0][0,1])
-                        selected['names']=[{0:'transpose',1:'preposition',2:'surface'}.get(closing)]*batch
+                        selected['names']=[{0:'swap',1:'preposition',2:'surface'}.get(closing)]*batch
                     else:selected['names']=[None]*batch
                 return ordinary(state, gate, **kwargs)
             patch.setattr(language,'choose_operation',choose)
@@ -486,7 +502,7 @@ def _native_step_comparison(tmp_path, monkeypatch):
                 steps = [(program.actions[:, 0] > 0).sum() for program in programs]
                 assert (steps[1] - steps[0]).item() == 1
                 programs = [entry['observed_entries'][0] for entry in observed[:2]]
-                assert int((programs[1].actions[:,0] == (3 if extra=='transpose' else 2)).sum()) == 1
+                assert int((programs[1].actions[:,0] == (3 if extra=='swap' else 2)).sum()) == 1
                 for program in programs:
                     reference_requests(language, program.actions,leaf_orders=program.leaf_orders)
                 torch.testing.assert_close(programs[0].end_state,programs[1].end_state,rtol=0,atol=0)

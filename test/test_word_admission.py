@@ -9,7 +9,7 @@ def snapshot(cs):
     from Spaces import _concept_alloc_of
     alloc = _concept_alloc_of(cs)
     store = alloc.layer()
-    return (alloc.next_id, dict(alloc.placement), dict(cs.interpret._pending),
+    return (alloc.next_id, dict(alloc.symbols), dict(cs.interpret._pending),
             {key: tuple(value) for key, value in store._constituents.items()},
             dict(store.features._index),
             () if store.features.values is None else tuple(store.features.values.detach().tolist()),
@@ -46,7 +46,9 @@ def test_26_full_row_inventory_leaves_no_word_identity():
     from test_concept_capacity_policy import _cs
     cs = _cs(8)
     from order_fixtures import force_order
-    for row in range(8):
+    # Word admission needs a seat in order zero; higher blocks cannot spill
+    # into it. Fill its constructed capacity, keeping the total eight rows.
+    for row in range(cs.order_slice(0)[1]):
         force_order(cs, 1000 + row, 0)
         assert cs._csw_concept_row(0, 1000 + row) == row
     before = snapshot(cs)
@@ -198,6 +200,24 @@ def test_eager_admission_never_looks_up_nonlexical_forms(monkeypatch, surface):
             percept_when=None, tile_spans=None, percept_store=None, ws=_property_ws())
     assert calls == []
     assert cs.interpret.word_for_form(surface) is None
+
+
+def test_grammar_word_admission_stages_an_empty_bank_when_no_word_is_observed():
+    from types import SimpleNamespace
+    from Models import BasicModel
+    raw = torch.tensor([[97, 98]])
+    ids, spans = torch.tensor([[-1]]), torch.tensor([[[0, 2]]])
+    staged = []
+    model = SimpleNamespace(inputSpace=SimpleNamespace(_last_sentences=['ab']),
+        perceptualSpace=SimpleNamespace(_forward_input={'native_indices':ids,'native_part_spans':spans}),
+        wholeSpace=SimpleNamespace(), _staged_concepts_in=raw,
+        _concept_owner=lambda: None, _aligned_serial_word_mode=lambda: False,
+        _stage_mixing_grammar_leaf_mask=lambda: None,
+        _stage_reading_grammar_references=lambda words, fi: staged.append(words))
+    BasicModel._stage_reading_word_concepts(model)
+    assert staged == [[]]
+    assert model._reading_word_percepts is None
+    assert model._reading_word_extents is None
 
 
 def test_grammar_word_admission_keeps_nonlexical_percept_extent(monkeypatch):

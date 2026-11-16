@@ -17,7 +17,7 @@ def test_named_word_identity_survives_below_binding_threshold_and_rebuild():
     word = owner.interpret.lookup_word([4], [], form='wug')
     agreeing_views(owner, word)
     description = dict(owner.interpret._pending[word], identity_key='round1e-form')
-    row = owner.interpret.define(word, obj, description=description)
+    row = owner.interpret.define(word, obj, description=description, trust=1.)
     index, alloc = owner.definitions, owner._concept_allocator
     count, next_id = len(store.parts), alloc.next_id
     for rebuild in (False, True):
@@ -66,7 +66,7 @@ def test_lookup_below_threshold_reuses_named_word_without_allocating():
     owner, store, obj, _ = learned(1)
     word = owner.interpret.lookup_word([4], [], form='wug')
     agreeing_views(owner, word)
-    owner.interpret.define(word, obj)
+    owner.interpret.define(word, obj, trust=1.)
     before = owner._concept_allocator.next_id, len(store.parts)
     assert owner.definitions.objects(word) == ()
     assert owner.interpret.lookup_word([4], [], form='wug') == word
@@ -77,8 +77,9 @@ def view(owner, store, identity, content, number):
     observe(owner, identity, content)
 
 
-def fixture(*, trainable=False, capacity=32):
-    owner, bank, _, _ = paired_fixture(meaning_pairs=4, capacity=capacity)
+def fixture(*, trainable=False, capacity=32, order_reservations=()):
+    owner, bank, _, _ = paired_fixture(meaning_pairs=4, capacity=capacity,
+                                      order_reservations=order_reservations)
     owner._symbolic_order = 3
     if trainable:
         from ConceptTrust import ConceptTrust
@@ -233,7 +234,7 @@ def test_mint_has_one_view_and_for_radius_with_zero_against():
     assert bank.trust.views[owner._csw_row_of(identity)] == 1
     row = owner._csw_row_of(identity)
     value = bank.lookup_rows(row)
-    torch.testing.assert_close(value[:3], content[:3])
+    assert not value[:3].any()  # §30.7: the minted order-one symbol has no form.
     assert value[3:7].norm().item() == pytest.approx(-math.expm1(-1/3))
     assert not value[7:11].any()
     assert bank.trust.lengths[row,1] == 0.
@@ -391,7 +392,7 @@ def test_ordered_mereology_rises_without_reclosing_and_falls_with_stability():
     word = owner.interpret.lookup_word([4], [], form='wug')
     from definition_fixtures import agreeing_views
     agreeing_views(owner, word)
-    named = owner.interpret.define(word, wug)
+    named = owner.interpret.define(word, wug, trust=1.)
     before = parts.truth_plus.clone(), parts.truth_minus.clone()
     assert float(parts.evidence(first)[0]) == pytest.approx(-math.expm1(-1/3))
     assert float(parts.evidence(second)[0]) == pytest.approx(1.)
@@ -465,7 +466,10 @@ def test_order_survives_retention_checkpoint_and_rejects_cycles():
 
 def test_item107_generic_sentence_never_names_its_chain(monkeypatch):
     from test_clause_acceptance import SentenceFixture
-    owner,_,atoms=fixture(capacity=160)
+    from Language import Grammar
+    from PartsOfSpeech import order_reservations
+    grammar = Grammar(); grammar.load_from_grammar_file('complete.grammar')
+    owner,_,atoms=fixture(capacity=160, order_reservations=order_reservations(grammar))
     f=SentenceFixture(monkeypatch,native_cube=False,cs=owner)
     word=owner.interpret.lookup_word([4],[],form='wug')
     original,genuine=built(owner,atoms[1]),built(owner,atoms[2])
@@ -717,7 +721,11 @@ def test_sign_sentence_observes_a_remembered_endpoint_before_joining(monkeypatch
     from test_clause_acceptance import SentenceFixture
     from test_item25_completion import _sign_equation
     from definition_fixtures import agreeing_views
-    owner, _, _, alloc = paired_fixture(meaning_pairs=4, capacity=160)
+    from Language import Grammar
+    from PartsOfSpeech import order_reservations
+    grammar = Grammar(); grammar.load_from_grammar_file('complete.grammar')
+    owner, _, _, alloc = paired_fixture(meaning_pairs=4, capacity=160,
+                                       order_reservations=order_reservations(grammar))
     owner._symbolic_order = 3
     f = SentenceFixture(monkeypatch, cs=owner, native_cube=False)
     label = owner.interpret.lookup_word([4], (), form='Felix')

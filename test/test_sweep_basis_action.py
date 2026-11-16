@@ -1,3 +1,4 @@
+from action_fixtures import action_with_basis
 """Matrix-free forward actions preserve the retained dense kernel and credit."""
 import copy
 
@@ -43,7 +44,7 @@ def dense_action(action, value, verb, **basis):
 @pytest.mark.parametrize('modifier', [False, True])
 @pytest.mark.parametrize('source', ['group', 'object', 'mixed'])
 def test_forward_action_matches_dense_values_and_parameter_credit(modifier, source):
-    action = MeaningAction(8, modifier=modifier).double()
+    action = action_with_basis(8, modifier=modifier).double()
     with torch.no_grad():
         for i, parameter in enumerate(action.parameters()):
             parameter.add_((torch.arange(parameter.numel(), dtype=parameter.dtype)
@@ -73,7 +74,7 @@ def test_forward_action_matches_dense_values_and_parameter_credit(modifier, sour
 
 
 def test_forward_object_action_does_not_construct_a_dense_basis(monkeypatch):
-    action = MeaningAction(896)
+    action = action_with_basis(896)
     value = torch.full((28, 1, 896), .3, requires_grad=True)
     obj = torch.full_like(value, .4, requires_grad=True)
     calls = []
@@ -92,10 +93,10 @@ def test_forward_object_action_does_not_construct_a_dense_basis(monkeypatch):
 
 @pytest.mark.parametrize('modifier', [False, True])
 def test_forward_reflection_action_compiles_with_unchanged_credit(modifier):
-    action = MeaningAction(8, modifier=modifier).double()
+    action = action_with_basis(8, modifier=modifier).double()
     with torch.no_grad():
         action.readout.fill_(.08)
-        action.object_vectors[0, 1, 0] = .2
+        action.object_basis.vectors[0, 1, 0] = .2
     value = torch.linspace(.15, .75, 16, dtype=torch.float64).reshape(2, 8).requires_grad_()
     context = value.detach().flip(-1).requires_grad_()
     args = dict(object_value=context, group=torch.tensor([0, -1]),

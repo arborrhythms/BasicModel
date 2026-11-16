@@ -116,8 +116,8 @@ def test_reflexive_part_fact_is_not_an_intuition_definition_cycle(tmp_path):
     model, registry, store, refs = setup()
     owner = model._concept_owner()
     alloc = owner._concept_allocator
-    cid = refs[0][1]
-    alloc.reference_orders[cid] = 1
+    from test_reference_close import known_concept
+    cid = known_concept(owner, registry._payload(refs[0]), order=1)
     alloc.individuals.add(cid)
     working = torch.full((owner.outputShape[-1],), .3)
     value = replace(ConceptualMeaning.from_description(working),
@@ -142,8 +142,7 @@ def test_reflexive_part_fact_is_not_an_intuition_definition_cycle(tmp_path):
                         for name, tensor in alloc.parts.named_buffers()}
     # Reciprocal testimony between two recorded order-one concepts remains
     # readable in both directions without making either a class member.
-    other = refs[1][1]
-    alloc.reference_orders[other] = 1
+    other = known_concept(owner, registry._payload(refs[1]), order=1)
     for member, whole in ((cid, other), (other, cid)):
         store.append_relation(member, whole, truth_plus=1.)
         assert alloc.parts.find(member, whole) is not None

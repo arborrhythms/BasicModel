@@ -23,7 +23,7 @@ def _bound_references(meaning):
 
 
 def matches(model, meaning, word):
-    """Strict identity match against the existing lexical association index."""
+    """Read the concept identity of the concluded binding."""
     return _matches(model, meaning, word, references(meaning))
 
 
@@ -96,7 +96,7 @@ def _matches(model, meaning, word, values):
 
 
 def cost(model, meaning, target, *, stream=0):
-    """An exact identity costs zero; other bindings use content coverage.
+    """Read identity or coverage of another bound idea.
 
     This is a loss-side answer term for the existing paired chooser rule.
     Missing target identities or an unbound answer cannot be scored as correct.

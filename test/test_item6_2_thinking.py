@@ -123,7 +123,7 @@ def test_thought_uses_existing_compose_scorer_and_owner_credit():
     model,registry,store,(a,b,c)=world()
     model.train()
     model.errors.clear()
-    result=run(model,registry.form('equal',a,a),work_budget=20,
+    result=run(model,registry.form('define',a,a),work_budget=20,
                score=lambda result:float(has_open_slots(result.meaning)))
     assert model._selected_thought_chooser(result.meaning) is model.shared_grammar
     assert not hasattr(model,'selected_thought_choosers')
@@ -161,7 +161,7 @@ def test_not_exchanges_both_poles_and_preserves_content():
 
 
 def test_operations_all_declare_pairs_and_ast_never_returns_scalar():
-    expected={'ask','bind','query','not','isTrue','exist','isPart','part','isEqual','equal','infer','intuit','implies','gain'}
+    expected={'ask','bind','query','not','isTrue','exist','isPart','part','isEqual','equal','infer','intuit','implies','gain','non','define'}
     assert set(THOUGHT_EXECUTORS)==expected
     assert all(item.evidence_pair for item in THOUGHT_EXECUTORS.values())
     source=Path('bin/ThoughtFaces.py').read_text()
@@ -178,7 +178,7 @@ def test_nested_ask_returns_the_binding_and_shares_budget(monkeypatch):
     model.conceptualSpace.add_whole(a[1],b)
     store.append_relation(a[1],b[1],truth_plus=1.)
     store._concept_owner()._concept_allocator.singletons.add(b[1])
-    child=registry.form('equal',a,b)
+    child=registry.form('define',a,b)
     child=question(replace(child, role_refs=(None,child.role_refs[1],b),
         role_mask=torch.tensor([False,True,True]), bindings={'_equality':True}), (('referent',0),))
     outer=registry.form('ask',child)
@@ -262,7 +262,7 @@ def credit_chain_world(monkeypatch):
     model, registry, store, (a,b,c) = world()
     store.append_relation(a[1], b[1], truth_plus=1.)
     store._concept_owner()._concept_allocator.singletons.add(b[1])
-    goal=registry.form('equal',a,b)
+    goal=registry.form('define',a,b)
     goal=question(replace(goal,role_refs=(None,goal.role_refs[1],b),
         role_mask=torch.tensor([True,True,True]),bindings={'_equality':True}), (('referent',0),))
     def candidate(name, meaning):
@@ -390,7 +390,7 @@ def test_open_closing_and_later_binding_are_reference_driven(surface):
     # A new occurrence can fill the earlier null. Its source address remains
     # distinct from the question's address and from the new inference.
     supplied=with_slots(replace(source,role_refs=(b,None,None)),(),pair=(1.,0.))
-    copular=registry.form('equal',a,b)
+    copular=registry.form('define',a,b)
     copular=with_slots(replace(copular,role_refs=(None,copular.role_refs[1],b),
         bindings=dict(bindings(copular),_equality=True,_forward_references=((0,a[1]),))),
         (('referent',0),),pair=(1.,0.))
