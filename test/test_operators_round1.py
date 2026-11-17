@@ -108,18 +108,18 @@ def test_footprint_requires_a_declared_subsystem_writer(monkeypatch):
         Grammar()._fill_rule_list([], {'rule': 'S = broken.forward(S)'})
 
 
-@pytest.mark.parametrize('kind', ['verb', 'adverb'])
+@pytest.mark.parametrize('kind', ['verb', 'modifier'])
 def test_modifier_can_write_silent_coordinate_and_reverse_with_witness(kind):
-    from Language import VerbLayer, AdverbLayer
-    op = (VerbLayer if kind == 'verb' else AdverbLayer)(nInput=3, nOutput=3)
-    shift = op._verb_shift if kind == 'verb' else op._adv_shift
+    from Language import VerbLayer, ModifierLayer
+    op = (VerbLayer if kind == 'verb' else ModifierLayer)(nInput=3, nOutput=3)
+    shift = op._verb_shift if kind == 'verb' else op._modifier_shift
     operand = torch.tensor([[.6, .5, .35]], requires_grad=True)
     modifier = torch.tensor([[0., 1., 0.]])
     with torch.no_grad():
         shift[1, 1] = .25
     actual = op.compose(operand, modifier)
     assert actual[0, 1] > .5
-    recovered, _ = op.reverse(actual, **{('verb_what' if kind == 'verb' else 'adverb_what'): modifier})
+    recovered, _ = op.reverse(actual, **{('verb_what' if kind == 'verb' else 'modifier_what'): modifier})
     torch.testing.assert_close(recovered, operand, atol=1e-6, rtol=1e-6)
     actual.sum().backward()
     assert shift.grad[1, 1] != 0
@@ -155,10 +155,10 @@ def test_shipped_rule_footprints_and_alias_are_exhaustive():
     assert rules[0].footprint_reads == rules[0].footprint_writes == ('meaning', 'poles')
 
 
-@pytest.mark.parametrize('kind', ['verb', 'adverb'])
+@pytest.mark.parametrize('kind', ['verb', 'modifier'])
 def test_gain_only_checkpoint_loads_with_zero_translation(kind):
-    from Language import VerbLayer, AdverbLayer
-    cls = VerbLayer if kind == 'verb' else AdverbLayer
+    from Language import VerbLayer, ModifierLayer
+    cls = VerbLayer if kind == 'verb' else ModifierLayer
     old, restored = cls(nInput=3, nOutput=3), cls(nInput=3, nOutput=3)
     state = {k: v for k, v in old.state_dict().items() if not k.endswith('_shift')}
     restored.load_state_dict(state, strict=True)

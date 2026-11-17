@@ -37,7 +37,7 @@ def test_explicit_addresses_bound_decoding_without_establishing_content_match(mo
     # An address grants a read; without an entry it establishes no field match.
     context = replace(_context(_cs(), store=store, max_records=1),
         operand_references=tuple(('argin1', reference) for reference in references))
-    assert _signature('query', 'argin1').invoke(context, meaning)['value'] == ()
+    assert _signature('query', 'argin1').invoke(context, meaning)['value'] is None
 
 
 def test_zero_budget_does_not_fetch_a_named_concept_payload(monkeypatch):
@@ -75,7 +75,7 @@ def test_addressed_end_read_returns_complete_content_without_another_occurrence(
     assert len(store) == 1
     # The closed content question has no stored extension to read here.
     queried = _signature('query', 'argin1').invoke(context, replace(meaning))
-    assert queried['value'] == () and queried['support_true'] == queried['support_false'] == 0
+    assert queried['value'] is None and queried['support_true'] == queried['support_false'] == 0
 
 
 @pytest.mark.parametrize('declarations', [17, ['isPart(X,Y)', 'isPart(A,B)'], [None], ['isPart(X,,Y)']])

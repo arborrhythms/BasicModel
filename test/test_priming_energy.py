@@ -26,7 +26,6 @@ def _chain_cs(*, batch_size=2):
     selected = [3,rA,5,rB,6]
     derived.placement[selected] = directions([0,10,16,50,60], dtype=torch.float32)
     derived.placement_witnesses[selected] = 1
-    derived.placement_valid[[rA,rB]] = True
     cs._priming_decay = 1.
     return cs, rA, rB
 

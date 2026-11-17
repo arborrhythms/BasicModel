@@ -6,7 +6,9 @@ from test_review13_subspaces import fixture
 
 
 def argument_inventory(arguments, count=4):
-    owner, bank, _, _ = fixture(meaning_pairs=max(4, count), capacity=max(32, len(arguments)+count+8))
+    operations = {name.rsplit('_argin', 1)[0] for name in arguments if '_argin' in name}
+    owner, bank, _, _ = fixture(meaning_pairs=max(4, count), capacity=max(32, len(arguments)+count+8),
+                               order_reservations=(0, len(arguments), len(operations)))
     parts = PartsOfSpeech(arguments, owner)
     # The fixture owns its concept space for as long as its grammar catalogue.
     object.__setattr__(parts, '_fixture_owner', owner)

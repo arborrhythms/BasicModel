@@ -153,7 +153,7 @@ def observe_score_function(result):
                 names = [] if entry['walk']=='narrowing' else ((entry['module'].op_names or [str(i) for i in range(entry['module'].r_reduce)]) * (entry['width']-1)
                          + (entry['module'].unary_names or [str(i) for i in range(entry['module'].r_apply)]) * entry['width'] + ['STOP'])
                 if entry['walk']=='narrowing':
-                    names=['divide','descend','gloss','and','or','not'] * (entry['original'].shape[-1]//6)+['STOP']
+                    names=['divide','descend','mint','and','or','not'] * (entry['original'].shape[-1]//6)+['STOP']
                 # Central difference of the very same mean-reduced surrogate.
                 z = entry['original'][row].double()
                 plus, minus = z.clone(), z.clone()

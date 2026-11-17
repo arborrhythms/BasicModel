@@ -295,7 +295,8 @@ def test_intuition_may_answer_and_retired_face_is_absent():
     assert 'intuit' in THOUGHT_EXECUTORS and 'intuit' in registry.executable_operation_ids
     result = invoke(model, registry, registry.form('intuit', value))
     assert result.evidence_kind == 'intuition'
-    assert accepted(result.evidence['meaning'])  # A closed intuition may answer (§3.6).
+    assert result.value is None and result.evidence.get('meaning') is None
+    assert result.evidence['knowing_written']  # §48: intuition writes the field.
     retired = 'is' + 'Implied'
     assert retired not in THOUGHT_EXECUTORS
     assert ('is_' + 'implied') not in Path('bin/ThoughtFaces.py').read_text()
@@ -380,7 +381,7 @@ def test_worked_token_property_line_queries_backward_and_forward_then_replays(mo
                             and pattern.role_refs[2] == kind)):
                     selected.append(action)
                     return action
-            if step in (1, 3) and action.semantic_id == 'infer':
+            if step in (1, 3) and action.semantic_id == 'infer' and not action.open_roles:
                 premise = resident.get(request.role_refs[0][1])
                 rule = resident.get(request.role_refs[2][1])
                 direction = bindings(request).get('_infer_direction')
@@ -414,3 +415,151 @@ def test_worked_token_property_line_queries_backward_and_forward_then_replays(mo
     tampered[position] = replace(tampered[position], support_true=.1)
     with pytest.raises(ValueError, match='replayed supports'):
         replay_thoughts(tampered)
+
+
+def test_opening_episode_preserves_its_selected_resident_premise(monkeypatch):
+    model, registry, store, refs = world()
+    stm = model.conceptualSpace.stm
+    attach(model._what_memory(), stm)
+    premises = [put(stm, idea(registry, refs[0]), row=0)
+                for _ in range(stm.state[chunks.READ].shape[1])]
+    first = bindings(premises[0])['_chunk_when']
+    chosen = []
+    def choose(root, active, actions, **kwargs):
+        if chosen:
+            return None
+        action = next(item for item in actions if item is not None
+            and item.semantic_id == 'infer' and item.request.role_refs[0] == ('chunk', first)
+            and item.open_roles)
+        chosen.append(action)
+        return action
+    monkeypatch.setattr(model, '_choose_selected_thought_action', choose)
+    result = run(model, idea(registry, refs[1]), work_budget=32)
+    assert len(chosen) == 1
+    assert [event.operation for event in result.records if event.kind == 'thought'] == ['infer', 'conclude']
+    assert any(when == first for when, _ in held(stm, 0))
+
+
+def test_thought_menu_reads_the_execution_workspace_in_an_unshared_model(monkeypatch):
+    model, registry, store, refs = world()
+    from test_cs_symbol_table import _cs
+    from clock_fixtures import install
+    execution_space = _cs()
+    object.__setattr__(model, 'conceptualSpace', execution_space)
+    install(model)
+    foreign = put(registry.space.stm, idea(registry, refs[0]), row=0)
+    resident = put(execution_space.stm, idea(registry, refs[1]), row=0)
+    foreign_ref = ('chunk', bindings(foreign)['_chunk_when'])
+    resident_ref = ('chunk', bindings(resident)['_chunk_when'])
+    chosen = []
+    menus = []
+    def choose(root, active, actions, **kwargs):
+        premises = {item.request.role_refs[0] for item in actions
+                    if item is not None and item.semantic_id == 'infer'}
+        menus.append(premises)
+        assert foreign_ref not in premises
+        if chosen:
+            return None
+        action = next(item for item in actions if item is not None
+            and item.semantic_id == 'infer' and item.request.role_refs[0] == resident_ref)
+        chosen.append(action)
+        return action
+    monkeypatch.setattr(model, '_choose_selected_thought_action', choose)
+    result = run(model, idea(registry, refs[2]), work_budget=32)
+    assert len(chosen) == 1 and len(menus) >= 2
+    assert resident_ref in menus[0]
+    assert model._what_memory()._thought_stm is execution_space.stm
+    assert [event.operation for event in result.records if event.kind == 'thought'] == ['infer', 'conclude']
+
+
+def test_opening_a_request_preserves_its_owned_resident_operand():
+    from ThoughtChunks import read
+    model, registry, store, refs = world()
+    memory, stm = model._what_memory(), model.conceptualSpace.stm
+    attach(memory, stm)
+    premises = [put(stm, idea(registry, refs[0]), row=0)
+                for _ in range(stm.state[chunks.READ].shape[1])]
+    first = bindings(premises[0])['_chunk_when']
+    request = registry.form('infer', premises[0], open_roles=('argin2',))
+    memory.begin_thought_episode(request, b=0, work_budget=32)
+    value = read(stm, first, 0)
+    assert value.role_refs == premises[0].role_refs
+    assert memory.thought_state(b=0).focus_when != first
+    assert len(held(stm,0)) == len(premises)
+
+
+def test_chain_integration_reads_the_execution_workspace_in_an_unshared_model():
+    from types import MappingProxyType
+    from Queries import ThoughtResult
+    from ThoughtStream import integrate
+    from test_cs_symbol_table import _cs
+    from clock_fixtures import install
+    model, registry, store, (a, b, c) = world()
+    execution_space = _cs()
+    object.__setattr__(model, 'conceptualSpace', execution_space)
+    install(model)
+    witnesses = []
+    for left, right in ((a, b), (b, c)):
+        index = store.append_relation(left[1], right[1], truth_plus=.7)
+        frame = store.part_row(index[1], reading='part')
+        value = replace(frame['meaning'], bindings=dict(bindings(frame['meaning']),
+            _rule_row=frame['occurrence'], _rule_kind='part', _evidence_kind='retrieval'))
+        put(execution_space.stm, with_slots(value, (), pair=(.7, 0.)), row=0)
+        witnesses.append(frame['occurrence'])
+    goal = with_slots(registry.form('isPart', a, c), (), pair=(0., 0.))
+    result = ThoughtResult('ask', 'conceptual-subgoal', 'idea', 'unverified',
+        registry.form('ask', goal), MappingProxyType({}))
+    resolved = integrate(registry, goal, result, (), stm=execution_space.stm)
+    assert evidence_pair(resolved) == pytest.approx((.7, 0.))
+    assert bindings(resolved)['_thought_witnesses'] == tuple(witnesses)
+    assert held(registry.space.stm, 0) == ()
+
+
+def test_replaced_thought_view_does_not_follow_its_time_into_another_chunk():
+    from WalkTrials import ThoughtTrialState
+    model, registry, store, refs = world()
+    stm = model.conceptualSpace.stm
+    attach(model._what_memory(), stm)
+    original = put(stm, idea(registry, refs[0]), row=0)
+    when = bindings(original)['_chunk_when']
+    original_index = int(chunks.locate(stm.state, when, band=chunks.WHEN)[0])
+    saved = ThoughtTrialState(model)
+    gate = torch.tensor([True])
+    state, incoming = chunks.deposit(stm.state, registry._payload(refs[1])[None], gate,
+        when=model.when_encoding.encode(model._advance_when_time()), stack=True)
+    assert int(incoming[0]) != original_index
+    positions = torch.arange(state[chunks.READ].shape[1])[None]
+    stm.set_state(chunks.clear(state, positions == original_index))
+    # The ordinary close can publish the retained sentence at the last
+    # thought time. That does not transfer the replaced focus's semantic view.
+    closed = chunks.keep_close(stm.state, gate,
+        refs=torch.zeros(1, 2, 2, dtype=torch.long), when=torch.tensor([when]))
+    stm.set_state(closed)
+    before = tuple(value.clone() for value in stm.state)
+    assert held(stm, 0) == ()
+    for actual, expected in zip(stm.state, before, strict=True):
+        torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+    with pytest.raises(ValueError, match='no retained semantic reference'):
+        read(stm, when, 0)
+    saved.restore()
+    assert [address for address, _ in held(stm, 0)] == [when]
+    restored = read(stm, when, 0)
+    assert restored.role_refs == original.role_refs
+    torch.testing.assert_close(restored.roles, original.roles, rtol=0, atol=0)
+
+
+def test_sentence_scratch_restore_keeps_a_temporarily_hidden_thought_view():
+    model, registry, store, refs = world()
+    stm = model.conceptualSpace.stm
+    original = put(stm, idea(registry, refs[0]), row=0)
+    when = bindings(original)['_chunk_when']
+    saved = tuple(value.clone() for value in stm.state)
+    index = int(chunks.locate(saved, when, band=chunks.WHEN)[0])
+    stm.set_state(chunks.clear(saved, torch.arange(saved[chunks.READ].shape[1])[None] == index))
+    assert held(stm, 0) == ()
+    # Sentence scoring restores tensor scratch without executing a semantic
+    # writer. The retained view must become readable with its owned slot.
+    stm.set_state(saved)
+    restored = read(stm, when, 0)
+    assert restored.role_refs == original.role_refs
+    torch.testing.assert_close(restored.roles, original.roles, rtol=0, atol=0)

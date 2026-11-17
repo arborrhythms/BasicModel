@@ -34,7 +34,7 @@ def test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s
     assert ended.tolist() == [0]
     assert policy.slots(state, torch.tensor([2])).tolist() == [1]
     assert int(state[0, 0, 0]) & policy.RELATIVE
-    state, ended = policy.apply(state, choice(binary, 'lift'), torch.tensor(2))
+    state, ended = policy.apply(state, choice(binary, 'change'), torch.tensor(2))
     assert ended.tolist() == [3] and int(state[0, 0, 1]) == -4
 
 
@@ -43,10 +43,10 @@ def test_absolute_embedding_pushes_its_point_without_a_reference():
     state = policy.empty(torch.zeros(1, 8, 8))
     for ref in (10, 11, 12, 13):
         state = policy.push(state, torch.tensor([True]), torch.tensor([ref]))
-    state, ended = policy.apply(state, choice(binary, 'lift'), torch.tensor(0))
+    state, ended = policy.apply(state, choice(binary, 'change'), torch.tensor(0))
     assert ended.tolist() == [1] and int(state[0, 0, 1]) == -1
     state, _ = policy.apply(state, choice(binary, 'verb'), torch.tensor(1))
-    state, ended = policy.apply(state, choice(binary, 'lift'), torch.tensor(2))
+    state, ended = policy.apply(state, choice(binary, 'change'), torch.tensor(2))
     assert ended.tolist() == [1] and policy.slots(state, torch.tensor([1])).tolist() == [1]
 
 
@@ -99,3 +99,29 @@ def test_committed_close_keeps_recent_chunks_beside_the_output_field():
     torch.testing.assert_close(state[1][10][0, 0, :4], idea.point)
     torch.testing.assert_close(state[1][10][1, 0].reshape(3,4), relation.meaning.roles[[2, 0, 1]])
     assert state[1][11].tolist() == [[1], [3]]
+
+
+def test_nested_relative_operand_does_not_complete_a_three_root_forest():
+    policy, binary, _ = scope()
+    state = policy.empty(torch.zeros(1, 8, 8))
+    for ref in (121, 143, 139, -1):
+        state = policy.push(state, torch.tensor([True]), torch.tensor([ref]))
+    state, _ = policy.apply(state, choice(binary, 'implies'), torch.tensor(6))
+    # The rightmost chunk is a complete implication; the other two roots
+    # have no selected predicate between them. They still need composition.
+    assert int(state[0, 0, 0]) & policy.RELATIVE
+    assert policy.slots(state, torch.tensor([3])).tolist() == [1]
+    compiled = torch.compile(policy.slots, backend='eager', fullgraph=True)
+    assert compiled(state, torch.tensor([3])).tolist() == [1]
+
+
+def test_three_root_allowance_reads_the_middle_predicate_not_nested_relations():
+    from ClauseRow import predicate_identity
+    policy, _, _ = scope()
+    state = policy.empty(torch.zeros(2, 8, 8))
+    state[:, :3, 1] = torch.tensor([[10, predicate_identity('part'), 11],
+                                   [10, 99, 11]])
+    state[:, 0, 0] = policy.RELATIVE | policy.SENTENCE | policy.LOCAL
+    assert policy.slots(state, torch.tensor([3, 3])).tolist() == [3, 1]
+    assert policy.slots(state, torch.tensor([1, 1])).tolist() == [3, 3]
+    assert policy.slots(state, torch.tensor([2, 2])).tolist() == [1, 1]

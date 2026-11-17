@@ -1,5 +1,4 @@
 """Only the kept parse's participant constituents can enter a bind menu."""
-from order_fixtures import force_order
 from chunk_fixtures import context as chunk_context
 from dataclasses import replace
 from types import SimpleNamespace
@@ -27,7 +26,7 @@ def test_positive_marker_or_predicate_is_never_an_arrival_candidate(monkeypatch,
     x = Composition(atoms[0]*0, reference=words['x'], word_id=words['x'], leaves=(0,))
     if attachment == 'predicate':
         phrase = Composition(atoms[0], (marker, noun), operation='verb', head_role=1)
-        tree = Composition(atoms[0], (x, phrase), operation='lift', head_role=2)
+        tree = Composition(atoms[0], (x, phrase), operation='change', head_role=2)
     else:
         phrase = Composition(atoms[0], (marker, noun) if attachment == 'surface' else (noun, marker),
             operation='surface' if attachment == 'surface' else 'verb',
@@ -94,24 +93,24 @@ def test_ordinary_menu_uses_the_retained_argument_occupations(monkeypatch):
     from PartsOfSpeech import PartsOfSpeech
     resolver, store, atoms, words, _ = world()
     owner = resolver.components.owner
-    rule = SimpleNamespace(method_name='lift', surface_name=None, head_role=2,
+    rule = SimpleNamespace(method_name='change', surface_name=None, head_role=2,
                            rhs_symbols=('NP', 'VP'), clause_form='S', relation_kind=None)
     from test_reference_close import known_concept as mint
     words = dict(three=mint(owner, atoms[0]), wrong=mint(owner, atoms[1]))
-    occupations = PartsOfSpeech(('lift_argin1', 'lift_argin2'), owner)
+    occupations = PartsOfSpeech(('change_argin1', 'change_argin2'), owner)
     labels = {name: owner.interpret.lookup_word([120+i], (), form=name)
               for i, name in enumerate(words)}
     for name, word in labels.items():
         owner.interpret.define(word, words[name])
-    occupations.add(labels['three'], 'lift_argin1')
-    occupations.add(labels['wrong'], 'lift_argin2')
+    occupations.add(labels['three'], 'change_argin1')
+    occupations.add(labels['wrong'], 'change_argin2')
     object.__setattr__(store, '_occupation_owner', weakref.ref(occupations))
     object.__setattr__(store, '_part_read_rules', (rule,))
     # Explicitly minted native identities; the predicate position in this
     # admitted pair does not make it a participant.
     tree = Composition(atoms[0], (
         Composition(atoms[0], reference=words['three']),
-        Composition(atoms[1], reference=words['wrong'])), operation='lift', head_role=2)
+        Composition(atoms[1], reference=words['wrong'])), operation='change', head_role=2)
     written = {}
     clause = Clause(ConceptualMeaning.from_description(atoms[0]), point=atoms[0], composition=tree)
     row = store.write_clause(clause,  written_rows=written)
@@ -136,17 +135,17 @@ def test_ordinary_menu_uses_the_retained_argument_occupations(monkeypatch):
 def test_journal_and_close_use_the_reading_order_and_argument_position(monkeypatch, order, position):
     from ClauseJournal import finish_clause
     from reading_fixtures import record_reading
-    from Spaces import _concept_alloc_of
     from test_bind_thought import native
     f = native(monkeypatch)
-    word = f.cs.interpret.lookup_word([101], (), form='m')
-    force_order(f.cs, word, order)
-    f.words['m'] = word, word
-    tree = (('lift', 'm', 'v') if position == 'participant' else
-            ('surface', 'm', 'v') if position == 'marker' else ('lift', 'v', 'm'))
+    # Reading order belongs to the named object, not the word's form row.
+    # Objectless words have their separate pending-reference certificate.
+    obj = f.noun('m', order=order)
+    word = f.words['m'][0]
+    tree = (('change', 'm', 'v') if position == 'participant' else
+            ('surface', 'm', 'v') if position == 'marker' else ('change', 'v', 'm'))
     program = f.program(tree)
     orders = torch.zeros(2, dtype=torch.long)
-    orders[program.word_ids == word] = f.cs._concept_source_order(word)
+    orders[program.word_ids == word] = f.cs._concept_source_order(obj)
     program = replace(program, leaf_orders=orders, close_references=True)
     clause = finish_clause(f.language, record_reading(f.language, program), registry=f.registry)
     expected = int(order == 1 and position == 'participant')
@@ -182,7 +181,7 @@ def test_a_pending_lexical_site_cannot_bind_to_its_enclosing_introduction(monkey
     frame = SituationFrame.from_row(store.row(earlier))
     point = atoms[0]
     leaf = Composition(point, reference=word, word_id=word, leaves=(0,), order=1)
-    phrase = Composition(point, (leaf,), operation='compound_unary', head_role=1,
+    phrase = Composition(point, (leaf,), operation='marker', head_role=1,
                          leaves=(0,), order=1)
     clause = Clause(ConceptualMeaning.from_description(point), point=point, order=1,
                     composition=phrase, subject_word_id=word)

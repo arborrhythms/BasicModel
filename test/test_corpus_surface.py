@@ -50,7 +50,7 @@ def test_native_surface_dispatch_keeps_nested_counts_and_inverts(postposed):
             return language.forward_binary_step(left, right, torch.tensor([indices[name]]),
                 torch.ones(1, dtype=torch.bool), grammar_context=context)
 
-        content = forward('sum', forward('sum', leaves[0], leaves[1], (1, 1)), leaves[2], (2, 1))
+        content = forward('surface', forward('surface', leaves[0], leaves[1], (1, 1)), leaves[2], (2, 1))
         marker = leaves[3]
         if postposed:
             from Memory import STMChunks as chunks
@@ -60,7 +60,7 @@ def test_native_surface_dispatch_keeps_nested_counts_and_inverts(postposed):
             state[chunks.STACK][0, :2] = torch.tensor([0, 1])
             state[chunks.DEPTH][0] = 2
             choice = LanguageOperationChoice(marker, torch.tensor([3]), torch.tensor([0]),
-                torch.tensor([indices['transpose']]), torch.tensor([True]), torch.ones(1),
+                torch.tensor([indices['swap']]), torch.tensor([True]), torch.ones(1),
                 torch.tensor([0]), torch.tensor([True]))
             swapped = model.conceptualSpace.apply_language_choice(tuple(state), choice)
             # The native 2-to-2 route changes stack order, not physical values.
@@ -82,10 +82,10 @@ def test_native_surface_dispatch_keeps_nested_counts_and_inverts(postposed):
         # and the two counted inner folds, back to the four source leaves.
         from DerivationReconstruction import reconstruct
         actions = ([] if postposed else [(0, -1, 3)]) + [
-            (0, -1, 0), (0, -1, 1), (1, indices['sum'], -1),
-            (0, -1, 2), (1, indices['sum'], -1)]
+            (0, -1, 0), (0, -1, 1), (1, indices['surface'], -1),
+            (0, -1, 2), (1, indices['surface'], -1)]
         if postposed:
-            actions += [(0, -1, 3), (3, indices['transpose'], -1)]
+            actions += [(0, -1, 3), (3, indices['swap'], -1)]
         actions += [(1, indices['surface'], -1)]
         stack, operation_values, operand_counts = [], [], []
         for kind, operation, word in actions:
@@ -97,7 +97,7 @@ def test_native_surface_dispatch_keeps_nested_counts_and_inverts(postposed):
             else:
                 (b, nb), (a, na) = stack.pop(), stack.pop()
                 counts = na, nb
-                result = forward('surface' if operation == indices['surface'] else 'sum', a, b, counts)
+                result = forward('surface', a, b, counts)
                 values = torch.cat((a, b, result))
                 stack.append((result, na + nb))
             operation_values.append(values)

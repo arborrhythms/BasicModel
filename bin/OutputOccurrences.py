@@ -15,6 +15,7 @@ class Generated:
     references: tuple = ()
     realization_field: ConceptualField | None = None
     extension: tuple = ()
+    reconstruction_field: ConceptualField | None = None
 
     def texts(self, surface):
         decoded = surface[:, 0].detach().long().cpu().tolist()
@@ -24,10 +25,15 @@ class Generated:
 
 
 def realize(model, generation):
-    """The same system-1 inverse realizes output and reconstructed grammar."""
+    """Read spelling and the generated meaning through the common inverse."""
     with model.languageSpace.generation_scope(), model._synthesis_guard():
-        return model.reverse(model.conceptualSpace.subspace.carrier_like(),
+        result = model.reverse(model.conceptualSpace.subspace.carrier_like(),
             field=generation.field if generation.realization_field is None else generation.realization_field)
+        if generation.reconstruction_field is not None:
+            scored = model.reverse(model.conceptualSpace.subspace.carrier_like(),
+                                   field=generation.reconstruction_field)
+            result._reconstruction_percepts = scored._reconstruction_percepts
+        return result
 
 
 def object_identity(owner, reference):
@@ -38,6 +44,8 @@ def object_identity(owner, reference):
         seen.add(reference)
         if reference[0] == 'sym':
             return reference[1]
+        if reference[0] == 'bp':
+            return None  # A reading is not its class; the field supplies that.
         token = owner.mtm.token_of(reference)
         entry = owner.mtm.entries.get(token)
         if entry is not None and entry.symbol is not None and not entry.pending:
@@ -65,41 +73,50 @@ def generated(model, words, counts, truncated, bank, trace, *, when=None, refere
     active = (torch.arange(W, device=words.device)[None] < counts[:, None]) & bank.terminal_valid.any(-1)[:, None]
     selected = torch.where(active, selected, -1)
     from FieldProjection import stimulate
-    field = stimulate(owner, words)
+    orders = selected.new_zeros(B, W)
+    for b, terminals in enumerate(references):
+        for w, reference in enumerate(terminals[:W]):
+            if reference is not None:
+                orders[b,w] = max(0, owner._concept_source_order(reference))
+    field = stimulate(owner, words, order=orders)
     scalar = torch.zeros_like(active)
-    memberships = {}
     if hasattr(owner, 'basic_percepts'):
-        from ScalarPercepts import bare, concepts
+        from ScalarPercepts import bare
         scalar = bare(owner, words)
-        memberships = {owner.concept_id_at_row(row): None for row in concepts(owner)}
-    # Only actual box membership names a bare reading. Partial support
-    # outside every box supplies no word; ties keep inventory order.
-    ids = field.concept_ids.tolist()
-    candidates = [cid for cid in ids if cid in memberships and owner.word_surface_for_row(owner._csw_row_of(cid))]
-    native = words.clone()
+    # Only full percept membership names a bare reading. Partial support
+    # outside every collection supplies no word; ties keep inventory order.
+    lexical = selected.new_full(selected.shape, -1)
+    strength = words.new_ones(B, W)
     said = [[None] * W for _ in range(B)]
     for b in range(B):
         for w in range(min(W, int(counts[b]))):
             reference = references[b][w] if references else None
             identity = object_identity(owner, reference) if reference is not None else None
             if reference is None and bool(scalar[b, w]):
-                eligible = [cid for cid in candidates if float(field.evidence[ids.index(cid), b, w, 0].detach()) >= 1.]
+                eligible = owner.interpret.recognized_objects(field, batch=b, position=w)
                 identity = eligible[0] if eligible else None
-            if reference is None and not bool(scalar[b, w]):
-                continue
-            row = None if identity is None else owner._csw_row_of(identity)
+            ordinary = reference is None and not bool(scalar[b, w])
+            row = (int(selected[b, w]) if ordinary and bool(active[b, w]) else
+                   None if identity is None else owner._csw_row_of(identity))
+            if ordinary and row is not None:
+                identity = owner.concept_id_at_row(row)
+                # Identification presence belongs to form. The claim's two
+                # meaning lanes still belong to the independently scored field.
+                width = bank.meaning_start or bank.codes.shape[-1]
+                form = bank.codes[b, chosen[b, w], :width]
+                energy = form.square().sum()
+                strength[b, w] = (words[b, w, :width] * form).sum() / energy.clamp_min(
+                    torch.finfo(form.dtype).tiny)
             raw = None if row is None else owner.word_surface_for_row(row)
             active[b, w] = raw is not None
             selected[b, w] = -1 if raw is None else row
             if raw is None:
-                native[b, w] = 0.
                 continue
             word = (identity if identity in owner.definitions.word_ids or owner.interpret.no_object(identity)
                     else owner.interpret.reverse(identity))
-            # The learned unique definition supplies the interpretation
-            # inverse. The semantic point remains unchanged for scoring.
-            native[b, w] = owner.similarity_codebook.lookup_rows([owner._csw_row_of(word)])[0].to(words)
-            said[b][w] = reference if reference is not None else ('sym', identity)
+            lexical[b, w] = word
+            if not ordinary:
+                said[b][w] = reference if reference is not None else ('sym', identity)
     where = selected.new_zeros(B, W, 2)
     for b in range(B):
         cursor = 0
@@ -116,11 +133,39 @@ def generated(model, words, counts, truncated, bank, trace, *, when=None, refere
         when = selected.new_tensor((tick, tick + 1))[None, None]
     when = when.to(device=words.device).expand(B, W, 2)
     emitted = torch.arange(W, device=words.device)[None] < counts[:, None]
-    field = stimulate(owner, words * emitted[...,None], where=where, when=when)
-    realization = stimulate(owner, native * active[...,None], where=where, when=when)
+    field = stimulate(owner, words * emitted[...,None], order=orders, where=where, when=when)
+    # A terminal has selected one spelling. Re-stimulating its word code and
+    # expanding its types would add sibling words to that spelling. Read the
+    # selected lexical identity's own percepts through the common inverse;
+    # the stimulated semantic field above still measures what was said.
+    presence = field.concept_ids[:, None, None].eq(lexical[None]) & active[None]
+    realization = ConceptualField(field.concept_ids,
+        torch.stack((presence * strength[None], torch.zeros_like(presence).to(words)), -1),
+        where, when, None)
     from Extension import generated as extend_generated, stored_field
-    realization = stored_field(owner, realization)
+    # A spelling identifies a word; it cannot replace the generated point's
+    # live meaning in the percept reconstruction cost. Both reads use the
+    # same native inverse, with no further answer derivation or grammar walk.
+    reconstruction = stored_field(owner, field)
+    width = bank.meaning_start or bank.percept_width or D
+    has_spelling = words[..., :width].detach().ne(0).any(-1) | scalar
+    if references:
+        has_spelling = has_spelling | torch.tensor(
+            [[ref is not None for ref in row] for row in references], device=words.device)
+    # A point without a form or an object reference is said through the
+    # ordinary inverse of its extension, including its declared members.
+    ids = torch.cat((realization.concept_ids, reconstruction.concept_ids)).unique(sorted=True)
+    def align(value):
+        evidence = value.evidence.new_zeros(len(ids), *value.evidence.shape[1:])
+        evidence[torch.searchsorted(ids, value.concept_ids)] = value.evidence
+        return evidence
+    realization = ConceptualField(ids,
+        torch.where(has_spelling[None, ..., None], align(realization), align(reconstruction)),
+        where, when, None)
     if depths is None:
         raise ValueError('an emitted field requires the native generate walk root count')
-    extension, field = extend_generated(model,trace[0],counts,depths,field,references)
-    return Generated(words, counts, truncated, bank, trace, field, tuple(map(tuple, said)), realization, extension)
+    emitted_references = tuple(tuple(said[b][w] if said[b][w] is not None else
+        references[b][w] if references else None for w in range(W)) for b in range(B))
+    extension, field = extend_generated(model,trace[0],counts,depths,field,emitted_references)
+    return Generated(words, counts, truncated, bank, trace, field, tuple(map(tuple, said)),
+                     realization, extension, reconstruction)

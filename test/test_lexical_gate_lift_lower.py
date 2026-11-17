@@ -52,7 +52,7 @@ def _operands(seed=11):
     return a, b
 
 
-@pytest.mark.parametrize("cls_name", ["LiftLayer"])
+@pytest.mark.parametrize("cls_name", ["ChangeLayer"])
 def test_two_verbs_distinct_with_masks_on_ablated_identical(cls_name):
     """One shared matrix, two verbs: distinct with masks on; with masks
     ablated the verbs are indistinguishable and the path is the
@@ -83,7 +83,7 @@ def test_two_verbs_distinct_with_masks_on_ablated_identical(cls_name):
         f"(gate=None is the baseline path)")
 
 
-@pytest.mark.parametrize("cls_name", ["LiftLayer"])
+@pytest.mark.parametrize("cls_name", ["ChangeLayer"])
 def test_gate_none_code_passthrough(cls_name):
     """lexical_gate(None) is None, so call sites can thread the result
     unconditionally; a zero-width layer also produces None."""
@@ -94,7 +94,7 @@ def test_gate_none_code_passthrough(cls_name):
     assert probe.lexical_gate(torch.rand(_D)) is None
 
 
-@pytest.mark.parametrize("cls_name", ["LiftLayer"])
+@pytest.mark.parametrize("cls_name", ["ChangeLayer"])
 def test_projection_trains_end_to_end_with_composition_loss(cls_name):
     """End-to-end training (DECIDED 2026-06-11): the embedding->gate map
     learns from the composition loss alone -- no separate mask
@@ -162,7 +162,7 @@ def test_weight_law_holds_under_arbitrary_gates():
             "gated round-trip broke", g)
 
 
-@pytest.mark.parametrize("cls_name", ["LiftLayer"])
+@pytest.mark.parametrize("cls_name", ["ChangeLayer"])
 def test_signed_kernel_gated_roundtrip(cls_name):
     """The gate-slicing surface keeps working on the signed kernels
     (§3): the gated forward/reverse round-trip of the legacy folds is

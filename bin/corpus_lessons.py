@@ -199,7 +199,8 @@ def heldout(model, stage, data, *, after_batch=None):
     return rows
 
 
-def measure(config, lessons, output, *, eager=False, presentations=None, curriculum_name='lesson-13', gradient_report=False):
+def measure(config, lessons, output, *, eager=False, presentations=None, curriculum_name='lesson-13', gradient_report=False,
+            after_training=None):
     import torch
     from data import TheData
     from Models import BaseModel
@@ -289,7 +290,6 @@ def measure(config, lessons, output, *, eager=False, presentations=None, curricu
                         placements.append(dict(rows=occupied.nonzero().flatten().tolist(),
                             directions=codes.placement[occupied].tolist(),
                             witnesses=codes.placement_witnesses[occupied].tolist(),
-                            valid=codes.placement_valid[occupied].tolist(),
                             shape=list(codes.placement.shape), pointer=codes.placement.data_ptr()))
                     fold=getattr(model._concept_owner(),'_last_definition_fold',None)
                     if fold is not None:
@@ -386,6 +386,8 @@ def measure(config, lessons, output, *, eager=False, presentations=None, curricu
             phase['torch_version'] = str(torch.__version__)
             phases.append(phase)
             (output / 'phases.json').write_text(json.dumps(phases, indent=2) + '\n')
+        if after_training is not None:
+            after_training(model)
     finally:
         model.End()
         model.symbolSpace.soft_reset()

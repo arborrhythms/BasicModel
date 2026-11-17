@@ -33,7 +33,7 @@ def _cs(nS=64, order=3):
         nInput=nP, nPercepts=nP, nConcepts=nS, nSymbols=nS,
         nWords=nS, nOutput=nS, nWhere=0, nWhen=0,
     )
-    cs = Spaces.ConceptualSpace([nP, _D], [nS, _D], [nS, _D])
+    cs = Spaces.ConceptualSpace([nP, _D], [nS, _D], [nS, _D], order_limit=order)
     object.__setattr__(cs, "_symbolic_order", order)
     object.__setattr__(cs, "_serial", False)
     return cs

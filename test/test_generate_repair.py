@@ -15,7 +15,10 @@ def controlled_walk(monkeypatch, mode):
     owner = SimpleNamespace(_generate_binary_ops=(SimpleNamespace(meaning_layout=None),)*binary,
         _generate_unary_ops=(SimpleNamespace(meaning_layout=None),)*unary, _generate_policy_width=2)
     owner.generate_policy_logits = lambda x,features=None: x.new_zeros(len(x), binary+unary+1)
-    owner.choose_generate = lambda logits: logits.argmax(-1)
+    from Language import LanguageSpace
+    owner.operator_cost = 1.
+    owner.parts_of_speech = SimpleNamespace(_space=None)
+    owner.choose_generate = MethodType(LanguageSpace.choose_generate, owner)
     def menu(language, parent, live, **options):
         value = parent[:, 0]
         stop = binary+unary
@@ -147,7 +150,10 @@ def test_winning_departure_credit_reaches_only_generate_policy_and_its_owner():
     upstream = torch.nn.Linear(2, 2)
     language = SimpleNamespace(generate_policy=policy, _generate_policy_width=2,
         _tree_layer=lambda arity: SimpleNamespace(exploration_fraction=.5, exploration_temperature=1.))
-    for name in ('generate_policy_logits',):
+    language.operator_cost = 1.
+    language._generate_binary_ops = (SimpleNamespace(),)
+    language._generate_unary_ops = (SimpleNamespace(),)
+    for name in ('generate_policy_logits', 'choose_generate'):
         setattr(language, name, MethodType(getattr(LanguageSpace, name), language))
     tops = upstream(torch.ones(3, 4, 2))
     audit = dict(departure=torch.tensor([1, 2, -1]), wins=torch.tensor([True, False, False]),
@@ -190,7 +196,7 @@ def test_promoted_order_survives_early_occurrence_forgetting_and_two_epochs():
     from test_presentation_memory import model_for
     owner, store, alloc, key, word, occurrence = identity_fixture()
     cid = promote_identity(owner, key, word=word)
-    assert alloc.reference_orders[cid] == 1
+    assert alloc.seated_order(cid) == 1
     store.reset()  # Clear both stores when the fixture removes every occurrence.
     store.parts.retain(())
     assert store.location(occurrence) is None and alloc.order_of(cid) == 1

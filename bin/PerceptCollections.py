@@ -1,6 +1,5 @@
 """Named order-zero collections of observed basic percepts, for any modality."""
 from dataclasses import replace
-import math
 import torch
 
 
@@ -17,10 +16,22 @@ def definitions(owner):
 
 
 def read(owner, points):
-    basic = owner.basic_percepts
-    return {row: basic.read_collection(basic.read_points(points, [p for p, _ in edges]),
-                                      torch.stack([w for _, w in edges]).to(points))
+    return {row: read_collection(owner, points, edges)
             for row, edges in definitions(owner).items()}
+
+
+def read_collection(owner, points, edges):
+    basic = owner.basic_percepts
+    return basic.read_collection(basic.read_points(points, [p for p, _ in edges]),
+                                 torch.stack([w for _, w in edges]).to(points))
+
+
+@torch.no_grad()
+def collect(owner, row, percepts):
+    """Add witnessed basic percepts to one collection and refresh its bounds."""
+    for percept in percepts:
+        owner.add_concept_feature(row, 'bp', int(percept), 1.)
+    owner.similarity_codebook.W[row].copy_(code(owner, row))
 
 
 def read_native(owner, perception):
@@ -81,8 +92,7 @@ def observe(owner, word, percept, occurrence, *, stream):
             return None
         owner._preflight_concept_row(0, context='percept collection')
         owner._preflight_concept_allocation(1, context='percept collection')
-        cid = alloc.new_concept()
-        alloc.reference_orders[cid] = 0
+        cid = owner.new_concept(order=0)
         alloc.individuals.add(cid)
         alloc.symbol_types.setdefault(cid, set()).update(('concept', 'object', 'percept_collection'))
         row = owner._csw_concept_row(0, cid)
@@ -94,12 +104,9 @@ def observe(owner, word, percept, occurrence, *, stream):
         trust.views[row] = entry.count - 1
         trust.agreement[row] = sum(entry.refinement['readings'][:-1])
         pool.promote(key, cid)
-    owner.add_concept_feature(row, 'bp', percept, 1.)
-    owner.similarity_codebook.W[row].copy_(code(owner, row))
+    collect(owner, row, (percept,))
     trust = owner.similarity_codebook.trust
     trust.views[row] += 1
     trust.agreement[row] += agreement
-    views = int(trust.views[row])
-    certainty = float(trust.agreement[row]) / views * -math.expm1(-views / trust.trust_views)
-    owner.interpret.define(word, cid, evidence=(certainty, 0.))
+    owner.interpret.define(word, cid)
     return cid

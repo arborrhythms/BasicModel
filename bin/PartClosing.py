@@ -8,7 +8,7 @@ from Spaces import _concept_alloc_of
 
 
 class PartClosing:
-    _assertions = frozenset(('part', 'assertPart', 'whole', 'implies', 'equal'))
+    _assertions = frozenset(('part', 'assertPart', 'whole', 'implies', 'equal', 'define'))
 
     def __init__(self, owner, store):
         self.owner, self.store = owner, store
@@ -53,7 +53,7 @@ class PartClosing:
             return self._planned[id(value)]
         children = tuple(self._plan_term(child, True) for child in value.children)
         reference = self._reference(value)
-        if children and value.operation not in (*self._assertions, 'lift', 'verb'):
+        if children and value.operation not in (*self._assertions, 'change', 'verb'):
             if value.head_role:
                 children = (children[value.head_role-1],)
             if len(children) == 1 and reference is None:
@@ -145,7 +145,8 @@ class PartClosing:
     def preflight(self):
         # At worst every binary semantic term is a relation and every leaf or
         # compressed child an occurrence. Reserve the whole transaction first.
-        relations = sum(len(r['children']) == 2 and r['value'].operation in self._assertions
+        relations = sum((2 if r['value'].operation == 'define' else 1)
+                        if len(r['children']) == 2 and r['value'].operation in self._assertions else 0
                         for r in self._planned.values())
         if int(self.alloc.next_id) + relations > self.parts.capacity:
             raise OverflowError('LTM1 construction capacity exhausted before close')
@@ -276,8 +277,8 @@ class PartClosing:
             # The selected introduction still names its own located mention.
             reference = self._mentions.get(id(term.binding),
                 self._entries.get(id(term.binding), reference))
-        if term.operation in ('lift', 'verb') and children:
-            child = children[0 if term.operation == 'lift' else -1]
+        if term.operation in ('change', 'verb') and children:
+            child = children[0 if term.operation == 'change' else -1]
             reference = child['reference']
             if reference is None or reference[0] != OCCURRENCE:
                 reference = self._entries.get(id(child['value'])) or reference
@@ -334,8 +335,8 @@ class PartClosing:
             elif term.binding is not None:
                 target = self._planned[id(term.binding)]
             elif (not dict(metadata.bindings).get('_identity')
-                    and term.operation in ('lift', 'verb') and record['children']):
-                child = record['children'][0 if term.operation == 'lift' else -1]
+                    and term.operation in ('change', 'verb') and record['children']):
+                child = record['children'][0 if term.operation == 'change' else -1]
                 if child['reference'] is None or child['reference'][0] != OCCURRENCE:
                     target = child
             if target is not None and id(target['value']) in located:
@@ -405,6 +406,36 @@ class PartClosing:
         self.occurrences.add(result[1])
         return result
 
+    def entry_kind(self, record, *, sentence=False, force=False):
+        """The writer's storage choice, also read before a link departure."""
+        term, children = record['value'], record['children']
+        if (not sentence and not force and record['reference'] is not None
+                and (not children or term.operation not in (*self._assertions, 'change', 'verb'))):
+            return record['reference'][0]
+        forced = (force or (sentence and record.get('selected_reference') is not None)) and (
+            term.binding is not None or record.get('mention'))
+        return RELATION if term.operation in self._assertions and len(children) == 2 and not forced else OCCURRENCE
+
+    def event_point(self, clause, kind):
+        """Separate event content, when the ordinary clause row cannot hold it."""
+        if clause.identity is None or clause.identity.get('event') is None:
+            return None
+        from IdentityRows import carrier
+        point = clause.identity['result']
+        record = self.prepare(clause)
+        if kind == OCCURRENCE and torch.equal(carrier(self.owner, point),
+                                              carrier(self.owner, record['value'].point)):
+            return None
+        return point
+
+    def event_order(self, clause, *, context):
+        record = self.prepare(clause)
+        kind = self.entry_kind(record, sentence=clause is context, force=clause is not context)
+        # A separate event is written from its point, without a referent.
+        if self.event_point(clause, kind) is not None:
+            return 0
+        return self.occurrence_order(clause, context=context)
+
     def _write(self,record,*,pair=(0.,0.),sentence=False,metadata=None,
                stream=-1,surprise=-1.,force=False,from_trust=False):
         term = record['value']
@@ -422,16 +453,12 @@ class PartClosing:
             metadata = record.get('metadata')
         assertion = term.operation in self._assertions and len(children) == 2
         if (not sentence and not force and record['reference'] is not None
-                and (not children or term.operation not in (*self._assertions, 'lift', 'verb'))):
+                and (not children or term.operation not in (*self._assertions, 'change', 'verb'))):
             result = record['reference']
-        elif not assertion or not children or forced_occurrence:
+        elif self.entry_kind(record, sentence=sentence, force=force) == OCCURRENCE:
             pair = tuple(pole * self.source_trust for pole in pair)
             result = self._write_occurrence(record,pair=pair,sentence=sentence,
                 metadata=metadata,stream=stream,surprise=surprise)
-        elif len(children) == 1:
-            result = self._write(children[0],pair=pair,sentence=sentence,
-                                 metadata=metadata,stream=stream,surprise=surprise,
-                                 from_trust=from_trust)
         else:
             left, right = (self._write(child, stream=stream) for child in children)
             if term.operation == 'whole':
@@ -442,8 +469,14 @@ class PartClosing:
             row = self.parts.add(left, right, truth_plus=pair[0], truth_minus=pair[1],
                 surprise=surprise)
             self.edges.append(row)
+            if term.operation == 'define':
+                # A kept definition consists of ordinary Part rows. Its
+                # opposite direction is not a new durable relation kind.
+                reverse = self.parts.add(right, left, truth_plus=pair[0], truth_minus=pair[1],
+                                         surprise=surprise)
+                self.edges.append(reverse)
             promoted = False
-            if assertion and term.operation in ('equal', 'part', 'assertPart') and pair[0] > 0:
+            if assertion and term.operation in ('equal', 'define', 'part', 'assertPart') and pair[0] > 0:
                 from FamiliarTier import define_pending
                 subject = children[0]['value']
                 while len(subject.children) == 1 and subject.operation not in ('sign','bind'):
@@ -455,7 +488,7 @@ class PartClosing:
                     self.owner.__dict__.setdefault('_kept_definition_witnesses', []).append(
                         (left, right, None, other_word, True))
                     promoted = True
-                elif (term.operation == 'equal' or left[0] != SYMBOL or right[0] != SYMBOL
+                elif (term.operation in ('equal', 'define') or left[0] != SYMBOL or right[0] != SYMBOL
                       or not (self.owner.interpret.no_object(left[1])
                               and self.owner.interpret.no_object(right[1]))):
                     # Two bare word symbols can stand in a Part relation.
@@ -465,7 +498,7 @@ class PartClosing:
                     promoted = define_pending(self.owner, left, right, word=word)
                     if not promoted:
                         self.owner.__dict__.setdefault('_kept_definition_witnesses', []).append((left, right, word, None, False))
-            if assertion and term.operation == 'equal':
+            if assertion and term.operation in ('equal', 'define'):
                 self.alloc.singletons.add(right[1] if right[0] == SYMBOL else right)
                 if not promoted:
                     self._observe_equality(left, right, record, pair)

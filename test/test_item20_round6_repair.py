@@ -118,6 +118,7 @@ def test_occurrence_writer_preserves_the_emitted_terminal_despite_priming():
     store = NS(_tensor_row_keys={0:10, 1:11}, _index={}, values=torch.empty(0), conjunctive=empty)
     owner = NS(similarity_codebook=NS(lookup_rows=lambda rows: codes[0, rows],
         mereology=NS(percept_event_width=2)),
+        definitions=NS(word_ids={10, 11}),
         _row_order=lambda row: 0, concept_id_at_row=lambda row: row + 10,
         word_surface_for_row=lambda row: (b'a', b'b')[row],
         cs_reverse_presence=lambda evidence, **kwargs: evidence,
@@ -287,7 +288,7 @@ def test_event_staging_keeps_the_accessible_collections_selected_token(monkeypat
     from test_modal_timelines import fixture, recording, close, same
     from CaseSelection import CaseBank, stage_event_cases
     f, action, modifier = fixture(monkeypatch)
-    _, frame, _, _ = close(f, recording(f, ('lift', ('lower_unary', 'subject'), 'move')),
+    _, frame, _, _ = close(f, recording(f, ('change', ('lower_unary', 'subject'), 'move')),
         actions=(action, modifier), evidence=(.8, .2))
     token, entry = next(iter(f.cs.mtm.entries.items()))
     verb = f.words['move'][1]

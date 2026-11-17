@@ -35,7 +35,6 @@ def _move(bank, rows):
     with torch.no_grad():
         bank.mereology.placement[rows] = torch.tensor([[.2, .8], [.7, .3]])
         bank.mereology.placement_witnesses[rows] = 1
-        bank.mereology.placement_valid[rows] = True
         bank.mereology.placement_dirty[rows] = True
 
 
@@ -64,7 +63,10 @@ def test_bound_identity_joins_both_current_reference_meanings():
 
 
 def test_unlabelled_mention_reads_its_current_occurrence():
-    owner, bank, store, _, _, occurrences, key = _references()
+    owner, bank, store, rows, _, occurrences, key = _references()
+    # Isolate the unlabelled occurrence from its collection's first word.
+    # Use the fixture's existing declared word geometry, below this reading.
+    _move(bank, rows)
     pool = owner.mtm
     pool.bind(key, occurrences[1], kind=None, when=1,
               value=store.point_of_row(occurrences[1][-1]), reading=None)

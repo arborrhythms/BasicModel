@@ -104,80 +104,6 @@ def count(store, name, amount=1):
 
 
 @torch.no_grad()
-def reinstate(store, frames, stream):
-    """Publish the remembered concepts, without reinterpreting old percepts."""
-    ref = store.__dict__.get('_concept_owner')
-    owner = None if ref is None else ref()
-    if owner is None or owner._model is None:
-        return False
-    model = owner._model
-    model._episode_counts.setdefault('content_recalls', 0)
-    model._episode_counts['content_recalls'] += 1
-    indices = [frame['index'] for frame in frames if isinstance(frame['index'], int)
-               and bool((store.episodic_concepts[frame['index']] >= 0).any())]
-    if not indices:
-        return False
-    entries = []
-    for i in indices:
-        for k, cid in enumerate(store.episodic_concepts[i].flatten().tolist()):
-            if cid < 0:
-                continue
-            if owner._csw_row_of(cid) is None:
-                model._episode_counts['ids_skipped'] += 1
-            else:
-                entries.append((i, k, cid))
-    from SentenceField import knowing, publish
-    current = knowing(model)
-    B = current.evidence.shape[1]
-    ids = sorted(set(current.concept_ids.flatten().tolist()) | {cid for _, _, cid in entries})
-    lookup = {cid: i for i, cid in enumerate(ids)}
-    R = max(current.evidence.shape[2], len(entries))
-    evidence = current.evidence.new_zeros(len(ids), B, R, 2)
-    where = current.where.new_zeros(B, R, 2)
-    when = current.when.new_zeros(B, R, 2)
-    for b in range(B):
-        if b == stream:
-            continue
-        column = current.concept_ids if current.concept_ids.ndim == 1 else current.concept_ids[:, b]
-        for old, cid in enumerate(column.tolist()):
-            evidence[lookup[cid], b, :current.evidence.shape[2]] = current.evidence[old, b]
-        where[b, :current.where.shape[1]] = current.where[b]
-        when[b, :current.when.shape[1]] = current.when[b]
-    from RowTime import encoder
-    cursor = 0
-    for reading, (i, k, cid) in enumerate(entries):
-        value = store.episodic_values[i].flatten()[k]
-        evidence[lookup[cid], stream, reading] = torch.stack((value.clamp_min(0), (-value).clamp_min(0)))
-        raw = owner.word_surface_for_row(owner._csw_row_of(cid))
-        if raw is None:
-            model._episode_counts['surfaces_missing'] += 1
-        length = 0 if raw is None else len(raw)
-        where[stream, reading] = where.new_tensor((cursor, cursor + length))
-        cursor += length + 1
-        tick = encoder().decode_index(store.entry_time(i))
-        when[stream, reading] = torch.stack((tick, tick + 1))
-    field = ConceptualField(current.concept_ids.new_tensor(ids), evidence, where, when, None)
-    owner._episode_review_field = field
-    owner._cs_field_concept_ids = field.concept_ids
-    owner._cs_field_where, owner._cs_field_when = where, when
-    publish(model, field)
-    perception = owner._percept_field
-    if perception is not None:
-        def emptied(value, axis):
-            if value is None:
-                return None
-            result = value.clone()
-            result.select(axis, stream).zero_()
-            return result
-        owner._percept_field = replace(perception,
-            values=emptied(perception.values, 1), events=emptied(perception.events, 1),
-            spans=emptied(perception.spans, 0), where=emptied(perception.where, 0),
-            when=emptied(perception.when, 0), when_band=emptied(perception.when_band, 0),
-            boundaries=emptied(perception.boundaries, 2))
-    model._episode_counts['reinstatements'] += 1
-    return True
-
-
 def for_meaning(store,meaning):
     """A kept idea's extension, from its kept tree or the native generate walk."""
     if not store.episodic_capacity:
@@ -190,7 +116,25 @@ def for_meaning(store,meaning):
     roots=forest(owner,meaning)
     if not roots:
         return None
+    return tree_entry(store, roots)
+
+
+def tree_entry(store, roots):
+    """Copy an explicit extension into the entry's constructed signed slots."""
+    from Extension import joined, ConceptSet, as_field
     empty=ConceptSet(store.episodic_concepts.new_empty(0),store.slots.new_empty(0,2))
     field=as_field((joined(roots,empty),),where=store.slots.new_zeros(1,1,2),when=store.slots.new_zeros(1,1,2))
     ids,values=select(field,store.episodic_capacity,store.slots.new_ones(1,dtype=torch.bool))
     return ids[0],values[0]
+
+
+def entry_set(store, row):
+    """Read a flat entry as concepts with independent for and against lanes."""
+    from Extension import ConceptSet
+    ids, values = store.episodic_concepts[row], store.episodic_values[row]
+    valid = ids >= 0
+    unique, inverse = ids[valid].unique(return_inverse=True)
+    lanes = torch.stack((values[valid].clamp_min(0), (-values[valid]).clamp_min(0)), -1)
+    combined = lanes.new_zeros(len(unique), 2)
+    combined.scatter_reduce_(0, inverse[:, None].expand(-1, 2), lanes, reduce='amax')
+    return ConceptSet(unique, combined)

@@ -39,15 +39,17 @@ class Context:
     trust: float | tuple = 0.
     open: bool = False
     rows: bool = False
+    stream: int = 0
 
 
-NARROW = frozenset(('intersection', 'compound', 'compound_unary', 'adverb', 'verb',
+NARROW = frozenset(('intersection', 'compound', 'marker', 'modifier', 'verb',
                     'conjunction', 'pi', 'min'))
 JOIN = frozenset(('union', 'disjunction', 'sigma', 'max'))
 DETERMINERS = frozenset(('definite', 'definite_unary', 'lower', 'lower_unary', 'universal', 'some'))
 CONTENT = frozenset(('preposition', 'preposition_unary', 'surface', 'surface_unary', 'sign',
-    'interpret', 'bind', 'lift', 'transpose', 'generic', 'ask', 'part', 'whole', 'equal',
-    'implies', 'gloss', 'divide', 'descend', 'sum', 'product', 'synthesize',
+    'interpret', 'bind', 'change', 'lift', 'swap', 'generic', 'ask', 'part', 'whole', 'equal',
+    'implies', 'mint', 'focus', 'add', 'subtract', 'multiply', 'divide',
+    'sum', 'product', 'synthesize',
     'isPart', 'isEqual', 'assertPart'))
 
 
@@ -94,7 +96,7 @@ def stored_field(owner, field):
     return ConceptualField(ids, evidence, field.where, field.when, None)
 
 
-def interpreted(owner, source):
+def interpreted(owner, source, *, stream=0):
     """Read the same declared word-to-object links as the native interpretation.
 
     A mandatory symbol shift has already interpreted its numerical leaf;
@@ -106,7 +108,7 @@ def interpreted(owner, source):
     for identity,value in zip(source.ids.tolist(),source.values):
         if identity < 0:
             continue
-        objects = owner.interpret.denotations(identity) if identity in words else ()
+        objects = owner.interpret.preferred(identity, batch=stream) if identity in words else ()
         for reference in objects or (identity,):
             contributions.setdefault(reference,[]).append(value)
     ids = source.ids.new_tensor(sorted(contributions))
@@ -133,7 +135,7 @@ def compose(operator, operands, context=None):
     source = operands[content_index(operator, operands, context)]
     if name == 'interpret':
         owner = context.owner if context.owner is not None else operator.owner
-        return stored(owner,interpreted(owner,source))
+        return stored(owner,interpreted(owner,source,stream=context.stream))
     if name in ('not', 'non'):
         return ConceptSet(source.ids, reduce(source.values, operation=name))
     if name == 'ask' and context.open:
@@ -243,7 +245,7 @@ def joined(forest, empty):
     return combine(tuple(node.field for node in forest), 'union') if forest else empty
 
 
-def held_context(owner, rule, reference=None, *, open=False):
+def held_context(owner, rule, reference=None, *, open=False, stream=0):
     """Determiners use the identity already selected by compose, if MTM holds it."""
     name = getattr(rule, 'surface_name', None) or rule.method_name
     identity, trust = None, 0.
@@ -259,10 +261,10 @@ def held_context(owner, rule, reference=None, *, open=False):
             trust = tuple(max((reading[2+lane] for reading in entry.readings),default=0.) for lane in range(2))
     semantic = getattr(rule, 'semantic_operand', None)
     content = semantic if semantic is not None else max(0, getattr(rule, 'head_role', 0)-1)
-    return Context(owner, name, content, identity, trust, open)
+    return Context(owner, name, content, identity, trust, open, stream=stream)
 
 
-def reading(model, program, field, row, positions):
+def reading(model, program, field, row, positions, *, install=True):
     """Extend the pinned STM tree once in its actual compose order."""
     owner, language = model._concept_owner(), model.languageSpace
     ids = field.concept_ids if field.concept_ids.ndim == 1 else field.concept_ids[:,row]
@@ -278,10 +280,10 @@ def reading(model, program, field, row, positions):
             reference = int(program.concept_ids[word])
             source = ConceptSet(ids,values[:,int(positions[word])])
             if program.interpret_forced:
-                source = stored(owner,interpreted(owner,source))
+                source = stored(owner,interpreted(owner,source,stream=row))
             node=Node(source,reference=('sym',reference) if reference > 0 else None)
             stack.append(node)
-            if program.tree is not None:
+            if install and program.tree is not None:
                 program.tree.install_extension(node,word=word)
             continue
         if kind == 3:
@@ -303,11 +305,11 @@ def reading(model, program, field, row, positions):
             selected = program.tree.composition(action=at).reference
             if selected not in (-1,0):
                 reference = owner._closed_clause_store().semantic_reference(selected)
-        context = held_context(owner,rule,reference,open=rule.method_name == 'ask')
+        context = held_context(owner,rule,reference,open=rule.method_name == 'ask',stream=row)
         value = operator.compose_extend(*(child.field for child in children),context=context)
         node=Node(value,children,operator,context,reference)
         stack.append(node)
-        if program.tree is not None:
+        if install and program.tree is not None:
             program.tree.install_extension(node,action=at)
         if offset:
             stack.insert(len(stack)-1-offset,stack.pop())
@@ -326,6 +328,20 @@ def with_extensions(clause, roots=None):
 
 
 def understand(model, record, programs):
+    # The teacher follows the same selected operators on observation alone.
+    # Do not overwrite the live tree's extensions with this detached read.
+    source = getattr(model, '_intuition_observation', None)
+    if source is not None and getattr(model, '_intuition_prediction', None) is not None:
+        from IntuitionField import observed
+        with torch.no_grad():
+            teachers = tuple(() if program is None else reading(model, program, source, row,
+                model._sentence_leaf_positions(record,row), install=False)
+                for row, program in enumerate(programs))
+            empty = ConceptSet(source.concept_ids.new_empty(0), source.evidence.new_empty(0,2))
+            teacher = as_field(tuple(joined(roots,empty) for roots in teachers),
+                               where=source.where, when=source.when)
+            owner = model._concept_owner()
+            model._intuition_teacher = observed(owner, teacher)[0][:, :owner._order_caps()[0]].detach()
     forest = tuple(() if program is None else reading(model, program, record.open_field, row,
         model._sentence_leaf_positions(record,row)) for row,program in enumerate(programs))
     empty = ConceptSet(record.open_field.concept_ids.new_empty(0), record.open_field.evidence.new_empty(0,2))
@@ -377,7 +393,7 @@ def generated(model, actions, counts, depths, leaf_field, references):
                 continue
             children = tuple(child.get('node',Node(empty)) for child in node['children'])
             choice = node['choice']; operator = getattr(ops[choice],'gl',ops[choice])
-            context = held_context(owner,rules[choice])
+            context = held_context(owner,rules[choice],stream=b)
             value = operator.compose_extend(*(child.field for child in children),context=context)
             node['node'] = Node(value,children,operator,context)
         forest = tuple(root.get('node',Node(empty)) for root in roots)

@@ -1,4 +1,4 @@
-from ConceptHierarchy import refresh
+from placement_fixtures import place_types
 """Default certificates for the occupation categorizer, independent of learning gates."""
 from collections import Counter
 from argument_fixtures import argument_inventory, view_counts
@@ -51,9 +51,13 @@ def test_kept_readings_alone_supply_argument_views(tmp_path, monkeypatch, eager_
     model.inputSpace.data.train_output = [torch.zeros(1),torch.zeros(1)]
     model.inputSpace.data.text_answers = {'train':['cat','dog']}
     monkeypatch.setattr(model.inputSpace.data, 'grammar_lessons', {'train': [
-        dict(text='a red cat', tree=['lower',0,['conjunction',1,2]], waits=True),
-        dict(text='the blue dog', tree=['definite',0,['conjunction',1,2]], waits=True)]}, raising=False)
+        dict(text='a red cat', tree=['surface',0,['add',1,2]], waits=True),
+        dict(text='the blue dog', tree=['surface',0,['add',1,2]], waits=True)]}, raising=False)
     parts = model.languageSpace.parts_of_speech
+    # This certificate isolates kept membership and lexical head flow.
+    # Round C's independent priming certificate checks the added forecast.
+    monkeypatch.setattr(parts, 'expected_arguments',
+        lambda read, like: like.new_zeros(like.shape[0],len(parts.arguments)))
     events, lessons, initial = [], [], {}
     initial_views = {}
     stage = model._stage_reconstruction_teacher
@@ -64,7 +68,7 @@ def test_kept_readings_alone_supply_argument_views(tmp_path, monkeypatch, eager_
             words = model.inputSpace._ar_word_concept_ids
             for i, word in enumerate(sorted(set(words[words>=0].flatten().tolist()))):
                 parts.add(word,parts.arguments[i], parts.order_of(word))
-            refresh(parts.owner)
+            place_types(parts.owner)
             initial.update({int(word): parts.similarities(int(word)).clone().cpu()
                             for word in words[words>=0].unique().tolist()})
             initial_views.update(view_counts(parts))
@@ -74,9 +78,9 @@ def test_kept_readings_alone_supply_argument_views(tmp_path, monkeypatch, eager_
     from dataclasses import replace
     def snapshot(program):
         return replace(program, tree=None, actions=program.actions.clone(), leaves=program.leaves.clone())
-    def observation(program, binary, unary):
+    def observation(program, binary, unary, **kwargs):
         events.append((snapshot(program), binary, unary))
-        return observe(program, binary, unary)
+        return observe(program, binary, unary, **kwargs)
     def annotation(*args, **kwargs):
         before = view_counts(parts)
         result = lesson(*args, **kwargs)
@@ -108,27 +112,40 @@ def test_kept_readings_alone_supply_argument_views(tmp_path, monkeypatch, eager_
             words = winner.word_ids.tolist()
             places = sorted(source.index(word) for word in words)
             positions = {word:places.index(source.index(word)) for word in words}
-            stack, heads = [], {}
+            stack, trees = [], {}
             for kind, op, position in winner.actions.tolist():
                 if kind == 0:
-                    node = ((positions[words[position]],), (words[position],))
-                    stack.append(node); heads[node[0]]=node[1]
+                    span = (positions[words[position]],)
+                    stack.append(span); trees[span] = words[position]
                 elif kind == 1:
-                    rule=model.languageSpace._compose_binary_rules[op]
+                    rule = model.languageSpace._compose_binary_rules[op]
                     if rule.method_name == 'bind':
-                        continue  # Its second operand is a retained field, off this stack.
-                    right,left=stack.pop(),stack.pop()
-                    role=getattr(rule,'head_role',0)
-                    carried = left[1]+right[1] if rule.method_name=='conjunction' else (left,right)[role-1][1] if role else ()
-                    node=(left[0]+right[0],carried)
-                    stack.append(node);heads[node[0]]=node[1]
+                        continue  # The other operand is an off-stack field.
+                    right, left = stack.pop(), stack.pop()
+                    span = left + right
+                    trees[span] = (rule, left, right)
+                    stack.append(span)
                 elif kind == 3:
-                    stack[-2:]=reversed(stack[-2:])
+                    stack[-2:] = reversed(stack[-2:])
             for state in states:
+                def carried(span):
+                    tree = trees[span]
+                    if isinstance(tree, int):
+                        result = initial.get(tree, torch.zeros(len(parts.arguments))).clone()
+                    else:
+                        rule, left, right = tree
+                        mask = flow_mask(rule)
+                        # Reproduce the tree's reduction order, including its
+                        # float additions, without reading chooser occupation.
+                        result = (carried(left) if mask & 1 else torch.zeros(len(parts.arguments)))
+                        if mask & 2:
+                            result = result + carried(right)
+                    for arity, op in state['operations'].get(span, ()):
+                        if arity == 1 and not flow_mask(model.languageSpace._compose_unary_rules[op]):
+                            result = torch.zeros_like(result)
+                    return result
                 for i,span in enumerate(state['spans']):
-                    expected_probability=torch.zeros(len(parts.arguments))
-                    for word in heads[span]:
-                        expected_probability += initial.get(word, torch.zeros(len(parts.arguments)))
+                    expected_probability = carried(span)
                     torch.testing.assert_close(state['kwargs']['occupation'][b,i].cpu(),expected_probability,rtol=0,atol=0)
         return result
     monkeypatch.setattr(model,'_commit_sentence',committed)
@@ -179,7 +196,7 @@ def test_kept_readings_alone_supply_argument_views(tmp_path, monkeypatch, eager_
     _, measured, _ = argument_inventory(formal_arguments([rule('surface_unary',1)]))
     with pytest.raises(ValueError,match='unary position'):
         measured.observe_kept(malformed,(),[rule('surface_unary',1)])
-        refresh(measured.owner)
+        place_types(measured.owner)
     model.End()
 
 
@@ -191,7 +208,9 @@ def test_one_word_can_belong_to_several_argument_concepts(chooser):
     parts.add(word, b)
     parts.add(word, a); parts.add(word, a)
     import math
-    refresh(parts.owner)
+    from placement_fixtures import place_at
+    for name in (a,b):
+        place_at(parts.owner, parts.concepts[name], [1.,0.,0.,0.])
     scores = parts.similarities(word)
     assert float(scores[parts.index[a]]) == pytest.approx(1.)
     assert float(scores[parts.index[b]]) == pytest.approx(1.)
@@ -206,13 +225,11 @@ def test_word_flow_follows_the_catalogue_and_ends_at_a_clause():
     from PartsOfSpeech import operation_name
     grammar=Grammar();grammar.load_from_grammar_file('complete.grammar')
     rules={operation_name(r):r for r in grammar.rules_upward if operation_name(r)}
-    expected=dict(intersection=3,union=3,conjunction=3,disjunction=3,product=3,sum=3,
-        **{'not':1,'non':1},adverb=1,preposition=2,surface=2,compound=2,
-        lower=2,definite=2,lower_unary=1,definite_unary=1,
-        preposition_unary=1,surface_unary=1,verb=1,
-        lift=0,equal=0,part=0,whole=0,implies=0,generic=0,ask=0,bind=1)
+    expected=dict(intersection=3,union=3,add=3,subtract=3,multiply=3,divide=3,
+        **{'not':1,'non':1},modifier=1,preposition=2,surface=2,compound=2,
+        lower=1,lift=1,verb=1,change=0,part=0,whole=0,implies=0,ask=0,bind=1)
     assert rules['bind'].arity == 2 and rules['bind'].head_role == 1
-    assert rules['adverb'].head_role == 1
+    assert rules['modifier'].head_role == 1
     for name,mask in expected.items():
         r=rules[name];arity=1 if name=='bind' else len(r.rhs_symbols)
         assert flow_mask(r)==mask
@@ -220,7 +237,7 @@ def test_word_flow_follows_the_catalogue_and_ends_at_a_clause():
         actions=[[0,-1,i] for i in range(arity)]+[[2 if arity==1 and name!='bind' else 1,0,0]]
         parts.observe_kept(NS(word_ids=torch.tensor(ids[:arity]),
                               actions=torch.tensor(actions)),[r] if arity==2 or name=='bind' else (),[r] if arity==1 and name!='bind' else ())
-        refresh(parts.owner)
+        place_types(parts.owner)
         for i, word in enumerate(ids[:arity]):
             expected = {f'{name}_argin{i+1}'}
             if mask & (1 << i): expected.add(f'{name}_argout1')
@@ -249,8 +266,8 @@ def test_word_flow_follows_the_catalogue_and_ends_at_a_clause():
     assert torch.equal(result[6,:2],words[6,:2].flip(0))
     compiled=torch.compile(lambda x:update_flow(x,choice,(0,1,2,3),(0,1)),backend='eager',fullgraph=True)
     torch.testing.assert_close(compiled(words),result,rtol=0,atol=0)
-    binary=[rules[name] for name in ('intersection','lower','lift','transpose')]
-    unary=[rules[name] for name in ('not','lower_unary')]
+    binary=[rules[name] for name in ('intersection','surface','change','swap')]
+    unary=[rules[name] for name in ('not','lower')]
     _, parts, ids = argument_inventory(formal_arguments(binary+unary))
     # lower(a, intersection(black, cat)), then lift that NP with a VP word.
     # The description's two words both cross the declared head operand.
@@ -258,36 +275,42 @@ def test_word_flow_follows_the_catalogue_and_ends_at_a_clause():
         [0,-1,0],[0,-1,1],[0,-1,2],[1,0,0],[1,1,0],
         [0,-1,3],[3,3,0],[3,3,0],[1,2,0],[2,0,0],[2,1,0]]))
     parts.observe_kept(program,binary,unary)
-    refresh(parts.owner)
+    place_types(parts.owner)
     for word in ids[1:3]:
-        for argument in ('intersection_argout1','lower_argin2','lower_argout1','lift_argin1'):
+        for argument in ('intersection_argout1','surface_argin2','surface_argout1','change_argin1'):
             assert word in parts.members(argument)
-    assert {arg for arg in parts.arguments if ids[0] in parts.members(arg)} == {'lower_argin1'}
-    assert parts.members('lift_argin2') == (ids[3],)
-    assert not any(parts.members(arg) for arg in ('lift_argout1','not_argin1','lower_unary_argin1'))
+    assert {arg for arg in parts.arguments if ids[0] in parts.members(arg)} == {'surface_argin1'}
+    assert parts.members('change_argin2') == (ids[3],)
+    assert not any(parts.members(arg) for arg in ('change_argout1','not_argin1','lower_argin1'))
+    # Geometry is independently placed; the old membership centroid is gone.
+    from placement_fixtures import place_at
+    for name, point in (('intersection_argin1', [1.,0.,0.,0.]),
+                        ('intersection_argin2', [0.,1.,0.,0.]),
+                        ('intersection_argout1', [1.,1.,0.,0.])):
+        place_at(parts.owner, parts.concepts[name], point)
     cosines={(row['left'],row['right']):row['cosine'] for row in parts.collapse()}
     assert cosines['intersection_argin1','intersection_argout1']==pytest.approx(2**-.5)
     assert cosines['intersection_argin2','intersection_argout1']==pytest.approx(2**-.5)
 
 
-def test_kept_product_carries_both_operands_words_into_the_enclosing_np():
+def test_kept_multiply_carries_both_operands_words_into_the_enclosing_np():
     from Language import Grammar
     from PartsOfSpeech import operation_name
     grammar=Grammar();grammar.load_from_grammar_file('complete.grammar')
     rules={operation_name(r):r for r in grammar.rules_upward if operation_name(r)}
-    binary=[rules['product'],rules['lower']]
+    binary=[rules['multiply'],rules['surface']]
     _, parts, ids = argument_inventory(formal_arguments(binary), count=3)
     # lower(a, product(black, cat)): both words survive into lower's head.
     program=NS(word_ids=torch.tensor(ids),actions=torch.tensor([
         [0,-1,0],[0,-1,1],[0,-1,2],[1,0,0],[1,1,0]]))
     parts.observe_kept(program,binary,())
-    refresh(parts.owner)
+    place_types(parts.owner)
     assert flow_mask(binary[0])==3
-    assert {arg for arg in parts.arguments if ids[0] in parts.members(arg)} == {'lower_argin1'}
+    assert {arg for arg in parts.arguments if ids[0] in parts.members(arg)} == {'surface_argin1'}
     for role, word in enumerate(ids[1:], 1):
         assert {arg for arg in parts.arguments if word in parts.members(arg)} == {
-            f'product_argin{role}', 'product_argout1', 'lower_argin2', 'lower_argout1'}
-    assert view_counts(parts)['product_argout1'] == view_counts(parts)['lower_argout1'] == 2
+            f'multiply_argin{role}', 'multiply_argout1', 'surface_argin2', 'surface_argout1'}
+    assert view_counts(parts)['multiply_argout1'] == view_counts(parts)['surface_argout1'] == 2
 
 
 def test_chooser_adds_input_similarities_directly_and_carries_words(chooser):

@@ -32,8 +32,7 @@ def known_concept(owner, content, *, form=None, order=1):
     """A supplied, fully trusted native region; learning is certified separately."""
     from Spaces import _concept_alloc_of
     alloc = _concept_alloc_of(owner)
-    identity = owner.new_concept()
-    alloc.reference_orders[identity] = order
+    identity = owner.new_concept(order=order)
     alloc.settle(identity)
     row = owner._csw_concept_row(order, identity)
     owner.similarity_codebook.W[row].copy_(content)
@@ -78,7 +77,7 @@ def close(resolver, point, predicate, mode, frames, *, document, sentence, selec
             owner.similarity_codebook.W[row].copy_(predicate)
         predicates[key] = symbol
     composition = Composition(value, (term, Composition(predicate, reference=predicates[key])),
-                              operation='lift', order=2)
+                              operation='change', order=2)
     clause = Clause(ConceptualMeaning.from_description(value), point=value,
                     children=(np,), refs=(('clause', 0), -1, -1), order=2,
                     composition=composition)
@@ -377,16 +376,18 @@ def test_deferred_reference_request_survives_kept_trial_detachment(monkeypatch):
     from ClauseJournal import finish_clause
     from ReferenceClose import constituents
     f = SentenceFixture(monkeypatch, native_cube=True)
-    program = record_reading(f.language, replace(
-        f.program(('lift', ('lower', 'cue', 'object'), 'predicate')),
-        leaf_orders=torch.tensor([0, 1, 0]), close_references=True))
+    from chunk_fixtures import record, higher_word
+    f.noun('object', order=1)
+    higher_word(f, 'object')
+    program, _, _ = record(f, ('change', ('lower_unary', 'object'), 'predicate'),
+                           leaf_orders=(2,0))
     scored = finish_clause(f.language, program, registry=f.registry)
     retained = program.detached()
     committed = finish_clause(f.language, retained, registry=f.registry)
     assert retained.close_references
     before, after = constituents(scored), constituents(committed)
     assert len(before) == len(after) == 1
-    assert before[0].reference_request['mode'] == after[0].reference_request['mode'] == 'mint'
+    assert before[0].reference_request['mode'] == after[0].reference_request['mode'] == 'bind'
     assert before[0].reference_request['leaves'] == after[0].reference_request['leaves']
     torch.testing.assert_close(before[0].point, after[0].point, rtol=0, atol=0)
 
@@ -408,7 +409,7 @@ def test_objectless_marker_stays_literal_under_an_implicit_reference_read():
     torch.testing.assert_close(result['unary'][0, 0, valid][0], value[0, 0])
 
 
-@pytest.mark.parametrize('description_order', (1, 2))
+@pytest.mark.parametrize('description_order', (2,))
 def test_kept_journal_supplies_np_content_predicate_and_positional_provenance(monkeypatch, description_order):
     from test_clause_acceptance import SentenceFixture
     from reading_fixtures import record_reading
@@ -416,25 +417,20 @@ def test_kept_journal_supplies_np_content_predicate_and_positional_provenance(mo
     from ReferenceClose import constituents
     from ReferenceContext import binding_spec, denoted_order
     f = SentenceFixture(monkeypatch, native_cube=True)
-    for rule in f.binary:
-        mode = rule.determiner_mode
-        if mode not in ('mint', 'bind', 'kind'):
-            continue
-        expected = max(1, description_order - 1)
-        assert binding_spec(rule, 'argin2', description_order) == (expected, mode)
-        stamps = torch.tensor([description_order, 17])
-        assert denoted_order(rule, (torch.zeros_like(stamps), stamps), (), None).tolist() == [expected, 16]
-    program = f.program(('lift', ('lower', 'cue', 'object'), 'predicate'))
-    program = record_reading(f.language, replace(program,
-        leaf_orders=torch.tensor([0, description_order, 1]), close_references=True))
+    from chunk_fixtures import record, higher_word
+    f.noun('object', order=description_order-1)
+    higher_word(f, 'object')
+    program, _, _ = record(f, ('change', ('lower_unary', 'object'), 'predicate'),
+                           leaf_orders=(description_order, 0))
     clause = finish_clause(f.language, program, registry=f.registry)
     mentions = constituents(clause)
-    assert len(mentions) == 1 and mentions[0].order == 1
+    assert len(mentions) == 1 and mentions[0].order == description_order-1
     request = mentions[0].reference_request
-    assert request['mode'] == 'mint' and request['leaves'] == (1,) and request['role'] == 0
-    torch.testing.assert_close(mentions[0].point, program.leaves[1], rtol=0, atol=0)
-    torch.testing.assert_close(request['predicate'], program.leaves[2], rtol=0, atol=0)
-    torch.testing.assert_close(request['cue'], program.leaves[0], rtol=0, atol=0)
+    assert request['mode'] == 'bind' and request['leaves'] == (0,) and request['role'] == 0
+    torch.testing.assert_close(mentions[0].point, program.leaves[0], rtol=0, atol=0)
+    torch.testing.assert_close(request['predicate'], program.leaves[1], rtol=0, atol=0)
+    # Unary lower has no separate marker/cue operand (§27.1).
+    assert request.get('cue') is None
     torch.testing.assert_close(clause.point, program.end_state[0], rtol=0, atol=0)
     # The real conceptual allocator and clause taxonomy accept a first
     # mention immediately, including with statistical learning frozen.
@@ -451,11 +447,11 @@ def test_kept_journal_supplies_np_content_predicate_and_positional_provenance(mo
     identity = resolver.last_audit[0]['reference']
     assert isinstance(identity, tuple) and identity[:2] == ('ltm', f.store.address_domain)
     assert component.individual_ids == before
-    assert f.store.raw_meaning_of(f.store.location(identity)).role_refs[0] == ('sym', program.concept_ids[1].item())
+    assert f.store.raw_meaning_of(f.store.location(identity)).role_refs[0] == ('sym', f.cs.definitions.objects(f.words['object'][0])[0])
     assert not hasattr(component, 'nouns')  # The row counter is retired by §17.14.
     occurrence = resolver.last_audit[0]['occurrence']
-    kind = int(program.concept_ids[1])
-    assert f.store.row(f.store.index_of_row(occurrence))['order'] == f.cs._concept_source_order(kind) == 0
+    kind = f.cs.definitions.objects(f.words['object'][0])[0]
+    assert f.store.row(f.store.index_of_row(occurrence))['order'] == f.cs._concept_source_order(kind) == description_order-1
     # This unclocked grammar fixture is working memory (§17.15). Copy its
     # admitted runtime state; legacy durable migration has separate coverage.
     restored = STM0(8, capacity=64, relation_capacity=8192)

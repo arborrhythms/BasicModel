@@ -39,10 +39,10 @@ class TestRuleDefTyped(unittest.TestCase):
 
     def test_function_call_rhs_populates_rhs_symbols(self):
         g = Grammar()
-        g.configure({'S': ['lift(S, S)']})
+        g.configure({'S': ['change(S, S)']})
         rule = g.rules[0]
         self.assertEqual(rule.rhs_symbols, ('S', 'S'))
-        self.assertEqual(rule.method_name, 'lift')
+        self.assertEqual(rule.method_name, 'change')
         self.assertEqual(rule.arity, 2)
 
     def test_epsilon_rule_has_empty_rhs(self):

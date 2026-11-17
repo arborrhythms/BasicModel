@@ -44,7 +44,8 @@ class ClosingImage:
         occupied = raw.abs().sum(-1)>0 if occupied is None else occupied
         activation = (symbol_activations(keys[None], raw[None], occupied[None],
                                        None if lanes is None else lanes[None], identities=None if identities is None else identities[None],
-                                       bank_ids=prediction.symbol_ids, key_valid=None if getattr(prediction, 'key_valid', None) is None else prediction.key_valid[None])[0]
+                                       bank_ids=prediction.symbol_ids, key_orders=prediction.symbol_orders,
+                                       key_valid=None if getattr(prediction, 'key_valid', None) is None else prediction.key_valid[None])[0]
                       if activation is None else activation.detach().to(raw))
         if activation.shape != (len(keys), 2):
             raise ValueError('retained activation target must align with its prior bank')
@@ -54,6 +55,7 @@ class ClosingImage:
             expected = expected * (1.-prior_withheld[:, None])
         indices, matched = match_symbols(keys[None], raw[None],
             identities=None if identities is None else identities[None], bank_ids=prediction.symbol_ids,
+            key_orders=prediction.symbol_orders,
             key_valid=None if getattr(prediction, 'key_valid', None) is None else prediction.key_valid[None])
         indices, matched = indices[0], matched[0]
         exempt = (torch.zeros(len(keys), device=raw.device, dtype=raw.dtype)

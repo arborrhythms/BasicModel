@@ -47,6 +47,8 @@ def open_field(model, sid, a0):
         owner._cs_field_where, owner._cs_field_when, None)
     from ScalarPercepts import join
     field = join(model,sid,field)
+    from IntuitionField import open_field as intuit
+    field = intuit(model, field)
     model._sentence_open_fields[int(sid)] = field
     publish(model, field)
     return field

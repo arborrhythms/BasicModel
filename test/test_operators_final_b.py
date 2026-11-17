@@ -123,6 +123,7 @@ def forced_prefix_certificate():
             content_cost=content.detach().tolist(),
             percept_cost=percept.detach().tolist(),
             leaf_cost=(input_reverse+content+percept).detach().tolist(),
+            application_cost=charge('operator.application').detach().tolist(),
             byte_identity=m._last_decoder_byte_identity.detach().tolist(),
             actions=m._attention_words.actions.tolist(),
             meaning_norm=bank.codes[...,104:].norm().item(),
@@ -160,7 +161,7 @@ def test_forced_not_and_or_descend_and_snapshot_certificate():
         # Distinct negative meanings can be erased by disjunction's meet.
         # Exact report spelling cannot waive either native field loss.
         # Both fields, plus the forecast residual, make the reading cost.
-        torch.testing.assert_close(torch.tensor(read['R']), torch.tensor(read['leaf_cost']))
+        torch.testing.assert_close(torch.tensor(read['R']), torch.tensor(read['leaf_cost']) + torch.tensor(read['application_cost']))
         assert all(0 <= value <= 1 for value in read['byte_identity'])
     assert all(value >= 0 for value in report['reads'][0]['content_cost'])
     assert report['reads'][1]['content_cost'][2] > 0
@@ -171,7 +172,7 @@ def test_both_training_trials_share_bootstrap_snapshot(monkeypatch, tmp_path):
     model, _, data = _fresh_model('data/XOR_grammar.xml')
     try:
         derived = model._concept_owner().similarity_codebook.mereology
-        snapshots, costs = [], []
+        snapshots, costs, calls = [], [], []
         path_cost = model._sentence_path_cost
         def capture(*args, **kwargs):
             bank = model._sentence_primed_bank
@@ -183,10 +184,14 @@ def test_both_training_trials_share_bootstrap_snapshot(monkeypatch, tmp_path):
         for _ in range(3):
             snapshots.clear()
             model.runEpoch(optimizer=optimizer, batchSize=4, split='train', max_batches=1)
-            assert len(snapshots) == 2
-            assert snapshots[0][0] == snapshots[1][0]
-            for before, after in zip(snapshots[0][1:], snapshots[1][1:]):
-                torch.testing.assert_close(before, after, atol=0, rtol=0)
+            reading_departure = any(bool(((draw['walk'] >= 0) & (draw['walk'] < 4)).any())
+                for audit in model._sentence_credit_audits for draw in audit['departures'])
+            assert len(snapshots) == (2 if reading_departure else 1)
+            calls.append(len(snapshots))
+            if len(snapshots) == 2:
+                assert snapshots[0][0] == snapshots[1][0]
+                for before, after in zip(snapshots[0][1:], snapshots[1][1:]):
+                    torch.testing.assert_close(before, after, atol=0, rtol=0)
             for audit in model._sentence_credit_audits:
                 reconstruction = audit['components'][..., 0]
                 assert torch.isfinite(reconstruction).all() and reconstruction.ge(0).all()
@@ -194,6 +199,6 @@ def test_both_training_trials_share_bootstrap_snapshot(monkeypatch, tmp_path):
         assert derived.context_audit()
         import json
         (tmp_path/'certificate.json').write_text(json.dumps(dict(
-            paired_snapshot_equality=True, reconstruction_costs=costs), indent=2))
+            paired_snapshot_equality=True, path_cost_calls=calls, reconstruction_costs=costs), indent=2))
     finally:
         model.End(); model.symbolSpace.soft_reset()

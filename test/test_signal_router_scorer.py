@@ -23,5 +23,6 @@ def test_scores_and_probabilities_match_explicit_enumeration():
     x = torch.tensor([[[1.], [2.], [4.]]])
     _, _, route = step(x, slots=3)
     expected = torch.tensor([[6., 12., -3., -6., -12., 7./3]])
+    expected[:, :-1] -= step.operator_cost
     torch.testing.assert_close(route['logits'], expected)
     torch.testing.assert_close(route['probabilities'], expected.softmax(-1))

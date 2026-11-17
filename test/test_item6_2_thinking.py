@@ -28,7 +28,11 @@ def world():
     refs = tuple(('sym', cs.new_concept()) for _ in range(3))
     for ref in refs:
         force_order(cs, ref[1], 0)
-        cs._csw_concept_row(0, ref[1])
+        row = cs._csw_concept_row(0, ref[1])
+        # This relation-calculus fixture supplies native cube coordinates.
+        # Seating now installs an ID seed, after the bank-wide setup above.
+        with torch.no_grad():
+            cs.similarity_codebook.W[row].sigmoid_()
     store = LTM0(cs.outputShape[-1], capacity=128)
     memory = WhatInteractionMemory(batch=1, capacity=128, detach_mode='episode')
     model = BasicModel()
@@ -65,8 +69,21 @@ def chain_world(monkeypatch):
         store.append_relation(left[1], right[1], truth_plus=1.)
     chosen=[]
     def choose(root,active,actions,**kwargs):
-        if None in actions and len(chosen) == 2:
+        if None in actions and len(chosen) == 3:
             return None
+        if len(chosen) == 2:
+            from ThoughtChunks import held
+            resident = dict(held(model.conceptualSpace.stm, 0))
+            for action in actions:
+                if action is not None and action.semantic_id == 'infer' and not action.open_roles:
+                    premise = resident.get(action.request.role_refs[0][1])
+                    rule = resident.get(action.request.role_refs[2][1])
+                    if (premise is not None and rule is not None
+                            and premise.role_refs[0] == a and premise.role_refs[2] == b
+                            and rule.role_refs[0] == b and rule.role_refs[2] == c
+                            and bindings(action.request).get('_infer_direction') == (0,2)):
+                        chosen.append(action)
+                        return action
         for action in actions:
             if action is not None and action.semantic_id=='query' and action.request.constituents:
                 q=action.request.constituents[0]
@@ -82,14 +99,17 @@ def chain_world(monkeypatch):
 def test_chain_two_queries_one_conclusion_and_both_witnesses(monkeypatch):
     model,registry,store,(a,b,c),chosen=chain_world(monkeypatch)
     result=run(model,registry.form('isPart',a,c),work_budget=64)
-    assert [r.operation for r in result.records if r.kind=='thought']==['query','query','conclude']
-    assert len(chosen)==2 and not open_slots(result.meaning)
+    assert [r.operation for r in result.records if r.kind=='thought']==['query','query','infer','conclude']
+    assert len(chosen)==3 and not open_slots(result.meaning)
     assert evidence_pair(result.meaning)==(1.,0.)
-    saved=store.part_row(store.parts.find(a[1],c[1]))
+    saved=store.row(len(store)-1)
     assert saved['evidence']==(1.,0.)
+    assert store.referent_of(len(store)-1) == a
     assert set(bindings(result.meaning)['_thought_witnesses'])=={
         ('sym',store.parts.find(a[1],b[1])),('sym',store.parts.find(b[1],c[1]))}
-    assert saved['refs'].tolist()==[a[1],c[1]]
+    assert saved['meaning'].role_refs[0] == a
+    stop = store.when_start
+    torch.testing.assert_close(saved['point'][:stop], result.meaning.roles[2,:stop])
 
 
 def test_open_references_and_bound_surface_are_independent_of_thinking(monkeypatch):
@@ -123,7 +143,7 @@ def test_thought_uses_existing_compose_scorer_and_owner_credit():
     model,registry,store,(a,b,c)=world()
     model.train()
     model.errors.clear()
-    result=run(model,registry.form('equal',a,a),work_budget=20,
+    result=run(model,registry.form('define',a,a),work_budget=20,
                score=lambda result:float(has_open_slots(result.meaning)))
     assert model._selected_thought_chooser(result.meaning) is model.shared_grammar
     assert not hasattr(model,'selected_thought_choosers')
@@ -161,7 +181,7 @@ def test_not_exchanges_both_poles_and_preserves_content():
 
 
 def test_operations_all_declare_pairs_and_ast_never_returns_scalar():
-    expected={'ask','bind','query','not','isTrue','exist','isPart','part','isEqual','equal','infer','intuit','implies','gain'}
+    expected={'ask','bind','query','not','isTrue','exist','isPart','part','isEqual','equal','infer','intuit','implies','gain','non','define'}
     assert set(THOUGHT_EXECUTORS)==expected
     assert all(item.evidence_pair for item in THOUGHT_EXECUTORS.values())
     source=Path('bin/ThoughtFaces.py').read_text()
@@ -173,24 +193,23 @@ def test_operations_all_declare_pairs_and_ast_never_returns_scalar():
                         and node.value.func.id in ('float','int','bool'))
 
 
-def test_nested_ask_returns_the_binding_and_shares_budget(monkeypatch):
+def test_nested_ask_shares_budget_but_recall_returns_no_binding(monkeypatch):
     model,registry,store,(a,b,c)=world()
     model.conceptualSpace.add_whole(a[1],b)
     store.append_relation(a[1],b[1],truth_plus=1.)
     store._concept_owner()._concept_allocator.singletons.add(b[1])
-    child=registry.form('equal',a,b)
-    child=question(replace(child, role_refs=(None,child.role_refs[1],b),
-        role_mask=torch.tensor([False,True,True]), bindings={'_equality':True}), (('referent',0),))
+    child=registry.form('isPart',b,open_roles=('argin1',))
     outer=registry.form('ask',child)
     from meaning_fixtures import replay_thought_plan
-    replay_thought_plan(model, monkeypatch, ['ask', 'query', None, None])
+    from itertools import chain, repeat
+    replay_thought_plan(model, monkeypatch, chain(['ask'], repeat('query')))
     result=run(model,outer,work_budget=64)
-    assert not open_slots(result.meaning)
-    assert evidence_pair(result.meaning)==(1.,0.)
+    assert open_slots(result.meaning)
+    assert evidence_pair(result.meaning)==(0.,0.)
     assert result.work.spent==model._what_memory().thought_state().work_spent
     assert [r.kind for r in result.records].count('descend')==1
     assert [r.kind for r in result.records].count('return')==1
-    assert bindings(result.meaning)['_thought_witnesses']
+    assert result.work.spent > 0
 
 
 def test_omission_lane_concludes_absence_without_negative_content(monkeypatch):
@@ -235,7 +254,12 @@ def test_modus_ponens_requires_premise_and_implication_witnesses(monkeypatch):
     memory.begin_thought_episode(goal, work_budget=128, opened_by_chooser=True)
     premise_read = invoke(model, registry, registry.form('query', query_pattern(goal, 'truth', store.occurrence_of(source), None)))
     rule_read = invoke(model, registry, registry.form('query', query_pattern(goal, 'implies', p, q)))
-    result = invoke(model, registry, registry.form('infer', premise_read.evidence['meaning'], rule_read.evidence['meaning']))
+    from ThoughtChunks import read
+    stm = model.conceptualSpace.stm
+    premise = read(stm, tuple(store.entry_time(source).tolist()), 0)
+    from ThoughtChunks import held
+    rule_value = next(value for _,value in held(stm,0) if bindings(value).get('_rule_row') == rule)
+    result = invoke(model, registry, registry.form('infer', premise, rule_value))
     assert evidence_pair(result.evidence['meaning']) == pytest.approx((.8, 0.))
     assert set(bindings(result.evidence['meaning'])['_thought_witnesses']) == {store.occurrence_of(source), rule}
     assert store.part_row(rule[1])['evidence'] == pytest.approx((.9, 0.))
@@ -262,15 +286,13 @@ def credit_chain_world(monkeypatch):
     model, registry, store, (a,b,c) = world()
     store.append_relation(a[1], b[1], truth_plus=1.)
     store._concept_owner()._concept_allocator.singletons.add(b[1])
-    goal=registry.form('equal',a,b)
-    goal=question(replace(goal,role_refs=(None,goal.role_refs[1],b),
-        role_mask=torch.tensor([True,True,True]),bindings={'_equality':True}), (('referent',0),))
+    goal=registry.form('isPart',b,open_roles=('argin1',))
     def candidate(name, meaning):
         return ThoughtOperationCandidate(registry.operation_spec(name),meaning,())
     direct=candidate('isPart',registry.form('isPart',c,a))
-    first=candidate('query',registry.form('query',goal))
+    first=candidate('isPart',goal)
     negate=candidate('not',registry.form('not',registry._payload(a)))
-    def menu(registry,root,active,current,records,descriptions=()):
+    def menu(registry,root,active,current,records,descriptions=(), *, stm):
         if not has_open_slots(current):return ()
         return (direct,first) if not slots(records) else (negate,)
     monkeypatch.setattr('ThoughtStream.candidates',menu)
@@ -320,7 +342,7 @@ def test_answer_credit_moves_shared_chooser_toward_the_completed_chain(monkeypat
     model.eval()
     model._what_memory().end_what_episode()
     learned=run(model,goal,work_budget=64)
-    assert [r.operation for r in learned.records if r.kind=='thought']==['query','conclude']
+    assert [r.operation for r in learned.records if r.kind=='thought']==['isPart','conclude']
     assert not open_slots(learned.meaning)
     assert store.part_row(store.parts.find(learned.meaning.role_refs[0][1],goal.role_refs[2][1]))['evidence']==(1.,0.)
 
@@ -390,7 +412,7 @@ def test_open_closing_and_later_binding_are_reference_driven(surface):
     # A new occurrence can fill the earlier null. Its source address remains
     # distinct from the question's address and from the new inference.
     supplied=with_slots(replace(source,role_refs=(b,None,None)),(),pair=(1.,0.))
-    copular=registry.form('equal',a,b)
+    copular=registry.form('define',a,b)
     copular=with_slots(replace(copular,role_refs=(None,copular.role_refs[1],b),
         bindings=dict(bindings(copular),_equality=True,_forward_references=((0,a[1]),))),
         (('referent',0),),pair=(1.,0.))
@@ -451,7 +473,12 @@ def test_event_implication_reads_endpoint_when_order(monkeypatch,positions,known
     rule = invoke(model, registry, registry.form('query', query_pattern(goal, 'implies', *events)))
     assert bool(rule.evidence.get('frames')) is known
     if known:
-        result = invoke(model, registry, registry.form('infer', premise.evidence['meaning'], rule.evidence['meaning']))
+        from ThoughtChunks import read, held
+        stm = model.conceptualSpace.stm
+        premise_value = read(stm, tuple(store.entry_time(store.location(events[0])).tolist()), 0)
+        witness = rule.evidence['frames'][0]['occurrence']
+        rule_value = next(value for _, value in held(stm,0) if bindings(value).get('_rule_row') == witness)
+        result = invoke(model, registry, registry.form('infer', premise_value, rule_value))
         assert evidence_pair(result.evidence['meaning']) == pytest.approx((.8, 0.))
         assert result.evidence['meaning'].role_refs[0] == events[1]
         assert set(events).issubset(bindings(result.evidence['meaning'])['_thought_witnesses'])

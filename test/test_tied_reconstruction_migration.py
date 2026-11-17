@@ -294,7 +294,7 @@ def test_compiled_reverse_does_not_backpropagate_through_an_unused_inverse(tmp_p
         binary = language._tree_layer(2)
         names = list(binary.op_names)
         selected = names.index("sum")
-        unused = getattr(binary.ops[names.index("lift")], "gl", binary.ops[names.index("lift")])
+        unused = getattr(binary.ops[names.index("change")], "gl", binary.ops[names.index("change")])
         with torch.no_grad():
             unused._sigma.layer.raw_L.fill_(float("nan"))
         width = int(model.conceptualSpace.stm.concept_dim)

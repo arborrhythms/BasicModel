@@ -37,6 +37,26 @@ def test_worker_exit_and_diagnostics_are_preserved(runner, tmp_path):
     assert "real failure" in (tmp_path / "worker.log").read_text()
 
 
+def test_assessment_from_teardown_keeps_the_original_test_outcome(runner, tmp_path):
+    (tmp_path / 'test_observed.py').write_text(
+        'import json, pytest\n'
+        '@pytest.fixture(autouse=True)\n'
+        'def report(request):\n'
+        ' yield\n'
+        ' request.node.user_properties.append(("assessment", json.dumps({"readiness": "not ready: failed", "rungs": [{"rung": 1, "status": "failed"}]})))\n'
+        'def test_operator():\n'
+        ' assert False, "original operator assertion"\n')
+    result = runner.run_suite(root=tmp_path, selectors=['test_observed.py'],
+        run_dir=tmp_path/'result', memory_bytes=512*1024**2, timeout=30,
+        suite_timeout=120, workers=1, lock_path=tmp_path/'lock')
+    reports = [report for worker in result['workers'] for report in worker['reports']]
+    assert result['exit_code'] == 1
+    assert len(reports) == 1 and reports[0]['outcome'] == 'failed'
+    assert 'original operator assertion' in reports[0]['message']
+    assert reports[0]['assessments'][0]['readiness'] == 'not ready: failed'
+    assert reports[0]['assessments'][0]['rungs'][0]['status'] == 'failed'
+
+
 def test_timeout_kills_term_resistant_descendants(runner, tmp_path):
     child = "import signal,time; signal.signal(signal.SIGTERM, signal.SIG_IGN); time.sleep(60)"
     source = (

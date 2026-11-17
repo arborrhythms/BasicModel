@@ -34,6 +34,7 @@ class ConceptTrust(nn.Module):
         self.register_buffer('content', torch.zeros_like(bank.W))
         self.register_buffer('known', torch.zeros(len(bank.W), dtype=torch.bool, device=bank.W.device))
         self.register_buffer('allocated', torch.zeros(len(bank.W), dtype=torch.bool, device=bank.W.device))
+        self.register_buffer('read_objects', torch.zeros(len(bank.W), dtype=torch.bool, device=bank.W.device))
         self._deferred_word_views = None
         if isinstance(bank.W, nn.Parameter):
             import weakref
@@ -47,9 +48,9 @@ class ConceptTrust(nn.Module):
 
     @property
     def revision(self):
-        bank = self.owner.similarity_codebook
-        return (id(self), self.lengths._version, self.allocated._version,
-                None if self.tracked else bank.W._version)
+        # positive_length reads these columns on both chart kinds. W may
+        # merely be a derived-code cache; refreshing it is not new trust.
+        return (id(self), self.lengths._version, self.allocated._version)
 
     @torch.no_grad()
     def capture(self, row):
@@ -62,17 +63,31 @@ class ConceptTrust(nn.Module):
             self.lengths[row, lane] = value[start:start+self.width].norm()
 
     @torch.no_grad()
-    def remember(self, identity, content):
-        if not self.tracks(identity):
-            return
+    def remember(self, identity, content, *, region=None):
         from IdentityRows import carrier
         row = self.owner._csw_row_of(identity)
         if row is None:
             raise ValueError('trust requires an allocated concept row')
         if not bool(self.known[row]):
-            self.content[row].copy_(carrier(self.owner, content, region=self.tracked))
+            self.content[row].copy_(carrier(self.owner, content,
+                region=self.tracked if region is None else region))
             self.known[row] = True
         self.refresh(identity)
+
+    @torch.no_grad()
+    def read_object(self, identity):
+        """An implicit read-word definition grants its object unit trust."""
+        row = self.owner._csw_row_of(identity)
+        if row is None:
+            raise ValueError('a read-word object requires its allocated concept row')
+        self.read_objects[row] = True
+        self.lengths[row, 0] = 1.
+        # A percept collection's form holds its actual value bounds. It has
+        # no placed radius to normalize, and the usual untracked read is one.
+        if 'percept_collection' not in self.owner._concept_allocator.symbol_types.get(identity, ()):
+            self.allocated[row] = True
+            self.project([row])
+
 
     @torch.no_grad()
     def refresh(self, identity):
@@ -85,34 +100,43 @@ class ConceptTrust(nn.Module):
         views = int(self.views[row])
         length = (float(self.agreement[row]) / views * -math.expm1(-views / self.trust_views)
                   if views else 0.)
-        self.lengths[row, 0] = length
+        self.lengths[row, 0] = 1. if bool(self.read_objects[row]) else length
         self.project([row])
 
     @torch.no_grad()
     def project(self, rows=None):
         bank = self.owner.similarity_codebook
-        update_content = rows is None
         rows = self.allocated.nonzero().flatten() if rows is None else torch.as_tensor(rows, device=bank.W.device, dtype=torch.long)
         if not len(rows):
             return
         values = bank.W[rows].clone()
         derived = getattr(bank, 'mereology', None)
         start, width = (self.start, self.width) if self.tracked else (0, bank.W.shape[-1])
-        direction = values[:, start:start+width]
-        if self.tracked:
-            direction = torch.where(self.known[rows, None], direction.clamp_min(0), direction)
-        fallback = self.content[rows, start:start+width] if not self.tracked else derived.placement[rows]
-        direction = torch.where(direction.norm(dim=-1, keepdim=True) > 0, direction, fallback)
-        direction = torch.nn.functional.normalize(direction, dim=-1)
+        if self.tracked and not isinstance(bank.W, nn.Parameter):
+            # W is a cache on the derived chart. Re-normalizing its scaled
+            # value adds rounding that a checkpoint rebuild does not repeat.
+            direction = derived.positive_directions(rows)
+        else:
+            direction = values[:, start:start+width]
+            if self.tracked:
+                direction = torch.where(self.known[rows, None], direction.clamp_min(0), direction)
+            if self.tracked:
+                direction = torch.where(direction.norm(dim=-1, keepdim=True) > 0,
+                                        direction, derived.placement[rows])
+            direction = torch.nn.functional.normalize(direction, dim=-1)
         values[:, start:start+width] = direction * self.lengths[rows, 0, None]
-        if update_content:
-            raw = self.content[rows, start:start+width]
-            self.content[rows, start:start+width] = torch.where(
-                direction.norm(dim=-1, keepdim=True) > 0, direction * raw.norm(dim=-1, keepdim=True), raw)
+        if derived is not None:
+            higher = torch.tensor([self.owner._row_order(int(row)) > 0 for row in rows],
+                                  dtype=torch.bool, device=rows.device)
+            values[higher, :derived.percept_event_width] = 0.
         bank.W[rows] = values
 
     def _load_from_state_dict(self, state, prefix, *args, **kwargs):
-        for name in ('lengths', 'views', 'agreement', 'content', 'known', 'allocated'):
+        if prefix+'read_objects' not in state:
+            import warnings
+            warnings.warn('concept trust checkpoint predates unit read-word object trust; no read-object grants restored', UserWarning)
+            state[prefix+'read_objects'] = torch.zeros_like(self.read_objects)
+        for name in ('lengths', 'views', 'agreement', 'content', 'known', 'allocated', 'read_objects'):
             value = state.get(prefix+name)
             target = getattr(self, name)
             if value is None or value.shape != target.shape or value.dtype != target.dtype:
@@ -158,28 +182,36 @@ def defer_word_views(owner):
 
 
 @torch.no_grad()
-def observe(owner, identity, content):
+def observe(owner, identity, content=None, *, region=None):
     """Add one kept view without allocating a memory row."""
     from Memory import NULL_CONCEPT
     from IdentityRows import carrier, meet_ratios
     trust = owner.similarity_codebook.trust
     if (trust._deferred_word_views is not None
             and 'word' in owner._concept_allocator.symbol_types.get(identity, ())):
-        trust._deferred_word_views.append((identity, content.detach().clone()))
+        trust._deferred_word_views.append((identity, None if content is None else content.detach().clone()))
         return
     if not trust.tracks(identity) or identity == NULL_CONCEPT or owner.is_frozen(identity):
         return
-    trust.remember(identity, content)
+    if content is None:
+        row = owner._csw_row_of(identity)
+        trust.known[row] = True
+        trust.views[row] += 1
+        trust.agreement[row] += 1
+        trust.refresh(identity)
+        return
+    region = trust.tracked if region is None else region
+    trust.remember(identity, content, region=region)
     row = owner._csw_row_of(identity)
-    value = carrier(owner, content, region=trust.tracked)
+    value = carrier(owner, content, region=region)
     if not bool(trust.content[row].any()):
         coverage = 1.
         if bool(value.any()):
             trust.content[row].copy_(value)
     else:
         candidate = trust.content[row]
-        if not trust.tracked:
-            # Signed whole-value charts have distinct positive and negative
+        if not region:
+            # Signed extension and whole-value charts have distinct positive and negative
             # coordinates for coverage; ordinary rows on them remain untracked.
             value = torch.cat((value.clamp_min(0), (-value).clamp_min(0)))
             candidate = torch.cat((candidate.clamp_min(0), (-candidate).clamp_min(0)))

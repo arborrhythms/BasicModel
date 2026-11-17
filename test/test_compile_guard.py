@@ -329,14 +329,15 @@ def test_cached_model_factories_guard_compiled_calls_and_leave_eager_direct(monk
     from Models import BasicModel
     import util
     monkeypatch.setattr(util, 'TheCompileBackend', backend)
-    def numerical_step(x):
+    def numerical_step(x, *, forecast_bank=None):
         return x.sin() * 2
     if entry == 'reconstruction':
         owner = SimpleNamespace(_reconstruct_sentences=numerical_step,
                                 _recon_placement=lambda: 'compiled')
         factory = BasicModel._compiled_reconstruct
     else:
-        owner = SimpleNamespace(_output_generate_walk=numerical_step)
+        owner = SimpleNamespace(_output_generate_walk=numerical_step,
+            languageSpace=SimpleNamespace(parts_of_speech=SimpleNamespace(_space=None)))
         factory = BasicModel._compiled_output_walk
     if backend == 'none':
         def forbidden(*args, **kwargs):

@@ -79,12 +79,6 @@ def test_frozen_weights_no_grad():
     assert any(float(g[i]) != 0.0 for i in idx_B), "unfrozen weights train"
 
 
-def test_frozen_no_forgetting():
-    """retire_concept is a no-op on frozen concepts (no forgetting)."""
-    cs, rA, _rB = _fixture()
-    cs.freeze_concept(301)
-    cs.retire_concept(301)
-    assert cs._csw_row_of(301) == rA, "frozen concept must survive retire"
 
 
 def test_mint_frozen_idempotent():

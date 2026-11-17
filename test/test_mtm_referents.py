@@ -30,7 +30,6 @@ def place(bank, row, pair):
     with torch.no_grad():
         bank.mereology.placement[row] = torch.tensor(pair)
         bank.mereology.placement_witnesses[row] = 1
-        bank.mereology.placement_valid[row] = True
         bank.mereology.placement_dirty[row] = True
 
 
@@ -209,16 +208,6 @@ def test_tiny_positive_containment_is_exact_and_empty_content_is_not_evidence():
     assert all(ratio == 0 for ratio in meet_ratios(torch.zeros(2), query))
 
 
-def test_reclamation_protects_a_held_reading():
-    from ConceptForgetting import reclaim_concepts
-    from test_concept_forgetting import _cs, concept
-    owner = _cs(8)
-    weak, row = concept(owner, magnitude=.1)
-    strong, _ = concept(owner, magnitude=.9)
-    owner.mtm.named(weak, value=owner.similarity_codebook.W[row])
-    result = reclaim_concepts(owner)
-    assert weak not in result['retired'] and owner._csw_row_of(weak) is not None
-    assert strong in result['retired']
 
 
 def test_ingestion_pool_has_its_owner_and_reads_current_meanings():

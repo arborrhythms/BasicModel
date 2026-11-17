@@ -70,7 +70,7 @@ def test_episode_columns_compact_keep_prior_entries_and_load_empty_entries():
     assert int(restored.truth_schema) == 17
 
 
-def test_content_query_reinstates_in_requesting_batch_and_next_attention_replaces_it(tmp_path, monkeypatch):
+def test_content_query_retains_entries_in_requesting_stm_and_preserves_perception(tmp_path, monkeypatch):
     from test_item20_round7_time import native
     from reading_fixtures import force_absolute_reading
     from Queries import ThoughtLTMCapability
@@ -105,38 +105,33 @@ def test_content_query_reinstates_in_requesting_batch_and_next_attention_replace
         row = indices[0]
         assert int(model.when_encoding.decode_index(store.entry_time(row))) == written_times[0]
         assert written_times[0] >= model._sentence_ticks[0]
-        wanted = store.episodic_concepts[row].flatten()
-        expected = {int(cid): torch.stack((store.episodic_values[row].flatten()[k].clamp_min(0),
-                    (-store.episodic_values[row].flatten()[k]).clamp_min(0)))
-                    for k, cid in enumerate(wanted) if int(cid) >= 0}
-        before = owner._percept_field
-        old_other = {key: before.values[k, 1].sum(0) for k, key in enumerate(before.keys)}
+        from ThoughtChunks import held
+        from ThoughtReferences import bindings
+        from EpisodicMemory import entry_set
+        before, field = owner._percept_field, knowing(model)
+        old_other = held(owner.stm, 1)
         from WalkTrials import ThoughtTrialState
         trial = ThoughtTrialState(model)
         query = ThoughtLTMCapability(store=weakref.ref(store), equal=lambda *args: 0., tau_id=.9, row=0)
         found = query.query(model._last_sentence_understanding.understanding_field,
             max_records=store.capacity, work=QueryWorkBudget(2048))
-        assert found['frames']
+        assert found['frames'] and found['value'] is None
         recalled = owner._percept_field
-        assert recalled is not before
-        assert not recalled.values[:, 0].any() and not recalled.events[:, 0].any()
-        field = knowing(model)
-        actual = {int(cid): field.evidence[k, 0].sum(0) for k, cid in enumerate(field.concept_ids)
-                  if bool(field.evidence[k, 0].any())}
-        assert actual.keys() == expected.keys()
-        for concept, pair in expected.items():
-            torch.testing.assert_close(actual[concept], pair, rtol=0, atol=0)
-        for k, key in enumerate(recalled.keys):
-            torch.testing.assert_close(recalled.values[k, 1].sum(0), old_other[key], rtol=0, atol=0)
-        live = field.evidence[:, 0].any((0, 2))
-        tick = model.when_encoding.decode_index(store.entry_time(row))
-        assert (field.when[0, live, 0] == tick).all()
-        assert model._episode_counts['reinstatements'] >= 1
+        assert recalled is before
+        torch.testing.assert_close(knowing(model).evidence, field.evidence, rtol=0, atol=0)
+        views = {bindings(value).get('_rule_row'): (when, value) for when, value in held(owner.stm, 0)}
+        for frame in found['frames']:
+            when, value = views[frame['occurrence']]
+            assert when == tuple(frame['time'].tolist())
+            original = entry_set(store, frame['index'])
+            torch.testing.assert_close(value.extension[0].field.ids, original.ids, rtol=0, atol=0)
+            torch.testing.assert_close(value.extension[0].field.values, original.values, rtol=0, atol=0)
+        for (when, value), (old_when, old_value) in zip(held(owner.stm, 1), old_other, strict=True):
+            assert when == old_when
+            torch.testing.assert_close(value.roles, old_value.roles, rtol=0, atol=0)
         trial.restore(effects_only=True)
+        assert {bindings(value).get('_rule_row') for _,value in held(owner.stm, 0)} == set(views)
         torch.testing.assert_close(knowing(model).evidence, field.evidence)
-        from EpisodicMemory import reinstate
-        assert not reinstate(store, [], 0)
-        assert owner._percept_field is recalled
         with torch.no_grad():
             source = model.inputSpace.prepInput(['beta', 'alpha'])
             model.forward(source)

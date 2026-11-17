@@ -2,6 +2,7 @@
 import argparse
 from datetime import datetime, timezone
 import gzip
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -39,20 +40,57 @@ def restore_rng(value):
     np.random.set_state(value['numpy'])
 
 
+def marked_applications(language, program, marked):
+    """Read the kept stack journal, including the selected marker kernel."""
+    if program is None:
+        return []
+    stack, result = [], []
+    for action, (kind, local, position) in enumerate(program['actions']):
+        if kind < 0:
+            break
+        if kind == 0:
+            stack.append({position})
+            continue
+        if kind == 3:
+            stack[-2:] = reversed(stack[-2:])
+            continue
+        rules = language._compose_binary_rules if kind == 1 else language._compose_unary_rules
+        rule = rules[local]
+        arity = 2 if kind == 1 and rule.method_name != 'bind' else 1
+        offset = max(0, position) if kind == 2 else 0
+        if offset:
+            stack.append(stack.pop(-1-offset))
+        leaves = set().union(*stack[-arity:]); del stack[-arity:]
+        touched = sorted(leaves.intersection(marked))
+        if touched:
+            result.append(dict(action=action, operator=rule.surface_name or rule.method_name,
+                kernel=rule.kernel_index, marked_words=touched, leaves=sorted(leaves),
+                at_leaf=len(leaves)==1))
+        stack.append(leaves)
+        if offset:
+            stack.insert(len(stack)-1-offset, stack.pop())
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('out', type=Path)
     parser.add_argument('--variant', choices=CASE_VARIANTS, required=True)
     parser.add_argument('--smoke', action='store_true')
     parser.add_argument('--initial-rng', type=Path)
+    parser.add_argument('--source-hash', help='Exact bounded_tests source hash for an uncommitted reviewed round')
+    parser.add_argument('--compress-checkpoints', action='store_true')
     args = parser.parse_args()
     os.chdir(ROOT)
     args.out = args.out.resolve()
     args.out.mkdir(parents=True, exist_ok=False)
     source = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
-    if not args.smoke and subprocess.check_output(['git', 'diff', source, '--name-only', '--', 'bin', 'test', 'data'], text=True).strip():
-        raise RuntimeError('the corpus gate requires frozen implementation and fixtures')
     audit = source_snapshot(ROOT)
+    source_hash = hashlib.sha256(json.dumps(audit,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+    if args.source_hash is not None and args.source_hash != source_hash:
+        raise RuntimeError('the supplied source snapshot differs from this implementation')
+    if not args.smoke and args.source_hash is None and subprocess.check_output(['git', 'diff', source, '--name-only', '--', 'bin', 'test', 'data'], text=True).strip():
+        raise RuntimeError('the corpus gate requires frozen implementation and fixtures')
     if args.initial_rng is not None:
         if args.initial_rng.exists():
             restore_rng(torch.load(args.initial_rng, weights_only=False))
@@ -62,7 +100,7 @@ def main():
                 torch.save(rng(), stream)
     torch.set_num_threads(1)
     torch.save(rng(), args.out/'initial-rng.pt')
-    protocol = dict(source=source, variant=args.variant, development=args.smoke,
+    protocol = dict(source=source, source_hash=source_hash, variant=args.variant, development=args.smoke,
         epochs=1 if args.smoke else 3, batch_size=2, learning_rate=.001,
         menu='complete production menu', answer_supervision='questions only',
         grammar_lessons=False, reference_orders=False, segmentation_hints=False,
@@ -89,7 +127,14 @@ def main():
         def snapshot():
             return dict(state_dict=model.state_dict(), vocab_extras=model._collect_vocab_extras(),
                 structural_extras=model._collect_structural_extras(), rng=rng(), optimizer=optimizer.state_dict())
-        torch.save(snapshot(), args.out/'initial.pt')
+        def checkpoint(name):
+            path = args.out/name
+            if args.compress_checkpoints:
+                with gzip.open(path.with_suffix(path.suffix+'.gz'), 'wb', compresslevel=1) as stream:
+                    torch.save(snapshot(), stream)
+            else:
+                torch.save(snapshot(), path)
+        checkpoint('initial.pt')
         original = BasicModel._commit_sentence
         def keep(current, state, sid, active, observations, predictions, wins):
             credit = current._last_sentence_credit
@@ -119,7 +164,7 @@ def main():
                     data.source_addresses = {split: [dict(document=row['id'], sentence=sid,
                         document_key=row['id'], sentence_index=sid, split=split)
                         for row in batch for sid in range(3)]}
-                    torch.save(snapshot(), args.out/'last-batch-start.pt')
+                    checkpoint('last-batch-start.pt')
                     torch.save(rng(), args.out/f'batch-{len(progress):03d}-rng.pt')
                     keeps.clear()
                     data.has_supervised_outputs = False
@@ -153,10 +198,15 @@ def main():
                                     continue
                                 trial = int(record['wins'][b])
                                 graph = record['trials'][trial]['clauses'][b]
-                                selected = sum(term['operation'] in ('compound', 'compound_unary')
+                                selected = sum(term['operation'] in ('compound', 'marker')
                                                for term in graph['compositions'])
+                                marked = ([] if args.variant == 'unmarked' or record['sentence'] != 1 else
+                                          [1,2] if args.variant == 'two_leaves' else [1])
+                                applied = marked_applications(model.languageSpace,
+                                    record['trials'][trial]['programs'][b], marked)
                                 observed.append(dict(sentence=record['sentence'], selections=selected,
-                                    reconstruction=record['credit']['components'][b][trial][0]))
+                                    reconstruction=record['credit']['components'][b][trial][0],
+                                    marked_applications=applied))
                             answer = answers[b] if b < len(answers) else None
                             selection_exact = bool(observed) and observed[-1]['selections'] == row['labels']['selections']
                             results.append(dict(id=row['id'], expected=row['answer'], answer=answer,
@@ -172,7 +222,7 @@ def main():
                     model.begin_presentation()
                     for offset in range(0, len(train), protocol['batch_size']):
                         present(train[offset:offset+protocol['batch_size']], True, epoch)
-                torch.save(snapshot(), args.out/'trained.pt')
+                checkpoint('trained.pt')
                 model.languageSpace.parts_of_speech.frozen = True
                 model._concept_owner()._online_learning_frozen = True
                 for offset in range(0, len(evaluation), protocol['batch_size']):
@@ -187,7 +237,7 @@ def main():
                 save(args.out/'results.json', report)
                 print(json.dumps({key:value for key,value in report.items() if key != 'results'}), flush=True)
         except BaseException:
-            torch.save(snapshot(), args.out/'failure.pt')
+            checkpoint('failure.pt')
             save(args.out/'failure.json', dict(error=traceback.format_exc(), progress=progress))
             raise
         finally:

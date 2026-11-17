@@ -13,7 +13,7 @@ from Meaning import ConceptualMeaning
 
 def store_and_clause():
     from part_fixtures import native_store
-    store, _ = native_store(points=torch.eye(4), capacity=8)
+    store, _ = native_store(points=torch.eye(4), capacity=8, order_limit=3)
     point = torch.tensor([.2, .4, .6, .8])
     return store, Clause(ConceptualMeaning.from_description(point), point=point)
 
@@ -86,13 +86,17 @@ def test_open_reading_keeps_both_poles_and_its_order(monkeypatch):
     from reading_fixtures import finish_reading
     from test_clause_acceptance import SentenceFixture
     fixture = SentenceFixture(monkeypatch)
-    reading = replace(fixture.program(('sum', 'cat', 'animal')),
+    for word in ('cat', 'animal'):
+        fixture.noun(word, order=3)
+    reading = replace(fixture.program(('add', 'cat', 'animal')),
         leaf_orders=torch.tensor([3, 3]),
         leaf_evidence=torch.tensor([[.8, .7], [.6, 0.]]))
     clause = finish_reading(fixture.language, reading, registry=fixture.registry)
     row = fixture.store.write_clause(clause)
     assert clause.order == 3
-    assert fixture.store.row(row)['order'] == 0
+    # §27.2 reads the actual concept's block, rather than the old leaf stamp
+    # that disagreed with the fixture's order-zero allocation.
+    assert fixture.store.row(row)['order'] == 3
     assert fixture.store.trust[row:row+2].tolist() == pytest.approx([.6, -.7])
     assert fixture.store.row(row)['trust'] == pytest.approx(.6)
 

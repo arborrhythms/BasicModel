@@ -56,7 +56,8 @@ def _chain(monkeypatch, budget):
         _generate_unary_ops=(SimpleNamespace(meaning_layout=(1, 1, 1)),) * 3,
         _generate_policy_width=3)
     language.generate_policy_logits = lambda top, features=None: top.new_zeros(len(top), 4)
-    language.choose_generate = lambda logits: logits.argmax(-1)
+    from generation_fixtures import undeclared_arguments
+    undeclared_arguments(language)
     calls = []
 
     def menu(_language, parent, live, **options):

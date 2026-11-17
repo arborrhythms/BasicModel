@@ -12,9 +12,9 @@ def participant_terms(roots, rules=()):
     This is an eager reading of the admitted operation journal. The same
     head declarations underlie the occupation-based read of retained pairs.
     """
-    from Language import LowerLayer, LiftLayer, VerbLayer, SurfaceLayer
+    from Language import LowerLayer, ChangeLayer, VerbLayer, SurfaceLayer
     heads = {name: cls.head_role for name, cls in (
-        ('lower', LowerLayer), ('lift', LiftLayer), ('verb', VerbLayer),
+        ('lower', LowerLayer), ('change', ChangeLayer), ('verb', VerbLayer),
         ('surface', SurfaceLayer))}
     catalogue = {rule.method_name: rule for rule in rules}
     eligible, inspected, seen = {}, {}, set()
@@ -32,7 +32,7 @@ def participant_terms(roots, rules=()):
         children = term.children
         lower = (name in ('lower', 'lower_unary', 'definite', 'definite_unary')
                  or getattr(rule, 'determiner_mode', None) is not None)
-        clause = (name in ('lift', 'equal', 'part', 'whole')
+        clause = (name in ('change', 'equal', 'part', 'whole')
                   or getattr(rule, 'clause_form', None) == 'S'
                   or getattr(rule, 'relation_kind', None) is not None)
         if noun or lower or name == 'bind':
@@ -47,7 +47,7 @@ def participant_terms(roots, rules=()):
             positions = {(head or len(children))-1: noun}
         elif name in ('equal', 'part', 'whole'):
             positions = {i: True for i in range(len(children))}
-        elif name == 'lift' and len(children) == 2:
+        elif name == 'change' and len(children) == 2:
             positions = {i: i+1 != head for i in range(len(children))}
         elif noun and head and not clause:
             positions = {head-1: True}
@@ -106,7 +106,7 @@ def clause_participants(clause, rules=()):
                 and (request or node.order == 1)
                 and (node.composition is None or not node.composition.children
                      or node.relation is None and node.order == 1 and node.composition.head_role
-                     and node.composition.operation not in ('lift', 'verb', 'equal', 'part', 'whole')
+                     and node.composition.operation not in ('change', 'verb', 'equal', 'part', 'whole')
                      and not any(rule.method_name == node.composition.operation
                          and (getattr(rule, 'clause_form', None) in ('S', 'VP')
                               or getattr(rule, 'relation_kind', None) is not None) for rule in rules))):

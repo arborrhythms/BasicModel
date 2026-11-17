@@ -24,6 +24,8 @@ def named_scalar_model(tmp_path, monkeypatch, eager_reading):
     try:
         yield model, objects
     finally:
+        from assessment_support import record
+        record(model, dict(word='alpha', words=['alpha', 'beta', 'gamma']), scalar=1.)
         model.End()
         model.symbolSpace.soft_reset()
 
@@ -74,7 +76,7 @@ def memory_brick():
     from types import SimpleNamespace
     from Memory import LTM0, MediumTermMemory
     store = LTM0(12, capacity=8, percept_width=12, episodic_concepts=4, read_capacity=8)
-    owner = SimpleNamespace(_model=None, _csw_row_of=lambda cid: cid,
+    owner = SimpleNamespace(_model=None, _csw_row_of=lambda cid: cid, _order_caps=lambda: (10,10,10),
                             _row_order=lambda cid: {10: 0, 20: 1, 30: 2}[cid],
                             components=SimpleNamespace(reference_close=None), mtm=MediumTermMemory())
     store._concept_owner = lambda: owner
@@ -358,7 +360,7 @@ def test_an_empty_read_inside_a_conclusion_writes_its_operand_recursively(operat
         context = model._thought_grammar_context(cue, row=0, work=QueryWorkBudget(256), continuation=None)
         request = registry.form(operation, store.occurrence_of(row), context=context)
         result = registry.execute(request, context)
-        child = integrate(registry, request, result, ())
+        child = integrate(registry, request, result, (), stm=model.conceptualSpace.stm)
         parent = with_slots(replace(ConceptualMeaning.from_description(torch.eye(8)[1]),
             role_refs=(('constituent', 0), None, None), constituents=(child,)), (), pair=(0., 0.))
         index = write(model, parent, row=0)

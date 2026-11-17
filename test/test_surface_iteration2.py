@@ -8,7 +8,7 @@ from test_meaning_kernels import paired
 @pytest.mark.parametrize('compiled', (False, True))
 @pytest.mark.parametrize('postposed', (False, True))
 def test_surface_nested_operand_and_transpose_reverse_exactly(paired, compiled, postposed):
-    from Language import SurfaceLayer, TransposeLayer
+    from Language import SurfaceLayer, SwapLayer
     from MeaningKernels import centroid
     layer = SurfaceLayer(12, 12).double()
     with torch.no_grad():
@@ -19,7 +19,7 @@ def test_surface_nested_operand_and_transpose_reverse_exactly(paired, compiled, 
     content = torch.cat((centroid(tuple(leaves[:3, :4])), leaves[2, 4:]))
     marker = leaves[3]
     surface = (content, marker) if postposed else (marker, content)
-    transpose = TransposeLayer()
+    transpose = SwapLayer()
     operands = transpose.compose(*surface) if postposed else surface
     def roundtrip(left, right):
         parent = layer.compose_blocks(layer.compose, left, right, counts=(1, 3))

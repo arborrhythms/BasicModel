@@ -72,7 +72,7 @@ def test_two_event_witnesses_raise_the_named_object_without_work(tmp_path, monke
     third = event(cs, store, 3)
     equal_close(cs, store, third, word)
     parent = cs.interpret.forward(word)
-    assert parent != word and alloc.reference_orders[parent] == alloc.order_of(parent) == 1
+    assert parent != word and cs._row_order(cs._csw_row_of(parent)) == alloc.order_of(parent) == 1
     assert set(alloc.parts.parts((SYMBOL, parent))) == {(OCCURRENCE, m) for m in (first, second, third)}
     assert alloc.singleton_values.data_ptr() == pointer
     fourth = event(cs, store, 4)
@@ -88,7 +88,6 @@ def test_only_distinct_published_identities_raise(same_token, same_value, raises
     from Memory import OCCURRENCE, SYMBOL
     cs, store, alloc = equality_fixture()
     word = cs.interpret.lookup_word([1], [2], form='category')
-    force_order(cs, word, 1)
     first = event(cs, store, 1, order=1, value=.25, token=True)
     second = event(cs, store, 2, order=1, value=.25 if same_value else .75, token=not same_token)
     # Distinct occurrence addresses need distinct source keys even when their
@@ -107,7 +106,7 @@ def test_only_distinct_published_identities_raise(same_token, same_value, raises
     result = cs.interpret.forward(word)
     assert (result != word) == raises
     if raises:
-        assert alloc.reference_orders[result] == 2
+        assert cs._row_order(cs._csw_row_of(result)) == 2
         assert set(alloc.parts.parts((SYMBOL, result))) == {(OCCURRENCE, m) for m in (first, second, third)}
 
 
@@ -127,8 +126,8 @@ def test_one_identity_equality_and_weak_testimony_do_not_raise(monkeypatch):
 
 
 @pytest.mark.parametrize('name,orders,expected', [
-    ('lift', (1, 0), 0), ('lift', (2, 0), 1), ('lift', (0, 0), 0),
-    ('lift', (-1, 0), -1), ('verb', (2, 0), 2),
+    ('change', (1, 0), 0), ('change', (2, 0), 1), ('change', (0, 0), 0),
+    ('change', (-1, 0), -1), ('verb', (2, 0), 2),
     ('lower', (0, 2), 1), ('lower', (0, 1), 1), ('lower', (0, 0), 0),
     ('lower', (0, -1), -1), ('equal', (1, 3), 1),
     ('part', (0, 2), 2), ('whole', (2, 0), 2), ('bind', (0, 2), 2),
@@ -142,7 +141,7 @@ def test_denoted_lookup(name, orders, expected):
 
 
 def test_modal_predication_keeps_the_subject_order_without_a_floor_one():
-    rule = NS(method_name='lift')
+    rule = NS(method_name='change')
     subjects = torch.tensor([0, 1, 2, -1])
     refs = (OrderReference(None), OrderReference(None, torch.ones(4, dtype=torch.bool)))
     assert torch.equal(denoted_order(rule, (subjects, torch.zeros_like(subjects)), refs, None), subjects)
@@ -152,9 +151,9 @@ def test_retired_order_stamps_and_formation_are_absent():
     import ReferenceContext
     from Language import Grammar, GRAMMAR_LAYER_CLASSES, SymbolSubSpace
     assert all(not hasattr(ReferenceContext, name) for name in ('shifted_order', 'operation_order', 'result_order'))
-    assert 'order_delta' not in Grammar.RuleDef._fields
+    assert 'order_delta' in Grammar.RuleDef._fields  # §27.1: unary changes of order.
     assert 'order_delta' not in Grammar.RuleOrderSignature._fields
-    assert all(not hasattr(layer, 'order_delta') for layer in GRAMMAR_LAYER_CLASSES.values())
+    assert {name for name, layer in GRAMMAR_LAYER_CLASSES.items() if layer.order_delta} == {'lift', 'lower_unary'}
     assert not hasattr(SymbolSubSpace, 'conceptualize')
 
 
@@ -167,7 +166,8 @@ def test_unwitnessed_order_and_inconsistent_record():
     assert alloc.order_of(atom) == 0
     alloc.add(parent, 'part', ('sym', atom))
     assert alloc.order_of(parent) == 1
-    alloc.reference_orders[parent] = 2
+    # A corrupt row assignment disagrees with the original native definition.
+    alloc.order_from_row = lambda cid: 2 if cid == parent else None
     with pytest.raises(ValueError, match='disagrees'):
         alloc.settle(parent)
 
@@ -180,7 +180,7 @@ def test_row_request_cannot_write_an_order():
     alloc = _concept_alloc_of(cs)
     with pytest.raises(ValueError, match='foreign order'):
         cs._csw_concept_row(0, cid)
-    assert cid not in alloc.reference_orders
+    assert alloc.order_of(cid) == -1 and cs._csw_row_of(cid) is None
     cs.add_part(cid, 1)
     with pytest.raises(ValueError, match='foreign order'):
         cs._csw_concept_row(1, cid)
@@ -190,7 +190,7 @@ def test_row_request_cannot_write_an_order():
 def test_argument_concepts_stay_above_words_when_their_denotations_change_order(tmp_path):
     from argument_fixtures import argument_inventory
     from PartsOfSpeech import PartsOfSpeech
-    from ConceptHierarchy import refresh
+    from placement_fixtures import place_types
     from IndependentComponents import _pack_state, _unpack_state
     cs, parts, (word,) = argument_inventory(('select_argin1', 'modify_argin1'), count=1)
     obj = cs.new_concept()
@@ -198,12 +198,16 @@ def test_argument_concepts_stay_above_words_when_their_denotations_change_order(
     cs._csw_concept_row(1, obj)
     cs.interpret.define(word, obj)
     parts.add(word, 'select_argin1')
-    refresh(cs)
+    from placement_fixtures import place_at
+    place_at(cs, parts.concepts['select_argin1'], [1., 0., 0., 0.])
     assert cs._concept_allocator.order_of(obj) == 1
     first = parts.argument_scores(torch.tensor([word]), torch.zeros(1))
-    force_order(cs, obj, 2)
+    previous = obj
+    obj = cs.new_concept(order=2)
+    cs.interpret.define(word, obj)
+    assert cs._concept_allocator.order_of(previous) == 1
     parts.add(word, 'modify_argin1'); parts.add(word, 'modify_argin1')
-    refresh(cs)
+    place_at(cs, parts.concepts['modify_argin1'], [1., 0., 0., 0.])
     assert cs._concept_allocator.order_of(obj) == 2
     second = parts.argument_scores(torch.tensor([word]), torch.zeros(1))
     assert parts.order_of(word) == 0
@@ -282,20 +286,6 @@ def test_forgotten_first_equality_renews_its_existing_snapshot_seat():
     assert set(alloc.parts.parts((SYMBOL, parent))) == {(OCCURRENCE, m) for m in (second, third, fourth)}
 
 
-def test_retirement_handles_class_base_cache_without_losing_another_class():
-    cs, store, alloc = equality_fixture()
-    word = cs.interpret.lookup_word([1], [2], form='label')
-    first, second = event(cs, store, 1), event(cs, store, 2)
-    equal_close(cs, store, first, word)
-    equal_close(cs, store, second, word)
-    equal_close(cs, store, event(cs, store, 3), word)
-    parent = cs.interpret.forward(word)
-    base = alloc.relate_idx['part-base', parent]
-    cs.retire_concept(cs.new_concept())
-    assert alloc.relate_idx['part-base', parent] == base
-    cs.retire_concept(parent)
-    assert ('part-base', parent) not in alloc.relate_idx
-    assert ('part-kind', base, 1) not in alloc.relate_idx
 
 
 @pytest.mark.parametrize('order', (0, 1, -1))
@@ -323,9 +313,10 @@ def test_kept_clause_and_durable_row_read_the_predication_order(monkeypatch, sub
     from test_clause_acceptance import SentenceFixture
     from reading_fixtures import finish_reading
     f = SentenceFixture(monkeypatch)
-    entry = f.program(('lift', 'subject', 'predicate'))
-    force_order(f.cs, int(entry.concept_ids[0]), subject_order)
-    entry = replace(entry, leaf_orders=torch.tensor([subject_order,0]))
+    entry = f.program(('change', 'subject', 'predicate'))
+    concept_ids = entry.concept_ids.clone()
+    concept_ids[0] = f.cs.new_concept(order=subject_order)
+    entry = replace(entry, concept_ids=concept_ids, leaf_orders=torch.tensor([subject_order,0]))
     clause = finish_reading(f.language, entry, registry=f.registry)
     assert clause.order == closed_order
     row = f.store.write_clause(clause)

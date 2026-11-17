@@ -50,8 +50,10 @@ def test_rejected_inverse_cannot_write_one_conditioner_lane(dtype, monkeypatch):
     monkeypatch.setattr(Generative, 'inverse_menu', menu)
     op = SimpleNamespace(meaning_layout=(328, 392))
     language = SimpleNamespace(_generate_binary_ops=(), _generate_unary_ops=(op,),
-        _generate_policy_width=392, choose_generate=lambda logits: logits.argmax(-1),
+        _generate_policy_width=392,
         generate_policy_logits=lambda parent, features: parent.new_zeros(len(parent), 2))
+    from generation_fixtures import undeclared_arguments
+    undeclared_arguments(language)
     result = BasicModel._output_generate_walk(SimpleNamespace(languageSpace=language),
         root[:, None], 1, return_trace=True)
     assert result[4].tolist() == [[1]]

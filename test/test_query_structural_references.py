@@ -44,7 +44,7 @@ def _snapshot(cs):
         rows={name: value.clone() for name, value in cs._fixture_occurrences.named_buffers()},
         parts={name: value.clone() for name, value in alloc.parts.named_buffers()},
         bank=cs.similarity_codebook.W.detach().clone(),
-        placement=dict(alloc.placement), retired=set(alloc.retired),
+        placement=dict(alloc.symbols), retired=set(alloc.retired),
         tensor_rows=deepcopy(alloc._layers[0]._tensor_rows))
 
 
@@ -90,14 +90,10 @@ def test_closed_is_part_menu_accepts_an_unseated_structural_operand():
     _unchanged(cs, before)
 
 
-@pytest.mark.parametrize('state', ('invalid', 'retired'))
-def test_structural_operand_refuses_unavailable_handles_without_writes(state):
+def test_structural_operand_refuses_unavailable_handles_without_writes():
     cs, registry, request, _ = _request()
-    if state == 'retired':
-        cs.retire_concept(request.role_refs[0][1])
-    else:
-        request = replace(request, role_refs=(
-            ('sym', cs._concept_allocator.next_id), *request.role_refs[1:]))
+    request = replace(request, role_refs=(
+        ('sym', cs._concept_allocator.next_id), *request.role_refs[1:]))
     before = _snapshot(cs)
     with pytest.raises(ValueError, match='reference is unavailable'):
         registry.execute(request, _context(cs, store=cs._fixture_occurrences))

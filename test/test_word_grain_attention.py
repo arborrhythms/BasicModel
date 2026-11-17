@@ -1,7 +1,7 @@
 """Plain word-grain inverse dispatch after symbol retrieval retirement."""
 from types import SimpleNamespace
 import torch
-from Language import Grammar, LanguageLayer, LiftLayer
+from Language import Grammar, LanguageLayer, ChangeLayer
 
 class _Basis:
     def __init__(self, W):
@@ -33,9 +33,9 @@ class _StackSubSpace:
         self._activation = t
 
 def _grammar_with_lift():
-    """Real Grammar holding one binary SS-role rule ``LP = lift(NP3, VP1)``."""
+    """Real Grammar holding one binary SS-role rule ``LP = change(NP3, VP1)``."""
     g = Grammar()
-    g.rules = [g._parse_rule("LP", "lift(NP3, VP1)", space_role='SS')]
+    g.rules = [g._parse_rule("LP", "change(NP3, VP1)", space_role='SS')]
     g.rule_table = {0: g.rules[0].canonical}
     g.symbol_vocab_size = 4
     g._configured = True
@@ -50,12 +50,12 @@ def test_attention_off_is_plain_reverse():
     where = torch.zeros(1,3,1); where[0,0,0] = 5.
     active = torch.zeros(1,3); active[0,0] = 1.
     sub = _StackSubSpace(what, where, active, _Basis(bank), SimpleNamespace())
-    lift = LiftLayer(nInput=2,nOutput=2)
+    lift = ChangeLayer(nInput=2,nOutput=2)
     captured = {}
     def reverse(parent, basis=None, **kwargs):
         captured.update(kwargs)
         return parent,parent
     lift.reverse = reverse
-    syn = SimpleNamespace(space_role='SS',_by_name={'lift':lift})
+    syn = SimpleNamespace(space_role='SS',_by_name={'change':lift})
     LanguageLayer.__new__(LanguageLayer).unreduce(sub,syn,grammar=grammar)
     assert captured == {}

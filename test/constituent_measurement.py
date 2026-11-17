@@ -23,7 +23,7 @@ def reading(language, program, source_positions, meaning_slice):
             continue
         if kind == 3:
             stack[-2:]=reversed(stack[-2:])
-            steps.append(dict(kind='transpose',method='transpose',leaves=[node['leaves'] for node in stack[-2:]]))
+            steps.append(dict(kind='swap',method='swap',leaves=[node['leaves'] for node in stack[-2:]]))
             continue
         position=max(0,leaf) if kind==2 else 0
         if position:

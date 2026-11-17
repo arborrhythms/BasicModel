@@ -68,8 +68,12 @@ def install_where_registry(model):
         word_capacity = int(model.perceptualSpace.outputShape[0])
         part_capacity = int(TheXMLConfig.get('architecture.serialResidualPartCapacity', default=16))
         input_extent = max(input_extent, word_capacity * part_capacity)
+    from math import prod
+    numeric_extent = prod(model.inputSpace.inputShape) if model.inputSpace.model_type == 'numeric' else 0
     registry = WhereRegistry((
-        ('input', input_extent),
+        ('text', input_extent),
+        ('numeric', numeric_extent),
+        ('scalar', 1),
         ('parts', capacity(parts)),
         ('wholes', capacity(whole)),
         ('symbols', 2 * max(capacity(symbols), int(model.conceptualSpaces[0].nVectors))),
@@ -106,11 +110,9 @@ def install_where_registry(model):
     model.when_encoding = encoder()
     model._sentence_ticks = {}
     model._open_sentence_slot = None
-    model._episode_counts = dict(written=0, anchors=0, relation_only_closings=0,
-                                content_recalls=0, reinstatements=0, ids_skipped=0, surfaces_missing=0)
+    model._episode_counts = dict(written=0, anchors=0, relation_only_closings=0)
     for space in model.conceptualSpaces:
         object.__setattr__(space.stm, '_time_owner', weakref.ref(model))
-        space._episode_review_field = None
     store = getattr(model.symbolSpace, 'ltm_store', None)
     if store is not None:
         object.__setattr__(store, '_address_encoding', model.when_encoding)

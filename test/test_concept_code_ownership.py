@@ -35,7 +35,9 @@ def test_promoting_a_candidate_initializes_only_its_new_row():
     row = cs._csw_row_of(discovered[0])
     keep = torch.arange(len(W)) != row
     torch.testing.assert_close(W[keep], before[keep], rtol=0, atol=0)
-    torch.testing.assert_close(W[row], expected)
+    from ConceptPlacement import seed
+    torch.testing.assert_close(W[row], seed(discovered[0], W[row]))
+    torch.testing.assert_close(cs.similarity_codebook.trust.content[row], expected)
 
 
 
@@ -53,7 +55,13 @@ def test_admitting_a_phrase_does_not_compose_or_normalize_its_code():
     cs._commit_chunk_admissions()
     assert members in cs.__dict__['_chunk_admitted']
     assert members in cs.__dict__['_chunk_rows']
-    torch.testing.assert_close(W, before, rtol=0, atol=0)
+    # Admission initializes only the newly seated row from its own identity.
+    row = cs._chunk_rows[members]
+    cid = cs.concept_id_at_row(row)
+    keep = torch.arange(len(W)) != row
+    torch.testing.assert_close(W[keep], before[keep], rtol=0, atol=0)
+    from ConceptPlacement import seed
+    torch.testing.assert_close(W[row], seed(cid, W[row]))
 
 
 def test_concept_quantization_cannot_refresh_the_reconstruction_dictionary():

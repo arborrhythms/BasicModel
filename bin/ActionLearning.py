@@ -6,8 +6,9 @@ import torch
 def rate_groups(parameters, language, ratio, lr):
     if not math.isfinite(ratio) or not 0 < ratio <= 1:
         raise ValueError('actionRateRatio must be finite and in (0, 1]')
-    lift, adverb = (None, None) if language is None else (language.verb_action(), language.modifier_action())
-    ids = {p: power for action, power in ((lift, 1), (adverb, 2)) if action is not None for p in action.parameters()}
+    lift, modifier = (None, None) if language is None else (language.verb_action(), language.modifier_action())
+    basis = None if language is None else getattr(language, 'phrase_basis', lambda: None)()
+    ids = {p: power for action, power in ((lift, 1), (basis, 1), (modifier, 2)) if action is not None for p in action.parameters()}
     return [dict(params=group, lr=lr * ratio**power, action_rate_power=power)
             for power in (0, 1, 2) if (group := [p for p in parameters if ids.get(p, 0) == power])]
 
@@ -18,7 +19,10 @@ def snapshot(model):
     if language is None:
         return {}
     groups = {name: tuple(action.parameters()) for name, action in
-              (('lift', language.verb_action()), ('adverb', language.modifier_action())) if action is not None}
+              (('change', language.verb_action()), ('modifier', language.modifier_action())) if action is not None}
+    basis = getattr(language, 'phrase_basis', lambda: None)()
+    if basis is not None:
+        groups['verb'] = tuple(basis.parameters())
     groups['codes'] = tuple(p for p, (_, kind, _) in units(model).items() if kind == 'row')
     result = {}
     for name, parameters in groups.items():

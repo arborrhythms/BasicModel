@@ -36,7 +36,7 @@ def test_containment_reads_canonical_ids_without_expanding_bytes():
 def test_inventory_outlives_the_eight_attended_rows():
     cs = _cs(nS=64, order=3)
     cs.outputShape[0] = 8
-    assert cs._order_caps()[0] == 8
+    assert cs._order_caps()[0] == 35  # §27.2: inventory blocks are fixed at construction.
     definitions = []
     for n in range(12):
         cid = cs.new_concept()

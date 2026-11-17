@@ -80,7 +80,7 @@ def test_explicit_boundary_retains_one_entry_and_skips_masked_rows(monkeypatch):
     discourse = SymbolExpectation(n_symbols=8, max_depth=8, n_dim=8,
         concept_dim=8)
     discourse.set_symbol_bank(torch.eye(discourse.concept_dim))
-    entry = fixture.program(('lift', 'cat', ('verb', 'chases', 'mouse')))
+    entry = fixture.program(('change', 'cat', ('verb', 'chases', 'mouse')))
     for active in (True, False):
         commit_reading(fixture.language, fixture.registry, entry, None,
                        discourse=discourse, active=active, document='doc')

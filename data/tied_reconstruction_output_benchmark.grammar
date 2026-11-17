@@ -91,9 +91,8 @@
 
     <compose>
       <!-- Typed attention candidates; no predefined surface or generate face. -->
-      <rule operands="field">F = divide.forward(F)</rule>
-      <rule operands="field">F = descend.forward(F)</rule>
-      <rule operands="field">F = gloss.forward(F)</rule>
+      <rule operands="field">F = focus.forward(F)</rule>
+      <rule operands="field">F = mint.forward(F)</rule>
       <rule operands="field">F = intersection.forward(F)</rule>
       <rule operands="field">F = union.forward(F)</rule>
 
@@ -133,13 +132,13 @@
       <rule>sum_argout1 = sum.forward(sum_argin1, sum_argin2)</rule>
       <rule>product_argout1 = product.forward(product_argin1, product_argin2)</rule>
 
-      <!-- Composition / projection. verb = VP spectral operator; adverb =
+      <!-- Composition / projection. verb = VP spectral operator; modifier =
            VP eigenmodifier; lift remains the generic order-raising fold;
            lower = DET. -->
-      <rule>lift_argout1 = lift.forward(lift_argin1, lift_argin2)</rule>
+      <rule>change_argout1 = change.forward(change_argin1, change_argin2)</rule>
       <rule>verb_argout1 = verb.forward(verb_argin1, verb_argin2)</rule>
       <rule>compound_argout1 = compound.forward(compound_argin1, compound_argin2)</rule>
-      <rule>adverb_argout1 = adverb.forward(adverb_argin1, adverb_argin2)</rule>
+      <rule>modifier_argout1 = modifier.forward(modifier_argin1, modifier_argin2)</rule>
       <rule>lower_argout1 = lower.forward(lower_argin1, lower_argin2)</rule>
 
       <!-- Preposition (PP): refines the NP or VP via a .where relation.

@@ -778,6 +778,15 @@ class Data():
         }
         if dataset == "mnist":
             self.loadMNist()
+        if dataset == "images":
+            from image_corpus import load
+            name = (dat or {}).get('imageCorpus', 'shapes')
+            for split in ('train', 'validation', 'test'):
+                pixels, labels = load(name, split)
+                setattr(self, split + '_input', pixels)
+                setattr(self, split + '_output', torch.nn.functional.one_hot(labels, 10).float())
+            self.has_supervised_outputs = True
+            self.inputLength = int(pixels.shape[-2] * pixels.shape[-1])
         if dataset == "xor":
             self.loadXOR()
         if dataset == "phrases":

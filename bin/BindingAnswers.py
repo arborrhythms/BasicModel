@@ -23,7 +23,7 @@ def _bound_references(meaning):
 
 
 def matches(model, meaning, word):
-    """Strict identity match against the existing lexical association index."""
+    """Read the concept identity of the concluded binding."""
     return _matches(model, meaning, word, references(meaning))
 
 
@@ -96,7 +96,7 @@ def _matches(model, meaning, word, values):
 
 
 def cost(model, meaning, target, *, stream=0):
-    """An exact identity costs zero; other bindings use content coverage.
+    """Read identity or coverage of another bound idea.
 
     This is a loss-side answer term for the existing paired chooser rule.
     Missing target identities or an unbound answer cannot be scored as correct.
@@ -109,8 +109,9 @@ def cost(model, meaning, target, *, stream=0):
     if len(values) != 1:
         return meaning.roles.new_ones(())
     owner = model._concept_owner()
+    order = owner._concept_source_order(values[0][0])
     rows = [owner._csw_row_of(identity) for identity in owner.word_concepts(target)]
-    rows = [row for row in rows if row is not None]
+    rows = [row for row in rows if row is not None and owner._row_order(row) == order]
     if not rows:
         return meaning.roles.new_ones(())
     basis = owner.similarity_codebook.lookup_rows(torch.tensor(

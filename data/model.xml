@@ -18,6 +18,8 @@
     <separateChooser>false</separateChooser>
     <reconstructionJitter>0</reconstructionJitter>
     <explorePaths>1</explorePaths>
+    <!-- One logit unit and one path-cost unit per kept operator application. -->
+    <operatorCost>1</operatorCost>
     <omissionTarget>0.9</omissionTarget>
     <omissionLimit>0.5</omissionLimit>
     <omissionHorizon>1024</omissionHorizon>
@@ -511,6 +513,7 @@
     <!-- Active bipolar complement. Zero disables meaning; storage geometry stays fixed. -->
     <meaningWidth>128</meaningWidth>
     <placementRate>0.1</placementRate>
+    <objectStartNeighbours>3</objectStartNeighbours>
     <placementNegatives>5</placementNegatives>
     <placementNegativeWeight>1.0</placementNegativeWeight>
     <!-- Zero retains the complete bridge reservation; a positive capacity

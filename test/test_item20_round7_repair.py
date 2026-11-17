@@ -45,7 +45,7 @@ def test_pending_selected_phrase_keeps_its_own_occurrence_when_the_head_is_resol
     assert owner.mtm.token_of(store.occurrence_of(row)) == key
 
 
-@pytest.mark.parametrize('operation', ('lift', 'verb'))
+@pytest.mark.parametrize('operation', ('change', 'verb'))
 def test_composed_alias_keeps_the_selected_occurrence_instead_of_its_original_head(operation):
     from test_reference_close import fixture, known_concept
     from ClauseRow import Clause, Composition
@@ -79,7 +79,7 @@ def test_composed_alias_keeps_the_selected_occurrence_instead_of_its_original_he
     assert owner.mtm.entries[key].refinement['member_order'] == 0
 
 
-@pytest.mark.parametrize('operation', ('lift', 'verb'))
+@pytest.mark.parametrize('operation', ('change', 'verb'))
 def test_nested_introduction_prepares_its_child_before_claiming_the_written_order(operation):
     from test_reference_close import fixture, known_concept
     from test_medium_term_memory import mention, keep
@@ -94,7 +94,7 @@ def test_nested_introduction_prepares_its_child_before_claiming_the_written_orde
         meaning=replace(ConceptualMeaning.from_description(atoms[0]),
                         bindings={'_identity': ('sym', word)}))
     other = Composition(atoms[1])
-    operands = (child.composition, other) if operation == 'lift' else (other, child.composition)
+    operands = (child.composition, other) if operation == 'change' else (other, child.composition)
     root = Clause(ConceptualMeaning.from_description(atoms[0]), point=atoms[0], order=1,
         children=(child,), composition=Composition(atoms[0], operands, operation=operation, order=1),
         reference_request=dict(mode='mint', leaves=(0, 1), cue=atoms[0]*0,

@@ -1,4 +1,4 @@
-from ConceptHierarchy import refresh
+from placement_fixtures import place_types
 """Formal argument declarations allocate concepts, never learned evidence."""
 import pytest
 import torch
@@ -6,7 +6,7 @@ import torch
 from test_review13_subspaces import fixture
 
 
-def operation_measurement(occupations, name='lift'):
+def operation_measurement(occupations, name='change'):
     """The reported definiteness remains a lesson measurement, without a gate."""
     value = occupations.operation(name)
     return min(value['definiteness']) if value['measurable'] and all(
@@ -15,7 +15,7 @@ def operation_measurement(occupations, name='lift'):
 
 def test_formal_arguments_are_prebuilt_zero_radius_concepts_above_words():
     cs, bank, _, alloc = fixture(meaning_pairs=4)
-    names = ('lift_argin1', 'lift_argin2', 'lift_argout1')
+    names = ('change_argin1', 'change_argin2', 'change_argout1')
     pointers = (bank.W.data_ptr(), bank.trust.lengths.data_ptr())
     concepts = cs.prebuild_formal_arguments(names)
     assert set(concepts) == set(names)
@@ -47,7 +47,7 @@ def test_insufficient_argument_capacity_refuses_the_whole_declaration():
 
 def test_group_of_argument_concepts_is_one_order_above_arguments():
     cs, _, _, alloc = fixture(meaning_pairs=4)
-    arguments = cs.prebuild_formal_arguments(('lift_argin1', 'verb_argin2'))
+    arguments = cs.prebuild_formal_arguments(('change_argin1', 'verb_argin2'))
     group = cs.new_concept()
     for argument in arguments.values():
         cs.add_part(group, ('sym', argument))
@@ -60,7 +60,7 @@ def test_argument_declarations_survive_native_structural_checkpoint():
     from types import SimpleNamespace
     from Models import BaseModel
     cs, bank, _, alloc = fixture(meaning_pairs=4)
-    names = ('lift_argin1', 'lift_argin2')
+    names = ('change_argin1', 'change_argin2')
     concepts = cs.prebuild_formal_arguments(names)
     host = SimpleNamespace(conceptualSpaces=[cs], wholeSpace=None, named_modules=lambda: ())
     saved = BaseModel._collect_structural_extras(host)['conceptual_spaces'][0]['allocator']
@@ -80,7 +80,7 @@ def argument_fixture(*names):
     from PartsOfSpeech import PartsOfSpeech
     from definition_fixtures import agreeing_views
     cs, bank, _, alloc = fixture(meaning_pairs=4)
-    speech = PartsOfSpeech(names or ('lift_argin1', 'lift_argin2'), cs)
+    speech = PartsOfSpeech(names or ('change_argin1', 'change_argin2'), cs)
     words = tuple(cs.interpret.lookup_word([part], (), form=form)
                   for part, form in ((4, 'dax'), (7, 'wug')))
     for i, word in enumerate(words):
@@ -95,14 +95,17 @@ def test_argument_views_learn_radius_and_shared_words_do_not_divide_membership()
     import math
     cs, bank, alloc, speech, (word, _) = argument_fixture()
     for _ in range(3):
-        speech.observe_use('lift', ((word,), (word,)))
-    refresh(cs)
+        speech.observe_use('change', ((word,), (word,)))
+    for identity in speech.concepts.values():
+        row = cs._csw_row_of(identity)
+        bank.mereology.placement[row] = torch.eye(4)[0]
+        bank.mereology.placement_witnesses[row] = 1
     radius = -math.expm1(-3 / bank.trust.trust_views)
     from ConceptTrust import positive_length
-    assert 'trust' not in speech.operation('lift')
-    assert positive_length(cs, speech.seats['lift'].concept) == 0.
-    assert speech.operation('lift')['definiteness'] == pytest.approx((radius, radius))
-    assert speech.members('lift_argin1') == speech.members('lift_argin2') == (word,)
+    assert 'trust' not in speech.operation('change')
+    assert positive_length(cs, speech.seats['change'].concept) == 0.
+    assert speech.operation('change')['definiteness'] == pytest.approx((radius, radius))
+    assert speech.members('change_argin1') == speech.members('change_argin2') == (word,)
     assert not hasattr(speech, 'counts') and not hasattr(speech, 'distribution')
     for argument in speech.arguments:
         cid = speech.concepts[argument]
@@ -114,34 +117,24 @@ def test_argument_views_learn_radius_and_shared_words_do_not_divide_membership()
     torch.testing.assert_close(speech.similarities(word), torch.ones(2))
 
 
-def test_shared_members_cluster_argument_centroids_in_native_space():
-    cs, bank, _, speech, (a, b) = argument_fixture('left_argin1', 'right_argin1')
-    speech.add(a, 'left_argin1')
-    speech.add(b, 'right_argin1')
-    assert speech.collapse()[0]['cosine'] == pytest.approx(0.)
-    speech.add(b, 'left_argin1')
-    speech.add(a, 'right_argin1')
-    refresh(cs)
-    assert speech.collapse()[0]['cosine'] == pytest.approx(1.)
-    expected = torch.tensor([1., 1., 0., 0.]) / (2**.5)
-    for cid in speech.concepts.values():
-        torch.testing.assert_close(bank.mereology.placement[cs._csw_row_of(cid)], expected)
 
 
-def test_higher_order_context_moves_word_meanings_without_changing_forms_or_radii():
+def test_higher_order_context_cannot_move_word_meanings_forms_or_radii():
     cs, bank, _, speech, words = argument_fixture('group_argin1')
     for word in words:
         speech.add(word, 'group_argin1')
-    refresh(cs)
+    place_types(cs)
     rows = [cs._csw_row_of(word) for word in words]
     forms = bank.lookup_rows(torch.tensor(rows))[:, :3].clone()
     radii = bank.trust.lengths.clone()
     before = bank.mereology.placement[rows].clone()
     parent = speech._direction(speech.concepts['group_argin1']).clone()
-    from ConceptHierarchy import condition
-    condition(cs, words)
+    context = torch.zeros(cs.nVectors)
+    context[cs._csw_row_of(speech.concepts['group_argin1'])] = 1.
+    bank.mereology.negative_count = 0
+    bank.mereology.place_rows(rows, context, b'other-order')
     after = bank.mereology.placement[rows]
-    assert bool(((after @ parent) > (before @ parent)).all())
+    torch.testing.assert_close(after, before, rtol=0, atol=0)
     torch.testing.assert_close(bank.trust.lengths, radii, rtol=0, atol=0)
     torch.testing.assert_close(bank.lookup_rows(torch.tensor(rows))[:, :3], forms, rtol=0, atol=0)
 
@@ -149,10 +142,10 @@ def test_higher_order_context_moves_word_meanings_without_changing_forms_or_radi
 def test_empty_argument_views_supply_no_operation_authority_or_definiteness(monkeypatch):
     cs, _, _, speech, _ = argument_fixture()
     for _ in range(3):
-        speech.observe_use('lift', ((), ()))
-    assert speech.operation('lift')['uses'] == 3
+        speech.observe_use('change', ((), ()))
+    assert speech.operation('change')['uses'] == 3
     from ConceptTrust import positive_length
-    assert positive_length(cs, speech.seats['lift'].concept) == 0.
+    assert positive_length(cs, speech.seats['change'].concept) == 0.
     assert operation_measurement(speech) == 0.
 
 
@@ -165,8 +158,8 @@ def test_form_only_charts_record_members_without_learning_from_form_geometry(for
     from ConceptHierarchy import observe_member
     word = cs.interpret.lookup_word([4], (), form='dax')
     if formal:
-        speech = PartsOfSpeech(('lift_argin1',), cs)
-        parent = speech.concepts['lift_argin1']
+        speech = PartsOfSpeech(('change_argin1',), cs)
+        parent = speech.concepts['change_argin1']
     else:
         parent = cs.new_concept()
         cs.add_part(parent, ('sym', word))
@@ -174,19 +167,19 @@ def test_form_only_charts_record_members_without_learning_from_form_geometry(for
     for _ in range(3):
         observe_member(cs, parent, word)
     assert positive_length(cs, word) == 1.
-    from ConceptHierarchy import members, direction, condition
+    from ConceptHierarchy import members, direction
     row = cs._csw_row_of(parent)
     assert int(bank.trust.views[row]) == 0
     assert float(bank.trust.lengths[row, 0]) == 0.
     assert members(cs, parent) == (word,)
     assert direction(cs, parent).numel() == 0
     before = bank.W.clone()
-    condition(cs)
+    place_types(cs)
     torch.testing.assert_close(bank.W, before, rtol=0, atol=0)
 
 
-def test_ordinary_nested_classes_condition_members_without_a_grammar_catalogue():
-    from ConceptHierarchy import observe_member, condition, direction
+def test_ordinary_nested_classes_place_within_each_order_without_a_grammar_catalogue():
+    from ConceptHierarchy import observe_member, direction
     from definition_fixtures import agreeing_views
     cs, bank, _, alloc = fixture(meaning_pairs=4)
     words = [cs.interpret.lookup_word([part], (), form=form)
@@ -205,7 +198,7 @@ def test_ordinary_nested_classes_condition_members_without_a_grammar_catalogue()
         for _ in range(3):
             for member in members:
                 observe_member(cs, cid, member)
-        refresh(cs)
+        place_types(cs)
         return cid
 
     first, second = group(words[:2]), group(words[2:])
@@ -216,23 +209,25 @@ def test_ordinary_nested_classes_condition_members_without_a_grammar_catalogue()
     target = direction(cs, upper).clone()
     forms = bank.lookup_rows(torch.tensor(rows))[:, :3].clone()
     radii = bank.trust.lengths.clone()
-    bank.mereology.negative_count = 0  # Isolate hierarchical attraction.
+    bank.mereology.negative_count = 0  # No same-order negative update in this check.
     first_before = direction(cs, first).clone()
-    condition(cs)
-    assert bool(((bank.mereology.placement[rows] @ target) > (before @ target)).all())
+    context = torch.zeros(cs.nVectors)
+    context[cs._csw_row_of(upper)] = 1.
+    bank.mereology.place_rows(rows + [cs._csw_row_of(first)], context, b'higher-order-context')
+    torch.testing.assert_close(bank.mereology.placement[rows], before, rtol=0, atol=0)
     torch.testing.assert_close(bank.trust.lengths, radii, rtol=0, atol=0)
     torch.testing.assert_close(bank.lookup_rows(torch.tensor(rows))[:, :3], forms, rtol=0, atol=0)
-    assert float(direction(cs, first) @ target) > float(first_before @ target)
+    torch.testing.assert_close(direction(cs, first), first_before, rtol=0, atol=0)
 
 
-def test_learned_members_centroids_and_confidence_restore_into_a_fresh_owner():
+def test_learned_members_placements_and_confidence_restore_into_a_fresh_owner():
     import copy
     from types import SimpleNamespace
     from Models import BaseModel
     cs, bank, _, speech, words = argument_fixture()
     for _ in range(3):
-        speech.observe_use('lift', ((words[0],), (words[1],)))
-    refresh(cs)
+        speech.observe_use('change', ((words[0],), (words[1],)))
+    place_types(cs)
     host = SimpleNamespace(conceptualSpaces=[cs], wholeSpace=None, named_modules=lambda: ())
     structure = BaseModel._collect_structural_extras(host)['conceptual_spaces'][0]['allocator']
     vectors, grammar = copy.deepcopy(bank.state_dict()), copy.deepcopy(speech.state_dict())
@@ -242,7 +237,7 @@ def test_learned_members_centroids_and_confidence_restore_into_a_fresh_owner():
     BaseModel._restore_allocator_extras(host, fresh, structure)
     fresh_bank.load_state_dict(vectors)
     restored.load_state_dict(grammar)
-    assert restored.operation('lift') == speech.operation('lift')
+    assert restored.operation('change') == speech.operation('change')
     for name in speech.arguments:
         assert restored.members(name) == speech.members(name)
         torch.testing.assert_close(restored._direction(restored.concepts[name]), speech._direction(speech.concepts[name]))
@@ -261,8 +256,8 @@ def test_explicit_class_views_on_a_whole_conceptual_chart_use_the_same_radius_ru
     assert getattr(bank, 'mereology', None) is None
     word = cs.interpret.lookup_word([4], (), form='dax')
     if formal:
-        speech = PartsOfSpeech(('lift_argin1',), cs)
-        parent = speech.concepts['lift_argin1']
+        speech = PartsOfSpeech(('change_argin1',), cs)
+        parent = speech.concepts['change_argin1']
     else:
         parent = cs.new_concept()
         cs.add_part(parent, ('sym', word))
@@ -272,40 +267,48 @@ def test_explicit_class_views_on_a_whole_conceptual_chart_use_the_same_radius_ru
     assert positive_length(cs, word) == 1.
     assert positive_length(cs, parent) == pytest.approx(-math.expm1(-1.))
     bank.trust.project()
-    assert float(bank.W[cs._csw_row_of(parent)].norm()) == pytest.approx(-math.expm1(-1.))
+    assert not bank.W[cs._csw_row_of(parent)].any()  # Extension is not the class's position.
 
 
 def test_revised_separability_evidence_and_contiguous_classes():
     import math
-    from ConceptHierarchy import refresh
-    cs, bank, _, speech, (a,b) = argument_fixture('lift_argin1','lift_argin2','verb_argin1')
+    from placement_fixtures import place_types
+    cs, bank, _, speech, (a,b) = argument_fixture('change_argin1','change_argin2','verb_argin1')
     for view in range(1,6):
-        speech.observe_use('lift', ((a,), (b,)))
-        refresh(cs)
-        result=speech.operation('lift')
+        speech.observe_use('change', ((a,), (b,)))
+        for name, point in zip(('change_argin1','change_argin2'), torch.eye(4)[:2]):
+            row = cs._csw_row_of(speech.concepts[name])
+            bank.mereology.placement[row] = point
+            bank.mereology.placement_witnesses[row] = 1
+        result=speech.operation('change')
         expected=-math.expm1(-view/bank.trust.trust_views)
         assert [v['d_j'] for v in result['argument_measurements'].values()] == [1.,1.]
         assert result['definiteness'] == pytest.approx((expected,expected))
         assert operation_measurement(speech) == pytest.approx(expected)
         assert (expected >= .75) == (view == 5)
-    speech.add(a,'verb_argin1');refresh(cs)
-    assert speech.operation('lift')['argument_measurements']['lift_argin1']['d_j']==1.
+    speech.add(a,'verb_argin1')
+    row = cs._csw_row_of(speech.concepts['verb_argin1'])
+    bank.mereology.placement[row] = torch.eye(4)[0]
+    bank.mereology.placement_witnesses[row] = 1
+    assert speech.operation('change')['argument_measurements']['change_argin1']['d_j']==1.
     # Overlap competes only outside the contiguity angle: a shared member
     # at the competing centroid is no longer won strictly by the mixed class.
-    row=cs._csw_row_of(speech.concepts['lift_argin1'])
+    row=cs._csw_row_of(speech.concepts['change_argin1'])
     bank.mereology.placement[row]=torch.tensor([1.,1.,0.,0.])/(2**.5)
-    speech.add(b,'lift_argin1')
-    result=speech.operation('lift')
-    assert result['argument_measurements']['lift_argin1']['d_j'] < 1.
+    speech.add(b,'change_argin1')
+    result=speech.operation('change')
+    assert result['argument_measurements']['change_argin1']['d_j'] < 1.
     assert operation_measurement(speech) < .75
 
 
 def test_revised_fit_is_coverage_and_radius_is_commitment():
-    from ConceptHierarchy import refresh, condition
+    from placement_fixtures import place_types
     from IdentityRows import meet_ratios
+    from ConceptHierarchy import extension
     cs,bank,_,speech,(a,b)=argument_fixture('group_argin1')
-    speech.add(a,'group_argin1');speech.add(b,'group_argin1');refresh(cs)
+    speech.add(a,'group_argin1');speech.add(b,'group_argin1');place_types(cs)
     row=cs._csw_row_of(speech.concepts['group_argin1'])
+    bank.mereology.placement[row] = torch.tensor([1., 1., 0., 0.]) / 2**.5
     outsider=cs.interpret.lookup_word([9],(),form='outsider')
     outside_row=cs._csw_row_of(outsider)
     bank.mereology.placement[outside_row]=torch.nn.functional.normalize(torch.tensor([.2,.98,0.,0.]),dim=0)
@@ -315,15 +318,13 @@ def test_revised_fit_is_coverage_and_radius_is_commitment():
     for radius in (.1,.3,.6,1.):
         bank.trust.lengths[row,0]=radius
         score=float(speech.similarities(outsider)[0]);scores.append(score)
-        assert score == pytest.approx(float(meet_ratios(speech._direction(outsider),speech._direction(speech.concepts['group_argin1'])*radius)[0]))
+        assert score == pytest.approx(float(meet_ratios(speech._direction(outsider),extension(cs, speech.concepts['group_argin1'])*radius)[0]))
     assert all(x>=y for x,y in zip(scores,scores[1:])) and scores[0]>scores[-1]
-    bank.mereology.negative_count=0  # Isolate the class's conditioning pressure.
-    before=float(speech.similarities(a)[0]);condition(cs,(a,));assert float(speech.similarities(a)[0])>before
     bank.trust.lengths[row,0]=0.;assert float(speech.similarities(a)[0])==0.
 
 
 def test_revised_boundary_scope_preserves_absent_members_and_objects(monkeypatch):
-    from ConceptHierarchy import refresh, condition
+    from placement_fixtures import place_types
     from definition_fixtures import agreeing_views
     from IdentityRows import mint
     cs,bank,_,speech,(a,b)=argument_fixture('group_argin1')
@@ -331,39 +332,30 @@ def test_revised_boundary_scope_preserves_absent_members_and_objects(monkeypatch
     cs.interpret.define(a,obj)
     binding=cs.definitions.objects(a)
     speech.add(a,'group_argin1');speech.add(b,'group_argin1')
-    calls=[];derive=bank.mereology.derive_class_placements
-    monkeypatch.setattr(bank.mereology,'derive_class_placements',lambda:(calls.append(1),derive())[1])
-    refresh(cs)
-    before=bank.mereology.placement.clone();condition(cs,(a,))
-    assert calls==[1]
+    place_types(cs)
+    before=bank.mereology.placement.clone()
+    context = torch.zeros(cs.nVectors)
+    context[cs._csw_row_of(b)] = 1.
+    bank.mereology.negative_count = 0
+    bank.mereology.placement[cs._csw_row_of(a)] = torch.tensor([1.,0.,0.,0.])
+    bank.mereology.placement[cs._csw_row_of(b)] = torch.tensor([0.,1.,0.,0.])
+    before=bank.mereology.placement.clone()
+    bank.mereology.place_rows([cs._csw_row_of(a)], context, b'scoped-row')
     assert not torch.equal(before[cs._csw_row_of(a)],bank.mereology.placement[cs._csw_row_of(a)])
     for identity in (b,obj):torch.testing.assert_close(before[cs._csw_row_of(identity)],bank.mereology.placement[cs._csw_row_of(identity)],rtol=0,atol=0)
     assert cs.definitions.objects(a)==binding
 
 
-def test_revised_centroid_uses_fit_and_first_members_are_equal():
-    from ConceptHierarchy import refresh
-    from Priming import part_edges
-    cs,bank,_,speech,(a,b)=argument_fixture('group_argin1')
-    speech.add(a,'group_argin1');speech.add(b,'group_argin1')
-    parent=cs._csw_row_of(speech.concepts['group_argin1'])
-    refresh(cs);torch.testing.assert_close(bank.mereology.placement[parent],torch.tensor([1.,1.,0.,0.])/(2**.5))
-    bank.mereology.placement[parent]=torch.tensor([.98,.2,0.,0.]);bank.mereology.placement[parent]/=bank.mereology.placement[parent].norm()
-    bank.trust.lengths[parent,0]=1.
-    before=bank.mereology.placement[parent].clone();src,dst,w=part_edges(cs,authority=False);w=w[dst==parent]
-    assert w[0]>w[1]
-    refresh(cs)
-    assert float(bank.mereology.placement[parent] @ before) > float(torch.tensor([1.,1.,0.,0.]) @ before)/(2**.5)
 
 
 def test_revised_form_only_operation_reports_unmeasurable_definiteness():
     from PartsOfSpeech import PartsOfSpeech
     cs,bank,_,alloc=fixture(meaning_pairs=0)
-    speech=PartsOfSpeech(('lift_argin1','lift_argin2'),cs)
+    speech=PartsOfSpeech(('change_argin1','change_argin2'),cs)
     a,b=[cs.interpret.lookup_word([i],(),form=f'term{i}') for i in (4,7)]
-    speech.observe_use('lift',((a,),(b,)))
+    speech.observe_use('change',((a,),(b,)))
     from ConceptTrust import positive_length
-    assert positive_length(cs, speech.seats['lift'].concept) == 0.
+    assert positive_length(cs, speech.seats['change'].concept) == 0.
     assert operation_measurement(speech) is None
     row=alloc.parts.add(a,b,truth_plus=.8,truth_minus=.3)
     torch.testing.assert_close(torch.stack(alloc.parts.evidence(row)), torch.tensor([.8, .3]))
@@ -381,12 +373,12 @@ def test_revised_relation_membership_is_enumerated_once():
 
 
 def test_revised_membership_proof_names_formal_class():
-    from ConceptHierarchy import refresh
+    from placement_fixtures import place_types
     from Queries import ThoughtTaxonomyCapability
     from QueryWork import QueryWorkBudget
     cs,bank,_,speech,(a,b)=argument_fixture('group_argin1')
     for _ in range(3):speech.add(a,'group_argin1')
-    refresh(cs);parent=speech.concepts['group_argin1']
+    place_types(cs);parent=speech.concepts['group_argin1']
     # An observed occupant alone does not assert the taxonomy relation.
     reader = ThoughtTaxonomyCapability(cs)
     bounds = dict(max_nodes=64,max_records=64,max_steps=8,max_expansions=64)

@@ -726,8 +726,9 @@ load with empty episodic entries. [Checkpoint migration](../bin/Memory.py).
 at a document boundary, in training or after a stateful inference request,
 and at the epoch boundary; it never runs inside an open sentence. It starts
 when occupancy reaches `forgetHighWater` (90%) or an earlier pass fell short,
-deletes down to `forgetLowWater` (70%), and runs at most once per
-`forgetMinInterval` (256) sentences; there is no free-standing age decay. An
+deletes down to `forgetLowWater` (70%). High-water pressure in either LTM
+table overrides `forgetMinInterval` at a closed boundary; unpressured passes
+still wait its 256 completed sentences. There is no free-standing age decay. An
 entry's retention value is
 
 $$V = w_t T + w_u U + w_l L - w_a A,$$

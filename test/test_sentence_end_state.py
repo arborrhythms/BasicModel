@@ -58,7 +58,7 @@ def test_finishing_uses_actual_operands_and_result_without_running_an_operator()
         raise AssertionError('finishing replayed an operator')
 
     language = SimpleNamespace(
-        _compose_binary_rules=[SimpleNamespace(method_name='lift', clause_form='S',
+        _compose_binary_rules=[SimpleNamespace(method_name='change', clause_form='S',
             head_role=0, reference_modes=(), lhs='S')], _compose_unary_rules=[],
         forward_binary_step=forbidden, forward_unary_step=forbidden)
     left, right, result = torch.tensor([[1., 2., 3., 4.], [5., 6., 7., 8.],
@@ -154,7 +154,7 @@ def test_idea_caches_the_operand_addresses_recorded_before_fusion():
     from ClauseJournal import finish_clause
     from Understanding import Reading
 
-    language = SimpleNamespace(_compose_binary_rules=[SimpleNamespace(method_name='lift',
+    language = SimpleNamespace(_compose_binary_rules=[SimpleNamespace(method_name='change',
         clause_form='S', head_role=0, reference_modes=(), lhs='S')], _compose_unary_rules=[])
     left, right, result = torch.arange(12, dtype=torch.float32).reshape(3, 4)
     frames = torch.zeros(3, 3, 4)

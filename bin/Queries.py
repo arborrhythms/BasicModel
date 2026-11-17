@@ -89,7 +89,6 @@ class StructuralGrammarContext(GrammarContext):
     reference: object = None
     form_context: object = None
     case_view: object = None
-    case_unary_view: object = None
 
     def __post_init__(self):
         super().__post_init__()
@@ -101,7 +100,7 @@ class StructuralGrammarContext(GrammarContext):
                 raise TypeError('structural case selection requires the bounded tensor carrier')
             object.__setattr__(self, 'selected_cases', SelectedCases(
                 *(value.clone() for value in self.selected_cases)))
-        for name in ('case_view', 'case_unary_view'):
+        for name in ('case_view',):
             value = getattr(self, name)
             if value is None:
                 continue
@@ -512,7 +511,7 @@ def _existing_symbol(space, reference):
     """Validate a live handle; a structural reference needs no vector row."""
     ref = concept_reference(reference)
     allocator = getattr(space, '_concept_allocator', None)
-    if (allocator is None or ref[1] not in allocator.placement
+    if (allocator is None or ref[1] not in allocator.symbols
             or ref[1] in allocator.retired):
         raise ValueError('query concept reference is unavailable')
     return ref
@@ -779,7 +778,12 @@ class ThoughtConceptualCapability:
     def quantize(self, *args, **kwargs):
         raise ValueError('quantize thought is retired; all-concept symbolization is future work')
 
-    def intuition(self, meaning, frames, *, row, work, premise):
+    def intuition(self, *, row, work):
+        from IntuitionField import read
+        return read(object.__getattribute__(self, '_ThoughtConceptualCapability__space'),
+                    row=row, work=work)
+
+    def implication(self, meaning, frames, *, row, work, premise):
         from Intuition import execute
         return execute(object.__getattribute__(self, '_ThoughtConceptualCapability__space'),
                        meaning, frames, row=row, work=work, premise=premise)
@@ -894,7 +898,7 @@ class ThoughtLTMCapability:
         object.__setattr__(self, '_ThoughtLTMCapability__reference_decisions', reference_decisions)
 
     @_read_stream(attribute='_ThoughtLTMCapability__row')
-    def intuition_rules(self, *, max_records, work):
+    def implication_rules(self, *, max_records, work):
         """Only rules indexed by the expected knowing; every row read is metered."""
         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
         if store is None:
@@ -948,7 +952,7 @@ class ThoughtLTMCapability:
             if len(frames) >= max_records:
                 break
             index = store.location(occurrence) if store is not None else None
-            if index is not None and store.row_name(index) not in seen:
+            if isinstance(index, int) and store.row_name(index) not in seen:
                 work.require('record')
                 frames.append(SituationFrame.from_row(store.row(index)))
                 seen.add(store.row_name(index))
@@ -1196,28 +1200,13 @@ class ThoughtLTMCapability:
         candidates = tuple(row for row in found['value']
                            if row['match'] >= tau
                            and row['occurrence'] not in excluded and can_answer(row))
-        from ExtendedRecall import answer
-        owner_ref = getattr(store,'_concept_owner',None)
-        owner = None if owner_ref is None else owner_ref()
-        available = []
-        if owner is not None:
-            for candidate in candidates:
-                value = answer(owner,pattern,candidate['meaning'],work=work)
-                if value is not None:
-                    available.append((candidate,value))
-        best = max(available,key=lambda item:item[0]['match']) if available else None
-        frames = () if best is None else (best[0],)
-        value = None if best is None else best[1]
-        # An open operand can be recalled from untrusted conversation. Its
-        # content is returned; that availability does not turn into authority.
-        trust = 0. if best is None else best[0]['trust']
-        return dict(value=frames,frames=frames,result_kind='set',meaning=value,answer_operand=value,
-            reference=None if value is None else value.role_refs[0],
-            binding_value=None if value is None else value.roles[0],
-            support_true=max(0.,trust),support_false=max(0.,-trust),
-            witnesses=() if best is None else (best[0]['occurrence'],),
-            records_scanned=found['records_scanned'],incomplete=found['incomplete'],
-            episodic_frames=found.get('episodic_frames',()))
+        # Recall retains the matched episode. An open operand is not
+        # converted into a new point here; subsequent thinking reads STM.
+        return dict(value=None, frames=candidates, result_kind='set',
+            support_true=0., support_false=0.,
+            witnesses=tuple(frame['occurrence'] for frame in candidates),
+            records_scanned=found['records_scanned'], incomplete=found['incomplete'],
+            episodic_frames=found.get('episodic_frames', ()))
 
     def _with_components(self, result, *, max_records, work):
         """Read chains and their identity-bound values on the same meter."""
@@ -1487,26 +1476,23 @@ class ThoughtLTMCapability:
         distinct. Rows share one history.
         """
         from Understanding import ConceptualField
-        from EpisodicMemory import query, reinstate
+        from EpisodicMemory import query
         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
         stream = object.__getattribute__(self, '_ThoughtLTMCapability__row')
-        semantic = None
-        if not isinstance(pattern, ConceptualField):
-            semantic = self.best_match(pattern, max_records=max_records, work=work,
-                                       references=references)
-            frames = semantic.get('episodic_frames', ())
-            if frames:
-                reinstate(store, frames, stream)
-            return semantic
+        if isinstance(pattern, ConceptualField):
+            found = query(store, pattern, stream=stream, max_records=max_records,
+                          work=work, references=references)
+            frames = found['value']
         else:
-            cue, cue_stream = pattern, stream
-        found = query(store, cue, stream=cue_stream, max_records=max_records,
-                      work=work, references=references)
-        frames = found['value']
-        reinstate(store, frames, stream)
-        return dict(found, frames=frames, result_kind='set', chunks_loaded=True,
-            support_true=max((row['match'] for row in frames), default=0.), support_false=0.,
-            witnesses=tuple(row['occurrence'] for row in frames))
+            found = self.best_match(pattern, max_records=max_records, work=work,
+                                    references=references)
+            frames = found.get('frames', ()) or found.get('episodic_frames', ())
+        missing = store.recall_chunks(frames, work=work, stream=stream) if frames else ()
+        # The metadata records the read; no semantic result is manufactured.
+        result = {name: value for name, value in found.items() if name not in
+                  ('value', 'meaning', 'answer_operand', 'answer_candidates', 'binding_value', 'reference')}
+        return dict(result, value=None, frames=frames, result_kind='set', chunks_loaded=bool(frames),
+            incomplete=tuple(dict.fromkeys((*found.get('incomplete', ()), *missing))))
 
     def lookup(self, *args, **kwargs):
         raise ValueError('lookup is retired; use query')
@@ -1708,9 +1694,11 @@ class ThoughtExecutorDescriptor:
 
     content_kind: str = 'concept'
     effect_kind: str | None = None
+    effect_forms: tuple = ()
     method_grants: tuple = ()
     continues: bool = False
     open_operands: bool = False
+    open_operand_roles: tuple = ()
     predicate_name: str | None = None
     relation_directions: tuple = ()
     taxonomy_by_order: bool = False
@@ -1745,6 +1733,10 @@ class ThoughtExecutorDescriptor:
     def result_kind(self):
         return self.content_kind
 
+    def permits_open(self, roles):
+        return (self.open_operands and len(roles) == 1
+                and (not self.open_operand_roles or roles[0] in self.open_operand_roles))
+
     def kinds_for(self, open_roles=()):
         # Closed part can act on vectors. A grammar-open side enumerates
         # taxonomy neighbors and therefore needs the remaining native name.
@@ -1756,7 +1748,7 @@ from ThoughtFaces import (part as _conceptual_part, is_part as _symbolic_part,
     equal as _conceptual_equal, is_equal as _symbolic_equal, implies as _implies,
     infer as _infer, intuit as _intuit, is_true as _is_true, exist as _exist,
     query as _query, ask as _ask, negate as _negate, gain as _gain, bind as _bind,
-    reverse_bind as _reverse_bind)
+    reverse_bind as _reverse_bind, define as _define, withhold as _withhold)
 
 
 _thought_executors = (
@@ -1767,6 +1759,14 @@ _thought_executors = (
     ThoughtExecutorDescriptor('not', 'serial-negation', ('meaning',), Mind.SERIAL,
         (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC, Mind.BUDGET), (Mind.SERIAL,), 'inference', _negate,
         evidence_pair=True, method_grants=(('conceptual_space', ('payload', 'extent', 'negate')),)),
+    ThoughtExecutorDescriptor('non', 'serial-withholding', ('meaning',), Mind.SERIAL,
+        (Mind.SERIAL, Mind.BUDGET), (Mind.SERIAL,), 'inference', _withhold,
+        evidence_pair=True, method_grants=(('conceptual_space', ()),)),
+    ThoughtExecutorDescriptor('define', 'conceptual-definition', ('concept', 'concept'), Mind.SERIAL,
+        (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC, Mind.BUDGET), (Mind.SERIAL,),
+        'conceptual-identity', _define, evidence_pair=True, predicate_name='operation:define',
+        relation_directions=((0, 2), (2, 0)),
+        method_grants=(('conceptual_space', ('payload', 'equal')),)),
     ThoughtExecutorDescriptor('part', 'conceptual-containment', ('concept', 'concept'), Mind.SERIAL,
         (Mind.KNOWING, Mind.SYMBOLIC, Mind.SERIAL, Mind.MERONYMY, Mind.BUDGET),
         (Mind.SERIAL, Mind.SYMBOLIC, Mind.KNOWING), 'meronymy', _conceptual_part,
@@ -1788,16 +1788,17 @@ _thought_executors = (
         (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC, Mind.BUDGET), (Mind.SERIAL,), 'containment', _implies,
         evidence_pair=True, method_grants=(('conceptual_space', ('payload', 'extent', 'negate')),)),
     ThoughtExecutorDescriptor('infer', 'symbolic-derivation', ('reference', 'reference'), Mind.SERIAL,
-        (Mind.SERIAL, Mind.SYMBOLIC, Mind.KNOWING, Mind.LTM, Mind.TAXONOMY, Mind.BUDGET), (Mind.SERIAL,), 'inference', _infer,
+        (Mind.SERIAL, Mind.SYMBOLIC, Mind.KNOWING, Mind.LTM, Mind.TAXONOMY, Mind.BUDGET), (Mind.SERIAL, Mind.KNOWING), 'inference', _infer,
         evidence_pair=True, relation_directions=((0, 2), (2, 0)),
-        method_grants=(('ltm', ('relation_evidence',)),
+        open_operands=True, open_operand_roles=('argin2',),
+        effect_forms=(('search', 'implication'), ('selection', None), ('derivation', None)),
+        method_grants=(('ltm', ('relation_evidence', 'implication_rules')),
                        ('taxonomy', ('evidence', 'neighbors')),
-                       ('conceptual_space', ('intuition_selection',)))),
-    ThoughtExecutorDescriptor('intuit', 'conceptual-inference', ('meaning',), Mind.SERIAL,
-        (Mind.SERIAL, Mind.KNOWING, Mind.LTM, Mind.PRIMING, Mind.BUDGET),
-        (Mind.SERIAL, Mind.KNOWING), 'intuition', _intuit, evidence_pair=True,
-        effect_kind='intuition',
-        method_grants=(('ltm', ('intuition_rules',)), ('conceptual_space', ('intuition',)))),
+                       ('conceptual_space', ('intuition_selection', 'implication')))),
+    ThoughtExecutorDescriptor('intuit', 'conceptual-inference', ('meaning',), Mind.KNOWING,
+        (Mind.SERIAL, Mind.KNOWING, Mind.BUDGET),
+        (Mind.KNOWING,), 'intuition', _intuit, evidence_pair=True, effect_kind='intuition',
+        method_grants=(('conceptual_space', ('intuition',)),)),
     ThoughtExecutorDescriptor('isTrue', 'symbolic-truth', ('description',), Mind.SERIAL,
         (Mind.SERIAL, Mind.LTM, Mind.BUDGET), (Mind.SERIAL,), 'truth', _is_true, evidence_pair=True,
         method_grants=(('ltm', ('end_evidence', 'truth_evidence', 'resolve_description')),)),
@@ -1806,11 +1807,11 @@ _thought_executors = (
         evidence_pair=True, method_grants=(('conceptual_space', ('payload', 'extent', 'negate')),)),
     ThoughtExecutorDescriptor('query', 'conceptual-lookup', ('description',), Mind.SERIAL,
         (Mind.SERIAL, Mind.LTM, Mind.PRIMING, Mind.BUDGET), (Mind.SERIAL,), 'retrieval', _query,
-        evidence_pair=True, content_kind='set', method_grants=(('ltm', ('query', 'resolve_description')),)),
+        evidence_pair=True, content_kind='set', effect_kind='recall', method_grants=(('ltm', ('query', 'resolve_description')),)),
     ThoughtExecutorDescriptor('ask', 'conceptual-subgoal', ('description',), Mind.SERIAL,
         (Mind.SERIAL, Mind.LTM, Mind.PRIMING, Mind.BUDGET), (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC),
-        'subgoal', _ask, evidence_pair=True, content_kind='subgoal', effect_kind='frames', continues=True,
-        method_grants=(('ltm', ('best_match', 'resolve_description')),)),
+        'subgoal', _ask, evidence_pair=True, content_kind='subgoal', effect_kind='recall', continues=True,
+        method_grants=(('ltm', ('query', 'resolve_description')),)),
     ThoughtExecutorDescriptor('gain', 'expectation-gain', ('concept',), Mind.EXPECTATION,
         (Mind.SERIAL, Mind.EXPECTATION, Mind.BUDGET), (Mind.EXPECTATION,), 'gain', _gain,
         evidence_pair=True, effect_kind='gain', method_grants=(('conceptual_space', ('payload', 'extent', 'negate')),)),
@@ -1834,9 +1835,9 @@ def _descriptor_context(context, descriptor):
     fallback = {'conceptual_space': set(), 'ltm': set(), 'taxonomy': set()}
     methods = {
         Mind.SERIAL: ('ltm', ('query', 'resolve_held_description')),
-        Mind.LTM: ('ltm', ('retrieve', 'resolve_description', 'best_match', 'end_evidence', 'truth_evidence', 'relation_evidence', 'premise_evidence', 'bind_reference', 'intuition_rules')),
+        Mind.LTM: ('ltm', ('retrieve', 'resolve_description', 'best_match', 'end_evidence', 'truth_evidence', 'relation_evidence', 'premise_evidence', 'bind_reference', 'implication_rules')),
         Mind.EXPECTATION: ('ltm', ('expectation',)),
-        Mind.KNOWING: ('conceptual_space', ('payload', 'equal', 'extent', 'negate', 'order', 'intuition', 'intuition_selection')),
+        Mind.KNOWING: ('conceptual_space', ('payload', 'equal', 'extent', 'negate', 'order', 'intuition', 'implication', 'intuition_selection')),
         Mind.SYMBOLIC: ('conceptual_space', ('payload', 'equal', 'extent', 'negate', 'order')),
         Mind.TAXONOMY: ('taxonomy', ('evidence', 'neighbors')),
     }
@@ -1874,12 +1875,11 @@ class ThoughtSignature:
         if (not roles or not set(self.occupied_roles).issubset(roles)
                 or len(set(self.occupied_roles)) != len(self.occupied_roles)):
             raise ValueError('thought signature has invalid role occupancy')
-        # A relation with one grammar-open side is the existing bounded
-        # taxonomy-neighbor operation.  Other executors have no invented
-        # partial-call meaning; their operand masks fail before a reader runs.
+        # Each open side must have a declared read: taxonomy neighbors or
+        # implication search from a resident premise, never a partial call.
         open_roles = tuple(role for role in roles if role not in self.occupied_roles)
         if open_roles and not (
-                self.descriptor.open_operands and len(open_roles) == 1):
+                self.descriptor.permits_open(open_roles)):
             raise ValueError('thought operation does not admit this open-role form')
 
     @property
@@ -2174,7 +2174,7 @@ class GrammaticalThoughtRegistry:
     def clause_reference(self, relation):
         """Canonical ended predicate, independent of thought authorization."""
         from ClauseRow import predicate_identity
-        relation = 'part' if relation in ('whole', 'equal', 'generic') else relation
+        relation = 'part' if relation in ('whole', 'equal', 'define', 'generic') else relation
         if relation in ('part', 'implies'):
             return ('sym', predicate_identity(relation))
         operation = self.operation_spec(relation)
@@ -2388,7 +2388,7 @@ class GrammaticalThoughtRegistry:
             role for role in operation.operand_roles
             if source_by_canonical_role[role] in open_roles)
         if canonical_open_roles and not (
-                descriptor.open_operands and len(canonical_open_roles) == 1):
+                descriptor.permits_open(canonical_open_roles)):
             raise ValueError(
                 f'thought operation {semantic_id!r} has no executable open-role form')
         occupied_roles = tuple(
@@ -2541,7 +2541,7 @@ class GrammaticalThoughtRegistry:
                 or not set(open_roles).issubset(operation.operand_roles)):
             raise ValueError('thought candidate has invalid open roles')
         if open_roles and not (
-                descriptor.open_operands and len(open_roles) == 1):
+                descriptor.permits_open(open_roles)):
             raise ValueError('thought candidate operation has no open-role executor')
         identity = (descriptor.domain, operation.semantic_id)
         vp = self._reference(identity)
@@ -2735,7 +2735,11 @@ class GrammaticalThoughtRegistry:
                 # polarity contract before the request enters the softmax.
                 continue
             legal.append(request)
-        return tuple(legal)
+        return self.field_candidates(legal)
+
+    def field_candidates(self, requests):
+        """Each field operation is offered once; it returns no per-order operand."""
+        return tuple(requests)
 
     def signature_for(self, meaning, *, work=None, verify_reference=True):
         """Recover one checked operation from a canonical VP and role mask."""
@@ -2761,11 +2765,12 @@ class GrammaticalThoughtRegistry:
                for index in range(len(meaning.role_mask))):
             raise ValueError('thought meaning has occupancy outside its structural role contract')
         signature = ThoughtSignature(operation, self.descriptors[semantic_id], occupied)
+        open_reference_kind = 'chunk' if semantic_id == 'infer' else 'sym'
         if signature.open_roles and any(
                 not (isinstance(meaning.role_refs[self._slot_for_operand(role)], tuple)
-                     and meaning.role_refs[self._slot_for_operand(role)][0] == 'sym')
+                     and meaning.role_refs[self._slot_for_operand(role)][0] == open_reference_kind)
                 for role in occupied):
-            raise ValueError('open taxonomy operand requires a native concept reference')
+            raise ValueError(f'open thought operand requires a native {open_reference_kind} reference')
         if not meaning.polarity and not signature.descriptor.evidence_pair:
             raise ValueError('negated thought requires a truth-valued operation')
         return signature

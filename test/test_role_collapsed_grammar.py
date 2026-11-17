@@ -40,12 +40,11 @@ _FORBIDDEN_STATE_TOKENS = {
 # compose/generate faces and join their checked thought descriptors only at a
 # completed boundary.
 _REQUIRED_OPS = {
-    "part", "whole", "equal", "ask",
+    "part", "whole", "ask",
     "not", "non",
-    "conjunction", "disjunction", "intersection", "union",
-    "lift", "verb", "adverb", "lower",
-    "preposition", "surface", "transpose", "lower_unary",
-    "definite_unary", "preposition_unary", "surface_unary",
+    "intersection", "union", "add", "subtract", "multiply", "divide",
+    "change", "verb", "modifier", "lift",
+    "preposition", "surface", "swap", "lower_unary",
 }
 
 
@@ -89,7 +88,7 @@ def test_symbolicspace_owns_its_starts():
     # relative-truth start; S is the absolute-truth start, without a truth-reducing wrapper.
     assert "S" in ws_syms, ws_syms
     assert g.ws_relative_starts == frozenset({
-        'part_argout1', 'whole_argout1', 'equal_argout1', 'implies_argout1'})
+        'part_argout1', 'whole_argout1', 'implies_argout1'})
     assert "S" in g.ws_absolute_starts
 
 
@@ -107,7 +106,7 @@ def test_no_retired_relation_or_query_aliases():
     methods = {r.method_name for r in g.rules if r.method_name}
     assert not (methods & {"queryPart", "assertPart", "isPart", "isEqual",
                            "queryEqual", "query"})
-    assert {"part", "whole", "equal"} <= methods
+    assert {"part", "whole"} <= methods
 
 
 
@@ -125,7 +124,7 @@ def test_no_category_rename_projection_rules():
 def test_canonical_relation_forms_use_role_names():
     """The grammar uses canonical role-labelled relation forms."""
     g = _load()
-    for op in ("part", "whole", "equal"):
+    for op in ("part", "whole"):
         rules = [r for r in g.rules if r.method_name == op]
         assert rules, f"{op} must be a structural grammar form"
         assert all(op + "_" in r.canonical for r in rules)

@@ -1741,7 +1741,7 @@ class Basis(nn.Module):
     # Step 9 of the 2026-05-01 syntactic-layer refactor: forward
     # logic ops on Basis (`conjunction` / `disjunction` / `negation` /
     # `non`) were thin pass-throughs to the corresponding `Ops` static
-    # methods; the new GrammarLayer subclasses (LiftLayer, ConjunctionLayer,
+    # methods; the new GrammarLayer subclasses (ChangeLayer, ConjunctionLayer,
     # etc.) call `Ops` directly. Forward methods removed; codebook-search
     # `*Reverse` methods stay because they need `self.getW()`.
 
@@ -8094,12 +8094,18 @@ class Space(SpaceCarrierMixin, nn.Module):
         return self.relevance_weights(batch=rows.shape[0])
 
     def placement_context(self, batch=0):
-        """Observed symbols only: placement never reads a code-derived prediction."""
+        """Observation and definition folds, before any placement likeness."""
         target = self._priming_target()
-        surface = target._priming_seen
+        surface = target._observed_knowing
         if not 0 <= int(batch) < len(surface):
             raise RuntimeError('placement stream exceeds the constructed surface')
-        return (surface[int(batch)].detach() - 1).clamp_min(0)
+        from FieldProjection import close, inventory
+        rows = inventory(target)
+        result = surface.new_zeros(surface.shape[1])
+        if rows:
+            raw = surface[int(batch), rows].detach()
+            result[rows] = close(target, rows, raw).amax(-1)
+        return result
 
     def priming_weights(self, *, batch=None):
         return self.relevance_weights(batch=batch)
@@ -10587,7 +10593,8 @@ class PartSpace(Space):
             from BasicPercepts import BasicPercepts
             from types import SimpleNamespace
             self.basic_percepts = BasicPercepts(SimpleNamespace(_basis=self.subspace.what),
-                self.nWhat, 0, self.nVectors)
+                (self.nWhat + 1) // 2, self.nWhat // 2,
+                int(TheXMLConfig.space(section, 'basicPerceptCapacity', default=self.nVectors)))
         else:
             object.__setattr__(self, 'basic_percepts', self.percept_store.basic_percepts)
         # Numeric carriers have no lexical dictionary. Native text prototype
@@ -10948,7 +10955,7 @@ class PartSpace(Space):
                 # This event is an occurrence in the input. Its stored part
                 # has a separate registry row address, independent of where
                 # this instance starts. The band carries no end coordinate.
-                stamp = (registry.encode('input', offsets) if registry is not None else
+                stamp = (registry.encode('text', offsets) if registry is not None else
                          w_enc.encode(offsets.clamp(min=0)))
                 stamp = stamp * (offsets >= 0).unsqueeze(-1).to(stamp.dtype)
                 event[..., w_idx] = stamp.to(event)
@@ -11709,7 +11716,7 @@ class PartSpace(Space):
             # Only stamp when the band lies past the percept content columns.
             if _w_idx and content_width <= _w_idx[0] < muxed_width:
                 registry = getattr(self, 'where_registry', None)
-                _stamp = (registry.encode('input', word_offset_grid) if registry is not None else
+                _stamp = (registry.encode('text', word_offset_grid) if registry is not None else
                           _w_enc.encode(word_offset_grid.clamp(min=0)))
                 _stamp = _stamp * (word_offset_grid >= 0).unsqueeze(-1).to(
                     _stamp.dtype)
@@ -12566,29 +12573,29 @@ class _ConceptRoleView:
         return _concept_alloc_of(self._host)
 
     def keys(self):
-        return list(self._alloc().placement)
+        return list(self._alloc().symbols)
 
     def __iter__(self):
         return iter(self.keys())
 
     def __len__(self):
-        return len(self._alloc().placement)
+        return len(self._alloc().symbols)
 
     def __contains__(self, cid):
-        return int(cid) in self._alloc().placement
+        return int(cid) in self._alloc().symbols
 
     def __bool__(self):
-        return bool(self._alloc().placement)
+        return bool(self._alloc().symbols)
 
     def __getitem__(self, cid):
         alloc = self._alloc()
-        if int(cid) not in alloc.placement:
+        if int(cid) not in alloc.symbols:
             raise KeyError(cid)
         return set(alloc.refs(cid, self._role))
 
     def get(self, cid, default=None):
         alloc = self._alloc()
-        if int(cid) not in alloc.placement:
+        if int(cid) not in alloc.symbols:
             return default
         return set(alloc.refs(cid, self._role))
 
@@ -12655,13 +12662,14 @@ def _concept_alloc_of(host):
 
         def _cap(_h=host):
             caps_fn = getattr(_h, "_order_caps", None)
-            return max(2, int(getattr(_h, "_symbolic_order", 0)))
+            return len(caps_fn()) - 1 if caps_fn is not None else 0
 
         alloc = ConceptAllocator(layer_sizer=_sizer, order_cap=_cap,
             member_width=int(getattr(host, 'nDim', 0)),
             member_capacity=int(TheXMLConfig.space('SymbolSpace','equalityWitnessCapacity',8192)),
             relation_capacity=int(TheXMLConfig.space('SymbolSpace','relationCapacity',8192)))
         alloc.reference_order = getattr(host, '_concept_source_order', None)
+        alloc.order_from_row = getattr(host, '_seated_concept_order', None)
         object.__setattr__(host, "_concept_allocator", alloc)
         object.__setattr__(host, "_concept_parts",
                            _ConceptRoleView(host, "part"))
@@ -12729,7 +12737,8 @@ class ConceptualSpace(Space):
                  shared_similarity_codebook=None,
                  indexed_similarity_codebook=False,
                  derived_similarity_codebook=False,
-                 shared_percept_readout=None):
+                 shared_percept_readout=None,
+                 order_limit=None, order_reservations=()):
         """Initialize ConceptualSpace; allocate state for the class contract.
 
         See class docstring for invariants.
@@ -12757,6 +12766,16 @@ class ConceptualSpace(Space):
         self.stage_idx = (int(stage_idx)
                           if stage_idx is not None else 0)
         super().__init__(inputShape, spaceShape, outputShape)
+        self._order_limit = (max(1, int(TheXMLConfig.get(
+            'architecture.conceptLayers', default=2))-1)
+            if order_limit is None else int(order_limit))
+        self._order_reservations = tuple(int(value) for value in order_reservations)
+        self._order_allocation = str(TheXMLConfig.space(
+            section, 'orderAllocation', 'geometric')).strip()
+        self.object_start_neighbours = int(TheXMLConfig.space(section, 'objectStartNeighbours', 3))
+        if self.object_start_neighbours < 1:
+            raise ValueError('objectStartNeighbours must be positive')
+        self._order_caps()  # Freeze the partition before any reader or graph sees it.
         from Memory import NULL_CONCEPT
         self.null_concept_id = NULL_CONCEPT
         # The reserved row is outside the trainable inventory and all sparse
@@ -12842,9 +12861,23 @@ class ConceptualSpace(Space):
         self.layers = nn.ModuleList([])
         from Expectation import ActivationPredictor
         from IntuitionLayer import IntuitionLayer
+        self.expectation_map = TheXMLConfig.space(section, 'expectationMap', 'sigmaPi')
+        if self.expectation_map not in ('sigmaPi', 'predictor'):
+            raise ValueError('expectationMap must be sigmaPi or predictor')
         with torch.random.fork_rng(devices=[]):
-            self.concept_predictor = ActivationPredictor(self.outputShape[-1])
+            self.concept_predictor = (ActivationPredictor(self.outputShape[-1])
+                if self.expectation_map == 'predictor' else None)
         self.intuition = IntuitionLayer(int(TheXMLConfig.get('architecture.intuitionCapacity', default=4096)))
+        from SigmaPiStack import SigmaPiStack
+        expect_hidden = int(TheXMLConfig.space(section, 'expectHidden', 64))
+        expect_pairs = int(TheXMLConfig.space(section, 'expectLayers', 1))
+        self.expect_stack = (SigmaPiStack(2*self._order_caps()[0], 2*self._order_caps()[0],
+            hidden=expect_hidden, pairs=expect_pairs)
+            if self.expectation_map == 'sigmaPi' and expect_hidden else None)
+        intuit_hidden = int(TheXMLConfig.space(section, 'intuitHidden', 64))
+        intuit_pairs = int(TheXMLConfig.space(section, 'intuitLayers', 2))
+        self.intuit_stack = (SigmaPiStack(2*self._order_caps()[0], 2*self._order_caps()[0],
+            hidden=intuit_hidden, pairs=intuit_pairs) if intuit_hidden else None)
         self._sparsity = SparsityRegLayer(
             l1_lambda=float(getattr(self, "l1_lambda", 0.0) or 0.0),
             enabled=bool(getattr(self, "codebook", False)),
@@ -13655,8 +13688,6 @@ class ConceptualSpace(Space):
 
     def End(self):
         super().End()
-        # The next pass owns its native observation. A review survives in
-        # _episode_review_field until that pass replaces it.
         self._clear_percept_field()
         self._cs_field_where = None
         self._cs_field_when = None
@@ -14393,29 +14424,18 @@ class ConceptualSpace(Space):
                        for symbol in alloc.parts.indices().tolist())
         return nxt, nxt + n - int(alloc.reclaimed_seats) - unseated, capacity
 
-    def _preflight_concept_row(self, order=0, *, context="word admission"):
+    def _preflight_concept_row(self, order=0, *, context="word admission", count=1):
         """Check the physical seat before changing identity or definition records."""
         store = _concept_alloc_of(self).layer()
-        caps, capacity = self._order_caps(), int(self.nVectors)
-        if getattr(self, '_concept_binding', 'mixing') == 'aligned':
-            base, size = 0, capacity
-        elif int(order) == 0:
-            base = 0 if store._row_next.get(0, 0) < caps[0] else sum(caps)
-            size = caps[0] if base == 0 else capacity - base
-        else:
-            rung = min(int(order), len(caps) - 1)
-            base, size = sum(caps[:rung]), caps[rung]
-        next_row = int(store._row_next.get(base, 0))
-        while next_row < size and base + next_row in store._tensor_row_keys:
-            next_row += 1
-        if next_row >= size and int(order) > 0 and sum(caps) < capacity:
-            base, size = sum(caps), capacity - sum(caps)
-            next_row = int(store._row_next.get(base, 0))
-            while next_row < size and base + next_row in store._tensor_row_keys:
-                next_row += 1
-        if next_row >= size:
-            raise ConceptRowCapacityError(f'concept row capacity exhausted before {context}; no identity was minted')
-        return base + next_row
+        base, end = self.order_slice(order)
+        if type(count) is not int or count < 1:
+            raise ValueError('concept seat count must be a positive integer')
+        free = (row for row in range(base, end) if row not in store._tensor_row_keys)
+        first = next(free, None)
+        if first is None or any(next(free, None) is None for _ in range(count-1)):
+            raise ConceptRowCapacityError(
+                f'concept order {order} capacity exhausted before {context}; no identity was minted')
+        return first
 
     def _preflight_concept_allocation(self, count=1, *, context="concept"):
         """Validate and reveal a grouped allocation before minting any id.
@@ -14447,8 +14467,6 @@ class ConceptualSpace(Space):
             self, n, context=context)
         alloc = _concept_alloc_of(self)
         result = [alloc.new_concept() for _ in range(n)]
-        from ConceptForgetting import warn_capacity
-        warn_capacity(self)
         return result
 
     def _automatic_concept_admitted(self, count=1, *, reason="automatic"):
@@ -14497,7 +14515,7 @@ class ConceptualSpace(Space):
             "dropped": dict(getattr(self, "_concept_admission_drops", {}) or {}),
         }
 
-    def new_concept(self):
+    def new_concept(self, *, order=None):
         """Allocate one bounded aligned concept id atomically.
 
         Concept records are relation-only, but their ids share the configured
@@ -14505,8 +14523,13 @@ class ConceptualSpace(Space):
         VQ before minting and fail before mutating ``next_id`` at physical
         exhaustion.
         """
-        return ConceptualSpace._new_concepts(
+        if order is not None:
+            self._preflight_concept_row(order, context='declared concept')
+        concept = ConceptualSpace._new_concepts(
             self, 1, context="one concept")[0]
+        if order is not None:
+            self._declare_concept_row(order, concept)
+        return concept
 
     def add_part(self, sym, part):
         """Add ``part`` (a part-code or a sub-symbol ref) to Parts(sym)."""
@@ -14541,19 +14564,6 @@ class ConceptualSpace(Space):
         both = getattr(self, '_refinement_both', None)
         return row is not None and both is not None and bool(both[row].any())
 
-    def retire_concept(self, sym):
-        """Retire a TRANSIENT symbol that has triggered refinement -- the
-        restructuring it signaled supersedes it. Idempotent; drops its
-        Parts / Wholes records and any idempotency-cache entries pointing at
-        it (store-level lifecycle: :meth:`Layers.ConceptAllocator.drop`).
-        FROZEN concepts never retire (no forgetting)."""
-        from Memory import NULL_CONCEPT
-        if sym == NULL_CONCEPT:
-            return
-        if int(sym) in getattr(self, "_frozen_concepts", ()):
-            return
-        _concept_alloc_of(self).drop(sym)
-
     def _word_definition_ids(self):
         index = self._definition_index()
         words = set(() if index is None else index.word_ids)
@@ -14577,7 +14587,7 @@ class ConceptualSpace(Space):
         ident = alloc.identity
         resolved = []
         words = self._word_definition_ids()
-        for sym in list(alloc.placement):
+        for sym in list(alloc.symbols):
             if sym in words:
                 continue  # a word's native definition survives identity refinement
             store = alloc.store_of(sym)
@@ -14627,7 +14637,7 @@ class ConceptualSpace(Space):
         higher-order symbols are excluded too (their constituents are their
         definition, not a refinement backlog)."""
         alloc = _concept_alloc_of(self)
-        return sorted(s for s in alloc.placement
+        return sorted(s for s in alloc.symbols
                       if alloc.records(s) and s not in alloc.raised)
 
     def _concept_raise_set(self):
@@ -14658,42 +14668,52 @@ class ConceptualSpace(Space):
     # Edges run between row identities; dictionary vectors stay distributed.
 
     def _order_caps(self):
-        """Cached initial order partition, independent of execution mode.
+        """Fixed contiguous blocks over the whole constructed inventory.
 
-        The tile-based taper seeds allocation. The native field separately
-        gathers every reachable definition through ``_field_caps``; inventory
-        rows beyond this initial partition are not an attention limit.
+        The ordinary inventory follows its declared shares or the geometric
+        taper; grammar seats belong to their declared orders. Attention's width cannot move these
+        boundaries, and no order has a shared overflow tail.
         """
-        N = int(self.nVectors) - int(getattr(self, '_formal_reservation', 0))
-        K = int(getattr(self, "_symbolic_order", 0) or 0)
-        sparse = int(getattr(self, '_symbolic_order', 0)) > 0
-        key = (N, K, sparse)
-        cache = getattr(self, "_order_caps_cache", None)
-        if cache is None or cache[0] != key:
-            if sparse:
-                # Shrink the tile base until the whole taper fits the
-                # inventory (nVectors == nActive configs keep pool room:
-                # N=8, K=3 -> [4, 2, 1, 1], mirroring the legacy split).
-                base = min(int(self.outputShape[0]), N)
-                caps = [base] + [max(1, base >> k) for k in range(1, K + 1)]
-                while sum(caps) > N and base > 1:
-                    base >>= 1
-                    caps = [base] + [max(1, base >> k)
-                                     for k in range(1, K + 1)]
-                while sum(caps) > N and len(caps) > 1:
-                    caps.pop()
-                caps = tuple(caps)
+        caps = getattr(self, '_order_caps_cache', None)
+        if caps is None:
+            reservations = self._order_reservations
+            limit = max(self._order_limit, len(reservations)-1)
+            ordinary = int(self.nVectors)-sum(reservations)
+            if limit < 0 or ordinary < 0 or any(value < 0 for value in reservations):
+                raise ValueError('invalid concept order construction')
+            allocation = getattr(self, '_order_allocation', 'geometric')
+            if allocation != 'geometric':
+                tokens = allocation.split()
+                if len(tokens) != limit+1 or any(not token.isdecimal() for token in tokens):
+                    raise ValueError('orderAllocation requires one nonnegative row count per order')
+                widths = [int(token) for token in tokens]
+                if sum(widths) != ordinary:
+                    raise ValueError(f'orderAllocation must sum to {ordinary} unreserved rows')
+            elif ordinary < limit+1:
+                widths = [int(order < ordinary) for order in range(limit+1)]
             else:
-                n_snap = max(1, N // 2)
-                caps = (n_snap, max(1, N - n_snap))
-            object.__setattr__(self, "_order_caps_cache", (key, caps))
-        return self._order_caps_cache[1]
+                lo, hi = 1, ordinary
+                while lo < hi:
+                    base = (lo+hi+1)//2
+                    if sum(max(1, base >> order) for order in range(limit+1)) <= ordinary:
+                        lo = base
+                    else:
+                        hi = base-1
+                widths = [max(1, lo >> order) for order in range(limit+1)]
+                widths[0] += ordinary-sum(widths)
+            for order, count in enumerate(reservations):
+                widths[order] += count
+            caps = tuple(widths)
+            object.__setattr__(self, '_order_caps_cache', caps)
+        return caps
 
     def order_slice(self, order):
         """The ``(start, end)`` row range of ramsified ``order`` in the stacked
         ``nVectors``-row concept inventory (``CS.subspace.what`` / SS)."""
         caps = self._order_caps()
-        o = max(0, min(int(order), len(caps) - 1))
+        o = int(order)
+        if not 0 <= o < len(caps):
+            raise ConceptRowCapacityError(f'concept order {o} has no constructed block')
         start = sum(caps[:o])
         return start, start + caps[o]
 
@@ -14731,7 +14751,7 @@ class ConceptualSpace(Space):
             target_order = self._row_order(r)
             cid = self.concept_id_at_row(r)
             alloc = _concept_alloc_of(self)
-            testimony = (cid in alloc.reference_orders and source0
+            testimony = (alloc.seated_order(cid) is not None and source0
                          and ('sym', self.concept_id_at_row(int(col))) in self.concept_parts(cid))
             if self._row_order(col) != target_order - 1 and not testimony:
                 raise ValueError('sigma edges require symbols of the preceding order')
@@ -14800,16 +14820,20 @@ class ConceptualSpace(Space):
                 self.add_concept_feature(row, 'bp', percept, weight, negated=negated)
 
     def _row_order(self, row):
-        """Logical order is metadata, never an address or a mode."""
+        """Read order from the fixed contiguous block, without concept metadata."""
         row = int(row)
-        cid = self.concept_id_at_row(row)
-        if cid is not None:
-            # Physical row selection needs a nonnegative pool; unknown stays
-            # unknown in the allocator and uses the base pool only here.
-            return max(0, _concept_alloc_of(self).order_of(cid))
-        caps = self._order_caps()
-        return next((k for k in range(1, len(caps))
-                     if sum(caps[:k]) <= row < sum(caps[:k + 1])), 0)
+        if not 0 <= row < self.nVectors:
+            raise IndexError('concept row is outside the constructed inventory')
+        end = 0
+        for order, capacity in enumerate(self._order_caps()):
+            end += capacity
+            if row < end:
+                return order
+        raise RuntimeError('concept blocks do not cover their inventory')
+
+    def _seated_concept_order(self, concept):
+        row = self._csw_row_of(concept)
+        return None if row is None else self._row_order(row)
 
     def _order0_inventory_row(self, row):
         return 0 <= row < int(self.nVectors) and self._row_order(row) == 0
@@ -14899,7 +14923,7 @@ class ConceptualSpace(Space):
         object.__setattr__(self, '_cs_field_rows', rows)
         object.__setattr__(self, '_cs_field_concept_ids', ids)
 
-    def cs_read_memberships(self, percepts, extents):
+    def cs_read_memberships(self, percepts, extents, *, publish=True):
         """Pool native percept poles inside each bracket, then read definitions.
 
         The reading axis batches independent attention brackets. No concept
@@ -14917,26 +14941,29 @@ class ConceptualSpace(Space):
             dtype=self.similarity_codebook.W.dtype, when=when,
             registry=getattr(model, 'where_registry', None),
             when_encoding=getattr(model, 'when_encoding', None))
-        return self.cs_read_percept_field(perception)
+        return self.cs_read_percept_field(perception, publish=publish)
 
-    def cs_read_percept_field(self, perception):
+    def cs_read_percept_field(self, perception, *, publish=True):
         """Read memberships of the current open-attention percept field."""
         store = _concept_alloc_of(self).layer(0)
         matrix = store.features
         keys = [('bp', col // 2) for col in matrix._cols]
-        object.__setattr__(self, '_percept_field', perception)
-        object.__setattr__(self, '_cs_field_where', perception.where)
-        object.__setattr__(self, '_cs_field_when', perception.when)
+        if publish:
+            object.__setattr__(self, '_percept_field', perception)
+            object.__setattr__(self, '_cs_field_where', perception.where)
+            object.__setattr__(self, '_cs_field_when', perception.when)
         membership = perception.values.index_select(0, perception.selected(keys))
         columns = torch.tensor(matrix._cols, device=membership.device, dtype=torch.long)
         required = torch.where((columns % 2)[:, None, None, None].bool(), membership.flip(-1), membership)
         from PerceptCollections import read_native
         collections = read_native(self, perception)
-        self._bind_attended_concepts(required, matrix)
+        if publish:
+            self._bind_attended_concepts(required, matrix)
         fields, raw_fields = [], []
         B, E = membership.shape[1:3]
-        n0 = self._field_caps()[0]
-        addresses = self._field_inventory_rows()
+        n0 = self._field_caps()[0] if publish else self._order_caps()[0]
+        addresses = (self._field_inventory_rows() if publish else
+                     torch.arange(self.nVectors, device=membership.device))
         for b in range(B):
             rows = addresses[:, b] if addresses.ndim == 2 else addresses
             bound = matrix.bind(rows.tolist(), paired=False)
@@ -14950,12 +14977,14 @@ class ConceptualSpace(Space):
             if collections:
                 field = torch.stack([collections[int(row)][b:b+1] if int(row) in collections else field[i]
                                      for i, row in enumerate(rows[:n0])])
-            fields.append(self._compose_order0(field, inventory_rows=rows))
-            raw_fields.append(self._cs_order0_raw)
-        object.__setattr__(self, '_cs_order0_raw', torch.cat(raw_fields, 1))
+            fields.append(self._compose_order0(field, inventory_rows=rows, publish=publish))
+            if publish:
+                raw_fields.append(self._cs_order0_raw)
+        if publish:
+            object.__setattr__(self, '_cs_order0_raw', torch.cat(raw_fields, 1))
         return torch.cat(fields, 1)
 
-    def _compose_order0(self, field, *, inventory_rows=None):
+    def _compose_order0(self, field, *, inventory_rows=None, publish=True):
         """Intersect and union predicates of the shared subject before encoding.
 
         Native percept poles have already been pooled inside the bracket.
@@ -15012,7 +15041,8 @@ class ConceptualSpace(Space):
                 working = working.index_copy(0, index, result)
                 done.add(row)
                 pending.remove(row)
-        object.__setattr__(self, '_cs_order0_raw', raw[:n0].detach())
+        if publish:
+            object.__setattr__(self, '_cs_order0_raw', raw[:n0].detach())
         return working[:n0]
 
 
@@ -15055,8 +15085,10 @@ class ConceptualSpace(Space):
         """
         base = list(self.params)
         seen = {id(p) for p in base}
-        for parameter in (*self.components.parameters(), *self.concept_predictor.parameters(),
-                          *self.intuition.parameters()):
+        for parameter in (*self.components.parameters(), *(() if self.concept_predictor is None else self.concept_predictor.parameters()),
+                          *(() if self.expect_stack is None else self.expect_stack.parameters()),
+                          *self.intuition.parameters(),
+                          *(() if self.intuit_stack is None else self.intuit_stack.parameters())):
             if id(parameter) not in seen:
                 base.append(parameter)
                 seen.add(id(parameter))
@@ -15440,9 +15472,9 @@ class ConceptualSpace(Space):
                 for tag,value in refs)
             right = refs[1][1] if refs[1][0] == SYMBOL else refs[1]
             name = ('equal' if right in alloc.singletons and right not in alloc.raised else
-                    'part' if all(tag == SYMBOL for tag, _ in refs) else 'lift')
+                    'part' if all(tag == SYMBOL for tag, _ in refs) else 'change')
             return denoted_order(SimpleNamespace(method_name=name), orders, refs, alloc)
-        if int(concept_id) not in alloc.placement:
+        if int(concept_id) not in alloc.symbols:
             store = self._closed_clause_store()
             row = None if store is None else store.location(concept_id)
             if row is not None:
@@ -15462,7 +15494,7 @@ class ConceptualSpace(Space):
         for ly in alloc._layers.values():
             for k, r in ly._tensor_rows.items():
                 cid = k[1] if isinstance(k, tuple) and len(k) == 2 else k
-                out[(alloc.placement.get(cid, 0), cid)] = r
+                out[(self._row_order(r), cid)] = r
         return out
 
     def concept_id_at_row(self, row):
@@ -15476,64 +15508,39 @@ class ConceptualSpace(Space):
         return None
 
     def _csw_concept_row(self, order, concept_id):
+        """Read or seat an order witnessed by a definition or declaration."""
+        if int(concept_id) in _concept_alloc_of(self).retired:
+            raise ValueError('a retired concept cannot be assigned a new storage row')
+        if int(order) != _concept_alloc_of(self).order_of(concept_id):
+            raise ValueError('concept row requested at a foreign order')
+        return self._declare_concept_row(order, concept_id)
+
+    def _declare_concept_row(self, order, concept_id):
         """Persistent definition address for a concept id, independent of attention.
 
-        Higher-order pool addresses retain their reserved slices. Order-0
-        definitions may occupy the rest of the inventory; each read gathers
-        them afresh into the bounded attended field.
+        Every seat belongs to one fixed order block, including grammar
+        declarations. A full block raises before assigning any row.
         """
         alloc = _concept_alloc_of(self)
         previous_rows = len(alloc.layer()._tensor_row_keys)
         if int(concept_id) in alloc.retired:
             raise ValueError('a retired concept cannot be assigned a new storage row')
-        if int(order) != alloc.order_of(concept_id):
+        witnessed = alloc.order_of(concept_id)
+        if witnessed >= 0 and int(order) != witnessed:
             raise ValueError('concept row requested at a foreign order')
         if int(order) < 0:
             raise ValueError('an unwitnessed concept has no storage order')
-        caps = self._order_caps()
+        base, end = self.order_slice(order)
         ly = alloc.layer(0)
-        if 'formal-argument' in alloc.symbol_types.get(int(concept_id), ()):
-            region, cap = "formal argument inventory", int(self.nVectors)
-            key = ('shared', int(concept_id))
-            row = ly.row_of(key)
-            if row is None:
-                free = next((r for r in range(cap-1, -1, -1) if r not in ly._tensor_row_keys), None)
-                row = None if free is None else ly.assign_row(key, capacity=1, base=free)
-        elif getattr(self, '_concept_binding', 'mixing') == 'aligned':
-            region, cap = "shared concept inventory", int(self.nVectors)
-            row = ly.assign_row(("shared", int(concept_id)),
-                                capacity=cap, base=0)
-        elif int(order) == 0:
-            region, cap = "concept inventory", int(self.nVectors)
-            key = ("snap", int(concept_id))
-            row = ly.row_of(key)
-            if row is None:
-                base = 0 if ly._row_next.get(0, 0) < caps[0] else sum(caps)
-                capacity = caps[0] if base == 0 else cap - base
-                required = base + int(ly._row_next.get(base, 0)) + 1
-                if required <= cap:
-                    ly.grow_inventory(min(cap, max(required, ly.nOutput * 2))
-                                      if required > ly.nOutput else ly.nOutput)
-                row = ly.assign_row(key, capacity=capacity, base=base)
-        elif len(caps) == 2:
-            region, cap = "relation pool", caps[1]
-            row = ly.assign_row(("pool", int(concept_id)), capacity=caps[1],
-                                base=caps[0])
-        else:
-            # Dual-towers rev 2: one tapered block per ramsified order.
-            o = max(1, min(int(order), len(caps) - 1))
-            region, cap = f"order-{o} block", caps[o]
-            row = ly.assign_row((f"o{o}", int(concept_id)), capacity=caps[o],
-                                base=sum(caps[:o]))
-        if row is None and int(order) > 0 and sum(caps) < int(self.nVectors):
-            # The initial taper is a placement preference, not a second
-            # physical inventory ceiling. Use its ordinary unpartitioned
-            # tail, as order-zero admission does; no seats are reserved.
-            key = ("pool", int(concept_id)) if len(caps) == 2 else (f"o{o}", int(concept_id))
-            base = sum(caps)
-            required = base + int(ly._row_next.get(base, 0)) + 1
-            ly.grow_inventory(min(int(self.nVectors), max(required, ly.nOutput)))
-            row = ly.assign_row(key, capacity=int(self.nVectors)-base, base=base)
+        row = self._csw_row_of(concept_id)
+        if row is None:
+            self._preflight_concept_row(order, context='concept seating')
+            alloc.touch(concept_id)
+            row = ly.assign_row(('shared', int(concept_id)), capacity=end-base, base=base)
+        if row is None:
+            raise ConceptRowCapacityError(f'concept order {order} capacity exhausted')
+        if not base <= row < end:
+            raise ValueError(f'concept {concept_id} lies outside its order {order} block')
         if row is not None:
             # Aligned capacity is physically preallocated. Revealing a row is
             # a full-shape bool-mask mutation shared across CS/WS VQs; no
@@ -15545,37 +15552,15 @@ class ConceptualSpace(Space):
                 model, "_ensure_aligned_active_rows", None)
             if callable(ensure_active):
                 ensure_active(int(row) + 1)
-        if row is None:
-            n = int(getattr(self, "_csw_overflow_count", 0)) + 1
-            object.__setattr__(self, "_csw_overflow_count", n)
-            seen = getattr(self, "_csw_overflow_seen", None)
-            if seen is None:
-                seen = set()
-                object.__setattr__(self, "_csw_overflow_seen", seen)
-            # Warn once per (region, cid); the counter still counts every event.
-            if (region, int(concept_id)) not in seen:
-                seen.add((region, int(concept_id)))
-                if bool(
-                        getattr(self, "_concept_binding", "mixing") == "aligned"
-                        and getattr(self, "_serial", False)):
-                    raise RuntimeError(
-                        f"CS {region} exhausted ({cap} rows): the fixed "
-                        f"concept/symbol inventory cannot seat concept "
-                        f"{int(concept_id)}")
-                warnings.warn(
-                    f"CS {region} exhausted ({cap} rows): concept "
-                    f"{int(concept_id)} gets records only, no weighted "
-                    f"reading (overflow #{n})", RuntimeWarning)
         if row is not None and len(ly._tensor_row_keys) != previous_rows:
+            from ConceptPlacement import initialize
+            initialize(self, concept_id, row)
             self.similarity_codebook.trust.capture(row)
             self._priming_edge_revision = None
             derived = getattr(self.similarity_codebook, 'mereology', None)
             if derived is not None:
                 derived._form_valid[row] = False
                 derived.placement_dirty[row] = True
-        if row is not None:
-            from ConceptForgetting import warn_capacity
-            warn_capacity(self)
         return row
 
     def _populate_concept_weights(self, concept_id, *, witness=None, pole=0, coactive=False,
@@ -15960,26 +15945,18 @@ class ConceptualSpace(Space):
         alloc = _concept_alloc_of(self)
         missing = tuple(name for name in arguments if name not in registry)
         if missing:
-            layer = alloc.layer()
-            available = int(self.nVectors) - len(layer._tensor_row_keys)
-            if len(missing) > available:
-                raise RuntimeError('formal argument concepts exceed the constructed higher-order capacity')
+            self._preflight_concept_row(order, context='formal argument concepts', count=len(missing))
             self._preflight_concept_allocation(len(missing), context='formal argument concepts')
-            object.__setattr__(self, '_formal_reservation', max(
-                int(getattr(self, '_formal_reservation', 0)),
-                len(alloc.formal_arguments)+len(alloc.operator_concepts)+len(missing)))
             bank = self.similarity_codebook
             trust = bank.trust
             derived = getattr(bank, 'mereology', None)
             for name in missing:
-                identity = self.new_concept()
-                alloc.reference_orders[identity] = order
+                identity = self.new_concept(order=order)
                 alloc.symbol_types.setdefault(identity, set()).update(('concept', 'class', kind))
                 alloc.settle(identity)
                 row = self._csw_concept_row(order, identity)
                 if row is None:
                     raise RuntimeError('formal argument inventory changed after preflight')
-                bank.W[row].zero_()
                 trust.allocated[row] = True
                 trust.known[row] = True
                 trust.lengths[row].zero_()
@@ -15987,10 +15964,7 @@ class ConceptualSpace(Space):
                 trust.agreement[row] = 0
                 trust.content[row].zero_()
                 if derived is not None:
-                    derived.placement[row].zero_()
                     derived.placement_witnesses[row] = 0
-                    derived.placement_derived[row] = True
-                    derived.placement_valid[row] = False
                     derived.placement_dirty[row] = True
                 registry[name] = identity
         for name in arguments:
@@ -16008,10 +15982,9 @@ class ConceptualSpace(Space):
             object.__setattr__(self, "_frozen_named", reg)
         if name in reg:
             return reg[name]
-        cid = self.new_concept()
+        cid = self.new_concept(order=0)
         # This constructor supplies a declared primitive, rather than asking
         # a row allocation to invent an order for an unwitnessed concept.
-        _concept_alloc_of(self).reference_orders[cid] = 0
         self._csw_concept_row(0, cid)
         self.freeze_concept(cid)
         reg[name] = cid
@@ -16046,26 +16019,13 @@ class ConceptualSpace(Space):
         return p
 
     def _csw_rows_of(self, concept_id):
-        """ALL global store rows of ``concept_id`` across the block
-        namespaces (legacy pool / snap / rev-2 per-order ``o<k>``), in
-        that scan order. Usually 0 or 1 entries."""
-        ly = _concept_alloc_of(self).layer(0)
-        rows = []
-        for ns in ("shared", "pool", "snap"):
-            r = ly.row_of((ns, int(concept_id)))
-            if r is not None:
-                rows.append(int(r))
-        for o in range(1, len(self._order_caps())):
-            r = ly.row_of((f"o{o}", int(concept_id)))
-            if r is not None:
-                rows.append(int(r))
-        return rows
+        """The concept's one physical row, as the existing list read expects."""
+        row = self._csw_row_of(concept_id)
+        return [] if row is None else [row]
 
     def _csw_row_of(self, concept_id):
-        """GLOBAL store row of ``concept_id`` under any block namespace
-        (snap / legacy pool / rev-2 per-order ``o<k>``), or None."""
-        rows = self._csw_rows_of(concept_id)
-        return rows[0] if rows else None
+        """The concept's one row in the shared fixed inventory, or None."""
+        return _concept_alloc_of(self).layer(0).row_of(('shared', int(concept_id)))
 
     def _bias_col(self):
         """The EVERYTHING bias column in STORE coordinates (store nOutput)."""
@@ -16210,7 +16170,7 @@ class ConceptualSpace(Space):
         raised = alloc.raised
         dropped = []
         words = self._word_definition_ids()
-        for c in list(alloc.placement):
+        for c in list(alloc.symbols):
             if c in words:
                 continue
             if int(c) in getattr(self, "_frozen_concepts", ()):
@@ -16499,7 +16459,7 @@ class ConceptualSpace(Space):
         """
         alloc = _concept_alloc_of(self)
         cid = int(concept_id)
-        if cid not in alloc.placement or cid in alloc.retired:
+        if cid not in alloc.symbols or cid in alloc.retired:
             raise ValueError("word form requires an existing concept identity")
         if isinstance(form, bytes):
             form = form.decode('utf-8', errors='surrogateescape')
@@ -16520,7 +16480,7 @@ class ConceptualSpace(Space):
             values.update((word, *index.objects(word)))
         store = self._closed_clause_store()
         return tuple(sorted(cid for cid in values if cid not in alloc.retired and
-                            (cid in alloc.placement or
+                            (cid in alloc.symbols or
                              (store is not None and store.index_of_row(cid) is not None))))
 
     def resolve_word_concept(self, form, *, order, previous=None):
@@ -17729,7 +17689,7 @@ class ConceptualSpace(Space):
             "source_count": len(parts) + len(wholes),
         }
 
-    def record_concept_fold_support(self, concept_id, support, actual_order):
+    def record_concept_fold_support(self, concept_id, support):
         """Persist one concept's ordered native-fold derivation.
 
         Event carriers already retain this provenance for reverse/autograd.
@@ -17772,10 +17732,7 @@ class ConceptualSpace(Space):
         if records is None:
             records = {}
             object.__setattr__(self, "_concept_fold_support", records)
-        records[int(concept_id)] = {
-            "actual_order": int(actual_order),
-            "support": normalized,
-        }
+        records[int(concept_id)] = {"support": normalized}
         return records[int(concept_id)]
 
     def concept_fold_support(self, concept_id):
@@ -18636,6 +18593,10 @@ class ConceptualSpace(Space):
 
         fold_blob = extras.get("concept_fold_support")
         if isinstance(fold_blob, dict):
+            if any(isinstance(record, dict) and 'actual_order' in record
+                   for record in fold_blob.values()):
+                import warnings
+                warnings.warn('checkpoint: retired fold order stamp; concept order reads its row block')
             restored = {}
             for cid, record in fold_blob.items():
                 if not isinstance(record, dict):
@@ -18644,8 +18605,7 @@ class ConceptualSpace(Space):
                 if not isinstance(support, dict):
                     continue
                 normalized = ConceptualSpace.record_concept_fold_support(
-                    self, int(cid), support,
-                    int(record.get("actual_order", -1)))
+                    self, int(cid), support)
                 restored[int(cid)] = normalized
 
         legacy_keys = {'taxonomy', 'taxonomy_parent', 'meta_pair_to_idx', 'meta_trust',

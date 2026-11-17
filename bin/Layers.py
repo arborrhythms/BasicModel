@@ -1159,7 +1159,7 @@ class InvertibleLinearLayer(ErgodicLayer):
 
         When a caller has stashed a per-call ``_current_gate`` (a ``[rank]``
         tensor of bounded multipliers, by convention in ``[-1, 1]`` via a
-        tanh reparam owned by the caller -- see LiftLayer / LowerLayer),
+        tanh reparam owned by the caller -- see ChangeLayer / LowerLayer),
         d is multiplied by it before the stable-clamp so the existing
         clamp bounds the gated value. With ``gate=None`` (default), this
         is a no-op and the layer behaves identically to its un-gated
@@ -1476,7 +1476,7 @@ class InvertibleLinearLayer(ErgodicLayer):
           naive=False: sequential triangular solves.
 
         ``gate``: optional ``[rank]`` tensor multiplied into the diagonal
-        ``d`` before the stable-clamp. Used by rule layers (LiftLayer /
+        ``d`` before the stable-clamp. Used by rule layers (ChangeLayer /
         LowerLayer) to select a low-rank slice of the operator. With
         ``gate=None`` (default), behavior is unchanged from the un-gated
         baseline.
@@ -2487,7 +2487,9 @@ class GrammarLayer(Layer):
         return torch.cat((value[...,:start],torch.zeros_like(value[...,start:end]),value[...,end:]),-1)
     meaning_rule = None
     meaning_head_role = 0
+    meaning_inverse = False
     determiner_mode = None
+    order_delta = 0
     reference_modes = ()
     thought_predicate_identity = None
     substrate = False
@@ -2519,13 +2521,18 @@ class GrammarLayer(Layer):
         elif callable(getattr(self, 'compose_case_meaning', None)):
             meaning = self.compose_case_meaning(*meanings, view=kwargs.get('case_view'))
         elif getattr(self, 'meaning_action', None) is not None:
-            context = {} if action_context is None or self.rule_name == 'adverb' else dict(action_context)
+            context = {} if action_context is None or self.rule_name == 'modifier' else dict(action_context)
             if context.get('object_value') is not None:
                 context['object_value'] = context['object_value'][..., form_width:]
             meaning = self.meaning_action(meanings[0], meanings[1], **context)
+        elif getattr(self, 'meaning_basis', None) is not None:
+            # Its OBJECT reference carries the basis source. The phrase's
+            # gain remains the verb's meaning, without an extra LaneKernel.
+            meaning = meanings[0]
         elif getattr(self, 'meaning_kernel', None) is not None:
             head = self.meaning_head_role
-            meaning = self.meaning_kernel(meanings[head], None if len(meanings) == 1 else meanings[1-head])
+            meaning = self.meaning_kernel(meanings[head], None if len(meanings) == 1 else meanings[1-head],
+                                          inverse=self.meaning_inverse)
         else:
             meaning = meanings[self.meaning_head_role]
         return assert_cube(torch.cat((form, meaning), -1))
@@ -2550,6 +2557,10 @@ class GrammarLayer(Layer):
             if reference_right != (self.meaning_head_role == 0):
                 self.raise_no_inverse('a head kernel requires the other operand')
             meaning = self.meaning_kernel(parent[..., form_width:], reference[..., form_width:], inverse=True)
+        elif getattr(self, 'meaning_basis', None) is not None:
+            if not reference_right:
+                self.raise_no_inverse('a phrase basis requires its object as the known operand')
+            meaning = assert_cube(parent[..., form_width:])
         elif self.meaning_rule == 'sum':
             meaning = parent[..., form_width:] * 2 - reference[..., form_width:]
         else:
@@ -2666,16 +2677,20 @@ class GrammarLayer(Layer):
             if code_width > form_width and nInput in (0, code_width):
                 self.meaning_layout = (form_width, code_width)
                 width = code_width - form_width
-                if self.rule_name in ('lift', 'adverb'):
+                if self.rule_name in ('change', 'modifier'):
                     from MeaningKernels import MeaningAction
                     self.meaning_action = MeaningAction(width,
                         capacity=int(TheXMLConfig.space('ConceptualSpace', 'verbGroups', 24)),
                         reflections=int(TheXMLConfig.space('ConceptualSpace', 'verbBasisReflections', 4)),
                         fit=float(TheXMLConfig.space('ConceptualSpace', 'verbGroupFit', .1)),
-                        modifier=self.rule_name == 'adverb')
+                        modifier=self.rule_name == 'modifier')
+                elif self.rule_name == 'verb':
+                    from MeaningKernels import MeaningBasis
+                    self.meaning_basis = MeaningBasis(width,
+                        reflections=int(TheXMLConfig.space('ConceptualSpace', 'verbBasisReflections', 4)))
                 elif (self.rule_name and self.meaning_rule is None and
-                      self.rule_name not in ('interpret', 'bind', 'transpose', 'divide', 'descend',
-                                             'gloss', 'and', 'or')):
+                      self.rule_name not in ('interpret', 'bind', 'swap', 'focus',
+                                             'mint', 'and', 'or', 'marker')):
                     from MeaningKernels import LaneKernel
                     self.meaning_kernel = LaneKernel(width)
         # -- Butterfly cascade state (Stage 5, 2026-05-27 revision) --
@@ -3140,7 +3155,7 @@ class GrammarLayer(Layer):
 
 
 class SigmaLayer(GrammarLayer):
-    """Additive chart map used by the grammar's LiftLayer.
+    """Additive chart map used by the grammar's ChangeLayer.
 
     Lift owns the operand assembly and dispatch. Perceptual towers use
     their native meronomies; they do not own this fold.
@@ -3295,7 +3310,7 @@ class SigmaLayer(GrammarLayer):
 
         ``gate`` (optional): per-call ``[rank]`` tensor passed through
         to the inner ``InvertibleLinearLayer`` as a multiplicative gate
-        on its diagonal. Used by rule layers (LiftLayer / LowerLayer)
+        on its diagonal. Used by rule layers (ChangeLayer / LowerLayer)
         to select a low-rank slice of the operator. The gating lives
         inside the LDU layer; SigmaLayer just passes it through.
 
@@ -3368,7 +3383,7 @@ class SigmaLayer(GrammarLayer):
         Args:
             left, right: ``[..., D]`` in [-1, 1].
             gate: optional per-call ``[rank]`` multiplier on the inner
-                LDU's diagonal (used by LiftLayer for low-rank slicing).
+                LDU's diagonal (used by ChangeLayer for low-rank slicing).
 
         Returns:
             ``[..., nOutput]`` in [-1, 1].
@@ -3771,7 +3786,7 @@ class NegationLayer(Layer):
 
 # UnionLayer (ex-UnionLayer; lattice max) -- moved to Language.py (2026-05-29 §5;
 # renamed 2026-07-05: 'union' is now the additive concept op).
-# LiftLayer -- moved to Language.py (2026-05-29 grammar-file-refactor §5).
+# ChangeLayer -- moved to Language.py (2026-05-29 grammar-file-refactor §5).
 
 
 # LowerLayer -- moved to Language.py (2026-05-29 grammar-file-refactor §5).
@@ -3937,7 +3952,7 @@ def isa_part_op(child, parent, sigma=None):
 # query / absorb) have lossy reverse paths -- the pseudo-inverse
 # `(parent, parent)` or a pole projection -- so a leaf whose path
 # includes any of them carries degraded contiguity information.
-CONTIGUITY_PRESERVING_OPS = frozenset({'pi', 'sigma', 'lift', 'lower', 'not', 'non'})
+CONTIGUITY_PRESERVING_OPS = frozenset({'pi', 'sigma', 'change', 'lower', 'not', 'non'})
 
 
 class ConceptsFromPercepts(Layer):
@@ -4484,7 +4499,7 @@ class PiLayer(GrammarLayer):
         ``gate`` (optional): per-call ``[rank]`` tensor stashed on
         ``self.layer._current_gate`` so that ``compute_W_current``
         -> ``_d_effective`` picks it up. Used by rule layers
-        (LiftLayer / LowerLayer) for low-rank operator slicing.
+        (ChangeLayer / LowerLayer) for low-rank operator slicing.
 
         Butterfly mode: wrap the FFT-style element-pair cascade with
         the pi log-domain transforms (``_to_mult`` / log / cascade /
@@ -5148,10 +5163,10 @@ class SparseLayer(Layer):
                                 migrated[name] = value
                         leaf.state[new] = migrated
             if not owned and new is not None:
-                # These definition weights join the ordinary dense group
-                # when getOptimizer sees them at construction. Keep that
-                # layout when their first edge is admitted after construction.
-                leaves[0].param_groups[0]['params'].append(new)
+                # A first edge has the same objective owner as an edge
+                # present at construction. MultiOptimizer routes it to
+                # that owner's family, rather than the first (Adam) child.
+                optimizer.add_param_group({'params': [new]})
         if old is not None and old.requires_grad:
             def relay(gradient):
                 live = self.values
@@ -5669,10 +5684,6 @@ class ConceptualAttentionLayer(SparseLayer):
         """Register ``key`` in the record store (empty record list)."""
         self._constituents.setdefault(int(key), [])
 
-    def pop_row_key(self, key):
-        """Remove ``key`` + its records (retire)."""
-        self._record_revision = getattr(self, '_record_revision', 0) + 1
-        return self._constituents.pop(int(key), None)
 
     def constituents(self, key):
         """The ordered ``[(role, ref), ...]`` records of ``key`` (copy)."""
@@ -5847,7 +5858,7 @@ class ConceptAllocator:
     def __init__(self, layer_sizer=None, order_cap=None, *, member_capacity=8192, member_width=0, relation_capacity=8192):
         self.next_id = 1                 # 0 reserved
         self.reclaimed_seats = 0         # capacity credits, never recycled handles
-        self.placement = {}              # cid -> derived order (bookkeeping)
+        self.symbols = {}                # insertion-ordered handles; no stored order
         self.raised = set()              # σ-raised: never re-refined
         self.singletons = set()          # unit-set rows (min-support exempt)
         count = TheXMLConfig.space('ConceptualSpace', 'raiseCount', 3)
@@ -5862,7 +5873,7 @@ class ConceptAllocator:
         self.word_forms = {}             # surface -> set of persistent concept ids
         self.operator_concepts = {}
         self.formal_arguments = {}       # declared argument -> ordinary higher-order concept
-        self.reference_orders = {}       # grammar-resolved object order
+        self.order_from_row = None       # construction-owned physical block read
         self.testimony_seen = {}         # object id -> first two distinct occurrences
         self.testimony_current = {}      # deduplication within this observation boundary
         from Memory import LTM1
@@ -5928,7 +5939,7 @@ class ConceptAllocator:
 
     def _part_handle_reserved(self, cid):
         """An expired relation handle can still name an independent symbol."""
-        if cid in self.reference_orders or self.symbol_types.get(cid) or self.store_of(cid).constituents(cid):
+        if self.seated_order(cid) is not None or self.symbol_types.get(cid) or self.store_of(cid).constituents(cid):
             return True
         for layer in self._layers.values():
             if any(key == cid or isinstance(key, tuple) and key[-1] == cid for key in layer._tensor_rows):
@@ -5957,7 +5968,7 @@ class ConceptAllocator:
         """Allocate a fresh global concept id (stable handle, no vector)."""
         cid = int(self.next_id)
         self.next_id = cid + 1
-        self.placement[cid] = 0
+        self.symbols[cid] = None
         self.layer(0).ensure_row_key(cid)
         return cid
 
@@ -5967,14 +5978,14 @@ class ConceptAllocator:
         cid = int(cid)
         if cid == NULL_CONCEPT:
             raise ValueError('the null-concept is outside the definition inventory')
-        if cid not in self.placement:
-            self.placement[cid] = 0
+        if cid not in self.symbols:
+            self.symbols[cid] = None
             self.layer(0).ensure_row_key(cid)
         return cid
 
     def store_of(self, cid):
         """The layer currently holding ``cid``'s records."""
-        return self.layer(self.placement.get(int(cid), 0))
+        return self.layer()
 
     def class_member(self, member, whole):
         """Read a class membership from tagged referents and their recorded orders."""
@@ -5984,8 +5995,12 @@ class ConceptAllocator:
             return False
         if member[0] != self.parts.SYMBOL or whole[0] != self.parts.SYMBOL:
             return True
-        lower, upper = (self.reference_orders.get(ref[1]) for ref in (member, whole))
+        lower, upper = (self.seated_order(ref[1]) for ref in (member, whole))
         return lower is None or upper is None or lower + 1 == upper
+
+    def seated_order(self, cid):
+        """The physical block's order, or None before a concept has a row."""
+        return None if cid is None or self.order_from_row is None else self.order_from_row(int(cid))
 
     def records(self, cid):
         from Memory import NULL_CONCEPT
@@ -6056,8 +6071,9 @@ class ConceptAllocator:
             raise ValueError('the null-concept has no order')
         if cid <= 0:
             return -1  # Padding and unavailable references have no witness.
-        if cid in self.reference_orders:
-            return self.reference_orders[cid]
+        seated = self.seated_order(cid)
+        if seated is not None:
+            return seated
         _seen = set() if _seen is None else set(_seen)
         if cid in _seen:
             return -1  # A cycle supplies no finite order witness.
@@ -6073,9 +6089,7 @@ class ConceptAllocator:
             if getattr(self, '_percept_revision', None) != revision:
                 self._percept_rows = set(features._rows)
                 self._percept_revision = revision
-            keys = [('snap', cid), ('pool', cid), ('shared', cid), cid]
-            keys.extend((f'o{order}', cid) for order in range(1, self.cap()+1))
-            if any(layer.row_of(key) in self._percept_rows for key in keys):
+            if layer.row_of(('shared', cid)) in self._percept_rows:
                 return 0
         return 0 if cid in self.identity else -1
 
@@ -6087,10 +6101,10 @@ class ConceptAllocator:
             return None
         cid = self.touch(cid)
         expected, structural = self._part_order(cid, {cid})
-        if structural and cid in self.reference_orders and self.reference_orders[cid] != expected:
+        seated = self.seated_order(cid)
+        if structural and seated is not None and seated != expected:
             raise ValueError('recorded concept order disagrees with its parts')
         new = self.order_of(cid)
-        self.placement[cid] = new
         return new
 
     def add(self, cid, role, ref):
@@ -6125,29 +6139,6 @@ class ConceptAllocator:
         self.parts.remove_symbol(cid)
         self.settle(cid)
 
-    def drop(self, cid):
-        """Retire: remove records + registry entry (tensor rows persist --
-        row assignments are permanent in the shared layer) and clear
-        idempotency-cache entries pointing at ``cid``."""
-        from Memory import NULL_CONCEPT
-        cid = int(cid)
-        if cid == NULL_CONCEPT:
-            return
-        o = self.placement.pop(cid, None)
-        if o is not None:
-            self.layer(o).pop_row_key(cid)
-        self.retired.add(cid)
-        for ids in self.word_forms.values():
-            ids.discard(cid)
-        for k in [k for k, v in self.relate_idx.items()
-                  if v == cid or k == ('part-base', cid)]:
-            self.relate_idx.pop(k, None)
-        self.parts.remove_symbol(cid)
-        self.symbol_types.pop(cid, None)
-        self.word_descriptions.pop(cid, None)
-        self.named_identities.pop(cid, None)
-        for objects in self.named_identities.values():
-            objects.discard(cid)
 
 
 class MeronymicFoldAdapter(Layer):
@@ -9287,6 +9278,7 @@ class SymbolExpectation(Layer):
         self.register_buffer('_bank_ids', torch.empty(0, dtype=torch.long), persistent=False)
         self.register_buffer('_bank_addresses', torch.empty(0, dtype=torch.long), persistent=False)
         self.register_buffer('_bank_orders', torch.empty(0, dtype=torch.long), persistent=False)
+        self._bank_order_count = 1
         self._batch = 0
         self.ensure_batch(batch)
         self.reset_expectation_metrics()
@@ -9304,6 +9296,10 @@ class SymbolExpectation(Layer):
         self._bank_orders = (torch.zeros(len(keys), device=keys.device, dtype=torch.long) if orders is None else orders.detach().clone())
         if any(value.shape != (len(keys),) for value in (self._bank_ids, self._bank_orders, self._bank_addresses)):
             raise ValueError('symbol identities and orders must align with the bank')
+        owner_ref = getattr(self._ltm_store, '_concept_owner', None)
+        owner = None if owner_ref is None else owner_ref()
+        self._bank_order_count = (len(owner._order_caps()) if owner is not None else
+                                 max(1, int(self._bank_orders.max())+1) if len(keys) else 1)
 
     def expect(self, level, *args, **kwargs):
         if level not in self.levels or level not in self.enabled_levels:
@@ -9358,13 +9354,14 @@ class SymbolExpectation(Layer):
         self._inter_context_occurrences[b].clear()
         self._inter_last_meaning[b] = None
 
-    def _prediction_inputs(self, inputs):
+    def _prediction_inputs(self, inputs, *, orders=None):
         from RowTime import encoder, relative_to
         keys, context, activation = (value.detach() for value in inputs[:3])
         store = self._ltm_store
         start = None if store is None else store.when_start
+        orders = (self._bank_orders if orders is None else orders) if context.ndim == 3 else None
         if start is None:
-            return keys, context, activation
+            return (keys, context, activation) if orders is None else (keys, context, activation, None, orders)
         present = getattr(store, '_model_present', None)
         now = (inputs[3].detach() if len(inputs) == 4 else
                encoder().encode(int(store.model_clock) if present is None else int(present()))
@@ -9373,15 +9370,14 @@ class SymbolExpectation(Layer):
             return torch.cat((value[..., :start],
                 relative_to(value[..., start:start+4], now), value[..., start+4:]), -1)
         recent_age = relative_to(context[..., self.concept_dim+start:self.concept_dim+start+4], now)
-        context = relative(context.reshape(len(context), 2, self.concept_dim)).flatten(1)
-        return relative(keys), context, activation, recent_age
+        context = relative(context.reshape(*context.shape[:-1], 2, self.concept_dim)).flatten(-2)
+        return relative(keys), context, activation, recent_age, orders
 
     def _bank_inputs(self, chain, lanes=None, identities=None):
         from Expectation import ActivationPredictor, symbol_activations
         parameter = next(self._inter_predictor.parameters())
         values = torch.stack([roles.to(parameter) for _, roles, _ in chain])[None]
         occupied = torch.stack([mask.to(parameter.device) for _, _, mask in chain])[None]
-        context = ActivationPredictor.context_from(values, occupied)
         keys, ids, orders = self._bank_keys.to(parameter), self._bank_ids, self._bank_orders
         lane_values = (None if lanes is None else torch.stack([
             roles.new_tensor((1., 0.) if pair is None else pair).expand(3, 2)
@@ -9389,12 +9385,19 @@ class SymbolExpectation(Layer):
         handles = None if identities is None else torch.stack([
             torch.full((3,), -1, device=keys.device, dtype=torch.long) if value is None else value.to(keys.device)
             for value in identities])[None].flatten(1)
+        value_orders = torch.full_like(occupied, -1, dtype=torch.long)
+        if self._bank_order_count == 1:
+            value_orders.zero_()
+        elif handles is not None and len(ids):
+            matches = (handles[..., None] == ids.to(handles)[None, None]) & (handles[..., None] >= 0)
+            value_orders = torch.where(matches.any(-1), orders.to(handles)[matches.long().argmax(-1)], -1).reshape_as(occupied)
+        context = ActivationPredictor.context_by_order(values, occupied, value_orders, self._bank_order_count)
         activation = symbol_activations(keys[None], values.flatten(1, 2), occupied.flatten(1), lane_values,
-            identities=handles, bank_ids=ids)
+            identities=handles, bank_ids=ids, key_orders=orders)
         return (keys[None], context, activation), ids, orders
 
     def _prediction(self, inputs, ids, orders, *, bindings=(), scope=()):
-        logits = self._inter_predictor(*self._prediction_inputs(inputs))[0]
+        logits = self._inter_predictor(*self._prediction_inputs(inputs, orders=orders))[0]
         keys = inputs[0][0].detach()
         if not bool(torch.isfinite(logits).all()):
             raise FloatingPointError('non-finite symbol activation prediction')
@@ -9477,13 +9480,13 @@ class SymbolExpectation(Layer):
         return symbol_activations(prediction.symbol_keys[None], roles.detach()[None],
                                   occupied[None], None if lanes is None else lanes[None],
                                   identities=None if identities is None else identities[None],
-                                  bank_ids=prediction.symbol_ids)[0]
+                                  bank_ids=prediction.symbol_ids, key_orders=prediction.symbol_orders)[0]
 
     def _score(self, pending, roles, occupied, errors, *, row=None, evidence=None, identities=None):
         prediction = pending.prediction
         lanes = None if evidence is None else roles.new_tensor(evidence).expand(3, 2)
         target = self._activation_target(prediction, roles, occupied, lanes, identities)
-        logits = self._inter_predictor(*self._prediction_inputs(pending.inputs))[0]
+        logits = self._inter_predictor(*self._prediction_inputs(pending.inputs, orders=prediction.symbol_orders))[0]
         from Meaning import withheld_symbols
         withheld = withheld_symbols(prediction, prediction)
         residual = (logits.sigmoid() - target) * (1.-withheld[:, None])
@@ -15746,9 +15749,9 @@ _MOVED_TO_LANGUAGE = frozenset({
     'ChunkLayer',
     'SumLayer',
     'ProductLayer',
-    'LiftLayer',
+    'ChangeLayer',
     'VerbLayer',
-    'AdverbLayer',
+    'ModifierLayer',
     'LowerLayer',
     'ConjunctionLayer',
     'DisjunctionLayer',

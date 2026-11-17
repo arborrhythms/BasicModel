@@ -1168,6 +1168,22 @@ generation is expected at this stage and is recorded, not tuned away.
    a gradient and was never stepped); the lesson arm watches the float32
    optimizer peaks that the whole-path lessons showed on the chooser's
    `what_projection.weight`.
+   **Order, amended (Alec, 2026-11-16):** round C is reviewed and
+   committed; the `performance` branch is merged; the rest of this item
+   follows (the sentence as one block, then the teacher of the walk of
+   attention); the work is pushed; then item 1.7, which was round D
+   (specification §43).
+- **1.7. `SigmaLayer` and `PiLayer`, and symbols split from concepts**
+   (Alec, 2026-11-16: "I think we should position D as item 1.7"; then
+   "review and commit round C, and merge with the performance branch. Then
+   do everything else in 1.8", and "(and push before moving on to 1.7)").
+   Round D of item 1.8 becomes this item, built after item 1.8 is finished
+   and pushed: [specification](doc/plans/2026-11-14-sigma-pi-layers.md) §18,
+   with §18.22 and §18.23 (symbols without dimensions, split from
+   concepts). Not yet written there: the discussion of the same night
+   (flattened percept vectors read by one template per concept, one Sigma
+   and Pi form at every order, an event axis for symbols, binding a letter
+   to its place).
 - **1.5. Lookups as one matmul, whole/part folds as scatters, the percept
    pass per sentence** (Alec, 2026-10-30). Before item 1, so the
    compiler work compiles what this builds under `fullgraph`, and before

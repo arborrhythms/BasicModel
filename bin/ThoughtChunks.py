@@ -41,12 +41,35 @@ def held(stm, row):
     """Enumerating a menu neither reads nor retains an evicted chunk."""
     state = stm.state
     result = []
-    for when, view in (item for item in stm._thought_contents[row] if item is not None):
-        index = int(chunks.locate(state, when, band=chunks.WHEN)[row])
-        if index >= 0:
+    for index, item in enumerate(stm._thought_contents[row]):
+        if item is None:
+            continue
+        when, view = item
+        stamp = state[chunks.WHEN].new_tensor(when)
+        if bool(state[chunks.READ][row, index] > 0) and torch.equal(state[chunks.WHEN][row, index], stamp):
             meaning = view.read()
             result.append((when, with_slots(meaning, open_slots(meaning),
                 pair=state[chunks.TRUTH][row, index].tolist())))
+    return tuple(result)
+
+
+def recalled(stm, row):
+    """Recalled records are read from their live slot, never the trace copy."""
+    result = []
+    for when, meaning in held(stm, row):
+        data = bindings(meaning)
+        occurrence = data.get('_rule_row')
+        if data.get('_evidence_kind') != 'retrieval' or occurrence is None:
+            continue
+        kind = data.get('_rule_kind')
+        readings = ('equality',) if kind == 'equal' else ('conditional',) if kind == 'implies' else ('part',)
+        result.append(dict(occurrence=occurrence, meaning=meaning,
+            evidence=evidence_pair(meaning), trust=evidence_pair(meaning)[0]-evidence_pair(meaning)[1],
+            time=meaning.roles.new_tensor(when),
+            refs=tuple(meaning.role_refs[slot] for slot in (0, 2)
+                       if meaning.role_refs[slot] is not None),
+            readings=readings, temporal_witnesses=tuple(ref for ref in
+                data.get('_thought_witnesses', ()) if ref != occurrence)))
     return tuple(result)
 
 
@@ -91,16 +114,22 @@ def put(stm, meaning, when=None, row=0, *, pin=False, existing=False):
             where=(-1.,) * 4, when=when, truth=pair, stack=pin)
         if int(index[row]) < 0:
             raise OverflowError('thought focus cannot exceed the constructed STM capacity')
+    meaning = retain(stm, meaning, when, row, int(index[row]), pair=pair)
+    stm.set_state(state)
+    return meaning
+
+
+def retain(stm, meaning, when, row, index, *, pair):
+    """Keep the semantic view at a deposited slot's existing time and address."""
     data = bindings(meaning)
     data['_chunk_when'] = tuple(when)
     meaning = with_slots(replace(meaning, bindings=data), open_slots(meaning), pair=pair)
     rows = list(stm._thought_contents)
     contents = list(rows[row])
     from ThoughtStrata import write
-    contents[int(index[row])] = (tuple(when), write(stm._thought_stores[row][int(index[row])], meaning, key=when))
+    contents[index] = (tuple(when), write(stm._thought_stores[row][index], meaning, key=when))
     rows[row] = tuple(contents)
     stm._thought_contents = tuple(rows)
-    stm.set_state(state)
     return meaning
 
 
@@ -108,6 +137,11 @@ def begin(memory, meaning, row):
     stm = getattr(memory, '_thought_stm', None)
     if stm is None:
         return None
+    # The incoming request has selected these resident operands. Read them
+    # before allocating its focus, which can replace the least-recently read.
+    for reference in dict.fromkeys(meaning.role_refs):
+        if reference is not None and reference[0] == 'chunk':
+            read(stm, reference[1], row)
     return bindings(put(stm, meaning, row=row, pin=True))['_chunk_when']
 
 
@@ -165,25 +199,7 @@ def stage(memory, result, row):
     evidence = dict(result.evidence)
     data = bindings(value)
     data['_evidence_kind'] = result.evidence_kind
-    frames = evidence.get('frames', ())
-    if result.semantic_id in ('query', 'ask') and frames:
-        previous = read(context.stm, context.focus_when, row)
-        if (previous.role_refs != value.role_refs
-                and not any(item.role_refs == previous.role_refs for other_when, item in held(context.stm, row)
-                            if other_when != context.focus_when)):
-            put(context.stm, previous, row=row)
-        frame = frames[0]
-        data['_rule_row'] = frame['occurrence']
-        readings = frame.get('readings', ())
-        requested = (bindings(result.request.constituents[0]).get('_query_relation')
-                     if result.request.constituents else None)
-        data['_rule_kind'] = (requested if requested in ('part', 'equal', 'implies') else
-            'equal' if 'equality' in readings else 'implies' if 'conditional' in readings else 'part')
-        value = replace(value, bindings=data)
-        value = put(context.stm, value, row=row)
-        _write_serial(context, value)
-    else:
-        value = _write_serial(context, replace(value, bindings=data))
+    value = _write_serial(context, replace(value, bindings=data))
     evidence['meaning'] = value
     evidence['support_true'], evidence['support_false'] = evidence_pair(value)
     if result.semantic_id == 'infer' and ('derivation' in evidence or 'intuition_derivation' in evidence):

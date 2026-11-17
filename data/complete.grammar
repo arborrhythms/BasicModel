@@ -88,14 +88,13 @@
     <start name="absolute_truth">S</start>
     <start name="relative_truth">part_argout1</start>
     <start name="relative_truth">whole_argout1</start>
-    <start name="relative_truth">equal_argout1</start>
+    <!-- §27.1: <start name="relative_truth">equal_argout1</start> -->
     <start name="relative_truth">implies_argout1</start>
 
     <compose>
       <!-- Typed attention candidates; no predefined surface or generate face. -->
-      <rule operands="field">F = divide.forward(F)</rule>
-      <rule operands="field">F = descend.forward(F)</rule>
-      <rule operands="field">F = gloss.forward(F)</rule>
+      <rule operands="field">F = focus.forward(F)</rule>
+      <rule operands="field">F = mint.forward(F)</rule>
       <rule operands="field">F = intersection.forward(F)</rule>
       <rule operands="field">F = union.forward(F)</rule>
 
@@ -109,7 +108,7 @@
            part; composition itself never establishes a fact. -->
       <rule>part_argout1 = part.forward(part_argin1, part_argin2)</rule>
       <rule family="part" permutation="argin2,argin1">whole_argout1 = whole.forward(whole_argin1, whole_argin2)</rule>
-      <rule>equal_argout1 = equal.forward(equal_argin1, equal_argin2)</rule>
+      <!-- §27.1: <rule>equal_argout1 = equal.forward(equal_argin1, equal_argin2)</rule> -->
       <rule clause="implies">implies_argout1 = implies.forward(implies_argin1, implies_argin2)</rule>
 
       <!-- Pure existence composition. The numerical wrapper roots the
@@ -117,7 +116,7 @@
            face checks the full description's referent against accepted facts;
            merely composing it cannot establish truth. -->
 
-      <rule reference="argin1" head="argin1">generic_argout1 = generic.forward(generic_argin1)</rule>
+      <!-- §27.1: <rule reference="argin1" head="argin1">generic_argout1 = generic.forward(generic_argin1)</rule> -->
 
 
       <!-- Boundary-capable thought operations still have ordinary structural
@@ -142,28 +141,33 @@
            Disjunction combines magnitudes a+b-ab and normalizes x+y-x*y.
            The reverse uses the
            codebook recommender (Ops._binary_op_recommend). -->
-      <rule>conjunction_argout1 = conjunction.forward(conjunction_argin1, conjunction_argin2)</rule>
-      <rule>disjunction_argout1 = disjunction.forward(disjunction_argin1, disjunction_argin2)</rule>
+      <!-- §27.1: <rule>conjunction_argout1 = conjunction.forward(conjunction_argin1, conjunction_argin2)</rule> -->
+      <!-- §27.1: <rule>disjunction_argout1 = disjunction.forward(disjunction_argin1, disjunction_argin2)</rule> -->
       <rule>intersection_argout1 = intersection.forward(intersection_argin1, intersection_argin2)</rule>
       <rule>union_argout1 = union.forward(union_argin1, union_argin2)</rule>
 
       <!-- Arithmetic concept ops: sum is the mean (a+b)/2 and the additive
            composition control; product is a*b. Structural chunk still adds.
            Difference is retired (sum of a negated operand). -->
-      <rule>sum_argout1 = sum.forward(sum_argin1, sum_argin2)</rule>
-      <rule>product_argout1 = product.forward(product_argin1, product_argin2)</rule>
+      <!-- §27.1: <rule>sum_argout1 = sum.forward(sum_argin1, sum_argin2)</rule> -->
+      <!-- §27.1: <rule>product_argout1 = product.forward(product_argin1, product_argin2)</rule> -->
 
-      <!-- Composition / projection. verb = VP spectral operator; adverb =
+      <!-- Composition / projection. verb = VP spectral operator; modifier =
            VP eigenmodifier; lift composes the sentence at its subject order;
            lower = DET: mint, bind an address, or retain the kind. -->
-      <rule clause="S">lift_argout1 = lift.forward(lift_argin1, lift_argin2)</rule>
+      <rule clause="S">change_argout1 = change.forward(change_argin1, change_argin2)</rule>
+      <rule>lift_argout1 = lift.forward(lift_argin1)</rule>
+      <rule>add_argout1 = add.forward(add_argin1, add_argin2)</rule>
+      <rule>subtract_argout1 = subtract.forward(subtract_argin1, subtract_argin2)</rule>
+      <rule>multiply_argout1 = multiply.forward(multiply_argin1, multiply_argin2)</rule>
+      <rule>divide_argout1 = divide.forward(divide_argin1, divide_argin2)</rule>
       <rule clause="VP">verb_argout1 = verb.forward(verb_argin1, verb_argin2)</rule>
       <rule>compound_argout1 = compound.forward(compound_argin1, compound_argin2)</rule>
-      <rule>adverb_argout1 = adverb.forward(adverb_argin1, adverb_argin2)</rule>
-      <rule reference="argin2" head="argin2" referent="mint">lower_argout1 = lower.forward(lower_argin1, lower_argin2)</rule>
-      <rule implementation="lower" reference="argin2" head="argin2" referent="bind">definite_argout1 = definite.forward(definite_argin1, definite_argin2)</rule>
-      <rule implementation="lower" reference="argin2" head="argin2" referent="kind">universal_argout1 = universal.forward(universal_argin1, universal_argin2)</rule>
-      <rule implementation="lower" reference="argin2" head="argin2" referent="kind">some_argout1 = some.forward(some_argin1, some_argin2)</rule>
+      <rule>modifier_argout1 = modifier.forward(modifier_argin1, modifier_argin2)</rule>
+      <!-- §27.1: <rule reference="argin2" head="argin2">lower_argout1 = lower.forward(lower_argin1, lower_argin2)</rule> -->
+      <!-- §27.1: <rule implementation="lower" reference="argin2" head="argin2">definite_argout1 = definite.forward(definite_argin1, definite_argin2)</rule> -->
+      <!-- §27.1: <rule implementation="lower" reference="argin2" head="argin2">universal_argout1 = universal.forward(universal_argin1, universal_argin2)</rule> -->
+      <!-- §27.1: <rule implementation="lower" reference="argin2" head="argin2">some_argout1 = some.forward(some_argin1, some_argin2)</rule> -->
 
       <!-- Preposition (PP): refines the NP or VP via a .where relation. -->
       <rule>preposition_argout1 = preposition.forward(preposition_argin1, preposition_argin2)</rule>
@@ -172,12 +176,12 @@
            meaning while retaining both operands in the numerical carrier.
            Which spans are markers is learned by the ordinary grammar MLP. -->
       <rule head="argin2">surface_argout1 = surface.forward(surface_argin1, surface_argin2)</rule>
-      <rule>transpose_argout1, transpose_argout2 = transpose.forward(transpose_argin1, transpose_argin2)</rule>
-      <rule>lower_unary_argout1 = lower_unary.forward(lower_unary_argin1)</rule>
-      <rule>definite_unary_argout1 = definite_unary.forward(definite_unary_argin1)</rule>
-      <rule>preposition_unary_argout1 = preposition_unary.forward(preposition_unary_argin1)</rule>
-      <rule>surface_unary_argout1 = surface_unary.forward(surface_unary_argin1)</rule>
-      <rule>compound_unary_argout1 = compound_unary.forward(compound_unary_argin1)</rule>
+      <rule>swap_argout1, swap_argout2 = swap.forward(swap_argin1, swap_argin2)</rule>
+      <rule implementation="lower_unary">lower_argout1 = lower.forward(lower_argin1)</rule>
+      <!-- §27.1: <rule>definite_unary_argout1 = definite_unary.forward(definite_unary_argin1)</rule> -->
+      <!-- §27.1: <rule>preposition_unary_argout1 = preposition_unary.forward(preposition_unary_argin1)</rule> -->
+      <!-- §27.1: <rule>surface_unary_argout1 = surface_unary.forward(surface_unary_argin1)</rule> -->
+      <rule>marker_argout1 = marker.forward(marker_argin1)</rule>
       <rule head="argin1">bind_argout1 = bind.forward(bind_argin1, bind_argin2)</rule>
     </compose>
 
@@ -190,29 +194,32 @@
       <rule>query_argout1 = query.thought(query_argin1)</rule>
       <rule>part_argout1 = part.thought(part_argin1, part_argin2)</rule>
       <rule family="part" permutation="argin2,argin1">whole_argout1 = whole.thought(whole_argin1, whole_argin2)</rule>
-      <rule>equal_argout1 = equal.thought(equal_argin1, equal_argin2)</rule>
+      <!-- §27.1: <rule>equal_argout1 = equal.thought(equal_argin1, equal_argin2)</rule> -->
       <rule>not_argout1 = not.thought(not_argin1)</rule>
+      <rule>non_argout1 = non.thought(non_argin1)</rule>
       <rule>bind_argout1 = bind.thought(bind_argin1)</rule>
       <rule>isTrue_argout1 = isTrue.thought(isTrue_argin1)</rule>
       <rule>exist_argout1 = exist.thought(exist_argin1)</rule>
       <rule>isPart_argout1 = isPart.thought(isPart_argin1, isPart_argin2)</rule>
+      <rule family="isPart" permutation="argin2,argin1">isWhole_argout1 = isWhole.thought(isWhole_argin1, isWhole_argin2)</rule>
+      <rule predicate="operation:define">define_argout1 = define.thought(define_argin1, define_argin2)</rule>
       <rule>isEqual_argout1 = isEqual.thought(isEqual_argin1, isEqual_argin2)</rule>
       <rule>infer_argout1 = infer.thought(infer_argin1, infer_argin2)</rule>
       <rule family="infer" permutation="argin2,argin1">inferBackward_argout1 = inferBackward.thought(inferBackward_argin1, inferBackward_argin2)</rule>
       <rule>intuit_argout1 = intuit.thought(intuit_argin1)</rule>
       <rule>implies_argout1 = implies.thought(implies_argin1, implies_argin2)</rule>
-      <rule>gain_argout1 = gain.thought(gain_argin1)</rule>
+      <!-- §27.1: <rule>gain_argout1 = gain.thought(gain_argin1)</rule> -->
     </thought>
 
     <generate>
       <rule>interpret_argin1 = interpret.reverse(interpret_argout1)</rule>
-      <rule>sign_argin1 = sign.reverse(sign_argout1)</rule>
+      <!-- §27.1: <rule>sign_argin1 = sign.reverse(sign_argout1)</rule> -->
       <!-- Reverse rules: output -> inputs. -->
       <rule>part_argin1, part_argin2 = part.reverse(part_argout1)</rule>
       <rule family="part" permutation="argin2,argin1">whole_argin1, whole_argin2 = whole.reverse(whole_argout1)</rule>
-      <rule>equal_argin1, equal_argin2 = equal.reverse(equal_argout1)</rule>
+      <!-- §27.1: <rule>equal_argin1, equal_argin2 = equal.reverse(equal_argout1)</rule> -->
       <rule>implies_argin1, implies_argin2 = implies.reverse(implies_argout1)</rule>
-      <rule>generic_argin1 = generic.reverse(generic_argout1)</rule>
+      <!-- §27.1: <rule>generic_argin1 = generic.reverse(generic_argout1)</rule> -->
 
 
       <rule>ask_argin1 = ask.reverse(ask_argout1)</rule>
@@ -220,32 +227,37 @@
       <rule>not_argin1 = not.reverse(not_argout1)</rule>
       <rule>non_argin1 = non.reverse(non_argout1)</rule>
 
-      <rule>conjunction_argin1, conjunction_argin2 = conjunction.reverse(conjunction_argout1)</rule>
-      <rule>disjunction_argin1, disjunction_argin2 = disjunction.reverse(disjunction_argout1)</rule>
+      <!-- §27.1: <rule>conjunction_argin1, conjunction_argin2 = conjunction.reverse(conjunction_argout1)</rule> -->
+      <!-- §27.1: <rule>disjunction_argin1, disjunction_argin2 = disjunction.reverse(disjunction_argout1)</rule> -->
       <rule>intersection_argin1, intersection_argin2 = intersection.reverse(intersection_argout1)</rule>
       <rule>union_argin1, union_argin2 = union.reverse(union_argout1)</rule>
 
-      <rule>sum_argin1, sum_argin2 = sum.reverse(sum_argout1)</rule>
-      <rule>product_argin1, product_argin2 = product.reverse(product_argout1)</rule>
+      <!-- §27.1: <rule>sum_argin1, sum_argin2 = sum.reverse(sum_argout1)</rule> -->
+      <!-- §27.1: <rule>product_argin1, product_argin2 = product.reverse(product_argout1)</rule> -->
 
-      <rule>lift_argin1, lift_argin2 = lift.reverse(lift_argout1)</rule>
+      <rule>change_argin1, change_argin2 = change.reverse(change_argout1)</rule>
+      <rule>lift_argin1 = lift.reverse(lift_argout1)</rule>
+      <rule>add_argin1, add_argin2 = add.reverse(add_argout1)</rule>
+      <rule>subtract_argin1, subtract_argin2 = subtract.reverse(subtract_argout1)</rule>
+      <rule>multiply_argin1, multiply_argin2 = multiply.reverse(multiply_argout1)</rule>
+      <rule>divide_argin1, divide_argin2 = divide.reverse(divide_argout1)</rule>
       <rule>verb_argin1, verb_argin2 = verb.reverse(verb_argout1)</rule>
       <rule>compound_argin1, compound_argin2 = compound.reverse(compound_argout1)</rule>
-      <rule>compound_unary_argin1 = compound_unary.reverse(compound_unary_argout1)</rule>
-      <rule>adverb_argin1, adverb_argin2 = adverb.reverse(adverb_argout1)</rule>
-      <rule referent="mint">lower_argin1, lower_argin2 = lower.reverse(lower_argout1)</rule>
-      <rule implementation="lower" referent="bind">definite_argin1, definite_argin2 = definite.reverse(definite_argout1)</rule>
-      <rule implementation="lower" referent="kind">universal_argin1, universal_argin2 = universal.reverse(universal_argout1)</rule>
-      <rule implementation="lower" referent="kind">some_argin1, some_argin2 = some.reverse(some_argout1)</rule>
+      <rule>marker_argin1 = marker.reverse(marker_argout1)</rule>
+      <rule>modifier_argin1, modifier_argin2 = modifier.reverse(modifier_argout1)</rule>
+      <!-- §27.1: <rule>lower_argin1, lower_argin2 = lower.reverse(lower_argout1)</rule> -->
+      <!-- §27.1: <rule implementation="lower">definite_argin1, definite_argin2 = definite.reverse(definite_argout1)</rule> -->
+      <!-- §27.1: <rule implementation="lower">universal_argin1, universal_argin2 = universal.reverse(universal_argout1)</rule> -->
+      <!-- §27.1: <rule implementation="lower">some_argin1, some_argin2 = some.reverse(some_argout1)</rule> -->
 
       <rule>preposition_argin1, preposition_argin2 = preposition.reverse(preposition_argout1)</rule>
 
       <rule>surface_argin1, surface_argin2 = surface.reverse(surface_argout1)</rule>
-      <rule>transpose_argin1, transpose_argin2 = transpose.reverse(transpose_argout1, transpose_argout2)</rule>
-      <rule>lower_unary_argin1 = lower_unary.reverse(lower_unary_argout1)</rule>
-      <rule>definite_unary_argin1 = definite_unary.reverse(definite_unary_argout1)</rule>
-      <rule>preposition_unary_argin1 = preposition_unary.reverse(preposition_unary_argout1)</rule>
-      <rule>surface_unary_argin1 = surface_unary.reverse(surface_unary_argout1)</rule>
+      <rule>swap_argin1, swap_argin2 = swap.reverse(swap_argout1, swap_argout2)</rule>
+      <rule implementation="lower_unary">lower_argin1 = lower.reverse(lower_argout1)</rule>
+      <!-- §27.1: <rule>definite_unary_argin1 = definite_unary.reverse(definite_unary_argout1)</rule> -->
+      <!-- §27.1: <rule>preposition_unary_argin1 = preposition_unary.reverse(preposition_unary_argout1)</rule> -->
+      <!-- §27.1: <rule>surface_unary_argin1 = surface_unary.reverse(surface_unary_argout1)</rule> -->
     </generate>
   </Symbolic>
 
@@ -255,7 +267,7 @@
   <Anchors>
     <part>partOf, partof, part-of</part>
     <whole>wholeOf, wholeof, whole-of</whole>
-    <equal>isEqual, is-equal</equal>
+    <!-- §27.1: <equal>isEqual, is-equal</equal> -->
   </Anchors>
 
 </grammar>

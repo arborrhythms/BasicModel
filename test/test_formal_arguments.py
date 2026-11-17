@@ -44,12 +44,12 @@ def test_inputs_and_outputs_enumerated():
 
 def test_methodless_projection_skipped():
     g = _G([
-        _Rule("lift", ["lift_argin1", "lift_argin2"]),
+        _Rule("change", ["change_argin1", "change_argin2"]),
         _Rule(None, ["NP"]),          # epsilon / passthrough -> no role
         _Rule("", ["X"]),             # falsy method -> skipped
     ])
     roles, idx, n = vocabulary(g)
-    assert set(roles) == {"lift_argin1", "lift_argin2", "lift_argout1"}
+    assert set(roles) == {"change_argin1", "change_argin2", "change_argout1"}
     assert n == 3
 
 
@@ -78,5 +78,5 @@ def test_aliases_and_all_outputs_have_distinct_arguments():
     # Coordinate forms and field declarations share the canonical operation.
     assert len(formal_arguments(grammar.rules_upward)) == len(set(formal_arguments(grammar.rules_upward)))
     arguments = formal_arguments(grammar.rules_upward)
-    assert {'lower_argin1','definite_argin1','universal_argin1',
-            'transpose_argout1','transpose_argout2'} <= set(arguments)
+    assert {'lower_argin1','lift_argin1','bind_argin1',
+            'swap_argout1','swap_argout2'} <= set(arguments)

@@ -40,7 +40,7 @@ def agreeing_views(owner, *identities, count=3):
 
 
 def projected_content(owner, identity, value):
-    """Expected promoted content: unchanged form, meaning direction times radius."""
+    """Promoted content: only order zero has form; meaning is placed at its radius."""
     import torch
     bank = owner.similarity_codebook
     trust = bank.trust
@@ -50,6 +50,8 @@ def projected_content(owner, identity, value):
         start = trust.start
         direction = bank.mereology.placement[row]
         expected[start:start+trust.width] = torch.nn.functional.normalize(direction, dim=0) * trust.lengths[row,0]
+        if owner._row_order(row) > 0:
+            expected[:bank.mereology.percept_event_width] = 0.
     return expected
 
 
@@ -92,8 +94,8 @@ def learned_operation(occupations, operation, *occupants, count):
     for _ in range(count):
         occupations.observe_use(operation, operands)
         occupations.observe_seat(operation, operands)
-        from ConceptHierarchy import refresh
-        refresh(occupations.owner)
+        from placement_fixtures import place_types
+        place_types(occupations.owner)
 
 
 def collected(cs, parts=(), wholes=()):

@@ -19,7 +19,7 @@ class Occurrence:
     retain: tuple = ()
 
 
-def retained_reference(owner, reference):
+def retained_reference(owner, reference, *, stream=None):
     """Keep a name's selected member rather than its mutable denotation."""
     if not (isinstance(reference, tuple) and reference[:1] == ('name',)):
         return reference
@@ -28,10 +28,10 @@ def retained_reference(owner, reference):
     if entry is None:
         raise RuntimeError('a selected name lost its pending identity')
     return (entry.occurrences[0] if entry.occurrences
-            else ('sym', owner.interpret.referent(reference[1])))
+            else ('sym', owner.interpret.referent(reference[1], batch=stream)))
 
 
-def member_order(owner, site):
+def member_order(owner, site, *, stream=None):
     """Use the concept being read, not its containing clause's grammar order."""
     if site.order is not None:
         return site.order
@@ -47,7 +47,7 @@ def member_order(owner, site):
         return -1
     if concept is not None:
         if 'word' in owner._concept_allocator.symbol_types.get(concept, ()):
-            concept = owner.interpret.referent(concept)
+            concept = owner.interpret.referent(concept, batch=stream)
         return owner._concept_source_order(concept)
     return owner._concept_source_order(site.address)
 
@@ -108,10 +108,10 @@ def chunk_candidates(owner, kind, order, stream):
     return result
 
 
-def menu(owner, occurrence, candidates, *, value, where, when, stream):
+def menu(owner, occurrence, candidates, *, value, where, when, stream, projected=None):
     pool, resolver = owner.mtm, owner.components.reference_close
     site = occurrence if isinstance(occurrence, Occurrence) else Occurrence(occurrence)
-    order = member_order(owner, site)
+    order = member_order(owner, site, stream=stream)
     coordinates = (lambda point: point.detach()) if site.kind == 'percept' else resolver.coordinates
     query = coordinates(value)
     candidates = {**chunk_candidates(owner, site.kind, order, stream), **candidates}
@@ -129,12 +129,14 @@ def menu(owner, occurrence, candidates, *, value, where, when, stream):
     for key, record in candidates.items():
         if not candidate_eligible(owner, key, record, kind=site.kind, order=order, stream=stream):
             continue
+        if projected is not None and (site.kind, key) in projected:
+            record = dict(record, value=projected[site.kind, key])
         candidate = coordinates(record['value'])
         a, b = meet_ratios(query, candidate)
         if bool((a == 1) | (b == 1)):
             legal[key] = dict(record, content=candidate)
-    choices, features, logits = resolver.score(value, query, value, 0, legal,
-        stream=stream, where=where, when=when, coordinate_read=coordinates)
+    choices, features, logits = resolver.score_order(value, query, value, 0, legal,
+        stream=stream, where=where, when=when, coordinate_read=coordinates, member_order=order)
     return choices, features, logits
 
 
@@ -170,7 +172,7 @@ def preview_cost(resolver, plans, like):
 def link(owner, occurrence, candidates, *, value, where, when, stream):
     pool, resolver = owner.mtm, owner.components.reference_close
     site = occurrence if isinstance(occurrence, Occurrence) else Occurrence(occurrence)
-    order = member_order(owner, site)
+    order = member_order(owner, site, stream=stream)
     if site.selected is Ellipsis:
         choices, features, logits = menu(owner, site, candidates, value=value,
             stream=stream, where=where, when=when)
@@ -182,7 +184,7 @@ def link(owner, occurrence, candidates, *, value, where, when, stream):
     target = pool.token_of(selected) if selected is not None else None
     if target is not None and site.kind == 'reference':
         from FamiliarTier import resolve_known_reference
-        resolve_known_reference(owner, target, order)
+        resolve_known_reference(owner, target, order, stream=stream)
         entry = pool.entries[target]
         native = entry.symbol
         if native is None and not entry.occurrences:
@@ -190,7 +192,7 @@ def link(owner, occurrence, candidates, *, value, where, when, stream):
             # learned since that path opened still supplies a native referent.
             word = pool.reading_of(target)
             if word in owner._concept_allocator.named_identities:
-                native = owner.interpret.referent(word)
+                native = owner.interpret.referent(word, batch=stream)
         if (native is not None and entry.refinement.get('member_order', order) != order
                 and owner._concept_source_order(native) == order):
             # After promotion a new mention reads the promoted concept, one
@@ -316,12 +318,15 @@ def preview(resolver, plan, clause, reading, *, stream, when):
         if order < 0:
             raise ValueError('a state link requires a witnessed occurrence order')
         proposed.append((('state', 0), state.point, state.where, order))
-    pending = [] if clause is None else [clause]
+    pending = [] if state is None else [state]
+    from PartClosing import PartClosing
+    closing = PartClosing(owner, resolver.store)
     while pending:
         node = pending.pop()
         record = node.identity
         if record is not None and record.get('event') is not None and not record.get('alternative'):
-            proposed.append((('event', record['action']), record['result'], node.where, node.order))
+            proposed.append((('event', record['action']), record['result'], node.where,
+                             closing.event_order(node, context=state)))
         pending.extend((*node.children, *node.companions))
     if reading is not None and reading.word_ids is not None:
         for index, word in enumerate(reading.word_ids.tolist()):
@@ -333,16 +338,23 @@ def preview(resolver, plan, clause, reading, *, stream, when):
                     None if reading.symbol_where is None else reading.symbol_where[index], -1))
     plan['link_choices'] = {}
     plan['link_coverage'] = []
+    projected = {}
     for key, value, where, order in proposed:
         if value is None: continue
         choices, features, logits = menu(owner, Occurrence((), kind=key[0], order=order), {},
-            value=value, where=where, when=when, stream=stream)
+            value=value, where=where, when=when, stream=stream, projected=projected)
         index, decision = resolver.choose(plan, choices, features, logits)
         decision['link'] = key
         selected = None if index is None else choices[index]
         plan['link_choices'][key] = selected
         coordinates = (lambda point: point) if key[0] == 'percept' else resolver.coordinates
-        covered = (value if selected is None else
+        projected_key = (key[0], selected)
+        covered = (value if selected is None else projected[projected_key] if projected_key in projected else
             owner.mtm.value_of(selected) if owner.mtm.token_of(selected) is not None else
             owner.mtm.read_member(selected))
         plan['link_coverage'].append((coordinates(value), coordinates(covered)))
+        if selected is not None:
+            # These collections read the maximum of their members. Later
+            # choices in this close must see the earlier prepared additions,
+            # without writing those additions before the path is kept.
+            projected[projected_key] = torch.maximum(covered, value)

@@ -93,7 +93,7 @@ def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, 
         isp = model.inputSpace
         assert isp._word_active_mask[:, :3].tolist() == [[True, True, True]] * 4
         assert isp._word_active_mask.sum(-1).tolist() == [4 if trailing else 3] * 4
-        assert model.where_registry.slices['input'][1] == (
+        assert model.where_registry.slices['text'][1] == (
             max(model.inputSpace.data.inputLength,
                 int(model.perceptualSpace.outputShape[0]) * model.serial_residual_part_capacity))
         assert torch.equal(isp._ar_embedded[:, 1], isp._ar_embedded_N[:, 1])

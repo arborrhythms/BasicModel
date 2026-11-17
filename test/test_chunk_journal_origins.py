@@ -112,13 +112,9 @@ def test_existing_identity_needs_no_introducing_operation(monkeypatch, origin):
 
 def _native_packed_reading(f, method):
     """Run selected native operations, storing no column for either SHIFT."""
-    tree = ('bind', (method, 'carrier')) if method == 'lower_unary' else (
-        'bind', (method, 'marker', 'carrier'))
-    entry = f.program(tree)
-    orders = torch.tensor([2] if method == 'lower_unary' else [0, 2])
-    from order_fixtures import force_order
-    for identity, order in zip(entry.concept_ids.tolist(), orders.tolist()):
-        force_order(f.cs, identity, order)
+    f.noun('carrier', order=2)
+    entry = f.program(('bind', (method, 'carrier')))
+    orders = torch.tensor([2])
     walk = Walk(f.binary, f.unary, capacity=f.cs.mtm.capacity,
         first_id=int(f.cs.mtm.transient_ids[0]))
     state = walk.empty(entry.leaves[None, 0], 2)
@@ -171,7 +167,7 @@ def _native_packed_reading(f, method):
     return reading, introduced_at, handle
 
 
-@pytest.mark.parametrize('method', ('lower', 'lower_unary'))
+@pytest.mark.parametrize('method', ('lower_unary',))
 def test_shift_alias_records_real_operation_and_closing_writes_it(monkeypatch, method):
     from ClauseJournal import finish_clause
     from test_clause_acceptance import SentenceFixture

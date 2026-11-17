@@ -274,7 +274,7 @@ def test_seventh_source_is_location_masked_and_unbind_ignores_ss():
     }]
     assert torch.equal(
         out._aligned_source_validity[:, -1], valid)
-    support = cs.record_concept_fold_support(1, out._fold_support, actual_order=1)['support']
+    support = cs.record_concept_fold_support(1, out._fold_support)['support']
     assert support["source_count"] == 7
     assert support["symbol_sources"][0]["prior_tick"] is True
 

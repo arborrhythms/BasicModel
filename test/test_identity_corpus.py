@@ -159,20 +159,22 @@ def test_native_observer_uses_owned_individual_not_enclosing_sentence(monkeypatc
     from reading_fixtures import record_reading, resolve_reading_references
     from test_clause_acceptance import SentenceFixture
     fixture=SentenceFixture(monkeypatch)
-    entry=fixture.program(('lift',('lower','a','cat'),'runs'))
-    entry=replace(entry,leaf_orders=torch.tensor([0,2,0]))
-    entry=record_reading(fixture.language,resolve_reading_references(
-        fixture.language,entry,forced={1:-1}))
+    from chunk_fixtures import record, higher_word
+    fixture.noun('cat', order=1)
+    higher_word(fixture, 'cat')
+    entry, _, _=record(fixture, ('change',('lower_unary','cat'),'runs'), leaf_orders=(2,0))
     clause=finish_clause(fixture.language,entry,registry=fixture.registry)
+    from chunk_fixtures import recall
+    resolver=fixture.cs.components.reference_close
     model=SimpleNamespace(languageSpace=fixture.language,
         symbolSpace=SimpleNamespace(ltm_store=fixture.store),
-        inputSpace=SimpleNamespace(_word_active_mask=torch.ones(1,3,dtype=torch.bool),
-            _packed_sentence_ids=torch.zeros(1,3,dtype=torch.long)),
+        inputSpace=SimpleNamespace(_word_active_mask=torch.ones(1,2,dtype=torch.bool),
+            _packed_sentence_ids=torch.zeros(1,2,dtype=torch.long)),
         _sentence_observation=lambda *a,**k:dict(entries=(entry,)),
-        _derivation_program=lambda *a:(torch.arange(3)[None],))
+        _derivation_program=lambda *a:(torch.arange(2)[None],))
     with native_observer(model) as captured:
         model._sentence_observation(None,0,None,admit=True)
-        token=captured[0][0]['tokens'][1]
+        token=captured[0][0]['tokens'][0]
         assert token['requested'] and token['reference'] is None
         assert token['selected_reference']==-1
         assert token['missing_reason']=='mint_awaits_row_write'
@@ -191,19 +193,21 @@ def test_native_observer_uses_owned_individual_not_enclosing_sentence(monkeypatc
         from ReferenceContext import SituationFrame
         from identity_measurement import grade_capture, score_document
         address=token['reference']
-        bound=fixture.program(('lift',('lower','the','cat'),'runs'))
-        bound=replace(bound,leaf_orders=torch.tensor([0,2,0]))
-        local=next(i for i,r in enumerate(fixture.binary) if r.determiner_mode=='bind')
-        bound.actions[2,1]=local
-        bound=record_reading(fixture.language,resolve_reading_references(
-            fixture.language,bound,frames=(replace(SituationFrame.from_row(fixture.store.row(child)), order=clause.children[0].order),),
-            forced={1:address}))
+        # The former forced ReferenceBank read the owned row directly. Use
+        # the ordinary recall of that row to stage its current bind candidate.
+        frame=SituationFrame.from_row(fixture.store.row(child))
+        recall(resolver,(frame,),stream=0)
+        token_key=fixture.cs.mtm.token_of(fixture.store.occurrence_of(child))
+        identity=fixture.cs.mtm.entries[token_key]
+        target=identity.symbol if identity.symbol is not None else identity.transient
+        bound, _, _=record(fixture, ('change',('bind',('lower_unary','cat')),'runs'),
+            frames=(frame,), bind_targets={0:target}, leaf_orders=(2,0))
         entry=bound
         model.inputSpace._packed_sentence_ids.fill_(1)
         model._sentence_observation(None,1,None,admit=True)
-        assert captured[1][0]['tokens'][1]['reference']==address
+        assert captured[1][0]['tokens'][0]['reference']==address
         label=dict(id='mint-bind',family='determiner',probe=None,
-            mentions=[dict(id='m0',sentence=0,word=1),dict(id='m1',sentence=1,word=1)],
+            mentions=[dict(id='m0',sentence=0,word=0),dict(id='m1',sentence=1,word=0)],
             row_pair=dict(mentions=['m0','m1'],expected=1))
         graded=score_document(label,grade_capture(label,captured,0))
         assert graded['rows']['correct'] and graded['rows']['resolved']
@@ -220,21 +224,21 @@ def test_observer_reports_discarded_mint_and_unadmitted_leaf_by_reason(monkeypat
     fixture=SentenceFixture(monkeypatch)
     # The second projection discards the cat individual; only the final
     # word becomes the head of the written row. Never assign that row to cat.
-    entry=fixture.program(('lower',('lower','a','cat'),'.'))
-    entry=replace(entry,leaf_orders=torch.tensor([0,2,2]))
-    entry=record_reading(fixture.language,resolve_reading_references(
-        fixture.language,entry,forced={1:-1,2:-1}))
+    from chunk_fixtures import record, higher_word
+    fixture.noun('cat', order=1)
+    higher_word(fixture, 'cat')
+    entry, _, _=record(fixture, ('surface',('lower_unary','cat'),'.'), leaf_orders=(2,0))
     clause=finish_clause(fixture.language,entry,registry=fixture.registry)
     model=SimpleNamespace(languageSpace=fixture.language,
         symbolSpace=SimpleNamespace(ltm_store=fixture.store),
-        inputSpace=SimpleNamespace(_word_active_mask=torch.ones(1,3,dtype=torch.bool),
-            _packed_sentence_ids=torch.zeros(1,3,dtype=torch.long)),
+        inputSpace=SimpleNamespace(_word_active_mask=torch.ones(1,2,dtype=torch.bool),
+            _packed_sentence_ids=torch.zeros(1,2,dtype=torch.long)),
         _sentence_observation=lambda *a,**k:dict(entries=(entry,)),
-        _derivation_program=lambda *a:(torch.arange(3)[None],))
+        _derivation_program=lambda *a:(torch.arange(2)[None],))
     with native_observer(model) as captured:
         model._sentence_observation(None,0,None,admit=True)
         fixture.store.write_clause(clause,written_rows={},stream=0)
-        label=dict(mentions=[dict(id='cat',sentence=0,word=1),
+        label=dict(mentions=[dict(id='cat',sentence=0,word=0),
             dict(id='unread',sentence=0,word=7),dict(id='absent',sentence=1,word=0)])
         result=grade_capture(label,captured,0)
     assert all(value is None for value in result['references'].values())

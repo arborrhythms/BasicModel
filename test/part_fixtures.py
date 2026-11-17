@@ -10,11 +10,11 @@ from Spaces import ConceptualSpace
 from test_basicmodel import _populate_test_config
 
 
-def native_store(width=4, capacity=32, points=(), *, percept_width=0):
+def native_store(width=4, capacity=32, points=(), *, percept_width=0, order_limit=None):
     _populate_test_config(inputDim=width, perceptDim=width, conceptDim=width,
         symbolDim=width, wordDim=width, outputDim=width, nInput=4, nPercepts=4,
         nConcepts=512, nSymbols=512, nWords=512, nOutput=512, nWhere=0, nWhen=0)
-    owner = ConceptualSpace([4, width], [512, width], [512, width])
+    owner = ConceptualSpace([4, width], [512, width], [512, width], order_limit=order_limit)
     owner._model = None  # This isolated store has no attended model field.
     with torch.no_grad():
         owner.similarity_codebook.W.sigmoid_()

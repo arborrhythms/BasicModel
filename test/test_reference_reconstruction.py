@@ -49,7 +49,7 @@ def sentence_cost(resolver, plans, *, active=None, enabled=True):
         _input_reconstructions={0: None},
         _sentence_order_zero_field=None, _sentence_generation=None,
         _sentence_reverse=None, _sentence_order_zero_reverse=None,
-        _sentence_observation=lambda *args: observation,
+        _sentence_observation=lambda *args, record: dict(observation, record=record),
         _reconstruct_trial=lambda *args: (root[:, None], root[:, 0], root[:, 0],
                                          active, root[:, 0]))
     lang = [None]*12
@@ -109,8 +109,7 @@ def test_named_token_keeps_its_content_before_and_after_the_close():
     from ThoughtReferences import bindings, open_slots
     resolver, store, a, words, _ = world()
     owner, word = resolver.components.owner, words['x']
-    # A unit fixture may supply the word's reading order (spec section 13).
-    force_order(owner, word, 1)
+    # An objectless word keeps its native order-zero percept collection.
     with torch.no_grad():
         owner.similarity_codebook.W[owner._csw_row_of(word)].copy_(a[0])
     order = owner._concept_source_order(word)
@@ -120,7 +119,7 @@ def test_named_token_keeps_its_content_before_and_after_the_close():
         return replace(node, point=a[0], order=order,
             meaning=ConceptualMeaning.from_description(a[0]),
             composition=replace(node.composition, point=a[0], order=order, leaves=(leaf,)),
-            reference_request=dict(node.reference_request, mode='bind', leaves=(leaf,),
+            reference_request=dict(node.reference_request, mode='bind', interpret_leaf=True, leaves=(leaf,),
                                    content=a[0], cue=a[0]))
 
     first, second = site(0), site(1)
@@ -128,7 +127,7 @@ def test_named_token_keeps_its_content_before_and_after_the_close():
         children=(first, second), refs=(('clause', 0), -1, ('clause', 1)))
     before, pool = snapshot(resolver), dict(owner.mtm.entries)
     same = resolver.preview(clause, chunk_context(resolver, ()))
-    assert first.composition.order == second.composition.order == 1
+    assert first.composition.order == second.composition.order == order == 0
     assert same['items'][0]['own_object'] and same['items'][0]['anonymous']
     assert same['items'][1]['selected'] == ('new', 0)
     assert not same['items'][1]['own_object'] and not same['decisions'][1]['departed']

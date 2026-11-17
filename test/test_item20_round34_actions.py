@@ -1,3 +1,4 @@
+from action_fixtures import action_with_basis
 """Participation re-reads, rates and clamp velocity certificates."""
 from types import SimpleNamespace
 import torch
@@ -14,7 +15,7 @@ def seat(*, recorded=True, alternative=False):
     before = torch.tensor([.2, .3, .4, .5, .6, .3, .2, .4], requires_grad=True)
     phrase = torch.full((8,), .3, requires_grad=True)
     value = torch.linspace(.15, .85, 8, requires_grad=True)
-    action, modifier = MeaningAction(8, capacity=2), MeaningAction(8, modifier=True)
+    action, modifier = action_with_basis(8, capacity=2), action_with_basis(8, modifier=True)
     pool = MediumTermMemory()
     key = ('ltm', ADDRESS_DOMAIN, 1)
     owner, store = attach(pool, 8, 'reread')
@@ -46,7 +47,7 @@ def test_later_answer_reads_exact_value_and_only_action_parameters():
         assert not saved.requires_grad
         results.append(dict(alternative=alternative, exact=True, stored=saved.tolist(),
             lift_gradient=float(action.readout.grad.norm()),
-            adverb_gradient=None if modifier.readout.grad is None else float(modifier.readout.grad.norm()),
+            modifier_gradient=None if modifier.readout.grad is None else float(modifier.readout.grad.norm()),
             input_gradients=False))
     record('reread', results)
 
@@ -68,7 +69,7 @@ def test_missing_recorded_input_stays_detached_and_legacy_event_loads():
 
 def test_third_failed_fit_uses_phrase_and_assignment_is_training_only():
     from VerbLearning import observe
-    action = MeaningAction(8, capacity=2, fit=.0001)
+    action = action_with_basis(8, capacity=2, fit=.0001)
     with torch.no_grad():
         action.readout.fill_(.3)
     pool = MediumTermMemory()
@@ -107,11 +108,11 @@ def test_action_rates_and_realized_relative_steps():
     reports = []
     for ratio in (1., .1):
         code = torch.nn.Parameter(torch.ones(1))
-        lift, adverb = torch.nn.Linear(1, 1, bias=False), torch.nn.Linear(1, 1, bias=False)
+        lift, modifier = torch.nn.Linear(1, 1, bias=False), torch.nn.Linear(1, 1, bias=False)
         with torch.no_grad():
-            lift.weight.fill_(1); adverb.weight.fill_(1)
-        language = SimpleNamespace(verb_action=lambda:lift, modifier_action=lambda:adverb)
-        parameters = [code, lift.weight, adverb.weight]
+            lift.weight.fill_(1); modifier.weight.fill_(1)
+        language = SimpleNamespace(verb_action=lambda:lift, modifier_action=lambda:modifier)
+        parameters = [code, lift.weight, modifier.weight]
         optimizer = torch.optim.SGD(rate_groups(parameters, language, ratio, .1), lr=.1, momentum=.9)
         for parameter in parameters:
             parameter.grad = torch.ones_like(parameter)

@@ -10,7 +10,7 @@ def model():
     return _fresh_model(str(Path(_PROJECT) / 'data/MM_grammar.xml'))[0]
 
 
-def admit(m, text):
+def admit(m, text, *, object_order=0):
     cs, ps, ws = m._concept_owner(), m.perceptualSpace, m.wholeSpace
     native = getattr(ps, 'percept_store', None)
     parts = native.spell_out(text.encode()) if native is not None else list(text.encode())
@@ -20,6 +20,18 @@ def admit(m, text):
     word, obj = pair[:2]
     if cs.interpret.no_object(word):
         obj = witness_object(cs, word)
+    # §27.2 reads order from a physical block. Higher fixture referents
+    # therefore collect their preceding-order member instead of stamping
+    # an already seated basic object with a different order.
+    for order in range(cs._concept_source_order(obj)+1, object_order+1):
+        member = obj
+        obj = cs.new_concept(order=order)
+        cs.add_part(obj, ('sym', member))
+        cs._concept_allocator.singletons.add(obj)
+        cs._concept_allocator.raised.add(obj)
+        cs._populate_concept_weights(obj)
+        cs.interpret.define(word, obj)
+    assert cs._concept_source_order(obj) == object_order
     assert cs.definitions.row(word, obj) is not None
     return word, obj
 
@@ -72,14 +84,16 @@ def test_24_index_is_bidirectional_and_rebuilds_from_saved_rows(monkeypatch):
     assert index.words(obj) == (word,)
 
 
-def test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index():
+def test_25_two_objects_default_to_highest_order_and_synonyms_have_a_reverse_index():
     m = model()
     cs = m._concept_owner()
     word, obj = admit(m, 'hello')
     synonym, second = admit(m, 'there')
     cs.interpret.define(word, second)
     cs.interpret.define(synonym, obj)
-    assert cs.interpret.forward(word) is None
+    # §30.6: absent an expectation, the highest order wins; equal orders
+    # retain the definition index's stable identity order.
+    assert cs.interpret.forward(word) == min(obj, second)
     assert cs.interpret.forward(word, selected=second) == second
     assert set(cs.definitions.words(obj)) == {word, synonym}
     assert set(cs.definitions.objects(word)) == {obj, second}
@@ -92,14 +106,14 @@ def test_26_full_store_refuses_the_whole_word_transaction():
     alloc = _concept_alloc_of(cs)
     # The next native symbol is outside this deliberately exhausted Part pool.
     store.parts.capacity = alloc.next_id
-    before = alloc.next_id, dict(alloc.placement), dict(alloc.layer()._tensor_rows), len(store)
+    before = alloc.next_id, dict(alloc.symbols), dict(alloc.layer()._tensor_rows), len(store)
     try:
         result = admit(m, 'hello')
     except RuntimeError as error:
         assert 'capacity' in str(error) or 'full' in str(error)
     else:
         assert result is None
-    assert before == (alloc.next_id, dict(alloc.placement), dict(alloc.layer()._tensor_rows), len(store))
+    assert before == (alloc.next_id, dict(alloc.symbols), dict(alloc.layer()._tensor_rows), len(store))
 
 
 def test_27_definition_rewitness_keeps_its_when_and_store_position():

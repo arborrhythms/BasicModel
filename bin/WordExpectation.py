@@ -44,7 +44,7 @@ def word_distribution(owner, words, bank, valid, targets, *, gain=1., observed_p
     # The word read begins with the already observed field/STM. Incoming
     # words join this context only after their own causal prediction.
     for row in range(B):
-        chain, lane_history, _, _ = (owner._read_context(row)
+        chain, lane_history, identities, _ = (owner._read_context(row)
             if row < len(owner._inter_context) else ((), (), (), ()))
         if not chain:
             continue
@@ -52,11 +52,19 @@ def word_distribution(owner, words, bank, valid, targets, *, gain=1., observed_p
         occupied = torch.stack([mask.to(words.device) for _, _, mask in chain]).flatten()
         pairs = torch.stack([words.new_tensor((1.,0.) if pair is None else pair).expand(3,2)
             for pair in lane_history]).flatten(0,1)
-        source[row] = symbol_activations(bank[row:row+1],values[None],occupied[None],pairs[None])[0]
+        handles = torch.stack([torch.full((3,), -1, device=words.device, dtype=torch.long)
+            if ids is None else ids.to(words.device) for ids in identities]).flatten()
+        orders = torch.full_like(handles, -1)
+        if len(owner._bank_ids):
+            matches = (handles[:, None] == owner._bank_ids.to(words.device)[None]) & (handles[:, None] >= 0)
+            orders = torch.where(matches.any(-1), owner._bank_orders.to(words.device)[matches.long().argmax(-1)], -1)
+        occupied = occupied & (orders == 0)
+        source[row] = symbol_activations(bank[row:row+1],values[None],occupied[None],pairs[None],
+            key_orders=torch.zeros(C, device=words.device, dtype=torch.long), value_orders=orders[None])[0]
         total[row] = (values * occupied[:,None]).sum(0)
         count[row] = occupied.sum()
         positions = torch.where(occupied,torch.arange(len(values),device=words.device)+1,0)
-        recent[row] = values[(positions.amax()-1).clamp_min(0)]
+        recent[row] = torch.where(positions.amax() > 0, values[(positions.amax()-1).clamp_min(0)], 0.)
     probabilities, predictions, fields, losses, tops, ranks, estimates = [], [], [], [], [], [], []
     forecast_count = W
     if W and not torch.is_grad_enabled() and not torch.compiler.is_compiling():

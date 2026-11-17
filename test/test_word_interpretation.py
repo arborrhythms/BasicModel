@@ -85,10 +85,10 @@ def test_default_interpret_reuses_existing_kind_without_minting():
     cs, interpret = _operator()
     word = interpret.lookup_word([7], [], form='cat')
     kind = interpret.forward(word, order=2)
-    before = dict(_concept_alloc_of(cs).placement)
+    before = dict(_concept_alloc_of(cs).symbols)
     assert interpret.forward(word) == kind
     assert interpret.forward(word, order=1) == kind
-    assert dict(_concept_alloc_of(cs).placement) == before
+    assert dict(_concept_alloc_of(cs).symbols) == before
 
 
 def test_default_interpret_reuses_a_witnessed_association():
@@ -235,8 +235,8 @@ def test_every_serial_word_runs_interpret_before_composition(tmp_path, monkeypat
 
 
 
-def test_selected_generic_grammar_ends_the_interpreted_kinds(monkeypatch):
-    """The selected generic reading of 'cats are animals' owns kind refs.
+def test_selected_relation_grammar_ends_the_interpreted_kinds(monkeypatch):
+    """The selected relation reading of 'cats are animals' owns kind refs.
 
     This tests the declared grammar interface, not untrained parsing.
     The closing receives resolved objects and never performs lexical resolution.
@@ -245,7 +245,7 @@ def test_selected_generic_grammar_ends_the_interpreted_kinds(monkeypatch):
     from Memory import LTM0
     from Models import _append_observed_meaning
     from test_selected_relation_meaning import _program_owner
-    cs, _, registry, language, _, make_program, _, _ = _program_owner(monkeypatch)
+    cs, _, registry, language, _, make_program, _, _ = _program_owner(monkeypatch, order_limit=2)
     words = [cs.interpret.lookup_word([part], [], form=form)
              for part, form in ((7, 'cats'), (8, 'animals'))]
     for word in words:
@@ -297,7 +297,13 @@ def test_testimony_and_its_later_definition_are_read_by_the_parallel_field():
     cs._serial = True
     word = interpret.lookup_word([7], [], form='wug')
     from definition_fixtures import witness_object
-    obj = witness_object(cs, word)
+    member = witness_object(cs, word)
+    # The later concept member belongs to a class, seated one order above
+    # its members from construction. A basic-percept collector cannot
+    # silently acquire a different order while keeping its physical row.
+    obj = cs.new_concept(order=1)
+    cs.add_part(obj, ('sym', member))
+    interpret.define(word, obj)
     assert interpret.forward(word, occurrence=(0, 0)) == obj
     for tick in range(1, 20):
         assert interpret.forward(word, occurrence=(tick, 0)) == obj
@@ -329,14 +335,14 @@ def test_known_word_survives_full_inventory_without_partial_alternative(monkeypa
     word = interpret.lookup_word([7], [1], form='cat')
     obj = interpret.forward(word)
     before = deepcopy(cs.definitions.description(word))
-    ids = dict(_concept_alloc_of(cs).placement)
+    ids = dict(_concept_alloc_of(cs).symbols)
     def full(*args):
         raise RuntimeError('concept row capacity exhausted before word admission; no identity was minted')
     monkeypatch.setattr(cs, '_preflight_concept_row', full)
     assert interpret.lookup_word([8], [1], form='cat', word_reading=True) == word
     assert interpret.forward(word) == obj
     assert cs.definitions.description(word) == before
-    assert dict(_concept_alloc_of(cs).placement) == ids
+    assert dict(_concept_alloc_of(cs).symbols) == ids
     assert cs.concept_admission_stats()['dropped']['word alternative'] == 1
     with pytest.raises(RuntimeError, match='capacity exhausted'):
         interpret.lookup_word([8], [1], form='cat')

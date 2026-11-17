@@ -450,7 +450,7 @@ def test_thought_boundary_detaches_executor_operands_and_recorded_request():
 @pytest.mark.parametrize(
     ("filename", "required"),
     [
-        ("complete.grammar", {"part", "equal"}),
+        ("complete.grammar", {"part", "define"}),
         ("default.grammar", {"part", "equal"}),
         ("ladder.grammar", {"part", "equal"}),
     ],
@@ -558,7 +558,7 @@ def test_complete_grammar_exposes_its_declared_canonical_thought_operations():
     grammar = Grammar()
     grammar.load_from_grammar_file("complete.grammar")
     registry = GrammaticalThoughtRegistry.install(_cs(), grammar)
-    assert {"part", "equal", "ask", "query", "isTrue", "exist", "isEqual", "infer", "intuit", "gain"}.issubset(
+    assert {"part", "define", "ask", "query", "isTrue", "exist", "isEqual", "infer", "intuit", "non"}.issubset(
         registry.executable_operation_ids)
     assert {"true", "arma", "quantize", "lookup"}.isdisjoint(registry.executable_operation_ids)
 
@@ -813,12 +813,13 @@ def test_canonical_thought_executors_use_only_their_named_capability_views():
         def equal(self, left, right): return float(torch.equal(left, right))
         def extent(self, value): return dict(value=value, support_true=1., support_false=0.)
         def negate(self, value): return value
-        def intuition(self, value, frames, *, row, work, premise):
-            assert frames == ('selected-rule',) and row == 0
+        def intuition(self, *, row, work):
+            value = ConceptualMeaning.from_description(torch.ones(4))
+            assert row == 0
             assert isinstance(work, QueryWorkBudget)
-            return dict(value=value,meaning=value,support_true=.4,support_false=.1)
+            return None
     class LTMRead:
-        def intuition_rules(self, **limits): return ('selected-rule',)
+        def implication_rules(self, **limits): return ('selected-rule',)
         def bind_reference(self, meaning, role, **limits):
             return dict(value=meaning, meaning=meaning, binding_role=role,
                         support_true=0., support_false=0.)
@@ -838,8 +839,8 @@ def test_canonical_thought_executors_use_only_their_named_capability_views():
         continuation=None, boundary=lambda row:None, row=0)
     value = torch.ones(4)
     arguments = {name: {'argin1': ('sym',1), 'argin2': ('sym',2)} for name in ('isPart','isEqual')}
-    arguments.update({name: {'argin1':value, 'argin2':value} for name in ('part','equal','implies')})
-    arguments.update({name: {'argin1':meaning} for name in ('isTrue','ask','query','not')})
+    arguments.update({name: {'argin1':value, 'argin2':value} for name in ('part','equal','implies','define')})
+    arguments.update({name: {'argin1':meaning} for name in ('isTrue','ask','query','not','non')})
     arguments.update({name: {'argin1':value} for name in ('exist','gain')})
     from dataclasses import replace
     arguments['bind'] = {'argin1': replace(meaning, bindings={'_bind_role': 0})}
@@ -866,7 +867,9 @@ def test_canonical_thought_executors_use_only_their_named_capability_views():
     assert results['isPart']['witnesses'] == ('relation-row',)
     assert results['infer']['support_true'] == pytest.approx(.6)
     assert results['equal']['support_true'] == 1.
-    assert results['intuit']['support_true'] == .4
+    assert results['intuit']['support_true'] == 0.
+    assert results['intuit']['value'] is None
+    assert results['intuit']['knowing_written']
     assert not hasattr(context, 'reasoner')
 
 
@@ -940,7 +943,7 @@ def test_description_thought_preparation_uses_only_its_declared_ltm_view():
             assert reference == occurrence
             return description, 1
 
-        def best_match(self, value, **limits):
+        def query(self, value, **limits):
             self.calls.append(("ask", value, limits))
             assert value is not description
             assert not value.roles.requires_grad

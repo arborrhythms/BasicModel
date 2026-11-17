@@ -1,4 +1,4 @@
-"""Live grammar operators for verb spectra and adverb eigenmodifiers."""
+"""Live grammar operators for verb spectra and modifier eigenmodifiers."""
 
 import os
 import sys
@@ -15,7 +15,7 @@ import pytest
 import torch
 
 from Language import (
-    AdverbLayer,
+    ModifierLayer,
     Grammar,
     GRAMMAR_LAYER_CLASSES,
     VerbLayer,
@@ -40,12 +40,12 @@ def _strong_spectrum(layer, seed=1):
     return layer
 
 
-def _strong_adverb(layer, seed=2):
+def _strong_modifier(layer, seed=2):
     g = torch.Generator().manual_seed(seed)
     with torch.no_grad():
-        layer._adv_edit.weight.copy_(
-            torch.randn(layer._adv_edit.weight.shape, generator=g) * 0.8)
-        layer._adv_edit.bias.fill_(0.4)
+        layer._modifier_edit.weight.copy_(
+            torch.randn(layer._modifier_edit.weight.shape, generator=g) * 0.8)
+        layer._modifier_edit.bias.fill_(0.4)
     return layer
 
 
@@ -57,9 +57,9 @@ def _methods(fname):
     return up, down
 
 
-def test_verb_and_adverb_registered():
+def test_verb_and_modifier_registered():
     assert GRAMMAR_LAYER_CLASSES["verb"] is VerbLayer
-    assert GRAMMAR_LAYER_CLASSES["adverb"] is AdverbLayer
+    assert GRAMMAR_LAYER_CLASSES["modifier"] is ModifierLayer
 
 
 def test_verb_layer_forces_spectrum_and_inverts_given_verb():
@@ -77,15 +77,15 @@ def test_verb_layer_forces_spectrum_and_inverts_given_verb():
     torch.testing.assert_close(returned_verb, verb)
 
 
-def test_adverb_layer_forces_edit_and_is_zero_init_noop():
-    layer = AdverbLayer(nInput=_D, nOutput=_D)
-    assert layer._adverb_eig_edit is True
-    assert layer._adv_edit is not None
-    vp, adv = _np_and_word()
-    torch.testing.assert_close(layer.forward(vp, adv), vp, atol=1e-5, rtol=1e-5)
+def test_modifier_layer_forces_edit_and_is_zero_init_noop():
+    layer = ModifierLayer(nInput=_D, nOutput=_D)
+    assert layer._modifier_eig_edit is True
+    assert layer._modifier_edit is not None
+    vp, modifier = _np_and_word()
+    torch.testing.assert_close(layer.forward(vp, modifier), vp, atol=1e-5, rtol=1e-5)
 
-    layer = _strong_adverb(AdverbLayer(nInput=_D, nOutput=_D))
-    edited = layer.forward(vp, adv)
+    layer = _strong_modifier(ModifierLayer(nInput=_D, nOutput=_D))
+    edited = layer.forward(vp, modifier)
     assert float((edited - vp).abs().max()) > 0.1
 
 
@@ -103,39 +103,38 @@ def test_verb_reverse_without_operand_raises():
         layer.reverse(vp, basis=None)
 
 
-def test_adverb_reverse_always_raises():
-    # Adverb editing is lossy (invertible=False); reverse has no faithful
+def test_modifier_reverse_always_raises():
+    # Modifier editing is lossy (invertible=False); reverse has no faithful
     # inverse and must error rather than return the old (parent, parent).
-    layer = _strong_adverb(AdverbLayer(nInput=_D, nOutput=_D))
-    vp, adv = _np_and_word()
-    edited = layer.forward(vp, adv)
+    layer = _strong_modifier(ModifierLayer(nInput=_D, nOutput=_D))
+    vp, modifier = _np_and_word()
+    edited = layer.forward(vp, modifier)
     with pytest.raises(NotImplementedError):
         layer.reverse(edited)
     with pytest.raises(NotImplementedError):
         layer.reverse(edited, basis=None)
 
 
-def test_default_and_complete_have_verb_adverb_not_shamatha():
+def test_default_and_complete_have_verb_modifier_not_shamatha():
     for fname in ("default.grammar", "complete.grammar"):
         up, down = _methods(fname)
-        assert {"verb", "adverb"} <= up, fname
-        assert {"verb", "adverb"} <= down, fname
+        assert {"verb", "modifier"} <= up, fname
+        assert {"verb", "modifier"} <= down, fname
 
     up, down = _methods("shamatha.grammar")
-    assert "verb" not in up and "adverb" not in up
-    assert "verb" not in down and "adverb" not in down
+    assert "verb" not in up and "modifier" not in up
+    assert "verb" not in down and "modifier" not in down
 
 
 def test_default_grammar_replaces_lift_with_verb():
     up, down = _methods("default.grammar")
     assert "verb" in up and "verb" in down
-    assert "lift" not in up and "lift" not in down
+    assert "change" not in up and "change" not in down
 
 
 def test_complete_contains_absorbed_role_only_methods():
     complete_up, complete_down = _methods("complete.grammar")
-    absorbed = {"preposition", "surface", "transpose", "lower_unary",
-                "definite_unary", "preposition_unary", "surface_unary"}
+    absorbed = {"preposition", "surface", "swap", "lower_unary"}
     assert 'bind' in complete_up and 'bind' not in complete_down
     assert absorbed <= complete_up, absorbed - complete_up
     assert absorbed <= complete_down, absorbed - complete_down

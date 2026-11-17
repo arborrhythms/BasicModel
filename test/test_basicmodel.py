@@ -2127,6 +2127,9 @@ class TestTrainingUpdatesWeights(unittest.TestCase):
 
         m.runTrial(numEpochs=1, batchSize=10, lr=0.01)
 
+        self.assertFalse(getattr(m.conceptualSpace, '_promotion_refusals', {}),
+                         'the fixed primitive curriculum must fit without refused promotion')
+
         weights_after = m.state_dict()
         changed = sum(
             1 for k in weights_before

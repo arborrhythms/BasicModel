@@ -63,20 +63,29 @@ def test_token_promotes_at_three_sentences_with_the_occurrence_fold_and_keeps_it
     # A repeated sentence is a distinct retained observation (§17.21).
     third, _ = actual(mention(atoms[0]+atoms[1], mode='bind'), (frame,), position=1)
     assert pool.entries[token].symbol is not None
-    # §50: the third mention contains the held description instead of only overlapping it.
-    fourth, _ = actual(mention(atoms[0]+atoms[1]+atoms[2], mode='bind'), (frame,), position=2)
+    # The lifecycle certificate supplies the fourth kept binding. A newly
+    # seeded identity no longer has its descriptive fold as its position;
+    # discovering that binding from geometry is a separate contract.
+    node = mention(atoms[0]+atoms[1]+atoms[2], mode='bind')
+    node = replace(node, reference_request=dict(node.reference_request, compose_bind=1),
+        identity=dict(handle=1, origins=torch.tensor([[2, token[-1], 1]])))
+    fourth, _ = actual(node, (frame,), position=2)
     entry = pool.entries[token]
     assert entry.occurrences == (token, store.occurrence_of(second), store.occurrence_of(third), store.occurrence_of(fourth))
     assert entry.kind == kind and entry.symbol is not None and entry.count == 4
     expected = atoms[0] + 2*atoms[1]/3
-    torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(entry.symbol)], expected)
+    torch.testing.assert_close(owner.similarity_codebook.trust.content[owner._csw_row_of(entry.symbol)], expected)
+    from ConceptPlacement import seed
+    torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(entry.symbol)], seed(entry.symbol, expected))
     assert resolver._derivation_symbol(token) == entry.symbol
     changed = store.append_idea(atoms[3])
     pool.event(token, store.occurrence_of(changed), verb=verb, role=0, when=50,
         before=pool.value_of(token))
     consolidate(owner, store)
     torch.testing.assert_close(pool.value_of(token), atoms[3])
-    torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(entry.symbol)], expected)
+    torch.testing.assert_close(owner.similarity_codebook.trust.content[owner._csw_row_of(entry.symbol)], expected)
+    from ConceptPlacement import seed
+    torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(entry.symbol)], seed(entry.symbol, expected))
     restored = MediumTermMemory(pool.capacity,pool.horizon,n_vectors=int(pool.transient_ids[0]), field_width=pool.field_width)
     restored.restore(pool.state())
     assert restored.entries[token].symbol == entry.symbol and restored.names == pool.names
@@ -192,7 +201,7 @@ def test_event_without_factored_refs_uses_the_captured_verb_reading(monkeypatch)
     from test_identity_threading import recorded_identity_reading
     from ClauseJournal import finish_clause
     f = SentenceFixture(monkeypatch)
-    entry, _, _ = recorded_identity_reading(f, ('lift', ('lower_unary', 'subject'), 'action'))
+    entry, _, _ = recorded_identity_reading(f, ('change', ('bind', 'subject'), 'action'))
     clause = finish_clause(f.language, entry, registry=f.registry)
     verb = native(f.cs, torch.ones(8)*.25)
     from Spaces import _concept_alloc_of
@@ -292,10 +301,14 @@ def test_capacity_eviction_during_close_drops_only_the_evicted_tokens_history(mo
     f.cs.mtm = MediumTermMemory(capacity=2,n_vectors=f.cs.nVectors)
     import weakref
     f.cs.mtm._owner = weakref.ref(f.cs)
-    tree = ('sum',
-        ('lift', ('lower_unary', 'subject'), ('verb', 'move', ('lower', 'd', 'place'))),
-        ('lift', ('lower_unary', 'alias'), ('verb', 'affect', ('lower', 'd', 'target'))))
-    entry, _, _ = recorded_identity_reading(f, tree)
+    from chunk_fixtures import higher_word
+    for name in ('subject','alias','place','target'):
+        f.noun(name, order=1)
+        higher_word(f, name)
+    tree = ('add',
+        ('change', ('lower_unary', 'subject'), ('verb', 'move', ('lower_unary', ('surface', 'd', 'place')))),
+        ('change', ('lower_unary', 'alias'), ('verb', 'affect', ('lower_unary', ('surface', 'd', 'target')))))
+    entry, _, _ = recorded_identity_reading(f, tree, dummy_binds=(0,1,2,3))
     resolver = f.cs.components.reference_close
     clause = finish_clause(f.language, entry, registry=f.registry)
     plan = resolver.preview(clause, chunk_context(resolver, ()))

@@ -300,6 +300,7 @@ def _tiny_canonical_model(
         word_buckets="16,32,64,128,256", forward_grammar_weight=0.0,
         concept_rows=64, dimension=16, concept_meaning_width=0,
         chooser_depth=None, training_overrides=None, architecture_overrides=None,
+        conceptual_overrides=None,
         part_rows=256, stm_capacity=None, ltm_capacity=None, grammar=None):
     """Build the real aligned serial model with 16-coordinate events."""
     tree = ET.parse(_ROOT / "data" / "BasicModel.xml")
@@ -363,7 +364,25 @@ def _tiny_canonical_model(
     _set("./architecture/weightsPath", tmp_path / "unused.ckpt")
     if grammar is not None:
         _set("./SymbolSpace/language/grammar", grammar)
-    for path, values in (("./architecture/training", training_overrides),
+    if not concept_meaning_width:
+        # This point-only parity fixture has no meaning block for marker's
+        # learned form-to-meaning map. Keep its dimensions and all other rules.
+        name = root.find('./SymbolSpace/language/grammar').text
+        source = Path(name)
+        source = source if source.is_absolute() else _ROOT/'data'/source
+        rules = ET.parse(source)
+        removed = False
+        for section in rules.getroot().iter():
+            for rule in list(section):
+                if rule.tag == 'rule' and 'marker.' in (rule.text or ''):
+                    section.remove(rule)
+                    removed = True
+        if removed:
+            grammar_path = tmp_path/'point-only.grammar'
+            rules.write(grammar_path, encoding='unicode')
+            _set('./SymbolSpace/language/grammar', grammar_path)
+    for path, values in (("./ConceptualSpace", conceptual_overrides),
+                         ("./architecture/training", training_overrides),
                          ("./architecture", architecture_overrides)):
         for tag, value in (values or {}).items():
             node = root.find(f"{path}/{tag}")

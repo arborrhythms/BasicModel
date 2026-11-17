@@ -11,26 +11,26 @@ from test_clause_acceptance import SentenceFixture
 
 def inventory(cs):
     alloc = _concept_alloc_of(cs)
-    return dict(next_id=alloc.next_id, placement=copy.deepcopy(alloc.placement),
+    return dict(next_id=alloc.next_id, placement=copy.deepcopy(alloc.symbols),
                 rows=copy.deepcopy(cs._csw_rows),
                 keys=copy.deepcopy(alloc.relate_idx))
 
 
 def test_closing_idea_is_narrow_without_a_derivation_part(monkeypatch):
     f = SentenceFixture(monkeypatch)
-    clause = f.clause(('lift', 'cat', 'runs'))
+    clause = f.clause(('change', 'cat', 'runs'))
     before = inventory(f.cs)
     row = f.store.write_clause(clause)
     assert row >= 0
     assert inventory(f.cs) == before
     assert f.store.parts.find(f.noun('cat'), f.noun('runs')) is None
-    assert f.store.row_name(row) not in _concept_alloc_of(f.cs).placement
+    assert f.store.row_name(row) not in _concept_alloc_of(f.cs).symbols
     torch.testing.assert_close(f.store.point_of_row(f.store.occurrence_of(row)), clause.point)
 
 
 def test_referenced_phrase_is_an_occurrence_part_argument(monkeypatch):
     f = SentenceFixture(monkeypatch)
-    clause = f.clause(('part', 'cat', ('lift', 'chases', 'mouse')))
+    clause = f.clause(('part', 'cat', ('change', 'chases', 'mouse')))
     row = f.store.write_clause(clause)
     reference = int(f.store.row(row)['refs'][1])
     from Memory import OCCURRENCE
@@ -44,7 +44,7 @@ def test_referenced_phrase_is_an_occurrence_part_argument(monkeypatch):
 
 def test_closing_part_and_implies_never_ask_thought_authorization(monkeypatch):
     f = SentenceFixture(monkeypatch)
-    entry = f.program(('implies', ('part', 'cat', 'animal'), ('lift', 'cat', 'runs')))
+    entry = f.program(('implies', ('part', 'cat', 'animal'), ('change', 'cat', 'runs')))
     def unavailable(*args, **kwargs):
         raise AssertionError('closing asked the thought registry for its relation identity')
     monkeypatch.setattr(f.registry, 'clause_reference', unavailable)
@@ -74,13 +74,16 @@ def test_full_symbol_inventory_needs_no_seats_and_chain_exhaustion_is_atomic(mon
         name = rule.method_name
         if name not in f.ops:
             cls = Language.GRAMMAR_LAYER_CLASSES[name]
-            f.ops[name] = cls(width, width) if name in ('lift', 'verb', 'lower', 'surface', 'sum', 'implies') else cls()
+            f.ops[name] = cls(width, width) if name in ('change', 'verb', 'lower', 'surface', 'sum', 'implies') else cls()
         return f.ops[name]
     f.operation = operation
     f.store = model.symbolSpace.ltm_store
     from ClauseRow import attach_clause_index
     attach_clause_index(model, f.store, f.cs)
     try:
+        # Seat the named category at its declared order before the fixture
+        # fills the same fixed inventory (§27.2).
+        f.noun('animal', order=1)
         entry = f.program(('part', ('disjunction', ('part', 'cat', 'animal'), 'sleeps'), 'cat'))
         layer = _concept_alloc_of(f.cs).layer(0)
         caps = f.cs._order_caps()

@@ -16,8 +16,11 @@ def test_generate_features_equal_argument_scores_and_kept_output_is_preferred():
     program = SimpleNamespace(leaves=values[:2], word_ids=torch.tensor(words[:2]),
         actions=torch.tensor([[0,-1,0],[0,-1,1],[1,0,0]]))
     speech.observe_kept(program, [binary], [])
-    from ConceptHierarchy import refresh
-    refresh(owner)
+    from placement_fixtures import place_at
+    for name, coordinates in (('intersection_argin1', [1.,0.,0.,0.]),
+                        ('intersection_argin2', [0.,1.,0.,0.]),
+                        ('intersection_argout1', [1.,1.,0.,0.])):
+        place_at(owner, speech.concepts[name], coordinates)
     values = torch.stack([point(owner, word) for word in words])
     speech.prepare_values()
     table = speech.argument_scores(torch.tensor(words), values)

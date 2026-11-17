@@ -69,6 +69,13 @@ def equal(context, arguments):
     return pair(left.detach().clone(), score, operands=(left, right), result_kind='concept')
 
 
+def define(context, arguments):
+    """Read identity evidence; the kept close writes the two Part directions."""
+    from Queries import _vector
+    left, right = (_vector(context, arguments[role]) for role in ('argin1', 'argin2'))
+    return pair(None, context.conceptual_space.equal(left, right), operands=(left, right))
+
+
 def is_equal(context, arguments):
     return context.ltm.relation_evidence('equal', arguments['argin1'], arguments['argin2'],
         max_records=context.max_records, work=context.work)
@@ -81,13 +88,15 @@ def implies(context, arguments):
 
 def infer(context, arguments):
     from ThoughtInference import derive
-    return derive(context, arguments)
+    result = derive(context, arguments)
+    result['effect_form'] = ('search' if len(arguments) == 1 else
+        'selection' if getattr(context, 'intuition_rule', None) is not None else 'derivation')
+    return result
 
 
 def intuit(context, arguments):
-    frames = context.ltm.intuition_rules(max_records=context.max_records, work=context.work)
-    return context.conceptual_space.intuition(arguments['argin1'], frames,
-        row=context.row, work=context.work, premise=context.focus_when)
+    context.conceptual_space.intuition(row=context.row, work=context.work)
+    return pair(None, knowing_written=True, learned_field=True, evidence_kind='intuition')
 
 
 def is_true(context, arguments):
@@ -124,13 +133,14 @@ def query(context, arguments):
 
 
 def ask(context, arguments):
-    from ThoughtReferences import has_open_slots
+    from dataclasses import replace
+    from ThoughtReferences import has_open_slots, bindings
     requested = arguments['argin1']
     if has_open_slots(requested) and callable(context.continuation):
         found = returned_subgoal(context.continuation(requested))
     else:
         references = tuple(ref for _, ref in context.operand_references if ref and ref[0] == 'ltm')
-        found = context.ltm.best_match(requested, max_records=context.max_records,
+        found = context.ltm.query(requested, max_records=context.max_records,
                                      work=context.work, references=references)
     return dict(found, requested_meaning=requested)
 
@@ -169,6 +179,25 @@ def negate(context, arguments):
     extent = context.conceptual_space.extent(tensor)
     return pair(context.conceptual_space.negate(tensor), extent['support_false'], extent['support_true'],
                 result_kind='concept', evidence_kind='inference')
+
+
+def withhold(context, arguments):
+    from dataclasses import replace
+    from Meaning import ConceptualMeaning
+    from ThoughtReferences import with_slots, open_slots
+    from Extension import Node, Context
+    from Language import NonLayer
+    value = arguments['argin1']
+    if isinstance(value, ConceptualMeaning):
+        operator = NonLayer()
+        extension = tuple(Node(operator.compose_extend(node.field), (node,), operator,
+                               Context(name='non')) for node in value.extension)
+        value = with_slots(replace(value, roles=torch.zeros_like(value.roles), extension=extension),
+                           open_slots(value), pair=(0., 0.))
+        return pair(value, meaning=value, evidence_kind='inference')
+    if torch.is_tensor(value):
+        return pair(torch.zeros_like(value), result_kind='concept', evidence_kind='inference')
+    return pair(None, evidence_kind='inference')
 
 
 def gain(context, arguments):

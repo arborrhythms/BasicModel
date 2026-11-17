@@ -111,14 +111,21 @@ def test_the_expander_knows_no_language():
 
 
 def test_inventory_names_live_implementations_and_every_game_has_a_test_probe():
-    from Language import GRAMMAR_LAYER_CLASSES, _OPERATOR_SURFACE_SCHEMAS
+    from Language import GRAMMAR_LAYER_CLASSES, _OPERATOR_SURFACE_SCHEMAS, Grammar
     import xml.etree.ElementTree as ET
     inventory=json.loads((GAMES/'inventory.json').read_text())
     assert set(inventory['rules'].values()) <= set(GRAMMAR_LAYER_CLASSES)
     live={node.text.split('=')[1].split('.')[0].strip() for node in
           ET.parse(ROOT/'data/complete.grammar').findall('./Symbolic/compose/rule')}
-    assert set(inventory['rules']) <= live
-    assert (live & set(_OPERATOR_SURFACE_SCHEMAS)) <= set(inventory['rules'])
+    declared = set()
+    for path in [*(ROOT/'data').glob('*.grammar'), *(ROOT/'test/fixtures').rglob('*.grammar')]:
+        grammar = Grammar()
+        grammar.load_from_grammar_file(str(path))
+        declared.update(rule.method_name for rule in grammar.rules_upward)
+    # §27.1 restricts complete.grammar; the retained games keep their names
+    # and may exercise an implementation declared by another grammar.
+    assert set(inventory['rules'].values()) <= declared
+    assert (live & set(_OPERATOR_SURFACE_SCHEMAS)) <= set(inventory['rules'].values())
     for game in inventory['games']:
         assert any(row['split']=='test' for entry in manifest()['files']
                    if entry['game']==game for row in rows(entry)), game

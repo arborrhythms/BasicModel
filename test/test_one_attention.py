@@ -224,11 +224,11 @@ def test_boolean_field_cannot_be_declared_between_symbols(operation,arity):
 def test_bracket_candidates_are_grammar_declared_field_operations_without_generate():
     from Language import Grammar
     g=Grammar();rules=[]
-    for name in ('divide','descend','gloss'):
+    for name in ('focus','mint'):
         g._fill_rule_list(rules,{'rule':{'_':f'X = {name}.forward(X)','operands':'field'}})
         with pytest.raises(ValueError,match='generate'):
             g._fill_rule_list([],{'rule':f'X = {name}.reverse(X)'},face='generate')
-    assert [r.operand_kinds for r in rules] == [('field',)]*3
+    assert [r.operand_kinds for r in rules] == [('field',)]*2
 
 
 def test_shared_meter_cannot_replenish_between_input_and_thought():

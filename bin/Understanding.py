@@ -56,6 +56,8 @@ class Reading:
     reference_orders: Any = None
     symbol_where: Any = None
     symbol_when: Any = None
+    # Native input extents beside the encoded address of each word's start.
+    word_extents: Any = None
     reference_values: Any = None
     reference_relations: Any = None
     # Actual left/right operands and result, only while this reading is open.
@@ -97,7 +99,7 @@ class Reading:
     def _tensor_fields(self):
         core = ("rows", "word_rows", "activations", "leaves", "actions",
                 "targets", "end_state", "concept_ids")
-        return core + tuple(name for name in ("word_ids", "reference_ids", "reference_orders", "symbol_where", "symbol_when",
+        return core + tuple(name for name in ("word_ids", "reference_ids", "reference_orders", "symbol_where", "symbol_when", "word_extents",
                                              "reference_values", "reference_relations", "operation_values", "action_records", "operation_refs", "operation_relations", "operation_probabilities", "leaf_orders", "leaf_evidence",
                                              "identity_origins", "identity_ids", "identity_actions", "identity_values", "identity_leaves",
                                              "timeline_actions", "timeline_values", "case_values", "case_selected", "operand_counts",

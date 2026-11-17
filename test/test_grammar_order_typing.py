@@ -16,11 +16,11 @@ Bare categories (no order annotation) bind to constant order 0 per the
 plan's "bare category is syntactic sugar for order 0" decision.
 
 Example fully-explicit rules:
-    S4 = lift(NP3, VP1)        # event = lift contiguous noun + verb aspect
+    S4 = change(NP3, VP1)        # event = lift contiguous noun + verb aspect
     NP3 = lower(DET, NP4)      # specify an abstract count noun
 
 Example polymorphic rules:
-    S = lift(NP*, VP1)         # any NP-order; LHS is variable too
+    S = change(NP*, VP1)         # any NP-order; LHS is variable too
     NP = conjunction(DET, N*)  # bind * to N's order
 """
 import sys
@@ -144,11 +144,11 @@ def test_parse_category_still_accepts_multi_digit_constant():
 
 
 def test_lift_looks_up_subject_predication_order():
-    """``S4 = lift(NP3, VP1)`` retains fully
+    """``S4 = change(NP3, VP1)`` retains fully
     explicit constant order annotations on every category."""
     from Language import Grammar
     g = Grammar()
-    rule = g._parse_rule("S4", "lift(NP3, VP1)", space_role='SS')
+    rule = g._parse_rule("S4", "change(NP3, VP1)", space_role='SS')
     sig = g._rule_order_signature(rule)
     assert not hasattr(sig, 'order_delta')
     assert sig.lhs_category == "S"
@@ -159,7 +159,7 @@ def test_lift_looks_up_subject_predication_order():
     assert sig.rhs_order_exprs[0].delta == 3
     assert sig.rhs_order_exprs[1].kind == "constant"
     assert sig.rhs_order_exprs[1].delta == 1
-    assert sig.op_name == "lift"
+    assert sig.op_name == "change"
 
 
 def test_lower_rule_has_lookup_without_a_declared_delta():
@@ -226,19 +226,19 @@ def test_lhs_order_captured():
 
 
 def test_modal_sentence_lift():
-    """``S5 = lift(S4, MP1)`` — modal phrase (MP) raises a sentence into
+    """``S5 = change(S4, MP1)`` — modal phrase (MP) raises a sentence into
     a 5D modal-probability space. Confirms the lift pattern works for
     sentence-level modal embedding, not just NP/VP construction."""
     from Language import Grammar
     g = Grammar()
-    rule = g._parse_rule("S5", "lift(S4, MP1)", space_role='SS')
+    rule = g._parse_rule("S5", "change(S4, MP1)", space_role='SS')
     sig = g._rule_order_signature(rule)
     assert sig.lhs_category == "S"
     assert sig.lhs_order_expr.delta == 5
     assert sig.rhs_categories == ("S", "MP")
     assert sig.rhs_order_exprs[0].delta == 4
     assert sig.rhs_order_exprs[1].delta == 1
-    assert sig.op_name == "lift"
+    assert sig.op_name == "change"
     assert not hasattr(sig, 'order_delta')
 
 

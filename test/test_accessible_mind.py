@@ -36,15 +36,21 @@ def test_thought_effect_uses_cached_row_identity(monkeypatch):
     def forbidden(self):
         raise AssertionError("thought must not rebuild the dictionary reverse map")
     monkeypatch.setattr(type(cs), "_csw_rows", property(forbidden))
-    result = ThoughtResult('ask', 'conceptual-subgoal', 'set', 'retrieval', _meaning(),
-        MappingProxyType({'frames': ({'reference': ('sym', member)},)}))
     from clock_fixtures import install
     model = install(SimpleNamespace(conceptualSpace=cs, _concept_owner=lambda: cs))
+    from ClauseRow import attach_clause_index
+    from dataclasses import replace
+    store = STM0(8, percept_width=0, capacity=32, relation_capacity=8192)
+    attach_clause_index(SimpleNamespace(), store, cs)
+    meaning = replace(_meaning(),role_refs=(('sym',member),None,None))
+    address = store.append_meaning(meaning)
+    frame = store.row(address)
     for _ in range(2):
-        apply_thought_effect(model, result, row=0, work=QueryWorkBudget(32))
+        assert not store.recall_chunks((frame,),stream=0,work=QueryWorkBudget(32))
     from ThoughtChunks import held
     ideas = held(cs.stm, 0)
-    assert len(ideas) == 2 and ideas[0][0] != ideas[1][0]
+    # Repeated reads retain the same occurrence at its original time.
+    assert len(ideas) == 1 and ideas[0][0] == tuple(frame['time'].tolist())
     assert all(idea.role_refs[0] == ('sym', member) for _, idea in ideas)
     assert not hasattr(cs.subspace, '_thought_occurrence')
 
@@ -173,7 +179,7 @@ def test_thought_retrieval_keeps_history_and_restores_episode_knowing(monkeypatc
         return dict(value=(frame,), frames=(frame,), episodic_frames=(),
             result_kind='set', support_true=.7, support_false=0.,
             records_scanned=1, incomplete=(), witnesses=(frame['occurrence'],))
-    monkeypatch.setattr(ThoughtLTMCapability, 'query', retrieved)
+    monkeypatch.setattr(ThoughtLTMCapability, 'best_match', retrieved)
     def choose(root, active, actions, **kw):
         if kw.get('evidence') is not None:
             return None
@@ -217,11 +223,13 @@ def test_higher_order_retrieval_seeds_discontinuous_members_only():
     held = ConceptualMeaning.from_description(torch.ones(8))
     from dataclasses import replace
     held = replace(held, role_refs=(('sym', higher), None, None))
-    result = ThoughtResult('ask', 'conceptual-subgoal', 'set', 'retrieval', meaning,
-        MappingProxyType({'frames': ({'meaning': held},)}))
     from clock_fixtures import install
     model = install(SimpleNamespace(conceptualSpace=cs, _concept_owner=lambda: cs))
-    apply_thought_effect(model, result, row=0, work=QueryWorkBudget(32))
+    from ClauseRow import attach_clause_index
+    store = STM0(8, percept_width=0, capacity=32, relation_capacity=8192)
+    attach_clause_index(SimpleNamespace(), store, cs)
+    address = store.append_meaning(held)
+    assert not store.recall_chunks((store.row(address),),stream=0,work=QueryWorkBudget(32))
     from ThoughtChunks import held as stored_ideas
     retained = stored_ideas(cs.stm, 0)
     assert len(retained) == 1

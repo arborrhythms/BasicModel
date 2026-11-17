@@ -11,7 +11,8 @@ def read(owner, address, concept=None):
     if concept is not None:
         alloc = owner._concept_allocator
         if 'word' in alloc.symbol_types.get(concept, ()):
-            concept = owner.interpret.referent(concept)
+            # An addressed historical member has no active presentation stream.
+            concept = owner.interpret.referent(concept, batch=None)
         row = owner._csw_row_of(concept)
         if row is not None:
             return owner.similarity_codebook.lookup_rows([row])[0]

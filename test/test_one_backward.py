@@ -96,9 +96,8 @@ def test_bands_and_intuition_receive_exactly_their_own_terms_in_one_surrogate(tm
     keys = semantic[:,None].expand(-1,2,-1)
     context = semantic.repeat(1,2)
     knowing = semantic[:,None].expand(-1,2,-1)
-    predicted = predictor(keys,context,knowing).sigmoid()
-    frozen = Prediction(keys,context,knowing,predicted.detach(),torch.arange(2),
-        torch.tensor([True]),target,torch.ones(1,2,dtype=torch.bool))
+    predicted = predictor(keys.detach(),context.detach(),knowing.detach()).sigmoid()
+    frozen = Prediction(predicted,torch.arange(2),torch.tensor([True]),target)
     concept_model = SimpleNamespace(_concept_prediction=frozen,
         _concept_owner=lambda:SimpleNamespace(concept_predictor=predictor))
     attention = CandidateAttention(2,2,hidden_width=4)
@@ -173,7 +172,8 @@ def test_native_sentence_counts_one_backward_and_step_and_preserves_band_gradien
         def storage():
             return {label+'.'+name:dict(pointer=value.data_ptr(),shape=list(value.shape),
                 bytes=value.numel()*value.element_size())
-                for label,module in (('percept',owner),('concept',concept.concept_predictor),('intuition',concept.intuition))
+                for label,module in (('percept',owner),('expect',concept.expect_stack),
+                                     ('intuit',concept.intuit_stack),('infer',concept.intuition))
                 for name,value in (*module.named_parameters(),*module.named_buffers())}
         allocated=storage()
         from corpus_capacity import optimizer_parameter_bytes

@@ -16,7 +16,7 @@ def test_promoted_percepts_keep_their_original_byte_addresses(configuration, mon
     TheData.load(dat['dataset'],dat=dat)
     model,_=Models.BaseModel.from_config(path,data=TheData)
     try:
-        assert model.where_registry.slices['input'][1] >= TheData.inputLength
+        assert model.where_registry.slices['text'][1] >= TheData.inputLength
         items,_=next(iter(TheData.data_loader(split='train',num_streams=1)))
         for _ in range(3):
             model._lex_embed_stem(model.inputSpace.prepInput(items))

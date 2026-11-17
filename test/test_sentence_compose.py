@@ -222,7 +222,7 @@ def test_disabled_sentence_prediction_leaves_adam_momentum_unused():
         languageSpace=SimpleNamespace(_tree_layer=lambda arity: SimpleNamespace()),
         _sentence_leaf_positions=lambda record, row: torch.arange(1),
         _tensor_pushed_ideas=root[:, None],
-        _sentence_observation=lambda *a: observation,
+        _sentence_observation=lambda *a, record: dict(observation, record=record),
         _expectation_documents_for_slot=lambda *a: None)
     lang = [None] * 12
     lang[6], lang[10], lang[11] = root[:, None], root.repeat(1, 3)[:, None], torch.ones(1, 1)

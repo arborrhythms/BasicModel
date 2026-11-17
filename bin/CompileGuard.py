@@ -31,7 +31,8 @@ def output_walk_phase(args, kwargs):
     basis = kwargs.get('basis', args[5] if len(args) > 5 else None)
     banks = (basis is not None, *(kwargs.get(key) is not None for key in
              ('basis_priming', 'terminal_valid', 'case_bank', 'whole_bank',
-              'constituents', 'constituent_valid', 'constituent_families', 'initial_depth')))
+              'constituents', 'constituent_valid', 'constituent_families', 'initial_depth')),
+             bool(kwargs.get('forecast_bank')))
     return (route, kwargs.get('return_trace', False), kwargs.get('return_candidates', False),
             kwargs.get('require_symbols', True), sample,
             kwargs.get('structural_context', False), banks)

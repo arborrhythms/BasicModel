@@ -663,7 +663,7 @@ class Mereology:
 
         Tries ``symbolSpace.host_layer`` first (chart-registered host
         layers, including WholeSpace.sigma / ConceptualSpace.pi /
-        LiftLayer / LowerLayer). Falls back to the parameter-free
+        ChangeLayer / LowerLayer). Falls back to the parameter-free
         ``GRAMMAR_LAYER_CLASSES[rule_name]()`` instance for ops that
         aren't on the host registry (e.g. NotLayer when it isn't
         attached as a builtin).

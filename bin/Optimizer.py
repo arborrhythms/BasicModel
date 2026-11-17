@@ -902,7 +902,16 @@ class MultiOptimizer:
         else:
             for owner, parameters in route(param_group['params']).items():
                 if parameters:
-                    self._dense_child(owner).add_param_group(dict(param_group, params=list(parameters)))
+                    child = self._dense_child(owner)
+                    # Late ordinary parameters inherit their owner's current
+                    # base group, including its schedule and rate metadata.
+                    # Explicit caller options still override that template.
+                    base = next((group for group in child.param_groups
+                                 if group.get('action_rate_power', 0) == 0), {})
+                    options = {key: value for key, value in base.items() if key != 'params'}
+                    options.update(param_group)
+                    options['params'] = list(parameters)
+                    child.add_param_group(options)
         self._refresh_param_groups()
 
     def _step_without_finite_preflight(self):

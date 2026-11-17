@@ -168,7 +168,7 @@ def test_symbol_gain_keeps_native_identity_and_inactive_row_context():
     torch.testing.assert_close(gained[4], ids)
     assert gained[5][0,0] == activation[0,0]  # no repeated attenuation
     assert gained[5][0,1] == activation[0,1]  # raw coefficient is immutable
-    assert field.read().gains(values)[0,1] == 0  # content consumer receives S once
+    assert field.read().gains(values, orders=order)[0,1] == 0  # content consumer receives S once
     assert gained[5][1,0] == activation[1,0]  # inactive row is untouched
     field.anticipate(gained)
     torch.testing.assert_close(field.pending[3][1,2], torch.tensor([1.,0.]))
@@ -177,8 +177,8 @@ def test_symbol_gain_keeps_native_identity_and_inactive_row_context():
 def test_negative_evidence_is_an_activation_target_not_an_omission_sign():
     head = owner()
     roles = torch.eye(4)[:1]
-    head.predict_and_observe_stm_end_state([1], [roles], layout='infix')
-    head.predict_and_observe_stm_end_state([1], [roles], layout='infix', evidence=[(0., .8)])
+    head.predict_and_observe_stm_end_state([1], [roles], layout='infix', symbol_ids=[torch.tensor([0,-1,-1])])
+    head.predict_and_observe_stm_end_state([1], [roles], layout='infix', evidence=[(0., .8)], symbol_ids=[torch.tensor([0,-1,-1])])
     target = head.last_expectation_comparison().activation
     torch.testing.assert_close(target[0], torch.tensor([0., .8]))
 

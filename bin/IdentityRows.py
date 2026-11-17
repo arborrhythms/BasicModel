@@ -23,13 +23,15 @@ def cache_rows(owner):
                  if cid not in alloc.retired and (row := owner._csw_row_of(cid)) is not None)
 
 
-def carrier(owner, point, *, region=True):
+def carrier(owner, point, *, region=None):
     """Validate the native carrier, excluding its separate location/time band."""
     like = owner.similarity_codebook.W
     if point is None:
         return like.new_zeros(like.shape[-1])
     value = point.detach().to(like).clone()
     derived = getattr(owner.similarity_codebook, 'mereology', None)
+    if region is None:
+        region = derived is not None and derived.meaning_pairs > 0
     if derived is not None:
         value[..., derived.percept_width:derived.percept_event_width] = 0
     if not bool(torch.isfinite(value).all()) or (region and bool(((value < 0) | (value > 1)).any())):
@@ -37,7 +39,7 @@ def carrier(owner, point, *, region=True):
     return value
 
 
-def coordinates(owner, point, *, region=True):
+def coordinates(owner, point, *, region=None):
     """Read meanings only; the shared index is the link to perceptual form.
 
     Keep the carrier's width so narrowed rows and wide STM values retain
@@ -55,7 +57,7 @@ def point(owner, identity):
     row = owner._csw_row_of(int(identity))
     if row is None:
         return None
-    return owner.similarity_codebook.W[row].detach()
+    return owner.similarity_codebook.lookup_rows(row).detach()
 
 
 def meet_ratios(query, candidate):
@@ -83,24 +85,21 @@ def mint(owner, content, *, form=None):
     content = carrier(owner, content)
     witnessed_content = content.clone()
     alloc = allocator(owner)
-    identity = owner.new_concept()
-    alloc.reference_orders[identity] = 1
+    identity = owner.new_concept(order=1)
     alloc.settle(identity)
+    alloc.symbol_types.setdefault(identity, set()).update(('concept', 'object'))
     row = owner._csw_concept_row(1, identity)
     if row is None:
         raise RuntimeError('identity inventory changed after allocation preflight')
     derived = getattr(owner.similarity_codebook, 'mereology', None)
     if derived is not None:
         derived.remember_content(row, content)
-        content[derived.percept_width:] = 0
         derived.placement_dirty[row] = True
-    owner.similarity_codebook.W[row].copy_(content)
     if form is None:
         alloc.individuals.add(identity)
     else:
         alloc.form_regions[int(form)] = identity
-    if derived is not None and derived.meaning_pairs:
-        derived.place_rows([row], torch.zeros_like(derived.placement_witnesses), derived.content_key(row))
+    owner.similarity_codebook.trust.remember(identity, witnessed_content)
     from ConceptTrust import observe
     observe(owner, identity, witnessed_content)
     return identity

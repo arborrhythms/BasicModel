@@ -63,10 +63,12 @@ def _signature(semantic_id, *roles):
         THOUGHT_EXECUTORS[semantic_id], tuple(roles))
 
 
-def _world(capacity=64):
-    cs = _cs(nS=capacity)
+def _world(capacity=64, *, order_limit=None, reserve_grammar=False):
     grammar = Grammar()
     grammar.load_from_grammar_file('complete.grammar')
+    from PartsOfSpeech import order_reservations
+    reservations = order_reservations(grammar) if reserve_grammar else ()
+    cs = _cs(nS=capacity, order_limit=order_limit, order_reservations=reservations)
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     base = cs.new_concept()
     from order_fixtures import force_order
@@ -113,9 +115,9 @@ def test_registry_installation_reuses_native_bindings_and_checkpoint(tmp_path):
     from Models import BaseModel
     cs, grammar, registry, a, b, _ = _world()
     question = registry.form('part', a, b)
-    before = dict(cs._concept_allocator.placement)
+    before = dict(cs._concept_allocator.symbols)
     GrammaticalThoughtRegistry.install(cs, grammar)
-    assert cs._concept_allocator.placement == before
+    assert cs._concept_allocator.symbols == before
     def model(space):
         value = BaseModel()
         value.name = 'GrammaticalVPCheckpoint'
@@ -192,7 +194,7 @@ def test_query_proposition_preserves_live_operand_gradients_without_new_paramete
     cs, _, registry, _, _, _ = _world()
     before = tuple(id(p) for p in cs.parameters())
     a, b = (torch.randn(8, requires_grad=True) for _ in range(2))
-    question = registry.form('equal', a, b)
+    question = registry.form('define', a, b)
     loss = question.roles[0].square().sum() + 2 * question.roles[2].square().sum()
     loss.backward()
     assert a.grad.abs().sum() > 0 and b.grad.abs().sum() > 0

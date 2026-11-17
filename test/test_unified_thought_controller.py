@@ -77,6 +77,18 @@ def test_child_context_can_refine_before_returning_its_causal_result(monkeypatch
     reference = memory.thought_reference(record)
     memory.finish_thought(child)
     memory.end_what_episode()
+    # This controller fixture declares its checked System-2 filling. Recall
+    # now loads STM only; its no-return contract is tested separately.
+    import ThoughtStream
+    from Queries import ThoughtOperationCandidate
+    from ThoughtReferences import has_open_slots
+    candidates = ThoughtStream.candidates
+    def menu(registry, root, active, current, records, descriptions=(), *, stm):
+        result = candidates(registry, root, active, current, records, descriptions, stm=stm)
+        if root.role_refs == child.role_refs and has_open_slots(current):
+            result = (*result, ThoughtOperationCandidate(registry.operation_spec('isPart'), child, ('argin1',)))
+        return result
+    monkeypatch.setattr(ThoughtStream, 'candidates', menu)
     child_choices = []
 
     def choose(_root, _active, actions, *, level, evidence=None, **_kwargs):
@@ -88,9 +100,9 @@ def test_child_context_can_refine_before_returning_its_causal_result(monkeypatch
         child_choices.append(evidence)
         if len(child_choices) > 2:
             return None
-        target = "query" if len(child_choices) == 1 else "equal"
+        target = "isPart" if len(child_choices) == 1 else "define"
         if len(child_choices) == 1:
-            assert not any(action is not None and action.semantic_id == 'equal' for action in actions)
+            assert not any(action is not None and action.semantic_id == 'define' for action in actions)
         return next(action for action in actions
                     if action is not None and action.semantic_id == target)
 
@@ -101,10 +113,10 @@ def test_child_context_can_refine_before_returning_its_causal_result(monkeypatch
         selected = model.run_selected_thought(outer, work_budget=128)
     assert len(child_choices) == 3
     assert child_choices[1]["support_true"] == 1.0
-    assert selected.result.value.semantic_id == "equal"
+    assert selected.result.value.semantic_id == "define"
     child_ops = [record.operation for record in selected.records
                  if record.level == 1 and record.kind == "thought"]
-    assert child_ops == ["query", "equal", "conclude"]
+    assert child_ops == ["isPart", "define", "conclude"]
     returned = next(record for record in selected.records if record.kind == "return")
     conclusion = next(record for record in selected.records
                       if record.level == 0 and record.operation == "conclude")
@@ -163,7 +175,7 @@ def test_runbatch_credits_each_controller_row_from_its_own_answer(monkeypatch, e
         from order_fixtures import force_order
         force_order(owner, ref[1], 0)
         owner._csw_concept_row(0, ref[1])
-        query = registry.form('equal', ref, ref)
+        query = registry.form('define', ref, ref)
         fields = WholePaths.fields
         def supplied(*args, **kwargs):
             return [replace(field, query=query) if field is not None else None

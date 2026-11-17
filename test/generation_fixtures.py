@@ -23,6 +23,15 @@ def suffix(tops, pending, *, choices=1):
             tops.new_zeros(B,T,choices,9),tops)
 
 
+def native_policy(language, *, cost=0.):
+    """Isolated inverse/credit fixtures omit application pressure explicitly."""
+    from types import MethodType
+    from Language import LanguageSpace
+    language.operator_cost = cost
+    language.choose_generate = MethodType(LanguageSpace.choose_generate, language)
+    return language
+
+
 def undeclared_arguments(language):
     """Toy algebra has no learned syntactic argument inventory."""
     from types import SimpleNamespace
@@ -30,4 +39,4 @@ def undeclared_arguments(language):
         value_scores=lambda value: value.new_zeros(*value.shape[:-1], 0))
     language._generate_binary_rules = ()
     language._generate_unary_rules = ()
-    return language
+    return native_policy(language)

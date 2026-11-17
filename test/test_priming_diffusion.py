@@ -14,10 +14,8 @@ def owner(points):
     native = nn.Module()
     native.similarity_codebook = SimpleNamespace(mereology=SimpleNamespace(
         placement=F.normalize(points.detach(), dim=-1), meaning_pairs=points.shape[1],
-        placement_witnesses=torch.ones(len(points), dtype=torch.long, device=points.device),
-        placement_derived=torch.zeros(len(points), dtype=torch.bool, device=points.device),
-        placement_valid=torch.zeros(len(points), dtype=torch.bool, device=points.device)))
-    native._concept_allocator = SimpleNamespace(symbol_types={}, raised=set(), placement={i+1:0 for i in range(len(points))},
+        placement_witnesses=torch.ones(len(points), dtype=torch.long, device=points.device)))
+    native._concept_allocator = SimpleNamespace(symbol_types={}, raised=set(), symbols={i+1:None for i in range(len(points))},
         retired=set(), _layers={0:object()}, parts=LTM1(256), relate_idx={('part-base', 2): (2, 1), ('part-base', 3): (2, 2)})
     native._priming_edge_src = torch.full((512,), -1, dtype=torch.long)
     native._priming_edge_dst = torch.full((512,), -1, dtype=torch.long)
@@ -76,49 +74,32 @@ def class_fixture():
     alloc.parts.add(cs.concept_id_at_row(b), symbol, truth_minus=.5)
     return cs, derived, (a,b,row), relation
 
-def test_class_centroid_weight_witnesses_cross_order_reach_and_context_skip():
-    cs, derived, (a,b,c), _ = class_fixture()
-    assert derived.placement_derived[c] and not derived.placement_valid[c]
-    derived.place_rows([c], torch.ones(cs.nVectors), b'not-a-context-placement')
-    assert derived.placement_witnesses[c] == 0
-    derived.derive_class_placements()
-    expected = F.normalize(derived.placement[a] + .5*derived.placement[b], dim=0)
-    torch.testing.assert_close(derived.placement[c], expected)
-    assert derived.placement_witnesses[c] == 2 and derived.placement_valid[c]
-    surface = cs.prime_seen(torch.tensor([[a]]))
-    assert surface[0,c] == 1  # seen words do not synthesize predictions
-    assert cs._concept_allocator.order_of(cs.concept_id_at_row(c)) == 1
-    assert cs._priming_seen[0,c] == 1
-    pointers = [value.data_ptr() for value in (derived.placement, derived.placement_derived, derived.placement_valid)]
-    derived.derive_class_placements()
-    assert pointers == [value.data_ptr() for value in (derived.placement, derived.placement_derived, derived.placement_valid)]
 
-def test_class_flags_roundtrip_with_fixed_shapes():
+def test_class_placements_roundtrip_with_fixed_shapes():
     import copy
+    from placement_fixtures import place_types
     cs,derived,_,_=class_fixture()
-    derived.derive_class_placements()
+    place_types(cs)
     saved=derived.placement_extras(); state=copy.deepcopy(derived.state_dict())
-    pointers=derived.placement_derived.data_ptr(),derived.placement_valid.data_ptr()
-    derived.placement_derived.zero_();derived.placement_valid.zero_()
+    pointers=derived.placement.data_ptr(),derived.placement_witnesses.data_ptr()
+    derived.placement.zero_();derived.placement_witnesses.zero_()
     derived.load_placement_extras(saved)
-    assert torch.equal(derived.placement_derived,saved['derived'])
-    assert torch.equal(derived.placement_valid,saved['valid'])
+    assert torch.equal(derived.placement,saved['placement'])
+    assert torch.equal(derived.placement_witnesses,saved['witnesses'])
     derived.load_state_dict(state)
-    assert pointers==(derived.placement_derived.data_ptr(),derived.placement_valid.data_ptr())
+    assert pointers==(derived.placement.data_ptr(),derived.placement_witnesses.data_ptr())
     with pytest.raises(ValueError,match='constructed column'):
-        derived.load_placement_extras(dict(saved,valid=torch.zeros(1,dtype=torch.bool)))
+        derived.load_placement_extras(dict(saved,witnesses=torch.zeros(1,dtype=torch.long)))
 
 
 def test_noncontiguous_class_placement_remains_independent_of_spread():
     cs, derived, (a,b,c), _ = class_fixture()
     derived.placement[b] = torch.tensor([0.,1.])
-    derived.derive_class_placements()
-    assert not derived.placement_valid[c]
     cs._expected_knowing[0,c] = torch.tensor([.3,.8])
     before = cs._expected_knowing.clone()
     cs.prime_seen(torch.tensor([[a]]))
     assert torch.equal(before,cs._expected_knowing)
-    assert cs.placement_context(0)[a] == 1 and cs.placement_context(0)[c] == 0
+    assert not cs.placement_context(0).any()  # Seen counts are not observed field evidence.
     assert cs.relevance_weights(batch=1)[0,c] == pytest.approx(1.8)
 
 
@@ -169,7 +150,7 @@ def test_seen_ledger_guard_decay_bump_desire_and_fired_rows(monkeypatch):
     result=cs.prime_seen(torch.tensor([[3],[6],[5]]),decay=.8,active_rows=active)
     assert torch.equal(result,cs.relevance_weights(batch=3))
     assert torch.equal(cs._priming_seen,expected) and torch.equal(frozen,cs._expected_knowing)
-    for b in range(3):assert torch.equal(cs.placement_context(b),(expected[b]-1).clamp_min(0))
+    for b in range(3):assert not cs.placement_context(b).any()
     cs.prime_desire(torch.tensor([[near],[near],[near]]),valence=.5,bump=2.)
     assert torch.equal(cs._priming_seen,expected) and torch.equal(frozen,cs._expected_knowing)
     assert cs._desire[:,near].eq(1).all()
@@ -185,24 +166,24 @@ def test_seen_ledger_guard_decay_bump_desire_and_fired_rows(monkeypatch):
         cs.prime_seen(torch.zeros(4,1,dtype=torch.long))
 
 
-def test_one_precomposition_prediction_and_one_centroid_close_per_sentence(monkeypatch,eager_reading):
+def test_one_precomposition_prediction_and_one_placement_per_active_stream(monkeypatch,eager_reading):
     import ConceptSpread
     from test_mm_xor import _fresh_model
     model,*_=_fresh_model('data/XOR_grammar.xml')
     derived=model._concept_owner().similarity_codebook.mereology
-    events=[];prime=model._prime_sentence_symbols;predict=ConceptSpread.open_prediction;derive=derived.derive_class_placements
+    events=[];prime=model._prime_sentence_symbols;predict=ConceptSpread.open_prediction;place=derived.observe_close
     def sentence(sid):
         events.append(('sentence',sid));return prime(sid)
-    def opened(model,active):
-        events.append(('prediction',active.tolist()));return predict(model,active)
-    def centroid():
-        events.append(('centroid',));return derive()
+    def opened(model,active,**kwargs):
+        events.append(('prediction',active.tolist()));return predict(model,active,**kwargs)
+    def placement(reading,batch=0):
+        events.append(('placement',batch));return place(reading,batch)
     monkeypatch.setattr(model,'_prime_sentence_symbols',sentence)
     monkeypatch.setattr(ConceptSpread,'open_prediction',opened)
-    monkeypatch.setattr(derived,'derive_class_placements',centroid)
+    monkeypatch.setattr(derived,'observe_close',placement)
     try:
         with torch.no_grad():model.forward(model.inputSpace.prepInput(['hello world','loving there']))
-        assert [event[0] for event in events]==['sentence','prediction','centroid']
+        assert [event[0] for event in events]==['sentence','prediction','placement','placement']
         assert events[1][1]==[True,True]
     finally:model.End();model.symbolSpace.soft_reset()
 

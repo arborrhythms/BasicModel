@@ -37,7 +37,8 @@ def test_query_requires_the_address_of_an_unresolved_fixed_operand(monkeypatch,s
     result=_context(cs,store=cs._fixture_occurrences).ltm.best_match(pattern,max_records=10,work=None)
     assert result['records_scanned']==1
     if same_reference:
-        assert result['frames']==(frame,) and result['support_true']==.8
+        assert result['frames'] == (frame,) and result['frames'][0]['evidence'] == (.8, 0.)
+        assert result['value'] is None and result['support_true'] == result['support_false'] == 0.
     else:
         assert result['frames']==() and result['witnesses']==()
         assert result['support_true']==result['support_false']==0.

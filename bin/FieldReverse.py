@@ -68,7 +68,15 @@ class NativeDecode(nn.Module):
 
 def reverse(model, sub, field):
     """A basic percept puts its parts at its own field bracket, never an input trace."""
+    from dataclasses import replace
     cs, ps = model._concept_owner(), model.perceptualSpace
+    # Each modality owns a distinct address range. Only text brackets can
+    # produce bytes; a colocated scalar is reconstructed by its value read.
+    start, end = model.where_registry.slices['text']
+    text = ((field.where[..., 0] >= start) & (field.where[..., 1] <= end)
+            & (field.where[..., 1] > field.where[..., 0]))
+    field = replace(field, evidence=field.evidence * text[None, ..., None],
+                    where=torch.where(text[..., None], field.where - start, 0))
     radix, primitive = ps.percept_store, model.wholeSpace.subspace.what.primitive_properties
     decoder = radix.activity_decoder
     ids = field.concept_ids
@@ -102,7 +110,7 @@ def reverse(model, sub, field):
     identity = getattr(radix, 'identity', None)
     atoms = set(identity.atoms.values()) if identity is not None else set()
     for edge, col in enumerate(columns.tolist()):
-        if col // 2 in cs.basic_percepts.numeric_axes or cs.basic_percepts.is_value(col // 2):
+        if cs.basic_percepts.is_value(col // 2):
             continue  # Values have no byte locations; the value inverse reads their percepts.
         support = attributed[edge, ..., 0]
         group, wholes = cs.basic_percepts.occurrences[col // 2]
@@ -161,7 +169,7 @@ def reverse(model, sub, field):
     where_indices = ps._radix_where_indices
     if where_indices and where_indices[0] >= radix.dim:
         locations = decoder.positions[:width].expand(B, -1)
-        stamp = model.where_registry.encode('input', locations)
+        stamp = model.where_registry.encode('text', locations)
         code[..., where_indices] = stamp.to(code) * strength[..., None]
     if ps.subspace.nWhen:
         times = place(field.when[..., 0].to(device=code.device, dtype=torch.long))

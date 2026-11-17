@@ -45,7 +45,7 @@ SOURCES = (
     ('bin.Spaces:InputSpace.__init__', ('_peer_embedding',), False),
     ('bin.Spaces:InputSpace.forward', ('_raw_input',), False),
     ('bin.Spaces:PartSpace.embed_stem', ('_raw_input', 'vocab.forward'), False),
-    ('Layers:LiftLayer', ('PartSpace.sigma', 'ConceptualSpace.pi'), False),
+    ('Layers:ChangeLayer', ('PartSpace.sigma', 'ConceptualSpace.pi'), False),
     ('Layers:LowerLayer', ('PartSpace.sigma', 'ConceptualSpace.pi'), False),
     ('Spaces:PartSpace.__init__', ('self.conceptualSpace_ref = None',), False),
     ('Spaces:ConceptualSpace.__init__', ('self.wholeSpace_ref = None',
@@ -154,7 +154,7 @@ def test_retired_names_remain_absent():
             source = inspect.getsource(getattr(cls, method))
             for name in ('_to_mult', '_from_mult', 'atanh', 'tanh'):
                 assert name not in source, (cls.__name__, method, name)
-    lift = Layers.LiftLayer(wholeSpace=None, perceptualSpace=None)
+    lift = Layers.ChangeLayer(wholeSpace=None, perceptualSpace=None)
     assert getattr(lift, 'raw_gate', None) is None
     assert 'raw_gate' not in dict(lift.named_parameters())
     from embed import WordVectors
@@ -208,7 +208,7 @@ def test_retired_names_remain_absent():
                 if path.name == 'complete.grammar':
                     assert token not in GRAMMAR_TOKENS, (token, rule.canonical)
                 assert not token.endswith('_MARK'), (token, rule.canonical)
-        for name in ('copy', 'swap'):
+        for name in ('copy', 'transpose'):
             assert name not in {rule.method_name for rule in grammar.rules if rule.method_name}
     for name in ('grammar2.cfg', 'grammar_legacy.cfg'):
         assert not (ROOT / 'data' / name).exists(), name

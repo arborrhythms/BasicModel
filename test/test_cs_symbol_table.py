@@ -29,7 +29,7 @@ from test_basicmodel import _populate_test_config
 _D = 8
 
 
-def _cs(nS=64):
+def _cs(nS=64, *, order_limit=None, order_reservations=()):
     nP = 4
     _populate_test_config(
         inputDim=_D, perceptDim=_D, conceptDim=_D, symbolDim=_D,
@@ -37,7 +37,8 @@ def _cs(nS=64):
         nInput=nP, nPercepts=nP, nConcepts=nS, nSymbols=nS,
         nWords=nS, nOutput=nS, nWhere=0, nWhen=0,
     )
-    return with_definitions(Spaces.ConceptualSpace([nP, _D], [nS, _D], [nS, _D]))
+    return with_definitions(Spaces.ConceptualSpace([nP, _D], [nS, _D], [nS, _D],
+        order_limit=order_limit, order_reservations=order_reservations))
 
 
 def test_new_symbol_starts_empty():
@@ -88,14 +89,6 @@ def test_counts_alone_do_not_request_refinement():
     assert not cs.concept_over_collected(collected(cs, (7,), (8,)))   # 1+1, not over
 
 
-def test_retire_transient_symbol():
-    cs = _cs()
-    A = collected(cs, (1,), (2,))
-    cs.retire_concept(A)
-    assert cs.concept_parts(A) == [] and cs.concept_wholes(A) == []
-    # idempotency cache cleared -> re-relating the same pair mints a NEW symbol
-    assert collected(cs, (1,), (2,)) != A
-    cs.retire_concept(A)                          # idempotent
 
 
 # -- live population from the .where binding (S2a) -----------------------------

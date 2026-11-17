@@ -250,7 +250,7 @@ def test_mini_basicmodel_production_widths_runs_forward_backward(
     support = ConceptualSpace._ordered_fold_support(
         (0, 1, 2), (0, 1, 2))
     expected = model.conceptualSpaces[0].record_concept_fold_support(
-        17, support, 3)
+        17, support)
     assert model.conceptualSpace.concept_fold_support(17) == expected
     checkpoint_extras = model._collect_vocab_extras()
     assert checkpoint_extras is not None
@@ -337,7 +337,7 @@ def test_concept_fold_support_roundtrips_with_conceptual_extras():
         (0, 1, 2), (0, 1, 2))
     model, _ = _serial_model_and_batch()
     cs = model.conceptualSpaces[0]
-    expected = cs.record_concept_fold_support(17, support, 3)
+    expected = cs.record_concept_fold_support(17, support)
     blob = cs.vocab_extras()
 
     model2, _ = _serial_model_and_batch()

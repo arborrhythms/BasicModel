@@ -56,8 +56,9 @@ def _model():
         Language.TheGrammar._configured = False
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
-            m, _ = Models.BasicModel.from_config(
-                os.path.join(_DATA, "MM_grammar.xml"))
+            from configuration_fixtures import order_allocation
+            with order_allocation('MM_grammar.xml', (8, 0, 0)) as path:
+                m, _ = Models.BasicModel.from_config(path)
         Models.TheData.load("xor")
         # These provenance fixtures supply absolute ideas. Reading a bare form
         # alone no longer testifies to its object; witness all four explicitly.

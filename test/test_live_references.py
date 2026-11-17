@@ -35,7 +35,8 @@ def test_transparent_operation_preserves_a_vp_with_a_relational_operand():
             torch.stack((point,other,combined)),
             torch.stack((combined,point*0,combined)))),
         end_state=torch.stack((combined,point*0,point*0)))
-    registry = SimpleNamespace(space=SimpleNamespace(_clause_store_ref=weakref.ref(store)))
+    registry = SimpleNamespace(space=SimpleNamespace(_clause_store_ref=weakref.ref(store),
+        interpret=SimpleNamespace(no_object=lambda reference: False)))
     field = finish_clause(language, entry, registry=registry)
     assert field.relation is None
     torch.testing.assert_close(field.point, combined)
@@ -116,7 +117,7 @@ def test_identity_operand_keeps_order_one_and_implicit_literals(order, literal, 
 
 
 @pytest.mark.parametrize('order', [0, 2])
-@pytest.mark.parametrize('operation', ['lift', 'part', 'whole', 'equal'])
+@pytest.mark.parametrize('operation', ['change', 'part', 'whole', 'equal'])
 def test_identity_journal_keeps_the_implicit_typed_reference_and_point(order, operation):
     from dataclasses import replace
     from types import SimpleNamespace
@@ -125,8 +126,8 @@ def test_identity_journal_keeps_the_implicit_typed_reference_and_point(order, op
     from test_sentence_references import language_and_program
     language, entry = language_and_program()
     rule = SimpleNamespace(method_name=operation, reference_roles=(), reference_modes=(),
-        clause_form='S' if operation == 'lift' else None,
-        relation_kind=None if operation == 'lift' else operation, head_role=0)
+        clause_form='S' if operation == 'change' else None,
+        relation_kind=None if operation == 'change' else operation, head_role=0)
     language._compose_binary_rules = (rule,)
     typed = torch.tensor([.2, .3, .4, .5])
     types = ReferenceTypes(torch.tensor([[1]]), torch.tensor([order]),
@@ -269,7 +270,7 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
     monkeypatch.setattr(torch, 'while_loop', eager_while)
     language = model.languageSpace
     rules = list(language._compose_binary_rules)
-    op = next(i for i, r in enumerate(rules) if r.method_name == 'lift')
+    op = next(i for i, r in enumerate(rules) if r.method_name == 'change')
     rules[op] = rules[op]._replace(clause_form='S', head_role=1)
     language._compose_binary_rules = tuple(rules)
     from ChunkJournal import ChunkJournal

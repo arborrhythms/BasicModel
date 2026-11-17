@@ -29,9 +29,8 @@
     <language>
       <grammar>
       <compose>
-        <rule operands="field">F = divide.forward(F)</rule>
-        <rule operands="field">F = descend.forward(F)</rule>
-        <rule operands="field">F = gloss.forward(F)</rule>
+        <rule operands="field">F = focus.forward(F)</rule>
+        <rule operands="field">F = mint.forward(F)</rule>
         <rule operands="field">F = intersection.forward(F)</rule>
         <rule operands="field">F = union.forward(F)</rule>
         <rule>P = sigma(P)</rule>
@@ -45,7 +44,7 @@
         <rule>S = intersection(S, S)</rule>
         <rule>S = union(S, S)</rule>
         <rule>S = lower(S, S)</rule>
-        <rule>S = lift(S, S)</rule>
+        <rule>S = change(S, S)</rule>
       </compose>
     </grammar>
     </language>

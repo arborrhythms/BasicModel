@@ -37,7 +37,7 @@ def operated(model, opened, reading, *, proposals=False):
     return replace(opened,evidence=evidence)
 
 
-def run(model, sid, present):
+def run(model, sid, present, *, trust):
     from FamiliarTier import open_sentence,promote_candidates
     from SentenceField import native_target,publish,select_fields
     from ModelAttention import handoff
@@ -96,7 +96,7 @@ def run(model, sid, present):
     publish(model,field)
     decoded = model.reverse(model.conceptualSpace.subspace.carrier_like(),field=field)
     from Understanding import InputReconstruction
-    points = key(owner,field).mean(1)
+    points = key(owner,field,order=0).mean(1)
     selected_cost = costs.gather(1,winners[:,None])[:,0]
     sentence_costs = selected_cost.new_zeros(len(present),model.inputSpace._packed_sentence_slot_mask.shape[1])
     sentence_costs[:,sid] = selected_cost
@@ -111,9 +111,8 @@ def run(model, sid, present):
     for batch in present.nonzero().flatten().tolist():
         # A glance keeps its examined idea and the selected field together.
         certainty = float(field.evidence[:,batch,:,0].amax()) if field.evidence[:,batch].numel() else 0.
-        trust = 0. if model.__dict__.get('_conversation_read', False) else owner._incoming_trust_multiplier()*certainty
         store.append_meaning(ConceptualMeaning.from_description(points[batch].detach()),
-            trust=trust,entry=(entry_ids[batch],entry_values[batch]))
+            trust=trust*certainty,entry=(entry_ids[batch],entry_values[batch]))
         owner.mtm.close(None,stream=batch,references=owner._field_activated_references.get(batch,()))
     if model.training:
         promote_candidates(owner)

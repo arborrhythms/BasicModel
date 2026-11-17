@@ -44,7 +44,9 @@ def test_one_presentation_updates_detached_context_at_the_close():
         for record in context:
             assert record['direction_norm'] == pytest.approx(1.)
             if record['row'] not in argument_rows:
-                assert record['placement_witnesses'] == 2
+                # Both sentence occurrences place the word; its argument pull
+                # now adds placement observations at the same kept close.
+                assert record['placement_witnesses'] >= 2
             assert not derived.placement.requires_grad
         derived.begin_forward()
         assert len(derived.context_audit()) == len(context) and not list(derived.parameters())

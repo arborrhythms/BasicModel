@@ -10,7 +10,7 @@ from ThoughtReferences import bindings, open_slots
 def request(clause, written, store):
     record = clause.identity
     if (not record or not (record.get('timeline_order') or record.get('case_value') is not None)
-            or record.get('operation') != 'lift' or not record.get('event')):
+            or record.get('operation') != 'change' or not record.get('event')):
         return None
     subject, verb = record['event'][1], record['event'][3]
     if not subject:

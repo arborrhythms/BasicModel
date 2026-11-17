@@ -1,6 +1,5 @@
 """Free variables, stored columns, exhaustion and formation provenance (§14)."""
 from Memory import STM0
-from order_fixtures import force_order
 from dataclasses import replace
 from types import SimpleNamespace
 import pytest
@@ -112,7 +111,7 @@ def test_one_empty_region_query_permits_conclude_and_only_source_mints(monkeypat
         assert dict(bindings(child)['_formation_records'][0]) == dict(role=2,choice='open',probability=.25)
         assert bindings(result.meaning)['_bound_roles'] == (('referent',2),)
         from BindingAnswers import cost
-        owner = SimpleNamespace(word_concepts=lambda _: (9,), _csw_row_of=lambda _:0,
+        owner = SimpleNamespace(_concept_source_order=lambda _: 0, _row_order=lambda _: 0, word_concepts=lambda _: (9,), _csw_row_of=lambda _:0,
             similarity_codebook=SimpleNamespace(lookup_rows=lambda _,**kw:torch.ones(1,root.roles.shape[-1])))
         scored = SimpleNamespace(_concept_owner=lambda:owner,symbolSpace=SimpleNamespace(ltm_store=store))
         # The minted empty region has no content meeting the target.
@@ -299,8 +298,7 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
     from test_definition_rows import admit
     owner = model._concept_owner()
     for word in ('x', 'what', 'y', 'is', 'plus', 'two'):
-        _, obj = admit(model, word)
-        force_order(owner, obj, 1 if word in ('x', 'what') else 0)
+        admit(model, word, object_order=1 if word in ('x', 'what') else 0)
     from dataclasses import replace
     from Queries import ThoughtLTMCapability
     content_query = ThoughtLTMCapability.query
@@ -442,8 +440,7 @@ def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager
     # interprets every word, so provision its DEF object instead of putting
     # order 1 on the lexical form and implicitly raising it again.
     from test_definition_rows import admit
-    _, obj = admit(model, 'x')
-    force_order(owner, obj, 1)
+    _, obj = admit(model, 'x', object_order=1)
     # Other words were order-0 forms in this forced grammar fixture. Give
     # them their order-0 objects so D6 preserves that supplied vocabulary.
     for word in ('y', 'is', 'plus', 'two', 'three'):

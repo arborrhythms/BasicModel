@@ -97,10 +97,10 @@ def test_stationary_pending_walk_keeps_the_full_budget_result_and_pullback(compi
 
 
 def test_stored_unfold_preserves_live_native_operator_activation():
-    from Language import LiftLayer
+    from Language import ChangeLayer
     from MemoryIndex import unfold_idea
     language = additive_language()
-    op = LiftLayer(nInput=4, nOutput=4)
+    op = ChangeLayer(nInput=4, nOutput=4)
     language._generate_binary_ops = (op,)
     words = torch.eye(4) * .1
     root = op.compose(words[0:1], words[1:2])[0].detach()
@@ -311,8 +311,7 @@ def test_stored_binding_reads_filled_identity_not_formation_provenance():
         assert stored_binding(provenance, 0) is None
 
 
-def test_native_catalog_can_realize_both_determiner_identity_choices(tmp_path):
-    from Generative import determiner_expansions
+def test_generate_checkpoint_preserves_retained_operator_weights(tmp_path):
     from math_chain_ordinary import ordinary_model
     model = ordinary_model(tmp_path)
     try:
@@ -322,21 +321,16 @@ def test_native_catalog_can_realize_both_determiner_identity_choices(tmp_path):
         orders = torch.tensor([0, 0, 1])
         keys = language._generate_rule_keys.tolist()
         assert len(keys) == len(set(keys))
-        for mode in ('mint', 'bind'):
-            choices = determiner_expansions(language, words[2], 0, words, orders, binding=mode)
-            assert choices, mode
-            assert all(language._generate_binary_rules[i].determiner_mode == mode for i in choices)
-        # A pre-item-6 checkpoint has the mint row but no definite row.
-        # Its learned weights retain their meanings when that row is added.
-        definite = next(i for i, rule in enumerate(language._generate_binary_rules)
-                        if rule.determiner_mode == 'bind')
-        retained = [i for i in range(len(keys)) if i != definite]
+        # Missing rule rows are initialized without changing retained rows.
+        added = next(i for i, rule in enumerate(language._generate_binary_rules)
+                     if rule.method_name == 'add')
+        retained = [i for i in range(len(keys)) if i != added]
         state = {name: value.detach().clone() for name, value in language.state_dict().items()}
         for name in ('_generate_rule_keys', 'generate_policy.weight', 'generate_policy.bias'):
             state[name] = state[name][retained].clone()
         saved = state['generate_policy.weight'].clone()
         migration = language.migrate_generate_checkpoint(state, '')
-        assert migration['generate_policy.weight'][definite] == -1
+        assert migration['generate_policy.weight'][added] == -1
         torch.testing.assert_close(state['generate_policy.weight'][retained], saved, rtol=0, atol=0)
     finally:
         model.End()
@@ -433,6 +427,7 @@ def _field_trial(words, returned, *, available=True, meaning_start=None):
         _index={}, values=torch.empty(0),
         conjunctive=SimpleNamespace(_index={}, values=torch.empty(0)))
     owner = SimpleNamespace(subspace=carrier, similarity_codebook=codebook,
+        definitions=SimpleNamespace(word_ids={0, 1}),
         _csw_row_of=int, _row_order=lambda row: 0, _field_caps=lambda: (2,),
         _field_codes=lambda codes, rows: codes[rows], cs_reverse_presence=lambda query, **kwargs: query,
         _concept_allocator=SimpleNamespace(layer=lambda order: definitions, refs=lambda *args: ()),
@@ -471,7 +466,8 @@ def _field_trial(words, returned, *, available=True, meaning_start=None):
         _staged_concepts_in=torch.ones(1, 1, 2, dtype=torch.long), _input_reconstructions={},
         _publish_sentence_scratch=lambda state: None, _trial_understanding=lambda *args: record,
         _tensor_pushed_ideas=words, _sentence_field=None,
-        _sentence_observation=lambda *args: dict(entries=(None,), clauses=(None,), meanings=(None,), reference_plans=()))
+        _sentence_observation=lambda *args, record: dict(record=record,
+            entries=(None,), clauses=(None,), meanings=(None,), reference_plans=()))
     def reverse(carrier, *, field):
         percepts = events(field)
         return SimpleNamespace(_reconstruction_percepts=percepts,

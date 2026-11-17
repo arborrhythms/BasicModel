@@ -75,8 +75,8 @@ def test_open_matches_and_updates_centroid_with_bounded_support():
     codes = torch.tensor([[1., 0.], [0., 1.], [0., 1.]])
     owner.similarity_codebook.lookup_rows = lambda rows: codes[rows]
     key = pool.open_candidate(order=1, when=0, value=torch.tensor([1., 0.]), support={0: 2.})
-    assert key == ('candidate', 0) and pool.match_candidate(1, torch.tensor([1., .1])) == key
-    assert pool.match_candidate(2, torch.tensor([1., 0.])) is None
+    assert key == ('candidate', 0) and pool.match_candidate(1, torch.tensor([1., .1]), value_order=0, support={0:2.}) == key
+    assert pool.match_candidate(2, torch.tensor([1., 0.]), value_order=0, support={0:2.}) is None
     pool.update_candidate(key, when=1, value=torch.tensor([0., 1.]), support={1: 2., 2: 1.})
     entry = pool.entries[key]
     assert entry.count == 2 and len(entry.support) == 2 and entry.when == 1
@@ -139,7 +139,9 @@ def test_count_mints_once_with_weighted_definition_form_and_released_transient()
     assert not pool.transient_used[transient-int(pool.transient_ids[0])]
     row = cs._csw_row_of(minted[0])
     assert dict(cs.concept_weights(row)) == {r: w*3 for r, w in support.items()}
-    torch.testing.assert_close(cs.similarity_codebook.W[row], expected)
+    torch.testing.assert_close(cs.similarity_codebook.trust.content[row], expected)
+    from ConceptPlacement import seed
+    torch.testing.assert_close(cs.similarity_codebook.W[row], seed(minted[0], expected))
     assert pool.promote_candidates(cs) == []
     assert pointers == (pool.transient_ids.data_ptr(), pool.transient_used.data_ptr(), cs.similarity_codebook.W.data_ptr())
 
@@ -190,7 +192,7 @@ def test_candidate_checkpoint_restores_counter_support_lanes_and_next_match():
     restored._owner = cs.mtm._owner
     assert restored.candidate_counter == 1 and restored.entries[key].support == cs.mtm.entries[key].support
     assert restored.entries[key].readings == cs.mtm.entries[key].readings
-    assert restored.match_candidate(1, cs.mtm.value_of(key)) == key
+    assert restored.match_candidate(1, cs.mtm.value_of(key), value_order=cs._row_order(rows[0][1]), support=cs.mtm.entries[key].support) == key
     assert restored.open_candidate(order=0, when=2, value=torch.ones(_D), support={0:1.}) == ('candidate',1)
     assert pointers == (restored.transient_ids.data_ptr(), restored.transient_used.data_ptr())
     state['entries'][0]['support'][0] = 99.

@@ -21,8 +21,3 @@ def applied(history, operation):
 
 def transposed(history):
     return -2 - count(history) * RADIX
-
-
-def penalty(history, like):
-    """First application costs zero, then one, four, nine, ... logit units."""
-    return count(history).to(like).square()

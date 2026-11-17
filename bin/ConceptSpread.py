@@ -1,27 +1,22 @@
-"""Bottom-up next-state expectation; all consumers read a frozen prediction."""
-from dataclasses import dataclass, replace
+"""Omission-trained expectation; consumers read the detached open prediction."""
+from dataclasses import dataclass
 import torch
 
 
 @dataclass(frozen=True)
 class Prediction:
-    keys: torch.Tensor
-    context: torch.Tensor
-    knowing: torch.Tensor
     value: torch.Tensor
     rows: torch.Tensor
     active: torch.Tensor
     target: torch.Tensor | None = None
-    target_rows: torch.Tensor | None = None
 
 
 def rule_order(owner, row):
     value = owner._expected_knowing[row].detach().amax(-1)
-    return tuple(index for index in value.argsort(descending=True, stable=True).tolist()
-                 if bool(value[index] > 0))
+    return tuple(value.argsort(descending=True, stable=True).tolist())
 
 
-def open_prediction(model, present):
+def open_prediction(model, present, *, sid=None):
     owner = model._concept_owner()
     owner._serial_concept_path = bool(getattr(getattr(model, 'inputSpace', None), '_serial_word_major', False)
                                       or getattr(model, 'word_brackets', False) and getattr(model, 'serial_object_meta', False))
@@ -29,62 +24,38 @@ def open_prediction(model, present):
     B = len(present)
     if B > owner.nStreams:
         raise RuntimeError('concept prediction exceeds constructed streams')
-    rows = torch.tensor(sorted(row for row in owner._row_to_concept() if owner._row_order(row) == 0),
-                        device=present.device, dtype=torch.long)
-    keys = owner.similarity_codebook.lookup_rows(rows).detach()[None].expand(B, -1, -1).clone()
+    rows = torch.arange(owner._order_caps()[0], device=present.device)
     knowing = owner._observed_knowing[:B, rows].detach().clone()
-    from Expectation import ActivationPredictor
-    content = keys * knowing.amax(-1)[..., None]
-    context = ActivationPredictor.context_from(content, knowing.any(-1))
-    prediction = owner.concept_predictor(keys, context, knowing).sigmoid()
-    model._concept_prediction = Prediction(keys, context, knowing,
-        prediction.detach().clone(), rows, present.detach().clone())
+    if owner.concept_predictor is not None:
+        from Expectation import ActivationPredictor
+        keys = owner.similarity_codebook.lookup_rows(rows).detach()[None].expand(B, -1, -1).clone()
+        context = ActivationPredictor.context_from(keys * knowing.amax(-1)[..., None], knowing.any(-1))
+        prediction = owner.concept_predictor(keys, context, knowing).sigmoid()
+    elif owner.expect_stack is not None:
+        prediction = owner.expect_stack(knowing.flatten(1)).reshape_as(knowing)
+    else:
+        prediction = torch.zeros_like(knowing)
+    from Omission import concept_teacher
+    target, hidden = concept_teacher(model, sid=sid, present=present)
+    model._concept_prediction = Prediction(prediction, rows, present & hidden, target)
     with torch.no_grad():
-        target = owner._expected_knowing[:B]
-        target.copy_(torch.where(present[:, None, None], 0., target))
-        target[:, rows] = torch.where(present[:, None, None], prediction.detach(), target[:, rows])
-
-
-def observe(model, field, addresses, present):
-    """The next observed field is a teacher, never a differentiable target."""
-    owner = model._concept_owner()
-    field = field.detach().amax(2)
-    target = torch.zeros_like(owner._observed_knowing[:len(present)])
-    valid_rows = torch.zeros_like(target[..., 0], dtype=torch.bool)
-    for b in range(len(present)):
-        rows = addresses[:, b] if addresses.ndim == 2 else addresses
-        valid = torch.tensor([int(index) >= 0 and owner._row_order(int(index)) == 0
-                              for index in rows.tolist()], device=rows.device, dtype=torch.bool)
-        target[b].scatter_reduce_(0, rows[valid, None].expand(-1, 2),
-                                 field[valid, b], reduce='amax', include_self=True)
-        valid_rows[b, rows[valid]] = True
-    previous = getattr(model, '_concept_prediction', None)
-    if previous is not None:
-        model._concept_prediction = replace(previous, target=target[:, previous.rows].detach(),
-                                            target_rows=valid_rows[:, previous.rows])
-    with torch.no_grad():
-        owner._observed_knowing[:len(present)].copy_(torch.where(
-            present[:, None, None], target, owner._observed_knowing[:len(present)]))
+        expected = owner._expected_knowing[:B]
+        expected.copy_(torch.where(present[:, None, None], 0., expected))
+        expected[:, rows] = torch.where(present[:, None, None], prediction.detach(), expected[:, rows])
 
 
 def loss(model):
     prediction = getattr(model, '_concept_prediction', None)
-    if prediction is None or prediction.target is None:
+    if prediction is None or prediction.target is None or not bool(prediction.active.any()):
         return None
-    predictor = model._concept_owner().concept_predictor
-    live = predictor(prediction.keys, prediction.context, prediction.knowing).sigmoid()
-    frozen = live + (prediction.value - live).detach()
-    square = (frozen - prediction.target.detach()).square()
-    mask = prediction.target_rows
-    error = (square * mask[..., None]).sum((1, 2)) / (2 * mask.sum(-1)).clamp_min(1)
+    error = (prediction.value - prediction.target.detach()).square().mean((1, 2))
     return torch.where(prediction.active, error, 0.)
 
 
 def complete(model, present, registry):
-    """Learn once from the kept carrier after its thought episode has ended."""
-    from SentenceField import descended, inventory, knowing
-    field = descended(model, knowing(model))
-    observe(model, field.evidence, inventory(model._concept_owner(), field), present)
+    """Expectation learns the full input; intuition learns the kept thought."""
     value = loss(model)
     if value is not None:
         registry.error('expectation.concepts', value, 1., mask=present, category='expectation')
+    from IntuitionField import complete as complete_intuition
+    complete_intuition(model, present, registry)

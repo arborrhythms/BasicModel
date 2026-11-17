@@ -135,7 +135,7 @@ def test_language_plan_snapshots_routing_before_latch():
     )
     coordinator = SimpleNamespace(
         current_rules=rules, routing_state=routing, _compose_generation=7,
-        languageLayer=SimpleNamespace(operation_layer=SimpleNamespace(ops=())))
+        languageLayer=SimpleNamespace(operation_layer=SimpleNamespace(ops=(), unary_ops=())))
     language = LanguageSpace(SimpleNamespace(subspace=coordinator))
     plan = language.reduction_plan()
     # A later Language C-stage may replace its mutable coordinator state; the

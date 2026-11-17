@@ -15,23 +15,21 @@ from test_reference_review10 import observed_individual
 
 def phrase(fixture, determiner, description, *, lexical=True):
     """A forced grammar reading, executed and closed by the native journal."""
-    program = fixture.program(('lift', ('lower', 'a' if determiner == 'lower' else 'the',
-                                        description), 'rolls'))
-    if determiner != 'lower':
-        mint = next(i for i, rule in enumerate(fixture.binary)
-                    if rule.method_name == 'lower' and rule.determiner_mode == 'mint')
-        bind = next(i for i, rule in enumerate(fixture.binary)
-                    if rule.method_name == 'lower' and rule.determiner_mode == 'bind')
-        actions = program.actions.clone()
-        actions[(actions[:, 0] == 1) & (actions[:, 1] == mint), 1] = bind
-        program = replace(program, actions=actions)
-    orders = torch.ones(len(program.leaves), dtype=torch.long)
-    orders[-1] = 0
-    program = replace(program, close_references=True, leaf_orders=orders)
+    from chunk_fixtures import record, higher_word
+    tree = ('change', ('lower_unary', description), 'rolls')
+    def declare(node):
+        if isinstance(node, str):
+            if node not in fixture.words:
+                fixture.noun(node, order=1)
+                higher_word(fixture, node)
+        else:
+            for child in node[1:]:
+                declare(child)
+    declare(description)
+    program, _, _ = record(fixture, tree)
     if not lexical:
         program = replace(program, word_ids=torch.full_like(program.word_ids, -1))
-    return finish_clause(fixture.language, record_reading(fixture.language, program),
-                         registry=fixture.registry)
+    return finish_clause(fixture.language, program, registry=fixture.registry)
 
 
 def close_sentence(resolver, clause):
@@ -57,7 +55,10 @@ def test_ordinary_description_keeps_its_phrase_and_scores_by_containment(monkeyp
                      else rule for rule in f.binary)
     f.language._compose_binary_rules = f.binary
     for word in ('a', 'red', 'ball', 'blue', 'the', 'rolls'):
-        f.noun(word)
+        f.noun(word, order=1 if word in ('red','ball','blue') else 0)
+        if word in ('red','ball','blue'):
+            from chunk_fixtures import higher_word
+            higher_word(f, word)
     red = f.registry._payload(('sym', f.noun('red')))
     ball = f.registry._payload(('sym', f.noun('ball')))
     blue = f.registry._payload(('sym', f.noun('blue')))
@@ -69,7 +70,10 @@ def test_ordinary_description_keeps_its_phrase_and_scores_by_containment(monkeyp
     token = f.cs.mtm.token_of(item['reference'])
     assert token is not None
     expected = torch.maximum(red, ball)
-    torch.testing.assert_close(f.cs.mtm.value_of(token), expected, rtol=0, atol=0)
+    # The native journal also keeps the surrounding verb's state change.
+    # Its subject occurrence still holds the complete description.
+    torch.testing.assert_close(f.cs.mtm.read_member(item['reference']), expected, rtol=0, atol=0)
+    torch.testing.assert_close(f.cs.mtm.value_of(token), sentence.point, rtol=0, atol=0)
     assert f.cs.mtm.reading_of(token) not in (f.words['red'][0], f.words['ball'][0])
     frames = (frame,)
     records = resolver.individuals(resolver.accessible(chunk_context(resolver, frames)))
@@ -78,7 +82,10 @@ def test_ordinary_description_keeps_its_phrase_and_scores_by_containment(monkeyp
     cue = torch.zeros_like(red)
     alternatives, _, _ = resolver.score(torch.maximum(blue, ball), predicate, cue, 0, records)
     assert token not in alternatives
-    contained, _, _ = resolver.score(ball, predicate, cue, 0, records)
+    # Containment reads the changed state, not the earlier description.
+    current = f.cs.mtm.value_of(token)
+    assert token not in resolver.score(ball, predicate, cue, 0, records)[0]
+    contained, _, _ = resolver.score(torch.minimum(ball, current), predicate, cue, 0, records)
     assert token in contained
     definite = resolver.preview(phrase(f, 'definite', ('union', 'blue', 'ball')),
                                 chunk_context(resolver, frames))
@@ -122,15 +129,15 @@ def test_asserted_constraint_still_excludes_a_contained_candidate():
                            document='constraint', sentence=0)
     token = plan['items'][0]['reference']
     for index, support in enumerate((atoms[1], atoms[2])):
-        observed_individual(resolver, support, index)
+        observed_individual(resolver, support, index, order=0)
     records = resolver.individuals(resolver.accessible(chunk_context(resolver, (frame,))))
     # Own content is a part of the antecedent. Only the separately asserted
     # coordinate conflicts with witnessed evidence on its other coordinate.
     args = (atoms[0], atoms[6], torch.zeros_like(atoms[0]), 0, records)
     allowed, _, _ = resolver.score(*args)
     assert token in allowed
-    assert not resolver.exclusion_query()(atoms[0], atoms[0] + atoms[1])
-    assert resolver.exclusion_query()(atoms[2], atoms[0] + atoms[1])
+    assert not resolver.exclusion_query(order=0)(atoms[0], atoms[0] + atoms[1])
+    assert resolver.exclusion_query(order=0)(atoms[2], atoms[0] + atoms[1])
     excluded, _, _ = resolver.score(*args, asserted=(atoms[2],))
     assert token not in excluded
 
@@ -153,6 +160,6 @@ def test_witnessed_exclusion_still_splits_grouped_uses():
         tuple(value.tolist()) for value in (atoms[0], atoms[0] + atoms[1], atoms[0] + atoms[2]))
     assert len(resolver.individuals(records)) == 1
     for index, support in enumerate((atoms[1], atoms[2])):
-        observed_individual(resolver, support, index)
-    assert resolver.exclusion_query()(atoms[0] + atoms[1], atoms[0] + atoms[2])
+        observed_individual(resolver, support, index, order=0)
+    assert resolver.exclusion_query(order=0)(atoms[0] + atoms[1], atoms[0] + atoms[2])
     assert len(resolver.individuals(records)) == 2

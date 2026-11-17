@@ -139,10 +139,11 @@ def test_51_training_and_serving_keep_the_same_open_answer_and_different_authori
     owner._trust = 1.
     names = [rule.method_name for rule in model.languageSpace._compose_binary_rules]
     selected = names.index('conjunction')
-    # Supply a grammatical choice in the existing full menu. The two repeated
-    # words have one object, so both operands have a nonempty intersection.
+    # Supply conjunction as this trust fixture's reading, including exploration.
+    # Finite low scores still permit departures to other binary operators.
+    # The two repeated words have one object and a nonempty intersection.
     def binary(x, candidates, *_args, **kwargs):
-        scores = x.new_full(candidates.shape[:-1], -1e6)
+        scores = x.new_full(candidates.shape[:-1], -torch.inf)
         indices = kwargs.get('op_indices')
         if indices is None:
             scores[..., selected] = 0.
@@ -183,35 +184,19 @@ def test_51_training_and_serving_keep_the_same_open_answer_and_different_authori
         *(child.field for child in children), context=root.context))
     question = with_slots(replace(clause.meaning, extension=(requested,)),
                           (('referent', 2),), pair=(0., 0.))
-    generated = []
-    native = model.generate
-    rules = [rule.method_name for rule in model.languageSpace._generate_binary_rules]
-    binary_index = rules.index('conjunction')
-    stop = len(rules) + len(model.languageSpace._generate_unary_rules)
-    def selected_inverse(*args, **kwargs):
-        trace = torch.full((1, model._walk_budget()), -1, dtype=torch.long)
-        trace[0, :3] = torch.tensor([binary_index, stop, stop])
-        kwargs['walk_options'] = dict(kwargs.get('walk_options') or {}, kept_actions=trace)
-        result = native(*args, **kwargs)
-        generated.append(result)
-        return result
-    # This independent inverse is executed and checked by the native walk;
-    # it is a supplied legal selection, not a saved tree on the retained row.
-    monkeypatch.setattr(model, 'generate', selected_inverse)
+    # Recall brings the matched row into STM; System 1 produces no operand.
     assert not store.meaning_of(0).extension
-    opened = reader.best_match(question, max_records=8, work=QueryWorkBudget(128))
-    assert generated and generated[-1].counts.tolist() == [2]
-    assert opened['answer_operand'] is not None
-    # A generated point can activate several concepts. The lexical readback
-    # row does not name its answer; the open operand retains the whole set.
-    expected = generated[-1].extension[0][0].operand((('conjunction', 1),))
-    actual = opened['answer_operand'].extension[0].field
-    ids = torch.cat((expected.ids, actual.ids)).unique()
-    torch.testing.assert_close(actual.aligned(ids), expected.aligned(ids))
-    torch.testing.assert_close(actual.aligned(root.children[1].field.ids),
-                               root.children[1].field.values)
+    opened = reader.query(question, max_records=8, work=QueryWorkBudget(128))
+    assert opened['value'] is None and opened['chunks_loaded']
+    from ThoughtChunks import read
+    chunk = read(owner.stm, tuple(store.entry_time(0).tolist()), 0)
+    from Extension import ConceptSet
+    ids, values = store.episodic_concepts[0], store.episodic_values[0]
+    valid = ids >= 0
+    expected = ConceptSet(ids[valid], torch.stack((values[valid].clamp_min(0), (-values[valid]).clamp_min(0)), -1))
+    actual = chunk.extension[0].field
+    torch.testing.assert_close(actual.aligned(expected.ids), expected.values)
     assert int(actual.values.any(-1).sum()) > 1
-    assert opened['reference'] is None
     assert opened['witnesses'] == (store.occurrence_of(0),)
-    assert (opened['support_true'], opened['support_false']) == pytest.approx(
+    assert dict(chunk.bindings)['_evidence_pair'] == pytest.approx(
         (0., 0.) if conversation else (certainty, 0.))

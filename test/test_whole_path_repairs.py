@@ -91,7 +91,7 @@ def test_no_departure_does_not_share_later_registry_writes():
     registry = Error(row_mask=active)
     registry.add('reconstruction', torch.tensor([2.]), objective='reconstruction')
     base = Path((), (), {}, None, registry, torch.tensor([[2., 0., 0.]]), Thinking(), None, None)
-    other = finish(None, (), 0, active, base=base, draw={'walk': torch.tensor([-1])})
+    other = finish(None, (), 0, active, base=base, draw={'walk': torch.tensor([-1])}, trust=1.)
     registry.add('attention.reading_lesson', torch.tensor([3.]), objective='attention')
     assert 'attention.reading_lesson' not in other.registry._terms
     assert other.registry.total(objective='reconstruction') == 2
@@ -210,3 +210,61 @@ def test_partial_omission_admits_only_the_visible_form_parts(tmp_path, monkeypat
     finally:
         model.End()
         model.symbolSpace.soft_reset()
+
+
+def test_extension_attachment_keeps_reference_plans_on_the_scored_clause(tmp_path, monkeypatch):
+    from test_item18_expect import lesson
+    from ClauseRow import Clause, Composition
+    from Meaning import ConceptualMeaning
+    from Understanding import ConceptualField
+    from SentenceUnderstanding import SentenceUnderstanding
+    import Models
+    model = lesson(tmp_path, monkeypatch)
+    owner = model._concept_owner()
+    point = owner.similarity_codebook.W.new_zeros(owner.nDim)
+    point[0] = 1.
+    # The ownership mechanism receives a declared completed binding. The
+    # learned chooser is not required to create a reference site for this test.
+    clause = Clause(ConceptualMeaning.from_description(point), point=point, order=1,
+        composition=Composition(point, order=1), reference_request=dict(mode='bind',
+            leaves=(0, 1, 2, 3), cue=point*0, predicate=point, content=point,
+            role=0, compose_bind=0))
+    original_boundary = Models._boundary_observation_view
+    def boundary(*args, clauses, **kwargs):
+        result = original_boundary(*args, clauses=clauses, **kwargs)
+        clauses[0] = clause
+        return result
+    monkeypatch.setattr(Models, '_boundary_observation_view', boundary)
+    monkeypatch.setattr(model, '_capture_reading_programs', lambda **kw: (None, {0: (None,)}))
+    root = point[None]
+    depth = torch.ones(1, dtype=torch.long)
+    lang = [None]*12
+    lang[6], lang[10], lang[11] = root[:, None], root.repeat(1,3)[:, None], depth[:, None]
+    field = ConceptualField(torch.empty(0,dtype=torch.long), point.new_zeros(0,1,4,2),
+        point.new_zeros(1,4,2), point.new_zeros(1,4,2), None)
+    record = SentenceUnderstanding(root,root[:,None].expand(-1,3,-1),depth,root[:,None],
+        depth[:,None],root[:,None].expand(-1,4,-1),torch.full((1,4),-1),
+        torch.ones(1,4,dtype=torch.bool),None,torch.tensor(0),open_field=field)
+    model._sentence_trial = 'base'
+    model._component_reading = True
+    checked = []
+    try:
+        observation = model._sentence_observation((tuple(v[:1] for v in owner.stm.state),lang,None),0,
+            torch.ones(1,dtype=torch.bool),record=record)
+        for scored, plan in zip(observation['clauses'], observation['reference_plans']):
+            nodes = set()
+            def visit(node):
+                if node is None or id(node) in nodes:
+                    return
+                nodes.add(id(node))
+                for child in (*node.children, *node.companions):
+                    visit(child)
+            visit(scored)
+            for item in plan['items']:
+                if item.get('parent') is None and not item.get('lexical'):
+                    assert id(item.get('source_node', item['node'])) in nodes
+                    checked.append(item)
+        assert checked
+        assert observation['clauses'][0] is not clause
+    finally:
+        model.End(); model.symbolSpace.soft_reset()

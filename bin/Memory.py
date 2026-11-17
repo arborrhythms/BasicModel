@@ -239,7 +239,7 @@ class STMChunks:
 
 
     @staticmethod
-    def bind_menu(state, mention, *, exclusions=None, meaning_start=0):
+    def bind_menu(state, mention, *, orders=None, exclusions=None, meaning_start=0):
         """Fixed K+1 field variants: dummy first, then eligible off-stack chunks."""
         batch, positions, width = mention.shape
         own = mention[:, :, None]
@@ -248,11 +248,17 @@ class STMChunks:
         from IdentityRows import meet_ratios
         covered, covers = meet_ratios(own[..., meaning_start:], candidates[..., meaning_start:])
         available = available & ((covered == 1) | (covers == 1))
+        if orders is not None:
+            # With an open order each candidate supplies its own typed read.
+            # A dummy still has no order; ReferenceContext rejects that close.
+            available = available & ((orders[..., None] < 0)
+                | (orders[..., None] == state[STMChunks.ORDERS][:, None]))
         if exclusions is not None:
-            x, y = exclusions[:, 0], exclusions[:, 1]
+            x, y = exclusions[:, 1], exclusions[:, 2]
             ax, ay = own.index_select(-1, x) >= .3, own.index_select(-1, y) >= .3
             bx, by = candidates.index_select(-1, x) >= .3, candidates.index_select(-1, y) >= .3
-            available = available & ~((ax & ~bx & by & ~ay) | (ay & ~by & bx & ~ax)).any(-1)
+            same = state[STMChunks.ORDERS][:,None,:,None] == exclusions[:,0]
+            available = available & ~(((ax & ~bx & by & ~ay) | (ay & ~by & bx & ~ax)) & same).any(-1)
         dummy = torch.zeros(batch, positions, 1, dtype=torch.long, device=mention.device)
         chunks = torch.arange(state[STMChunks.STACK].shape[1], device=mention.device)[None, None].expand(batch, positions, -1)
         return (torch.cat((torch.zeros_like(own), candidates), 2),
@@ -398,7 +404,8 @@ class ShortTermMemory(MemoryStore, Layer):
         self._live_unary_history_depth = torch.zeros(batch,dtype=torch.long)
         self._thought_contents = tuple((None,) * self._init_capacity for _ in range(batch))
         from ThoughtStrata import construct
-        object.__setattr__(self, '_thought_stores', construct(batch, self._init_capacity, concept_dim))
+        object.__setattr__(self, '_thought_stores', construct(batch, self._init_capacity, concept_dim,
+            episodic_concepts=int(TheXMLConfig.space('SymbolSpace', 'episodicConcepts', 4))))
 
     @property
     def state(self):
@@ -1198,10 +1205,24 @@ class MediumTermMemory(MemoryStore):
             support=support, mass=sum(support.values()))
         return expected
 
-    def match_candidate(self, order, value):
+    def match_candidate(self, order, value, *, value_order, support):
+        from FamiliarTier import support_order
+        owner = self._owner()
         value = self._value(value)
+        # An unplaced member has no geometric direction yet. The same
+        # weighted references still identify the same observed collection.
+        def proportions(reading):
+            mass = sum(reading.values())
+            return {row: weight / mass for row, weight in reading.items()}
+        wanted = proportions(support)
+        for key, entry in self.entries.items():
+            if (entry.order == order and entry.symbol is None
+                    and 'promoted_percept' not in entry.refinement
+                    and proportions(entry.support) == wanted):
+                return key
         scored = [(float(torch.nn.functional.cosine_similarity(self.value_of(key).to(value), value, dim=0)), key)
                   for key, entry in self.entries.items() if entry.order == order
+                  and support_order(owner, entry.support, entry.order) == value_order
                   and entry.symbol is None and 'promoted_percept' not in entry.refinement]
         score, key = max(scored, key=lambda item: item[0], default=(-1., None))
         return key if score >= self.match_cos else None
@@ -1227,10 +1248,9 @@ class MediumTermMemory(MemoryStore):
         result = {}
         for key, entry in self.entries.items():
             if entry.order is not None:
-                rows = list(entry.support)
-                codes = owner.similarity_codebook.lookup_rows(rows)
-                weights = codes.new_tensor(list(entry.support.values()))
-                result[key] = (codes * weights[:, None]).sum(0) / weights.sum()
+                from FamiliarTier import centroid, support_order
+                result[key] = centroid(owner, entry.support,
+                    order=support_order(owner, entry.support, entry.order))
         return result
 
     def record_reading(self, key, stream, pair):
@@ -1302,7 +1322,9 @@ class MediumTermMemory(MemoryStore):
         if entry.order is not None:
             owner = self._owner()
             from FamiliarTier import centroid
-            value = centroid(owner, entry.support)
+            from FamiliarTier import support_order
+            value = centroid(owner, entry.support,
+                order=support_order(owner, entry.support, entry.order))
             return value if live_candidate else self._value(value)
         members = self.member_references(entry if token is None else token, timeline=timeline)
         # A participation witness without forward operands records an event,
@@ -1650,6 +1672,11 @@ class MediumTermMemory(MemoryStore):
         def address(value):
             return (isinstance(value, tuple) and len(value) == 3 and value[0] == 'ltm'
                     and isinstance(value[1], str) and type(value[2]) is int)
+        def percept(value):
+            return (state['version'] >= 13 and isinstance(value, tuple) and len(value) == 2
+                    and value[0] == 'bp' and type(value[1]) is int and value[1] >= 0)
+        def occurrence(value):
+            return address(value) or percept(value)
         def named(value):
             return (state['version'] >= 10 and isinstance(value, tuple) and len(value) == 2
                     and value[0] == 'name' and type(value[1]) is int and value[1] > 0)
@@ -1667,11 +1694,13 @@ class MediumTermMemory(MemoryStore):
                     'when', 'native', *required)) <= record.keys():
                 raise ValueError('incomplete identity checkpoint entry')
             key, uses = record['key'], tuple(record['occurrences'])
-            collection = isinstance(key, tuple) and len(key) in (3, 4) and key[0] == 'collection' and sentence(key[2])
+            collection = (isinstance(key, tuple) and len(key) in (3, 4) and key[0] == 'collection'
+                          and (sentence(key[2]) or percept(key[2])))
             candidate = (isinstance(key, tuple) and len(key) == 2 and key[0] == 'candidate'
                          and type(key[1]) is int and 0 <= key[1] < counter)
             if (key in entries or (candidate and uses) or (not candidate and
-                    (not (address(key) or named(key) or collection) or not all(map(sentence if collection else address, uses))
+                    (not (occurrence(key) or named(key) or collection)
+                     or not all((sentence(use) or percept(use)) if collection else occurrence(use) for use in uses)
                      or (not named(key) and not collection and key not in uses)
                      or len(set(uses)) != len(uses)))):
                 raise ValueError('invalid identity checkpoint membership')
@@ -1733,6 +1762,9 @@ class MediumTermMemory(MemoryStore):
             refinement = record.get('refinement', {})
             if not isinstance(refinement, dict):
                 raise ValueError('invalid identity checkpoint refinement')
+            if percept(key) and (refinement.get('promoted_percept') != key[1]
+                                or record.get('transient') is not None):
+                raise ValueError('a retained basic percept requires its native reference, not a transient identity')
             for member in refinement.get('members', ()):
                 if (not isinstance(member, (tuple, list)) or len(member) != 2 or member[0] not in uses
                         or not (symbol(member[1]) or isinstance(member[1], tuple) and len(member[1]) == 2
@@ -1746,7 +1778,7 @@ class MediumTermMemory(MemoryStore):
             if not symbol(record.get('symbol')):
                 raise ValueError('invalid identity checkpoint promoted symbol')
         for mention, token, reading in state['names']:
-            if (not (address(mention) or named(mention)) or not (address(token) or named(token))
+            if (not (occurrence(mention) or named(mention)) or not (occurrence(token) or named(token))
                     or not symbol(reading) or mention in names or token not in entries
                     or (mention not in entries[token].occurrences and not (named(mention) and reading == mention[1]))):
                 raise ValueError('invalid identity checkpoint name')
@@ -1789,7 +1821,7 @@ class MediumTermMemory(MemoryStore):
 class IdeaRows(ClauseRows, EntryRead, MemoryStore, Layer):
     """The common idea read; durability and working syntax have separate owners."""
     columns = ('slots', 'episodic_concepts', 'episodic_values', 'trust', 'referent', 'activity')
-    caches = ()
+    caches = ('_observation_revision', '_coordinate_counts', '_coordinate_joint')
     auxiliary = {'count': 'occupied seats', 'model_clock': 'next occurrence time',
         'percept_layout': 'construction geometry', 'truth_schema': 'checkpoint layout',
         'forget_passes': 'pass count', 'forget_sentences': 'kept sentence count',
@@ -1826,15 +1858,65 @@ class IdeaRows(ClauseRows, EntryRead, MemoryStore, Layer):
         import weakref
         object.__setattr__(self,'parts',LTM1(relation_capacity))
         self.parts._occurrence_store = weakref.ref(self)
+        self.clear_caches()
 
     def __len__(self):
         return int(self.count)
 
     def clear_caches(self):
-        pass
+        for name in self.caches:
+            setattr(self, name, None)
 
     def rebuild_caches(self):
-        pass
+        self._ensure_observations()
+
+    @property
+    def _idea_revision(self):
+        return id(self.slots), self.slots._version, id(self.referent), self.referent._version, len(self)
+
+    def _observation_order(self, row):
+        reference, owner = self.referent_of(row), self.owner()
+        return 0 if reference is None or owner is None else max(0,owner._concept_source_order(reference))
+
+    def _ensure_observations(self):
+        if self._observation_revision == self._idea_revision:
+            return
+        support = (self.slots[:len(self)].detach() >= .3).float()
+        owner = self.owner()
+        count = 1 if owner is None else len(owner._order_caps())
+        orders = torch.tensor([self._observation_order(row) for row in range(len(self))],
+                              device=support.device,dtype=torch.long)
+        separate = support[None] * (torch.arange(count,device=support.device)[:,None] == orders)[...,None]
+        self._coordinate_counts = separate.sum(1)
+        self._coordinate_joint = separate.transpose(1,2) @ separate
+        self._observation_revision = self._idea_revision
+
+    def coordinate_exclusions(self, start=0, *, order=None):
+        """Eight retained occurrences on each side, with no joint occurrence.
+
+        Counts are derived from immutable rows. Native appends update them;
+        compaction or restoration invalidates them for one batched rebuild.
+        """
+        self._ensure_observations()
+        eligible = self._coordinate_counts >= 8
+        eligible[:, :int(start)] = False
+        pairs = (eligible[:, :, None] & eligible[:, None, :]
+                 & (self._coordinate_joint == 0)).triu(1)
+        if order is not None:
+            return (() if not 0 <= order < len(pairs) else
+                    tuple(map(tuple,pairs[order].nonzero().tolist())))
+        return tuple(map(tuple, pairs.nonzero().tolist()))
+
+    def _append_cache_state(self):
+        return self._observation_revision == self._idea_revision
+
+    def _append_cached(self, row, valid):
+        if valid:
+            support = (self.slots[row].detach() >= .3).float()
+            order = self._observation_order(row)
+            self._coordinate_counts[order].add_(support)
+            self._coordinate_joint[order].add_(support[:, None] * support[None, :])
+            self._observation_revision = self._idea_revision
 
     def validate_referents(self, state, prefix, names):
         count = int(state[prefix+'count'])
@@ -1992,10 +2074,12 @@ class IdeaRows(ClauseRows, EntryRead, MemoryStore, Layer):
         first=len(self)
         for value in values:
             row=len(self)
+            cache = self._append_cache_state()
             self._write_point(row,meaning.roles[int(occupied[0])])
             self.trust[row]=value
             self.referent[row]=self.referent.new_tensor(reference)
             self.count.fill_(row+1)
+            self._append_cached(row, cache)
             if entry is not None:
                 for name,data in zip(('episodic_concepts','episodic_values'),entry):
                     getattr(self,name)[row].copy_(data.detach())
@@ -2105,6 +2189,7 @@ class IdeaRows(ClauseRows, EntryRead, MemoryStore, Layer):
 class LTM0(IdeaRows):
     """One immutable signed claim, typed referent and flat extension per time."""
     address_domain='time-v1'
+    caches = (*IdeaRows.caches, '_time_index_revision', '_row_times', '_rows_by_time')
 
     def __init__(self,nDim,capacity=1024,content_width=None,*,percept_width=None,
                  relation_capacity=8192,read_capacity=None,episodic_concepts=0):
@@ -2116,19 +2201,39 @@ class LTM0(IdeaRows):
             raise ValueError('LTM0 requires the native percept time band')
 
     def row_name(self,row):
-        from RowTime import encoder
-        return int(encoder().decode_index(self.entry_time(int(row))))
+        self._ensure_time_index()
+        return self._row_times[int(row)]
 
     def index_of_row(self,reference):
-        # Time order is the index. Compaction keeps it; no durable duplicate
-        # time/name column or concept-to-row posting is needed.
-        reference=int(reference)
-        lo,hi=0,len(self)
-        while lo<hi:
-            mid=(lo+hi)//2
-            if self.row_name(mid)<reference: lo=mid+1
-            else: hi=mid
-        return lo if lo<len(self) and self.row_name(lo)==reference else None
+        self._ensure_time_index()
+        return self._rows_by_time.get(int(reference))
+
+    def _ensure_time_index(self):
+        if self._time_index_revision == self._idea_revision:
+            return
+        from RowTime import encoder
+        self._row_times = encoder().decode_index(self.time[:len(self)]).tolist()
+        self._rows_by_time = {int(time): row for row, time in enumerate(self._row_times)}
+        self._time_index_revision = self._idea_revision
+
+    def rebuild_caches(self):
+        super().rebuild_caches()
+        self._ensure_time_index()
+
+    def _append_cache_state(self):
+        return super()._append_cache_state(), self._time_index_revision == self._idea_revision
+
+    def _append_cached(self, row, valid):
+        if valid[1]:
+            # next_time has just advanced the clock past the written row.
+            time = int(self.model_clock) - 1
+            self._row_times.append(time)
+            self._rows_by_time[time] = row
+            self._time_index_revision = self._idea_revision
+        # Reading the observation's order can resolve an occurrence referent
+        # through this index. Publish its append first, so that read cannot
+        # rebuild the index and have this same time appended a second time.
+        super()._append_cached(row, valid[0])
 
     @torch.no_grad()
     def _write_point(self,row,point):
@@ -2209,6 +2314,7 @@ class LTM0(IdeaRows):
     def _load_from_state_dict(self,state,prefix,*args,**kwargs):
         self.prepare_checkpoint(state,prefix)
         super()._load_from_state_dict(state,prefix,*args,**kwargs)
+        self.clear_caches()
 
 
 
@@ -2299,7 +2405,7 @@ class LTM1(MemoryStore, nn.Module):
         def endpoint(kind, value):
             if kind == RELATION:
                 return max(float(self.effective_plus[value]), float(self.effective_minus[value]))
-            if kind == SYMBOL and owner is not None and value in owner._concept_allocator.placement:
+            if kind == SYMBOL and owner is not None and value in owner._concept_allocator.symbols:
                 return positive_length(owner, value)
             return 1.
         for row in self.relation_order[:len(self)].tolist():
@@ -2618,8 +2724,8 @@ class STM0(IdeaRows):
     address_domain='stm-v1'
     columns=(*IdeaRows.columns,'row_names')
 
-    def __init__(self,width,capacity,*,percept_width=0,relation_capacity=2):
-        super().__init__(width,capacity,percept_width=percept_width,
+    def __init__(self,width,capacity,*,percept_width=0,relation_capacity=2,episodic_concepts=0):
+        super().__init__(width,capacity,percept_width=percept_width,episodic_concepts=episodic_concepts,
             relation_capacity=relation_capacity,read_capacity=capacity)
         self.register_buffer('row_names',torch.full((capacity,),-1,dtype=torch.long))
         import weakref

@@ -25,12 +25,14 @@ class SymbolField:
         values, depth = state[:2]
         keys = self.owner._bank_keys.to(values)[None].expand(len(values), -1, -1)
         occupied = values.ne(0).any(-1)
-        context = ActivationPredictor.context_from(values, occupied)
+        context = ActivationPredictor.context_by_order(values, occupied, state[2], self.owner._bank_order_count)
         source = symbol_activations(keys, values, occupied, self.source_lanes,
-            identities=state[4], bank_ids=self.owner._bank_addresses)
+            identities=state[4], bank_ids=self.owner._bank_addresses,
+            key_orders=self.owner._bank_orders, value_orders=state[2])
         logits = self.owner._inter_predictor(*self.owner._prediction_inputs((keys, context, source)))
         self.pending = keys, logits, context, source
-        self.before = values.detach().clone(), occupied.detach().clone(), state[4].detach().clone()
+        self.before = (values.detach().clone(), occupied.detach().clone(),
+                       state[4].detach().clone(), state[2].detach().clone())
 
     def arrive(self, state, rows, *, lanes=None):
         if self.pending is None:
@@ -40,7 +42,8 @@ class SymbolField:
         present = values.ne(0).any(-1)
         occupied = present & rows[:, None]
         observed = symbol_activations(keys, values, occupied, lanes,
-            identities=identities, bank_ids=self.owner._bank_addresses)
+            identities=identities, bank_ids=self.owner._bank_addresses,
+            key_orders=self.owner._bank_orders, value_orders=orders)
         self.source_lanes = (torch.stack((present.to(values), torch.zeros_like(present).to(values)), -1)
                              if lanes is None else lanes.detach().clone())
         expected = logits.sigmoid()
@@ -60,10 +63,11 @@ class SymbolField:
         if self.pending is None:
             return None
         keys, logits, _, source = self.pending
-        values, occupied, ids = self.before
+        values, occupied, ids, orders = self.before
         addresses = self.owner._bank_addresses
         known = symbol_activations(keys, values, occupied,
-            identities=ids, bank_ids=addresses)[..., 0] > 0
+            identities=ids, bank_ids=addresses,
+            key_orders=self.owner._bank_orders, value_orders=orders)[..., 0] > 0
         actual = source.detach().clone()
         if incoming_ids is not None:
             matches = (incoming_ids[:, None] == addresses[None]) & (addresses[None] >= 0)
@@ -71,7 +75,7 @@ class SymbolField:
             actual = torch.maximum(actual, matches[..., None].to(actual)*incoming_lanes[:, None].detach())
             known = known | matches
         return SymbolRead(keys, logits.detach().sigmoid(), self.strength,
-                          self.epsilon, self.saturation, addresses, actual, known)
+                          self.epsilon, self.saturation, addresses, actual, known, self.owner._bank_orders)
 
     def closing_predictions(self):
         """The shared head's last pre-arrival read, separate from the D prior."""

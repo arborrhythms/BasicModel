@@ -123,19 +123,59 @@ class EntryRead:
             if point is None:
                 point = frame['meaning'].roles[0]
             point = point.detach().to(state[0]).clone()
-            if self.when_start is not None:
-                point[self.when_start:self.when_start+4] = frame['time'].to(point)
             refs = state[chunks.REFS].new_zeros(state[0].shape[0],2,2)
             refs[:,0,0], refs[:,0,1] = (chunks.RELATION if relation else chunks.OCCURRENCE),occurrence[-1]
-            token = owner.mtm.token_of(occurrence)
-            entry = None if token is None else owner.mtm.entries[token]
-            identity = -1 if entry is None else entry.symbol if entry.symbol is not None else entry.transient
-            where = point.new_zeros(4) if self.when_start is None or self.when_start < 4 else point[self.when_start-4:self.when_start]
-            state,index = chunks.deposit(state,point.expand(state[0].shape[0],-1),gate,
-                refs=refs,order=frame['order'],identity=identity,where=where,when=frame['time'].to(point),
-                truth=frame['evidence'])
-            if int(index[stream]) < 0:
-                missing.append('stm_all_chunks_on_stack')
-                break
+            already = ((state[chunks.REFS][stream,:,0] == refs[stream,0]).all(-1)
+                       & (state[chunks.READ][stream] > 0)).nonzero().flatten()
+            # Only LTM0 owns an episodic time. A relation is a semantic read
+            # whose STM view takes the time of that read, like a new thought.
+            if relation:
+                if len(already):
+                    when = state[chunks.WHEN][stream, already[0]].clone()
+                else:
+                    from ThoughtChunks import _next_when
+                    when = point.new_tensor(_next_when(stm, stream))
+            else:
+                when = frame['time'].to(point)
+            if self.when_start is not None:
+                point[self.when_start:self.when_start+4] = when
+            if len(already):
+                index = state[chunks.STACK].new_zeros(len(gate))
+                index[stream] = already[0]
+                updated = list(state)
+                for column, value in ((chunks.BUFFER, point),
+                        (chunks.TRUTH, point.new_tensor(frame['evidence'])),
+                        (chunks.WHEN, when)):
+                    updated[column] = chunks.write(state[column], index,
+                        value.expand(len(gate), *value.shape), gate)
+                state = chunks.read(tuple(updated), index, gate)
+            else:
+                token = owner.mtm.token_of(occurrence)
+                entry = None if token is None else owner.mtm.entries[token]
+                identity = -1 if entry is None else entry.symbol if entry.symbol is not None else entry.transient
+                where = point.new_zeros(4) if self.when_start is None or self.when_start < 4 else point[self.when_start-4:self.when_start]
+                state,index = chunks.deposit(state,point.expand(state[0].shape[0],-1),gate,
+                    refs=refs,order=frame['order'],identity=identity,where=where,when=when,
+                    truth=frame['evidence'])
+                if int(index[stream]) < 0:
+                    missing.append('stm_all_chunks_on_stack')
+                    break
+            from dataclasses import replace
+            from ThoughtChunks import retain
+            meaning = frame['meaning']
+            data = dict(meaning.bindings)
+            data.update(_rule_row=occurrence, _thought_witnesses=(occurrence, *frame.get('temporal_witnesses', ())),
+                        _evidence_kind='retrieval')
+            if relation:
+                readings = frame.get('readings', ())
+                data.update(_rule_row=occurrence, _rule_kind=('equal' if 'equality' in readings
+                    else 'implies' if 'conditional' in readings else 'part'))
+            meaning = replace(meaning, bindings=data)
+            if not relation and isinstance(location, int):
+                from Extension import Node
+                from EpisodicMemory import entry_set
+                meaning = replace(meaning, extension=(Node(entry_set(self, location)),))
+            retain(stm, meaning, tuple(when.tolist()), stream,
+                   int(index[stream]), pair=frame['evidence'])
         stm.set_state(state)
         return tuple(dict.fromkeys(missing))

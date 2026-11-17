@@ -97,7 +97,7 @@ def test_pressure_enters_credit_but_temperature_does_not():
         step.temperature = temperature
         _, _, loaded = step(x, slots=2, allowance=2, rounds_left=3)
         torch.testing.assert_close(loaded['probabilities'],
-                                   torch.tensor([[1., 0., 0., 0.]]).softmax(-1))
+                                   torch.tensor([[1.-step.operator_cost, -step.operator_cost, -step.operator_cost, 0.]]).softmax(-1))
         assert loaded['probabilities'][0, 0] > unloaded['probabilities'][0, 0]
 
 

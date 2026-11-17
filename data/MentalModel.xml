@@ -67,8 +67,9 @@
   <!-- ConceptualSpace: matches percept/symbol row count; state mixing
        happens via iterative Sigma-Pi (not concatenation). -->
   <ConceptualSpace>
+    <!-- Item 1.8: preserve the form width; allocate the declared meaning lanes. -->
     <nOutput>128</nOutput>
-    <nDim>104</nDim>
+    <nDim>232</nDim>
     <nVectors>128</nVectors>
     <invertible>true</invertible>
     <tetralemmaOverride enabled="false" />

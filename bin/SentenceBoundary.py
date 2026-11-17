@@ -26,13 +26,17 @@ def finish(model, sub, sym, perception_sub, perception_sym, written, perception_
     for owner, names in ((trace, ('_choice_values', '_choice_action_records',
             '_choice_log_probabilities', '_forward_losses', '_chunk_state', '_case_state')),
         (model, ('_tensor_pushed_ideas', '_tensor_sentence_roots_live', '_packed_sentence_roots',
-            '_attention_words', '_last_decoder_trace', '_last_output_walk_trace',
+            '_attention_words', '_attention_greedy', '_word_expectation',
+            '_last_decoder_trace', '_last_output_walk_trace',
             '_last_decoder_comparison', '_compose_sampling_scale',
             '_sentence_expectation_comparison', '_sentence_gradient_objectives',
-            '_sentence_open_fields', '_input_reconstructions', '_sentence_generation',
+            '_sentence_open_fields', '_sentence_fields', '_input_reconstructions', '_sentence_generation',
             '_sentence_reverse', '_sentence_order_zero_reverse', '_last_sentence_credit',
             '_sentence_credit_audits', '_sentence_walk_residuals', '_sentence_decoder_walk_credits',
-            '_sentence_output_walk_credits', '_sentence_order_zero_field', '_last_answer_construction'))):
+            '_sentence_output_walk_credits', '_sentence_order_zero_field', '_last_answer_construction',
+            '_last_closing_thoughts', '_intuition_bracket', '_intuition_prediction',
+            '_intuition_observation', '_intuition_teacher',
+            '_concept_prediction'))):
         for name in names:
             if hasattr(owner, name):
                 setattr(owner, name, detached(getattr(owner, name)))
@@ -67,7 +71,6 @@ def finish(model, sub, sym, perception_sub, perception_sym, written, perception_
             space._percept_field = detached(space._percept_field)
         if hasattr(space, '_cs_open_field'):
             space._cs_open_field = detached(space._cs_open_field)
-        space._episode_review_field = detached(space._episode_review_field)
     if model.percept_expectation is not None:
         model.percept_expectation.last_arrival = detached(model.percept_expectation.last_arrival)
     # Publishing the chosen syntax replaces this slab with sentence writes.

@@ -1,13 +1,13 @@
-"""Stage 4 substrate refactor: LiftLayer / LowerLayer as binary GrammarLayer ops.
+"""Stage 4 substrate refactor: ChangeLayer / LowerLayer as binary GrammarLayer ops.
 
 Plan: doc/plans/2026-05-26-two-loop-pi-sigma-substrate.md Stage 4.
 
 Acceptance gates (per the master plan, Stage 4 §Files modified / §Acceptance):
 
-  * ``LiftLayer`` and ``LowerLayer`` are proper binary GrammarLayer
+  * ``ChangeLayer`` and ``LowerLayer`` are proper binary GrammarLayer
     subclasses:
-      - ``LiftLayer.arity == 2``, ``LiftLayer.rule_name == "lift"``,
-        ``LiftLayer.space_role == 'CS'``.
+      - ``ChangeLayer.arity == 2``, ``ChangeLayer.rule_name == "change"``,
+        ``ChangeLayer.space_role == 'CS'``.
       - ``LowerLayer.arity == 2``, ``LowerLayer.rule_name == "lower"``,
         ``LowerLayer.space_role == 'CS'``.
       - Both inherit from ``GrammarLayer``.
@@ -28,7 +28,7 @@ Acceptance gates (per the master plan, Stage 4 §Files modified / §Acceptance):
     folds are no longer borrowed by Lift / Lower.
 
   * Registration with the signal router (``SymbolSubSpace.languageLayer``):
-    after a SymbolSubSpace is constructed, LiftLayer and LowerLayer
+    after a SymbolSubSpace is constructed, ChangeLayer and LowerLayer
     attach as CS-space_role reduce ops on the LanguageLayer.
 
 The pre-Stage-4 contract (``space_role='SS'``, internal ``_sigma`` /
@@ -51,17 +51,17 @@ _BIN = os.path.join(
 if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
-from Layers import GrammarLayer, LiftLayer, LowerLayer
+from Layers import GrammarLayer, ChangeLayer, LowerLayer
 
 
 class TestLiftLowerClassAttributes(unittest.TestCase):
     """Stage 4: class-level attributes for the binary grammar-op contract."""
 
     def test_lift_is_grammarlayer_subclass(self):
-        """LiftLayer must be a GrammarLayer subclass."""
+        """ChangeLayer must be a GrammarLayer subclass."""
         self.assertTrue(
-            issubclass(LiftLayer, GrammarLayer),
-            "LiftLayer must inherit from GrammarLayer (Stage 4).")
+            issubclass(ChangeLayer, GrammarLayer),
+            "ChangeLayer must inherit from GrammarLayer (Stage 4).")
 
     def test_lower_is_grammarlayer_subclass(self):
         """LowerLayer must be a GrammarLayer subclass."""
@@ -70,10 +70,10 @@ class TestLiftLowerClassAttributes(unittest.TestCase):
             "LowerLayer must inherit from GrammarLayer (Stage 4).")
 
     def test_lift_arity_is_two(self):
-        """LiftLayer is a binary grammar op."""
+        """ChangeLayer is a binary grammar op."""
         self.assertEqual(
-            LiftLayer.arity, 2,
-            "LiftLayer must have arity == 2 (binary op over STM pairs).")
+            ChangeLayer.arity, 2,
+            "ChangeLayer must have arity == 2 (binary op over STM pairs).")
 
     def test_lower_arity_is_two(self):
         """LowerLayer is a binary grammar op."""
@@ -82,18 +82,18 @@ class TestLiftLowerClassAttributes(unittest.TestCase):
             "LowerLayer must have arity == 2 (binary op over STM pairs).")
 
     def test_lift_rule_name(self):
-        """LiftLayer's canonical rule_name is 'lift'."""
-        self.assertEqual(LiftLayer.rule_name, "lift")
+        """ChangeLayer's canonical rule_name is 'change'."""
+        self.assertEqual(ChangeLayer.rule_name, "change")
 
     def test_lower_rule_name(self):
         """LowerLayer's canonical rule_name is 'lower'."""
         self.assertEqual(LowerLayer.rule_name, "lower")
 
     def test_lift_space_role_is_CS(self):
-        """LiftLayer operates at the CS space_role (STM-pair composition)."""
+        """ChangeLayer operates at the CS space_role (STM-pair composition)."""
         self.assertEqual(
-            LiftLayer.space_role, 'CS',
-            "LiftLayer.space_role must be 'CS' (Stage 4 §Files modified).")
+            ChangeLayer.space_role, 'CS',
+            "ChangeLayer.space_role must be 'CS' (Stage 4 §Files modified).")
 
     def test_lower_space_role_is_CS(self):
         """LowerLayer operates at the CS space_role (STM-pair composition)."""
@@ -108,13 +108,13 @@ class TestLiftLowerForwardReverseShape(unittest.TestCase):
 
     def _make_lift(self, dim=4):
         # Parameter-free construction; the layer is self-contained.
-        return LiftLayer(nInput=dim, nOutput=dim)
+        return ChangeLayer(nInput=dim, nOutput=dim)
 
     def _make_lower(self, dim=4):
         return LowerLayer(nInput=dim, nOutput=dim)
 
     def test_lift_forward_two_operands_one_result(self):
-        """LiftLayer.forward(a, b) returns one tensor of [..., D] shape."""
+        """ChangeLayer.forward(a, b) returns one tensor of [..., D] shape."""
         D = 4
         lift = self._make_lift(D)
         torch.manual_seed(0)
@@ -123,9 +123,9 @@ class TestLiftLowerForwardReverseShape(unittest.TestCase):
         with torch.no_grad():
             out = lift.forward(a, b)
         self.assertTrue(torch.is_tensor(out),
-                        "LiftLayer.forward must return a tensor.")
+                        "ChangeLayer.forward must return a tensor.")
         self.assertEqual(out.shape, a.shape,
-                         "LiftLayer.forward output shape must match input.")
+                         "ChangeLayer.forward output shape must match input.")
 
     def test_lower_forward_two_operands_one_result(self):
         """LowerLayer.forward(a, b) returns one tensor of [..., D] shape."""
@@ -140,7 +140,7 @@ class TestLiftLowerForwardReverseShape(unittest.TestCase):
         self.assertEqual(out.shape, a.shape)
 
     def test_lift_reverse_returns_pair(self):
-        """LiftLayer.reverse(parent) returns a 2-tuple ``(left, right)``."""
+        """ChangeLayer.reverse(parent) returns a 2-tuple ``(left, right)``."""
         D = 4
         lift = self._make_lift(D)
         torch.manual_seed(2)
@@ -182,7 +182,7 @@ class TestLiftLowerRoundTrip(unittest.TestCase):
     def test_lift_round_trip_consistent(self):
         """A second compose on the split should reproduce the parent."""
         D = 4
-        lift = LiftLayer(nInput=D, nOutput=D)
+        lift = ChangeLayer(nInput=D, nOutput=D)
         torch.manual_seed(4)
         a = torch.rand(2, 3, D) * 0.9 + 0.05
         b = torch.rand(2, 3, D) * 0.9 + 0.05
@@ -194,7 +194,7 @@ class TestLiftLowerRoundTrip(unittest.TestCase):
         torch.testing.assert_close(parent, parent_2, rtol=1e-4, atol=1e-4)
         # And: the round-trip output must be finite (fail-loud).
         self.assertTrue(torch.isfinite(parent).all(),
-                        "LiftLayer.forward must not produce non-finite "
+                        "ChangeLayer.forward must not produce non-finite "
                         "values (fail-loud numerical contract).")
         self.assertTrue(torch.isfinite(left).all())
         self.assertTrue(torch.isfinite(right).all())
@@ -214,7 +214,7 @@ class TestLiftLowerComposeGenerate(unittest.TestCase):
     def test_lift_compose_dispatches_to_forward(self):
         """compose(left, right) gives the same result as forward(left, right)."""
         D = 4
-        lift = LiftLayer(nInput=D, nOutput=D)
+        lift = ChangeLayer(nInput=D, nOutput=D)
         torch.manual_seed(6)
         a = torch.rand(2, 3, D) * 0.9 + 0.05
         b = torch.rand(2, 3, D) * 0.9 + 0.05
@@ -237,7 +237,7 @@ class TestLiftLowerComposeGenerate(unittest.TestCase):
     def test_lift_generate_dispatches_to_reverse(self):
         """generate(parent) gives the same pair as reverse(parent)."""
         D = 4
-        lift = LiftLayer(nInput=D, nOutput=D)
+        lift = ChangeLayer(nInput=D, nOutput=D)
         torch.manual_seed(8)
         a = torch.rand(2, 3, D) * 0.9 + 0.05
         b = torch.rand(2, 3, D) * 0.9 + 0.05
@@ -252,7 +252,7 @@ class TestLiftLowerComposeGenerate(unittest.TestCase):
 
 
 class TestLiftLowerNoSubstrateBorrow(unittest.TestCase):
-    """Stage 4 acceptance: LiftLayer / LowerLayer no longer reach into
+    """Stage 4 acceptance: ChangeLayer / LowerLayer no longer reach into
     Space-owned substrate folds (``PartSpace.sigma`` /
     ``ConceptualSpace.pi``).
 
@@ -262,8 +262,8 @@ class TestLiftLowerNoSubstrateBorrow(unittest.TestCase):
     """
 
     def test_lift_constructible_without_spaces(self):
-        """LiftLayer instantiates with no Space references."""
-        layer = LiftLayer(nInput=4, nOutput=4)
+        """ChangeLayer instantiates with no Space references."""
+        layer = ChangeLayer(nInput=4, nOutput=4)
         # Forward path must run without any Space wiring -- the layer
         # is self-contained per the Stage 4 contract.
         a = torch.rand(2, 3, 4) * 0.9 + 0.05
@@ -287,20 +287,20 @@ class TestLiftLowerHasInternalSubstrate(unittest.TestCase):
     """Stage 4: the sigma-style / pi-style math is owned internally
     by the layer (not borrowed from a Space).
 
-    LiftLayer holds an internal SigmaLayer (additive log-domain);
+    ChangeLayer holds an internal SigmaLayer (additive log-domain);
     LowerLayer holds an internal PiLayer (multiplicative log-domain).
     Both are trainable nn.Modules registered under the layer.
     """
 
     def test_lift_has_internal_sigma(self):
-        """LiftLayer owns an internal SigmaLayer for the binary fold."""
+        """ChangeLayer owns an internal SigmaLayer for the binary fold."""
         from Layers import SigmaLayer
-        lift = LiftLayer(nInput=4, nOutput=4)
+        lift = ChangeLayer(nInput=4, nOutput=4)
         # The internal sigma exposes trainable parameters.
         params = [p for p in lift.parameters() if p.requires_grad]
         self.assertGreater(
             len(params), 0,
-            "LiftLayer must own trainable parameters (its internal "
+            "ChangeLayer must own trainable parameters (its internal "
             "additive fold).")
         # The internal SigmaLayer instance is reachable on the layer.
         # (Allow either ``_sigma`` or ``sigma`` as the attribute name;
@@ -308,7 +308,7 @@ class TestLiftLowerHasInternalSubstrate(unittest.TestCase):
         inner = getattr(lift, '_sigma', None) or getattr(lift, 'sigma', None)
         self.assertIsNotNone(
             inner,
-            "LiftLayer must own an internal SigmaLayer (sigma-style "
+            "ChangeLayer must own an internal SigmaLayer (sigma-style "
             "binary fold).")
         self.assertIsInstance(inner, SigmaLayer)
 
@@ -320,7 +320,7 @@ class TestLiftLowerHasInternalSubstrate(unittest.TestCase):
 
 class TestLiftLowerWiredIntoSignalRouter(unittest.TestCase):
     """Stage 4 acceptance gate: when a SymbolSubSpace is constructed,
-    LiftLayer and LowerLayer attach to the CS-space_role of its
+    ChangeLayer and LowerLayer attach to the CS-space_role of its
     ``languageLayer`` as binary reduce ops.
 
     Path: SymbolSubSpace.__init__ -> ``_wire_signal_router_grammar_ops``
@@ -333,10 +333,10 @@ class TestLiftLowerWiredIntoSignalRouter(unittest.TestCase):
 
     def test_lift_and_lower_registered_with_word_subspace_authority(self):
         """When a SymbolSubSpace is the chart authority,
-        ``register_grammar_layer`` adds any newly-built LiftLayer /
+        ``register_grammar_layer`` adds any newly-built ChangeLayer /
         LowerLayer to its roster."""
         import Language
-        from Layers import LiftLayer as _Lift, LowerLayer as _Lower
+        from Layers import ChangeLayer as _Lift, LowerLayer as _Lower
         from Layers import GrammarLayer as _GL
 
         class _FakeAuthority:
@@ -361,7 +361,7 @@ class TestLiftLowerWiredIntoSignalRouter(unittest.TestCase):
         # have non-empty rule_names, so both register with the
         # authority.
         self.assertIn(lift, auth.registered,
-                      "LiftLayer must auto-register with the SymbolSpace "
+                      "ChangeLayer must auto-register with the SymbolSpace "
                       "chart authority (Stage 4 wiring).")
         self.assertIn(lower, auth.registered,
                       "LowerLayer must auto-register with the SymbolSpace "

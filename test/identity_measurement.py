@@ -105,17 +105,65 @@ def control_observation(label, policy):
     return dict(references=refs)
 
 
+def journal_requests(language, program):
+    """Read selected identities from the kept journal, including discarded subtrees."""
+    from Occurrence import operand_name
+    if program.identity_actions is None:
+        return {}
+    def reference(handle):
+        if handle <= 0:
+            return -1
+        kind, source, resolved = map(int, program.identity_origins[handle-1])
+        if not resolved:
+            return 0
+        if kind == 2:
+            return operand_name(source)
+        if kind in (1,5):
+            return source
+        return -1 if kind in (3,4) else 0
+    requests, stack = {}, []
+    for at, (kind, local, leaf) in enumerate(program.actions.tolist()):
+        if kind < 0:
+            break
+        if kind == 0:
+            stack.append((leaf,))
+            handle = int(program.identity_leaves[leaf])
+            if handle:
+                requests[leaf] = reference(handle)
+            continue
+        if kind == 3:
+            stack[-2:] = reversed(stack[-2:])
+            continue
+        rule = (language._compose_binary_rules if kind == 1 else language._compose_unary_rules)[local]
+        position = max(0,leaf) if kind == 2 else 0
+        if position:
+            stack.append(stack.pop(-1-position))
+        arity = 1 if kind == 2 or rule.method_name == 'bind' else 2
+        operands = stack[-arity:]
+        del stack[-arity:]
+        leaves = tuple(i for operand in operands for i in operand)
+        if rule.method_name == 'bind' or getattr(rule,'order_delta',0):
+            result, chosen = map(int, program.identity_actions[at,(0,4)])
+            for i in leaves:
+                if result > 0:
+                    requests[i] = reference(chosen if chosen > 0 else result)
+                else:
+                    requests.pop(i,None)
+        stack.append(leaves)
+        if position:
+            stack.insert(len(stack)-1-position,stack.pop())
+    return requests
+
+
 @contextmanager
 def native_observer(model):
     """Read-only taps on the chosen journal and the existing row writer.
 
     First/second mention offsets are *grading* provenance. Mode names never
-    enter the metrics; the current journal adapter reads requested order-one
-    references, and the writer supplies actual addresses for minted rows.
-    A future adapter may expose column explanations at this same seam.
+    enter the metrics. The kept identity journal supplies the selections;
+    the writer supplies actual addresses for newly retained occurrences.
     """
     import torch
-    from ReferenceContext import reference_requests
     captured={}; current_sid=[None]
     model._reference_close_audit = {}
     source_leaves = {}
@@ -134,15 +182,13 @@ def native_observer(model):
             tokens={}
             if program is not None:
                 source=(isp._word_active_mask[b] & (isp._packed_sentence_ids[b]==sid)).nonzero().flatten().tolist()
-                requests=reference_requests(model.languageSpace,program.actions,
-                    leaf_orders=program.leaf_orders,operation_refs=program.operation_refs)
+                requests=journal_requests(model.languageSpace,program)
                 for leaf,position in enumerate(positions[b].tolist()):
                     if position<0 or leaf>=len(program.word_rows) or position not in source:
                         continue
                     word=source.index(position)
                     source_leaves[int(sid), b, leaf] = word
-                    request=requests.get(leaf)
-                    reference=(request[2] if request is not None and request[0]==1 else None)
+                    reference=requests.get(leaf)
                     reason = (None if valid_reference(reference) else
                               'mint_awaits_row_write' if reference == -1 else
                               'selected_open_reference' if reference == 0 else
@@ -150,7 +196,7 @@ def native_observer(model):
                     tokens[word]=dict(reference=reference if valid_reference(reference) else None,
                         selected_reference=reference, missing_reason=reason,
                         word_id=int(program.word_ids[leaf]),
-                        requested=request is not None and request[0]==1,
+                        requested=leaf in requests,
                         source='selected' if valid_reference(reference) else 'unresolved')
             records.append(dict(tokens=tokens))
         captured[int(sid)]=records
@@ -168,9 +214,9 @@ def native_observer(model):
                 # counting the enclosing sentence as another individual.
                 head=node.refs[0]
                 child=(node.children[head[1]] if isinstance(head,tuple) else None)
-                owns_head=(child is not None and child.order==1 and
+                owns_head=(child is not None and child.reference_request and
                            child.subject_word_id==node.subject_word_id)
-                if index is not None and node.order==1 and not owns_head:
+                if index is not None and node.reference_request and not owns_head:
                     from Occurrence import operand_name
                     by_word[node.subject_word_id].add(operand_name(store.row_name(index))
                         if isinstance(index, int) else index[1])

@@ -150,41 +150,52 @@ def value(state, identity, timeline=0):
     return values[:,0]
 
 
-def record(f,tree,*,frames=(),dummy_binds=(),branch_binds=(),names=('subject','alias'),leaf_orders=None):
+def higher_word(f, word):
+    """Declare a class sense above a fixture's existing named member."""
+    wid, member = f.words[word]
+    parent = f.cs.new_concept(order=f.cs._concept_source_order(member)+1)
+    f.cs.add_part(parent, member)
+    with torch.no_grad():
+        f.cs.similarity_codebook.W[f.cs._csw_row_of(parent)].copy_(
+            f.cs.similarity_codebook.W[f.cs._csw_row_of(member)])
+    f.cs.interpret.define(wid, parent)
+    f.words[word] = wid, parent
+    return parent
+
+
+def record(f,tree,*,frames=(),dummy_binds=(),branch_binds=(),bind_targets=None,names=('subject','alias'),leaf_orders=None):
     from ReferenceContext import denoted_order
     # These fixed source readings assert their event; ask at the head still
     # removes that evidence through the production journal.
+    # Fixed source orders are supplied before seating the fixture's objects.
+    # A concept's block is its order; a test cannot move an existing row by
+    # changing a sidecar after interpreting its word.
+    leaf_names, requested = [], []
+    def declare(node):
+        if isinstance(node, str):
+            index = len(leaf_names)
+            leaf_names.append(node)
+            requested.append(f.cs._concept_source_order(f.words[node][1]) if node in f.words
+                             else 1 if node in names else 0)
+            return (index,)
+        name, *children = node
+        operands = [declare(child) for child in children]
+        catalog = f.binary if len(children) == 2 or name == 'bind' else f.unary
+        rule = next(rule for rule in catalog if rule.method_name == name)
+        head = (getattr(rule, 'head_role', 0) or 1)-1
+        carried = operands[head] if head < len(operands) else operands[0]
+        if getattr(rule, 'determiner_mode', None) in ('mint', 'bind'):
+            for index in carried:
+                if requested[index] == 0:
+                    requested[index] = 2
+        return carried if getattr(rule, 'head_role', 0) else tuple(i for part in operands for i in part)
+    declare(tree)
+    orders = torch.tensor(requested if leaf_orders is None else leaf_orders)
+    for name, order in zip(leaf_names, orders.tolist()):
+        cid = f.noun(name, order=order)
+        assert f.cs._concept_source_order(cid) == order, 'declare the fixture object at its source order'
     entry = f.program(tree)
     entry = replace(entry, leaf_evidence=entry.leaves.new_tensor([[1., 0.]]).expand(len(entry.leaves), 2))
-    named = {f.words[name][0] for name in names if name in f.words}
-    orders = (torch.tensor([1 if int(word) in named else 0 for word in entry.word_ids])
-              if leaf_orders is None else torch.tensor(leaf_orders))
-    # These fixed-operation identity certificates supply kinds whose selected members are individuals;
-    # the retired determiner constant no longer manufactures that order.
-    from order_fixtures import force_order
-    if leaf_orders is None:
-        stack = []
-        for kind, local, position in entry.actions.tolist():
-            if kind == 0:
-                stack.append((position,))
-                continue
-            if kind == 3:
-                stack[-2:] = reversed(stack[-2:])
-                continue
-            rule = (f.binary if kind == 1 else f.unary)[local]
-            arity = 2 if kind == 1 and rule.method_name != 'bind' else 1
-            operands = stack[-arity:]
-            del stack[-arity:]
-            head = (getattr(rule, 'head_role', 0) or 1)-1
-            carried = operands[head] if head < arity else operands[0]
-            if getattr(rule, 'determiner_mode', None) in ('mint', 'bind'):
-                for index in carried:
-                    if int(orders[index]) == 0:
-                        orders[index] = 2
-            stack.append(carried if getattr(rule, 'head_role', 0) else tuple(i for part in operands for i in part))
-    for index, order in enumerate(orders.tolist()):
-        if order != f.cs._concept_source_order(int(entry.concept_ids[index])):
-            force_order(f.cs, int(entry.concept_ids[index]), order)
     state = prepend(f,frames,len(entry.leaves))
     walk = Walk(f.binary,f.unary,capacity=f.cs.mtm.capacity,first_id=int(f.cs.mtm.transient_ids[0]))
     walk.free = torch.where(f.cs.mtm.transient_used,-1,f.cs.mtm.transient_ids)
@@ -213,13 +224,16 @@ def record(f,tree,*,frames=(),dummy_binds=(),branch_binds=(),names=('subject','a
             offered,ids,indices,valid = chunks.bind_menu(stm,live[:,:1])
             if binds not in dummy_binds:
                 eligible = valid[0,0] & (ids[0,0] > 0)
-                if first is not None:
-                    eligible &= ids[0,0] == first
+                target = (bind_targets or {}).get(binds, first)
+                if target is not None:
+                    eligible &= ids[0,0] == target
                 wanted = 1 if binds in branch_binds else 0
                 timelines = torch.cat((torch.zeros(1,dtype=torch.long),stm[chunks.TIMELINE][0]))
                 timeline_eligible = eligible & (timelines == wanted)
                 eligible = timeline_eligible if bool(timeline_eligible.any()) else eligible & (timelines == 0)
                 matches = eligible.nonzero().flatten()
+                if binds in (bind_targets or {}):
+                    assert len(matches), 'the fixed bind target must be in the native menu'
                 pick = int(matches[0]) if len(matches) else 0
             else:
                 pick = 0
@@ -229,14 +243,38 @@ def record(f,tree,*,frames=(),dummy_binds=(),branch_binds=(),names=('subject','a
             refs[:,1] = identity
             binds += 1
         else:
+            if getattr(rule, 'order_delta', 0) == -1:
+                # Fixed choices use the same existing-word interpretation as
+                # the live operand menu before composing unary lower.
+                from ReferenceContext import ReferenceTypes, resolve_order
+                ids = tuple(f.words[name][0] for name in f.words)
+                definitions = [f.cs.definitions.objects(wid) for wid in ids]
+                order_ids = torch.arange(len(f.cs._order_caps()))
+                table = torch.full((1, len(ids), len(order_ids)), -1, dtype=torch.long)
+                points = operands.new_zeros(1, len(ids), len(order_ids), operands.shape[-1])
+                for i, objects in enumerate(definitions):
+                    for cid in objects:
+                        order = f.cs._concept_source_order(cid)
+                        table[0, i, order] = cid
+                        points[0, i, order] = f.registry._payload(('sym', cid))
+                types = ReferenceTypes(torch.tensor([ids]), order_ids, table, points)
+                source = chunks.stack_view(stm)[2][:, :1]
+                native = stm[chunks.REFS].gather(1, chunks.stack_indices(stm)[:, :1, None, None].expand(-1, -1, 2, 2))[:, :, 0, 1]
+                point, reference = resolve_order(operands[:, :1], native, source-1, types)
+                operands = torch.cat((point, operands[:, 1:]), 1)
+                refs[:, 0] = reference[:, 0]
             result = f.operation(rule).compose(*(operands[:,i] for i in range(arity))).reshape(1,-1)
         stamps = chunks.stack_view(stm)[2][0,:arity].tolist()
-        order = stamps[0] if bind else denoted_order(rule,tuple(reversed(stamps)), (), None)
+        if bind:
+            target_order = int(stm[chunks.ORDERS][0, index]) if index >= 0 else stamps[0]
+            order = denoted_order(rule, (stamps[0], target_order), (), None)
+        else:
+            order = denoted_order(rule, tuple(reversed(stamps)), (), None)
         selected = choice(result,kind=kind,local=local,identity=identity,chunk=index,bind=bind,
                           order=order,head=getattr(rule,'head_role',0))
         inputs.append((rule.method_name,operands.clone(),result.clone()))
         state = walk.apply(state,selected,operands,column,refs)
-        if first is None and (bind or getattr(rule,'determiner_mode',None) in ('mint','bind')):
+        if first is None and (bind or getattr(rule,'order_delta',0) or getattr(rule,'determiner_mode',None) in ('mint','bind')):
             first = int(state[0][chunks.IDENTITY][0,int(chunks.at(state[0]))])
     stm,scope,records,values = state
     identity = capture(f.cs,stm,scope,records,values,batch=0,positions=torch.arange(len(entry.leaves)),

@@ -44,7 +44,7 @@ def supply_meaning(fixture, name, value):
 
 def operations():
     return Walk((SimpleNamespace(method_name='bind',head_role=1),
-                 SimpleNamespace(method_name='lift',clause_form='S',head_role=2)), ())
+                 SimpleNamespace(method_name='change',clause_form='S',head_role=2)), ())
 
 
 
@@ -210,9 +210,11 @@ def test_frame_access_does_not_leak_a_native_individuals_other_stream_value():
 @pytest.mark.parametrize('compiled', (False, True))
 def test_compose_bind_locations_share_the_operation_chooser_and_zero_dummy(compiled):
     from Language import BindLayer,OperationSelectionLayer
+    from Expectation import OrderPrime
     from ReferenceContext import prepare_operands
     rule=SimpleNamespace(method_name='bind',head_role=1)
     layer=OperationSelectionLayer(d_model=2,ops=[BindLayer()],unary_ops=[])
+    layer.operator_cost = 0.  # This certificate isolates the unlearned dummy score.
     with torch.no_grad():
         layer.reduce_anchor.fill_(1)
         layer.stop_anchor.fill_(-100)
@@ -227,7 +229,9 @@ def test_compose_bind_locations_share_the_operation_chooser_and_zero_dummy(compi
         active=torch.tensor([[True,False]])
         data=prepare_operands(mention,ids,ids*0,ids*0,orders=ids+2,
             rules=(rule,),unary_rules=(),bank=bank,live=None,active=active,chunk_state=state)
-        _,path,route=layer(mention,reference_data=data,expectation_prime=torch.ones(1,2),
+        prime = OrderPrime(torch.ones(1,1,2), torch.ones(1,1), torch.ones(1,1,dtype=torch.long))
+        _,path,route=layer(mention,reference_data=data,expectation_prime=prime,
+                           candidate_orders=torch.ones(1,len(data['binary_ops'])+1,dtype=torch.long),
                            depth=torch.ones(1,dtype=torch.long))
         return path,route['identity'],route['logits'],route['probabilities'],route['operands'],data['binary_valid']
     if compiled:
@@ -263,15 +267,15 @@ def test_compose_menu_uses_the_resolvers_observed_exclusions():
                       role_refs=(('sym', individual), None, None))
         for _ in range(8):
             store.append_meaning(idea)
-    exclusions=torch.tensor(resolver.exclusion_pairs()).reshape(-1,2)
+    exclusions=torch.tensor(resolver.exclusion_pairs()).reshape(-1,3)
     state=chunks.empty(1,8,12)
-    state,_=chunks.deposit(state,atoms[:1],torch.tensor([True]),identity=101)
+    state,_=chunks.deposit(state,atoms[:1],torch.tensor([True]),identity=101,order=1)
     for own in (atoms[1],atoms[0],atoms[0]+atoms[1],atoms[1]*0):
-        *_,available=chunks.bind_menu(state,own.reshape(1,1,-1),exclusions=exclusions)
+        *_,available=chunks.bind_menu(state,own.reshape(1,1,-1),orders=torch.tensor([[1]]),exclusions=exclusions)
         assert available[0,0,0]
         # §50 also excludes empty meaning. The other three inputs are either
         # contained, containing, or a witnessed incompatible coordinate.
-        assert bool(available[0,0,1]) == (bool(own.any()) and not resolver.exclusion_query()(own,atoms[0]))
+        assert bool(available[0,0,1]) == (bool(own.any()) and not resolver.exclusion_query(order=1)(own,atoms[0]))
 
 
 
@@ -289,12 +293,15 @@ def test_kept_journal_commits_two_verbs_one_identity_and_immutable_occurrences(m
     from test_clause_acceptance import SentenceFixture
     from test_medium_term_memory import snapshot, unchanged
     f = SentenceFixture(monkeypatch)
-    first = ('lift', ('lower_unary', 'subject'), ('verb', 'move', ('lower', 'd', 'place')))
+    first = ('change', ('lower_unary', 'subject'), ('verb', 'move', ('surface', 'd', 'place')))
+    from chunk_fixtures import higher_word
+    f.noun('subject', order=1)
+    higher_word(f, 'subject')
     supply_meaning(f, 'alias', f.program(first).end_state[0].detach() * .5)
-    tree = ('sum', first,
-        ('lift', ('bind', 'alias'), ('verb', 'affect', ('lower', 'd', 'target'))))
+    tree = ('add', first,
+        ('change', ('bind', 'alias'), ('verb', 'affect', ('surface', 'd', 'target'))))
     entry, inputs, handle = recorded_identity_reading(f, tree)
-    lifts = [record for record in inputs if record[0] == 'lift']
+    lifts = [record for record in inputs if record[0] == 'change']
     # The alias is a description mention and joins before the next VP reads it.
     alias = entry.leaves[entry.word_ids.tolist().index(f.words['alias'][0])]
     torch.testing.assert_close(lifts[1][1][:, 0], torch.maximum(lifts[0][2], alias))
@@ -303,7 +310,9 @@ def test_kept_journal_commits_two_verbs_one_identity_and_immutable_occurrences(m
     plan = resolver.preview(clause, chunk_context(resolver, ()))
     prepared = resolver.prepare(clause, plan)
     assert not f.cs.mtm.entries
-    assert all(decision['candidates'] == (None,) for decision in plan['decisions'])
+    # Runtime bind selects its introduction in compose. The former mint-only
+    # menu is retired by §27.1; the empty MTM and selected identity still hold.
+    assert plan['items'][0]['own_object']
     written = {}
     row = f.store.write_clause(prepared, written_rows=written, )
     retained = snapshot(resolver)
@@ -359,21 +368,22 @@ def test_binding_an_unresolved_object_does_not_complete_its_verb():
 
 
 @pytest.mark.parametrize('readmit', (False, True))
-@pytest.mark.parametrize('wrapper', ('sum', 'lower'))
+@pytest.mark.parametrize('wrapper', ('add',))
 def test_later_bind_keeps_its_earlier_determination_under_a_wrapper(monkeypatch, readmit, wrapper):
     from ClauseJournal import finish_clause
     from test_clause_acceptance import SentenceFixture
     from test_medium_term_memory import snapshot, unchanged
     f = SentenceFixture(monkeypatch)
-    supply_meaning(f, 'tail', f.program(('lower_unary', 'subject')).end_state[0].detach() * .5)
+    f.noun('subject', order=1)
+    supply_meaning(f, 'tail', f.program(('bind', 'subject')).end_state[0].detach() * .5)
     entry, _, handle = recorded_identity_reading(f,
-        ('bind', (wrapper, ('lower_unary', 'subject'), 'tail')))
+        ('bind', (wrapper, ('bind', 'subject'), 'tail')))
     clause = finish_clause(f.language, entry, registry=f.registry)
     resolver = f.cs.components.reference_close
     plan = resolver.preview(clause, chunk_context(resolver, ()))
     assert len(plan['items']) == 2
     introduction, use = plan['items']
-    assert introduction['mode'] == 'mint'
+    assert introduction['mode'] == 'bind' and introduction['own_object']
     assert introduction['node'].identity['handle'] == use['node'].identity['handle'] == handle
     assert use['selected'] == introduction['selected'] == ('new', 0)
     if readmit:
@@ -419,7 +429,7 @@ def test_three_point_roots_require_a_selected_relative_predicate(monkeypatch):
     f = SentenceFixture(monkeypatch)
     # The close still rejects three point roots with no relative grammar.
     from reading_fixtures import record_reading
-    plain = record_reading(f.language, f.program(('sum', 'prefix', ('sum', 'predicate', 'tail'))))
+    plain = record_reading(f.language, f.program(('add', 'prefix', ('add', 'predicate', 'tail'))))
     plain = replace(plain, actions=plain.actions[:-2], operation_values=plain.operation_values[:-2],
                     operation_refs=plain.operation_refs[:-2])
     with pytest.raises(ValueError, match='three slots have no selected relative clause'):
@@ -515,7 +525,7 @@ def test_transparent_wrapper_retains_one_completed_event(monkeypatch):
     from test_clause_acceptance import SentenceFixture
     f = SentenceFixture(monkeypatch)
     entry, _, _ = recorded_identity_reading(f, ('not',
-        ('lift', ('lower_unary', 'subject'), ('verb', 'move', ('lower', 'd', 'target')))))
+        ('change', ('bind', 'subject'), ('verb', 'move', ('surface', 'd', 'target')))))
     clause = finish_clause(f.language, entry, registry=f.registry)
     resolver = f.cs.components.reference_close
     plan = resolver.preview(clause, chunk_context(resolver, ()))
@@ -751,14 +761,15 @@ def test_relative_determination_keeps_its_introduction_and_later_bind(monkeypatc
     f = SentenceFixture(monkeypatch)
     # §50: the alias is a nonempty part at every explicitly changed state.
     for name, level in (('left', .2), ('right', .4), ('changed', .6), ('latest', .8), ('alias', .1)):
+        f.noun(name, order=2 if name in ('left', 'right', 'alias') else 0)
         supply_meaning(f, name, torch.full((8,), level))
-    relative = ('definite_unary', ('implies', 'left', 'right'))
+    relative = ('bind', ('implies', 'left', 'right'))
     if dummy:
         relative = ('bind', relative)
-    tree = ('sum', ('equal', ('equal', relative, 'changed'), 'latest'), ('bind', 'alias'))
+    tree = ('add', ('part', ('part', relative, 'changed'), 'latest'), ('bind', 'alias'))
     # The forced alias denotes the order-2 relative object. The remaining
     # four leaf orders are the helper's existing determiner/equality witnesses.
-    entry, inputs, handle = recorded_identity_reading(f, tree, dummy_binds=(0,) if dummy else (),
+    entry, inputs, handle = recorded_identity_reading(f, tree, dummy_binds=(0,1) if dummy else (0,),
         leaf_orders=(2, 2, 0, 0, 2))
     clause = finish_clause(f.language, entry, registry=f.registry)
     resolver = f.cs.components.reference_close
@@ -767,7 +778,7 @@ def test_relative_determination_keeps_its_introduction_and_later_bind(monkeypatc
                  and item['node'].identity['handle'] == handle)
     assert intro['node'].subject_word_id == -1
     assert intro['node'].children[0].relation == 'implies'
-    opened = next(value for name, _, value in inputs if name == 'definite_unary')[0]
+    opened = next(value for name, _, value in inputs if name == 'bind')[0]
     torch.testing.assert_close(intro['content'], opened)
     assert intro['own_object'] and intro['selected'] == ('new', 0)
     assert plan['items'][-1]['selected'] == intro['selected']
@@ -800,8 +811,8 @@ def test_two_relative_determinations_keep_distinct_objects(monkeypatch):
     from ClauseJournal import finish_clause
     from test_clause_acceptance import SentenceFixture
     f = SentenceFixture(monkeypatch)
-    relative = ('definite_unary', ('implies', 'left', 'right'))
-    entry, _, _ = recorded_identity_reading(f, ('sum', relative, relative))
+    relative = ('bind', ('implies', 'left', 'right'))
+    entry, _, _ = recorded_identity_reading(f, ('add', relative, relative), dummy_binds=(0,1))
     resolver = f.cs.components.reference_close
     clause = finish_clause(f.language, entry, registry=f.registry)
     plan = resolver.preview(clause, chunk_context(resolver, ()))

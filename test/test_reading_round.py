@@ -76,6 +76,10 @@ def test_support_reuse_requires_order_and_cosine_and_singleton_opens_nothing():
     assert witnessed_match(cs, 0, support) is None
     with torch.no_grad():
         cs.similarity_codebook.W[row].copy_(torch.eye(8)[7])
+    # The class chart is learned from context (§30.7); reuse compares its
+    # retained witness centroid, not the class's own chart coordinates.
+    assert witnessed_match(cs, 1, support) == cid
+    remember_candidate(cs, cid, {rows[0][1]: 9., rows[1][1]: 1.})
     assert witnessed_match(cs, 1, support) is None
     before = cs.mtm.candidate_counter
     assert observe_candidate(cs, 1, {rows[0][1]: 1.}) is None
@@ -232,7 +236,7 @@ def pending_reading_journal(monkeypatch):
     from reading_fixtures import record_reading
     from ClauseJournal import finish_clause
     f = SentenceFixture(monkeypatch)
-    program = f.program(('equal', 'left', 'right'))
+    program = f.program(('part', 'left', 'right'))
     words = [f.cs.interpret.lookup_word((81 + n,), (), form='pending-' + str(n))
              for n in range(2)]
     readings = [f.cs.interpret.reading(word) for word in words]
@@ -263,7 +267,7 @@ def test_order_zero_bind_keeps_its_introduction_and_event(monkeypatch, durable_m
     from Meaning import ConceptualMeaning
     from test_clause_acceptance import SentenceFixture
     f = SentenceFixture(monkeypatch)
-    entry, _, handle = record(f, ('lift', ('bind', 'subject'), 'predicate'),
+    entry, _, handle = record(f, ('change', ('bind', 'subject'), 'predicate'),
                              leaf_orders=[0, 0])
     clause = finish_clause(f.language, entry, registry=f.registry)
     resolver = f.cs.components.reference_close
@@ -333,7 +337,7 @@ def test_reading_event_cases_accept_native_part_rows_and_filter_open_questions(m
     from test_modal_timelines import fixture, recording, close, same
     from CaseSelection import CaseBank, stage_event_cases
     f, action, modifier = fixture(monkeypatch)
-    _, frame, _, _ = close(f, recording(f, ('lift', ('lower_unary', 'subject'), 'move')),
+    _, frame, _, _ = close(f, recording(f, ('change', ('lower_unary', 'subject'), 'move')),
         actions=(action, modifier), evidence=(.8, .2))
     token, entry = next(iter(f.cs.mtm.entries.items()))
     event = entry.events[0]

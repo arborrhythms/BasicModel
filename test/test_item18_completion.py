@@ -12,7 +12,7 @@ def test_empty_intuition_does_not_close_an_open_question():
     goal = with_slots(ConceptualMeaning.from_description(registry._payload(refs[0])),
                       (('referent', 0),))
     result = invoke(model, registry, registry.form('intuit', goal))
-    concluded = integrate(registry, goal, result, ())
+    concluded = integrate(registry, goal, result, (), stm=model.conceptualSpace.stm)
     assert open_slots(concluded) == open_slots(goal)
     assert concluded.role_refs == goal.role_refs
     torch.testing.assert_close(concluded.roles, goal.roles)
@@ -165,6 +165,10 @@ def policy_fixture():
     model.selection = operation
     model.symbolSpace = SimpleNamespace(languageLayer=SimpleNamespace(operation_layer=operation))
     language._tree_layer = lambda _: operation
+    from generation_fixtures import native_policy
+    language._generate_binary_ops = ()
+    language._generate_unary_ops = (SimpleNamespace(),)
+    native_policy(language)
     language.generate_policy_logits = lambda top, features=None: language.generate_policy(top)
     return model, operation
 
@@ -208,9 +212,9 @@ def test_separate_selection_credit_cannot_train_its_input_or_decoder(departure):
 def test_thought_faces_have_exact_ltm_method_grants():
     from Queries import THOUGHT_EXECUTORS
     expected = dict(bind=('bind_reference',), isPart=('relation_evidence',),
-        isEqual=('relation_evidence',), infer=('relation_evidence',),
-        intuit=('intuition_rules',), isTrue=('end_evidence','truth_evidence','resolve_description'),
-        query=('query','resolve_description'), ask=('best_match','resolve_description'))
+        isEqual=('relation_evidence',), infer=('relation_evidence','implication_rules'),
+        intuit=(), isTrue=('end_evidence','truth_evidence','resolve_description'),
+        query=('query','resolve_description'), ask=('query','resolve_description'))
     for name, descriptor in THOUGHT_EXECUTORS.items():
         assert dict(descriptor.method_grants).get('ltm', ()) == expected.get(name, ())
 

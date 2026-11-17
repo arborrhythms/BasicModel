@@ -16,16 +16,28 @@ def test_retained_four_clauses_recover_non_witnesses_without_a_discard_charge(tm
         map_location='cpu', weights_only=True)
     model = make_model(tmp_path, monkeypatch)
     try:
+        from Language import LowerLayer, NonLayer
+        # The archive's local slots were binary lower=12 and unary non=2.
+        # §27.1 removes binary lower from complete.grammar, but it remains
+        # declared in default.grammar and ladder.grammar. Exercise those
+        # native layers directly; a new catalog index cannot reinterpret an
+        # old retained action as an unrelated operator.
+        native_width = model._concept_owner().nDim
+        lower, non = LowerLayer(native_width, native_width), NonLayer()
+        layers = SimpleNamespace(ops=[lower], unary_ops=[non])
+        language = SimpleNamespace(_tree_layer=lambda _arity: layers)
         for trial in saved['trials']:
-            programs = [SimpleNamespace(**p) for p in trial['programs']]
+            programs = [SimpleNamespace(**dict(p, actions=p['actions'].clone())) for p in trial['programs']]
             # The archive has signed, pre-centroid forms. Keep its actions and
             # all three meaning values; map only forms into the current cube
             # and express each local output as its parts' centroid.
             width = saved['meaning_start']
-            layer = model.languageSpace._tree_layer(2)
-            form_width = next(op.gl.meaning_layout[0] for op in layer.ops
-                              if op.gl.meaning_layout is not None)
+            form_width = lower.meaning_layout[0]
             for program in programs:
+                for kind, archived in ((1, 12), (2, 2)):
+                    selected = program.actions[:, 0] == kind
+                    assert (program.actions[selected, 1] == archived).all()
+                    program.actions[selected, 1] = 0
                 archive = program.operation_values
                 form = cube_unchart(archive[..., :width])
                 program.operation_values = torch.cat((
@@ -35,7 +47,7 @@ def test_retained_four_clauses_recover_non_witnesses_without_a_discard_charge(tm
                     if kind in (1, 2):
                         frame = program.operation_values[step]
                         frame[2, :form_width] = frame[:2 if kind == 1 else 1, :form_width].mean(0)
-            charge = forward_discard(model.languageSpace, programs, form_width, trial['other_cost'])
+            charge = forward_discard(language, programs, form_width, trial['other_cost'])
             torch.testing.assert_close(charge, torch.zeros(4))
             torch.testing.assert_close(trial['other_cost'], torch.full((4,), 1.85))
         # Every non retains its occurrence operand, without claiming a free inverse.
@@ -44,12 +56,12 @@ def test_retained_four_clauses_recover_non_witnesses_without_a_discard_charge(tm
             for step, (kind, operation, _) in enumerate(program.actions.tolist()):
                 if kind != 2:
                     continue
-                wrapped = model.languageSpace._tree_layer(1).unary_ops[operation]
+                wrapped = language._tree_layer(1).unary_ops[operation]
                 op = getattr(wrapped, 'gl', wrapped)
                 if op.rule_name != 'non':
                     continue
                 frame = program.operation_values[step]
-                ((value, domain),) = inverse_step(model.languageSpace, kind, operation, frame[2:3], frame)
+                ((value, domain),) = inverse_step(language, kind, operation, frame[2:3], frame)
                 torch.testing.assert_close(value, frame[:1], rtol=0, atol=0)
                 assert domain.all()
                 witnesses += 1
@@ -59,8 +71,8 @@ def test_retained_four_clauses_recover_non_witnesses_without_a_discard_charge(tm
         index = int((program.actions[:, 0] == 1).nonzero()[0])
         kind, op, _ = program.actions[index].tolist()
         frame = program.operation_values[index]
-        local = inverse_step(model.languageSpace, kind, op, frame[2:3], frame)
-        inherited = inverse_step(model.languageSpace, kind, op, frame[2:3], frame,
+        local = inverse_step(language, kind, op, frame[2:3], frame)
+        inherited = inverse_step(language, kind, op, frame[2:3], frame,
             coordinates=torch.zeros_like(frame[2:3], dtype=torch.bool))
         assert all(domain.all() for _, domain in local)
         assert all(not domain.any() for _, domain in inherited)
@@ -83,7 +95,7 @@ def test_forward_discard_is_absent_from_the_loop(monkeypatch):
     assert report['reads'][1]['meaning_norm'] > 0
     for read in report['reads']:
         assert read['multisets'] == 4
-        torch.testing.assert_close(torch.tensor(read['R']), torch.tensor(read['leaf_cost']))
+        torch.testing.assert_close(torch.tensor(read['R']), torch.tensor(read['leaf_cost']) + torch.tensor(read['application_cost']))
     assert charges and not any(charges)
 
 

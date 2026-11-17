@@ -109,20 +109,23 @@ def test_registry_uses_the_two_reconstructions_and_post_thought_target(tmp_path,
         terms.append(model._sentence_cost_registry._terms)
         return value
     monkeypatch.setattr(model, '_sentence_path_cost', capture)
-    import ConceptSpread
-    complete = ConceptSpread.complete
+    import IntuitionField
+    complete = IntuitionField.complete
     def completed(*args, **kwargs):
         value = complete(*args, **kwargs)
-        prediction = model._concept_prediction
-        targets.append(prediction.target)
+        target = model._intuition_target
+        targets.append(target)
         owner = model._concept_owner()
-        assert not prediction.target.requires_grad
+        assert not target.requires_grad
+        from SentenceField import knowing
+        expected, _ = IntuitionField.observed(owner, knowing(model))
+        torch.testing.assert_close(target, expected[:, :owner._order_caps()[0]])
+        assert 'intuition.field' in model._sentence_close_errors._terms
+        prediction = model._concept_prediction
         assert all(owner._row_order(int(row)) == 0 for row in prediction.rows)
-        torch.testing.assert_close(prediction.target,
-            owner._observed_knowing[:len(prediction.active), prediction.rows])
-        assert 'expectation.concepts' in model._sentence_close_errors._terms
+        assert prediction.target is None  # No omission teacher in this presentation.
         return value
-    monkeypatch.setattr(ConceptSpread, 'complete', completed)
+    monkeypatch.setattr(IntuitionField, 'complete', completed)
     try:
         source = model.inputSpace.prepInput(['alpha beta'])
         model.runBatch(train=True, optimizer=model.getOptimizer(lr=.003), batchSize=1,

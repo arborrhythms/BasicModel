@@ -22,7 +22,7 @@ def _tiny_grammar():
     from Language import Grammar
     g = Grammar()
     g.rules = [
-        g._parse_rule("S4", "lift(NP3, VP1)", space_role='SS'),
+        g._parse_rule("S4", "change(NP3, VP1)", space_role='SS'),
         g._parse_rule("NP3", "lower(DET, NP4)", space_role='SS'),
     ]
     g._configured = True
@@ -97,7 +97,7 @@ def test_knowledge_view_rule_order_signatures():
     assert isinstance(sigs, list)
     assert len(sigs) == 2
     assert all('order_delta' not in sig for sig in sigs)
-    assert sigs[0]['op_name'] == 'lift'
+    assert sigs[0]['op_name'] == 'change'
     assert sigs[1]['op_name'] == 'lower'
 
 
@@ -234,10 +234,10 @@ def _make_sig(lhs_category, lhs_order, rhs_categories, rhs_orders,
 
 
 def test_admissible_binary_exact_match():
-    """Rule ``S4 = lift(NP3, VP1)`` is admissible for operands
+    """Rule ``S4 = change(NP3, VP1)`` is admissible for operands
     (NP at order 3, VP at order 1)."""
     from embed import is_rule_admissible
-    sig = _make_sig('S', 4, ('NP', 'VP'), (3, 1), 'lift')
+    sig = _make_sig('S', 4, ('NP', 'VP'), (3, 1), 'change')
     assert is_rule_admissible(
         sig, left_cat='NP', left_order=3,
         right_cat='VP', right_order=1) is True
@@ -246,7 +246,7 @@ def test_admissible_binary_exact_match():
 def test_inadmissible_binary_category_mismatch():
     """Left category mismatch → not admissible."""
     from embed import is_rule_admissible
-    sig = _make_sig('S', 4, ('NP', 'VP'), (3, 1), 'lift')
+    sig = _make_sig('S', 4, ('NP', 'VP'), (3, 1), 'change')
     assert is_rule_admissible(
         sig, left_cat='DET', left_order=3,
         right_cat='VP', right_order=1) is False
@@ -255,7 +255,7 @@ def test_inadmissible_binary_category_mismatch():
 def test_inadmissible_binary_order_mismatch():
     """Left order mismatch → not admissible."""
     from embed import is_rule_admissible
-    sig = _make_sig('S', 4, ('NP', 'VP'), (3, 1), 'lift')
+    sig = _make_sig('S', 4, ('NP', 'VP'), (3, 1), 'change')
     assert is_rule_admissible(
         sig, left_cat='NP', left_order=2,  # rule wants 3
         right_cat='VP', right_order=1) is False
@@ -264,7 +264,7 @@ def test_inadmissible_binary_order_mismatch():
 def test_inadmissible_right_category_mismatch():
     """Right category mismatch → not admissible."""
     from embed import is_rule_admissible
-    sig = _make_sig('S', 4, ('NP', 'VP'), (3, 1), 'lift')
+    sig = _make_sig('S', 4, ('NP', 'VP'), (3, 1), 'change')
     assert is_rule_admissible(
         sig, left_cat='NP', left_order=3,
         right_cat='AP', right_order=1) is False
@@ -273,7 +273,7 @@ def test_inadmissible_right_category_mismatch():
 def test_inadmissible_arity_mismatch():
     """Binary rule fed only a left operand → not admissible (arity wrong)."""
     from embed import is_rule_admissible
-    sig = _make_sig('S', 4, ('NP', 'VP'), (3, 1), 'lift')
+    sig = _make_sig('S', 4, ('NP', 'VP'), (3, 1), 'change')
     assert is_rule_admissible(
         sig, left_cat='NP', left_order=3) is False
 
@@ -319,7 +319,7 @@ def _three_rule_list():
     """Three serialized rule signatures: lift, lower, and an
     ordinary not-rule."""
     return [
-        _make_sig('S', 4, ('NP', 'VP'), (3, 1), 'lift'),
+        _make_sig('S', 4, ('NP', 'VP'), (3, 1), 'change'),
         _make_sig('NP', 3, ('DET', 'NP'), (0, 4), 'lower'),
         _make_sig('S', 3, ('S',), (3,), 'not'),
     ]

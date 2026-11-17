@@ -133,7 +133,7 @@ def test_training_trajectory_selects_the_kept_trial_and_excludes_unreachable_ce(
     assert torch.equal(torch.get_rng_state(), before)
     observations = {(0,0): dict(steps=[dict(kind=k) for k in ('leaf','leaf','binary')]),
                     (0,1): dict(steps=[dict(kind=k) for k in
-                        ('leaf','leaf','leaf','transpose','unary','binary','binary')])}
+                        ('leaf','leaf','leaf','swap','unary','binary','binary')])}
     trajectory.finish_batch(1, 0, rows, observations, torch.tensor([True,False]))
     report = trajectory.report()['overall']
     assert report['lesson_calls'] == 4 and report['fold_targets_per_lesson_call'] == .5
@@ -143,7 +143,7 @@ def test_training_trajectory_selects_the_kept_trial_and_excludes_unreachable_ce(
         assert report['reachable_state_ce'][name]['mean'] == pytest.approx(-torch.tensor(.75).log().item())
     assert report['first_pair_by_family']['description']['accuracy'] == 1.
     assert report['first_pair_by_family']['intransitive']['accuracy'] == 1.
-    assert report['kept_program_steps']['totals'] == dict(leaf=5,binary=3,unary=1,transpose=1,compose=5,total=10)
+    assert report['kept_program_steps']['totals'] == dict(leaf=5,binary=3,unary=1,swap=1,compose=5,total=10)
 
 
 def test_declared_forms_keep_distinct_targets_when_the_implementation_is_shared():
@@ -160,7 +160,7 @@ def test_declared_forms_keep_distinct_targets_when_the_implementation_is_shared(
     for expected, name in enumerate(names):
         tree = [name, 0, 1]
         binary, _ = compose_examples(language, program, tree)
-        assert [target for _, target, _, _ in binary if target >= 0] == [expected]
+        assert [target for _, target, _, _, _ in binary if target >= 0] == [expected]
         assert [row['target'] for row in constituent_examples(language, program, tree)
                 if row['target'] >= 0] == [expected]
 

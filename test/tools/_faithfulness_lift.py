@@ -1,4 +1,4 @@
-"""Ad-hoc faithfulness probe for LiftLayer (idea-decoder review, 2026-06-20).
+"""Ad-hoc faithfulness probe for ChangeLayer (idea-decoder review, 2026-06-20).
 Run: .venv/bin/python test/_faithfulness_lift.py
 """
 import os, sys
@@ -19,7 +19,7 @@ try:
 except Exception as e:
     print("config init note:", e)
 
-from Language import LiftLayer
+from Language import ChangeLayer
 
 D = 8
 def rand_idea(B=4):
@@ -31,7 +31,7 @@ def mx(a, b):
 print("=" * 64)
 print("LIFT faithfulness (content-only, verbEigEdit OFF)")
 print("=" * 64)
-lift = LiftLayer(nInput=D); lift.eval()
+lift = ChangeLayer(nInput=D); lift.eval()
 NP, VP = rand_idea(), rand_idea()
 
 # (1) forward then reverse, then forward again: the SUM round-trip
@@ -50,7 +50,7 @@ print()
 print("=" * 64)
 print("LIFT with a NON-ZERO verb edit (design B: verb leaves a trace)")
 print("=" * 64)
-lift2 = LiftLayer(nInput=D); lift2.eval()
+lift2 = ChangeLayer(nInput=D); lift2.eval()
 # force the edit on with a real (non-zero) projection so it actually perturbs
 import torch.nn as nn
 from Language import _make_lex_gate

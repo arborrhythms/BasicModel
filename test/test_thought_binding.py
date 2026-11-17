@@ -54,8 +54,8 @@ def test_substitution_requires_the_returned_premise_and_keeps_its_witness():
     assert integrate(goal, step, (first, read(operand, value, binding))) is goal
     # Equal cached vectors and isomorphic descriptions are not declared relations.
     first.evidence['evaluation_values'] = {compound: torch.ones(3), rewritten: torch.ones(3)}
-    first.evidence['evaluations'] = {compound: dict(kind='lift', identity=operand),
-                                   rewritten: dict(kind='lift', identity=value)}
+    first.evidence['evaluations'] = {compound: dict(kind='change', identity=operand),
+                                   rewritten: dict(kind='change', identity=value)}
     assert integrate(goal, step, (first, read(operand, value, binding))) is goal
 
 
@@ -89,6 +89,31 @@ def test_conclusion_does_not_publish_unreferenced_working_constituents(monkeypat
     assert len(store) == before
     assert store.parts.references(index[1])[0][1] == a
     assert store.parts.references(index[1])[1][1] == b
+
+
+def test_checked_binding_projects_before_writing_its_unselected_request(monkeypatch):
+    from dataclasses import replace
+    from part_fixtures import native_store
+    from ThoughtStream import write
+    import Occurrence
+    store, (a, b, predicate) = native_store(width=3, points=torch.eye(3))
+    model = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store))
+    monkeypatch.setattr(Occurrence, 'source_at', lambda *args: ('document', 0))
+    request = ConceptualMeaning(torch.eye(3), torch.tensor([True, True, False]),
+        role_refs=(('sym', b), ('sym', predicate), None))
+    # Bind selected a. The other working role still describes the question;
+    # it is not a newly concluded relation or a premise to store separately.
+    concluded = ConceptualMeaning(torch.eye(3), torch.ones(3, dtype=torch.bool),
+        role_refs=(('sym', a), ('sym', predicate), ('constituent', 0)),
+        constituents=(request,), bindings={'_producing_operation':'bind',
+            '_bound_roles':(('referent',0),), '_evidence_pair':(.8,0.)})
+    before = len(store), len(store.parts)
+    index = write(model, concluded, row=0)
+    assert (len(store), len(store.parts)) == (before[0]+1, before[1])
+    assert store.meaning_of(index).role_refs == (('sym', a), None, None)
+    # The guard still refuses that request if someone tries to conclude it.
+    with pytest.raises(ValueError, match='multi-role thought requires'):
+        write(model, request, row=0)
 
 
 @pytest.mark.parametrize('producer', ('query', 'bind'))
@@ -200,7 +225,7 @@ def test_concluded_relation_keeps_its_occurrence_argument(monkeypatch, role):
 def test_empty_query_keeps_a_closed_equality_on_the_semantic_chain_path(monkeypatch):
     from test_item6_2_thinking import world, run
     model, registry, store, (a, b, c) = world()
-    root = registry.form('equal', a, a)
+    root = registry.form('define', a, a)
     selected = []
     def choose(_root, active, actions, **kwargs):
         if selected:
@@ -213,7 +238,7 @@ def test_empty_query_keeps_a_closed_equality_on_the_semantic_chain_path(monkeypa
     monkeypatch.setattr(model, '_choose_selected_thought_action', choose)
     result = run(model, root, work_budget=20)
     assert len(selected) == 1
-    assert bindings(result.meaning)['_producing_operation'] == 'query'
+    assert '_producing_operation' not in bindings(result.meaning)
     assert not bindings(result.meaning).get('_bound_roles')
     torch.testing.assert_close(result.meaning.roles, root.roles, rtol=0, atol=0)
     assert evidence_pair(result.meaning) == (0., 0.)
@@ -251,10 +276,10 @@ def test_unrelated_query_evidence_does_not_rewrite_a_closed_unknown_chain(pair):
     def signature(*args, **kwargs):
         raise ValueError('an ordinary predicate is not a registered thought operation')
     registry = SimpleNamespace(signature_for=signature, space=SimpleNamespace())
-    result = integrate_thought(registry, goal, materialize(raw), ())
+    result = integrate_thought(registry, goal, materialize(raw), (), stm=None)
     assert evidence_pair(result) == (0., 0.) and result.role_refs == goal.role_refs
     torch.testing.assert_close(result.roles, goal.roles, rtol=0, atol=0)
-    assert bindings(result)['_producing_operation'] == 'query'
+    assert '_producing_operation' not in bindings(result)
     assert not bindings(result).get('_thought_witnesses')
 
 @pytest.mark.parametrize('producer', ('query', 'bind'))
@@ -298,11 +323,11 @@ def test_empty_read_does_not_bind_its_temporary_question_address(producer, incom
             semantic_id='part' if value.role_refs[1] == ('sym', 99) else producer))
     registry = SimpleNamespace(signature_for=signature,
         space=SimpleNamespace(mtm=SimpleNamespace(entries={})))
-    result = integrate_thought(registry, goal, materialized, ())
+    result = integrate_thought(registry, goal, materialized, (), stm=None)
     assert result.role_refs == goal.role_refs and open_slots(result) == (('referent', 0),)
     torch.testing.assert_close(result.roles, goal.roles, rtol=0, atol=0)
     assert evidence_pair(result) == (1., 1.)
-    assert bindings(result)['_producing_operation'] == producer
+    assert bindings(result).get('_producing_operation') == (None if producer == 'query' else producer)
     assert not bindings(result).get('_bound_roles')
     store = SimpleNamespace(episodic_capacity=0, _validate_local_references=validate_local_references,
         write_clause=lambda clause, **kwargs: (clause, kwargs),
@@ -331,7 +356,7 @@ def test_returned_ask_content_keeps_both_evidence_poles(payload, pair):
         request, _freeze_boundary_value(evidence)))
     registry = SimpleNamespace(signature_for=lambda *args, **kwargs:
         SimpleNamespace(operation=SimpleNamespace(semantic_id='part')), space=SimpleNamespace())
-    bound = integrate_thought(registry, goal, result, ())
+    bound = integrate_thought(registry, goal, result, (), stm=None)
     assert bound.role_refs == returned.role_refs and not open_slots(bound)
     assert evidence_pair(bound) == pair
     assert bindings(bound)['_thought_witnesses'] == (('ltm', 'test', 3),)

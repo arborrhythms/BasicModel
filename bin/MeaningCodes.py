@@ -151,6 +151,18 @@ def compose(name, left, right=None):
         return torch.zeros_like(left)
     if name == 'sum':
         return (left + right) * .5
+    if name in ('add', 'subtract', 'multiply', 'divide'):
+        from Layers import bounded_atanh
+        a, b = bounded_atanh(left), bounded_atanh(right)
+        if name == 'add':
+            result = a + b
+        elif name == 'subtract':
+            result = (a - b).clamp_min(0)
+        elif name == 'multiply':
+            result = a * b
+        else:
+            result = torch.where(b != 0, a / torch.where(b != 0, b, 1.), 0.)
+        return result.tanh()
     positive, negative = left.chunk(2, -1)
     other_positive, other_negative = right.chunk(2, -1)
     if name in ('conjunction', 'intersection'):

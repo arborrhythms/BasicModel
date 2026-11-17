@@ -109,6 +109,35 @@ def test_bound_use_reads_as_its_introduction_without_rewriting_rows(mode):
     assert not resolver.individuals({})
 
 
+def test_individuals_read_each_live_token_once_per_interpretation(monkeypatch):
+    resolver, store, atoms = fixture()
+    first, address, _ = close(resolver, atoms[0], atoms[6], 'mint', (),
+                              document='pool', sentence=0)
+    introduction = store.occurrence_of(store.index_of_row(address))
+    use, _ = keep(resolver, mention(atoms[0], mode='bind'), (first,), position=1)
+    frame = SituationFrame.from_row(store.row(use))
+    records = resolver.accessible(chunk_context(resolver, (frame,)))
+    expected = resolver.individuals(records)
+    assert set(expected) == {introduction}
+    before = snapshot(resolver)
+    calls, read = [], resolver.token_value
+    def counted(reference):
+        calls.append(reference)
+        return read(reference)
+    monkeypatch.setattr(resolver, 'token_value', counted)
+    for iteration in range(2):
+        actual = resolver.individuals(records)
+        assert set(actual) == set(expected)
+        for identity in expected:
+            for key in expected[identity]:
+                if torch.is_tensor(expected[identity][key]):
+                    torch.testing.assert_close(actual[identity][key], expected[identity][key], rtol=0, atol=0)
+                else:
+                    assert actual[identity][key] == expected[identity][key]
+        assert calls == [introduction] * (iteration + 1)
+        unchanged(resolver, before)
+
+
 def test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token():
     resolver, store, a = fixture()
     pool = resolver.components.owner.mtm = MediumTermMemory(2)

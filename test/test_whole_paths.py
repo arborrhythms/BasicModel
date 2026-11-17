@@ -7,7 +7,7 @@ def test_thought_content_growth_preserves_structure_and_trial_rollback():
     from dataclasses import replace
     from Meaning import ConceptualMeaning
     from ThoughtStrata import construct, bound_to_sentence, write, snapshot, restore
-    stores = construct(1, 2, 4)
+    stores = construct(1, 2, 4, episodic_concepts=0)
     bound_to_sentence(stores, words=3, operators=3)
     store = stores[0][0]
     def nested(count):
@@ -63,7 +63,8 @@ def test_retained_named_transient_captures_its_concept_not_its_mtm_address():
     pool = SimpleNamespace(entries={'retained': token}, reading_of=lambda key: 17)
     strata = SentenceStrata(1, 1, 2, 4)
     model = SimpleNamespace(_reconstruction_stack=lambda: SimpleNamespace(),
-        _concept_owner=lambda: SimpleNamespace(mtm=pool),
+        _concept_owner=lambda: SimpleNamespace(mtm=pool,
+            _csw_row_of=lambda cid: 0 if cid == 17 else None),
         inputSpace=SimpleNamespace(_ar_word_concept_ids=torch.tensor([[17]])),
         symbolSpace=SimpleNamespace(), languageSpace=SimpleNamespace(),
         conceptualSpace=SimpleNamespace(stm=SimpleNamespace(strata=strata)))
@@ -396,7 +397,8 @@ def test_output_departure_runs_only_the_last_stage(monkeypatch):
     active = torch.tensor([True])
     model = NS(_what_memory=lambda: None, when_time=torch.tensor(7),
         when_encoding=NS(t=7), present=lambda: 7, _sentence_fields={}, _sentence_answer_predictions=None,
-        inputSpace=NS(data=NS(has_supervised_outputs=True)))
+        inputSpace=NS(data=NS(has_supervised_outputs=True)),
+        languageSpace=NS(operator_cost=1., _generate_binary_ops=(), _generate_unary_ops=()))
     before = ThoughtTrialState(model)
     registry = Error(row_mask=active)
     registry.add('reconstruction', torch.tensor([2.]), objective='reconstruction')
@@ -416,7 +418,7 @@ def test_output_departure_runs_only_the_last_stage(monkeypatch):
     monkeypatch.setattr(WholePaths, 'output', output)
     draw = dict(walk=torch.tensor([6]), reconstruction_round=torch.tensor([-1]),
                 thought_round=torch.tensor([-1]), output_round=torch.tensor([0]))
-    path = finish(model, (), 0, active, base=base, draw=draw)
+    path = finish(model, (), 0, active, base=base, draw=draw, trust=1.)
     assert len(calls) == 1 and path.observation['record'] is base.observation['record']
     assert path.parts.tolist() == [[2.,0.,1.]]
 
@@ -605,7 +607,7 @@ def test_thought_preview_keeps_scored_reference_arrivals_unchanged():
     observation = dict(clauses=(clause,), reference_plans=(plan,), entries=(entry,))
     assert plan['arrival_count'] == 0
     for _ in range(2):
-        assert fields(model, observation, 0)[0] is not None
+        assert fields(model, observation, 0, trust=1.)[0] is not None
         assert view.reference == word
         assert len(resolver._arrival_constituents(clause)[1]) == plan['arrival_count']
         assert 'prepared_root' not in plan and 'written_node' not in plan['items'][0]

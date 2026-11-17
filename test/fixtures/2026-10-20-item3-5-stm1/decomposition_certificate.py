@@ -68,8 +68,8 @@ def run(folder, successors=1):
         pattern = replace(pattern, bindings=dict(bindings(pattern), _query_components=True))
         return registry.form('query', pattern, bindings={'_forced_decomposition': True})
 
-    def candidates(registry, root, active, current, records, descriptions=()):
-        actions = original_menu(registry, root, active, current, records, descriptions)
+    def candidates(registry, root, active, current, records, descriptions=(), *, stm):
+        actions = original_menu(registry, root, active, current, records, descriptions, stm=stm)
         target = root.role_refs[2]
         selected = None
         env = next(((doc, name) for (doc, index), source in sources.items()

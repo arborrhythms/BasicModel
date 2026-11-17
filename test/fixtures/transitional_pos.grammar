@@ -68,8 +68,8 @@
 
       <!-- Sentence. -->
       <rule>S3 = NP3</rule>
-      <rule>S4 = lift.forward(NP3, VP1)</rule>
-      <rule>S5 = lift.forward(MP1, S4)</rule>
+      <rule>S4 = change.forward(NP3, VP1)</rule>
+      <rule>S5 = change.forward(MP1, S4)</rule>
 
       <!-- Noun phrase. Normal noun phrases are NP3. Nouns are N3;
            count nouns enter as NP4; DET lowers/specifies NP4 into NP3.
@@ -98,7 +98,7 @@
       <!-- Adjective / prepositional phrases. -->
       <rule>AP = lower.forward(ADJ, NP3)</rule>
       <rule>AP = intersection.forward(ADJ, AP)</rule>
-      <rule>PP = lift.forward(P, NP3)</rule>
+      <rule>PP = change.forward(P, NP3)</rule>
       <rule>NP3 = lower.forward(NP3, PP)</rule>
       <rule>VP1 = lower.forward(VP1, PP)</rule>
 
@@ -146,8 +146,8 @@
 
       <!-- Sentence. -->
       <rule>NP3 = S3</rule>
-      <rule>NP3, VP1 = lift.reverse(S4)</rule>
-      <rule>MP1, S4 = lift.reverse(S5)</rule>
+      <rule>NP3, VP1 = change.reverse(S4)</rule>
+      <rule>MP1, S4 = change.reverse(S5)</rule>
 
       <!-- Noun phrase. -->
       <rule>N3 = NP3</rule>
@@ -170,7 +170,7 @@
       <!-- Adjective / prepositional phrases. -->
       <rule>ADJ, NP3 = lower.reverse(AP)</rule>
       <rule>ADJ, AP = intersection.reverse(AP)</rule>
-      <rule>P, NP3 = lift.reverse(PP)</rule>
+      <rule>P, NP3 = change.reverse(PP)</rule>
       <rule>NP3, PP = lower.reverse(NP3)</rule>
       <rule>VP1, PP = lower.reverse(VP1)</rule>
 

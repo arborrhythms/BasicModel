@@ -34,15 +34,14 @@
 
     <compose>
       <!-- Typed attention candidates; no predefined surface or generate face. -->
-      <rule operands="field">F = divide.forward(F)</rule>
-      <rule operands="field">F = descend.forward(F)</rule>
-      <rule operands="field">F = gloss.forward(F)</rule>
+      <rule operands="field">F = focus.forward(F)</rule>
+      <rule operands="field">F = mint.forward(F)</rule>
       <rule operands="field">F = intersection.forward(F)</rule>
       <rule operands="field">F = union.forward(F)</rule>
 
       <rule>union_argout1 = union.forward(union_argin1, union_argin2)</rule>
       <rule>intersection_argout1 = intersection.forward(intersection_argin1, intersection_argin2)</rule>
-      <rule>lift_argout1 = lift.forward(lift_argin1, lift_argin2)</rule>
+      <rule>change_argout1 = change.forward(change_argin1, change_argin2)</rule>
       <rule>lower_argout1 = lower.forward(lower_argin1, lower_argin2)</rule>
       <rule>not_argout1 = not.forward(not_argin1)</rule>
       <rule>conjunction_argout1 = conjunction.forward(conjunction_argin1, conjunction_argin2)</rule>
@@ -74,7 +73,7 @@
     <generate>
       <rule>union_argin1, union_argin2 = union.reverse(union_argout1)</rule>
       <rule>intersection_argin1, intersection_argin2 = intersection.reverse(intersection_argout1)</rule>
-      <rule>lift_argin1, lift_argin2 = lift.reverse(lift_argout1)</rule>
+      <rule>change_argin1, change_argin2 = change.reverse(change_argout1)</rule>
       <rule>lower_argin1, lower_argin2 = lower.reverse(lower_argout1)</rule>
       <rule>not_argin1 = not.reverse(not_argout1)</rule>
       <rule>conjunction_argin1, conjunction_argin2 = conjunction.reverse(conjunction_argout1)</rule>

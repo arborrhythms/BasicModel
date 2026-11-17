@@ -206,7 +206,7 @@ def _tiny_grammar():
     from Language import Grammar
     g = Grammar()
     g.rules = [
-        g._parse_rule("S4", "lift(NP3, VP1)", space_role='SS'),
+        g._parse_rule("S4", "change(NP3, VP1)", space_role='SS'),
         g._parse_rule("NP3", "lower(DET, NP4)", space_role='SS'),
         g._parse_rule("S3", "not(S3)", space_role='SS'),
     ]

@@ -169,15 +169,15 @@ class ForcedDecompositionGrammar:
                     # a following copula can be reduced into that object.
                     operation = 'verb'
                 elif depth > 1 and 'plus' in right and (int(scope[b,0,0]) & 8) and not left.intersection({'is', 'plus'}):
-                    operation = 'lift'
+                    operation = 'change'
                 elif self.word >= last and depth > 1:
                     # Surface markers occupy the surface operation's first
                     # role. Reverse the two stack operands before attaching a
                     # trailing marker, preserving the noun's recorded bind.
-                    if right.intersection({'.','?'}): operation = 'transpose'
+                    if right.intersection({'.','?'}): operation = 'swap'
                     elif 'is' in left: operation = 'surface'
                     elif 'plus' in left: operation = 'verb'
-                    elif 'plus' in right: operation = 'lift'
+                    elif 'plus' in right: operation = 'change'
                     else: operation = 'equal'
                 elif self.word >= last and depth == 1 and question:
                     prior = context.get('previous_unary')

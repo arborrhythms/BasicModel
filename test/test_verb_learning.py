@@ -1,3 +1,4 @@
+from action_fixtures import action_with_basis
 """Kept observations credit a retained verb event once, across sentences."""
 from chunk_fixtures import context as chunk_context
 from dataclasses import replace
@@ -23,12 +24,14 @@ def test_two_kept_sentences_join_the_copular_observation_and_teach_once(monkeypa
     from ReferenceContext import SituationAddress
     from test_clause_acceptance import SentenceFixture
     f = SentenceFixture(monkeypatch)
-    action = MeaningAction(8, capacity=2)
+    action = action_with_basis(8, capacity=2)
     for word, value in (('subject', .2), ('move', .3), ('property', .4)):
-        symbol = f.noun(word)
+        symbol = f.noun(word, order=int(word == 'subject'))
         with torch.no_grad():
             f.cs.similarity_codebook.W[f.cs._csw_row_of(symbol)].fill_(value)
-    f.ops['lift'] = SimpleNamespace(compose=lambda a, b: action(a, b))
+    f.ops['change'] = SimpleNamespace(compose=lambda a, b: action(a, b))
+    from chunk_fixtures import higher_word
+    higher_word(f, 'subject')
     resolver, errors = f.cs.components.reference_close, Error()
     def close(tree, frames=(), position=0):
         clause = finish_clause(f.language, record(f, tree, frames), registry=f.registry)
@@ -41,7 +44,7 @@ def test_two_kept_sentences_join_the_copular_observation_and_teach_once(monkeypa
         return SituationAddress(f.store.occurrence_of(row),
             symbols=written.get(('symbols', id(kept)), ()),
             activations=written.get(('activations', id(kept)), ())).read(f.store)
-    frame = close(('lift', ('lower_unary', 'subject'), 'move'))
+    frame = close(('change', ('lower_unary', 'subject'), 'move'))
     token = next(key for key, entry in f.cs.mtm.entries.items() if entry.events)
     assert not resolver.last_verb_observation
     close(('part', ('bind', 'subject'), 'property'), (frame,), position=1)
@@ -58,7 +61,7 @@ def test_observed_state_trains_readout_once_without_concept_gradients():
     token, event = ('ltm', 'unit', 1), ('ltm', 'unit', 2)
     before = torch.tensor([.2, .3, 0., .4, .2, .3, 0., .4], requires_grad=True)
     verb = torch.full((8,), .2, requires_grad=True)
-    action = MeaningAction(8, capacity=2)
+    action = action_with_basis(8, capacity=2)
     from memory_fixtures import attach, put
     owner, store = attach(mtm, 8, 'verb-state')
     put(store, token, before)
@@ -94,13 +97,15 @@ def test_copular_join_is_kept_and_fires_the_previous_verb_teacher(monkeypatch):
     from ClauseRow import Clause, ClausePredicate
     from Meaning import ConceptualMeaning
     f = SentenceFixture(monkeypatch)
-    action = MeaningAction(8, capacity=2)
+    action = action_with_basis(8, capacity=2)
     for word, value in (('subject', .2), ('move', .3), ('property', .4)):
-        symbol = f.noun(word)
+        symbol = f.noun(word, order=int(word == 'subject'))
         with torch.no_grad():
             f.cs.similarity_codebook.W[f.cs._csw_row_of(symbol)].fill_(value)
-    f.ops['lift'] = SimpleNamespace(compose=lambda a, b: action(a, b))
-    entry, _, _ = recorded_identity_reading(f, ('lift', ('lower_unary', 'subject'), 'move'))
+    f.ops['change'] = SimpleNamespace(compose=lambda a, b: action(a, b))
+    from chunk_fixtures import higher_word
+    higher_word(f, 'subject')
+    entry, _, _ = recorded_identity_reading(f, ('change', ('lower_unary', 'subject'), 'move'))
     clause = finish_clause(f.language, entry, registry=f.registry)
     resolver = f.cs.components.reference_close
     plan = resolver.preview(clause, chunk_context(resolver, ()))

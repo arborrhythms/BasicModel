@@ -146,6 +146,16 @@ class ResultCollector:
 
     def pytest_runtest_logreport(self, report):
         self.failed = self.failed or report.failed
+        assessments = [json.loads(value) for name, value in report.user_properties
+                       if name == 'assessment']
+        if assessments:
+            # Fixture cleanup observes the final taught model. Keep that
+            # report on the original outcome without inventing a second case.
+            for previous in reversed(self.reports):
+                if previous['nodeid'] == report.nodeid:
+                    previous['assessments'] = assessments
+                    self.publish()
+                    break
         if (report.failed and self.case_random_stream is not None
                 and report.nodeid not in self.failed_random_streams
                 and self.result_path is not None):
@@ -168,6 +178,8 @@ class ResultCollector:
             stdout="\n".join(content for name, content in report.sections if "stdout" in name.lower())[-4000:])
         if getattr(report, "compile_cache_failure", None) is not None:
             record["compile_cache_failure"] = report.compile_cache_failure
+        if assessments:
+            record['assessments'] = assessments
         self.reports.append(record)
         self.publish()
 

@@ -22,8 +22,8 @@ def test_declared_generation_catalog_shares_one_optimizer_owner(tmp_path, output
         names = language._generate_binary_names + language._generate_unary_names
         assert set(names) == {rule.method_name for rule in TheGrammar.rules_downward}
         assert language.generate_policy is not None  # output owns it in either output mode
-        shared = model.symbolSpace.subspace._resolve_rule_layer("CS", "lift")
-        assert language.resolve_generation_op("CS", "lift") is shared
+        shared = model.symbolSpace.subspace._resolve_rule_layer("CS", "change")
+        assert language.resolve_generation_op("CS", "change") is shared
         assert shared in language._generate_binary_ops
         opt = model.getOptimizer(lr=1e-3)
         owned = [id(p) for group in opt.param_groups for p in group["params"]]
@@ -45,7 +45,7 @@ def test_shared_generation_weights_and_adam_survive_strict_reload(tmp_path, outp
     fresh = None
     try:
         model._materialize_answer_path()
-        shared = model.languageSpace.resolve_generation_op("CS", "lift")
+        shared = model.languageSpace.resolve_generation_op("CS", "change")
         opt = model.getOptimizer(lr=.001)
         model._optimizer = opt
         sum(p.square().sum() + .25 * p.sum() for p in shared.parameters()).backward()
@@ -57,8 +57,8 @@ def test_shared_generation_weights_and_adam_survive_strict_reload(tmp_path, outp
         model.save_weights(str(checkpoint))
         fresh = _model(tmp_path, output_loop)
         assert fresh.load_weights(str(checkpoint), strict=True, require_match=True)
-        restored = fresh.languageSpace.resolve_generation_op("CS", "lift")
-        assert restored is fresh.symbolSpace.subspace._resolve_rule_layer("CS", "lift")
+        restored = fresh.languageSpace.resolve_generation_op("CS", "change")
+        assert restored is fresh.symbolSpace.subspace._resolve_rule_layer("CS", "change")
         restored_opt = fresh.getOptimizer(lr=.001)
         owned = [id(p) for group in restored_opt.param_groups for p in group["params"]]
         for name, parameter in restored.named_parameters():
@@ -91,7 +91,7 @@ def test_alias_catalog_reordering_preserves_shared_identity_and_separate_policy(
 
     source = torch.nn.Linear(4, 4)
     coordinator = SimpleNamespace(
-        languageLayer=SimpleNamespace(operation_layer=SimpleNamespace(ops=())), muxedSize=4, _grammar_is_default_only=False,
+        languageLayer=SimpleNamespace(operation_layer=SimpleNamespace(ops=(), unary_ops=())), muxedSize=4, _grammar_is_default_only=False,
         _host_layer_registry={("CS", "sum"): source},
         _resolve_rule_layer=lambda role, name: source)
     grammar = SimpleNamespace(rules_upward=[], rule_table=[], rules_downward=[])
@@ -99,8 +99,8 @@ def test_alias_catalog_reordering_preserves_shared_identity_and_separate_policy(
     monkeypatch.setattr(util.TheXMLConfig, "training", lambda name, default=None: False)
 
     def catalog(roles):
-        grammar.rules_downward = [SimpleNamespace(
-            space_role=role, method_name="sum", lhs="X,Y",
+        grammar.rules_downward = [Language.Grammar.RuleDef(
+            space_role=role, arity=2, method_name="sum", lhs="X,Y", rhs_symbols=('Z',),
             canonical="X,Y = sum.reverse(Z)", width_min=None, width_max=None)
             for role in roles]
         before = torch.get_rng_state().clone()
@@ -129,13 +129,13 @@ def test_default_catalog_does_not_borrow_a_natural_fold_from_another_space(monke
     import util
 
     shared = torch.nn.Linear(4, 4)
-    rules = [SimpleNamespace(space_role="SS", method_name="sigma", lhs=role,
+    rules = [Language.Grammar.RuleDef(space_role="SS", arity=1, method_name="sigma", lhs=role, rhs_symbols=(role,),
                              canonical=f"{role} -> sigma.reverse({role})",
                              width_min=None, width_max=None) for role in ("P", "S")]
     grammar = SimpleNamespace(rules_upward=[], rules_downward=rules,
                               rules=rules, rule_table=[])
     coordinator = SimpleNamespace(
-        languageLayer=SimpleNamespace(operation_layer=SimpleNamespace(ops=())), muxedSize=4, _grammar_is_default_only=True,
+        languageLayer=SimpleNamespace(operation_layer=SimpleNamespace(ops=(), unary_ops=())), muxedSize=4, _grammar_is_default_only=True,
         _host_layer_registry={("SS", "sigma"): shared},
         _default_generate_rules=lambda: {"subsymbolic": [[0]], "SS": [[1]]},
         _resolve_rule_layer=lambda role, name: shared)
@@ -157,12 +157,12 @@ def test_output_dispatch_scope_uses_declared_shared_inverse_and_resets_on_error(
     model = _model(tmp_path, False)
     try:
         language = model.languageSpace
-        source = model.symbolSpace.subspace._resolve_rule_layer("CS", "lift")
+        source = model.symbolSpace.subspace._resolve_rule_layer("CS", "change")
         monkeypatch.setattr(source, "reverse", lambda parent, **kwargs: (parent + .1, parent - .1))
         router = _make_minimal_signal_router(D=8)
-        rule = next(i for i, r in enumerate(TheGrammar.rules_upward) if r.method_name == "lift")
+        rule = next(i for i, r in enumerate(TheGrammar.rules_upward) if r.method_name == "change")
         syntactic = SimpleNamespace(space_role="CS", _word_space=model.symbolSpace.subspace,
-                                    _by_name={"lift": source})
+                                    _by_name={"change": source})
         calls = []
         resolve = language.resolve_generation_op
 
@@ -183,7 +183,7 @@ def test_output_dispatch_scope_uses_declared_shared_inverse_and_resets_on_error(
         with pytest.raises(RuntimeError, match="probe output failure"):
             with language.generation_scope():
                 torch.testing.assert_close(read(), expected)
-                assert calls == [("CS", "lift")]
+                assert calls == [("CS", "change")]
                 with language.generation_scope():
                     assert language._generation_active
                 assert language._generation_active
@@ -193,7 +193,7 @@ def test_output_dispatch_scope_uses_declared_shared_inverse_and_resets_on_error(
         assert not calls
         # Removing a declaration must fail in output; a compose registration
         # cannot silently provide an undeclared generation alternative.
-        monkeypatch.delitem(language._generation_resolved, ("CS", "lift"))
+        monkeypatch.delitem(language._generation_resolved, ("CS", "change"))
         with language.generation_scope(), pytest.raises(KeyError, match="undeclared"):
             read()
     finally:

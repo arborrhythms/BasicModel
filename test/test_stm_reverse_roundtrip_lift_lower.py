@@ -80,7 +80,7 @@ class TestNotSelfInverse(unittest.TestCase):
         self.x = torch.rand(4, 5) * 2 - 1
 
     def test_lift_not_reverse_of_forward_bitonic(self):
-        twice = Ops.lift(Ops.lift(self.x, mode='NOT'), mode='NOT')
+        twice = Ops.change(Ops.change(self.x, mode='NOT'), mode='NOT')
         self.assertTrue(torch.allclose(twice, self.x, atol=ATOL_EXACT))
 
     def test_lower_not_reverse_of_forward_bitonic(self):
@@ -90,14 +90,14 @@ class TestNotSelfInverse(unittest.TestCase):
     def test_lift_not_forward_of_reverse_bitonic(self):
         # y -> reverse (NOT, self-inverse) -> forward (NOT) == y
         y = torch.rand(4, 5) * 2 - 1
-        back = Ops.lift(Ops.lift(y, mode='NOT', inverse=True), mode='NOT')
+        back = Ops.change(Ops.change(y, mode='NOT', inverse=True), mode='NOT')
         self.assertTrue(torch.allclose(back, y, atol=ATOL_EXACT))
 
     def test_lift_not_monotonic_paired_index_involution(self):
         # Bivector layout (aP, aN) per concept; NOT swaps the pair, twice
         # restores. Use an even width so the pairing is well-formed.
         x = torch.tensor([0.9, 0.0, 0.0, 0.7, 0.3, 0.0])
-        twice = Ops.lift(Ops.lift(x, mode='NOT', monotonic=True),
+        twice = Ops.change(Ops.change(x, mode='NOT', monotonic=True),
                          mode='NOT', monotonic=True)
         self.assertTrue(torch.allclose(twice, x, atol=ATOL_EXACT))
 
@@ -126,7 +126,7 @@ class TestLatticeCodebookReverse(unittest.TestCase):
         for i in range(self.W.shape[0]):
             y = self.W[i].clone()
             x1, x2 = Ops.liftReverseAll(y, W=self.W, monotonic=True)
-            recl = Ops.lift(x1, x2, mode='OR', kind='strict')
+            recl = Ops.change(x1, x2, mode='OR', kind='strict')
             self.assertTrue(
                 torch.allclose(recl, y, atol=ATOL_CODEBOOK),
                 f"OR/strict reclosure failed on codebook row {i}")
@@ -142,7 +142,7 @@ class TestLatticeCodebookReverse(unittest.TestCase):
     def test_or_forward_of_reverse_batched(self):
         Y = torch.stack([self.W[0], self.W[2], self.W[3]], dim=0)
         x1, x2 = Ops.liftReverseAll(Y, W=self.W, monotonic=True)
-        recl = Ops.lift(x1, x2, mode='OR', kind='strict')
+        recl = Ops.change(x1, x2, mode='OR', kind='strict')
         self.assertTrue(torch.allclose(recl, Y, atol=ATOL_CODEBOOK))
 
     # -- AND / intersection (lower) ----------------------------------
@@ -175,8 +175,8 @@ class TestLatticeCodebookReverse(unittest.TestCase):
         # codebook tolerance band.
         y = self.W[3].clone()
         x1, x2 = Ops.liftReverseAll(y, W=self.W, monotonic=True)
-        recl_strict = Ops.lift(x1, x2, mode='OR', kind='strict')
-        recl_soft = Ops.lift(x1, x2, mode='OR', kind='soft')
+        recl_strict = Ops.change(x1, x2, mode='OR', kind='strict')
+        recl_soft = Ops.change(x1, x2, mode='OR', kind='soft')
         # soft and strict agree to the recommender tolerance because one
         # operand dominates per channel (the recommended pair is nested).
         self.assertTrue(
@@ -208,9 +208,9 @@ class TestReverseModeCoverageMatrix(unittest.TestCase):
         x = torch.tensor([0.5, -0.3, 0.8])
         y = torch.tensor([0.4, 0.6, -0.2])
         self.assertTrue(torch.allclose(
-            Ops.lift(x, y, mode='AND'), Ops.lower(x, y, mode='AND')))
+            Ops.change(x, y, mode='AND'), Ops.lower(x, y, mode='AND')))
         self.assertTrue(torch.allclose(
-            Ops.lower(x, y, mode='OR'), Ops.lift(x, y, mode='OR')))
+            Ops.lower(x, y, mode='OR'), Ops.change(x, y, mode='OR')))
 
     def test_all_point_kinds_forward_then_codebook_reverse_run(self):
         # Exercise every forward kind end-to-end with a codebook reverse
@@ -237,7 +237,7 @@ class TestReverseModeCoverageMatrix(unittest.TestCase):
                           ('AND', Ops.lowerReverseAll)):
             y = W[2].clone()
             x1, x2 = rev(y, W=W, monotonic=True)
-            op = Ops.lift if mode == 'OR' else Ops.lower
+            op = Ops.change if mode == 'OR' else Ops.lower
             for kind in ('strict', 'radial', 'soft'):
                 recl = op(x1, x2, mode=mode, kind=kind)
                 self.assertTrue(torch.isfinite(recl).all(),

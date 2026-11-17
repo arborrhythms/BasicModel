@@ -1,3 +1,4 @@
+from action_fixtures import action_with_basis
 """Recorded action witnesses and fail-loud reconstruction certificates."""
 from dataclasses import replace
 from types import SimpleNamespace
@@ -15,8 +16,8 @@ from MeaningKernels import MeaningAction
 def action_fixture(kind):
     op = GrammarLayer(12, 12).double()
     op.meaning_layout = (4, 12)
-    op.rule_name = 'adverb' if kind == 'adverb' else 'lift'
-    op.meaning_action = MeaningAction(8, modifier=kind == 'adverb').double()
+    op.rule_name = 'modifier' if kind == 'modifier' else 'change'
+    op.meaning_action = action_with_basis(8, modifier=kind == 'modifier').double()
     with torch.no_grad():
         for index, parameter in enumerate(op.meaning_action.parameters()):
             parameter.add_((torch.arange(parameter.numel(), dtype=parameter.dtype)
@@ -29,8 +30,8 @@ def action_fixture(kind):
     return op, left, right, parent, context
 
 
-@pytest.mark.parametrize('kind', ['object', 'group', 'adverb'])
-def test_recorded_action_context_round_trips_without_changing_adverbs(kind):
+@pytest.mark.parametrize('kind', ['object', 'group', 'modifier'])
+def test_recorded_action_context_round_trips_without_changing_modifiers(kind):
     op, left, right, parent, context = action_fixture(kind)
     record = value_record(torch.stack((left, right), 1),
                           SimpleNamespace(candidate=parent, action_context=context))
@@ -42,7 +43,7 @@ def test_recorded_action_context_round_trips_without_changing_adverbs(kind):
     torch.testing.assert_close(recovered, left, rtol=0, atol=2e-15)
     recomposed = native_recompose(op, parent, left, right, form_width=4, action_context=witness)
     torch.testing.assert_close(recomposed, parent, rtol=0, atol=2e-15)
-    if kind == 'adverb':
+    if kind == 'modifier':
         recovered = inverse_step(language, 1, 0, parent, record[:, :36].reshape(3, 12))[0][0]
         torch.testing.assert_close(recovered, left, rtol=0, atol=2e-15)
     else:

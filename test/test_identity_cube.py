@@ -2,7 +2,7 @@
 import torch
 import pytest
 
-from Language import LiftLayer, LowerLayer, SurfaceLayer, VerbLayer
+from Language import ChangeLayer, LowerLayer, SurfaceLayer, VerbLayer
 
 
 def test_native_synthesis_centroids_form_and_inverts_meaning():
@@ -22,7 +22,7 @@ def test_native_synthesis_centroids_form_and_inverts_meaning():
 
 
 def test_lift_chart_preserves_cube_under_signed_linear_updates():
-    layer = LiftLayer(4, 4)
+    layer = ChangeLayer(4, 4)
     with torch.no_grad():
         layer._sigma.layer.bias.fill_(-.25)
     left = torch.tensor([[0., .2, .4, .6]], requires_grad=True)

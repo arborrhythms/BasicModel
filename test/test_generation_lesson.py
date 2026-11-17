@@ -38,7 +38,7 @@ def test_sentence_generation_lesson_keeps_its_weighted_output_gradient():
         _student_compose_states=lambda record, row: None,
         _tensor_pushed_ideas=torch.zeros(batch, words, width),
         reconstruct_in_loop=False,
-        _sentence_observation=lambda *args: {'entries': (program, program),
+        _sentence_observation=lambda *args, **kwargs: {'record': kwargs['record'], 'entries': (program, program),
             'clauses': (None, None), 'reference_plans': ()},
         _reading_lesson_enabled=True, grammar_lesson_weight=.7,
         _reading_lesson_sources=[0, 1], _reading_lesson_split='train',

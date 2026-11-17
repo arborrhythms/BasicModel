@@ -8,7 +8,7 @@ from reading_fixtures import record_reading
 from test_clause_acceptance import SentenceFixture
 
 
-@pytest.mark.parametrize('relation', ('part', 'equal'))
+@pytest.mark.parametrize('relation', ('part',))
 def test_event_uses_its_kept_result_after_a_verb_projects_the_relation(monkeypatch, relation):
     f = SentenceFixture(monkeypatch)
     reading = record_reading(f.language, f.program(('verb', (relation, 'member', 'kind'), 'action')))

@@ -4,7 +4,23 @@ No retired operator can execute here. Old checkpoints without a catalogue
 require an explicitly supplied catalogue from their archived source.
 """
 import copy
+import re
 import torch
+
+
+def imported_name(name):
+    """One-way declaration renames; these names are never runtime aliases."""
+    return re.sub(r'\badverb(?=_|\b)', 'modifier', name)
+
+
+def imported_catalog(value):
+    if isinstance(value, str):
+        return imported_name(value)
+    if isinstance(value, dict):
+        return {key: imported_catalog(member) for key, member in value.items()}
+    if isinstance(value, (tuple, list)):
+        return type(value)(imported_catalog(member) for member in value)
+    return value
 
 
 def catalog(model):
@@ -29,6 +45,7 @@ def _mapping(old, new):
 
 def align(model, state, old):
     """Return migrated tensors, explicit drift, and optimizer transformations."""
+    old = imported_catalog(old)
     live, new = model.state_dict(), catalog(model)
     result, drift, transforms = dict(state), {}, {}
     def meaning_migration():

@@ -23,7 +23,7 @@ def summarize_batches(batches):
         families[family] = dict(total=len(rows), correct=correct,
             unreached=sum(row is None for row in rows), accuracy=correct/len(rows) if rows else None)
     steps = {name: sum(row['steps'][name] for row in kept)
-             for name in ('leaf', 'binary', 'unary', 'transpose', 'compose', 'total')}
+             for name in ('leaf', 'binary', 'unary', 'swap', 'compose', 'total')}
     return dict(first_batch=batches[0]['batch'], last_batch=batches[-1]['batch'],
         lesson_calls=calls, fold_targets=folds, fold_targets_per_lesson_call=folds/calls,
         reachable_state_ce=ce, first_pair_by_family=families,
@@ -92,8 +92,8 @@ class TrainingTrajectory:
             if observed is None:
                 raise ValueError('training trajectory missed a kept reading')
             counts = Counter(step['kind'] for step in observed['steps'])
-            counts = {name: counts[name] for name in ('leaf', 'binary', 'unary', 'transpose')}
-            counts['compose'] = sum(counts[name] for name in ('binary', 'unary', 'transpose'))
+            counts = {name: counts[name] for name in ('leaf', 'binary', 'unary', 'swap')}
+            counts['compose'] = sum(counts[name] for name in ('binary', 'unary', 'swap'))
             counts['total'] = counts['leaf'] + counts['compose']
             kept.append(dict(id=row['id'], family=row['id'].split(':')[1],
                 trial=int(bool(wins[b])), first_pair=calls[int(bool(wins[b]))*len(rows)+b][0]['first_pair'], steps=counts))

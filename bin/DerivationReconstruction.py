@@ -40,33 +40,22 @@ def inverse_step(language, kind, operation, parent, frame, *, coordinates=None, 
     if kind == 2:
         wrapped = language._tree_layer(1).unary_ops[operation]
         op = getattr(wrapped, 'gl', wrapped)
-        if (getattr(op, 'meaning_layout', None) is not None
-                and callable(getattr(op, 'compose_case_meaning', None))):
-            width = op.meaning_layout[0]
-            # Selection discards case content. The single child's form is
-            # preserved; no affine inverse invents the discarded meaning.
-            if whole is not None:
-                from FormCentroids import pad_whole
-                from MeaningKernels import uncenter
-                form = uncenter(parent[..., :width], pad_whole(whole, width))
-            else:
-                form = parent[..., :width]
-            return ((torch.cat((form, torch.zeros_like(parent[..., width:])), -1),
-                     torch.cat((coordinates[..., :width], torch.zeros_like(coordinates[..., width:])), -1)),)
         if getattr(op, 'retains_operand', False):
             # A withholding operation explicitly retains its operand in the
             # committed journal. This is an occurrence witness, not a free
             # inverse of exclusion or a prediction of a missing operand.
             witness = witness_frame[:1]
             return ((witness, torch.isfinite(witness)),)
-        if whole is not None and getattr(op, 'meaning_layout', None) is not None:
+        if (whole is not None and getattr(op, 'meaning_layout', None) is not None
+                and not getattr(op, 'preserves_form', False)):
             width = op.meaning_layout[0]
             from FormCentroids import pad_whole
             from MeaningKernels import uncenter
             form = uncenter(parent[..., :width], pad_whole(whole, width))
             parent = torch.cat((form, parent[..., width:]), -1)
         child, bad = language.reverse_unary_step(parent, op_index, live, return_status=True)
-        if getattr(op, 'inverse_kind', None) == 'unary' and not hasattr(op, 'marker_base'):
+        if (getattr(op, 'inverse_kind', None) == 'unary' and not hasattr(op, 'marker_base')
+                and not getattr(op, 'preserves_form', False)):
             coordinates = op.reverse(coordinates.to(parent)).bool()
         return ((child, coordinates & ~bad[:, None]),)
     wrapped = language._tree_layer(2).ops[operation]
@@ -91,10 +80,11 @@ def inverse_step(language, kind, operation, parent, frame, *, coordinates=None, 
         return ((witness, coordinates), (missing, domain))
     if getattr(op, 'meaning_layout', None) is not None and (
             getattr(op, 'meaning_kernel', None) is not None or
-            getattr(op, 'meaning_action', None) is not None or op.meaning_rule == 'sum'):
+            getattr(op, 'meaning_action', None) is not None or
+            getattr(op, 'meaning_basis', None) is not None or op.meaning_rule == 'sum'):
         right_known = getattr(op, 'meaning_action', None) is not None or op.meaning_head_role == 0
         if (getattr(op, 'meaning_action', None) is not None
-                and op.rule_name != 'adverb' and action_context is None):
+                and op.rule_name != 'modifier' and action_context is None):
             raise ValueError('an action inverse requires its recorded forward context')
         witness = witness_frame[1 if right_known else 0][None]
         left, right = op.reverse_blocks(parent, witness, counts=counts,

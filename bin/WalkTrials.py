@@ -37,6 +37,7 @@ def generate_credit(language, audit, tops, features):
         features=observed[..., :WALK_FEATURE_WIDTH - 1])
     logits = logits.masked_fill(~legal, -torch.inf)
     logits = torch.where(legal.any(-1, keepdim=True), logits, 0.)
+    _, logits = language.choose_generate(logits, return_logits=True)
     excluded = torch.nn.functional.one_hot(audit['greedy'][ar, step].clamp_min(0), logits.shape[-1]).bool()
     proposal = alternative_probabilities(logits.detach().masked_fill(excluded, -torch.inf),
         fraction=language._tree_layer(2).exploration_fraction,
@@ -127,7 +128,7 @@ class ThoughtTrialState:
                 (model,('expectation_gain', '_answer_attention_obs', '_last_answer_construction',
                         '_last_output_comparison', '_last_output_walk_trace',
                         '_sentence_answer_cost', '_sentence_answer_predictions',
-                        '_sentence_answer_raw_cost'))]
+                        '_sentence_answer_raw_cost', '_intuition_teacher'))]
         if stm is not None:
             owners.append((stm, tuple('_live_' + name for name in STMChunks.FIELDS) +
                            ('_thought_contents', '_active_batch', '_max_depth_host')))
@@ -136,7 +137,7 @@ class ThoughtTrialState:
         self.field_owner = conceptual
         if conceptual is not None:
             owners.append((conceptual, ('_percept_field', '_cs_field_where', '_cs_field_when',
-                                       '_cs_field_concept_ids', '_episode_review_field')))
+                                       '_cs_field_concept_ids')))
         carrier=getattr(getattr(model,'conceptualSpace',None),'subspace',None)
         if carrier is not None:
             owners.append((carrier,tuple(name for name in vars(carrier)
@@ -185,7 +186,7 @@ class ThoughtTrialState:
             restore(stm._thought_stores, snapshot)
         for owner,values,names in self.saved:
             if effects_only and ('_what_slots' in names or '_thought_contents' in names
-                                 or '_episode_review_field' in names):
+                                 or '_concept_activations' in names):
                 continue
             if '_thought_contents' in names:
                 from Memory import STMChunks
@@ -197,13 +198,10 @@ class ThoughtTrialState:
             # A trial may introduce a knowing carrier for the first time.
             dynamic=tuple(name for name in vars(owner) if name.startswith('_concept_')) if any(name.startswith('_concept_') for name in names) else ()
             for name in set(names)|set(dynamic):
+                if effects_only and name == '_intuition_teacher':
+                    continue
                 if name in values:object.__setattr__(owner,name,_copy_containers(values[name]))
                 elif name in vars(owner):delattr(owner,name)
-        if effects_only:
-            review = getattr(self.field_owner, '_episode_review_field', None)
-            if review is not None:
-                from SentenceField import publish
-                publish(self.model, review)
 
     @classmethod
     def keep(cls, states, winners):
@@ -308,14 +306,7 @@ class ThoughtTrialState:
                 saved[position][1]['_concept_activations'], saved[position][1]['_concept_where'],
                 saved[position][1]['_concept_when'], None) for saved in (state.saved for state in states)]
             publish(chosen.model, select_fields(fields, winners))
-        if chosen.field_owner is not None:
-            position = next((i for i, (owner, _, _) in enumerate(states[0].saved)
-                             if owner is chosen.field_owner), None)
-            if position is not None:
-                reviewed = any(states[index].saved[position][1].get('_episode_review_field') is not None
-                               for index in indices)
-                from SentenceField import knowing
-                chosen.field_owner._episode_review_field = knowing(chosen.model) if reviewed else None
+
 
 
 

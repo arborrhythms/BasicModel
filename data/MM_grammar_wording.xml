@@ -78,22 +78,23 @@
     <chunkPromotionThreshold>2</chunkPromotionThreshold>
   </PartSpace>
   <ConceptualSpace>
+    <!-- Item 1.8: preserve the form width; allocate the declared meaning lanes. -->
     <conceptReadoutL1>0.01</conceptReadoutL1>
     <nInput>8</nInput>
-    <nInputDim>64</nInputDim>
+    <nInputDim>192</nInputDim>
     <nVectors>2048</nVectors>
     <activeVectors>1024</activeVectors>
     <stmCapacity>8</stmCapacity>
-    <nDim>64</nDim>
+    <nDim>192</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>64</nOutputDim>
+    <nOutputDim>192</nOutputDim>
     <invertible>true</invertible>
   </ConceptualSpace>
   <WholeSpace>
     <analysis>meronomy</analysis>
     <butterfly>true</butterfly>
     <nInput>8</nInput>
-    <nInputDim>64</nInputDim>
+    <nInputDim>192</nInputDim>
     <nVectors>9</nVectors>
     <nDim>64</nDim>
     <nOutput>8</nOutput>
@@ -102,7 +103,7 @@
   </WholeSpace>
   <OutputSpace>
     <nInput>8</nInput>
-    <nInputDim>64</nInputDim>
+    <nInputDim>192</nInputDim>
     <nVectors>1</nVectors>
     <nDim>1</nDim>
     <nOutput>1</nOutput>

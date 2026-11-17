@@ -28,7 +28,7 @@ def test_truthset_asserts_only_outer_idea_and_reasserts_declared_pairs(monkeypat
     f = SentenceFixture(monkeypatch)
     store = f.store
     child = f.clause(('part','a','b'))
-    outer = f.clause(('lift','speaker',('verb','predicate',('part','a','b'))))
+    outer = f.clause(('change','speaker',('verb','predicate',('part','a','b'))))
     with store.clause_assertions(trust=.7) as rows:
         parent = store.write_clause(outer)
     assert rows == [parent] and isinstance(parent,int)

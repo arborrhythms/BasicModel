@@ -71,32 +71,6 @@ def forest(owner, meaning, *, work=None):
     return generated.extension[0]
 
 
-def answer(owner, question, recalled, *, work=None):
-    """Read the answer only at a matching operator path's open operand."""
-    requested = forest(owner,question,work=work)
-    available = forest(owner,recalled,work=work)
-    found = []
-    for root_index, root in enumerate(requested):
-        if root_index >= len(available):
-            continue
-        for path in root.open_paths():
-            value = available[root_index].operand(path)
-            if value is not None and bool(value.values.any()):
-                found.append(value)
-    if not found:
-        return None
-    from FieldProjection import key
-    from Extension import as_field
-    from Meaning import ConceptualMeaning
-    value = combine(tuple(found),'union')
-    where = value.ids.new_zeros(1,1,2)
-    point = key(owner,as_field((value,),where=where,when=where))[0,0]
-    active = value.ids[value.values.amax(-1) > 0]
-    reference = ('sym',int(active[0])) if len(active) == 1 else None
-    return replace(ConceptualMeaning.from_description(point),role_refs=(reference,None,None),
-                   extension=(Node(value,reference=reference),))
-
-
 def existence(store, results):
     """Brightest witnessed row, plus the exact-content part usable as proof."""
     indices, scores = results.ids, results.values

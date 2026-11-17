@@ -13,8 +13,9 @@ from Understanding import Reading
 from test_query_vp_boundaries import _world
 
 
-def _program_owner(monkeypatch, *, face="part", interrogative=False):
-    cs, grammar, _legacy_registry, a, b, _context = _world(capacity=160)
+def _program_owner(monkeypatch, *, face="part", interrogative=False, order_limit=None):
+    cs, grammar, _legacy_registry, a, b, _context = _world(
+        capacity=160, order_limit=order_limit, reserve_grammar=True)
     with torch.no_grad():
         cs.similarity_codebook.W.copy_(cs.similarity_codebook.W.sigmoid())
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
@@ -76,7 +77,7 @@ def _program_owner(monkeypatch, *, face="part", interrogative=False):
 
 
 @pytest.mark.parametrize(
-    "face,order", [("part", (0, 1)), ("whole", (1, 0)), ("equal", (0, 1))])
+    "face,order", [("part", (0, 1)), ("whole", (1, 0))])
 @pytest.mark.parametrize("interrogative", [False, True])
 def test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode(
         monkeypatch, face, order, interrogative):
@@ -114,7 +115,7 @@ def test_changed_part_operand_remains_distinguishable_when_folded_root_is_identi
     torch.testing.assert_close(left.roles[1:], right.roles[1:])
 
 
-@pytest.mark.parametrize("face", ["part", "equal"])
+@pytest.mark.parametrize("face", ["part"])
 def test_unreduced_lexical_relation_keeps_signed_operands_and_native_vp(
         monkeypatch, face):
     """A three-slot lexical relation is still one selected meaning.
@@ -414,3 +415,31 @@ def test_observation_boundary_uses_selected_relation_before_prediction_and_ltm(
     # The live head still trains its selected value; no operation vector or
     # second operand is an entry in the predictor's target.
     assert calls[0][1][0].requires_grad
+
+
+@pytest.mark.parametrize('word_available', [True, False])
+def test_program_concepts_do_not_mistake_an_unpromoted_handle_for_a_concept(monkeypatch, word_available):
+    cs, grammar, registry, language, leaves, program, a, b = _program_owner(monkeypatch)
+    transient = int(cs.mtm.transient_ids[0])
+    entry = program()
+    actual_refs = torch.tensor([[[a[1], transient]]])
+    journal = SimpleNamespace(_choice_refs=actual_refs,
+        _choice_values=torch.stack((leaves[0], leaves[1], entry.end_state[0]))[None,None])
+    host = SimpleNamespace(_concept_owner=lambda:cs, languageSpace=language,
+        symbolSpace=SimpleNamespace(), _reconstruction_stack=lambda:journal,
+        inputSpace=SimpleNamespace(_ar_word_concept_ids=torch.tensor([[a[1],b[1] if word_available else -1]])),
+        conceptualSpace=SimpleNamespace(stm=SimpleNamespace(strata=SimpleNamespace(capture=lambda *args:None))))
+    positions=torch.tensor([[0,1]])
+    captured,=BasicModel._program_entries(host,
+        (positions,entry.actions[None],entry.targets[None],torch.tensor([[-1,-1,0]])),
+        leaves[None],entry.rows[None],entry.word_rows[None],entry.activations[None],entry.end_state[None],
+        concept_ids=torch.tensor([[a[1],transient]]))
+    assert captured.concept_ids.tolist() == [a[1],b[1] if word_available else -1]
+    assert captured.operation_refs[-1].tolist() == [a[1],transient]
+    torch.testing.assert_close(captured.leaves,leaves)
+    meaning=language.program_meaning(captured,registry)
+    if word_available:
+        assert meaning.role_refs == registry.form('part',a,b).role_refs
+    else:
+        assert meaning is None
+    assert transient not in cs._concept_allocator.symbols

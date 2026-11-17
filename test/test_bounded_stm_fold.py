@@ -64,8 +64,8 @@ def test_compose_single_reduction_space_role():
 
 
 def test_lift_lower_stay_invertible_cs_ops():
-    assert Language.LiftLayer.space_role == Language.LowerLayer.space_role == 'CS'
-    assert Language.LiftLayer.invertible
+    assert Language.ChangeLayer.space_role == Language.LowerLayer.space_role == 'CS'
+    assert Language.ChangeLayer.invertible
     assert not Language.LowerLayer.invertible
     assert Language.LowerLayer.inverse_kind == 'right'
 

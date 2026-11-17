@@ -106,6 +106,16 @@ stopping gates: every chooser action, every registered cost term and
 every parameter after each batch is exactly equal on this branch and on
 `3926005f12`.
 
+**Merge amendment (Alec, 2026-11-16).** For the merge with round C at
+`dd26587e074a9e1fb6ee9b900f2febe13d5110e6`, Alec chose “Keep shared
+forecast; amend P3” in response to item 1.8 §51.4. The single shared
+sentence forecast stays. Its recorded changes to the backward graph,
+and the resulting parameter/cost/probability differences over the sixteen
+batches, are reported as that explicit exception, not accepted through a
+numerical tolerance. Exact P1/P2 kernels and the other optimizations
+remain required, as do both stopping gates. The new main baseline and
+the measured exception are recorded in item 1.8 §51.3–§51.6.
+
 *Stop rule.* If no rule makes some case exactly equal, do not
 approximate it: stop, and write the case for Alec with how often it
 occurs in the lesson and what each choice would change.

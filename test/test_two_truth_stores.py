@@ -144,19 +144,19 @@ def test_relational_evaluation_respects_both_argument_positions():
     from part_fixtures import part
     rs=_relative_store();left,right=_vec(1.),_vec(0.,0.,1.)
     part(rs,left,right,evidence=(1.,0.))
-    assert rs.evaluate(left,right)[0]==pytest.approx(1.)
-    assert rs.evaluate(right,left)[0]==0
-    assert .5 < rs.evaluate(_vec(1.,.3),right)[0] < 1.
+    assert rs.evaluate(left,right,orders=(0,0))[0]==pytest.approx(1.)
+    assert rs.evaluate(right,left,orders=(0,0))[0]==0
+    assert .5 < rs.evaluate(_vec(1.,.3),right,orders=(0,0))[0] < 1.
 
 
 def test_consequents_read_the_native_whole_without_a_predicate_filter():
     from part_fixtures import part
     rs=_relative_store();left,right=_vec(1.),_vec(0.,0.,1.)
     edge=part(rs,left,right,evidence=(1.,0.))
-    result,=rs.consequents(_vec(.95,.05))
+    result,=rs.consequents(_vec(.95,.05),order=0)
     assert result[0]==edge[1] and result[1]>.9
     torch.testing.assert_close(result[2],right)
-    assert rs.consequents(_vec(0.,0.,0.,1.))==[]
+    assert rs.consequents(_vec(0.,0.,0.,1.),order=0)==[]
 
 
 def test_distinct_wholes_do_not_imply_negative_membership():
