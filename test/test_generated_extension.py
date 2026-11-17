@@ -42,8 +42,10 @@ def declared_object(tmp_path, monkeypatch):
         chart.trust.content[row] = point
         chart.mereology.placement[row].zero_()
         chart.mereology.placement[row,0] = 1.
-    field = stimulate(owner, point[None,None])
+    field = stimulate(owner, point[None,None], order=owner._concept_source_order(obj))
     assert field.concept_ids[field.evidence[:,0,0,0] == 1.].tolist() == [obj]
+    chart.trust.lengths[owner._csw_row_of(word),0] = 1.
+    owner.interpret.define(word, obj, evidence=(1.,0.))
     try:
         yield model, word, obj, point
     finally:
@@ -63,7 +65,7 @@ def test_generated_known_object_uses_its_declared_word(declared_object, read):
         percept_width=chart.mereology.percept_event_width, meaning_start=chart.mereology.percept_event_width)
     stop = len(model.languageSpace._generate_binary_ops) + len(model.languageSpace._generate_unary_ops)
     result = generated(model,point[None,None],torch.tensor([1]),torch.tensor([False]),bank,
-        (torch.tensor([[stop]]),),depths=torch.tensor([1]))
+        (torch.tensor([[stop]]),),references=((('sym',obj),),),depths=torch.tensor([1]))
     if read == 'word':
         decoded = realize(model,result).materialize()
         assert result.texts(decoded) == ('petal',)

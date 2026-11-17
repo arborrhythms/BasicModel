@@ -103,10 +103,13 @@ def test_open_binding_annotation_labels_only_the_native_dummy_without_replacing_
 
 def test_one_concept_generation_annotation_trains_stop_on_the_existing_code():
     from GrammarLessons import generate_loss
+    from Language import LanguageSpace
+    from types import MethodType
     logits = torch.nn.Linear(3, 2, bias=False)
     language = SimpleNamespace(_generate_binary_names=(), _generate_binary_ops=(),
         _generate_unary_names=('identity',), _generate_unary_ops=(torch.nn.Identity(),),
-        generate_policy_logits=logits)
+        generate_policy_logits=logits, operator_cost=1.)
+    language.choose_generate = MethodType(LanguageSpace.choose_generate, language)
     point = torch.tensor([.2, .7, 1.])
     program = SimpleNamespace(leaves=torch.zeros(1, 3))
     loss = generate_loss(language, [program], [dict(generation=dict(

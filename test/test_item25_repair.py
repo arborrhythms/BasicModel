@@ -160,17 +160,26 @@ def test_reflexive_part_fact_is_not_an_intuition_definition_cycle(tmp_path):
 
 def test_recalled_chunk_addresses_depend_only_on_their_own_stream(tmp_path):
     from dataclasses import replace
-    from types import MappingProxyType
-    from Memory import ShortTermMemory
-    from Queries import ThoughtResult
-    from ThoughtChunks import put, stage
+    from Memory import ShortTermMemory, LTM0
+    from ThoughtChunks import put, held
     from ThoughtReferences import bindings, with_slots
     from Memory import STMChunks as chunks
+    from QueryWork import QueryWorkBudget
     def recall(batch):
         stm = ShortTermMemory(batch=batch, concept_dim=8)
         from clock_fixtures import for_stm
         model = for_stm(stm)
-        value = with_slots(replace(meaning((1., 0.)), role_refs=(('sym', 1), None, None)), (), pair=(.8, .1))
+        from test_cs_sparse_weights import _cs
+        from ClauseRow import attach_clause_index
+        owner = _cs(nS=64, order=1, dim=8)
+        objects = [owner.new_concept(order=0) for _ in range(2)]
+        owner.stm = stm
+        store = LTM0(8, capacity=8, percept_width=8)
+        attach_clause_index(model, store, owner)
+        value = with_slots(replace(meaning((1., 0.)), role_refs=(('sym', objects[0]), None, None)), (), pair=(.8, .1))
+        retrieved = replace(value, role_refs=(('sym', objects[1]), None, None))
+        source = store.append_meaning(retrieved, trust=.8)
+        original_time = tuple(store.entry_time(source).tolist())
         focus = bindings(put(stm, value, row=0, pin=True))['_chunk_when']
         if batch > 1:
             put(stm, value, row=1, pin=True)
@@ -178,26 +187,22 @@ def test_recalled_chunk_addresses_depend_only_on_their_own_stream(tmp_path):
         before = tuple(t[1:].clone() for t in stm.state)
         shapes = tuple(tuple(t.shape) for t in stm.state)
         truth_pointer = stm._live_chunk_truth.data_ptr()
-        memory = SimpleNamespace(_thought_stm=stm, thought_state=lambda b: SimpleNamespace(focus_when=focus))
-        retrieved = replace(value, role_refs=(('sym', 2), None, None))
-        result = ThoughtResult('query', 'conceptual-subgoal', 'set', 'retrieval', value,
-            MappingProxyType(dict(meaning=retrieved, frames=({'occurrence': ('ltm', 'native', 7)},))))
         for _ in range(2):
-            stage(memory, result, 0)
-        recalled = sorted(tuple(when) for item in stm._thought_contents[0] if item is not None
-                          for when, content in (item,) if bindings(content).get('_rule_row')
-                          and when != focus)
-        assert len(recalled) == len(set(recalled)) == 2
+            store.recall_chunks((store.row(source),), stream=0, work=QueryWorkBudget(32))
+        recalled = sorted(tuple(when) for when, content in held(stm, 0)
+                          if bindings(content).get('_rule_row') and when != focus)
+        # §48: re-reading one retained occurrence refreshes its original slot.
+        assert len(recalled) == len(set(recalled)) == 1
+        assert recalled == [original_time]
         assert shapes == tuple(tuple(t.shape) for t in stm.state)
         assert stm._live_chunk_truth.data_ptr() == truth_pointer
         assert all(torch.equal(old, current[1:]) for old, current in zip(before, stm.state))
         return recalled
     single, batch = recall(1), recall(2)
     from RowTime import encoder
-    # The other stream's additional thought advances the one shared clock.
-    # Its unrelated read tick still cannot supply a thought address.
-    assert torch.equal(encoder().decode_index(torch.tensor(batch)),
-                       encoder().decode_index(torch.tensor(single)) + 1)
+    # Neither the other stream's thought nor its read tick changes LTM0 time.
+    torch.testing.assert_close(encoder().decode_index(torch.tensor(batch)),
+                               encoder().decode_index(torch.tensor(single)), rtol=0, atol=0)
     receipt(tmp_path, 'stream-local-recall-addresses', dict(single=single, batch=batch,
         other_stream_read_tick=1000, other_stream_unchanged=True, shapes_unchanged=True, truth_storage_unchanged=True))
 

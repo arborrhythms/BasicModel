@@ -210,9 +210,11 @@ def test_frame_access_does_not_leak_a_native_individuals_other_stream_value():
 @pytest.mark.parametrize('compiled', (False, True))
 def test_compose_bind_locations_share_the_operation_chooser_and_zero_dummy(compiled):
     from Language import BindLayer,OperationSelectionLayer
+    from Expectation import OrderPrime
     from ReferenceContext import prepare_operands
     rule=SimpleNamespace(method_name='bind',head_role=1)
     layer=OperationSelectionLayer(d_model=2,ops=[BindLayer()],unary_ops=[])
+    layer.operator_cost = 0.  # This certificate isolates the unlearned dummy score.
     with torch.no_grad():
         layer.reduce_anchor.fill_(1)
         layer.stop_anchor.fill_(-100)
@@ -227,7 +229,9 @@ def test_compose_bind_locations_share_the_operation_chooser_and_zero_dummy(compi
         active=torch.tensor([[True,False]])
         data=prepare_operands(mention,ids,ids*0,ids*0,orders=ids+2,
             rules=(rule,),unary_rules=(),bank=bank,live=None,active=active,chunk_state=state)
-        _,path,route=layer(mention,reference_data=data,expectation_prime=torch.ones(1,2),
+        prime = OrderPrime(torch.ones(1,1,2), torch.ones(1,1), torch.ones(1,1,dtype=torch.long))
+        _,path,route=layer(mention,reference_data=data,expectation_prime=prime,
+                           candidate_orders=torch.ones(1,len(data['binary_ops'])+1,dtype=torch.long),
                            depth=torch.ones(1,dtype=torch.long))
         return path,route['identity'],route['logits'],route['probabilities'],route['operands'],data['binary_valid']
     if compiled:
@@ -263,15 +267,15 @@ def test_compose_menu_uses_the_resolvers_observed_exclusions():
                       role_refs=(('sym', individual), None, None))
         for _ in range(8):
             store.append_meaning(idea)
-    exclusions=torch.tensor(resolver.exclusion_pairs()).reshape(-1,2)
+    exclusions=torch.tensor(resolver.exclusion_pairs()).reshape(-1,3)
     state=chunks.empty(1,8,12)
-    state,_=chunks.deposit(state,atoms[:1],torch.tensor([True]),identity=101)
+    state,_=chunks.deposit(state,atoms[:1],torch.tensor([True]),identity=101,order=1)
     for own in (atoms[1],atoms[0],atoms[0]+atoms[1],atoms[1]*0):
-        *_,available=chunks.bind_menu(state,own.reshape(1,1,-1),exclusions=exclusions)
+        *_,available=chunks.bind_menu(state,own.reshape(1,1,-1),orders=torch.tensor([[1]]),exclusions=exclusions)
         assert available[0,0,0]
         # §50 also excludes empty meaning. The other three inputs are either
         # contained, containing, or a witnessed incompatible coordinate.
-        assert bool(available[0,0,1]) == (bool(own.any()) and not resolver.exclusion_query()(own,atoms[0]))
+        assert bool(available[0,0,1]) == (bool(own.any()) and not resolver.exclusion_query(order=1)(own,atoms[0]))
 
 
 

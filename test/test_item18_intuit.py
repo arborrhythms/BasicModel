@@ -74,18 +74,21 @@ def test_84_intuit_reads_once_at_observation_and_no_relation_row(tmp_path, monke
         from QueryWork import QueryWorkBudget
         def forbidden(*args, **kwargs):
             raise AssertionError('learned intuition read an implication')
-        monkeypatch.setattr(ThoughtLTMCapability, 'implication_rules', forbidden)
-        monkeypatch.setattr(model.symbolSpace.ltm_store, 'part_row', forbidden)
-        value = learned_read(owner, row=0, work=QueryWorkBudget(64))
-        assert value['evidence_kind'] == 'intuition' and value['learned_field']
-        from ThoughtFaces import intuit
-        from types import SimpleNamespace
-        # The face receives no LTM capability at all.
-        context = SimpleNamespace(row=0, work=QueryWorkBudget(64),
-            conceptual_space=SimpleNamespace(intuition=lambda **kw: learned_read(owner, **kw)))
-        intuit(context, {'argin1': value['meaning']})
-        assert len(calls) == 1
-        assert not value['witnesses']
+        with monkeypatch.context() as guard:
+            guard.setattr(ThoughtLTMCapability, 'implication_rules', forbidden)
+            guard.setattr(model.symbolSpace.ltm_store, 'part_row', forbidden)
+            value = learned_read(owner, row=0, work=QueryWorkBudget(64))
+            assert value is None
+            from ThoughtFaces import intuit
+            from types import SimpleNamespace
+            # The face receives no LTM capability at all.
+            context = SimpleNamespace(row=0, work=QueryWorkBudget(64),
+                conceptual_space=SimpleNamespace(intuition=lambda **kw: learned_read(owner, **kw)))
+            effect = intuit(context, {'argin1': None})
+            assert effect['evidence_kind'] == 'intuition' and effect['learned_field']
+            assert effect['value'] is None
+            assert len(calls) == 1
+            assert not effect['witnesses']
     finally:
         hook.remove()
         from assessment_support import record
@@ -145,17 +148,25 @@ def test_83_thought_teaches_the_open_map_and_an_unseen_conclusion_still_needs_in
         trained_other_output |= bool(final.grad[:, 2*rows[5]:2*rows[5]+2].any())
         optimizer.step()
     assert trained_other_output
-    field = open_field(model, observation((0, 1)))
-    assert field.evidence[4, 0, 0, 0] > .5
+    from IntuitionField import read as deposit
+    from SentenceField import knowing
+    publish(model, open_field(model, observation((0, 1))))
+    deposit(owner, row=0, work=QueryWorkBudget(64))
+    field = knowing(model)
+    learned = (field.concept_ids == refs[4][1]).nonzero().item()
+    assert field.evidence[learned, 0, 0, 0] > .5
     publish(model, field)
     complete(model, torch.tensor([True]), Error())
     assert model._intuition_target[0, rows[4], 0] == 0
-    unseen = open_field(model, observation((2, 3)))
-    assert unseen.evidence[5, 0, 0, 0] == 0
+    publish(model, open_field(model, observation((2, 3))))
+    deposit(owner, row=0, work=QueryWorkBudget(64))
+    unseen = knowing(model)
+    unlearned = (unseen.concept_ids == refs[5][1]).nonzero().item()
+    assert unseen.evidence[unlearned, 0, 0, 0] == 0
     publish(model, unseen)
     result = invoke(model, registry, search(model, registry, idea(registry, refs[7])))
     apply_thought_effect(model, result, row=0, work=QueryWorkBudget(256))
-    assert owner.subspace._concept_activations[5, 0, 0, 0] == 1
-    print(dict(presentations=200, learned=float(field.evidence[4, 0, 0, 0].detach()),
-               unseen=float(unseen.evidence[5, 0, 0, 0].detach()),
-               inferred=float(owner.subspace._concept_activations[5, 0, 0, 0].detach())))
+    assert owner.subspace._concept_activations[unlearned, 0, 0, 0] == 1
+    print(dict(presentations=200, learned=float(field.evidence[learned, 0, 0, 0].detach()),
+               unseen=float(unseen.evidence[unlearned, 0, 0, 0].detach()),
+               inferred=float(owner.subspace._concept_activations[unlearned, 0, 0, 0].detach())))

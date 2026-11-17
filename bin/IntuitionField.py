@@ -20,67 +20,58 @@ def observed(owner, field):
 
 
 def open_field(model, field, *, bracket=None):
-    """Evaluate once on observation; a numeric result belongs to its bracket."""
+    """Predict the basic block once; the selected face deposits its forecast."""
     owner = model._concept_owner()
     knowing, rows = observed(owner, field)
+    width = owner._order_caps()[0]
     model._intuition_observation = field
-    model._intuition_teacher = knowing.detach().clone()
+    model._intuition_teacher = knowing[:, :width].detach().clone()
+    model._intuition_bracket = bracket
     with torch.no_grad():
         owner._observed_knowing[:len(knowing)].copy_(knowing.detach())
     stack = owner.intuit_stack
-    if stack is None:
-        model._intuition_prediction = None
-        model._intuition_field = replace(field, evidence=torch.zeros_like(field.evidence))
-        return field
-    prediction = stack(knowing.detach().flatten(1)).reshape_as(knowing)
-    model._intuition_prediction = prediction
-    if rows.ndim == 1:
-        additions = prediction[:, rows.clamp_min(0)].transpose(0, 1)
-        additions = additions * (rows >= 0)[:, None, None]
-    else:
-        additions = prediction.gather(1, rows.T.clamp_min(0)[..., None].expand(-1, -1, 2)).transpose(0, 1)
-        additions = additions * (rows >= 0)[..., None]
-    locations = field.where[..., 1] > field.where[..., 0]
-    if bracket is not None:
-        locations = locations & (field.where == bracket[:, None]).all(-1)
-    learned = additions[:, :, None] * locations[None, :, :, None]
-    model._intuition_field = replace(field, evidence=learned)
-    evidence = torch.maximum(field.evidence, learned)
-    return replace(field, evidence=evidence)
+    model._intuition_prediction = (None if stack is None else
+        stack(knowing[:, :width].detach().flatten(1)).reshape(len(knowing), width, 2))
+    return field
 
 
 def read(owner, *, row, work):
-    """State the already computed field; neither run the stack nor read LTM."""
+    """Deposit the prediction in the open basic field and propagate; no operand."""
+    from SentenceField import knowing, publish
+    from FieldProjection import close, inventory
     from Understanding import ConceptualField
-    from Meaning import ConceptualMeaning
-    from ThoughtReferences import with_slots
-    from Extension import ConceptSet, Node
-    from FieldProjection import key
     work.require('field')
-    field = getattr(getattr(owner, '_model', None), '_intuition_field', None)
-    if field is None:
-        ids = torch.empty(0, dtype=torch.long, device=owner.similarity_codebook.W.device)
-        poles = owner.similarity_codebook.W.new_zeros(0, 2)
-        value = owner.similarity_codebook.W.new_zeros(owner.outputShape[-1])
-    else:
-        ids = field.concept_ids if field.concept_ids.ndim == 1 else field.concept_ids[:, row]
-        valid = ids >= 0
-        ids = ids[valid]
-        poles = field.evidence[valid, row].amax(1).detach()
-        selected = ConceptualField(ids, poles[:, None, None],
-            field.where[row:row+1, :1], field.when[row:row+1, :1], None)
-        value = key(owner, selected)[0, 0].detach()
-    pair = poles.amax(0) if len(poles) else value.new_zeros(2)
-    meaning = with_slots(replace(ConceptualMeaning.from_description(value),
-        bindings={'_evidence_kind': 'intuition'},
-        extension=(Node(ConceptSet(ids, poles)),)), (), pair=pair)
-    return dict(value=value, meaning=meaning, support_true=float(pair[0]),
-        support_false=float(pair[1]), evidence_kind='intuition',
-        learned_field=True, witnesses=(), incomplete=())
+    model = getattr(owner, '_model', None)
+    prediction = getattr(model, '_intuition_prediction', None)
+    if prediction is None:
+        return
+    field = knowing(model)
+    rows = inventory(owner)
+    ids = field.concept_ids.new_tensor([owner.concept_id_at_row(r) for r in rows])
+    lookup = {int(cid): index for index, cid in enumerate(ids)}
+    evidence = field.evidence.new_zeros(len(rows), *field.evidence.shape[1:])
+    # Preserve every existing order and stream; only this stream's basic
+    # block receives the new independent evidence.
+    for stream in range(evidence.shape[1]):
+        current = field.concept_ids if field.concept_ids.ndim == 1 else field.concept_ids[:,stream]
+        for index, cid in enumerate(current.tolist()):
+            if cid in lookup:
+                evidence[lookup[cid],stream] = field.evidence[index,stream]
+    locations = field.where[row,:,1] > field.where[row,:,0]
+    bracket = getattr(model, '_intuition_bracket', None)
+    if bracket is not None:
+        locations &= (field.where[row] == bracket[row]).all(-1)
+    for index, address in enumerate(rows):
+        if address < prediction.shape[1]:
+            addition = prediction[row,address].detach()[None] * locations[:,None]
+            evidence[index,row] = torch.maximum(evidence[index,row], addition)
+    # Closure writes only the active stream; another stream's field is held.
+    evidence[:,row:row+1] = close(owner, rows, evidence[:,row:row+1])
+    publish(model, ConceptualField(ids, evidence, field.where, field.when, field.percepts))
 
 
 def complete(model, present, registry):
-    """The kept field at every order teaches the one open-pass prediction."""
+    """The kept basic field teaches the one open-pass prediction."""
     prediction = getattr(model, '_intuition_prediction', None)
     if prediction is None:
         return

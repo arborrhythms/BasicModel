@@ -42,18 +42,6 @@
       "reads": "absolute"
     },
     {
-      "file": "bin/EpisodicMemory.py",
-      "function": "reinstate",
-      "previous_absolute_time": false,
-      "attributes": [
-        "when",
-        "when_band"
-      ],
-      "line": 92,
-      "reads": "absolute",
-      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
-    },
-    {
       "file": "bin/Extension.py",
       "function": "generated",
       "attributes": [
@@ -125,6 +113,18 @@
       "previous_absolute_time": false,
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
       "line": 69,
+      "reads": "absolute"
+    },
+    {
+      "file": "bin/GenerateOccupation.py",
+      "function": "clock",
+      "attributes": [
+        "when_encoding"
+      ],
+      "role": "generation forecast observation time",
+      "previous_absolute_time": false,
+      "now": "Encodes the observation tick before the walk; the predictor receives relative ages.",
+      "line": 25,
       "reads": "absolute"
     },
     {
@@ -401,6 +401,18 @@
       "line": 197,
       "reads": "absolute",
       "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase."
+    },
+    {
+      "file": "bin/PartsOfSpeech.py",
+      "function": "PartsOfSpeech._occupied_field",
+      "attributes": [
+        "when"
+      ],
+      "role": "formal argument field time transport",
+      "previous_absolute_time": false,
+      "now": "Copies the word field time band into its formal-argument reading; no learned scorer receives absolute phase.",
+      "line": 383,
+      "reads": "absolute"
     },
     {
       "file": "bin/PerceptField.py",

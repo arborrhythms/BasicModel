@@ -222,22 +222,27 @@ def test_typed_prediction_result_is_detached_before_history_or_checkpoint():
 
 
 def test_what_subgoal_descends_executes_returns_and_causally_carries_evidence(monkeypatch):
-    from test_item6_2_thinking import world
-    model, registry, store, (part, whole, _) = world()
+    from test_item6_2_thinking import chain_world
+    model, registry, store, (part, whole, last), chosen = chain_world(monkeypatch)
     memory = model._what_memory()
-    store.append_relation(part[1], whole[1], truth_plus=1.)
     from QueryWork import QueryWorkBudget
 
     from meaning_fixtures import unsupported
-    store._concept_owner()._concept_allocator.singletons.add(whole[1])
-    inner = registry.form('define', part, whole)
-    inner = unsupported(replace(inner, role_refs=(None,inner.role_refs[1],whole),
-        role_mask=torch.tensor([False,True,True]), bindings={'_equality':True}), (('referent',0),))
+    inner = registry.form('isPart', part, last)
+    inner = unsupported(replace(inner, role_refs=(part, None, last),
+        bindings={'_query_relation': 'part'}), (('relation', 1),))
     prior = memory.begin_thought_episode(inner, work_budget=2)
     memory.finish_thought(inner, support_true=0.0, evidence_kind="subgoal")
     memory.end_what_episode()
-    from meaning_fixtures import replay_thought_plan
-    replay_thought_plan(model, monkeypatch, ["ask", "query", None, None])
+    # Recall supplies premises; the child explicitly infers their conclusion.
+    choose_chain = model._choose_selected_thought_action
+    entered = []
+    def choose(root, active, actions, **kwargs):
+        if not entered:
+            entered.append(True)
+            return next(action for action in actions if action is not None and action.semantic_id == 'ask')
+        return choose_chain(root, active, actions, **kwargs)
+    monkeypatch.setattr(model, '_choose_selected_thought_action', choose)
     with model._query_boundary_scope((0,)):
         outer = registry.form(
             "ask", memory.thought_reference(memory.thought_history()[0]),
@@ -251,16 +256,16 @@ def test_what_subgoal_descends_executes_returns_and_causally_carries_evidence(mo
     assert result.evidence["support_true"] == 1
     assert result.work.spent == state.work_spent
     records = memory.thought_history()
-    latest = records[-8:]
+    latest = records[-10:]
     assert [record.kind for record in latest] == [
-        "begin", "thought", "descend", "thought", "thought", "return", "thought", "finish",
+        "begin", "thought", "descend", "thought", "thought", "thought", "thought", "return", "thought", "finish",
     ]
     assert latest[1].meaning.role_refs == outer.role_refs
-    assert latest[3].result.request.constituents[0].role_refs == inner.role_refs
-    assert latest[5].support_true == 1
-    assert any(ref[0] == "thought" for ref in latest[5].sources)
+    assert latest[2].meaning.role_refs == inner.role_refs
+    assert latest[7].support_true == 1
+    assert any(ref[0] == "thought" for ref in latest[7].sources)
     assert [record.operation for record in latest if record.kind == "thought"] == [
-        "ask", "query", "conclude", "conclude"]
+        "ask", "query", "query", "infer", "conclude", "conclude"]
     memory.end_what_episode()
 
 

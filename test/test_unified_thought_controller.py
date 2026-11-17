@@ -77,6 +77,18 @@ def test_child_context_can_refine_before_returning_its_causal_result(monkeypatch
     reference = memory.thought_reference(record)
     memory.finish_thought(child)
     memory.end_what_episode()
+    # This controller fixture declares its checked System-2 filling. Recall
+    # now loads STM only; its no-return contract is tested separately.
+    import ThoughtStream
+    from Queries import ThoughtOperationCandidate
+    from ThoughtReferences import has_open_slots
+    candidates = ThoughtStream.candidates
+    def menu(registry, root, active, current, records, descriptions=(), *, stm):
+        result = candidates(registry, root, active, current, records, descriptions, stm=stm)
+        if root.role_refs == child.role_refs and has_open_slots(current):
+            result = (*result, ThoughtOperationCandidate(registry.operation_spec('isPart'), child, ('argin1',)))
+        return result
+    monkeypatch.setattr(ThoughtStream, 'candidates', menu)
     child_choices = []
 
     def choose(_root, _active, actions, *, level, evidence=None, **_kwargs):
@@ -88,7 +100,7 @@ def test_child_context_can_refine_before_returning_its_causal_result(monkeypatch
         child_choices.append(evidence)
         if len(child_choices) > 2:
             return None
-        target = "query" if len(child_choices) == 1 else "define"
+        target = "isPart" if len(child_choices) == 1 else "define"
         if len(child_choices) == 1:
             assert not any(action is not None and action.semantic_id == 'define' for action in actions)
         return next(action for action in actions
@@ -104,7 +116,7 @@ def test_child_context_can_refine_before_returning_its_causal_result(monkeypatch
     assert selected.result.value.semantic_id == "define"
     child_ops = [record.operation for record in selected.records
                  if record.level == 1 and record.kind == "thought"]
-    assert child_ops == ["query", "define", "conclude"]
+    assert child_ops == ["isPart", "define", "conclude"]
     returned = next(record for record in selected.records if record.kind == "return")
     conclusion = next(record for record in selected.records
                       if record.level == 0 and record.operation == "conclude")

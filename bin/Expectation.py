@@ -11,6 +11,49 @@ from torch import nn
 from torch.nn import functional as F
 
 
+@dataclass(frozen=True)
+class OrderPrime:
+    """Expected positions retain their orders until a candidate reads them."""
+    keys: torch.Tensor
+    weights: torch.Tensor
+    orders: torch.Tensor
+
+    def stream(self, index):
+        return type(self)(self.keys[index:index+1], self.weights[index:index+1],
+                          self.orders[index:index+1])
+
+    def mean(self, order):
+        weights = self.weights * ((self.orders == order) & (self.orders >= 0))
+        return (weights[..., None] * self.keys).sum(1) / weights.sum(-1).clamp_min(1.)[:, None]
+
+    @classmethod
+    def from_predictions(cls, predictions, like, width):
+        predictions = tuple(predictions)
+        size = max((len(p.symbol_keys) for p in predictions
+                    if p is not None and p.symbol_keys is not None), default=0)
+        keys = like.new_zeros(len(predictions), size, width)
+        weights = like.new_zeros(len(predictions), size)
+        orders = torch.full((len(predictions), size), -1, device=like.device, dtype=torch.long)
+        for b, prediction in enumerate(predictions):
+            if prediction is None or prediction.symbol_keys is None:
+                continue
+            if prediction.symbol_orders is None:
+                raise ValueError('expectation priming requires the bank orders')
+            count = len(prediction.symbol_keys)
+            keys[b, :count] = F.normalize(prediction.symbol_keys.detach()[..., :width].to(like), dim=-1)
+            weights[b, :count] = prediction.expected_activation.detach().to(like).sum(-1)
+            orders[b, :count] = prediction.symbol_orders.to(orders)
+        return cls(keys, weights, orders)
+
+    def bias(self, candidates, orders):
+        same = (orders[..., None] == self.orders[:, None]) & (orders[..., None] >= 0)
+        weights = self.weights[:, None].to(candidates) * same
+        # Both numerator and normalization belong to the candidate's order.
+        prime = torch.einsum('bak,bkd->bad', weights, self.keys.to(candidates))
+        prime = prime / weights.abs().sum(-1).clamp_min(1.)[..., None]
+        return (F.normalize(candidates.detach(), dim=-1) * prime).sum(-1).detach()
+
+
 def unit(value, name):
     value = float(value)
     if not math.isfinite(value) or not 0. <= value <= 1.:
@@ -183,29 +226,52 @@ class ActivationPredictor(nn.Module):
                                      nn.Linear(hidden, 2 * self.width))
         self.local = nn.Linear(4, 2)
 
-    def forward(self, keys, context, activation=None, now=None):
+    def forward(self, keys, context, activation=None, now=None, key_orders=None):
         keys, context = keys.detach(), context.detach()
-        if keys.shape[-1] != self.width or context.shape != (keys.shape[0], 2 * self.width):
+        if (keys.shape[-1] != self.width or context.shape[0] != keys.shape[0]
+                or context.shape[-1] != 2 * self.width or context.ndim not in (2, 3)):
             raise ValueError('activation predictor requires native keys and field/STM context')
         keys = F.normalize(keys, dim=-1)
         activation = (keys.new_zeros(*keys.shape[:2], 2) if activation is None else activation.detach())
         if activation.shape != (*keys.shape[:2], 2):
             raise ValueError('symbol activation must retain both evidence lanes')
-        # Both evidence lanes across the whole symbolic field are top-down
-        # context. A negative source is not interchangeable with its omission.
-        field = torch.einsum('bnl,bnd->bld', activation, keys)
-        field = field / activation.sum(1).clamp_min(1.)[..., None]
+        # One shared network, applied to each order's own geometry. Evidence
+        # lanes stay independent; another order's positions never enter this
+        # order's field centroid, STM context or geometric query.
+        if context.ndim == 2:
+            context = context[:, None]
+        count = context.shape[1]
+        if key_orders is None:
+            if count != 1:
+                raise ValueError('multi-order prediction requires the bank orders')
+            key_orders = torch.zeros(keys.shape[1], device=keys.device, dtype=torch.long)
+        key_orders = key_orders.to(device=keys.device, dtype=torch.long)
+        same = torch.arange(count, device=keys.device)[:, None] == key_orders[None]
+        field = torch.einsum('bnl,bnd,on->bold', activation, keys, same.to(keys))
+        mass = torch.einsum('bnl,on->bol', activation, same.to(keys))
+        field = field / mass.clamp_min(1.)[..., None]
         now = self._empty_now.to(context).expand(keys.shape[0], -1) if now is None else now.detach().to(context)
-        if now.shape != (keys.shape[0], 4):
-            raise ValueError('activation predictor age requires four RowTime coordinates per stream')
-        query = self.context(torch.cat((context, field.flatten(1), now), -1)).reshape(keys.shape[0], 2, self.width)
+        if now.ndim == 2:
+            now = now[:, None].expand(-1, count, -1)
+        if now.shape != (keys.shape[0], count, 4):
+            raise ValueError('activation predictor age requires four coordinates per stream and order')
+        query = self.context(torch.cat((context, field.flatten(-2), now), -1)).reshape(keys.shape[0], count, 2, self.width)
         scores = []
         for start in range(0, keys.shape[1], 1024):
             key = keys[:, start:start + 1024]
-            similarity = torch.einsum('bnd,bld->bnl', key, query)
+            orders = key_orders[start:start + 1024]
+            selected = query[:, orders.clamp(0, count-1)]
+            similarity = torch.einsum('bnd,bnld->bnl', key, selected)
+            similarity = similarity * ((orders >= 0) & (orders < count))[None, :, None]
             local = self.local(torch.cat((activation[:, start:start + 1024], similarity), -1))
             scores.append(local)
         return torch.cat(scores, 1) if scores else keys.new_zeros(keys.shape[0], 0, 2) + query.sum() * 0.
+
+    @staticmethod
+    def context_by_order(values, occupied, orders, count):
+        """Contiguous per-order contexts; membership evidence is not a point."""
+        return torch.stack([ActivationPredictor.context_from(values,
+            occupied & (orders == order)) for order in range(count)], 1)
 
     @staticmethod
     def context_from(values, occupied=None):
@@ -247,7 +313,8 @@ def sample_alternative(probabilities, draw):
     return (draw >= cumulative).sum(-1).clamp_max(probabilities.shape[-1]-1)
 
 
-def symbol_activations(keys, values, occupied, lanes=None, *, identities=None, bank_ids=None, key_valid=None):
+def symbol_activations(keys, values, occupied, lanes=None, *, identities=None, bank_ids=None, key_valid=None,
+                       key_orders=None, value_orders=None):
     """Identify raw observations before applying gain; return two native lanes.
 
     Native handles identify activated rows. Without a handle, only exact
@@ -258,7 +325,8 @@ def symbol_activations(keys, values, occupied, lanes=None, *, identities=None, b
     B, N, _ = keys.shape
     if not N:
         return values.new_zeros(B, 0, 2)
-    indices, matched = match_symbols(keys, values, identities=identities, bank_ids=bank_ids, key_valid=key_valid)
+    indices, matched = match_symbols(keys, values, identities=identities, bank_ids=bank_ids,
+        key_valid=key_valid, key_orders=key_orders, value_orders=value_orders)
     if lanes is None:
         lanes = torch.stack((occupied.to(values), torch.zeros_like(occupied).to(values)), -1)
     source = torch.where((occupied & matched)[..., None], lanes.detach().to(values), 0.)
@@ -266,7 +334,8 @@ def symbol_activations(keys, values, occupied, lanes=None, *, identities=None, b
         1, indices[..., None].expand(-1, -1, 2), source, reduce='amax', include_self=True)
 
 
-def match_symbols(keys, values, *, identities=None, bank_ids=None, key_valid=None):
+def match_symbols(keys, values, *, identities=None, bank_ids=None, key_valid=None,
+                  key_orders=None, value_orders=None):
     """Native handles identify activated codes; unhandled values require exact keys.
 
     A missing named handle is unknown, never its nearest neighbour. Direct
@@ -276,6 +345,11 @@ def match_symbols(keys, values, *, identities=None, bank_ids=None, key_valid=Non
         compute_mode='donot_use_mm_for_euclid_dist')
     if key_valid is not None:
         distances = distances.masked_fill(~key_valid[:, None, :], torch.inf)
+    if key_orders is not None:
+        orders = key_orders[None] if key_orders.ndim == 1 else key_orders
+        same = ((orders == orders[:, :1]).all(-1)[:, None, None].expand_as(distances) if value_orders is None else
+                (value_orders[..., None] == orders[:, None]) & (value_orders[..., None] >= 0))
+        distances = distances.masked_fill(~same, torch.inf)
     distance, index = distances.min(-1)
     matched = distance <= 1e-5
     if identities is not None:
@@ -299,12 +373,14 @@ class SymbolRead:
     identities: object = None
     observed: object = None
     observed_mask: object = None
+    orders: object = None
 
-    def gains(self, values, occupied=None, lanes=None, *, identities=None):
+    def gains(self, values, occupied=None, lanes=None, *, identities=None, orders=None):
         """A content view of exact raw identities, never a write to their carrier."""
         if self.strength == 0.:
             return values.new_ones(values.shape[:-1])
-        index, matched = match_symbols(self.keys, values, identities=identities, bank_ids=self.identities)
+        index, matched = match_symbols(self.keys, values, identities=identities, bank_ids=self.identities,
+            key_orders=self.orders, value_orders=orders)
         expected = self.expected.detach().gather(1, index[..., None].expand(-1,-1,2))
         if occupied is None:
             occupied = torch.ones_like(matched)

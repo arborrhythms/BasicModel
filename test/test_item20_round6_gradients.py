@@ -149,6 +149,8 @@ def test_order_zero_decode_reaches_the_grammar_inverse_and_selected_definition(m
         decomposition_chooser=DecompositionChooser(), generate_policy=policy, _generate_policy_width=12,
         _tree_layer=lambda arity: NS(ops=(op,), exploration_fraction=.5, exploration_temperature=1.),
         generation_scope=nullcontext)
+    from generation_fixtures import native_policy
+    native_policy(language)
     for name in ('reverse_binary_step', '_reverse_of_binary_op', 'generate_policy_logits'):
         setattr(language, name, MethodType(getattr(LanguageSpace, name), language))
     language._bounded_binary_reconstruction = LanguageSpace._bounded_binary_reconstruction

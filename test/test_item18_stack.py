@@ -89,6 +89,6 @@ def test_80_numeric_certificate_keeps_its_bar_with_the_stack_built():
     model, prediction, error = certificate()
     stack = model._concept_owner().intuit_stack
     assert stack is not None and stack.pairs == 2
-    assert model._intuition_prediction.shape == (4, model._concept_owner().nVectors, 2)
+    assert model._intuition_prediction.shape == (4, model._concept_owner()._order_caps()[0], 2)
     assert error < 1e-6
     model.End()

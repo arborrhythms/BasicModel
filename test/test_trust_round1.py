@@ -353,7 +353,7 @@ def test_untracked_chart_keeps_signed_content_and_whole_norm(paired, monkeypatch
     assert positive_length(owner, value=probe) == 1.
 
 
-def test_unplaced_word_has_radius_without_invented_direction():
+def test_unplaced_word_has_radius_along_its_id_seed():
     owner, store, _ = fixture()
     word = owner.interpret.lookup_word([4], [], form='word')
     row = owner._csw_row_of(word)
@@ -361,8 +361,12 @@ def test_unplaced_word_has_radius_without_invented_direction():
     for n in range(3):
         view(owner, store, word, content, n)
     assert positive_length(owner, word) == pytest.approx(1-math.exp(-1))
-    assert not owner.similarity_codebook.W[row,3:].any()
-    assert not owner.similarity_codebook.lookup_rows(row)[3:].any()
+    from ConceptPlacement import seed
+    derived = owner.similarity_codebook.mereology
+    torch.testing.assert_close(derived.placement[row], seed(word, derived.placement[row]))
+    direction = torch.nn.functional.normalize(derived.placement[row].clamp_min(0), dim=0)
+    torch.testing.assert_close(owner.similarity_codebook.lookup_rows(row)[3:7], direction * positive_length(owner, word))
+    assert not owner.similarity_codebook.lookup_rows(row)[7:].any()
 
 
 def test_mint_without_occurrence_store_keeps_the_landed_contract(monkeypatch):

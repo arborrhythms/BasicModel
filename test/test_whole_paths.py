@@ -7,7 +7,7 @@ def test_thought_content_growth_preserves_structure_and_trial_rollback():
     from dataclasses import replace
     from Meaning import ConceptualMeaning
     from ThoughtStrata import construct, bound_to_sentence, write, snapshot, restore
-    stores = construct(1, 2, 4)
+    stores = construct(1, 2, 4, episodic_concepts=0)
     bound_to_sentence(stores, words=3, operators=3)
     store = stores[0][0]
     def nested(count):
@@ -63,7 +63,8 @@ def test_retained_named_transient_captures_its_concept_not_its_mtm_address():
     pool = SimpleNamespace(entries={'retained': token}, reading_of=lambda key: 17)
     strata = SentenceStrata(1, 1, 2, 4)
     model = SimpleNamespace(_reconstruction_stack=lambda: SimpleNamespace(),
-        _concept_owner=lambda: SimpleNamespace(mtm=pool),
+        _concept_owner=lambda: SimpleNamespace(mtm=pool,
+            _csw_row_of=lambda cid: 0 if cid == 17 else None),
         inputSpace=SimpleNamespace(_ar_word_concept_ids=torch.tensor([[17]])),
         symbolSpace=SimpleNamespace(), languageSpace=SimpleNamespace(),
         conceptualSpace=SimpleNamespace(stm=SimpleNamespace(strata=strata)))
@@ -396,7 +397,8 @@ def test_output_departure_runs_only_the_last_stage(monkeypatch):
     active = torch.tensor([True])
     model = NS(_what_memory=lambda: None, when_time=torch.tensor(7),
         when_encoding=NS(t=7), present=lambda: 7, _sentence_fields={}, _sentence_answer_predictions=None,
-        inputSpace=NS(data=NS(has_supervised_outputs=True)))
+        inputSpace=NS(data=NS(has_supervised_outputs=True)),
+        languageSpace=NS(operator_cost=1., _generate_binary_ops=(), _generate_unary_ops=()))
     before = ThoughtTrialState(model)
     registry = Error(row_mask=active)
     registry.add('reconstruction', torch.tensor([2.]), objective='reconstruction')

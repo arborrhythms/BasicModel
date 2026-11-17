@@ -60,7 +60,8 @@ def test_transient_occurrence_is_deferred_and_covered_when_its_symbol_arrives():
     cs.mtm.promote(key, cs.concept_id_at_row(b))
     assert dict(cs.concept_weights(row)) == {b:1.}
     assert not cb.lookup_rows(row)[:3].any()
-    assert not cb.mereology.placement[row].any()
+    from ConceptPlacement import seed
+    torch.testing.assert_close(cb.mereology.placement[row], seed(cs.concept_id_at_row(row), cb.mereology.placement[row]))
     assert cb.mereology.placement_witnesses[row] == 0
     assert pointers == (cb.W.data_ptr(),cb.mereology.placement.data_ptr())
 
@@ -251,7 +252,8 @@ def test_candidate_promotion_keeps_weighted_definition_and_no_inherited_place_or
     assert cs.mtm.entries[key].symbol == symbol
     assert dict(cs.concept_weights(row)) == {a:2.,b:1.}
     assert not cb.lookup_rows(row)[:3].any()
-    assert not cb.mereology.placement[row].any()
+    from ConceptPlacement import seed
+    torch.testing.assert_close(cb.mereology.placement[row], seed(cs.concept_id_at_row(row), cb.mereology.placement[row]))
     assert cb.mereology.placement_witnesses[row] == 0
     assert pointers == (cb.W.data_ptr(),cb.mereology.placement.data_ptr())
 
@@ -408,7 +410,7 @@ def test_answer_judges_the_carried_candidate_bind_without_an_individual_menu(mon
 
 
 def test_identity_promotion_at_capacity_preserves_the_open_token_and_rows():
-    from FamiliarTier import IdentityPromotionCapacityError, promote_identity
+    from FamiliarTier import promote_identity
     from test_presentation_memory import fixture, write
     resolver, store, points = fixture()
     owner = resolver.components.owner
@@ -420,8 +422,8 @@ def test_identity_promotion_at_capacity_preserves_the_open_token_and_rows():
         layer.assign_row(('occupied', index), capacity=owner.nVectors, base=0)
     assert len(layer._tensor_row_keys) == owner.nVectors
     before = (alloc.next_id, dict(layer._tensor_rows), len(store.parts))
-    with pytest.raises(IdentityPromotionCapacityError, match='no order-1 concept seat'):
-        promote_identity(owner, token)
+    with pytest.warns(RuntimeWarning, match='order 1 block'):
+        assert promote_identity(owner, token) is None
     assert (alloc.next_id, dict(layer._tensor_rows), len(store.parts)) == before
     assert owner.mtm.entries[token].symbol is None
 

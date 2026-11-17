@@ -89,18 +89,22 @@ def test_content_cue_reenters_shared_chunks_with_stored_stamp_and_identities():
     store,rows,_,_,_,chain = pending_chain()
     owner = store._concept_owner()
     owner.stm = ShortTermMemory(batch=1,capacity=8,concept_dim=16)
+    from clock_fixtures import for_stm
+    clock = for_stm(owner.stm)
     for key in tuple(owner.mtm.entries):owner.mtm.forget(key)
     for number in range(1,9):
         state,_ = chunks.deposit(owner.stm.state,torch.full((1,16),number/10),torch.tensor([True]))
         owner.stm.set_state(state)
     old = owner.stm.state[chunks.READ].clone()
     reader = ThoughtLTMCapability(store=lambda:store,equal=lambda *_:0.,tau_id=.9)
-    when = store.entry_time(chain)
+    stored_time = store.entry_time(chain).clone()
     result = store.cued_rows(store.meaning_of(chain), references=(chain,),
         max_records=1, work=QueryWorkBudget(64))
     assert not store.recall_chunks(result['value'], work=QueryWorkBudget(64))
     assert result['value'] and not result['incomplete']
     state = owner.stm.state
+    when = clock.when_encoding.encode(clock.present())
+    torch.testing.assert_close(store.entry_time(chain),stored_time,rtol=0,atol=0)
     assert state[chunks.REFS][0,0,0].tolist() == [chunks.RELATION,chain[1]]
     torch.testing.assert_close(state[chunks.WHEN][0,0],when,rtol=0,atol=0)
     torch.testing.assert_close(state[0][0,0,store.when_start:store.when_start+4],when,rtol=0,atol=0)

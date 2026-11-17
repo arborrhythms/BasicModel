@@ -51,9 +51,10 @@ def test_enabled_prime_is_uncapped_for_every_candidate_menu(count):
     # the independently declared expectation prior.
     candidates[:, 0] = prime
     candidates[:, 1] = -prime
-    bias = OperationSelectionLayer.prime_bias(owner, candidates, prime)
-    expected = torch.einsum('bad,bd->ba',
-        torch.nn.functional.normalize(candidates, dim=-1), prime)
+    from Expectation import OrderPrime
+    typed = OrderPrime(prime[:, None], torch.ones(2, 1), torch.zeros(2, 1, dtype=torch.long))
+    bias = OperationSelectionLayer.prime_bias(owner, candidates, typed, torch.zeros(2, count, dtype=torch.long))
+    expected = (torch.nn.functional.normalize(candidates, dim=-1) * prime[:, None]).sum(-1)
     torch.testing.assert_close(bias, expected, rtol=0, atol=0)
     assert bool((bias[:, 0] > bias[:, 1]).all())
     assert bool((bias[:, 0] - bias[:, 1] > 1).all())
@@ -92,7 +93,7 @@ def test_binding_judge_scores_referent_while_surface_readers_keep_their_training
     correct = replace(base, role_refs=(('sym', 5), None, None),
                       bindings={'_bound_roles': (('referent', 0),)})
     wrong = replace(correct, role_refs=(('sym', 7), None, None))
-    owner = SimpleNamespace(word_concepts=lambda _: (5,), _csw_row_of=lambda _: 0,
+    owner = SimpleNamespace(_concept_source_order=lambda _: 0, _row_order=lambda _: 0, word_concepts=lambda _: (5,), _csw_row_of=lambda _: 0,
         similarity_codebook=SimpleNamespace(lookup_rows=lambda *args, **kwargs: torch.ones(1, 4)))
     questions = tuple(What.supervised(i) for i in range(4))
     answers = tuple(WhatAnswer(q, ReferentTarget('target') if i < 3 else 'target')

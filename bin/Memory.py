@@ -239,7 +239,7 @@ class STMChunks:
 
 
     @staticmethod
-    def bind_menu(state, mention, *, exclusions=None, meaning_start=0):
+    def bind_menu(state, mention, *, orders=None, exclusions=None, meaning_start=0):
         """Fixed K+1 field variants: dummy first, then eligible off-stack chunks."""
         batch, positions, width = mention.shape
         own = mention[:, :, None]
@@ -248,11 +248,17 @@ class STMChunks:
         from IdentityRows import meet_ratios
         covered, covers = meet_ratios(own[..., meaning_start:], candidates[..., meaning_start:])
         available = available & ((covered == 1) | (covers == 1))
+        if orders is not None:
+            # With an open order each candidate supplies its own typed read.
+            # A dummy still has no order; ReferenceContext rejects that close.
+            available = available & ((orders[..., None] < 0)
+                | (orders[..., None] == state[STMChunks.ORDERS][:, None]))
         if exclusions is not None:
-            x, y = exclusions[:, 0], exclusions[:, 1]
+            x, y = exclusions[:, 1], exclusions[:, 2]
             ax, ay = own.index_select(-1, x) >= .3, own.index_select(-1, y) >= .3
             bx, by = candidates.index_select(-1, x) >= .3, candidates.index_select(-1, y) >= .3
-            available = available & ~((ax & ~bx & by & ~ay) | (ay & ~by & bx & ~ax)).any(-1)
+            same = state[STMChunks.ORDERS][:,None,:,None] == exclusions[:,0]
+            available = available & ~(((ax & ~bx & by & ~ay) | (ay & ~by & bx & ~ax)) & same).any(-1)
         dummy = torch.zeros(batch, positions, 1, dtype=torch.long, device=mention.device)
         chunks = torch.arange(state[STMChunks.STACK].shape[1], device=mention.device)[None, None].expand(batch, positions, -1)
         return (torch.cat((torch.zeros_like(own), candidates), 2),
@@ -398,7 +404,8 @@ class ShortTermMemory(MemoryStore, Layer):
         self._live_unary_history_depth = torch.zeros(batch,dtype=torch.long)
         self._thought_contents = tuple((None,) * self._init_capacity for _ in range(batch))
         from ThoughtStrata import construct
-        object.__setattr__(self, '_thought_stores', construct(batch, self._init_capacity, concept_dim))
+        object.__setattr__(self, '_thought_stores', construct(batch, self._init_capacity, concept_dim,
+            episodic_concepts=int(TheXMLConfig.space('SymbolSpace', 'episodicConcepts', 4))))
 
     @property
     def state(self):
@@ -1198,10 +1205,24 @@ class MediumTermMemory(MemoryStore):
             support=support, mass=sum(support.values()))
         return expected
 
-    def match_candidate(self, order, value):
+    def match_candidate(self, order, value, *, value_order, support):
+        from FamiliarTier import support_order
+        owner = self._owner()
         value = self._value(value)
+        # An unplaced member has no geometric direction yet. The same
+        # weighted references still identify the same observed collection.
+        def proportions(reading):
+            mass = sum(reading.values())
+            return {row: weight / mass for row, weight in reading.items()}
+        wanted = proportions(support)
+        for key, entry in self.entries.items():
+            if (entry.order == order and entry.symbol is None
+                    and 'promoted_percept' not in entry.refinement
+                    and proportions(entry.support) == wanted):
+                return key
         scored = [(float(torch.nn.functional.cosine_similarity(self.value_of(key).to(value), value, dim=0)), key)
                   for key, entry in self.entries.items() if entry.order == order
+                  and support_order(owner, entry.support, entry.order) == value_order
                   and entry.symbol is None and 'promoted_percept' not in entry.refinement]
         score, key = max(scored, key=lambda item: item[0], default=(-1., None))
         return key if score >= self.match_cos else None
@@ -1227,10 +1248,9 @@ class MediumTermMemory(MemoryStore):
         result = {}
         for key, entry in self.entries.items():
             if entry.order is not None:
-                rows = list(entry.support)
-                codes = owner.similarity_codebook.lookup_rows(rows)
-                weights = codes.new_tensor(list(entry.support.values()))
-                result[key] = (codes * weights[:, None]).sum(0) / weights.sum()
+                from FamiliarTier import centroid, support_order
+                result[key] = centroid(owner, entry.support,
+                    order=support_order(owner, entry.support, entry.order))
         return result
 
     def record_reading(self, key, stream, pair):
@@ -1302,7 +1322,9 @@ class MediumTermMemory(MemoryStore):
         if entry.order is not None:
             owner = self._owner()
             from FamiliarTier import centroid
-            value = centroid(owner, entry.support)
+            from FamiliarTier import support_order
+            value = centroid(owner, entry.support,
+                order=support_order(owner, entry.support, entry.order))
             return value if live_candidate else self._value(value)
         members = self.member_references(entry if token is None else token, timeline=timeline)
         # A participation witness without forward operands records an event,
@@ -1850,17 +1872,26 @@ class IdeaRows(ClauseRows, EntryRead, MemoryStore, Layer):
 
     @property
     def _idea_revision(self):
-        return id(self.slots), self.slots._version, len(self)
+        return id(self.slots), self.slots._version, id(self.referent), self.referent._version, len(self)
+
+    def _observation_order(self, row):
+        reference, owner = self.referent_of(row), self.owner()
+        return 0 if reference is None or owner is None else max(0,owner._concept_source_order(reference))
 
     def _ensure_observations(self):
         if self._observation_revision == self._idea_revision:
             return
         support = (self.slots[:len(self)].detach() >= .3).float()
-        self._coordinate_counts = support.sum(0)
-        self._coordinate_joint = support.T @ support
+        owner = self.owner()
+        count = 1 if owner is None else len(owner._order_caps())
+        orders = torch.tensor([self._observation_order(row) for row in range(len(self))],
+                              device=support.device,dtype=torch.long)
+        separate = support[None] * (torch.arange(count,device=support.device)[:,None] == orders)[...,None]
+        self._coordinate_counts = separate.sum(1)
+        self._coordinate_joint = separate.transpose(1,2) @ separate
         self._observation_revision = self._idea_revision
 
-    def coordinate_exclusions(self, start=0):
+    def coordinate_exclusions(self, start=0, *, order=None):
         """Eight retained occurrences on each side, with no joint occurrence.
 
         Counts are derived from immutable rows. Native appends update them;
@@ -1868,9 +1899,12 @@ class IdeaRows(ClauseRows, EntryRead, MemoryStore, Layer):
         """
         self._ensure_observations()
         eligible = self._coordinate_counts >= 8
-        eligible[:int(start)] = False
-        pairs = (eligible[:, None] & eligible[None, :]
+        eligible[:, :int(start)] = False
+        pairs = (eligible[:, :, None] & eligible[:, None, :]
                  & (self._coordinate_joint == 0)).triu(1)
+        if order is not None:
+            return (() if not 0 <= order < len(pairs) else
+                    tuple(map(tuple,pairs[order].nonzero().tolist())))
         return tuple(map(tuple, pairs.nonzero().tolist()))
 
     def _append_cache_state(self):
@@ -1879,8 +1913,9 @@ class IdeaRows(ClauseRows, EntryRead, MemoryStore, Layer):
     def _append_cached(self, row, valid):
         if valid:
             support = (self.slots[row].detach() >= .3).float()
-            self._coordinate_counts.add_(support)
-            self._coordinate_joint.add_(support[:, None] * support[None, :])
+            order = self._observation_order(row)
+            self._coordinate_counts[order].add_(support)
+            self._coordinate_joint[order].add_(support[:, None] * support[None, :])
             self._observation_revision = self._idea_revision
 
     def validate_referents(self, state, prefix, names):
@@ -2189,13 +2224,16 @@ class LTM0(IdeaRows):
         return super()._append_cache_state(), self._time_index_revision == self._idea_revision
 
     def _append_cached(self, row, valid):
-        super()._append_cached(row, valid[0])
         if valid[1]:
             # next_time has just advanced the clock past the written row.
             time = int(self.model_clock) - 1
             self._row_times.append(time)
             self._rows_by_time[time] = row
             self._time_index_revision = self._idea_revision
+        # Reading the observation's order can resolve an occurrence referent
+        # through this index. Publish its append first, so that read cannot
+        # rebuild the index and have this same time appended a second time.
+        super()._append_cached(row, valid[0])
 
     @torch.no_grad()
     def _write_point(self,row,point):
@@ -2686,8 +2724,8 @@ class STM0(IdeaRows):
     address_domain='stm-v1'
     columns=(*IdeaRows.columns,'row_names')
 
-    def __init__(self,width,capacity,*,percept_width=0,relation_capacity=2):
-        super().__init__(width,capacity,percept_width=percept_width,
+    def __init__(self,width,capacity,*,percept_width=0,relation_capacity=2,episodic_concepts=0):
+        super().__init__(width,capacity,percept_width=percept_width,episodic_concepts=episodic_concepts,
             relation_capacity=relation_capacity,read_capacity=capacity)
         self.register_buffer('row_names',torch.full((capacity,),-1,dtype=torch.long))
         import weakref

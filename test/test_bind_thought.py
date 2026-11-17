@@ -191,6 +191,8 @@ def test_g2_generated_leaf_without_object_uses_same_resolver(monkeypatch, kind, 
     from Spaces import _concept_alloc_of
     assert word in _concept_alloc_of(f.cs).word_forms[marker]
     assert word in f.cs.word_concepts(marker)
+    with torch.no_grad():
+        f.cs.similarity_codebook.W[f.cs._csw_row_of(word)].sigmoid_()
     f.words[marker] = word, word
     program = f.program(('change', marker, VERBS[0]))
     program = replace(program, leaves=torch.stack((f.atoms[7], f.atoms[4])),
@@ -270,7 +272,7 @@ def test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content(monke
     target, _ = occurrence(f, f.atoms[0], f.atoms[4])
     meaning = f.store.meaning_of(missing)
     meaning = replace(meaning, bindings=dict(bindings(meaning), _query_occurrence=f.store.occurrence_of(missing)))
-    offered = candidates(f.registry, meaning, meaning, meaning, ())
+    offered = candidates(f.registry, meaning, meaning, meaning, (), stm=f.model.conceptualSpace.stm)
     assert [a.open_roles for a in offered if a.semantic_id == 'bind'] == [(0,)]
     selected = []
     def choose(root, active, actions, **kwargs):
@@ -286,7 +288,7 @@ def test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content(monke
     assert open_slots(f.store.meaning_of(missing)) == (('referent', 0),)
     torch.testing.assert_close(f.store.slots[missing], before, rtol=0, atol=0)
     assert not [a for a in candidates(f.registry, meaning, result.meaning, result.meaning,
-                                    result.records) if a.semantic_id == 'bind']
+                                    result.records, stm=f.model.conceptualSpace.stm) if a.semantic_id == 'bind']
 
 
 def test_participant_evidence_lasts_with_the_identity_pool(monkeypatch):
@@ -350,12 +352,12 @@ def test_distinct_open_roles_are_distinct_bind_sites_even_after_no_access(monkey
     f = native(monkeypatch)
     meaning = site(f, f.atoms[0])
     meaning = with_slots(meaning, (('referent', 0), ('referent', 2)))
-    actions = candidates(f.registry, meaning, meaning, meaning, ())
+    actions = candidates(f.registry, meaning, meaning, meaning, (), stm=f.model.conceptualSpace.stm)
     assert [a.open_roles for a in actions if a.semantic_id == 'bind'] == [(0,), (2,)]
     result = execute(f, meaning, 0)
     assert open_slots(result.value) == open_slots(meaning)
     records = (SimpleNamespace(kind='thought', result=result),)
-    actions = candidates(f.registry, meaning, meaning, result.value, records)
+    actions = candidates(f.registry, meaning, meaning, result.value, records, stm=f.model.conceptualSpace.stm)
     assert [a.open_roles for a in actions if a.semantic_id == 'bind'] == [(2,)]
 
 
@@ -375,6 +377,8 @@ def test_selected_open_formation_keeps_one_site_and_its_objectless_cue(monkeypat
     f = native(monkeypatch)
     word = f.cs.interpret.lookup_word([101], (), form='m')
     from Spaces import _concept_alloc_of
+    with torch.no_grad():
+        f.cs.similarity_codebook.W[f.cs._csw_row_of(word)].sigmoid_()
     f.words['m'] = word, word
     program = f.program(('change', 'm', VERBS[0]))
     program = replace(program, binding_choices=True,
@@ -396,6 +400,8 @@ def test_pending_subject_keeps_its_composed_predicate_when_stored(monkeypatch):
     from ClauseJournal import finish_clause
     f = native(monkeypatch)
     word = f.cs.interpret.lookup_word([101], (), form='m')
+    with torch.no_grad():
+        f.cs.similarity_codebook.W[f.cs._csw_row_of(word)].sigmoid_()
     f.words['m'] = word, word
     program = f.program(('change', 'm', ('verb', VERBS[0], KINDS[0])))
     program = replace(program, binding_choices=True,

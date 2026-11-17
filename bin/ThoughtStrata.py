@@ -36,7 +36,11 @@ class View:
                     return tuple(unquote(part) for part in item)
                 return item
             data = {name:unquote(item) for name,item in metadata['_metadata']}
-            return ConceptualMeaning(roles, mask, **data, constituents=children)
+            from EpisodicMemory import entry_set
+            from Extension import Node
+            extension = entry_set(store, store.index_of_row(head[1]))
+            return ConceptualMeaning(roles, mask, **data, constituents=children,
+                extension=() if not len(extension.ids) else (Node(extension),))
         return meaning(self.root)
 
     def __getattr__(self, name):
@@ -47,11 +51,11 @@ class View:
         return self
 
 
-def construct(batch, chunks, width):
+def construct(batch, chunks, width, *, episodic_concepts):
     # A thought can retain one bounded set of constituent ideas. The recent
     # chunk count remains unchanged; these are its content and pair seats.
     stores = tuple(tuple(STM0(width, 4*chunks, percept_width=0,
-        relation_capacity=4*chunks) for _ in range(chunks)) for _ in range(batch))
+        relation_capacity=4*chunks, episodic_concepts=episodic_concepts) for _ in range(chunks)) for _ in range(batch))
     for row in stores:
         for store in row:
             store._thought_capacity_bound = store.capacity
@@ -81,7 +85,8 @@ def _resize(store, capacity):
     width, device, dtype = store.nDim, store.slots.device, store.slots.dtype
     external = getattr(store, '_external_memory', None)
     generation = store.generation
-    STM0.__init__(store, width, capacity, percept_width=0, relation_capacity=capacity)
+    STM0.__init__(store, width, capacity, percept_width=0, relation_capacity=capacity,
+                  episodic_concepts=store.episodic_capacity)
     store.to(device=device, dtype=dtype)
     store._thought_capacity_bound = bound
     store.generation = generation
@@ -103,9 +108,9 @@ def write(store, meaning, *, key):
         _resize(store, count)
     store.expire()
     store.to(device=meaning.roles.device, dtype=meaning.roles.dtype)
-    def append(point, bindings):
+    def append(point, bindings, entry=None):
         value = replace(ConceptualMeaning.from_description(point.detach()), bindings=bindings)
-        row = store.append_meaning(value)
+        row = store.append_meaning(value, entry=entry)
         return OCCURRENCE, store.row_name(row)
     def retain(value):
         children = [retain(child) for child in value.constituents]
@@ -118,8 +123,10 @@ def write(store, meaning, *, key):
                 return tuple(quote(part) for part in item)
             return item
         metadata = {name:quote(item) for name,item in data.items()}
+        from EpisodicMemory import tree_entry
+        entry = tree_entry(store, value.extension) if value.extension else None
         head = append(value.roles[value.role_mask].amax(0),
-            {'_roles': tuple(value.role_mask.tolist()), '_metadata': metadata})
+            {'_roles': tuple(value.role_mask.tolist()), '_metadata': metadata}, entry=entry)
         operands = [append(value.roles[role], {}) for role in value.role_mask.nonzero().flatten().tolist()]
         root = head
         for child in (*operands, *children):

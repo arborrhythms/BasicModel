@@ -369,7 +369,7 @@ def write_knowing(model, evidence, row):
         from IntuitionField import observed
         from SentenceField import knowing
         target, _ = observed(space, replace(knowing(model), evidence=additions.detach()))
-        model._intuition_teacher = torch.maximum(teacher, target)
+        model._intuition_teacher = torch.maximum(teacher, target[:, :teacher.shape[1]])
 
 
 def operand(rule, slot):

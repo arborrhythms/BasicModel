@@ -4,6 +4,24 @@ import pytest
 import torch
 
 
+def test_appending_a_referent_keeps_the_time_index_aligned():
+    from test_reference_close import fixture
+
+    resolver, store, atoms = fixture(percept=True)
+    first = store.append_idea(atoms[8])
+    reference = store.occurrence_of(first)
+    # The exclusion cache reads a new row's order through its referent.
+    store.coordinate_exclusions(order=0)
+    second = store.append_idea(atoms[9], referent=reference)
+    third = store.append_idea(atoms[10])
+    references = [store.occurrence_of(row) for row in (first, second, third)]
+    assert len(set(references)) == 3
+    for row, address in zip((first, second, third), references):
+        assert store.location(address) == row
+        torch.testing.assert_close(store.point_of_row(address), store.slots[row])
+    assert len(store._row_times) == len(store)
+
+
 def test_pending_question_keeps_its_retained_context_point():
     from dataclasses import replace
     from ReferenceContext import SituationFrame
@@ -68,13 +86,13 @@ def test_23_9_all_retained_occurrences_supply_exclusion_after_mtm_expires():
         resolver.components.owner.mtm.restore(None)
         assert len(store) == 16
         assert all(store.referent_of(i) is None for i in range(len(store)))
-        assert resolver.exclusion_pairs() == ((8, 9),)
+        assert resolver.exclusion_pairs(order=0) == ((8, 9),)
         histories.append({name: getattr(store, name)[:len(store)].clone()
                           for name in store.columns})
         # One joint occurrence removes the empirical exclusion. Repeated
         # access alone cannot substitute for another retained occurrence.
         store.append_idea(atoms[8] + atoms[9])
-        assert resolver.exclusion_pairs() == ()
+        assert resolver.exclusion_pairs(order=0) == ()
     for name in histories[0]:
         torch.testing.assert_close(histories[0][name], histories[1][name], rtol=0, atol=0)
 
@@ -124,8 +142,11 @@ def test_23_13_promotion_without_actual_events_keeps_the_current_mtm_value(menti
     current = owner.mtm.value_of(key).clone()
     torch.testing.assert_close(current[:2], current.new_tensor([1., 1.]))
     symbol = promote_identity(owner, key)
-    torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(symbol)],
+    torch.testing.assert_close(owner.similarity_codebook.trust.content[owner._csw_row_of(symbol)],
                                current, rtol=0, atol=0)
+    from ConceptPlacement import seed
+    torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(symbol)],
+                               seed(symbol, current), rtol=0, atol=0)
 
 
 def test_43_a_new_thought_advances_past_retained_occurrence_times():

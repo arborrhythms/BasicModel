@@ -952,7 +952,7 @@ class ThoughtLTMCapability:
             if len(frames) >= max_records:
                 break
             index = store.location(occurrence) if store is not None else None
-            if index is not None and store.row_name(index) not in seen:
+            if isinstance(index, int) and store.row_name(index) not in seen:
                 work.require('record')
                 frames.append(SituationFrame.from_row(store.row(index)))
                 seen.add(store.row_name(index))
@@ -1200,28 +1200,13 @@ class ThoughtLTMCapability:
         candidates = tuple(row for row in found['value']
                            if row['match'] >= tau
                            and row['occurrence'] not in excluded and can_answer(row))
-        from ExtendedRecall import answer
-        owner_ref = getattr(store,'_concept_owner',None)
-        owner = None if owner_ref is None else owner_ref()
-        available = []
-        if owner is not None:
-            for candidate in candidates:
-                value = answer(owner,pattern,candidate['meaning'],work=work)
-                if value is not None:
-                    available.append((candidate,value))
-        best = max(available,key=lambda item:item[0]['match']) if available else None
-        frames = () if best is None else (best[0],)
-        value = None if best is None else best[1]
-        # An open operand can be recalled from untrusted conversation. Its
-        # content is returned; that availability does not turn into authority.
-        trust = 0. if best is None else best[0]['trust']
-        return dict(value=frames,frames=frames,result_kind='set',meaning=value,answer_operand=value,
-            reference=None if value is None else value.role_refs[0],
-            binding_value=None if value is None else value.roles[0],
-            support_true=max(0.,trust),support_false=max(0.,-trust),
-            witnesses=() if best is None else (best[0]['occurrence'],),
-            records_scanned=found['records_scanned'],incomplete=found['incomplete'],
-            episodic_frames=found.get('episodic_frames',()))
+        # Recall retains the matched episode. An open operand is not
+        # converted into a new point here; subsequent thinking reads STM.
+        return dict(value=None, frames=candidates, result_kind='set',
+            support_true=0., support_false=0.,
+            witnesses=tuple(frame['occurrence'] for frame in candidates),
+            records_scanned=found['records_scanned'], incomplete=found['incomplete'],
+            episodic_frames=found.get('episodic_frames', ()))
 
     def _with_components(self, result, *, max_records, work):
         """Read chains and their identity-bound values on the same meter."""
@@ -1491,26 +1476,23 @@ class ThoughtLTMCapability:
         distinct. Rows share one history.
         """
         from Understanding import ConceptualField
-        from EpisodicMemory import query, reinstate
+        from EpisodicMemory import query
         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
         stream = object.__getattribute__(self, '_ThoughtLTMCapability__row')
-        semantic = None
-        if not isinstance(pattern, ConceptualField):
-            semantic = self.best_match(pattern, max_records=max_records, work=work,
-                                       references=references)
-            frames = semantic.get('episodic_frames', ())
-            if frames:
-                reinstate(store, frames, stream)
-            return semantic
+        if isinstance(pattern, ConceptualField):
+            found = query(store, pattern, stream=stream, max_records=max_records,
+                          work=work, references=references)
+            frames = found['value']
         else:
-            cue, cue_stream = pattern, stream
-        found = query(store, cue, stream=cue_stream, max_records=max_records,
-                      work=work, references=references)
-        frames = found['value']
-        reinstate(store, frames, stream)
-        return dict(found, frames=frames, result_kind='set', chunks_loaded=True,
-            support_true=max((row['match'] for row in frames), default=0.), support_false=0.,
-            witnesses=tuple(row['occurrence'] for row in frames))
+            found = self.best_match(pattern, max_records=max_records, work=work,
+                                    references=references)
+            frames = found.get('frames', ()) or found.get('episodic_frames', ())
+        missing = store.recall_chunks(frames, work=work, stream=stream) if frames else ()
+        # The metadata records the read; no semantic result is manufactured.
+        result = {name: value for name, value in found.items() if name not in
+                  ('value', 'meaning', 'answer_operand', 'answer_candidates', 'binding_value', 'reference')}
+        return dict(result, value=None, frames=frames, result_kind='set', chunks_loaded=bool(frames),
+            incomplete=tuple(dict.fromkeys((*found.get('incomplete', ()), *missing))))
 
     def lookup(self, *args, **kwargs):
         raise ValueError('lookup is retired; use query')
@@ -1813,9 +1795,9 @@ _thought_executors = (
         method_grants=(('ltm', ('relation_evidence', 'implication_rules')),
                        ('taxonomy', ('evidence', 'neighbors')),
                        ('conceptual_space', ('intuition_selection', 'implication')))),
-    ThoughtExecutorDescriptor('intuit', 'conceptual-inference', ('meaning',), Mind.SERIAL,
+    ThoughtExecutorDescriptor('intuit', 'conceptual-inference', ('meaning',), Mind.KNOWING,
         (Mind.SERIAL, Mind.KNOWING, Mind.BUDGET),
-        (Mind.SERIAL,), 'intuition', _intuit, evidence_pair=True,
+        (Mind.KNOWING,), 'intuition', _intuit, evidence_pair=True, effect_kind='intuition',
         method_grants=(('conceptual_space', ('intuition',)),)),
     ThoughtExecutorDescriptor('isTrue', 'symbolic-truth', ('description',), Mind.SERIAL,
         (Mind.SERIAL, Mind.LTM, Mind.BUDGET), (Mind.SERIAL,), 'truth', _is_true, evidence_pair=True,
@@ -1825,11 +1807,11 @@ _thought_executors = (
         evidence_pair=True, method_grants=(('conceptual_space', ('payload', 'extent', 'negate')),)),
     ThoughtExecutorDescriptor('query', 'conceptual-lookup', ('description',), Mind.SERIAL,
         (Mind.SERIAL, Mind.LTM, Mind.PRIMING, Mind.BUDGET), (Mind.SERIAL,), 'retrieval', _query,
-        evidence_pair=True, content_kind='set', method_grants=(('ltm', ('query', 'resolve_description')),)),
+        evidence_pair=True, content_kind='set', effect_kind='recall', method_grants=(('ltm', ('query', 'resolve_description')),)),
     ThoughtExecutorDescriptor('ask', 'conceptual-subgoal', ('description',), Mind.SERIAL,
         (Mind.SERIAL, Mind.LTM, Mind.PRIMING, Mind.BUDGET), (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC),
-        'subgoal', _ask, evidence_pair=True, content_kind='subgoal', effect_kind='frames', continues=True,
-        method_grants=(('ltm', ('best_match', 'resolve_description')),)),
+        'subgoal', _ask, evidence_pair=True, content_kind='subgoal', effect_kind='recall', continues=True,
+        method_grants=(('ltm', ('query', 'resolve_description')),)),
     ThoughtExecutorDescriptor('gain', 'expectation-gain', ('concept',), Mind.EXPECTATION,
         (Mind.SERIAL, Mind.EXPECTATION, Mind.BUDGET), (Mind.EXPECTATION,), 'gain', _gain,
         evidence_pair=True, effect_kind='gain', method_grants=(('conceptual_space', ('payload', 'extent', 'negate')),)),
@@ -2753,7 +2735,11 @@ class GrammaticalThoughtRegistry:
                 # polarity contract before the request enters the softmax.
                 continue
             legal.append(request)
-        return tuple(legal)
+        return self.field_candidates(legal)
+
+    def field_candidates(self, requests):
+        """Each field operation is offered once; it returns no per-order operand."""
+        return tuple(requests)
 
     def signature_for(self, meaning, *, work=None, verify_reference=True):
         """Recover one checked operation from a canonical VP and role mask."""

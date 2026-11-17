@@ -38,7 +38,7 @@ def test_public_evaluate_follows_taxonomy_and_retains_record_provenance():
         ("sym", relation), ("sym", cs._concept_allocator.parts.find(b[1], c[1]))}
     assert result["edges_expanded"] == 2
     assert len(cs._ltm_store) == 0
-    cs.retire_concept(relation)
+    cs._concept_allocator.parts.remove(a[1], b[1])
     assert reasoner.evaluate(QuerySpec.from_surface("isPart", a, c))["posture"] == UNKNOWN
 
 
@@ -139,7 +139,7 @@ def test_actual_model_entry_and_checkpoint_keep_taxonomy_identity(tmp_path):
         assert path == TruthGroundedReasoner(source).evaluate(spec)["path"]
         assert path[0].owner == ('sym', relation)
         restored.symbolSpace.ltm_store.reset()
-        restored.conceptualSpace.retire_concept(relation)
+        restored.symbolSpace.ltm_store.parts.remove(*restored.symbolSpace.ltm_store.parts.refs[relation].tolist())
         assert restored.reason_about(spec, spaces=[]).posture == UNKNOWN
     finally:
         source.End()

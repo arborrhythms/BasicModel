@@ -134,6 +134,8 @@ def test_unary_lowering_reads_existing_order_without_minting_a_composing_argumen
     source = f.noun('cat', order=2)
     word = f.words['cat'][0]
     member = f.cs.new_concept(order=1)
+    with torch.no_grad():
+        f.cs.similarity_codebook.W[f.cs._csw_row_of(member)].sigmoid_()
     f.cs.interpret.define(word, member)
     program = f.program(('change', ('lower_unary', 'cat'), 'sleeps'))
     before = len(f.cs.definitions._store()), len(f.cs._concept_allocator.symbols)

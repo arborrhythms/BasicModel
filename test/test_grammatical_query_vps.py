@@ -136,12 +136,11 @@ def test_unary_end_read_keeps_full_description_through_an_existing_occurrence():
     assert result.value.scope == description.scope
 
 
-def test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation():
+def test_missing_vp_binding_fails_without_lazy_reinstallation():
     cs, registry, a, b, context = _world()
     question = registry.form('exist', a)
-    # Named VPs do not retire through the normal frozen-concept lifecycle.
     # Simulate a missing native record in an incomplete structural restore.
-    cs._concept_allocator.drop(question.role_refs[1][1])
+    del cs._concept_allocator.symbols[question.role_refs[1][1]]
     placement = dict(cs._concept_allocator.symbols)
     with pytest.raises(ValueError, match='unavailable|retired|VP'):
         registry.form('exist', a)

@@ -94,6 +94,10 @@ def test_generate_credit_uses_proposal_correction_and_ties_have_no_graph():
     language = SimpleNamespace(exploration_fraction=.5, exploration_temperature=2.,
         generate_policy_logits=lambda top, features:logits)
     language._tree_layer = lambda arity:language
+    from generation_fixtures import native_policy
+    language._generate_binary_ops = ()
+    language._generate_unary_ops = (SimpleNamespace(), SimpleNamespace(),)
+    native_policy(language)
     tops = torch.zeros(1, 2, 1)
     features = torch.zeros(1, 2, 3, 9)
     features[..., -1] = 1

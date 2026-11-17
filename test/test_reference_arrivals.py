@@ -200,7 +200,7 @@ def test_bound_use_does_not_assign_a_kind_before_arrival(monkeypatch):
         composition=Composition(a[0], (Composition(a[0], reference=words['x']),),
                                 operation='definite_unary', head_role=1, order=1))
     # A positive prime makes this a selected bind under the zero-logit dummy.
-    monkeypatch.setattr(resolver, 'prime', lambda signature, stream: signature.new_tensor(1.))
+    monkeypatch.setattr(resolver, 'prime', lambda signature, stream, order: signature.new_tensor(1.))
     used, plan = keep(resolver, site, (frame,), position=1)
     assert plan['items'][0]['reference'] == token
     assert resolver.components.owner.mtm.entries[token].kind is None
@@ -277,7 +277,7 @@ def test_named_bind_to_a_native_individual_keeps_an_occurrence_keyed_value(monke
     native = mint(resolver.components.owner, a[0], order=0)
     frame = SituationFrame(1, torch.stack((a[0], a[0]*0, a[0]*0)),
         torch.tensor([True, False, False]), -1, a[0], symbol_ids=(native,))
-    monkeypatch.setattr(resolver, 'prime', lambda signature, stream: signature.new_tensor(1.))
+    monkeypatch.setattr(resolver, 'prime', lambda signature, stream, order: signature.new_tensor(1.))
     row, plan = keep(resolver, described(a[0], words['x']), (frame,))
     assert plan['items'][0]['reference'] == native
     value = store.meaning_of(row)
@@ -296,7 +296,7 @@ def test_named_bind_to_a_retained_unpooled_occurrence_keeps_its_kind(monkeypatch
     frame = SituationFrame.from_row(store.row(antecedent))
     from chunk_fixtures import recall
     recall(resolver,(frame,))
-    monkeypatch.setattr(resolver, 'prime', lambda signature, stream: signature.new_tensor(1.))
+    monkeypatch.setattr(resolver, 'prime', lambda signature, stream, order: signature.new_tensor(1.))
     row, plan = keep(resolver, described(a[0], words['x']), (frame,), position=1)
     pool = resolver.components.owner.mtm
     token = pool.token_of(store.occurrence_of(row))

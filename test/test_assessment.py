@@ -18,7 +18,8 @@ def test_repeated_operations_are_counted_and_open_references_stay_marked():
     assert tree_text(tree) == 'bind.open x2(lower(token))'
 
 
-def test_ladder_checks_earlier_rungs_without_supplying_a_tree(monkeypatch):
+@pytest.mark.parametrize('count', (20, 21))
+def test_ladder_checks_earlier_rungs_without_supplying_a_tree(monkeypatch, count):
     import AssessmentProbe as probe
     calls = []
     def read(model, text, **kwargs):
@@ -27,11 +28,11 @@ def test_ladder_checks_earlier_rungs_without_supplying_a_tree(monkeypatch):
         return dict(text=text, words=[word], forest=[0], trees=[dict(position=0, word=text)],
                     missing=[], meaning=None, context_meanings=[], answer=text, evidence_kind=None)
     monkeypatch.setattr(probe, 'read_sentence', read)
-    vocabulary = dict(word='a', words=[str(i) for i in range(20)], name='a', verb='b')
+    vocabulary = dict(word='a', words=[str(i) for i in range(count)], name='a', verb='b')
     report = probe.known_probe(None, vocabulary, source='fixture')
     assert [row['status'] for row in report['rungs'][:4]] == ['passed', 'passed', 'passed', 'failed']
     assert report['rungs'][4]['status'] == 'not applicable'
-    assert len(calls) == 3+60+1+1
+    assert len(calls) == 3+3*count+1+1
     assert all(not {'tree', 'meaning', 'reference'}.intersection(kwargs) for _, kwargs in calls)
     assert probe.readiness(report, 4) == 'not ready: failed'
 

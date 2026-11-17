@@ -226,7 +226,8 @@ def test_program_keeps_the_identity_leaf_stamp_before_reference_resolution():
     model=SimpleNamespace(_reconstruction_stack=lambda:trace,inputSpace=SimpleNamespace(),
         symbolSpace=SimpleNamespace(_word_reference_orders=torch.tensor([[0,2]])),
         languageSpace=SimpleNamespace(resolve_lexical_references=resolve),
-        _concept_owner=lambda:SimpleNamespace(mtm=MediumTermMemory(n_vectors=512)),
+        _concept_owner=lambda:SimpleNamespace(mtm=MediumTermMemory(n_vectors=512),
+            _csw_row_of=lambda cid: {101: 10, 102: 11}.get(cid)),
         conceptualSpace=SimpleNamespace(stm=SimpleNamespace(
             strata=SimpleNamespace(capture=lambda *args: None))))
     program=(torch.tensor([[0,1]]),torch.tensor([[[0,-1,0],[0,-1,1],[1,0,-1]]]),

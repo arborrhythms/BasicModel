@@ -347,9 +347,11 @@ def test_promotion_folds_only_actual_events_and_document_end_keeps_ideas(monkeyp
         ideas.append(f.store.occurrence_of(row))
     entry=f.cs.mtm.entries[token]
     assert entry.symbol is not None and len(entry.occurrences)==3
-    from definition_fixtures import projected_content
-    torch.testing.assert_close(f.cs.similarity_codebook.W[f.cs._csw_row_of(entry.symbol)],
-                               projected_content(f.cs, entry.symbol, actual_value))
+    promoted_row = f.cs._csw_row_of(entry.symbol)
+    from ConceptPlacement import seed
+    torch.testing.assert_close(f.cs.similarity_codebook.W[promoted_row],
+                               seed(entry.symbol, f.cs.similarity_codebook.W[promoted_row]))
+    torch.testing.assert_close(f.cs.similarity_codebook.trust.content[promoted_row], actual_value)
     assert f.cs.mtm.value_of(entry, timeline=1).ne(actual_value).any()
     rows,bank=f.store.slots.clone(),f.cs.similarity_codebook.W.clone()
     consolidate(f.cs,f.store)

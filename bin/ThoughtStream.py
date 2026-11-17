@@ -17,6 +17,8 @@ def materialize(result):
     from Queries import _freeze_boundary_value
     from Meaning import ConceptualMeaning
     evidence = dict(result.evidence)
+    if result.semantic_id in ('query', 'intuit') or evidence.get('chunks_loaded'):
+        return result  # These effects have no returned semantic operand.
     meaning = evidence.get('meaning')
     if meaning is None:
         frames = evidence.get('frames', ())
@@ -32,6 +34,11 @@ def materialize(result):
         else:
             meaning = (result.request.constituents[0] if len(result.request.constituents) == 1
                        else result.request)
+    if evidence.get('reference') is not None and evidence.get('binding_value') is not None:
+        # A selected symbolic read supplies a checked filling. Resolve it
+        # before storing its meaning, whose open slots correctly carry zero trust.
+        meaning = fill(meaning, evidence, witnesses=evidence.get('witnesses', ()),
+                       operation=result.semantic_id)
     if int(meaning.role_mask.sum()) == 2:
         meaning = replace(meaning, sentence_kind='relation')
     data = bindings(meaning)
@@ -66,12 +73,11 @@ def query_pattern(goal, kind, left, right, values=None, excluded=()):
                     (('referent', 2),) if right is None else (), pair=(0., 0.), source_evidence=(0., 0.))
 
 
-def candidates(registry, root, active, current, records, descriptions=()):
+def candidates(registry, root, active, current, records, descriptions=(), *, stm):
     from Queries import ThoughtOperationCandidate
     results = slots(records)
     meanings = tuple(result.evidence.get('meaning') for result in results)
     meanings = tuple(value for value in meanings if value is not None)
-    stm = getattr(registry.space, 'stm', None)
     if stm is not None and hasattr(stm, 'state'):
         from ThoughtChunks import held
         resident = dict(held(stm, getattr(registry, '_thought_row', 0)))
@@ -91,7 +97,6 @@ def candidates(registry, root, active, current, records, descriptions=()):
                      and not has_open_slots(item.request))]
     if 'infer' in registry.executable_operation_ids:
         from ThoughtChunks import held
-        stm = getattr(registry.space, 'stm', None)
         premises = () if stm is None or not hasattr(stm, 'state') else held(stm, getattr(registry, '_thought_row', 0))
         for where, premise in premises:
             from Intuition import held_terms
@@ -132,7 +137,8 @@ def candidates(registry, root, active, current, records, descriptions=()):
         return tuple(requests)
     kind = relation(registry, root)
     patterns = [current]
-    frames = [frame for result in results for frame in result.evidence.get('frames', ())]
+    from ThoughtChunks import recalled
+    frames = () if stm is None or not hasattr(stm, 'state') else recalled(stm, getattr(registry, '_thought_row', 0))
     excluded = tuple(frame['occurrence'] for frame in frames)
     if kind is None:
         data = bindings(current)
@@ -171,10 +177,10 @@ def candidates(registry, root, active, current, records, descriptions=()):
         seen.add(key)
         request = registry.form('query', pattern)
         requests.append(ThoughtOperationCandidate(registry.operation_spec('query'), request, ()))
-    return tuple(requests)
+    return registry.field_candidates(requests)
 
 
-def completion_result(meaning, result):
+def completion_result(meaning, result, *, applied=True):
     """A finish carries a proof only when it concludes that proof's value.
 
     A returned subgoal can leave its caller unchanged. Its checked proof stays
@@ -185,6 +191,11 @@ def completion_result(meaning, result):
     if result is None or not any(name in result.evidence for name in
             ('derivation', 'intuition_derivation', 'pervasion_derivation', 'operand_pair')):
         return result
+    # Integration may deliberately retain the incoming goal after an empty
+    # search. Equal anonymous coordinates do not make that attempt its proof.
+    # The checked result remains on the operation's own history record.
+    if not applied:
+        return None
     supplied = result.evidence.get('meaning')
     if supplied is None:
         raise ValueError('a checked thought proof requires its concluded meaning')
@@ -202,10 +213,19 @@ def completion_result(meaning, result):
     return result if same(meaning, supplied) else None
 
 
-def integrate(registry, goal, result, records, *, work=None):
+def integrate(registry, goal, result, records, *, stm, work=None):
     """Compose witnesses already read into serial slots; never search LTM here."""
     if result is None:
         return goal
+    if result.semantic_id == 'query' or result.evidence.get('knowing_written') or result.evidence.get('chunks_loaded'):
+        # System 1 changes the field or loads STM. A later selected operation
+        # reads that state; this effect is not itself a concluded operand.
+        try:
+            same = registry.signature_for(goal, verify_reference=False).operation.semantic_id == result.semantic_id
+        except (TypeError, ValueError):
+            same = False
+        requested = result.evidence.get('requested_meaning')
+        return requested if same and requested is not None else goal
     if (result.semantic_id in ('infer', 'intuit')
             and not (result.support_true or result.support_false)
             and not result.evidence.get('derivation')):
@@ -257,7 +277,8 @@ def integrate(registry, goal, result, records, *, work=None):
             return fill(goal, result, witnesses=witnesses, operation=result.semantic_id)
         return goal
     results = (*slots(records), result)
-    frames = [frame for item in results for frame in item.evidence.get('frames', ())]
+    from ThoughtChunks import recalled
+    frames = () if stm is None or not hasattr(stm, 'state') else recalled(stm, getattr(registry, '_thought_row', 0))
     left, target = goal.role_refs[0], goal.role_refs[2]
     edges = {}
     for frame in frames:
@@ -436,6 +457,31 @@ def write(model, meaning, *, row, _active=None, _bound=None):
         check(meaning)
         if len(store) + len(visited) > store.capacity:
             raise OverflowError('thought row capacity exhausted; forgetting is required')
+    identity, point = None, None
+    owner_ref = store.__dict__.get('_concept_owner')
+    owner = None if owner_ref is None else owner_ref()
+    if int(meaning.role_mask.sum()) > 1:
+        # A checked binding's result is the value of its filled variable.
+        # The other working roles are the request, not durable structure.
+        data = bindings(meaning)
+        filled = [role for tag, role in data.get('_bound_roles', ()) if tag == 'referent']
+        if has_open_slots(meaning) or not filled:
+            raise ValueError('a multi-role thought requires a semantic chain or a checked binding')
+        role = filled[-1]
+        point = meaning.roles[role]
+        identity = meaning.role_refs[2-role] if (data.get('_equality') or data.get('_producing_operation') == 'infer') and role in (0, 2) else meaning.role_refs[role]
+        data['_bound_roles'] = (('referent', 0),)
+        # The bound answer and the identity whose value changed are distinct
+        # semantic bindings. Neither is a grammatical component of the idea.
+        data['_bound_references'] = ((0, meaning.role_refs[role]),)
+        data['_open_references'] = ()
+        data.pop('_forward_references', None)
+        data.pop('_chain_view', None)
+        if identity is not None:
+            data['_identity'] = identity
+        from Meaning import ConceptualMeaning
+        meaning = replace(ConceptualMeaning.from_description(point), bindings=data,
+            scope=meaning.scope, polarity=meaning.polarity, constituents=meaning.constituents)
     active = set() if _active is None else _active
     bound = {} if _bound is None else _bound
     if id(meaning) in active or len(active) > 64:
@@ -473,32 +519,14 @@ def write(model, meaning, *, row, _active=None, _bound=None):
         active.remove(id(original))
     else:
         active.remove(id(meaning))
-    identity, point = None, None
-    owner_ref = store.__dict__.get('_concept_owner')
-    owner = None if owner_ref is None else owner_ref()
-    if int(meaning.role_mask.sum()) > 1:
-        # A checked binding's result is the value of its filled variable.
-        # The other working roles are the request, not durable structure.
+    if point is not None and identity is not None:
+        # Resolve only references that survive the checked projection. Its
+        # other working roles were the request, not concluded constituents.
+        from MemoryLink import retained_reference
         data = bindings(meaning)
-        filled = [role for tag, role in data.get('_bound_roles', ()) if tag == 'referent']
-        if has_open_slots(meaning) or not filled:
-            raise ValueError('a multi-role thought requires a semantic chain or a checked binding')
-        role = filled[-1]
-        point = meaning.roles[role]
-        identity = meaning.role_refs[2-role] if (data.get('_equality') or data.get('_producing_operation') == 'infer') and role in (0, 2) else meaning.role_refs[role]
-        data['_bound_roles'] = (('referent', 0),)
-        # The bound answer and the identity whose value changed are distinct
-        # semantic bindings. Neither is a grammatical component of the idea.
-        data['_bound_references'] = ((0, meaning.role_refs[role]),)
-        data['_open_references'] = ()
-        data.pop('_forward_references', None)
-        data.pop('_chain_view', None)
-        if identity is not None:
-            from MemoryLink import retained_reference
-            data['_identity'] = retained_reference(owner, identity, stream=row)
-        from Meaning import ConceptualMeaning
-        meaning = replace(ConceptualMeaning.from_description(point), bindings=data,
-            scope=meaning.scope, polarity=meaning.polarity)
+        identity = data['_identity']
+        data['_identity'] = retained_reference(owner, identity, stream=row)
+        meaning = replace(meaning, bindings=data)
     from EpisodicMemory import for_meaning
     result = store.append_meaning(meaning, evidence=evidence_pair(meaning),
                                   entry=for_meaning(store,meaning))

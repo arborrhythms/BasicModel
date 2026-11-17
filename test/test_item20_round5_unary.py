@@ -1,4 +1,4 @@
-"""Repeated unary work costs progressively more at the same operand extent."""
+"""Every unary application pays the same cost; history retains legality only."""
 from types import SimpleNamespace as NS
 import torch
 from torch import nn
@@ -15,9 +15,10 @@ class Half(nn.Module):
         return value*2
 
 
-def test_unary_repeat_penalty_grows_without_forbidding_a_legitimate_chain(monkeypatch):
+def test_uniform_operator_cost_does_not_forbid_a_legitimate_unary_chain(monkeypatch):
     from Language import OperationSelectionLayer, SumLayer
     layer = OperationSelectionLayer(d_model=2, ops=[SumLayer()], unary_ops=[Half()], chooser='mlp')
+    layer.operator_cost = 1.
     bias = nn.Parameter(torch.tensor(20.))
     monkeypatch.setattr(layer.chooser, 'score_binary', lambda x, candidates, *a, **k:
         (x.new_zeros(*x.shape[:2], 1), x.new_zeros(x.shape[0], x.shape[1]-1, 1)))
@@ -33,12 +34,12 @@ def test_unary_repeat_penalty_grows_without_forbidding_a_legitimate_chain(monkey
         counts.append(int(UnaryHistory.count(history)[0, 0]))
         probabilities.append(route['probabilities'][0, 0])
         history = route['previous_unary']
-        assert route['kind'].item() == (2 if step < 5 else 0)
-    assert penalties == [0., 1., 4., 9., 16., 25.]
+        assert route['kind'].item() == 2
+    assert penalties == [1.] * 6
     assert counts == [0, 1, 2, 3, 4, 5]
     torch.autograd.grad(-probabilities[2].log(), (bias,))
-    receipt('unary-repeat-penalty', dict(penalties=penalties, counts=counts,
-        first_application_penalty=0, all_repeats_legal=True, stop_after=5,
+    receipt('uniform-operator-cost', dict(penalties=penalties, counts=counts,
+        first_application_penalty=1, all_repeats_legal=True,
         graph_preserved=True, weight=1))
 
 

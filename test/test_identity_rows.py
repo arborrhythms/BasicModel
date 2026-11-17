@@ -34,7 +34,8 @@ def test_meet_ties_kind_requests_and_excludes_missing_defining_content():
     specific_ids, _, specific = resolver.score(q+atoms[1], q*0, q*0, 0, candidates)
     assert specific_ids == (1,) and specific.tolist() == [1.]
     with pytest.raises(ValueError, match='native concept'):
-        resolver.coordinates(-q)
+        invalid = q.clone(); invalid[0] = float('inf')
+        resolver.coordinates(invalid)
 
 
 def test_content_meet_cannot_read_form_while_form_can_identify_its_region():
@@ -43,7 +44,8 @@ def test_content_meet_cannot_read_form_while_form_can_identify_its_region():
     owner = resolver.components.owner
     # The same paired layout as the production owner: form, band, meaning.
     object.__setattr__(owner.similarity_codebook, 'mereology',
-                       SimpleNamespace(percept_width=4, percept_event_width=6))
+                       SimpleNamespace(percept_width=4, percept_event_width=6, meaning_pairs=3,
+                           derive=lambda rows, b=0: owner.similarity_codebook.W[rows]))
     q = atoms[0] + atoms[6]
     candidates = {1: dict(content=atoms[0]+atoms[7], role=0, position=(0,0)),
                   2: dict(content=atoms[1]+atoms[6], role=0, position=(0,0))}
@@ -66,14 +68,15 @@ def test_individual_axes_in_the_change_residual_exclude_form_and_its_gradient():
           document='separate-metrics', sentence=0)
     owner = resolver.components.owner
     object.__setattr__(owner.similarity_codebook, 'mereology',
-                       SimpleNamespace(percept_width=4, percept_event_width=6))
+                       SimpleNamespace(percept_width=4, percept_event_width=6, meaning_pairs=3,
+                           derive=lambda rows, b=0: owner.similarity_codebook.W[rows]))
     observation = (.25*atoms[6]).expand(3, -1).clone().requires_grad_()
     prediction = torch.zeros_like(observation)
-    residual = resolver.components.innovation(observation, prediction)
-    changed_form = resolver.components.innovation(observation+.5*atoms[1], prediction)
+    residual = resolver.components.innovation(observation, prediction, orders=torch.ones(3,dtype=torch.long), prediction_orders=torch.ones(3,dtype=torch.long))
+    changed_form = resolver.components.innovation(observation+.5*atoms[1], prediction, orders=torch.ones(3,dtype=torch.long), prediction_orders=torch.ones(3,dtype=torch.long))
     torch.testing.assert_close(changed_form, residual, rtol=0, atol=0)
     assert not torch.equal(
-        resolver.components.innovation(observation+.5*atoms[6], prediction), residual)
+        resolver.components.innovation(observation+.5*atoms[6], prediction, orders=torch.ones(3,dtype=torch.long), prediction_orders=torch.ones(3,dtype=torch.long)), residual)
     residual.sum().backward()
     assert not observation.grad[:, :6].any()
     assert observation.grad[:, 6].abs().sum() > 0
@@ -188,7 +191,7 @@ def test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_
 
 
 @pytest.mark.parametrize('native_bank', (False, True))
-def test_loader_permanently_rejects_signed_identity_without_modifying_the_row(native_bank):
+def test_loader_rejects_nonfinite_identity_without_modifying_the_row(native_bank):
     resolver, store, atoms = fixture()
     frame, address, _ = native_close(resolver, atoms[0], atoms[6],
                           document='strict-load', sentence=0)
@@ -197,12 +200,13 @@ def test_loader_permanently_rejects_signed_identity_without_modifying_the_row(na
     owner = resolver.components.owner
     if native_bank:
         with torch.no_grad():
-            owner.similarity_codebook.W[owner._csw_row_of(identity),0] = -.125
+            owner.similarity_codebook.W[owner._csw_row_of(identity),0] = float('inf')
     else:
-        store.slots[row, 0] = -.125
+        store.slots[row, 0] = float('inf')
     held = store.slots.clone()
     native = point(resolver.components.owner, identity).clone()
-    with pytest.raises(ValueError, match='native concept coordinates'):
+    error, message = (ValueError, 'native concept coordinates') if native_bank else (FloatingPointError, 'non-finite')
+    with pytest.raises(error, match=message):
         resolver.components.migrate_identity_rows()
     torch.testing.assert_close(store.slots, held, rtol=0, atol=0)
     torch.testing.assert_close(point(resolver.components.owner, identity), native, rtol=0, atol=0)

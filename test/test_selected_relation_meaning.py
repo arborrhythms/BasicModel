@@ -415,3 +415,31 @@ def test_observation_boundary_uses_selected_relation_before_prediction_and_ltm(
     # The live head still trains its selected value; no operation vector or
     # second operand is an entry in the predictor's target.
     assert calls[0][1][0].requires_grad
+
+
+@pytest.mark.parametrize('word_available', [True, False])
+def test_program_concepts_do_not_mistake_an_unpromoted_handle_for_a_concept(monkeypatch, word_available):
+    cs, grammar, registry, language, leaves, program, a, b = _program_owner(monkeypatch)
+    transient = int(cs.mtm.transient_ids[0])
+    entry = program()
+    actual_refs = torch.tensor([[[a[1], transient]]])
+    journal = SimpleNamespace(_choice_refs=actual_refs,
+        _choice_values=torch.stack((leaves[0], leaves[1], entry.end_state[0]))[None,None])
+    host = SimpleNamespace(_concept_owner=lambda:cs, languageSpace=language,
+        symbolSpace=SimpleNamespace(), _reconstruction_stack=lambda:journal,
+        inputSpace=SimpleNamespace(_ar_word_concept_ids=torch.tensor([[a[1],b[1] if word_available else -1]])),
+        conceptualSpace=SimpleNamespace(stm=SimpleNamespace(strata=SimpleNamespace(capture=lambda *args:None))))
+    positions=torch.tensor([[0,1]])
+    captured,=BasicModel._program_entries(host,
+        (positions,entry.actions[None],entry.targets[None],torch.tensor([[-1,-1,0]])),
+        leaves[None],entry.rows[None],entry.word_rows[None],entry.activations[None],entry.end_state[None],
+        concept_ids=torch.tensor([[a[1],transient]]))
+    assert captured.concept_ids.tolist() == [a[1],b[1] if word_available else -1]
+    assert captured.operation_refs[-1].tolist() == [a[1],transient]
+    torch.testing.assert_close(captured.leaves,leaves)
+    meaning=language.program_meaning(captured,registry)
+    if word_available:
+        assert meaning.role_refs == registry.form('part',a,b).role_refs
+    else:
+        assert meaning is None
+    assert transient not in cs._concept_allocator.symbols

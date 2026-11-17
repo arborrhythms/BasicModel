@@ -253,7 +253,8 @@ def test_continuity_is_binding_evidence_and_never_a_column_signature():
     value = torch.zeros(12); value[4] = 1.
     identity = mint(owner, value)
     object.__setattr__(owner.similarity_codebook, 'mereology', SimpleNamespace(
-        percept_width=0, percept_event_width=4))
+        percept_width=0, percept_event_width=4, meaning_pairs=4,
+        derive=lambda rows, b=0: owner.similarity_codebook.W[rows]))
     identity = columns.individual_ids[0]
     original = columns.column_point(identity).detach().clone()
     frame = SituationFrame(1, torch.zeros(3, 12), torch.tensor([True, False, False]),
@@ -415,10 +416,12 @@ def test_sparse_coding_is_confined_to_verbs_and_cannot_train_noun_signatures():
     columns = component_fixture()
     assert not hasattr(columns, 'nouns')
     roles = torch.eye(4)[:3].clone().requires_grad_()
-    meaning = ConceptualMeaning(roles, torch.ones(3, dtype=torch.bool))
+    meaning = ConceptualMeaning(roles, torch.ones(3, dtype=torch.bool),
+        role_refs=tuple(('sym', columns.individual_ids[0]) for _ in range(3)))
     prediction = SimpleNamespace(roles=torch.zeros_like(roles, requires_grad=True))
     assert columns.cost([meaning], None, torch.tensor([True])).item() == 0
-    innovation = columns.innovation(roles.detach(), prediction.roles)
+    innovation = columns.innovation(roles.detach(), prediction.roles,
+        orders=torch.ones(3,dtype=torch.long), prediction_orders=torch.ones(3,dtype=torch.long))
     witness(columns.verbs, innovation)
     columns.cost([meaning], [prediction], torch.tensor([True])).sum().backward()
     # Component expectation owns its local weights, not the observed roles

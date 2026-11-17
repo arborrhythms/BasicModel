@@ -66,6 +66,10 @@ def test_shared_word_teaches_another_argument_without_dividing_existing_authorit
     revision = speech.revision
     learned_operation(speech, 'verb', (words[0],), (), count=1)
     assert speech.revision != revision
+    # This authority test supplies coincident argument classes; geometry
+    # acquisition and competing classes are measured separately.
+    from placement_fixtures import place_at
+    for cid in speech.concepts.values(): place_at(speech.owner, cid, [1.,0.,0.,0.])
     measure = speech.operation('change')
     radius = -math.expm1(-1/3)
     assert measure['uses'] == 1 and measure['definiteness'] == pytest.approx((radius, radius))
@@ -94,15 +98,22 @@ def test_empty_occupants_count_uses_without_inventing_a_class(monkeypatch):
 def test_argument_confidence_uses_member_agreement_instead_of_competing_roles():
     from argument_fixtures import argument_inventory
     owner, speech, (a,b,c) = argument_inventory(('change_argin1','change_argin2','verb_argin1'), count=3)
+    # Supply the agreeing type geometry used by this trust-count fixture.
+    from placement_fixtures import place_at
+    for cid in speech.concepts.values(): place_at(owner, cid, [1.,0.,0.,0.])
     learned_operation(speech, 'change', a, c, count=3)
     learned_operation(speech, 'change', b, c, count=1)
     learned_operation(speech, 'verb', b, count=1)
     # The fourth, orthogonal member disagrees; its other role is independent.
     expected = .75 * -math.expm1(-4/3)
     assert float(speech.radii()[speech.index['change_argin1']]) == pytest.approx(expected)
+    from placement_fixtures import place_at
+    for cid in speech.concepts.values(): place_at(owner, cid, [1.,0.,0.,0.])
     evidence = -math.expm1(-4/3)
     assert speech.operation('change')['definiteness'] == pytest.approx((evidence,evidence))
-    assert 0 < positive_length(owner, speech.seats['change'].concept) <= evidence
+    # The operation collects its two arguments, once per use; words no
+    # longer overwrite that order-two collection's evidence or position.
+    assert positive_length(owner, speech.seats['change'].concept) == pytest.approx(-math.expm1(-8/3))
 
 
 def test_curriculum_measurements_match_hand_counts_and_lexical_report(monkeypatch):

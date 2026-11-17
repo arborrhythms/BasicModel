@@ -156,9 +156,9 @@ def test_equality_is_one_singleton_membership_and_never_merges_native_content():
 def test_vector_and_row_readers_keep_both_poles_and_weight_substitution():
     store, points = clause_store()
     row = store.write_clause(part_clause(), evidence=(.7,.4))
-    torch.testing.assert_close(store.evaluate(points[1],points[2]),torch.tensor([.7,.4]))
+    torch.testing.assert_close(store.evaluate(points[1],points[2],orders=(0,0)),torch.tensor([.7,.4]))
     torch.testing.assert_close(store.evaluate_rows(1,2),torch.tensor([.7,.4]))
-    match, = store.consequents(points[1])
+    match, = store.consequents(points[1],order=0)
     assert match[0] == row[1] and match[1] == pytest.approx(.7)
 
 
@@ -212,7 +212,9 @@ def test_verification_keeps_conflicting_observations_as_two_poles():
 def test_invalid_parent_never_partially_writes_its_child():
     store, _ = clause_store()
     child = part_clause()
-    outer = idea_clause(torch.full((4,),-.1),children=(child,),refs=(1,('clause',0),-1))
+    outer = idea_clause(children=(child,), refs=(1, ('clause', 0), -1))
+    # Corrupt an admitted clause's mutable payload at the writer boundary.
+    outer.point.fill_(float('nan'))
     before = store._concept_owner()._concept_allocator.next_id
     with pytest.raises(ValueError,match='native concept coordinates'):
         store.write_clause(outer)

@@ -48,6 +48,7 @@
       <xs:element name="separateChooser" type="xs:boolean" minOccurs="0"/>
       <xs:element name="reconstructionJitter" type="unitInterval" minOccurs="0"/>
       <xs:element name="explorePaths" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="operatorCost" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="omissionTarget" type="unitInterval" minOccurs="0"/>
       <xs:element name="omissionLimit" type="unitInterval" minOccurs="0"/>
       <xs:element name="omissionHorizon" type="xs:positiveInteger" minOccurs="0"/>
@@ -1116,6 +1117,7 @@
     <xs:all>
       <xs:element name="meaningWidth" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="placementRate" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="objectStartNeighbours" type="xs:positiveInteger" default="3" minOccurs="0"/>
       <xs:element name="placementNegatives" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="placementNegativeWeight" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="primingBridgeCapacity" type="xs:nonNegativeInteger" minOccurs="0"/>

@@ -95,7 +95,8 @@ def infer(context, arguments):
 
 
 def intuit(context, arguments):
-    return context.conceptual_space.intuition(row=context.row, work=context.work)
+    context.conceptual_space.intuition(row=context.row, work=context.work)
+    return pair(None, knowing_written=True, learned_field=True, evidence_kind='intuition')
 
 
 def is_true(context, arguments):
@@ -132,13 +133,14 @@ def query(context, arguments):
 
 
 def ask(context, arguments):
-    from ThoughtReferences import has_open_slots
+    from dataclasses import replace
+    from ThoughtReferences import has_open_slots, bindings
     requested = arguments['argin1']
     if has_open_slots(requested) and callable(context.continuation):
         found = returned_subgoal(context.continuation(requested))
     else:
         references = tuple(ref for _, ref in context.operand_references if ref and ref[0] == 'ltm')
-        found = context.ltm.best_match(requested, max_records=context.max_records,
+        found = context.ltm.query(requested, max_records=context.max_records,
                                      work=context.work, references=references)
     return dict(found, requested_meaning=requested)
 

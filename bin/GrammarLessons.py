@@ -71,6 +71,12 @@ def compose_examples(language, program, tree, *, variables=()):
                                     substitute, leaves[i])
     root, parents, rules = _annotation_tree(language, tree, len(leaves))
     stack, binary, unary = [], [], []
+    from ReferenceContext import denoted_order
+    leaf_orders = getattr(program, 'leaf_orders', None)
+    reference_orders = getattr(program, 'reference_orders', None)
+    if reference_orders is not None:
+        leaf_orders = (reference_orders if leaf_orders is None else
+                       torch.where(reference_orders >= 0, reference_orders, leaf_orders))
 
     def reduce(closing=False):
         if len(stack) < 2:
@@ -83,26 +89,30 @@ def compose_examples(language, program, tree, *, variables=()):
         target = -1 if parent is None else rules[2][parent[0]]
         if closing and target < 0:
             raise ValueError("grammar lesson tree cannot be scheduled by the bounded parser")
-        binary.append((window.detach(), target, bool(closing), len(stack)))
+        orders = torch.stack((left[2], right[2]))
+        binary.append((window.detach(), target, bool(closing), len(stack), orders))
         if target >= 0:
             op = language._tree_layer(2).ops[target]
             with torch.no_grad():
                 value = op(window[0], window[1])
-            stack[-2:] = [(parent, value)]
+            order = denoted_order(language._compose_binary_rules[target], tuple(orders), (), None)
+            stack[-2:] = [(parent, value, order)]
 
     for index, leaf in enumerate(leaves):
-        stack.append((("leaf", index), leaf))
+        order = (torch.tensor(-1, device=leaf.device) if leaf_orders is None else leaf_orders[index])
+        stack.append((("leaf", index), leaf, order))
         reduce()
-        node, value = stack[-1]
+        node, value, order = stack[-1]
         parent = parents.get((node,))
         if parent is not None and parent[0] == 'bind.open':
             raise ValueError('open field bindings require student-state lessons (waits=True)')
         target = -1 if parent is None else rules[1][parent[0]]
-        unary.append((value.detach(), target))
+        unary.append((value.detach(), target, order[None]))
         if target >= 0:
             with torch.no_grad():
                 value = language._tree_layer(1).unary_ops[target](value)
-            stack[-1] = (parent, value)
+            order = denoted_order(language._compose_unary_rules[target], (order,), (), None)
+            stack[-1] = (parent, value, order)
     while len(stack) > 1:
         reduce(closing=True)
     if stack[0][0] != root:
@@ -319,18 +329,26 @@ def compose_loss(language, programs, lessons, *, errors=None, streams=None):
                                          variables=lesson.get("variables", ()))
         prime = getattr(layer, '_expectation_prime', None)
         stream = b if streams is None else streams[b]
-        prime = None if prime is None else prime[stream:stream+1]
-        for window, target, _closing, _depth in binary:
+        prime = None if prime is None else prime.stream(stream)
+        from ReferenceContext import composition_orders, OrderReference
+        def orders_for(orders):
+            ids = tuple(OrderReference(orders.new_full((1,), -1), orders.new_zeros(1, dtype=torch.bool))
+                        for _ in orders)
+            return composition_orders(orders[None], ids, language._compose_binary_rules,
+                                      language._compose_unary_rules)
+        for window, target, _closing, _depth, orders in binary:
             if target >= 0:
                 _, _, route = layer(window.detach()[None], slots=1,
-                    what_ctx=window.new_zeros(1, context_width), expectation_prime=prime)
+                    what_ctx=window.new_zeros(1, context_width), expectation_prime=prime,
+                    candidate_orders=orders_for(orders))
                 probabilities = route['probabilities']
                 errors.error('compose.choice', -probabilities[0, target].clamp_min(1e-30).log(),
                              math.log(probabilities.shape[-1]), category='grammar')
-        for value, target in unary:
+        for value, target, orders in unary:
             if target >= 0:
                 _, _, route = layer(value.detach()[None, None], slots=1,
-                    what_ctx=value.new_zeros(1, context_width), expectation_prime=prime)
+                    what_ctx=value.new_zeros(1, context_width), expectation_prime=prime,
+                    candidate_orders=orders_for(orders))
                 probabilities = route['probabilities']
                 errors.error('compose.choice', -probabilities[0, target].clamp_min(1e-30).log(),
                              math.log(probabilities.shape[-1]), category='grammar')
@@ -426,6 +444,7 @@ def generate_loss(language, programs, lessons, registry, word_code, *, errors=No
         return None
     values = torch.stack(values)
     target = torch.tensor(targets, device=values.device, dtype=torch.long)
-    errors.categorical('generate.choice', language.generate_policy_logits(values), target,
+    _, logits = language.choose_generate(language.generate_policy_logits(values), return_logits=True)
+    errors.categorical('generate.choice', logits, target,
                        category='grammar', objective='output')
     return errors.total()

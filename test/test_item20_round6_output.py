@@ -48,6 +48,10 @@ def test_output_departure_credit_reaches_generate_policy_on_the_answer_side():
     language = NS(generate_policy=policy, _generate_policy_width=2,
         _tree_layer=lambda arity: NS(exploration_fraction=.5, exploration_temperature=1.))
     language.generate_policy_logits = MethodType(LanguageSpace.generate_policy_logits, language)
+    from generation_fixtures import native_policy
+    language._generate_binary_ops = ()
+    language._generate_unary_ops = (NS(), NS(),)
+    native_policy(language)
     audit = dict(departure=torch.tensor([0]), greedy=torch.tensor([[0]]),
         explore=torch.tensor([[1]]), eligible=torch.tensor([[True]]), costs=torch.tensor([[.3, .8]]))
     credit = generate_credit(language, audit, reader(torch.ones(1, 1, 2)),

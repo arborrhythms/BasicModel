@@ -54,6 +54,10 @@ def test_kept_readings_alone_supply_argument_views(tmp_path, monkeypatch, eager_
         dict(text='a red cat', tree=['surface',0,['add',1,2]], waits=True),
         dict(text='the blue dog', tree=['surface',0,['add',1,2]], waits=True)]}, raising=False)
     parts = model.languageSpace.parts_of_speech
+    # This certificate isolates kept membership and lexical head flow.
+    # Round C's independent priming certificate checks the added forecast.
+    monkeypatch.setattr(parts, 'expected_arguments',
+        lambda read, like: like.new_zeros(like.shape[0],len(parts.arguments)))
     events, lessons, initial = [], [], {}
     initial_views = {}
     stage = model._stage_reconstruction_teacher
@@ -74,9 +78,9 @@ def test_kept_readings_alone_supply_argument_views(tmp_path, monkeypatch, eager_
     from dataclasses import replace
     def snapshot(program):
         return replace(program, tree=None, actions=program.actions.clone(), leaves=program.leaves.clone())
-    def observation(program, binary, unary):
+    def observation(program, binary, unary, **kwargs):
         events.append((snapshot(program), binary, unary))
-        return observe(program, binary, unary)
+        return observe(program, binary, unary, **kwargs)
     def annotation(*args, **kwargs):
         before = view_counts(parts)
         result = lesson(*args, **kwargs)
@@ -108,27 +112,40 @@ def test_kept_readings_alone_supply_argument_views(tmp_path, monkeypatch, eager_
             words = winner.word_ids.tolist()
             places = sorted(source.index(word) for word in words)
             positions = {word:places.index(source.index(word)) for word in words}
-            stack, heads = [], {}
+            stack, trees = [], {}
             for kind, op, position in winner.actions.tolist():
                 if kind == 0:
-                    node = ((positions[words[position]],), (words[position],))
-                    stack.append(node); heads[node[0]]=node[1]
+                    span = (positions[words[position]],)
+                    stack.append(span); trees[span] = words[position]
                 elif kind == 1:
-                    rule=model.languageSpace._compose_binary_rules[op]
+                    rule = model.languageSpace._compose_binary_rules[op]
                     if rule.method_name == 'bind':
-                        continue  # Its second operand is a retained field, off this stack.
-                    right,left=stack.pop(),stack.pop()
-                    role=getattr(rule,'head_role',0)
-                    carried = left[1]+right[1] if rule.method_name in ('add','subtract','multiply','divide') else (left,right)[role-1][1] if role else ()
-                    node=(left[0]+right[0],carried)
-                    stack.append(node);heads[node[0]]=node[1]
+                        continue  # The other operand is an off-stack field.
+                    right, left = stack.pop(), stack.pop()
+                    span = left + right
+                    trees[span] = (rule, left, right)
+                    stack.append(span)
                 elif kind == 3:
-                    stack[-2:]=reversed(stack[-2:])
+                    stack[-2:] = reversed(stack[-2:])
             for state in states:
+                def carried(span):
+                    tree = trees[span]
+                    if isinstance(tree, int):
+                        result = initial.get(tree, torch.zeros(len(parts.arguments))).clone()
+                    else:
+                        rule, left, right = tree
+                        mask = flow_mask(rule)
+                        # Reproduce the tree's reduction order, including its
+                        # float additions, without reading chooser occupation.
+                        result = (carried(left) if mask & 1 else torch.zeros(len(parts.arguments)))
+                        if mask & 2:
+                            result = result + carried(right)
+                    for arity, op in state['operations'].get(span, ()):
+                        if arity == 1 and not flow_mask(model.languageSpace._compose_unary_rules[op]):
+                            result = torch.zeros_like(result)
+                    return result
                 for i,span in enumerate(state['spans']):
-                    expected_probability=torch.zeros(len(parts.arguments))
-                    for word in heads[span]:
-                        expected_probability += initial.get(word, torch.zeros(len(parts.arguments)))
+                    expected_probability = carried(span)
                     torch.testing.assert_close(state['kwargs']['occupation'][b,i].cpu(),expected_probability,rtol=0,atol=0)
         return result
     monkeypatch.setattr(model,'_commit_sentence',committed)

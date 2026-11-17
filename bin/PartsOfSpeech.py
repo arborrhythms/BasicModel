@@ -79,6 +79,7 @@ class PartsOfSpeech(nn.Module):
         self._revision = 0
         self.frozen = False
         self.register_buffer('_value_arguments', torch.empty(0, 0), persistent=False)
+        self.register_buffer('_argument_rows', torch.empty(0, dtype=torch.long), persistent=False)
         self._value_start = self._value_width = 0
         if space is not None:
             self.bind(space)
@@ -97,6 +98,8 @@ class PartsOfSpeech(nn.Module):
         # Construction reserves the grammar's seats in their order blocks.
         # Binding fills those fixed slices without moving their boundaries.
         self.concepts = space.prebuild_formal_arguments(self.arguments)
+        self._argument_rows = torch.tensor([space._csw_row_of(self.concepts[name])
+            for name in self.arguments], device=space.similarity_codebook.W.device, dtype=torch.long)
         self._space = weakref.ref(space)
         from OperationSeats import OperationSeats
         self.seats = OperationSeats(space, self.operations)
@@ -105,14 +108,15 @@ class PartsOfSpeech(nn.Module):
 
     @torch.no_grad()
     def prepare_values(self):
-        """Stage the same committed argument directions used by argument_scores."""
+        """Stage the arguments' extensions in the words' space."""
         if self._space is None or self._space() is None or not self.arguments:
             return
         owner = self.owner
         bank = owner.similarity_codebook
         derived = getattr(bank, 'mereology', None)
         self._value_start = 0 if derived is None else derived.percept_event_width
-        self._value_arguments = torch.stack([self._direction(self.concepts[name])
+        from ConceptHierarchy import extension
+        self._value_arguments = torch.stack([extension(owner, self.concepts[name])
             for name in self.arguments]) * self.radii()[:, None]
         self._value_width = self._value_arguments.shape[-1]
 
@@ -161,6 +165,17 @@ class PartsOfSpeech(nn.Module):
         if not values:
             return like.new_zeros(*words.shape, len(self.arguments))
         return torch.stack(values).reshape(*words.shape, len(self.arguments))
+
+    def expected_arguments(self, read, like):
+        """Positive presence of each argument in this place's causal forecast."""
+        if read is None or read.identities is None:
+            return like.new_zeros(like.shape[0], len(self.arguments))
+        rows = self._argument_rows.to(read.identities)
+        addresses = read.identities
+        if addresses.ndim == 1:
+            addresses = addresses[None].expand(read.expected.shape[0], -1)
+        matches = rows[None, :, None] == addresses[:, None, :]
+        return (read.expected[..., 0][:, None] * matches).sum(-1).detach().to(like)
 
     def add(self, word, argument, order=None):
         if self.frozen or int(word) < 0:
@@ -238,10 +253,10 @@ class PartsOfSpeech(nn.Module):
         self.uses[name] += 1
         self._revision += 1
 
-    def observe_kept(self, program, binary_rules, unary_rules):
+    def observe_kept(self, program, binary_rules, unary_rules, *, field=None, stream=0, placements=None):
         if self.frozen or program is None:
-            return set()
-        observed = set()
+            return field
+        occupied = {}
         words = ([None] * len(program.leaves) if program.word_ids is None
                  else program.word_ids.detach().cpu().tolist())
         stack = []
@@ -252,7 +267,7 @@ class PartsOfSpeech(nn.Module):
             if kind == 0:
                 if not 0 <= position < len(words):
                     raise ValueError('occupation journal has an invalid leaf')
-                stack.append(() if words[position] is None else (int(words[position]),))
+                stack.append(() if words[position] is None else (position,))
                 operators.append(set())
                 continue
             if kind not in (1, 2, 3):
@@ -276,16 +291,20 @@ class PartsOfSpeech(nn.Module):
             name = operation_name(rule)
             descendants = operators[at] if kind == 2 or field_bind else set().union(*operators[-2:])
             current = descendants | {name}
-            self.observe_use(name, operands)
-            self.observe_seat(name, operands)
-            observed.update(word for carried in operands for word in carried if word is not None and word >= 0)
+            word_operands = [tuple(words[position] for position in carried) for carried in operands]
+            self.observe_use(name, word_operands)
+            self.observe_seat(name, word_operands)
+            for i, carried in enumerate(operands):
+                for position in carried:
+                    occupied.setdefault(position, set()).add(f'{name}_argin{i+1}')
             mask = flow_mask(rule)
             results = operands[::-1] if kind == 3 else [tuple(
                 word for i, carried in enumerate(operands) if mask & (1 << i)
                 for word in carried)]
             for i, carried in enumerate(results):
-                for word in carried:
-                    self.add(word, f'{name}_argout{i+1}')
+                for position in carried:
+                    self.add(words[position], f'{name}_argout{i+1}')
+                    occupied.setdefault(position, set()).add(f'{name}_argout{i+1}')
             if kind == 2 or field_bind:
                 stack[at] = results[0]
                 operators[at] = current
@@ -293,25 +312,81 @@ class PartsOfSpeech(nn.Module):
                 stack[-2:] = results
                 operators[-2:] = [set(current) for _ in results]
 
-        return observed
+        if placements is None:
+            self._place_groups(words, occupied)
+        else:
+            placements.append((words, occupied))
+        return self._occupied_field(field, program, occupied, stream) if field is not None else None
+
+    def _place_groups(self, words, occupied):
+        owner = self.owner
+        derived = getattr(owner.similarity_codebook, 'mereology', None)
+        if derived is None:
+            return
+        groups, present = [], {}
+        for position, arguments in occupied.items():
+            word = words[position]
+            if word < 0:
+                continue
+            all_arguments = [self.concepts[name] for name in self.arguments if word in self.members(name)]
+            groups.append((tuple(owner._csw_row_of(self.concepts[name]) for name in sorted(arguments)),
+                           tuple(owner._csw_row_of(cid) for cid in all_arguments),
+                           ('word',owner._csw_row_of(word))))
+            for name in arguments:
+                present.setdefault(name, set()).add(word)
+        for name, members in present.items():
+            groups.append((tuple(owner._csw_row_of(cid) for cid in sorted(members)),
+                           tuple(owner._csw_row_of(cid) for cid in self.members(name)),
+                           ('class',owner._csw_row_of(self.concepts[name]))))
+        from Occurrence import sentence_key
+        rows = [owner._csw_row_of(words[position]) for position in occupied if words[position] >= 0]
+        key = sentence_key([derived.content_key(row) for row in rows if row is not None])
+        derived.place_groups(groups, key)
+
+
+    def _occupied_field(self, field, program, occupied, stream):
+        """Keep the word evidence and place; only the concept address changes."""
+        from Understanding import ConceptualField
+        ids = sorted(set(map(int, field.concept_ids)) | set(self.concepts.values()))
+        lookup = {cid: i for i, cid in enumerate(ids)}
+        places, times = field.where.clone(), field.when.clone()
+        evidence = field.evidence.new_zeros(len(ids), *field.evidence.shape[1:])
+        evidence[[lookup[int(cid)] for cid in field.concept_ids]] = field.evidence
+        for position, arguments in occupied.items():
+            if int(program.word_ids[position]) < 0:
+                continue
+            if program.word_extents is None:
+                raise ValueError('kept argument evidence requires the word input extents')
+            where = program.word_extents[position].to(places)
+            matches = (places[stream] == where).all(-1).nonzero().flatten()
+            if len(matches):
+                at = int(matches[0])
+            else:
+                at = places.shape[1]
+                place = places.new_zeros(len(places), 1, 2)
+                time = times.new_zeros(len(times), 1, 2)
+                place[stream, 0] = where
+                if program.symbol_when is not None:
+                    from RowTime import encoder
+                    tick = encoder().decode_index(program.symbol_when[position])
+                    time[stream, 0] = torch.stack((tick, tick+1)).to(time)
+                places, times = torch.cat((places, place), 1), torch.cat((times, time), 1)
+                evidence = torch.nn.functional.pad(evidence, (0, 0, 0, 1))
+            pair = program.leaf_evidence[position].detach().to(evidence)
+            for name in arguments:
+                row = lookup[self.concepts[name]]
+                evidence[row, stream, at] = torch.maximum(evidence[row, stream, at], pair)
+                address = self.owner._csw_row_of(self.concepts[name])
+                observed = self.owner._observed_knowing
+                observed[stream, address] = torch.maximum(observed[stream, address], pair)
+        return ConceptualField(field.concept_ids.new_tensor(ids), evidence, places, times, field.percepts)
 
     @torch.no_grad()
     def observe_seat(self, name, operands):
         if self.frozen or self._space is None:
             return
-        from ConceptTrust import observe
-        from IdentityRows import point
-        values = [point(self.owner, word) for words in operands for word in words if word is not None and word > 0]
-        values = [value for value in values if value is not None]
-        if values:
+        if any(word is not None and word > 0 for words in operands for word in words):
             concept = self.seats[name].concept
-            value = torch.stack(values).mean(0)
-            row = self.owner._csw_row_of(concept)
-            derived = getattr(self.owner.similarity_codebook, 'mereology', None)
-            if derived is not None and self.owner._row_order(row) > 0:
-                value[:derived.percept_event_width] = 0.
-            self.owner.similarity_codebook.W[row].copy_(value)
-            observe(self.owner, concept, value)
             for argument in self.arguments:
                 if argument.startswith(name+'_'):
                     from ConceptHierarchy import observe_member

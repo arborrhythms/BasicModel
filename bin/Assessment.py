@@ -352,6 +352,9 @@ def read_sentence(model, text, *, scalar=None, context=(), answer=False, trace=F
                     continue
                 word = owner.interpret.word_for_form(form)
                 objects = () if word is None else owner.interpret.denotations(word)
+                speech = model.languageSpace.parts_of_speech
+                fits = () if word is None else speech.similarities(word).detach().tolist()
+                arguments = sorted(zip(speech.arguments, fits), key=lambda item: (-item[1], item[0]))
                 evidence = [store.parts.evidence(owner.definitions.row(word, obj)) for obj in objects]
                 attention = (None if reading is None else 'minted' if bool(reading.accepted[0, position])
                              else 'entered' if bool(reading.descended[0, position]) else 'left')
@@ -360,6 +363,7 @@ def read_sentence(model, text, *, scalar=None, context=(), answer=False, trace=F
                     objects=list(objects), definition_evidence=[[float(v) for v in pair] for pair in evidence],
                     trusted=bool(evidence) and all(float(pair[0]) >= definition_threshold() for pair in evidence),
                     attention=attention,
+                    nearest_arguments=[dict(argument=name, fit=float(fit)) for name, fit in arguments[:3]],
                     native_field=native_fields[-1][0][position] if native_fields else None))
             forest, meaning = records[0] if records else ([], None)
             def leaves(node):
@@ -394,6 +398,10 @@ def format_record(record):
     missing = ', '.join(word['form'] for word in record['words'] if word['position'] in record['missing']) or 'none'
     sources = []
     for word in record['words']:
+        arguments = word.get('nearest_arguments', ())
+        if arguments:
+            sources.append('  arguments '+word['form']+': '+', '.join(
+                item['argument']+' '+format(item['fit'], '.6g') for item in arguments))
         field = word.get('native_field')
         if (word['attention'] != 'left' or field is None
                 or not all(lane['value'] > 0 for lane in field['lanes'].values())):

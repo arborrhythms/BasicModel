@@ -229,7 +229,7 @@ def test_invalid_relation_checkpoint_rejected_before_mutation(column, value):
         torch.testing.assert_close(store.state_dict()[name], original, rtol=0, atol=0)
 
 
-def test_close_placement_updates_meaning_and_addressed_read_finds_idea(monkeypatch):
+def test_close_records_placement_and_addressed_read_finds_idea(monkeypatch):
     from types import SimpleNamespace
     from MereologicalCodes import MereologicalCodes
     from MeaningCodes import identity_code
@@ -242,6 +242,10 @@ def test_close_placement_updates_meaning_and_addressed_read_finds_idea(monkeypat
     monkeypatch.setattr(cs, 'word_surface_for_row', lambda row: {a: b'p', b: b'q'}.get(row))
     derived = cb.mereology
     reading = SimpleNamespace(word_rows=torch.tensor([a, b, a]), concept_ids=None)
+    # This one-dimensional chart has only one positive unit direction.
+    # The close records its witness; multi-dimensional movement is tested
+    # in the round-C placement certificates.
+    derived.placement[[a,b]] = 1.
     before = derived.placement.clone()
     cs._sentence_seen_rows[0, :2] = torch.tensor([a,b])
     cs.prime_seen(torch.tensor([[a,b]]))
@@ -250,7 +254,7 @@ def test_close_placement_updates_meaning_and_addressed_read_finds_idea(monkeypat
     target = identity_code(b'p', derived.meaning_pairs,
                            derived.meaning_ones, like=before)
     target = torch.nn.functional.normalize(target, dim=0)
-    assert (derived.placement[a] - target).norm() < (before[a] - target).norm()
+    torch.testing.assert_close(derived.placement[a], target)
     assert int(derived.placement_witnesses[a]) == int(derived.placement_witnesses[b]) == 1
     derived.begin_forward()
     value = cb.lookup_rows(a)
@@ -275,6 +279,8 @@ def test_content_recall_loads_only_the_requested_stream_and_identity_pool():
     owner = store._concept_owner()
     for key in tuple(owner.mtm.entries): owner.mtm.forget(key)
     owner.stm = ShortTermMemory(batch=2, capacity=8, concept_dim=16)
+    from clock_fixtures import for_stm
+    for_stm(owner.stm)
     reader = ThoughtLTMCapability(store=lambda: store, equal=lambda *_: None, tau_id=.99, row=1)
     result = store.cued_rows(store.meaning_of(chain), references=(chain,),
                               max_records=1, work=QueryWorkBudget(64))

@@ -31,6 +31,7 @@ def test_binary_equal_fit_prefers_structural_face_in_the_ordinary_mlp():
 def test_compose_probability_rounding_does_not_overturn_a_better_logit(monkeypatch):
     layer = OperationSelectionLayer(d_model=1, chooser='mlp',
         ops=[_Candidate('opaque'), _Candidate('structural')])
+    layer.operator_cost = 0.  # This fixture measures the chooser's exact score tie rule.
     def score(x, reduced, *_args, **_kwargs):
         logits = x.new_tensor([1e-8, 0.]).expand(x.shape[0], x.shape[1] - 1, 2)
         return x.new_zeros(x.shape[0], x.shape[1], 1), logits
@@ -85,6 +86,7 @@ def test_unary_and_generate_use_the_same_exact_tie_order():
             return x
     ops = [Unary('opaque'), Unary('structural')]
     layer = OperationSelectionLayer(d_model=4, chooser='mlp', unary_ops=ops)
+    layer.operator_cost = 0.
     with torch.no_grad():
         for p in layer.chooser.parameters():
             p.zero_()
@@ -94,7 +96,7 @@ def test_unary_and_generate_use_the_same_exact_tie_order():
         layer.chooser.mlp[-1].weight[0, 0] = 1
     _, _, routing = layer(torch.randn(2, 1, 4))
     assert routing['op'].reshape(-1).tolist() == [1, 1]
-    owner = NS(_generate_binary_ops=(), _generate_unary_ops=ops)
+    owner = NS(_generate_binary_ops=(), _generate_unary_ops=ops, operator_cost=0.)
     scores = torch.tensor([[2., 2., -1.], [3., 2., -1.]])
     assert LanguageSpace.choose_generate(owner, scores).tolist() == [1, 0]
 

@@ -213,7 +213,7 @@ class ReferenceClose(nn.Module):
                 descriptions.append(self.coordinates(pool.read_member(reference, pool.reading_of(reference))))
         return torch.stack(descriptions).amax(0) if descriptions else torch.zeros_like(value)
 
-    def prime(self, signature, stream):
+    def prime(self, signature, stream, order):
         if stream is None:
             return signature.sum()*0
         model = getattr(self.components.owner, '_model', None)
@@ -222,7 +222,7 @@ class ReferenceClose(nn.Module):
         value = getattr(reducer, '_expectation_prime', None)
         if value is None or stream is None:
             return signature.sum()*0
-        value = value[int(stream)].detach().to(signature).reshape(-1)
+        value = value.stream(int(stream)).mean(order)[0].detach().to(signature)
         width = min(value.numel(), signature.numel())
         return (signature[:width]*value[:width]).sum()/signature[:width].sum().clamp_min(1e-12)
 
@@ -346,19 +346,19 @@ class ReferenceClose(nn.Module):
         from IdentityRows import carrier
         return carrier(self.components.owner, value)
 
-    def exclusion_pairs(self):
+    def exclusion_pairs(self, *, order=None):
         """Exclusions witnessed by eight retained occurrences on each side.
 
-        Every retained idea counts, irrespective of native order, reference
+        Every retained idea counts in its own order, irrespective of reference
         resolution or how it was produced. Reads do not create observations.
         """
         derived = getattr(self.components.owner.similarity_codebook, 'mereology', None)
         start = 0 if derived is None else derived.percept_event_width
-        return self.store.coordinate_exclusions(start)
+        return self.store.coordinate_exclusions(start, order=order)
 
-    def exclusion_query(self):
+    def exclusion_query(self, *, order):
         """Read observed exclusion once, for grouping or a bind's candidates."""
-        pairs = self.exclusion_pairs()
+        pairs = self.exclusion_pairs(order=order)
         def support(value):
             return set((value >= .3).nonzero().flatten().tolist())
         def contradicts(a, b):
@@ -430,11 +430,16 @@ class ReferenceClose(nn.Module):
             return None if value is None else self._predicate_key(self.predicate_coordinates(value))
         # Exclusion is a query over retained uses. No learned cooccurrence
         # table or word class supplies it, and no result is written to LTM.
-        contradicts = self.exclusion_query()
+        @cache
+        def contradiction(order):
+            return self.exclusion_query(order=order)
+        def member_space(identity, member):
+            return next(iter(contracts(identity,(member,))))[1]
         for identity, members in tuple(groups.items()):
             anchors = []
             for member in reversed(members):
-                if not anchors or any(contradicts(member['content'], anchor['content'])
+                if not anchors or any(member_space(identity,member) != member_space(identity,anchor)
+                                      or contradiction(member_space(identity,member))(member['content'], anchor['content'])
                                       for anchor in anchors):
                     anchors.append(member)
             if len(anchors) < 2:
@@ -445,8 +450,10 @@ class ReferenceClose(nn.Module):
                                        for anchor in anchors[1:])]
             partitions = {key: [] for key in identities}
             for member in members:
-                scores = [meet_ratios(member['content'], anchor['content'])[1] +
-                          int(predicate(member) == predicate(anchor)) for anchor in anchors]
+                scores = [(meet_ratios(member['content'], anchor['content'])[1] +
+                          int(predicate(member) == predicate(anchor)))
+                          if member_space(identity,member) == member_space(identity,anchor)
+                          else member['content'].new_tensor(-torch.inf) for anchor in anchors]
                 selected = identities[int(torch.stack(scores).argmax())]
                 partitions[selected].append(member)
             groups.pop(identity)
@@ -480,7 +487,7 @@ class ReferenceClose(nn.Module):
                 common = any(any(bool(coverage == 1) for coverage in
                     meet_ratios(x['content'], y['content']))
                     and predicate(x) == predicate(y) for x in newer_a for y in newer_b)
-                if common and not any(contradicts(x['content'], y['content']) for x in a for y in b):
+                if common and not any(contradiction(member_space(left,x))(x['content'], y['content']) for x in a for y in b):
                     groups[left].extend(groups.pop(right))
         result = {}
         for identity, members in groups.items():
@@ -539,22 +546,47 @@ class ReferenceClose(nn.Module):
 
     def score(self, content, predicate, cue, role, individuals, *, stream=None, asserted=(), where=None, when=None, coordinate_read=None, member_order=None, percept_collections=()):
         """Meet content and form, native expectation, then recency and roles."""
+        if member_order is None and individuals:
+            owner = self.components.owner
+            groups = {}
+            for identity, candidate in individuals.items():
+                entry = owner.mtm.entries.get(owner.mtm.token_of(candidate.get('token') or identity))
+                order = (entry.refinement.get('member_order') if entry is not None else None)
+                if order is None:
+                    order = candidate.get('member_order')
+                if order is None:
+                    order = owner._concept_source_order(identity)
+                groups.setdefault(order, {})[identity] = candidate
+            scored = [self.score_order(content,predicate,cue,role,group,stream=stream,
+                asserted=asserted,where=where,when=when,coordinate_read=coordinate_read,
+                member_order=order,percept_collections=percept_collections)
+                for order,group in groups.items()]
+            return (tuple(choice for choices,_,_ in scored for choice in choices),
+                    torch.cat([features for _,features,_ in scored]),
+                    torch.cat([logits for _,_,logits in scored]))
+        if member_order is not None:
+            from MemoryLink import candidate_eligible
+            individuals = {identity: candidate for identity,candidate in individuals.items()
+                if candidate_eligible(self.components.owner, identity, candidate,
+                    kind='percept' if percept_collections or member_order == -1 else 'reference',
+                    order=-1 if percept_collections else member_order, stream=stream, allow_promotion=False)}
+        return self.score_order(content,predicate,cue,role,individuals,stream=stream,
+            asserted=asserted,where=where,when=when,coordinate_read=coordinate_read,
+            member_order=member_order,percept_collections=percept_collections)
+
+    def score_order(self, content, predicate, cue, role, individuals, *, member_order,
+                    stream=None, asserted=(), where=None, when=None, coordinate_read=None, percept_collections=()):
+        """Score an already eligible pool in its one declared geometry."""
         from IdentityRows import form_region
         coordinate_read = self.coordinates if coordinate_read is None else coordinate_read
         content = coordinate_read(content)
         region = form_region(self.components.owner,cue)
-        contradicts = self.exclusion_query()
+        contradicts = self.exclusion_query(order=member_order)
         constraints = (content, *(self.coordinates(value) for value in asserted))
         choices, features = [], []
         for identity,candidate in individuals.items():
             if percept_collections and not (isinstance(identity, tuple) and identity[:1] == ('bp',)):
                 continue
-            if member_order is not None:
-                from MemoryLink import candidate_eligible
-                if not candidate_eligible(self.components.owner, identity, candidate,
-                        kind='percept' if percept_collections or member_order == -1 else 'reference',
-                        order=-1 if percept_collections else member_order, stream=stream, allow_promotion=False):
-                    continue
             value = coordinate_read(candidate['content']).to(content)
             if any(contradicts(own, value) for own in constraints):
                 continue
@@ -571,8 +603,14 @@ class ReferenceClose(nn.Module):
                 continue
             form = (content.sum()*0 if region is None else meet_ratios(region.to(value),value)[0])
             recency = sum(other['position'] > candidate['position'] for other in individuals.values())
+            order = member_order
+            if order is None:
+                owner = self.components.owner
+                entry = owner.mtm.entries.get(owner.mtm.token_of(candidate.get('token') or identity))
+                order = (entry.refinement.get('member_order', -1) if entry is not None
+                         else owner._concept_source_order(identity))
             features.append(torch.stack((candidate_coverage,request_coverage,
-                self.prediction(candidate.get('token') or candidate.get('kind', identity),predicate,role),self.prime(value,stream),form,
+                self.prediction(candidate.get('token') or candidate.get('kind', identity),predicate,role),self.prime(value,stream,order),form,
                 content.new_tensor(-recency/max(1,len(individuals))),
                 content.new_tensor(candidate['role']/2),content.new_tensor(role/2),
                 *self.continuity(candidate, content, stream=stream, where=where, coordinate_read=coordinate_read))))
@@ -1664,7 +1702,7 @@ class ReferenceClose(nn.Module):
                     plan_use(reference, occurrence, kind, joined_value, reading, where, item)
             elif isinstance(reference, int) and reference in alloc.individuals:
                 from ConceptTrust import observe
-                observe(self.components.owner, reference, node.point)
+                observe(self.components.owner, reference)
                 kind = self._derivation_symbol(occurrence)
                 token = plan['individuals'].get(reference, {}).get('token')
                 if token is None:
@@ -1858,6 +1896,7 @@ class ReferenceClose(nn.Module):
         mtm = self.components.owner.mtm
         identities, introduced, referenced = {}, set(), set()
         new_events = {}
+        event_links = {}
         def occurrence_of(node):
             return written.get(('occurrence', id(node)), written.get('root_occurrence')
                                if node is plan['prepared_root'] else None)
@@ -1984,7 +2023,9 @@ class ReferenceClose(nn.Module):
                 referenced.add(token)
                 if not alternative and role == 0:
                     for witness in witnesses:
-                        new_events[witness] = plan.get('link_choices', {}).get(('event', record['action']), Ellipsis)
+                        key = ('event', record['action'])
+                        new_events[witness] = plan.get('link_choices', {}).get(key, Ellipsis)
+                        event_links[witness] = key
                 if role == 0 and changed:
                     values = record.get('timeline_values') if alternative else record['values']
                     if values is None:
@@ -1994,14 +2035,21 @@ class ReferenceClose(nn.Module):
         # Event paths use the same link rule as mentions and kept states.
         from MemoryLink import Occurrence
         owner = self.components.owner
+        events = []
         for token in tuple(referenced):
             entry = mtm.entries[token]
             for branch in entry.timelines:
                 for event in branch.events:
                     if event.occurrence not in new_events or event.role != 0:
                         continue
-                    owner.link(Occurrence(event.occurrence, kind='event', selected=new_events[event.occurrence]), {},
-                        value=mtm.event_value(event), where=None, when=when, stream=plan.get('stream'))
+                    events.append(event)
+        # Preview judged each addition after the earlier selected additions.
+        # Iteration over participant tokens must not reorder those judgments.
+        link_order = {key: index for index, key in enumerate(plan.get('link_choices', {}))}
+        events.sort(key=lambda event: link_order.get(event_links.get(event.occurrence), len(link_order)))
+        for event in events:
+            owner.link(Occurrence(event.occurrence, kind='event', selected=new_events[event.occurrence]), {},
+                value=mtm.event_value(event), where=None, when=when, stream=plan.get('stream'))
         return referenced
 
     def get_extra_state(self):

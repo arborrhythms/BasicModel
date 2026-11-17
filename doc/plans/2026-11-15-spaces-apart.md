@@ -2,11 +2,12 @@
 
 A specification for making one principle hold across the architecture.
 It is built in round C of item 1.8, with the parts of speech
-(`doc/plans/2026-11-15-parts-of-speech.md`). It has no text for Codex
-yet. A rule marked *default* is Claude's choice where Alec has not
-spoken.
+(`doc/plans/2026-11-15-parts-of-speech.md`). Its text for Codex is §45.4
+of the 1.8 specification; §48 there revises it, and §48.12 continues
+it. A rule marked
+*default* is Claude's choice where Alec has not spoken.
 
-## 1. Alec's words (2026-11-15)
+## 1. Alec's words (2026-11-15 and 2026-11-16)
 
 ""a class taking no centre of its members" is actually correct, let's
 dig in. A sub should pull its doms together in dom space as a centroid
@@ -17,6 +18,17 @@ unrelated to its own position."
 
 "Please ensure this design principle across the architecture by making
 sure that the spaces do not have geometric influence on one another."
+
+Alec, 2026-11-16 (§48.5 of the 1.8 specification), of how a new row
+starts on a chart with no placement step: "we have a pi layer that
+determines the parts and wholes in mereological space, and that
+determines the activation. It needs a location in perceptual space, and
+I think (for the case of basic percepts) it should come from the area of
+the PI (I.e weighted perceptual space, as the PI weights determine it).
+The rule about not crossing orders is mostly about not mixing perceptual
+and conceptual space, and this is all perceptual space. (And order zero
+or below)." And of word and object concepts: they "are not placed within
+conceptual space in any particular way on creation".
 
 Standing: "the conceptual space is not shared with perceptual space ...
 that bifurcation needs to be complete; we don't want leakage"
@@ -33,19 +45,42 @@ reading of 2026-10-22 with today's words:* one store and one coordinate
 system hold every order's rows, intermingled, but a position of one
 order is never moved by, nor measured against, a position of another.
 
+**Which line nothing crosses** (Alec, 2026-11-16). It is the line between
+perceptual space and conceptual space. Inside conceptual space each order
+has its own geometry, as above. Inside perceptual space, order zero and
+below, a percept's location is derived from the perceptual locations it
+collects: a basic percept lies at the area of its Pi, the part of
+perceptual space its Pi covers, weighted as the Pi's weights determine.
+*Claude's reading:* the Pi-weighted mean of its members' perceptual
+codes, as `MereologicalCodes._percept_centroid` takes it today with the
+definition's edge weights. A row above order zero has no perceptual form
+(§30.7 of the 1.8 specification) and is a concept.
+
+**Between conceptual orders, only activation** (Alec, 2026-11-16). The
+pull of a concept on its members acts within each order, and on meta
+concepts too: "that propagation happens throughout orders over all
+percepts, concepts, symbols, so it should happen on meta concepts also".
+A word and an object of different orders are therefore related by
+activation only. Once symbols have no dimensions (§3.18 of the 1.8
+specification), what passes between conceptual orders passes through
+symbols, as activation, and symbols, "dimensionless and arbitrary", move
+nothing: "That seems quite good, actually" (§48.11 there).
+
 **What may cross between spaces:**
 
 - a membership or definition edge, which says which concepts belong
   together;
 - activation and evidence: field values, presence, the two lanes, counts
   of views, trust as a scalar of certainty;
-- a seed: a key hashed from content to start an unplaced row.
+- a seed: a key hashed from content, or from the row's own identity, to
+  start an unplaced row.
 
 **What may not:**
 
-- writing a row's position (its codebook row `W`, its placement, its
-  direction, or a content vector that becomes its direction) from
-  positions of another order or of the other space;
+- writing a concept's position (its codebook row `W`, its placement,
+  its direction, or a content vector that becomes its direction) from
+  positions of another order or of the other space (a percept's location
+  taken from the perceptual locations it collects is not such a write);
 - comparing positions of two orders, or of the two spaces, by any
   likeness (coverage, cosine, distance, nearest);
 - a placement step whose context or negatives hold another order's
@@ -61,9 +96,10 @@ position and lies in their space; it is its extension.
 (the percept space's coordinates) beside its meaning lanes, tied at the
 one index (`doc/SymbolFirewall.md`). Writing a percept code into the
 form half is the percept space's own position, stored at the shared
-index (`PerceptCollections.code`, `MereologicalCodes.derive`); *Claude's
-reading:* it is not a crossing, as long as no form is compared with a
-meaning and no meaning is written from a form.
+index (`PerceptCollections.code`, `MereologicalCodes.derive`). It is not
+a crossing (Alec, 2026-11-16: "this is all perceptual space"), as long as
+no form is compared with a meaning and no meaning is written from a
+form.
 
 ## 3. What already holds
 
@@ -96,10 +132,15 @@ Claude.
    class's direction. The agreement it measures is a scalar of evidence
    and may set the class's radius.
 3. `FamiliarTier.promote_identity`: a new identity (order $m+1$) takes
-   `W` from the value of its order-$m$ readings. *Rule:* a new concept's
-   position starts unplaced, from its seed, and is placed by its context;
-   the readings' value is kept as its extension. Counting its occurrences
-   as views stays, with no content.
+   `W` from the value of its order-$m$ readings. *Rule* (revised
+   2026-11-16, §48.11 of the 1.8 specification): an identity is the
+   object that the words it is made with name. It starts at the centroid
+   of the places of the objects named by its words' k nearest words, at
+   its own order (Alec's approximation; *default* k = 3), or at its seed
+   where there is no such object, and is placed afterwards by its meta
+   concepts, not by the sentence's context. The readings' value is kept
+   as its extension. Counting its occurrences as views stays, with no
+   content.
 4. `FamiliarTier._resolve_null_token`, `ReferenceClose.commit` (a
    mention's point into an individual's trust) and
    `FamiliarTier.commit_read_words` (an object's value into a word's
@@ -109,10 +150,17 @@ Claude.
    (one order above that row's members) takes `W`, trust content and
    agreement from the row's slot. *Rule:* as rule 3.
 6. `FamiliarTier.cover_members`, on a chart with no placement: a class's
-   `W` and trust content are the fold of its member rows. *Rule:* not
-   written from its members; it starts at zero, as a declared argument
-   does. *Not determined:* how a row of such a chart is placed at all
-   (§5).
+   `W` and trust content are the fold of its member rows. *Rule*
+   (revised 2026-11-16, §48.5 of the 1.8 specification): on such a chart
+   the whole row is form. An order-zero row is a percept and starts at
+   the area of its Pi over its perceptual members (order zero or below),
+   weighted by its support until round D gives it a Pi; a higher-order
+   row in its support does not count. A row above order zero is a
+   concept, not placed in any particular way on creation: one that words
+   name when it is made starts as rule 3 says, and any other at its seed
+   (*default*, §48.11 of the 1.8 specification; zero puts every new
+   concept on one point, and MTM then finds no two contexts alike). The
+   member fold stays as its extension.
 
 **Positions compared across orders.**
 
@@ -129,7 +177,9 @@ Claude.
    `observe_candidate` and `MediumTermMemory.match_candidate`: centroids
    over support rows of several orders, compared with candidates of any
    order. *Rule:* a support's centroid is taken over rows of one order,
-   and a candidate is compared only with candidates of that order.
+   and a candidate is compared only with candidates of that order. An
+   order-zero candidate, a percept, takes it over its perceptual members
+   (§48.5 of the 1.8 specification).
 10. `FieldProjection.stimulate`, used by `ReferenceClose` to recognise a
     percept and by `OutputOccurrences`: a point scored against every
     inventory row of every order. *Rule:* against the rows of one order,
@@ -138,7 +188,9 @@ Claude.
 11. `FieldProjection.key`, read as a meaning value by `IntuitionField`,
     `NumericPercepts` and `ExtendedRecall`: a centroid over a field's
     rows of every order. *Rule:* a key is taken over one order's rows;
-    the reader names the order.
+    the reader names the order. `IntuitionField` and `ExtendedRecall`
+    read no key at all, since `intuit` and recall return nothing (§48.11
+    of the 1.8 specification); `NumericPercepts` reads it at order zero.
 12. `ReferenceClose.score`: candidates are filtered by order only when
     the site names one. *Rule:* candidates are always compared at the
     request's own order (as `doc/Orders.md` §9 already says of `bind`);
@@ -177,6 +229,11 @@ applies and the change is listed with its test.
 4. *Both stopping gates* hold. Learning results and the assessment's
    tables are read before and after and recorded as the baseline (§43
    of the 1.8 specification).
+5. *A new row's start* (rule 6). On `XOR_symbols.xml` the capacity case
+   of §46.16 of the 1.8 specification passes; an order-zero row's start
+   and its MTM centroid read only its perceptual members; a row above
+   order zero starts at its seed, or a new identity at its words'
+   neighbours' objects; and no promotion is refused on it.
 
 ## 7. What it changes
 

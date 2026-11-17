@@ -40,13 +40,15 @@ def test_all_orders_keep_largest_signed_values_in_one_flat_entry():
     assert all(t.shape[1] == 0 for t in select(field, 0, torch.tensor([True])))
 
 
-def test_recalled_flat_extension_decodes_directly_and_retired_ids_are_counted(tmp_path, monkeypatch):
+def test_recalled_flat_extension_is_retained_in_stm_without_running_the_grammar(tmp_path, monkeypatch):
     from test_item20_round7_time import native
     from reading_fixtures import force_absolute_reading
     from Queries import ThoughtLTMCapability
     from QueryWork import QueryWorkBudget
     from SentenceField import knowing
-    from EpisodicMemory import reinstate
+    from ThoughtChunks import held
+    from ThoughtReferences import bindings
+    from EpisodicMemory import entry_set
     model = native(tmp_path, monkeypatch)
     force_absolute_reading(model)
     owner, store = model._concept_owner(), model.symbolSpace.ltm_store
@@ -64,48 +66,21 @@ def test_recalled_flat_extension_decodes_directly_and_retired_ids_are_counted(tm
             raise AssertionError('direct episodic reconstruction invoked the grammar')
         monkeypatch.setattr(model, 'generate', forbidden)
         monkeypatch.setattr(model.languageSpace, 'reverse_binary_step', forbidden)
+        before, percepts = knowing(model), owner._percept_field
         query = ThoughtLTMCapability(store=weakref.ref(store), equal=lambda *args: 0., tau_id=.9, row=0)
-        found = query.query(opened, max_records=store.capacity,
-                            work=QueryWorkBudget(2048))
-        assert found['frames']
-        recalled = knowing(model)
-        def readings(field):
-            ids = field.concept_ids[:, None] if field.concept_ids.ndim == 1 else field.concept_ids
-            return {int(ids[c, 0]): field.evidence[c, 0].amax(0)
-                    for c in range(len(ids)) if bool(field.evidence[c, 0].any())}
-        original = {}
+        found = query.query(opened, max_records=store.capacity, work=QueryWorkBudget(2048))
+        assert found['frames'] and found['value'] is None
+        views = {bindings(value).get('_rule_row'): (when, value)
+                 for when, value in held(owner.stm, 0)}
         for frame in found['frames']:
-            index = frame['index']
-            for cid, value in zip(store.episodic_concepts[index].tolist(), store.episodic_values[index]):
-                if cid >= 0:
-                    pair = torch.stack((value.clamp_min(0), (-value).clamp_min(0)))
-                    original[cid] = torch.maximum(original.get(cid, torch.zeros_like(pair)), pair)
-        actual = readings(recalled)
-        assert original.keys() == actual.keys()
-        for key in original:
-            torch.testing.assert_close(original[key], actual[key], rtol=0, atol=0)
-        after = model.reverse(model.conceptualSpace.subspace.carrier_like(), field=recalled)
-        from FieldReverse import word_texts
-        expected = tuple(owner.word_surface_for_row(owner._csw_row_of(cid)).decode()
-                         for frame in found['frames']
-                         for cid in store.episodic_concepts[frame['index']].tolist() if cid >= 0)
-        assert word_texts(after.materialize(), recalled.where) == (expected,)
-        assert not owner._percept_field.values.any()
-        # A missing surface keeps the reference with an empty extent; positions
-        # come from the stored reading order, never from a saved input bracket.
-        surface = owner.word_surface_for_row
-        first = int(store.episodic_concepts[row, 0])
-        missing = int((store.episodic_concepts[row] == first).sum())
-        monkeypatch.setattr(owner, 'word_surface_for_row',
-            lambda slot: None if owner.concept_id_at_row(slot) == first else surface(slot))
-        assert reinstate(store, [{'index': row}], 0)
-        assert model._episode_counts['surfaces_missing'] == missing
-        assert knowing(model).where[0, 0].tolist() == [0, 0]
-        previous = model._episode_counts['ids_skipped']
-        store.episodic_concepts[row, 0] = 10**9
-        assert reinstate(store, [{'index': row}], 0)
-        assert model._episode_counts['ids_skipped'] == previous + 1
-        assert 10**9 not in knowing(model).concept_ids.tolist()
+            when, value = views[frame['occurrence']]
+            assert when == tuple(frame['time'].tolist())
+            original = entry_set(store, frame['index'])
+            actual = value.extension[0].field
+            torch.testing.assert_close(actual.ids, original.ids, rtol=0, atol=0)
+            torch.testing.assert_close(actual.values, original.values, rtol=0, atol=0)
+        torch.testing.assert_close(knowing(model).evidence, before.evidence, rtol=0, atol=0)
+        assert owner._percept_field is percepts
     finally:
         model.End()
 

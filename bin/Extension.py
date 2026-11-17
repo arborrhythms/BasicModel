@@ -340,7 +340,8 @@ def understand(model, record, programs):
             empty = ConceptSet(source.concept_ids.new_empty(0), source.evidence.new_empty(0,2))
             teacher = as_field(tuple(joined(roots,empty) for roots in teachers),
                                where=source.where, when=source.when)
-            model._intuition_teacher = observed(model._concept_owner(), teacher)[0].detach()
+            owner = model._concept_owner()
+            model._intuition_teacher = observed(owner, teacher)[0][:, :owner._order_caps()[0]].detach()
     forest = tuple(() if program is None else reading(model, program, record.open_field, row,
         model._sentence_leaf_positions(record,row)) for row,program in enumerate(programs))
     empty = ConceptSet(record.open_field.concept_ids.new_empty(0), record.open_field.evidence.new_empty(0,2))

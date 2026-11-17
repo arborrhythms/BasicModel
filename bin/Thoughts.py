@@ -388,18 +388,10 @@ class LevelledThoughtHistory:
                      if isinstance(record, ThoughtRecord))
 
     def retrieved_frames(self, b=0, limit=32):
-        """Only what effects enter this STM view; never read the store here."""
-        frames, seen = [], set()
-        for record in reversed(self.thought_window(b=b, limit=limit)):
-            result = record.result
-            if result is None or result.semantic_id not in ('ask', 'query'):
-                continue
-            for frame in result.evidence.get('frames', ()):
-                reference = frame['occurrence']
-                if reference not in seen:
-                    frames.append(frame)
-                    seen.add(reference)
-        return tuple(reversed(frames))
+        """Only the still-resident recalled slots enter this view."""
+        from ThoughtChunks import recalled
+        stm = getattr(self, '_thought_stm', None)
+        return () if stm is None else recalled(stm, b)[-limit:]
 
     def thought_state(self, b=0):
         return replay_thoughts(self.thought_history(b=b))

@@ -135,6 +135,53 @@ def denoted_order(rule, operand_orders, operand_ids, alloc):
     return max(orders) if min(orders) >= 0 else -1
 
 
+def composition_orders(orders, denotations, binary_rules, unary_rules, *, references=None,
+                       bank=None, chunks=None):
+    """Stage the orders of the compose menu from its typed operands.
+
+    This is the same denoted-order read used for the kept result. References
+    supply native orders for interpretation and for an off-stack bind.
+    """
+    B, N = orders.shape
+    binary_ops = range(len(binary_rules)) if references is None else references['binary_ops']
+    unary_ops = range(len(unary_rules)) if references is None else references['unary_ops']
+    ids = torch.stack([ref.identity for ref in denotations], -1)
+    timelines = torch.stack([ref.timeline for ref in denotations], -1)
+    binary_ids = (OrderReference(ids[:, :-1], timelines[:, :-1]),
+                  OrderReference(ids[:, 1:], timelines[:, 1:]))
+    binary = []
+    for variant, index in enumerate(binary_ops):
+        value = denoted_order(binary_rules[index], (orders[:, :-1], orders[:, 1:]), binary_ids, None)
+        if references is not None and references['binary_bind'][variant]:
+            from Memory import STMChunks
+            chunk = references['binary_choices'][:, :, variant, 1]
+            bound = STMChunks.gather(chunks[STMChunks.ORDERS], chunk.clamp_min(0))
+            live = orders >= 0
+            newest = (live.sum(-1)-1).clamp_min(0)
+            mention = orders.gather(1, newest[:, None]).expand_as(chunk)
+            value = torch.where(chunk >= 0, bound, mention)
+        binary.append(value)
+    unary = []
+    for variant, index in enumerate(unary_ops):
+        value = denoted_order(unary_rules[index], (orders,), (), None)
+        if references is not None and unary_rules[index].method_name == 'interpret':
+            identity = references['unary_refs'][:, :, variant, 0]
+            native = torch.full_like(value, -1)
+            if bank.orders is not None and bank.ids.shape[1]:
+                native = torch.where(bank.ids[:, None] == identity[..., None],
+                                     bank.orders[:, None], -1).amax(-1)
+            if bank.types is not None:
+                native = torch.maximum(native, torch.where(
+                    bank.types.identities[:, None] == identity[..., None, None],
+                    bank.types.orders, -1).flatten(2).amax(-1))
+            value = torch.where(native >= 0, native, value)
+        unary.append(value)
+    return torch.cat((
+        torch.stack(binary, -1).flatten(1) if binary else orders.new_empty(B, 0),
+        torch.stack(unary, -1).flatten(1) if unary else orders.new_empty(B, 0),
+        orders.new_full((B, 1), -1)), -1)
+
+
 def operation_modes(rule):
     """Temporary reference behaviour belongs to operations, never role names."""
     modes = dict(getattr(rule, 'reference_modes', ()))
@@ -609,7 +656,7 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
             own = identities.gather(1,newest)
             own_relative = flags.gather(1,newest).bitwise_and(1) != 0
             points, ids, chunks, available = STMChunks.bind_menu(chunk_state,mention,
-                exclusions=getattr(bank,'exclusions',None), meaning_start=getattr(
+                orders=mention_order, exclusions=getattr(bank,'exclusions',None), meaning_start=getattr(
                     getattr(getattr(getattr(interpreter, 'owner', None), 'similarity_codebook', None),
                             'mereology', None), 'percept_event_width', 0))
             for column in range(points.shape[2]):

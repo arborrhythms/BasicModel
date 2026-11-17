@@ -261,10 +261,19 @@ def test_thought_keeps_negated_definition_in_a_timed_stm_idea():
     cs.subspace._concept_activations = before.clone()
     cs.subspace._concept_where = torch.tensor([[[0, 2]]])
     cs.subspace._concept_when = torch.tensor([[[5, 6]]])
-    result = SimpleNamespace(semantic_id='ask', evidence={'frames': ({'reference': ('row', row)},)})
     from clock_fixtures import install
     model = install(SimpleNamespace(conceptualSpace=cs, _concept_owner=lambda: cs))
-    apply_thought_effect(model, result, row=0, work=QueryWorkBudget(32))
+    # A recalled premise enters its native STM slot; no query result is a point.
+    from dataclasses import replace
+    from Meaning import ConceptualMeaning
+    from Memory import STM0
+    from ClauseRow import attach_clause_index
+    store = STM0(cs.nDim, capacity=8, relation_capacity=8192)
+    attach_clause_index(model, store, cs)
+    content = replace(ConceptualMeaning.from_description(cs.similarity_codebook.lookup_rows(row)),
+                      role_refs=(('sym', 101), None, None))
+    index = store.append_meaning(content, trust=.7)
+    store.recall_chunks((store.row(index),), stream=0, work=QueryWorkBudget(32))
     from ThoughtChunks import held
     stamp, idea = held(cs.stm, 0)[0]
     assert idea.role_refs[0] == ('sym', 101)
@@ -279,3 +288,14 @@ def test_thought_keeps_negated_definition_in_a_timed_stm_idea():
     size = len(demand)
     descended = torch.stack((adjoint[:size], adjoint[matrix.nOutput+1:matrix.nOutput+1+size]), -1).reshape_as(demand)
     torch.testing.assert_close(descended[1, 0, 0], torch.tensor([0., 1.]))
+
+
+def test_concept_meaning_starts_zero_and_grows_without_changing_direction():
+    from MeaningCodes import defined_code
+    direction = torch.tensor([1., 2., 3., 4.])
+    values = [defined_code(direction, count) for count in (0, 1, 4, 20)]
+    assert not values[0].any()
+    norms = [float(value.norm()) for value in values]
+    assert norms == pytest.approx([0., .2, .5, 20/24])
+    for value in values[1:]:
+        torch.testing.assert_close(value / value.norm(), direction / direction.norm())

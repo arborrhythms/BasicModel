@@ -160,7 +160,7 @@ def test_declared_forms_keep_distinct_targets_when_the_implementation_is_shared(
     for expected, name in enumerate(names):
         tree = [name, 0, 1]
         binary, _ = compose_examples(language, program, tree)
-        assert [target for _, target, _, _ in binary if target >= 0] == [expected]
+        assert [target for _, target, _, _, _ in binary if target >= 0] == [expected]
         assert [row['target'] for row in constituent_examples(language, program, tree)
                 if row['target'] >= 0] == [expected]
 

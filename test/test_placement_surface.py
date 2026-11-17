@@ -104,7 +104,7 @@ def test_unchanged_forward_reuses_edges_bridge_forms_and_witnesses(monkeypatch):
         __import__('PartRead')
 
 
-def test_promotion_uses_its_order_context_and_has_no_higher_order_form(monkeypatch):
+def test_promotion_keeps_its_id_seed_and_has_no_higher_order_form(monkeypatch):
     import weakref
     from ClauseRow import attach_clause_index
     from Memory import LTM0
@@ -144,17 +144,16 @@ def test_promotion_uses_its_order_context_and_has_no_higher_order_form(monkeypat
     row = cs._csw_row_of(symbol)
     cb.lookup_rows(row)
     assert not cb.W[row,:3].any()
-    q = F.normalize(identity_code(derived.content_key(row), derived.meaning_pairs,
-                                 derived.meaning_ones), dim=0)
-    positives = (context > 0) & placed & derived.same_order(row)
-    negatives = derived._negatives(row, context, placed, key)
-    expected = derived.placement_step(q, before_codes[positives], context[positives], before_codes[negatives])
-    torch.testing.assert_close(derived.placement[row], expected)
-    assert int(derived.placement_witnesses[row]) == 1
+    from ConceptPlacement import seed
+    expected = seed(symbol, derived.placement[row])
+    torch.testing.assert_close(derived.placement[row], expected, rtol=0, atol=0)
+    assert int(derived.placement_witnesses[row]) == 0
+    torch.testing.assert_close(derived.placement[placed], before_codes[placed], rtol=0, atol=0)
     radius = cb.trust.lengths[row, 0]
     assert float(radius) == pytest.approx(1 - math.exp(-3/3))
-    torch.testing.assert_close(cb.W[row,3:11], expected * radius)
+    torch.testing.assert_close(cb.W[row,3:11], F.normalize(expected.clamp_min(0),dim=0) * radius)
     assert not cb.W[row,11:].any()
+
 
 
 def test_placement_checkpoint_is_versioned_and_fixed_capacity(monkeypatch):

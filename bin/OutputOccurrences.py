@@ -73,7 +73,12 @@ def generated(model, words, counts, truncated, bank, trace, *, when=None, refere
     active = (torch.arange(W, device=words.device)[None] < counts[:, None]) & bank.terminal_valid.any(-1)[:, None]
     selected = torch.where(active, selected, -1)
     from FieldProjection import stimulate
-    field = stimulate(owner, words)
+    orders = selected.new_zeros(B, W)
+    for b, terminals in enumerate(references):
+        for w, reference in enumerate(terminals[:W]):
+            if reference is not None:
+                orders[b,w] = max(0, owner._concept_source_order(reference))
+    field = stimulate(owner, words, order=orders)
     scalar = torch.zeros_like(active)
     if hasattr(owner, 'basic_percepts'):
         from ScalarPercepts import bare
@@ -128,7 +133,7 @@ def generated(model, words, counts, truncated, bank, trace, *, when=None, refere
         when = selected.new_tensor((tick, tick + 1))[None, None]
     when = when.to(device=words.device).expand(B, W, 2)
     emitted = torch.arange(W, device=words.device)[None] < counts[:, None]
-    field = stimulate(owner, words * emitted[...,None], where=where, when=when)
+    field = stimulate(owner, words * emitted[...,None], order=orders, where=where, when=when)
     # A terminal has selected one spelling. Re-stimulating its word code and
     # expanding its types would add sibling words to that spelling. Read the
     # selected lexical identity's own percepts through the common inverse;

@@ -94,27 +94,16 @@ def consolidate(owner, store, *, context=None, key=None, batch=0, rows=None, wri
             derived = getattr(owner.similarity_codebook,'mereology',None)
             if derived is not None:
                 derived.remember_content(seat,value)
-                if order > 0:
-                    value[:derived.percept_event_width] = 0.
-                derived.placement[seat].zero_()
-                derived.placement_witnesses[seat] = 0
                 derived.placement_dirty[seat] = True
-            owner.similarity_codebook.W[seat].copy_(value)
             owner.similarity_codebook.trust.remember(symbol,value)
             from ConceptTrust import observe
-            observe(owner,symbol,value)
+            observe(owner,symbol)
             alloc.settle(symbol)
             store.referent[index] = store.referent.new_tensor((SYMBOL,symbol))
             store.activity[index] = 1.
             promoted.append(seat)
         derived = getattr(owner.similarity_codebook,'mereology',None)
         if derived is not None:
-            if context is None:
-                context = owner.placement_context(batch)
-            if key is None:
-                from Occurrence import sentence_key
-                key = sentence_key([derived.content_key(row) for row in promoted])
-            derived.place_rows(promoted,context,key)
             owner.similarity_codebook.lookup_rows(promoted)
         return tuple(sources)
     finally:

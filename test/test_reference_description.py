@@ -129,15 +129,15 @@ def test_asserted_constraint_still_excludes_a_contained_candidate():
                            document='constraint', sentence=0)
     token = plan['items'][0]['reference']
     for index, support in enumerate((atoms[1], atoms[2])):
-        observed_individual(resolver, support, index)
+        observed_individual(resolver, support, index, order=0)
     records = resolver.individuals(resolver.accessible(chunk_context(resolver, (frame,))))
     # Own content is a part of the antecedent. Only the separately asserted
     # coordinate conflicts with witnessed evidence on its other coordinate.
     args = (atoms[0], atoms[6], torch.zeros_like(atoms[0]), 0, records)
     allowed, _, _ = resolver.score(*args)
     assert token in allowed
-    assert not resolver.exclusion_query()(atoms[0], atoms[0] + atoms[1])
-    assert resolver.exclusion_query()(atoms[2], atoms[0] + atoms[1])
+    assert not resolver.exclusion_query(order=0)(atoms[0], atoms[0] + atoms[1])
+    assert resolver.exclusion_query(order=0)(atoms[2], atoms[0] + atoms[1])
     excluded, _, _ = resolver.score(*args, asserted=(atoms[2],))
     assert token not in excluded
 
@@ -160,6 +160,6 @@ def test_witnessed_exclusion_still_splits_grouped_uses():
         tuple(value.tolist()) for value in (atoms[0], atoms[0] + atoms[1], atoms[0] + atoms[2]))
     assert len(resolver.individuals(records)) == 1
     for index, support in enumerate((atoms[1], atoms[2])):
-        observed_individual(resolver, support, index)
-    assert resolver.exclusion_query()(atoms[0] + atoms[1], atoms[0] + atoms[2])
+        observed_individual(resolver, support, index, order=0)
+    assert resolver.exclusion_query(order=0)(atoms[0] + atoms[1], atoms[0] + atoms[2])
     assert len(resolver.individuals(records)) == 2

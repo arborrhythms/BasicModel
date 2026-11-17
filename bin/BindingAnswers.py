@@ -109,8 +109,9 @@ def cost(model, meaning, target, *, stream=0):
     if len(values) != 1:
         return meaning.roles.new_ones(())
     owner = model._concept_owner()
+    order = owner._concept_source_order(values[0][0])
     rows = [owner._csw_row_of(identity) for identity in owner.word_concepts(target)]
-    rows = [row for row in rows if row is not None]
+    rows = [row for row in rows if row is not None and owner._row_order(row) == order]
     if not rows:
         return meaning.roles.new_ones(())
     basis = owner.similarity_codebook.lookup_rows(torch.tensor(

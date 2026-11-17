@@ -49,7 +49,7 @@ def test_reified_relation_is_visible_without_endpoint_mutation():
     result = _view(cs).part_of(_ref(a), _ref(b))
     assert result["support_true"] == 1
     assert {item.owner for item in result["path"]} == {_ref(edge)}
-    cs.retire_concept(edge)
+    cs._concept_allocator.parts.remove(a, b)
     assert _view(cs).part_of(_ref(a), _ref(b))["support_true"] == 0
 
 
@@ -76,7 +76,7 @@ def test_snapshot_does_not_read_later_taxonomy_mutations():
     assert _view(cs).part_of(_ref(a), _ref(b))["support_true"] == 1
 
 
-def test_taxonomy_cycles_do_not_loop_and_retired_references_are_unavailable():
+def test_taxonomy_cycles_do_not_loop_and_unknown_references_are_unavailable():
     cs, (a, b, c) = _world()
     cs.add_whole(a, _ref(b))
     cs.add_whole(b, _ref(a))
@@ -84,7 +84,7 @@ def test_taxonomy_cycles_do_not_loop_and_retired_references_are_unavailable():
     result = _view(cs).part_of(_ref(a), _ref(c), max_steps=8)
     assert result["support_true"] == 1
     assert len(result["path"]) == 2
-    cs.retire_concept(c)
+    c = cs._concept_allocator.next_id
     unavailable = _view(cs).part_of(_ref(a), _ref(c))
     assert unavailable["support_true"] == 0
     assert "unavailable_reference" in unavailable["incomplete"]

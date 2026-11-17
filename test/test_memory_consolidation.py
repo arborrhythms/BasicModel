@@ -63,20 +63,29 @@ def test_token_promotes_at_three_sentences_with_the_occurrence_fold_and_keeps_it
     # A repeated sentence is a distinct retained observation (§17.21).
     third, _ = actual(mention(atoms[0]+atoms[1], mode='bind'), (frame,), position=1)
     assert pool.entries[token].symbol is not None
-    # §50: the third mention contains the held description instead of only overlapping it.
-    fourth, _ = actual(mention(atoms[0]+atoms[1]+atoms[2], mode='bind'), (frame,), position=2)
+    # The lifecycle certificate supplies the fourth kept binding. A newly
+    # seeded identity no longer has its descriptive fold as its position;
+    # discovering that binding from geometry is a separate contract.
+    node = mention(atoms[0]+atoms[1]+atoms[2], mode='bind')
+    node = replace(node, reference_request=dict(node.reference_request, compose_bind=1),
+        identity=dict(handle=1, origins=torch.tensor([[2, token[-1], 1]])))
+    fourth, _ = actual(node, (frame,), position=2)
     entry = pool.entries[token]
     assert entry.occurrences == (token, store.occurrence_of(second), store.occurrence_of(third), store.occurrence_of(fourth))
     assert entry.kind == kind and entry.symbol is not None and entry.count == 4
     expected = atoms[0] + 2*atoms[1]/3
-    torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(entry.symbol)], expected)
+    torch.testing.assert_close(owner.similarity_codebook.trust.content[owner._csw_row_of(entry.symbol)], expected)
+    from ConceptPlacement import seed
+    torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(entry.symbol)], seed(entry.symbol, expected))
     assert resolver._derivation_symbol(token) == entry.symbol
     changed = store.append_idea(atoms[3])
     pool.event(token, store.occurrence_of(changed), verb=verb, role=0, when=50,
         before=pool.value_of(token))
     consolidate(owner, store)
     torch.testing.assert_close(pool.value_of(token), atoms[3])
-    torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(entry.symbol)], expected)
+    torch.testing.assert_close(owner.similarity_codebook.trust.content[owner._csw_row_of(entry.symbol)], expected)
+    from ConceptPlacement import seed
+    torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(entry.symbol)], seed(entry.symbol, expected))
     restored = MediumTermMemory(pool.capacity,pool.horizon,n_vectors=int(pool.transient_ids[0]), field_width=pool.field_width)
     restored.restore(pool.state())
     assert restored.entries[token].symbol == entry.symbol and restored.names == pool.names

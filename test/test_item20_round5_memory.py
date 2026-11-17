@@ -110,6 +110,10 @@ def test_promoted_reference_reenters_as_one_higher_order_member():
         pool.closes[0] = clock+1
     concept = promote_identity(owner, key)
     assert owner._concept_source_order(concept) == 1
+    # Supply the higher-order position this reference-menu fixture reads.
+    # Promotion keeps its extension separately and leaves this position unset.
+    with torch.no_grad():
+        owner.similarity_codebook.W[owner._csw_row_of(concept)].copy_(atoms[0])
     from chunk_fixtures import context
     candidates = resolver.individuals(resolver.accessible(context(resolver, ()), stream=0))
     choices, _, _ = resolver.score(atoms[0], atoms[0]*0, atoms[0], 0,
@@ -676,7 +680,7 @@ def test_thought_trial_rollback_preserves_expired_external_references_without_re
     external = STM0(4, capacity=4, relation_capacity=8192)
     row = external.append_idea(torch.ones(4))
     address = external.occurrence_of(row)
-    stores = construct(1, 2, 4)
+    stores = construct(1, 2, 4, episodic_concepts=0)
     store = stores[0][0]
     store._external_memory = lambda: external
     meaning = replace(ConceptualMeaning.from_description(torch.ones(4)), role_refs=(address, None, None))

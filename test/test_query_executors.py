@@ -177,15 +177,12 @@ def test_query_returns_only_the_completed_direction_of_an_unresolved_equality(mo
     monkeypatch.setattr(store, 'part_row', lambda *args, **kwargs: frame)
     target = unresolved if reverse else name
     pattern = question(equality(None, target), (('referent', 0),))
-    # This unit isolates the unresolved-role guard. Certificate 39 exercises
-    # the matching inverse tree itself; here that inverse supplies an operand.
-    monkeypatch.setattr('ExtendedRecall.answer',lambda *args,**kwargs:
-        ConceptualMeaning.from_description(torch.eye(8)[0]))
     from QueryWork import QueryWorkBudget
     result = _context(cs,store=store).ltm.best_match(pattern,max_records=10,work=QueryWorkBudget(32))
     assert result['records_scanned'] == 1
     if reverse:
-        assert len(result['frames']) == 1 and result['support_true'] == .8
+        assert len(result['frames']) == 1
+        assert result['frames'][0]['evidence'] == (.8, 0.)
         assert result['frames'][0]['occurrence'] == frame['occurrence']
         assert result['frames'][0]['meaning'].role_refs == meaning.role_refs
         torch.testing.assert_close(result['frames'][0]['meaning'].roles, meaning.roles)

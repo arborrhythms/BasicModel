@@ -198,7 +198,7 @@ def test_thought_description_operands_keep_cube_forms_and_existing_tail(
         requests.extend(item.request for item in registry.controller_candidates(
             description, description, description,
             descriptions=((description, reference),)) if item.semantic_id == 'ask')
-        assert len(requests) == 4
+        assert len(requests) == 4  # System 1 offers one read, not one point per order.
         for request in requests:
             torch.testing.assert_close(request.roles[0], expected)
             assert request.roles[0, :width].ge(0).all()

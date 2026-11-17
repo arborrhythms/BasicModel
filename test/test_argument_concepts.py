@@ -267,7 +267,7 @@ def test_explicit_class_views_on_a_whole_conceptual_chart_use_the_same_radius_ru
     assert positive_length(cs, word) == 1.
     assert positive_length(cs, parent) == pytest.approx(-math.expm1(-1.))
     bank.trust.project()
-    assert float(bank.W[cs._csw_row_of(parent)].norm()) == pytest.approx(-math.expm1(-1.))
+    assert not bank.W[cs._csw_row_of(parent)].any()  # Extension is not the class's position.
 
 
 def test_revised_separability_evidence_and_contiguous_classes():
@@ -304,6 +304,7 @@ def test_revised_separability_evidence_and_contiguous_classes():
 def test_revised_fit_is_coverage_and_radius_is_commitment():
     from placement_fixtures import place_types
     from IdentityRows import meet_ratios
+    from ConceptHierarchy import extension
     cs,bank,_,speech,(a,b)=argument_fixture('group_argin1')
     speech.add(a,'group_argin1');speech.add(b,'group_argin1');place_types(cs)
     row=cs._csw_row_of(speech.concepts['group_argin1'])
@@ -317,7 +318,7 @@ def test_revised_fit_is_coverage_and_radius_is_commitment():
     for radius in (.1,.3,.6,1.):
         bank.trust.lengths[row,0]=radius
         score=float(speech.similarities(outsider)[0]);scores.append(score)
-        assert score == pytest.approx(float(meet_ratios(speech._direction(outsider),speech._direction(speech.concepts['group_argin1'])*radius)[0]))
+        assert score == pytest.approx(float(meet_ratios(speech._direction(outsider),extension(cs, speech.concepts['group_argin1'])*radius)[0]))
     assert all(x>=y for x,y in zip(scores,scores[1:])) and scores[0]>scores[-1]
     bank.trust.lengths[row,0]=0.;assert float(speech.similarities(a)[0])==0.
 

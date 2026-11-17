@@ -60,7 +60,8 @@ def test_repeated_inverse_states_preserve_walk_choices_gradients_and_optimizer_s
     op = Unary(-1.)
     owner = language((op,)*9)
     owner.generate_policy_logits = lambda value,features=None: value.new_tensor([0.]*9+[1.]).expand(len(value), -1)
-    owner.choose_generate = lambda logits: logits.argmax(-1)
+    from generation_fixtures import undeclared_arguments
+    undeclared_arguments(owner)
     model = SimpleNamespace(languageSpace=owner)
     original = Generative.inverse_menu
     calls = []
@@ -156,7 +157,8 @@ def test_rejected_unary_leaves_its_existing_optimizer_momentum_untouched(monkeyp
     selected, rejected = Unary(-1.), Unary(.5)
     owner = language((selected, rejected))
     owner.generate_policy_logits = lambda x,features=None: x.new_tensor([0., 0., 1.]).expand(len(x), -1)
-    owner.choose_generate = lambda logits: logits.argmax(-1)
+    from generation_fixtures import undeclared_arguments
+    undeclared_arguments(owner)
     model = SimpleNamespace(languageSpace=owner)
     event = torch.tensor([[[.2, .4], [0., 0.]]], dtype=torch.float64, requires_grad=True)
     _ensure_grad_anchors(event.device, (event.dtype,))

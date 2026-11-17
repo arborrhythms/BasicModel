@@ -78,7 +78,7 @@ def close_bracket(owner, field, bracket):
         when=torch.cat((field.when, when[:, None]), 1))
 
 
-def stimulate(owner, point, *, where=None, when=None):
+def stimulate(owner, point, *, order=0, where=None, when=None):
     """Candidate coverage on each lane, then upward definition closure."""
     if point.ndim == 2:
         point = point[:, None]
@@ -112,6 +112,9 @@ def stimulate(owner, point, *, where=None, when=None):
         collections = read(owner, point)
         if collections:
             direct = torch.stack([collections.get(row, direct[i]) for i, row in enumerate(rows)])
+    requested = torch.as_tensor(order, device=point.device, dtype=torch.long)
+    native = requested.new_tensor([owner._row_order(row) for row in rows])
+    direct = direct * (native[:, None, None] == requested)[..., None]
     evidence = close(owner, rows, direct)
     B, E = point.shape[:2]
     if where is None:
@@ -122,21 +125,35 @@ def stimulate(owner, point, *, where=None, when=None):
     return ConceptualField(ids, evidence, where, when, None)
 
 
-def key(owner, field):
-    """Evidence-weighted centroid; no inventory row is created for a pattern."""
+def orders(owner, field, *, stream=None):
+    """Orders represented by evidence, read from their allocated blocks."""
+    ids = field.concept_ids
+    if ids.ndim == 1:
+        evidence = field.evidence if stream is None else field.evidence[:, stream]
+        active = evidence.flatten(1).ne(0).any(-1)
+    else:
+        evidence = field.evidence.amax((-1, -2)).ne(0)
+        ids, active = ((ids.flatten(), evidence.flatten()) if stream is None else
+                       (ids[:, stream], evidence[:, stream]))
+    return tuple(sorted({owner._row_order(row) for cid, live in zip(ids, active)
+        if bool(live) and int(cid) >= 0 and (row := owner._csw_row_of(int(cid))) is not None}))
+
+
+def key(owner, field, *, order):
+    """A centroid at the requested order; the complete field stays intact."""
     ids = field.concept_ids
     if ids.ndim != 1:
         raise ValueError('field key requires shared concept identities')
     rows = [owner._csw_row_of(int(cid)) if int(cid) >= 0 else None for cid in ids]
-    valid = torch.tensor([row is not None for row in rows], device=ids.device)
+    valid = torch.tensor([row is not None and owner._row_order(row) == order for row in rows], device=ids.device)
     codes = owner.similarity_codebook.lookup_rows([0 if row is None else row for row in rows]).to(field.evidence)
     weights = field.evidence.amax(-1) * valid[:, None, None]
     mass = weights.sum(0)[...,None]
     value = torch.einsum('cbe,cd->bed', weights, codes)
     centroid = value / torch.where(mass > 0, mass, 1.)
-    if len(codes):
+    if bool(valid.any()):
         # Matmul and sum accumulate in different orders. Roundoff must not
         # take a convex combination beyond its input coordinates (notably
         # the exact membership rails consumed by the identity chart).
-        centroid = centroid.clamp(codes.amin(0), codes.amax(0))
+        centroid = centroid.clamp(codes[valid].amin(0), codes[valid].amax(0))
     return torch.where(mass > 0, centroid, 0.)

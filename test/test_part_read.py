@@ -92,6 +92,8 @@ def test_answer_read_follows_admitted_surface_with_a_composed_marker(monkeypatch
     from Meaning import ConceptualMeaning
     f = SentenceFixture(monkeypatch)
     marker = f.cs.interpret.lookup_word([84], [], form='unbound-form')
+    with torch.no_grad():
+        f.cs.similarity_codebook.W[f.cs._csw_row_of(marker)].sigmoid_()
     f.words['unbound-form'] = marker, marker
     row = f.store.write_clause(f.clause(('surface',
         ('surface', 'marker-object', 'unbound-form'),

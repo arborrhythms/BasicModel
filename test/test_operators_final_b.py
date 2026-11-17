@@ -123,6 +123,7 @@ def forced_prefix_certificate():
             content_cost=content.detach().tolist(),
             percept_cost=percept.detach().tolist(),
             leaf_cost=(input_reverse+content+percept).detach().tolist(),
+            application_cost=charge('operator.application').detach().tolist(),
             byte_identity=m._last_decoder_byte_identity.detach().tolist(),
             actions=m._attention_words.actions.tolist(),
             meaning_norm=bank.codes[...,104:].norm().item(),
@@ -160,7 +161,7 @@ def test_forced_not_and_or_descend_and_snapshot_certificate():
         # Distinct negative meanings can be erased by disjunction's meet.
         # Exact report spelling cannot waive either native field loss.
         # Both fields, plus the forecast residual, make the reading cost.
-        torch.testing.assert_close(torch.tensor(read['R']), torch.tensor(read['leaf_cost']))
+        torch.testing.assert_close(torch.tensor(read['R']), torch.tensor(read['leaf_cost']) + torch.tensor(read['application_cost']))
         assert all(0 <= value <= 1 for value in read['byte_identity'])
     assert all(value >= 0 for value in report['reads'][0]['content_cost'])
     assert report['reads'][1]['content_cost'][2] > 0

@@ -172,6 +172,14 @@ def apply_thought_effect(model, result, *, row, work, effect_round=None):
         from Intuition import write_knowing
         write_knowing(model, result.evidence, row)
         return
+    if kind == 'intuition':
+        if result.evidence.get('knowing_written'):
+            effect_round.claim(S.KNOWING)
+        return
+    if kind == 'recall':
+        if result.evidence.get('chunks_loaded'):
+            effect_round.claim(S.SERIAL)
+        return
     if kind not in ('reference', 'frames'):
         return
     space = getattr(model, 'conceptualSpace', None)

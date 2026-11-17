@@ -12758,6 +12758,9 @@ class ConceptualSpace(Space):
         self._order_reservations = tuple(int(value) for value in order_reservations)
         self._order_allocation = str(TheXMLConfig.space(
             section, 'orderAllocation', 'geometric')).strip()
+        self.object_start_neighbours = int(TheXMLConfig.space(section, 'objectStartNeighbours', 3))
+        if self.object_start_neighbours < 1:
+            raise ValueError('objectStartNeighbours must be positive')
         self._order_caps()  # Freeze the partition before any reader or graph sees it.
         from Memory import NULL_CONCEPT
         self.null_concept_id = NULL_CONCEPT
@@ -12859,7 +12862,7 @@ class ConceptualSpace(Space):
             if self.expectation_map == 'sigmaPi' and expect_hidden else None)
         intuit_hidden = int(TheXMLConfig.space(section, 'intuitHidden', 64))
         intuit_pairs = int(TheXMLConfig.space(section, 'intuitLayers', 2))
-        self.intuit_stack = (SigmaPiStack(2*self.nVectors, 2*self.nVectors,
+        self.intuit_stack = (SigmaPiStack(2*self._order_caps()[0], 2*self._order_caps()[0],
             hidden=intuit_hidden, pairs=intuit_pairs) if intuit_hidden else None)
         self._sparsity = SparsityRegLayer(
             l1_lambda=float(getattr(self, "l1_lambda", 0.0) or 0.0),
@@ -13671,8 +13674,6 @@ class ConceptualSpace(Space):
 
     def End(self):
         super().End()
-        # The next pass owns its native observation. A review survives in
-        # _episode_review_field until that pass replaces it.
         self._clear_percept_field()
         self._cs_field_where = None
         self._cs_field_when = None
@@ -14452,8 +14453,6 @@ class ConceptualSpace(Space):
             self, n, context=context)
         alloc = _concept_alloc_of(self)
         result = [alloc.new_concept() for _ in range(n)]
-        from ConceptForgetting import warn_capacity
-        warn_capacity(self)
         return result
 
     def _automatic_concept_admitted(self, count=1, *, reason="automatic"):
@@ -14550,19 +14549,6 @@ class ConceptualSpace(Space):
         row = ConceptualSpace._csw_row_of(self, sym)
         both = getattr(self, '_refinement_both', None)
         return row is not None and both is not None and bool(both[row].any())
-
-    def retire_concept(self, sym):
-        """Retire a TRANSIENT symbol that has triggered refinement -- the
-        restructuring it signaled supersedes it. Idempotent; drops its
-        Parts / Wholes records and any idempotency-cache entries pointing at
-        it (store-level lifecycle: :meth:`Layers.ConceptAllocator.drop`).
-        FROZEN concepts never retire (no forgetting)."""
-        from Memory import NULL_CONCEPT
-        if sym == NULL_CONCEPT:
-            return
-        if int(sym) in getattr(self, "_frozen_concepts", ()):
-            return
-        _concept_alloc_of(self).drop(sym)
 
     def _word_definition_ids(self):
         index = self._definition_index()
@@ -15553,15 +15539,14 @@ class ConceptualSpace(Space):
             if callable(ensure_active):
                 ensure_active(int(row) + 1)
         if row is not None and len(ly._tensor_row_keys) != previous_rows:
+            from ConceptPlacement import initialize
+            initialize(self, concept_id, row)
             self.similarity_codebook.trust.capture(row)
             self._priming_edge_revision = None
             derived = getattr(self.similarity_codebook, 'mereology', None)
             if derived is not None:
                 derived._form_valid[row] = False
                 derived.placement_dirty[row] = True
-        if row is not None:
-            from ConceptForgetting import warn_capacity
-            warn_capacity(self)
         return row
 
     def _populate_concept_weights(self, concept_id, *, witness=None, pole=0, coactive=False,
@@ -15958,7 +15943,6 @@ class ConceptualSpace(Space):
                 row = self._csw_concept_row(order, identity)
                 if row is None:
                     raise RuntimeError('formal argument inventory changed after preflight')
-                bank.W[row].zero_()
                 trust.allocated[row] = True
                 trust.known[row] = True
                 trust.lengths[row].zero_()
@@ -15966,7 +15950,6 @@ class ConceptualSpace(Space):
                 trust.agreement[row] = 0
                 trust.content[row].zero_()
                 if derived is not None:
-                    derived.placement[row].zero_()
                     derived.placement_witnesses[row] = 0
                     derived.placement_dirty[row] = True
                 registry[name] = identity

@@ -27,7 +27,8 @@ def decoder(monkeypatch=None):
     from generation_fixtures import undeclared_arguments
     undeclared_arguments(language)
     language.generate_policy_logits = MethodType(LanguageSpace.generate_policy_logits, language)
-    language.choose_generate = lambda logits: logits.argmax(-1)
+    from generation_fixtures import undeclared_arguments
+    undeclared_arguments(language)
     def binary(parent, *args, return_status=False, **kwargs):
         pair = (parent*.25, parent*.75)
         return (*pair, torch.zeros(parent.shape[0], dtype=torch.bool)) if return_status else pair

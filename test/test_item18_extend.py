@@ -64,7 +64,7 @@ def test_36_determiners_read_the_stored_members_and_mtm(monkeypatch):
     import ConceptHierarchy
     monkeypatch.setattr(ConceptHierarchy,'members',lambda owner,cid: (1,2,3) if cid == 4 else ())
     codes = torch.eye(3)
-    owner = SimpleNamespace(_csw_row_of=lambda cid: cid-1,
+    owner = SimpleNamespace(_csw_row_of=lambda cid: cid-1, _row_order=lambda row: 0,
         similarity_codebook=SimpleNamespace(lookup_rows=lambda rows: codes[rows]))
     kind, = sets([[0.,0.],[0.,0.],[0.,0.],[1.,0.]])
     op = LowerLayer()
@@ -83,7 +83,7 @@ def test_36_determiners_read_the_stored_members_and_mtm(monkeypatch):
     generic = results['lower']
     field = ConceptualField(generic.ids,generic.values[:,None,None],
                             torch.zeros(1,1,2),torch.zeros(1,1,2),None)
-    torch.testing.assert_close(key(owner,field)[0,0], codes.mean(0))
+    torch.testing.assert_close(key(owner,field,order=0)[0,0], codes.mean(0))
 
 
 
@@ -213,11 +213,10 @@ def test_39_cued_rows_preserves_extension_relevance_without_role_matching():
     assert '_cue_roles' not in inspect.getsource(EntryRead.cued_rows)
 
 
-def test_39_sentence_object_is_the_generated_operand_and_not_the_witness_row(monkeypatch):
+def test_39_generated_sentence_preserves_its_object_extension(monkeypatch):
     from dataclasses import replace
     from test_clause_acceptance import SentenceFixture
     from Extension import ConceptSet,Context,Node,generated,held_context,stored
-    from ExtendedRecall import answer
     from Language import AskLayer
     from ThoughtReferences import fill,with_slots,open_slots
     from Understanding import ConceptualField
@@ -259,15 +258,12 @@ def test_39_sentence_object_is_the_generated_operand_and_not_the_witness_row(mon
         root.children[0].field,question_vp.field,context=root.context))
     request=with_slots(replace(clause.meaning,role_refs=(('sym',subject),('sym',predicate),None),
         extension=(question_tree,)),(('referent',2),),pair=(0.,0.))
-    result=answer(f.cs,request,replace(retained,extension=trees[0]))
-    assert result is not None and result.role_refs[0] == ('sym',obj)
-    assert result.extension[0].field.ids[result.extension[0].field.values[:,0]>0].tolist() == [obj]
-    bound=fill(request,dict(meaning=result,answer_operand=result,frames=(f.store.row(row),),
-        support_true=.7,support_false=0.),witnesses=(f.store.occurrence_of(row),),operation='query')
-    assert not open_slots(bound)
-    assert bound.role_refs[2] == ('sym',obj)
-    assert bound.role_refs[2] != f.store.occurrence_of(row)
-    torch.testing.assert_close(bound.roles[2],f.registry._payload(('sym',obj)))
+    # §48.7 retires recall returning an answer operand. The native generated
+    # tree still preserves the object's own identity and extension.
+    assert object_node.reference == ('sym',obj)
+    assert object_node.field.ids[object_node.field.values[:,0]>0].tolist() == [obj]
+    assert object_node.reference != f.store.occurrence_of(row)
+    assert question_tree.children[1].children[1].context.open
 
 
 def test_40_signed_existence_is_maximum_and_analogy_is_separate():

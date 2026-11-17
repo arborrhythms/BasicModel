@@ -112,7 +112,7 @@ class NumericPercepts:
         bracket = torch.stack((field.where[..., 0].amin(1), field.where[..., 1].amax(1)), -1)
         field = open_field(self.model, field, bracket=bracket)
         owner = self.model._concept_owner()
-        point = key(owner, field)
+        point = key(owner, field, order=0)
         carrier = SubSpace.from_tensor(point, inputShape=point.shape[1:], outputShape=point.shape[1:],
                                       nInputDim=point.shape[-1], nOutputDim=point.shape[-1])
         carrier._concept_ids, carrier._concept_activations = field.concept_ids, field.evidence

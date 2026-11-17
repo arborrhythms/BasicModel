@@ -28,7 +28,8 @@ def test_same_order_identity_row_survives_the_epoch_boundary(operation):
     term = Composition(operands[0].point, operands, operation=operation, order=1)
     clause = Clause(ConceptualMeaning.from_description(term.point), relation=operation,
         refs=(left, predicate_identity(operation), right), composition=term, order=1)
-    trust = min(float(store._concept_point(cid).norm()) for cid in symbols)
+    from ConceptTrust import positive_length
+    trust = min(positive_length(owner, cid) for cid in symbols)
     written = store.write_clause(clause, evidence=(1., .25))
     row = alloc.parts.find(left, right)
     assert written == ('sym', row) and store.row(written)['evidence'] == pytest.approx((trust, .25*trust))
@@ -218,6 +219,10 @@ def test_ambiguous_pointer_identity_across_time_is_empty(tmp_path):
             pool.bind(token, store.occurrence_of(extra), kind=None, value=points[i], when=i)
         symbol = promote_identity(owner, token, word=label)
         assert alloc.order_of(symbol) == 1
+        # This ambiguity fixture supplies three separate order-one positions;
+        # promotion no longer copies the observed order-zero points.
+        with torch.no_grad():
+            owner.similarity_codebook.W[owner._csw_row_of(symbol)].copy_(points[i])
         relata.append((label, symbol))
     vectors = torch.stack([store._concept_point(cid) for _, cid in relata])
     support = vectors.ne(0)

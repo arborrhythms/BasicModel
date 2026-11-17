@@ -2644,10 +2644,16 @@ rewritten to it before any text for Codex.
   operation."
 - *The definition store.* "The definition store can still be split, just
   flag it in future work". So the two kinds of row of "The round" above
-  are not in a round; they are in FutureWork.
+  are not in a round; they are in FutureWork. *Reversed* (Alec,
+  2026-11-16): "The split between concepts and symbols is not future
+  work." It is built in round D (sigma-pi §18.22).
 - *Who makes symbols.* "lets let interpret() make all symbols. We should
   probably call it interpret." A promoted conjunction is then a concept
-  and not a symbol.
+  and not a symbol. *Corrected* (Alec, 2026-11-16): "Interpret is more
+  about the process of creating meta-concepts (I misspoke and called
+  these symbols)." So `interpret` makes the meta concept that joins a
+  word and its object; who makes symbols, and a promoted conjunction,
+  are as sigma-pi §18.22 and §18.23 have them.
 - *The trust of a word's mapping.* "the trust of a words mapping is
   really something the architecture should be setting based on success.
   lets just use one, and flag it." It is one, as `InterpretLayer.define`
@@ -7787,6 +7793,28 @@ place. §18.7 is held and is rewritten before it goes to Codex. Its larger
 part is giving attention's brackets, the fold ladder and word tiling a
 second axis. The image data is built (on `testing`, `data/images/`,
 `bin/image_corpus.py`, with `image_corpus.load(name, split)`).
+
+
+**Number as an intensity, words that name it, and feeling (Alec,
+2026-11-16).** "The number modality that we are building will have
+relations between numeric literals and can also be named by words, which
+is what will test relations between symbols and what they signify, each
+having an input context and each set relating to the other through meta
+concepts (this is not the same as words (one) and numeric literals (1);
+we are exposing number to the model directly, as an intensity value
+(like a digital image or perhaps a feeling)." So a number is given as an
+intensity (the level sets above), never as a numeral, and what is tested
+is a word against the number it names: each has an input context of its
+own, and the two relate through meta concepts (§48.3).
+
+*Flagged as a hypothesis.* Alec: "Please flag in the doc that
+non-symbolic exposure may be seen as feelings, since modern LLMs do that.
+(I.e. the hypothesis that continuous data (e.g. image data) exposes LLMs
+to feelings)." A number given as an intensity, or an image given as its
+pixels, may be seen as feeling rather than as symbol; since modern LLMs
+are given continuous data such as images, the hypothesis is that such
+data exposes them to feelings. Nothing in the architecture or its tests
+depends on it.
 
 ## 23. Codex return to Alec for Claude: completion of this round (2026-11-14)
 
@@ -13044,6 +13072,8 @@ coordinates that do not overlap.
    rows, which is in FutureWork by Alec's word. As built, the mapping row
    that `define` writes is the meta-concept, `DefinitionIndex` is the
    dictionary, and `denotations` is the search among siblings.
+   (*Reversed* 2026-11-16: the split is built in round D, sigma-pi
+   §18.22.)
 
 ### 30.7 Placement by the field, and no form for a symbol
 
@@ -13070,7 +13100,8 @@ coordinates that do not overlap.
   (*Default:* Alec's "Yes, all three" of 2026-11-12 was given for that
   pass and lapses with it.)
 - *Two kinds of row* (§3.19 "The round", certificates 57 to 62):
-  FutureWork, by Alec's word.
+  FutureWork, by Alec's word. *Reversed* (Alec, 2026-11-16): built in
+  round D, sigma-pi §18.22.
 - The trust of a mapping set by success, learned attention acts, the
   removal of tanh and atanh from `SigmaLayer` and `PiLayer`, and geometry
   for inclusion: FutureWork.
@@ -16120,6 +16151,15 @@ until after the merge (Alec: "Defer until after merge"), so §42.1 is
 withdrawn and §31.3 stands as it was. §40.4 is withdrawn: certificate
 90 is a baseline result.
 
+**The order, amended (Alec, 2026-11-16):** "I think we should position D
+as item 1.7. Then review and commit round C, and merge with the
+performance branch. Then do everything else in 1.8", and "(and push
+before moving on to 1.7)". So round D leaves this item and becomes item
+1.7 (`doc/plans/2026-11-14-sigma-pi-layers.md`), which follows it in the
+countdown. The order is now: round C, reviewed and committed; the merge
+of the `performance` branch; the sentence as one block and the rest of
+this item; the push; then item 1.7.
+
 **The baseline rule** (*defaults* are Claude's).
 
 1. *A learning certificate is recorded, not repaired.* A certificate
@@ -17273,4 +17313,3013 @@ Return as §46: the checkpoint's hash; each change with the test that
 failed before it; the ladder; the certificates and measurements, before
 and after; the baseline list; the sweep; the source snapshot; and every
 edit, if any, in the five protected places (there should be none).
+~~~
+
+## 46. Round-C return in progress (Codex, 2026-11-15; through Alec for Claude)
+
+**Partial return; stopped at the capacity question in §46.16.** Alec authorized §46.5's
+narrow word-loop exception and continuation under §46.9's field-read
+assumption. Both are flagged for Alec and Claude's review. Those earlier
+questions are resolved; the separate automatic-promotion capacity contract
+is not. Nothing in round C is committed or pushed. The attempted final
+validation found defects and was interrupted for their repairs; it is not
+a completed sweep or finished-source measurement. Details follow below.
+
+### 46.1 Authorized local checkpoint
+
+Before any round-C edit, the accepted source snapshot was checked:
+**`eb87db17045ad78c83bab06903209ee73f2d8f3bc6a953caf26d99fb92faf1c2`**.
+Rounds A and B were then committed on local `main` as
+**`ac8fbb011483b12c3b9bd21763f284a6880c8c87`**, with subject
+**"Checkpoint item 1.8 rounds A and B (baseline)"**. The commit includes
+all 366 selected paths (364 changed files with Git's two rename detections),
+including untracked source, tests, fixtures and the item-1.8 plan files.
+No receipt or ignored file was staged. The unrelated
+`doc/plans/2026-11-14-item1-5.md` and loose downloaded
+`shard_00000.parquet` remain untracked and outside the checkpoint. Nothing
+was pushed. Round C is the uncommitted diff from this checkpoint.
+
+### 46.2 Operator cost: cause, change and certificates reached
+
+The old unary history charged **0, 1, 4, 9, ...** at the same slot. The
+binary bind dummy's fixed score bypassed that penalty entirely. Complete
+path comparison did not count operator applications.
+
+`operatorCost` is now declared in `data/model.xml` and `data/model.xsd`,
+default **1**, finite and nonnegative, in logit/path-cost units. Compose
+deducts it from every operator score, after the dummy's fixed score and
+expectation bias have been resolved. The alternative distribution gets
+the same deduction. STOP/wait is uncharged. `UnaryHistory.penalty` and
+both its uses are removed; the existing history and its inverse/swap
+legality remain.
+
+`LanguageSpace.choose_generate` charges the same amount, including every
+generate operator, and can return its charged logits to its caller. The
+live generation walk, its departure-credit reader in `WalkTrials`, and
+the generation lesson read those logits, so selection, sampling and
+credit use the same distribution. The choice-only callers retain their
+choice return. The edit in `Models.py` is in the generation walk, outside
+the protected word loop.
+
+`WholePaths.finish` records one `operator.application` regularizer term
+(the specified default). It counts compose journal kinds 1, 2 and 3 and
+the applied operators in the reconstruction and output generate traces;
+leaves, STOP and padding are not applications. A changed suffix replaces
+the term's complete count, rather than charging its reused prefix twice.
+The term contributes to R, hence the existing R+A comparison and
+`WholePaths.credit`, as well as the registry objectives. No thought face
+or attention act has been assigned a new operator price.
+
+All four new tests in `test_item18_operator_cost.py` **failed before,
+3.89 seconds**, for their intended assertions:
+
+| Test | Before | After |
+|---|---|---|
+| `test_repeated_unary_has_the_same_cost_as_its_first_use` | For score 4 and declared c=.75, scores **4, 3, 0** | **3.25, 3.25, 3.25**; STOP remains **-2** |
+| `test_binary_bind_dummy_pays_the_declared_operator_cost` | Dummy score **0** even with expectation present | **-.75** |
+| `test_generate_cost_leaves_stop_uncharged` | Scores **(.5,.5,0)** select operator 0 | With c=1, selects STOP 2 |
+| `test_complete_path_pays_c_for_one_more_kept_application` | R remains **2**, missing all five applications | R **5.75** for five applications; **6.5** for six; paired advantage **.75**, shorter path kept |
+
+The path test includes a transpose, a unary, a binary, reconstruction
+generation and output generation, and checks the regularizer's objective
+exposure. An intermediate implementation used the boolean active mask as
+the count's dtype; the path test exposed the collapsed count (**three
+passed, one failed, 2.51 seconds**). The count now uses the reading's
+floating tensor. No fixture size, seed or presentation count changed.
+
+The focused after-run is **55 passed, one warning, 22.47 seconds** across
+the four certificates, unary-history checks, structural preference,
+whole-paths and grammar lessons. Ports keep these surviving contracts:
+
+- `test_item20_round5_unary.py::test_unary_repeat_penalty_grows_without_forbidding_a_legitimate_chain`
+  is retired by name for its progressive-penalty contract (§45.3, point 1).
+  Its replacement, `test_uniform_operator_cost_does_not_forbid_a_legitimate_unary_chain`,
+  retains six legal applications, the same history counts and the live
+  gradient assertion; all six now pay **1**. The old penalty-induced STOP
+  assertion is retired with that contract.
+- `test_structural_preference.py::test_compose_probability_rounding_does_not_overturn_a_better_logit`
+  and `test_unary_and_generate_use_the_same_exact_tie_order` explicitly use
+  c=0 to retain their isolated pre-cost score comparisons and every
+  assertion. At c=1 the former's 1e-8 float32 difference is rounded away
+  by subtraction, and the latter's formerly tied operators lose to STOP;
+  neither old fixture specified the new cost. The new cost certificates
+  exercise positive c separately.
+- `test_whole_paths.py::test_output_departure_runs_only_the_last_stage`
+  declares its empty generate catalogue and operator cost; its prefix
+  ownership and cost assertions remain.
+- `test_grammar_lesson_context.py::test_one_concept_generation_annotation_trains_stop_on_the_existing_code`
+  supplies the native charged-choice reader on its lightweight language
+  mock; both gradient-sign assertions remain.
+
+The two structural-preference cases and two incomplete mocks, together
+with the retired penalty assertion, were the **five failures** in the
+intermediate neighboring run (**50 passed, 22.52 seconds**). No learning
+baseline mark was added. Rung-1 and unforced-turnover before/after
+measurements remain owed; the accepted B values in §44 are retained as
+the before baseline, not claimed as round-C results.
+
+### 46.3 Design question: the mixed-order prime is produced inside a protected function
+
+Spaces-apart §5 asks for the readers of the every-order key bank built by
+`ModelAttention.stage_symbol_bank`, and says to bring crossings under §2.
+The bank carries each row's order. A live reader inside
+**`Models._run_sentence_word_bricks`** discards that distinction: for each
+stream it takes `prediction.expected_activation.sum(-1)`, normalizes all
+`prediction.symbol_keys` together by row, and averages their positions
+into one `reducer._expectation_prime`. The code reads no `symbol_orders`.
+`OperationSelectionLayer.prime_bias` then takes each candidate's dot
+product with that one vector and adds it to the compose scores.
+
+The new mechanism test
+`test_item18_space_boundaries.py::test_word_loop_priming_score_is_invariant_to_other_order_rotation`
+executes the actual producer block extracted from the protected function,
+then the native `prime_bias`. It fixes an order-zero candidate and the
+order-zero bank row, and rotates only the order-one row with one random
+orthogonal draw, preserving that order's geometry. Its score changes
+from **0.5** to **-0.4916691184043884**. The required atol-1e-6 invariance
+assertion **fails, 2.45 seconds**, with absolute difference
+**0.9916691184043884**. No random seed was chosen or retried. This is a
+cross-order geometric comparison, not activation travelling over an edge.
+
+The source of the mixed vector is in a function that §45.4 and §31.3
+explicitly protect from edits. Once the positions have been averaged,
+the consumer cannot recover the contribution of each order by filtering
+that vector. Restricting the shared key bank itself would also discard
+the other orders' legitimate expectation entries. No such workaround or
+protected edit has been made.
+
+**For Alec and Claude:** may round C make one narrowly scoped exception
+in this word-loop block, retaining the expected keys/activations by order
+instead of averaging all orders together, so the chooser compares a
+candidate only within its own order? **Recommendation:** allow that edit
+and the corresponding `prime_bias` reader change, leaving the four
+attention files unchanged. The alternative is to defer this reader to
+the performance-merge round and explicitly record it as an exception to
+round C's space-separation scope. The present specifications require both
+that the crossing be repaired and that its producer remain untouched;
+they do not choose between those two scopes.
+
+Round C stops here under the requested design-question rule. The invariance
+test is intentionally still failing and is not marked as a learning
+baseline. The ladder, parts-of-speech certificates and remaining space
+sites have not been implemented. No finished-source lesson, verbal proof,
+collapse table, stopping gates or default sweep has been run for round C.
+
+### 46.4 Returned partial source and protected places
+
+The partial `bounded_tests.source_snapshot` is
+**`a9cc6ea4ad20454380db7a93e8624980494dc70e01974fce5a1d80fc28216e18`**.
+The four protected attention files are byte-identical to the checkpoint;
+`Models._run_sentence_word_bricks` is text-identical too. **Zero edits in
+all five places.** Mint purity is unchanged, no first-walk teacher is
+built, and round D is untouched. The local A/B checkpoint is the only
+commit; round-C edits are uncommitted and nothing was pushed.
+
+### 46.5 Authorized exception for review: expectation in the sentence driver
+
+Alec answered the §46.3 scope question: **"Go ahead and change it, but
+flag it so that Claude and I can discuss on your next completion."**
+This resumes round C. **For Alec and Claude's next review:** there is
+now one round-C edit inside `Models._run_sentence_word_bricks`: its
+expectation-prime staging block. The four attention modules stay unchanged.
+The edit changes neither traversal nor the opportunities to think; it
+must be carried through the performance merge deliberately.
+
+The source keeps the expectation bank's positions, activation and orders
+together (`Expectation.OrderPrime`). A candidate reads only the positions
+of its own order, and the normalization counts only that order's
+activation. Unknown-order candidates receive no geometric prior.
+`ReferenceContext.composition_orders` stages the candidate menu's orders
+from the existing `denoted_order` rules, with native reference reads for
+interpretation and off-stack binding; `LanguageSpace.choose_operation`
+passes them to the compose chooser. No order is inferred from a vector.
+The all-order average is deleted.
+
+The §46.3 rotation certificate now passes. Together with a check of
+same-order weighting (including normalization and independent lanes)
+and the menu's head/lift/timeline orders: **3 passed in 2.89 seconds**.
+The direct chooser mocks in the operator-cost and identity-threading
+tests now supply typed expectation banks. The identity-threading test
+declares `operator_cost=0` to keep its isolated zero-dummy assertion;
+the positive-cost dummy certificate still checks the charged score.
+These are ports, with no assertions removed. Wider verification is in
+progress; this subsection does not claim the round complete.
+
+The wider read found two additional consumers of the former flat prime:
+`ReferenceClose.prime` and `GrammarLessons.compose_loss`. The first now
+reads its candidate/request order; the second carries the annotated
+operands' existing orders through its examples and selects the matching
+stream of the typed prior. The native student-state teacher already
+captures the chooser's candidate orders. The constituent-example test
+ports its tuple unpacking and keeps its target assertions. With the cost,
+priming, identity-threading, assessment, constituent-teacher and native
+expectation tests: **86 passed, 2 skipped, 28.27 seconds** at this step.
+
+### 46.6 Subsequent partial work: the ladder and argument groupings
+
+The ladder is marked reviewed and still gates nothing. Rung 2 accepts
+at least twenty distinct words and reads every distinct word declared by
+the source; the distinct-object check uses that same count. Rungs 5, 6
+and 9 use the reviewed modifier trees and lose their unavailable marks.
+The old twenty-word mechanism case is retained, with a new twenty-one-word
+case. This adds a reader case, without changing a learning fixture.
+
+The following parts-of-speech and separation repairs are built so far:
+
+- `ConceptHierarchy.fit` and `PartsOfSpeech.prepare_values` read the
+  centroid of an argument's word members, in word space. They previously
+  read the argument's own position in the next order. The member sum is
+  cached outside the checkpoint and refreshed when its membership or
+  placement revision changes. It never writes the class's position.
+- `ConceptTrust.project` no longer takes trust content as an unplaced
+  chart's direction, nor rewrites trust content along the class's own
+  direction. Agreement remains a scalar of evidence.
+- `PartsOfSpeech.observe_seat` no longer copies the operands' mean into
+  the operation's position/trust content. Membership over its arguments
+  remains; those are the operation's evidence.
+- `observe_kept` tracks occurrences through the existing word flow,
+  writes the occupied argument's evidence at each word's input extent,
+  and applies the two within-order placement steps. Up uses all the
+  word's argument memberships; down uses all the active argument's word
+  members, and moves only the present words. Those are the specified
+  defaults. A frozen row does not move. Each pass reads a frozen set of
+  positions and uses the existing step and same-order negative sampler.
+  The ordinary sentence placement excludes the rows whose argument
+  participation supplies this more specific context.
+- The kept close performs this observation before staging the entry and
+  publishing its field. The additions also enter observed knowing and
+  the existing intuition teacher; the stack's own deposit is not copied
+  into its teacher. `Reading.word_extents` retains the existing native
+  input brackets beside `symbol_where`, which encodes only the start's
+  address. No attention reader or traversal changes for this capture.
+
+Six mechanism tests in `test_item18_parts_round_c` cover the fit,
+generate fit, unplaced trust direction, located argument evidence,
+both placement halves with frozen/absent rows, and centroid refresh.
+The coordinate rotations for writes are random pairs of axis swaps
+(orthogonal, determinant +1), keeping the native positive cone; arbitrary
+QR rotations leave that cone and are not valid placement inputs.
+
+On an isolated archive of the A/B checkpoint, the six cases and the
+two ladder cases give **7 failed, 1 passed, 3.95 seconds**: the old
+twenty-word case passes; the new count fails; fit scores change by 1
+under the other-order rotation; trust content writes an unplaced row;
+no located-field argument exists; the words do not move; and the new
+extension reader is absent. On the partial implementation the six
+argument cases pass (**6 passed, 3.05 seconds**). The first four had
+also been measured before their repair (**4 failed, 2.69 seconds**) and
+after (**4 passed, 2.70 seconds**).
+
+The native-close fixture needed a contract port: it now declares one
+input extent per existing explicit leaf, retains its existing leaf
+evidence, supplies a sentence-field carrier, and constructs its native
+`SentenceUnderstanding`. Its capacities, leaves and presentations do
+not change. The ten `test_item4_native` cases first failed on these
+missing fixture interfaces; after the port **all 11 tests in that file
+pass, 4.65 seconds**. The parts-of-speech observer spy now forwards the
+field and stream arguments. No assertion was removed from either port.
+
+This is partial work. Argument priming in occupation, assessment's
+nearest-argument read, the learning measurements and remaining separation
+sites are not yet complete. No new baseline mark or retirement has been
+added in this continuation. The finished-source stopping gates, lesson,
+verbal proof, assessment tables and full sweep have not run.
+
+### 46.7 For Alec and Claude: a field of several orders has no single-order key
+
+Spaces-apart §4.11 requires each `FieldProjection.key` reader to name
+one order. `NumericPercepts.forward` has a natural order-zero input
+read. Two other readers presently request no order:
+
+- `IntuitionField.read`, reached by `ThoughtFaces.intuit` through
+  `ThoughtConceptualCapability.intuition`, reads the learned field of
+  every order, as §30.4.1 and .4 require. It averages those rows into
+  one point and puts that point in role zero of the thought's meaning.
+  The face currently ignores its argument and has no order parameter.
+  `ThoughtStream` then takes that meaning as the conclusion.
+- `ExtendedRecall.answer` unions the fields at the question's open
+  operands and calls the same key reader. The extension's `Node`/`Context`
+  carries no conceptual-order request; the returned set can contain
+  concepts of several orders. It too constructs one role-zero point.
+
+The conflict is reproduced with one word at order zero and one argument
+class at order one, both at evidence `(1,0)`. Rotating only the class
+from the second axis onto the first changes `IntuitionField.read`'s
+positive meaning coordinates from
+`[0.31606027483940125, 0.14173434674739838, 0, 0]` to
+`[0.4577946066856384, 0, 0, 0]`. Its cosine with the unchanged word is
+**0.9124531149864197 → 1.0**. The learned field's identities and evidence,
+including the returned `(1,0)` support, stay unchanged. The producer is
+the cross-order key average; neither attention nor the stack produced
+this change. No repair to these key readers has been made yet.
+
+**Recommendation for decision:** retain the whole learned/recalled field,
+but make point-valued thought or answer candidates separately for each
+represented order. When the request already names an order, read only
+that order's point. When it does not, let the existing chooser select
+among those separately typed candidates. This would preserve every
+order's field without manufacturing an average across them. It changes
+the current single-result read, so it needs Alec and Claude's decision;
+the specifications do not choose an order or state how an untyped
+multi-order result is to become one point. Round C stops for that
+question under §45.4, with the §46.5 edit explicitly flagged for review.
+
+### 46.8 Verification and returned partial source at the next question
+
+After the native-close fixture port, the combined focused run gives
+**99 passed, 4 skipped, 38.37 seconds**. It covers
+`test_item18_operator_cost`, `test_item18_space_boundaries`,
+`test_item18_parts_round_c`, `test_parts_of_speech`, `test_assessment`,
+`test_identity_threading`, `test_grammar_lesson_context`,
+`test_constituent_lesson` and `test_item4_native`. This is not the default
+sweep or the finished-source validation. The remaining implementation
+and measurements listed above are still owed.
+
+The returned partial `bounded_tests.source_snapshot` is
+**`c373ffeca2ec1bea859012099ef140b5325a12e023443125c24f291a29849312`**.
+`git diff --check` passes. The four attention modules are byte-identical
+to the A/B checkpoint. The sole edit inside the fifth protected place,
+`Models._run_sentence_word_bricks`, is the authorized expectation-prime
+staging replacement of §46.5; the extracted-function diff was checked.
+No first-walk teacher or round-D work is built. Nothing in round C has
+been committed or pushed. The §46.7 question was sent through the user
+question tool as well as written here.
+
+### 46.9 Resumed under the field-read assumption
+
+Alec asked, “Can’t you keep going under the assumption?” Codex proceeds
+with §46.7’s recommendation, explicitly as an assumption for review by
+Alec and Claude. The whole field remains attached to each result; a
+point-valued read names one order, and the ordinary thought menu offers
+the orders separately. An explicit order request is preserved. No order
+is inferred from a cosine. The other unfinished work of round C continues.
+
+`FieldProjection.key` now requires its reader’s order. Numeric input and
+the numeric examination bracket read order zero. Learned intuition reads
+the selected order, retaining the complete learned field. Recall returns
+separate answer operands for the represented orders, each retaining the
+complete inverse extension. A direct untyped multi-order recall exposes
+its alternatives rather than taking an arbitrary point; the native thought
+menu supplies the order. Recall candidates are offered for constructed
+orders without an eager memory read, and an order with no returned evidence
+has no answer. The closing reads the selected order when no exact reference
+was resolved. These are implementation choices under the assumption,
+flagged for review; they are not a newly specified architecture contract.
+
+### 46.10 Separation at the remaining readers
+
+The thirteen sites of spaces-apart §4 are now treated as follows. These
+are mechanisms, not claims of learned grammar. The promotion ports retain
+all admission, history, identity and reload assertions; their old equality
+between a higher-order position and its lower-order content is the
+contract §4.3/5/6 explicitly replaces.
+
+| Site | Producer before | Reader/writer after |
+|---|---|---|
+| 1, `PartsOfSpeech.observe_seat` | The operation's position and trust content were copied from operand words. | It records membership of the formal arguments; no word position is assigned to the operation. |
+| 2, `ConceptTrust.project` | An unplaced chart used trust content as the row's direction. | Content is an extension only. Projection scales an existing direction; an unplaced row stays zero. |
+| 3, `FamiliarTier.promote_identity` | The promoted row copied its observed lower-order value. | It starts unplaced, keeps the value as extension, counts views without content and uses native seeded placement when available. |
+| 4, null-token resolution, `ReferenceClose.commit`, `commit_read_words` | Occurrence/object positions entered another order's trust content. | These are counted views. A word with an actual basic percept still reads that percept's evidence. |
+| 5, consolidation | A promoted row copied its LTM slot into its position. | The slot supplies extension, counts and a placement seed, never the new direction. |
+| 6, unplaced `cover_members` | The member fold became the class position. | A newly formed class starts at zero; its member fold remains extension. Existing placed rows are not reset. |
+| 7 and 8, compose/generate occupation | A word/value was compared with an argument's position. | It is compared with the argument's member centroid, then receives that argument's expected for-lane activation. |
+| 9, familiar/MTM candidates | Supports of several orders could share a centroid and matching pool. | `centroid` names one support order; matching carries that order. Generic candidates use their greatest member order, whose next order promotion already declares; lower-order membership remains evidence, never part of that centroid. Native percept candidates use order zero. |
+| 10, stimulation | Direct point comparison scored every inventory order. | Direct scoring uses the requested order (zero for a percept), then the ordinary definition closure may activate higher orders. Generated references supply their own orders. |
+| 11, key/intuition/recall | One point averaged all field orders. | §46.9's explicitly flagged assumption: full fields, separate typed point candidates. |
+| 12, reference selection | Unspecified requests compared all candidates in one pool. | Candidates are partitioned by their declared orders. A named STM request filters to that order; an open order reads each candidate at its own order, while an untyped dummy cannot close. |
+| 13, answer cost | The answer point was compared with all of a target word's concepts. | Only concepts at the answer's order participate. |
+
+The exclusion census was another reader of the same geometry. It still
+counts every retained occurrence, with the accepted eight-occurrence and
+no-joint-occurrence rule, but counts and joint counts are separate per
+order. A retained referent supplies the order; an anonymous basic idea is
+order zero. The cache remains reconstructible and nonpersistent, and a
+referent change invalidates it. Reference grouping and bind exclusion
+read `(order, coordinate, coordinate)` instead of joining equal coordinate
+numbers from different orders. A certificate gives two orders eight
+occurrences each: they do not create an exclusion between orders; adding
+the missing eight occurrences within one order does create its exclusion.
+
+The five additional audit sites in spaces-apart §5:
+
+- Parameter `similarity_codebook.W`: indexed lexical reads train the
+  addressed rows through reconstruction; derived charts have no parameter
+  gradient. The optional nonserial conceptual SBOW did compare a mixed
+  symbolic slab with an all-order pool. Its producer now parks separate
+  decoded order slabs; its nearest assignment and negative pool use that
+  order's block. The plain stage-zero producer declares order zero. This
+  optional loss remains off in the shipped configurations; no scale is
+  changed. A gradient certificate checks invariant loss and own-order
+  gradient after rotating the other order, and zero other-order gradient.
+- `ClauseRow.consequents` and `evaluate` require the order(s) of the
+  endpoint(s) actually compared. Their existing reference-based alternatives
+  remain unchanged. No production caller of these two vector interfaces
+  was found; their direct relation tests are ported to explicit order zero.
+- The all-order bank built by `ModelAttention` is unchanged. Its readers
+  (`SymbolField`, `Meaning.ClosingImage`, the activation predictor's bank
+  input and target, chooser gains and word expectation) now match by native
+  identity or within an explicit order. An untyped value does not
+  geometrically match a mixed-order bank. Forecasts still carry independent
+  scalar evidence across membership edges. The protected prime consumer
+  is the exception Alec authorized in §46.5.
+- `IndependentComponents.innovation` is live in observation cost and the
+  kept commit. It formerly subtracted points before projecting onto all
+  individual axes. It now reads each role on axes of its own order and
+  subtracts the scalar readings. Native role references, a typed field
+  binding or the predictor's selected bank key supply that order; an
+  untyped role supplies no geometric identification.
+- A kind's code in a clause role does reach consolidation. The slot is
+  retained as the promoted concept's extension, with count-only views;
+  the new concept's position is not copied from that slot (§4.5 above).
+
+### 46.11 Placement, priming and checkpoint details
+
+The upward centroid contains all of a word's argument memberships; the
+downward centroid contains all of an active argument's word members.
+Only present participants move; frozen rows do not. Negative samples are
+of the moving row's order. These are the stated defaults, including the
+addition of expected activation to fit. A cached member sum is keyed by
+its physical class/word row and refreshed on a membership or placement
+revision. It is not a historical table of word-by-argument scores. The
+class's own direction remains separate.
+
+The compose occupation flow adds the pending shared predictor's argument
+presence at the incoming word's place. The generate walk uses that same
+predictor on the causal emitted prefix to forecast the next output place;
+referenced terminals carry their declared orders. No desired sentence or
+compose tree supplies its forecast. The inverse-menu cache does not cache
+the forecast. This causal generation read is an implementation choice
+for review. The native chooser certificate checks a +0.7 argument forecast
+adds exactly 0.7 to its operation score; the generate feature checks the
+same increment. STOP has no argument feature.
+
+`PartsOfSpeech.observe_kept` records every actual argument occurrence at
+its word extent, including separate occurrences of the same word. Its
+field joins the native knowing and intuition teacher before the episode
+is staged. The storage certificate round-trips the ordinary structural
+checkpoint, relation memberships, located knowing, placement tensors and
+the flattened durable entry; it adds no persistent membership matrix.
+The assessment's word record reports its three nearest arguments.
+
+The new 24 separation/POS certificates all fail on the A/B checkpoint
+(**24 failed, 6.02 seconds**). Some fail because the required typed/field
+interface is absent; those are not represented as numeric rotation
+failures. The current focused run, including the generation regression
+module, gives **34 passed, 12.88 seconds**. Earlier concrete rotation
+counterexamples are in §46.5 and §46.7. Four promoted-content assertion
+ports also fail on the old source; they now check retained extension and
+an unplaced position. No fixture capacity, seed or existing presentation
+count was changed.
+
+### 46.12 Ports in this continuation
+
+- `test_attention_promotion::test_*` and the two token-fold checks in
+  `test_memory_consolidation` read the promoted extension instead of
+  asserting that it was copied into `W`; the exact cases are enumerated
+  in the final port list below.
+- `test_item18_reduction::test_23_13_promotion_without_actual_events_keeps_the_current_mtm_value`
+  retains both plain/mention cases and reads that value as extension.
+- Retained-occurrence exclusion, identity-threading and bind-menu fixtures
+  declare the order of their existing idea/identity and query. They retain
+  their original eight-observation, cache, compaction and reload assertions.
+- `test_two_truth_stores` gives its vector relation reads explicit endpoint
+  orders; `test_independent_components` gives the geometric roles their
+  existing concept references/orders.
+- Direct field-key and thought-face fixtures pass the requested order;
+  direct recall fixtures read the returned candidate tuple.
+- `test_generated_extension` declares the higher-order object it was
+  already asserting through a definition and terminal reference. It no
+  longer relies on an unreferenced all-order cosine identifying that object.
+- The negative expectation fixture provides its native symbol handles.
+  Generation/credit doubles expose the shared charged chooser. The native
+  kept-membership/head-flow certificate isolates its original occupation
+  term with zero forecast; the new independent certificate tests priming.
+
+No whole test is retired in this continuation. These ports retain each
+assertion of a surviving contract. Final validation, the learning
+measurements and the source snapshot follow; the numbers above are
+focused checks, not the finished-source sweep.
+
+
+### 46.13 Diagnostic sweep and repairs at its producers
+
+The first round-C default sweep completed all **7,128** selected tests:
+**6,629 passed, 330 skipped, 167 failed, 1 xfailed, 1 xpassed**, in
+**1,409.3520481669693 seconds**, peak aggregate **11,735,644,392 bytes**.
+Both stopping gates passed. Its source snapshot was
+`a8011b8c9ecb90e20b2ed4882bd6139b8f353837e3a6d42ee2fbe4cc1377825c`.
+This is diagnostic failed-source validation, not the final result. No
+implementation failure in it is being classified as a learning baseline.
+Receipts remain local. Repairs require a new finished-source validation.
+
+The shared causes found so far:
+
+- The new generation forecast called the clock's Python integer reader
+  inside the compiled walk. `GenerateOccupation.clock` now reads the
+  tensor time before that walk and passes its encoding through forecast
+  to the existing relative-time predictor. The generation/compiled
+  regression batch now has **51 passed, 2 skipped, 1 xpassed**, in
+  **38.03 seconds**; no clock is frozen to a test value.
+- Partitioning `ReferenceClose.score` by order accidentally reapplied a
+  reference-only eligibility filter to event/state collections already
+  checked by `MemoryLink.menu`. `score_order` now scores an already legal
+  pool in one order; kind/order legality stays with its original caller.
+- `IdentityRows.point` read stale `W` after native placement marked the
+  derived code cache dirty. It now uses `lookup_rows`, like the other
+  native point readers. The compose/generate occupation equality test
+  exposed the stale read.
+- Native percept candidate support was the whole multi-order field;
+  it now reads order zero. Generic mixed support keeps all membership
+  edges but uses its greatest order's point, matching the existing
+  promotion order rule. This is an additional implementation choice under
+  §46.9's assumption, flagged for review. An identical weighted set of
+  references can recur even while its members are unplaced: MTM and the
+  durable witness reader now recognize those identical proportions before
+  attempting geometric generalization. Different unplaced references are
+  not identified by their common zero vector.
+- POS placement moved word positions before a selected event link was
+  written. The menu and writer therefore judged different geometry.
+  A diagnostic delaying only that placement makes the native ten-epoch
+  event test pass. The kept close now records the argument field first,
+  finishes every selected link, then applies the collected placement steps
+  before promotion. No containment guard is weakened. This edit is in
+  `_commit_sentence`, outside the protected word loop.
+- An open-order bind was filtered out before its candidate could supply
+  its order. Each candidate now supplies that typed comparison; the
+  existing result-order check still rejects an unknown dummy. Empty
+  intuition also retains its ordinary menu entries, one per constructed
+  order; it is not made to win and may return no answer.
+
+The next focused read/placement run gives **145 passed, 2 failed** in
+**59.11 seconds**. The two failures expose old fixture assumptions: a
+promoted concept's position was implicitly copied from its members, and
+an operation's trust was overwritten by its words rather than counting
+its argument memberships. Their ports supply the declared higher-order
+position and read the operation's actual counted argument evidence. The
+argument radius and agreement assertions remain.
+
+Generation mock ports explicitly declare zero application pressure where
+those fixtures isolate inverse control flow or credit; the independent
+operator-cost certificates test the default cost. Native models keep the
+configured default. Direct relation and field readers name their orders;
+source inventories include the new lane-preserving argument-field writer.
+The closing fixture's missing leaf evidence is now explicit zero evidence,
+not invented certainty from an activation. The selected-relation test
+exposed that erroneous first fixture port.
+
+### 46.14 Subsequent diagnostic repairs (2026-11-16)
+
+The order-separated expectation predictor now keeps field/STM context as
+one context per order. A query takes the context of its key's order;
+word expectation takes order zero. The generate occupation reader uses
+that same predictor over its emitted prefix, with each terminal's order.
+Rotating another order previously changed an order-zero prediction (the
+fixed diagnostic's maximum difference was **0.06501198**; its regression
+failed before with maximum difference **0.0233776**). The invariant now
+passes. Shared predictor parameters keep their shapes. The compiled walk
+receives a padded, construction-capacity forecast bank at its eager
+boundary, instead of guarding the changing number of witnessed keys in a
+module buffer. It adds no stored bank or allocation overflow. The focused
+read/placement/expectation batch gives **231 passed in 75.42 seconds**;
+compiled generation, serving and POS give **32 passed in 48.78 seconds**;
+expectation and assessment give **84 passed, 3 skipped in 28.35 seconds**.
+
+Two further fixture ports retain their assertions. The empirical-exclusion
+fixtures in `test_reference_description` now declare their witnessed
+occurrences and queries at order zero: these are anonymous native ideas,
+not order-one individuals. Together with their reference fixtures, **16
+passed in 8.21 seconds**. `test_subspace_context.model` now initializes its
+XML configuration before `TheData.load('xor')`. The data loader chooses
+the numeric/text modality from that configuration; the old order loaded
+numeric data using global defaults before constructing a text model. The
+isolated forward test failed before (**2.76 seconds**); the module now has
+**19 passed in 16.66 seconds**, and the two forward cases also pass alone
+(**12.70 seconds**). The tentative production forward-head change was
+withdrawn: this failure's producer was the fixture's load order.
+
+The attempted final run then exposed three additional defects:
+
+1. **An unselected request was stored before a checked answer was
+   projected.** The second native certificate-90 run reached a checked
+   `bind` with three roles. Role zero named its concluded concept; role
+   two still held the two-role working request, which had neither a
+   semantic chain nor a checked binding. `ThoughtStream.write` recursively
+   attempted to store that unselected request before projecting the
+   checked answer to its selected role. The writer's guard correctly
+   rejected the request. Projection now precedes traversal of the
+   constituents actually needed by the projected answer. The reference
+   and cycle checks, and the writer's semantic guard, remain. The new
+   `test_checked_binding_projects_before_writing_its_unselected_request`
+   fails before (**1 failed in 2.66 seconds**), passes after, and separately
+   asserts that storing the unchecked child alone still raises. The
+   thought-binding, thought-inference, item-1.8 completion and compile
+   regression batch gives **91 passed in 18.15 seconds**. A full native-90
+   measurement on the repaired source is still owed.
+2. **The forecast wrapper also wrapped an eager function.** The compiled
+   boundary needs the fixed forecast bank, but an eager function prepares
+   it itself. `_compiled_output_walk` now returns and caches the original
+   callable when compilation is disabled. The eager identity assertion
+   stays. Numerical mocks accept the new explicit bank argument and
+   declare their absence of a POS space. The two failing
+   `test_cached_model_factories_guard_compiled_calls_and_leave_eager_direct`
+   output-walk variants (`eager` and `none`) pass in the 91-test batch.
+3. **An append duplicated a retained time in its cache.** Round C's
+   exclusion cache reads an observation's order through its referent. In
+   `LTM0._append_cached`, that read could rebuild the time index with the
+   newly appended row already included. The following incremental update
+   appended the same time again. A later row then received the previous
+   row's cached address. The lesson selected an event of norm
+   **0.4865829348564148**, but its writer subsequently read a zero point at
+   the returned address and correctly refused the event link. The time
+   index is now updated before the observation cache can read it. No
+   containment or capacity guard changes. The three-row regression
+   `test_appending_a_referent_keeps_the_time_index_aligned` fails before
+   (**1 failed in 2.23 seconds**, only two distinct addresses for three
+   rows); the memory/reference batch passes after (**57 passed in 15.85
+   seconds**). Replaying the lesson's original recorded initialization
+   now passes the first **20** kept sentences, beyond the failing
+   fourteenth close. This is a diagnostic prefix, not the 160-sentence
+   result. An earlier hypothesis about the event-point producer was
+   disproved; no such production change was made.
+
+### 46.15 Interrupted validation, not the final sweep
+
+On source
+`0266b19fc9999c4425aa9fcef407af85fe3ee49b9e81e51149eb48ac740ef951`,
+both stopping gates passed: XOR took **0.2283987089758739 seconds** and
+the previously named raised class took **0.10323287500068545 seconds**.
+The bounded run took **13.029692834010348 seconds**, with peak aggregate
+memory **676,333,032 bytes**. Neither stopping gate has failed in this
+continuation. These precede §46.14's last repairs and are not substituted
+for the required finished-source gates.
+
+The default sweep was interrupted after **1,494 of 7,130** selected
+tests, **281.83010562497657 seconds**, peak aggregate memory
+**11,436,275,056 bytes**. Its three reported failures were the two
+compile-wrapper variants repaired above and
+`test_basicmodel::TestTrainingUpdatesWeights::test_xor_weights_change_after_one_epoch`,
+whose capacity producer is §46.16. It is not a completed sweep. The
+lesson and one native-90 measurement had failed at the two writers above;
+the other native-90 measurement and remaining validation were stopped
+before proceeding with repairs. No result from a changing source is
+claimed as finished-source validation. Receipts remain local and are not
+linked.
+
+The finished-source lesson, its order occupancies and field attribution,
+fixture assessment tables, native-90 baseline tables, verbal proof,
+POS before/after measurements, both gates and complete default sweep
+remain owed. The existing learning-baseline marks are unchanged; none of
+these implementation or capacity failures has been marked as a learning
+failure. The ladder remains reviewed and gates nothing.
+
+### 46.16 For Alec and Claude: automatic promotion at a full concept block
+
+**Producer.** In the fixed `XOR_symbols.xml` test, `runTrial` first runs
+the existing primitive-concept curriculum (`ConceptLessons`): **32**
+updates for its supplied names and **32** witnessing updates over the same
+four inputs. Recurring field contexts are promoted by
+`FamiliarTier.promote_candidates`. Spaces-apart §4.6 requires an unplaced
+class on this chart to start at zero rather than copy its members'
+position. Once that copy is removed, distinct recurrent contexts no longer
+reuse the old geometric identifications. The automatic promoter continues
+admitting them until its fixed block fills. This is a capacity exception,
+not a failed learned-output assertion.
+
+Replaying the failed worker's recorded Torch, NumPy and Python states on
+the A/B checkpoint passes (**1 passed in 4.47 seconds**). On round C's
+original construction it fails (**1 failed in 2.06 seconds**) with block
+capacities **(19, 19, 9)** and occupancy **(10, 12, 9)**, at an order-two
+promotion. An isolated diagnostic replacing only `cover_members` by its
+checkpoint implementation also passes (**1 passed in 3.15 seconds**).
+That replacement reintroduces the forbidden position copy; it is not in
+the returned source and is not proposed as a repair.
+
+**Repartitioning is insufficient.** Alec's existing permission to declare
+per-order shares was examined without changing the **47-row** total
+(**32** ordinary seats plus **15** grammar reservations):
+
+| Ordinary shares | Constructed blocks | Occupancy at failure | Next required order |
+| --- | --- | --- | --- |
+| Geometric: (19, 9, 4) | (19, 19, 9) | (10, 12, 9) | 2 |
+| Equal: (11, 11, 10) | (11, 21, 15) | (11, 12, 11) | 0 |
+| Preserve the 19 order-zero seats; two ordinary seats for the curriculum's first-order classes; remaining seats at order two: (19, 2, 11) | (19, 12, 16) | (18, 12, 16) | 2 |
+
+The last diagnostic reaches **46 occupied seats out of 47** and already
+has **15** distinct eligible candidates with no durable witness match:
+**10** require order zero and **5** order two. Their retained readings
+meet the existing recurrence count, have only the positive lane, and have
+different support sets. Borrowing the last free seat cannot accommodate
+this queue. The last replay fails in **2.19 seconds**. No seed, input,
+presentation count, vector width or total capacity was changed. Both
+experimental declarations have been removed; `XOR_symbols.xml` is back
+to its checkpoint contents.
+
+**Recommendation / question.** For automatic MTM candidate promotion,
+leave an otherwise eligible candidate in the existing bounded MTM when
+its target block has no free seat, and reconsider it at a later ordinary
+promotion boundary after normal forgetting frees space. Report the
+deferred demand beside occupancy. Explicit requested allocations and
+identity promotions keep their capacity errors; no overflow allocation,
+new counter, forced eviction or forbidden position copy is introduced.
+This is a change to automatic admission's existing fail-on-full contract,
+not specified by round C. May it be built, or should Claude specify a
+different admission rule? No implementation of that recommendation has
+been made. §45.4 requires stopping at a question the specifications do not
+settle, so the round stops here for Alec and Claude rather than disguising
+the exception as a learning baseline.
+
+### 46.17 Source and protected places at this question
+
+The returned partial source is
+`527e59e032697424fbdc4a015155c86e621210c9ed1f558ba89c2a4409177741`
+over **1,188** `bounded_tests.source_snapshot` inputs. The local checkpoint
+remains `ac8fbb011483b12c3b9bd21763f284a6880c8c87`. Round C is uncommitted;
+nothing has been pushed and the parent WikiOracle pointer is unchanged.
+
+The four protected attention files have no diff from that checkpoint.
+The only edit inside `Models._run_sentence_word_bricks` remains §46.5's
+authorized expectation-prime replacement: retain typed keys, weights and
+orders instead of combining all orders' positions into one vector. It is
+flagged for Alec and Claude's review. The repaired eager/compiled output
+boundary, order-separated optional SBOW reader and kept-close argument
+field/placement scheduling are outside that protected function. No
+first-walk teacher, mint-purity change or round-D work was added.
+
+
+## 47. Review of the partial return of round C (Claude, 2026-11-16)
+
+### 47.1 What was checked
+
+- *Source.* The digest of `bounded_tests.source_snapshot`, computed as
+  Codex's runners compute it, is
+  `527e59e032697424fbdc4a015155c86e621210c9ed1f558ba89c2a4409177741` over
+  1,188 inputs: the source §46.17 returns.
+- *Checkpoint.* `ac8fbb011483b12c3b9bd21763f284a6880c8c87`, "Checkpoint
+  item 1.8 rounds A and B (baseline)", is on local `main` and on no remote
+  branch.
+- *Protected places.* `bin/Attention.py`, `bin/ModelAttention.py`,
+  `bin/SentenceAttention.py` and `bin/AttentionTraversal.py` have no diff
+  from the checkpoint. In `Models._run_sentence_word_bricks` the text of
+  the function differs from the checkpoint in one block only: the
+  all-order average (`prime[b] = (signal[:, None]*keys).sum(0)/...`) is
+  replaced by `Expectation.OrderPrime.from_predictions` (§46.5).
+- *Read in the code.* `Language.operator_scores` subtracts `operatorCost`
+  from every operator logit and not from the last (STOP or wait). It is
+  applied in `OperationSelectionLayer.forward` after the dummies' fixed
+  scores are set, so both bind dummies pay it, and to the alternative
+  distribution, and in `LanguageSpace.choose_generate`.
+  `UnaryHistory.penalty` is deleted. `WholePaths.application_cost` counts
+  compose kinds 1 to 3 and the generate operators below STOP. Each matches
+  §45.4, point 1.
+- *Rerun by Claude* on that source: both stopping gates,
+  `test_item18_operator_cost.py`, `test_item18_space_boundaries.py`,
+  `test_item18_parts_round_c.py` and the capacity case of §46.16:
+  **33 passed, 1 failed, 12.75 seconds**. The failure is
+  `test_basicmodel.py::TestTrainingUpdatesWeights::test_xor_weights_change_after_one_epoch`,
+  `ConceptRowCapacityError` at order 2, as §46.16 reports. Not rerun by
+  Claude: that the new certificates fail on the checkpoint.
+
+### 47.2 Findings
+
+1. *Words lost their sentence placement.* `MereologicalCodes.observe_close`
+   now removes from the kept sentence's ordinary placement every row that
+   `PartsOfSpeech.group_rows` returns: each argument the reading used and
+   each word that filled one, which in a reading of more than one word is
+   every word. Such a word is then placed only by rule 4 of parts of
+   speech, toward the other words of its arguments. For the arguments this
+   is what parts of speech §5.1 asks: an argument's context is the word's
+   other arguments, not the sentence. For the words no rule asked it
+   (§46.6 calls it "this more specific context"). It changes what a word's
+   position is: from its place among the sentence's words, pulled also by
+   its classes, to its classes' pull alone. Alec's words in parts of speech
+   §5.2 are that the pulls up and down "influence distribution within an
+   order"; *Claude's reading:* added to the ordinary placement, not in its
+   place. Put to Alec (§47.3).
+2. *A new concept on a chart with no placement stays at zero.*
+   `FamiliarTier.cover_members` now zeroes the row of each new concept on
+   a chart without `mereology` (spaces-apart §4, site 6), and nothing
+   places it afterward: such a chart has no placement step, and §46.10
+   reports no parameter gradient into a class's row. Spaces-apart §4.6 left
+   exactly this open ("how a row of such a chart is placed at all"). It is
+   Claude's gap, and it is the producer of §46.16:
+   `MediumTermMemory.match_candidate` merges two candidates only by the
+   cosine of their supports' centroids, and over rows at zero only
+   identical proportions match, so each distinct support recurs into a
+   concept of its own. Spaces-apart §2 already lets a seed cross ("a key
+   hashed from content to start an unplaced row"). A scratch trial by
+   Claude, on a copy of the returned source in which only `cover_members`
+   changed (the new row starts at a unit vector drawn from a key of its
+   concept id, instead of zero): the capacity case passes. Before the
+   failure, `cover_members` had started 8, 2 and 4 rows at orders 0, 1 and
+   2 at zero; seeded, it starts 4, 1 and 1, and the test ends. Three runs of
+   each gave the same counts, so this is one draw. Put to Alec (§47.3).
+3. *When a concept seat is freed.* §46.16's deferral would reconsider a
+   candidate "after normal forgetting frees space". Only
+   `ConceptForgetting.reclaim_concepts` frees a concept seat: at a closed
+   document boundary, when forgetting is enabled and the whole inventory
+   is full (`warn_capacity`), it erases exact duplicates, unused mints and
+   columns of zero relevance, and never gives a retired identity to the
+   seat's next occupant. A full block of one order, with free seats in
+   other orders, does not call it (`Forgetting.forget` touches LTM rows
+   only, and `Spaces.retire_concept` has no caller).
+4. *Each order read apart (§46.9).* `Queries.field_candidates` offers
+   `intuit`, `query` and `ask` once per constructed order (`_order_caps`),
+   and `ThoughtFaces.intuit` reads the order chosen. The thought menu grows
+   by the number of orders for those three faces. *Claude's reading:* it
+   is what `doc/Orders.md` §9 already does for `bind`, where the request
+   names the order. Put to Alec with §46.5 (§47.3).
+5. *Accepted as Claude's reading*, among the choices Codex flagged: the
+   generate walk's forecast from the emitted prefix (§46.11: nothing later
+   than the walk is read); a mixed support's centroid at its greatest
+   order (§46.13: the order promotion already assigns it); identical
+   proportions recognized before the cosine (§46.13); the ports that set
+   the cost to zero in two structural-preference tests and in the mocks
+   (§46.2, §46.13: each keeps its assertions, and the cost has its own
+   certificates).
+6. *The edit inside the word loop (§46.5).* It is the one block, keeps the
+   bank's orders, drops the all-order average, and changes no traversal
+   and no opportunity to think. *Claude's reading:* accepted, and carried
+   into the performance merge as an edit of that function. Put to Alec
+   with point 4 (§47.3).
+7. *Owed.* Rung 1 and the unforced turnover case, before and after
+   (§45.4, point 1); certificates 2, 3, 4a, 6 and 8 of parts of speech;
+   the lesson with each order's occupancy, the verbal proof, the
+   assessment's tables, the collapse table; both stopping gates and one
+   default sweep on the finished source.
+
+### 47.3 Alec's answers (2026-11-16)
+
+Put to him as four questions; his answers, verbatim:
+
+1. *Words' sentence placement* (§47.2, point 1): "The superconcept of the
+   word-C (part of speech) and the location of the object-C (meaning)
+   determine the use/ location of the word."
+2. *A new concept on a chart with no placement* (point 2): "Please
+   elaborate. I think you are saying that it is impossible to learn the
+   object, only the word. But it may be possible that the word provides
+   enough context, if there is grammatical pressure on the word ( the bind
+   operator faces lower entropy in virtue of some choices rather than
+   others; we may need to bind objects within the STM tree so that their
+   gradients influence one another)."
+3. *A full block at automatic promotion* (point 3): "You can overwrite the
+   oldest references."
+4. *The two flagged choices* (points 4 and 6): "The loop edit is fine. I
+   don't understand the field read, but I would say a combined read,
+   perhaps ramsified, would make more sense? Please explain."
+
+The edit inside the word loop (§46.5) is accepted. Points 1 to 3 and the
+field read are explained to him and asked again; no Codex text until they
+are settled.
+
+Alec's second answers, and what they change, are §48.
+
+
+## 48. Placement, percepts, memory and System 1 after the review of round C (Alec, 2026-11-16)
+
+Alec's answers to the points §47.3 put back to him, what they change,
+and what Claude checked for them. *Claude's reading* marks an
+interpretation of his words; a rule marked *default* is Claude's choice
+where he has not spoken. Four points were put to him in §48.9; his
+answers are §48.11, and the text for Codex that continues round C is
+§48.12.
+
+### 48.1 Alec's words (2026-11-16)
+
+- Of "the four attention files" and the word loop in Claude's report:
+  "I don't know what the four attention files are, and the word loop is
+  due to be replaced by thinking and successive called to attend()".
+- Where a word is placed (§47.3, point 1): "word-concepts are not placed
+  within conceptual space in any particular way on creation, same for
+  object-concepts. But words are related via context in the sentence and
+  meta concepts, and that will structure them. Object concepts, since we
+  don't know have experience with them, are placed by their meta
+  concepts. The number modality that we are building will have relations
+  between numeric literals and can also be named by words, which is what
+  will test relations between symbols and what they signify, each having
+  an input context and each set relating to the other through meta
+  concepts (this is not the same as words (one) and numeric literals (1);
+  we are exposing number to the model directly, as an intensity value
+  (like a digital image or perhaps a feeling). Please flag in the doc
+  that non-symbolic exposure may be seen as feelings, since modern LLMs
+  do that. (I.e. the hypothesis that continuous data (e.g. image data)
+  exposes LLMs to feelings)."
+- How a new concept starts (point 2), of Claude's "before round C, a new
+  concept on such a chart was put at the centre of its members. That
+  copies positions across orders, which your principle forbids, so round
+  C starts it at zero.": "No, we have a pi layer that determines the
+  parts and wholes in mereological space, and that determines the
+  activation. It needs a location in perceptual space, and I think (for
+  the case of basic percepts) it should come from the area of the PI (I.e
+  weighted perceptual space, as the PI weights determine it). The rule
+  about not crossing orders is mostly about not mixing perceptual and
+  conceptual space, and this is all perceptual space. (And order zero or
+  below)."
+- A full block (point 3): "Let's keep concepts forever; only memories get
+  retired, thus st, mt, and Lt forgetting schedules."
+- The field read (point 4), of Claude's "A thought needs one point to
+  carry on: to be compared, bound and written.": "That is semantic
+  memory; animals and system 1 cognition in general is episodic."
+- "BTW, intuit and expect can just predict basic-level concepts, they
+  don't need to predict higher order concepts since those are entailments
+  and can be derived from basic level. Although for prediction, if we do
+  expectation or intuition at order-zero, then we can do propagation to
+  derive the rest (please verify)."
+- "There is some architectural work here, please document carefully and
+  then revise the specs"
+
+### 48.2 The four attention files, and the word loop
+
+`bin/Attention.py`, `bin/ModelAttention.py`, `bin/SentenceAttention.py`
+and `bin/AttentionTraversal.py` hold attention: the walk that chooses
+which span of the input is read next, and what is expected there. With
+the loop over a sentence's words in `Models._run_sentence_word_bricks`,
+they are the five places the `performance` branch rewrites
+(`doc/plans/2026-11-14-attention-in-thinking.md` on that branch), so
+§31.3 keeps the rounds of 1.8 out of them until that branch is merged.
+That stands.
+
+The loop over words is replaced by thinking that calls `attend()` for
+each look. Alec decided it on 2026-11-14 and placed it in the order on
+2026-11-15. §29.13 holds only his first words of it; the rest was
+recorded in the plan of the `performance` branch
+(`doc/plans/2026-11-14-attention-in-thinking.md`, §1 and §12, which local
+main does not hold). Its final version, in his words:
+
+- *Attention inside thinking.* "can we skip the performance measurement,
+  and just have the performance thread execute attention() as a part of
+  the thinking loop?" (2026-11-14); "the word loop is due to be replaced
+  by thinking and successive called to attend()" (2026-11-16). `attend`
+  is the chooser of a field location (`OperationSelectionLayer.attend`,
+  `bin/Language.py`).
+- *A look carries its expectation.* "expectation of the percepts is baked
+  into attention(): every time we look in a new place, we have an
+  expectation about what we will perceive there, and what we will
+  conceive about it"; "yes, we expect the whole .where span". The
+  forecast is `expect` at order zero, with the higher orders derived
+  (§48.7, §48.8, §48.11).
+- *Surprise.* "I would provide it surprise as a signal to the attention
+  algorithm" (2026-11-14). What the chooser does with it is learned, not
+  ruled.
+- *One walk and one block per sentence.* "lets figure out how we can do
+  one walk per sentence: the expectation can be computed during the sole
+  walk"; "The goal of one compiled block on GPU per sentence seems like
+  the best optimization potential." The word spans are "something that
+  attention will do, possibly in conjunction with the first open sentence
+  attention"; memory writes "should be tensors", and so is the rest of a
+  step ("why decoded? all can stay tensors, if possible, but throughout
+  the sentence is a reasonable first step"); new things "can happen in
+  virtue of memory pre-allocation".
+- *Reading in order first.* "We should teach reading words in order as a
+  preliminary to reading". A presentation's allowance grows with its
+  length ("thats reasonable").
+- *When.* After round D and the merge of `performance`, in the order Alec
+  set on 2026-11-15 (§43). Its rules are §12.2 of that plan.
+
+Until then §46.5's edit inside the loop stands; it is carried through
+the merge and goes with the loop.
+
+### 48.3 Where words and objects are placed
+
+1. *Nothing on creation.* A new word concept or object concept is not
+   placed in any particular way (Alec). *Claude's reading* (question 1
+   of §48.9): it starts from a seed, an arbitrary unit point drawn from a
+   key of its own identity (spaces-apart §2), never from another row.
+   Where its chart has a placement step, its first kept close places it
+   from there, as built. *Settled in §48.11, answer 1:* a concept that
+   words name when it is made starts at the centroid of the objects its
+   words' nearest words name; any other starts at its seed.
+2. *A word concept: the sentence, and its meta concepts* (Alec). The
+   sentence's ordinary placement (`MereologicalCodes.observe_close`,
+   `place_rows`) keeps every word concept present, including one that
+   filled an argument: round C's removal of `PartsOfSpeech.group_rows`
+   from it (§46.6) is withdrawn for word concepts. The pull of its meta
+   concepts (parts of speech, rule 4: an active argument draws the words
+   present that fill it toward the centroid of its words, among words) is
+   added to that placement, not put in its place. This was Claude's
+   reading in §47.2, point 1.
+3. *An argument: as built.* It stays out of the sentence's placement and
+   is drawn toward the word's other arguments (parts of speech, rule 3).
+   Alec's words do not change it.
+4. *An object concept: its meta concepts only* (Alec). It leaves the
+   sentence's ordinary placement, which places it today wherever it is
+   present, and each active meta concept it belongs to draws it toward
+   the centroid of that concept's members, among rows of its own order:
+   rule 4 applied to objects. *Claude's reading:* the "experience" an
+   object lacks is an input context of its own; a text presents only
+   words.
+5. *A word and its object* (question 2). As built, what ties a word to
+   its object is the mapping row that `InterpretLayer.define` writes,
+   which §30.6 reads as their meta concept; it has no position and pulls
+   nothing. *Claude's reading:* by Alec's rule of 2026-11-15 ("A dom
+   should pull its subs together in sub space"), the meta concept of a
+   word and its object draws the two toward each other, within order
+   zero. An object then comes to lie near its word and a word near its
+   object, and neither position is copied from the other. *Corrected in
+   §48.11, answer 2:* a word is at order zero, and the object it names is
+   often higher (an identity is one order above its occurrence). The pull
+   acts within each order, so such a pair is related by activation only.
+6. *A concept with an input context of its own* (an object given in a
+   modality, §48.4) is placed by that context as well, as a word is by
+   its sentence (*Claude's reading* of "each having an input context").
+
+| Row | Placed after round C (§46) | Placed by Alec's rule |
+|---|---|---|
+| Word concept that filled an argument | its arguments' pull only | the sentence, and its meta concepts' pull |
+| Word concept that filled none | the sentence | the sentence, and its meta concepts' pull |
+| Argument | the pull toward the word's other arguments | unchanged |
+| Object concept present in the field | the sentence | its meta concepts' pull only |
+| New row on a chart with no placement step | starts at zero | §48.5; §48.11, answer 1 |
+
+### 48.4 The number modality, and continuous input as feeling
+
+A number is given to the model directly, as an intensity: §22.9's level
+sets, a percept with a kind and no magnitude, as a pixel is given in a
+digital image. It is not a numeral, and the relation tested is not the
+one between the word `one` and the literal `1`, two symbols, but the one
+between a word and the number it names. Words and numbers each have an
+input context of their own and relate through meta concepts (§48.3,
+rules 5 and 6). Alec's flag, that non-symbolic exposure may be seen as
+feeling, is written as a hypothesis at the end of §22.9; the doc pass of
+1.8 carries it into `doc/Philosophy.md` (feelings) and `doc/Spaces.md`
+("The number modality").
+
+### 48.5 Where a new row starts: perceptual space and conceptual space
+
+*The principle, restated* (Alec). The line that nothing crosses is the
+one between perceptual space and conceptual space: "The rule about not
+crossing orders is mostly about not mixing perceptual and conceptual
+space". Inside conceptual space each order keeps its own geometry, as
+decided on 2026-11-15 ("the doms location in dom space does not
+influence the subs location in sub space"). Inside perceptual space,
+order zero and below, a percept's location is derived from the
+perceptual locations it collects.
+
+1. *A basic percept lies at the area of its Pi* (Alec): the part of
+   perceptual space its Pi covers, weighted as the Pi's weights
+   determine. *Claude's reading:* the Pi-weighted mean of its members'
+   perceptual codes. `MereologicalCodes._percept_centroid` computes that
+   mean today, weighted by the order-zero definition's edges over basic
+   percepts; once round D builds the basic percept with `PiLayer`, the
+   weights are that Pi's.
+2. *A chart whose rows are all form.* On a codebook with no `mereology`
+   (`XOR_symbols.xml` and the other gradient-only test charts) the whole
+   row is form (`FieldProjection.stimulate` reads it so), and an
+   order-zero row is a percept: MTM keeps such a candidate in "the
+   perceptual order" (`FamiliarTier.promote_candidates`). A new one
+   starts at the area of its Pi over its perceptual members, those of
+   order zero or below, weighted by their support until round D gives it
+   a Pi. A higher-order row in its support does not count: XOR_symbols'
+   order-zero candidates hold the order-one rows 29 and 30 as
+   "initialization evidence" (*Claude's reading*: counting them would
+   put a concept's position into a percept's). The same members give its
+   centroid when MTM compares it with another candidate
+   (`FamiliarTier.centroid`, `MediumTermMemory.match_candidate`), in
+   place of §46.13's centroid at the support's greatest order, which
+   Claude accepted in §47.2, point 5, before this answer.
+3. *Above order zero* a row carries no perceptual form (§30.7, rule 4).
+   It is a concept, not placed in any particular way on creation (§48.3,
+   rule 1), and starts at its seed (question 1; settled in §48.11,
+   answer 1, where a concept that words name starts near the objects of
+   their neighbours).
+4. This replaces rule 6 of spaces-apart §4 ("it starts at zero") and
+   settles what that rule left open.
+
+*Checked by Claude* on a scratch copy of the returned source in which
+only `FamiliarTier.cover_members` was changed, with the capacity case of
+§46.16
+(`test_basicmodel.py::TestTrainingUpdatesWeights::test_xor_weights_change_after_one_epoch`);
+one draw of seeds, three runs alike:
+
+| Start of a new row | Rows started at orders 0, 1, 2 | Result |
+|---|---|---|
+| Zero (round C as returned) | 8, 2, 4 | `ConceptRowCapacityError` at order 2 |
+| Order zero at its Pi's area; above, zero | 8, 2, 4 | the same error |
+| Order zero at its Pi's area; above, a seed | 4, 1, 1 | passes |
+| A seed at every order | 4, 1, 1 | passes |
+
+The rows logged at the failure: eight order-zero candidates, four over
+row 0 alone and four over order-zero rows with one or two order-one rows;
+and six raised classes, two at order 1 and four at order 2, each one
+order above its highest member. So the concepts above order zero make
+the overflow. While they all start at one point, MTM's comparison of
+supports finds no two contexts alike, and each recurring context is
+promoted; a seed starts them apart. None of these rows moves during the
+test (a change of exactly 0.0): no gradient reaches them, and the chart
+has no placement step.
+
+*For Codex to read, not decided:* an order-zero candidate's definition is
+written as a union over its whole support (`cover_members` with
+`conjunctive=False` unless its literal is a field), so on XOR_symbols an
+order-zero row is defined over order-one rows, and `FieldProjection.close`
+derives it from them.
+
+### 48.6 Concepts are kept; memories are forgotten on three schedules
+
+1. *No concept is retired* (Alec). No concept row is freed, overwritten
+   or given to another concept. *Claude's reading:*
+   `ConceptForgetting.reclaim_concepts` goes (it runs from `Models` at a
+   closed document boundary when `warn_capacity` finds the inventory
+   full, and erases exact duplicates, unused mints and zero-relevance
+   columns), as does `ConceptualSpace.retire_concept` (`bin/Spaces.py`),
+   which only tests call; their
+   tests (`test/test_concept_forgetting.py` among them) are retired by
+   name. Alec's "You can overwrite the oldest references" (§47.3) and
+   Claude's three defaults for it are withdrawn.
+2. *Memories are forgotten, each on its own schedule* (Alec: "st, mt, and
+   Lt forgetting schedules"). As built:
+   - STM: a store is cleared whole (`STM0.expire`, `STM1.expire`) when it
+     is taken for the next sentence or thought (`SentenceStrata.capture`,
+     `ThoughtStrata`).
+   - MTM: an entry lapses after `mtmHorizon` kept closes (default 16) in
+     which nothing refers to it, in a pool of `mtmCapacity` entries
+     (default 64) (`MediumTermMemory`).
+   - LTM: at a closed document or epoch boundary, `Forgetting.forget`
+     deletes rows by retention value from `forgetHighWater` (0.9) down to
+     `forgetLowWater` (0.7), and `forget_parts` does the same for the
+     relation stratum.
+   *Claude's reading:* these are the three schedules, and none is added.
+3. *A full block* (§46.16; question 3). An automatic promotion (an MTM
+   candidate, and *default* an identity too) whose order's block has no
+   free seat makes no concept: its entry stays in MTM and lapses on MTM's
+   schedule. Each block's unmet demand is reported beside its occupancy.
+   A declared or explicitly requested concept still raises
+   `ConceptRowCapacityError`. This is §46.16's recommendation without
+   "after normal forgetting frees space": no forgetting frees a concept's
+   seat. *Settled in §48.11, answer 3:* it also raises a warning.
+
+### 48.7 System 1 is episodic: what `intuit` and recall return
+
+1. *A System 1 result is an episode, not a point* (*Claude's reading*,
+   question 4). `intuit` returns its field: concepts with their two
+   lanes, places and times. Recall returns the entries it finds, which
+   hold concepts (an LTM0 entry's episodic concepts). Neither is made
+   into a point: nothing averages a field's orders (the producer of
+   §46.7), and nothing chooses one of its orders. So §46.9 is reversed:
+   `Queries.field_candidates` no longer adds an entry per order, bound
+   by `_field_order`, for `intuit`, `query` and `ask`, and
+   `IntuitionField.read` and `ExtendedRecall.answers` take no
+   `FieldProjection.key`. A reader that needs one order's evidence reads
+   that order of the field. This is the "combined read, perhaps
+   ramsified" Alec asked for in §47.3: one result, its orders kept apart.
+2. *A point is made only by System 2* (*Claude's reading*): by
+   `interpret`, which makes a symbol, or by a determiner's selection,
+   which may take the key of a kind's members at their one order (of
+   "a cat", Alec on 2026-11-12: "perhaps it can be a centroid?").
+3. *`expect` and `intuit` predict order zero* (Alec). `expect` already
+   does: `ConceptSpread.open_prediction` runs over the rows of the
+   order-zero block. `intuit` predicts every row
+   (`IntuitionField.open_field`, over `nVectors`, taught at every order
+   by `intuition.field`) by Claude's *default* in §30.4, rule 1, which
+   this replaces: its input and its output become the order-zero block,
+   its teacher the kept field at order zero, and the higher orders of the
+   field it gives come from `FieldProjection.close` (§48.8).
+
+*Settled and amended in §48.11, answer 4:* neither returns anything.
+`intuit` writes into the basic field and propagates; recall brings an LTM
+slot into an STM slot.
+
+### 48.8 Verified: the higher orders derived from order zero
+
+Alec asked whether expectation or intuition at order zero, with
+propagation, derives the rest. It does, wherever there is a definition,
+and a type comes out as strong as its strongest member. Read in the
+returned source by Claude, with one probe of `FieldLogic.reduce`:
+
+- *The propagation is built.* `FieldProjection.close(owner, rows,
+  evidence)` folds each definition once, in dependency order: a union
+  over `store` for a class over its members, an intersection over
+  `store.conjunctive`, and a negated edge exchanging the two lanes.
+  Direct evidence and a definition are independent sources, and the
+  greater is kept. `FieldProjection.stimulate` already works as Alec
+  describes: direct evidence at one order (*default* zero), then `close`.
+- *Both lanes go up correctly.* A union takes the greatest for-lane and
+  the least against-lane of its members, an intersection the reverse
+  (`FieldLogic.reduce`). A type is supported when one member is, and
+  refuted only when every member is.
+- *Only what has a definition is derived.* Classes promoted by MTM
+  (`cover_members`), the arguments (since round B, through
+  `ConceptHierarchy.observe_member`) and the definitions `Interpret`
+  writes over percepts have one. An identity
+  (`FamiliarTier.promote_identity`, a constituent in its store) and a
+  concept minted from an LTM row (`MemoryConsolidation.consolidate`) have
+  none, so nothing would derive their expectation. *Default:* Codex
+  reports which readers expect them.
+- *A derived type is as strong as its strongest member.* Ten members
+  each expected at 0.1 give their class 0.1 (measured); that one of them
+  comes has chance 0.651 if they are independent, and 1 if they exclude
+  one another. So an expectation sure of a type and unsure of its member,
+  "a noun comes next", is weak once derived. It matters most for a new
+  word: parts of speech, rule 5, adds an argument's expected activation
+  at a word's place, which would then be the strongest expected word's.
+  *Default:* the union keeps the greatest, and that priming is measured
+  (parts of speech, certificates 5 and 6) before anything is changed.
+- *Upward only.* `close` derives types from tokens and conjunctions from
+  their parts. What a whole implies of its parts is not derived by it;
+  the expectation of percepts stays with attention's look (§48.2).
+- *A third predictor.* The word loop's prime (§46.5), the compose
+  occupation's argument presence (§46.11), word expectation and a query's
+  context (§46.14) read the shared predictor of `SymbolExpectation`, over
+  the bank of every order. *Default:* it keeps its orders until the word
+  loop is replaced, since it is staged inside the protected places; then
+  attention's expectation is `expect` at order zero, closed upward.
+
+### 48.9 For Alec
+
+1. *A new concept's start.* Above order zero, "not placed in any
+   particular way on creation" is a seed drawn from the concept's own
+   identity (Claude's recommendation; §48.5 shows that it clears
+   §46.16), or zero?
+2. *A word and its object.* Their meta concept draws them toward each
+   other within order zero (Claude's recommendation), or only relates
+   them, so that an object is placed by its classes alone?
+3. *A full block.* An automatic promotion with no free seat leaves its
+   entry in MTM to lapse, an explicit request still raises, and concept
+   reclamation goes (Claude's recommendation)?
+4. *The field read.* `intuit` and recall return their field, orders kept
+   apart, with no point, and the per-order menu goes (Claude's
+   recommendation)?
+
+Alec answered them on 2026-11-16 (§48.11).
+
+### 48.10 What continues round C, once §48.9 is settled
+
+Round C's source (§46) changes in these places, beside what §47.2,
+point 7, already owes:
+
+1. Placement (§48.3): word concepts back in the sentence's placement,
+   with rule 4 added; object concepts out of it and placed by their meta
+   concepts; the pull between a word and its object if question 2 is yes.
+2. The start of a new row (§48.5): `cover_members` on a chart with no
+   placement step, and an order-zero candidate's centroid over its
+   perceptual members.
+3. Memory (§48.6): no concept retired, and the full block.
+4. System 1 (§48.7): §46.9 reversed, and `intuit` over the order-zero
+   block.
+5. Measurements: the argument priming of a new word, before and after
+   (§48.8), with those of §47.2, point 7.
+
+Not in it: the shared predictor and the word loop (§48.2, §48.8); round
+D's `PiLayer`; and the grammatical pressure Alec named in §47.3 ("we may
+need to bind objects within the STM tree so that their gradients
+influence one another"), a design of its own.
+
+§48.11 settles §48.9 and adds to this list; the text for Codex is
+§48.12.
+
+### 48.11 Alec's answers to §48.9, his remarks on §48.8, and the record (2026-11-16)
+
+#### 48.11.1 Alec's words
+
+- Of Claude's "I've recorded that the word loop will be replaced by
+  thinking plus successive attend() calls": "That should not have been
+  recorded just now, that should have been in the spec already. Please
+  read the history of this conversation for other missed details if it
+  was not already in the spec for 1.8". Then: "all messages need not be
+  there, some were reconsidered, but the final version of things should
+  be in the doc, and eventually in the arch".
+- Limit 1 of §48.8: "Limit 1 is worth capturing in the doc: "only
+  concepts that have definitions are derived. Identities, and concepts
+  minted from LTM rows, have none." that fundamental disconnect gives
+  system 2 an ungrounded theoretical life that should be investigated
+  further; ungrounded lives tend to be unhealthy."
+- Limit 2: "if you are talking about using part of speech to decide which
+  word to place when generating a sentence from an idea, yes, that is
+  insufficient. The idea itself will hold that information in an encoded
+  way. when that idea is unavailable, as when thinking or intuiting,
+  semantic location and activation (e.g. priming, recency, etc) will
+  determine which word to choose from a set of grammatically correct
+  choices."
+- Limit 3: "when we have to determine the full field from the basic
+  field, we propagate in one direction. however, distribution is two-way
+  vertically over activations, which then organizes the space
+  within-orders."
+- "Please note in the doc that "basic" is used to refer to basic
+  percepts, order-zero concepts, and order-zero symbols. they are basic
+  in the sense that animals and humans have them, and they are basic in
+  E. Rosch's sense."
+- Question 1: "if you want an approximation, you can probably start with
+  a centroid based on the related objects as determined from word space
+  (i.e. find the k nearest words, find their objects, use that
+  centroid)."
+- Question 2: "that propagation happens throughout orders over all
+  percepts, concepts, symbols, so it should happen on meta concepts
+  also. Although this raises a question for me: with the impending part
+  D work that reduces symbol dim to zero, that propagation would seem to
+  break; there would still be an influence between conceptual orders,
+  but only as mediated by symbols (which would not have an influence
+  because they are dimensionless and arbitrary). That seems quite good,
+  actually, please capture in the doc (along wth everything else)."
+- Question 3: "you can raise a warning. Im surprised we are running out
+  of concepts with small models, we should examine the allocation."
+- Question 4: "intuit and recall dont return ; intuit writes to the
+  basic conceptual field and does propagation, recall brings an LTM slot
+  into an STM slot"
+
+#### 48.11.2 "Basic"
+
+"Basic" names one level in each space: the basic percept, the order-zero
+concept and the order-zero symbol. Where this specification says "order
+zero" of a percept, a concept or a symbol, "basic" means the same, and
+the basic field is the order-zero block of the field. They are basic in
+two senses (Alec): animals and humans both have them, which is why
+System 1 works on them (§48.7); and they are Rosch's basic level, the
+level of categories first learned and most used, between the
+superordinate and the subordinate (Rosch, Mervis, Gray, Johnson and
+Boyes-Braem, 1976). Alec gave such a percept its place on 2026-11-12:
+"the basic level percepts that take the centroid of their parts and
+wholes as a location have a physical situation, and correspond to
+particular conceptual events". The area of its Pi (§48.5) is that place.
+
+#### 48.11.3 The three limits of §48.8, as Alec reads them
+
+1. *An ungrounded System 2* (limit 1; to be investigated). A concept
+   with no definition has no extension that order zero reaches: nothing
+   System 1 predicts at order zero derives it (§48.8), and only System 2
+   activates it, through a word's definition row, a reference or a
+   recall. Two kinds are known. One is the identity:
+   `FamiliarTier.promote_identity` keeps an occurrence as its constituent
+   and defines the words it is made with (`InterpretLayer.define`), so an
+   identity is the object those words name, one order above that
+   occurrence. The other is a concept minted from an LTM row
+   (`MemoryConsolidation.consolidate`). Alec calls the disconnect an
+   "ungrounded theoretical life" of System 2 and asks that it be
+   investigated; it is not a rule of round C. *Default:* round C's
+   continuation counts these concepts by kind and says which readers
+   activate them (§48.12), and the question goes to `doc/FutureWork.md`
+   in the doc pass.
+2. *Choosing a word* (limit 2). Saying an idea, the idea holds which
+   word is meant, in an encoded way. Without the idea, in thinking or
+   intuiting, the grammar gives the admissible words, and "semantic
+   location and activation (e.g. priming, recency, etc)" choose among
+   them (Alec). *Claude's reading:* the limit concerned reading as well:
+   a new word's place is primed by the argument it fills (parts of
+   speech, rule 5), and an argument derived from order-zero expectations
+   is as strong as its most expected word. By Alec's rule, the argument
+   says only which words are admissible; which of them is expected is
+   location and activation. *Default*, unchanged: the union keeps the
+   greatest, and the priming is measured (parts of speech, certificates 5
+   and 6).
+3. *Two directions* (limit 3). Deriving the full field from the basic
+   field goes one way, upward (`FieldProjection.close`); "upward only" in
+   §48.8 is said of that derivation. Distribution, the spread of
+   activation, goes both ways between orders, and that activation
+   organizes each order's places, inside the order (§3.18: "the
+   propagation up and down will cause types to exert influence on
+   related tokens"; Alec, 2026-11-15: "vertical priming (up and down)
+   influences distribution within an order"). Nothing in round C changes
+   for it.
+
+#### 48.11.4 The four answers
+
+1. *How a new concept starts* (question 1). Zero is never a start.
+   - An order-zero percept starts at the area of its Pi (§48.5, points 1
+     and 2).
+   - A concept that words name when it is made, an identity
+     (`FamiliarTier.promote_identity`), starts near the objects of its
+     words' neighbours (Alec's approximation). For each word it is made
+     with, take the k nearest words, by the cosine of their places, among
+     words of that word's order; take the objects they name
+     (`named_identities`) at the new concept's order; start at the
+     centroid of those objects' places, renormalized as a place is.
+     *Default:* k = 3, a `ConceptualSpace` key `objectStartNeighbours`;
+     the neighbours are read and never moved. This replaces the zeroing
+     of the identity's row and, on a placed chart, its placement by the
+     sentence's context (an object is placed by its meta concepts,
+     §48.3, rule 4). A comparison among words selects, and a mean among
+     objects of one order places; no position crosses an order or a
+     space.
+   - Any other new concept (one no word names when it is made, as an MTM
+     class on XOR_symbols), and an identity with no such neighbour,
+     starts at a seed drawn from its own identity (*default*; the trial
+     of §48.5). *Default:* the seed is a unit vector of normal values
+     from a generator keyed by the concept's id.
+   - The member fold stays the extension (`cover_members`).
+2. *Meta concepts* (question 2). The meta concept of a word and its
+   object is primed and primes, up and down, like any concept, and the
+   pull of a concept on its members acts on it too (Alec: "it should
+   happen on meta concepts also"). *Claude's reading*, by the rule of
+   2026-11-15 that a pull stays within an order: it draws its members
+   toward each other within each order. A word is at order zero and the
+   object it names is often higher (an identity is one order above its
+   occurrence); such a pair is related by activation only, and neither
+   moves the other. A word and an object of one order are drawn
+   together. *Default:* each definition row is its own meta concept, one
+   word and one object, so two objects of one word (polysemy) are not
+   drawn together by it.
+3. *A full block* (question 3). An automatic promotion (an MTM
+   candidate, `FamiliarTier.promote_candidates`, or an identity,
+   `promote_identity`) that finds no free row in its order's block makes
+   no concept, raises a warning, and leaves its entry in MTM to lapse on
+   MTM's schedule (§48.6). *Default:* one `RuntimeWarning` per order per
+   run, naming the order, the block's size and the promotion refused, and
+   a count of refusals per order beside occupancy. *Claude's reading:* a
+   declared concept, a word's admission and a test's explicit request
+   still raise `ConceptRowCapacityError`, since their callers need the
+   row. With no concept retired, `ConceptForgetting.reclaim_concepts`,
+   `ConceptForgetting.warn_capacity`, their call in
+   `BasicModel.post_tick_compact`, and `ConceptualSpace.retire_concept`
+   go, with their tests.
+4. *What `intuit` and recall do* (question 4). They return nothing
+   (Alec).
+   - `intuit` writes into the basic conceptual field, the order-zero
+     block of the open field, and propagates: `FieldProjection.close`
+     derives the higher orders (§48.8). Its input and output are the
+     order-zero block (§48.7, rule 3).
+   - Recall brings an LTM slot into an STM slot: the matched `LTM0` entry
+     is put into a chunk of STM with its time, as
+     `EntryRead.recall_chunks` does (today only tests call it). What
+     comes next reads that slot as it reads any slot of STM.
+   - Neither makes a point or an operand of its own. §46.9 is reversed
+     as §48.7 says: `IntuitionField.read` and `ExtendedRecall.answers`
+     take no `FieldProjection.key` and give nothing per order, and
+     `Queries.field_candidates` offers each of `intuit` and recall once,
+     with no `_field_order`. A point is still made only by System 2
+     (§48.7, rule 2). *Claude's reading:* an answer is what thinking
+     leaves in STM, read where it is used, by generate, a comparison or
+     bind.
+
+#### 48.11.5 Symbols without dimensions
+
+Alec's remark under question 2, as he put it: once symbols have no
+dimensions, an influence between conceptual orders remains only through
+symbols, and symbols, "dimensionless and arbitrary", exert none of their
+own. "That seems quite good, actually." Between orders only activation
+passes, through the graph of sigma and pi, and no order moves another's
+places: the rule of 2026-11-15, made structural.
+
+*Claude's reading*, for Alec: the symbol without dimensions is §3.18's
+("A symbol is a point of it, with no location and no dimensions";
+2026-11-12), and what rounds A to C built of it is that a row above
+order zero carries no perceptual form (§30.7, rule 4). Round D as
+written changes order zero only (sigma-pi §18.5, rule 12: "The symbolic
+orders, their definitions and their rules are as they are"). So no round
+yet takes a symbol's own dimensions away; where that is built is his to
+say, and it does not bear on round C.
+
+Asked which round should take symbols' dimensions away, Alec answered:
+"Add it to round D" (2026-11-16). It is written as §18.22 of
+`doc/plans/2026-11-14-sigma-pi-layers.md`. Claude first read that this
+needs §3.19's "two kinds of row" (certificates 57 to 62), which §30.8
+had put in FutureWork, and then proposed keeping the shared row. Alec
+decided the same day: "The split between concepts and symbols is not
+future work. So make symbols dimensionless in round D, and split
+symbols from concepts. If you want to make promotion easier, it is fine
+to make a symbol for every concept premptively, but they are still
+separate tensors." §18.22 there holds his full words, what the vertical
+maps are today (two sparse matrices, learned, joining rows of one
+table), and the rules.
+
+#### 48.11.6 The allocation
+
+Alec: "Im surprised we are running out of concepts with small models, we
+should examine the allocation." Examined by Claude on `XOR_symbols.xml`,
+the chart of §46.16, in a scratch copy of round C as returned:
+
+- *How rows are given out.* A `ConceptualSpace` has `nVectors` free rows
+  (32 here) over its orders (three here, 0 to 2). `_order_caps` tapers
+  them geometrically, each order about half the one below: 19, 9 and 4.
+  The grammar's seats are added on top
+  (`PartsOfSpeech.order_reservations`): 10 formal arguments at order 1
+  and 5 operators at order 2. So the blocks are 19, 19 and 9 rows, 47 in
+  all.
+- *What filled them in one epoch, with round C's zero start.* Order 0,
+  10 of 19 (eight concepts, a word and one untyped row); order 1, 12 of
+  19 (the 10 arguments and two classes); order 2, 9 of 9 (the 5
+  operators and four classes). The fifth class at order 2 raised
+  `ConceptRowCapacityError`. With a seed start (§48.5), 4, 1 and 1 new
+  rows, and order 2 holds 6 of 9.
+- *So* the shortage came from the zero start, through which MTM promoted
+  each recurring context again; the blocks' size only made it show early.
+  The top order of a small chart keeps few free rows (4 of 32 here), and
+  the grammar's seats take about a third of the inventory.
+- *Default:* the allocation is not changed in round C. A row is costly
+  (Alec, 2026-11-08, of rows in LTM: "we should not be adding rows, here
+  or anywhere, without a lot of justification"). The continuation
+  reports each order's block, seats, rows used and promotions refused on
+  XOR_symbols and in the lesson (§48.12), and the taper waits for those
+  numbers.
+
+#### 48.11.7 The record of this conversation
+
+Alec asked that this specification hold the final version of what was
+decided in this conversation, not every message: "some were
+reconsidered". Claude compared his messages from 2026-11-08 on with this
+specification, its companions (parts of speech, spaces apart, sigma-pi,
+the assessment) and the documents, first by their words and then by
+their subjects. Two final decisions were missing: the replacement of the
+word loop, whose final version §48.2 now states, and the rule on rows,
+quoted in §48.11.6. Everything else Claude found is here, in a companion
+or in the documents in its final form, or was reconsidered; a decision
+recorded only in other words could have been missed by that comparison.
+The doc pass carries the final versions into the documents ("eventually
+in the arch").
+
+### 48.12 Codex text: continue round C (Claude, 2026-11-16; for Alec to paste)
+
+~~~
+Continue item 1.8, round C
+(doc/plans/2026-11-11-item1-8-last-architecture-round.md). Your partial
+return is §46 and Claude's review §47. Alec's answers and the revised
+rules are §48; where they differ, §48.11 is the last word. Read §48 whole
+first, then doc/plans/2026-11-15-parts-of-speech.md (rules 4d, 5 and 6,
+§12) and doc/plans/2026-11-15-spaces-apart.md (§2; §4, rules 3, 6 and
+11), both revised today. A rule marked default is Claude's: follow it,
+and say in the return where it does not fit. Find the cause of any
+failure yourself; fix a same-round test's setup defect without changing
+its assertions, and say so. Continue without stopping and record each
+decision you take.
+
+Leave bin/Attention.py, bin/ModelAttention.py, bin/SentenceAttention.py,
+bin/AttentionTraversal.py and Models._run_sentence_word_bricks as they
+are, apart from the accepted edit of §46.5 (§31.3, §48.2). Resize no
+fixture's capacities. No language is named in code. Commit nothing
+unless Alec asks. Never push main, and never force-push.
+
+1. Placement (§48.3; §48.11.4, answer 2).
+   a. MereologicalCodes.observe_close places every word concept present
+      at the kept close again, including one that filled an argument:
+      withdraw §46.6's exclusion through PartsOfSpeech.group_rows for
+      word concepts. Arguments stay out of it, placed by parts-of-speech
+      rule 3.
+   b. Parts-of-speech rule 4's pull is added to that placement.
+   c. Object concepts (symbol type 'object') leave the sentence's
+      placement, including derived.place_rows for a new identity in
+      FamiliarTier.promote_identity. Each active meta concept of an
+      object draws it toward the centroid of that concept's members of
+      its own order.
+   d. The definition row InterpretLayer.define writes is the meta concept
+      of a word and its object. Its pull acts within each order: members
+      of one order are drawn toward each other; a word and an object of
+      different orders are related by activation only. Default: each
+      definition row is its own meta concept.
+2. Where a new row starts (§48.5; §48.11.4, answer 1). Zero is never a
+   start.
+   a. An order-zero row on a chart with no placement step (XOR_symbols)
+      starts at the area of its Pi: the support-weighted mean of its
+      perceptual members, order zero or below
+      (FormCentroids.convex_mean); a higher-order row in its support does
+      not count. FamiliarTier.centroid and
+      MediumTermMemory.match_candidate take such a candidate's centroid
+      over the same members, in place of §46.13's greatest order.
+   b. A new identity (FamiliarTier.promote_identity, which defines its
+      words at once) starts at the centroid of the places of the objects
+      named by its words' k nearest words: for each of its words, the
+      neighbours by cosine among words of that word's order; their
+      objects (named_identities) at the new identity's order; the mean
+      renormalized as a place is. New ConceptualSpace key
+      objectStartNeighbours, default 3. This replaces the zeroing of its
+      row.
+   c. Every other new concept, and an identity with no such neighbour,
+      starts at a seed drawn from its own identity: default, a unit
+      vector of normal values from a generator keyed by its concept id.
+   d. FamiliarTier.cover_members keeps the member fold as extension
+      only. Rows already placed are not reset.
+3. Memory (§48.6; §48.11.4, answer 3).
+   a. Delete ConceptForgetting.reclaim_concepts and
+      ConceptForgetting.warn_capacity, their call in
+      BasicModel.post_tick_compact, and ConceptualSpace.retire_concept.
+      Retire their tests and name each in the return. No concept row is
+      freed, overwritten or reused.
+   b. When FamiliarTier.promote_candidates or promote_identity finds no
+      free row in its order's block
+      (ConceptualSpace._preflight_concept_row), it makes no concept and
+      leaves the MTM entry to lapse on MTM's schedule; it counts the
+      refusal for that order and raises one RuntimeWarning per order per
+      run, naming the order, the block's size and the promotion refused.
+      A declared concept, a word's admission and a test's explicit
+      request still raise ConceptRowCapacityError.
+4. System 1 (§48.7; §48.11.4, answer 4). intuit and recall return
+   nothing.
+   a. intuit's input and output are the order-zero block
+      (IntuitionField.open_field), and its teacher is the kept field at
+      order zero. Its face writes the prediction into the open field's
+      order-zero block and runs FieldProjection.close; it gives no value,
+      meaning or point.
+   b. Recall puts the matched LTM0 entry into a chunk of STM with its
+      time, as EntryRead.recall_chunks does; what follows reads that
+      slot.
+   c. Reverse §46.9: IntuitionField.read and ExtendedRecall.answers take
+      no FieldProjection.key and give nothing per order;
+      Queries.field_candidates offers intuit and recall once, with no
+      _field_order. Remove the readers of _field_order that serve only
+      this (ReferenceClose, PartClosing, IndependentComponents: check
+      each). FieldProjection.key keeps its numeric readers at order zero.
+   d. Default: the shared SymbolExpectation predictor keeps its orders
+      (§48.8).
+5. Measure on the finished source, before and after where the change can
+   move it:
+   a. rung 1 and the unforced turnover case (§45.4, point 1);
+   b. parts-of-speech certificates 2, 3, 4a, 5, 6 and 8, with the
+      argument priming of a new word;
+   c. for XOR_symbols and the lesson, each order's block, grammar seats,
+      rows used and promotions refused (§48.11.6);
+   d. the concepts with no definition, by kind (identity, consolidated,
+      other) and chart, and which readers activate them (§48.11.3,
+      point 1);
+   e. the lesson with each order's occupancy, the verbal proof, the
+      assessment's tables and the collapse table;
+   f. test/test_basicmodel.py::TestTrainingUpdatesWeights::test_xor_weights_change_after_one_epoch
+      passes with no promotion refused (§46.16).
+6. Both stopping gates, then one default sweep:
+   env -u RUN_TRAINED -u RUN_SLOW make test
+
+Not in this round: the word loop and the shared predictor (§48.2,
+§48.8); round D; symbols without dimensions (§48.11.5); the binding of
+objects in the STM tree that Alec named in §47.3.
+
+Write your return as §49 of the specification: what changed, by
+function; each test retired or ported, by name and why; the
+measurements; and what you did not do, with the reason.
+~~~
+
+## 49. Round-C continuation (Codex, 2026-11-16; through Alec for Claude)
+
+This supersedes the choices in §46 that §48
+changed; it does not erase the intermediate failures recorded there.
+The uniform operator charge, reviewed ladder, located POS observations,
+within-order pulls, extension-centroid occupation and space-separation
+repairs of §46 remain, except where explicitly revised below. Their
+before failures remain recorded there. The checkpoint remains `ac8fbb011483b12c3b9bd21763f284a6880c8c87`.
+Nothing after that checkpoint is committed or pushed. Receipts stay local
+and are not linked. The final validation and digest are recorded below.
+The final retirement audit restored the independent zero-magnitude
+`MeaningCodes.defined_code` test from the deleted forgetting module,
+unchanged, under `test_concept_evidence.py` (one passed, 2.47 seconds).
+A zero unwitnessed meaning is distinct from a nonzero concept position.
+The corrected inventory is **144 ports** and **17 whole retirements**,
+including the one intermediate §46 port and retirement.
+
+### 49.0 The retained round-C mechanisms
+
+`OperationSelectionLayer.forward` and `LanguageSpace.choose_generate`
+subtract `operatorCost` (default 1) once per available operator, including
+both bind dummies; STOP/wait remains uncharged. `UnaryHistory.penalty`
+is removed; its inverse/swap legality remains. `WholePaths.finish` records
+the complete kept compose/reconstruction/output application count as one
+`operator.application` regularizer, consumed by `objectives` and `credit`.
+The four native before failures in §46.2 are retained: at c=.75 a repeated
+unary's scores change from (4,3,0) to (3.25,3.25,3.25); the binary dummy
+from 0 to −.75; generate's equal-score operator loses to uncharged STOP;
+and five versus six kept applications add 3.75 versus 4.5 to path R.
+Suffix replacement does not charge a reused prefix twice.
+
+`PartsOfSpeech.observe_kept/_occupied_field` puts each filled formal
+argument at order one at the actual word's extent. `_place_groups` uses
+all memberships for the upward pull and all members for the downward
+context, moving only present rows, with same-order negatives. The class's
+own place stays separate from its word-extension centroid. Compose's
+occupation read and `GenerateOccupation` add expected argument activation
+to likeness to that centroid. Generate forecasts from its causal emitted
+prefix through the existing predictor, without reading a desired answer.
+The membership/placement-revision cache is reconstructible and unsaved.
+The reviewed ladder, including twenty distinct words at rung 2 and the
+reviewed trees at rungs 5, 6 and 9, remains diagnostic only.
+
+### 49.1 Placement, by function
+
+`MereologicalCodes.observe_close` again includes every present word in
+ordinary sentence placement. It removes formal arguments and objects
+from that context. `PartsOfSpeech.group_rows`, whose exclusion also
+removed the words, is deleted. The existing deferred
+`PartsOfSpeech._place_groups` adds the argument/word pulls after the
+selected references are written; it does not substitute for the ordinary
+word placement. This retains §46.13's protection against moving a
+selected reference before its writer checks it.
+
+`ConceptPlacement.meta_groups` supplies the additional object groups to
+the existing placement step and its same-order negatives. For an active
+class it groups its members by their order and moves the present object
+members. For each active Interpret definition pair it groups that one
+word and that one object: a same-order pair can move its present members;
+a pair at different orders has no geometric pull. Two definitions of a
+polysemous word remain two groups. No definition column or position was
+added. `FamiliarTier.promote_identity` no longer places a newly made
+object by its sentence.
+
+`test_sentence_places_words_in_addition_to_their_argument_pull` and
+`test_definition_meta_concepts_pull_only_present_members_of_one_order`
+exercise the ordinary placement and the extra pull separately. The latter
+checks a same-order pair, a cross-order pair, absence and unchanged
+neighbours. The other-order rotations, frozen-row and centroid-refresh
+certificates of §46 remain. The word-argument extension cache is still a
+rebuildable member sum keyed by membership and placement revisions, not
+an extra persisted table.
+
+### 49.2 Where a row starts, and what its fold means
+
+`ConceptPlacement.initialize`, called by
+`ConceptualSpace._declare_concept_row`, gives each newly seated row its
+own ID-keyed normal unit seed. It uses a local generator, consuming no
+training random stream. `Spaces._prebuild_declared` had then erased the
+seeds of formal arguments and operators. The new
+`test_declared_arguments_and_operators_keep_their_id_seed_without_invented_views`
+failed on that reset (one failure, 2.57 seconds); the reset is removed.
+Their count, radius and evidence still start at zero: a place invents no
+view.
+
+`FamiliarTier.cover_members` keeps the fold in trust content as extension
+and does not reset an already placed row. On a chart without a placement
+step, an order-zero concept's initial point is
+`FormCentroids.convex_mean` over support at order zero or below, weighted
+by support. Higher-order support remains in its definition and does not
+enter this centroid. `FamiliarTier.centroid` and
+`MediumTermMemory.match_candidate` use the same perceptual subset for
+these candidates. Above zero the place stays the own-ID seed. The old
+zero start made distinct recurring higher-order contexts geometrically
+indistinguishable and produced the capacity failure in §46.16.
+
+`ConceptPlacement.identity_start` reads up to
+`objectStartNeighbours` nearest words for each naming word, by cosine at
+that word's order, then averages only their named objects at the new
+identity's order and renormalizes. Named objects are deduplicated before that mean, so multiple neighbouring spellings do not weight one object repeatedly. The new XML/XSD key defaults to 3.
+No selected neighbour moves. With no eligible object, or a cancelling
+mean, the original unit seed remains. `FamiliarTier.promote_identity`
+keeps its observed-form fold separately; `MemoryConsolidation.consolidate`
+and the explicit `IdentityRows.mint` likewise retain content as extension
+without copying it into the concept's place. The explicit mint had still
+copied its witnessed value into `W`; its new regression checks both the
+seed and the separate retained extension.
+
+**Native coordinates.** A normal seed can be signed. A whole-value chart
+has no paired meaning region; `IdentityRows.carrier/coordinates` and
+`ConceptTrust.remember/observe` accept finite signed coordinates there.
+A paired meaning chart still validates its evidence coordinates in
+[0,1]. Its `MereologicalCodes.positive_directions` renders the positive
+part of the signed placement, normalized, into those lanes; it does not
+replace the placement. Cross-order member agreement keeps its signed
+extension in separate positive/negative coordinates for the scalar
+coverage calculation. No member direction becomes the parent's place.
+The signed-seed/native-evidence regression failed before this boundary
+was corrected. **Against the normal-seed default:** an entirely negative
+placement can initially render zero positive direction, although its
+place is nonzero. No seed was selected, retried, made positive or tuned
+to remove that case; the distinction is reported for Claude's review.
+
+The first three continuation certificates failed before (3 failures,
+3.09 seconds): own-seed start, perceptual-only centroid, and automatic
+full-block refusal. The tests also verify that the member fold remains
+available and existing positions and neighbour objects do not change.
+
+### 49.3 No concept reclamation
+
+`ConceptForgetting.py` is deleted, with `reclaim_concepts`,
+`warn_capacity`, and its root walk. `BasicModel.post_tick_compact` no
+longer invokes them. `ConceptualSpace.retire_concept`, the allocator's
+row-dropping path, the sparse row-key removal and the trust retirement
+writer are removed with their callers. Old checkpoint metadata can still
+identify historically missing handles; no live writer frees, overwrites
+or reuses a concept seat. STM, MTM and LTM forgetting keep their existing
+separate schedules.
+
+`ConceptPlacement.promotion_seat` is the automatic-admission boundary
+used by `FamiliarTier.promote_candidates` and `promote_identity`. A full
+order block increments that owner's per-order refusal count, warns once
+for that order during the run, and leaves the MTM entry and its evidence
+alone. Subsequent ordinary closes may reconsider it; no concept deletion
+can make room. Explicit admissions retain `ConceptRowCapacityError`.
+Callers tolerate the absence of an automatically promoted identity
+instead of treating it as a resolved reference. The warning states the
+order, block capacity and refused promotion. Counts and warnings are
+run diagnostics, not checkpoint evidence or another forgetting schedule.
+
+### 49.4 System 1 writes the field or a live STM slot
+
+`IntuitionField.open_field` runs the one stack on the order-zero block
+and records the observed basic field as its teacher. It does not deposit
+the result. Only selected `IntuitionField.read` joins the prediction to
+the active stream's basic field at its current bracket and calls
+`FieldProjection.close` upward. Existing higher-order evidence, other
+streams, locations and percepts remain. The method returns `None`.
+`Extension`/`Intuition.write_knowing` and `IntuitionField.complete` teach
+only the basic block, excluding the stack's own deposit. `WalkTrials`
+keeps a selected deposit in its effects-only restoration and removes it
+on full restoration. `SentenceBoundary` retires the bracket state with
+the sentence. The selected-write regression checks the two-lane result,
+teacher and both restorations. This regression is a single-stream fixture;
+the retained native recall isolation test covers separate streams.
+
+`ThoughtFaces.intuit` gives no meaning, value or point. `Queries.query`
+loads its matched frames through `EntryRead.recall_chunks`, then gives no
+semantic operand. `Queries.field_candidates` offers each face once.
+`ExtendedRecall.answers` and the per-order `_field_order` request/read
+path are deleted. `ReferenceClose`, the PartClosing paths and
+`IndependentComponents` retain their real request/reference order reads;
+none receives an order selected for an invented System-1 point.
+`FieldProjection.key` remains for its numeric order-zero readers. The
+shared `SymbolExpectation` predictor keeps its orders, as §48.8 requires.
+
+`EntryRead.recall_chunks` copies the matched LTM0 entry and original time
+into the ordinary constructed STM chunk. Re-reading an already held
+occurrence refreshes that same slot, including trust zero; it does not
+invent another time or another occurrence. `ThoughtStrata.write/View.read`
+round-trip the flat extension through the native STM0 episodic columns,
+with the existing `episodicConcepts` capacity. Duplicate entry concepts
+join their lanes by maximum. No fixture's rows or chunks were enlarged.
+
+`ThoughtChunks.retain` attaches the semantic view to that actual slot;
+`held`, `read` and `recalled` recover it from the live slot and its current
+truth. `Thoughts.retrieved_frames`, and the relation-premise consumers in
+`ThoughtStream`, now use this live read instead of result/history copies.
+`ThoughtStream.materialize/integrate` no longer turn query frames or an
+intuition field into a point or an automatic answer. Explicit later
+inference and binding still conclude through their existing readers.
+`EpisodicMemory.reinstate`, its direct conceptual-field overwrite, the
+`_episode_review_field` state and its production counters are removed.
+
+**Relation-read time decision.** LTM1 has no episodic time to restore.
+A relation loaded by the same existing recall reader takes the time of
+that read for its STM view; a repeated read keeps its existing slot's
+time. LTM0 keeps its stored time exactly. This prevents unrelated
+semantic rows, whose old frames all had zero time, from aliasing one STM
+address. It adds no time column to LTM1. The native relation-recall mocks
+now supply the live clock they require.
+
+### 49.4a Final space-separation reader inventory
+
+This is the final state of spaces-apart's thirteen sites; it replaces the
+zero-start and per-order System-1 assumptions in §46.10.
+
+| Site | Final reader/writer |
+| --- | --- |
+| 1, `PartsOfSpeech.observe_seat` | Records formal memberships; never copies a word's position into the operator. |
+| 2, `ConceptTrust.project` | Count/radius scales the row's existing direction; retained content is extension. New directions now have their own seeds. |
+| 3, `FamiliarTier.promote_identity` | Neighbour objects at the new row's own order supply the start, otherwise its ID seed; no sentence placement of objects. |
+| 4, `ReferenceClose.commit/commit_read_words` | Cross-order references supply counted views, not position writes. Actual basic-percept evidence remains. |
+| 5, `MemoryConsolidation.consolidate` and `IdentityRows.mint` | Retained occurrence content supplies extension and views; the concept retains its own place. |
+| 6, `FamiliarTier.cover_members` | The member fold is extension. Only a new order-zero row without a placement step starts at the perceptual support mean. |
+| 7–8, compose and `GenerateOccupation` | Word fit reads an argument's word-extension centroid plus its expected activation, never the argument's own position. |
+| 9, `FamiliarTier.centroid` / MTM matching | The candidate's perceptual support at order zero or below supplies the initial order-zero centroid; higher-order support does not enter it. |
+| 10, `FieldProjection.stimulate` | Direct comparison is within the supplied order (zero for perception); definition closure carries activation upward. A generated reference supplies its own order. |
+| 11, `FieldProjection.key`, intuition and recall | Numeric key remains order-zero. Intuition deposits the basic field then closes it; recall loads live STM. Neither supplies a point. |
+| 12, reference selection | Candidate pools carry their own orders; explicit requests filter by order. An untyped dummy does not close by geometric identification. |
+| 13, answer cost | Comparison uses only target-word concepts at the answer's order. |
+
+The five additional sites remain as audited in §46.10: the optional
+nonserial SBOW loss reads separate decoded order slabs and same-order
+negative pools; `ClauseRow.consequents/evaluate` require endpoint orders;
+the unchanged attention bank's readers match by native identity or an
+explicit order; `IndependentComponents.innovation` subtracts scalar
+readings of each role on its own-order axes; consolidation keeps a
+kind's clause-role value as extension. The exclusion census counts the
+accepted eight/no-joint retained occurrences separately per order and
+invalidates its nonpersistent cache on a referent change. The accepted
+OrderPrime edit preserves each block through the protected word loop.
+The original 24 separation/POS certificates failed on A/B (6.02 seconds);
+interface-absence failures are distinguished from the concrete rotation
+counterexamples in §46.5/7. Their final outcomes are counted below.
+
+### 49.5 Defaults and boundaries
+
+Built defaults: operatorCost=1 and the registry regularizer term; one definition row per meta group; all memberships for
+the upward POS group; all members for the downward context, moving only
+present members; rebuildable extension centroids; likeness plus expected
+activation; k=3 neighbour words for an identity's start; an own-ID normal
+unit seed otherwise; one warning per order per run and counted automatic
+refusals; unchanged block allocation and taper; unchanged all-order
+shared predictor; and reporting undefined concepts rather than adding
+definitions. The positive-cone rendering and signed-context normalization issues in
+§49.8 qualify the normal-seed default. The fixed certificate-2 merge
+also remains incomplete; the specified group choices are retained. The measurements below test the
+strongest-member union and do not replace it with a probability sum.
+
+There is no edit in the four attention files. The only change inside
+`Models._run_sentence_word_bricks` remains the accepted §46.5 typed
+expectation-prime block, which must be carried through the performance
+merge. This continuation makes no further change there. No first-walk
+teacher, change of mint purity, round-D symbol/percept rewrite, shared
+predictor redesign, or binding of objects in the STM tree was built;
+each is outside this round's latest scope. The parent WikiOracle pointer
+and the unrelated item-1.5 plan remain untouched.
+
+### 49.5a Thought workspace and selected-premise lifetime
+
+`BasicModel._run_selected_thought_once` used to choose a closed episode's
+first inference from the resident chunks, then allocate its focus before
+reading the selected premise. With all eight slots occupied, that deposit
+evicted the oldest premise just selected. This is a separate small
+reproduction, not the producer of the native certificate-90 failure.
+`test_opening_episode_preserves_its_selected_resident_premise` reproduces
+the absent-address error before the repair (one failure, 3.24 seconds).
+A selected chunk operand now gets its ordinary read before the opening
+deposit. Its LRU timestamp is refreshed; enumeration and an explicit no-op
+still read nothing. No stale semantic copy substitutes for the slot.
+
+`ThoughtChunks.begin` also read no resident operands before allocating
+an open request's focus. The eight-slot regression
+`test_opening_a_request_preserves_its_owned_resident_operand` failed at
+the absent-address read (one failure, 2.50 seconds). The ordinary read
+of each distinct incoming chunk operand now precedes that allocation.
+The unchanged slot count, retained reference and distinct focus assertions
+pass after. This does not pin another slot or retain an evicted copy.
+
+**Native certificate 90's actual producer.** A passive replay reproduced
+its failure at presentation round 71, with all 70 completed-round records
+and teaching probabilities identical. `ThoughtStream.candidates` read
+`registry.space.stm`, while the episode, recall and inference used
+`model.conceptualSpace.stm`. On the unshared multistage model these are
+different workspaces. The chosen premise was absent from the execution
+STM already at choice time; no intervening deposit had evicted it.
+Candidate enumeration now takes that execution STM as an explicit
+argument, for the opening menu, subsequent menus, resident results and
+recalled frames. It does not change the conceptual dictionary owner.
+`test_thought_menu_reads_the_execution_workspace_in_an_unshared_model`
+fails before because its menu offers the other workspace's premise
+(one failure, 3.28 seconds), and passes after through native inference.
+Together the two new workspace/lifecycle regressions pass in 3.01 seconds.
+The broader thought check passed 175 tests and skipped one; its one
+remaining error was a direct test caller missing the new required STM
+argument. That call was ported without changing its assertions and passes
+in 2.39 seconds. The fresh complete sweep includes all these checks.
+
+The port from a recall answer to a symbolic `isPart` filling also exposed
+a latent staging error. `ThoughtStream.materialize` supplied the still-open
+request as the result's meaning. `ThoughtChunks.put` correctly gives an
+open question zero trust, so the checked binding's truth was lost before
+`integrate` filled its reference. Materialization now applies the existing
+`ThoughtReferences.fill` to that checked `reference`/`binding_value` before
+staging. The two nested-credit assertions fail at 0 versus 1 before and
+pass unchanged after; no open question is allowed positive trust. An open
+relation's absent predicate raises `TypeError` at signature lookup, so the
+new System-1 no-return guard handles it alongside `ValueError`, as the
+other relation readers already do. No grammar menu is changed by these
+repairs.
+
+### 49.5b Event-link ordering and grammar capture
+
+The next unchanged-source diagnostic, snapshot
+`5266f023fd281a4f6c0f975c949fee38e34288fecb679ce46d96edaa38301652`,
+passed both stopping gates but exposed two further runtime errors. It is
+not the final sweep. Its recognition replay passed the earlier failing
+round 71; those unfinished curricula are not claimed as completed results.
+
+**A link's collection changes within one close.**
+`test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles`
+failed the native `MemoryLink.link` containment guard. The exact captured
+stream passes on A/B (**38.023950 seconds**) and reproduces on this
+round's source (**28.215036 seconds**). The selected event collection
+initially held occurrence 54; by the failing append of occurrence 94 it
+also held 90 and 91. Independent prepared menus all read the earlier
+collection. One earlier kept addition enlarged it: the later selected
+value and that new collection no longer contained each other. The guard's
+ratios were **0.9977798462 and 0.9999990463**. A trace of the actual menu
+and commit reads, without another memory read, identifies this change;
+no tolerance is added to the guard.
+
+`MemoryLink.preview/menu` now carry the maximum of earlier prepared
+additions into later choices for that same collection and member kind.
+This is the existing `MTM.value_of` collection rule, in a local preview
+map; MTM is not written by preview. `ReferenceClose.link_events` commits
+those selected event links in their prepared order, rather than participant
+set order. Unprepared links retain their ordinary reader. The native
+regression `test_event_menus_include_earlier_links_of_the_same_kept_close`
+starts with (.1,.1), then proposes (.8,.2) and (.2,.8): the second cannot
+join the first enlarged collection. It fails before (**one failure,
+2.83 seconds**); the event-order file passes after (**three passed,
+2.62 seconds**). The unchanged captured math-chain failure stream passes
+(**34.324585 seconds**). The guard, capacities, training count and seed
+are unchanged; this is not a baseline mark.
+
+**An unpromoted handle was called a concept.** The 160-sentence lesson
+stopped after 152 completed sentences. Its passive replay reproduces all
+152 recorded fields exactly. `LanguageSpace.program_meaning` attempted to
+form a selected part relation with concept ID **4231**, although the
+allocator held concepts **1–450**. That ID is in MTM's constructed
+transient range. `Models._program_entries` normalized handles only when an
+already named MTM entry supplied a reading; a fresh or unnamed handle
+could escape into `Reading.concept_ids`, which the adapter correctly
+expects to be conceptual references.
+
+Capture now gives a remaining transient the actually observed lexical
+concept at that place, or **−1** if that place has none. It keeps the
+transient in the operation/identity journal and leaves its captured values
+unchanged. It allocates no concept, chooses no identity by geometry and
+changes no object binding in the STM tree. This completes the existing
+capture contract: lexical conceptual references beside temporary identity
+handles. The two parameterizations of
+`test_program_concepts_do_not_mistake_an_unpromoted_handle_for_a_concept`
+fail before (**two failures, 2.49 seconds**), then pass with both the
+conceptual reference and unchanged temporary operand checked. The focused
+journal, relation, reference and event suite gives **90 passed, one
+skipped, 26.82 seconds**. `_program_entries` is outside the protected word
+loop; that loop is unchanged.
+
+### 49.5c Proof ownership and the remaining recalled-frame reader
+
+The next diagnostic (snapshot `7c0ec5e4b039d6fc15ae2919bb3504f0fcc1243cde84faa3d8b61db85ce9e064`)
+exposed a runtime failure during certificate 81, before any learning
+assertion. An exact captured-stream replay reproduced it in 141.22
+seconds. The root was an anonymous zero-valued idea with source evidence
+(0,1). The chooser took intuit, not and an empty infer search; integration
+correctly retained the root. `completion_result` nevertheless treated the
+search's zero-valued, unreferenced result as the root's proof. Finish then
+correctly rejected recorded evidence (0,1) against the empty proof (0,0).
+This is proof attribution, not a learning baseline.
+
+`BasicModel._run_selected_thought_once.accept_result` now records whether
+integration supplied a conclusion or retained its incoming goal. That
+local outcome fact travels through nested returns and finish.
+`ThoughtStream.completion_result` uses it before its existing semantic
+comparison. An unapplied search remains checked on its own operation
+record and is not attached to the unchanged goal as a proof. A changed
+pair on an applied proof still fails replay; no evidence comparison was
+made into an exemption. The new native regression
+`test_empty_search_does_not_certify_an_unchanged_zero_valued_idea` fails
+before with the captured replay error (one failure, 2.60 seconds), then
+passes including deliberately corrupted proof evidence. Its initial
+setup had no resident premise before selecting infer; the corrected
+reproduction follows the captured intuit/not/infer sequence. Its new
+object-identity assertion was corrected to compare the retained proof's
+content, since the history deliberately freezes a detached copy.
+
+Auditing the same workspace boundary found a second reader:
+`ThoughtStream.integrate` still read `registry.space.stm`. It now takes
+the execution STM explicitly, like `candidates`; both controller calls
+and the direct test calls are ported. The native unshared-workspace
+chain regression failed at evidence 0 versus .7 (2.54 seconds). It also
+exposed `ThoughtChunks.recalled` putting the predicate into `refs`,
+where a recalled frame's contract is its two ends. It now reads slots 0
+and 2 there; the full meaning still carries its predicate. With these
+two producer repairs the chain concludes at .7 with both native row
+witnesses and no read from the other workspace. The two new regressions
+pass together, **2 passed in 2.87 seconds**. Direct argument ports retain
+all earlier assertions. No frame is copied into an auxiliary memory.
+The expanded thought suite passes **183 tests in 46.72 seconds**.
+Certificate 81 also passes its original captured failing stream, all
+200 presentations unchanged, **228.84 seconds** (guard 231.59 seconds).
+
+### 49.5d Expired semantic views at the sentence close
+
+The next diagnostic completed all 160 lesson sentences and passed the
+40 round-C mechanism cases, but certificate 81 exposed another runtime
+error on its new first stream. A passive replay failed in 31.24 seconds.
+`_commit_sentence` republishes the selected sentence STM, clearing the
+old thought focus; the closing head then receives the retained row's
+time. In the captured case the cleared focus was physical slot 5, and
+the new head at slot 2 received that time. `ThoughtChunks.held` searched
+all physical slots for each old view's time, thereby offering the old
+slot-5 semantics as a slot-2 premise. `read` correctly rejected it because
+slot 2 had no corresponding retained semantic reference.
+
+`ThoughtChunks.held` now reads a view only at its own occupied
+physical slot, with that slot's matching time. It no longer searches all
+slots and moves a semantic view to whichever one happens to share its
+time. The fixed eight-slot enumeration is also cheaper than locating
+each old address across the same eight slots. The checked `read` remains
+strict; no old semantic content is copied to the closing head.
+
+`test_replaced_thought_view_does_not_follow_its_time_into_another_chunk`
+reproduces the native clear/close sequence with the original eight
+chunks. It fails before because the old view is offered (2.29 seconds),
+then passes, including unchanged state on enumeration, strict rejection
+at the new head and restoration of the original readable view.
+A companion scratch-restoration regression demonstrates why the view
+must be inactive rather than erased: sentence scoring may temporarily
+hide it, then restore its original tensors without a semantic write.
+An intermediate invalidation in `ShortTermMemory.set_state` failed that
+contract (one failure, 2.52 seconds) and was removed. The new test is
+`test_sentence_scratch_restore_keeps_a_temporarily_hidden_thought_view`.
+The initial new regression's assertion that the internal slot view had
+been erased was likewise corrected; no existing assertion changed.
+On the final owner-slot repair, the exact native certificate-81 streams both pass: the stale-view stream in **133.978646 seconds**, and the independent empty-proof stream in **232.714325 seconds**. No presentation, random stream or learning rate changed. The focused thought, memory, restoration and whole-path suite gives **109 passed**, one warning, **39.11 seconds**. The full unchanged-source sweep below also includes this repair.
+
+### 49.5e A stable handle is not a physical row number
+
+The next interrupted sweep, snapshot
+`477a315ff1d8bd3c4a3a17ef36019d6c3210a5eb4125f40fd27c3d357294845c`,
+exposed `test_relation_closing.py::test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats[admitted]`.
+Its exact captured stream reproduces the failure in **2.70 seconds**.
+The source word slab carries object IDs `(69,78)`, `(69,75)`, `(72,78)`
+and `(72,75)`. The native `_program_entries` call changed the second IDs
+to the lexical words 77 or 74. The MTM numeric reservation is 75–138;
+objects 75 and 78 nevertheless have permanent concept seats. Stable
+handles include unseated relation handles and need not be dense physical
+row numbers. The range-only cleanup introduced in §49.5b mistook these
+allocated objects for unknown transient handles.
+
+`BasicModel._program_entries` now consults the existing physical-row
+lookup before either named-transient substitution or the unnamed
+fallback. An allocated concept survives unchanged; an unallocated MTM
+handle still follows the named-reading/lexical fallback already specified.
+The operand journal and points are untouched. This is outside the
+protected word loop. No assertion, fixture capacity or presentation changed.
+The exact stream now passes (**2.27 seconds**), with all four object pairs
+unchanged. The relation-closing, selected-meaning, inference and intuition
+files give **85 passed, one skipped, 25.31 seconds**. The interrupted
+sweep and incomplete scalar curricula are diagnostic attempts, not final
+results; the finished-source measurements below replace them.
+
+### 49.5f Two capture-reader mock ports
+
+The subsequent sweep exposed the missing allocation lookup in
+`test_sentence_journal.py::test_program_keeps_the_identity_leaf_stamp_before_reference_resolution`.
+The direct-reader audit found the same omission in
+`test_whole_paths.py::test_retained_named_transient_captures_its_concept_not_its_mtm_address`.
+The two unchanged tests fail with `AttributeError` before their ports
+(**2.97** and **3.03 seconds**, respectively). Their mocks now declare
+their existing seats: concepts 101/102 at rows 10/11 in the first;
+concept 17 at row zero and transient 91 unseated in the second.
+Every assertion remains, including the original leaf stamps, order,
+named concept, unchanged values and retained MTM token. No production
+code changes for these ports. The seven files containing the direct
+capture readers give **100 passed, two skipped, one warning, 47.36
+seconds**. The two functions are included in the corrected port inventory:
+**143 A/B functions plus one intermediate §46 function, 144 total**.
+The incomplete sweep and scalar runs were replaced by the complete
+validation below; no interrupted curriculum is called a bound result.
+
+### 49.6 Ports and retirements, by name
+
+Names below are function counts, not expanded parametrizations. A helper port is listed as a helper; tests merely importing it are not counted as changed functions. Old names identify renamed tests as well. No learning assertion is removed to pass a mechanism check.
+
+**143 existing A/B test functions ported, 19 helper functions ported; 16 A/B test functions completely retired.** An intermediate §46 test is also retired and another partially ported below; they did not exist at the checkpoint.
+
+| File | Ported function(s) | Reason |
+| --- | --- | --- |
+| `test/fixtures/2026-10-20-item3-5-stm1/decomposition_certificate.py` | `run` | Pass the serial execution STM explicitly into the thought menu; a conceptual dictionary owner is not necessarily that workspace. Preserve all firing, evidence, replay, nesting and decomposition assertions. |
+| `test/generation_fixtures.py` | `undeclared_arguments` | Declare the charged generate chooser/forecast interface; isolated control-flow fixtures use c=0; the independent positive-cost certificates cover the new charge. |
+| `test/memory_fixtures.py` | `attach` | Supply the existing content/reference order or declared reference and the native reader interface; do not infer an identity or order from an all-order point. |
+| `test/reading_fixtures.py` | `commit_reading` | Supply native leaf evidence, extents and the field carrier to the kept close; forward the new observation arguments. Retain participation and head-flow assertions. |
+| `test/test_accessible_mind.py` | `test_thought_effect_uses_cached_row_identity`<br>`test_thought_retrieval_keeps_history_and_restores_episode_knowing`<br>`test_higher_order_retrieval_seeds_discontinuous_members_only` | Recall uses EntryRead.recall_chunks and the held STM view. Retire automatic point/field reinstatement and newly manufactured recall times under §48.11.4(4); keep native content, lanes, scope, original time, isolation and storage assertions. |
+| `test/test_argument_concepts.py` | `test_explicit_class_views_on_a_whole_conceptual_chart_use_the_same_radius_rule`<br>`test_revised_fit_is_coverage_and_radius_is_commitment` | Read an argument’s word-space extension separately from its own place. Where the certificate isolates counted agreement, declare the intended agreeing argument geometry; do not depend on a now-retired copy from words. |
+| `test/test_assessment.py` | `test_ladder_checks_earlier_rungs_without_supplying_a_tree` | Reviewed ladder: at least twenty distinct words, reviewed modifier trees, no unavailable determiner marks; still reports only. |
+| `test/test_attention_promotion.py` | `test_open_matches_and_updates_centroid_with_bounded_support`<br>`test_count_mints_once_with_weighted_definition_form_and_released_transient`<br>`test_candidate_checkpoint_restores_counter_support_lanes_and_next_match` | Keep member/occurrence content as extension and initialize only the new row from its allowed source. References carry their explicit order; automatic full-block promotion leaves MTM unchanged. The isolated fourth memory binding is declared, not geometrically rediscovered; sizes and presentations stay fixed. |
+| `test/test_basicmodel.py` | `TestTrainingUpdatesWeights::test_xor_weights_change_after_one_epoch` | Add the §48 capacity certificate: the unchanged one-epoch XOR update must have no promotion refused. |
+| `test/test_bind_thought.py` | `test_g2_generated_leaf_without_object_uses_same_resolver`<br>`test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content`<br>`test_distinct_open_roles_are_distinct_bind_sites_even_after_no_access`<br>`test_selected_open_formation_keeps_one_site_and_its_objectless_cue`<br>`test_pending_subject_keeps_its_composed_predicate_when_stored` | After admitting an objectless word, apply the fixture’s already declared native-cube setup to that new row, too. Resolver, selected-open-site and retained-predicate assertions are unchanged. |
+| `test/test_clause_storage.py` | `test_vector_and_row_readers_keep_both_poles_and_weight_substitution`<br>`test_invalid_parent_never_partially_writes_its_child` | Role/vector reads declare endpoint orders. Invalid-content atomicity uses nonfinite input: signed whole-chart coordinates are now legal; paired meaning regions still require native coordinates. |
+| `test/test_compile_guard.py` | `test_cached_model_factories_guard_compiled_calls_and_leave_eager_direct` | Numerical output-walk doubles accept the explicit forecast-bank argument and declare that they have no POS space; eager-call identity stays asserted. |
+| `test/test_concept_capacity_policy.py` | `test_automatic_capacity_mode_reuses_known_identity_without_recycling` | No reclamation call remains. Identity reuse is still checked against the existing admitted identity and permanent seats. |
+| `test/test_concept_code_ownership.py` | `test_promoting_a_candidate_initializes_only_its_new_row`<br>`test_admitting_a_phrase_does_not_compose_or_normalize_its_code` | Keep member/occurrence content as extension and initialize only the new row from its allowed source. References carry their explicit order; automatic full-block promotion leaves MTM unchanged. The isolated fourth memory binding is declared, not geometrically rediscovered; sizes and presentations stay fixed. |
+| `test/test_concept_evidence.py` | `test_thought_keeps_negated_definition_in_a_timed_stm_idea` | Recall uses EntryRead.recall_chunks and the held STM view. Retire automatic point/field reinstatement and newly manufactured recall times under §48.11.4(4); keep native content, lanes, scope, original time, isolation and storage assertions. |
+| `test/test_concept_forgetting.py` | `test_concept_meaning_starts_zero_and_grows_without_changing_direction` | Move test_concept_meaning_starts_zero_and_grows_without_changing_direction unchanged to test_concept_evidence.py. Zero unwitnessed meaning is still required; it is not a zero concept position. |
+| `test/test_constituent_lesson.py` | `test_declared_forms_keep_distinct_targets_when_the_implementation_is_shared` | Unpack the teacher’s typed operand-order field while keeping its distinct-target assertions. |
+| `test/test_decoder_exploration.py` | `decoder` | Declare the charged generate chooser/forecast interface; isolated control-flow fixtures use c=0; the independent positive-cost certificates cover the new charge. |
+| `test/test_episodic_concepts.py` | `test_recalled_flat_extension_decodes_directly_and_retired_ids_are_counted` | Recall uses EntryRead.recall_chunks and the held STM view. Retire automatic point/field reinstatement and newly manufactured recall times under §48.11.4(4); keep native content, lanes, scope, original time, isolation and storage assertions. |
+| `test/test_expectation_gain.py` | `test_symbol_gain_keeps_native_identity_and_inactive_row_context`<br>`test_negative_evidence_is_an_activation_target_not_an_omission_sign` | Supply native symbol handles/orders; expectation compares context inside each order. Keep sign, causal-context and inactive-stream assertions. |
+| `test/test_familiar_tier.py` | `test_transient_occurrence_is_deferred_and_covered_when_its_symbol_arrives`<br>`test_candidate_promotion_keeps_weighted_definition_and_no_inherited_place_or_form`<br>`test_identity_promotion_at_capacity_preserves_the_open_token_and_rows` | Keep member/occurrence content as extension and initialize only the new row from its allowed source. References carry their explicit order; automatic full-block promotion leaves MTM unchanged. The isolated fourth memory binding is declared, not geometrically rediscovered; sizes and presentations stay fixed. |
+| `test/test_field_key_bounds.py` | `test_identical_field_codes_keep_their_exact_boundary_after_accumulation` | The numeric key explicitly reads order zero. Keep the numeric bounds and lane assertions; this file has no intuition branch. |
+| `test/test_final_generation.py` | `test_certified_completion_only_has_priority_and_pending_improvement_gets_credit` | Supply the existing content/reference order or declared reference and the native reader interface; do not infer an identity or order from an all-order point. |
+| `test/test_forward_discard.py` | `test_forward_discard_is_absent_from_the_loop` | Port the source inventory to the additional kept-field publisher; the discard contract stays. |
+| `test/test_generate_repair.py` | `controlled_walk`<br>`test_winning_departure_credit_reaches_only_generate_policy_and_its_owner` | Declare the charged generate chooser/forecast interface; isolated control-flow fixtures use c=0; the independent positive-cost certificates cover the new charge. |
+| `test/test_generated_extension.py` | `declared_object`<br>`test_generated_known_object_uses_its_declared_word` | Supply the existing content/reference order or declared reference and the native reader interface; do not infer an identity or order from an all-order point. |
+| `test/test_generation_budget.py` | `_chain` | Declare the charged generate chooser/forecast interface; isolated control-flow fixtures use c=0; the independent positive-cost certificates cover the new charge. |
+| `test/test_generation_selection_backward.py` | `test_rejected_inverse_cannot_write_one_conditioner_lane` | Declare the charged generate chooser/forecast interface; isolated control-flow fixtures use c=0; the independent positive-cost certificates cover the new charge. |
+| `test/test_grammar_lesson_context.py` | `test_one_concept_generation_annotation_trains_stop_on_the_existing_code` | Declare the charged generate chooser/forecast interface; isolated control-flow fixtures use c=0; the independent positive-cost certificates cover the new charge. |
+| `test/test_grammatical_query_vps.py` | `test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation` | Use a missing/unknown handle or a removed relation to test unavailable reads; concept retirement itself is removed by §48.6. Keep cycle, evidence, no-write and no-lazy-reinstall checks. |
+| `test/test_identity_rows.py` | `test_meet_ties_kind_requests_and_excludes_missing_defining_content`<br>`test_content_meet_cannot_read_form_while_form_can_identify_its_region`<br>`test_individual_axes_in_the_change_residual_exclude_form_and_its_gradient`<br>`test_loader_permanently_rejects_signed_identity_without_modifying_the_row` | Native cube doubles declare their derived lookup. Whole-chart seeds may be signed; the loader’s atomic rejection uses nonfinite values. Geometric roles supply their existing reference orders; noun/verb gradient separation stays. |
+| `test/test_identity_threading.py` | `test_compose_bind_locations_share_the_operation_chooser_and_zero_dummy`<br>`test_compose_menu_uses_the_resolvers_observed_exclusions` | Typed expectation and reference pools name their existing orders. Keep the resolver, exclusion, occurrence, cache/reload and identity assertions; c=0 isolates the historical dummy score. |
+| `test/test_independent_components.py` | `test_continuity_is_binding_evidence_and_never_a_column_signature`<br>`test_sparse_coding_is_confined_to_verbs_and_cannot_train_noun_signatures` | Native cube doubles declare their derived lookup. Whole-chart seeds may be signed; the loader’s atomic rejection uses nonfinite values. Geometric roles supply their existing reference orders; noun/verb gradient separation stays. |
+| `test/test_inverse_work.py` | `test_repeated_inverse_states_preserve_walk_choices_gradients_and_optimizer_steps`<br>`test_rejected_unary_leaves_its_existing_optimizer_momentum_untouched` | Declare the charged generate chooser/forecast interface; isolated control-flow fixtures use c=0; the independent positive-cost certificates cover the new charge. |
+| `test/test_item18_completion.py` | `test_empty_intuition_does_not_close_an_open_question`<br>`policy_fixture`<br>`test_thought_faces_have_exact_ltm_method_grants` | Supply the existing content/reference order or declared reference and the native reader interface; do not infer an identity or order from an all-order point. |
+| `test/test_item18_extend.py` | `test_36_determiners_read_the_stored_members_and_mtm`<br>`test_39_sentence_object_is_the_generated_operand_and_not_the_witness_row` | The determiner fixture declares its geometry. Certificate 39 retains the generated object’s reference and field; its ExtendedRecall automatic-answer branch is retired by §48.11.4(4). |
+| `test/test_item18_finish.py` | `memory_brick`<br>`test_an_empty_read_inside_a_conclusion_writes_its_operand_recursively` | Supply the existing content/reference order or declared reference and the native reader interface; do not infer an identity or order from an all-order point. |
+| `test/test_item18_intuit.py` | `test_84_intuit_reads_once_at_observation_and_no_relation_row`<br>`test_83_thought_teaches_the_open_map_and_an_unseen_conclusion_still_needs_inference` | Intuition input, teacher and target are the basic block; selection deposits/propagates with no returned meaning. The independent numeric learning bar is unchanged. |
+| `test/test_item18_reduction.py` | `test_23_9_all_retained_occurrences_supply_exclusion_after_mtm_expires`<br>`test_23_13_promotion_without_actual_events_keeps_the_current_mtm_value` | Keep member/occurrence content as extension and initialize only the new row from its allowed source. References carry their explicit order; automatic full-block promotion leaves MTM unchanged. The isolated fourth memory binding is declared, not geometrically rediscovered; sizes and presentations stay fixed. |
+| `test/test_item18_round_a.py` | `test_retained_exclusion_counts_follow_append_compaction_and_restore` | Typed expectation and reference pools name their existing orders. Keep the resolver, exclusion, occurrence, cache/reload and identity assertions; c=0 isolates the historical dummy score. |
+| `test/test_item18_stack.py` | `test_80_numeric_certificate_keeps_its_bar_with_the_stack_built` | Intuition input, teacher and target are the basic block; selection deposits/propagates with no returned meaning. The independent numeric learning bar is unchanged. |
+| `test/test_item18_trust.py` | `test_51_training_and_serving_keep_the_same_open_answer_and_different_authority` | Recall uses EntryRead.recall_chunks and the held STM view. Retire automatic point/field reinstatement and newly manufactured recall times under §48.11.4(4); keep native content, lanes, scope, original time, isolation and storage assertions. |
+| `test/test_item20_round34_projection.py` | `test_generate_credit_uses_proposal_correction_and_ties_have_no_graph` | Declare the charged generate chooser/forecast interface; isolated control-flow fixtures use c=0; the independent positive-cost certificates cover the new charge. |
+| `test/test_item20_round5_memory.py` | `test_promoted_reference_reenters_as_one_higher_order_member`<br>`test_thought_trial_rollback_preserves_expired_external_references_without_resurrection` | Keep member/occurrence content as extension and initialize only the new row from its allowed source. References carry their explicit order; automatic full-block promotion leaves MTM unchanged. The isolated fourth memory binding is declared, not geometrically rediscovered; sizes and presentations stay fixed. |
+| `test/test_item20_round5_unary.py` | `test_unary_repeat_penalty_grows_without_forbidding_a_legitimate_chain` | Progressive unary penalties are retired by §45.3(1). The renamed test keeps six legal uses and gradients and charges every use the same c. |
+| `test/test_item20_round6_gradients.py` | `test_order_zero_decode_reaches_the_grammar_inverse_and_selected_definition` | Supply the existing content/reference order or declared reference and the native reader interface; do not infer an identity or order from an all-order point. |
+| `test/test_item20_round6_loop.py` | `test_registry_uses_the_two_reconstructions_and_post_thought_target` | Intuition input, teacher and target are the basic block; selection deposits/propagates with no returned meaning. The independent numeric learning bar is unchanged. |
+| `test/test_item20_round6_measurements.py` | `test_memory_centroids_preserve_common_rails_with_fractional_evidence` | Keep member/occurrence content as extension and initialize only the new row from its allowed source. References carry their explicit order; automatic full-block promotion leaves MTM unchanged. The isolated fourth memory binding is declared, not geometrically rediscovered; sizes and presentations stay fixed. |
+| `test/test_item20_round6_output.py` | `test_output_departure_credit_reaches_generate_policy_on_the_answer_side` | Declare the charged generate chooser/forecast interface; isolated control-flow fixtures use c=0; the independent positive-cost certificates cover the new charge. |
+| `test/test_item20_round7_episodes.py` | `test_content_query_reinstates_in_requesting_batch_and_next_attention_replaces_it` | Recall uses EntryRead.recall_chunks and the held STM view. Retire automatic point/field reinstatement and newly manufactured recall times under §48.11.4(4); keep native content, lanes, scope, original time, isolation and storage assertions. |
+| `test/test_item25_completion.py` | `test_same_order_identity_row_survives_the_epoch_boundary`<br>`test_ambiguous_pointer_identity_across_time_is_empty` | Typed expectation and reference pools name their existing orders. Keep the resolver, exclusion, occurrence, cache/reload and identity assertions; c=0 isolates the historical dummy score. |
+| `test/test_item25_repair.py` | `test_recalled_chunk_addresses_depend_only_on_their_own_stream` | Recall uses EntryRead.recall_chunks and the held STM view. Retire automatic point/field reinstatement and newly manufactured recall times under §48.11.4(4); keep native content, lanes, scope, original time, isolation and storage assertions. |
+| `test/test_item4_repair.py` | `test_word_read_starts_from_factual_previous_context_and_never_forecasts_itself` | Supply native symbol handles/orders; expectation compares context inside each order. Keep sign, causal-context and inactive-stream assertions. |
+| `test/test_item4_step0.py` | `test_enabled_prime_is_uncapped_for_every_candidate_menu`<br>`test_binding_judge_scores_referent_while_surface_readers_keep_their_training` | Typed expectation and reference pools name their existing orders. Keep the resolver, exclusion, occurrence, cache/reload and identity assertions; c=0 isolates the historical dummy score. |
+| `test/test_item6_2_thinking.py` | `world`<br>`chain_world`<br>`test_chain_two_queries_one_conclusion_and_both_witnesses`<br>`test_nested_ask_returns_the_binding_and_shares_budget`<br>`test_modus_ponens_requires_premise_and_implication_witnesses`<br>`credit_chain_world`<br>`test_answer_credit_moves_shared_chooser_toward_the_completed_chain`<br>`test_event_implication_reads_endpoint_when_order` | Read recalled premises from native STM, then explicitly infer. Keep witnesses, trust lanes, budget and credit assertions. Fixed relation-calculus points are supplied after seating, since seating now installs an own-ID seed. |
+| `test/test_layout_removal.py` | `test_close_placement_updates_meaning_and_addressed_read_finds_idea`<br>`test_content_recall_loads_only_the_requested_stream_and_identity_pool` | Read the retained STM entry/time. A one-dimensional positive meaning chart has one unit direction: retain its placement evidence and addressed read rather than require impossible angular movement. |
+| `test/test_math_chain_section14.py` | `test_one_empty_region_query_permits_conclude_and_only_source_mints` | Supply the existing content/reference order or declared reference and the native reader interface; do not infer an identity or order from an all-order point. |
+| `test/test_memory_consolidation.py` | `test_token_promotes_at_three_sentences_with_the_occurrence_fold_and_keeps_its_state` | Keep member/occurrence content as extension and initialize only the new row from its allowed source. References carry their explicit order; automatic full-block promotion leaves MTM unchanged. The isolated fourth memory binding is declared, not geometrically rediscovered; sizes and presentations stay fixed. |
+| `test/test_modal_timelines.py` | `test_promotion_folds_only_actual_events_and_document_end_keeps_ideas` | Keep member/occurrence content as extension and initialize only the new row from its allowed source. References carry their explicit order; automatic full-block promotion leaves MTM unchanged. The isolated fourth memory binding is declared, not geometrically rediscovered; sizes and presentations stay fixed. |
+| `test/test_mtm_reference_values.py` | `test_unlabelled_mention_reads_its_current_occurrence` | Declare the existing known-word geometry before the unlabelled current-value binding; an ID-seeded word now contributes to its collection. Preserve every current-value assertion. |
+| `test/test_normal_thought_controller.py` | `test_what_subgoal_descends_executes_returns_and_causally_carries_evidence` | The child explicitly queries two native premises and infers before returning; recall no longer fills the variable. Preserve returned truth, provenance, budget and balanced-context assertions; use the new operation/event sequence. |
+| `test/test_operators_final.py` | `test_unary_lowering_reads_existing_order_without_minting_a_composing_argument` | Apply the fixture’s declared native-cube point setup after admission of its additional word/member; admission now installs a signed ID seed. Keep interpretation, lowering and no-mint assertions. |
+| `test/test_operators_final_b.py` | `forced_prefix_certificate`<br>`test_forced_not_and_or_descend_and_snapshot_certificate` | The forced reconstruction fixtures declare zero forecast/positive geometry; operator and round-trip assertions remain isolated from the newly added occupation prime. |
+| `test/test_operators_round4a.py` | `test_one_presentation_updates_detached_context_at_the_close` | Every word still has both sentence placement observations; rule 4 adds argument pulls, so retire the assertion that exactly two were its only placement observations (§48.3). |
+| `test/test_part_read.py` | `test_answer_read_follows_admitted_surface_with_a_composed_marker` | Apply the fixture’s declared native-cube point setup after admission of its additional word/member; admission now installs a signed ID seed. Keep interpretation, lowering and no-mint assertions. |
+| `test/test_parts_of_speech.py` | `test_kept_readings_alone_supply_argument_views` | The independent kept-tree replay follows each operator’s flow_mask and per-decision unary history, retaining the recursive addition order for bit-exact fields. The old head_role replay incorrectly propagated words through change. Native participation and every equality assertion stay. |
+| `test/test_placement_surface.py` | `test_layout_lesson_context_rises_without_random_collapse`<br>`test_promotion_uses_its_order_context_and_has_no_higher_order_form` | The fixed eight-close learning measurement is a non-strict baseline; its assertions remain. Identity promotion starts at its ID seed without sentence-context placement (§48.11.4(1)); retain no higher-order form, counted radius and unchanged neighbour assertions. |
+| `test/test_query_contract_boundaries.py` | `test_explicit_addresses_bound_decoding_without_establishing_content_match`<br>`test_addressed_end_read_returns_complete_content_without_another_occurrence` | Recall returns no value or conclusion trust (§48.11.4(4)); the admitted frame retains its original evidence. Keep address scoping, complete content, no extra occurrence, unrelated-reference and work assertions. |
+| `test/test_query_executors.py` | `test_query_returns_only_the_completed_direction_of_an_unresolved_equality` | System-1 results return no operand. Update exact capability grants and retain semantic guard, independent witness, unknown-chain and missing-answer assertions. |
+| `test/test_query_structural_references.py` | `test_structural_operand_refuses_unavailable_handles_without_writes` | Use a missing/unknown handle or a removed relation to test unavailable reads; concept retirement itself is removed by §48.6. Keep cycle, evidence, no-write and no-lazy-reinstall checks. |
+| `test/test_reduction_pressure.py` | `test_pressure_enters_credit_but_temperature_does_not` | Account for the declared uniform operator cost in explicit score/credit enumeration; pressure and temperature assertions remain. |
+| `test/test_reference_arrivals.py` | `test_bound_use_does_not_assign_a_kind_before_arrival`<br>`test_named_bind_to_a_native_individual_keeps_an_occurrence_keyed_value`<br>`test_named_bind_to_a_retained_unpooled_occurrence_keeps_its_kind` | Typed expectation and reference pools name their existing orders. Keep the resolver, exclusion, occurrence, cache/reload and identity assertions; c=0 isolates the historical dummy score. |
+| `test/test_reference_description.py` | `test_asserted_constraint_still_excludes_a_contained_candidate`<br>`test_witnessed_exclusion_still_splits_grouped_uses` | Typed expectation and reference pools name their existing orders. Keep the resolver, exclusion, occurrence, cache/reload and identity assertions; c=0 isolates the historical dummy score. |
+| `test/test_reference_review10.py` | `test_later_ball_mention_preserves_the_boxs_key_members_and_count`<br>`observed_individual`<br>`test_own_content_excludes_an_observed_incompatible_antecedent` | Typed expectation and reference pools name their existing orders. Keep the resolver, exclusion, occurrence, cache/reload and identity assertions; c=0 isolates the historical dummy score. |
+| `test/test_replacement_kernel_contracts.py` | `test_direct_and_depth_one_two_chains_keep_native_premises`<br>`test_supplied_mechanism_walk_uses_one_controller_at_every_level` | Read recalled premises from native STM, then explicitly infer. Keep witnesses, trust lanes, budget and credit assertions. Fixed relation-calculus points are supplied after seating, since seating now installs an own-ID seed. |
+| `test/test_review11_contracts.py` | `decoder` | Declare the charged generate chooser/forecast interface; isolated control-flow fixtures use c=0; the independent positive-cost certificates cover the new charge. |
+| `test/test_sentence_journal.py` | `test_program_keeps_the_identity_leaf_stamp_before_reference_resolution` | Declare the physical seats of the mock’s existing concepts 101 and 102 for the native allocation read; keep every identity-leaf, order and source-state assertion. |
+| `test/test_signal_router_scorer.py` | `test_scores_and_probabilities_match_explicit_enumeration` | Account for the declared uniform operator cost in explicit score/credit enumeration; pressure and temperature assertions remain. |
+| `test/test_stm_chunk_gates.py` | `test_content_cue_reenters_shared_chunks_with_stored_stamp_and_identities` | Recall uses EntryRead.recall_chunks and the held STM view. Retire automatic point/field reinstatement and newly manufactured recall times under §48.11.4(4); keep native content, lanes, scope, original time, isolation and storage assertions. |
+| `test/test_stm_chunk_repairs.py` | `test_same_chunks_supply_current_time_and_untimed_estimate` | Read the existing single order of the shared predictor’s explicit order axis in this one-order fixture. Preserve exact elapsed-time, output, no-clock and no-state-change assertions. |
+| `test/test_structural_preference.py` | `test_compose_probability_rounding_does_not_overturn_a_better_logit`<br>`test_unary_and_generate_use_the_same_exact_tie_order` | Declare the charged generate chooser/forecast interface; isolated control-flow fixtures use c=0; the independent positive-cost certificates cover the new charge. |
+| `test/test_subspace_context.py` | `model` | Load XML before modality-dependent data. The old fixture loaded numeric data under defaults before constructing a text model; forward assertions are unchanged. |
+| `test/test_taxonomy_entry.py` | `test_public_evaluate_follows_taxonomy_and_retains_record_provenance`<br>`test_actual_model_entry_and_checkpoint_keep_taxonomy_identity` | Read recalled premises from native STM, then explicitly infer. Keep witnesses, trust lanes, budget and credit assertions. Fixed relation-calculus points are supplied after seating, since seating now installs an own-ID seed. |
+| `test/test_taxonomy_policy.py` | `test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation` | Read recalled premises from native STM, then explicitly infer. Keep witnesses, trust lanes, budget and credit assertions. Fixed relation-calculus points are supplied after seating, since seating now installs an own-ID seed. |
+| `test/test_taxonomy_view.py` | `test_reified_relation_is_visible_without_endpoint_mutation`<br>`test_taxonomy_cycles_do_not_loop_and_retired_references_are_unavailable` | Use a missing/unknown handle or a removed relation to test unavailable reads; concept retirement itself is removed by §48.6. Keep cycle, evidence, no-write and no-lazy-reinstall checks. |
+| `test/test_thought_answer_adapters.py` | `test_code_answer_uses_the_checked_atom_and_keeps_its_reference`<br>`_stored_query`<br>`test_open_relation_answer_preserves_every_member_without_another_reader`<br>`_open_goal`<br>`test_subgoal_carries_the_typed_child_result_into_the_answer`<br>`test_typed_results_survive_resolve_and_reverse_without_execution` | Retain typed/checkpoint/reverse and checked-code boundaries. Recall and a recalled subgoal no longer supply an answer operand; later System-2 binding is required (§48.11.4(4)). |
+| `test/test_thought_binding.py` | `test_empty_query_keeps_a_closed_equality_on_the_semantic_chain_path`<br>`test_unrelated_query_evidence_does_not_rewrite_a_closed_unknown_chain`<br>`test_empty_read_does_not_bind_its_temporary_question_address`<br>`test_returned_ask_content_keeps_both_evidence_poles` | System-1 results return no operand. Update exact capability grants and retain semantic guard, independent witness, unknown-chain and missing-answer assertions. |
+| `test/test_thought_infer.py` | `test_intuition_may_answer_and_retired_face_is_absent` | System-1 results return no operand. Update exact capability grants and retain semantic guard, independent witness, unknown-chain and missing-answer assertions. |
+| `test/test_thought_intuition.py` | `test_three_rule_union_not_first_and_one_candidate_per_firing`<br>`test_exhausted_intuit_preserves_the_goal_without_depositing_its_request` | Pass the serial execution STM explicitly into the thought menu; a conceptual dictionary owner is not necessarily that workspace. Preserve all firing, evidence, replay, nesting and decomposition assertions. |
+| `test/test_thought_operation_catalog.py` | `test_canonical_thought_executors_use_only_their_named_capability_views`<br>`test_description_thought_preparation_uses_only_its_declared_ltm_view` | System-1 results return no operand. Update exact capability grants and retain semantic guard, independent witness, unknown-chain and missing-answer assertions. |
+| `test/test_thought_review.py` | `test_policy_selects_nested_what_part_and_receives_actual_episode_credit` | Pass the serial execution STM explicitly into the thought menu; a conceptual dictionary owner is not necessarily that workspace. Preserve all firing, evidence, replay, nesting and decomposition assertions. |
+| `test/test_trust_round1.py` | `test_unplaced_word_has_radius_without_invented_direction` | A new word has its own seed. Keep its counted radius without asserting the retired zero direction (§48.11.4(1)). |
+| `test/test_trust_round2.py` | `test_shared_word_teaches_another_argument_without_dividing_existing_authority`<br>`test_argument_confidence_uses_member_agreement_instead_of_competing_roles` | Read an argument’s word-space extension separately from its own place. Where the certificate isolates counted agreement, declare the intended agreeing argument geometry; do not depend on a now-retired copy from words. |
+| `test/test_two_truth_stores.py` | `test_relational_evaluation_respects_both_argument_positions`<br>`test_consequents_read_the_native_whole_without_a_predicate_filter` | Role/vector reads declare endpoint orders. Invalid-content atomicity uses nonfinite input: signed whole-chart coordinates are now legal; paired meaning regions still require native coordinates. |
+| `test/test_unified_thought_controller.py` | `test_child_context_can_refine_before_returning_its_causal_result` | Its controlled controller menu now declares the checked symbolic isPart filling before define, replacing a query that no longer returns a binding. Preserve every closure, refinement, no-early-define, evidence, provenance and budget assertion; update the first operation’s name. Native query/infer causality is tested separately. |
+| `test/test_unresolved_fixed_operand.py` | `test_query_requires_the_address_of_an_unresolved_fixed_operand` | Recall returns no value or conclusion trust (§48.11.4(4)); the admitted frame retains its original evidence. Keep address scoping, complete content, no extra occurrence, unrelated-reference and work assertions. |
+| `test/test_whole_paths.py` | `test_thought_content_growth_preserves_structure_and_trial_rollback`<br>`test_retained_named_transient_captures_its_concept_not_its_mtm_address`<br>`test_output_departure_runs_only_the_last_stage` | Declare the charged generation/forecast and native retained-entry interfaces; preserve zero entry capacity where the old fixture had none. The named-transient mock declares concept 17’s seat and transient 91’s absence; assertions stay. |
+
+The following 16 complete reclamation tests are retired by §48.6 and §48.11.4(3):
+
+- `test/test_concept_forgetting.py::test_component_coordinates_protect_referenced_seats`.
+- `test/test_concept_forgetting.py::test_different_order_or_definition_never_merges`.
+- `test/test_concept_forgetting.py::test_equal_descriptions_do_not_merge_distinct_individuals`.
+- `test/test_concept_forgetting.py::test_exact_physical_preallocation_warns_even_for_external_handles`.
+- `test/test_concept_forgetting.py::test_incoming_sparse_edge_or_record_prevents_recycling`.
+- `test/test_concept_forgetting.py::test_live_reference_preserves_weak_candidate_and_keeps_a_representative`.
+- `test/test_concept_forgetting.py::test_only_unreferenced_zero_relevance_column_is_pruned`.
+- `test/test_concept_forgetting.py::test_optimizer_moments_follow_surviving_edges_and_reused_code_seat_is_clean`.
+- `test/test_concept_forgetting.py::test_reclaimed_capacity_and_taxonomy_provenance_roundtrip`.
+- `test/test_concept_forgetting.py::test_smaller_exact_redundancy_frees_seat_but_never_reuses_handle`.
+- `test/test_concept_forgetting.py::test_two_empty_concepts_are_not_redundant`.
+- `test/test_concept_forgetting.py::test_unused_mints_are_reclaimed_by_magnitude_without_erasing_defined_or_referenced_concepts`.
+- `test/test_cs_symbol_table.py::test_retire_transient_symbol`.
+- `test/test_frozen_concepts.py::test_frozen_no_forgetting`.
+- `test/test_mtm_referents.py::test_reclamation_protects_a_held_reading`.
+- `test/test_orders_learned.py::test_retirement_handles_class_base_cache_without_losing_another_class`.
+
+The following **12 names changed** while retaining the surviving assertions listed above:
+
+| File | Old name | New name |
+| --- | --- | --- |
+| `test/test_episodic_concepts.py` | `test_recalled_flat_extension_decodes_directly_and_retired_ids_are_counted` | `test_recalled_flat_extension_is_retained_in_stm_without_running_the_grammar` |
+| `test/test_grammatical_query_vps.py` | `test_missing_or_retired_vp_binding_fails_without_lazy_reinstallation` | `test_missing_vp_binding_fails_without_lazy_reinstallation` |
+| `test/test_identity_rows.py` | `test_loader_permanently_rejects_signed_identity_without_modifying_the_row` | `test_loader_rejects_nonfinite_identity_without_modifying_the_row` |
+| `test/test_item18_extend.py` | `test_39_sentence_object_is_the_generated_operand_and_not_the_witness_row` | `test_39_generated_sentence_preserves_its_object_extension` |
+| `test/test_item20_round5_unary.py` | `test_unary_repeat_penalty_grows_without_forbidding_a_legitimate_chain` | `test_uniform_operator_cost_does_not_forbid_a_legitimate_unary_chain` |
+| `test/test_item20_round7_episodes.py` | `test_content_query_reinstates_in_requesting_batch_and_next_attention_replaces_it` | `test_content_query_retains_entries_in_requesting_stm_and_preserves_perception` |
+| `test/test_item6_2_thinking.py` | `test_nested_ask_returns_the_binding_and_shares_budget` | `test_nested_ask_shares_budget_but_recall_returns_no_binding` |
+| `test/test_layout_removal.py` | `test_close_placement_updates_meaning_and_addressed_read_finds_idea` | `test_close_records_placement_and_addressed_read_finds_idea` |
+| `test/test_placement_surface.py` | `test_promotion_uses_its_order_context_and_has_no_higher_order_form` | `test_promotion_keeps_its_id_seed_and_has_no_higher_order_form` |
+| `test/test_taxonomy_view.py` | `test_taxonomy_cycles_do_not_loop_and_retired_references_are_unavailable` | `test_taxonomy_cycles_do_not_loop_and_unknown_references_are_unavailable` |
+| `test/test_thought_answer_adapters.py` | `test_open_relation_answer_preserves_every_member_without_another_reader` | `test_open_relation_recall_keeps_members_in_stm_and_returns_no_operand` |
+| `test/test_trust_round1.py` | `test_unplaced_word_has_radius_without_invented_direction` | `test_unplaced_word_has_radius_along_its_id_seed` |
+
+**Intermediate §46 tests, not in the A/B count:** `test_item18_space_boundaries.py::test_multiorder_recall_offers_each_order_and_preserves_an_explicit_request` is completely retired by §48.11.4(4), which removes per-order System-1 offers. `test_field_point_and_intuition_are_ordered_and_retain_the_complete_field` is ported to `test_numeric_field_key_keeps_its_order`; its numeric assertions remain and its intuition-point assertion is retired by the same decision. Thus **17 complete test functions are removed in total** (16 checkpoint tests and one intermediate test), and **144 test functions are ported in total** (143 checkpoint tests and one intermediate test). Rename counts are included, not additional.
+
+**Non-function inventories:** `test/fixtures/when-readers-round4a0.json` loses only `EpisodicMemory.reinstate`, because that reader is deleted. `test/tetralemma_audit.py::SITES` adds `PartsOfSpeech._occupied_field` and its `evidence`/`pair` inputs; this is an additional publisher to audit, not a weakened two-lane invariant.
+
+**Diagnostic attribution.** The completed diagnostic sweep ran all 7,122 cases and found 41 failures. Replaying those exact captured failing streams after the ports and the two runtime repairs gave **40 passed, one xfailed, 42.08 seconds**. The remaining xfail is the unchanged eight-close placement learning assertion, newly marked non-strict with reason **"baseline, item 1.8 §43"**, restricted to `AssertionError`. Its producer and numbers are in §49.8. The native scalar diagnostic’s first run exposed the mismatched candidate/execution STM owners in §49.5a; its second diagnostic was deliberately interrupted when that source became obsolete, not reported as a failed 200-round curriculum. The finished-source reruns below supersede both.
+
+For `test_invalid_parent_never_partially_writes_its_child`, the fixture constructs a valid clause and then corrupts its writer-boundary point to NaN; the constructor itself now correctly refuses such a point. The original exception/atomicity assertions remain. For the independent parts-of-speech replay, respecting `flow_mask` alone exposed a 1.9e−6 difference from reassociating additions; retaining the actual tree’s recursive grouping keeps its exact equality assertion. The imported percept-transitivity test’s failure came from that replay, not from a transitivity regression.
+
+**New continuation certificates.** All functions below are in `test/test_item18_round_c_continuation.py` and have ordinary assertions, no baseline marks:
+
+| Test | Before / cause | Finished contract |
+| --- | --- | --- |
+| `test_unplaced_concepts_start_at_their_own_seed_and_keep_their_position` | Native row differed from its ID seed; member fold could reset place | Own seed and unchanged existing place |
+| `test_percept_start_and_candidate_centroid_ignore_higher_orders` | Target remained at zero; higher-order support was selected for centroid | Weighted perceptual support only |
+| `test_full_identity_promotion_warns_once_and_leaves_the_entry` | Full block raised during automatic promotion | Two refusals, one warning, unchanged MTM/allocator; explicit admission still raises |
+| `test_identity_starts_from_its_neighbours_objects_without_moving_them` | Neighbour-start reader did not exist | Correct neighbour object at the identity’s order; all other rows unchanged |
+| `test_sentence_places_words_in_addition_to_their_argument_pull` | Both participating words stayed unchanged | Ordinary sentence move remains; object and argument rows do not join it |
+| `test_definition_meta_concepts_pull_only_present_members_of_one_order` | Definition meta-group reader did not exist | Same-order present pair moves; other-order and absent rows stay |
+| `test_intuit_deposits_only_when_selected_and_derives_higher_orders` | Per-order point-return contract | Selected basic-field deposit, upward definition fold, no point/return, uncontaminated teacher, trial restoration |
+| `test_a_signed_seed_has_a_native_nonnegative_evidence_code` | Signed whole-chart seed crossed the old nonnegative validator | Signed native point; legal paired evidence rendering |
+| `test_explicit_identity_fold_keeps_its_own_seed_and_the_extension_separate` | Explicit mint copied its witnessed value into its place (one failure, 2.23 seconds) | Place/extension separation |
+| `test_declared_arguments_and_operators_keep_their_id_seed_without_invented_views` | Grammar prebuild zeroed the newly seated rows (one failure, 2.57 seconds) | Seed retained; count/radius/evidence still zero |
+
+The neighbour/meta-group before checks failed because their new reader module was absent; they are not represented as pre-existing native-reader assertion failures. The ordinary sentence test and the first three tests fail on their native producers. The additional resident-premise regression is `test_thought_infer.py::test_opening_episode_preserves_its_selected_resident_premise`, described in §49.5a. The operator-cost and space-rotation before failures are retained in §46; their finished-source outcomes are included below.
+
+
+**Capacity correction before the final sweep.** The required `episodic_concepts` argument was initially set to the model default 4 in two standalone fixtures: `test_whole_paths.py::test_thought_content_growth_preserves_structure_and_trial_rollback` and `test_item20_round5_memory.py::test_thought_trial_rollback_preserves_expired_external_references_without_resurrection`. Those fixtures previously had no entry slots. The port now explicitly supplies **0**, preserving their original capacities and every assertion; the two checks pass, **2 passed in 3.03 seconds**. The partially run sweep was interrupted and replaced after this correction. It is not counted as the final sweep.
+
+The explicit-STM port also touches the existing direct candidates calls in `test_bind_thought.py`, the controlled menu in `test_unified_thought_controller.py` and the `credit_chain_world` helper in `test_item6_2_thinking.py`; their assertions and controlled selections remain. They are included in the function counts above.
+
+`ThoughtStream.integrate` also takes the execution STM explicitly. Existing direct callers in `test_item18_completion.py`, `test_item18_finish.py`, `test_thought_intuition.py` and `test_thought_binding.py` now supply their native STM or explicit `None` for a read-free mock. No assertion changed; the four additionally modified test functions are included in the count above.
+
+The retirement audit restored `test_concept_forgetting.py::test_concept_meaning_starts_zero_and_grows_without_changing_direction` unchanged in `test_concept_evidence.py`. It tests `MeaningCodes.defined_code` at 0, 1, 4 and 20 views, requiring magnitudes 0, .2, .5 and 20/24 and unchanged direction. That magnitude contract survives the new nonzero position. It is counted as one relocation/port, not a retirement. No other retired function lacks a call to reclamation, retirement or the retired capacity warning.
+
+### 49.7 Allocation audit and the concepts without definitions
+
+The allocation itself stays fixed. `corpus_capacity.allocation_plan` still
+uses the XML `nVectors` as the conceptual row count. The constructor adds
+the higher-order grammar reservations and includes the thought seats
+inside the ordinary inventory: for explore-1, XML **4096**, plus **72+27**
+additional grammar seats, gives **4195** constructed rows. The **12**
+thought seats are already inside 4096; free ordinary rows are **4084**.
+The resulting blocks are **2346, 1239, 610**, with reservations **12, 72,
+27**. Thus the planning helper's dictionary, placement, cached-form and
+state-field row counts understate this constructor by **99** rows. It
+also reports the earlier sparse intuition-bank estimate rather than the
+current stack's tensors. Its `tensor_inventory` measures actual storage;
+its nominal `allocation_plan` is not a faithful inventory of these blocks.
+No allocation is changed to make the helper agree.
+
+The no-definition audit checks the positive edges of the union,
+conjunction and basic-percept feature matrices. Identity uses the native
+identity registry; consolidated uses a passive record of successful
+`MemoryConsolidation.consolidate` writes, including concepts whose LTM
+source may subsequently be forgotten; remaining allocated rows are other.
+A word-to-object definition row in LTM1 does not count as a bottom-up
+feature definition. These two meanings of definition are kept separate.
+
+Readers: `FieldProjection.close` only retains supplied evidence for an
+undefined row; it cannot derive it from a nonexistent definition. The
+order-zero prediction can activate basic rows directly, but does not
+predict an undefined higher-order row. `InterpretLayer.referent` and its
+ordinary interpretation readers select the object named by a word;
+`PartsOfSpeech._occupied_field` supplies the formal argument participated
+in at that word's place. Reference readers in `ReferenceClose` and
+`IndependentComponents` access identities by their retained references.
+Recall now places an entry in STM; `ThoughtChunks.read/recalled` and the
+selected inference/binding read it there, rather than asserting that
+recall re-derived a conceptual field. The shared all-order predictor and
+vertical priming retain their existing reference/activation reads. No
+new grounding rule is built for the undefined higher-order identities.
+
+| Model / phase / chart | Order | Block capacity | Grammar seats | Used | Refused |
+| --- | --- | --- | --- | --- | --- |
+| XOR / before / 0 | 0 | 19 | 0 | 0 | 0 |
+| XOR / before / 0 | 1 | 19 | 10 | 10 | 0 |
+| XOR / before / 0 | 2 | 9 | 5 | 5 | 0 |
+| XOR / before / 1 | 0 | 19 | 0 | 0 | 0 |
+| XOR / before / 1 | 1 | 19 | 10 | 0 | 0 |
+| XOR / before / 1 | 2 | 9 | 5 | 0 | 0 |
+| XOR / after / 0 | 0 | 19 | 0 | 10 | 0 |
+| XOR / after / 0 | 1 | 19 | 10 | 11 | 0 |
+| XOR / after / 0 | 2 | 9 | 5 | 6 | 0 |
+| XOR / after / 1 | 0 | 19 | 0 | 0 | 0 |
+| XOR / after / 1 | 1 | 19 | 10 | 0 | 0 |
+| XOR / after / 1 | 2 | 9 | 5 | 0 | 0 |
+| Lesson / after / 0 | 0 | 2346 | 12 | 37 | 0 |
+| Lesson / after / 0 | 1 | 1239 | 72 | 101 | 0 |
+| Lesson / after / 0 | 2 | 610 | 27 | 35 | 0 |
+| Lesson / after / 1 | 0 | 2346 | 12 | 0 | 0 |
+| Lesson / after / 1 | 1 | 1239 | 72 | 0 | 0 |
+| Lesson / after / 1 | 2 | 610 | 27 | 0 | 0 |
+| Lesson / after / 2 | 0 | 2346 | 12 | 0 | 0 |
+| Lesson / after / 2 | 1 | 1239 | 72 | 0 | 0 |
+| Lesson / after / 2 | 2 | 610 | 27 | 0 | 0 |
+
+The XOR test passes after its unchanged one epoch with **zero refusals**. The exact pre-§48 failure stream instead filled order 2 to 9/9 and raised on its next automatic promotion; used rows then were (10,12,9). Finished-source XOR usage is (10, 11, 6). Lesson chart 0 starts with the reservations (12,72,27) and ends at (37, 101, 35). The table reports every constructed chart, including inactive charts.
+
+| Audit after teaching | Chart | Undefined identities | Undefined consolidated | Undefined other |
+| --- | --- | --- | --- | --- |
+| XOR | 0 | 0 | 0 | 15 |
+| XOR | 1 | 0 | 0 | 0 |
+| lesson | 0 | 22 | 0 | 61 |
+| lesson | 1 | 0 | 0 | 0 |
+| lesson | 2 | 0 | 0 | 0 |
+
+### 49.8 Parts-of-speech measurements and collapse
+
+The same four-word fixture, first captured stream and fixed 32 rounds were used on the A/B checkpoint, the pre-§48 source and the finished source. These are declared-place measurements under POS rule 7, not acquired grammar. Ordinary sentence placement precedes the additional POS pulls. The comparison adapters only supply each version’s native observation interface. No capacity, seed, count or learning rate changed.
+
+| Measurement | A/B after its fixed teaching | Pre-§48 after its fixed teaching | Finished source after the same teaching |
+| --- | --- | --- | --- |
+| 2: four noun-argument pair cosines | (1.000000, 1.000000, 1.000000, 1.000000, 1.000000, 1.000000) | (1.000000, 1.000000, 1.000000, 1.000000, 1.000000, 1.000000) | (0.079722, 0.767688, 0.780276, 0.112290, 0.112067, 0.999802) |
+| 2: those arguments against modifier’s place | (1.000000, 1.000000, 1.000000, 1.000000) | (1.000000, 1.000000, 1.000000, 1.000000) | (0.000000, 0.447429, 0.000000, 0.000000) |
+| 3: pronoun/noun word cosine | 0.000148 | 0.874985 | 0.000000 |
+| 3: two subject fits | (0.322255, 0.634904) | (1.000000, 0.859096) | (0.536753, 0.463247) |
+| 4a: within-word groups | (0.998748, 0.998748) | (0.998873, 0.998873) | (0.998811, 0.998811) |
+| 4a: between-word groups | (0.000000, 0.000000, 0.000000, 0.000000) | (0.000000, 0.000000, 0.000000, 0.000000) | (0.000000, 0.000000, 0.000000, 0.000000) |
+| 4a: within-argument groups | (1.000000, 1.000000, 1.000000, 1.000000, 1.000000, 1.000000) | (1.000000, 1.000000, 1.000000, 1.000000, 1.000000, 1.000000) | (0.999529, 0.999529, 1.000000, 0.998850, 0.998875, 1.000000) |
+| 4a: between-argument groups | (1.000000, 1.000000, 1.000000, 1.000000, 1.000000, 1.000000, 1.000000, 1.000000, 1.000000) | (1.000000, 1.000000, 1.000000, 1.000000, 1.000000, 1.000000, 1.000000, 1.000000, 1.000000) | (0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000) |
+| 6: known word’s object fit | 0.459279 | 1.000000 | 0.997472 |
+| 6: new word’s unoccupied object fit | 0.494905 | 0.239685 | 0.253918 |
+
+For certificate 2 the four noun arguments are `verb_argin1`, `verb_argin2`, `modifier_argin1`, `preposition_argin2`, in that order; pair order is the upper triangle. The modifier comparison is with `modifier_argin2`. **The complete merge criterion is not met:** some noun pairs remain below the modifier comparison. Certificate 3 retains the initially separated words (cosine 0) and gives both a subject fit; it does not demonstrate movement farther apart from that initial orthogonality. Certificate 4a gives within-group convergence and zero between-group cosines. These learning results are reported without a new bar.
+
+| Finished-source case | Before its teaching | After | Closes |
+| --- | --- | --- | --- |
+| 2_merge | noun_pairs=(-0.424482, -0.329919, -0.862474, 0.094454, 0.374088, -0.093032); modifier_pairs=(0.365167, -0.141577, -0.452449, -0.441315) | noun_pairs=(0.079722, 0.767688, 0.780276, 0.112290, 0.112067, 0.999802); modifier_pairs=(0.000000, 0.447429, 0.000000, 0.000000) | 256 |
+| 3_split | words=0.000000; subject_fits=(0.000000, 0.000000) | words=0.000000; subject_fits=(0.536753, 0.463247) | 128 |
+| 4a_both_halves | word_within=(0.000000, 0.000000); word_between=(0.000000, 0.000000, 0.000000, 0.000000); argument_within=(-0.452449, 0.207043, 0.722999, -0.012884, 0.559282, 0.235929); argument_between=(-0.122194, -0.093032, -0.851876, -0.630594, -0.441315, 0.031804, -0.526966, -0.796416, -0.491221) | word_within=(0.998811, 0.998811); word_between=(0.000000, 0.000000, 0.000000, 0.000000); argument_within=(0.999529, 0.999529, 1.000000, 0.998850, 0.998875, 1.000000); argument_between=(0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000) | 128 |
+| 6_new_word | known=1.000000; novel=0.000000 | known=0.997472; novel=0.253918 | 96 preparatory + 1 new-word close |
+
+**Certificate 9, kept-close timing.** These are single fixed runs, not a benchmark repeated to select a favourable time; other validation jobs ran concurrently with the finished-source measurement.
+
+| Case / closes | A/B seconds total / per close | Pre-§48 seconds total / per close | Finished seconds total / per close |
+| --- | --- | --- | --- |
+| 2_merge / 256 | 0.607871 / 0.00237450 | 0.590719 / 0.00230749 | 0.654293 / 0.00255583 |
+| 3_split / 128 | 0.337481 / 0.00263657 | 0.320566 / 0.00250442 | 0.364653 / 0.00284885 |
+| 4a_both_halves / 128 | 0.221598 / 0.00173124 | 0.215916 / 0.00168684 | 0.257314 / 0.00201027 |
+
+**Certificate 5, argument priming of the new word:** this is a declared mechanism input, not learned expectation. The supplied expected `verb_argin2` activation is 0.69999999; fit 0.25391772 becomes 0.95391774, delta 0.70000005. The compose and generate certificates read the same addition. The word was never a member of the object argument; certificate 6 raises that unoccupied fit from 0 to 0.25391772 after its one declared reading.
+
+**Certificate 8:** no measured source passes rung 6 of the reviewed ladder, so this acquired-grammar certificate is **not ready**, not passed and not wired. The ladder does not gate the sweep.
+
+**Against the normal-seed default.** The independent fixed eight-close `test_layout_lesson_context_rises_without_random_collapse` remains at mean context likeness 0 → 0. All seven active places keep unit norm; they are not zero rows. Their initial signed coordinate sums are −.07798006, .08614281, .23785287, .55618823, −.50395131, −.63963592, .75433064. The existing placement step normalizes a context by its coordinate sum clamped below at 1e−12, a positive-cone assumption that fits these signed starts poorly. Both the mandated normal seed and the existing step are retained; the learning assertion is a non-strict §43 baseline. This is an additional qualification to a wholly negative place rendering zero positive lanes.
+
+#### 49.8.1 Complete fixed-fixture collapse tables
+
+Each cell is the cosine from `PartsOfSpeech.collapse`, **A/B → finished** after the identical fixed teaching. Upper triangles contain every pair; diagonals are omitted. These values compare argument positions only. They are distinct from the word-extension fits above.
+
+**2_merge**. 1=modifier_argin1; 2=modifier_argin2; 3=modifier_argout1; 4=preposition_argin1; 5=preposition_argin2; 6=preposition_argout1; 7=verb_argin1; 8=verb_argin2; 9=verb_argout1.
+
+| Argument | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | — | 1.0000 → 0.0000 | 1.0000 → 0.9927 | 1.0000 → 0.0000 | 1.0000 → 0.9998 | 1.0000 → 0.9887 | 1.0000 → 0.7677 | 1.0000 → 0.1123 | 1.0000 → 0.7677 |
+| 2 | — | — | 1.0000 → 0.0000 | 1.0000 → 0.9999 | 1.0000 → 0.0000 | 1.0000 → 0.0000 | 1.0000 → 0.0000 | 1.0000 → 0.4474 | 1.0000 → 0.0000 |
+| 3 | — | — | — | 1.0000 → 0.0000 | 1.0000 → 0.9949 | 1.0000 → 0.9996 | 1.0000 → 0.8392 | 1.0000 → 0.1103 | 1.0000 → 0.8392 |
+| 4 | — | — | — | — | 1.0000 → 0.0000 | 1.0000 → 0.0000 | 1.0000 → 0.0000 | 1.0000 → 0.4563 | 1.0000 → 0.0000 |
+| 5 | — | — | — | — | — | 1.0000 → 0.9915 | 1.0000 → 0.7803 | 1.0000 → 0.1121 | 1.0000 → 0.7803 |
+| 6 | — | — | — | — | — | — | 1.0000 → 0.8549 | 1.0000 → 0.1095 | 1.0000 → 0.8549 |
+| 7 | — | — | — | — | — | — | — | 1.0000 → 0.0797 | 1.0000 → 1.0000 |
+| 8 | — | — | — | — | — | — | — | — | 1.0000 → 0.0797 |
+| 9 | — | — | — | — | — | — | — | — | — |
+
+**3_split**. 1=bind_argin1; 2=bind_argin2; 3=bind_argout1; 4=modifier_argin1; 5=modifier_argin2; 6=modifier_argout1; 7=surface_argin1; 8=surface_argin2; 9=surface_argout1; 10=verb_argin1; 11=verb_argin2; 12=verb_argout1.
+
+| Argument | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | — | 0.0000 → -0.0642 | 1.0000 → 0.3727 | 1.0000 → 0.1970 | 1.0000 → 0.0000 | 1.0000 → 0.1968 | 1.0000 → 0.0000 | 1.0000 → 0.3862 | 1.0000 → 0.3228 | 1.0000 → 0.9247 | 1.0000 → 0.0000 | 1.0000 → 0.9247 |
+| 2 | — | — | 0.0000 → -0.9088 | 0.0000 → -0.1727 | 0.0000 → -0.1686 | 0.0000 → -0.1727 | 0.0000 → -0.1686 | 0.0000 → -0.0960 | 0.0000 → -0.1230 | 0.0000 → 0.2746 | 0.0000 → -0.1686 | 0.0000 → 0.2746 |
+| 3 | — | — | — | 1.0000 → 0.0000 | 1.0000 → 0.0000 | 1.0000 → 0.0000 | 1.0000 → 0.0000 | 1.0000 → 0.0000 | 1.0000 → 0.0000 | 1.0000 → 0.0000 | 1.0000 → 0.0000 | 1.0000 → 0.0000 |
+| 4 | — | — | — | — | 1.0000 → 0.0000 | 1.0000 → 1.0000 | 1.0000 → 0.0000 | 1.0000 → 0.9769 | 1.0000 → 0.9900 | 1.0000 → 0.2937 | 1.0000 → 0.0000 | 1.0000 → 0.2937 |
+| 5 | — | — | — | — | — | 1.0000 → 0.0000 | 1.0000 → 1.0000 | 1.0000 → 0.0000 | 1.0000 → 0.0000 | 1.0000 → 0.0000 | 1.0000 → 1.0000 | 1.0000 → 0.0000 |
+| 6 | — | — | — | — | — | — | 1.0000 → 0.0000 | 1.0000 → 0.9769 | 1.0000 → 0.9900 | 1.0000 → 0.2935 | 1.0000 → 0.0000 | 1.0000 → 0.2935 |
+| 7 | — | — | — | — | — | — | — | 1.0000 → 0.0000 | 1.0000 → 0.0000 | 1.0000 → 0.0000 | 1.0000 → 1.0000 | 1.0000 → 0.0000 |
+| 8 | — | — | — | — | — | — | — | — | 1.0000 → 0.9973 | 1.0000 → 0.4912 | 1.0000 → 0.0000 | 1.0000 → 0.4912 |
+| 9 | — | — | — | — | — | — | — | — | — | 1.0000 → 0.4254 | 1.0000 → 0.0000 | 1.0000 → 0.4254 |
+| 10 | — | — | — | — | — | — | — | — | — | — | 1.0000 → 0.0000 | 1.0000 → 1.0000 |
+| 11 | — | — | — | — | — | — | — | — | — | — | — | 1.0000 → 0.0000 |
+| 12 | — | — | — | — | — | — | — | — | — | — | — | — |
+
+**4a_both_halves**. 1=modifier_argin1; 2=modifier_argin2; 3=modifier_argout1; 4=verb_argin1; 5=verb_argin2; 6=verb_argout1.
+
+| Argument | 1 | 2 | 3 | 4 | 5 | 6 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | — | 1.0000 → 0.9995 | 1.0000 → 0.9995 | 1.0000 → 0.0000 | 1.0000 → 0.0000 | 1.0000 → 0.0000 |
+| 2 | — | — | 1.0000 → 1.0000 | 1.0000 → 0.0000 | 1.0000 → 0.0000 | 1.0000 → 0.0000 |
+| 3 | — | — | — | 1.0000 → 0.0000 | 1.0000 → 0.0000 | 1.0000 → 0.0000 |
+| 4 | — | — | — | — | 1.0000 → 0.9988 | 1.0000 → 0.9989 |
+| 5 | — | — | — | — | — | 1.0000 → 1.0000 |
+| 6 | — | — | — | — | — | — |
+
+**6_new_word**. 1=surface_argin1; 2=surface_argin2; 3=surface_argout1; 4=verb_argin1; 5=verb_argin2; 6=verb_argout1.
+
+| Argument | 1 | 2 | 3 | 4 | 5 | 6 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | — | 1.0000 → 0.0000 | 1.0000 → 0.0000 | 1.0000 → 0.0000 | 1.0000 → 0.0000 | 1.0000 → 0.0000 |
+| 2 | — | — | 1.0000 → 1.0000 | 1.0000 → 0.9405 | 1.0000 → 0.9376 | 1.0000 → 0.9385 |
+| 3 | — | — | — | 1.0000 → 0.9402 | 1.0000 → 0.9378 | 1.0000 → 0.9387 |
+| 4 | — | — | — | — | 1.0000 → 0.9917 | 1.0000 → 0.9931 |
+| 5 | — | — | — | — | — | 1.0000 → 0.9999 |
+| 6 | — | — | — | — | — | — |
+
+### 49.9 Assessment, lesson and turnover
+
+The ladder is reviewed, with at least twenty distinct words at rung 2 and the reviewed modifier trees at rungs 5, 6 and 9. It remains a diagnostic. P=passed, F=failed, B=blocked by a lower rung, N=not applicable to that fixture’s declared vocabulary. Each source is one row; a missing role is not guessed from a spelling.
+
+| Source | Rung 1 before C | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `test/test_item18_placement.py::test_91_context_includes_the_present_tokens_types_before_likeness` | N | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_placement.py::test_91_observed_formal_membership_is_also_a_field_definition` | N | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_placement.py::test_91_one_step_uses_only_context_and_negatives_of_the_rows_order` | N | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_placement.py::test_91_classes_have_no_form_and_are_placed_by_the_same_context` | N | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_recognition.py::test_scalar_percept_and_its_collection_restore_with_their_typed_references` | N | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_stack.py::test_79_stack_learns_the_four_disjoint_word_combinations` | N | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_stack.py::test_79_stages_are_the_shared_pi_and_sigma_layers` | N | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_stack.py::test_79_stack_construction_leaves_the_global_draw_unchanged` | N | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_stack.py::test_80_numeric_certificate_keeps_its_bar_with_the_stack_built` | N | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_word_trust.py::test_88_read_word_fixes_its_objects_radius_without_freezing_its_content` | N | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_word_trust.py::test_88_stated_definition_keeps_the_callers_trust[0.0]` | N | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_word_trust.py::test_88_stated_definition_keeps_the_callers_trust[0.75]` | N | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_word_trust.py::test_89_expectation_selects_among_orders_and_is_local_to_the_stream` | N | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_word_trust.py::test_88_scalar_definition_reads_one_after_the_same_six_views` | F | P | N | N | N | N | N | N | N | N |
+| `test/test_item18_word_trust.py::test_88_derived_code_reads_do_not_rebuild_definition_index` | P | P | N | N | N | N | N | N | N | N |
+| `test/test_item18_word_trust.py::test_89_written_prediction_is_local_across_constructed_streams` | N | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_expect.py::test_82_omission_teacher_keeps_the_staged_input_bracket` | N | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_expect.py::test_81_expectation_restores_the_omitted_native_word` | F | P | N | N | N | N | N | N | N | N |
+| `test/test_item18_expect.py::test_82_omission_is_the_only_teacher_and_consumers_detach[sigmaPi]` | F | P | N | N | N | N | N | N | N | N |
+| `test/test_item18_expect.py::test_82_omission_is_the_only_teacher_and_consumers_detach[predictor]` | F | P | N | N | N | N | N | N | N | N |
+| `test/test_item18_intuit.py::test_infer_ordinary_derivation_does_not_claim_a_knowing_deposit` | N | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_intuit.py::test_85_infer_keeps_the_old_three_rule_supports` | N | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_intuit.py::test_84_intuit_reads_once_at_observation_and_no_relation_row` | F | F | N | N | N | N | N | N | N | N |
+| `test/test_item18_intuit.py::test_83_thought_teaches_the_open_map_and_an_unseen_conclusion_still_needs_inference` | N | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_lexical_form.py::test_91_reading_and_free_generation_take_the_mapped_words_form[aligned]` | F | P | N | N | N | N | N | N | N | N |
+| `test/test_item18_lexical_form.py::test_91_reading_and_free_generation_take_the_mapped_words_form[mixing]` | N | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_lexical_form.py::test_91_spelling_presence_reads_form_and_keeps_its_gradient` | F | P | N | N | N | N | N | N | N | N |
+| `test/test_item18_marker.py::test_86_marker_preserves_form_and_has_an_exact_selected_inverse` | N | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_marker.py::test_86_compose_and_generate_choose_each_kernel` | N | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_marker.py::test_86_retired_unary_case_has_no_grammar_and_compound_stays` | N | N | N | N | N | N | N | N | N | N |
+| `test/test_item18_marker.py::test_86_pinned_sentence_keeps_the_selected_kernel` | N | N | N | N | N | N | N | N | N | N |
+| `explore-1 lesson after four epochs` | F | F | B | B | B | N | N | B | N | N |
+| `test/test_item18_recognition.py::test_90_present_percept_is_said_by_its_class_without_naming_an_object` | F | P | N | N | N | N | N | N | N | N |
+| `test/test_item18_recognition.py::test_90_named_percept_does_not_mix_native_spellings` | F | P | N | N | N | N | N | N | N | N |
+
+Failed-rung records below are the ordinary evaluation reads, restored afterward. Repeated identical formatted records are printed once with their count. The full traces stay local.
+
+**test/test_item18_intuit.py::test_84_intuit_reads_once_at_observation_and_no_relation_row**.
+
+Rung 1: definition not trusted, word does not denote one object.
+
+Identical record count: 3.
+
+```text
+"alpha"
+  words   alpha[known, minted]
+  tree    alpha
+  missing none
+  arguments alpha: add_argin1 0, add_argin2 0, add_argout1 0
+```
+
+**explore-1 lesson after four epochs**.
+
+Rung 1: missing leaves, different tree, word not minted, definition not trusted, word does not denote one object.
+
+Identical record count: 3.
+
+```text
+"Felix"
+  words   Felix[known, left]
+  tree    (empty)
+  missing Felix
+  arguments Felix: compound_argin2 1, compound_argout1 1, divide_argin2 1
+  native  Felix at [0, 5]: for 1.0 from word 113 (row 13); against 0.999536395072937 from word 113 (row 13)
+```
+
+#### 49.9.1 The 160-sentence whole-path lesson
+
+Configuration remains explore-1.xml: four epochs of 16 idea sentences and four of 24 relation sentences, **160** total. It completed; the curriculum’s learning criteria did not pass. No early exit was turned into a pass. The observer reads both selected fields before trial restoration.
+
+Fields: **0/160** exact; maximum coordinate difference **1.00000000**; mean of sentence mean absolute differences **0.3694050700**. Final retained LTM0 rows: **923**.
+
+Coordinate-weighted mean absolute difference: **0.3914348468**. The A/B values in §44.13 were 0/160 exact, maximum 1, coordinate-weighted mean .4345473262 and 664 retained rows; its final order occupancy was (35,92,28). Both versions used the same captured first stream and four-epoch protocol.
+
+| Phase | Scored answers across phase | Correct bindings | Returned text nonempty | Exit |
+| --- | --- | --- | --- | --- |
+| ideas | 32 | 0 | 1 | criteria not met |
+| relations | 48 | 0 | 0 | criteria not met |
+
+**Producers of the two fields.** The understood field is the kept tree’s `compose_extend` result (`Extension.compose`/the reading’s extension); the generated field is `OutputOccurrences.generated` after the selected generate walk. The first three observed mismatches are concrete:
+
+| Sentence | Kept composition | Generated extension | Maximum / mean difference |
+| --- | --- | --- | --- |
+| 1 | surface projects the empty right operand; root field empty | One unreferenced terminal stimulates 13 nonzero concepts; no generate operator | 0.50000000 / 0.19484967 |
+| 2 | change projects its empty right operand, after surface had retained concept 124; root field empty | One unreferenced terminal stimulates 12 nonzero concepts; no generate operator | 1.00000000 / 0.41622922 |
+| 3 | surface projects the empty right operand; root field empty | One unreferenced terminal stimulates 19 nonzero concepts; no generate operator | 0.41428572 / 0.10869430 |
+
+Thus those composed roots discard a nonempty left field by the operator’s declared projection, while an unreferenced generated terminal stimulates the field from its point. It is an observed parse/generate mismatch, not two differently timed reads of one field. The remaining 157 comparisons establish disagreement; they were not each assigned a producer beyond those two native publishers. At rung 1 the lesson leaves known word `Felix` (concept 113, row 13) with no object definition: its own word row supplies for=1 and against=.99953640. The pure-mint legality rule and first-walk teacher are unchanged.
+
+**Unforced turnover, before and after §48:** both pass on the same captured first stream, without changing the 32-row fixture or eight-plus-two presentations. The first closed-boundary pass is 8 → 6 retained rows, cutoff .1720475554, one protected; after two further sentences the second is 8 → 6, cutoff .1549190879, one protected. The checkpoint restores six rows and the saved pass count. This is a measured XPASS of the existing non-strict capacity baseline, not a new grammar-learning gate.
+
+The A/B checkpoint was also replayed on that same captured stream: **pass**, 5.821814 seconds, versus the finished source’s 3.814451 seconds. Its first pass was **16 → 9**, cutoff **.4499999881**, **9 protected**, target 6 not reached; after two further presentations the second was **13 → 6**, cutoff **.4049999714**, **4 protected**. Its first-boundary checkpoint restored **9** rows and one pass, versus **6** rows and one pass after C. The final live store has six rows in both. The default sweep uses its own captured stream; a fixed-stream pass here does not replace that separate result.
+
+#### 49.9.2 Lesson collapse audit
+
+All **72 arguments / 2556 pairs** were read. Cosines: minimum -0.72299379, mean 0.08169835, maximum 0.93270439; 0 pairs at least .99, 891 negative. For each argument the table gives its nearest other argument (lexical tie-break only for display). The complete fixed-fixture pair tables are in §49.8.1; no merge or split operation is inferred from a cosine.
+
+| Argument | Nearest argument | Cosine |
+| --- | --- | --- |
+| `add_argin1` | `subtract_argin2` | 0.842152 |
+| `add_argin2` | `verb_argout1` | 0.630859 |
+| `add_argout1` | `surface_argin2` | 0.744649 |
+| `ask_argin1` | `verb_argout1` | 0.720612 |
+| `ask_argout1` | `add_argin1` | 0.644317 |
+| `bind_argin1` | `preposition_argout1` | 0.464684 |
+| `bind_argin2` | `swap_argout2` | 0.487224 |
+| `bind_argout1` | `verb_argin2` | 0.608882 |
+| `change_argin1` | `multiply_argout1` | 0.932704 |
+| `change_argin2` | `surface_argout1` | 0.733670 |
+| `change_argout1` | `interpret_argout1` | 0.697436 |
+| `compound_argin1` | `part_argin1` | 0.736590 |
+| `compound_argin2` | `preposition_argout1` | 0.708374 |
+| `compound_argout1` | `multiply_argin1` | 0.789990 |
+| `divide_argin1` | `preposition_argout1` | 0.669401 |
+| `divide_argin2` | `multiply_argin2` | 0.842513 |
+| `divide_argout1` | `implies_argin1` | 0.894234 |
+| `focus_argin1` | `whole_argin2` | 0.391465 |
+| `focus_argout1` | `lift_argin1` | 0.468883 |
+| `implies_argin1` | `divide_argout1` | 0.894234 |
+| `implies_argin2` | `preposition_argout1` | 0.606599 |
+| `implies_argout1` | `swap_argin1` | 0.535595 |
+| `interpret_argin1` | `union_argin1` | 0.500422 |
+| `interpret_argout1` | `change_argout1` | 0.697436 |
+| `intersection_argin1` | `non_argin1` | 0.406196 |
+| `intersection_argin2` | `modifier_argout1` | 0.618745 |
+| `intersection_argout1` | `bind_argout1` | 0.553276 |
+| `lift_argin1` | `focus_argout1` | 0.468883 |
+| `lift_argout1` | `swap_argout1` | 0.409595 |
+| `lower_argin1` | `divide_argin2` | 0.515969 |
+| `lower_argout1` | `verb_argin1` | 0.426946 |
+| `marker_argin1` | `multiply_argin1` | 0.605339 |
+| `marker_argout1` | `implies_argin1` | 0.619719 |
+| `mint_argin1` | `compound_argin1` | 0.579113 |
+| `mint_argout1` | `verb_argin2` | 0.640522 |
+| `modifier_argin1` | `modifier_argout1` | 0.781845 |
+| `modifier_argin2` | `compound_argin2` | 0.584173 |
+| `modifier_argout1` | `modifier_argin1` | 0.781845 |
+| `multiply_argin1` | `divide_argout1` | 0.819676 |
+| `multiply_argin2` | `divide_argin2` | 0.842513 |
+| `multiply_argout1` | `change_argin1` | 0.932704 |
+| `non_argin1` | `verb_argout1` | 0.577531 |
+| `non_argout1` | `divide_argout1` | 0.689908 |
+| `not_argin1` | `not_argout1` | 0.320823 |
+| `not_argout1` | `implies_argin2` | 0.456868 |
+| `part_argin1` | `compound_argin1` | 0.736590 |
+| `part_argin2` | `preposition_argin2` | 0.588611 |
+| `part_argout1` | `verb_argin1` | 0.581353 |
+| `preposition_argin1` | `intersection_argin2` | 0.599387 |
+| `preposition_argin2` | `whole_argin2` | 0.627766 |
+| `preposition_argout1` | `compound_argin2` | 0.708374 |
+| `sign_argin1` | `non_argin1` | 0.471713 |
+| `sign_argout1` | `preposition_argin2` | 0.466608 |
+| `subtract_argin1` | `add_argout1` | 0.669280 |
+| `subtract_argin2` | `add_argin1` | 0.842152 |
+| `subtract_argout1` | `modifier_argin1` | 0.680586 |
+| `surface_argin1` | `part_argin2` | 0.507819 |
+| `surface_argin2` | `add_argout1` | 0.744649 |
+| `surface_argout1` | `change_argin2` | 0.733670 |
+| `swap_argin1` | `implies_argout1` | 0.535595 |
+| `swap_argin2` | `subtract_argin2` | 0.631542 |
+| `swap_argout1` | `swap_argout2` | 0.433486 |
+| `swap_argout2` | `modifier_argout1` | 0.631480 |
+| `union_argin1` | `union_argin2` | 0.586761 |
+| `union_argin2` | `union_argin1` | 0.586761 |
+| `union_argout1` | `intersection_argin2` | 0.460909 |
+| `verb_argin1` | `verb_argout1` | 0.918120 |
+| `verb_argin2` | `subtract_argout1` | 0.666316 |
+| `verb_argout1` | `verb_argin1` | 0.918120 |
+| `whole_argin1` | `subtract_argin2` | 0.672786 |
+| `whole_argin2` | `modifier_argin1` | 0.731753 |
+| `whole_argout1` | `verb_argin2` | 0.501114 |
+
+### 49.10 Finished-source validation
+
+Both stopping gates ran first and passed. The complete default command was `env -u RUN_TRAINED -u RUN_SLOW make test`, with nothing deselected. The finished source did not change during these runs. Earlier interrupted diagnostics in §49.5a–e are not substituted for this result.
+
+**7133/7133 completed**, exit **0**, **2381.999056 seconds**, peak aggregate process-tree memory **11,609,160,704 bytes**. Outcomes: **6800 passed**, **330 skipped**, **2 xpassed**, **1 xfailed**.
+
+| Mechanism file | Passed |
+| --- | --- |
+| `test/test_item18_operator_cost.py` | 4 |
+| `test/test_item18_parts_round_c.py` | 9 |
+| `test/test_item18_round_c_continuation.py` | 10 |
+| `test/test_item18_space_boundaries.py` | 17 |
+
+Counts above are unique selected tests. `test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected` emits four passing call records (its subtests and outer test); it is counted once. The raw pytest record count is **7136**. No selector was omitted.
+
+The two stopping gates also passed inside the sweep:
+
+| Gate | Sweep call seconds |
+| --- | --- |
+| `test/test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class` | 0.110088 |
+| `test/test_mm_xor.py::TestMMXorConvergence::test_convergence` | 0.291350 |
+
+Learning certificates retain their existing protocols:
+
+| Certificate | Result and measured values | Call seconds |
+| --- | --- | --- |
+| 79 | passed; `{'stack_correct': 4, 'linear_correct': 2, 'presentations': 200, 'output': [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0], [0.0, 1.0]]}` | 0.023177 |
+| 80 | passed; `{'answers': [-1.2914142644149251e-08, 1.0, 1.0, -1.2914142644149251e-08], 'weights': [1.0, 1.0, -2.0], 'promoted_row': 2, 'mse': 8.338754153843379e-17}` | 0.251866 |
+| 81 | passed; `{'presentations': 200, 'text': 'alpha gamma', 'hidden_row': 13, 'expected': 1.0, 'other_absent': 0.0}`; `{'presentations': 200, 'text': 'beta delta', 'hidden_row': 15, 'expected': 1.0, 'other_absent': 0.0}` | 170.323873 |
+| 83 | passed; `{'presentations': 200, 'learned': 1.0, 'unseen': 0.0, 'inferred': 1.0}` | 0.887885 |
+
+#### 49.10.1 Remaining expected failures and passes
+
+The only **new** non-strict mark in this continuation is `test_placement_surface.py::test_layout_lesson_context_rises_without_random_collapse`, restricted to `AssertionError`, reason **"baseline, item 1.8 §43"**. All five original assertions remain. Its fixed eight-close context measurement is 0 → 0; the signed-start/context-sum interaction is recorded in §49.8. The existing two native-90 marks and the unforced-turnover mark remain; no runtime exception is newly concealed by a baseline mark.
+
+| Test | Default-sweep outcome | Producer / scope |
+| --- | --- | --- |
+| `test/test_forgetting.py::test_unforced_grammar_turnover_reports_its_retained_occurrences` | xpassed | Existing ClauseCapacityError-only baseline; this run reaches the document boundary and passes all unchanged memory assertions. |
+| `test/test_placement_surface.py::test_layout_lesson_context_rises_without_random_collapse` | xfailed | Fixed-budget placement learning; signed ID seeds meet the existing positive-cone context normalization (§49.8). |
+| `test/test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input` | xpassed | Inherited native reconstruction-learning baseline; the recovered-word overlap assertion passes on this draw. |
+
+No unexpected sweep failure remains. The lesson remains 0/160 exact fields and 0/80 correct answer bindings (§49.9.1); the first three field disagreements are attributed there. POS certificate 2 does not meet its full merge criterion, certificate 3 preserves initially separated words rather than showing further separation, and certificate 8 is not ready because no measured model passes rung 6 (§49.8). These are reported learning limits, with no new gate or tuning. Native certificate 90’s completed fixed curricula follow below.
+
+#### 49.10.2 The verbal proof
+
+The unchanged `XOR_grammar.xml` proof ran once through the sweep's shared
+training fixture: **400 epochs, 1,600 sentence presentations**. Its
+selected-grammar inverse passes **4/4** word multisets; all four observed
+texts are exact. The independent field reconstruction also returns
+**4/4**. The numeric output gives **3/4** correct classifications at .5:
+
+| Input | Label | Numeric output, as printed | Grammar inverse | Field inverse |
+| --- | --- | --- | --- | --- |
+| hello world | 0 | .3856 | hello world | hello world |
+| hello there | 1 | .3856 | hello there | hello there |
+| loving world | 1 | .7077 | loving world | loving world |
+| loving there | 0 | .3856 | loving there | loving there |
+
+The console's `OK` marks the text comparison; it is not a claim of four
+correct numeric answers. The final printed training losses are
+**output .1330**, **reconstruction .0212**. The guarded worker completes
+in **702.225065 seconds**, peak **2,751,565,352 bytes**, exit **0**. The
+pytest call alone takes .000303 seconds because training belongs to its
+module fixture; that call time is not the proof's training time.
+
+For comparison, §44.16's A/B return recorded grammar **4/4**, field
+**2/4**, numeric **2/4**, outputs **.4928, .4883, .5063, .5018**, and
+final losses **.1751/.0207**. These are two native runs under the same
+400-epoch protocol, not a matched-initialization experiment. The final
+sweep records its first random stream; no draw or seed was chosen to
+obtain this result. The remaining numeric error is a learning baseline,
+not a changed grammar assertion. The separate numeric certificate 80
+and both stopping gates pass as reported above.
+
+### 49.11 Native certificate 90: the fixed acquisition baselines
+
+The two native fixtures run explicitly under `RUN_SLOW`, on the same source as the default sweep, with their original captured first streams. The teacher-only target remains `surface(0, surface(1, verb(bind.open(lower(2)), 3)))`. Evaluation supplies text and the scalar value, with no slot, meaning or answer reference. Neither fixture changes its scalar acquisition, capacities, learning rate or presentation budget.
+
+| Fixture in `test_item18_recognition.py` | Rounds / training presentations / evaluated readings | Exact readings / good rounds / final consecutive | Outcome | Call / guard seconds | Peak bytes |
+| --- | --- | --- | --- | --- | --- |
+| `test_90_present_percept_is_said_by_its_class_without_naming_an_object` | 200 / 600 / 600 | 0 / 0 / 0 | bound reached; non-strict XFAIL | 4276.032008 / 4309.359208 | 3403796584 |
+| `test_90_named_percept_does_not_mix_native_spellings` | 200 / 600 / 600 | 0 / 0 / 0 | bound reached; non-strict XFAIL | 4014.315396 / 4021.100498 | 3030339400 |
+
+These are failed acquisition results. The subsequent unchanged 18 presentations and the recognition assertions were **not reached**; no recognition accuracy is claimed. Both fixtures reached the same bound under A/B (§44.17). The final readings, grouped only when identical, are:
+
+| Fixture | Count among its final three reads | Kept reading |
+| --- | --- | --- |
+| 1 | 1 | `modifier(lower(0), divide(divide(1, 2), 3))` |
+| 1 | 2 | `implies(lower(0), divide(divide(1, 2), 3))` |
+| 2 | 3 | `part(0, verb(lower(1), subtract(2, 3)))` |
+
+The known producer is the retained compose program: it differs from the annotated nesting and opening. This stage fails before the later recognition call, so it does not identify a failing class conclusion or a thought-choice outcome. No intervention makes bind win a menu, and no attention rule changes. The final-round teacher-state probabilities below are observations of the existing teacher over native trial paths, not additional presentations. Operation 3 is lower; operation 14 is the existing bind.open dummy; −1 is wait/STOP. Other targets, if any, are printed in their native recorded form.
+
+| Fixture | Source spans | Target | States | At zero | Nonzero probability range |
+| --- | --- | --- | --- | --- | --- |
+| 1 | `[[1,3],[0]]` | wait | 8 | 4 | 0.910855174–0.951533794 |
+| 1 | `[[1],[3]]` | wait | 4 | 0 | 0.00512323109–0.00531755062 |
+| 1 | `[[2,1,3,0]]` | wait | 4 | 0 | 0.811860979–0.882738531 |
+| 1 | `[[2],[1,3,0]]` | wait | 4 | 4 | none |
+| 1 | `[[2],[1,3]]` | wait | 4 | 0 | 0.202814832–0.339191407 |
+| 1 | `[[2],[1]]` | wait | 4 | 0 | 0.953632474–0.955389678 |
+| 1 | `[[2]]` | lower at position 0 | 4 | 0 | 0.915507555–0.923288941 |
+| 1 | `[[2]]` | bind.open | 4 | 0 | 0.249731854–0.253572255 |
+| 2 | `[[1,2,3,0]]` | wait | 5 | 0 | 0.534235477–0.903060913 |
+| 2 | `[[1],[2,3,0]]` | wait | 5 | 5 | none |
+| 2 | `[[1],[2]]` | lower at position 1 | 5 | 0 | 0.800826967–0.832988799 |
+| 2 | `[[1],[2]]` | bind.open | 5 | 0 | 0.0690177456–0.082071349 |
+| 2 | `[[1]]` | wait | 6 | 0 | 0.593580484–0.702076197 |
+| 2 | `[[2],[3,0]]` | wait | 10 | 5 | 0.176397189–0.254971474 |
+| 2 | `[[2],[3]]` | 8 | 5 | 0 | 0.0499825589–0.0540407933 |
+| 2 | `[[3,1,2,0]]` | wait | 2 | 0 | 0.486481518–0.486481518 |
+| 2 | `[[3,1,2],[0]]` | wait | 1 | 0 | 0.0189619828–0.0189619828 |
+| 2 | `[[3,1,2]]` | wait | 1 | 0 | 0.486481518–0.486481518 |
+| 2 | `[[3,1],[2]]` | lower at position 1 | 1 | 0 | 0.127760127–0.127760127 |
+| 2 | `[[3,1]]` | wait | 1 | 0 | 0.486481518–0.486481518 |
+| 2 | `[[3],[0]]` | wait | 5 | 0 | 0.0142797614–0.015258966 |
+| 2 | `[[3],[1]]` | wait | 1 | 0 | 0.00643269764–0.00643269764 |
+| 2 | `[[3]]` | wait | 1 | 0 | 0.384128064–0.384128064 |
+
+### 49.12 Returned source and protected places
+
+Returned `bounded_tests.source_snapshot`:
+
+`f4dfb94da4740242f916bc7efb35971c4b74cff5f6fc911b0c5bd54e954a097c`
+
+This is the working-tree source, not a new Git commit. The local A/B
+checkpoint remains `ac8fbb011483b12c3b9bd21763f284a6880c8c87`.
+Nothing in round C is committed or pushed. The final source comparisons
+are unchanged; receipts remain local and are not linked.
+
+| Protected place | Edit in this continuation / final round-C state |
+| --- | --- |
+| `bin/Attention.py` | None; byte-identical to the A/B checkpoint |
+| `bin/ModelAttention.py` | None; byte-identical to the A/B checkpoint |
+| `bin/SentenceAttention.py` | None; byte-identical to the A/B checkpoint |
+| `bin/AttentionTraversal.py` | None; byte-identical to the A/B checkpoint |
+| `Models._run_sentence_word_bricks` | No further edit; the accepted §46.5 change preserves the expectation prime's separate order blocks instead of their all-order average. Its exact text matches the pre-§48 return. Carry this one accepted block through the performance merge for Alec and Claude's review. |
+
+The first-walk teacher, changes to mint purity, round D and the symbol
+split, redesign of the shared predictor, and the object binding in the
+STM tree named in §47.3 remain outside this round. No implicit concept
+reclamation, per-order System-1 return path or point substitute was kept
+behind a switch. The unrelated item-1.5 plan and parent WikiOracle
+pointer were left alone.
+
+## 50. Review of round C's continuation (Claude, 2026-11-16): accepted under §43, with one correction of Claude's own default
+
+Reviewed: the working tree Codex returned (§49.12, snapshot
+`f4dfb94da474...`), on the checkpoint `ac8fbb0114`. Nothing is
+committed.
+
+### 50.1 What was checked
+
+- *The return against §48.12.* Each of its six items is answered:
+  placement (§49.1), where a row starts (§49.2), memory (§49.3), System 1
+  (§49.4), the measurements (§49.7 to §49.11), the gates and the sweep
+  (§49.10).
+- *Claude's runs* (processor, the round's interpreter). The four
+  mechanism files (40 tests), both stopping gates and
+  `test_xor_weights_change_after_one_epoch` pass, and the placement
+  baseline fails as marked: 43 passed, 1 expected failure, 13.75 seconds.
+  The default sweep was not repeated; §49.10's is taken as returned (7133
+  completed: 6800 passed, 330 skipped, 2 unexpected passes, 1 expected
+  failure).
+- *Protected places.* `git diff ac8fbb0114` is empty for the four
+  attention files.
+- *Fixtures.* Under `data/` only `model.xml` (the keys `operatorCost` and
+  `objectStartNeighbours`), `model.xsd` and the reviewed ladder
+  `assessment/known_probe.json` differ from the checkpoint. No capacity
+  is changed.
+- *Removals.* `bin/ConceptForgetting.py` is gone, and `bin/` has no
+  reader of `retire_concept`, `reclaim_concepts`, `warn_capacity` or
+  `ExtendedRecall.answers`.
+- *Ports and retirements.* Claude read §49.6's reasons and did not read
+  each of the 144 changes.
+
+### 50.2 The correction: a new row's seed must not be signed
+
+§48.12, item 2c, was Claude's default: "a unit vector of normal values".
+It is wrong for this space. `MereologicalCodes.placement_step` works "in
+the positive conceptual coordinates": it divides a context by the sum of
+its coordinates, and it clamps the moved row at zero. A signed seed lies
+outside that cone. Codex built the default as written, reported the
+misfit (§49.2, "Against the normal-seed default"; §49.8) and did not tune
+it, which was right.
+
+Its cost is the round's one new baseline mark:
+`test_placement_surface.py::test_layout_lesson_context_rises_without_random_collapse`
+stays at a context likeness of 0 after its eight closes.
+
+*Tried in a scratch copy* (source and tests copied, `data` linked;
+nothing in Codex's tree was touched). With `ConceptPlacement.seed` taking
+the absolute value of the same keyed normal draw before it is normalized,
+that test passes. Two continuation certificates then fail, as they
+should: `test_unplaced_concepts_start_at_their_own_seed_and_keep_their_position`
+states the signed formula, and
+`test_a_signed_seed_has_a_native_nonnegative_evidence_code` requires a
+negative coordinate (the placement test with the continuation file: 8
+passed, 2 failed, 1 unexpected pass, 5.02 seconds).
+
+*What follows for Codex*, before the commit (Claude's recommendation) or
+after it (Alec's choice, §50.4):
+
+1. `ConceptPlacement.seed` is the absolute value of the same keyed normal
+   draw, normalized.
+2. The widening that the signed seed required goes back to its form at
+   the checkpoint: finite signed coordinates accepted by
+   `IdentityRows.carrier` and `coordinates` and by `ConceptTrust.remember`
+   and `observe` on a whole-value chart; the positive part alone rendered
+   by `MereologicalCodes.positive_directions`; the loader test's change
+   from a signed to a nonfinite input. Codex names anything that has to
+   stay, and its reader.
+3. The two certificates above are ported to the nonnegative seed, and the
+   baseline mark on the placement test is removed if it passes.
+
+### 50.3 Recorded, with no action in this round
+
+- *Parts of speech.* Certificate 2's merge is incomplete; certificate 3
+  shows no movement beyond the words' first separation; certificate 8 is
+  not ready, since no source passes rung 6. Learning results under §43.
+- *The lesson.* 0 of 160 exact fields, as at A/B. The mean difference
+  falls from .4345 to .3914 and the retained LTM0 rows rise from 664 to
+  923. The first three mismatches have one cause (§49.9.1): the composed
+  root discards a nonempty left field by its operator's projection, while
+  an unreferenced generated terminal stimulates the field from its point.
+  It goes to the sentence as one block.
+- *The verbal proof.* Grammar 4 of 4; field 4 of 4, where A/B gave 2;
+  numeric 3 of 4, where A/B gave 2.
+- *Certificate 90.* Both fixtures reach their bound with no good round,
+  as at A/B.
+- *Concepts without definitions.* In the lesson's first chart 22
+  identities and 61 other concepts have none (§49.7). This is limit 1 of
+  §48.11.3; it goes to FutureWork in the doc pass.
+- *The planning helper.* `corpus_capacity.allocation_plan` understates
+  the constructed rows by 99, the grammar seats of orders one and two. A
+  reporting defect, for the housekeeping.
+- *Codex's own decisions*, each the repair of a cause that the sweep
+  exposed, accepted: the thought menu and `ThoughtStream.integrate` take
+  the execution STM explicitly (§49.5a, §49.5c); a relation read from
+  LTM1 takes the time of its read (§49.4); an unpromoted handle is
+  captured as the lexical concept at its place, or -1 (§49.5b, §49.5e);
+  `MemoryLink.preview` carries the earlier links of the same close
+  (§49.5b); a thought view is read only at its own slot (§49.5d).
+
+### 50.4 For Alec
+
+1. The seed correction of §50.2: before the commit of round C, or after
+   it.
+2. The commit of round C, on Alec's word.
+
+Answered in §50.5: the correction first, by Codex, with the commit.
+
+### 50.5 Alec's answers, and the Codex text (2026-11-16)
+
+Alec: "Fix first"; then "codex can do the fix and commit without test",
+and "you can also emit the text for codex to do the merge. then quick
+sanity check with you and resume the 1.8 work".
+
+So the correction is the smallest one, and §50.2's second step is
+withdrawn: the validators that accept signed coordinates on a
+whole-value chart stay as Codex returned them (`IdentityRows.carrier`
+checks the range only where the chart has a paired meaning region).
+Round C's member agreement keeps a signed extension, and narrowing the
+validators again is not something to do without a test run. Whether a
+whole-value chart should again refuse signed coordinates is left for the
+housekeeping.
+
+*Claude's scratch run of the correction* (the seed's absolute value, the
+two certificates ported as in the text below, nothing in Codex's tree
+touched): the 40 tests of round C's four mechanism
+files pass, the placement test passes without its mark, and both
+stopping gates and `test_xor_weights_change_after_one_epoch` pass with
+no promotion refused.
+
+*The merge.* The plan of the `performance` branch
+(`doc/plans/2026-11-14-attention-in-thinking.md`, §5) has it: main is
+merged into `performance`, the conflicts are resolved, P1 to P3 are run
+against the merged main, and the branch is reviewed before it becomes
+main. The branch is 18 commits on `3926005f12`. Both sides changed
+`bin/Layers.py`, `bin/Meaning.py`, `bin/Models.py`, `bin/Spaces.py`,
+`test/conftest.py` and `test/test_bounded_test_runner.py`. The saved
+evidence of its certificates (`output/attention-thinking`,
+`output/attention-block`) is not on this machine, and its base changes
+from `3926005f12` to the commit of round C, so the base is recorded
+again.
+
+~~~
+Item 1.8: correct the seed, commit round C, and merge the performance
+branch (doc/plans/2026-11-11-item1-8-last-architecture-round.md).
+Claude's review of your §49 is §50: round C is accepted under §43.
+Alec's order is in §43, "The order, amended": round D is now item 1.7
+and follows item 1.8. Do the three parts in order. Find the cause of any
+failure yourself, and record each decision you take. Never push main,
+and never force-push. Leave the parent WikiOracle pointer, the
+basicmodel-docs worktree and the item 1.5 plan alone.
+
+Part 1. The seed (§50.2, §50.5). Alec: "codex can do the fix and commit
+without test". Claude ran it in a scratch copy; no test run is asked of
+you for this part.
+a. bin/ConceptPlacement.py, seed: take the absolute value of the same
+   keyed normal draw before it is normalized:
+   normalize(torch.randn(like.shape, generator=generator).abs().to(like), dim=-1)
+b. test/test_item18_round_c_continuation.py:
+   - test_unplaced_concepts_start_at_their_own_seed_and_keep_their_position:
+     the expected seed takes .abs() on the same draw.
+   - test_a_signed_seed_has_a_native_nonnegative_evidence_code is renamed
+     test_a_seed_is_a_native_nonnegative_evidence_code, and its assertion
+     that some coordinate is negative becomes the assertion that none is.
+c. test/test_placement_surface.py: remove the non-strict mark "baseline,
+   item 1.8 §43" from
+   test_layout_lesson_context_rises_without_random_collapse. With this
+   seed it passes.
+d. Change nothing else for the seed. The validators that accept signed
+   coordinates on a whole-value chart stay as you returned them.
+
+Part 2. Commit round C. In /Users/arogers/github/WikiOracle/basicmodel,
+on main, on ac8fbb0114, commit the working tree as it stands after part
+1: source, tests, data, todo.md and doc/plans (Claude edited todo.md,
+this specification and doc/plans/2026-11-14-sigma-pi-layers.md), and your
+receipts by the rule you followed at the checkpoint. One commit, whose
+message names round C of item 1.8 and the seed correction of §50.2. No
+test run is asked before it.
+
+Part 3. Merge the performance branch. Its plan is
+doc/plans/2026-11-14-attention-in-thinking.md on that branch; §5 there is
+"the merge". Work in the worktree
+/Users/arogers/github/WikiOracle/basicmodel-performance, branch
+performance (b568abdebe).
+a. git fetch origin. If origin/performance is ahead of the local branch,
+   fast-forward to it first, and say so.
+b. Merge main, the commit of part 2, into performance. Do not move main.
+c. Conflicts are expected in bin/Layers.py, bin/Meaning.py,
+   bin/Models.py, bin/Spaces.py, test/conftest.py and
+   test/test_bounded_test_runner.py. The rules:
+   - Models._run_sentence_word_bricks, Models._sentence_path_cost and the
+     attention files take the performance branch's form, with the one
+     accepted block of §46.5 carried into it (the expectation prime keeps
+     its separate order blocks). Show that block before and after.
+   - Everywhere else the results are main's (rounds A to C), in the
+     performance branch's faster form where both can stand. Where they
+     cannot, main's result stays, and you list what of the performance
+     branch was dropped or rebuilt, with the reason.
+   - No fixture is resized, no existing assertion is changed, and nothing
+     is kept behind a switch.
+d. Certify the merged branch against main at the commit of part 2, from
+   one saved random stream. The branch's saved evidence is not on this
+   machine and its base has changed, so record the base again on main.
+   Certificate P3 of the plan: every chooser action, every registered
+   cost term and every parameter after each batch is exactly equal, on
+   the first sixteen training sentences of data/MM_corpus_lessons.xml and
+   on both stopping gates. P1 and P2 as the branch's tests and
+   certificate scripts have them. If a case cannot be made exactly equal,
+   do not approximate it: write it for Alec, with how often it occurs.
+e. Run, on the merged branch: both stopping gates; the four mechanism
+   files of round C (test_item18_operator_cost.py,
+   test_item18_parts_round_c.py, test_item18_round_c_continuation.py,
+   test_item18_space_boundaries.py); the performance branch's own test
+   files (test_attention_host_work.py, test_attention_thinking_handoff.py,
+   test_attention_thinking_steps.py, test_sentence_owned_attention.py,
+   test_performance_leaves.py, test_prepare_data.py,
+   test_bounded_test_runner.py); then one default sweep,
+   env -u RUN_TRAINED -u RUN_SLOW make test, under the baseline rule of
+   §43. This sweep is also the first on the corrected seed.
+f. Commit the merge on performance. Do not push it, and do not move main:
+   Claude checks the merged branch first.
+
+Write your return as §51 of the specification: the commit of part 2;
+each conflict and how it was resolved, by function; the block of §46.5
+before and after; the certificates of 3d; the sweep's counts, with every
+failure named and its cause; the seconds for the sixteen lesson sentences
+on main and on the merged branch; and what you did not do, with the
+reason.
 ~~~

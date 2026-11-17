@@ -48,7 +48,8 @@ def decoder():
     for name in ('generate_policy_logits', 'reverse_binary_step', '_reverse_of_binary_op'):
         setattr(language, name, MethodType(getattr(LanguageSpace, name), language))
     language._bounded_binary_reconstruction = LanguageSpace._bounded_binary_reconstruction
-    language.choose_generate = lambda logits: logits.argmax(-1)
+    from generation_fixtures import undeclared_arguments
+    undeclared_arguments(language)
     model = SimpleNamespace(languageSpace=language)
     model._output_generate_walk = MethodType(BasicModel._output_generate_walk, model)
     return model, policy

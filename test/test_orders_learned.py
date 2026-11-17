@@ -286,20 +286,6 @@ def test_forgotten_first_equality_renews_its_existing_snapshot_seat():
     assert set(alloc.parts.parts((SYMBOL, parent))) == {(OCCURRENCE, m) for m in (second, third, fourth)}
 
 
-def test_retirement_handles_class_base_cache_without_losing_another_class():
-    cs, store, alloc = equality_fixture()
-    word = cs.interpret.lookup_word([1], [2], form='label')
-    first, second = event(cs, store, 1), event(cs, store, 2)
-    equal_close(cs, store, first, word)
-    equal_close(cs, store, second, word)
-    equal_close(cs, store, event(cs, store, 3), word)
-    parent = cs.interpret.forward(word)
-    base = alloc.relate_idx['part-base', parent]
-    cs.retire_concept(cs.new_concept())
-    assert alloc.relate_idx['part-base', parent] == base
-    cs.retire_concept(parent)
-    assert ('part-base', parent) not in alloc.relate_idx
-    assert ('part-kind', base, 1) not in alloc.relate_idx
 
 
 @pytest.mark.parametrize('order', (0, 1, -1))

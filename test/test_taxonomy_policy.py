@@ -64,5 +64,6 @@ def test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation():
     model.symbolSpace.ltm_store=LTM0(8,capacity=32)
     # Remove the derived conclusion as well as its shared-store premises.
     cs._concept_allocator.parts.remove(a[1],c[1])
-    cs.retire_concept(b[1])
+    cs._concept_allocator.parts.remove(a[1],b[1])
+    cs._concept_allocator.parts.remove(b[1],c[1])
     assert model.reason_about(QuerySpec.from_surface('isPart', a, c)).support_true == 0

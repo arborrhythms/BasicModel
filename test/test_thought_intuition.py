@@ -32,7 +32,7 @@ def test_three_rule_union_not_first_and_one_candidate_per_firing():
     torch.testing.assert_close(replayed, torch.stack(fields).amax(0))
     assert pair.tolist() == pytest.approx([result.support_true, result.support_false])
     from ThoughtStream import candidates
-    offers = candidates(registry, meaning, meaning, meaning, ())
+    offers = candidates(registry, meaning, meaning, meaning, (), stm=model.conceptualSpace.stm)
     choices = [item for item in offers if bindings(item.request).get('_intuition_rule') is not None]
     assert len(choices) == 3
     for offer, term in zip(choices, terms):
@@ -554,7 +554,7 @@ def test_exhausted_intuit_preserves_the_goal_without_depositing_its_request(budg
         assert result.evidence.get('meaning') is None and result.evidence.get('value') is None
         assert materialize(result) is result
         assert stage(model._what_memory(), result, 0) is result
-        assert integrate(registry, goal, result, ()) is goal
+        assert integrate(registry, goal, result, (), stm=model.conceptualSpace.stm) is goal
     assert stm._thought_contents is contents
     for original, unchanged in zip(before, stm.state, strict=True):
         torch.testing.assert_close(original, unchanged, rtol=0, atol=0)
@@ -753,3 +753,40 @@ def test_nested_return_keeps_empty_proof_off_known_referent_fallback(dtype, monk
                     for record in result.records)
     with pytest.raises(ValueError, match='intuition pair differs'):
         replay_thoughts(corrupt)
+
+
+def test_empty_search_does_not_certify_an_unchanged_zero_valued_idea(monkeypatch):
+    from test_item6_2_thinking import world
+    from Meaning import ConceptualMeaning
+    from ThoughtReferences import evidence_pair, with_slots
+    from Thoughts import replay_thoughts
+    model, registry, store, _ = world()
+    goal = with_slots(replace(ConceptualMeaning.from_description(
+        torch.zeros(model.conceptualSpace.outputShape[-1])), sentence_kind='idea'),
+        (), pair=(0., 1.), source_evidence=(0., 1.))
+    chosen = []
+    def choose(root, active, actions, **kwargs):
+        if len(chosen) == 3 and None in actions:
+            return None
+        action = next(item for item in actions if item is not None
+                      and item.semantic_id == ('intuit', 'not', 'infer')[len(chosen)]
+                      and (len(chosen) != 2 or item.open_roles == ('argin2',)))
+        chosen.append(action)
+        return action
+    monkeypatch.setattr(model, '_choose_selected_thought_action', choose)
+    with model._query_boundary_scope((0,)):
+        result = model._run_selected_thought_once(goal, work_budget=32)
+    assert len(chosen) == 3
+    assert evidence_pair(result.meaning) == (0., 1.)
+    torch.testing.assert_close(result.meaning.roles, goal.roles, rtol=0, atol=0)
+    proof = next(record for record in result.records if record.operation == 'infer')
+    assert proof.result.evidence['intuition_derivation'] == ()
+    assert (proof.support_true, proof.support_false) == (0., 0.)
+    assert result.records[-1].result is None
+    assert result.result.semantic_id == proof.result.semantic_id == 'infer'
+    assert result.result.evidence['intuition_derivation'] == proof.result.evidence['intuition_derivation']
+    assert replay_thoughts(result.records).finished
+    corrupted = tuple(replace(record, support_true=.5) if record is proof else record
+                      for record in result.records)
+    with pytest.raises(ValueError, match='intuition pair differs'):
+        replay_thoughts(corrupted)

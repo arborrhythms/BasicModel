@@ -6540,6 +6540,18 @@ def make_transform_chooser(kind, *, d_model, n_copy, n_op,
 
 
 
+def configured_operator_cost():
+    cost = float(TheXMLConfig.get('architecture.operatorCost', default=1.))
+    if not math.isfinite(cost) or cost < 0:
+        raise ValueError('operatorCost must be finite and nonnegative')
+    return cost
+
+
+def operator_scores(logits, cost):
+    """Every application pays once; the final STOP/wait pays nothing."""
+    return torch.cat((logits[..., :-1] - cost, logits[..., -1:]), -1)
+
+
 class OperationSelectionLayer(nn.Module):
     """One global categorical choice over operations at all live locations.
 
@@ -6555,6 +6567,7 @@ class OperationSelectionLayer(nn.Module):
                  op_names=None, unary_names=None, op_space_roles=None,
                  chooser="anchordot"):
         super().__init__()
+        self.operator_cost = configured_operator_cost()
         self.separate_chooser = bool(TheXMLConfig.get("architecture.separateChooser", default=False))
         self.d_model = int(d_model)
         self.ops = nn.ModuleList(ops)
@@ -6886,19 +6899,17 @@ class OperationSelectionLayer(nn.Module):
         return torch.where(depth > 0, self.reduce_pressure * (
             depth / allowance.clamp_min(1) + required / remaining.clamp_min(1)), 0.)
 
-    def prime_bias(self, candidates, prime):
-        """The uncapped expectation prior, separate from the chooser's content."""
-        bias = torch.einsum('bad,bd->ba',
-            F.normalize(candidates.detach()[..., :self.d_model], dim=-1), prime.to(candidates))
-        return bias.detach()
+    def prime_bias(self, candidates, prime, orders):
+        """The uncapped expectation prior in each candidate's own order."""
+        return prime.bias(candidates[..., :self.d_model], orders)
 
     def forward(self, x, *, depth=None, slots=1, active=None, sample=False,
                 masked_action=None, replay_action=None, what_ctx=None, op_prior=None, occupation=None,
                 grammar_context=None, allowance=None,
                 rounds_left=None, load_depth=None, reference_data=None,
                 previous_unary=None, stop_exact=None, operand_activations=None,
-                operand_content_activations=None, operand_identities=None, policy_grad=True,
-                expectation_prime=None, closing=False):
+                operand_content_activations=None, operand_identities=None, operand_orders=None, policy_grad=True,
+                expectation_prime=None, candidate_orders=None, closing=False):
         B, N, D = x.shape
         if N < 1:
             raise ValueError("compose needs a nonempty static slab")
@@ -6955,7 +6966,7 @@ class OperationSelectionLayer(nn.Module):
                 # Identify before attenuation. Composed operands have presence
                 # and leaves their projection coefficient; S is one
                 # scalar on this consumer view and never mutates either.
-                operand_gain = symbol_read.gains(x, live, identities=operand_identities)
+                operand_gain = symbol_read.gains(x, live, identities=operand_identities, orders=operand_orders)
                 # Activation-aware operators also consume S. Their content
                 # candidates are scored beside the raw identity candidates;
                 # only the latter may be selected into STM or the journal.
@@ -6965,8 +6976,11 @@ class OperationSelectionLayer(nn.Module):
                     content_activations = raw_activation * operand_gain
                 content_binary = self._stacked_reduced(x, grammar_context, reference_data,
                                                        content_activations)
-                binary_gain = symbol_read.gains(binary.flatten(1,2)).reshape(binary.shape[:-1])
-                unary_gain = symbol_read.gains(unary.flatten(1,2)).reshape(unary.shape[:-1])
+                split = binary.shape[1]*binary.shape[2]
+                binary_orders = None if candidate_orders is None else candidate_orders[:, :split]
+                unary_orders = None if candidate_orders is None else candidate_orders[:, split:-1]
+                binary_gain = symbol_read.gains(binary.flatten(1,2), orders=binary_orders).reshape(binary.shape[:-1])
+                unary_gain = symbol_read.gains(unary.flatten(1,2), orders=unary_orders).reshape(unary.shape[:-1])
                 dimmed = feature(content) * operand_gain.detach()[...,None]
                 stop_content, binary_content = self.chooser.score_binary(dimmed,
                     feature(content_binary[..., :self.d_model])*binary_gain.detach()[...,None], self.stop_anchor,
@@ -7046,7 +7060,6 @@ class OperationSelectionLayer(nn.Module):
             excluded = excluded & (previous_rule >= 0)[..., None]
             excluded = excluded.index_select(-1, ui)
             unary_scores = unary_scores.masked_fill(excluded, -torch.inf)
-            unary_scores = unary_scores - UnaryHistory.penalty(previous_unary, unary_scores)[..., None]
         stop = (stop_scores.squeeze(-1) * live).sum(-1) / depth.clamp_min(1)
         limit = torch.as_tensor(slots, device=x.device)
         # In a small STM a relative row can fit while the next-word slot is
@@ -7069,11 +7082,12 @@ class OperationSelectionLayer(nn.Module):
         prime = (getattr(self, '_expectation_prime', None) if expectation_prime is None
                  else expectation_prime)
         if prime is not None:
-            bias = self.prime_bias(candidates, prime)
+            if candidate_orders is None:
+                raise ValueError('expectation priming requires candidate orders')
+            bias = self.prime_bias(candidates, prime, candidate_orders)
             logits = logits + bias
         if reference_data is not None:
             # The dummy has no learned score, including expectation bias.
-            # Its repeated unary work still pays the ordinary location cost.
             # Preserve every eligibility/deadline decision already applied.
             dummy = torch.tensor(reference_data.get('unary_bind_dummy',()), device=x.device,
                                  dtype=torch.bool).expand(N, -1).reshape(-1)
@@ -7081,9 +7095,9 @@ class OperationSelectionLayer(nn.Module):
                 device=x.device,dtype=torch.bool).expand(N-1,-1).reshape(-1)
             fixed = torch.cat((binary_dummy, dummy, dummy.new_zeros(1)))[None]
             fixed_score = torch.zeros_like(logits)
-            if previous_unary is not None and r_apply:
-                fixed_score[:, nb:nb+nu] = -UnaryHistory.penalty(previous_unary, logits)[..., None].expand(B, N, r_apply).reshape(B, nu)
             logits = torch.where(fixed & torch.isfinite(logits), fixed_score, logits)
+        logits = operator_scores(logits, self.operator_cost)
+        alternative_logits = operator_scores(alternative_logits, self.operator_cost)
         greedy = structural_argmax(logits, flags)
         reference = (greedy if masked_action is None else
                      torch.where(masked_action >= 0, masked_action, greedy))
@@ -11202,6 +11216,7 @@ class LanguageSpace(nn.Module):
     """
     def __init__(self, symbol_space):
         super().__init__()
+        self.operator_cost = configured_operator_cost()
         object.__setattr__(self, "_symbol_space", symbol_space)
         object.__setattr__(
             self, "_language_layer_ref",
@@ -11523,13 +11538,16 @@ class LanguageSpace(nn.Module):
         return (self.generate_policy(top[:, :cw]) if features is None else
                 self.generate_policy(top[:, :cw],features))
 
-    def choose_generate(self, logits):
-        """The existing generate policy's hard decision, with the same tie rule."""
+    def choose_generate(self, logits, *, return_logits=False):
+        """Charge each operator and return the choice and, when needed, its scores."""
+        logits = operator_scores(logits, self.operator_cost)
         if logits.shape[-1] == 1:
-            return logits.argmax(dim=-1)  # A disabled output policy only has STOP.
+            choice = logits.argmax(dim=-1)  # A disabled output policy only has STOP.
+            return (choice, logits) if return_logits else choice
         flags = tuple(operator_is_structural(op) for op in
                       (*self._generate_binary_ops, *self._generate_unary_ops)) + (True,)
-        return structural_argmax(logits, flags)
+        choice = structural_argmax(logits, flags)
+        return (choice, logits) if return_logits else choice
 
     @property
     def language_layer(self):
@@ -11734,7 +11752,7 @@ class LanguageSpace(nn.Module):
             raw_activation = window.ne(0).any(-1).to(window) if window_activations is None else window_activations
             occupied = torch.arange(n, device=buffer.device)[None] < window_depth[:, None]
             content_activations = raw_activation * symbol_read.gains(window, occupied,
-                identities=state[4].gather(1, source))
+                identities=state[4].gather(1, source), orders=state[2].gather(1, source))
         arguments = dict(depth=window_depth, slots=stop_slots,
             occupation=(None if occupation is None else occupation.gather(1,
                 source[..., None].expand(B, n, occupation.shape[-1]))),
@@ -11743,9 +11761,15 @@ class LanguageSpace(nn.Module):
             rounds_left=rounds_left, load_depth=depth, closing=closing,
             stop_exact=stop_exact,
             operand_activations=window_activations,
-            operand_content_activations=content_activations, operand_identities=state[4].gather(1, source), policy_grad=policy_grad,
+            operand_content_activations=content_activations, operand_identities=state[4].gather(1, source),
+            operand_orders=state[2].gather(1, source), policy_grad=policy_grad,
             previous_unary=(None if previous_unary is None else previous_unary.gather(1, source)),
             op_prior=op_prior, grammar_context=structural_context, reference_data=references)
+        from ReferenceContext import composition_orders
+        arguments['candidate_orders'] = composition_orders(
+            state[2].gather(1, source), denotations,
+            self._compose_binary_rules, self._compose_unary_rules,
+            references=references, bank=getattr(self, '_reference_bank', None), chunks=chunks)
         replay = getattr(self, '_kept_compose_actions', None)
         if replay is not None:
             slot = torch.as_tensor(lesson_slot, device=replay.device).expand(B).reshape(B, 1)

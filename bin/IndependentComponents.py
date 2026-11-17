@@ -391,12 +391,27 @@ class IndependentComponents(nn.Module):
         from IdentityRows import point
         return point(self.owner, identity)
 
-    def innovation(self, observation, prediction):
-        """Legacy B's residual against native individual rows; no identity chart."""
+    def role_orders(self, meaning):
+        """A reference or the retained bank address types a role; never its cosine."""
+        result = torch.full((3,), -1, device=meaning.roles.device, dtype=torch.long)
+        if getattr(meaning, 'symbol_orders', None) is not None:
+            index = meaning.symbol_logits.detach().sigmoid().amax(-1).argmax()
+            result[0] = meaning.symbol_orders[index]
+        else:
+            for role, reference in enumerate(getattr(meaning, 'role_refs', (None,)*3)):
+                if reference is not None:
+                    result[role] = self.owner._concept_source_order(reference)
+        return result
+
+    def innovation(self, observation, prediction, *, orders, prediction_orders):
+        """Project each typed role within its order, then subtract scalar readings."""
         from IdentityRows import coordinates, point
         axes = F.normalize(torch.stack([coordinates(self.owner, point(self.owner, cid))
                                         for cid in self.individual_ids]), dim=-1)
-        values = (observation - prediction) @ axes.T.to(observation)
+        native = orders.new_tensor([self.owner._concept_source_order(cid) for cid in self.individual_ids])
+        observed = (observation @ axes.T.to(observation)) * (orders[:, None] == native)
+        expected = (prediction @ axes.T.to(prediction)) * (prediction_orders[:, None] == native)
+        values = observed - expected.to(observed)
         rows = [self.owner._csw_row_of(cid) for cid in self.individual_ids]
         if any(row is None for row in rows):
             raise RuntimeError('an identity has lost its native conceptual row')
@@ -416,7 +431,8 @@ class IndependentComponents(nn.Module):
             if meaning is not None and bool(active[b]):
                 prediction = predictions[b] if predictions is not None else None
                 if prediction is not None and self.individual_ids:
-                    residual = self.innovation(meaning.roles.detach(), prediction.roles.detach()).detach()
+                    residual = self.innovation(meaning.roles.detach(), prediction.roles.detach(),
+                        orders=self.role_orders(meaning), prediction_orders=self.role_orders(prediction)).detach()
                     loss = self.verbs.loss(torch.cat((changes, residual[None]), 0))
                 elif len(changes):
                     loss = self.verbs.loss(changes)
@@ -456,7 +472,8 @@ class IndependentComponents(nn.Module):
         # close. Whole-row residual recurrence is not individual identity.
         # The deferred order-two mechanism owns cross-document recurrence.
         if prediction is not None and self.individual_ids:
-            residual = self.innovation(meaning.roles.detach(), prediction.roles.detach())
+            residual = self.innovation(meaning.roles.detach(), prediction.roles.detach(),
+                orders=self.role_orders(meaning), prediction_orders=self.role_orders(prediction))
             self._innovations[identity] = residual.detach().cpu()
             self.verbs.observe(residual, witness=witness,
                 allocate=self._allocate_change)

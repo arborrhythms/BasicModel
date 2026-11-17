@@ -129,7 +129,6 @@ class MereologicalCodes(nn.Module):
 
     @torch.no_grad()
     def place_rows(self, rows, context, key):
-        from MeaningCodes import identity_code
         if not self.meaning_pairs:
             return
         rows = list(dict.fromkeys(map(int, rows)))
@@ -141,12 +140,47 @@ class MereologicalCodes(nn.Module):
         codes = self.placement.detach().clone()
         placed = self.placement_witnesses > 0
         for row in rows:
-            q = codes[row] if placed[row] else F.normalize(identity_code(
-                self.content_key(row), self.meaning_pairs, self.meaning_ones, like=codes), dim=0)
+            if self.owner.is_frozen(self.owner.concept_id_at_row(row)):
+                continue
+            q = codes[row]
             selected = (context > 0) & placed & self.same_order(row)
             selected[row] = False
             negatives = self._negatives(row, context, placed, key)
             self.placement[row].copy_(self.placement_step(q, codes[selected], context[selected], codes[negatives]))
+            self.placement_witnesses[row] += 1
+            self.placement_dirty[row] = True
+
+    @torch.no_grad()
+    def place_groups(self, groups, key):
+        """Membership selects groups; every geometric operand is same-order."""
+        if not self.meaning_pairs:
+            return
+        codes = self.placement.detach().clone()
+        placed = self.placement_witnesses > 0
+        targets, memberships = {}, {}
+        for movers, members, group_key in groups:
+            if not members:
+                continue
+            orders = {self.owner._row_order(int(row)) for row in (*movers, *members)}
+            if len(orders) != 1:
+                raise ValueError('placement groups cannot cross orders')
+            if bool(placed[list(members)].all()):
+                from ConceptHierarchy import group_centroid
+                centroid = group_centroid(self.owner,
+                    [self.owner.concept_id_at_row(row) for row in members], key=group_key)
+            else:
+                centroid = codes[list(members)].mean(0)
+            for row in movers:
+                targets.setdefault(row, []).append(centroid)
+                memberships.setdefault(row, set()).update(members)
+        for row, contexts in targets.items():
+            if self.owner.is_frozen(self.owner.concept_id_at_row(row)):
+                continue
+            selected = codes.new_zeros(len(codes))
+            selected[list(memberships[row])] = 1.
+            negatives = self._negatives(row, selected, placed, key)
+            self.placement[row] = self.placement_step(codes[row], torch.stack(contexts),
+                codes.new_ones(len(contexts)) / len(contexts), codes[negatives])
             self.placement_witnesses[row] += 1
             self.placement_dirty[row] = True
 
@@ -156,8 +190,23 @@ class MereologicalCodes(nn.Module):
         if reading is None:
             return None
         context = self.owner.placement_context(batch)
-        rows = (context > 0).nonzero().flatten()
-        self.place_rows(rows.tolist(), context, self.reading_key(reading))
+        sentence = context.clone()
+        language = getattr(getattr(self.owner, '_model', None), 'languageSpace', None)
+        if language is not None:
+            for cid in language.parts_of_speech.concepts.values():
+                row = self.owner._csw_row_of(cid)
+                if row is not None:
+                    sentence[row] = 0
+        for cid, kinds in self.owner._concept_allocator.symbol_types.items():
+            if 'object' in kinds:
+                row = self.owner._csw_row_of(cid)
+                if row is not None:
+                    sentence[row] = 0
+        rows = (sentence > 0).nonzero().flatten()
+        key = self.reading_key(reading)
+        self.place_rows(rows.tolist(), sentence, key)
+        from ConceptPlacement import meta_groups
+        self.place_groups(meta_groups(self.owner, context), key)
         return context
 
     def placement_extras(self):
@@ -187,10 +236,9 @@ class MereologicalCodes(nn.Module):
     def _validate_placement(codes, witnesses):
         norms = codes.norm(dim=-1)
         tolerance = max(1e-5, 8 * torch.finfo(codes.dtype).eps)
-        if (not bool(torch.isfinite(codes).all()) or bool((codes < 0).any())
+        if (not bool(torch.isfinite(codes).all())
                 or bool((witnesses < 0).any())
-                or bool(((norms > 1e-6) & ((norms - 1).abs() > tolerance)).any())
-                or bool((codes[witnesses == 0] != 0).any())):
+                or bool(((norms > 1e-6) & ((norms - 1).abs() > tolerance)).any())):
             raise ValueError('invalid placement directions or witness counts')
 
     def _load_from_state_dict(self, state, prefix, *args, **kwargs):
@@ -342,8 +390,8 @@ class MereologicalCodes(nn.Module):
 
     @torch.no_grad()
     def positive_directions(self, rows):
-        """The one direction read for a derived for-lane value."""
-        return F.normalize(self.placement[rows], dim=-1)
+        """Render the native positive cone; the signed place itself stays intact."""
+        return F.normalize(self.placement[rows].clamp_min(0), dim=-1)
 
     def positive_codes(self, rows):
         """The for-lane cache is derived from placement and its trusted radius."""

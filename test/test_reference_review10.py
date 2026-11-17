@@ -73,7 +73,7 @@ def test_later_ball_mention_preserves_the_boxs_key_members_and_count(monkeypatch
         refs=(words['y'], ClausePredicate(pred, 'equal'), ('clause', 0)))
     pending = close(first, 0)['items'][0]['reference']
     box = close(property_clause('box', 'red'), 1)['items'][0]['reference']
-    monkeypatch.setattr(resolver, 'prime', lambda value, stream: value[0]*4+value[1])
+    monkeypatch.setattr(resolver, 'prime', lambda value, stream, order: value[0]*4+value[1])
     close(equality(a[0], words['x'], words['box'], subject=pending_content), 2)
     assert owner.mtm.token_of(pending) == box
     ball = close(property_clause('ball', 'blue'), 3)['items'][0]['reference']
@@ -82,10 +82,10 @@ def test_later_ball_mention_preserves_the_boxs_key_members_and_count(monkeypatch
         # Eight separate observations of each support; never a joint one.
         for support in (a[0], a[1]):
             observed_individual(resolver, support, int(support.argmax()))
-        assert resolver.exclusion_query()(a[0], a[1])
+        assert resolver.exclusion_query(order=1)(a[0], a[1])
     else:
-        assert not resolver.exclusion_query()(a[0], a[1])
-        monkeypatch.setattr(resolver, 'prime', lambda value, stream: value[1]*4+value[0])
+        assert not resolver.exclusion_query(order=1)(a[0], a[1])
+        monkeypatch.setattr(resolver, 'prime', lambda value, stream, order: value[1]*4+value[0])
     final = close(equality(a[1], words['x'], words['ball'], subject=a[1]), 4)
     new_mention = final['items'][0]
     assert owner.mtm.token_of(box) == box
@@ -116,9 +116,9 @@ def test_arrival_cannot_merge_a_pending_token_with_other_members():
     unchanged(resolver, retained)
 
 
-def observed_individual(resolver, support, index):
+def observed_individual(resolver, support, index, *, order=1):
     from test_reference_close import known_concept as mint
-    subject = mint(resolver.components.owner, support)
+    subject = mint(resolver.components.owner, support, order=order)
     idea = replace(ConceptualMeaning.from_description(support), role_refs=(('sym', subject), None, None))
     for use in range(8):
         resolver.store.append_meaning(idea)
@@ -133,7 +133,7 @@ def test_own_content_excludes_an_observed_incompatible_antecedent(monkeypatch, h
         observed_individual(resolver, support, index)
     pool = resolver.components.owner.mtm
     before = pool.entries[antecedent]
-    monkeypatch.setattr(resolver, 'prime', lambda value, stream: value.new_tensor(100.))
+    monkeypatch.setattr(resolver, 'prime', lambda value, stream, order: value.new_tensor(100.))
     clause = mention(a[1], mode='bind')
     if has_word:
         clause = replace(clause, subject_word_id=words['wrong'])

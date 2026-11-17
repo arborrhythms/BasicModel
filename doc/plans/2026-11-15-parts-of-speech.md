@@ -1,8 +1,10 @@
 # Parts of speech: a class is a bundle of places (Claude, 2026-11-15)
 
 A specification of how the model learns which words go where. It is
-round C of item 1.8 (§10). It has no text for Codex yet. A rule marked
-*default* is Claude's choice where Alec has not spoken.
+round C of item 1.8 (§10). Its text for Codex is §45.4 of the 1.8
+specification; §48 there revises it, and §48.12 continues it. A rule
+marked *default* is
+Claude's choice where Alec has not spoken.
 
 ## 1. Alec's words (2026-11-15)
 
@@ -274,7 +276,9 @@ the words of those places.
    the words present that fill it are each moved toward the centroid of
    that argument's words (*default:* all its members, present or not),
    with the same step. The context is words only; the argument's own
-   position takes no part. Absent words do not move (*default*).
+   position takes no part. Absent words do not move (*default*). The
+   pull is added to the sentence's ordinary placement of a word, not put
+   in its place (Alec, 2026-11-16, §12).
 4b. *No position crosses an order.* A class is not placed at its
    members' centroid and a word is not moved toward its class's
    position: §30.7, rules 2 and 3, of the 1.8 specification stand, and
@@ -285,6 +289,14 @@ the words of those places.
    updated when a member joins or moves (*default*), and read as the
    class's extension. Likewise a word's centroid of its classes in the
    classes' space.
+4d. *The sentence places its words* (Alec, 2026-11-16, §12). A word
+   concept present at the kept close stays in the sentence's ordinary
+   placement (`MereologicalCodes.observe_close`), whether or not it
+   filled an argument; only the arguments, which rule 3 places, are left
+   out of it. An object concept is placed by its meta concepts alone.
+   The meta concept of a word and its object pulls within each order
+   only; a word and an object of different orders are related by
+   activation (§48.11 of the 1.8 specification).
 5. *Fit and priming.* A word's fit to an argument
    (`ConceptHierarchy.fit`, `PartsOfSpeech.similarities`) is the
    likeness of the word's position to the argument's centroid of its
@@ -295,8 +307,19 @@ the words of those places.
    pressure ... based on priming"). The sum is the word's occupation
    term at that argument in the compose chooser (`bin/Language.py`) and
    in the generate walk (`GenerateOccupation`). *Default:* the two are
-   added.
-6. *A new word.* Nothing else is built. Its first reading rests on the
+   added. Until the word loop is replaced, the expected activation is the
+   shared predictor's, as built (§46.11 of the 1.8 specification);
+   derived from expected words instead, it would be as strong as the
+   strongest of them (§48.8 there). Alec, 2026-11-16, of choosing a word
+   when no idea holds it: "semantic location and activation (e.g.
+   priming, recency, etc) will determine which word to choose from a set
+   of grammatically correct choices". The argument says which words are
+   admissible; location and activation, which of them is expected.
+6. *A new word.* It is not placed in any particular way on creation
+   (Alec, 2026-11-16): it starts at its seed (*default*). An object made
+   with its words starts at the centroid of the objects their nearest
+   words name (Alec's approximation, §48.11 of the 1.8 specification).
+   Nothing else is built. Its first reading rests on the
    known words' fits and priming and on what the grammar allows; once
    kept, rule 4 draws it at once toward the words of the places it took,
    and by rule 5 it then fits every place whose words are near it,
@@ -351,7 +374,8 @@ agreement; any class over words beside the arguments.
 
 ## 8. What it changes
 
-- Every kept close: the field at order one, word placements (rule 4),
+- Every kept close: the field at order one, word placements (the
+  sentence and rule 4), object placements (their meta concepts),
   argument placements (rule 3).
 - The chooser's and the generate walk's occupation terms (rule 5).
 - Nothing in the grammar file, the arguments' seats or their names.
@@ -363,6 +387,9 @@ agreement; any class over words beside the arguments.
 - Up and down, as an EM between words and their arguments, each order in
   its own space (Alec, §5.2 and §5.3): rules 3, 4, 4b, 4c.
 - What the arguments cannot part (§11): decided.
+- Where words and objects are placed (Alec, 2026-11-16, §12): a word by
+  its sentence and its meta concepts, an object by its meta concepts,
+  and nothing particular on creation.
 - *Left as defaults:* which rows move in rules 3 and 4, how a centroid
   is kept (rule 4c), and the two terms of rule 5 added.
 
@@ -413,3 +440,33 @@ that operator arguments will be sufficient. If we cannot distinguish, it
 is re@son to introduce a new operator." So the arguments are taken as
 sufficient; where the assessment finds two classes the arguments cannot
 part, the remedy is a new operator in the grammar.
+
+## 12. Placed by the sentence and by meta concepts (Alec, 2026-11-16)
+
+Round C as returned took every word that filled an argument out of the
+sentence's ordinary placement (§46.6 of the 1.8 specification), so that
+such a word was placed by rule 4 alone. Asked about it, Alec first said
+"The superconcept of the word-C (part of speech) and the location of the
+object-C (meaning) determine the use/ location of the word", and then:
+
+"word-concepts are not placed within conceptual space in any particular
+way on creation, same for object-concepts. But words are related via
+context in the sentence and meta concepts, and that will structure them.
+Object concepts, since we don't know have experience with them, are
+placed by their meta concepts."
+
+So (§48.3 of the 1.8 specification):
+
+- A word concept is placed by its sentence, as before round C, and by
+  its meta concepts: rule 4's pull is added to the sentence's placement
+  (rules 4 and 4d).
+- An argument is placed by rule 3 alone, as built.
+- An object concept, the meaning a word stands for, is placed by its
+  meta concepts alone; a text gives it no context of its own.
+- Nothing is placed in any particular way on creation (rule 6).
+- Settled (Alec, 2026-11-16, §48.11 of the 1.8 specification): "that
+  propagation happens throughout orders over all percepts, concepts,
+  symbols, so it should happen on meta concepts also". The meta concept
+  of a word and its object pulls within each order; a word and an object
+  of different orders, as a word and an identity are, are related by
+  activation only (*Claude's reading*, by §5.3).

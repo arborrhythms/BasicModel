@@ -5647,10 +5647,6 @@ class ConceptualAttentionLayer(SparseLayer):
         """Register ``key`` in the record store (empty record list)."""
         self._constituents.setdefault(int(key), [])
 
-    def pop_row_key(self, key):
-        """Remove ``key`` + its records (retire)."""
-        self._record_revision = getattr(self, '_record_revision', 0) + 1
-        return self._constituents.pop(int(key), None)
 
     def constituents(self, key):
         """The ordered ``[(role, ref), ...]`` records of ``key`` (copy)."""
@@ -6106,29 +6102,6 @@ class ConceptAllocator:
         self.parts.remove_symbol(cid)
         self.settle(cid)
 
-    def drop(self, cid):
-        """Retire: remove records + registry entry (tensor rows persist --
-        row assignments are permanent in the shared layer) and clear
-        idempotency-cache entries pointing at ``cid``."""
-        from Memory import NULL_CONCEPT
-        cid = int(cid)
-        if cid == NULL_CONCEPT:
-            return
-        if cid in self.symbols:
-            del self.symbols[cid]
-            self.layer().pop_row_key(cid)
-        self.retired.add(cid)
-        for ids in self.word_forms.values():
-            ids.discard(cid)
-        for k in [k for k, v in self.relate_idx.items()
-                  if v == cid or k == ('part-base', cid)]:
-            self.relate_idx.pop(k, None)
-        self.parts.remove_symbol(cid)
-        self.symbol_types.pop(cid, None)
-        self.word_descriptions.pop(cid, None)
-        self.named_identities.pop(cid, None)
-        for objects in self.named_identities.values():
-            objects.discard(cid)
 
 
 class MeronymicFoldAdapter(Layer):
@@ -9268,6 +9241,7 @@ class SymbolExpectation(Layer):
         self.register_buffer('_bank_ids', torch.empty(0, dtype=torch.long), persistent=False)
         self.register_buffer('_bank_addresses', torch.empty(0, dtype=torch.long), persistent=False)
         self.register_buffer('_bank_orders', torch.empty(0, dtype=torch.long), persistent=False)
+        self._bank_order_count = 1
         self._batch = 0
         self.ensure_batch(batch)
         self.reset_expectation_metrics()
@@ -9285,6 +9259,10 @@ class SymbolExpectation(Layer):
         self._bank_orders = (torch.zeros(len(keys), device=keys.device, dtype=torch.long) if orders is None else orders.detach().clone())
         if any(value.shape != (len(keys),) for value in (self._bank_ids, self._bank_orders, self._bank_addresses)):
             raise ValueError('symbol identities and orders must align with the bank')
+        owner_ref = getattr(self._ltm_store, '_concept_owner', None)
+        owner = None if owner_ref is None else owner_ref()
+        self._bank_order_count = (len(owner._order_caps()) if owner is not None else
+                                 max(1, int(self._bank_orders.max())+1) if len(keys) else 1)
 
     def expect(self, level, *args, **kwargs):
         if level not in self.levels or level not in self.enabled_levels:
@@ -9339,13 +9317,14 @@ class SymbolExpectation(Layer):
         self._inter_context_occurrences[b].clear()
         self._inter_last_meaning[b] = None
 
-    def _prediction_inputs(self, inputs):
+    def _prediction_inputs(self, inputs, *, orders=None):
         from RowTime import encoder, relative_to
         keys, context, activation = (value.detach() for value in inputs[:3])
         store = self._ltm_store
         start = None if store is None else store.when_start
+        orders = (self._bank_orders if orders is None else orders) if context.ndim == 3 else None
         if start is None:
-            return keys, context, activation
+            return (keys, context, activation) if orders is None else (keys, context, activation, None, orders)
         present = getattr(store, '_model_present', None)
         now = (inputs[3].detach() if len(inputs) == 4 else
                encoder().encode(int(store.model_clock) if present is None else int(present()))
@@ -9354,15 +9333,14 @@ class SymbolExpectation(Layer):
             return torch.cat((value[..., :start],
                 relative_to(value[..., start:start+4], now), value[..., start+4:]), -1)
         recent_age = relative_to(context[..., self.concept_dim+start:self.concept_dim+start+4], now)
-        context = relative(context.reshape(len(context), 2, self.concept_dim)).flatten(1)
-        return relative(keys), context, activation, recent_age
+        context = relative(context.reshape(*context.shape[:-1], 2, self.concept_dim)).flatten(-2)
+        return relative(keys), context, activation, recent_age, orders
 
     def _bank_inputs(self, chain, lanes=None, identities=None):
         from Expectation import ActivationPredictor, symbol_activations
         parameter = next(self._inter_predictor.parameters())
         values = torch.stack([roles.to(parameter) for _, roles, _ in chain])[None]
         occupied = torch.stack([mask.to(parameter.device) for _, _, mask in chain])[None]
-        context = ActivationPredictor.context_from(values, occupied)
         keys, ids, orders = self._bank_keys.to(parameter), self._bank_ids, self._bank_orders
         lane_values = (None if lanes is None else torch.stack([
             roles.new_tensor((1., 0.) if pair is None else pair).expand(3, 2)
@@ -9370,12 +9348,19 @@ class SymbolExpectation(Layer):
         handles = None if identities is None else torch.stack([
             torch.full((3,), -1, device=keys.device, dtype=torch.long) if value is None else value.to(keys.device)
             for value in identities])[None].flatten(1)
+        value_orders = torch.full_like(occupied, -1, dtype=torch.long)
+        if self._bank_order_count == 1:
+            value_orders.zero_()
+        elif handles is not None and len(ids):
+            matches = (handles[..., None] == ids.to(handles)[None, None]) & (handles[..., None] >= 0)
+            value_orders = torch.where(matches.any(-1), orders.to(handles)[matches.long().argmax(-1)], -1).reshape_as(occupied)
+        context = ActivationPredictor.context_by_order(values, occupied, value_orders, self._bank_order_count)
         activation = symbol_activations(keys[None], values.flatten(1, 2), occupied.flatten(1), lane_values,
-            identities=handles, bank_ids=ids)
+            identities=handles, bank_ids=ids, key_orders=orders)
         return (keys[None], context, activation), ids, orders
 
     def _prediction(self, inputs, ids, orders, *, bindings=(), scope=()):
-        logits = self._inter_predictor(*self._prediction_inputs(inputs))[0]
+        logits = self._inter_predictor(*self._prediction_inputs(inputs, orders=orders))[0]
         keys = inputs[0][0].detach()
         if not bool(torch.isfinite(logits).all()):
             raise FloatingPointError('non-finite symbol activation prediction')
@@ -9458,13 +9443,13 @@ class SymbolExpectation(Layer):
         return symbol_activations(prediction.symbol_keys[None], roles.detach()[None],
                                   occupied[None], None if lanes is None else lanes[None],
                                   identities=None if identities is None else identities[None],
-                                  bank_ids=prediction.symbol_ids)[0]
+                                  bank_ids=prediction.symbol_ids, key_orders=prediction.symbol_orders)[0]
 
     def _score(self, pending, roles, occupied, errors, *, row=None, evidence=None, identities=None):
         prediction = pending.prediction
         lanes = None if evidence is None else roles.new_tensor(evidence).expand(3, 2)
         target = self._activation_target(prediction, roles, occupied, lanes, identities)
-        logits = self._inter_predictor(*self._prediction_inputs(pending.inputs))[0]
+        logits = self._inter_predictor(*self._prediction_inputs(pending.inputs, orders=prediction.symbol_orders))[0]
         from Meaning import withheld_symbols
         withheld = withheld_symbols(prediction, prediction)
         residual = (logits.sigmoid() - target) * (1.-withheld[:, None])

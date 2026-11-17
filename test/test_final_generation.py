@@ -73,6 +73,10 @@ def test_certified_completion_only_has_priority_and_pending_improvement_gets_cre
         _tree_layer=lambda arity: SimpleNamespace(exploration_fraction=.5, exploration_temperature=1.))
     for name in ('generate_policy_logits',):
         setattr(language,name,MethodType(getattr(LanguageSpace,name),language))
+    from generation_fixtures import native_policy
+    language._generate_binary_ops = ()
+    language._generate_unary_ops = (SimpleNamespace(),)
+    native_policy(language)
     tops=torch.ones(3,1,2,requires_grad=True)
     features=torch.ones(3,1,2,9,requires_grad=True)
     features.data[:,0,0,0]=.1

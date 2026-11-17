@@ -127,12 +127,12 @@ def test_policy_selects_nested_what_part_and_receives_actual_episode_credit(dept
     base_menu = ThoughtStream.candidates
     outer = goal
     for _ in range(depth): outer = registry.form('ask', outer)
-    def nested(registry, root, active, current, records, descriptions=()):
+    def nested(registry, root, active, current, records, descriptions=(), *, stm):
         if not has_open_slots(current): return ()
         name = registry.signature_for(root, verify_reference=False).operation.semantic_id
         if name == 'ask':
             return (ThoughtOperationCandidate(registry.operation_spec('ask'), root, ()),)
-        return base_menu(registry, root, active, current, records, descriptions)
+        return base_menu(registry, root, active, current, records, descriptions, stm=stm)
     monkeypatch.setattr(ThoughtStream, 'candidates', nested)
     selected = run(model, outer, work_budget=128,
         score=lambda result: dict(reconstruction=float(has_open_slots(result.meaning)), answer=0.))

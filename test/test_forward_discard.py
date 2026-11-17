@@ -95,7 +95,7 @@ def test_forward_discard_is_absent_from_the_loop(monkeypatch):
     assert report['reads'][1]['meaning_norm'] > 0
     for read in report['reads']:
         assert read['multisets'] == 4
-        torch.testing.assert_close(torch.tensor(read['R']), torch.tensor(read['leaf_cost']))
+        torch.testing.assert_close(torch.tensor(read['R']), torch.tensor(read['leaf_cost']) + torch.tensor(read['application_cost']))
     assert charges and not any(charges)
 
 

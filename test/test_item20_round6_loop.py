@@ -119,7 +119,7 @@ def test_registry_uses_the_two_reconstructions_and_post_thought_target(tmp_path,
         assert not target.requires_grad
         from SentenceField import knowing
         expected, _ = IntuitionField.observed(owner, knowing(model))
-        torch.testing.assert_close(target, expected)
+        torch.testing.assert_close(target, expected[:, :owner._order_caps()[0]])
         assert 'intuition.field' in model._sentence_close_errors._terms
         prediction = model._concept_prediction
         assert all(owner._row_order(int(row)) == 0 for row in prediction.rows)

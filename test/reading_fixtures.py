@@ -264,8 +264,9 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
     short_term = ShortTermMemory(batch=1, capacity=8, concept_dim=width)
     short_term.strata = SentenceStrata(1, len(entry.leaves), 8, width)
     owner.conceptualSpace = SimpleNamespace(_ltm_consolidation=store is not None,
-        _incoming_trust_multiplier=lambda: trust, stm=short_term)
+        _incoming_trust_multiplier=lambda: trust, stm=short_term, subspace=SimpleNamespace())
     owner._concept_owner = lambda: registry.space
+    owner.conceptualSpaces = (registry.space,)
     owner.symbolSpace = SimpleNamespace(ltm_store=store, expectation=discourse)
     from clock_fixtures import install
     if not hasattr(owner, 'when_time'):
@@ -292,6 +293,12 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
     owner.expectation_gain = getattr(owner, 'expectation_gain', 0.)
     owner.training = False
     owner.spaces = []
+    # These declared clauses have one input place per explicit fixture leaf.
+    starts = torch.arange(len(entry.leaves), device=entry.leaves.device)
+    extents = torch.stack((starts, starts+1), -1)
+    lanes = (entry.leaf_evidence if entry.leaf_evidence is not None else
+             entry.leaves.new_zeros(len(entry.leaves), 2))
+    entry = replace(entry, word_extents=extents, leaf_evidence=lanes)
     readings = (entry if active else None,)
     owner._capture_reading_programs = lambda **kwargs: (readings, {sid: readings})
     owner._expectation_documents_for_slot = lambda *args: [document]
@@ -309,7 +316,6 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
                  '_recall_sentence_history','_check_recall_batch'):
         setattr(owner,name,MethodType(getattr(BasicModel,name),owner))
     owner._sentence_understandings = {}
-    owner._last_sentence_understanding = None
 
     owner._clause_end_state = MethodType(BasicModel._clause_end_state,owner)
     owner._discard_sentence_record = BasicModel._discard_sentence_record
@@ -340,12 +346,17 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
     for position, identity in enumerate(entry.concept_ids):
         evidence[ids == identity,0,position] = (entry.leaf_evidence[position]
                 if entry.leaf_evidence is not None else evidence.new_tensor([max(0.,float(entry.activations[position])),max(0.,-float(entry.activations[position]))]))
-    bounds = entry.leaves.new_zeros(1,len(entry.leaves),2)
+    bounds = extents[None]
     field = ConceptualField(ids,evidence,bounds,bounds,None)
     roots = reading(owner,entry,field,0,torch.arange(len(entry.leaves))) if bool(active.any()) else ()
     empty = ConceptSet(ids[:0],evidence.new_empty(0,2))
     extended = as_field((joined(roots,empty),),where=bounds,when=bounds)
-    view['record'] = SimpleNamespace(understanding_field=extended)
+    from SentenceUnderstanding import SentenceUnderstanding
+    view['record'] = SentenceUnderstanding(entry.end_state[:1], entry.end_state[None],
+        torch.tensor([1]), entry.end_state[:1], torch.tensor([1]), entry.leaves[None],
+        entry.word_rows[None], torch.ones_like(entry.word_rows[None],dtype=torch.bool),
+        None, torch.tensor([sid]), understanding_field=extended)
+    owner._last_sentence_understanding = view['record']
     view['clauses'] = [with_extensions(value, roots) for value in view['clauses']]
     view['meanings'] = [None if value is None else value.meaning for value in view['clauses']]
     cost, pending = None, None

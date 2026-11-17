@@ -108,7 +108,7 @@ def chunk_candidates(owner, kind, order, stream):
     return result
 
 
-def menu(owner, occurrence, candidates, *, value, where, when, stream):
+def menu(owner, occurrence, candidates, *, value, where, when, stream, projected=None):
     pool, resolver = owner.mtm, owner.components.reference_close
     site = occurrence if isinstance(occurrence, Occurrence) else Occurrence(occurrence)
     order = member_order(owner, site, stream=stream)
@@ -129,12 +129,14 @@ def menu(owner, occurrence, candidates, *, value, where, when, stream):
     for key, record in candidates.items():
         if not candidate_eligible(owner, key, record, kind=site.kind, order=order, stream=stream):
             continue
+        if projected is not None and (site.kind, key) in projected:
+            record = dict(record, value=projected[site.kind, key])
         candidate = coordinates(record['value'])
         a, b = meet_ratios(query, candidate)
         if bool((a == 1) | (b == 1)):
             legal[key] = dict(record, content=candidate)
-    choices, features, logits = resolver.score(value, query, value, 0, legal,
-        stream=stream, where=where, when=when, coordinate_read=coordinates)
+    choices, features, logits = resolver.score_order(value, query, value, 0, legal,
+        stream=stream, where=where, when=when, coordinate_read=coordinates, member_order=order)
     return choices, features, logits
 
 
@@ -336,16 +338,23 @@ def preview(resolver, plan, clause, reading, *, stream, when):
                     None if reading.symbol_where is None else reading.symbol_where[index], -1))
     plan['link_choices'] = {}
     plan['link_coverage'] = []
+    projected = {}
     for key, value, where, order in proposed:
         if value is None: continue
         choices, features, logits = menu(owner, Occurrence((), kind=key[0], order=order), {},
-            value=value, where=where, when=when, stream=stream)
+            value=value, where=where, when=when, stream=stream, projected=projected)
         index, decision = resolver.choose(plan, choices, features, logits)
         decision['link'] = key
         selected = None if index is None else choices[index]
         plan['link_choices'][key] = selected
         coordinates = (lambda point: point) if key[0] == 'percept' else resolver.coordinates
-        covered = (value if selected is None else
+        projected_key = (key[0], selected)
+        covered = (value if selected is None else projected[projected_key] if projected_key in projected else
             owner.mtm.value_of(selected) if owner.mtm.token_of(selected) is not None else
             owner.mtm.read_member(selected))
         plan['link_coverage'].append((coordinates(value), coordinates(covered)))
+        if selected is not None:
+            # These collections read the maximum of their members. Later
+            # choices in this close must see the earlier prepared additions,
+            # without writing those additions before the path is kept.
+            projected[projected_key] = torch.maximum(covered, value)

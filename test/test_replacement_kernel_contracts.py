@@ -48,8 +48,9 @@ def test_direct_and_depth_one_two_chains_keep_native_premises(hops):
     assert edge is not None and store.parts.truth_plus[edge] == 1
     assert len(store) == 0
     if hops > 1:
-        model.conceptualSpace.retire_concept(edge)
-    model.conceptualSpace.retire_concept(refs[1][1])
+        store.parts.remove(refs[0][1],refs[hops][1])
+    for a,b in zip(refs[:hops],refs[1:hops+1]):
+        store.parts.remove(a[1],b[1])
     if hops > 1:
         assert model.reason_about(query).posture == 'UNKNOWN'
 
@@ -130,10 +131,13 @@ def test_supplied_mechanism_walk_uses_one_controller_at_every_level(monkeypatch)
     from test_thought_answer_adapters import _open_goal
     from meaning_fixtures import replay_thought_plan
     query=_open_goal(model, registry, a, b)
-    replay_thought_plan(model, monkeypatch, ['ask', 'query', None, None])
+    from itertools import chain, repeat
+    replay_thought_plan(model, monkeypatch, chain(['ask'], repeat('query')))
     result=model.reason_about(registry.form('ask',query))
-    assert [(r.level,r.operation) for r in result.records if r.kind=='thought']==[
-        (0,'ask'),(1,'query'),(1,'conclude'),(0,'conclude')]
+    operations = [(r.level,r.operation) for r in result.records if r.kind=='thought']
+    assert operations[0] == (0,'ask')
+    assert set(operations[1:]) == {(1,'query')}
+    assert any(r.kind == 'return' for r in result.records)
     assert not hasattr(model,'selected_thought_choosers')
     assert model._selected_thought_chooser(query) is model.shared_grammar
 

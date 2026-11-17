@@ -37,6 +37,7 @@ SITES = {
     'bin/ClauseRow.py': {'ClauseRows.write_clause': ['evidence']},
     'bin/Understanding.py': {'Reading.__post_init__': []},
     'bin/Memory.py': {'IdeaRows.append_meaning': ['evidence']},
+    'bin/PartsOfSpeech.py': {'PartsOfSpeech._occupied_field': ['evidence', 'pair']},
     'bin/MeaningCodes.py': {'exchange': [], 'compose': []},
 }
 

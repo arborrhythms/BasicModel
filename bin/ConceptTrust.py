@@ -63,15 +63,14 @@ class ConceptTrust(nn.Module):
             self.lengths[row, lane] = value[start:start+self.width].norm()
 
     @torch.no_grad()
-    def remember(self, identity, content):
-        if not self.tracks(identity):
-            return
+    def remember(self, identity, content, *, region=None):
         from IdentityRows import carrier
         row = self.owner._csw_row_of(identity)
         if row is None:
             raise ValueError('trust requires an allocated concept row')
         if not bool(self.known[row]):
-            self.content[row].copy_(carrier(self.owner, content, region=self.tracked))
+            self.content[row].copy_(carrier(self.owner, content,
+                region=self.tracked if region is None else region))
             self.known[row] = True
         self.refresh(identity)
 
@@ -89,11 +88,6 @@ class ConceptTrust(nn.Module):
             self.allocated[row] = True
             self.project([row])
 
-    @torch.no_grad()
-    def retire(self, row):
-        """Release every radius witness with its concept's reclaimed seat."""
-        for name in ('lengths', 'views', 'agreement', 'content', 'known', 'allocated', 'read_objects'):
-            getattr(self, name)[row].zero_()
 
     @torch.no_grad()
     def refresh(self, identity):
@@ -112,7 +106,6 @@ class ConceptTrust(nn.Module):
     @torch.no_grad()
     def project(self, rows=None):
         bank = self.owner.similarity_codebook
-        update_content = rows is None
         rows = self.allocated.nonzero().flatten() if rows is None else torch.as_tensor(rows, device=bank.W.device, dtype=torch.long)
         if not len(rows):
             return
@@ -127,14 +120,11 @@ class ConceptTrust(nn.Module):
             direction = values[:, start:start+width]
             if self.tracked:
                 direction = torch.where(self.known[rows, None], direction.clamp_min(0), direction)
-            fallback = self.content[rows, start:start+width] if not self.tracked else derived.placement[rows]
-            direction = torch.where(direction.norm(dim=-1, keepdim=True) > 0, direction, fallback)
+            if self.tracked:
+                direction = torch.where(direction.norm(dim=-1, keepdim=True) > 0,
+                                        direction, derived.placement[rows])
             direction = torch.nn.functional.normalize(direction, dim=-1)
         values[:, start:start+width] = direction * self.lengths[rows, 0, None]
-        if update_content:
-            raw = self.content[rows, start:start+width]
-            self.content[rows, start:start+width] = torch.where(
-                direction.norm(dim=-1, keepdim=True) > 0, direction * raw.norm(dim=-1, keepdim=True), raw)
         if derived is not None:
             higher = torch.tensor([self.owner._row_order(int(row)) > 0 for row in rows],
                                   dtype=torch.bool, device=rows.device)
@@ -192,28 +182,36 @@ def defer_word_views(owner):
 
 
 @torch.no_grad()
-def observe(owner, identity, content):
+def observe(owner, identity, content=None, *, region=None):
     """Add one kept view without allocating a memory row."""
     from Memory import NULL_CONCEPT
     from IdentityRows import carrier, meet_ratios
     trust = owner.similarity_codebook.trust
     if (trust._deferred_word_views is not None
             and 'word' in owner._concept_allocator.symbol_types.get(identity, ())):
-        trust._deferred_word_views.append((identity, content.detach().clone()))
+        trust._deferred_word_views.append((identity, None if content is None else content.detach().clone()))
         return
     if not trust.tracks(identity) or identity == NULL_CONCEPT or owner.is_frozen(identity):
         return
-    trust.remember(identity, content)
+    if content is None:
+        row = owner._csw_row_of(identity)
+        trust.known[row] = True
+        trust.views[row] += 1
+        trust.agreement[row] += 1
+        trust.refresh(identity)
+        return
+    region = trust.tracked if region is None else region
+    trust.remember(identity, content, region=region)
     row = owner._csw_row_of(identity)
-    value = carrier(owner, content, region=trust.tracked)
+    value = carrier(owner, content, region=region)
     if not bool(trust.content[row].any()):
         coverage = 1.
         if bool(value.any()):
             trust.content[row].copy_(value)
     else:
         candidate = trust.content[row]
-        if not trust.tracked:
-            # Signed whole-value charts have distinct positive and negative
+        if not region:
+            # Signed extension and whole-value charts have distinct positive and negative
             # coordinates for coverage; ordinary rows on them remain untracked.
             value = torch.cat((value.clamp_min(0), (-value).clamp_min(0)))
             candidate = torch.cat((candidate.clamp_min(0), (-candidate).clamp_min(0)))

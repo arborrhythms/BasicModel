@@ -243,17 +243,17 @@ def test_retained_exclusion_counts_follow_append_compaction_and_restore():
     for point in points:
         for _ in range(8):
             store.append_idea(point)
-    assert store.coordinate_exclusions(8) == ((8, 9),)
+    assert store.coordinate_exclusions(8,order=0) == ((8, 9),)
     before = {key: value.clone() for key, value in store.state_dict().items()}
     counts = store._coordinate_counts
     joint = store._coordinate_joint
     store.append_idea(points.sum(0))
-    assert store.coordinate_exclusions(8) == ()
+    assert store.coordinate_exclusions(8,order=0) == ()
     assert store._coordinate_counts is counts and store._coordinate_joint is joint
     store.restore_runtime_state(before)
-    assert store.coordinate_exclusions(8) == ((8, 9),)
+    assert store.coordinate_exclusions(8,order=0) == ((8, 9),)
     store.compact_rows(range(1, 16))
-    assert store.coordinate_exclusions(8) == ()
+    assert store.coordinate_exclusions(8,order=0) == ()
 
 
 def test_derived_concept_projection_and_rebuild_are_identical():

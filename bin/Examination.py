@@ -96,7 +96,7 @@ def run(model, sid, present, *, trust):
     publish(model,field)
     decoded = model.reverse(model.conceptualSpace.subspace.carrier_like(),field=field)
     from Understanding import InputReconstruction
-    points = key(owner,field).mean(1)
+    points = key(owner,field,order=0).mean(1)
     selected_cost = costs.gather(1,winners[:,None])[:,0]
     sentence_costs = selected_cost.new_zeros(len(present),model.inputSpace._packed_sentence_slot_mask.shape[1])
     sentence_costs[:,sid] = selected_cost

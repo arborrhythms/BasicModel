@@ -44,7 +44,7 @@ def test_memory_centroids_preserve_common_rails_with_fractional_evidence(source)
     codes = torch.cat((torch.ones(7, 176, dtype=torch.float64),
                        torch.zeros(7, 176, dtype=torch.float64)), dim=1)
     bank = NS(W=codes, lookup_rows=lambda rows: codes[rows])
-    owner = NS(similarity_codebook=bank)
+    owner = NS(similarity_codebook=bank, _row_order=lambda row: 0)
     members = dict(enumerate(weights.tolist()))
     if source == 'candidate':
         result = centroid(owner, members)

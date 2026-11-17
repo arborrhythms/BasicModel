@@ -727,30 +727,35 @@ class ClauseRows:
                 result = torch.maximum(result, result.new_tensor(self.parts.evidence(symbol)))
         return result
 
-    def _vector_relations(self, reading=None):
+    def _vector_relations(self, reading=None, *, orders):
         from ChainRead import point
         result = []
+        owner = self._concept_owner()
         for symbol in self.relations(reading).tolist():
-            a, b = (point(self, ref) for ref in self.parts.references(symbol))
+            references = self.parts.references(symbol)
+            if any(requested is not None and owner._concept_source_order(reference) != requested
+                   for reference, requested in zip(references, orders)):
+                continue
+            a, b = (point(self, ref) for ref in references)
             if a is not None and b is not None:
                 result.append((symbol, a, b))
         return result
 
     @torch.no_grad()
-    def consequents(self, state, threshold=.7, *, reading=None):
+    def consequents(self, state, threshold=.7, *, order, reading=None):
         from IdentityRows import meet_ratios
         result = []
-        for symbol, left, right in self._vector_relations(reading):
+        for symbol, left, right in self._vector_relations(reading, orders=(order,None)):
             score = float(meet_ratios(state.to(left), left)[1])
             if score > threshold:
                 result.append((symbol, score*float(self.parts.evidence(symbol)[0]), right.clone()))
         return sorted(result, key=lambda record: -record[1])
 
     @torch.no_grad()
-    def evaluate(self, left, right, *, reading=None):
+    def evaluate(self, left, right, *, orders, reading=None):
         from IdentityRows import meet_ratios
         result = self.slots.new_zeros(2)
-        for symbol, a, b in self._vector_relations(reading):
+        for symbol, a, b in self._vector_relations(reading, orders=orders):
             match = meet_ratios(left.to(a), a)[1] * meet_ratios(right.to(b), b)[1]
             result = torch.maximum(result, match * result.new_tensor(self.parts.evidence(symbol)))
         return result

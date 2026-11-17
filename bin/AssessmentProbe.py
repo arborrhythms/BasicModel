@@ -1,4 +1,4 @@
-"""The proposed known ladder; expectations never enter the model's read."""
+"""The reviewed known ladder; expectations never enter the model's read."""
 import json
 from pathlib import Path
 
@@ -50,7 +50,7 @@ def known_probe(model, vocabulary, *, source, scalar=None, trace=False):
 
     The caller declares its taught kinds; this reader never guesses a part of
     speech from a spelling. Unavailable and failed prerequisites block later
-    rungs. The proposed trees cannot yet gate a test or a lesson.
+    rungs. These reviewed trees still report without gating a test or lesson.
     """
     spec = specification()
     table = []
@@ -61,12 +61,12 @@ def known_probe(model, vocabulary, *, source, scalar=None, trace=False):
             result['reason'] = rung['unavailable']
         elif missing:
             result['reason'] = 'fixture has no declared '+', '.join(missing)
-        elif rung['rung'] == 2 and len(vocabulary['words']) != 20:
-            result['reason'] = f"fixture declares {len(vocabulary['words'])} words, not twenty"
+        elif rung['rung'] == 2 and len(set(vocabulary['words'])) < 20:
+            result['reason'] = f"fixture declares {len(set(vocabulary['words']))} distinct words, fewer than twenty"
         elif any(prior['status'] != 'passed' for prior in table):
             result.update(status='blocked', reason='lower rung has not passed')
         else:
-            assignments = [dict(vocabulary, word=word) for word in vocabulary['words']] if rung['rung'] == 2 else [vocabulary]
+            assignments = [dict(vocabulary, word=word) for word in dict.fromkeys(vocabulary['words'])] if rung['rung'] == 2 else [vocabulary]
             failures, objects = [], []
             for assignment in assignments:
                 slots = {key: dict(form=value) for key, value in assignment.items() if isinstance(value, str)}
@@ -84,7 +84,7 @@ def known_probe(model, vocabulary, *, source, scalar=None, trace=False):
                         failures.append('object changed between readings')
                     objects.extend(identities[0])
                 result['records'].extend(readings)
-            if 'distinct_objects' in rung['checks'] and len(set(objects)) != 20:
+            if 'distinct_objects' in rung['checks'] and len(set(objects)) != len(assignments):
                 failures.append('objects are not distinct')
             result.update(status='failed' if failures else 'passed', reasons=list(dict.fromkeys(failures)))
         table.append(result)

@@ -26,6 +26,10 @@ def model():
     """A BasicModel built from MM_text.xml (has SymbolSpace + discourse)."""
     from data import TheData
     from Models import BaseModel
+    from util import init_config
+    # XOR chooses its text/numeric representation from the active config.
+    # Load this fixture's config before asking it for the four examples.
+    init_config(path=_CONFIG_PATH, defaults_path=str(_project / 'data' / 'model.xml'))
     TheData.load("xor")
 
     m, _ = BaseModel.from_config(_CONFIG_PATH, data=TheData)

@@ -66,7 +66,7 @@ def test_same_chunks_supply_current_time_and_untimed_estimate(tmp_path):
     predictor._inter_context_occurrences[0].append(None)
     contexts, estimates = [], []
     handle = predictor._inter_predictor.context.register_forward_pre_hook(
-        lambda module, args: contexts.append(args[0].detach().clone()))
+        lambda module, args: contexts.append(args[0][:, 0].detach().clone()))
     try:
         for tick in (7, 19):
             store.model_clock.fill_(tick)

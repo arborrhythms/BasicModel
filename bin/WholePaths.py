@@ -181,6 +181,24 @@ def answer_cost(model, construction, thoughts, questions, active, registry, *, s
     return cost
 
 
+def application_cost(language, observation, output_trace, like):
+    """Count this path's composed and generated applications, never STOPs."""
+    programs = observation.get('entries', ())
+    count = like.new_zeros(len(like))
+    for row, program in enumerate(programs):
+        if program is not None:
+            kinds = program.actions[:, 0]
+            count[row] = ((kinds >= 1) & (kinds <= 3)).sum()
+    generation = observation.get('generation')
+    reconstruction_trace = None if generation is None else generation.trace
+    stop = len(language._generate_binary_ops) + len(language._generate_unary_ops)
+    for trace in (reconstruction_trace, output_trace):
+        if trace is not None:
+            actions = trace[0]
+            count = count + ((actions >= 0) & (actions < stop)).sum(-1).to(count)
+    return count * language.operator_cost
+
+
 @trial_activity()
 def finish(model, state, sid, active, *, trust, base=None, draw=None):
     """Run only the suffix after this path's departure, ending before a write."""
@@ -285,6 +303,12 @@ def finish(model, state, sid, active, *, trust, base=None, draw=None):
                 model._sentence_answer_predictions)
         else:
             cost, construction, output_trace = None, None, None
+        # A reused prefix may already hold this term. Replace its complete
+        # count after the changed suffix, rather than charging the prefix twice.
+        registry._terms.pop('operator.application', None)
+        registry.add('operator.application',
+            application_cost(model.languageSpace, observation, output_trace, observation['record'].root),
+            category='reg', objective='reconstruction', side='R')
         effects = ThoughtTrialState(model)
         parts = components(registry, expectation, observation['record'].root.sum(-1)*0, answer=cost)
         forced = (getattr(model, '_compose_forced_slots', None) if reading else base.compose_forced_slots)

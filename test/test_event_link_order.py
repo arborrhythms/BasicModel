@@ -37,3 +37,34 @@ def test_event_menu_uses_retained_order_instead_of_grammar_order(separate):
     owner.link(Occurrence(address, kind='event', selected=plan['link_choices']['event', 0]), {},
         value=result, where=None, when=2, stream=0)
     assert address in owner.mtm.entries[collection].occurrences
+
+
+def test_event_menus_include_earlier_links_of_the_same_kept_close():
+    from ClauseRow import Clause, Composition
+    from Meaning import ConceptualMeaning
+    from MemoryLink import Occurrence, preview
+    from test_reference_close import fixture
+    resolver, store, atoms = fixture()
+    owner = resolver.components.owner
+    original = .1*(atoms[0]+atoms[1])
+    values = (.8*atoms[0]+.2*atoms[1], .2*atoms[0]+.8*atoms[1])
+    row = store.append_meaning(ConceptualMeaning.from_description(original))
+    collection = owner.link(Occurrence(store.occurrence_of(row), kind='event', selected=None), {},
+        value=original, where=None, when=1, stream=0)
+    def event(action, value):
+        return Clause(ConceptualMeaning.from_description(value), point=value, order=0,
+            composition=Composition(value, order=0),
+            identity=dict(event=(1,1,0,1,0,0),action=action,result=value))
+    clause = replace(event(0, values[0]), companions=(event(1, values[1]),))
+    resolver.select = lambda choices, logits, **kwargs: choices.index(collection) if collection in choices else None
+    plan = dict(items=[],decisions=[],departure=-1,cost=atoms[0].new_zeros(()),stream=0)
+    preview(resolver,plan,clause,None,stream=0,when=2)
+    assert plan['link_choices']['event',0] == collection
+    assert plan['link_choices']['event',1] is None
+    # Preview is a read; the prepared first link has not yet changed MTM.
+    torch.testing.assert_close(owner.mtm.value_of(collection), original)
+    for action,value in enumerate(values):
+        row=store.append_meaning(ConceptualMeaning.from_description(value))
+        target=owner.link(Occurrence(store.occurrence_of(row),kind='event',
+            selected=plan['link_choices']['event',action]),{},value=value,where=None,when=2,stream=0)
+        assert (target == collection) == (action == 0)

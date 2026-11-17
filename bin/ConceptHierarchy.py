@@ -27,6 +27,32 @@ def direction(owner, identity):
     return normalize(value.detach(), dim=-1)
 
 
+def group_centroid(owner, identities, *, key=None):
+    """A cached sum in the members' space, separate from their group's row."""
+    identities = tuple(sorted(set(map(int, identities))))
+    bank = owner.similarity_codebook
+    derived = getattr(bank, 'mereology', None)
+    positions = bank.W if derived is None else derived.placement
+    if not identities:
+        return positions.new_zeros(positions.shape[-1])
+    orders = {owner._concept_allocator.order_of(identity) for identity in identities}
+    if len(orders) != 1:
+        raise ValueError('a centroid belongs to exactly one order')
+    revision = (id(positions), positions._version)
+    cache = owner.__dict__.setdefault('_membership_centroids', {})
+    saved = None if key is None else cache.get(key)
+    if saved is None or saved[:2] != (revision, identities):
+        total = torch.stack([direction(owner, identity) for identity in identities]).sum(0)
+        saved = (revision, identities, total)
+        if key is not None:
+            cache[key] = saved
+    return saved[2] / len(identities)
+
+
+def extension(owner, identity):
+    return group_centroid(owner, members(owner, identity), key=('class',owner._csw_row_of(identity)))
+
+
 @torch.no_grad()
 def observe_member(owner, parent, member):
     """A kept participation teaches one class view, using its member's meaning."""
@@ -50,7 +76,7 @@ def observe_member(owner, parent, member):
                     if derived is not None and derived.meaning_pairs else (0, view.numel()))
     view[start:start+width] = direction(owner, member)
     bank.trust.allocated[row] = True
-    observe(owner, parent, view)
+    observe(owner, parent, view, region=False)
 
 
 def can_observe(owner):
@@ -62,5 +88,5 @@ def fit(owner, member, parent):
     """Candidate coverage: magnitude is commitment, never a class gain."""
     from IdentityRows import meet_ratios
     row = owner._csw_row_of(parent)
-    value = direction(owner, parent) * owner.similarity_codebook.trust.lengths[row, 0]
+    value = extension(owner, parent) * owner.similarity_codebook.trust.lengths[row, 0]
     return meet_ratios(direction(owner, member), value)[0]

@@ -1,9 +1,15 @@
 # SigmaLayer and PiLayer: a sum, a product, and no chart that only bounds (Claude, 2026-11-14)
 
 A specification for rewriting `SigmaLayer` and `PiLayer` of
-`bin/Layers.py`. It is round D of item 1.8 (§18). It has no text for
-Codex yet: that is written when rounds A and B are merged. A rule
-marked *default* is Claude's choice where Alec has not spoken.
+`bin/Layers.py`. It was round D of item 1.8 (§18). Since 2026-11-16 it
+is item 1.7 (Alec: "I think we should position D as item 1.7"), built
+after item 1.8 is finished and pushed; it keeps the name round D here.
+It has no text for Codex yet: that is written on the source item 1.8
+leaves. A rule marked *default* is Claude's choice where Alec has not
+spoken. Not yet written here: the discussion of 2026-11-16 after §18.23
+(flattened percept vectors read by one template per concept, one Sigma
+and Pi form at every order, an event axis for symbols, binding a letter
+to its place).
 
 **Where each section stands.** §18.5 to §18.8 are the rules as
 decided, their certificates and Claude's defaults. The rest is the
@@ -1186,7 +1192,11 @@ Alec has not spoken (§18.8 lists them).
     `cs_reverse_presence` and `cs_percept_attribution`. "Both" is
     rendered where the parts are had again, by the forward path.
 12. Only order zero changes. The symbolic orders, their definitions
-    and their rules are as they are.
+    and their rules are as they are. *Amended by §18.22* (Alec,
+    2026-11-16): symbols are split from concepts, as separate tensors,
+    and have no dimensions; above order zero the folds keep their
+    arithmetic (*put to Alec in §18.23*: rules 8 and 9 at every
+    order).
 13. There is no regularization (§18.1). §18.3 and §18.4 are tests that
     were made on the way.
 
@@ -1822,3 +1832,335 @@ adds no rule for it.
 
 With this, nothing in §18 waits on Alec. The text for Codex is written
 when rounds A and B are merged, on the names of the merged source.
+
+### 18.22 Symbols without dimensions, split from concepts, in round D (Alec, 2026-11-16)
+
+*Alec's words.* On 2026-11-12: "the dimensionality of symbols should be
+zero (they are epistemic points which we do not feel, but which serve to
+represent collections)". On 2026-11-16, of the pull that meta concepts
+exert: "with the impending part D work that reduces symbol dim to zero,
+that propagation would seem to break; there would still be an influence
+between conceptual orders, but only as mediated by symbols (which would
+not have an influence because they are dimensionless and arbitrary).
+That seems quite good, actually". Told that round D as written changes
+order zero only (rule 12), and asked which round should take symbols'
+dimensions away, he answered: "Add it to round D".
+
+Then, on 2026-11-16, to Claude's proposal to keep the shared row (in the
+code a symbol's vector is only its activation times its concept's code,
+so the split seemed not to be needed):
+
+"'a symbol's vector is only its activation times its concept's code'.
+No, a symbol does not need a vector if it lives in a zero-dimension
+space. and that is precisely what decouples consecutive conceptual
+spaces: a conceptual space influences its vertically adjacent spaces by
+pulling the subs to doms, etc, but that effect will not propagate
+through a dimensionless space. It will, however, keep basic concepts in
+mereological space.
+
+But if you are saying that symbols and concepts are stored together,
+then the vertical mappings must not be as I thought. are they in fact
+learned with sparse sigma and pi matrices, as I thought step C
+indicated?
+
+The split between concepts and symbols is not future work. So make
+symbols dimensionless in round D, and split symbols from concepts. If
+you want to make promotion easier, it is fine to make a symbol for
+every concept premptively, but they are still separate tensors."
+
+*Decided* (Alec, 2026-11-16):
+
+- A symbol lives in a space of zero dimensions and has no vector.
+- In round D symbols are split from concepts, as separate tensors. The
+  split of 1.8 §3.19 ("Two kinds of row") is no longer FutureWork.
+- A symbol may be made for every concept beforehand, to make promotion
+  easier; the two stay separate tensors.
+
+*The vertical maps today*, in answer to his question (read on
+2026-11-16 in the working tree that round C is changing; no "step C"
+is found in the specifications, and 1.8 §3.19 "What is built now" reads
+the same):
+
+- They are learned, sparse Sigma and Pi matrices. The store,
+  `ConceptualAttentionLayer` (`W_sigma`, a union), and its
+  `conjunctive` (`W_pi`, an intersection) are both `SparseLayer` (COO)
+  in `bin/Layers.py`. An edge exists once a promotion adds it
+  (`add_edge`; `FamiliarTier.cover_members`, `ConceptIndex`). Each
+  matrix's values are one `Parameter`, given to the optimizer
+  (`definition_matrices`, `_maybe_rebuild_optimizer_for_csw`) and kept
+  nonnegative (`project_parts`).
+- Their arithmetic is a fold, not the sum of `SigmaLayer` or the
+  product of `PiLayer`: each member's value is raised to its edge's
+  weight, and the least (Pi) or the greatest (Sigma) is taken, lane by
+  lane (`SparseLayer.fold_presence`; `FieldProjection.close` with
+  `FieldLogic.reduce`). Round D keeps it above order zero (rule 12; Alec,
+  §18.1: "At the symbolic levels they are not. I think the order0 basic
+  percept building and zero-order concept building should use pi and
+  sigma, respectively. They are subsymbolic, so the fit is good there.").
+- Both join rows of one table. A defined row is a concept and is also
+  its symbol (`_csw_row_of`); a row's kinds (`symbol_types`: word,
+  object, class and others) are tags on that one row. So a definition
+  joins concepts to concepts directly, and the chain of §3.19 (concepts,
+  by Pi, to symbols; symbols, by Sigma, to the concepts of the next
+  order) is not built.
+
+*The rules it adds to §18.5*, to be checked on the source as round C
+returns it, before the text for Codex:
+
+14. *Two kinds of row, in separate tensors.* Concepts and symbols are
+    separate tables. A symbol is a Pi over member concepts of one order;
+    a concept above order zero is a Sigma over member symbols; a concept
+    of order zero is the Sigma over basic percepts of rule 9 and has no
+    edge from a symbol. This is System 2's vertical structure (1.8
+    §3.19: "symbols are PI(concepts), and concepts are SIGMA(symbols)").
+15. *A symbol has no dimensions.* It has no vector, no place, no form and
+    no trust content read as a direction. Nothing places it or compares
+    it by likeness. It has the value its Pi gives, and its edges.
+16. *Between conceptual orders, only activation.* A pull (a sub drawing
+    its doms together, a dom its subs) acts within one space and does not
+    pass through a symbol, so it does not reach the next conceptual
+    order. *Claude's reading* of "It will, however, keep basic concepts
+    in mereological space": no symbol stands between basic percepts and
+    the concepts of order zero (rule 9), so nothing cuts those concepts
+    off from mereological space, where they stay placed.
+17. *Each lane is a symbol* (1.8 §3.19): a concept's two lanes are read
+    by two passes and never netted. *Under question* (§18.23): with
+    lanes read by sign, a concept has one symbol, and its two lanes are
+    that symbol's pair.
+18. *The vertical maps keep their matrices and their arithmetic.* The
+    two sparse matrices stay, learned as now. What changes is what they
+    join: Pi goes from concepts to symbols, Sigma from symbols to
+    concepts. Above order zero each keeps its fold (rule 12); order zero
+    changes by rules 8 to 11.
+19. *A symbol for every concept, made beforehand* (*default*; Alec allows
+    it "to make promotion easier"). Each concept is given two symbols,
+    one for each lane, when its row is allocated, each a Pi over that one
+    lane. A class is then promoted by writing a Sigma's edges from
+    symbols that exist. A conjunction is promoted as a new symbol, the
+    Pi over its members, under a new concept, a Sigma over that one
+    symbol (*Claude's reading*, joining 1.8 §3.19's "a promoted field a
+    pi" with its "A promoted conjunction is then a concept"). Alec
+    confirmed the promotion ("Yes", §18.23); two symbols for each
+    concept are under question there.
+20. The shared row of a concept and its symbol (the invariant of
+    2026-09-14) is given up: they are separate tensors.
+
+*Defaults*, for Alec to overrule:
+
+- *Who makes symbols.* *Decided* (Alec, §18.23): allocation, promotion
+  and `interpret`. `interpret` makes the meta concept that joins a word
+  and its object (the mapping row `InterpretLayer.define` writes), and a
+  concept it makes is given its symbols at once. "make all symbols" of
+  2026-11-13 meant meta concepts.
+- *Where and when.* Replaced by §18.23: a symbol's `.where`, unique in
+  the model, is computed and added when it is read (Alec); each event
+  of the symbol tensor carries its own `.where` and `.when` (put to
+  Alec).
+- *Ideas keep their width.* What STM holds for an idea is a vector in
+  conceptual space (an absolute truth holds a concept vector, by the
+  one-slot row Alec decided on 2026-10-19), not a symbol. Confirmed
+  (Alec, 2026-11-16: "Correct").
+- *The order inside round D.* The split is built after rules 8 to 11,
+  since order zero is the bottom of the chain. Confirmed (Alec,
+  2026-11-16: "Good").
+- *Before the text for Codex*, Claude maps, in the source round C
+  returns, every reader of a symbol's vector or of the shared row: the
+  symbol codebook (`symbolTower`, set by `XOR_symbols`, `XOR_exact`,
+  `MM_20M_xor` and `MM_add_verb`), the paired symbol event
+  (`ConceptEvidence.decode`), the third input of conceptual space's
+  combine, attention's `SPACE_SYMBOL`, the content width of `LTM0`
+  (`symbol_dim`), `_csw_row_of`, and the addresses `2*cid` and
+  `2*cid+1`.
+
+*Certificates*, added to §18.6:
+
+11. Certificates 57 to 62 of the 1.8 specification, with 57 read as: no
+    tensor holds both a concept and a symbol; and 60 as rule 19 has it.
+12. *No vector for a symbol.* A test reads the source: nothing reads or
+    writes a vector, a place, a form or trust content at a symbol. And
+    the value a Sigma gives above order zero is unchanged when the places
+    of every other order are rotated (spaces-apart, certificate 1).
+13. *Symbols beforehand.* Every concept has its two symbols from its
+    allocation, and the promotion of a class makes no symbol.
+
+### 18.23 Alec's answers to §18.22; lanes by sign; place at every order (2026-11-16)
+
+*Alec's words*, in reply to §18.22:
+
+- On who makes symbols: "interpret should make two symbols every time
+  it makes a concept, to make that decision easier." And: "Interpret is
+  more about the process of creating meta-concepts (I misspoke and
+  called these symbols). So my proposition was 'lets let all word-object
+  associations be done by interpret(), which will create the
+  meta-concept that joins them.'"
+- On the fold: "The historical way of understanding a human concept was
+  as a class (by Aristotle), and that was formalized into set theory.
+  Modern neural networks made that a continuous function called an MLP,
+  and I call it a Sigma because it involves a summation over a fuzzy set
+  that is weighted by membership. so to replace a fold with a sum is not
+  inherently different (the way I understand what the fold was doing).
+  We can read the fuzzy membership off the weights. The only different
+  thing is that I am taking a product of several fuzzy sets to produce a
+  category, not pushing them through a nonlinearity. The net effect,
+  since I am selecting a hypercone from a hyperball, is to do an OR (a
+  multiplication) off of the selected members. But that cone varies in
+  width, so we are effectively saying which members must be present. So
+  its a class formation in virtue of saying what members are sufficient
+  (sum) and what members are necessary (product). If I am wrong about
+  that being a fold in our sense, let me know: my understanding is that
+  it is a modern and performant version of such."
+- On two symbols for each concept (rule 19): "Since we don't want a
+  conceptual explosion when walking up the ladder, we can just treat
+  positive and negative weights within the sigma as evidence for and
+  against. That will give us the two classes of evidence when we need
+  it, but also let the hierarchy propagate quickly when we are not
+  looking for contradiction."
+- On promotion (rule 19): "Yes, that would seem to be the performance
+  way of making new symbols and concepts; regularization instead of MLM
+  promotion. But they go hand-in-hand, and either may be used within a
+  SigmaPi framework. Maybe MLM creates new concepts/symbols as
+  necessary, but the membership is learned by the network."
+- On where and when: "I had been thinking that because symbols are a
+  type of percept, that we perceive them, but we do not conceive of
+  them. But perhaps they are unanalyzable, as 0-D percepts. They should
+  be associated with a .where (which is unique within the model), but
+  since that it computed it can be added when they are retrieved from
+  the symbolic codebook (which is really just a tensor that is written
+  by the pi of the previous orders concepts and read by the sigma of the
+  next orders concepts). As a result we can say 'all higher-order
+  concepts are orthogonal to each other because their basis is in
+  points, not a shared space'." Then: "But I have a significant concern
+  here that I need your help to think about. The early architecture
+  used concepts that had a positional encoding in virtue of the .where
+  and that shared perceptual space. With their own space, not
+  generalized over the perceptual space, it will not be possible to
+  abstract over .where. In other words, basic concepts will need to
+  flatten their perceptual membership vector (i.e. and operate not just
+  on percept activations, but the entire percept vectors). That being
+  the case, will the next order have to do the same thing over symbols
+  to abstract over its content?" And, a little later: "perhaps symbols
+  have zero-D in perceptual space, but we still add a .where and .when
+  so that when flattened sigma can abstract over that ???"
+- On ideas' width: "Correct". On building the split after rules 8 to
+  11: "Good".
+
+*Decided* (Alec, 2026-11-16):
+
+- *`interpret` makes meta concepts.* Every association of a word and an
+  object is made by `interpret`, which makes the meta concept that joins
+  them. "make all symbols" (1.8 §3.19, 2026-11-13) meant meta concepts.
+  A concept that `interpret` makes is given its symbols at once, as
+  allocation gives them (how many is put to Alec below).
+- *The symbol tensor holds values, and a symbol's `.where` is computed.*
+  The Pi of one order's concepts writes the tensor and the Sigma of the
+  next order reads it. A symbol's `.where`, unique in the model, is
+  computed and added when the symbol is read; it is not stored.
+- *Promotion as rule 19 has it* ("Yes"). *Claude's reading:* "MLM" is
+  MTM, promotion by recurrence in MTM (`FamiliarTier.promote_candidates`).
+  Today a promotion writes an edge at one and the network learns its
+  value (rule 10); nothing but a promotion adds an edge, and there is no
+  regularization (rule 13). "Maybe MLM creates new concepts/symbols as
+  necessary, but the membership is learned by the network" is kept as a
+  direction and adds no rule.
+- Ideas keep their width; the split is built after rules 8 to 11.
+
+*The fold, in answer to Alec's question* (Claude):
+
+Alec's reading is right. A Sigma says which members suffice and a Pi
+which are necessary, and an edge's weight is the fuzzy membership. A sum
+and a product are folds in that sense: one operation taken across the
+members. Claude reads "an OR (a multiplication)" as an OR over products,
+which is what a Sigma over Pis computes; a product alone is the AND, as
+the sentence after it has it.
+
+Today's fold differs from `SigmaLayer`'s sum and `PiLayer`'s product in
+its operation, not in its kind. It raises each member's value to its
+weight (`FieldLogic.power`: $v^{w}$ for Pi, $1 - (1 - v)^{w}$ for Sigma)
+and takes the least or the greatest (`SparseLayer.fold_presence`). Four
+differences follow:
+
+1. *Counting.* The least and the greatest read one member, the worst or
+   the best. A product and a sum read every member, so shortfalls
+   compound and evidence adds up.
+2. *Learning.* The least and the greatest pass the gradient to that one
+   member; a sum and a product pass it to every member. With the sparse
+   matrix product, that is the "performant" part.
+3. *Signs.* A sum reads a negative weight as the other pole in the same
+   pass (rule 9). The greatest cannot take a negative weight as an
+   exponent, and would need a pass for each pole.
+4. *Exact truth.* The fold keeps an exact 0 and 1 (`FieldLogic.power`
+   does not move them). A Sigma with rule 1's `tanh` exit gives less than
+   1 for any finite sum.
+
+*Lanes by sign* (Claude, on Alec's words):
+
+- Rule 9 does this at order zero now: the sign of a weight chooses the
+  pole it reads ($c^{+} = p^{+} G^{+} + p^{-} G^{-}$,
+  $c^{-} = p^{-} G^{+} + p^{+} G^{-}$). Above order zero the same rule
+  would read a symbol's pair. Each member enters by one signed edge, so a
+  concept needs one symbol, holding its pair, not two (*Claude's
+  reading* of "we don't want a conceptual explosion").
+- *Claude's reading* of "propagate quickly": before the exit, for less
+  against is one signed product, $(p^{+} - p^{-})\,W$, the difference of
+  the pair's two sums. So the quick pass is exact before the exit and an
+  approximation after a per-lane exit. It cannot show "both", which Alec
+  allows when no contradiction is sought; the pair stays what is stored
+  (two-truths §1.1).
+- The quick pass needs the sum: the greatest has no one-pass difference.
+  So lanes by sign mean rules 8 and 9 at every order. A symbol is made by
+  Pi from concepts, as a basic percept is made from its parts; a concept
+  is made by Sigma from symbols, as an order-zero concept is made from
+  basic percepts. That reverses rule 12's "above order zero the folds
+  keep their arithmetic" (Alec, §18.1: "At the symbolic levels they are
+  not."). *Put to Alec.*
+
+*Place at every order* (Claude, in answer to Alec's concern):
+
+- At order zero today, the abstraction over place comes from how rows
+  are read, not from a concept's vector. A basic percept's row is keyed
+  by its parts and wholes, not by its place (`BasicPercepts.reserve`;
+  only a value percept adds a place). Each row is read in every bracket
+  (`BasicPercepts.read(percepts, brackets, rows)`; `read_percepts`: "Read
+  each referenced native percept once, then pool before any fold").
+  Order-zero concepts are then computed event by event, with one set of
+  edges for every event (`ConceptualSpace._compose_order0`, whose field
+  is rows by batch by events by lanes). So the place belongs to the
+  event, not to the row. A concept is the same wherever its percepts
+  occur, and the attention bracket chooses which places are pooled. It
+  is weight sharing and pooling, as in a convolution. Nothing is
+  flattened, and nothing in it reads a concept's vector, so the split
+  leaves it as it is.
+- The same holds above order zero if the symbol tensor keeps the event
+  axis: symbols by events by lanes. Each event's `.where` and `.when` are
+  computed, from its bracket and the model clock, and added when it is
+  read, as Alec has it for `.where`. A Sigma reads each event with the
+  same edges, which makes it the same concept at any place and time, or
+  reads them pooled over the events that attention or recall selects. So
+  the `.where` and `.when` belong to the occurrence. The symbol itself
+  stays without dimensions, and no Sigma needs a flattened vector to
+  abstract over them.
+- The `.where` unique in the model is the symbol's address (today
+  `WhereRegistry`'s `symbols` range). It names the symbol. Nothing
+  abstracts over it but a class, which lists its members.
+- A Sigma that reads one event at a time cannot relate two events (this
+  one before that one). That needs a Pi over two events at once, as a
+  basic percept is an ordered run of letters, or compose in STM. A
+  flattened Sigma would not give it either.
+- A concept about a place or a time (first, left, earlier) is one whose
+  Pi has a place or time part, as a value percept's row has a place
+  today.
+- With rules 8 and 9 at every order, a symbol is to the next order what a
+  basic percept is to order zero: made by a Pi, read by a Sigma, at each
+  event. That is *Claude's reading* of "unanalyzable, as 0-D percepts".
+- "all higher-order concepts are orthogonal to each other because their
+  basis is in points": true of their definitions. Two concepts overlap
+  only by the members both list, never by likeness. The pulls within one
+  order still make that order's concepts alike or unlike; that likeness
+  stays in the order (rule 16).
+
+*Put to Alec* (2026-11-16):
+
+1. Rules 8 and 9 at every order, in place of the fold above order zero;
+   each concept then has one symbol, holding its pair.
+2. The event axis on the symbol tensor, with each event's `.where` and
+   `.when` added when it is read, in place of a flattened Sigma.

@@ -89,14 +89,6 @@ def test_counts_alone_do_not_request_refinement():
     assert not cs.concept_over_collected(collected(cs, (7,), (8,)))   # 1+1, not over
 
 
-def test_retire_transient_symbol():
-    cs = _cs()
-    A = collected(cs, (1,), (2,))
-    cs.retire_concept(A)
-    assert cs.concept_parts(A) == [] and cs.concept_wholes(A) == []
-    # idempotency cache cleared -> re-relating the same pair mints a NEW symbol
-    assert collected(cs, (1,), (2,)) != A
-    cs.retire_concept(A)                          # idempotent
 
 
 # -- live population from the .where binding (S2a) -----------------------------
