@@ -1365,9 +1365,14 @@ generation is expected at this stage and is recorded, not tuned away.
    (although with some gradient error on pass/fail that will encourage
    or discourage such near misses in the future)". Not in the rules
    and not in the source: a look is made of whole words, the lookup of
-   a form is exact, and a near miss is refused and not charged. *Open
-   for Alec:* when it is built (*recommended:* with item 1.7), and
-   three points of its design.
+   a form is exact, and a near miss is refused and not charged.
+   **Decided (§68.77): item 1.7.** "A look should be a .where that
+   returns percept indices. If that is forced to words, then the lexer
+   is doing the models job"; a Pi in that neighbourhood finds the
+   spellings; "the hit/miss on a word will hopefully feed into the
+   width of that pi hypercone". Item 1.8's loop stays on word brackets
+   with the exact lookup. **The reply to Codex's stop of §61.6 is the
+   text of §68.75.**
    **Commits and the docs folder (Alec, 2026-11-18).** Claude may
    commit its work locally; pushing stays rare. The pending
    documentation pass of the worktree `basicmodel-docs` is on `main`
@@ -1452,6 +1457,12 @@ generation is expected at this stage and is recorded, not tuned away.
    never to have the blank at all", with both trained and the blank
    removed only if the two vectors come to overlap. Open: what removing
    is, beside concepts kept forever.
+   **Looks and spellings (§19.28, rule 32; Alec, 2026-11-18):** a look
+   is a `.where` that returns percept indices and is not forced to
+   words; a row of the Pi finds the different spellings of a word
+   ("caat", "cat") and returns the basic percept for all of them;
+   the hit or miss on a word feeds the width of that row's cone. To
+   be specified with the item.
 - **1.6. The number modality, the math corpus, and the felt world that
    combines them** (Alec, 2026-11-18: "Then 1.6 becomes the number
    modality, the math corpus (it needs more development), and the work

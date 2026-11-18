@@ -4330,6 +4330,17 @@ old classes are not edited.
     joined to. The clauses in this item's terms, and how it meets
     rule 20's meta concept and blank object, are in §19.25.
 
+**J. Looks and spellings** (§19.28).
+
+32. *A look is a `.where` that returns percept indices, and a Pi finds
+    the spellings* (Alec, 2026-11-18). A look is not made of the stem's
+    word intervals: "If that is forced to words, then the lexer is
+    doing the models job". Different spellings of a word ("caat",
+    "cat") share most of their parts and wholes, so a row of the Pi in
+    that neighbourhood finds them and returns the basic percept that
+    corresponds to all of them. The hit or miss on a word feeds the
+    width of that row's cone. What is to be specified is in §19.28.
+
 **Certificates.**
 
 1. *The old classes are unchanged:* `SigmaLayer`, `PiLayer`, `PiLayer2`
@@ -4508,6 +4519,10 @@ budget of rule 28; the speed certificate.
    a row that MTM nominates for the two when the succession recurs,
    read by rule 30's spread, with expect's stack beside it as §19.22
    proposes. Within one sentence expect does it today (§19.25).
+8. Rule 32's unspecified parts (§19.28): what a look's `.where` is
+   when it is not word intervals; which quantity is a cone's width and
+   how a hit or a miss moves it; what a hit and a miss are; whether a
+   letter's place counts.
 
 **For the documentation pass** that lands with item 1.7 (`doc/*.md` is
 not edited now: another pass over those files is uncommitted, in the
@@ -5261,3 +5276,63 @@ easily forgotten store".
 - *Which way the tie is learned by in this item.* *Default:* the
   bootstrap as it is, since he says it stays, with way (a)'s trust on
   the tie wherever an existing object is found first.
+
+### 19.28 A look is a place that returns percepts; a Pi finds the spellings; hit and miss set its width (Alec, 2026-11-18)
+
+Asked when a word found by a near miss is built, and what "close"
+compares (1.8 §68.76), Alec, 2026-11-18:
+
+> A look should be a .where that returns percept indices. If that is
+> forced to words, then the lexer is doing the models job. Caat and cat
+> both match on whole of those letters, and they share many of the same
+> parts, so a pi in that neighborhood should find different spellings,
+> and return the basic percept corresponding to all of them (although
+> that pi lookup happens in 1.7).
+>
+> And the hit/miss on a word will hopefully feed into the width of that
+> pi hypercone.
+>
+> So that logic probably goes in 1.7
+
+**What it decides.** It is built in this item. It is rule 32 of §19.21.
+
+1. *A look is a `.where` that returns percept indices.* It is not made
+   of the stem's word intervals. Where the cut into words is made before
+   the model reads, "the lexer is doing the models job".
+2. *A Pi finds the spellings.* "caat" and "cat" match on the whole of
+   those letters and share many of their parts. A row of the Pi in that
+   neighbourhood finds the different spellings and returns the basic
+   percept that corresponds to all of them. This is the lookup over an
+   inexact match: no second lookup is added for it.
+3. *Hit and miss set the width.* Whether a word was found or missed
+   feeds the width of that row's cone.
+
+**What the record has to build it on.**
+
+- A row of the Pi is a hypercone, and its value for an input is the
+  input's centrality in the cone (§19.21, the Pi layer; Alec, §18.14:
+  "a (sparse) hypercone on hypercube parts and wholes").
+- A row exists when MTM nominates it (§19.10), and rows are taken as
+  neighbours by the mereology (rule 23 and §19.11).
+- Rule 30: the spread reaches the first layer, and the way back reads
+  what it expects.
+- Until this item, in the source that item 1.8 leaves: a look is made
+  of whole word intervals from the stem, the lookup of a form is exact
+  (`InterpretLayer.word_for_form`), and a word read with both lanes is
+  not offered to `interpret` (1.8 §68.76).
+
+**Not designed here, to be specified with the item.**
+
+- What a look's `.where` is when it is not word intervals: any
+  interval of the input, or the extents that attention's acts can
+  reach; and what then becomes of the stem's word intervals and word
+  texts, which `stage_input` and the first look read today.
+- Which quantity of a row is "the width" of its cone, and what moves
+  it: *Claude's reading* is that a miss narrows and a hit widens or
+  keeps, by the cost of the grammar's choice of `interpret`. He says
+  "hopefully"; it is not a rule yet.
+- What a hit and a miss are: the lookup finding a held word or none, or
+  the sentence then being read rightly or wrongly.
+- Whether a letter's place counts in the match, since in "caat" the
+  last letter stands one place later (rule 31: a generalization holds
+  no place).

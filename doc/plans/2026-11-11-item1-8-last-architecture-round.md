@@ -32403,7 +32403,10 @@ C. Go on with the text of §60.3 from your prototype of §61.5: the loop,
 
 D. Not for this text, and recorded in §68.74 and §68.70: the two byte
    frames of §61.4, and the key of a bracket on the whole-slab stem. Do
-   not repair them here.
+   not repair them here. Also not for this text (Alec, 2026-11-18;
+   §68.77): a look that is not made of whole words, and a word found
+   by a near miss. They are item 1.7's. Build the loop on the stem's
+   word brackets with the exact lookup.
 
 Commit locally as Alec has authorized. Return in §61, from §61.8.
 ~~~
@@ -32478,6 +32481,45 @@ and the word joins the tree.
 
 The text of §68.75 is not changed by this: it builds the loop with the
 exact lookup.
+
+### 68.77 Decided: looks as places and words found by a near miss go in item 1.7 (Alec, 2026-11-18)
+
+Alec, 2026-11-18, of §68.76:
+
+> A look should be a .where that returns percept indices. If that is
+> forced to words, then the lexer is doing the models job. Caat and cat
+> both match on whole of those letters, and they share many of the same
+> parts, so a pi in that neighborhood should find different spellings,
+> and return the basic percept corresponding to all of them (although
+> that pi lookup happens in 1.7).
+>
+> And the hit/miss on a word will hopefully feed into the width of that
+> pi hypercone.
+>
+> So that logic probably goes in 1.7
+
+And: "Please also reply to codex, which is stopped: The loop prototype
+exposed a missing legal action for looking at the final word."
+
+**What it settles.**
+
+1. *It is built in item 1.7,* and is its rule 32
+   (`doc/plans/2026-11-14-sigma-pi-layers.md`, §19.28): a look is a
+   `.where` that returns percept indices and is not forced to words; a
+   Pi finds the different spellings; hit and miss feed the width of its
+   cone.
+2. *Of the three points of §68.76:* a look may be other than whole
+   words; "close" is what a row of the Pi in that neighbourhood finds;
+   the cost goes to the width of that row's cone. How each is built is
+   to be specified with item 1.7.
+3. *Item 1.8 is unchanged* (*Claude's reading*). Its loop of looks is
+   built on the stem's word brackets with the exact lookup, and rule 5a
+   stands for it: a focus may look at a word. Item 1.7 then frees the
+   look from the word intervals.
+
+**The reply to Codex** is the text of §68.75, which answers the stop of
+§61.6. One line is added to its part D, so that the loop is not built
+toward looks that are not words in this item.
 
 ## 69. The thought replay (§68.31; Codex, 2026-11-18)
 
