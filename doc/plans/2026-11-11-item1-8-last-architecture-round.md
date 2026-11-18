@@ -27237,7 +27237,7 @@ Every source reader of `_ar_word_part_offsets` was checked:
 | `Models._run_aligned_word_chunk_loop` | Stages/chunks the part-offset tensor with ids and masks |
 | `Models._tensor_peer_while_ready` | Requires the tensor for the canonical word-major body |
 | `Models._run_tensor_peer_word_pipeline` | Passes the local offsets into the perceptual word body |
-| `InputSpace.word_part_offsets_at`, read by `Models._run_word_iteration` | Returns a word's offsets to `present_word` and the native perceptual read |
+| `InputSpace.word_part_offsets_at`, read by `Models._per_word_body_step` | Returns a word's offsets to `present_word` and the native perceptual read |
 | `bench_train_word_bucket._profile_peer_legs` | Supplies the first word's offsets to the profiled body |
 | `ModelAttention.stage_input` | Replaced by `word_intervals`; no longer reads the part-offset tensor |
 
@@ -27267,6 +27267,123 @@ repair these pre-existing frame differences.
 
 The loop implementation follows this checkpoint; §61.1's saved comparison
 remains the pre-loop baseline.
+
+
+### 61.5 Loop prototype and fixed-action comparison (not a completed stage)
+
+The first-stage prototype separated `WordExpectation.word_distribution`
+into an opening and individual arrivals, moved the word brick into the
+look's call of `interpret`, perceived each post-act bracket, and kept
+`SentenceField` as an arrival record. Interpretation used the existing
+unary grammar scorer and its operator cost; it did not accept a word in
+`attend`. This is an **incomplete prototype**, preserved locally, not the
+returned production source. Stage 2, the allowance/unfocus and the teacher
+have not been completed. The legality question below stops stage 1.
+
+On the exact saved construction stream and model state of §61.1, the
+four first-document sentences have **identical kept trees, meaning roots,
+meaning slots, meaning depths, and every newly written LTM0 row**. Maximum
+absolute difference is **0**, below the certificate's 1e-6. The words are
+found in source order. Each sentence has **4 actual calls of `attend`**,
+versus **9** on the starting source: interpretation is outside attention.
+All ten `ExpectedWords` fields are **exactly equal at every interpreted
+word**, as are the target bank, admission mask and word columns. Unread
+padding/separator slots now have no forecast, so those reporting slots
+are zero rather than the old repeated prediction; no interpreted word's
+forecast differs. This is preliminary evidence for certificates 6 and 7,
+not a claim that the finished loop passes them.
+
+The incremental forecast and `test_expectation_gain.py` give **11 passed
+in 2.96 seconds**. The new three-known-word loop mechanism gives **two
+failed parameters and one passed forecast test in 3.55 seconds**. Its
+failure is structural, not a learning baseline. It is not repaired by
+changing a scorer or forcing an otherwise illegal act.
+
+### 61.6 Stop: a pure sibling has no act that looks at it
+
+**Producer.** `Attention.narrowing_mask` returns `[False, False, True]`
+for a known, pure single-word bracket: neither divide nor descend is
+legal; only the old attention acceptance is. `narrow_step` also makes
+all three field operations illegal on that pure singleton. Removing
+acceptance leaves no act by which attention selects that bracket. The
+new grammar option is offered only at the current look, as rule 5 says.
+The unselected right sibling of a split has not been that look.
+
+**Native reproduction.** Three words, `red cat sleeps`, are admitted by
+the existing training-form admission, with no teaching or changed seed,
+capacity, rate or budget. The unchanged exploration configuration has
+attentionBudget **32**. Their native lanes are each **(1,0)**. Force the
+legal focuses in source order and take every offered interpretation:
+
+| Look | Attention act / post-act bracket | Grammar option |
+|---|---|---|
+| First | Whole input, bytes 0 to 14 | Not one word |
+| Second | Focus at slot 0, action 1; bytes 0 to 3 | Interprets `red` |
+| Third | Focus at slot 1, action 7; bytes 4 to 7 | Interprets `cat` |
+| Next needed | Right sibling, slot 2, bytes 8 to 14 | Never looked at; no legal attention act |
+
+The final table has three brackets `[0,3]`, `[4,7]`, `[8,14]`, done
+`[True, True, False]`, **2 acts spent, 30 left**, and all six attention
+acts false on the remaining bracket. Only word positions **0 and 2**
+get a brick and `word_step`; position **4** gets neither. If the first
+interpretation abstains, only position **2** is read: the first and last
+pure brackets both lack a next look. The grammar never declines an
+offer on the final word; the offer cannot be reached.
+
+This also reproduces on the **returned pre-loop source**, independently
+of the prototype: its five progress actions are **1, 2, 7, 8, 14** and
+all three words are accepted. At the last step its slot-2 legal menu is
+`[False,False,True,False,False,False]`. The local requirement test deletes
+only the retired acceptance column and asserts that some attention look
+remains: **1 failed in 0.96 seconds**, because none does. Thus the missing
+act is not an error in the new per-look field or forecast implementation.
+
+The not-yet-built `unfocus` does not resolve this example under rule 11:
+the last focus has already interpreted its left word, so reversal is
+illegal. Nor can the teacher of rule 13 use a Boolean field operation:
+its targets are focuses only, and no field act is legal on this bracket
+in any case. Certificate 11 cannot reach its one-to-six-word requirement
+under the literal mask.
+
+**For Alec and Claude.** May `focus` select a live, uninterpreted word
+bracket **at the same level**, even when its reading is already pure?
+Recommended: this spends one attention act and perceives the selected
+interval; it does not descend below a known word and does not accept it.
+Then grammar alone may interpret or abstain. It can use focus's existing
+act address, keeping the six-act menu. No automatic scan of sibling
+words or automatic interpretation is proposed.
+
+This needs an amendment to the statement in §60.1 that the
+`narrowing_mask` tests stay apart from the name, and to the exact meaning
+of focus on a word bracket. §60.3 step 3 requires stopping where the
+default cannot be built as written; no new legality has been installed.
+The teacher's target would remain the fewest legal focuses, including
+this one final look. Awaiting Alec's decision.
+
+### 61.7 Returned checkpoint at that question
+
+The tested interval port and docstring correction are committed locally
+as **`0ccd655615`**, `Retain stem word intervals for attention staging`.
+The incomplete loop prototype and its failing checks remain in local
+scratch; its production/test changes were removed from the working tree,
+leaving the tested port. No receipt is committed or linked. Nothing was
+pushed. Claude's concurrent documentation commits are preserved.
+
+The returned `bounded_tests.source_snapshot` contains **1,222 files**:
+**`ef78d41243bb08124c233f613f4fe504f81852b0486fa22c1be9104dd255955e`**.
+The additional file is `test/test_stem_word_intervals.py`. The two stopping
+gates passed on this source in the 66-test port run. No gate failed;
+no gate or completed-stage claim is made for the incomplete prototype.
+No default sweep and nothing under RUN_SLOW was run. The loop's final
+lesson, verbal proof, assessment tables, sixteen-sentence measurement,
+teacher curricula, and remaining certificates are not yet run.
+
+Of the five attention places, the returned port edits only
+`ModelAttention.stage_input`, replacing its surface search with the
+stem intervals. `Attention.py`, `SentenceAttention.py`,
+`AttentionTraversal.py` and `Models._run_sentence_word_bricks` remain
+at the accepted pre-loop source. The discarded prototype's attempted
+edits are recorded above solely to make the question reviewable.
 
 ## 62. Part A's remainder: the forecast of a look and its surprise (Claude, 2026-11-16; a design, with one question for Alec)
 
