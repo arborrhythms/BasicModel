@@ -107,6 +107,8 @@ def test_two_explore_paths_credit_their_own_compose_and_attention_state(tmp_path
         concept_rows=32, training_overrides={'reconstructionPlacement': 'eager'},
         architecture_overrides={'explorePaths': 2, 'omissionTarget': 1})
     model._tensor_peer_while_eager = True
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     model.inputSpace.data.has_supervised_outputs = False
     captured, credited = {}, []
     original_finish, original_credit = WholePaths.finish, model._compose_score_function_loss
@@ -122,7 +124,7 @@ def test_two_explore_paths_credit_their_own_compose_and_attention_state(tmp_path
         result = {name + '_round': torch.full_like(at, -1) for name in SentenceCredit.WALKS}
         result.update(walk=torch.ones_like(at), rounds=compose.sum(-1),
             walk_count=torch.ones_like(at), walk_rounds=compose.sum(-1) - len(used),
-            narrowing=torch.zeros_like(active), compose_round=at,
+            narrowing=torch.zeros_like(active), compose_round=at, interpret_round=torch.full_like(at, -1),
             round=at + (0 if narrowing is None else narrowing.alternatives.shape[1]))
         return result
     def credit(state, costs):

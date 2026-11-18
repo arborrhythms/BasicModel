@@ -48,7 +48,7 @@ JOIN = frozenset(('union', 'disjunction', 'sigma', 'max'))
 DETERMINERS = frozenset(('definite', 'definite_unary', 'lower', 'lower_unary', 'universal', 'some'))
 CONTENT = frozenset(('preposition', 'preposition_unary', 'surface', 'surface_unary', 'sign',
     'interpret', 'bind', 'change', 'lift', 'swap', 'generic', 'ask', 'part', 'whole', 'equal',
-    'implies', 'mint', 'focus', 'add', 'subtract', 'multiply', 'divide',
+    'implies', 'focus', 'add', 'subtract', 'multiply', 'divide',
     'sum', 'product', 'synthesize',
     'isPart', 'isEqual', 'assertPart'))
 

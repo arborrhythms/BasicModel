@@ -1,7 +1,7 @@
 """Execution phases declared by the grammar, independent of model sizes."""
 from dataclasses import dataclass
 
-EXAMINATION = frozenset(('focus', 'mint'))
+EXAMINATION = frozenset(('focus',))
 FIELD = frozenset(('intersection', 'union', 'not'))
 # These are per-space substrate folds, not symbolic choices. The default
 # dense numeric body still dispatches its declared pi/sigma layers.

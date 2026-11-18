@@ -20958,20 +20958,21 @@ class BasicModel(BaseModel):
             # A sentence is perceived once, after its predecessor's commit.
             from PrependedSymbols import refresh_words
             refresh_words(self, sid)
-            cache = []
-            for w in range(W):
-                gate = active[:, w] & (sentence_ids[:, w] == sid)
-                if not bool(gate.any()):
-                    continue
-                index = torch.tensor(w, device=words.device)
-                from ModelAttention import forecast_percept, observe_percept
-                forecast = forecast_percept(self, gate)
-                payload, sub = perceive(words[:, w:w + 1], gate[:, None], index, None, sub)
-                payload, sym = symbolize(payload, empty_feedback, index, None, sym)
-                payload = observe_percept(self,forecast,payload,sub,index,gate)
-                cache.append((index, payload, sub[3:9] if native_support else ()))
+            cache = {}
+            if not self.grammar_phases.vector:
+                for w in range(W):
+                    gate = active[:, w] & (sentence_ids[:, w] == sid)
+                    if not bool(gate.any()):
+                        continue
+                    index = torch.tensor(w, device=words.device)
+                    from ModelAttention import forecast_percept, observe_percept
+                    forecast = forecast_percept(self, gate)
+                    payload, sub = perceive(words[:, w:w + 1], gate[:, None], index, None, sub)
+                    payload, sym = symbolize(payload, empty_feedback, index, None, sym)
+                    payload = observe_percept(self,forecast,payload,sub,index,gate)
+                    cache[w] = (index, payload, sub[3:9] if native_support else (), gate)
             self._open_sentence_slot = sid
-            if not self.grammar_phases.vector or not cache:
+            if not self.grammar_phases.vector:
                 from Examination import run as examine
                 point = examine(self,sid,present,trust=trust)
                 current = list(lang)
@@ -20991,6 +20992,8 @@ class BasicModel(BaseModel):
             from HeldConcepts import snapshot as snapshot_held_concepts
             self._sentence_initial_concepts = snapshot_held_concepts(stm)
             self._prime_sentence_symbols(sid)
+            from SentenceLooks import WordForecast, Looks
+            word_forecast = WordForecast(self)
             self.languageSpace._compose_primed_bank = self._sentence_primed_bank
             pool = self._concept_owner().mtm
             self.languageSpace._free_transient_ids[:pool.capacity].copy_(torch.where(pool.transient_used,-1,pool.transient_ids).to(stm[0].device))
@@ -21011,10 +21014,10 @@ class BasicModel(BaseModel):
             paired_costs, cost_parts, attention_trials = [], [], []
             complete_paths, draws = [], []
             attention_work_trials = []
-            field_trials = []
+            field_trials, look_trials = [], []
             compound_trials = []
             field_enabled = (getattr(self, 'attention_budget', 0) > 0
-                and hasattr(self, 'attention_floor') and cache and all(entry[2] for entry in cache))
+                and hasattr(self, 'attention_floor') and native_support)
             pending_steps = []
             reader_registries = []
             reader_observations = []
@@ -21085,43 +21088,26 @@ class BasicModel(BaseModel):
                     forced = (torch.arange(actions.shape[1],device=words.device)[None]
                               == draw['compose_round'][:,None])
                     self._compose_forced_slots = forced
-                    fork.start(dict(draw, narrowing=draw['narrowing'] | (draw['candidate_round'] >= 0)))
+                    fork.start(dict(draw, narrowing=draw['narrowing'] | (draw['interpret_round'] >= 0)))
                     self._compose_sampling_scale = trace._choice_alternative_counts * (
                         draw['walk_count'] * draw['walk_rounds'])[:,None]
-                    if greedy_attention is not None and bool(draw['narrowing'].any()):
+                    if greedy_attention is not None:
+                        departure = torch.where(draw['attention_round']>=0, draw['attention_round'],
+                            torch.where(draw['interpret_round']>=0,(draw['interpret_round']-1).clamp_min(0), self.attention_budget+1))
                         reading_walk = self._attention_open(exploit=greedy_attention,
-                            departure=draw['attention_round'],sentence=sid,spent_override=attention_spent)
+                            departure=departure,sentence=sid,spent_override=attention_spent)
                 current_stm = current_lang = current_feedback = latches = None
                 field = symbol_field = compound_field = replay = None
                 def start_compose(index):
                     nonlocal reading, greedy_attention, current_stm, current_lang, current_feedback
                     nonlocal latches, field, symbol_field, compound_field, replay
-                    # This runs from the word loop. Restoration and candidate
-                    # construction both consume the whole evidence slab, so
-                    # their dependencies must settle before the first word.
-                    if reading_walk is not None:
-                        reading = reading_walk.for_restore(index)
-                        if exploit is None:
-                            greedy_attention = reading
-                        else:
-                            selected = select_rows(greedy_attention, reading, draw['narrowing'])
-                            reading = type(reading)(type(reading.table)(*selected[0]), *selected[1:])
-                    if reading is not None:
-                        handoff(self, reading)
-                        self._attention_meters = meters_for(reading)
-                        if kept is None and exploit is None:
-                            from ModelAttention import stage_expectation
-                            self._attention_greedy = reading
-                            stage_expectation(self, prefix=attention_base)
-                    if kept is None:
-                        attention_trials.append(reading)
                     # Every trial begins with restored history. Give its first
                     # word the same grad contract as subsequent word carries,
                     # without connecting it to a previous optimizer version.
                     restored = tuple(_carries_with_grad(bank) for bank in before)
                     if exploit is not None:
                         from SentenceFork import snapshot
-                        restored = select_rows(snapshot(exploit, live=single), restored, draw['narrowing'] | (draw['candidate_round'] >= 0))
+                        restored = select_rows(snapshot(exploit, live=single), restored, draw['narrowing'] | (draw['interpret_round'] >= 0))
                     self._restore_sentence_state(restored)
                     self.languageSpace._reference_bank = reference_bank
                     current_stm, current_lang, current_feedback = restored
@@ -21129,10 +21115,7 @@ class BasicModel(BaseModel):
                     field = None
                     if field_enabled:
                         from SentenceAttention import SentenceField
-                        # Field reads have their own per-sentence allowance;
-                        # bracket work must never consume a candidate's read.
-                        field = SentenceField(self, cached, active, sentence_ids, sid,
-                            torch.full_like(attention_spent, self.attention_budget))
+                        field = SentenceField(self, active, sentence_ids, sid)
                     self._sentence_field = field
                     from SymbolField import SymbolField
                     symbol_field = SymbolField(getattr(self.symbolSpace, 'expectation', None),
@@ -21145,7 +21128,7 @@ class BasicModel(BaseModel):
                     compound_field = LiveConstituents(self._sentence_primed_bank.codes,
                         self._sentence_primed_bank.terminal_valid, self.conceptualSpace.stm.capacity)
                     if exploit is not None:
-                        replay=draw['narrowing'] | (draw['candidate_round']>=0)
+                        replay=draw['narrowing'] | (draw['interpret_round']>=0)
                         # A bind-only departure does not repeat composition. Its
                         # inverse field is the whole greedy field, while a compose
                         # fork carries only its own prefix, before the departure.
@@ -21171,8 +21154,6 @@ class BasicModel(BaseModel):
                     # through the perceptual reducer with an already resolved row.
                     raw_lanes = payload[11]
                     if not closing:
-                        if reading_walk is not None:
-                            reading_walk.for_word(index)
                         reading = getattr(self, '_attention_words', None)
                         if reading is not None:
                             from ModelAttention import read_poles
@@ -21199,59 +21180,67 @@ class BasicModel(BaseModel):
                         lanes=None if field is None else field.placements()['lanes'].clamp(0,1))
                     observe_compounds(payload[7].reshape(B))
                     latches = [latches[1], current_feedback]
-                def read_field():
+                def arrival(index, rows):
+                    nonlocal sub, sym
+                    from ModelAttention import forecast_percept, observe_percept
                     from SentenceAttention import masked_payload
-                    last = torch.where(active & (sentence_ids == sid),
-                        torch.arange(W, device=words.device), -1).amax(-1)
-                    closed = torch.zeros_like(present)
-                    while bool(field.active.any()):
-                        scores = field.place(current_stm)
-                        options = {}
-                        if exploit is not None and scores is not None:
-                            turn = len(field.reads)
-                            greedy_reads = field_trials[0].reads
-                            old = (greedy_reads[turn]['action'] if turn < len(greedy_reads)
-                                   else torch.full((B,), len(cached), device=words.device, dtype=torch.long))
-                            options = dict(alternative=(draw['candidate_round'] == turn), greedy=old,
-                                alternative_scores=field.place(current_stm, expectation_free=True),
-                                replay=((draw['candidate_round'] > turn) |
-                                        ((draw['compose_round'] >= 0) & ~fork.joined)),
-                                scale=draw['walk_count'] * draw['walk_rounds'])
-                        lesson = getattr(self, '_attention_reading_lesson', None)
-                        if lesson is not None and self._sentence_training:
-                            options = dict(taught=lesson.target(field))
-                        if kept is not None:
-                            turn = len(field.reads)
-                            if turn >= len(kept['field']):
-                                raise RuntimeError('kept sentence exhausted its recorded field reads')
-                            options = dict(greedy=kept['field'][turn], replay=torch.ones_like(present))
-                        admitted = field.select(scores, **options)
-                        if kept is not None:
-                            torch._assert_async((field.reads[-1]['action'] == kept['field'][turn]).all(),
-                                                'kept sentence changed a field read')
-                        for column, (index, payload, native) in enumerate(cached):
-                            rows = admitted[:, column]
-                            if not bool(rows.any()):
-                                continue
-                            field._closing = torch.zeros_like(rows)
-                            word_step(index, masked_payload(payload, rows), native)
-                    # Closing follows the last read, not whichever source word
-                    # happened to be read last. No candidate is deposited again.
-                    for index, payload, native in cached:
-                        rows = present & (last == index)
+                    word = int(index)
+                    old = cached.get(word)
+                    fresh = rows if old is None else rows & ~old[3]
+                    if bool(fresh.any()):
+                        lanes = (self._attention_words.poles[:,word] if reading_walk is not None else
+                                 torch.stack((fresh,torch.zeros_like(fresh)),-1).to(words))
+                        word_forecast.arrive(index,fresh,lanes)
+                        forecast = forecast_percept(self,fresh)
+                        payload, sub = perceive(words[:,word:word+1],fresh[:,None],index,None,sub)
+                        payload, sym = symbolize(payload,empty_feedback,index,None,sym)
+                        payload = observe_percept(self,forecast,payload,sub,index,fresh)
+                        native = sub[3:9] if native_support else ()
+                        if old is not None:
+                            payload = select_rows(old[1],payload,fresh)
+                            native = select_rows(old[2],native,fresh) if native else ()
+                        cached[word] = (index,payload,native,fresh if old is None else old[3]|fresh)
+                    _,payload,native,_ = cached[word]
+                    payload = masked_payload(payload,rows)
+                    if field is not None:
+                        field.arrive(index,payload,native,rows)
+                        field._closing = torch.zeros_like(rows)
+                    word_step(index,payload,native)
+                start_compose(torch.zeros((),device=words.device,dtype=torch.long))
+                looks = None
+                if reading_walk is not None:
+                    looks = Looks(self,reading_walk,sid,present,
+                        prior=None if exploit is None else look_trials[0],
+                        draw=None if exploit is None else draw,kept=kept)
+                    reading = looks.run(arrival)
+                    if exploit is None:
+                        greedy_attention = reading
+                        self._attention_greedy = reading
+                    handoff(self,reading)
+                    self._attention_meters = meters_for(reading)
+                else:
+                    for word in range(W):
+                        rows = active[:,word] & (sentence_ids[:,word]==sid)
                         if bool(rows.any()):
-                            field._closing = rows
-                            word_step(index, masked_payload(payload, rows, closing=True), native, closing=True)
-                            closed |= rows
-                started = False
-                for index, payload, native in cached:
-                    if not started:
-                        start_compose(index)
-                        started = True
-                        if field is not None:
-                            read_field()
-                            break
-                    word_step(index, payload, native)
+                            arrival(torch.tensor(word,device=words.device),rows)
+                look_trials.append(looks)
+                attention_trials.append(reading)
+                if field is not None:
+                    # Closing has no word brick, even if the last source word
+                    # was never interpreted. It deposits no candidate.
+                    last = torch.where(active & (sentence_ids==sid),
+                        torch.arange(W,device=words.device),-1).amax(-1)
+                    D = current_stm[0].shape[-1]
+                    for word in last[present].unique().tolist():
+                        rows = present & (last==word)
+                        index = torch.tensor(word,device=words.device)
+                        payload = (words.new_zeros(B,1,D),torch.zeros(B,1,device=words.device,dtype=torch.long),
+                            torch.full((B,),-1,device=words.device,dtype=torch.long),words.new_zeros(B),
+                            torch.full((B,),-1,device=words.device,dtype=torch.long),
+                            torch.zeros(B,device=words.device,dtype=torch.long),words.new_zeros(B,D),
+                            rows[:,None],torch.zeros_like(rows[:,None]),*empty_feedback,words.new_zeros(B,2))
+                        field._closing = rows
+                        word_step(index,payload,(),closing=True)
                 path = (current_stm, current_lang, current_feedback)
                 if kept is not None and field is not None:
                     self.inputSpace._ar_grammar_leaf_mask = field.grammar_leaves(source_leaf_mask)
@@ -21294,11 +21283,8 @@ class BasicModel(BaseModel):
                 trace = self._reconstruction_stack()
                 owners, _, _ = self._compose_round_owners(trace._choice_actions)
                 eligible = trace._choice_attempted & trace._choice_explorable & (owners == sid)
-                candidate_rounds = None
-                if field_trials and field_trials[0] is not None:
-                    decisions = field_trials[0].reads
-                    candidate_rounds = (torch.stack([read['alternatives'] > 0 for read in decisions], -1)
-                        if decisions else present.new_zeros(B, 0))
+                interpretations = (None if not look_trials or look_trials[0] is None else
+                    torch.stack([decision['eligible'] for decision in look_trials[0].decisions],-1))
                 decisions = [plan['decisions'] for plan in observations[0].get('reference_plans', ())]
                 bind_rounds = present.new_zeros(B, max(map(len, decisions), default=0))
                 for b, menu in enumerate(decisions):
@@ -21309,7 +21295,7 @@ class BasicModel(BaseModel):
                 output = complete_paths[0].output_trace
                 return departure(greedy_attention, eligible, active=present,
                     sentence_ids=sentence_ids, sentence=sid, compose_round=fork.choose(draws),
-                    candidates=candidate_rounds, binds=bind_rounds,
+                    interpretations=interpretations, binds=bind_rounds,
                     reconstruction=None if generation is None else generation.trace[1],
                     thought=complete_paths[0].thinking.eligible(present),
                     output=None if output is None else output[1], used=draws)
@@ -21328,6 +21314,7 @@ class BasicModel(BaseModel):
                         candidate = first
                         attention_trials.append(attention_trials[0])
                         field_trials.append(field_trials[0])
+                        look_trials.append(look_trials[0])
                         compound_trials.append(compound_trials[0])
                         self._sentence_trial = 'explore'
                         if fork is not None:
@@ -21363,16 +21350,20 @@ class BasicModel(BaseModel):
                             self._last_bind_score_function = details
                             candidate.registry.add('expectation.bind_score_function', policy,
                                 category='expectation', objective='expectation', side='A')
-                        field = field_trials[path_index]
-                        if field is not None and field.backup is not None and bool((draw['candidate_round'] >= 0).any()):
+                        looks = look_trials[path_index]
+                        if looks is not None and bool((draw['interpret_round']>=0).any()):
                             from SentenceCredit import score_function
-                            backup = field.backup
-                            policy, _ = score_function(backup['probability'][:, None], backup['scale'][:, None],
-                                backup['rows'][:, None], pair)
-                            candidate.registry.add('attention.candidate_departure', policy,
-                                category='other', objective='attention', side='A')
+                            decisions = looks.decisions
+                            probabilities = torch.stack([entry['probability'] for entry in decisions],-1)
+                            corrections = torch.stack([entry['proposal'] for entry in decisions],-1)
+                            chosen = torch.arange(len(decisions),device=words.device)[None] == draw['interpret_round'][:,None]
+                            policy,_ = score_function(probabilities,
+                                corrections*(draw['walk_count']*draw['walk_rounds'])[:,None],chosen,pair)
+                            from ObjectiveOwnership import policy_objective
+                            candidate.registry.add('output.interpret_score_function',policy,
+                                category='output',objective=policy_objective(self,'compose','chooser'),side='A')
                         path_credit(self, complete_paths[0], candidate, present)
-                    taught = field_trials[0].lesson_cost() if field_trials[0] is not None else None
+                    taught = None
                     single_costs, weights = path_objectives(complete_paths, parts, present, draws)
                     if taught is not None:
                         # The reading lesson is observed once on the exploit,
@@ -21424,17 +21415,11 @@ class BasicModel(BaseModel):
                 self._attention_spent = kept.table.spent.detach().clone()
             if field_trials[0] is not None:
                 iterations = choose_tensors([field.iterations for field in field_trials])
-                from QueryWork import QueryWorkBudget
-                self._field_meters = tuple(QueryWorkBudget(self.attention_budget) for _ in range(B))
-                for b, meter in enumerate(self._field_meters):
-                    meter.require('serial-word-loop', int(iterations[b]))
                 self._last_sentence_field = dict(trials=[field.report() for field in field_trials],
-                    wins=wins.detach(), selected=selected.detach(), iterations=iterations.detach(),
-                    backup=None if field_trials[-1].backup is None else
-                        {key: value.detach() for key, value in field_trials[-1].backup.items()})
-                if hasattr(field_trials[0], 'cost_report'):
-                    self._last_field_cost = {key: choose_tensors([field.cost_report[key] for field in field_trials])
-                                            for key in field_trials[0].cost_report}
+                    wins=wins.detach(),selected=selected.detach(),iterations=iterations.detach())
+            if look_trials[0] is not None:
+                self._sentence_look_fields = dict(getattr(self,'_sentence_look_fields',{}))
+                self._sentence_look_fields[sid] = tuple(look_trials[int(selected[b])].fields for b in range(B))
             audit.update(sentence=sid, departure=draws[0] if draws else None, departures=tuple(draws),
                 actions=tuple(paths), readers=tuple(dict(mse=p.parts[:, 2],
                     predictions=p.observation.get('answer_predictions')) for p in complete_paths),
@@ -21476,17 +21461,7 @@ class BasicModel(BaseModel):
                 chosen = (tuple(v.detach() for v in chosen[0]),
                           tuple(v.detach() for v in chosen[1]),
                           tuple(v.detach() for v in chosen[2]))
-            activations = chosen[1][0]
-            if getattr(self, 'candidate_attention', None) is not None:
-                # Preserve the chosen field at its forward parameter state.
-                # Re-running the MLP after the trial's optimizer step would
-                # publish a different reading from the one just scored.
-                activations = admitted_activations
-            else:
-                for index, payload, _native in cache:
-                    payload = self._attention_sentence_payload(payload,index)
-                    value = torch.where(payload[7], payload[3].reshape(B, 1), 0.)
-                    activations = self._tensor_write_word_column(activations, index, value)
+            activations = admitted_activations
             chosen = (chosen[0], (activations, *chosen[1][1:]), chosen[2])
             if field_trials[0] is not None:
                 self.inputSpace._ar_grammar_leaf_mask = choose_tensors([

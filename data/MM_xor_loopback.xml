@@ -109,7 +109,6 @@
       <grammar>
       <compose>
         <rule operands="field">F = focus.forward(F)</rule>
-        <rule operands="field">F = mint.forward(F)</rule>
         <rule operands="field">F = intersection.forward(F)</rule>
         <rule operands="field">F = union.forward(F)</rule>
         <rule>S = not(S)</rule>

@@ -1,65 +1,67 @@
-"""Sentence-local candidates: native word wholes and their paired evidence."""
+"""Sentence-local record of the words grammar has interpreted."""
 import torch
-from AttentionTraversal import FieldTraversal
+from AttentionObjective import tolerate_heterogeneity
 
 
-class SentenceField(FieldTraversal):
-    def __init__(self, model, cache, active, sentence_ids, sid, allowance):
+class SentenceField:
+    def __init__(self, model, active, sentence_ids, sid):
         self.model = model
-        chooser = model._stm_reducer()
-        self.exploration_fraction = chooser.exploration_fraction
-        self.exploration_temperature = chooser.exploration_temperature
         self.scope = active & (sentence_ids == sid)
-        self.positions = torch.stack([entry[0] for entry in cache]).long()
-        valid = self.scope.index_select(1, self.positions)
-        B, W = valid.shape
-        registry = model.where_registry
-        native = [entry[2] for entry in cache]
-        self.parts = torch.stack([entry[0][:, -1] for entry in native]).sum(0)
-        self.wholes = torch.stack([entry[1][:, -1] for entry in native]).sum(0)
+        self.positions = self.scope.any(0).nonzero().flatten()
+        live = self.scope.index_select(1, self.positions)
+        B, W = live.shape
         from PrependedSymbols import word_view
+        from RowTime import subintervals
         bands = word_view(model.inputSpace, 'symbol_when')
         onset = model.when_encoding.decode_index(bands.index_select(1, self.positions))
-        rank = valid.long().cumsum(-1) - 1
-        count = valid.sum(-1).clamp_min(1)[:, None]
-        from RowTime import subintervals, relative_idea
-        when = subintervals(onset, rank, count)
-        addresses, features, masks, spans, keys, identities = [], [], [], [], [], []
-        reading = getattr(model, '_attention_words', None)
-        for column, (index, payload, entry) in enumerate(cache):
-            _, _, codes, roles, evidence, mask = entry
-            live = valid[:, column] & payload[8].reshape(B)
-            if reading is not None:
-                live &= reading.accepted[:, index]
-            valid[:, column] = live
-            address = codes + torch.where(roles == 0, registry.slices['parts'][0],
-                                         int(model.wholeSpace.subspace.what.where_offset))
-            address = address[:, None].expand_as(evidence)
-            mask = mask & (codes[:, None] >= 0) & live[:, None, None]
-            lanes = torch.stack((evidence.clamp_min(0), (-evidence).clamp_min(0)), -1)
-            lanes = torch.where(mask[..., None], lanes, 0.)
-            identity = torch.where(payload[2] >= 0, payload[2], payload[4])
-            identities.append(identity)
-            known = registry.intervals('symbols', identity)
-            lo = torch.where(mask, address, registry.capacity).flatten(1).amin(-1)
-            hi = torch.where(mask, address + 1, 0).flatten(1).amax(-1)
-            extent = torch.where((identity >= 0)[:, None], known, torch.stack((lo, hi), -1))
-            spans.append(extent)
-            pair = payload[11] if reading is None else reading.poles[:, index]
-            pair = torch.where(live[:, None], pair.to(lanes), 0.)
-            addresses.append(torch.cat((address.flatten(1), known[:, :1]), 1))
-            features.append(torch.cat((lanes.flatten(1, 2), pair[:, None]), 1))
-            masks.append(torch.cat((mask.flatten(1), (live & (identity >= 0))[:, None]), 1))
-            keys.append(payload[0].mean(1))
-        self.addresses = torch.stack(addresses, 1)
-        self.masks = torch.stack(masks, 1)
-        self.keys = relative_idea(model, torch.stack(keys, 1))
-        self.identities = torch.stack(identities, 1)
-        support = torch.stack(features, 1)
-        super().__init__(support, torch.stack(spans, 1).to(support), when,
-                         valid, allowance, tolerance=model.het_tolerance)
-        self.support_window = support.new_zeros(B, model.conceptualSpace.stm.capacity, W)
-        self._closing = torch.zeros(B, dtype=torch.bool, device=active.device)
+        rank = live.long().cumsum(-1) - 1
+        self.when = subintervals(onset, rank, live.sum(-1).clamp_min(1)[:, None])
+        like = model.inputSpace._ar_embedded_N
+        self.where = like.new_zeros(B, W, 2)
+        self.support = like.new_zeros(B, W, 1, 2)
+        self.identities = torch.full((B,W),-1,device=active.device,dtype=torch.long)
+        self.admission = like.new_zeros(B,W)
+        self.valid = torch.zeros_like(live)
+        self.iterations = torch.zeros(B,device=active.device,dtype=torch.long)
+        self.support_window = like.new_zeros(B, model.conceptualSpace.stm.capacity, W)
+        self._closing = torch.zeros(B,dtype=torch.bool,device=active.device)
+        self.reads = []
+
+    def arrive(self, index, payload, native, rows):
+        """Retain only the interpreted occurrence's own evidence and address."""
+        B = self.scope.shape[0]
+        column = (self.positions == index).long().argmax()
+        identity = torch.where(payload[2] >= 0,payload[2],payload[4])
+        registry = self.model.where_registry
+        known = registry.intervals('symbols', identity)
+        pair = self.model._attention_words.poles[:,index]
+        if native:
+            _,_,codes,roles,evidence,mask = native
+            address = codes + torch.where(roles == 0,registry.slices['parts'][0],
+                int(self.model.wholeSpace.subspace.what.where_offset))
+            address = address[:,None].expand_as(evidence)
+            mask = mask & (codes[:,None]>=0) & rows[:,None,None]
+            lanes = torch.stack((evidence.clamp_min(0),(-evidence).clamp_min(0)),-1)
+            lanes = torch.where(mask[...,None],lanes,0.)
+            low = torch.where(mask,address,registry.capacity).flatten(1).amin(-1)
+            high = torch.where(mask,address+1,0).flatten(1).amax(-1)
+            extent = torch.where((identity>=0)[:,None],known,torch.stack((low,high),-1))
+            support = torch.cat((lanes.flatten(1,2),pair[:,None]),1)
+        else:
+            extent,support = known,pair[:,None]
+        support = tolerate_heterogeneity(support,self.model.het_tolerance)
+        if self.support.shape[2] != support.shape[1]:
+            if self.reads:
+                raise ValueError('an arrival changed the native support width')
+            self.support = support.new_zeros(B,len(self.positions),support.shape[1],2)
+        at = (torch.arange(len(self.positions),device=rows.device)==column)[None]&rows[:,None]
+        self.support = torch.where(at[...,None,None],support[:,None],self.support)
+        self.where = torch.where(at[...,None],extent[:,None].to(self.where),self.where)
+        self.identities = torch.where(at,identity[:,None],self.identities)
+        self.valid |= at
+        self.admission = torch.where(at,1.,self.admission)
+        self.iterations += rows.long()
+        self.reads.append(dict(index=index,rows=rows.clone()))
 
     def remember(self, index, rows, language, *, closing=False):
         """Provenance of the existing STM slots, without a second content store.
@@ -119,41 +121,8 @@ class SentenceField(FieldTraversal):
         result['lanes'] = torch.einsum('bkw,bwf->bkf', self.support_window, self.support.sum(-2))
         return result
 
-    def place(self, stm, *, expectation_free=False):
-        from ModelCandidateAttention import context
-        layer = self.model.candidate_attention
-        if layer is None:
-            return None
-        B, W, K, _ = self.support.shape
-        valid = self.masks & self.remaining[..., None]
-        when = self.when[:, :, None].expand(-1, -1, K, -1).reshape(B, W * K, 2)
-        inputs = context(self.model, self.support.reshape(B, W * K, 2),
-            self.addresses.reshape(B, W * K), valid.reshape(B, W * K), when=when,
-            parts=self.parts, wholes=self.wholes, stm=stm, placements=self.placements(), expectation_free=expectation_free)
-        # Native key, structural stamps, both support magnitudes, unreadness,
-        # and priming salience; no desired text or target position enters.
-        heat = self.model._concept_owner().priming_weights(batch=B)
-        ids = self.identities.clamp(0, heat.shape[1] - 1)
-        salience = torch.where(self.identities >= 0, heat.gather(1, ids), 1.)
-        # Express temporal relations in this field's units. Dividing a
-        # fraction of a sentence by the entire timestamp range buried this
-        # input below the content keys. This is a coordinate chart, not a
-        # preferred direction or a selection rule.
-        located = self.valid.to(self.when.device)
-        onset = torch.where(located, self.when[..., 0], torch.inf).amin(-1, keepdim=True)
-        end = torch.where(located, self.when[..., 1], -torch.inf).amax(-1, keepdim=True)
-        onset = torch.where(located.any(-1, keepdim=True), onset, 0.)
-        duration = torch.where(located.any(-1, keepdim=True), end-onset, 1.).clamp_min(1e-6)
-        relative_when = (self.when-onset[..., None]) / duration[..., None]
-        structure = torch.cat((self.where / self.model.where_registry.capacity,
-            relative_when.to(self.keys),
-            self.support.sum(-2), self.remaining[..., None].to(self.keys),
-            salience[..., None]), -1)
-        return layer(inputs, torch.cat((self.keys, structure), -1))
-
     def source_order(self, row):
-        return [int(self.positions[entry['action'][row]]) for entry in self.reads
-                if bool(entry['admitted'][row].any())]
+        return [int(entry['index']) for entry in self.reads if bool(entry['rows'][row])]
 
     def full_admission(self):
         return self.support.new_zeros(self.scope.shape).scatter(1,
@@ -167,12 +136,6 @@ class SentenceField(FieldTraversal):
         """
         return torch.where(self.scope, self.full_admission().detach().bool(), prior)
 
-    def lesson_cost(self):
-        terms = [read['lesson_cross_entropy'] for read in self.reads
-                 if 'lesson_cross_entropy' in read]
-        return (torch.stack(terms).sum(0) / self.iterations.clamp_min(1)
-                if terms else None)
-
     def ordered_reconstruction(self, recovered):
         """Compact the already inverted supports in their actual read order."""
         compact = torch.zeros_like(recovered)
@@ -183,13 +146,12 @@ class SentenceField(FieldTraversal):
         return compact, self.iterations
 
     def report(self):
-        result = super().report()
-        result['positions'], result['identities'] = self.positions.detach(), self.identities.detach()
-        lesson = self.lesson_cost()
-        result['lesson_cross_entropy'] = None if lesson is None else lesson.detach()
-        result['slot_support'] = self.support_window.detach()
-        result['slot_stamps'] = {key: value.detach() for key, value in self.placements().items()}
-        return result
+        return dict(iterations=self.iterations.detach(),admission=self.admission.detach(),
+            eligible=self.valid.detach(),where=self.where.detach(),when=self.when.detach(),
+            support=self.support.detach(),positions=self.positions.detach(),identities=self.identities.detach(),
+            reads=[{key:value.detach() for key,value in entry.items()} for entry in self.reads],
+            slot_support=self.support_window.detach(),
+            slot_stamps={key:value.detach() for key,value in self.placements().items()})
 
 
 def masked_payload(payload, rows, *, closing=False):

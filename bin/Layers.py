@@ -2690,7 +2690,7 @@ class GrammarLayer(Layer):
                         reflections=int(TheXMLConfig.space('ConceptualSpace', 'verbBasisReflections', 4)))
                 elif (self.rule_name and self.meaning_rule is None and
                       self.rule_name not in ('interpret', 'bind', 'swap', 'focus',
-                                             'mint', 'and', 'or', 'marker')):
+                                             'and', 'or', 'marker')):
                     from MeaningKernels import LaneKernel
                     self.meaning_kernel = LaneKernel(width)
         # -- Butterfly cascade state (Stage 5, 2026-05-27 revision) --

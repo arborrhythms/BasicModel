@@ -2,8 +2,7 @@
 import torch
 import math
 from torch.nn import functional as F
-from Attention import (narrow_words, open_narrowing, advance_narrowing,
-                       finish_narrowing, close_narrowing, read_code_field, BracketKeys)
+from Attention import narrow_words, open_narrowing, read_code_field, BracketKeys
 
 
 POLE_CONSUMERS = ('_attention_sentence_payload', '_pushed_word_slab:poles',
@@ -26,22 +25,6 @@ class SentenceNarrowing:
         self.state, self.width = state, width
         self.reading = None
 
-    def for_restore(self, index):
-        # Restoring the sentence publishes the whole pole slab, and the
-        # candidate field reads every accepted word. Those consumers require
-        # the entire field, even when this particular word is already stable.
-        finish_narrowing(self.state)
-        self.reading=_word_carrier(close_narrowing(self.state),self.width)
-        return self.reading
-
-    def for_word(self, index):
-        if self.reading is not None and len(self.state.actions) == self.state.budget:
-            return self.reading
-        wanted=(torch.arange(self.state.keys.shape[1],device=self.state.keys.device)[None]
-                == index).expand_as(self.state.known)
-        advance_narrowing(self.state,wanted)
-        self.reading=_word_carrier(close_narrowing(self.state),self.width)
-        return self.reading
 
 
 def read_poles(model, consumer):

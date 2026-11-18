@@ -148,7 +148,7 @@ def field_text_config(*, examine):
         symbolic = grammar.getroot().find('Symbolic')
         symbolic.clear()
         compose = ET.SubElement(symbolic, 'compose')
-        names = ('focus', 'mint') if examine else ()
+        names = ('focus',) if examine else ()
         for name in (*names, 'intersection', 'union', 'not'):
             ET.SubElement(compose, 'rule', operands='field').text = f'F = {name}.forward(F)'
         grammar_path = Path(directory) / 'field.grammar'
@@ -417,3 +417,23 @@ def keep_existing_references(monkeypatch):
             menu[arity+'_valid'] = menu[arity+'_valid'] & ~menu[arity+'_choices'].eq(-2).any(-1)
         return menu
     monkeypatch.setattr(ReferenceContext, 'prepare_operands', supplied)
+
+
+def read_in_source_order(model, monkeypatch):
+    """Control word arrival for tests of a later grammar or credit decision."""
+    chooser = model._stm_reducer()
+    attend, interpret = chooser.attend, chooser.choose_interpret
+
+    def focus(keys, legal, space, **options):
+        progress = legal[..., :2].any(-1)
+        slot = progress.long().argmax(-1)
+        op = legal[torch.arange(len(slot), device=slot.device), slot, :2].long().argmax(-1)
+        options['replay_action'] = torch.where(progress.any(-1), 6 * slot + op, -1)
+        return attend(keys, legal, space, **options)
+
+    def read(word, allowed, **options):
+        options['replay_action'] = allowed.long()
+        return interpret(word, allowed, **options)
+
+    monkeypatch.setattr(chooser, 'attend', focus)
+    monkeypatch.setattr(chooser, 'choose_interpret', read)

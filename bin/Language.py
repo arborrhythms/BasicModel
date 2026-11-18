@@ -4620,12 +4620,9 @@ class FocusLayer(BracketOperation):
     bracket_action = (0, 1)
 
 
-class MintLayer(BracketOperation):
-    bracket_action = 2
-
 
 GRAMMAR_LAYER_CLASSES = {
-    'focus': FocusLayer, 'mint': MintLayer,
+    'focus': FocusLayer,
     'add': AddLayer, 'subtract': SubtractLayer, 'multiply': MultiplyLayer, 'divide': DivideLayer,
     'interpret':    InterpretLayer,
     'sign':         SignLayer,
@@ -6844,6 +6841,31 @@ class OperationSelectionLayer(nn.Module):
         result = (action, torch.ones_like(weight), counts > 0)
         return (*result, dict(probability=weight, alternative_count=torch.where(proposal_inverse>0,proposal_inverse,counts.to(logits)),
                               logits=logits)) if return_details else result
+
+    def choose_interpret(self, word, allowed, *, masked_action=None, replay_action=None):
+        """Grammar's existing unary scorer chooses interpretation or abstention."""
+        indices = [i for i, op in enumerate(self.unary_ops)
+                   if getattr(getattr(op, 'gl', op), 'rule_name', None) == 'interpret']
+        if len(indices) > 1:
+            raise ValueError('interpret has more than one unary declaration')
+        if not indices:
+            allowed = torch.zeros_like(allowed)
+            logits = word.new_zeros(len(word), 2)
+        else:
+            index = torch.tensor(indices, device=word.device)
+            key = word.detach()[:, None]
+            copy, apply = self.chooser.score_unary(key, key[:, :, None],
+                self.stop_anchor, self.apply_anchor[index],
+                op_offset=self.r_reduce, op_indices=index)
+            logits = torch.cat((copy[:, 0, :1], apply[:, 0]-self.operator_cost), -1)
+        logits = torch.stack((logits[:, 0], logits[:, 1].masked_fill(~allowed, -torch.inf)), -1)
+        action, probabilities, valid, proposal = self.select_logits(logits,
+            structural=(True, True), masked_action=masked_action,
+            replay_action=replay_action, departure_eligible=torch.isfinite(logits),
+            return_proposal=True)
+        return dict(action=action, interpreted=allowed & action.eq(1), eligible=allowed,
+                    probability=probabilities.gather(1, action[:, None])[:, 0],
+                    alternatives=allowed.long(), proposal=proposal, logits=logits)
 
     def thought_logits(self, active, requests):
         """Thought locations use the compose scorer and its one categorical law.

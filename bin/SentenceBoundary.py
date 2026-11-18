@@ -70,7 +70,7 @@ def finish(model, sub, sym, perception_sub, perception_sym, written, perception_
             space._percept_field = detached(space._percept_field)
         if hasattr(space, '_cs_open_field'):
             space._cs_open_field = detached(space._cs_open_field)
-    if model.percept_expectation is not None:
+    if getattr(model.percept_expectation, 'last_arrival', None) is not None:
         model.percept_expectation.last_arrival = detached(model.percept_expectation.last_arrival)
     # Publishing the chosen syntax replaces this slab with sentence writes.
     # Preserve any pre-loop perception values at positions not yet written.

@@ -27386,6 +27386,130 @@ stem intervals. `Attention.py`, `SentenceAttention.py`,
 at the accepted pre-loop source. The discarded prototype's attempted
 edits are recorded above solely to make the question reviewable.
 
+### 61.8 The look at a word (§68.75 B)
+
+A pure word left as the right child of a split previously had no legal
+focus. The loop now uses address 1 for that look. This is the focus address
+already used on a single unknown word. On a pure single word it spends
+one act at the current extent. Its table geometry, level and space stay
+the same. Only the grammar decision marks the word interpreted. After an
+abstention attention can look at the same word again until the sentence
+runs out of acts. On the explicit three-act test the table spends 1, 2,
+then 3, and grammar can still interpret at the third look.
+
+On “red cat sleeps” the fixed source-order focuses and interpretations
+now give brick and grammar-step positions **0, 2, 4**. The test that
+reproduced §61.6 failed on the prototype before this change. A second
+path leaves “red” and reads positions **2, 4**. The trace checks each
+word's single brick and step, the first word before the last attention
+call, and the fields and scopes of the looks. The single-word test
+checks each pure lane, repeated abstention, exhaustion of the allowance
+and the ineligibility of both lanes and of neither lane. Both stopping
+gates passed.
+
+This partial checkpoint restores the loop implementation described in
+§61.5. In the five attention places it edits the bracket walk in
+`Attention.py`, the opening and word handoff support in
+`ModelAttention.py`, the arrivals and their provenance in
+`SentenceAttention.py`, and the per-look grammar/brick and path work
+in `Models._run_sentence_word_bricks`. `AttentionTraversal.py` has no
+diff. Each step's perception in `SentenceLooks.perceive` reads the
+native indices and part spans with the selected extent. The staged
+exact word lookup and the open sentence field are still their own
+producers. §74's later Pi and sentence-wide gather belong to their
+respective items.
+
+**Ports on Codex's recommendation.** Eight model XML files declare
+the old field act inline. Their rules go with the seven grammar-file
+rules. The copy of the earlier grammar loaded by
+`test_reference_closing_reads_surface_meaning_and_never_mints_a_relation_address`
+also drops that rule. The test loads it for its determiner. With zero
+interpreted words the boundary used to raise while detaching the
+nonexistent last perceptual arrival. `SentenceBoundary.finish` now
+detaches that record when one exists.
+
+Three fixtures with a specified later operation used to rely on
+automatic admission. They now supply the reading at the test seam,
+through the native attention and interpretation decisions, and retain
+their assertions:
+
+- `test_kept_verbal_output_reaches_the_live_understanding_and_conditioner`
+  forced every unary score low in order to select its binary composition.
+  That also declined interpretation. It now gets the stated input words
+  before it checks the gradient through its completed binary reading.
+- `test_two_explore_paths_credit_their_own_compose_and_attention_state`
+  saw zero eligible compose rounds. It supplies source-order reading
+  and identifies its two forced departures as compose operations. The
+  original checks of different departure slots and path-owned credit stay.
+- `test_unsupervised_report_uses_the_kept_thought_and_stays_silent`
+  could open a second resolution when it had no completed reading.
+  It now supplies the words of the completed reading whose silent
+  thought it tests. It still forbids a second answer resolution.
+
+### 61.9 A checkpoint can remember the old acceptance and interpretation separately
+
+The first difference in this run of the fixed comparison occurs at
+construction and load, before the first sentence. In the saved §61.1
+state, each placement column has shape **4,195 × 16**. The construction
+with the old field declaration removed has **4,192 × 16**.
+`PartsOfSpeech.order_reservations` counts two order-one concepts for
+the formal input and output and an order-two concept for the operator.
+Removing that declaration changes the blocks from **2,346 / 1,239 /
+610** to **2,346 / 1,237 / 609**. The raw state loader rejects the
+shape. Consequently §61.5's preliminary exact comparisons cannot be
+reported as certificate 6 on this source.
+
+The ordinary checkpoint route reproduces a semantic problem even
+without the raw-state comparison. On archived `367950675f` with
+`explore-1.xml`, the native IDs were 46 and 47 for the two acceptance
+arguments and 98 for its operator. The interpretation arguments were
+35 and 36, and its operator was 93. Starting with the original construction
+stream, I wrote a relation from 98 to 93 at trust +0.75 through
+`append_relation`, then saved and reloaded it. It was LTM1 row 125.
+The old loader returned true. The new `load_weights` reaches
+`GrammarConceptCheckpoint.prepare` and refuses the removed declarations
+with “removed argument concepts require an explicit identity migration”.
+
+In a second old checkpoint I allocated the remaining **583** order-two
+concepts through `new_concept(order=2)` and gave each a relation to 93.
+The old loader restored all **610/610** occupied seats and the distinct
+98 → 93 endpoints of row 125 with positive evidence **0.75**. The new
+loader refused this checkpoint too. These are diagnostic writes in
+local checkpoints on the existing capacities. Adding a fresh primitive
+in place of the retired declaration can restore the number of seats,
+but a full block cannot house both a new concept and every saved one.
+Renaming 98 to the existing interpretation would turn the example
+relation into a self-relation. Reusing 98 for unfocus would make a saved
+claim about acceptance into one about undoing a focus.
+
+**Decision for Alec and Claude under §73.** Certificate 5 calls for
+loading an older checkpoint and §68.75 fixes capacity. I recommend
+preserving the former operator and its two formal arguments as ordinary
+historical concepts when their identities and learned records fit,
+retiring their executable declarations. For a checkpoint where they
+cannot fit alongside the live grammar, I recommend rejecting it with
+the affected order and capacity before applying the load. This requires
+an explicit exception for the full checkpoint. No migration has been
+chosen or applied.
+
+### 61.10 Targeted results at the migration question
+
+**45 passed** in **24.79 s** with one PyTorch sparse-invariant warning.
+The run covered `test_loop_of_looks.py`, `test_whole_paths.py`,
+`test_whole_path_repairs.py`, `test_expectation_gain.py`, the retained
+grammar reader in `test_identity_rows.py`, and the two stopping tests
+in `test_mm_xor.py` and `test_item25_completion.py`. The loop test
+covers the incremental forecast, the two interpretations of the
+three-word fixture and the permission to look at a word again after
+abstaining. Source snapshot **1,224 files**,
+**`f19455b11d73b96e096d664525289a611218e14cbedbef4cf4ea33d0b8b5b36b`**.
+
+Stage 1 is partial. The full fixed-state comparison and the prefix
+replay certificate remain outstanding. One chooser, the presentation
+allowance, unfocus, the teacher, the complete name inventory and the
+final measurements follow. No default sweep or slow tier was run.
+The local checkpoint contains source, fixtures and this return.
+
 ## 62. Part A's remainder: the forecast of a look and its surprise (Claude, 2026-11-16; a design, with one question for Alec)
 
 §61 is kept for Codex's return of §60.3. This section starts from the

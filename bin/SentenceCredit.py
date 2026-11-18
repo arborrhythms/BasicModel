@@ -52,7 +52,7 @@ WALKS = ('attention', 'compose', 'candidate', 'bind', 'reconstruction', 'thought
 
 
 def departure(narrowing, compose, *, active, sentence_ids=None, sentence=0,
-              compose_round=None, candidates=None, binds=None, reconstruction=None,
+              compose_round=None, candidates=None, interpretations=None, binds=None, reconstruction=None,
               thought=None, output=None, used=()):
     """Draw a distinct walk/round, uniformly at each level of the remaining menu."""
     from WalkTrials import departure_at
@@ -61,6 +61,11 @@ def departure(narrowing, compose, *, active, sentence_ids=None, sentence=0,
     if narrowing is not None and sentence_ids is not None:
         owners = sentence_ids.gather(1, narrowing.round_words.clamp_min(0))
         attention &= (owners == sentence) & (narrowing.round_words >= 0)
+    interpretation = empty if interpretations is None else interpretations.clone().bool()
+    for prior in used:
+        if interpretation.shape[1]:
+            at = prior.get('interpret_round', torch.full_like(active, -1, dtype=torch.long))
+            interpretation &= torch.arange(interpretation.shape[1], device=active.device)[None] != at[:, None]
     menus = [attention, compose, candidates, binds, reconstruction, thought, output]
     menus = [empty if menu is None else menu.clone().bool() for menu in menus]
     for prior in used:
@@ -69,6 +74,7 @@ def departure(narrowing, compose, *, active, sentence_ids=None, sentence=0,
                 at = prior[name + '_round']
                 menu &= torch.arange(menu.shape[1], device=menu.device)[None] != at[:, None]
     counts = torch.stack([menu.sum(-1) for menu in menus], -1) * active[:, None]
+    counts[:, 1] += interpretation.sum(-1) * active
     walk = departure_at(counts > 0)
     result = dict(walk=walk, rounds=counts.sum(-1), walk_count=(counts > 0).sum(-1),
         walk_rounds=torch.where(walk >= 0, counts.gather(1, walk.clamp_min(0)[:, None]).squeeze(1), 0),
@@ -79,6 +85,15 @@ def departure(narrowing, compose, *, active, sentence_ids=None, sentence=0,
         else:
             at = departure_at(menu) if menu.shape[1] else torch.full_like(walk, -1)
         result[name + '_round'] = torch.where(walk == i, at, -1)
+    # Interpretation is a unary grammar choice in the compose walk. The
+    # existing reservoir samples its other rounds uniformly; select between
+    # those and the interpretation rounds in proportion to their counts.
+    result['interpret_round'] = torch.full_like(walk, -1)
+    if interpretation.shape[1]:
+        pick = torch.rand(len(walk), device=walk.device) * counts[:, 1]
+        chosen = (walk == 1) & (pick < interpretation.sum(-1))
+        result['interpret_round'] = torch.where(chosen, departure_at(interpretation), -1)
+        result['compose_round'] = torch.where(chosen, -1, result['compose_round'])
     result['round'] = torch.where(walk == 0, result['attention_round'],
         torch.where(walk == 1, attention.shape[1] + result['compose_round'], -1))
     return result

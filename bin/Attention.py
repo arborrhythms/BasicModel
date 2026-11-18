@@ -89,8 +89,8 @@ def narrowing_mask(pure,both,neither,*,singular,word,can_split,has_parts):
     """Pinned word stop: only unknown words may descend below it."""
     divide=both&can_split&~word
     descend=has_parts&(~word|neither)
-    gloss=pure&singular&word
-    return torch.stack((divide,descend,gloss),-1)
+    interpret=pure&singular&word
+    return torch.stack((divide,descend,interpret),-1)
 
 
 def pooled_keys(event,spans):
@@ -181,6 +181,8 @@ class NarrowingState:
     slots: object
     can_advance: object = None
     steps_taken: int = 0
+    look_slot: object = None
+    look_active: object = None
 
 
 def open_narrowing(chooser,keys,spans,known,*,budget,prior=None,exploit=None,departure=None,identities=None,poles=None,spent=None):
@@ -206,6 +208,75 @@ def open_narrowing(chooser,keys,spans,known,*,budget,prior=None,exploit=None,dep
         chooser, keys, spans, known, budget, prior, exploit, departure, identities, poles,
         lengths, table, accepted, descended, values, actions, alternatives, probabilities, counts, reductions,
         field_values, field_poles, field_valid, handed_poles, pole_changes, round_words, field_scopes, field_operations, declared, rows, slots)
+
+
+def narrowing_view(state):
+    """Read the current brackets; grammar's option is separate from attention."""
+    table, keys, spans, known = state.table, state.keys, state.spans, state.known
+    B,W,D=keys.shape; K=int(state.budget)
+    lengths, poles, descended = state.lengths, state.poles, state.descended
+    accepted, reductions, declared = state.accepted, state.reductions, state.declared
+    field_valid, field_poles, field_values = state.field_valid, state.field_poles, state.field_values
+    prior=state.prior
+    lo,hi=table.intervals.unbind(-1)
+    covered=(spans[:,None,:,0]>=lo[:,:,None])&(spans[:,None,:,1]<=hi[:,:,None])&(spans[:,None,:,1]>spans[:,None,:,0])
+    count=covered.sum(-1)
+    left=torch.where(covered,spans[:,None,:,0],lengths[:,None,None]).amin(-1)
+    right=torch.where(covered,spans[:,None,:,1],0).amax(-1)
+    table=table._replace(intervals=torch.where((count>0)[...,None],torch.stack((left,right),-1),table.intervals),
+                         level=torch.where(count==1,LEVEL_WORD,LEVEL_SENTENCE))
+    word=count==1
+    evidence=(torch.stack((known,torch.zeros_like(known)),-1).to(keys) if poles is None else poles)
+    evidence=torch.where(descended[...,None],torch.stack((torch.ones_like(known),torch.zeros_like(known)),-1).to(keys),evidence)
+    support=covered[...,None] & evidence[:,None].ne(0)
+    positive=support[...,0].any(-1);negative=support[...,1].any(-1)
+    pooled_poles=torch.where(covered[...,None],evidence[:,None],0.).amax(2)
+    pooled_poles=torch.where(field_valid[...,None],field_poles,pooled_poles)
+    positive=pooled_poles[...,0]>0;negative=pooled_poles[...,1]>0
+    both=positive&negative;pure=positive^negative;neither=~(positive|negative)
+    singular=support.any(-1).sum(-1)==1
+    live=table.valid&~table.done&(count>0)&(table.remaining>0)[:,None]
+    progress=narrowing_mask(pure,both,neither,singular=singular,word=word,
+                            can_split=count>1,has_parts=count>0)
+    field=((both | (count>1))[:,:,None]&~reductions)
+    # Only attention's own focus/descent steps spend its allowance.
+    pending=(spans[...,1]>spans[...,0])&~accepted
+    minimum=pending.sum(-1)-live.sum(-1)+(pending&~evidence.any(-1)&~descended).sum(-1)
+    field=field & (table.remaining>minimum)[:,None,None]
+    # Address 1 focuses a single word. An unknown word descends;
+    # a pure word is looked at in place and grammar can interpret it.
+    attention_progress=torch.stack((progress[...,0],progress[...,1] | progress[...,2],
+                                    torch.zeros_like(progress[...,2])),-1)
+    legal=torch.cat((attention_progress,field),-1)&live[...,None]&declared[None,None]
+    pooled=(covered.to(keys)@keys)/count.clamp_min(1)[...,None]
+    pooled=torch.where(field_valid[...,None],field_values,pooled)
+    local_prior=None if prior is None else (covered.to(keys)@prior[...,None])[...,0]/count.clamp_min(1)
+    return (table,covered,count,evidence,pooled_poles,neither,live,progress,legal,pooled,local_prior)
+
+
+def interpretation_at(state, slot):
+    """The original pure single-word rule, without an attention accept act."""
+    table,covered,count,_,_,_,_,progress,_,_,_=narrowing_view(state)
+    rows=state.rows
+    allowed=table.valid[rows,slot]&~table.done[rows,slot]&progress[rows,slot,2]
+    selected=covered[rows,slot]
+    return selected.long().argmax(-1), allowed
+
+
+def record_interpretation(state, slot, active):
+    """Grammar consumes a word bracket without spending an attention act."""
+    table,covered,_,_,_,_,_,progress,_,_,_=narrowing_view(state)
+    rows=state.rows
+    allowed=table.valid[rows,slot]&~table.done[rows,slot]&progress[rows,slot,2]
+    torch._assert_async((~active|allowed).all(),'interpret requires one pure word')
+    picked=covered[rows,slot]&active[:,None]
+    state.accepted=state.accepted|picked
+    state.values=torch.where(picked[...,None],state.keys,state.values)
+    selected=(state.slots==slot[:,None])&active[:,None]
+    state.table=table._replace(done=table.done|selected)
+    state.field_valid=state.field_valid&~selected
+    state.can_advance=None
+    return state
 
 
 def narrow_step(state):
@@ -245,37 +316,10 @@ def narrow_step(state):
     if W == 0 or len(actions) >= K:
         return state
     step=state.steps_taken
+    table,covered,count,evidence,pooled_poles,neither,live,progress,legal,pooled,local_prior=narrowing_view(state)
     lo,hi=table.intervals.unbind(-1)
-    covered=(spans[:,None,:,0]>=lo[:,:,None])&(spans[:,None,:,1]<=hi[:,:,None])&(spans[:,None,:,1]>spans[:,None,:,0])
-    count=covered.sum(-1)
-    left=torch.where(covered,spans[:,None,:,0],lengths[:,None,None]).amin(-1)
-    right=torch.where(covered,spans[:,None,:,1],0).amax(-1)
-    table=table._replace(intervals=torch.where((count>0)[...,None],torch.stack((left,right),-1),table.intervals),
-                         level=torch.where(count==1,LEVEL_WORD,LEVEL_SENTENCE))
     word=count==1
-    evidence=(torch.stack((known,torch.zeros_like(known)),-1).to(keys) if poles is None else poles)
-    evidence=torch.where(descended[...,None],torch.stack((torch.ones_like(known),torch.zeros_like(known)),-1).to(keys),evidence)
-    support=covered[...,None] & evidence[:,None].ne(0)
-    positive=support[...,0].any(-1);negative=support[...,1].any(-1)
-    pooled_poles=torch.where(covered[...,None],evidence[:,None],0.).amax(2)
-    pooled_poles=torch.where(field_valid[...,None],field_poles,pooled_poles)
-    positive=pooled_poles[...,0]>0;negative=pooled_poles[...,1]>0
-    both=positive&negative;pure=positive^negative;neither=~(positive|negative)
-    singular=support.any(-1).sum(-1)==1
-    live=table.valid&~table.done&(count>0)&(table.remaining>0)[:,None]
-    progress=narrowing_mask(pure,both,neither,singular=singular,word=word,
-                            can_split=count>1,has_parts=count>0)
-    field=((both | (count>1))[:,:,None]&~reductions)
-    # As in compose, reserve the remaining progress rounds. Optional
-    # field rewrites cannot starve a word's divide/descent/gloss sequence.
-    pending=(spans[...,1]>spans[...,0])&~accepted
-    minimum=2*pending.sum(-1)-live.sum(-1)+(pending&~evidence.any(-1)&~descended).sum(-1)
-    field=field & (table.remaining>minimum)[:,None,None]
-    legal=torch.cat((progress,field),-1)&live[...,None]&declared[None,None]
     state.can_advance=legal.any()
-    pooled=(covered.to(keys)@keys)/count.clamp_min(1)[...,None]
-    pooled=torch.where(field_valid[...,None],field_values,pooled)
-    local_prior=None if prior is None else (covered.to(keys)@prior[...,None])[...,0]/count.clamp_min(1)
     mask=None if exploit is None else torch.where(departure==step,exploit.actions[:,step],-1)
     replay=None if exploit is None else torch.where(step<departure,exploit.actions[:,step],-1)
     action,credit,alternate,detail=chooser.attend(pooled,legal,table.space,prior=local_prior,
@@ -284,15 +328,11 @@ def narrow_step(state):
     chosen=live[rows,slot]&(action<A*K)
     selected=covered[rows,slot]&chosen[:,None]
     selected_word=word[rows,slot]
-    gloss=(op==2)&selected_word&chosen
     unknown=(op==1)&selected_word&neither[rows,slot]&chosen
-    picked_gloss=selected&gloss[:,None]
-    accepted=accepted|picked_gloss
     witness=selected&unknown[:,None]
     if identities is not None:
         witness=(witness[:,:,None] & (identities[:,:,None]==identities[:,None,:]) & (identities[:,None,:]>=0)).any(1)
     descended=descended|witness
-    values=torch.where(picked_gloss[...,None],keys*credit[:,None,None],values)
     # Divide at the first pole disagreement, descend at a retained part.
     first=selected.long().argmax(-1)
     first_positive=evidence[rows,first,0]>0
@@ -306,9 +346,8 @@ def narrow_step(state):
     cut=torch.where((op==0)&disagree.any(-1)&interior,boundary,part_cut)
     split=(op<2)&~selected_word&chosen
     table=table.split(slot,cut,descend=(True),active=split)
-    table=table.accept(slot,active=gloss)
     field_action=(op>=3)&chosen
-    table=table._replace(spent=table.spent+unknown.long()+field_action.long())
+    table=table._replace(spent=table.spent+((op==1)&selected_word&chosen).long()+field_action.long())
     where=(slots==slot[:,None])&field_action[:,None]
     which=torch.arange(3,device=keys.device)[None,None]==(op-3)[:,None,None]
     reductions=reductions|(where[...,None]&which)
@@ -336,7 +375,7 @@ def narrow_step(state):
     round_words.append(torch.where(chosen,first,-1))
     # A child is a fresh reading of its retained parts. A parent's
     # temporary Boolean aggregate must not become the child's evidence.
-    reset=(slots==slot[:,None])&(split|unknown|gloss)[:,None]
+    reset=(slots==slot[:,None])&(split|unknown)[:,None]
     field_valid=(field_valid|where)&~reset
     actions.append(torch.where(live.any(-1),action,-1));alternatives.append(alternate&live.any(-1))
     probabilities.append(detail['probability'])
@@ -351,6 +390,7 @@ def narrow_step(state):
     state.field_valid=field_valid
     state.pole_changes=pole_changes
     state.steps_taken += 1
+    state.look_slot, state.look_active = slot, chosen
     return state
 
 

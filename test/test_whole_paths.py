@@ -484,6 +484,8 @@ def test_kept_verbal_output_reaches_the_live_understanding_and_conditioner(tmp_p
     # The whole grammar is open (§17.18). Select a parametric composition
     # for this gradient contract; the first catalog rule is logical part.
     _select_completed_binary_path(model, operation='compound')
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     model.inputSpace.data.has_supervised_outputs = True
     monkeypatch.setattr(model.inputSpace.data, 'what', WhatAnswer.silence)
     # An explicit continuous thought transformation isolates the graph contract
@@ -544,6 +546,8 @@ def test_unsupervised_report_uses_the_kept_thought_and_stays_silent(tmp_path, mo
     model._tensor_peer_while_eager = True
     model.inputSpace.data.has_supervised_outputs = False
     monkeypatch.setattr(model.inputSpace.data, 'what', WhatAnswer.silence)
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     import ThoughtClosing
     # Supply no concluded episode; arbitrary native chooser draws may
     # otherwise conclude an answer, which is a different reporting case.
