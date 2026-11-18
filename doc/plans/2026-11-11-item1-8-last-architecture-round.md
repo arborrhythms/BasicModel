@@ -32408,6 +32408,77 @@ D. Not for this text, and recorded in §68.74 and §68.70: the two byte
 Commit locally as Alec has authorized. Return in §61, from §61.8.
 ~~~
 
+### 68.76 Alec on what replaces the old loop, and a word found by a near miss (2026-11-18; the gap, no text for Codex)
+
+Alec, 2026-11-18:
+
+> Ok, and just to be clear, we are replacing the old loop with the
+> chooser and thought over a sentence: so it will attend() repeatedly
+> and then call interpret() when it has isolated a word (or isolated a
+> word so closely that lookup over an inexact match will find it, which
+> will help with typos or attending a few characters too many/few of
+> that word; so "cat", "caat", "cat " may all be interpreted
+> successfully (although with some gradient error on pass/fail that
+> will encourage or discourage such near misses in the future).
+
+**The first half is what is being built.** §60.1, rules 1, 5, 5a and 6:
+one loop of looks; `attend` is called again and again; each look is
+perceived; where a look is one word, the grammar may call `interpret`,
+and the word joins the tree.
+
+**The second half is not in the rules and not in the source.** Read on
+2026-11-18:
+
+1. *A look is made of whole words.* The brackets come from the stem's
+   word intervals, which leave white space out, and an act of attention
+   divides a bracket of several words or goes into the parts of an
+   unknown word (`narrow_step`: a bracket is the word intervals it
+   covers). So "cat " cannot arise, and a look never takes a few
+   characters of its neighbour. A look that holds more is a look of two
+   words, and it is divided.
+2. *The lookup is exact.* `InterpretLayer.word_for_form` reads the
+   form's own key in the definitions. "caat" is another form: an
+   unknown word, which attention descends into and which is admitted in
+   time as a word of its own. Nothing ties it to "cat".
+3. *A near miss is refused, not charged.* Rule 5 offers `interpret`
+   where the look is one known word read with one lane. A word read
+   with both lanes, which is what a partly matching extent gives, is
+   not offered.
+
+**What the record has for it.**
+
+- `doc/Orders.md`, §3: a word collects its tokens by "form sameness
+  (exact; typos and variants are the fuzzy fringe)". The fringe is
+  named and not built.
+- Rule 6 of §60.1: the word is found from the sentence's staged bank,
+  and "moving the lookup itself to the look is not in this text". That
+  is the place where a lookup by an inexact match would go.
+- The one match of §70 (`ConceptualMatch.match`): one function that
+  matches a content against what is held, by parthood both ways, with
+  two graded numbers. It is the mechanism of the record for "a lookup
+  over an inexact match". It is not applied to word forms today.
+- `native_word_poles`: "A name lookup identifies the row to inspect,
+  but does not stand in for evidence." The row is found by the exact
+  name; only the evidence read at the extent is graded.
+
+**Open, for Alec** (nothing is designed here).
+
+1. *When it is built.* In item 1.8 after the loop of looks, or with
+   item 1.7, which rebuilds what a form is matched by (its rule 16, and
+   MTM's matchers moving to parthood). *Recommended:* with item 1.7, so
+   that it is built once.
+2. *What "close" compares:* the letters in the look against the letters
+   of a held word, by the one match; and whether a letter's place
+   counts, since in "caat" the last letter stands one place later.
+3. *Whether a look may be other than whole words,* which "a few
+   characters too many/few" needs, or whether the near miss is only in
+   the word itself, as in "caat".
+4. *Where the cost of a near miss goes:* on the grammar's choice of
+   `interpret`, on the choice of that look by `attend`, or both.
+
+The text of §68.75 is not changed by this: it builds the loop with the
+exact lookup.
+
 ## 69. The thought replay (§68.31; Codex, 2026-11-18)
 
 ### 69.1 Producer, repair and regression

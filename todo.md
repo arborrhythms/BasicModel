@@ -1360,6 +1360,14 @@ generation is expected at this stage and is recorded, not tuned away.
    every later text. Codex's solution is taken under it: a focus may
    look at a word (rule 5a of §60.1). **The one text for Codex to go
    on is §68.75.** To return to: the two byte frames of §61.4.
+   **A word found by a near miss (Alec, 2026-11-18; §68.76).** "so
+   "cat", "caat", "cat " may all be interpreted successfully
+   (although with some gradient error on pass/fail that will encourage
+   or discourage such near misses in the future)". Not in the rules
+   and not in the source: a look is made of whole words, the lookup of
+   a form is exact, and a near miss is refused and not charged. *Open
+   for Alec:* when it is built (*recommended:* with item 1.7), and
+   three points of its design.
    **Commits and the docs folder (Alec, 2026-11-18).** Claude may
    commit its work locally; pushing stays rare. The pending
    documentation pass of the worktree `basicmodel-docs` is on `main`
