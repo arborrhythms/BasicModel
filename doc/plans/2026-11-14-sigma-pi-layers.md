@@ -2841,8 +2841,9 @@ presentation count to obtain a pass.
    (test/test_mm_xor.py::TestMMXorConvergence::test_convergence,
    test/test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class);
    the lesson with its exact fields and its mean difference; the verbal
-   proof; the assessment's tables; certificates 9 and 10; and one default
-   sweep, env -u RUN_TRAINED -u RUN_SLOW make test.
+   proof; the assessment's tables; certificates 9 and 10. No default
+   sweep and nothing under RUN_SLOW (1.8 §72): name the test files you
+   ran.
 
 5. Return as §20 of doc/plans/2026-11-14-sigma-pi-layers.md: the lists of
    step 1; each step with its edits by file and function and its

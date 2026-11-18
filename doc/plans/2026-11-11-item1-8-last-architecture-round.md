@@ -27010,6 +27010,9 @@ look, the surprise given to `attend`, and the prior
 
 ### 60.3 Codex text (follows §59 and the repair of §68.31)
 
+*Amended for Codex by §68.73 (2026-11-18): the default sweep of step 7
+is struck (§72), and commits are local.*
+
 ~~~
 Item 1.8, part B, second text: the loop of looks. Read §54.6, §54.7 and
 §60 of doc/plans/2026-11-11-item1-8-last-architecture-round.md first,
@@ -27348,13 +27351,13 @@ and item 1.7.
    verbal proof; the assessment's tables; for the sixteen lesson
    sentences the calls of expect, the looks and the seconds, beside
    §61's; the distribution of excess and omission over the lesson's
-   looks, for interpreted words and for words left; and one default
-   sweep, env -u RUN_TRAINED -u RUN_SLOW make test.
+   looks, for interpreted words and for words left. No default sweep
+   and nothing under RUN_SLOW (§72): name the test files you ran.
 
 8. Return as §64: the edits by file and function; the readers of item
    4; each certificate with its result; the ported tests; the
-   measurements of item 7 beside those of §61; the sweep; the source
-   snapshot.
+   measurements of item 7 beside those of §61; the test files you
+   ran; the source snapshot.
 ~~~
 
 ## 63. Review of §58 (Claude, 2026-11-16): rule 1 and rule 2 accepted; certificate 5 to be amended
@@ -27521,8 +27524,8 @@ presentation count.
 Return as §66: the inventory before and after; each step with its edits
 by file and function and its certificates; the probe's list of breaks
 before and after; what remains for Alec under rule 7; the seconds of
-the sixteen sentences; one default sweep,
-env -u RUN_TRAINED -u RUN_SLOW make test; the source snapshot.
+the sixteen sentences; the test files you ran, with no default sweep
+and nothing under RUN_SLOW (§72); the source snapshot.
 ~~~
 
 ### 65.5 One record of a read (Alec, 2026-11-17; step A of item 1.6)
@@ -31822,7 +31825,8 @@ text of §68.71 has Codex report whether any test walks on this stem.
 
 ### 68.71 Codex text: the stem hands over its word intervals (answer to §61.2)
 
-Written on 2026-11-18 on Alec's word (§68.70).
+Written on 2026-11-18 on Alec's word (§68.70). *It is folded into
+§68.73, which is the one text to carry.*
 
 ~~~
 Item 1.8, the loop of looks: the answer to your question in §61.2. Read
@@ -31873,6 +31877,169 @@ The rules of §60.3 hold: no bound, learning rate, seed, capacity or
 presentation count changes, and a learning certificate is recorded and
 not repaired. Commit locally as Alec has authorized; never push main,
 and never force-push. Return in §61, from §61.3.
+~~~
+
+### 68.72 Review of §69, §59.87 to §59.90 and §61 (Claude, 2026-11-18)
+
+Alec, 2026-11-18: "please review codex's finished return now, and let
+me know the spec section for its continuation." The continuation is
+§68.73.
+
+**Verdict.** All three are accepted. The thought replay does what the
+text of §68.31 asks, the scalar part function what the text of §70.17
+asks, and §61.1 is step 1 of the text of §60.3. Nothing needs a
+correction before the continuation.
+
+**What was run** (targeted, by the rule of §72; in scratch copies; not
+receipts).
+
+| Run | Result | Codex's |
+|---|---|---|
+| `test_scalar_parthood.py` | 14 passed | 14 passed |
+| the two thought files and both stopping gates | 59 passed | 59 passed |
+| the mereology classes of `test_basicmodel.py`, and `test_impenetrable.py` | 37 passed | within its 53 |
+| `test_mtm_referents.py` and `test_conceptual_match.py` | 46 passed | 46 passed |
+| the new test of the replay, on the source before the repair (`31b24db620`) | 2 failed, its two parameters | fails before |
+| the new certificates of parthood, on that source | 8 failed, 6 passed | 8 failed, 6 passed |
+
+**What was read.** The whole change to the source: `Ops._part_kernel`,
+`Ops.copart` and the docstring of `Ops.boundary` in `bin/Layers.py`;
+`replay_thoughts` in `bin/Thoughts.py`, with
+`ThoughtInference.replay_pair`; the new test of the replay; the two
+small ports.
+
+**Not checked.** The default sweep (Codex: 7,299 cases, 6,967 passed,
+330 skipped, 2 XPASS, none failed). The lesson. The two slow curricula.
+The eighty files of §59.88. The counts of the census.
+
+**The thought replay against the text of §68.31.**
+
+| Asked | Found |
+|---|---|
+| 1. The case of three events as a test that fails on the starting source | `test_replay_uses_the_inferences_resident_alternatives_after_exist`, for both branches. Both fail before and pass after, and a changed support still raises |
+| 2. The replayed pair is the inference's own firings joined with the alternatives its event recorded | The episode's maximum (`conclusions`) is gone from both branches. `replay_pair` joins the alternatives of an explicit derivation, and the intuition branch joins them itself. The accumulator of pervasion is untouched |
+| 3. A report on keys with no references | §69.2 names nine readers and two uses on requests. §69.6 counts them on the lesson and on the two curricula |
+| 4. The runs | All run, the two curricula under `RUN_SLOW` among them |
+
+**What the census found, for Alec** (not a defect of the repair). A
+conclusion with no references is united with any held chunk that has no
+references and the same role mask. The content is not compared. On the
+first curriculum all three closed inferences were of that kind. Two
+were united with a held chunk whose numerical roles differed, and the
+union changed the conclusion's evidence. *Open:* whether two things
+with no references are the same by their content (the one match of
+§70, both numbers 1), and not by having none. *Claude's view:* by
+content. Not tried, and not for this item unless Alec says so.
+
+**The learning it records** (not repaired, by the baseline rule). Both
+slow recognition curricula end at their bound with no qualifying round,
+and 0 of 600 readings equal the taught tree: the kept readings do not
+hold the taught opening (`bind.open(lower(2))`). The lesson meets its
+criterion for ideas and not for relations. Each curriculum took about
+an hour and a half. The text of §68.31 asked for them; under §72 such a
+run waits for the submission of item 1.6.
+
+**The scalar part function against the text of §70.17.**
+
+| Step | Found |
+|---|---|
+| 1. The scalar form is the parthood of `doc/Mereology.md` | `ConceptualMatch.match` on the two lanes of each operand; the contract for an empty operand kept; the vector form unchanged. Its values on the documents' cases were read in §70.19 |
+| 2. The suite, and `copart` | Unchanged but for `copart`, now one less the parthood of the second in the first. Its callers are named, and none needs the other direction |
+| 3. The callers not edited; the support both ways | Not edited. For (1, 0, ...) and (2, 0, ...): 1 and 1 before, 1 and .5 after |
+| 4. Tests | Nine ported, the six named and three more of the same kind. Fourteen new certificates |
+| 5. The runs | Eighty files where the text said 58, since Claude had counted by a narrower pattern: 1,261 passed, 15 skipped |
+| 6. The docs | Left to Claude, and changed in §70.19 |
+
+Two things with it.
+
+1. *A port that the review of §70.11 missed* (§59.89).
+   `test_mtm_referents.py` still called `bind_menu` with the parameter
+   that `31b24db620` removed. §68.68 reran 21 files and not that one;
+   Codex's sweep found it.
+2. *`ImpenetrableLayer`.* Its docstring still names the clipped cosine
+   and calls its five relations a partition. Under a parthood that is
+   not symmetric its bins leave the mixed pairs out. No production path
+   builds the class. The continuation has Codex correct the docstring.
+   *Open, for Alec:* whether a class that nothing builds stays.
+
+**§61.** §61.1 is the record that step 1 of the text of §60.3 asks for.
+The question of §61.2 is answered in §68.69 to §68.71.
+
+**Next.** The continuation is §68.73: the test rule, the port, and then
+the loop of looks.
+
+### 68.73 Codex text: the continuation (the tests, the port, the loop of looks)
+
+Written on 2026-11-18. It holds the text of §68.71 and is the one text
+to carry.
+
+~~~
+Item 1.8, the loop of looks: the continuation. Read §68.69, §68.70,
+§68.72 and §72 of
+doc/plans/2026-11-11-item1-8-last-architecture-round.md. Your returns
+§69 and §59.87 to §59.90 are accepted (§68.72), and §61.1 stands as step
+1 of the text of §60.3. Alec, 2026-11-18, of your question in §61.2: the
+port. Build it, and go on with the text of §60.3.
+
+A. The tests of this text and of every later text of item 1.8 (Alec,
+   2026-11-18; §72). Run only targeted tests: the certificates of the
+   text, the tests of the files you change or port, and both stopping
+   gates. Run no complete default sweep, and nothing under RUN_SLOW. In
+   step 7 of the text of §60.3 the default sweep is struck. The rest of
+   step 7 stays: both gates, the lesson with its exact fields, the
+   verbal proof, the assessment's tables, the sixteen sentences. In the
+   return, name each test file you ran and say that no sweep was run.
+
+B. The port.
+1. The whole-slab stem keeps the word intervals it computes.
+   PartSpace._embed_radix has _wspans = Meronomy.percept_spans(_raw)
+   for each row; they are handed on with the stem's other outputs,
+   under a name of their own, to the staging reader. Do not fill
+   _ar_word_part_offsets on this stem: its presence is read as the mark
+   of a word-major stem (for one, word_major in bin/Models.py). Name
+   each reader of _ar_word_part_offsets you checked.
+2. ModelAttention.stage_input reads a word's start and end from the
+   stem on both stems, through one reader, and the search of the staged
+   surface is deleted (rule 15). No second call of percept_spans on the
+   staged surface takes its place.
+3. Nothing a model computes changes. An input with no word texts stages
+   no bracket, as now. The parallel field-only path keeps its word
+   brackets: they are its first look (§3.1; rules 2 and 3 of §60.1).
+4. Certificates.
+   (a) On the three parameters of
+       test_word_admission.py::test_29_each_reading_publishes_only_its_words
+       the staged spans (model._attention_spans) equal the starting
+       source's.
+   (b) On the whole-slab stem the staged spans equal the stem's own
+       intervals, on a row in which a word occurs twice and on a row
+       that is cut at the slab's width.
+   (c) stage_input holds no search of the surface. This fails on the
+       starting source.
+5. Report, with no edit: each test you ran that reaches stage_input on
+   a stem with no offsets, and for each whether a walk runs there. On
+   that stem a slot of the slab is an emitted part, and a word's
+   bracket is staged at the slot of its ordinal, so its key is the code
+   of the part at that slot (§68.69, "Beside the question"). If a walk
+   runs on such a call, name it in the return as a question for Alec,
+   and do not repair it.
+   Report also, with no edit: on the word-major stem the first offset
+   of a word is not where its bytes lie on the staged surface for 65 of
+   747 words in Claude's record over 46 test files (§68.69). Each
+   example kept is the single byte 1 after a zero byte, with offset 0
+   and position 1. Say what frame the stem's offsets are in, and name
+   any reader that compares them with positions on the staged surface.
+
+C. From the review, with no change of behaviour: bring the docstring of
+   ImpenetrableLayer to the function as built. It names the clipped
+   cosine and calls its five relations a partition; the scalar part is
+   parthood as shared size, and its bins leave the mixed pairs out
+   (your §59.88).
+
+The rules of §60.3 hold otherwise: no bound, learning rate, seed,
+capacity or presentation count changes, and a learning certificate is
+recorded and not repaired. Commit locally as Alec has authorized; the
+line of §60.3 that says to commit nothing is older than that. Never push
+main, and never force-push. Return in §61, from §61.3.
 ~~~
 
 ## 69. The thought replay (§68.31; Codex, 2026-11-18)
@@ -33165,10 +33332,17 @@ documents that need a repair for it.
    above among them.
 4. The push is on Alec's word, and the superproject's pointer is his.
 
-**Open, for Alec.** Where the PDF is built: on a machine that has the
-two programs, or on this one after they are installed. An install is
-his to approve, and a TeX installer asks for the administrator's
-password.
+**Decided** (Alec, 2026-11-18: "Can we install something to do that in
+requirements.txt?", then "Please add the pandoc and typst to
+requirements, we can test later."). `requirements.txt` now has
+`pypandoc_binary`, which carries the pandoc program, and `typst`, a
+typesetting engine that pip installs whole and that takes the place
+of xelatex; no pip package provides a TeX engine. Neither is pinned.
+Nothing is installed and nothing is tried. The `doc` target still
+calls pandoc with xelatex, and is changed when the route is tried:
+pandoc writes Typst's format and the `typst` package makes the PDF.
+*Not known until then:* whether every formula of the documents
+converts; and the look, since the LaTeX template no longer applies.
 
 ## 71. The items after 1.7, renumbered (Alec, 2026-11-18)
 
@@ -33208,3 +33382,50 @@ modality, of which the felt value beside the words, the XOR proofs and
 the image file are built in this item. What the development of the math
 corpus is. The order of item 1.5's two parts (*Claude's default:* the
 wiring first, as when it was an item of its own).
+
+## 72. Tests during the countdown: targeted in the point rounds, the sweep at whole items, the slow tier after item 1.6 (Alec, 2026-11-18)
+
+Alec, 2026-11-18:
+
+> The order of magnitude timings you mentioned for code completions of
+> the various sections was too long. We need to run only targetted test
+> from now on during the point build rounds (e.g. 1.x), and the complete
+> sweep only at the item numbers (e.g. 1.0). No Run_Slow until after all
+> architecture is baked at the submission of 1.6 (and lets schedule that
+> for an overnight run).
+
+**The rule** (*how each line applies is Claude's reading*).
+
+1. *In a build round of a point item,* which are items 1.8, 1.7, 1.6
+   and 1.5, only targeted tests are run: the certificates of the
+   round's text, the tests of the files the round changes or ports, and
+   both stopping gates. No complete default sweep.
+2. *The complete default sweep* (`make test`) is run at a
+   whole-numbered item: item 1, and item 0.
+3. *The slow tier* (`RUN_SLOW`) is not run until item 1.6 is submitted,
+   when the architecture changes no more. It is then run once,
+   overnight. The todo has it under item 1.6.
+
+**What these cost in the last return** (§69): the default sweep 2,239
+seconds; the lesson 450; the two slow curricula that the text of §68.31
+asked for, 5,433 and 5,950.
+
+**What changes.**
+
+- *The text of §60.3,* which Codex holds: the default sweep of its step
+  7 is struck. §68.73 says so to Codex.
+- *The texts not yet carried* are amended in place: §62.6, step 7;
+  §65.4; and the text of item 1.7
+  (`doc/plans/2026-11-14-sigma-pi-layers.md`, §19.8, step 4).
+- *A text's own measurements stay:* the lesson with its exact fields,
+  the verbal proof and the assessment's tables, which are how a round
+  that changes reading is read. *Claude's reading; about eight minutes
+  in all; Alec may strike them too.*
+- *Claude's reviews* rerun targeted tests only.
+- *The promotion of item 1.8* (§70.18) has no sweep of its own by this
+  rule. The last complete sweep is that of §69.4, on the source before
+  the loop of looks. *Put to Alec, since `main` is pushed then.*
+- `doc/Testing.md` has the rule.
+
+**What a return says.** Which test files were run, and that no sweep
+was. A test that was not run is no evidence for the round.

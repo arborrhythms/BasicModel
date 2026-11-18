@@ -33,6 +33,16 @@ worktree; then 0, which trains three analyzable stages (words only; simple
 sentences and synthetics; math), each read operator by operator and saved
 with tests, before the million-plus sentence corpus.
 
+**Tests until the long run (Alec, 2026-11-18):** "We need to run only
+targetted test from now on during the point build rounds (e.g. 1.x), and
+the complete sweep only at the item numbers (e.g. 1.0). No Run_Slow until
+after all architecture is baked at the submission of 1.6 (and lets
+schedule that for an overnight run)." So a round of items 1.8, 1.7, 1.6
+and 1.5 runs the certificates of its text, the tests of the files it
+changes, and both stopping gates; the complete default sweep is run at
+items 1 and 0; and the slow tier is run once, overnight, when item 1.6 is
+submitted (1.8 specification §72; [Testing](doc/Testing.md)).
+
 **Current (2026-10-29):** Items 3.5, 3.0, 2.9 (BasicModel `17e9454763`)
 and 2.8 (`a8a09a6acb`) are LANDED. Item 2.7 is closed code-complete at
 review freeze `472f5000850e`; its carried work and November landing round remain below. Item 2.5
@@ -1331,6 +1341,12 @@ generation is expected at this stage and is recorded, not tuned away.
    [Spaces](doc/Spaces.md#two-stems). Kept for later: on that stem
    a bracket's key is the code of a letter, which matters only if a
    walk ever runs there; Codex reports whether one does.
+   **Reviewed (§68.72, 2026-11-18):** the thought replay (§69) and the
+   scalar part function (§59.87 to §59.90) are accepted. **The one
+   text for Codex to continue is §68.73:** the test rule, the port,
+   then the loop of looks. Open for Alec from the review: whether two
+   things with no references are the same by their content, and
+   whether `ImpenetrableLayer`, which nothing builds, stays.
    **Commits and the docs folder (Alec, 2026-11-18).** Claude may
    commit its work locally; pushing stays rare. The pending
    documentation pass of the worktree `basicmodel-docs` is on `main`
@@ -1349,8 +1365,11 @@ generation is expected at this stage and is recorded, not tuned away.
    is on Alec's word. Added by Alec the same day (§70.20): the doc
    changes made in another session go with it, the new section of
    `doc/BasicModel.md` among them, and `BasicModel.pdf` is rebuilt
-   (`make doc`), last. This machine has neither pandoc nor xelatex,
-   so the PDF is not rebuilt yet: *where it is built is open.*
+   (`make doc`), last. This machine has neither pandoc nor xelatex.
+   Alec: "Please add the pandoc and typst to requirements, we can
+   test later." `requirements.txt` has `pypandoc_binary` and `typst`;
+   nothing is installed or tried, and the `doc` target is changed
+   when the route is tried.
 - **1.7. `SigmaLayer` and `PiLayer`, and symbols split from concepts**
    (Alec, 2026-11-16: "I think we should position D as item 1.7"; then
    "review and commit round C, and merge with the performance branch. Then
@@ -1418,8 +1437,11 @@ generation is expected at this stage and is recorded, not tuned away.
    you called out as "unnumbered: felt world for the math corpus" which
    combines both."). After item 1.7 and before item 1.5. The work that
    had this number until then, computation by wiring, is the first part
-   of item 1.5. Not yet specified as an item: what it takes of each
-   part is Alec's to say. What the record holds:
+   of item 1.5. **At its submission the slow tier (`RUN_SLOW`) is run
+   once, overnight,** and not before: the architecture changes no more
+   after this item (Alec, 2026-11-18; 1.8 §72). Not yet specified as an
+   item: what it takes of each part is Alec's to say. What the record
+   holds:
    1. *The number modality.* Built in item 1.8: a number is a level
       percept at its place; one felt value may accompany a sentence, at
       one fixed place (`bin/ScalarPercepts.py`); the XOR proofs and

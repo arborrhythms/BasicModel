@@ -355,6 +355,25 @@ not a stationary point of an affine reader over a fixed representation: either
 the budget ended mid-descent, which the trajectory shows, or the
 representation moved under the reader.
 
+## Which tier runs when, until the long run (Alec, 2026-11-18)
+
+Alec, 2026-11-18: "We need to run only targetted test from now on during
+the point build rounds (e.g. 1.x), and the complete sweep only at the
+item numbers (e.g. 1.0). No Run_Slow until after all architecture is
+baked at the submission of 1.6 (and lets schedule that for an overnight
+run)."
+
+- **A build round of a point item** (1.8, 1.7, 1.6, 1.5): targeted tests
+  only. They are the certificates of the round's text, the tests of the
+  files the round changes or ports, and both stopping gates. No complete
+  default sweep is run.
+- **A whole-numbered item** (1, and 0): the complete default sweep.
+- **The slow tier** (`RUN_SLOW`): not run until item 1.6 is submitted,
+  when the architecture changes no more; then once, overnight.
+
+A return names the test files it ran. A test that a round did not run is
+no evidence for that round.
+
 ## Tiers for a model that has not learned (Alec, 2026-10-16)
 
 The suite is test-heavy for a model that has not fully learned: of ~5,800
