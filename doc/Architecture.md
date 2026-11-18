@@ -400,9 +400,10 @@ which properties/level).
   use is fast, capacity-free and inhibitionless, while strategic priming is
   slow, capacity-limited, goal-set and able to suppress; selection and reward
   history capture attention even against current goals (Awh, Belopolsky &
-  Theeuwes 2012). The bracket candidates read the relevance below through
-  their detached codebook-retrieval prior, and the chosen bracket supplies the
-  scope handed to mereology.
+  Theeuwes 2012). The composing walk reads priming through its learned attention
+  context. Each bracket also supplies the excess and omission between its
+  conceptual field and the forecast made with its span left out. The chosen
+  bracket supplies the scope handed to mereology.
 
 **Concept spread is an expectation (Alec, 2026-10-28).** When a sentence
 opens, `expect`, the conceptual space's own learned map

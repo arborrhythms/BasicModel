@@ -376,11 +376,15 @@ def test_normal_narrowing_reads_native_poles(monkeypatch):
     calls=[]
     original=ModelAttention.narrow_words
     def traced(*args, **kwargs):
-        calls.append(kwargs.get('poles'))
+        calls.append((kwargs.get('poles'), kwargs.get('glance_keys')))
         return original(*args, **kwargs)
     monkeypatch.setattr(ModelAttention, 'narrow_words', traced)
     with torch.no_grad(): model.forward(value)
-    assert calls and all(torch.is_tensor(poles) for poles in calls), 'normal narrowing discards native paired evidence'
+    assert calls and all(torch.is_tensor(poles) for poles, _ in calls), 'normal narrowing discards native paired evidence'
+    pairs = model._last_examination['surprise']
+    expected = torch.nn.functional.linear(pairs, model.attention_context.weight[:, -2:])
+    for _, keys in calls:
+        torch.testing.assert_close(keys, expected[:, :keys.shape[1]])
 
 
 def test_prior_thought_reserves_the_input_allowance():
@@ -509,25 +513,31 @@ def test_inference_reuses_constant_padding_forecast_without_changing_results():
     assert len(calls) == 3, 'inactive trailing columns recomputed an unchanged forecast'
 
 
-def test_input_priming_reads_live_word_extent_without_changing_prior(monkeypatch):
-    from test_mm_xor import _fresh_model
-    from Attention import BracketKeys
-    model, _, _ = _field_model()
-    model.eval()
-    original = BracketKeys._codebook_retrieval_prior
-    calls = []
-    def bounded(keys, *args):
-        calls.append(keys.shape[1])
-        assert keys.shape[1] == 3, 'padding expanded the priming lookup'
-        actual = original(keys, *args)
-        reference = original(torch.nn.functional.pad(keys, (0, 0, 0, 7)), *args)
-        torch.testing.assert_close(actual, reference[:, :3], rtol=2e-6, atol=2e-7)  # GEMM reduction width rounding
-        assert not reference[:, 3:].count_nonzero()
-        return actual
-    monkeypatch.setattr(BracketKeys, '_codebook_retrieval_prior', staticmethod(bounded))
-    with torch.no_grad():
-        model._lex_embed_stem(model.inputSpace.prepInput(['hello world', 'hello']))
-    assert calls == [3]
+def test_glance_forecast_reads_only_live_word_extents(tmp_path, monkeypatch):
+    from test_item18_expect import lesson, read
+    from LookForecast import LookForecast
+    model = lesson(tmp_path, monkeypatch)
+    try:
+        read(model, 'hello world')
+        opened = model._sentence_look_fields[0][0][0]['field']
+        owner = model._concept_owner()
+        from unittest.mock import patch
+        import ConceptSpread
+        calls = []
+        expected = ConceptSpread.expected
+        def measure(current, knowing):
+            calls.append(len(knowing))
+            return expected(current, knowing)
+        with patch.object(ConceptSpread, 'expected', measure):
+            short = LookForecast(owner, opened, opened.where)
+            padded = torch.nn.functional.pad(opened.where, (0, 0, 0, 7))
+            long = LookForecast(owner, opened, padded)
+        assert calls == [2, 2]
+        torch.testing.assert_close(short.latest, long.latest[:, :opened.where.shape[1]], rtol=0, atol=0)
+        assert not long.latest[:, opened.where.shape[1]:].count_nonzero()
+    finally:
+        model.End()
+        model.symbolSpace.soft_reset()
 
 
 def test_normal_narrowing_omits_padding_and_preserves_the_complete_walk(monkeypatch):

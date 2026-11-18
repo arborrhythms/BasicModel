@@ -26,11 +26,24 @@ def _module_inputs(B=2,K=5,w=8,D=16,seed=0):
     return spans,percept,concept_q,symbol_q
 
 
-def _reading(spans,percept,prior=None):
-    keys=BracketKeys._span_keys(percept,spans)
-    chooser=OperationSelectionLayer(d_model=keys.shape[-1])
-    known=spans[...,1]>spans[...,0]
-    return narrow_words(chooser,keys,spans,known,budget=32,prior=prior)
+def _reading(spans, percept, *, decisions=False):
+    from types import SimpleNamespace
+    from unittest.mock import patch
+    from Attention import open_narrowing
+    from SentenceLooks import Looks
+    keys = BracketKeys._span_keys(percept, spans)
+    rule = torch.nn.Identity()
+    rule.rule_name = 'interpret'
+    chooser = OperationSelectionLayer(d_model=keys.shape[-1], unary_ops=[rule])
+    known = spans[..., 1] > spans[..., 0]
+    if not keys.shape[1]:
+        return narrow_words(chooser, keys, spans, known, budget=32)
+    state = open_narrowing(chooser, keys, spans, known, budget=32)
+    model = SimpleNamespace(_sentence_open_fields={0:None})
+    path = Looks(model, SimpleNamespace(state=state, width=keys.shape[1]), 0, known.any(1))
+    with patch('SentenceLooks.perceive', return_value=None), patch('ModelAttention.handoff'):
+        result = path.run(lambda *_: None)
+    return (result, path.decisions) if decisions else result
 
 
 def _distribution(percept,spans,*,training=True):
@@ -49,7 +62,7 @@ def test_shift_bootstrap_selects_each_word_once():
     spans,percept,*_=_module_inputs()
     value=_reading(spans,percept)
     assert value.accepted.all() and not value.descended.any()
-    assert value.table.spent.tolist()==[9,9]
+    assert value.table.spent.tolist()==[5,5]  # Each call to interpret itself spends no act.
     for row in range(len(spans)):
         assert sorted(map(tuple,value.table.intervals[row,value.table.done[row]].tolist()))==list(map(tuple,spans[row].tolist()))
 
@@ -63,10 +76,12 @@ def test_scope_is_normalized_unit_range():
 
 
 def test_coverage_mask_excludes_consumed():
-    spans,percept,*_=_module_inputs();out=_reading(spans,percept)
-    for actions in out.actions:
-        gloss=actions[(actions>=0)&(actions%6==2)]//6
-        assert gloss.unique().numel()==len(gloss)==spans.shape[1]
+    spans, percept, *_ = _module_inputs()
+    out, decisions = _reading(spans, percept, decisions=True)
+    for row in range(len(spans)):
+        words = [int(d['index'][row]) for d in decisions if d['interpreted'][row]]
+        assert len(set(words)) == len(words) == spans.shape[1]
+        assert out.accepted[row].all()
 
 
 def test_padding_spans_never_selected():
@@ -76,41 +91,37 @@ def test_padding_spans_never_selected():
     assert out.accepted[:,:-1].all()
 
 
-def test_codebook_retrieval_prior_is_the_subsymbolic_term():
+def test_projection_reads_the_two_bracket_surprise_components():
+    from AttentionContext import project
     B,K,w,D=1,5,6,8
     spans=_contiguous_spans(B,K,w)
     torch.manual_seed(1)
     percept=torch.randn(B,K*w,D)
     keys=BracketKeys._span_keys(percept,spans)
-    W=keys[0].clone();boosts=torch.ones(K);boosts[3]=5.
-    prior=BracketKeys._codebook_retrieval_prior(keys,W,None,boosts)
-    assert prior is not None and prior.shape==(B,K)
-    assert int(prior[0].argmax())==3
+    mapping=torch.nn.Linear(D+2,1,bias=False)
+    with torch.no_grad():
+        mapping.weight.zero_()
+        mapping.weight[0,-2]=1
+    surprise=torch.ones(B,K,2)
+    surprise[:,3,0]=5
+    scores=project(mapping,keys.mean(1),surprise).squeeze(-1)
+    assert scores.shape==(B,K) and int(scores[0].argmax())==3
 
 
-def test_codebook_path_preserves_gradient_boundary():
+def test_bracket_surprise_preserves_gradient_boundary():
+    from AttentionContext import project
     spans,percept,cq,_=_module_inputs()
-    keys=BracketKeys._span_keys(percept.requires_grad_(),spans)
     W=torch.randn(32,16,requires_grad=True)
-    prior=BracketKeys._codebook_retrieval_prior(keys,W,cq.requires_grad_(),None)
-    assert not prior.requires_grad
-    out=_reading(spans,percept,prior)
-    assert not out.values.requires_grad
-    out.probabilities.sum().backward()
-    assert W.grad is None and cq.grad is None and percept.grad is None
-
-
-def test_codebook_path_keeps_complete_word_coverage():
-    spans,percept,cq,_=_module_inputs()
+    cq.requires_grad_();percept.requires_grad_()
     keys=BracketKeys._span_keys(percept,spans)
-    prior=BracketKeys._codebook_retrieval_prior(keys,torch.randn(32,16),cq,None)
-    assert _reading(spans,percept,prior).accepted.all()
-
-
-def test_no_codebook_falls_back_to_content_choice():
-    spans,percept,cq,_=_module_inputs()
-    assert BracketKeys._codebook_retrieval_prior(percept,None,cq,None) is None
-    assert _reading(spans,percept).accepted.all()
+    # These inputs stand in for observed and forecast evidence, kept detached.
+    pair=(keys @ W.T)[..., :2]
+    projection=torch.nn.Linear(cq.shape[-1]+2,cq.shape[-1],bias=False)
+    project(projection,cq,pair).sum().backward()
+    assert W.grad is None and cq.grad is None and percept.grad is None
+    assert projection.weight.grad is not None
+    out=_reading(spans,percept)
+    assert not out.values.requires_grad and out.accepted.all()
 
 
 def test_next_word_activation_error_matches_both_native_lanes():

@@ -66,10 +66,25 @@ def test_84_intuit_reads_once_at_observation_and_no_relation_row(tmp_path, monke
     model = lesson(tmp_path, monkeypatch)
     calls = []
     owner = model._concept_owner()
+    from LookForecast import LookForecast
+    import ConceptSpread
+    open_calls, look_calls = [], []
+    original_open, original_look = ConceptSpread.open_prediction, LookForecast.forecast
+    def opened(*args, **kwargs):
+        open_calls.append(True)
+        return original_open(*args, **kwargs)
+    def looked(path, spans):
+        if (spans[..., 1] > spans[..., 0]).any():
+            look_calls.append(True)
+        return original_look(path, spans)
+    monkeypatch.setattr(ConceptSpread, 'open_prediction', opened)
+    monkeypatch.setattr(LookForecast, 'forecast', looked)
     hook = owner.expect_stack.register_forward_hook(lambda *args: calls.append(True))
     try:
         read(model, 'alpha gamma')
-        assert len(calls) == 1
+        assert len(open_calls) == 1
+        observed_calls = len(calls)
+        assert observed_calls == 1 + len(look_calls)
         from IntuitionField import read as learned_read
         from QueryWork import QueryWorkBudget
         def forbidden(*args, **kwargs):
@@ -87,7 +102,7 @@ def test_84_intuit_reads_once_at_observation_and_no_relation_row(tmp_path, monke
             effect = intuit(context, {'argin1': None})
             assert effect['evidence_kind'] == 'intuition' and effect['learned_field']
             assert effect['value'] is None
-            assert len(calls) == 1
+            assert len(calls) == observed_calls
             assert not effect['witnesses']
     finally:
         hook.remove()

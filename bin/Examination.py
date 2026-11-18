@@ -47,7 +47,13 @@ def run(model, sid, present, *, trust):
     owner = model._concept_owner()
     open_sentence(model,sid,present)
     opened = model._sentence_open_fields[sid]
-    baseline = model._attention_read(sentence=sid)
+    # This whole walk has one conceptual observation. All its alternatives
+    # read the same opening pairs, summed over the words in each bracket.
+    from LookForecast import LookForecast
+    spans = model._last_open_attention['brackets']
+    word_pairs = LookForecast(owner, opened, spans).latest
+    glance_keys = torch.nn.functional.linear(word_pairs, model.attention_context.weight[:, -2:])
+    baseline = model._attention_read(sentence=sid, glance_keys=glance_keys)
     readings = [baseline]
     departures = [torch.full_like(present,-1,dtype=torch.long)]
     count = model.explore_paths if model._sentence_training else 0
@@ -57,7 +63,7 @@ def run(model, sid, present, *, trust):
             eligible = baseline.alternatives[batch].nonzero().flatten()
             if len(eligible):
                 departure[batch] = eligible[torch.randint(len(eligible),())]
-        alternative = model._attention_read(sentence=sid,exploit=baseline,departure=departure)
+        alternative = model._attention_read(sentence=sid, exploit=baseline, departure=departure, glance_keys=glance_keys)
         from SentenceCompose import select_rows
         selected = select_rows(baseline,alternative,departure>=0)
         readings.append(type(baseline)(type(baseline.table)(*selected[0]),*selected[1:]))
@@ -116,7 +122,8 @@ def run(model, sid, present, *, trust):
         owner.mtm.close(None,stream=batch,references=owner._field_activated_references.get(batch,()))
     if model.training:
         promote_candidates(owner)
-    model._last_examination = dict(fields=fields,readings=readings,departures=departures,costs=costs.detach(),winners=winners)
+    model._last_examination = dict(fields=fields,readings=readings,departures=departures,costs=costs.detach(),winners=winners,
+                                   surprise=word_pairs)
     model._last_sentence_field = field
     model._sentence_trial_costs.append(costs.detach())
     model._sentence_winners.append(winners)

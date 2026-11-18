@@ -16,6 +16,20 @@ def rule_order(owner, row):
     return tuple(value.argsort(descending=True, stable=True).tolist())
 
 
+def expected(owner, knowing):
+    """Evaluate the existing omission-trained map without publishing a prediction."""
+    B, width = knowing.shape[:2]
+    if owner.concept_predictor is not None:
+        from Expectation import ActivationPredictor
+        rows = torch.arange(width, device=knowing.device)
+        keys = owner.similarity_codebook.lookup_rows(rows).detach()[None].expand(B, -1, -1).clone()
+        context = ActivationPredictor.context_from(keys * knowing.amax(-1)[..., None], knowing.any(-1))
+        return owner.concept_predictor(keys, context, knowing).sigmoid()
+    if owner.expect_stack is not None:
+        return owner.expect_stack(knowing.flatten(1)).reshape_as(knowing)
+    return torch.zeros_like(knowing)
+
+
 def open_prediction(model, present, *, sid=None):
     owner = model._concept_owner()
     owner._serial_concept_path = bool(getattr(getattr(model, 'inputSpace', None), '_serial_word_major', False)
@@ -28,22 +42,14 @@ def open_prediction(model, present, *, sid=None):
     knowing = owner._observed_knowing[:B, rows].detach().clone()
     from IdeaRead import open_read
     open_read(model, knowing)
-    if owner.concept_predictor is not None:
-        from Expectation import ActivationPredictor
-        keys = owner.similarity_codebook.lookup_rows(rows).detach()[None].expand(B, -1, -1).clone()
-        context = ActivationPredictor.context_from(keys * knowing.amax(-1)[..., None], knowing.any(-1))
-        prediction = owner.concept_predictor(keys, context, knowing).sigmoid()
-    elif owner.expect_stack is not None:
-        prediction = owner.expect_stack(knowing.flatten(1)).reshape_as(knowing)
-    else:
-        prediction = torch.zeros_like(knowing)
+    prediction = expected(owner, knowing)
     from Omission import concept_teacher
     target, hidden = concept_teacher(model, sid=sid, present=present)
     model._concept_prediction = Prediction(prediction, rows, present & hidden, target)
     with torch.no_grad():
-        expected = owner._expected_knowing[:B]
-        expected.copy_(torch.where(present[:, None, None], 0., expected))
-        expected[:, rows] = torch.where(present[:, None, None], prediction.detach(), expected[:, rows])
+        stored = owner._expected_knowing[:B]
+        stored.copy_(torch.where(present[:, None, None], 0., stored))
+        stored[:, rows] = torch.where(present[:, None, None], prediction.detach(), stored[:, rows])
 
 
 def loss(model):

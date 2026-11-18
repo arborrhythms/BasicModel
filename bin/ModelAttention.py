@@ -2,7 +2,7 @@
 import torch
 import math
 from torch.nn import functional as F
-from Attention import narrow_words, open_narrowing, read_code_field, BracketKeys
+from Attention import narrow_words, open_narrowing, read_code_field
 
 
 POLE_CONSUMERS = ('_attention_sentence_payload', '_pushed_word_slab:poles',
@@ -223,13 +223,8 @@ def stage_input(model):
         model._last_gist=(model._open_read*live[...,None]).sum(1)/live.sum(1).clamp_min(1)[:,None]
         poles=native_word_poles(model,spans,forms,known)
         model._attention_native_poles=poles
-    codebook=getattr(owner,'similarity_codebook',None)
-    rows=codebook.getW() if codebook is not None else None
-    boosts=owner.priming_weights(batch=B)
     live_width = max(1, int(torch.where(live,
         torch.arange(W, device=live.device)[None] + 1, 0).max()))
-    prior=BracketKeys._codebook_retrieval_prior(keys[:, :live_width],rows,model._last_gist,boosts)
-    if prior is not None: prior=F.pad(prior,(0,W-live_width))
     spent=spans.new_tensor([meter.spent for meter in model._attention_meters])
     def arguments(*, sentence=None, spent_override=None, **trial):
         reading_spans=spans[:, :live_width]
@@ -238,12 +233,14 @@ def stage_input(model):
             reading_spans=torch.where(here[...,None],reading_spans,0)
         return dict(chooser=chooser,keys=keys[:, :live_width],spans=reading_spans,
             known=known[:, :live_width],budget=model.attention_budget,
-            prior=None if prior is None else prior[:, :live_width],
             identities=ids[:, :live_width],poles=poles[:, :live_width],
             spent=spent if spent_override is None else spent_override,
             limit=spent.new_tensor([meter.spent + meter.remaining for meter in model._attention_meters]),**trial)
-    def read(**trial):
-        return _word_carrier(narrow_words(**arguments(**trial)),W)
+    def read(*, glance_keys=None, **trial):
+        options = arguments(**trial)
+        if glance_keys is not None:
+            options['glance_keys'] = glance_keys[:, :live_width]
+        return _word_carrier(narrow_words(**options),W)
     def opening(**trial):
         return SentenceNarrowing(open_narrowing(**arguments(**trial)),W)
     model._attention_read=read

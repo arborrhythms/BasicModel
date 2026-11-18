@@ -6822,10 +6822,10 @@ class OperationSelectionLayer(nn.Module):
             representatives.append(allowed[:, first:first + 16] & ~duplicates)
         return torch.cat(representatives, -1)
 
-    def attend(self, keys, legal, space, *, prior=None, masked_action=None, replay_action=None,
+    def attend(self, keys, legal, space, *, masked_action=None, replay_action=None,
                return_details=False, slot_limit=None, context=None):
         """Score bracket locations with the prefix understood at this look."""
-        keys = keys.detach() if context is None else keys.detach() + context[:, None]
+        keys = keys.detach() if context is None else keys.detach() + (context[:, None] if context.ndim == 2 else context)
         B,K,D=keys.shape
         width = K if slot_limit is None else min(K, slot_limit)
         # The word field can occupy at most one slot per word, while the
@@ -6838,7 +6838,6 @@ class OperationSelectionLayer(nn.Module):
                                           op_offset=self.r_reduce+self.r_apply)
         scores=F.pad(scores,(0,0,0,K-width),value=-torch.inf)
         scores=scores+self.space_prior[space][...,None]
-        if prior is not None:scores=scores+prior.detach()[...,None]
         scores=scores.masked_fill(~legal,-torch.inf).reshape(B,-1)
         stop=torch.where(legal.reshape(B,-1).any(-1),-torch.inf,0.)
         logits=torch.cat((scores,stop[:,None]),-1)

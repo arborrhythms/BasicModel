@@ -220,6 +220,8 @@ def _run_xor_grammar_in_process():
         Counter(original.split()) == Counter(recovered.replace("\x00", " ").split())
         for original, recovered, missing in zip(originals, model._field_gate_reconstructions,
                                                 model._field_gate_unavailable))
+    print(f'Grammar reconstruction audit: texts={model._grammar_gate_reconstructions!r}; '
+          f'unavailable={model._grammar_gate_unavailable!r}')
     print(f'Field reconstruction audit: {model._field_gate_matches}/{len(inputs)}; '
           f'texts={model._field_gate_reconstructions!r}')
     return model

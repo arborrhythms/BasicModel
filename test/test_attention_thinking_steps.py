@@ -14,6 +14,22 @@ def original_attention():
         ['git', 'show', '3926005f12:bin/Attention.py'], cwd=root, text=True)
     module = ModuleType('attention_at_3926005')
     exec(compile(source, '3926005f12:bin/Attention.py', 'exec'), module.__dict__)
+    # Exercise the archived walker unchanged on its no-prior input.
+    class HistoricalChooser:
+        def __init__(self, live):
+            self.live = live
+
+        def __getattr__(self, name):
+            return getattr(self.live, name)
+
+        def attend(self, *args, prior, **options):
+            assert prior is None, 'this oracle compares the unprimed bracket scores'
+            return self.live.attend(*args, **options)
+
+    archived_walk = module.narrow_words
+    def unprimed_walk(chooser, *args, **options):
+        return archived_walk(HistoricalChooser(chooser), *args, **options)
+    module.narrow_words = unprimed_walk
     return module
 
 

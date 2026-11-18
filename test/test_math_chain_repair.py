@@ -137,11 +137,10 @@ def test_configured_store_still_raises_when_full():
         store.append_idea(torch.zeros(4))
 
 
-def test_retrieval_prior_rejects_a_stale_single_stream_surface():
-    from Attention import BracketKeys
-    with pytest.raises(ValueError, match='priming'):
-        BracketKeys._codebook_retrieval_prior(torch.ones(8, 2, 4),
-            torch.eye(4), None, torch.ones(1, 4))
+def test_surprise_projection_rejects_a_stale_single_stream_surface():
+    from AttentionContext import project
+    with pytest.raises(ValueError, match='surprise'):
+        project(torch.nn.Linear(6, 4, bias=False), torch.ones(8, 4), torch.ones(1, 2, 2))
 
 
 def test_proposal_menu_never_offers_taxonomy_with_occurrence_operands():

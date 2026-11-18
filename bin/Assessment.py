@@ -288,6 +288,7 @@ def _attention_trace(model):
                         descended=result.descended.tolist(), spent=result.table.spent.tolist(),
                         remaining=result.table.remaining.tolist(), looks=[
                             dict(where=field['where'].tolist(), active=field['active'].tolist(),
+                                 surprise=field['surprise'].tolist(),
                                  word=decision['index'].tolist(), offered=decision['logits'][:,1].isfinite().tolist(),
                                  interpreted=decision['interpreted'].tolist())
                             for field,decision in zip(path.fields,path.decisions,strict=True)])

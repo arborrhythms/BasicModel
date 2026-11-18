@@ -24,7 +24,7 @@ def install(model):
     width += int(cs.stm.capacity)*(dim+16) + (2+len(model._concept_owner()._order_caps()))*dim
     model._attention_geometry = sizes, geometry
     with torch.random.fork_rng(devices=[]):
-        projection = nn.Linear(width, dim, bias=False, device='cpu')
+        projection = nn.Linear(width + 2, dim, bias=False, device='cpu')
     nn.init.zeros_(projection.weight)
     model.attention_context = projection.to(cs.stm._buffer)
 
@@ -74,7 +74,7 @@ def _needs(model, batch, width, like, opened=None):
                       for value, count in ((opened, 1), (gist, 1))], -1)
 
 
-def context(model, stm, field):
+def context(model, stm, field, surprise=None):
     """Summarize the understood prefix before the next attention decision."""
     from RowTime import age_interval, age_band
     values = stm[0]
@@ -124,4 +124,15 @@ def context(model, stm, field):
         residual = torch.cat((residual[..., :-4], torch.zeros_like(residual[..., -4:])), -1)
     inputs = torch.cat((heat, prime, residual.flatten(1), *keys, conceptual.flatten(1),
                         _needs(model, B, D, values)), -1)
-    return model.attention_context(inputs.detach())
+    return project(model.attention_context, inputs, surprise)
+
+
+def project(mapping, inputs, surprise=None):
+    """Apply one map to shared sentence features and independent bracket pairs."""
+    weights = mapping.weight
+    prefix = F.linear(inputs.detach(), weights[:, :-2])
+    if surprise is None:
+        return prefix
+    if surprise.ndim != 3 or surprise.shape[0] != inputs.shape[0] or surprise.shape[-1] != 2:
+        raise ValueError('surprise requires one pair per stream and bracket')
+    return prefix[:, None] + F.linear(surprise.detach().to(inputs), weights[:, -2:])

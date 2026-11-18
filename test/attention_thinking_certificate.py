@@ -109,12 +109,20 @@ class Observer:
         patch.setattr(ModelAttention, 'narrow_words', observed)
         self.attend_count = 0
         from SentenceLooks import Looks
+        import ConceptSpread
+        expected = ConceptSpread.expected
+        expect_calls = []
+        def counted_expect(owner, knowing):
+            expect_calls.append(len(knowing))
+            return expected(owner, knowing)
+        patch.setattr(ConceptSpread, 'expected', counted_expect)
         native_run = Looks.run
         def measured_path(path, arrive, **kwargs):
             if certify:
                 raise ValueError('the historical acceptance oracle cannot certify the loop of looks')
             state = path.walk.state
             words = []
+            first_expect = len(expect_calls)
             before = self.attend_count
             def arrived(index, rows):
                 words.append(dict(index=int(index), rows=rows.tolist(), after_attend=self.attend_count-before))
@@ -124,7 +132,9 @@ class Observer:
             self.walk_steps.append(steps)
             self.calls.append(dict(actions=result.actions.tolist(), spent=result.table.spent.tolist(),
                                    departure=None if path.draw is None else frozen(path.draw)))
-            self.word_driven.append(dict(looks=len(path.fields), attend_calls=steps, words=words))
+            self.word_driven.append(dict(looks=len(path.fields), attend_calls=steps, words=words,
+                look_expect_calls=len(expect_calls) - first_expect,
+                look_expect_forecasts=sum(expect_calls[first_expect:])))
             return result
         patch.setattr(Looks, 'run', measured_path)
         attend = Language.OperationSelectionLayer.attend

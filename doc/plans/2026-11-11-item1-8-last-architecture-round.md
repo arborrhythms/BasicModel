@@ -27931,6 +27931,48 @@ The fresh-reader, zero-bias equivalence and supplied-uniform tests failed before
 
 The bias, loop, reading lesson, native attention field, assessment, and two stopping-gate files gave **50 passed in 27.42 seconds**. The invalid negative, above-one and NaN construction cases plus the final reversed reading and bias cases gave **7 passed in 6.71 seconds**. There was no change to capacity, work allowance or presentation count.
 
+### 61.23 The sixteen sentences and the reading lessons after the bias
+
+The same saved initial random stream was used for each sixteen-sentence run. Each count includes all executed paths. The four counts in a cell are walks, looks including the glance, calls to attend and words interpreted. Seconds are elapsed batch time. The times below were measured alongside other targeted jobs.
+
+| Sentence | §61.17 counts | Seconds | Bias counts | Seconds |
+| --- | --- | --- | --- | --- |
+| This is Felix. | 2/66/64/1 | 2.4638 | 2/15/13/8 | 2.9087 |
+| What is this? | 2/66/64/0 | 1.7899 | 1/7/6/4 | 2.1417 |
+| That is Ciao. | 2/66/64/1 | 1.9837 | 2/16/14/8 | 2.2193 |
+| What is that? | 2/66/64/0 | 1.7003 | 1/7/6/4 | 2.1528 |
+| Here is Felix. | 2/66/64/1 | 1.9602 | 2/14/12/8 | 2.1012 |
+| Who is here? | 2/66/64/1 | 1.9201 | 2/14/12/8 | 2.1842 |
+| There is Ciao. | 2/66/64/1 | 1.9359 | 2/16/14/8 | 2.9033 |
+| Who is there? | 2/66/64/0 | 1.7045 | 1/8/7/4 | 2.5194 |
+| That is Felix. | 2/66/64/1 | 2.1505 | 2/16/14/8 | 2.8150 |
+| What is that? | 2/66/64/0 | 2.1909 | 2/17/15/8 | 3.4905 |
+| This is Ciao. | 2/66/64/0 | 2.0771 | 2/17/15/8 | 4.0771 |
+| What is this? | 2/66/64/0 | 2.0808 | 2/17/15/8 | 4.0159 |
+| Here is Ciao. | 2/66/64/1 | 2.1899 | 2/16/14/8 | 3.5748 |
+| Who is here? | 2/66/64/0 | 2.0321 | 1/8/7/4 | 2.9011 |
+| There is Felix. | 2/66/64/0 | 2.0661 | 2/16/14/8 | 2.8926 |
+| Who is there? | 2/66/64/1 | 2.3030 | 1/8/7/4 | 2.6686 |
+
+Totals went from **32 / 1,056 / 1,024 / 8 in 32.548962 s** to **27 / 212 / 185 / 108 in 45.566345 s**. Including setup, the bias runner took **46.394649 s**. The earlier §51 instrument recorded 18 walks, 215 bracket steps and 46 word arrivals in 27.245997 s. §59.82 did not time this sixteen-sentence stream.
+
+| Enabled stage | Presentations | Grammar exact, first → last | Free exact, first → last | Sum of CE, first → last | Final CE by row | Result | Seconds |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| reading_two | 64 | 0/4 → 4/4 | 4/4 → 4/4 | 2.772454202 → 0.0002093205549 | 5.16745567e-05, 5.16745567e-05, 5.27473276e-05, 5.32241138e-05 | pass | 175.662 |
+| reading_four | 64 | 4/4 → 4/4 | 4/4 → 4/4 | 0.0002429088963 → 0.0001063618456 | 2.65532108e-05, 2.66128118e-05, 2.661281e-05, 2.65830131e-05 | pass | 353.012 |
+
+Both stages took their prescribed 64 presentations. Neither attempted a departure. In §61.19 the two-word stage passed and the four-word stage failed its strict decline in summed cross entropy. In this run both final sums decreased. Identity permanence failed again and identifying words passed. The previously measured disabled controls are given in §61.19.
+
+### 61.24 The definitions in certificate 82 and the fixture readings
+
+At bias one the fixtures produced **6 passes, 2 failures and 23 unavailable** on rung one. In §61.18 all eight applicable fixtures failed. In §59.82 seven passed and certificate 84 failed. The full per-source comparison, including the trained lesson and the forecast measurements, is in §64.4. The bias assessment’s operator assertions gave **31 passed, 2 skipped, 279 deselected in 170.23 s**. The rung measures a trusted word–object definition as well as a word in the kept tree.
+
+Both certificate 82 fixtures first read “alpha gamma” and then read it with gamma hidden. They supply no definition. For sigmaPi, the three one-word assessment probes each read alpha and found one trusted object, 111. For predictor, all three read alpha and found no object or definition evidence. In a diagnostic of the latter case the first presentation admitted neither word and the second admitted both. The diagnostic observed no definition before, during or after the probe.
+
+The producer is the lexical occurrence count at the kept close. `FamiliarTier.commit_read_words` retains admitted lexical leaves, excluding an absent word and a leaf kept as a sign or a bare percept. `promote_candidates` requires three distinct retained occurrences within its horizon. `promote_identity` calls `InterpretLayer.define` on promotion. Tracing a separate native run, both maps retained one, then two, then three occurrences of alpha including the probe. The third produced a DEF with evidence (1, 0). Restoring the assessment trial restored the pre-probe inventory with no object. The two maps share this writer. The original bias measurement captured its field, tree and DEF evidence, but did not instrument each increment. The fixture’s two teaching reads do not guarantee the three retained occurrences. This accounts for the varying rung outcome without changing promotion, trust or the presentations.
+
+The chooser-specific ports are `test_1_2_3_words_join_before_the_walk_finishes`, `test_10_interpret_departure_keeps_the_focus_that_reached_its_word` and `test_reversed_candidate_reads_keep_native_field_order_without_teacher`. Each formerly got a free first refusal on the fresh default. Each now sets bias zero for its original selective refusal or departure. `test_11_lesson_teaches_shortest_walk_and_interpretation` now checks its previous shortest-walk assertions at both endpoints and checks which branch books the grammar target. In the one-word case bias one interprets with no grammar target. The bias implementation is local commit `4e0db320f2`.
+
 ## 62. Part A's remainder: the forecast of a look and its surprise (Claude, 2026-11-16; a design, with one question for Alec)
 
 §61 is kept for Codex's return of §60.3. This section starts from the

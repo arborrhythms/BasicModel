@@ -104,3 +104,56 @@ def test_native_attention_checkpoint_and_missing_legacy_parameters(tmp_path):
     fresh.End();fresh.symbolSpace.soft_reset()
 
 
+
+def test_saved_prefix_projection_and_adam_moments_gain_two_zero_columns(tmp_path):
+    from checkpoint_migrations import _optimizer_state_leaves
+    from test_grounded_xor import grounded_model
+
+    key = 'attention_context.weight'
+    path = tmp_path / 'before-surprise.ckpt'
+    model, _ = grounded_model(tmp_path)
+    try:
+        optimizer = model.getOptimizer()
+        model._optimizer = optimizer
+        parameter = model.attention_context.weight
+        parameter.sum().backward()
+        optimizer.step()
+        model.save_weights(path)
+        saved = torch.load(path, map_location='cpu', weights_only=False)
+        prefix = saved['state_dict'][key][:, :-2].clone()
+        saved['state_dict'][key] = prefix
+        moments = {}
+        manifest = saved['optimizer_param_names']['leaves']
+        for leaf, meta in zip(_optimizer_state_leaves(saved['optimizer_state']), manifest, strict=True):
+            for group, names in zip(leaf['param_groups'], meta['param_groups'], strict=True):
+                for pid, entry in zip(group['params'], names, strict=True):
+                    if entry['name'] == key:
+                        entry['shape'] = list(prefix.shape)
+                        for name, value in leaf['state'][pid].items():
+                            if value.shape == parameter.shape:
+                                moments[name] = value[:, :-2].clone()
+                                leaf['state'][pid][name] = moments[name]
+        assert {'exp_avg', 'exp_avg_sq'} <= moments.keys()
+        torch.save(saved, path)
+    finally:
+        model.End()
+        model.symbolSpace.soft_reset()
+    model, _ = grounded_model(tmp_path)
+    try:
+        with pytest.warns(UserWarning, match='two zero surprise columns'):
+            assert model.load_weights(path, require_match=True)
+        parameter = model.attention_context.weight
+        torch.testing.assert_close(parameter[:, :-2], prefix, rtol=0, atol=0)
+        assert not parameter[:, -2:].any()
+        optimizer = model.getOptimizer()
+        live = next(leaf for leaf in _optimizer_state_leaves(optimizer.state_dict())
+                    if any('exp_avg' in state and state['exp_avg'].shape == parameter.shape
+                           for state in leaf['state'].values()))
+        state, = (v for v in live['state'].values()
+                  if 'exp_avg' in v and v['exp_avg'].shape == parameter.shape)
+        for name, previous in moments.items():
+            torch.testing.assert_close(state[name][:, :-2], previous, rtol=0, atol=0)
+            assert not state[name][:, -2:].any()
+    finally:
+        model.End()
+        model.symbolSpace.soft_reset()

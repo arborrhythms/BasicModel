@@ -115,12 +115,22 @@ class Looks:
         slot = torch.zeros_like(self.present,dtype=torch.long)
         rows = self.present
         first = True
+        opened = self.model._sentence_open_fields[self.sid]
+        from LookForecast import LookForecast
+        forecasts = LookForecast(self.model._concept_owner(), opened, state.spans) if opened is not None else None
         while True:
             view = narrowing_view(state)
             interval = view[0].intervals[state.rows,slot]
-            field = (self.model._sentence_open_fields[self.sid] if first else
-                     perceive(self.model,interval,rows))
-            self.fields.append(dict(field=field,where=interval.detach().clone(),active=rows.clone()))
+            span = torch.where(rows[:, None, None], interval[:, None], 0)
+            if first:
+                field = opened
+                surprise = forecasts.latest if forecasts is not None else None
+            else:
+                prediction = forecasts.forecast(span) if forecasts is not None else None
+                field = perceive(self.model, interval, rows)
+                surprise = forecasts.observe(field, span, prediction) if forecasts is not None else None
+            self.fields.append(dict(field=field, where=interval.detach().clone(), active=rows.clone(),
+                                    surprise=surprise))
             index, allowed = interpretation_at(state,slot)
             allowed &= rows
             options = {}
@@ -164,7 +174,10 @@ class Looks:
                 break
             lesson_action = (None if self.teacher is None else
                              self.teacher.focus(state, view, self.teacher.next(state)))
-            narrow_step(state, context=None if context is None else context(), lesson_action=lesson_action)
+            prefix = None
+            if context is not None:
+                prefix = context(forecasts.for_brackets(view[0].intervals))
+            narrow_step(state, context=prefix, lesson_action=lesson_action)
             if lesson_action is not None:
                 self.teacher.book(state.lesson_log_probability, lesson_action >= 0)
             slot,rows=state.look_slot,state.look_active & self.present

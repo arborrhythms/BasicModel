@@ -372,7 +372,27 @@ def main():
         with (args.output/'look-lanes.jsonl').open('a') as f:
             f.write(json.dumps(record)+'\n')
 
-    with native_provenance(sink), word_deposits(deposit_sink), look_lane_counts(look_sink):
+    from unittest.mock import patch
+    from SentenceLooks import Looks
+    run_looks = Looks.run
+    def measured_looks(path, *a, **kw):
+        reading = run_looks(path, *a, **kw)
+        spans = path.walk.state.spans
+        with (args.output/'surprises.jsonl').open('a') as stream:
+            for step, (field, decision) in enumerate(zip(path.fields, path.decisions, strict=True)):
+                extents = spans if step == 0 else field['where'][:, None]
+                for b in field['active'].nonzero().flatten().tolist():
+                    for j, (lo, hi) in enumerate(extents[b].tolist()):
+                        if hi <= lo:
+                            continue
+                        positions = ((spans[b, :, 0] == lo) & (spans[b, :, 1] == hi)).nonzero().flatten()
+                        outcome = ('several words' if not len(positions) else
+                                   'interpreted' if reading.accepted[b, int(positions[0])] else 'left')
+                        stream.write(json.dumps(dict(phase=phase, presentation=count+1, step=step,
+                            where=[lo,hi], outcome=outcome, pair=field['surprise'][b,j].tolist()))+'\n')
+        return reading
+
+    with patch.object(Looks, 'run', measured_looks), native_provenance(sink), word_deposits(deposit_sink), look_lane_counts(look_sink):
         measure('doc/benchmarks/2026-11-11-whole-paths/configurations/explore-1.xml',
                 'data/corpus-lessons.json',args.output/'native-lesson',eager=True,after_training=assess)
     print('completed',count,flush=True)

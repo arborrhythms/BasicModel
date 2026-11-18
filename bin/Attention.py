@@ -98,14 +98,6 @@ def pooled_keys(event,spans):
     return weights@event.detach()
 
 
-def priming_prior(keys,prototypes,boosts):
-    """Intent's codebook prior: max_v cosine(key,row_v) × boost_v."""
-    keys=nn.functional.normalize(keys.detach(),dim=-1)
-    prototypes=nn.functional.normalize(prototypes.detach(),dim=-1)
-    cosine=keys@prototypes.transpose(-1,-2)
-    return (cosine*boosts.detach().unsqueeze(-2)).amax(-1)
-
-
 def read_code_field(codes, valid=None):
     """Nonlinear order-independent field read with the original word carrier.
 
@@ -149,7 +141,6 @@ class NarrowingState:
     spans: object
     known: object
     budget: object
-    prior: object
     exploit: object
     departure: object
     identities: object
@@ -182,9 +173,10 @@ class NarrowingState:
     steps_taken: int = 0
     look_slot: object = None
     look_active: object = None
+    glance_keys: object = None
 
 
-def open_narrowing(chooser,keys,spans,known,*,budget,prior=None,exploit=None,departure=None,identities=None,poles=None,spent=None,replay_until=None,limit=None):
+def open_narrowing(chooser,keys,spans,known,*,budget,exploit=None,departure=None,identities=None,poles=None,spent=None,replay_until=None,limit=None):
     """Stage the original walk, without choosing any action."""
     B,W,D=keys.shape;K=int(budget);A=6
     lengths=spans[...,1].amax(1) if W else spans.new_zeros(B)
@@ -205,7 +197,7 @@ def open_narrowing(chooser,keys,spans,known,*,budget,prior=None,exploit=None,dep
     rows=torch.arange(B,device=keys.device)
     slots=torch.arange(K,device=keys.device)[None]
     return NarrowingState(
-        chooser, keys, spans, known, budget, prior, exploit, departure, identities, poles,
+        chooser, keys, spans, known, budget, exploit, departure, identities, poles,
         lengths, table, accepted, descended, values, actions, alternatives, probabilities, counts, reductions,
         field_values, field_poles, field_valid, handed_poles, pole_changes, round_words, field_scopes, field_operations, declared, rows, slots,
         spans.new_full((B,K,9), -1), keys.new_zeros(B,K,D+2),
@@ -267,7 +259,6 @@ def narrowing_view(state):
     lengths, poles, descended = state.lengths, state.poles, state.descended
     accepted, reductions, declared = state.accepted, state.reductions, state.declared
     field_valid, field_poles, field_values = state.field_valid, state.field_poles, state.field_values
-    prior=state.prior
     lo,hi=table.intervals.unbind(-1)
     covered=(spans[:,None,:,0]>=lo[:,:,None])&(spans[:,None,:,1]<=hi[:,:,None])&(spans[:,None,:,1]>spans[:,None,:,0])
     count=covered.sum(-1)
@@ -302,13 +293,12 @@ def narrowing_view(state):
     legal=torch.cat((attention_progress,field),-1)&live[...,None]&declared[None,None]
     pooled=(covered.to(keys)@keys)/count.clamp_min(1)[...,None]
     pooled=torch.where(field_valid[...,None],field_values,pooled)
-    local_prior=None if prior is None else (covered.to(keys)@prior[...,None])[...,0]/count.clamp_min(1)
-    return (table,covered,count,evidence,pooled_poles,neither,live,progress,legal,pooled,local_prior)
+    return (table,covered,count,evidence,pooled_poles,neither,live,progress,legal,pooled)
 
 
 def interpretation_at(state, slot):
     """The original pure single-word rule, without an attention accept act."""
-    table,covered,count,_,_,_,_,progress,_,_,_=narrowing_view(state)
+    table,covered,count,_,_,_,_,progress,_,_=narrowing_view(state)
     rows=state.rows
     allowed=table.valid[rows,slot]&~table.done[rows,slot]&progress[rows,slot,2]
     selected=covered[rows,slot]
@@ -317,7 +307,7 @@ def interpretation_at(state, slot):
 
 def record_interpretation(state, slot, active):
     """Grammar consumes a word bracket without spending an attention act."""
-    table,covered,_,_,_,_,_,progress,_,_,_=narrowing_view(state)
+    table,covered,_,_,_,_,_,progress,_,_=narrowing_view(state)
     rows=state.rows
     allowed=table.valid[rows,slot]&~table.done[rows,slot]&progress[rows,slot,2]
     torch._assert_async((~active|allowed).all(),'interpret requires one pure word')
@@ -353,7 +343,6 @@ def narrow_step(state, *, context=None, lesson_action=None):
     spans=state.spans
     known=state.known
     budget=state.budget
-    prior=state.prior
     exploit=state.exploit
     departure=state.departure
     identities=state.identities
@@ -383,7 +372,7 @@ def narrow_step(state, *, context=None, lesson_action=None):
     if W == 0 or len(actions) >= K:
         return state
     step=state.steps_taken
-    table,covered,count,evidence,pooled_poles,neither,live,progress,legal,pooled,local_prior=narrowing_view(state)
+    table,covered,count,evidence,pooled_poles,neither,live,progress,legal,pooled=narrowing_view(state)
     lo,hi=table.intervals.unbind(-1)
     word=count==1
     state.can_advance=legal.any()
@@ -391,7 +380,9 @@ def narrow_step(state, *, context=None, lesson_action=None):
     replay=None if exploit is None else torch.where(step<state.replay_until,exploit.actions[:,step],-1)
     if lesson_action is not None:
         replay = torch.where(lesson_action >= 0, lesson_action, -1 if replay is None else replay)
-    action,credit,alternate,detail=chooser.attend(pooled,legal,table.space,prior=local_prior,
+    if state.glance_keys is not None:
+        context = covered.to(keys) @ state.glance_keys
+    action,credit,alternate,detail=chooser.attend(pooled,legal,table.space,
         masked_action=mask,replay_action=replay,return_details=True,slot_limit=min(K,W),
         **({} if context is None else {'context': context}))
     if lesson_action is not None:
@@ -620,10 +611,11 @@ def close_narrowing(state):
         history(round_words,spans.new_empty(B,0)),history(field_scopes,known.new_empty(B,0,W)))
 
 
-def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,departure=None,identities=None,poles=None,spent=None,limit=None):
+def narrow_words(chooser,keys,spans,known,*,budget,exploit=None,departure=None,identities=None,poles=None,spent=None,limit=None,glance_keys=None):
     """The complete examination reading, composed from its public steps."""
-    state=open_narrowing(chooser,keys,spans,known,budget=budget,prior=prior,
+    state=open_narrowing(chooser,keys,spans,known,budget=budget,
         exploit=exploit,departure=departure,identities=identities,poles=poles,spent=spent,limit=limit)
+    state.glance_keys = glance_keys
     finish_narrowing(state)
     return close_narrowing(state)
 
@@ -665,62 +657,6 @@ class BracketKeys:
         kn = kn / kn.norm(dim=-1, keepdim=True).clamp_min(1e-12)
         return torch.einsum('bd,bkd->bk', qn, kn)            # [B, K]
 
-    @staticmethod
-    def _codebook_retrieval_prior(keys, codebook_rows, intent, external_boosts):
-        """The **subsymbolic** score term -- the codebook-retrieval prior, the
-        literal ``intent_boosts`` / ``selection_boost_fn`` path
-        (orders.md §6 "Attention is connectionist spreading activation").
-
-        Routes each span through the codebook: a span scores high when its
-        content snaps near a prototype the intent has primed --
-
-            ``prior_k = max_v( cos(key_k, row_v) · boost_v )``
-
-        the same ``(sim · boosts).amax`` reduction ``WholeSpace._topk_priming
-        _mask`` uses. ``boost_v`` ``[V]`` is the intent's graded similarity to
-        each codebook row (``intent_priming_weights``; ``1.0`` = neutral): the
-        externally-primed ``external_boosts`` (a ``set_intent`` already on the
-        tower) when present, else derived from the query ``intent`` (prime from
-        the current concept). Returns ``[B, K]`` (``None`` when no codebook is
-        available -> the caller falls back to the concept-content cosine).
-
-        Fully DETACHED (keys, rows, intent, boosts): the gradient never reaches
-        the EMA-only codebooks (C-9/C-11)."""
-        if (keys is None or codebook_rows is None
-                or not torch.is_tensor(codebook_rows)
-                or codebook_rows.numel() == 0):
-            return None
-        W = codebook_rows.detach()
-        # Slice to the common LEADING width (the same idiom as ``_cos`` /
-        # ``intent_priming_weights`` / ``_topk_priming_mask``). This is
-        # CONTENT-vs-CONTENT by construction: the muxed percept key carries its
-        # content first with the .where/.when columns appended at the TAIL
-        # (negative indices), while the codebook rows are content-only and
-        # NARROWER (e.g. key 1024 = 1020 content + 2 where + 2 when, W 1020), so
-        # the min-slice drops the key's where/when tail and compares prototypes
-        # to span content -- the intended semantics, not a lossy truncation.
-        d = min(int(keys.shape[-1]), int(W.shape[-1]))
-        if d == 0:
-            return None
-        # [V] intent boosts: the primed-intent state if the tower carries one,
-        # else the graded intent->rows similarity of the current concept.
-        boosts = external_boosts
-        if boosts is None and intent is not None:
-            from Spaces import intent_priming_weights
-            boosts = intent_priming_weights(intent.detach(), W)
-        kn = keys.detach()[..., :d]
-        Wn = W[:, :d]
-        kn = kn / kn.norm(dim=-1, keepdim=True).clamp_min(1e-12)
-        Wn = Wn / Wn.norm(dim=-1, keepdim=True).clamp_min(1e-12)
-        sim = torch.einsum('bkd,vd->bkv', kn, Wn)            # [B, K, V]
-        if boosts is not None and torch.is_tensor(boosts):
-            bv = boosts.detach().to(sim.dtype)
-            if bv.ndim not in (1, 2) or (bv.ndim == 2 and bv.shape[0] != keys.shape[0]):
-                raise ValueError('retrieval priming surface differs from the current batch; broadcasting is forbidden')
-            V = int(Wn.shape[0])
-            bv = F.pad(bv[..., :V], (0, max(0, V-bv.shape[-1])), value=1.)
-            sim = sim * (bv[:,None] if bv.ndim == 2 else bv)
-        return sim.amax(dim=-1)                              # [B, K]
 
     @staticmethod
     def _span_keys(percept_ev, spans):

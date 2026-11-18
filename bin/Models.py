@@ -4571,6 +4571,14 @@ class BaseModel(Mereology, nn.Module):
 
         retired_attention = [key for key in state if key.startswith('candidate_attention.')]
         attention_transforms = {}
+        key = 'attention_context.weight'
+        if getattr(self, 'attention_context', None) is not None and key in state:
+            previous = state[key]
+            width = self.attention_context.in_features
+            if previous.shape == (self.attention_context.out_features, width - 2):
+                state[key] = torch.nn.functional.pad(previous, (0, 2))
+                attention_transforms[key] = (key, 1, (*range(width - 2), -1, -1))
+                warnings.warn('Extended the saved attention projection with two zero surprise columns')
         for key in retired_attention:
             state.pop(key)
             attention_transforms[key] = None
@@ -21235,7 +21243,7 @@ class BasicModel(BaseModel):
                         prior=None if exploit is None else look_trials[0],
                         draw=None if exploit is None else draw,kept=kept)
                     from AttentionContext import context
-                    reading = looks.run(arrival, context=lambda: context(self, current_stm, field))
+                    reading = looks.run(arrival, context=lambda surprise: context(self, current_stm, field, surprise))
                     if exploit is None:
                         greedy_attention = reading
                         self._attention_greedy = reading
