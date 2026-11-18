@@ -37,12 +37,15 @@ with tests, before the million-plus sentence corpus.
 targetted test from now on during the point build rounds (e.g. 1.x), and
 the complete sweep only at the item numbers (e.g. 1.0). No Run_Slow until
 after all architecture is baked at the submission of 1.6 (and lets
-schedule that for an overnight run)." So a round of items 1.8, 1.7, 1.6
-and 1.5 runs the certificates of its text, the tests of the files it
-changes, and both stopping gates; the complete default sweep is run at
-items 1 and 0; and the slow tier is run once, overnight, when item 1.6 is
-submitted (1.8 specification §72; [Testing](doc/Testing.md)). Item 1.8
-is pushed with no sweep of its own (Alec, the same day: "No sweep").
+schedule that for an overnight run)." Corrected the same day: "Sorry,
+every .X should get a 40 minute sweep, including 1.8, but not before its
+potential push round." So a build round runs the certificates of its
+text, the tests of the files it changes, and both stopping gates; each
+item, 1.8, 1.7, 1.6 and 1.5 among them, has one complete default sweep,
+at the round that may be pushed and not before it; and the slow tier is
+run once, overnight, when item 1.6 is submitted (1.8 specification §72;
+[Testing](doc/Testing.md)). For item 1.8 that round is the return of its
+last text, §65.4.
 
 **Current (2026-10-29):** Items 3.5, 3.0, 2.9 (BasicModel `17e9454763`)
 and 2.8 (`a8a09a6acb`) are LANDED. Item 2.7 is closed code-complete at

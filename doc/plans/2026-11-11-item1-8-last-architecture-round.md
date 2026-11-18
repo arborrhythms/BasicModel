@@ -27011,7 +27011,8 @@ look, the surprise given to `attend`, and the prior
 ### 60.3 Codex text (follows §59 and the repair of §68.31)
 
 *Amended for Codex by §68.73 (2026-11-18): the default sweep of step 7
-is struck (§72), and commits are local.*
+is struck, since item 1.8's one sweep is at its last text (§72), and
+commits are local.*
 
 ~~~
 Item 1.8, part B, second text: the loop of looks. Read §54.6, §54.7 and
@@ -27524,8 +27525,10 @@ presentation count.
 Return as §66: the inventory before and after; each step with its edits
 by file and function and its certificates; the probe's list of breaks
 before and after; what remains for Alec under rule 7; the seconds of
-the sixteen sentences; the test files you ran, with no default sweep
-and nothing under RUN_SLOW (§72); the source snapshot.
+the sixteen sentences; the test files you ran; and, since this is the
+last text of item 1.8, the item's one default sweep,
+env -u RUN_TRAINED -u RUN_SLOW make test (§72), with nothing under
+RUN_SLOW; the source snapshot.
 ~~~
 
 ### 65.5 One record of a read (Alec, 2026-11-17; step A of item 1.6)
@@ -31981,10 +31984,11 @@ doc/plans/2026-11-11-item1-8-last-architecture-round.md. Your returns
 1 of the text of §60.3. Alec, 2026-11-18, of your question in §61.2: the
 port. Build it, and go on with the text of §60.3.
 
-A. The tests of this text and of every later text of item 1.8 (Alec,
-   2026-11-18; §72). Run only targeted tests: the certificates of the
-   text, the tests of the files you change or port, and both stopping
-   gates. Run no complete default sweep, and nothing under RUN_SLOW. In
+A. The tests of this text (Alec, 2026-11-18; §72). Run only targeted
+   tests: the certificates of the text, the tests of the files you
+   change or port, and both stopping gates. Run no complete default
+   sweep, and nothing under RUN_SLOW. Item 1.8 has one default sweep,
+   at its last text (§65.4), and none before it. In
    step 7 of the text of §60.3 the default sweep is struck. The rest of
    step 7 stays: both gates, the lesson with its exact fields, the
    verbal proof, the assessment's tables, the sixteen sentences. In the
@@ -33329,8 +33333,8 @@ documents that need a repair for it.
    documents (§70.18).
 2. `make doc`, where pandoc and xelatex are, and the PDF is committed.
 3. The commits ahead of `origin/main` are read once more, the ones
-   above among them. No complete sweep is run for the push (Alec,
-   2026-11-18: "No sweep"; §72).
+   above among them. The item's one complete default sweep is run at
+   this round and not before it (Alec, 2026-11-18; §72).
 4. The push is on Alec's word, and the superproject's pointer is his.
 
 **Decided** (Alec, 2026-11-18: "Can we install something to do that in
@@ -33395,14 +33399,22 @@ Alec, 2026-11-18:
 > architecture is baked at the submission of 1.6 (and lets schedule that
 > for an overnight run).
 
+Claude first read "the item numbers (e.g. 1.0)" as the whole-numbered
+items, so that item 1.8 had no sweep, and Alec, asked, said "No
+sweep". He corrected both the same day:
+
+> Sorry, every .X should get a 40 minute sweep, including 1.8, but not
+> before its potential push round.
+
 **The rule** (*how each line applies is Claude's reading*).
 
-1. *In a build round of a point item,* which are items 1.8, 1.7, 1.6
-   and 1.5, only targeted tests are run: the certificates of the
-   round's text, the tests of the files the round changes or ports, and
-   both stopping gates. No complete default sweep.
-2. *The complete default sweep* (`make test`) is run at a
-   whole-numbered item: item 1, and item 0.
+1. *In a build round of an item,* only targeted tests are run: the
+   certificates of the round's text, the tests of the files the round
+   changes or ports, and both stopping gates. No complete default
+   sweep.
+2. *The complete default sweep* (`make test`, about forty minutes) is
+   run once for each item, items 1.8, 1.7, 1.6 and 1.5 among them: at
+   the round that may be pushed, and not before it.
 3. *The slow tier* (`RUN_SLOW`) is not run until item 1.6 is submitted,
    when the architecture changes no more. It is then run once,
    overnight. The todo has it under item 1.6.
@@ -33415,19 +33427,19 @@ asked for, 5,433 and 5,950.
 
 - *The text of §60.3,* which Codex holds: the default sweep of its step
   7 is struck. §68.73 says so to Codex.
-- *The texts not yet carried* are amended in place: §62.6, step 7;
-  §65.4; and the text of item 1.7
-  (`doc/plans/2026-11-14-sigma-pi-layers.md`, §19.8, step 4).
+- *The texts not yet carried* are amended in place. §62.6, step 7,
+  loses its sweep. §65.4 is the last text of item 1.8 and has the
+  item's one sweep. The text of item 1.7
+  (`doc/plans/2026-11-14-sigma-pi-layers.md`, §19.8, step 4) builds
+  the item whole and has its one sweep on the finished source.
 - *A text's own measurements stay:* the lesson with its exact fields,
   the verbal proof and the assessment's tables, which are how a round
   that changes reading is read. *Claude's reading; about eight minutes
   in all; Alec may strike them too.*
 - *Claude's reviews* rerun targeted tests only.
-- *The promotion of item 1.8* (§70.18) has no sweep of its own by this
-  rule. The last complete sweep is that of §69.4, on the source before
-  the loop of looks. Put to Alec, since `main` is pushed then, and
-  **decided** (Alec, 2026-11-18): "No sweep". Item 1.8 is pushed on
-  the targeted tests of its rounds.
+- *The promotion of item 1.8* (§70.18). Item 1.8 has one complete
+  default sweep, at its last round, the return of §65.4, before the
+  push, and none before that round. This replaces "No sweep".
 - `doc/Testing.md` has the rule.
 
 **What a return says.** Which test files were run, and that no sweep

@@ -361,13 +361,16 @@ Alec, 2026-11-18: "We need to run only targetted test from now on during
 the point build rounds (e.g. 1.x), and the complete sweep only at the
 item numbers (e.g. 1.0). No Run_Slow until after all architecture is
 baked at the submission of 1.6 (and lets schedule that for an overnight
-run)."
+run)." And, the same day: "every .X should get a 40 minute sweep,
+including 1.8, but not before its potential push round."
 
-- **A build round of a point item** (1.8, 1.7, 1.6, 1.5): targeted tests
-  only. They are the certificates of the round's text, the tests of the
-  files the round changes or ports, and both stopping gates. No complete
-  default sweep is run.
-- **A whole-numbered item** (1, and 0): the complete default sweep.
+- **A build round of an item:** targeted tests only. They are the
+  certificates of the round's text, the tests of the files the round
+  changes or ports, and both stopping gates. No complete default sweep
+  is run.
+- **The round of an item that may be pushed** (items 1.8, 1.7, 1.6 and
+  1.5 among them): the complete default sweep, once, about forty
+  minutes, and not before that round.
 - **The slow tier** (`RUN_SLOW`): not run until item 1.6 is submitted,
   when the architecture changes no more; then once, overnight.
 
