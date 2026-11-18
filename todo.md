@@ -1172,7 +1172,131 @@ generation is expected at this stage and is recorded, not tuned away.
    committed; the `performance` branch is merged; the rest of this item
    follows (the sentence as one block, then the teacher of the walk of
    attention); the work is pushed; then item 1.7, which was round D
-   (specification §43).
+   (specification §43). **The rest, in order (2026-11-16):** every rule is
+   written; the five texts for Codex and their returns are listed in
+   §67 of the specification (the lanes repair, the tree first, the loop
+   of looks with its teacher, a look's forecast and surprise, tables as
+   tensors and one graph for a sentence).
+   **Expectation, in this item (Alec, 2026-11-17):** "Expectation is
+   supposed to be simple: it is not prediction, just an aid to
+   understanding and missing data. So let's have expectation work on
+   percepts and the field, never on a full sentence. That means never on
+   an idea, either, since that is a computed value"; then "Expectation
+   is simple, then. intuit over System 1 (S1)", "we are not doing
+   predictive processing, we are doing input reconstruction", and "I'd
+   like to do expectation in round 1.8". Where an expected idea is
+   wanted, it is read from the expected field by an N:1 network, with no
+   WFF. That read is taught, an independent network of the form Pi,
+   Not, Sigma ("lets expect a conceptual field, and an independent N:1
+   pi-not-sigma to reach the idea"), with System 2's idea as its
+   target; "The N:1 read can be centroid if we are doing animal
+   cognition". intuit is expect's map and, as well, the propagation up
+   and down the orders ("lets run the N:N intuit() as the existing
+   propagation of N:N expect() *as well as* the (up and down) vertical
+   order propagation that is enabled only with symbols and recursive
+   cognition"); the downward half is item 1.7's vertical spread.
+   Completing every
+   operator's field use is future work ("lets add that to future work
+   unless it is immediately necessary"; the note for
+   `doc/FutureWork.md` is the specification's §68.55). His words are in
+   §68.43, §68.45, §68.50, §68.52 and §68.57; the rules in one place
+   are §68.53, with two trials; the text for Codex is §68.54, which
+   Alec approved on 2026-11-17 ("Yes, as written", §68.58). Codex began
+   it and stopped on one question (§59.43), which Alec answered: the
+   field read's loss keeps its weight under a key of its own,
+   `symbolFieldLossWeight` ("Yes, new key", §68.60, with the text that
+   continues §68.54). The build is under way; its return continues §59
+   from §59.45.
+   Codex stopped again on a question of signs (§59.50 to §59.58): a
+   word whose Sigma read is negative is pushed to STM as minus its
+   stored code. Reviewed in §68.62 (2026-11-17), where the cause is
+   found in rule 1 of §55.1, which removed the step that stored the
+   read in the code's unsigned form. Alec, 2026-11-18 (§68.63): "I do
+   not know the fix for the current code", and for the final version a
+   signed value "should be replaced by the two unsigned symbols or
+   percepts that represent the vector: so 0.5 becomes [0, .5] and -0.5
+   becomes [.5,0]", on the way up and on the way back. That is rule 3
+   of item 1.7, with the way back added (sigma-pi §19.24). The fix for
+   the current code is Claude's (§68.63): the word is deposited by the
+   leaf law again (`Interpret.activate_code` on the word's own code,
+   with the size of the read and the attention walk's pair), the
+   committed charts stand in place of §59.53's signed ones, and the
+   Sigma's sign fills the lanes with item 1.7. The text for Codex is
+   §68.64; Alec carried it. Codex's return is §59.59 to §59.74, not
+   yet complete. It stopped on the place and time coordinates inside
+   an idea (§59.60); Alec, as Codex records it: "Use sinusoids in 0-1
+   range, that's a todo in 1.7 anyway." (§59.62), so stored place and
+   time are unsigned since. It stopped again on `bind`'s containment
+   test (§59.70) and went on at Alec's "Please continue if that was
+   the only stopper" (§59.71). Claude's answer is §68.65: place and
+   time stay out of that test, which is the committed rule ("Bands
+   are positions"); §59.71 also moved the start of the comparison,
+   so that a model with no meaning block binds by its forms, and that
+   is to be taken back (*recommended; Alec's word awaited*). Alec,
+   2026-11-18: "Direct compare will not capture whether the concept
+   is a token of a concept type, whihc is where that information may
+   be necessary." The record reads it beside the containment sum (the
+   order filter; `ReferenceClose.continuity`). *Open for Alec:* since
+   the tree is built over words the menu compares the word, at order
+   0, with the held objects (18 candidates offered where HEAD offered
+   129 on four test files); what the menu reads for the mention is
+   undecided (§68.65, point 3). **Answered by Alec the same day
+   (§68.67):** "we should match the object, not the word"; the
+   object is matched against types and tokens, with polysemy
+   accounted for, by "an algorithm that matches a content against
+   Conceptual Space, so that we do this only in one place for all
+   clients needing a match"; place and time "are necessary at the
+   level of events", and it is "generalization that should remove
+   that information, not us by hand outside of the matching
+   function". So §68.66 is withdrawn. Codex took §59.71's moved start
+   back itself on reading §68.65 (§59.77); the place and time that its
+   menu still cuts out by hand go with the one match. Its design, with
+   what exists today, is §70. Alec, 2026-11-18 (§70.8): "Yes, as
+   proposed", so it is built now, in part B; a word with several
+   objects has one picked, "an educated guess from field
+   context/activation"; and "Im Ok with only spot testing this
+   change". A scratch trial (§70.10): with the menu given the word's
+   object and nothing cut by hand the failing test passes, with the
+   word it fails, and 144 tests of eleven files pass either way. At
+   the menu four mentions in five are phrases; they are left as they
+   are in the first text (*Claude's default*). Of the measure, whose
+   example is §70.9, Alec: "I have not reviewed the measure above, but
+   as long as it aims to fulfill my description, please doc it and we
+   will return to it." It is documented as provisional in §70.12, with
+   where it meets each part of his description and where it does not
+   yet. **To return to: the measure of the one match.** Matched at
+   Alec's request with parthood as *The Whole Part* defines it (pages
+   184 and 185): the two numbers are that parthood taken both ways,
+   and `meet_ratios` returns the values of its table of five cases
+   (§70.14); the clipped cosine that `doc/Mereology.md` calls
+   parthood is another function and cannot. Of a phrase
+   as the mention, Alec (§70.13): it "can still be turned into a
+   concept vector and either created or just used as an identity in a
+   small pi-not-sigma until it dictates that a symbol should be
+   produced for that entity". The close does this today from
+   comprehension's value; during the read the menu still tests the
+   vector made from the phrase's words, and the first text keeps that
+   and has Codex report what the other would take. The text for
+   Codex is §70.11, **approved by Alec on 2026-11-18 ("Sure")** to be
+   given as it stands; its return continues §59 from its next free
+   number. Codex's return is complete at §59.82: its final sweep has
+   7,261 cases, 6,929 passed, 330 skipped and none failed, both
+   stopping gates pass, and nothing is committed. It records, and does
+   not repair, that 139 of 160 lesson fields differ and that the
+   lesson's answers are empty. Codex resumed on §70.11 from that
+   source. Claude has not reviewed §59.59 to §59.82 as a whole. Alec,
+   2026-11-18: "Not now", then "please review it and the next reutrn
+   togather." The return on §70.11 came as §59.83 to §59.86: the one
+   match is built (`bin/ConceptualMatch.py`), and a single word at the
+   menu is tested by its object. Codex committed both returns locally
+   under Alec's authorization (`08d1cab2bf`, `31b24db620`; not
+   pushed). **Reviewed together in §68.68 (2026-11-18): both
+   accepted.** Claude's reruns on the committed source: both stopping
+   gates and the five named files, 95 passed; the new certificates,
+   33 passed; the 21 files of §68.40, 270 passed and 8 skipped. Not
+   rerun: the sweep and the lesson. Part B's first text is returned
+   whole; the next text is the repair of the thought replay (§68.31;
+   its return is §69).
 - **1.7. `SigmaLayer` and `PiLayer`, and symbols split from concepts**
    (Alec, 2026-11-16: "I think we should position D as item 1.7"; then
    "review and commit round C, and merge with the performance branch. Then
@@ -1180,10 +1304,106 @@ generation is expected at this stage and is recorded, not tuned away.
    Round D of item 1.8 becomes this item, built after item 1.8 is finished
    and pushed: [specification](doc/plans/2026-11-14-sigma-pi-layers.md) §18,
    with §18.22 and §18.23 (symbols without dimensions, split from
-   concepts). Not yet written there: the discussion of the same night
-   (flattened percept vectors read by one template per concept, one Sigma
-   and Pi form at every order, an event axis for symbols, binding a letter
-   to its place).
+   concepts). Its form as decided the same night is §18.24: the Pi
+   selects and weights the percepts, their vectors are pooled at the basic
+   level, and a dense Sigma collects them into concepts; above order zero
+   the Sigma reads symbols' activations. §18.25 (Alec, 2026-11-16): signed
+   concepts, unsigned percepts; a concept is one signed number in a
+   reading, stored as two unsigned lanes, two symbols for each concept.
+   **Its rules in one place: §19.21** (2026-11-17), with the text for
+   Codex in §19.8. As decided on 2026-11-17: one structure, Pi, Not,
+   Sigma, at every order, where a Not entry at the basic level records
+   an absence and the operator `not` is put on symbols; MTM nominates
+   every row of the Pi, with one concept for each row and both matrices
+   thinned; `interpret` makes the meta concept and a blank object; the
+   vertical spread, up by fan and down by share; orders that are not
+   strictly ramified; and thought reading the Sigma and the Pi
+   (`parts`, `wholes`). **Amended 2026-11-17 (§19.22):** the vertical
+   spread is what `intuit` runs, with expect's map, when the grammar
+   calls it. Open there, with Claude's answer and a proposal to measure
+   it: whether the first layer and expect can be one mechanism (Alec:
+   "these two N:N computations are the largest in the model"; and "one
+   possibility would be to involve the reconstruction to wind up back in
+   basic percepts, which is a kind of imagination rooted in the word").
+   **A testpoint for it (§19.23):** Alec, 2026-11-17: "please add a
+   testpoint that verifies the architecture fills in a blind spot on
+   reconstruction (i.e. the pi should generalize of neighboring elements
+   to fill in a missing area)." Rule 30 (the spread reaches the first
+   layer, and the way back reads what it expects) and certificate 24
+   (`TestBlindSpot` in `test/test_testpoint.py`). On the committed
+   source nothing is filled: 0 of 5 bytes in every case of the probe.
+   It is added with this item and not before (Alec: "With item 1.7").
+   §19.21, the rules in one place, now carries rule 30, certificate 24
+   and §19.22's amendments of rules 18, 23 and 25.
+   **The order of learning (§19.25):** Alec, 2026-11-18: "so we learn
+   word generalizations, and we learn object generalizations, and THEN
+   we learn word-object meta-concepts, because those are concsistently
+   associated. there isnt a statistic that will magically produce
+   identity across independent tokens." It is rule 31. The example he
+   asked to have in the doc (Helen Keller at the well-house, from
+   Walker Percy) is written out there for the doc pass. The two
+   testpoints he asked for are certificate 25, `TestCrossModalTie` (a
+   word and an object of another modality tied by their consistent
+   association), and certificate 26, `TestBellSalivate` (a sequence
+   learned: the bell, then the food). Both are added with this item
+   (*Claude's default*, as Alec decided for `TestBlindSpot`). Open
+   there: how rule 31 meets rule 20's blank object.
+   Alec's further remarks of the same day are §19.27: making the object
+   for the word is the bootstrap of a model with one modality, and
+   stays; two other ways to learn the tie are named and not chosen (a
+   relation at zero trust; Pi, Not, Sigma each time, promoted when the
+   Pi indicates, with a small MTM with forgetting); an existing object
+   is looked for before one is made; and of the blank object, "better
+   never to have the blank at all", with both trained and the blank
+   removed only if the two vectors come to overlap. Open: what removing
+   is, beside concepts kept forever.
+- **A felt world for the math corpus** (Alec, 2026-11-18; not yet
+   numbered, and its place in this countdown is not given: *Claude's
+   default* is after item 1.7). "for the math learning corpus, we
+   should make a model test that matches words to objects, where
+   objects are feeling-intensities within a 3-D space. So a sentence
+   like "one was on top of two", even though it doesnt make a lot of
+   sense, will still describe a world that is phenomenally accessible
+   to the model, an in which the feeling of one is actually above the
+   feeling of two. That also forma a basis for the identity tests that
+   we are talking about now. Maybe girls are even and boys are odd, so
+   we can map a gendered language onto numerals." His words in full,
+   what exists and what it needs:
+   [specification](doc/plans/2026-11-14-sigma-pi-layers.md) §19.26.
+   Not yet specified: the feeling modality with three place axes, the
+   scenes generated with the corpus's sentences, and the tests (a
+   numeral's word tied to its felt intensity, a word of place tied to
+   the relation of two places, two words with one perceptual basis
+   tied to one object).
+- **1.6. Computation by wiring, not by moving data** (Alec, 2026-11-17:
+   "can you investigate the possibility of pushing the architecture in
+   this zero-data movement direction? It's 1.6 so that subsequent
+   optimization becomes easier, with fewer cpu or python data
+   reads/writes"). After item 1.7 and before item 1.5. Investigated,
+   measured and re-scoped on 2026-11-17; nothing built:
+   [the document](doc/plans/2026-11-17-item1-6-zero-data-movement.md).
+   Decided that day (its section 9): the trace is the one form of a
+   sentence's tree, built with part C of item 1.8 (1.8 §65.5); MTM and
+   the rows it promotes into are one table; the choice among paths is
+   left as it is. **Measured** (its section 3; one worked document of
+   the math chain, eager, on the CPU): for one sentence 10.0 million
+   Python calls, 1.1 million calls into the tensor library and 24,547
+   host reads of a tensor; scoring the paths is 45% of a sentence, the
+   read 26%, its optimizer step 12%, the kept close 9%. The walk of the
+   pinned tree is four fifths of the `.tolist()` reads (step A). MTM is
+   at most 5% of a sentence and the kept rows' write 0.3%. **Revised
+   steps, decided** (Alec, 2026-11-17: "Can we update and finish open
+   questions in 1.6 as a prelude to GPU optimization?", then "the four
+   points are good to go with your recommendations"): step B, MTM as
+   rows, stays after item 1.7 and is designed (an entry is a row, and
+   whatever else it carries is a pair); step C, the block commit, is
+   withdrawn as wrong on the facts; step D, a meaning is made once, and
+   step E, what is cut from the graph is cut where it is written, are
+   added; the hook on every saved tensor is measured in item 1 first;
+   the reverse's zero buffers and the derived forms go to item 1.5 with
+   their numbers. Its section 7 is what GPU optimization receives,
+   with Alec's point of the same day that a sentence's percepts are
+   looked up once, at its start (item 1.5's percept pass).
 - **1.5. Lookups as one matmul, whole/part folds as scatters, the percept
    pass per sentence** (Alec, 2026-10-30). Before item 1, so the
    compiler work compiles what this builds under `fullgraph`, and before
@@ -1200,7 +1420,13 @@ generation is expected at this stage and is recorded, not tuned away.
    scores its `ltmWindow` rows in one batched product since item 2.5,
    though it still gathers them row by row and ranks them on the host);
    the percept pass runs once per sentence over all words with gradients,
-   since the percept depends on neither grammar state nor the expectation,
+   since the percept depends on neither grammar state nor the expectation
+   (Alec again on 2026-11-17, for the GPU: "compute perceptual features
+   for the whole sentence at the start (IOW, do all codebook lookups by
+   building an array of percept indices for the .what and an array of
+   .where with the same indices)"; measured then at 1,924 lookups of
+   codebook rows for a sentence, 63 of them of a whole table: item
+   1.6's document, section 7),
    with ragged parts in place of the 64-wide padding, a known word's
    percept read from its identity row's `amax` instead of recomposed from
    its atoms, and the forecast scored for all words at once; an explore

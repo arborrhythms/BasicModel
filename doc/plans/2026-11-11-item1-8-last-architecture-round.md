@@ -31320,6 +31320,112 @@ learning, the example and the two testpoints: sigma-pi §19.25, rule 31
 and certificates 25 and 26. No text for Codex is written until §70's
 questions are answered.
 
+### 68.68 Review of §59.45 to §59.86: the return of part B's first text, and the one match (Claude, 2026-11-18)
+
+Alec, 2026-11-18: "please review it and the next reutrn togather." The
+first is the return that §59.82 completes. The next is the return on
+§70.11, §59.83 to §59.86. Of the first, §59.45 to §59.58 had been read
+for the question of signs only (§68.62), and §59.59 to §59.82 for the
+questions put on the way.
+
+**Verdict.** Both are accepted. The source does what §68.54, §68.60,
+§68.64 and §70.11 ask, and nothing in it needs a correction before the
+next text. Three things Codex decided itself are listed for Alec below;
+none is objected to.
+
+**The state of the branch.** Under Alec's authorization of local
+commits (§59.83), Codex has made two on `main`, and pushed neither:
+`08d1cab2bf`, the source and specification of §59.82, and `31b24db620`,
+the one match. `main` is 23 commits ahead of `origin/main`. What Claude
+wrote after those commits (§70.14 and this section), the item 1.7
+specification and the todo are in the working tree, uncommitted.
+
+**What was run** (on a copy of `31b24db620`; not receipts).
+
+| Run | Result | Codex's |
+|---|---|---|
+| both stopping gates and the five files of §70.11 | 95 passed | 95 passed |
+| the new certificates with the coordinate file | 33 passed | 33 passed |
+| `test_reference_close.py` and `test_medium_term_memory.py` | 36 passed, 4 skipped | with four more certificates, 40 passed and 4 skipped |
+| the 21 files of §68.40 | 270 passed, 8 skipped | the same, on §59.79's source |
+
+**What was read.** The whole change of the one match to the source,
+seven files and the new module, against §70.11's steps. Of the earlier
+return: the word's step in `stage_cs_lang`, the repair of the inverse
+audit, the head of the coordinate import, and the inventory of tests,
+recomputed from the two commits.
+
+**Not checked.** The default sweep: Codex's has 7,261 cases and none
+failed, on §59.82's source, and none was run on the one match, by
+Alec's decision. The lesson. The 77 further files of §68.56. The
+unsigned codecs line by line. The 119 changed tests one by one.
+
+**The one match against §70.11.**
+
+| Step | Found |
+|---|---|
+| 1. One place | `ConceptualMatch.match(content, candidates, *, codebook=None, lane=None)`. The measure is that of `meet_ratios`, unchanged. The three cases of coordinates are in it and nowhere else. |
+| 2. Its callers | The six readers of family A and `FieldProjection.stimulate` call it. The cut of §59.71 and `percept_band` are gone. Values and gradients equal the earlier read: its tests on drawn operands, and its passive check on every caller reached. |
+| 3. The object at the menu | `ReferenceContext.bind_content`. A single word is the journal's negative source. Its value is the leaf law on the staged object's code with the slot's presence and pair, with no place or time; or the off-stack value found by the lookup that `refresh` uses, now `STMChunks.identity_sources`. The slot and the operator's operand are unchanged. |
+| 4. Certificates | All seven are there and pass. With step 3 taken out, the fusion assertion fails. |
+| 5. The count | On one stream, 144 calls with a single word: 15 candidates offered to the word, 32 to its object. 289 calls with a phrase, unchanged. |
+| 6. The report on a phrase | Given. The evaluator cannot be called on a part of the tree without separating what it writes; a replay to each phrase costs up to the phrases times the nodes; and its capture reads MTM, which the compiled forward may not. |
+
+Step 3 has three things the text did not say. Each is reported in
+§59.83 or §59.84, and each is accepted.
+
+1. *A word with no staged object is offered nothing:* its content at
+   the menu is empty (44 of the 144 single-word calls). This is point 5
+   of §70.2.
+2. *What a bind records as its right operand's order is now the
+   candidate's own order,* and the dummy is not held to the comparison
+   of orders. It follows from testing the object's order while the slot
+   keeps the word's.
+3. *The model's own interpreter and input space are given to
+   `prepare_operands`* where the grammar has `bind`; the bank of the
+   live-reference test has no interpreter.
+
+**The earlier return against its texts.**
+
+| Asked | Found |
+|---|---|
+| §68.64, step 1: the word deposited by the leaf law | `stage_cs_lang` activates the word's own staged code with the payload's presence and pair and keeps the product's place and time. The row and order pushed are the staged word's. |
+| §68.64, step 2: the committed charts | `bin/MeaningKernels.py` is byte for byte the merge's. The three named functions were not rechecked. |
+| §68.64, step 3: an identity mentioned only on an alternative | It reads zero on the actual timeline, with a test (Codex's answer, §59.63). |
+| §68.64, step 4: certificates | Negated reads leave nothing below zero. Certificate 81 passes on the recorded stream (reported; not run again). |
+| §68.54: nothing estimates a sentence | 44 test contracts retired, all of that kind, and 13 renamed. Recomputed: 57 test names gone, 17 added in files that existed, 119 changed. No skip or expected-failure mark was added, and no seed. |
+| The four attention files | Byte for byte the merge's, in both commits. |
+
+**Decided by Codex, for Alec to know.**
+
+1. *Old checkpoints are imported* (§59.62). `bin/CoordinateCheckpoint.py`
+   converts the place and time of saved observations to the unsigned
+   form, by the names of the saved fields. *Claude's view:* it may stay.
+   A field saved under another name would be missed, and only its own
+   fixtures test a checkpoint older than this round.
+2. *The mixing path stages the words' own codes* (§59.67). Rule 1 of
+   §55.1 requires it; the text had not named that path.
+3. *The inverse audit transports a leaf whose operand a reference
+   replaced* (§59.76), with a test that fails before it.
+
+**What the returns show and do not repair.**
+
+- The lesson's answers are empty, 0 of 32 and 0 of 48, as at §51 and
+  §58. Its exact fields are 21 of 160, where §58 had none. Rung two of
+  the assessment fails.
+- `ReferenceClose.continuity`'s overlap of two places is a sum of the
+  smaller coordinates, and the coordinates are now unsigned (§59.78).
+  §70.4 measured that such a sum is no test of the same place.
+- What §70.12 lists as not yet met: the object of a phrase, the two
+  orders, the codecs, the other clients, a miss.
+
+**Next.** Part B's first text is returned whole. The next text in the
+order of §68.31 is the small repair of the thought replay, written
+there on 2026-11-17; its return is §69. It concerns
+`Thoughts.replay_thoughts` and nothing changed today; it was not read
+against today's source again. Its line "Commit and push nothing until
+Alec says so" is older than Alec's authorization of local commits.
+
 ## 70. One match of a content against conceptual space (Claude, 2026-11-18; a design for Alec; no text for Codex)
 
 Alec, 2026-11-18 (§68.67): "So it seems we should match the object, not
@@ -31894,3 +32000,93 @@ of a phrase at the menu must be the one made from its objects
 takes), or whether the read's own vector serves for the bond, since the
 close settles the reference from comprehension's value and can undo the
 bond.
+
+### 70.14 The measure matched with parthood as *The Whole Part* defines it (Alec, 2026-11-18)
+
+Alec, 2026-11-18: "I would like you to match the overlap measure you
+have for identity with that for parthood as defined on pages 184-185 of
+The Whole Part, by Alec Rogers." In the epub it is the section Logic of
+the Formal Summary. And: "that definition of parthood is a 0-1 range of
+the overlap between two vectors, if I have done that calculation
+right."
+
+**The book's definition** (pages 184 and 185 of *The Whole Part*, one
+of the books attached to the author's ORCID record; read in the copy at
+archive.org, since the download link of thewholepart.com was broken on
+that day; nothing of it is quoted). Parthood is a continuous function
+of two things with a value between zero and one: the size of what they
+share, over the size of the first.
+
+$$x < y \;=\; \frac{|x \cap y|}{|x|}$$
+
+Its Figure Aa shows five relations of two shapes A and B, and its Table
+Ab gives each as two values, A in B and B in A.
+
+**The match.** Take what two vectors share as the smaller value on each
+coordinate, and a size as the sum of the coordinates. Then the book's
+parthood is the measure of §70.12, exactly:
+
+- *the content found in the candidate*, $m / \sum_i q_i$, is $q < c$;
+- *the candidate found in the content*, $m / \sum_i c_i$, is $c < q$.
+
+The two numbers of the one match are the two columns of the book's
+table. `IdentityRows.meet_ratios`, given regions as vectors of ones and
+zeros, returns the table's values (scratch, 2026-11-18):
+
+| The book's case | A in B | B in A | In the one match |
+|---|---|---|---|
+| 1. apart | 0 | 0 | nothing is offered |
+| 2. B inside A | .3 | 1 | the candidate is a part of the content: a token implies its type |
+| 3. A inside B | 1 | .3 | the content is a part of the candidate: a description fits a token |
+| 4. the same | 1 | 1 | identity |
+| 5. they overlap | .2 | .2 | each is a part of the other to a degree; not offered today |
+
+**What it shows about "identity".** The rule of 2026-11-05 offers a
+candidate when either number is exactly 1. That is cases 2, 3 and 4:
+parthood one way or the other. Identity is case 4 alone, parthood both
+ways; `doc/Mereology.md` has `equal` as the product of the two
+parthoods. So the measure that §70 has called a measure of identity is
+the book's parthood, taken both ways.
+
+**Alec's calculation.** It is right where the coordinates are zero or
+more. What two such vectors share is at least 0 and at most the size of
+the first, so the value lies between 0 and 1. It is 1 when the first is
+at or below the second on every coordinate, and 0 when they share
+nothing. Checked on 100,000 random pairs. It does not hold for signed
+coordinates: on signed random vectors the same formula left the range
+in 99.7 of 100 pairs. In the model a concept is stored as two unsigned
+lanes, and place and time are unsigned since §59.62, so it holds
+wherever the one match reads.
+
+**Where the source differs from the book.**
+
+1. *An empty first thing.* The formula has no value there.
+   `meet_ratios` gives 0 ("An empty request supplies no content
+   evidence", with the rule of 2026-11-05). `Ops._part_kernel` gives 1,
+   the empty being a part of everything (`doc/Mereology.md`). The one
+   match keeps 0.
+2. *The parthood of `doc/Mereology.md` is another function:* "Parthood
+   as Clipped Cosine Projection", the product of the two vectors over
+   their lengths. It is the same both ways, so it cannot give the
+   book's cases 2 and 3: it reads .548 and .548 where the book has .3
+   and 1. The readers of identity do not use it. *Not asked, and not
+   proposed here:* whether that function should become the book's.
+3. *Two lanes.* The readers of family A sum over both lanes of the
+   meaning at once, so the first is a part of the second when it is at
+   or below it on the for lane and on the against lane.
+   `FieldProjection.stimulate` takes each lane apart.
+
+**What changes in §70.** The names only. "The content found in the
+candidate" is the parthood of the content in the candidate, and "the
+candidate found in the content" is the parthood of the candidate in the
+content. The measure is the book's parthood and no longer only "the one
+that is there". It stays provisional in the sense of §70.12 until Alec
+has returned to it. The text of §70.11 needs no change: it names the
+two numbers of `meet_ratios`.
+
+**For the documentation pass** (`doc/*.md` is not edited now).
+`doc/Mereology.md`: that the measure of identity is the parthood of
+*The Whole Part*, pages 184 and 185, taken both ways, with the table
+above, and beside it what the clipped cosine is used for.
+`doc/Architecture.md`, the paragraph on a mention's association: the
+same reference.

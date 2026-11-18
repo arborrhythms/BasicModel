@@ -1,15 +1,13 @@
 # SigmaLayer and PiLayer: a sum, a product, and no chart that only bounds (Claude, 2026-11-14)
 
-A specification for rewriting `SigmaLayer` and `PiLayer` of
-`bin/Layers.py`. It was round D of item 1.8 (§18). Since 2026-11-16 it
+A specification that began as a rewriting of `SigmaLayer` and `PiLayer`
+of `bin/Layers.py`; by §18.24, rule 32, those two classes are left as
+they are and new classes are built. It was round D of item 1.8 (§18). Since 2026-11-16 it
 is item 1.7 (Alec: "I think we should position D as item 1.7"), built
 after item 1.8 is finished and pushed; it keeps the name round D here.
-It has no text for Codex yet: that is written on the source item 1.8
-leaves. A rule marked *default* is Claude's choice where Alec has not
-spoken. Not yet written here: the discussion of 2026-11-16 after §18.23
-(flattened percept vectors read by one template per concept, one Sigma
-and Pi form at every order, an event axis for symbols, binding a letter
-to its place).
+**Its rules to build, with the text for Codex, are §19, which is the
+last word of this specification;** everything before §19 is the record.
+A rule marked *default* is Claude's choice where Alec has not spoken.
 
 **Where each section stands.** §18.5 to §18.8 are the rules as
 decided, their certificates and Claude's defaults. The rest is the
@@ -1109,7 +1107,9 @@ are the record of how; where they and these rules differ, these rules
 are the last word. A rule marked *default* is Claude's choice where
 Alec has not spoken (§18.8 lists them).
 
-**The two classes, updated where they stand.**
+**The two classes, updated where they stand.** *Withdrawn by §18.24,
+rule 32* (Alec, 2026-11-16): rules 1 to 4 are not built; `SigmaLayer`
+and `PiLayer` stay as they are, and item 1.7's layers are new classes.
 
 1. `SigmaLayer` is its matrix with one exit (§18.16). It calls no
    `_chart` on what it is given, in `forward`, `compute_forward`,
@@ -2164,3 +2164,3083 @@ differences follow:
    each concept then has one symbol, holding its pair.
 2. The event axis on the symbol tensor, with each event's `.where` and
    `.when` added when it is read, in place of a flattened Sigma.
+
+### 18.24 Item 1.7 as decided: Pi selects, the percept vectors are pooled, a dense Sigma collects (Alec, 2026-11-16)
+
+This section is the last word of §18 where it differs from §18.5,
+§18.22 and §18.23. It was reached in a long discussion; only its final
+form is kept here.
+
+*Alec's words.*
+
+- The form: "Percepts (and symbols) are the PI layer. that doesn't
+  change much. However, at the basic level (where perceptual space is not
+  zero, as in symbolic space), the (square) pi layer emits a sparse
+  vector. That sparse vector is multiplied by the full percept vectors,
+  and at the basic level it is pooled, so the resulting dimensionality is
+  nPercepts*perceptDim (or nPercepts*1 for symbols). Those are collected
+  into concepts by the Sigma's DENSE matrix (matmul by either
+  perceptDim*nConcepts or 1*nConcepts)."
+- What the Pi does: "I want the PI to be selecting (and weighting) the
+  percepts to be passed on the the concept. It finds the hypercones,
+  weighted by centrality(?), and then sigma operates on those (optionally
+  pooled) PI vectors." And: "we let PI determine membership by using
+  regularization, and it tells us which percepts are important."
+- Every order: "These can be used uniformly across all sigma/pi levels
+  also. And for symbols, which have a zero-D perceptual space, the sigma
+  returns to its familiar form (i.e. across activation)."
+- Pooling, place and time: "Pooling over percepts happens only for basic
+  percepts; it is not warranted in higher orders, where the percepts may
+  be discontiguous. also, we are not storing .where and .when (the .where
+  gets written on STM read)." Then: ".where and .when are not stored FOR
+  SYMBOLS. we still have them in other places."
+- The mereological order: "In the mereological tower, a new row is
+  guaranteed to be greater than its parts (the mereology is a partial
+  order). A sum of byte codes is extreme, you just need a max and an
+  increment." And: "The basic percept code needs to obey that
+  mereological order: it must be greater than its parts and smaller than
+  its wholes."
+- Likeness: "'cat' and 'act' do not get paired because they are not
+  neighbors in mereological space."
+- The weights: "One nice thing about that formulation is that the number
+  of sigma weights does not depend on the cardinality of its membership."
+- The inverse: "sparse LDU for exact inversion. If we have enough
+  concepts, we will still have good inversion. But it does mean that we
+  cannot assume the inversion, so we may have to adjust the gradient
+  teaching algorithm."
+- A penalty on the Sigma's weights: "Im not sure thats true that it needs
+  a penalty, can we investigate on implemntation?"
+- Signed place and time coordinates: "where and when going negative is
+  not a problem if the PI is operating in activation space, is it?"
+  (They are not: see rule 23.)
+
+*The rules.* Rules 8, 10 and 13 to 16 and 20 stand except as said here.
+
+21. *The Pi layer is the percepts, and above order zero the symbols.* It
+    is square and sparse and works on activations (rule 8: a product
+    over the memberships of parts and wholes, on the monotone LDU). A row
+    is a hypercone, and its value for an input is that input's centrality
+    in the cone. Its output is a sparse vector: one pair, for and
+    against, for each percept.
+22. *At the basic level the Pi's output multiplies the percept vectors,
+    and they are pooled.* With $b_p$ the Pi's value for percept $p$ and
+    $v_p$ its full vector (`.what`, `.where`, `.when`), the pooled vector
+    of a reading is $x = \sum_p b_p\,v_p$, one for each lane, as wide as
+    the perceptual space. (Before the sum the array is percepts by
+    width; the Sigma is given the sum.) Pooling is within one reading.
+23. *A dense Sigma collects the pooled vector into the concepts of order
+    zero:* $y = \mathrm{exit}(x\,U)$, with $U$ of perceptual width by
+    concepts, signed. A term's sign chooses the lane it adds to, as a
+    weight's sign does in rule 9, so each lane stays at or above zero
+    although `.where` and `.when` are signed. This replaces rule 9's
+    sparse matrix of concepts by percepts at order zero. A concept has
+    as many Sigma weights as the space is wide, whatever its membership.
+24. *Above order zero there is no vector and no pooling.* The Sigma reads
+    the symbols' activations: symbols by concepts. *Claude's correction*
+    of "1*nConcepts": a matrix one wide cannot tell one symbol from
+    another, since every symbol would add the same row. It is the same
+    formula with a symbol's vector taken as its index. *Default:* it is
+    stored sparse, as rule 10 has it; the production chart has about a
+    million rows.
+25. *Sigma and Pi arithmetic at every order.* The least and the greatest
+    of `fold_presence` go above order zero too. This reverses rule 12's
+    "above order zero the folds keep their arithmetic", and it answers
+    §18.23's first question.
+26. *Place and time.* A percept's vector carries `.where` and `.when`. A
+    symbol stores neither; its `.where` is written when STM reads it.
+    §18.23's second question (an event axis for symbols) is dropped.
+27. *A percept's code obeys the order of the mereology:* at or above each
+    of its parts, at or below each of its wholes. A new row's code is the
+    greatest over its parts and an increment, in place of the sum of its
+    bytes' codes (`BytesFallbackEncoder.encode`). *Claude's reading:* the
+    greatest over the parts and the least over the wholes, as
+    `BasicPercepts.subspace_bounds` has them, are what obey it; a mean of
+    the parts is not above each part, so a centroid serves as a percept's
+    place and not as this code.
+    *Default, from a toy of 2026-11-16* (four two-word sentences labelled
+    as XOR, width 104, a dense Sigma fitted by least squares): the
+    increment is a small draw keyed to the row, not one amount added to
+    every coordinate. With words alone the four pooled vectors have rank
+    3 and every output is .5. With a row for each pair they have rank 4
+    and XOR is read exactly, unless the parts' codes share no coordinate:
+    then the greatest over the parts is their sum, a uniform increment
+    adds nothing a Sigma can use (rank 3, outputs .5), and a keyed
+    increment restores it (rank 4, exact).
+28. *Likeness of vectors pairs nothing* (*default*, from "they are not
+    neighbors in mereological space"). A row enters a cone, or two rows
+    are taken as neighbours, by the mereology or by a promotion, never by
+    the cosine of their codes. Before the text for Codex, Claude lists
+    the readers that compare codes by likeness (MTM's matching of a
+    candidate's support centroid is to be checked first).
+29. *The Pi's membership is learned under a penalty* (this reverses rule
+    13 for the Pi). *Default:* the penalty of §18.3, measured first. No
+    penalty is put on the Sigma's weights; whether a concept that should
+    ignore place and time comes to zero weights on those coordinates
+    without one is measured at implementation.
+30. *The inverse.* The Pi's sparse LDU inverts exactly. The Sigma's dense
+    matrix returns the pooled vector by least squares where there are at
+    least as many independent concepts as the space is wide, and not
+    otherwise; which percepts made the sum is not returned (§18.21, the
+    grey ball). Teaching does not assume an exact inverse. Before the
+    text for Codex, Claude lists where it does today.
+31. *The Pi of rule 21 is the product of memberships* (Alec, 2026-11-16:
+    "Use the membership product, PiLayer2's arithmetic"). For each lane,
+    with memberships $m$ in 0..1:
+    `z = exp(W @ log(clamp(m, EPS_LOG, 1)) + b)`, and back by the exact
+    LDU solve, as `PiLayer2` of `bin/Layers.py` has it. One is its
+    identity and zero annihilates, so a row requires the members it has
+    weight on. This replaces rule 8's naming of `PiLayer` on the
+    monotone matrix: that class multiplies $(1+x)/(1-x)$, for which an
+    absent unsigned input is the identity. Rule 2 stands for `PiLayer`
+    where the grammar uses it on signed values. `PiLayer2`'s inner layer
+    (`ContractiveInvertibleLinearLayer`) keeps its diagonal at one or
+    more, the rest at zero or more and the bias at zero or less, so a
+    row's value is never above its own reading, and a row with no
+    reading of its own does not fire. *Default:* the same arithmetic
+    for the symbols above order zero.
+32. *New classes, with new names* (Alec, 2026-11-16: "please dont
+    re-write the SigmaLayer and PiLayer: create newly named versions").
+    `SigmaLayer` and `PiLayer` are not edited, so rules 1 to 4 of §18.5
+    are withdrawn and nothing that is built with them changes value.
+    `PiLayer2` and `SigmaLayer2` exist already and also stay as they
+    are: `SigmaLayer2` is the De Morgan wrap of a `PiLayer2` kernel
+    (`1 - pi(1 - m)`), which is not the Sigma of rule 23. *Default
+    names:* `PiLayer3`, the square sparse product of memberships of
+    rules 21 and 31, with a pair of lanes; and `SigmaLayer3`, the
+    pooling of rule 22 with the dense signed matrix and exit of rule 23
+    (above order zero, rule 24's matrix over symbols). Rules 5 to 7, the
+    fast `SigmaPiLayer` and its stacks, edit neither of the two old
+    classes and stand.
+
+*What the form is* (Claude, for Alec's question whether it approximates
+the full computation, and whether it generalizes in both spaces).
+
+- The full computation has a weight for each concept, percept and
+  coordinate: $y_c = \sum_{p,d} W_{cpd}\,b_p\,v_{pd}$. With one vector for
+  each percept, the sum over $d$ is one number, $M_{cp} = W_{cp\cdot}
+  \cdot v_p$, so the whole array acts as one matrix of concepts by
+  percepts.
+- Rules 22 and 23 say $M_{cp} = u_c \cdot v_p$, that is $M = U^{\top}
+  V^{\top}$ with $V$ the percepts' vectors: a matrix of rank at most the
+  perceptual width. The best approximation of any matrix at that rank
+  loses exactly the energy of its further singular values
+  (Eckart-Young). So the form is exact where a concept's membership is a
+  linear function of a percept's vector, and it degrades smoothly where
+  it is not.
+- That constraint is the generalization. A new percept has a membership
+  in every concept from its vector at once (perceptual space), and every
+  percept teaches the one row of weights a concept has (conceptual
+  space).
+- Its limits, to be measured: no more concepts of order zero can be told
+  apart in one reading than the space is wide; unrelated percepts add
+  to one sum, so a concept's reading carries the others' share (the
+  signed weights are what can take it out); and a conjunction of two
+  percepts is read only because the code of the whole that has both as
+  parts (rule 27) is not a sum of its parts' codes.
+
+*A toy of both orders, trained on XOR* (Claude, 2026-11-16, at Alec's
+word: "please add a symbolic layer to the concepts (using a square PI as
+usual) and run XOR"; then: "that nonlinearity after sigma is
+important"). Plain tensors with this section's arithmetic, not the
+model's classes: word percepts, a square monotone Pi, pooling through
+nonnegative codes of width 32, a dense signed Sigma to six concepts, a
+square Pi over the concepts as symbols, a Sigma over the symbols to
+one concept read as the answer. An absent word is 0. Ten seeds, 3000
+steps, a penalty on the Pi weights off the diagonal; no seed chosen.
+
+| Exit after Sigma | Pair of lanes | Pi bias | Solved of 10 |
+|---|---|---|---:|
+| yes | yes | no | 9 |
+| yes | yes | yes | 10 |
+| yes | no | no | 8 |
+| yes | no | yes | 7 |
+| no | yes | no | 2 |
+| no | yes | yes | 1 |
+| no | no | no | 0 |
+| no | no | yes | 0 |
+
+So the exit after each Sigma (rule 1) is what carries XOR, as Alec
+says; the pair of lanes helps; four further percept rows for the word
+pairs change nothing (9 and 10 of 10 again). The Pi weights off the
+diagonal were pruned almost to none (about one kept at order zero,
+none at order one), so in this toy the two Pis stayed near the
+identity and the conjunction was made by the Sigmas' exits over two
+orders, not by a Pi row.
+
+*The same toy with the last Sigma linear* (Alec: "can you make the
+last layer linear and check again?"). The Sigma of order zero keeps its
+exit; the Sigma over the symbols has none.
+
+| Last Sigma | Pair of lanes | Pi bias | Solved of 10 |
+|---|---|---|---:|
+| linear | yes | no | 10 |
+| linear | yes | yes | 10 |
+| linear | no | no | 10 |
+| linear | no | yes | 8 |
+| tanh | yes | no | 9 |
+| tanh | yes | yes | 10 |
+| tanh | no | no | 8 |
+| tanh | no | yes | 7 |
+
+The exit that matters is the one after the Sigma of order zero. A
+linear last Sigma solves XOR at least as often as one with an exit.
+
+*Why the first Pi was not enough in the toy* (Alec: "Why isnt the
+initial PI sufficient as a nonlinearity? why do we have to add a
+second?"). The toy's Pi is `PiLayer`'s chart, `tanh(atanh(x) W)`. It
+multiplies odds, $(1+x)/(1-x)$, not memberships: an absent input, 0,
+is its neutral element. One row over two words gives .994 with both
+present, .9 with one and 0 with none, so it does not require both. A
+product of memberships, `exp(log(m) W)` with $m$ in 0..1 (the form of
+`PiLayer2`), gives .81, .009 and 0: an absent input annihilates.
+
+| Pi | Exit after Sigma | Penalty | Solved of 10 | Pi weights kept off the diagonal, order zero |
+|---|---|---|---:|---:|
+| chart (odds) | no | .001 | 2 | 0.0 |
+| chart (odds) | no | 0 | 1 | 3.7 |
+| chart (odds) | yes | .001 | 9 | 0.4 |
+| chart (odds) | yes | 0 | 10 | 0.8 |
+| product of memberships | no | .001 | 5 | 0.9 |
+| product of memberships | no | 0 | 7 | 4.6 |
+| product of memberships | yes | .001 | 10 | 3.3 |
+| product of memberships | yes | 0 | 10 | 4.4 |
+
+With the product of memberships the Pi alone solves XOR in most seeds
+with every Sigma linear (Boole's sum of products), and with the exit
+it solves all ten and the Pi keeps weights, that is, it selects. Rule 8
+says "a product over the unsigned memberships" and named `PiLayer`,
+whose chart is a different product; Alec chose the product of
+memberships (rule 31).
+
+*Certificates*, added to §18.6:
+
+14. *The pooled form equals the flattened one.* With one row of weights
+    for a concept repeated for every percept, the flattened computation
+    and rules 22 and 23 give the same values (atol 1e-6).
+15. *A new percept needs no new weight.* A percept never presented with a
+    concept reads that concept from its vector alone; a percept with an
+    unlike vector does not.
+16. *The standing gates on the new form.* Both stopping gates pass, XOR
+    among them, with rule 9's sparse matrix gone at order zero.
+17. *How many concepts are told apart.* At the lesson's size, the share of
+    order-zero concepts whose reading exceeds every other concept's on
+    their own percepts, and the largest reading a concept takes from
+    percepts that are not its own. Reported.
+18. *The order of the mereology.* Every percept's code is at or above
+    each part's and at or below each whole's, and a new row's code is not
+    its bytes' sum.
+19. *The inverse, as far as it goes.* The pooled vector is returned to a
+    stated tolerance where the concepts are enough, and the error is
+    reported where they are not.
+20. *Place and time without a penalty.* For a concept taught at several
+    places, its weights on the `.where` and `.when` coordinates after
+    teaching. Reported.
+
+21. *A row requires its members.* One Pi row with weight on two
+    members reads near their product with both present and at the
+    floor with one absent; no row's value exceeds its own reading.
+
+*Still Claude's defaults:* one symbol for each concept, holding its pair
+(§18.23, on "we don't want a conceptual explosion"); rule 24's sparse
+storage; rule 28; the penalty of rule 29. The binding of a letter to its
+place by a product, considered in the discussion, is not built.
+
+### 18.25 Signed concepts, unsigned percepts (Alec, 2026-11-16)
+
+"I think this is simpler than we are making it. A concept is on the
+signed unit hyperball, +-1, so sigma returns values in that range. thats
+evidence for and against the concept. those evidence channels (at
+output) are stored as two unsigned values. As they are unsigned,
+Percepts (pi) can operate on them. That will return twice as many
+unsigned values as the next conceptual stage can handle without
+doubling, so they are combined into a signed vector for the next sigma.
+So if we werent halving the number of symbols/concepts at each stage
+becuase we need fewer at higher orders, we would have regular signed
+concepts and doubled unsigned percepts."
+
+**The cycle, at every order.**
+
+1. A Sigma gives each of its concepts a signed value in [-1, 1]: its sign
+   is the lane, for or against.
+2. The value is stored as two unsigned values, one for each lane.
+3. The Pi above it (the percepts at order zero, the symbols above) works
+   on unsigned values, so it reads those pairs: twice as many inputs as
+   there are concepts, and twice as many unsigned outputs.
+4. The next Sigma reads each pair combined into one signed input, so it
+   reads as many inputs as there are concepts.
+5. So an order has n signed concepts and 2n unsigned percepts or
+   symbols, and the halving of the rows from one order to the next
+   (`_order_caps`) is what the combining in step 4 meets.
+
+**What it settles.**
+
+- *Two unsigned symbols for each concept,* one for each lane: Alec's "two
+  symbols every time it makes a concept" (§18.23). Claude's default of one
+  symbol holding its pair (§18.24, "Still Claude's defaults") is
+  withdrawn.
+- *Rule 24:* the Sigma above order zero reads the symbols' pairs combined
+  into one signed input for each concept.
+- *Rule 23* stands: one signed weight for each input.
+
+**Asked of Alec, and answered below.** Claude's reading of step 1 is that a concept's
+value in one reading is one signed number, whose positive part is stored
+on the for lane and negative part on the against lane. Then a single
+reading is never "both"; "both" arises only where readings are pooled (a
+bracket of several events, a field over places), and "neither" is a value
+of zero. The other reading keeps rule 23's present wording: the Sigma
+gives two sums, one from its positive weights and one from its negative
+weights, each unsigned, so that one reading can be "both".
+
+*Answered (Alec, 2026-11-16):* "Yes, one number". In one reading a
+concept's value is one signed number in [-1, 1]; its positive part is
+stored on the for lane and its negative part on the against lane. A
+single reading is never "both"; "both" arises where readings are pooled,
+and "neither" is zero. Rule 23 is amended to this: $y = \mathrm{exit}(x\,U)$
+is one signed value for each concept, split into its two parts, and not
+two sums by the sign of the weights.
+
+*Checked as a toy* (scratch, `xor_cycle.py`; not the model and not a
+receipt): the cycle on XOR with four word percepts, Pi as the product of
+memberships under `PiLayer2`'s constraints at both orders, six concepts,
+the answer read as the last Sigma's signed number, ten seeds each.
+
+| Free percept rows | Target for "false" | Solved of 10 | Off-diagonal Pi weights kept (order 0, order 1), mean |
+| ---: | ---: | ---: | --- |
+| 0 | 0 (neither) | 10 | 0.3, 0.2 |
+| 0 | -0.9 (against) | 9 | 1.1, 0.1 |
+| 4 | 0 (neither) | 10 | 1.2, 0.0 |
+| 4 | -0.9 (against) | 7 | 1.0, 0.3 |
+
+A first try that only replaced the Sigma of the older toy, and read the
+answer from its for lane alone, solved 3 or 4 of 10: the split at the
+answer passes no gradient below zero. Where an answer is read, it is read
+as the signed number (*default*).
+
+## 19. Item 1.7 as it stands: the rules to build, in one place (Claude, 2026-11-16; a doc pass)
+
+*As of 2026-11-17 the rules to build are restated in §19.21, which
+stands where it differs from §19.1 to §19.20.*
+
+This section is the last word of this specification. Everything before
+it is the record of how it was reached. Each rule names where it was
+settled; a rule marked *default* is Claude's choice where Alec has not
+spoken, and §19.7 lists them. It is built after item 1.8 is finished and
+pushed, on the source item 1.8 leaves.
+
+### 19.1 What it builds
+
+Two new layers, a Pi and a Sigma, used in one cycle at every order:
+percepts (and above order zero, symbols) are unsigned and are rows of a
+square, sparse Pi, a product of memberships; concepts are signed and are
+a Sigma over them. At order zero the Pi's values weight the percepts'
+full vectors, which are pooled before the Sigma. Symbols are split from
+concepts and have no dimensions. The old classes are not edited.
+
+### 19.2 The rules
+
+**A. The layers and the cycle.**
+
+1. *New classes* (§18.24, rule 32). `PiLayer3` and `SigmaLayer3`
+   (*default names*). `SigmaLayer`, `PiLayer`, `PiLayer2` and
+   `SigmaLayer2` are not edited, and nothing built with them changes
+   value.
+2. *The Pi* (§18.24, rules 21 and 31). Square and sparse, on unsigned
+   values: $z = \exp(W \log \mathrm{clamp}(m, \epsilon, 1) + b)$, with
+   `PiLayer2`'s constraints (diagonal at one or more, the rest at zero or
+   more, bias at zero or less), so a row requires the members it has
+   weight on and never exceeds its own reading; its way back is the exact
+   LDU solve. Each percept or symbol is two unsigned rows, one for each
+   lane (*Claude's reading* of §18.25, "doubled unsigned percepts").
+3. *The Sigma* (§18.24, rule 23, as amended by §18.25). One signed weight
+   for each input, signed inputs, and for each concept one signed number,
+   $\tanh(x\,U + c)$, in $[-1, 1]$ (the exit of §18.16). It is stored as
+   two unsigned lanes, its positive part on the for lane and its negative
+   part on the against lane; a single reading is never "both". Where an
+   answer is read from a Sigma, the signed number is read (*default*,
+   §18.25's toy).
+4. *The cycle* (§18.25). At an order with $n$ concepts: $n$ signed
+   values, stored as $2n$ unsigned lanes; the Pi above reads the $2n$
+   lanes and gives $2n$ unsigned values; each pair is combined, for less
+   against, into one signed input; the next Sigma reads $n$ inputs.
+
+**B. Order zero.**
+
+5. *A percept's code obeys the mereology* (§18.24, rule 27): at or above
+   each part's code and at or below each whole's. A new row's code is the
+   greatest over its parts' codes and an increment (*default:* a small
+   draw keyed to the row), in place of the sum of its bytes' codes
+   (`BytesFallbackEncoder.encode`).
+6. *A basic percept is a row of the Pi* over its parts and wholes
+   (§18.5, rule 8, with rule 31), in place of the least of
+   `BasicPercepts.read`. For order zero, `store.conjunctive` and the key
+   `conceptualPi` go.
+7. *Pooling within one reading* (§18.24, rule 22, with §18.25, step 4):
+   $x = \sum_p (b^{+}_p - b^{-}_p)\, v_p$, with $b_p$ the Pi's pair for
+   percept $p$ and $v_p$ its full vector (`.what`, `.where`, `.when`).
+8. *The concepts of order zero* (§18.24, rule 23): the Sigma of rule 3 on
+   $x$, with $U$ dense, of the perceptual width by the concepts. It
+   replaces §18.5's rule 9, the fold of `ConceptualSpace._compose_order0`,
+   the readout `IndexedSigmaConceptsFromPercepts`, and item 1.8's stand-in
+   for one signed weight (`SparseLayer._fold_weights`, §58 of the 1.8
+   specification) at order zero.
+
+8b. *A concept made at order zero starts from its members* (*default*).
+   The order-zero matrix of edges goes, so what promotion,
+   `PerceptCollections.collect` and the lessons write today (an edge in
+   the feature matrix, `add_concept_feature`) becomes a new column of
+   $U$: the sum of its members' vectors, normalized, which the network
+   then learns. So a new concept reads its members at once, as a new
+   percept reads its concepts from its vector (§18.24, certificate 15).
+   The Pi of order zero then holds only the mereology's entries, a
+   percept over its parts and wholes (rule 6); no concept writes into
+   it. It stays full rank: its diagonal at one or more is what gives
+   its exact way back (rule 17). The reduced rank of order zero is the
+   Sigma's, at most the perceptual width (§18.24, "What the form is"),
+   which is why a column of members' vectors is a good start (Claude,
+   2026-11-17, on Alec's question whether rule 8b is a reason to reduce
+   the Pi's rank).
+
+**C. Above order zero.**
+
+9. *Symbols are split from concepts and have no dimensions* (§18.22,
+   rules 14, 15 and 20). Separate tensors; a symbol has no vector, place,
+   form or trust content read as a direction; the shared row of a concept
+   and its symbol is given up.
+10. *Two unsigned symbols for each concept, one for each lane* (§18.25;
+    Alec, §18.23: "two symbols every time it makes a concept"). They are
+    made when the concept's row is allocated (§18.22, rule 19), and for a
+    meta concept when `interpret` makes it (§18.23). A conjunction is
+    promoted as a new symbol, a Pi row over its members, under a new
+    concept, a Sigma over that symbol (rule 19).
+11. *The Sigma above order zero* (§18.24, rule 24, with §18.25): it reads
+    the symbols' pairs combined into one signed input for each concept of
+    the order below. No vector and no pooling. Stored sparse (*default*).
+12. *Sigma and Pi at every order* (§18.24, rule 25). The least and the
+    greatest of `SparseLayer.fold_presence` go above order zero too, and
+    item 1.8's `SparseLayer._fold_weights` with them.
+13. *Place and time* (§18.24, rule 26). A percept's vector carries
+    `.where` and `.when`; a symbol stores neither; its `.where` is written
+    when STM reads it.
+14. *Between conceptual orders, only activation* (§18.22, rule 16): a
+    pull within one order does not pass through a symbol.
+
+**D. Learning and the way back.**
+
+15. *The Pi's membership is learned under a penalty* (§18.24, rule 29);
+    *default:* §18.3's penalty, measured first. Above order zero a
+    promotion still writes an edge at one into capacity allocated
+    beforehand (§18.5, rule 10; rule 10 here); at order zero it writes
+    a column of $U$ (rule 8b). The penalty thins the values of entries
+    that exist; it does not make the matrix sparse (§18.9).
+    No penalty is put on the Sigma (reversed above order zero by rule
+    22, §19.10; §19.13 shows why it matters).
+16. *Likeness of codes pairs nothing* (§18.24, rule 28, *default*). A row
+    enters a set, or two rows are taken as neighbours, by the mereology or
+    by a promotion, never by the likeness of their codes. The readers that
+    decide by likeness today are §19.4, list 1.
+17. *The way back* (§18.24, rule 30). The Pi inverts exactly; the Sigma
+    returns the pooled vector by least squares where there are enough
+    concepts, and not otherwise. Teaching does not assume an exact
+    inverse; where it does today is §19.4, list 2.
+
+**E. The learned maps of System 1, and storage.**
+
+18. *The stacks take the same arithmetic* (*Claude's reading* of Alec's
+    "These can be used uniformly across all sigma/pi levels"; Alec,
+    2026-11-17: yes, §19.10). `SigmaPiLayer` and `SigmaPiStack` (`expect`, `intuit`, the
+    marker of `bin/Language.py`) are built from rules 2 and 3 with no way
+    back, fused so that a stack is captured as one graph. Today
+    `bin/SigmaPiStack.py` uses `PiLayer`'s chart of odds and a linear
+    `SigmaLayer` clipped to [0, 1]. This replaces the formula of §18.5,
+    rule 5; rules 6 and 7 (keys, pair count, seed, the last Sigma starting
+    at zero, the cost of an MLP layer) stand.
+19. *The matrices are tensors on the device* (*default*): the Pi and the
+    Sigma above order zero are stored as compressed rows, not as
+    dictionaries of edges (`SparseLayer._index`), and grow into capacity
+    allocated beforehand.
+
+### 19.3 What these rules withdraw or replace
+
+§18.5: rules 1 to 4 (rule 1 here); rule 5's formula (rule 18); rule 8's
+`PiLayer` (rule 2); rule 9's two sums (rule 3); rule 10 for the Sigma
+(rules 8 and 11); rule 11 (rule 17); rule 12 (rule 12); rule 13 for the
+Pi (rule 15). §18.6: certificates 1 and 2. §18.22: rule 17's question and
+rule 18 (rules 10 and 12). §18.23: both points put to Alec (rules 12 and
+13). §18.24: "Still Claude's defaults: one symbol for each concept"
+(rule 10).
+
+### 19.4 Readers to adapt (read in the source on 2026-11-16)
+
+Read by a sub-agent in the working tree of 2026-11-16, while Codex was
+building §57.6 of the 1.8 specification; a few statements were read
+again by Claude. Names and lines move with item 1.8; Codex takes these
+lists again on its starting source (§19.8, step 1). What becomes of each
+is Claude's *default* unless a rule above says otherwise.
+
+**List 1: likeness that decides membership** (rule 16).
+
+| Where | What it decides today | Under rule 16 |
+| --- | --- | --- |
+| `MediumTermMemory.match_candidate` (`bin/Memory.py`) | an observation joins the open candidate whose value has cosine at least `match_cos` (0.8) with it, after an exact match of support proportions fails | the exact match stays; the cosine fallback goes |
+| `FamiliarTier.witnessed_match` | with equal member sets, a candidate is the existing concept if proportions are equal or the centroids' cosine is at least `conceptMatchCos` (0.8) | equal member sets decide; the cosine goes |
+| `FamiliarTier.observe_field` (two places) | a remembered context like the current one raises an order; a key whose value is like the used centroid counts as accessed | both by membership: the contexts' or the key's members, not their likeness |
+| `ReferenceClose.individuals` | each member goes to the anchor whose meet ratio is greatest | by containment, the members' mereology; reported first |
+| `IndependentComponents.SparseDictionary.observe` | a residual direction like an admitted or pending one joins it, or a new component is made on recurrence | reported, not changed in this item: it is perceptual, below percepts |
+
+Kept, since they are not likeness of codes: containment, a meet ratio of
+exactly one (`MemoryLink.menu` and `link`, `STMChunks.bind_menu`,
+`MediumTermMemory.merge`, `ReferenceClose`'s merge of groups,
+`TimelineRead.case_coverage`, `Interpret.recognized_objects`); exact
+equality (`cdist` at most 1e-5 in `WordExpectation` and
+`Expectation.match_symbols`); a likeness that only feeds a learned score,
+a cost or a report; decoding a generated vector to the nearest stored
+form (`SentenceUnderstanding.readback_scores`, `SynthesizeLayer.reverse`,
+`Basis._snap_content`). Also kept, by Alec's decision of 1.8 §48.11
+(answer 1): a new identity's start from the objects its words' nearest
+words name (`ConceptPlacement.identity_start`). `TruthLayer`'s cosine
+thresholds are outside the training step and are left. The likeness
+readers with no caller (`priming_prior`, `BracketKeys._cos`,
+`_context_cosine`, `_reverse_derive_words`) are removed.
+
+**List 2: teaching that assumes an exact way back** (rule 17).
+
+The grammar's operators keep `SigmaLayer` and `PiLayer` (rule 1), so the
+inverses of the generate walk (`_reverse_of_binary_op`,
+`SurfaceLayer.generate`, `_bounded_binary_reconstruction`) stay exact.
+What changes is the way back through order zero and between orders:
+
+| Where | Today | Under rule 17 |
+| --- | --- | --- |
+| `Models.reverseReconstruct` (field path), `FieldReverse.reverse`, `cs_percept_attribution`, `cs_reverse_presence`, `SparseLayer.attribute_presence` | a concept's evidence goes back to percepts by undoing each edge's exponent | the Sigma's least squares to the pooled vector, then the Pi's exact solve; the cost against the native target stays, with the fit's residual reported |
+| `Models.reverseReconstruct`, the check that a cost of zero is an exact identity, and the docstrings of `_reverse_body` that say the pairing is exact | exactness asserted | the check and the claims go |
+| `SentenceField.reconstruct`, `Examination.run`, `Models.reverseOutput` | `model.reverse` of a field, costed | unchanged in form; they read rule 17's way back |
+| `CaseSelection.stage_case_bank`; `refine_over_collected`; `Models._passback_scope_ps` | attribution of evidence to percepts | from rule 17's way back |
+
+**List 3: a symbol's vector, or the row a concept and its symbol share**
+(rules 9 to 11).
+
+| Where | Today | Under rules 9 to 11 |
+| --- | --- | --- |
+| `symbolTower` (`SymbolSubSpace`, a codebook of symbols with vectors of the concepts' width), set in `data/XOR_symbols.xml`, `XOR_exact.xml`, `MM_20M_xor.xml`, `MM_add_verb.xml`, `matrix/MM_20M_xor_noraise.xml` | symbols as vectors | goes, with the key; those configurations are ported |
+| `forward_concept_to_symbol` | writes a symbol's row from its concept's code; two addresses for each concept, `2*id` and `2*id+1` | writes the two symbols' values (rule 10); no code |
+| `ConceptEvidence.decode`, `cs_forward_content`'s paired symbol event, the SBOW slab (`Models`, near `forward_concept_to_symbol`) | one concept code read for both poles | the concept's code is read as the concept's; the symbol gives an activation |
+| `ConceptualCombine` with three streams under `symbolTower`; `Models._reverse_body` unpacks two of the three | a symbol's vector as the third input | goes with the tower |
+| attention's `SPACE_SYMBOL` keys (`_addressable_spaces`, `_answer_attention_step`, `PrimedSymbolReader`) | symbol codebook rows as keys | the concepts' codes as keys, where a key is needed |
+| `LTM0(content_width=symbol_dim)` | the width of an idea | unchanged (ideas keep their width, §18.22), renamed to the concept's width |
+| `WhereRegistry`'s `symbols` slice, two for each concept row | two addresses for each concept | kept: two symbols for each concept |
+| `_csw_row_of` (`('shared', cid)`, about 110 call sites) and the readers of `('sym', cid)` (`MemberRead.read`, `ClauseRow.concept_point`, `ReferenceClose`, `Queries`, `FamiliarTier`, `Memory.promote`, `Priming`, `Intuition`, `PartClosing`, `PrependedSymbols`, `add_concept_edge`) | one row for a concept and its symbol; a symbol read as a vector | a concept's row and a symbol's index are two lookups; a reader that wants a vector reads the concept's code |
+
+**List 4: the folds and matrices that the cycle replaces** (rules 6, 8,
+11 and 12).
+
+| Where | Under |
+| --- | --- |
+| `cs_read_percept_field`'s fold over the feature matrix (basic-percept literals) | rule 6: rows of the Pi |
+| `_compose_order0`'s folds of `store.conjunctive` and of the Sigma store; `IndexedSigmaConceptsFromPercepts` | rules 7 and 8 |
+| `_concept_rung_presence` (orders above zero) and `FieldProjection.close` (the closure upward) | rules 11 and 12: the cycle |
+| `SparseLayer._fold_weights` and the opposite columns of `_prepare_part_learning` | go: one signed weight needs no opposite column |
+| `add_concept_feature` and its writers (promotion in `FamiliarTier` and `Memory.promote`, `PerceptCollections.collect`, `ConceptLessons`, which runs Adam on `features.values`) | rule 8b |
+| the key `conceptualPi` (true in `BasicModel_corpus`, `MM_corpus_orders`, `MM_corpus_lessons`, `MM_xor`, `MM_xor_fixture`, `XOR_exact`, `XOR_symbols`; false in `model.xml` and `MM_image`) and its readers | goes (rule 6) |
+
+### 19.5 Certificates
+
+1. *The old classes are unchanged:* `SigmaLayer`, `PiLayer`, `PiLayer2`
+   and `SigmaLayer2` give the same values before and after, on random
+   inputs over the whole range.
+2. *The Pi:* §18.24's certificate 21 (a row requires its members);
+   bounds over the whole range, rails included, with weights scaled far
+   beyond their start (§18.6, certificate 4); the exact way back (atol
+   1e-6, §18.6, certificate 5).
+3. *The Sigma:* each concept is one signed number in a reading and its
+   two lanes are its parts, never both above zero; bounded as in 2.
+4. *The cycle:* two symbols for each concept, made at allocation; the
+   next Sigma reads one combined input for each concept below; a class
+   promoted makes no symbol (§18.22, certificate 13, amended).
+5. *Order zero:* §18.24's certificates 14 (pooled equals flattened), 15
+   (a new percept needs no new weight), 17 (concepts told apart,
+   reported), 18 (the mereological order), 19 (the way back as far as it
+   goes) and 20 (place and time weights, reported).
+6. *Symbols:* §18.22's certificates 11 and 12 (no tensor holds both a
+   concept and a symbol; nothing reads a vector, place, form or trust
+   content at a symbol; a Sigma above order zero is unchanged when the
+   places of every other order are rotated).
+7. *The stacks:* a fused `SigmaPiLayer` equals its two layers (atol
+   1e-6); a stack is one graph; seconds against an MLP layer of the same
+   size; depth (§18.6, certificates 3, 6, 7 and 8, on rule 18's
+   arithmetic).
+8. *Likeness and the way back:* no reader of §19.4's lists 1 and 2 is
+   left as it was, each changed as §19.4 says or reported.
+9. *The standing gates and the lesson* (§18.24, certificate 16; §18.6,
+   certificate 10): both stopping gates pass, XOR among them; the lesson's
+   readings before and after, each order's occupancy, the Pi's kept edges
+   for each row, and one default sweep.
+10. *Speed* (*default*): the seconds of the lesson's sixteen sentences
+    before and after, as §51 of the 1.8 specification reported them.
+
+### 19.6 The order of building
+
+1. The two classes, with certificates 1 to 3.
+2. Order zero: codes (rule 5), the percept Pi (rule 6), pooling and the
+   Sigma (rules 7 and 8), with certificate 5. Decided in §18.22: the
+   split comes after order zero.
+3. Symbols and the orders above (rules 9 to 14), with certificates 4
+   and 6.
+3b. The vertical spread (rules 23 to 27, §19.11), with certificates 14
+   to 17, 19 and 20.
+3c. Thought reads the Sigma and the Pi (rule 28, §19.12), with
+   certificate 21.
+3d. Certificate 22 (§19.13), on the stacks of step 4 and on one cycle.
+4. The stacks (rule 18), with certificate 7.
+5. The readers of §19.4 (rules 16 and 17), with certificate 8.
+6. Certificates 9 and 10.
+
+### 19.7 Claude's defaults, for Alec to overrule
+
+The names `PiLayer3` and `SigmaLayer3`; each percept or symbol as two
+unsigned rows of the Pi; the answer of a Sigma read as its signed number;
+the keyed increment of a new row's code; sparse storage above order zero;
+the penalty of §18.3; likeness pairs nothing (rule 16); the matrices as
+device tensors (rule 19); the speed certificate. Decided since, and no
+longer defaults: the stacks on the same arithmetic (rule 18, §19.10).
+
+### 19.8 Codex text (after item 1.8 is pushed)
+
+~~~
+Item 1.7: one structure of Pi, Not and Sigma at every order, and symbols
+split from concepts. Read §19.21 of
+doc/plans/2026-11-14-sigma-pi-layers.md first: it states the rules to
+build, their certificates and their order, and the sections before it
+are its record. Build the rules of §19.21 in its order of building, with
+its certificates, on main as item 1.8 left it.
+
+Work in /Users/arogers/github/WikiOracle/basicmodel on main. Commit and
+push nothing until Alec says so; never push main, and never force-push.
+Receipts stay local and are not linked. Do not edit SigmaLayer,
+PiLayer, PiLayer2 or SigmaLayer2. The baseline rule of §43 of the 1.8
+specification holds: a learning certificate is recorded and not
+repaired; a mechanism certificate must pass; both stopping gates must
+pass. Do not change a bound, a learning rate, a seed, a capacity or a
+presentation count to obtain a pass.
+
+1. Before any edit, take the four lists of §19.4 and the table of
+   §19.21 again on the starting source, and return any reader that is
+   new, gone or different, with what you propose for it. Where a reader decides by likeness and
+   §19.4 does not say what becomes of it, stop and write it for Alec and
+   Claude.
+
+2. Build the order of building of §19.21, steps 1 to 8, each step with
+   its certificates, keeping both stopping gates passing after each.
+   Where a rule marked default or as Claude's reading in §19.21 cannot
+   be built as written, stop and write it with your recommendation.
+
+3. Port the tests that assert what these rules change; list each with
+   its old and new assertion; retire none without naming what replaces
+   it. Port the configurations that set symbolTower or conceptualPi.
+
+4. Run once on the finished source: both stopping gates
+   (test/test_mm_xor.py::TestMMXorConvergence::test_convergence,
+   test/test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class);
+   the lesson with its exact fields and its mean difference; the verbal
+   proof; the assessment's tables; certificates 9 and 10; and one default
+   sweep, env -u RUN_TRAINED -u RUN_SLOW make test.
+
+5. Return as §20 of doc/plans/2026-11-14-sigma-pi-layers.md: the lists of
+   step 1; each step with its edits by file and function and its
+   certificates; the ported tests and configurations; the measurements of
+   step 4 beside those of item 1.8's last return; the sweep; the source
+   snapshot.
+~~~
+
+### 19.9 What a model starts with, and what proposes rows and entries (read in the source on 2026-11-17)
+
+*A fresh model.* The lesson's configuration
+(`explore-1.xml` of the 2026-11-11 benchmarks), built by
+`BaseModel.from_config` with no input, holds 111 concepts, each with its
+symbol in today's shared row, and no edge in either matrix:
+
+- 12 at order zero, frozen: the thought predicates the grammar names
+  (`implies`, `intuit`, `query`, `exist`, `ask`, `isPart`, `not`, `non`,
+  `bind`, `isEqual`, `infer`, `isTrue`), made by `Queries.install`
+  through `mint_frozen_concept`;
+- 72 at order one: the operators' arguments
+  (`prebuild_formal_arguments`, from `PartsOfSpeech.bind`; Alec's round
+  C of item 1.8);
+- 27 at order two: a class for each operator
+  (`prebuild_operator_concepts`).
+
+No word, percept, collection or identity exists before input. Other
+configurations with the same grammar: not checked. Under rule 10 these
+111 start with 222 symbols. The 12 at order zero have no members, so
+rule 8b gives them no start, and they are not basic (1.8 §48.11.2).
+*Default,* put to Alec: they stay columns of $U$ at zero, frozen, read by
+thought as references and never by perception.
+
+*What proposes rows and entries.* The penalty (rule 15) is on the Pi
+only, so what the Sigma gains above order zero is learned, not thinned.
+
+| | Order zero | Above order zero |
+| --- | --- | --- |
+| Rows of the Pi | a word's basic percept on its first reading, over its parts and wholes (`BasicPercepts.reserve` in the word loop); MTM: a recurring set of percepts becomes a new basic percept over their parts and the wholes they share (`FamiliarTier`) | each concept's two symbols at its allocation (rule 10); MTM: a recurring conjunction becomes a new symbol over its members |
+| Concepts, and the Sigma's entries | a word on its first reading (`interpret_word`); MTM: percept collections (`PerceptCollections`) and identities (`FamiliarTier.promote_identity`); lessons. $U$ is dense, so only columns are made (rule 8b) | MTM: classes; every kept reading: an argument gains the word that filled it (`ConceptHierarchy.observe_member`, with no recurrence); `interpret`: meta concepts; lessons; LTM consolidation, with no definition |
+
+### 19.10 Decided: MTM nominates every row of the Pi; one concept for each row; both thinned (Alec, 2026-11-17)
+
+*Alec's words.* "We achieved good simplification of sigma and pi. I dont
+like the first-read promotion and no thinning. I'd like to have more
+regularity over the architecture, one way is to use MTM to stage
+(nominate) basic level percepts and all subsequent symbols, and let
+concepts handle themselves (we let pi dictate the number of inputs and
+make them square within their sparse matrix)." Asked what is square, and
+whether the Sigma is thinned too, he answered "One concept per row" and
+"Both thinned".
+
+*The rules.* They amend §19.2 as said, and are built with steps 2 and 3
+of §19.6.
+
+20. *MTM nominates every row of the Pi.* A basic percept at order zero,
+    and a symbol at every order above it, becomes a row only when MTM
+    nominates it on recurrence (`concept_mint_count`); nothing becomes a
+    row on its first reading. *Claude's reading:* the tower of parts and
+    wholes below the basic percepts is perception and is made on first
+    sight, as now. This replaces the basic percept reserved at a word's
+    first reading (`BasicPercepts.reserve` in the word loop of
+    `bin/Models.py`), the lessons' declared admission
+    (`Corpus.admit_training_forms`, `ConceptLessons.admit_native_forms`),
+    and rule 10's symbols made at a concept's allocation, with §18.23's
+    "interpret should make two symbols every time it makes a concept".
+21. *One concept for each row.* Each nominated row brings one concept,
+    so every order's Sigma is square: as many concepts as inputs, with no
+    halving between orders. A concept starts reading only its own row, at
+    one; at order zero that is the column of $U$ given by the row's own
+    vector, normalized (rule 8b with one member). Concepts have no
+    nomination or promotion of their own: MTM's promotions of classes,
+    identities and percept collections become nominations of rows.
+22. *Both thinned.* Rule 15's penalty is on the Sigma's entries above
+    order zero as well as on the Pi's, measured first. The Sigma of order
+    zero is dense (rule 8) and is not penalized. This reverses §18.24,
+    rule 29: "No penalty is put on the Sigma's weights".
+
+*Why the split fits* (Claude; checked as arithmetic). In the Pi's
+product, an entry from a row to a member read at one changes the row by
+$z \log m = 0$ (at 0.9, by $-0.105 z$), so the gradient cannot find a
+conjunction from the readings where its members appear together; MTM's
+recurrence can. In the Sigma's sum, an entry from an active input changes
+the concept by $(1 - y^2)\,x$, which is not zero where the input is
+active, so a concept can learn its inputs from use. Rows need nominating;
+concepts can handle themselves.
+
+*Claude's defaults, for Alec.*
+
+- *A concept's further inputs.* The one writer of such entries today
+  stays: a kept reading adds the word that filled an argument to that
+  argument (`ConceptHierarchy.observe_member`; Alec's round C), as an
+  entry on the word's symbol once MTM has nominated it, now thinned by
+  rule 22. No other writer is added.
+- *A new word* is perceived at once, but `interpret` cannot find it
+  until its basic percept is nominated; its concept comes with that row.
+- *The grammar's declared concepts* (§19.9: 72 arguments, 27 operator
+  classes) are declared at construction, each with its row, and are the
+  only rows MTM does not nominate. The 12 frozen thought predicates at
+  order zero stay the open point of §19.9: they have no percept row.
+
+*Decided* (Alec, 2026-11-17: "A,b,c,d, yes"; of the frozen predicates,
+"E nice!"). The three defaults above, rule 18 of §19.2 (the stacks on
+the same arithmetic), and §19.9's default for the 12 frozen thought
+predicates (columns of $U$ at zero, frozen, read by thought as
+references and never by perception) are Alec's.
+
+*Certificates* (added to §19.5).
+
+11. *No row on a first reading.* A new word read once has no basic
+    percept and no concept, and `interpret` does not find it; after
+    `concept_mint_count` readings MTM nominates its basic percept, its
+    concept comes with it, and `interpret` finds it.
+12. *Square.* At every order the concepts equal the rows in number, and
+    a new concept reads only its own row, at one; at order zero its
+    column of $U$ is its row's vector, normalized.
+13. *Thinned.* Under the penalty, a Sigma entry above order zero that no
+    cost supports goes to zero, as a Pi entry does; the Sigma of order
+    zero is not penalized.
+
+The table of §19.9 is what the source does today; rules 20 to 22
+replace its first-read and unthinned entries.
+
+*Alec, later the same day.* "When word concepts are interpreted, though,
+we need to create the meta-concept structure if it does not already
+exist. And that wholes structure cannot be subject to thinning." So:
+
+- *Rule 20, amended.* The meta concept of a word and its object is not
+  nominated by MTM: `interpret` makes it, with its structure, when it
+  interprets the word and the meta concept does not yet exist. This keeps
+  §18.23's "interpret should make two symbols every time it makes a
+  concept" for meta concepts.
+- *Rule 22, amended.* The meta concept's structure is never thinned:
+  neither penalty acts on it. *Claude's reading:* a definition between
+  concepts ("balloons are rubber", an edge taught from its `LTM1` part row
+  by `DefinitionFold`) stays under rule 22, held by its witness's cost.
+- *A word with no object* (Alec: "if we interpret a word without an
+  object, we must create a blank one"). Today MTM holds such a word as a
+  pending name (`InterpretLayer.reading`, `pool.named`) and its object
+  comes later or not at all (after the lesson of 1.8 §58.8, `lives`,
+  `moves` and `sleeps` had none). Instead, `interpret` makes a blank
+  object, a new concept with no members, together with the meta concept,
+  both part of the structure that is never thinned. *Default:* the
+  blank object is one order above its word, as an identity is above its
+  occurrence. *Its start* (Alec, 2026-11-17), first: "The blank object is
+  just a random concept vector." Then, of Claude's first default (near the
+  objects of its word's neighbours): "sorry, near the objects of nearby
+  words is great. Pure zero is even better, since magnitude is certainty
+  in that space." So the blank object's vector starts at zero. *From the
+  record:* round C's zero start made recurring contexts alike by place,
+  and MTM promoted the same context again until order 2 was full (1.8
+  §48.11.6). A blank object is reached through its meta concept, not by
+  place, so Claude expects no such effect (not checked). A read that
+  normalizes a concept vector must not divide by its zero length. Until it
+  gains members it is what 1.8 §48.11.3 called an ungrounded concept.
+
+*Certificate* (added to §19.5). 18. Interpreting a word with no object
+makes one blank object and one meta concept, and the blank object's
+vector is zero; interpreting it again makes nothing new.
+
+### 19.11 Decided: the vertical spread is built in item 1.7 (Alec, 2026-11-17)
+
+*Alec:* "Build the vertical spread in 1.7", asked where the spread that
+rule 3 of 1.8 §55.1 needs is built (1.8 §68.8). What should exist: going
+up to containers and down to their missing members (1.8 §3.18, Part A,
+approved 2026-11-12); meta concepts primed and priming like any concept
+(1.8 §48.11.4); and between orders "an influence between conceptual
+orders, but only as mediated by symbols" (Alec, §18.22).
+
+*Checked as a toy* (scratch `spread_down.py`; not the model). A meta
+concept reads a word's symbol and its object's, at .8 each; the word is
+present and the object absent. Up, the cycle's forward primes the meta
+concept (.66). Down, the way back of rule 17 returns the inputs exactly
+as they were, so the object gets nothing: an inverse reconstructs, it
+does not complete. Handing the meta concept's degree to its members by
+their weights gives the object .33. So the spread goes down by the same
+matrices read the other way, not by their inverse; this corrects
+Claude's reading in 1.8 §68.8.
+
+*The rules* (in the form Alec's answers below gave them).
+
+23. *A fan up and a share down,* on the cycle's own matrices, Pi and
+    Sigma alike, by the size of their weights. Up: a concept's or a
+    symbol's value is split among the rows that read it, each by its
+    weight's share of all the weights it is read with (its fan). Down: a
+    row's value is split among its inputs, each by its weight's share of
+    the row. What a row receives is summed over all its parents and
+    children, at most one; a negative weight passes to the other lane, as
+    a weight's sign chooses the lane in rule 3. Down stops at order
+    zero's concepts: the Sigma of order zero returns only a pooled vector
+    (rule 17).
+24. *Siblings get less than the concept that caused them* (Alec). A
+    concept present at one gives every other concept the spread reaches
+    less than one: what goes up is split by its fan, and of each parent's
+    value the concept itself takes back a share.
+25. *One pass, written to the expected field at every order.* Up once,
+    then down once, from order zero's expectation (`expect`) and the
+    observed field. It writes `_expected_knowing` at every order, where
+    `ConceptSpread.open_prediction` writes order zero alone today. It runs
+    at the open pass, and again at the conversion of 1.8 §55, so that
+    `InterpretLayer.preferred_objects` reads what the sentence's words
+    primed (*default*).
+26. *Not strictly ramified* (Alec). A symbol of order $k$ reads the
+    concepts of every order below $k$: "the field of a second order
+    symbol is both zero and first order concepts". A meta concept is one
+    order above the higher of its word and its object (Alec: "The order
+    of the meta concept is good") and reaches both in one step, with no
+    symbol between. This amends rule 4, where the Pi above an order read
+    only that order's lanes, and §18.22's fields of one order. *Claude's
+    reading:* it holds for every symbol, not only meta concepts. A reader
+    to adapt is `ConceptAllocator.class_member`, which admits a
+    membership only between adjacent orders; step 1 of §19.8 lists the
+    others.
+27. *Nothing new to learn.* The spread reads the cycle's matrices, adds
+    no parameter and no teacher, writes only the expected field, and
+    changes no value of the evidence.
+
+*Alec, later the same day.* "Your comments about up and down not changing
+the original concept are correct, but children have multiple parents and
+parents have multiple children: that is the priming (and we should prime
+such that siblings get less activation than the directly responsible
+concept)." And: "The order of the meta concept is good; I think it
+ultimately points to the fact that human cognition is recursive and not
+strictly ramsified. So the field of a second order symbol is both zero
+and first order concepts. That will allow the high-order meta concept to
+reach both children in one step."
+
+*Checked as a toy* (scratch `spread_siblings.py`; not the model): one
+concept present at one, up then down, on 2,000 random sparse graphs of
+up to seven parents and nine children.
+
+| Spread | Largest value given to a sibling | Two children sharing five parents |
+| --- | ---: | ---: |
+| Up by the share of the row present (§3.18), down by row share | 1.000 | 1.000 |
+| Up by the cycle's forward, down by the row's largest weight (this section's first form) | 1.000 | 1.000 |
+| Up by fan, down by row share (rule 23) | .976 | .500 |
+
+Only the fan keeps every sibling below its cause; the others reach the
+cap of one. The division of a source's activation among its links is
+the fan effect of spreading activation (Anderson, 1974; cited from
+memory, not re-checked).
+
+*Certificates* (added to §19.5).
+
+14. *Up.* A word found raises its meta concept by its share.
+15. *Down.* A primed meta concept raises its object when the object is
+    absent; the way back of rule 17, on the same case, does not.
+16. *Rule 3 of 1.8 §55.1.* Finding a word raises its meta concepts and
+    their objects; of a word's two objects with equal expectation, the
+    one whose meta concept another word of the sentence primed is
+    preferred at the conversion.
+17. *Evidence unchanged.* With the spread on and off, every order's
+    evidence is equal, and the parameters are the same.
+19. *Siblings below the cause.* With one concept present at one, every
+    other concept the spread reaches is below one; two children sharing
+    five parents of equal weight give each other .5.
+20. *One step across orders.* A symbol of order two reads concepts of
+    orders zero and one; a meta concept over a word of order zero and an
+    object of order one primes the object in one pass, with no symbol
+    between.
+
+### 19.12 Decided: thought can read the Sigma and the Pi (Alec, 2026-11-17)
+
+*Alec's words.* "Requirement for 1.7 is introspection of the sigma and
+pi. So asking for the definition of cat() would allow the architecture
+to query that structure, e.g. parts(cat), wholes(cat) would allow the
+architecture to kind word for the parts and wholes of a concept, or the
+words corresponding to the symbols below and above the symbol for cat."
+*Claude's reading:* "kind word" is "find words".
+
+*What exists* (read in the source on 2026-11-17). Thought already has
+the queries `parts` and `wholes` (`bin/Queries.py`: their signatures
+return a set, through `_neighbors`), beside `isPart`, `isWhole` and
+`define`. They read the part table of LTM1 (`allocator.parts`, through
+`Taxonomy.capture_taxonomy`): the relations that sentences stated. They
+do not read the Sigma or the Pi. Today the matrices' edges are kept as
+dictionaries (`SparseLayer`), which rule 19 replaces with compressed
+rows, and §19.4 does not list these queries among its readers.
+
+28. *Thought reads the Sigma and the Pi.*
+    - `parts(c)` gives the entries of c's row of the Pi: the symbols
+      below c, at every lower order (rule 26), each with its weight.
+    - `wholes(c)` gives the rows of the Pi above c that have c as an
+      entry, each with its weight.
+    - Of the Sigma, thought can read what a concept reads (its own row,
+      rule 21, and the inputs `observe_member` adds) and which concepts
+      read a given row.
+    - A result is a set of references with their weights, not a yes or
+      no. A reference's words are those whose meta concepts join them to
+      its concept (§19.10); a reference with no word, such as a percept,
+      is given as itself.
+    - The compressed rows of rule 19 can be read by row, for `parts`, and
+      by column, for `wholes` (*default:* an index of columns kept beside
+      the rows).
+    - *Defaults:* a read is serial and is charged to the work budget as
+      the queries are today; it moves nothing (no activation, no weight,
+      no row).
+
+*For Alec: what the existing queries read.*
+- *Recommended:* `parts` and `wholes` read the matrices, and LTM1's part
+  table stays the evidence for `isPart`'s proofs. A stated relation
+  reaches the matrices when `DefinitionFold` teaches its edge ("balloons
+  are rubber", §19.10), so the queries see it once it is folded.
+- *The other way:* they read both, the matrices and LTM1's part table,
+  and sum the two as evidence.
+
+*Alec (2026-11-17):* "Ok. We can spec it later." The rule and its
+certificate stand; which of the two the queries read is left open.
+
+*Certificate* (added to §19.5). 21. *The structure is readable.* For a
+concept c, `parts(c)` and `wholes(c)` give the references and weights of
+c's row of the Pi and of the rows above that have c as an entry, with
+the words of those that have words; the matrices, the activations and
+the rows are unchanged after the read.
+
+### 19.13 Checked: the cycle does and, or and not, and can be read in those terms (2026-11-17)
+
+*Alec's words.* "Please also verify that the SigmaPi stack can do And,
+Or, and Not: we had those as separate grammatical operators, and I want
+to make sure that what we are doing is interpretable in those terms."
+
+*The grammar's operators* (read in the source). `FieldLogic.reduce` on
+the two lanes: `intersection` is the least for and the greatest against;
+`union` is the greatest for and the least against; `not` swaps the
+lanes; `non` empties both. On one reading, which is one signed number
+(§18.25), these are the least, the greatest and the negation.
+
+*How the cycle says them.* A Pi row is a product of the lanes it has
+weight on, so it is an *and* of literals: a concept's for lane is the
+concept, and its against lane is its *not*. A Sigma is a signed sum of
+symbols through tanh, so it is a weighted *or* of those terms, and a
+negative weight is a *not*. In symbols (a pair of rows, for less
+against), with fa, ga the lanes of a and fb, gb those of b:
+
+| Operator | Symbols, summed by the Sigma |
+| --- | --- |
+| a and b | (fa fb - ga) + (ga gb - gb) |
+| a or b | (fa - ga gb) + (fb - fa fb) |
+| not a | (ga - fa) |
+| non a | no symbol |
+
+*Checked as a toy* (scratch, `sigmapi_logic.py` and
+`sigmapi_readable2.py`, `sigmapi_readable3.py`; not the model and not a
+receipt; rows free of the diagonal, as a stack's are).
+
+1. *Exact on true, neither and false.* With the symbols above, the
+   Sigma's sum equals the field operator on all nine pairs (and on the
+   three values for not) to 2e-6, and after tanh at a gain of 3 to .005.
+2. *On graded readings the cycle is the product logic.* Its and is the
+   product of the fors, and its or is a + b - ab. Against the least and
+   the greatest, over 20,000 random pairs: mean difference .042, largest
+   .25 (at .5 and .5: and gives .25 where the least is .5; or gives .75
+   where the greatest is .5). Not is exact.
+3. *A Sigma alone is not enough.* For and, "neither" at (true,
+   neither), (neither, true) and (neither, neither) forces a single
+   Sigma's weights and bias to zero. The best single Sigma on a grid
+   errs by .76. So and and or need a Pi row.
+4. *Learned from random starts* (four symbols, ten seeds, targets at .9):
+   and, or and not are solved 10 of 10 with no penalty, with a penalty
+   on the Pi, and with a penalty on both.
+5. *Read back.* A literal is taken as present when its weight exceeds
+   .1; the network with present weights set to one and the rest to zero
+   is tested again.
+
+   | Penalty | and | or | not | Literals above .1 (and, or, not) |
+   | --- | ---: | ---: | ---: | --- |
+   | none | 10 of 10 | 8 of 10 | 10 of 10 | 21.8, 22.8 of 32; 13.2 of 16 |
+   | on the Pi only (.003, .01) | 0 | 0 | 0 | 0, 0, 0 |
+   | on the Pi and the Sigma (.003, .01) | 10 of 10 | 10 of 10 | 10 of 10 | 4.0, 4.0 of 32; 2.0 of 16 |
+
+   With the penalty on the Pi alone, every Pi weight falls below .1 and
+   the Sigma's weights grow to 4 to 8: the answers stay right, but the
+   logic is in the Sigma's gain and cannot be read from the rows. With
+   the penalty on both (rule 22, Alec's "Both thinned"), each run keeps
+   the fewest literals, and unused symbols end with a Sigma weight of
+   zero. Seed 0 reads: and as (fa fb - ga) and (1 - gb); or as
+   (fb - ga gb) and (fa - 1); not as (ga - fa).
+
+*What follows.*
+
+- The cycle can do and, or and not, and under rule 22 what it learns can
+  be read as them. Rule 22 is what makes it readable; rule 15's "No
+  penalty is put on the Sigma" would not have.
+- A literal that survives the penalty has a small weight (.1 to .3 in
+  the toy), because a lane at zero is clamped to 1e-6 and any weight
+  gates it. So `parts` and `wholes` (rule 28) read an entry as present
+  by a low threshold, not by a weight near one. *Default:* the threshold
+  is a key, measured with rule 15's penalty.
+- *For Alec, not blocking:* on graded readings the layers and the
+  grammar's field operators differ (point 2). They agree on true,
+  neither and false. Either they are left to differ, or
+  `FieldLogic.reduce` takes the product and a + b - ab so that both say
+  the same.
+
+*Certificate* (added to §19.5). 22. *And, or and not.* A stack of rules
+2 and 3 learns and, or and not over true, neither and false from random
+starts; with rule 22's penalty, the network whose present entries are
+set to one and the rest to zero gives the same answers.
+
+
+### 19.14 Item 1.7 after 2026-11-17: what is decided and what is open (Claude; a doc pass)
+
+Alec: "Please do any prep work necessary for 1.8 and 1.7". §19.2 to
+§19.8 are the rules as of 2026-11-16; §19.9 to §19.13 amend them. The
+Codex text of §19.8 names them all.
+
+*Decided on 2026-11-17 (Alec).*
+
+- Rules 20 to 22: MTM nominates every row of the Pi; one concept for
+  each row, the Sigma square; the Pi and the Sigma above order zero are
+  both thinned (§19.10). `interpret` makes a word's meta concept, whose
+  structure is never thinned, and a blank object for a word with none;
+  the blank object's vector starts at zero.
+- The three defaults of §19.10, rule 18, and the 12 frozen thought
+  predicates as §19.9 has them.
+- Rules 23 to 27: the vertical spread, up by fan and down by share, one
+  pass, not strictly ramified (§19.11).
+- Rule 28: thought reads the Sigma and the Pi (§19.12).
+
+*Amended in place by this pass.* Rule 15's "No penalty is put on the
+Sigma" now points to rule 22. §19.7 no longer lists rule 18 as a default.
+
+*Readers to add to §19.4's lists* (read in the source on 2026-11-17;
+Codex takes them again in step 1 of §19.8):
+
+| Where | Today | Under |
+| --- | --- | --- |
+| the thought queries `parts` and `wholes` (`bin/Queries.py`, `_neighbors`), through `Taxonomy.capture_taxonomy` | read LTM1's part table (`allocator.parts`) | rule 28; which of the two they read is open (§19.12) |
+| `ConceptualSpace.concept_parts` and `concept_wholes` (`bin/Spaces.py`) | read the allocator's part and whole references of a concept | rule 28's reads of the Pi, where the matrices replace those references (rules 6 and 10) |
+| `InterpretLayer.reading`'s pending name (`pool.named`) and `PrependedSymbols.stage`, which holds it in STM | a word with no object is a pending name in MTM | the blank object of §19.10 |
+
+*Open, none blocking the build.*
+
+1. Which of the two the queries `parts` and `wholes` read (§19.12; Alec:
+   "We can spec it later").
+2. On graded readings the layers give the product logic and the
+   grammar's field operators the least and the greatest (§19.13).
+3. The threshold by which an entry is read as present (§19.13,
+   *default:* a key, measured with rule 15's penalty).
+4. The remaining defaults of §19.7.
+5. Whether and and or are made monotone, with not the only crossing of
+   the lanes (§19.15): decided in §19.18, as rule 29.
+6. Rule 7's sum replaced by the product on the complements (§19.17).
+7. The readings of §19.20 (`expectLayers` stays at 1, §19.19).
+
+### 19.15 Monotone and and or; not carries all negation (Alec, 2026-11-17; a direction with its check)
+
+*Alec's words.* "Im unclear on whether and/or should be written to
+product logic, or what exactly that entails. I do think they might
+benefit from being monotone if that would allow us to also force the NOT
+operation to carry all negation. In particular, conceptual constructions
+that correspond to counterfactuals should be forced to carry a NOT
+operation, rather than having that sign flip masquerade within AND and
+OR. So if writing them in product logic forgoes that, then we should not
+make them match (and in fact, we should consider changing how intuit and
+the rest work so that they need NOT for negation). This is important
+because the removal of the NOT is exactly what is necessary to speak
+only of the good in Augustine's sense, where evil does not exist except
+as the privation of the good." And then: "Please capture this in the
+doc, and how it dovetails to Shamatha Speak, the language that speaks in
+absolute truth (which can be understood via the tripartite division of
+knowledge into what is absolute, what is relative/dependent, and what is
+imaginary (this last being augustine's removal))."
+
+*Product logic, and why it is a separate matter.* It is only how two
+graded certainties combine. The grammar's operators take the weaker for
+and and the stronger for or (`FieldLogic.reduce`); the layers multiply
+for and (two halves give a quarter) and give a + b - ab for or (two
+halves give three quarters). Both are monotone: raising an input never
+lowers the answer. So matching them or not neither gives nor forgoes
+what Alec asks. *Default:* they are left to differ (§19.13).
+
+*Where a negation can hide in rules 2 and 3 today.*
+
+1. A negative weight of a Sigma: evidence for an input becomes evidence
+   against the concept.
+2. A row of the Pi that reads the other lane: a symbol's for row with
+   weight on a concept's against lane.
+3. A bias below zero: with no evidence at all, the concept is denied.
+
+§18.20 recorded the first as the Sigma's purpose ("a negative weight is
+what crosses the poles"), with Alec's "the monotone versions were
+designed for percepts". The direction here extends the monotone version
+to the concepts and gives the crossing to not alone.
+
+*The monotone cycle.* A symbol's for row reads only for lanes and its
+against row only against lanes; a Sigma's weights are zero or more and
+it has no bias; not is its own operation, the swap of a concept's lanes
+(`FieldLogic.reduce`'s `not`), and nothing else crosses. And and or
+remain exact on true, neither and false:
+
+| Operator | Symbols (for row less against row), summed with weights of one |
+| --- | --- |
+| a and b | (fa fb less ga) and (fa fb less gb) |
+| a or b | (fa less ga gb) and (fb less ga gb) |
+
+*Checked as a toy* (scratch, `sigmapi_monotone.py`; not the model and
+not a receipt; ten seeds, four symbols, the penalty of rule 22 on both;
+"not offered" gives each concept's swap as a further input).
+
+| Task | Cycle | Not offered | Solved | Steps where raising an input lowers the answer | Answers against, given no evidence against |
+| --- | --- | --- | ---: | ---: | ---: |
+| and | signed (rules 2, 3) | no | 10 | 0% | 0% |
+| and | monotone | no | 10 | 0% | 0% |
+| or | signed | no | 10 | 0% | 0% |
+| or | monotone | no | 10 | 0% | 0% |
+| not | signed | no | 10 | 100% | 100% |
+| not | monotone | no | 0 | 0% | 0% |
+| not | monotone | yes | 10 | 100% | 100% |
+| xor | signed | no | 10 | 48% | 100% |
+| xor | monotone | no | 0 | 0% | 0% |
+| xor | monotone | yes | 10 | 48% | 100% |
+
+So the monotone cycle learns and and or as well as the signed one; it
+cannot negate at all unless a not is offered; and with a not offered it
+learns what the signed cycle learned. Where no not is used and the input
+holds no evidence against, it never answers against: it says for, or it
+says nothing.
+
+*What it would change in §19, if it becomes a rule.*
+
+- Rule 3: the Sigma's weights are zero or more, with no bias below zero,
+  in place of "one signed weight for each input". A concept still has
+  one signed value; its against part comes from its inputs' against
+  parts, or from a not.
+- Rule 2: a row reads its own lane only.
+- Rule 18: `expect` and `intuit` can no longer learn a negation of their
+  own; a counterfactual is carried by a not in thought, as Alec asks.
+- Rule 23's "a negative weight passes to the other lane" has nothing to
+  act on; a not passes to the other lane.
+- §18.20: with no negative weight the total returns by the same
+  substitutions as the signed part, so the way back of §18.21 can be
+  looked at again.
+- *Claude's reading:* a crossing is then an entry made by the operator
+  `not`, in a sentence or in thought, never one found by the gradient.
+  Rule 28 can list every one of them, and they can be left out.
+- *Not checked:* whether either stopping gate, or order zero, needs a
+  crossing that no `not` supplies. *Expected, not checked:* the XOR
+  gates do not, where "true" and "false" are words that are each
+  perceived, since then the answer is an or of ands over what is
+  present.
+
+*How it dovetails with Shamatha Speech.* What exists:
+`doc/Philosophy.md`, "Shamatha Speech and Single-Pointedness", gives it
+as the object grammar of ands and ors with a condition that the parts
+stay one connected field; `data/shamatha.grammar` is its grammar and
+carries a `not` rule today. The same file's account of the three natures
+has the dependent (*paratantra*), the imagined (*parikalpita*, "which
+the architecture does not build") and the perfected (*parinispanna*),
+the dependent seen without the imagined.
+
+Alec's note adds: Shamatha Speech is the language that speaks in
+absolute truth, understood by that division into the absolute, the
+relative or dependent, and the imaginary, and the imaginary is what
+Augustine removes. *Claude's reading, for him to correct:* with not the
+only crossing, the language without not is that speech. Its ands and ors
+hold only what was witnessed, each dependent on its parts; it can say
+for or stay silent, and what is absent is "neither", a privation and not
+a thing. A statement against something enters only through not, which
+is where the imaginary would be spoken. Removing not is Augustine's
+removal (evil as the privation of the good: *Enchiridion* 11,
+*Confessions* VII.12; cited from memory).
+
+*For the documentation pass* that lands with item 1.7: this section to
+`doc/Philosophy.md`, beside "Shamatha Speech and Single-Pointedness" and
+the three natures, with the reference to Augustine checked; and whether
+`data/shamatha.grammar` keeps its `not` rule is Alec's. `doc/*.md` is
+not edited now (`basicmodel-docs`).
+
+*For Alec.* Make the monotone cycle a rule of item 1.7 (it would be rule
+29, with a certificate from the table above, and Codex checking the
+stopping gates first), or keep it as a direction for now.
+
+### 19.16 A Sigma-Pi-Not stack; the order at the basic level; one Pi; pooling (Alec, 2026-11-17)
+
+*Alec's words.* "Expect and intuit should be able to learn a negation,
+so maybe we can create them with SigmaPiNot. Lets verify the order of
+operations at the basic level. DNF? CNF? Right now we have PI to make
+basic percepts, then SIGMA to make concepts, and possibly another PI to
+make symbols. The two-lane percepts get combined into a signed hyperball
+for conceptual space, then separated back out. Also is NOT applied to
+concepts, or do we reason over both truth lanes at the level of
+percepts/symbols? Since we need only one operator of each kind, Im
+thinking that basic percepts should be the single PI, so that we dont do
+more work than is necessary for a full logical expression. that
+dovetails with MTM doing the promotion to symbols at the next level,
+only when they are found in the input. Ive been thinking about the
+Pooling that PI is doing. Can we or should we make that the actual
+cross-content PI, instead of restricting PI to operate on the entire
+vectors?"
+
+**1. A Sigma-Pi-Not stack.** Not is a layer of its own: it offers each
+concept's swap. The Pi's rows read their own lane, and the Sigma's
+weights are zero or more with no bias (§19.15). An entry that reads a
+swap is a Not entry, and is penalized as the others are.
+
+*Checked as a toy* (scratch, `sigmapi_not_count.py`; not the model; ten
+seeds, four symbols, true, neither and false):
+
+| Task | Solved | Entries read directly | Entries read through Not | Runs using no Not |
+| --- | ---: | ---: | ---: | ---: |
+| and | 10 | 4.0 | 0.0 | 10 |
+| or | 10 | 4.0 | 0.0 | 10 |
+| not | 10 | 0.0 | 2.0 | 0 |
+| nand | 10 | 0.0 | 4.0 | 0 |
+| xor | 10 | 4.0 | 4.0 | 0 |
+
+So a stack so built learns a negation, and a Not appears exactly where
+the function needs one, in the fewest entries. *Recommended:* `expect`,
+`intuit` and the marker are built as Sigma-Pi-Not stacks (rule 18).
+
+**2. The order at the basic level** (as rules 2 to 8 have it).
+
+| Step | Operator | What it gives |
+| --- | --- | --- |
+| 1 | Pi (rule 6) | a basic percept: an and of its parts and wholes, on each lane |
+| 2 | pooling (rule 7) | each percept's pair, for less against, times its vector; summed over the percepts of one reading |
+| 3 | Sigma (rule 8) | a concept of order zero: one signed value, an or over the percepts, weighted through their content |
+| 4 | the split | the signed value stored as two lanes |
+| 5 | Pi, above | a symbol: an and over concepts' lanes, only where MTM nominated a row |
+| 6 | Sigma, above | a concept of the next order |
+
+- *The basic level is an or of ands:* disjunctive normal form. The next
+  order reads an and of ors over it, so the alternation gives both
+  forms. With Not on the concepts, a block is Not, then Pi, then Sigma:
+  negation at the literals, then and, then or, which is a full logical
+  expression.
+- *Both lanes at once.* Within a block the two operators act on the two
+  lanes dually: for a and b, the Pi makes the for lane (the product of
+  the fors) and the Sigma makes the against lane (the sum of the
+  againsts); for a or b, the other way round (§19.15's table).
+- *Where Not is applied.* Under rules 2 to 4 as written, both: the Pi
+  above reads all 2n lanes, so a row can take a concept's against lane
+  as a literal, and the Sigma's weights are signed. The two are one
+  arithmetic: a for row that reads a concept's against lane reads that
+  concept's Not. Under §19.15, Not is applied to concepts, as the swap
+  of a concept's pair between a Sigma and the next Pi; the Pi and the
+  Sigma on either side stay within their lanes. The percept Pi, below
+  the first Sigma, has no Not: perception gives evidence against only
+  where the input does (in the lesson of 1.8 §58.8 all 139 words read
+  (1, 0)).
+
+**3. One Pi.** The percept Pi, the Sigma and Not on its concepts are a
+full expression, so no second Pi is computed as a layer. This is what
+rules 20 and 21 already give: above order zero a row exists only where
+MTM nominated it on recurrence. Rule 4's "the Pi above reads the 2n
+lanes and gives 2n unsigned values" described a full Pi at every order;
+it is read as the nominated rows only. A conjunction of percepts found
+in the input is a basic percept that MTM nominates (§18.24, rule 27's
+toy: with a row for each pair, XOR is read exactly).
+
+**4. Pooling.** *What exists.* Alec, 2026-11-16 (§18.24): "I want the PI
+to be selecting (and weighting) the percepts to be passed on the the
+concept"; its output "is multiplied by the full percept vectors, and at
+the basic level it is pooled". So the Pi gives one pair for each
+percept, and the pooling is a sum of whole vectors.
+
+*Claude's reading of the question, for Alec to correct:* a product
+across the percepts' content, coordinate by coordinate, in place of the
+sum of whole vectors. *Checked as a toy* (scratch, `pooling_rank.py`;
+four word percepts, four two-word sentences labelled as XOR, width 104,
+a dense Sigma fitted by least squares, as rule 27's toy):
+
+| Codes | Pooling | Rank | Largest XOR error |
+| --- | --- | ---: | ---: |
+| share coordinates | sum | 3 | .5 |
+| share coordinates | product | 4 | 0 |
+| share no coordinate, absent as zero | product | 1 | .5 |
+| share no coordinate, absent as one | product | 3 | .5 |
+
+- With codes that share coordinates, the product makes a conjunction of
+  two percepts readable with no row for the pair. With codes that share
+  none it gives nothing.
+- On codes that obey the mereology (rule 5), a product by coordinate is
+  what two percepts share, and the sum is everything present.
+- `.where` and `.when` are signed (sines and cosines), and the product
+  needs unsigned values; Alec, 2026-11-16: "where and when going
+  negative is not a problem if the PI is operating in activation space".
+- It would be a second way to conjoin, beside the nominated rows of the
+  one Pi (point 3).
+- *Recommended, on this reading:* the pooling stays a sum, and
+  conjunctions stay rows of the Pi.
+
+*For Alec.* (a) Whether §19.15 and point 1 become rule 29 of item 1.7:
+monotone rows and weights, Not as a layer on concepts, and the stacks
+built as Sigma-Pi-Not. (b) Whether the reading of point 4 is the one
+meant.
+
+### 19.17 Unsigned place and time; the pooling as a multiplication; where Not sits, and System 1 (Alec, 2026-11-17)
+
+*Alec's words.* ".where and .when can be unsigned, just add one and
+divide by two. My thought is that the pooling might be able to be
+*replaced* by the multiplication of the elements. The reason for doing
+so is that, even though pi is good for selecting sparsity, it's best
+logical use is multiplication over the conceptual content itself, just
+as sigma does. Finally, your description of this as sigma-pi-not is not
+fitting onto negation over symbols, because negation over symbols is
+currently pi-sigma-pi-not, the first pi being the basic percept level.
+So if we keep that, we should pi-not-sigma, but that does not give us
+the end pi to reason over. Can you comment on system 1 and animal
+cognition to help us determine?"
+
+This section corrects §19.16 in two places: the stack is named by its
+order, Pi, Not, Sigma; and Not sits between a Pi and its Sigma, over
+percepts at order zero and over symbols above, not between a Sigma and
+the next Pi.
+
+**1. Place and time unsigned.** Where a product reads `.where` or
+`.when`, the coordinate is (x + 1)/2 (Alec). §19.16's objection on
+signed coordinates is withdrawn.
+
+**2. The pooling replaced by a multiplication of the elements.**
+*Checked as a toy* (scratch, `pooling_replace.py`; not the model). Codes
+obey rule 5: 12 letters with sparse codes, 40 words of three letters,
+a word's code the greatest over its letters plus a keyed increment;
+place and time unsigned; width 104; a dense Sigma fitted by least
+squares. "Product" multiplies the active percepts' vectors element by
+element. "On the complements" is the same multiplication applied to
+what each percept lacks: $x_i = 1 - \prod_p (1 - v_{p,i})^{b_p}$.
+
+| Active percepts | Asked | Sum (rule 7) | Product | On the complements |
+| --- | --- | ---: | ---: | ---: |
+| the word alone | which word, at a new place | 1.000 | 1.000 | 1.000 |
+| the word alone | has a letter, of unseen words | 1.000 | 1.000 | 1.000 |
+| the word alone | two words read together: which are present | 1.000 | .875 | 1.000 |
+| the word alone | XOR of two words, largest error | .5 | 0 | 0 |
+| the word and its letters | which word, at a new place | .988 | .075 | 1.000 |
+| the word and its letters | has a letter, of unseen words | 1.000 | .750 | 1.000 |
+| the word and its letters | two words read together: which are present | 1.000 | .058 | .995 |
+| the word and its letters | XOR of two words, largest error | .5 | .5 | 0 |
+
+- *The product itself* gives what the active percepts share, since a
+  zero annihilates. Where a word's parts are active beside it, almost
+  nothing is shared and the concepts cannot read the word (.075; .750
+  is the rate of always answering no).
+- *The product on the complements* keeps everything the sum keeps, and
+  it also reads the conjunction of two words with no row for the pair
+  (error 0, where the sum gives .5), because a + b - ab holds the
+  product ab. Two percepts interact only on the coordinates they share,
+  which under rule 5 are the parts they share.
+- It is the or of the product logic (§19.13), as the Pi's membership
+  product is its and. It is monotone, it crosses no lane, a percept with
+  $b_p = 0$ changes nothing, and the pooled vector stays between zero
+  and one, which the sum does not.
+- *Recommended:* rule 7's sum is replaced by the product on the
+  complements, for each lane. *Not checked:* the model's own codes; the
+  gradient where an element is already at one; the way back of rule 17
+  from such a vector.
+
+**3. Where Not sits.** *Checked as a toy* (scratch, `not_placement.py`;
+not the model; monotone Pi and Sigma, no bias; six seeds; in brackets
+the Not entries used). "Present only" inputs are present or absent, with
+no evidence against; the first two tasks are what animals learn (point
+4).
+
+| Task | No Not | Not, Pi, Sigma | Pi, Not, Sigma | Pi, Sigma, Not | Pi, Not, Sigma twice |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| present only: A alone, not A with X | 0 | 6 (2.0) | 6 (1.0) | 0 | 6 (1.5) |
+| present only: A or B, not both | 0 | 6 (2.7) | 6 (1.0) | 0 | 4 (1.5) |
+| three values: and | 6 (0) | 6 (0) | 6 (0) | 6 (0) | 6 (.7) |
+| three values: or | 6 (0) | 6 (0) | 6 (0) | 6 (0) | 6 (0) |
+| three values: not | 0 | 6 (2.0) | 6 (1.7) | 6 | 5 (1.8) |
+| three values: nand | 0 | 6 (4.0) | 6 (2.2) | 6 | 6 (2.2) |
+| three values: xor | 0 | 6 (4.0) | 0 | 0 | 3 (3.3) |
+| the 7 functions of two present-or-absent inputs that are silent when nothing is present | 4 | 7 | 7 | 4 | 7 |
+
+- *With no Not,* neither of the animals' two tasks is learned. So
+  System 1 needs a Not, as Alec says of `expect` and `intuit`.
+- *Pi, Not, Sigma* learns both with one Not entry each, the fewest, and
+  every function of what is present that is silent when nothing is. A
+  Not entry there says: this percept, or this conjunction, counts
+  against that concept.
+- *What it cannot do* is xor over three values: a conjunction of a thing
+  with a negated thing, where the evidence against is real. That needs a
+  Pi after the Not, which is Alec's "does not give us the end pi to
+  reason over". Two blocks have it: the Pi after a Not is the next
+  block's.
+- *Pi, Sigma, Not* only negates a whole answer and learns neither of the
+  animals' tasks.
+
+**4. System 1 and animal cognition** (Claude; the references marked
+"checked" were looked up on 2026-11-17, the rest are as `doc/Philosophy.md`
+already cites them or from memory).
+
+*What an animal has: three things, none of them a negation of a
+content.*
+
+1. *Opposites perceived positively.* Light and dark have a channel each
+   from the first synapse of the retina: the ON pathway inverts the
+   photoreceptor's signal at one synapse and the OFF pathway keeps it
+   (checked). Honey bees place an empty display below one (Howard and
+   others 2018, checked). So an against at the level of percepts is the
+   for of an opposite, which the two producers of 1.8 §57.6 give. No
+   operator is involved.
+2. *Omission against an expectation.* `doc/Philosophy.md`, "Absence is
+   inferred, never perceived": dopamine neurons dip at an omitted reward
+   (Schultz, Dayan and Montague 1997), the two signs of an error are
+   carried by two populations (Keller and Mrsic-Flogel 2018), and
+   Dharmakirti restricts non-observation to what was suitable to appear.
+3. *Learned inhibition.* A cue that signals the omission of an expected
+   outcome becomes a conditioned inhibitor (Rescorla 1969, checked), and
+   animals learn A or B but not both, where a unit for the compound
+   takes inhibitory strength (Pearce 1994, checked). Konorski (1967,
+   checked through later reviews) has the inhibitor excite a
+   representation of "no outcome": the against lane, driven positively.
+   In these models the answer is a sum over units for cues and for
+   compounds, some of which count against: a Pi, a sign, and a Sigma.
+   Excitation and inhibition are carried by different cells (Dale's
+   principle, checked), so each sign is a thing in the circuit, as a Not
+   entry is.
+
+*What an animal lacks* is negation as an operator on any content:
+denial, a "not P" for a P never met, a "not-red" taken as an object.
+Bermudez (2003; checked through reviews) calls what animals have
+proto-negation, between contraries such as presence and absence.
+Children understand logical "no" and "not" only after the age of two
+(Feiman and others 2017, checked). Apes pass exclusion tasks (Call 2004,
+checked), but the disjunctive syllogism is shown only from three years
+and the animals' success may not be deductive (Mody and Carey 2016,
+checked). As with `doc/Philosophy.md`'s "What an animal lacks", the
+evidence agrees in outline and is contested in detail.
+
+*What this determines* (Claude's reading, for Alec).
+
+- The block is Pi, Not, Sigma, one of each, at every order. With
+  `interpret` lacking, an animal has the first block alone. That block
+  learns what animals learn, and it cannot make a negated thing an
+  object, which is what they lack.
+- Negation over symbols stays where it is: it is the second block's Not,
+  after the Pi that MTM's promotions and `interpret` supply. The Pi to
+  reason over is that Pi, and thought reasons over its symbols with the
+  grammar's own operators.
+- An animal's Not entries are learned, from omission. The operator `not`
+  of a sentence or a thought can be put on any symbol, which is the
+  step from proto-negation to negation.
+- `expect`, `intuit` and the marker are stacks of Pi, Not, Sigma. One
+  pair learns inhibition; two pairs learn everything in the table.
+- With the Not entries left out, each block speaks only of what is
+  (§19.15).
+
+*For Alec.* (a) Rule 29 of item 1.7: every block and every stack is Pi,
+Not, Sigma, monotone, with no bias. (b) Rule 7's sum replaced by the
+product on the complements. *Answered in §19.18:* Alec took Pi, Sigma,
+Not, so (a)'s order is withdrawn; (b) is open.
+
+*References added* (to be checked again in the documentation pass).
+Bermudez (2003), *Thinking without Words*, Oxford. Call (2004),
+*Inferences about the location of food in the great apes*, Journal of
+Comparative Psychology 118(2). Feiman, Mody, Sanborn and Carey (2017),
+*What do you mean, no? Toddlers' comprehension of logical "no" and
+"not"*, Language Learning and Development 13(4). Howard, Avargues-Weber,
+Garcia, Greentree and Dyer (2018), *Numerical ordering of zero in honey
+bees*, Science 360. Konorski (1967), *Integrative Activity of the Brain*,
+Chicago. Mody and Carey (2016), *The emergence of reasoning by the
+disjunctive syllogism in early childhood*, Cognition 154. Pearce (1994),
+*Similarity and discrimination: a selective review and a connectionist
+model*, Psychological Review 101. Rescorla (1969), *Pavlovian
+conditioned inhibition*, Psychological Bulletin 72.
+
+### 19.18 Decided: Pi, Sigma, Not is the minimal structure (Alec, 2026-11-17)
+
+*Superseded in its order by §19.19:* the first layer is Pi, Sigma, and
+the layers above are Pi, Not, Sigma. Rule 29 is restated there. The
+toys of this section stand as a record.
+
+*Alec's words.* "I think we go with pi-sigma-not as the minimal
+structure of cognition, and sacrifice reasoning over concepts. That
+might fit with dharmakirti's notion that contradiction (both) is not a
+valid conceptual object."
+
+*Claude's reading of the order,* for Alec to correct: it is as written.
+A Pi makes percepts (above order zero, the rows MTM promotes); a Sigma
+makes concepts; Not is applied to a concept. It is "pi-sigma-pi-not"
+(§19.17) with its second Pi left out. It is not the order §19.17
+recommended (Pi, Not, Sigma), and that recommendation is withdrawn.
+
+29. *The minimal structure is Pi, Sigma, Not.*
+    - A row of the Pi reads its own lane. A Sigma's weights are zero or
+      more, and it has no bias (*Claude's reading:* carried from §19.15;
+      without it Not would not be the only crossing). A concept is still
+      one signed value (§18.25).
+    - Not is the swap of a concept's two lanes (`FieldLogic.reduce`'s
+      `not`), and it is the only crossing of the lanes.
+    - No Pi is computed over concepts and their Nots: nothing conjoins a
+      concept with a negated concept. This is the reasoning over
+      concepts that is given up. *Claude's reading:* it is given up in
+      the layers; the grammar's operators still act on object concepts
+      in comprehension and in thought (1.8 §68.26).
+    - So "both" is not a conceptual object: a concept is one signed
+      value, its Not is its swap, and no row holds the two together.
+      `doc/Architecture.md` has this already of an episode's entry: "One
+      signed value ... approximates the pair because a contradiction is
+      not a valid mental object (Dharmakirti) ... the both corner
+      belongs to working memory only". Percepts, fields and truth rows
+      keep both lanes, as now.
+
+*What it changes in §19.2:* rule 2 (a row reads its own lane), rule 3
+(weights zero or more, no bias), rule 4 (the Not follows the Sigma),
+rule 18 (the stacks are pairs of Pi, Sigma, Not), and rule 23's "a
+negative weight passes to the other lane" (a Not does).
+
+*Checked as toys* (scratch, `psn_stack2.py`, `psn_hand.py`,
+`psn_sigma.py`; not the model; six seeds; in brackets the Nots used).
+The rows of these toys have no diagonal, so a row with no weight is the
+constant one; the cycle's rows have their diagonal (rule 2).
+
+| Task | Pi, Sigma, Not | then a Sigma over the concepts and their Nots | then a Pi over them, and a Sigma |
+| --- | ---: | ---: | ---: |
+| present only: A alone, not A with X | 0 | 6 (1.0) | 0 |
+| present only: A or B, not both | 0 | 6 (1.0) | 0 |
+| three values: and | 6 (0) | 6 (0) | 6 |
+| three values: or | 6 (0) | 6 (0) | 6 |
+| three values: not | 6 (1.0) | not run | 6 |
+| three values: nand | 6 (1.0) | 6 (1.0) | 6 |
+| three values: xor | 0 | 6 (1.5) | 0 |
+| three values: a and not b | 0 | 1 (1.0) | 2 to 4 |
+| the 7 functions of two present-or-absent inputs that are silent when nothing is present | 4 | 7 | 4 |
+
+- *The structure alone* learns ands, ors, and the negation of a whole
+  answer. It does not learn the animals' two tasks of §19.17.
+- *With a Sigma that sums concepts and their Nots,* both are learned, in
+  every run, with one Not entry each, and so is every function of what
+  is present that is silent when nothing is. No Pi over concepts is
+  needed. In the tower that Sigma is the next order's (rule 11); in a
+  stack it is the next pair's, where each row starts as its own input
+  (*Claude's reading* of rule 21's start).
+- *With a Pi over the concepts and their Nots* (the last column), the
+  two tasks can be built by hand and are exact, but descent found the
+  first in 1 of 6 runs of 8,000 steps and the second in none.
+- *What is given up* is what Alec names: a conjunction with a negated
+  thing as an object (a and not b: 1 of 6 without a Pi over concepts),
+  and "both".
+
+*The stacks today* (read in the source). `expectLayers` is 1, and
+`intuitLayers` and `markerLayers` are 2. So as it is configured,
+`expect` would be one pair: it could negate an answer and could not
+learn an exception (A, but not A with X). *Default, for Alec:*
+`expectLayers` 2.
+
+*Certificate* (added to §19.5). 23. *Pi, Sigma, Not.* (a) With no Not
+entry, raising an input never lowers a concept, and with no evidence
+against at the input no concept is against. (b) A concept's Not is its
+swap. (c) A Sigma over concepts and their Nots learns "A alone, not A
+with X" from random starts, with one Not entry.
+
+*Open.* The three readings above (the order; the monotone rows and
+weights; the grammar's operators left as they are); `expectLayers`; and
+§19.17's (b), the pooling.
+
+### 19.19 Decided: Pi, Sigma at the first layer; Pi, Not, Sigma thereafter (Alec, 2026-11-17)
+
+*Superseded in part by §19.20:* the basic level is Pi, Not, Sigma too,
+and an animal needs no layer above the first. Rule 29 is restated there.
+
+*Alec's words.* ""What animals lack is negation as an operator on any
+content" makes me think that the first layer should be Augustinian for
+all creatures: pi-sigma. There is good conceptual motivation; negation
+can only apply to scalar symbols, becuase the negation of an entire
+vector is not biologically easy. Which gives us pi-sigma for the first
+layer and pi-not-sigma thereafter. Can animals solve xor? Presumably
+not, given what you said. I'm eager to see a short demo or PI used for
+combination instead of pooling, but I'm optimistic about it."
+
+29. *Pi, Sigma at the first layer; Pi, Not, Sigma thereafter* (restated;
+    it replaces §19.18's order).
+    - *The first layer,* for every creature: a Pi makes the basic
+      percepts and a Sigma the concepts of order zero. There is no Not.
+      It speaks only of what is.
+    - *Thereafter:* a Pi makes symbols, Not is the swap of a symbol's
+      pair, and a Sigma makes the concepts. Alec's reason: a symbol is a
+      scalar and can be negated; at the first layer the Pi's value
+      multiplies a whole vector, and the negation of a vector is not
+      biologically easy.
+    - Rows read their own lane, weights are zero or more, and there is
+      no bias (*Claude's reading,* as in §19.18).
+    - A row that required a concept both for and against is never
+      active, since a concept is one signed value (§18.25). So "both" is
+      still not a conceptual object (§19.18).
+    - *The stacks.* `expect`, `intuit` and the marker read concepts,
+      which are scalars, so each of their pairs is Pi, Not, Sigma
+      (*Claude's reading*). One such pair learns the animals' two tasks
+      (§19.17: 6 of 6, one Not entry each), so `expectLayers` stays at 1
+      and §19.18's question is withdrawn.
+
+*Checked as toys* (scratch; not the model; six seeds; in brackets the
+Not entries used). In `layered_nominated.py` the Pi's rows are supplied
+as MTM would nominate them (rule 20): each input's own row and a row for
+each pair. Only the Sigma's weights and the Not entries are learned.
+
+| Task | First layer alone | With one Pi, Not, Sigma above | With two |
+| --- | ---: | ---: | ---: |
+| XOR of two perceived words (true and false, each at two places) | 6 (0) | 6 (0) | 6 (0) |
+| present only: A alone, not A with X | 0 | 6 (1.0) | 6 (1.5) |
+| present only: A or B, not both | 0 | 6 (1.0) | 6 (2.0) |
+| not, of a signed input | 0 | 6 (1.0) | 6 (1.0) |
+| the 7 functions of two present-or-absent inputs that are silent when nothing is present | 4 | 7 | 7 |
+
+- *The first layer alone* never answers against where the input holds no
+  evidence against (lowest answer 0.000 over 20 random networks), and it
+  learns XOR over two perceived words with no Not, given a row for each
+  pair.
+- *One layer above it* learns both of the animals' tasks, with one Not
+  entry each.
+- *Rows learned by descent* (`layered.py`), in place of supplied rows,
+  do worse as layers are added: with one layer above, "A or B, not both"
+  4 of 6 and "A alone, not A with X" 0 of 6; with two, neither. This
+  agrees with rule 20: the rows are for MTM to nominate, not for the
+  gradient to find.
+
+*Can animals solve XOR?* Yes, where it is over what is present. It is
+called negative patterning: respond to A, respond to B, and withhold to
+A and B together. It is shown in honey bees (Deisig, Lachnit, Giurfa and
+Hellstern 2001, checked), and in rabbits and rats (Whitlow and Wagner
+1972; Rudy and Sutherland 1989; checked). It is the standard evidence
+for a unit for the compound, which is a row of the Pi. In this structure
+it needs the layer above the first, with one Not entry. So an animal has
+at least one layer of Pi, Not, Sigma over its own concepts, which
+`doc/Philosophy.md` allows ("they can have symbols of their concepts").
+XOR over two words that are each perceived needs no Not and no second
+layer.
+
+*Pi used for combination* (demo:
+`/private/tmp/claude-501/-Users-arogers-github-WikiOracle/60c974d9-e29a-405a-b603-4965d33f3a11/scratchpad/pi_combination_demo.py`,
+sent to Alec; it is rule 2's Pi, `exp(W @ log(m))`, over the percepts of
+a reading, for each element). On the elements themselves it keeps only
+what the percepts share (which word: .15; which two words: .06). On the
+gaps, 1 less each element, it keeps what any percept has, shared
+elements reinforce, and the result stays between zero and one (which
+word: 1.00; which two words: 1.00; XOR of two words with no row for the
+pair: error 0, where the sum's is .5). *Claude's note:* the gap is what
+is left to certainty, not a negation; nothing in it is ever counted
+against, so it fits a first layer with no Not.
+
+*Certificate* 23, restated. (a) At the first layer, raising an input
+never lowers a concept, and with no evidence against at the input no
+concept is against. (b) Above it, a Not is a symbol's swap. (c) One
+layer of Pi, Not, Sigma above the first learns "A alone, not A with X"
+and "A or B, not both", each with one Not entry, on supplied rows. (d)
+The first layer alone learns XOR of two perceived words, with a row for
+the pair.
+
+*Open.* (1) §19.17's (b): the sum replaced by the Pi on the gaps. (2)
+Whether Alec's "sacrifice reasoning over concepts" (§19.18) still holds
+here, where each Sigma is followed by the next layer's Pi. (3) Whether
+the first layer keeps an against lane fed by perceived opposites (1.8
+§57.6) or has none (*default:* it keeps what perception gives). (4) The
+monotone rows and weights, and the stacks' pairs, which are Claude's
+readings.
+
+*References added.* Deisig, Lachnit, Giurfa and Hellstern (2001),
+*Configural olfactory learning in honeybees: negative and positive
+patterning discrimination*, Learning and Memory 8. Rudy and Sutherland
+(1989), *The hippocampal formation is necessary for rats to learn and
+remember configural discriminations*, Behavioural Brain Research 34.
+Whitlow and Wagner (1972), *Negative patterning in classical
+conditioning: summation of response tendencies to isolable and
+configural components*, Psychonomic Science 27.
+
+### 19.20 One structure, Pi, Not, Sigma, at every order; the basic level reasons over absence (Alec, 2026-11-17)
+
+*Alec's words.* "Sacrifice over reasoning was probably a typo, I'd need
+to see it in context. "in your structure an animal needs at least one
+Pi-Not-Sigma layer over its own concepts. Philosophy.md already allows
+that: "they can have symbols of their concepts"." This remains a
+problem, becuase the distinction between human and animal cognition is
+recursion, enabled by symbols. So as soon as we have two orders
+recursively, we are at human-like mind. Dolphins and chimps might have a
+couple orders, but let's focus on the majority mammalian brain. You said
+that animals do not have negation, but perhaps negative patterning can
+be done as pi-not-sigma, And in some sense this is not negation; it is
+reasoning over absence. If so, we have a nice single structure that can
+be used for recursion."
+
+*What is withdrawn.* §19.19's "an animal has at least one layer of Pi,
+Not, Sigma over its own concepts". The majority mammalian brain is one
+order. What tells a human mind from an animal's is recursion, which
+symbols enable (Alec), and not the Not. "Sacrifice reasoning over
+concepts" (§19.18) is probably a typo (Alec); nothing is built on it.
+
+*Checked as a toy* (scratch, `basic_level_absence.py`; not the model).
+One order, no symbols and no second layer. The Pi's rows are the basic
+percepts A, B and X and the compounds AB and AX, which are rows of their
+own, as MTM nominates a conjunction that recurs; a compound's code is
+the greatest over its parts plus a keyed increment (rule 5). The active
+percepts' vectors are combined. The Sigma is dense over the content's 96
+elements, with for entries and Not entries, each zero or more, and no
+bias. Learning is local, one trial at a time: where the outcome came and
+was not expected, the for entries of the present content grow; where it
+was expected and did not come, the Not entries grow. The numbers are the
+expectation of the outcome after learning.
+
+| Taught | Asked | Sum | Pi on the gaps |
+| --- | --- | ---: | ---: |
+| A, B: outcome; A and B together: none | A | +.92 | +1.00 |
+| | B | +.95 | +1.00 |
+| | A and B together | +.01 | .00 |
+| | nothing | .00 | .00 |
+| A: outcome; A with X: none; B: outcome | A | +1.00 | +1.00 |
+| | A with X | .00 | .00 |
+| | X alone (never shown) | -1.00 | -.98 |
+| | B with X (never shown) | .00 | +.04 |
+
+- *Negative patterning is learned at the basic level alone,* as Pi, Not,
+  Sigma. So is conditioned inhibition, and the inhibitor passes the
+  test animals pass (Rescorla 1969): X alone is expected absent, and X
+  takes away what B predicts, though neither was shown.
+- *A Not entry is made only by an absence.* Taught A and B with no
+  omission, the layer has no Not entry (0 of 96). With omissions it has
+  13 to 25 of 96, each from one element of the content to the concept.
+- *With the Not entries left out,* the layer expects the outcome to A,
+  to B and most of all to both: it speaks only of what is.
+- *No vector is negated.* A Not entry is on one element, a scalar, as a
+  Not above is on a symbol, a scalar (Alec, §19.19: "negation can only
+  apply to scalar symbols").
+- The rule is local and uses no gradient passed back (1.8 §68.30).
+
+29. *One structure: Pi, Not, Sigma, at every order* (restated on Alec's
+    "If so"; it replaces §19.19's first layer of Pi, Sigma).
+    - *At the basic level* the Pi makes the basic percepts, their
+      vectors are combined, and the Sigma is dense over the content's
+      elements. A Not entry there is from one element to one concept. It
+      is taught only by an omission, the lane that already teaches the
+      predictor (`doc/Philosophy.md`, "Expectation as a Gain"); it is
+      reasoning over absence, not the negation of a content (*Claude's
+      reading* of Alec's words). The against lane at this level records
+      that something expected is absent, and with no omission the level
+      speaks only of what is.
+    - *Above it,* for a mind that has symbols, the same structure
+      repeats: a Pi makes symbols over concepts, Not is the swap of a
+      symbol's pair, and a Sigma makes the concepts. The operator `not`
+      of a sentence or a thought can be put on any symbol, which no
+      omission need teach.
+    - Rows read their own lane, weights and entries are zero or more,
+      and there is no bias (*Claude's reading*).
+    - `expect`, `intuit` and the marker are stacks of the same structure
+      over concepts (§19.19).
+
+*Certificate* 23, restated. (a) With no omission taught, the basic
+level has no Not entry, raising an input never lowers a concept, and no
+concept is against. (b) The basic level alone learns "A or B, not both"
+and "A alone, not A with X" from what was expected and what came, and
+after it X alone is expected absent. (c) The basic level alone learns
+XOR of two perceived words with no Not entry, given a row for the pair.
+(d) Above the basic level a Not is a symbol's swap.
+
+*Open.* (1) §19.17's (b): the sum replaced by the Pi on the gaps (the
+toy learns with either). (2) What teaches the Not entries of the basic
+level's own Sigma, as distinct from `expect`'s: here an omission
+(*Claude's reading*). (3) The monotone rows and entries, and the stacks'
+pairs, which are Claude's readings.
+
+*Alec, then (2026-11-17):* "So animal cognition sees particular events
+not happening, but it does not negate ideas (I.e. no conceptual
+negation, only perceptual absence)."
+
+This is the principle of rule 29's basic level. A Not entry there is
+taught by a particular event that was expected and did not happen, and
+nothing at that level negates an idea. Conceptual negation is the
+operator `not`, on a symbol, and so belongs to a mind with symbols.
+*From the record:* the absence is only of what was expected ("one does
+not miss what one was not looking for", `doc/Philosophy.md`); the input
+holds no negative fact.
+
+*For the documentation pass* that lands with item 1.7: in
+`doc/Philosophy.md`, "Absence is inferred, never perceived" says an
+absence is "only concluded in thought". To agree with this principle it
+tells apart the omission, which System 1 registers against its
+expectation and which an animal has, from the statement of an absence,
+which thought concludes.
+
+### 19.21 Item 1.7 as it stands after 2026-11-17: the rules to build, in one place (Claude; a doc pass)
+
+Alec, 2026-11-17: "Make sure it's all in the doc, and 1.7". This section
+states every rule of item 1.7 once, in its final form, with its
+certificates and its order of building. For the build it replaces §19.1,
+§19.2 and §19.5 to §19.7; §19.2 to §19.20 are its record, and where they
+differ this section stands. Nothing here is new: each rule names where
+it was decided, and Claude's readings and defaults are marked as they
+are in the record.
+
+**What it builds.** One structure at every order: a Pi, then Not, then
+a Sigma. Percepts, and above order zero symbols, are unsigned rows of a
+square, sparse Pi, a product of memberships. Concepts are signed and are
+a Sigma over them, each entry for or Not. A row exists only when MTM
+nominates it. At order zero the percepts' vectors are combined before
+the Sigma. Symbols are split from concepts and have no dimensions. The
+old classes are not edited.
+
+**A. The layers and the structure.**
+
+1. *New classes* (§18.24, rule 32). `PiLayer3` and `SigmaLayer3`
+   (*default names*). `SigmaLayer`, `PiLayer`, `PiLayer2` and
+   `SigmaLayer2` are not edited, and nothing built with them changes
+   value.
+2. *The Pi* (§18.24, rules 21 and 31). Square and sparse, on unsigned
+   values: $z = \exp(W \log \mathrm{clamp}(m, \epsilon, 1) + b)$, with
+   `PiLayer2`'s constraints (diagonal at one or more, the rest at zero or
+   more, bias at zero or less), so a row requires the members it has
+   weight on and never exceeds its own reading; its way back is the exact
+   LDU solve. Each percept or symbol is two unsigned rows, one for each
+   lane (*Claude's reading* of §18.25). A row has weight only on rows of
+   its own lane (*Claude's reading* of rule 29).
+3. *The Sigma* (§18.24, rule 23; §18.25; rule 29). For each concept one
+   signed number, $\tanh(x\,U)$, in $[-1, 1]$, with no bias (*Claude's
+   reading* of rule 29). Each input has one signed weight. Its positive
+   part is the input's *for entry* and its negative part is its *Not
+   entry*, so an entry is never both (*Claude's reading:* the arithmetic
+   of §18.24 is unchanged, and the negation is named and can be counted
+   and left out; Alec, 2026-11-17: "Signed sigma; good, this is knowing
+   in the signed hyperball"). A weight starts at zero or above (rules 8b and 21), so
+   there is no Not entry until teaching makes one. The concept's value is
+   stored as two unsigned lanes, its positive part on the for lane and
+   its negative part on the against lane; a single reading is never
+   "both". Where an answer is read from a Sigma, the signed number is
+   read (*default*).
+4. *The cycle* (§18.25, as amended by rules 20, 21 and 26). At an order
+   with $n$ concepts: $n$ signed values, stored as $2n$ unsigned lanes;
+   the rows above that MTM has nominated read those lanes, each row its
+   own lane; each symbol's pair is combined, for less against, into one
+   signed input; the next Sigma reads those inputs.
+29. *One structure: Pi, Not, Sigma, at every order* (Alec, §19.20).
+    - *At the basic level* the Pi makes the basic percepts, their
+      vectors are combined (rule 7), and the Sigma is dense over the
+      content's elements (rule 8). A Not entry there is from one element
+      to one concept, a scalar. It records that something expected is
+      absent. Alec: "animal cognition sees particular events not
+      happening, but it does not negate ideas (I.e. no conceptual
+      negation, only perceptual absence)". What teaches it is an
+      omission, the concept expected and not come, which is what the
+      gradient of a weight that starts at zero or above gives (Alec,
+      2026-11-17: "Omission teaches not: yes, for percepts, the opposite
+      of 1 is 0, not -1, as in Boole").
+    - *Above it,* for a mind that has symbols, the structure repeats: a
+      Pi makes symbols over concepts, a Not entry is from one symbol to
+      one concept (the concept reads that symbol's pair swapped), and a
+      Sigma makes the concepts. What tells a human mind from an animal's
+      is this recursion, which symbols enable, and not the Not (Alec).
+      The majority mammalian brain is one order.
+    - The operator `not` of a sentence or a thought swaps the lanes of
+      what it is put on (`FieldLogic.reduce`), as now. It can be put on
+      any symbol, and no omission need teach it.
+    - With every weight held at zero or above, so that no Not entry is
+      read, a mind speaks only of what is (§19.15, Shamatha Speech).
+
+**B. Order zero.**
+
+5. *A percept's code obeys the mereology* (§18.24, rule 27): at or above
+   each part's code and at or below each whole's. A new row's code is the
+   greatest over its parts' codes and an increment (*default:* a small
+   draw keyed to the row), in place of the sum of its bytes' codes
+   (`BytesFallbackEncoder.encode`).
+6. *A basic percept is a row of the Pi* over its parts and wholes
+   (§18.5, rule 8, with rule 31), in place of the least of
+   `BasicPercepts.read`. For order zero, `store.conjunctive` and the key
+   `conceptualPi` go. It becomes a row when MTM nominates it (rule 20).
+7. *Combination within one reading* (§18.24, rule 22; §19.17). For each
+   lane, the vectors of the active percepts are combined into one vector
+   as wide as the perceptual space, and the Sigma reads the for vector
+   less the against vector. `.where` and `.when` are read unsigned,
+   $(x + 1)/2$ (Alec). Since item 1.8 they are stored so (1.8 §59.62;
+   Alec, 2026-11-18, as Codex records it: "Use sinusoids in 0-1
+   range, that's a todo in 1.7 anyway."), and a reader of an angle
+   takes $2x - 1$; this part of the rule is built. The combination is
+   the Pi on the gaps (§19.17,
+   §19.19): for each dimension, a Pi over the percepts of the reading,
+   taken on one less each value, $x_i = 1 - \prod_p (1 - v_{p,i})^{b_p}$,
+   with $b_p$ the Pi's value for percept $p$ on that lane and $v_p$ its
+   full vector. It replaces §18.24's sum, $x = \sum_p b_p\,v_p$ (Alec,
+   2026-11-17: ""Pi on the gaps". You mean pi over the individual percept
+   dims instead of pooling? Good.").
+8. *The concepts of order zero* (§18.24, rule 23): the Sigma of rule 3 on
+   $x$, with $U$ dense, of the perceptual width by the concepts. It
+   replaces §18.5's rule 9, the fold of `ConceptualSpace._compose_order0`,
+   the readout `IndexedSigmaConceptsFromPercepts`, and item 1.8's
+   stand-in for one signed weight (`SparseLayer._fold_weights`, §58 of
+   the 1.8 specification) at order zero.
+
+8b. *A concept made at order zero starts from its members* (*default*):
+   a new column of $U$, the sum of its members' vectors, normalized,
+   which the network then learns; under rule 21 a new concept has one
+   member, its own row. What promotion, `PerceptCollections.collect` and
+   the lessons write today (an edge in the feature matrix,
+   `add_concept_feature`) becomes such a column. The Pi of order zero
+   holds only the mereology's entries, a percept over its parts and
+   wholes; no concept writes into it, and it stays full rank. The
+   reduced rank of order zero is the Sigma's, at most the perceptual
+   width.
+
+**C. Above order zero.**
+
+9. *Symbols are split from concepts and have no dimensions* (§18.22,
+   rules 14, 15 and 20). Separate tensors; a symbol has no vector, place,
+   form or trust content read as a direction; the shared row of a concept
+   and its symbol is given up.
+10. *A symbol is two unsigned rows, one for each lane, and brings one
+    concept* (§18.25; rules 2 and 21). It is made when MTM nominates it
+    (rule 20), or by `interpret` for a meta concept, and not at a
+    concept's allocation. A conjunction is promoted as a new symbol, a Pi
+    row over its members, under a new concept, a Sigma over that symbol.
+11. *The Sigma above order zero* (§18.24, rule 24, with §18.25): it reads
+    each symbol's pair combined into one signed input. No vector and no
+    pooling. Stored sparse (*default*).
+12. *Sigma and Pi at every order* (§18.24, rule 25). The least and the
+    greatest of `SparseLayer.fold_presence` go above order zero too, and
+    item 1.8's `SparseLayer._fold_weights` with them.
+13. *Place and time* (§18.24, rule 26). A percept's vector carries
+    `.where` and `.when`; a symbol stores neither; its `.where` is written
+    when STM reads it. Where a product reads them they are taken
+    unsigned (rule 7).
+14. *Between conceptual orders, only activation* (§18.22, rule 16): a
+    pull within one order does not pass through a symbol.
+
+**D. Learning and the way back.**
+
+15. *Membership is learned under a penalty* (§18.24, rule 29; rule 22).
+    *Default:* §18.3's penalty, measured first, on the Pi's entries and
+    on the Sigma's entries above order zero. The Sigma of order zero is
+    dense and is not penalized. Above order zero a promotion writes an
+    edge at one into capacity allocated beforehand; at order zero it
+    writes a column of $U$ (rule 8b). The penalty thins the values of
+    entries that exist; it does not make a matrix sparse (§18.9).
+16. *Likeness of codes pairs nothing* (§18.24, rule 28, *default*). A row
+    enters a set, or two rows are taken as neighbours, by the mereology or
+    by a promotion, never by the likeness of their codes. The readers that
+    decide by likeness today are §19.4, list 1.
+17. *The way back* (§18.24, rule 30). The Pi inverts exactly; the Sigma
+    returns the combined vector by least squares where there are enough
+    concepts, and not otherwise. A signed value on the way back is
+    replaced by its two unsigned parts before a percept or a symbol
+    holds it, as on the way up (Alec, §19.24): -.5 is .5 on the
+    against lane and nothing on the for lane. Teaching does not assume
+    an exact inverse; where it does today is §19.4, list 2.
+
+**E. The learned maps of System 1, and storage.**
+
+18. *The stacks are the same structure* (Alec, §19.10; rule 29).
+    `SigmaPiLayer` and `SigmaPiStack` (`expect`, the read from a field to
+    a point, and the marker of `bin/Language.py`; `intuit`'s own stack
+    goes with item 1.8, §19.22) are pairs of rules 2 and 3, a Pi and then
+    a Sigma
+    whose entries are for or Not, with no way back, fused so that a stack
+    is captured as one graph. They read concepts, which are scalars
+    (*Claude's reading*, §19.19). Today `bin/SigmaPiStack.py` uses
+    `PiLayer`'s chart of odds and a linear `SigmaLayer` clipped to [0, 1].
+    This replaces the formula of §18.5, rule 5; rules 6 and 7 of §18.5
+    (keys, pair count, seed, the last Sigma starting at zero, the cost of
+    an MLP layer) stand. `expectLayers` and `ideaLayers` stay at 1, and
+    `markerLayers` at 2.
+19. *The matrices are tensors on the device* (*default*): the Pi and the
+    Sigma above order zero are stored as compressed rows, not as
+    dictionaries of edges (`SparseLayer._index`), and grow into capacity
+    allocated beforehand. They can be read by row and by column (rule 28;
+    *default:* an index of columns kept beside the rows).
+
+**F. Rows and concepts** (§19.10).
+
+20. *MTM nominates every row of the Pi* (Alec). A basic percept at order
+    zero, and a symbol at every order above it, becomes a row only when
+    MTM nominates it on recurrence (`concept_mint_count`); nothing
+    becomes a row on its first reading. *Claude's reading:* the tower of
+    parts and wholes below the basic percepts is perception and is made
+    on first sight, as now. This replaces the basic percept reserved at a
+    word's first reading (`BasicPercepts.reserve` in the word loop of
+    `bin/Models.py`), the lessons' declared admission
+    (`Corpus.admit_training_forms`, `ConceptLessons.admit_native_forms`),
+    and symbols made at a concept's allocation.
+    - *A new word* is perceived at once, but `interpret` cannot find it
+      until its basic percept is nominated; its concept comes with that
+      row (Alec, "A,b,c,d, yes").
+    - *Not nominated* (Alec): the meta concept of a word and its object,
+      which `interpret` makes, with its structure, when it interprets the
+      word and the meta concept does not yet exist; the blank object,
+      below; and the grammar's declared concepts, the 72 arguments and 27
+      operator classes of §19.9, each declared with its row at
+      construction.
+    - *The 12 frozen thought predicates* of §19.9 stay columns of $U$ at
+      zero, frozen, read by thought as references and never by
+      perception (Alec, "E nice!").
+    - *The blank object* (Alec). For a word with no object, `interpret`
+      makes a new concept with no members, together with the meta
+      concept; today MTM holds such a word as a pending name
+      (`InterpretLayer.reading`, `pool.named`). *Default:* it is one
+      order above its word. Its vector starts at zero (Alec: "Pure zero
+      is even better, since magnitude is certainty in that space"); a
+      read that normalizes a concept vector must not divide by its zero
+      length.
+21. *One concept for each row* (Alec). Each nominated row brings one
+    concept, so every order's Sigma is square: as many concepts as
+    inputs, with no halving between orders. A concept starts reading only
+    its own row, at one; at order zero that is the column of $U$ given by
+    the row's own vector, normalized. Concepts have no nomination or
+    promotion of their own: MTM's promotions of classes, identities and
+    percept collections become nominations of rows. The one writer of a
+    concept's further inputs stays: a kept reading adds the word that
+    filled an argument to that argument
+    (`ConceptHierarchy.observe_member`), as an entry on the word's symbol
+    once MTM has nominated it.
+22. *Both thinned* (Alec). Rule 15's penalty is on the Sigma's entries
+    above order zero as well as on the Pi's; §19.13 shows that with the
+    Pi alone penalized what is learned cannot be read from the rows. The
+    structure of a meta concept is never thinned: neither penalty acts on
+    it. *Claude's reading:* a definition between concepts ("balloons are
+    rubber", an edge taught from its `LTM1` part row by `DefinitionFold`)
+    stays under the penalty, held by its witness's cost.
+
+**G. The vertical spread** (§19.11).
+
+23. *A fan up and a share down,* on the structure's own matrices, Pi and
+    Sigma alike, by the size of their weights. Up: a concept's or a
+    symbol's value is split among the rows that read it, each by its
+    weight's share of all the weights it is read with (its fan). Down: a
+    row's value is split among its inputs, each by its weight's share of
+    the row. What a row receives is summed over all its parents and
+    children, at most one; a Not entry passes to the other lane. At
+    order zero the way down goes on into the first layer (rule 30); the
+    combined vector of order zero's Sigma is not passed (rule 17).
+24. *Siblings get less than the concept that caused them* (Alec). A
+    concept present at one gives every other concept the spread reaches
+    less than one: what goes up is split by its fan, and of each parent's
+    value the concept itself takes back a share.
+25. *One pass, written to the expected field at every order, where the
+    grammar calls for it* (as amended by Alec, §19.22). Up once, then
+    down once, from order zero's expectation (`expect`) and the observed
+    field. It writes `_expected_knowing` at every order, where
+    `ConceptSpread.open_prediction` writes order zero alone today. It is
+    what `intuit` runs after it deposits expect's field; expect itself
+    is the map at order zero alone, and a model with no symbols never
+    runs the spread over the orders. *Default:* it also runs at the end
+    of the read, before comprehension takes its leaves' objects (1.8
+    §68.26), so that `InterpretLayer.preferred_objects` reads what the
+    sentence's words primed.
+26. *Not strictly ramified* (Alec). A symbol of order $k$ reads the
+    concepts of every order below $k$: "the field of a second order
+    symbol is both zero and first order concepts". A meta concept is one
+    order above the higher of its word and its object and reaches both in
+    one step, with no symbol between. *Claude's reading:* it holds for
+    every symbol, not only meta concepts.
+27. *Nothing new to learn.* The spread reads the structure's matrices,
+    adds no parameter and no teacher, writes only the expected field, and
+    changes no value of the evidence.
+30. *The spread reaches the first layer, and the way back reads what it
+    expects* (Alec's request of §19.23; the form is Claude's). The fan
+    and the share run on the Pi of order zero, the mereology's own
+    entries: a part that is present raises the rows that read it, and a
+    row gives a share to each of its parts, so a part that is missing
+    receives from the rows its neighbours raised. It writes expected
+    percepts and changes no evidence; a row still requires its members
+    (rule 2). At the reconstruction, where a look's percepts were
+    withheld the way back reads the expected ones in their place
+    (*default*). A concept reaches its row directly (rule 21).
+
+**H. Thought reads the structure** (§19.12).
+
+28. *Thought reads the Sigma and the Pi* (Alec). `parts(c)` gives the
+    entries of c's row of the Pi: the symbols below c, at every lower
+    order (rule 26), each with its weight. `wholes(c)` gives the rows of
+    the Pi above c that have c as an entry, each with its weight. Of the
+    Sigma, thought can read what a concept reads (its own row, and the
+    inputs `observe_member` adds), which concepts read a given row, and
+    which of those entries are Not entries. A result is a set of
+    references with their weights, not a yes or no. A reference's words
+    are those whose meta concepts join them to its concept; a reference
+    with no word, such as a percept, is given as itself. An entry is read
+    as present by a low threshold, since an entry that survives the
+    penalty is small (§19.13; *default:* the threshold is a key, measured
+    with rule 15's penalty). *Defaults:* a read is serial and is charged
+    to the work budget as the queries are today; it moves nothing.
+
+**I. The order of learning** (§19.25).
+
+31. *Words, objects, then their meta concepts* (Alec). A word
+    generalization and an object generalization are each learned
+    from their own occurrences, each a row that MTM nominates with
+    its concept; the object's may be of another modality. An
+    occurrence keeps its place and time, and a generalization holds
+    neither. Then the meta concept of the two is learned from their
+    consistent association. Nothing joins independent tokens: "there
+    isnt a statistic that will magically produce identity across
+    independent tokens". Two words are joined through what both are
+    joined to. The clauses in this item's terms, and how it meets
+    rule 20's meta concept and blank object, are in §19.25.
+
+**Certificates.**
+
+1. *The old classes are unchanged:* `SigmaLayer`, `PiLayer`, `PiLayer2`
+   and `SigmaLayer2` give the same values before and after, on random
+   inputs over the whole range.
+2. *The Pi:* §18.24's certificate 21 (a row requires its members);
+   bounds over the whole range, rails included, with weights scaled far
+   beyond their start (§18.6, certificate 4); the exact way back (atol
+   1e-6, §18.6, certificate 5); a row has no weight outside its own lane.
+3. *The Sigma:* each concept is one signed number in a reading and its
+   two lanes are its parts, never both above zero (Alec's numbers,
+   §19.24: .5 is for .5 and against 0; -.5 is for 0 and against .5);
+   on the way back a value of -.5 reaches the percepts as .5 on the
+   against lane and nothing on the for lane; no symbol and no percept
+   holds a number below zero; bounded as in 2; it has no bias; an
+   entry is for or Not, never both.
+4. *The cycle:* the next Sigma reads one combined input, for less
+   against, for each symbol; no symbol is made at a concept's allocation;
+   a promotion is the nomination of a row, which brings its one concept.
+5. *Order zero:* §18.24's certificates 15 (a new percept needs no new
+   weight), 17 (concepts told apart, reported), 18 (the mereological
+   order), 19 (the way back as far as it goes) and 20 (place and time
+   weights, reported). Its certificate 14 (pooled equals flattened) goes
+   with the sum: the combined vector is one less the product of the
+   gaps, lies between zero and one, and a percept at zero changes
+   nothing.
+6. *Symbols:* §18.22's certificates 11 and 12 (no tensor holds both a
+   concept and a symbol; nothing reads a vector, place, form or trust
+   content at a symbol; a Sigma above order zero is unchanged when the
+   places of every other order are rotated).
+7. *The stacks:* a fused `SigmaPiLayer` equals its two layers (atol
+   1e-6); a stack is one graph; seconds against an MLP layer of the same
+   size; depth (§18.6, certificates 3, 6, 7 and 8, on rule 18's
+   structure).
+8. *Likeness and the way back:* no reader of §19.4's lists 1 and 2, or
+   of the table below, is left as it was, each changed as listed or
+   reported.
+9. *The standing gates and the lesson* (§18.24, certificate 16; §18.6,
+   certificate 10): both stopping gates pass, XOR among them; the lesson's
+   readings before and after, each order's occupancy, the Pi's kept edges
+   for each row, the Not entries at each order, and one default sweep.
+10. *Speed* (*default*): the seconds of the lesson's sixteen sentences
+    before and after, as §51 of the 1.8 specification reported them.
+11. *No row on a first reading.* A new word read once has no basic
+    percept and no concept, and `interpret` does not find it; after
+    `concept_mint_count` readings MTM nominates its basic percept, its
+    concept comes with it, and `interpret` finds it.
+12. *Square.* At every order the concepts equal the rows in number, and
+    a new concept reads only its own row, at one; at order zero its
+    column of $U$ is its row's vector, normalized.
+13. *Thinned.* Under the penalty, a Sigma entry above order zero that no
+    cost supports goes to zero, as a Pi entry does; the Sigma of order
+    zero is not penalized.
+14. *Up.* A word found raises its meta concept by its share.
+15. *Down.* A primed meta concept raises its object when the object is
+    absent; the way back of rule 17, on the same case, does not.
+16. *Rule 3 of 1.8 §55.1.* Finding a word raises its meta concepts and
+    their objects; of a word's two objects with equal expectation, the
+    one whose meta concept another word of the sentence primed is
+    preferred at comprehension.
+17. *Evidence unchanged.* With the spread on and off, every order's
+    evidence is equal, and the parameters are the same.
+18. *The blank object.* Interpreting a word with no object makes one
+    blank object and one meta concept, and the blank object's vector is
+    zero; interpreting it again makes nothing new.
+19. *Siblings below the cause.* With one concept present at one, every
+    other concept the spread reaches is below one; two children sharing
+    five parents of equal weight give each other .5.
+20. *One step across orders.* A symbol of order two reads concepts of
+    orders zero and one; a meta concept over a word of order zero and an
+    object of order one primes the object in one pass, with no symbol
+    between.
+21. *The structure is readable.* For a concept c, `parts(c)` and
+    `wholes(c)` give the references and weights of c's row of the Pi and
+    of the rows above that have c as an entry, with the words of those
+    that have words, and the Not entries are told apart; the matrices,
+    the activations and the rows are unchanged after the read.
+22. *And, or and not.* A stack of rule 18 learns and, or and not over
+    true, neither and false from random starts; and and or use no Not
+    entry; with rule 22's penalty, the network whose present entries are
+    set to one and the rest to zero gives the same answers.
+23. *Pi, Not, Sigma.* (a) With no omission taught, the basic level has
+    no Not entry, raising an input never lowers a concept, and no concept
+    is against. (b) The basic level alone learns "A or B, not both" and
+    "A alone, not A with X" from what was expected and what came, and
+    after it X alone is expected absent. (c) The basic level alone learns
+    XOR of two perceived words with no Not entry, given a row for the
+    pair. (d) Above the basic level a Not entry is a symbol's pair read
+    swapped.
+24. *A blind spot is filled* (Alec, §19.23; the testpoint
+    `TestBlindSpot`). With half of a known word's forms withheld, the
+    reconstruction gives the whole word at its place; the word beside it
+    is unchanged; a word never taught is not completed. The values of
+    §19.23 are printed.
+25. *A word and an object of another modality are tied by their
+    consistent association* (Alec, §19.25; the testpoint
+    `TestCrossModalTie`). The word alone and the stimulus alone each
+    make a row and a concept, and no tie; presented together they
+    make the meta concept; then each leaves the other expected; a
+    word met with a different stimulus each time is tied to none; a
+    second word met with the same stimulus is tied to the same
+    object. The values of §19.25 are printed.
+26. *A sequence is learned* (Alec, §19.25; the testpoint
+    `TestBellSalivate`). After the first stimulus has been followed
+    by the second, the first alone leaves the second expected, and
+    its response through it; a stimulus never followed by the second
+    does not. The values of §19.25 are printed.
+
+**The order of building.**
+
+1. The two classes (rules 1 to 3 and 29), with certificates 1 to 3.
+2. Order zero: codes (rule 5), the percept Pi (rule 6), nomination and
+   one concept for each row (rules 20 and 21), combination and the Sigma
+   (rules 7, 8 and 8b), with certificates 5, 11, 12 and 23 (a) to (c).
+3. Symbols and the orders above (rules 4, 9 to 14 and 22, the meta
+   concept and the blank object), with certificates 4, 6, 13, 18 and
+   23 (d).
+4. The vertical spread (rules 23 to 27, and rule 30 of §19.23), with
+   certificates 14 to 17, 19, 20 and 24. Then rule 31, which needs
+   steps 2 to 4, with certificates 25 and 26.
+5. Thought reads the structure (rule 28), with certificate 21.
+6. The stacks (rule 18), with certificates 7 and 22.
+7. The readers of §19.4 and of the table below (rules 16 and 17), with
+   certificate 8.
+8. Certificates 9 and 10.
+
+**Readers to adapt.** §19.4's four lists stand. Added on 2026-11-17 (read
+in the source; Codex takes them again in step 1 of §19.8):
+
+| Where | Today | Under |
+| --- | --- | --- |
+| `ConceptAllocator.class_member` | admits a membership only between adjacent orders | rule 26: any lower order |
+| `ConceptSpread.open_prediction` | writes `_expected_knowing` at order zero alone | rule 25: every order |
+| the thought queries `parts` and `wholes` (`bin/Queries.py`, `_neighbors`), through `Taxonomy.capture_taxonomy` | read LTM1's part table (`allocator.parts`) | rule 28; which of the two they read is open |
+| `ConceptualSpace.concept_parts` and `concept_wholes` (`bin/Spaces.py`) | read the allocator's part and whole references of a concept | rule 28's reads of the Pi, where the matrices replace those references |
+| `InterpretLayer.reading`'s pending name (`pool.named`), and `PrependedSymbols.stage`, which holds it in STM | a word with no object is a pending name in MTM | the blank object (rule 20); item 1.8's comprehension takes the pending name as a leaf's object and reads the concepts held in STM (1.8 §68.19, §68.25), and follows it |
+| `SigmaPiStack` (`bin/SigmaPiStack.py`) and its keys `expectLayers`, `markerLayers` and, once item 1.8 has replaced `intuitLayers`, `ideaLayers` | `PiLayer`'s chart of odds and a linear `SigmaLayer`, clipped | rule 18 |
+| the word step's payload in `bin/Models.py` (`activation.abs()`, two places), `Interpret.positive_evidence`, `ModelAttention.reference_evidence`, and the walk's own pair (`ModelAttention.native_word_poles`, `Models._attention_sentence_payload`) | a word has two reads: the walk's pair fills the two lanes wherever the walk ran, and the readout's absolute value is the presence of the form; its sign is dropped, and where the walk gives no pair the pair is (presence, 0) | rule 3 and §19.24: one Sigma, whose positive part is the for lane and whose negative part is the against lane; the walk's separate pair goes with the fold (rules 8 and 12). Measured in item 1.8 (1.8 §68.63): the walk's pair was on 373 of 373 deposits of certificate 81 and at least 78 of 97 of the math chain and the gates; none of 478 reads was below zero; with the pair taken from the read's sign where the walk gives none and every read negated, two of four runs failed in MTM (an identity whose only mention is marked as an alternative has no member in the actual timeline, and `PrependedSymbols.symbolize` raises), so the readers of a word stored against are traced first. Item 1.8's certificate (with every read negated, no stored number is below zero) stays; where it reports equal values, this item changes that to the lanes exchanged |
+| `ConceptualSpace.promote_symbol_reference` and `compute_symbolic_reference` (`bin/Language.py`), in `stage_cs_sym` | a symbol carries a row and one signed activation ("SymbolSpace transports identity and signed activation") | rule 10 and §19.24: two unsigned rows, one for each lane (added 2026-11-18) |
+
+**Defaults and readings, for Alec to overrule.** The names `PiLayer3`
+and `SigmaLayer3`; each percept or symbol as two unsigned rows; a row
+reading its own lane only; the Sigma with no bias; the answer of a Sigma
+read as its signed number; the keyed increment of a new row's code;
+sparse storage above order zero; the penalty of §18.3; likeness pairs nothing (rule 16); the
+matrices as device tensors with an index of columns (rule 19); the
+stacks reading concepts as pairs of the same structure (rule 18); the
+blank object one order above its word; the spread run at the open pass
+and before comprehension (rule 25); the threshold key and the work
+budget of rule 28; the speed certificate.
+
+**Open, none blocking the build.**
+
+1. Whether the queries `parts` and `wholes` read the matrices alone,
+   with LTM1's part table kept as the evidence for `isPart`'s proofs
+   (*recommended*), or both (§19.12; Alec: "We can spec it later").
+2. On graded readings the layers give the product logic and the
+   grammar's field operators the least and the greatest (§19.13);
+   *default:* they are left to differ.
+3. Whether `data/shamatha.grammar` keeps its `not` rule (§19.15).
+4. Whether the basic level's against lane is fed by perceived opposites
+   (1.8 §57.6) as well as by omissions; *default:* it keeps what
+   perception gives.
+5. What becomes of the attention walk's own pair once the one Sigma's
+   value is the pair (§19.24); *default:* it goes with the fold that
+   reads it.
+6. How rule 31 meets rule 20. *Alec, 2026-11-18 (§19.27):* better
+   never to have the blank; to avoid a discontinuous decision both
+   may be trained, and the blank removed only if the two vectors come
+   to overlap in conceptual space. Still open: what removing is,
+   beside concepts kept forever, and what overlap is (*default:* the
+   match of 1.8 §70).
+7. What holds a succession, the bell and then the food, so that the
+   first leaves the second expected across two sentences. *Default:*
+   a row that MTM nominates for the two when the succession recurs,
+   read by rule 30's spread, with expect's stack beside it as §19.22
+   proposes. Within one sentence expect does it today (§19.25).
+
+**For the documentation pass** that lands with item 1.7 (`doc/*.md` is
+not edited now: another pass over those files is uncommitted, in the
+worktree `basicmodel-docs`).
+
+| File | What it gains | From |
+| --- | --- | --- |
+| `doc/Architecture.md` | the one structure, Pi, Not, Sigma, at every order; MTM nominates rows, one concept for each row, both thinned; the vertical spread; a section "Biological plausibility": the two lanes and the Not entries beside the retina's two channels and inhibition carried by its own cells, the local rule of excess and omission, and what is not plausible, inverses and backpropagation | rules 20 to 29; §19.17, §19.20; 1.8 §68.30 |
+| `doc/Philosophy.md` | Shamatha Speech as speech with the Not entries left out, with Augustine and the three natures; perceptual absence and no conceptual negation, with "Absence is inferred, never perceived" telling the omission from the statement of an absence; "What an animal lacks": recursion, which symbols enable, and one order for the majority mammalian brain; negative patterning and conditioned inhibition as reasoning over absence; the references of §19.17 and §19.19, checked again | §19.15, §19.17, §19.19, §19.20 |
+| `doc/Orders.md` | not strictly ramified; the meta concept one order above the higher of its word and object; the blank object and its zero vector | rules 20 and 26 |
+| `doc/Logic.md` | and, or and not in the layers; the product logic on graded readings beside the grammar's least and greatest | §19.13, §19.15 |
+| `doc/Reasoning.md`, `doc/QueryContracts.md` | `parts` and `wholes` read the structure, Not entries told apart | rule 28 |
+| `doc/Mereology.md`, `doc/Spaces.md` | a percept's code obeys the mereology; combination by the Pi on the gaps; place and time read unsigned | rules 5, 7 and 13 |
+| `doc/Params.md` | the keys that go (`conceptualPi`, `symbolTower`) and those added (the threshold of rule 28) | rules 6, 9 and 28 |
+| `doc/Language.md`, `doc/Training.md`, `doc/Philosophy.md` | the order of learning (words, objects, then their meta concepts by consistent association) with the example of the well-house, as written in §19.25, in `Language.md` where the meta concept is described and in `Training.md` where the curriculum's order is given; Percy's signal and name, and the references, in `Philosophy.md` (Alec, 2026-11-18: "Please make sure this example of meta-concept learning is in the doc.") | rule 31, §19.25 |
+
+*Confirmed by Alec, 2026-11-17, of this section's three readings.*
+"Signed sigma; good, this is knowing in the signed hyperball." ""Pi on
+the gaps". You mean pi over the individual percept dims instead of
+pooling? Good." "Omission teaches not: yes, for percepts, the opposite
+of 1 is 0, not -1, as in Boole". Rules 3, 7 and 29 above carry them, and
+they are no longer among the defaults. So a percept lies between zero
+and one and its opposite is zero, and a concept lies in the signed
+hyperball. *Claude's note* (Boole's algebra, cited from memory): on
+percepts a row of the Pi is its and, $xy$; a gap is its not, $1 - x$;
+and the Pi on the gaps is its or, $1 - (1 - x)(1 - y)$.
+
+*Alec, 2026-11-17, of MTM's form.* "The form of MTM can probably be the
+same as percepts or symbols, since it serves as a testing ground for
+percepts or symbols. So an easily promoted and easily forgotten store,
+as opposed to the percepts that they promote into." It bears on rule 20
+and is taken up in item 1.6
+(`doc/plans/2026-11-17-item1-6-zero-data-movement.md`, step B); item
+1.7 builds rule 20 on MTM as it is.
+
+### 19.22 intuit runs the vertical spread; one mechanism for the two large maps (Alec, 2026-11-17; Claude's answer)
+
+Alec, 2026-11-17 (in full in 1.8 §68.57): "intuit is only called from
+grammar, and we have an opportunity for higher-order cognition there,
+so lets run the N:N intuit() as the existing propagation of N:N
+expect() *as well as* the (up and down) vertical order propagation that
+is enabled only with symbols and recursive cognition." And: "So
+expectation is N:N, and currently it uses a pi-not-sigma that runs from
+concepts to concepts. That is so close to the pi-not-sigma that runs
+from basic percepts to concepts that I wonder if there is a way to
+integrate the two, because these two N:N computations are the largest
+in the model." And: "one possibility would be to involve the
+reconstruction to wind up back in basic percepts, which is a kind of
+imagination rooted in the word: pi-not-sigma-sigma^-1-not-pi^-1".
+
+**What it changes in this item.**
+
+- *Rule 25 is amended.* The vertical spread (rules 23 to 27) is what
+  `intuit` runs, after it deposits expect's field, when the grammar
+  calls it. expect is the map at order zero alone. Rule 25 had the
+  spread at the open pass of every sentence, as part of expectation at
+  every order; that was a default of Claude's.
+- *Rule 18 is amended by item 1.8.* `intuit_stack` and `intuitLayers`
+  go there (1.8 §68.53, rule 4), and a stack for the read from a field
+  to a point is added (rule 5 there). This item rebuilds the stacks
+  that remain.
+- *Open for Alec.* Rule 25 also ran the spread at the end of the read,
+  so that `InterpretLayer.preferred_objects` reads what the sentence's
+  words primed (certificates 14 to 16; rule 3 of 1.8 §55.1). `interpret`
+  is the grammar's as `intuit` is. *Claude's default:* the spread runs
+  wherever the grammar reads above order zero, at `interpret`'s choice
+  of an object and at `intuit`; a model with no symbols never runs it.
+
+**One mechanism for the two large maps (Claude's answer, for Alec).**
+
+The two, as this item has them: the first layer (rules 2, 3, 6 and 7:
+percept rows to basic percepts by the Pi, their vectors combined, a
+dense Sigma from the combined vector to order zero's concepts), and
+expect (rule 18: a stack of its own from order zero's field to order
+zero's field).
+
+Three ways toward one, and what is known of each.
+
+a. *The way up and the way back alone,* the round trip Alec names. An
+   exact way back returns what went up: an omitted value of .8 came
+   back 0 (1.8 §3.19), and "an inverse reconstructs, it does not
+   complete" (§19.11). So alone it gives the visible input back and
+   expects nothing. As built the same holds by teaching: the reverse of
+   the open field is scored on the visible events only
+   (`SentenceField.reconstruct`, `Omission.visible_events`), and an
+   omitted input is restored through System 2's generate walk
+   (`reconstruction_order_zero`).
+b. *The round trip from a field that something else has lit.* When the
+   concepts the way back starts from were lit by more than their own
+   percepts, it gives percepts that were not in the input. That is the
+   imagination he names: a word lights its concept, the spread lights
+   its meta concept and its object, and the way back gives the object's
+   percepts. It needs no new matrix. What lights the concepts is the
+   spread, or what `intuit` deposits.
+c. *The spread carried into the first layer.* Rule 23 stops going down
+   at order zero's concepts. Carried one layer further, a concept's
+   value goes down by share to the content it reads and to the percept
+   rows that give that content, and up by fan to every concept those
+   rows support. Order zero's expectation is then the first layer read
+   down and up, and expect has no stack. It knows what the first
+   layer's rows and weights hold: likeness through shared content, and
+   co-occurrence only where MTM has nominated a row for the things that
+   occur together (rule 20).
+
+Taken together, b and c are one mechanism at every level: up by the
+structure, a fan and a share at the concepts, and back down by the
+structure. In the first layer it needs no symbols, which is expect and
+an animal's. Across the orders it needs them, which is intuit. The two
+large maps are then one set of matrices read in both directions.
+
+*What it would cost.*
+
+- expect would have no teacher of its own. Today it is taught the
+  omitted input directly and can learn two words that merely occur
+  together. In the toy of 1.8 §3.18, likeness alone reached 3 of 4
+  cases of an expectation that depends on a pair, and a container
+  reached 4 of 4. Without a row for the pair, the one mechanism does
+  not expect one word from the other.
+- Omission would still teach, by rule 29: the Not entries of the first
+  layer.
+- Rule 17 gives the way back of order zero's Sigma a combined vector
+  only. The step from that vector to percept rows is a read by
+  coverage, not an exact inverse. It would complete by parts and
+  wholes, and it has not been tried.
+
+*Claude's proposal.* Build it in this item as a measured alternative
+beside expect's stack, which is kept on hand (Alec, 2026-11-14: "keep
+the old form on hand in case we want to revert"). The measures: the
+test that expectation restores an omitted word
+(`test_item18_expect.py::test_81_expectation_restores_the_omitted_native_word`),
+and the parameters and the time for a sentence, for both forms. Decide
+by those. Nothing of it is in item 1.8.
+
+*Sizes, measured in the math-chain model:* 1.8 §68.57.
+
+**Alec, of the round trip, later the same day.** "it doesnt do a lot of
+prediction, but it does reconstruction of missing data based on
+(limited) top-down information, and it provides a way (when integrated
+into intuit) to do imagination." And: "It also dovetails with The Whole
+Part, where I detail the imagination as the inverse of perception. that
+is relevant because a forwards-backwards ping-pong between those two
+spaces gives us the ability to imagine, which the recursive symbol look
+is absent imagination (since symbols are dimensionless). Sound good?"
+(Claude reads "look" as "loop". The book is cited as attached to his
+ORCID record, 0000-0002-6570-7571, with no passage.)
+
+*Claude's answer: yes, and his own words carry the one condition.*
+
+- The way back is the right way down, and it is the only one that can
+  give anything to look at: symbols have no dimensions, so the loop
+  over symbols alone imagines nothing. This agrees with way b above.
+- "Limited top-down information" is exact. The round trip restores what
+  the concepts hold beyond what the percepts lit, and nothing else: an
+  exact way back from the concepts the percepts lit returns those
+  percepts (way a above). So it predicts little, as he says, and what it
+  reconstructs depends on what lights the concepts from above.
+- With intuit, the spread over the orders is what lights them: a word,
+  its meta concept, its object, and then the way back to the object's
+  percepts. That is imagination rooted in the word, and the back and
+  forth between the two spaces is one more pass of the same two ways.
+- It makes the two large maps one only if order zero's own top-down
+  information also comes from the first layer's matrices (way c above)
+  and not from expect's stack. Where it does not, the stack stays as
+  the source of that information. This is the point to measure.
+- As built, the direct way back from the open field is taught the
+  visible input only (way a above). For it to fill missing data it must
+  either start from a field that expectation or intuit has added to, or
+  be taught the whole input as the generate walk's reconstruction is.
+
+*Decided in direction, Claude's reading of "Sound good?" answered yes;
+built in this item with the layers and their ways back. Its form to
+settle here:* the round trip as the way down for intuit (imagination)
+and for expectation's missing data; whether expect keeps a stack as its
+source of top-down information at order zero, by the measure of the
+proposal above.
+
+### 19.23 A blind spot is filled on reconstruction: a rule and a testpoint (Alec, 2026-11-17)
+
+*Alec:* "please add a testpoint that verifies the architecture fills in
+a blind spot on reconstruction (i.e. the pi should generalize of
+neighboring elements to fill in a missing area)."
+
+**What a blind spot is here.** Input that is withheld, by the
+architecture's own means (`Omission.Draw`): a whole word, or some of the
+forms of a word that is otherwise kept. A word of the small lesson model
+has 11 forms, each spanning the word. Withholding a form blanks the
+bytes it spans (`Omission.prepare`, `stage`), so with half of a word's
+forms withheld the word's bytes are the missing area, and its other
+forms are the neighbours that remain to be read.
+
+**What the source does today** (a probe, not the model's tests;
+`blindspot/blind_spot_probe.py` in the session's scratchpad; the
+committed source, HEAD `5721692530`; the small lesson of
+`test_item18_expect.py`, 200 presentations of "alpha gamma" and "beta
+delta"; three lessons: taught with everything visible, with the second
+word withheld, and with every second form of the second word withheld).
+Bytes right at the second word's place, of 5:
+
+| Blind spot at the probe | The way back from the open field | The way back through the generate walk |
+| --- | ---: | ---: |
+| none | 5 | 0 |
+| the whole word | 0 | 0 |
+| half of the word's forms | 0 | 0 |
+
+The three lessons give the same numbers, the two taught with the blind
+spot included. The word beside the blind spot is given back right by
+the first way in every case. So today nothing is filled: with half of
+its forms present a known word gives nothing back at its place.
+`test_item18_expect.py::test_81_expectation_restores_the_omitted_native_word`
+shows that the expected field does hold the omitted word's concept; it
+does not reach the reconstruction. Two reasons were read in the source:
+the way back from the open field is scored on the visible bytes only
+(`Omission.visible_events`), so nothing teaches it to fill; and the
+expected field is written beside the field, not into what the way back
+reads. Why a word with half of its forms present gives nothing at all
+was not traced: its basic percept is read by the share of its two
+boundaries that is present (`BasicPercepts.read_points`), and both
+boundaries are required (`read_collection`).
+
+**The rule** (the form is Claude's; it carries §19.22's way c and way b
+from a proposal to a rule, since Alec asks for what they give).
+
+30. *The spread reaches the first layer, and the way back reads what it
+    expects.* Rule 23's fan and share run on the Pi of order zero, the
+    mereology's own entries, as they run above it. Up: a part that is
+    present gives its value to the rows that read it, by its fan. Down:
+    a row gives its value to its parts, by share, so a part that is
+    missing receives a share from the rows its neighbours raised. This
+    is the Pi generalizing over neighbouring elements. It writes
+    expected percepts, as rule 25 writes the expected field, and the
+    evidence is unchanged (rule 27); the row itself still requires its
+    members (rule 2). At the reconstruction, where a look's percepts
+    were withheld the way back reads the expected ones in their place
+    (*default*). This amends rule 23, where the way down stopped at
+    order zero's concepts. *Default:* a concept reaches its row directly
+    (rule 21: one concept for each row), so the Sigma of order zero and
+    its combined vector (rule 17) are not passed on the way down.
+
+*Checked as arithmetic, not as a toy of this case.* §19.11's toy has
+the same step one order up: a row read at .8 by two members, one
+present, raises the row, and the row's share gives the absent member
+.33, where the exact way back gives it nothing. Whether the share alone
+is enough to give a word's bytes back, with five or six of its eleven
+forms present, is what the testpoint measures.
+
+**The testpoint** (certificate 24; a class `TestBlindSpot` in
+`test/test_testpoint.py`, which prints what it measures as that file's
+other classes do; built with step 4 of §19.21's order).
+
+1. *The lesson.* The small lesson model (`test_item18_expect.lesson`),
+   two sentences of two words, taught with everything visible until
+   each word's row exists (rule 20: at least `concept_mint_count`
+   readings).
+2. *Inside a word.* Every second form of the second word is withheld
+   through the omission's own draw, the sentence is read with no
+   teaching, and the reconstruction is decoded. It passes if all the
+   word's bytes are right at its place and the first word's bytes are
+   unchanged.
+3. *Not invented.* The same with a sentence whose second word was never
+   taught: its place stays empty, and no taught word appears there.
+4. *A whole word, reported and not required.* The second word wholly
+   withheld, after a lesson taught with that omission: the bytes right
+   at its place are printed. Filling it needs the word beside it to
+   expect it, which rule 30 gives only where a row holds the two
+   together (§19.22, the cost of one mechanism).
+5. *Printed for each case:* the text, the bytes withheld, the decoded
+   reconstruction, the bytes right at the blind spot and beside it, and
+   the expected value of the withheld forms against the largest
+   expected value of any form that was never present.
+
+*On today's source it fails* at point 2 (0 of 5). It is a mechanism
+certificate of item 1.7 and must pass there. *Decided* (Alec,
+2026-11-17, asked whether it should go into the suite now, marked as
+expected to fail: "With item 1.7"): it is added with item 1.7, and not
+before.
+
+### 19.24 A signed value is replaced by its two unsigned values, on the way up and on the way back (Alec, 2026-11-18)
+
+Alec, 2026-11-18, of item 1.8's failures over signs (1.8 §68.62 and
+§68.63):
+
+> I do not know the fix for the current code, but let me speak to what
+> should happen in the final version.
+>
+> You said "Since then a read of -1 pushes minus the whole code: the
+> form and both lanes below zero". The sigma may be negative, but in its
+> use in higher orders it travels through symbols, and in lower orders
+> it travels back through percepts. In both cases it should be replaced
+> by the two unsigned symbols or percepts that represent the vector: so
+> 0.5 becomes [0, .5] and -0.5 becomes [.5,0]
+
+**The rule.** A Sigma's value is signed, and the sign stays inside the
+Sigma. Going up, what the symbols hold of it is two unsigned values.
+Going back down, what the percepts hold of it is two unsigned values.
+In both, its positive part is the one and its negative part the other:
+.5 is against 0 and for .5, and -.5 is against .5 and for 0. No symbol
+and no percept holds a number below zero.
+
+**Where it stands in §19.21.**
+
+- *Up.* Rules 3, 4 and 10 state it already (§18.25, "Yes, one number").
+  Certificate 3 gains Alec's numbers.
+- *Back down.* New in the record. Rule 17 said only that the Sigma
+  returns the combined vector. It gains the sentence above.
+  *Claude's reading of where that is built:* at order zero the combined
+  vector that the Sigma returns is split, coordinate by coordinate, into
+  the for vector and the against vector of rule 7; above order zero each
+  symbol's signed input is split into that symbol's pair. The share down
+  of rules 23 and 30 passes a Not entry to the other lane; what it
+  moves is the two lanes, unsigned.
+
+*Claude's reading of the order in which the pair is written:* the
+negative part first. The stored code writes the for lane first
+(`MeaningCodes`), so in the code's order .5 is (for .5, against 0). The
+layout does not change.
+
+**What today's source has in its place** (1.8 §68.63). A symbol carries
+a row and one signed number. A word's two lanes are filled by the
+attention walk's own pair, read through the fold, and the readout
+`IndexedSigmaConceptsFromPercepts` gives one signed number of which
+only the size is kept. Rules 8, 10 and 12 replace these, and the two
+rows added to the table of readers in §19.21 name where. Item 1.8's
+repair stores what the committed source stored, and does not take the
+pair from the readout's sign: tried there, a word stored wholly against
+met a reader that is not ready for it.
+
+*Open for this item, and not yet asked of Alec:* what becomes of the
+attention walk's own pair once the one Sigma's value is the pair. Today
+the two can differ: in certificate 81 the walk says against of a first
+word that is present, in most presentations, while its readout is above
+zero (1.8 §68.63; observed, not traced). *Default:* the walk's pair
+goes with the fold that reads it (rules 8 and 12), and the pair of a
+word is the Sigma's alone. It is point 5 of the open list in §19.21.
+
+### 19.25 Words, objects, then their meta concepts: the order of learning, an example, and two testpoints (Alec, 2026-11-18)
+
+Alec, 2026-11-18 (his messages in full: 1.8 §68.67), of how a word and
+its object come to be tied:
+
+> perhaps many of the ties between word and object will have to be done
+> first in a multi-modal concept, where "Alec" and "he" have a common
+> perceptual basis or concept in another modality, so that we can tie
+> those words to that concept/stimulus. as cited by Walker Percy, it is
+> not until Helen Keller experiences water at the same time that she
+> feels water running over her hand that she learns this identity
+> between water-word and water-object.
+
+> so we learn word generalizations, and we learn object generalizations,
+> and THEN we learn word-object meta-concepts, because those are
+> concsistently associated. there isnt a statistic that will magically
+> produce identity across independent tokens.
+
+> Please make sure this example of meta-concept learning is in the doc.
+
+> And make sure we have a testpoint for cross-modality hebbian learning
+> as just described.
+
+> In addition to pavlovian bell-salivate sequence learning.
+
+And of place and time, in the same answer: "they are necessary at the
+level of events: there may be a one-shot learning that remembers a
+percept and its time/place. So I think it is really generalization that
+should remove that information".
+
+**The rule.**
+
+31. *Words, objects, then their meta concepts* (Alec). In this item's
+    terms; each clause is *Claude's reading* and names the rule it
+    rests on.
+    - *A word generalization and an object generalization are each
+      learned from their own occurrences.* Each is a row that MTM
+      nominates on recurrence, with its concept (rules 20 and 21). The
+      object's may be of another modality than the word's.
+    - *An occurrence keeps its place and time; a generalization does
+      not hold them.* An occurrence is a member that MTM holds, or an
+      entry of LTM0, and a single one can be remembered with its place
+      and time. What is made from occurrences stores neither: a symbol
+      stores none (rule 13), and a concept's stored code has none. No
+      reader removes them by hand; today four do (1.8 §70).
+    - *Then the meta concept of the two, by their consistent
+      association.* It is made when the word's concept and the object's
+      concept have been present together on enough occasions. It is one
+      order above the higher of the two and reaches both in one step
+      (rule 26). After it a word that is found raises its object, and an
+      object that is met raises its word (rules 23 to 25).
+    - *Nothing joins independent tokens.* Likeness of codes pairs
+      nothing (rule 16), and no count over occurrences that share
+      nothing makes an identity.
+    - *Two words are joined through what both are joined to* (Alec's
+      "Alec" and "he"): a perceptual basis or a concept, which may be of
+      another modality.
+
+*Open, for Alec: how it meets rule 20.* Rule 20 has `interpret` make a
+word's meta concept at once, with a blank object where the word has
+none (2026-11-17: "if we interpret a word without an object, we must
+create a blank one"). Rule 31 has the meta concept learned after the
+object exists.
+
+- *Claude's reading, recommended:* both stand, and they meet at the
+  blank object. The meta concept that `interpret` makes is the place.
+  What consistent association learns is the object in it: an object
+  generalization that has been present with the word on enough
+  occasions takes the blank object's place in that meta concept.
+- *The other reading:* the word then has two objects, the blank one and
+  the learned one. As the choice among a word's objects stands
+  (`InterpretLayer.preferred_objects`: what the context expects, then
+  the higher order) it would take the blank one, which is one order
+  above the word (*default* of rule 20), over a perceptual object of
+  order zero.
+
+*Answered in direction by Alec the same day: §19.27.*
+
+**What the source does today** (read on 2026-11-18 in item 1.8's
+working tree; not run, except where a test is named).
+
+- *A word and a percept of another modality.* The scalar modality
+  (`bin/ScalarPercepts.py`: "A continuous native modality beside text")
+  is perceived beside the text. At a kept close `ScalarPercepts.commit`
+  pairs every word of the sentence with the scalar percept present with
+  it, and `PerceptCollections.observe` collects the pair in MTM under
+  the word. At `concept_mint_count` occurrences (3 in `data/model.xml`)
+  it mints a concept of order zero, a percept collection, writes the
+  percept into it, and writes the word's definition
+  (`InterpretLayer.define`). So a word is already tied to what it
+  recurs with, across modalities, by recurrence in MTM. Tests:
+  `test_item18_word_trust.py::test_88_scalar_definition_reads_one_after_the_same_six_views`,
+  `test_item18_recognition.py::test_scalar_percept_and_its_collection_restore_with_their_typed_references`,
+  and the two scalar curricula under `RUN_SLOW`.
+- *Where it differs from rule 31.*
+  (a) The object is not learned on its own first: the collection is
+  made for the word, out of the word's occurrences (MTM's entry is
+  found by `defining_word`).
+  (b) Every word of the sentence is paired with the percept. What tells
+  a consistent pairing from a chance one is the collection's trust,
+  agreement over views, read afterwards.
+  (c) A word has one perceptual definition: every percept it meets
+  goes into the one collection, and two raise ("a word has more than
+  one perceptual definition").
+  (d) Two words that meet the same percept get a collection each, not
+  one object.
+  (e) A word alone does not raise its object: no spread from a word to
+  its object exists (1.8 §59.2). Rules 23 to 25 build it.
+- *A sequence.* `expect`, the map at order zero, is taught by omission
+  alone (`test_item18_expect.py::test_82_omission_is_the_only_teacher_and_consumers_detach`)
+  and restores the omitted second word of a taught pair
+  (`test_81_expectation_restores_the_omitted_native_word`). That is one
+  word expected from another within one sentence. Whether anything is
+  expected across two sentences was not measured. Since item 1.8
+  nothing estimates a sentence (1.8 §68.53). `doc/Orders.md` has
+  order-zero states "joined by succession make a sequence, an extended
+  event" in MTM (Alec, 2026-11-12); whether the source builds such
+  sequences was not read.
+
+**The example, for the documentation.**
+
+> *How a word comes to mean: the well-house.* Helen Keller could feel
+> the letters w-a-t-e-r spelled into her hand, and she could feel
+> water. For weeks the two were unrelated: a pattern of touches that
+> she could repeat, and a wetness that she knew. At the well-house her
+> teacher spelled the word into one hand while water ran over the
+> other, and the two became one thing (Keller 1903; Percy 1975).
+>
+> Three things were learned, in this order. First the word: its
+> spelling recurred, and the recurrence made a word concept. Second the
+> object: the feel of water recurred, in another modality, and made an
+> object concept. Each is a generalization over its own occurrences.
+> Each occurrence has its place and time, and the generalization holds
+> neither. Third, and only then, the meta concept that joins them: the
+> word concept and the object concept were present together, and that
+> consistent association is what was learned.
+>
+> Nothing else would have joined them. Alec, 2026-11-18: "there isnt a
+> statistic that will magically produce identity across independent
+> tokens." Two words are joined in the same way, through what both are
+> joined to. "Alec" and "he" are one person because both are tied to
+> one perceptual basis, and not because their occurrences are alike.
+
+*Claude's note, from memory of the essay, to be checked at the doc
+pass.* Percy sets two things apart: a signal that is followed by
+something, as the bell by the food, and a word that is the name of a
+thing. The two testpoints below measure the two: the sequence at order
+zero, which an animal has, and the meta concept one order above its
+word and its object, which needs symbols (rule 29).
+
+*References* (supplied by Claude from memory; to be checked at the doc
+pass). Keller, H. (1903), *The Story of My Life*, Doubleday, Page.
+Percy, W. (1975), "The Delta Factor", in *The Message in the Bottle*,
+Farrar, Straus and Giroux. Pavlov, I. P. (1927), *Conditioned
+Reflexes*, Oxford University Press. Hebb, D. O. (1949), *The
+Organization of Behavior*, Wiley.
+
+**The testpoints** (certificates 25 and 26; classes in
+`test/test_testpoint.py`, which print what they measure, as that file's
+other classes and `TestBlindSpot` do. *Default:* built with item 1.7
+and not before, as Alec decided for `TestBlindSpot`, and not marked as
+expected to fail. The class names are *defaults*.)
+
+*Certificate 25, `TestCrossModalTie`: a word and an object of another
+modality are tied by their consistent association.*
+
+1. *The word alone.* A word is read `concept_mint_count` times with
+   nothing else present. Its row and its concept exist. It has no
+   object but the blank one.
+2. *The object alone.* A stimulus of another modality (*default:* the
+   scalar modality) is presented as often with no word. Its row and its
+   concept exist, and no word is tied to it. The row holds no place and
+   no time; each occurrence that MTM holds keeps its own.
+3. *The two together.* After the same number of presentations of the
+   word with the stimulus, the meta concept exists over the two
+   concepts, and the word's object is that concept.
+4. *Each raises the other.* The word alone leaves the object's concept
+   expected above zero, and the way back gives the stimulus's percepts
+   at their place (rule 30). The stimulus alone leaves the word's
+   concept expected above zero.
+5. *No tie without consistency.* A second word, presented as often,
+   each time with a different stimulus, is tied to none of them.
+6. *Two words, one object* (Alec's "Alec" and "he"). A third word is
+   presented with the first stimulus. It is tied to the same object
+   concept, no second object is made, and each of the two words then
+   leaves the other's concept expected.
+7. *Printed for each stage:* the rows and concepts that exist, the
+   word's objects, the expected value of the object from the word and
+   of the word from the stimulus, and the largest expected value of any
+   concept never presented with either.
+
+*On today's source* (by reading, not run): point 3 holds in the form
+the source has it (a percept collection and a definition after three
+pairings); points 2, 4, 5 and 6 do not, for the reasons (a), (b), (d)
+and (e) above.
+
+*Certificate 26, `TestBellSalivate`: a sequence is learned; the bell,
+then the food.*
+
+1. *Before.* The first stimulus alone leaves the second not expected.
+2. *After pairing.* The first has been followed by the second, with
+   what the second always brings (the response), in N presentations.
+   The first alone then leaves the second expected, and the response
+   through it.
+3. *Order, reported and not required.* The second alone, and the value
+   it leaves for the first.
+4. *No tie without the sequence.* A third stimulus, presented as often
+   and never followed by the second, leaves it not expected.
+5. *Extinction, reported and not required.* The first presented alone
+   M times more, and the value it then leaves for the second; the
+   omission is what teaches (rule 29).
+6. *Two forms of the sequence, both printed:* the two stimuli as
+   successive words of one sentence, which is item 1.8's certificate 81
+   on other words, and as two sentences in succession. The second form
+   is required only once its mechanism is decided (open point 7 of
+   §19.21).
+
+*On today's source:* the first form passes (certificate 81). The second
+was not measured.
+
+### 19.26 A felt world for the math corpus: words matched to feelings at places (Alec, 2026-11-18; a todo)
+
+Alec, 2026-11-18:
+
+> Please add this todo also: for the math learning corpus, we should
+> make a model test that matches words to objects, where objects are
+> feeling-intensities within a 3-D space. So a sentence like "one was on
+> top of two", even though it doesnt make a lot of sense, will still
+> describe a world that is phenomenally accessible to the model, an in
+> which the feeling of one is actually above the feeling of two. That
+> also forma a basis for the identity tests that we are talking about
+> now. Maybe girls are even and boys are odd, so we can map a gendered
+> language onto numerals. The point is that we can give our math corpus
+> perceptions that are associated with intensities, just as the large
+> models already do when feeding in billions of images of our faces and
+> homes.
+
+**What it asks.** A test on a model, for the math corpus, in which the
+words have objects that the model perceives. An object is a felt
+intensity at a place in a space of three dimensions. A sentence of the
+corpus then describes a scene the model can perceive: in "one was on
+top of two" the feeling of one is above the feeling of two. The same
+world is the basis of the identity tests: certificates 25 and 26 of
+§19.25, and the match of 1.8 §70. His "maybe": a property that can be
+perceived carries a gendered vocabulary, even numerals as girls and odd
+ones as boys.
+
+**What exists** (read on 2026-11-18; not run).
+
+- The feeling modality, `bin/ScalarPercepts.py` ("A continuous native
+  modality beside text"): one felt value present with a sentence,
+  perceived by its level against part and whole percepts (Alec,
+  2026-11-12), at one fixed place (`where_registry.slices['scalar']`).
+  It has no place axis of its own.
+- A modality has its own number of place axes (Alec, 2026-11-13): text
+  one, an image two.
+- The tie of a word to a felt value by recurrence
+  (`PerceptCollections.observe`), with its differences from rule 31
+  (§19.25).
+- The generated math corpus and its tests (`test/test_math_chain.py`).
+  Its numerals are opaque words, and nothing computes on a numeric code
+  (Alec, 2026-10-07). Its sentences have no scene.
+
+**What it needs** (*Claude's reading; it is to be specified, and
+nothing is designed here*).
+
+1. The feeling modality with three place axes: a felt intensity at a
+   place.
+2. For the corpus's sentences that describe an arrangement, the scene
+   each one describes, generated with the sentence: which intensity is
+   at which place.
+3. The tests. A numeral's word is tied to its felt intensity
+   (certificate 25 on this world). A word of place ("on top of") is
+   tied to the relation of two places. Two words with one perceptual
+   basis are tied to one object (his gendered words on even and odd
+   numerals). A mention is matched to the object it describes by the
+   one match of 1.8 §70.
+
+*To keep* (*Claude's note*): the numeral stays an opaque word and the
+feeling is its object. The grammar still computes nothing on a
+magnitude (Alec, 2026-10-07; and 2026-11-13: "percept activations have
+a kind there but no magnitude").
+
+**Open.** Its place in the countdown (*default:* after item 1.7, whose
+rule 31 and certificates 25 and 26 it gives a world to). Whether
+"above" is one of the three axes by convention or is learned from the
+scenes. What carries even and odd as something perceived. Whether a
+scene is present with every sentence, as the felt value is today, or
+only in a lesson.
+
+### 19.27 Alec on §19.25: the bootstrap, two other ways to learn the tie, an existing object first, and the blank (2026-11-18)
+
+Alec, 2026-11-18, of what the source does today (§19.25) and of open
+point 6. Of "A word that recurs with a felt value gets an object made
+for it after three pairings; the object is not learned on its own
+first":
+
+> [It] is one option. We can do that explicitly with a relation A->B in
+> the taxonomy with zero trust, or perhaps learning the possible
+> association when none is known by using pi-not-sigma every time, but
+> only promoting when PI indicates. That strategy looks like the
+> existing conceptual hierarchy, so it may make sense to leverage that,
+> but we would beed a better method for managing certainty and we would
+> need a forgetting over that corpus (the later being the reason I
+> suggest a small MTM with forgetting, so that promoted concepts are not
+> forgotten, just more or less certain depending on their truth or
+> falsity when active).
+
+> That is a bootstrap because we cannot know the object expect through
+> word for a unimodal model. It is not a great solution, but it may work
+> with sufficient complexity (it works for LLMS, after all).
+
+Of "Two words that meet the same percept get an object each":
+
+> We should probably check to see if an object-concept already exists
+> before creating a new one. Please explain the concept here though,
+> maybe this is necessary (but I think the generality of pronoun lookup
+> will eventually correct this).
+
+Of open point 6, the blank object:
+
+> better never to have the blank at all, but to avoid a discontinuous
+> decision, we might train both and remove the blank only if the vectors
+> subsequently overlap in conceptual space.
+
+(His arrow in the first passage is written "->" here, and "[It]"
+stands for the sentence he quoted.)
+
+**What it says** (*Claude's reading* where marked).
+
+1. *The bootstrap stays.* A model with one modality cannot know an
+   object except through its word. So an object made for the word, out
+   of what the word recurs with, is how it starts.
+2. *Two other ways to learn the tie are named, and none is chosen.*
+   (a) A relation from the word to the object in the taxonomy, written
+   at once with zero trust. (b) The association learned by Pi, Not,
+   Sigma each time none is known, and promoted only when the Pi
+   indicates. The second is like the concept hierarchy that exists and
+   may be built on it. It needs a better way of managing certainty, and
+   forgetting over the candidates: a small MTM with forgetting, in
+   which what is promoted is not forgotten and is only more or less
+   certain, by its truth or falsity when it is active.
+3. *Look for an existing object first* ("We should probably"): before
+   an object is made for a word, whether an object concept exists.
+4. *The blank object.* Better never to have it. To avoid a
+   discontinuous decision both may be trained, the blank object and the
+   learned one, and the blank removed only if their vectors come to
+   overlap in conceptual space ("we might").
+
+**The explanation he asked for: why two words get an object each
+today, and what looking first would change.**
+
+Today the object that a word gets is that word's own account of what it
+has been met with. `PerceptCollections.observe` keeps one MTM entry for
+each word (found by `defining_word`), adds to it every percept that is
+present with the word, and on the third occasion makes a collection of
+it and defines the word as that collection. Nothing looks for a
+collection that already holds those percepts. So if "Alec" is read
+three times with one percept, and "he" three times with the same
+percept, there are two collections with the same one member, each named
+by one word.
+
+That is what lets words be told apart afterwards. Every word of a
+sentence is paired with the percept that is present. In "this is
+water", read with the feel of water, "this", "is" and "water" each
+start a collection with that member. They come apart by what each goes
+on to meet: "is" meets everything, its collection widens, and its trust
+(agreement over views) falls; "water" keeps meeting the same thing. Had
+the three been given one object on the first occasion they would be one
+concept, and parting them would be the discontinuous decision.
+
+It is also why two words for one thing are not joined. "Alec" and "he"
+keep an object each, with the same content. A match of the one object
+against the other finds them the same: both numbers of 1.8 §70.9 are 1.
+That is his "the generality of pronoun lookup will eventually correct
+this".
+
+*What looking first would change* (*Claude's reading*). The second word
+is tied to the first word's object. That is right for "Alec" and "he".
+It is wrong for "is" and "water", unless the tie itself can be doubted.
+So looking first needs his way (a): the tie is a relation that starts
+at zero trust and earns it by consistent association, and the object's
+own certainty is not touched by a doubtful tie. Today the certainty is
+kept on the collection (`ConceptTrust`: views and agreement), and the
+word's definition (`InterpretLayer.define`, a part row of LTM1 with its
+two truth lanes) is written when the collection is made.
+
+**What exists for way (b)** (read on 2026-11-18; not run). The one
+writer of a concept's further inputs, `ConceptHierarchy.observe_member`
+(rule 21). Certainty as the length of the for lane (`ConceptTrust`;
+Alec, 2026-11-06). MTM's candidates, which lapse after `mtmHorizon`
+(16) closes without a reference, in a pool of `mtmCapacity` (64), and
+are promoted at `conceptMintCount` (3). Rule 20, under which MTM
+nominates every row. And Alec, 2026-11-17: "The form of MTM can
+probably be the same as percepts or symbols ... an easily promoted and
+easily forgotten store".
+
+**Open, for Alec; none of it blocks item 1.8.**
+
+- *"Remove the blank"* meets two earlier decisions: "Let's keep
+  concepts forever; only memories get retired" (2026-11-16), and
+  "forgetting should probably not forget definitions" (2026-09-29).
+  *Claude's reading, to confirm:* the word stops reading the blank
+  object; the blank's row is left and is not reused.
+- *What "overlap" is.* *Default:* the match of 1.8 §70, with one of its
+  two numbers at one.
+- *Which way the tie is learned by in this item.* *Default:* the
+  bootstrap as it is, since he says it stays, with way (a)'s trust on
+  the tie wherever an existing object is found first.
