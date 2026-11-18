@@ -33329,7 +33329,8 @@ documents that need a repair for it.
    documents (§70.18).
 2. `make doc`, where pandoc and xelatex are, and the PDF is committed.
 3. The commits ahead of `origin/main` are read once more, the ones
-   above among them.
+   above among them. No complete sweep is run for the push (Alec,
+   2026-11-18: "No sweep"; §72).
 4. The push is on Alec's word, and the superproject's pointer is his.
 
 **Decided** (Alec, 2026-11-18: "Can we install something to do that in
@@ -33424,7 +33425,9 @@ asked for, 5,433 and 5,950.
 - *Claude's reviews* rerun targeted tests only.
 - *The promotion of item 1.8* (§70.18) has no sweep of its own by this
   rule. The last complete sweep is that of §69.4, on the source before
-  the loop of looks. *Put to Alec, since `main` is pushed then.*
+  the loop of looks. Put to Alec, since `main` is pushed then, and
+  **decided** (Alec, 2026-11-18): "No sweep". Item 1.8 is pushed on
+  the targeted tests of its rounds.
 - `doc/Testing.md` has the rule.
 
 **What a return says.** Which test files were run, and that no sweep
