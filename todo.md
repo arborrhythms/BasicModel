@@ -1443,9 +1443,16 @@ generation is expected at this stage and is recorded, not tuned away.
    had this number until then, computation by wiring, is the first part
    of item 1.5. **At its submission the slow tier (`RUN_SLOW`) is run
    once, overnight,** and not before: the architecture changes no more
-   after this item (Alec, 2026-11-18; 1.8 §72). Not yet specified as an
-   item: what it takes of each part is Alec's to say. What the record
-   holds:
+   after this item (Alec, 2026-11-18; 1.8 §72). **Begun 2026-11-18**
+   (Alec: "a detailed spec for how we can teach a synthetic math corpus
+   in which human language describes numerical (continuous) percepts"):
+   [the design](doc/plans/2026-11-18-item1-6-felt-math-world.md), with
+   what exists (§2), continuous perception at places on three axes
+   (§3), what a second modality changes in word and concept processing
+   (§4), the corpus and its grades (§5), a word of place (§6, not
+   designed), certificates F1 to F12 (§7) and its questions for Alec
+   (§9). No text for Codex until they are answered. What the record
+   held before it:
    1. *The number modality.* Built in item 1.8: a number is a level
       percept at its place; one felt value may accompany a sentence, at
       one fixed place (`bin/ScalarPercepts.py`); the XOR proofs and
