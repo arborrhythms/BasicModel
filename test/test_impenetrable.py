@@ -126,8 +126,8 @@ class TestOverlapPenalty(unittest.TestCase):
         self.assertIsNotNone(counts)
         self.assertGreaterEqual(counts["overlap"], 2)  # (0,1) and (1,0)
 
-    def test_relation_counts_partition_non_diagonal(self):
-        """Sum of the five relation counts equals K*(K-1) (all ordered off-diagonal pairs)."""
+    def test_relation_counts_leave_mixed_partial_pairs_unclassified(self):
+        """The existing five diagnostic bins omit mixed partial/full pairs."""
 
         K, D = 5, 4
         cb = torch.randn(K, D)
@@ -138,7 +138,12 @@ class TestOverlapPenalty(unittest.TestCase):
         counts = layer.last_relation_counts
         self.assertIsNotNone(counts)
         total = sum(counts.values())
-        self.assertEqual(total, K * (K - 1))
+        P = layer._pairwise_parthood(cb, basis)
+        middle = (P >= layer.eps) & (P <= layer.tau)
+        off = ~torch.eye(K, dtype=torch.bool)
+        unclassified = int(((middle ^ middle.T) & off).sum())
+        self.assertEqual(total + unclassified, K * (K - 1))
+        self.assertTrue(all(0 <= count <= K * (K - 1) for count in counts.values()))
 
 
 class TestVarianceFloor(unittest.TestCase):

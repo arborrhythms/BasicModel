@@ -26673,6 +26673,104 @@ Receipts remain local and are not linked. The validated source/specification
 will be checkpointed locally under Alec's latest commit authorization;
 no push is authorized or made.
 
+### 59.87 Scalar parthood: the shared measure (§70.17; Codex, 2026-11-18)
+
+Built with the replay repair of §69. The starting production source is
+`31b24db620`; the intervening commits change documentation. The scalar
+kernel was a clipped cosine, which made the support of a part relation
+symmetric and ignored the operands' sizes. `Layers.Ops._part_kernel`
+now separates each signed operand into its positive and negative lanes
+and takes the second result of `ConceptualMatch.match`: the shared size
+over the first operand's size. It neither supplies a codebook nor cuts
+coordinates. The norm-based empty threshold and the vector branch are
+unchanged. Values and gradients use the shared matcher; there is no
+second implementation of the ratio.
+
+`Ops.copart(..., scalar=True)` takes `1-part(y,x)`, Claude's default:
+the share of the second operand the first does not cover. I found no
+caller requiring the former direction. The existing callers are
+`Spaces.Basis.copart`, which forwards its operands without a directional
+assumption, and three scalar tests in
+`test_basicmodel.py::TestBasisMereologyVector`: the complement test, the
+parallel-direction test, and `test_copart_scalar_one_when_orthogonal`.
+The last is unchanged. The vector test still asserts `y-x`; the new
+certificate also checks it. No production path selects scalar copart
+directly. `whole`, `equal`, `overlap`, `underlap` and `boundary` keep
+their implementations; only boundary's stale zero-result docstring is
+corrected.
+
+The four callers named in §70.17 are unedited. With fixed
+`A=(1,0,0,0,0,0,0,0)` and `B=(2,0,0,0,0,0,0,0)`, both
+`ThoughtFaces.part` and `Queries._part` returned supports `(1,1)` for
+`A part B` and `B part A` before the repair. They now return
+**`(1,0.5)`**. Their vector result still equals the unchanged vector
+`Ops.part`. The two reader certificates fail before and pass after.
+`Layers._part_score` and `ImpenetrableLayer` also read the new scalar
+through their existing calls.
+
+New `test_scalar_parthood.py` has fourteen cases: the five binary-region
+pairs `(0,0)`, `(.3,1)`, `(1,.3)`, `(1,1)`, `(.2,.2)`; signed value
+and gradient equality with the shared matcher in both directions;
+self, negation and simultaneous sign reversal; full coverage exactly
+when each coordinate lies between zero and the second operand's
+coordinate (outside the retained near-empty convention); the three
+empty cases, also checked inside that convention; directed copart;
+and the two reader cases above. Before the change the first twelve give
+**6 failed, 6 passed**; the two reader cases give **2 failed**.
+Failures are the two unequal binary regions, signed shared coverage,
+exact self coverage, the coordinate condition, directed copart, and
+both reader supports. The already-satisfied contracts remain tested.
+
+### 59.88 Ports of the cosine's contracts (§70.17)
+
+Nine existing test functions are ported; none is retired. The first
+six are §70.17's list. Three more state the same retired symmetry or
+copart direction and were found by the caller inventory. Every existing
+operand, row count and dimension stays. No seed, learning rate, bound
+or presentation count changes.
+
+| Old test (class/file below) | Replacement and assertion |
+| --- | --- |
+| `test_part_is_clipped_cosine` | `test_part_is_shared_size_over_first_size`: fixed example gives `.5`, not `sqrt(.5)` |
+| `test_part_satisfies_boole_contrapositive` | `test_part_sign_reversal_preserves_direction`: `part(x,y)==part(-x,-y)`, without exchanging operands |
+| `test_boundary_zero_under_clipped_cosine` | `test_boundary_is_the_difference_of_directed_shares`: absolute directed difference; the fixed parallel example gives `.5` |
+| `test_overlap_false_when_parallel` | `test_overlap_true_for_unequal_parallel_sizes`: the unchanged unequal parallel points overlap |
+| `test_equal_three_region_partition` | Same name: the existing disjoint and partial cases stay; unequal parallel points have equal `.5` and overlap, while an additional identical-point check gives equal `1` |
+| `test_impenetrable.py::TestOverlapPenalty::test_relation_counts_partition_non_diagonal` | `test_relation_counts_leave_mixed_partial_pairs_unclassified`: the five existing bins plus their omitted mixed partial pairs account for every off-diagonal pair |
+| `test_scalar_mereology_respects_boole_contrapositive` | `test_scalar_mereology_respects_simultaneous_sign_reversal`: part, whole, equal and boundary retain their value when both signs are reversed, without exchanging operands |
+| `TestBasisMereologyVector::test_copart_scalar_is_complement_of_part` | `test_copart_scalar_is_complement_of_reversed_part`: `1-part(y,x)` |
+| `TestBasisMereologyVector::test_copart_scalar_zero_when_identical_directions` | `test_copart_scalar_retains_uncovered_parallel_size`: unchanged `x=(1,0,0), y=(2,0,0)` gives `.5`; the reverse gives zero |
+
+Unless a different file/class is shown, the table names
+`test_basicmodel.py::TestBasisMereology`. The unchanged region-indicator
+contrapositive test remains valid: these indicators are symmetric.
+
+**A limit of the unchanged caller.** `ImpenetrableLayer._classify`
+defines low/low, high/low, low/high, high/high and middle/middle bins.
+Asymmetric parthood also permits middle/high and middle/low pairs.
+Those pairs remain unclassified. The port measures that complement
+explicitly rather than claiming the five bins still partition all
+pairs. Its old production docstring still claims a partition; the
+caller is left unedited as §70.17 directs. No production path constructs
+this layer (§70.15). This is reported for Claude's documentation pass,
+not repaired by changing a caller's behavior.
+
+With the new kernel before these ports, the focused run gave
+**8 failed, 45 passed**, including two passing stopping gates. After
+the ports it gives **53 passed in 6.41 s**, including all fourteen new
+cases, both Basis mereology classes, the impenetrability file and both
+stopping gates.
+
+The literal inventory in §70.17, step 5 matches **79 test files** on
+`31b24db620`, rather than the text's 58. The new file brings it to
+**80**. All eighty were run by the bounded test runner on the finished
+source: **1,276/1,276 selected cases completed, 1,261 passed,
+15 skipped, 0 failed**, exit **0**, in **477.35197108297143 s**.
+Peak aggregate process-tree memory was **18,724,162,640 bytes**.
+The skips are the existing default exclusions; no mark was added.
+The two stopping gates are in the focused run above and in §69's
+default sweep. No parthood-only lesson or additional full sweep is run.
+
 ## 60. Part B, second text: the loop of looks (Claude, 2026-11-16)
 
 §58 and §59 are kept for Codex's returns of §57.6 and §55.3. This text
@@ -31425,6 +31523,71 @@ there on 2026-11-17; its return is §69. It concerns
 `Thoughts.replay_thoughts` and nothing changed today; it was not read
 against today's source again. Its line "Commit and push nothing until
 Alec says so" is older than Alec's authorization of local commits.
+
+## 69. The thought replay (§68.31; Codex, 2026-11-18)
+
+### 69.1 Producer, repair and regression
+
+The executor merges an inference with the chunks **currently held** at
+the same role references and role mask. `ThoughtChunks._write_serial`
+records exactly those pairs in `_alternative_pairs`; `ThoughtChunks.stage`
+copies them into the inference event's `alternatives`. Replay already
+read those alternatives, but also took the maximum of every earlier
+inference under the same reference tuple for the entire episode. An
+intervening `exist` can replace the focus; the episode maximum then
+resurrected evidence no longer present in the executor.
+
+`bin/Thoughts.py::replay_thoughts` removes only that `conclusions`
+accumulator, in both derivation branches and at episode begin. Explicit
+derivation still uses `ThoughtInference.replay_pair`, including its
+recorded alternatives. Intuition derivation still joins its own
+firings with its recorded alternatives. Every support comparison and
+exception remains. The separate pervasion accumulator `implicit` is
+unchanged. This builds Claude's default that the executor is the
+behavior and replay checks it; no evidence against that choice was
+found.
+
+`test_thought_intuition.py::test_replay_uses_the_inferences_resident_alternatives_after_exist`
+is parameterized over `derivation` and `intuition_derivation`. It gives
+both inferences valid individual histories, then the three events:
+infer with alternatives `(1,1)`, exist leaving `(0,0)`, infer with
+alternatives `(0,0)`, all with references `(None,None,None)`. Both
+parameters fail on the starting source and pass with the repair. The
+same test changes the last thought's support, then the finish's support;
+both corruptions still raise. The two whole thought files and both
+stopping gates give **59 passed in 10.96 s**.
+
+The proof writers are `ThoughtInference.derive` for an explicit held
+premise and rule, its selected-intuition branch, and `Intuition.implication`
+for a one-operand search. `ThoughtStream.materialize` labels the
+producing operation. The shared serial stage records alternatives for
+either proof branch after `_write_serial` has combined them. A backward
+open subgoal does not combine closed evidence. No writer needs an edit.
+The native census additionally checks that every combined pair reaches
+the event, without adding a production validation or changing a read.
+
+### 69.2 Anonymous-reference audit (behavior unchanged)
+
+| Reader | What all-None equality can identify; consequence if it matched nothing |
+| --- | --- |
+| `ThoughtChunks._write_serial` | A held chunk with the same role mask, excluding intuition-only deposits. It does not compare numerical roles. Excluding anonymous keys would stop their pair union and the updates to other matching slots. |
+| `Thoughts.replay_thoughts` | The removed `conclusions` maximum used this tuple alone. The surviving `implicit` pervasion accumulator and final judgement also use it, but native `Intuition.pervasion` requires referenced subject and property, so it cannot produce an all-None key. Rejecting such a fabricated key would reject a fabricated anonymous pervasion finish, not change a native pervasion. |
+| `ThoughtStream.candidates` | The resident value at the result's exact chunk time replaces the recorded value when references agree. Excluding all-None would remove those anonymous result operands from the menu, even at their valid resident address. |
+| `ThoughtStream.completion_result.same` | Attaches a proof to the finish only after references, polarity, witnesses, open slots, mask, numerical roles and recursive constituents agree. Excluding all-None would discard proofs of otherwise identical anonymous content. |
+| `ThoughtStream.integrate` | When operation signatures agree, matching request/goal references allow filling the goal. Excluding all-None would continue to later integration branches instead; earlier query/result branches are unaffected. |
+| `ThoughtStream.write` | Reuses an unchanged witnessed chain at its exact retained address after references, mask and numerical roles agree. Excluding all-None would lose that reuse and proceed to the writer. |
+| `ThoughtStream.commit` | Reuses the exact query occurrence only after references, polarity, scope, sentence kind, pair, slots, mask and roles agree. Excluding all-None would lose this unchanged-content reuse; the separate unresolved-question reuse still exists. |
+| `ThoughtInference.derive` | A constituent antecedent whose references equal the premise's is an identity match. Excluding all-None would try the subsequent membership branch, which can itself accept matching absent individual ends; rejecting the tuple alone would not necessarily reject that inference. |
+| `Models._commit_sentence` | Reuses the input writer's canonical meaning after a thought leaves references, polarity, scope, evidence, slots, mask and roles unchanged. Excluding all-None would retain the thought's value instead of taking this canonical reuse. |
+
+Two additional uses identify **requests**, not conclusions or held
+chunks: `ThoughtStream.candidates` deduplicates `(role_refs, bindings)`,
+and `GrammaticalThoughtRegistry.controller_candidates` deduplicates
+an operation's complete result request by references, bindings and
+numerical roles. Removing anonymous equality there could add duplicate
+menu requests. No reference-key policy is changed in this repair.
+
+The census and final validation numbers are recorded below when complete.
 
 ## 70. One match of a content against conceptual space (Claude, 2026-11-18; a design for Alec; no text for Codex)
 

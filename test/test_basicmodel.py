@@ -2393,24 +2393,23 @@ class TestGrammar(unittest.TestCase):
 
 
 class TestBasisMereology(unittest.TestCase):
-    """Scalar form (scalar=True) of the mereological suite: clipped-cosine
-    parthood and the region indicators derived from it."""
+    """Scalar shared-size parthood and the region indicators derived from it."""
 
-    def test_part_satisfies_boole_contrapositive(self):
+    def test_part_sign_reversal_preserves_direction(self):
         b = Spaces.Basis()
         x = torch.tensor([0.5, -0.3, 0.4])
         y = torch.tensor([0.2, 0.6, -0.1])
         self.assertAlmostEqual(
             b.part(x, y, scalar=True).item(),
-            b.part(-y, -x, scalar=True).item(),
+            b.part(-x, -y, scalar=True).item(),
             places=6,
         )
 
-    def test_part_is_clipped_cosine(self):
+    def test_part_is_shared_size_over_first_size(self):
         b = Spaces.Basis()
         x = torch.tensor([1.0, 0.0, 0.0])
         y = torch.tensor([0.5, 0.5, 0.0])
-        self.assertAlmostEqual(b.part(x, y, scalar=True).item(), math.sqrt(0.5), places=5)
+        self.assertAlmostEqual(b.part(x, y, scalar=True).item(), .5, places=5)
 
     def test_part_opposite_directions_zero(self):
         b = Spaces.Basis()
@@ -2439,21 +2438,21 @@ class TestBasisMereology(unittest.TestCase):
         b = Spaces.Basis()
         x = torch.tensor([1.0, 0.5, 0.0])
         y = torch.tensor([0.5, 1.0, 0.0])
-        # cos > 0 and < 1 -> equal in (0, 1) -> overlap region.
+        # Both directed shares are strictly between zero and one.
         self.assertTrue(bool(b.overlap(x, y, scalar=True).item()))
 
-    def test_overlap_false_when_parallel(self):
+    def test_overlap_true_for_unequal_parallel_sizes(self):
         b = Spaces.Basis()
         x = torch.tensor([1.0, 0.0, 0.0])
         y = torch.tensor([2.0, 0.0, 0.0])
-        # cosine == 1 -> equal == 1 -> outside (0, 1).
-        self.assertFalse(bool(b.overlap(x, y, scalar=True).item()))
+        # A smaller parallel point is wholly contained, but not identical.
+        self.assertTrue(bool(b.overlap(x, y, scalar=True).item()))
 
     def test_underlap_true_when_disjoint(self):
         b = Spaces.Basis()
         x = torch.tensor([1.0, 0.0, 0.0])
         y = torch.tensor([-1.0, 0.0, 0.0])
-        # cosine negative -> clipped to 0 -> equal == 0.
+        # Opposite signs share nothing, so equal == 0.
         self.assertTrue(bool(b.underlap(x, y, scalar=True).item()))
 
     def test_underlap_false_when_partially_overlapping(self):
@@ -2462,9 +2461,8 @@ class TestBasisMereology(unittest.TestCase):
         y = torch.tensor([1.0, 0.0, 0.0])
         self.assertFalse(bool(b.underlap(x, y, scalar=True).item()))
 
-    def test_scalar_mereology_respects_boole_contrapositive(self):
-        """Scalar members (part/whole/equal/boundary) are invariant under
-        (A, B) -> (-B, -A)."""
+    def test_scalar_mereology_respects_simultaneous_sign_reversal(self):
+        """Negating both operands preserves their directed shared sizes."""
         b = Spaces.Basis()
 
         x = torch.randn(4)
@@ -2473,9 +2471,9 @@ class TestBasisMereology(unittest.TestCase):
             fn = getattr(b, name)
             self.assertAlmostEqual(
                 fn(x, y, scalar=True).item(),
-                fn(-y, -x, scalar=True).item(),
+                fn(-x, -y, scalar=True).item(),
                 places=5,
-                msg=f"{name} fails Boole contrapositive",
+                msg=f"{name} fails simultaneous sign reversal",
             )
 
     def test_region_mereology_respects_boole_contrapositive(self):
@@ -2493,13 +2491,16 @@ class TestBasisMereology(unittest.TestCase):
                 msg=f"{name} fails Boole contrapositive",
             )
 
-    def test_boundary_zero_under_clipped_cosine(self):
-        """Under clipped cosine, part is symmetric so boundary = 0."""
+    def test_boundary_is_the_difference_of_directed_shares(self):
+        """A boundary records how differently the two sizes are covered."""
         b = Spaces.Basis()
 
         x = torch.randn(4)
         y = torch.randn(4)
-        self.assertAlmostEqual(b.boundary(x, y, scalar=True).item(), 0.0, places=5)
+        self.assertAlmostEqual(b.boundary(x, y, scalar=True).item(),
+            abs(b.part(x, y, scalar=True).item()-b.part(y, x, scalar=True).item()), places=5)
+        self.assertEqual(b.boundary(torch.tensor([1., 0.]),
+                                    torch.tensor([2., 0.]), scalar=True).item(), .5)
 
     def test_equal_three_region_partition(self):
         """equal in [0, 1] partitions into underlap (=0), overlap (in (0,1)),
@@ -2519,12 +2520,15 @@ class TestBasisMereology(unittest.TestCase):
         self.assertLess(e_o, 1.0)
         self.assertTrue(bool(b.overlap(x_o, y_o, scalar=True).item()))
         self.assertFalse(bool(b.underlap(x_o, y_o, scalar=True).item()))
-        # Identity: parallel same direction -> equal = 1
+        # Unequal parallel sizes overlap; equal points alone give identity.
         x_i = torch.tensor([1.0, 0.0])
         y_i = torch.tensor([2.0, 0.0])
-        self.assertAlmostEqual(b.equal(x_i, y_i, scalar=True).item(), 1.0, places=5)
-        self.assertFalse(bool(b.overlap(x_i, y_i, scalar=True).item()))
+        self.assertAlmostEqual(b.equal(x_i, y_i, scalar=True).item(), .5, places=5)
+        self.assertTrue(bool(b.overlap(x_i, y_i, scalar=True).item()))
         self.assertFalse(bool(b.underlap(x_i, y_i, scalar=True).item()))
+        self.assertEqual(b.equal(x_i, x_i, scalar=True).item(), 1.)
+        self.assertFalse(bool(b.overlap(x_i, x_i, scalar=True).item()))
+        self.assertFalse(bool(b.underlap(x_i, x_i, scalar=True).item()))
 
 
 class TestBasisMereologyVector(unittest.TestCase):
@@ -2620,20 +2624,21 @@ class TestBasisMereologyVector(unittest.TestCase):
         expected = y - x
         self.assertTrue(torch.allclose(b.copart(x, y), expected, atol=1e-6))
 
-    def test_copart_scalar_is_complement_of_part(self):
-        """Scalar copart(x, y) = 1 - part(x, y, scalar=True)."""
+    def test_copart_scalar_is_complement_of_reversed_part(self):
+        """Scalar copart(x, y) is the share of y not covered by x."""
         b = Spaces.Basis()
         x = torch.tensor([1.0, 0.0, 0.0])
         y = torch.tensor([0.5, 0.5, 0.0])
-        p = b.part(x, y, scalar=True).item()
+        p = b.part(y, x, scalar=True).item()
         self.assertAlmostEqual(b.copart(x, y, scalar=True).item(), 1.0 - p, places=6)
 
-    def test_copart_scalar_zero_when_identical_directions(self):
-        """x parallel to y -> part = 1 -> copart scalar = 0."""
+    def test_copart_scalar_retains_uncovered_parallel_size(self):
+        """A smaller parallel x leaves half of y unaccounted for."""
         b = Spaces.Basis()
         x = torch.tensor([1.0, 0.0, 0.0])
         y = torch.tensor([2.0, 0.0, 0.0])
-        self.assertAlmostEqual(b.copart(x, y, scalar=True).item(), 0.0, places=5)
+        self.assertAlmostEqual(b.copart(x, y, scalar=True).item(), .5, places=5)
+        self.assertEqual(b.copart(y, x, scalar=True).item(), 0.)
 
     def test_copart_scalar_one_when_orthogonal(self):
         """x orthogonal to y -> part = 0 -> copart scalar = 1."""

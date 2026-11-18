@@ -13,6 +13,54 @@ from test_thought_infer import setup, invoke, idea
 from test_item18_intuit import search
 
 
+@pytest.mark.parametrize('branch', ('derivation', 'intuition_derivation'))
+def test_replay_uses_the_inferences_resident_alternatives_after_exist(branch):
+    """An overwritten anonymous focus is not its episode's earlier maximum."""
+    from types import MappingProxyType
+    from Queries import ThoughtResult
+    from Thoughts import ThoughtRecord, replay_thoughts
+    from ThoughtReferences import evidence_pair, with_slots
+
+    empty = ConceptualMeaning.from_description(torch.zeros(8))
+    assert empty.role_refs == (None, None, None)
+
+    def history(steps):
+        budget = len(steps) + 1
+        records = [ThoughtRecord(0, 0, 'begin', 0, empty, budget=budget,
+                                 opened_by_chooser=True)]
+        for number, (operation, pair) in enumerate(steps, 1):
+            meaning = with_slots(empty, (), pair=pair)
+            evidence = dict(meaning=meaning, support_true=pair[0], support_false=pair[1])
+            if operation == 'infer':
+                evidence['alternatives'] = (((0., 0., 0., 0.), pair),)
+                evidence[branch] = (() if branch == 'intuition_derivation' else dict(
+                    premise_pair=(0., 0.), rule_pair=(1., 0.),
+                    match_support_true=1., backward=False, negated=False))
+            result = ThoughtResult(operation, 'conceptual', 'idea', 'inference',
+                                   empty, MappingProxyType(evidence))
+            records.append(ThoughtRecord(number, 0, 'thought', 0, meaning,
+                operation=operation, cost=1, pressure=number/budget,
+                support_true=pair[0], support_false=pair[1], result=result))
+        records.append(ThoughtRecord(budget, 0, 'finish', 0, meaning,
+            cost=1, pressure=1., support_true=pair[0], support_false=pair[1], result=result))
+        return tuple(records)
+
+    # Both inferences are valid in isolation. The second sees the value
+    # exist left in STM, not the first inference's now-overwritten value.
+    for pair in ((1., 1.), (0., 0.)):
+        assert replay_thoughts(history((('infer', pair),))).finished
+    records = history((('infer', (1., 1.)), ('exist', (0., 0.)), ('infer', (0., 0.))))
+    state = replay_thoughts(records)
+    assert state.finished and evidence_pair(state.contexts[0].meaning) == (0., 0.)
+    assert all(record.meaning.role_refs == (None, None, None) for record in records)
+    # The proof is still checked at both the operation and the finish.
+    for index in (3, 4):
+        corrupt = list(records)
+        corrupt[index] = replace(corrupt[index], support_true=.5)
+        with pytest.raises(ValueError, match='differs from replayed'):
+            replay_thoughts(corrupt)
+
+
 def test_three_rule_union_not_first_and_one_candidate_per_firing():
     model, registry, store, refs = setup()
     owner = model._concept_owner()

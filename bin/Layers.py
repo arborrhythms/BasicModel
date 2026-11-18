@@ -13389,9 +13389,9 @@ class Ops:
         Vector form (default): x * (y / ||y||) -- elementwise projection
         of x into y's unit direction. Returns a tensor shaped like x.
 
-        Scalar form (scalar=True): clipped cosine projection in [0, 1].
-            part(x, y) = max(0, x.y) / (||x|| * ||y||)
-        Satisfies Boole's contrapositive: part(x, y) = part(-y, -x).
+        Scalar form (scalar=True): shared size divided by the size of x.
+        Same-sign coordinates share their smaller magnitude; opposite signs
+        share nothing. The shared matcher reads the two unsigned lanes.
         Empty-set conventions:
             part(empty, y) = 1, part(x, empty) = 0, part(empty, empty) = 1.
         """
@@ -13400,10 +13400,9 @@ class Ops:
         if not scalar:
             return x * (y / ny.unsqueeze(-1))
         nx = Ops.norm(x)
-        dot = (x * y).sum(dim=-1)
-        clipped = torch.clamp(dot, min=0.0)
-        denom = (nx * ny).clamp(min=epsilon)
-        score = (clipped / denom).clamp(0.0, 1.0)
+        from ConceptualMatch import match
+        _, score = match(torch.cat((x.clamp_min(0), (-x).clamp_min(0)), -1),
+                         torch.cat((y.clamp_min(0), (-y).clamp_min(0)), -1))
         empty_x = nx < epsilon
         empty_y = ny_raw < epsilon
         ones = torch.ones_like(score)
@@ -13467,7 +13466,7 @@ class Ops:
         """Directional asymmetry of parthood.
 
         Vector form: |part(x, y) - part(y, x)| (elementwise).
-        Scalar form: zero under clipped-cosine (cosine is symmetric)."""
+        Scalar form: absolute difference of the two directed parthoods."""
         m = monotonic
         return torch.abs(
             Ops._part_kernel(x, y, monotonic=m, scalar=scalar)
@@ -13479,9 +13478,9 @@ class Ops:
         """Copart of x under y: the part of y not accounted for by x.
 
         Vector form: y - x.
-        Scalar form: 1 - part(x, y, scalar=True), clamped to [0, 1]."""
+        Scalar form: 1 - part(y, x, scalar=True), clamped to [0, 1]."""
         if scalar:
-            return (1.0 - Ops._part_kernel(x, y, monotonic=monotonic, scalar=True)).clamp(0.0, 1.0)
+            return (1.0 - Ops._part_kernel(y, x, monotonic=monotonic, scalar=True)).clamp(0.0, 1.0)
         return y - x
 
     @staticmethod
