@@ -1506,8 +1506,19 @@ generation is expected at this stage and is recorded, not tuned away.
    run?"). A first sketch of that world, its words and its grades is
    §12.5, and what each round waits on is §12.6. Open (§12.7): when a
    varying reading is the same percept again, where the vocabulary of
-   mathematics is taken from, and what a numeral names. No text for
-   Codex until they are answered. What the record held before it:
+   mathematics is taken from, and what a numeral names. **His third
+   answers (§13):** "percepts are discriminants", so two readings are
+   one percept when their parts and wholes are the same, "just as we do
+   today"; the sketch stands; and "we need a set of training examples,
+   maybe 100 per, categorized according to which english grammatical
+   rules are used within that sentence", the cast "single digits", with
+   "the evens and the odds", and "generalization and inference to work
+   over that space before we begin paying for computer time on a remote
+   machine". The 26 categories, each with its example, its question and
+   what it waits on, are §13.5; a row and its validity §13.6; what is
+   measured §13.7. Open: §13.8. The generator and its frozen rows touch
+   no model source and can be given to Codex before item 1.7 lands. No
+   text for Codex yet. What the record held before it:
    1. *The number modality.* Built in item 1.8: a number is a level
       percept at its place; one felt value may accompany a sentence, at
       one fixed place (`bin/ScalarPercepts.py`); the XOR proofs and

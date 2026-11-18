@@ -2,9 +2,9 @@
 
 *Claude, 2026-11-18. A design for Alec. No text for Codex: questions are
 open (§11.6), and the item is built after item 1.7 lands. Alec answered
-the first four questions the same day (§11) and the questions those
-opened (§12). §12 stands wherever it differs from §11, and §11 wherever
-it differs from §3 to §10.*
+the first four questions the same day (§11), the questions those opened
+(§12), and then set what the examples are (§13). A later section stands
+wherever it differs from an earlier one.*
 
 Alec, 2026-11-18, placing the item: "Then 1.6 becomes the number modality,
 the math corpus (it needs more development), and the work you called out as
@@ -902,4 +902,219 @@ answered and item 1.7 has returned.
    (§12.4, point 4). *Default:* yes.
 4. *A numeral names the one thing of its level* in a scene (§12.5).
 5. Questions 5 to 10 of §9, of which 6 (the grid) is now 8 by 8 by 8.
+
+## 13. Alec's third answers (2026-11-18): percepts are discriminants; examples by grammatical rule
+
+### 13.1 When a varying reading is the same percept
+
+Asked "When a felt value varies, should a reading near an existing
+percept count as that percept again?":
+
+> percepts are discriminants, so we will discriminate if there are
+> different (numeric) parts and wholes between the variations of the
+> felt value. Becuase even though the feeling is continuous, we perceive
+> it using percepts, which categorize that continuous intensity
+> mereologically between percept codes in the percept towers, just as we
+> do today.
+
+**The rule.** A reading is categorized between the codes that the part
+and whole towers hold. Two readings are told apart when a part's or a
+whole's code lies between them, and are the same percept when their
+parts and wholes are the same. No tolerance is added and no grid is
+declared. This answers question 1 of §12.7.
+
+**In the source.** `BasicPercepts.reserve(parts, wholes)` gives the same
+row to the same parts and wholes, and `BasicPercepts.read_points` reads
+any reading against the codes that exist. The one thing to know is what
+the towers hold: `perceive_value` puts every value met into them, as its
+own part and its own whole. So today two readings that differ at all are
+two percepts.
+
+**What it means for the corpus** (*default*). The generator writes its
+intensities at the resolution image data has, 256 steps from 0 to 1. A
+numeral's readings are then a handful of values (seven, for a variation
+of three steps either way), each met many times. The towers hold some
+sixty codes for nine numerals, every percept recurs, and nothing at the
+percept is built for this item. The word's concept is the interval over
+its numeral's percepts, as now (§2.1). *Data of much finer resolution
+would fill the table of values; that is not this item's data.*
+
+**One thing this leaves to item 1.7** (*Claude's note*). Rule 31 has the
+object learned on its own before any word. With seven percepts for one
+numeral, something has to gather the seven into one object while no word
+is present. Today the gathering is done for the word
+(`PerceptCollections.observe`). It is re-read at item 1.7's return.
+
+### 13.2 What the corpus is for, again
+
+> The sketch is good. As long as the english language used to describe
+> the scene is correct, it may not matter if it is weird; the structure
+> of the english language will port to new language, walking can pick up
+> entailments about legs, and the mind will forget the original
+> approximation where it conceived of different objects as different
+> numbers. So we can learn all english operators within this corpus (or
+> at least a large set).
+
+> So we need a set of training examples, maybe 100 per, categorized
+> according to which english grammatical rules are used within that
+> sentence. we can limit the cast of characters (nouns) to single
+> digits, and talk about the evens and the odds. And we should expect
+> generalization and inference to work over that space before we begin
+> paying for computer time on a remote machine.
+
+**What it decides.**
+
+1. §12.5's sketch stands.
+2. *Correct English, however odd.* A sentence may say something strange
+   ("three ran toward four"). It may not be wrong English, and it may
+   not be false of its images in training.
+3. *The aim is the operators of English,* all of them or a large set,
+   learned in this corpus.
+4. *The examples:* about a hundred for each category, the categories
+   being the grammatical rules a sentence uses.
+5. *The cast:* the single digits, with "the evens" and "the odds" as
+   their two kinds.
+6. *The bar before remote machines are paid for:* generalization and
+   inference work over this space, locally.
+
+### 13.3 What exists for examples by rule
+
+- *Games by operator.* `bin/game_corpus.py` freezes 31 game variants
+  under `data/games/` from recipes (`data/games/recipes/*.json`), 5,042
+  rows. A row has sources and a target ("a bear." and "in the beach."
+  give "a bear in the beach."). The recipe's note: "The intended operator
+  is an evaluation label, never a learner constraint".
+- *Ten lessons* in the order the operations are learned
+  (`data/lessons/parts-of-speech.json`; `doc/Training.md`, "Concept
+  hierarchy learning and curriculum order"): words, interpret, clause,
+  ask, verb, modifiers, determiners, adverb, prepositions, relations.
+- *Gates are behaviors* (Alec, 2026-10-18): "we do not demand which
+  operators must be chosen, only which behaviors must be exhibited."
+
+So a category here is a construction of English. Each row carries the
+names of the operators its construction is expected to use, as a label
+for reading results. No gate reads the label: a row is passed by its
+answer and its reconstruction.
+
+### 13.4 The world's cast and words
+
+*Defaults; question 1 and 2 of §13.8.*
+
+- *The cast:* one to nine, each the one thing of its level in a scene
+  (§12.5). Zero is nothing felt (§3.6) and is no character. The evens
+  are two, four, six and eight; the odds are one, three, five, seven and
+  nine.
+- *Kinds give the determiners their work.* With one thing of each level,
+  "a three" and "the three" are the same thing. "an even", "the evens",
+  "every odd", "no even" differ, and nothing has to be counted.
+- *What is seen of a thing:* its level, its place, its size once shapes
+  are built, and how its place changes from image to image.
+- *Pronouns.* The gendered ones are dropped (§11.4). "it" and "they" are
+  kept (*default*), since a later mention of something named is one of
+  the operators.
+
+### 13.5 The categories
+
+*Claude's draft. About a hundred examples each, so some 2,600 in all,
+beside the games' 5,042 rows and the math grades' 660. The last column
+names what the category waits on (§12.6); "nothing" means it can be
+generated and taught as soon as round one's scenes exist.*
+
+| # | Construction | Example, with what its images show | Asked | Operators, as a label | Waits on |
+|---|---|---|---|---|---|
+| 1 | A word alone; a feeling alone | "three." ; an image of three with no words | "what is this ?" | `interpret`, `sign` | nothing |
+| 2 | Naming | "this is three." | "what is this ?" | `interpret`, `part` | nothing |
+| 3 | Presence and absence | "three is here." "four is not here." | "is four here ?" | `change`, `not` | nothing |
+| 4 | Kinds | "two is even." "two is an even." "the odds are one, three, five, seven and nine." | "is three even ?" "what is two ?" | `part`, `whole`, `lower` | nothing |
+| 5 | And, or | "two and four are here." "this is two or three." | "is two here ?" | `union`, `intersection` | nothing |
+| 6 | Order of levels | "two is less than five." "five is greater than two." | "which is greater, two or five ?" | `part`, `modifier` | nothing |
+| 7 | A clause with one thing | "three moved." "three stopped." (images before and after) | "what moved ?" | `change` | succession |
+| 8 | A clause with two things | "three touched four." "three followed four." | "what touched four ?" "what did three touch ?" | `verb`, `change` | arrangement; succession for "followed" |
+| 9 | The same said the other way | "four was touched by three." | both roles | `swap`, `surface` | as 8 |
+| 10 | Adjective | "the big three moved." "three is big." | "what is big ?" | `intersection`, `modifier` | shapes |
+| 11 | Comparative of size | "three is bigger than four." | "which is bigger ?" | `modifier`, `part` | shapes |
+| 12 | Determiners over kinds | "an even moved." "the evens moved." "every odd stopped." "no even moved." "some odds moved." | "did every even move ?" | `lower`, `modifier` | succession |
+| 13 | Adverb | "three moved slowly." "three moved up." | "which moved slowly ?" | `modifier` | succession |
+| 14 | Place of two things | "three is above four." "three is near four." "three is on top of four." | "what is above four ?" "where is three ?" | `preposition`, `compound` | arrangement |
+| 15 | Place among three | "three is between two and four." | "what is between two and four ?" | `preposition`, `union` | arrangement |
+| 16 | Motion with a direction | "three walked toward four." "three ran away from four." | "what did three walk toward ?" | `verb`, `preposition`, `change` | arrangement; succession |
+| 17 | Tense | "three was above four." "three is above four." "three will move." | "where was three ?" | `compound`, `marker` | succession |
+| 18 | Aspect | "three is moving." "three has moved." | "has three moved ?" | `compound`, `marker` | succession |
+| 19 | Order of events | "three moved, then four moved." "before four moved, three stopped." | "which moved first ?" | `compound`, `union` | succession |
+| 20 | Events compared | "three walked toward two. it ran toward four." | "which was faster, the walk or the run ?" | `modifier`, `bind` | succession; two events compared |
+| 21 | A later mention | "three moved. it stopped." "the evens moved. they stopped." | "what stopped ?" | `bind` | succession |
+| 22 | A clause inside a phrase | "the even that is above three moved." | "what moved ?" | `bind`, `intersection`, `lower` | arrangement; succession |
+| 23 | Two clauses joined | "three moved and four stopped." "three moved but four did not." | "did four move ?" | `union`, `not` | succession |
+| 24 | If | "if three is above four, four is below three." | a question that needs the rule | `implies`, `infer` | arrangement |
+| 25 | What follows from a kind | "every even is above three." (and, before it, "four is even.") | "is four above three ?" | `implies`, `infer`, `isPart` | arrangement |
+| 26 | Said mathematics | "two plus one is three." "three minus one is two." | "what is two plus one ?" | `add`, `subtract`, `part` | nothing: the math corpus as it is |
+
+*Left out of the first set* (*default*): what might or could have
+happened ("three might move", "if three had moved"). Its images would
+have to show what did not happen. It is the second difference
+(`doc/Philosophy.md`) and is specified when the first set is learned.
+
+*Read against the ten lessons:* categories 1 to 3 are lessons 0 and 1;
+7 is the clause; the questions of every category are lesson 3; 8 and 9
+are the verb; 5, 10 and 11 the modifiers; 12 the determiners; 13 the
+adverb; 14 to 20 the prepositions and what `compound` selects; 4, 24 and
+25 the relations. The order of teaching is that of the lessons.
+
+### 13.6 A row, and how it is known to be valid
+
+*Defaults.*
+
+- *A row is a document:* the math corpus's `ChainDocument` (sentences,
+  question, answer) with, for each sentence, the image it is read with,
+  and beside it the category and the operator labels. An image with no
+  sentence is a sentence with empty text.
+- *The generator holds the world* and writes every sentence and every
+  image from it (§5.1, §12.4). A sentence is made from a record of what
+  it means, and that record is checked against the world: true in every
+  training row, and marked true or false in the test rows that measure
+  the witness (§5.3).
+- *The English is checked.* Each template is read by a person before it
+  is frozen. A test checks what can be checked by rule on every row:
+  agreement ("two is", "the evens are"), the article ("an even", "an
+  odd", "a three"), the past forms ("ran", "was"), and that no word
+  outside the declared vocabulary appears.
+- *Frozen* under `data/felt/`, one file for each category, with a
+  manifest: seed, command, hashes, the count of each split, and the
+  vocabulary.
+
+### 13.7 Generalization and inference, before any remote machine
+
+*Claude's reading of what is measured; the bar is his to set, as the
+lessons' criteria are (`doc/Training.md`: "declared by Alec (null until
+he sets it)").*
+
+- *Generalization.* Each category holds some of the cast out of it: a
+  construction taught on some digits and pairs is asked of others never
+  met in it. For example "what is above four ?" where three was never
+  above four in training. The answer and the reconstruction are the
+  measure.
+- *Inference.* Questions whose answer is neither said nor shown and
+  follows from what was. Four kinds: the other way round ("three is
+  above four", asked "what is below three ?"); through a kind (category
+  25); through a chain ("three is above four. four is above five.",
+  asked "is three above five ?"); through time ("which moved first ?").
+- *Where it runs.* On the small configuration, locally, with targeted
+  tests in each round and one sweep at the item's push (1.8 §72). The
+  slow tier's one overnight run at the submission of this item is the
+  first run of the whole set.
+
+### 13.8 Open after these answers
+
+1. *The cast is one to nine,* with zero as nothing felt (§13.4).
+2. *"it" and "they" are kept* (§13.4).
+3. *The bar* for generalization and inference (§13.7).
+4. *The list of categories* (§13.5): any to strike, add or divide.
+5. *What is left out of the first set* (§13.5).
+6. Of §12.7: where the vocabulary of said mathematics is taken from, and
+   whether the generator writes the pairs. Questions 5 to 10 of §9.
+
+**A part that can start early** (*Claude's note*). The generator, the
+frozen rows and the test of their validity touch no source of the model.
+Their text for Codex can be written before item 1.7 lands, for the
+categories marked "nothing" and, as data only, for all of them.
 
