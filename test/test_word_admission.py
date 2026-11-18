@@ -102,6 +102,15 @@ def test_29_each_reading_publishes_only_its_words(configuration, monkeypatch):
     inp = model.inputSpace.prepInput(texts)
     with torch.no_grad():
         _, symbols, _, _ = model(inp)
+    # §68.73: these are the starting source's staged brackets, including
+    # the word-major separator slot and the whole-slab word ordinals.
+    expected = torch.zeros_like(model._attention_spans)
+    second = 1 if configuration == 'MM_text.xml' else 2
+    for b in range(4):
+        length = 5 if b < 2 else 6
+        expected[b, 0] = expected.new_tensor((0, length))
+        expected[b, second] = expected.new_tensor((length + 1, length + 6))
+    torch.testing.assert_close(model._attention_spans, expected)
     cs = model._concept_owner()
     carrier = model.symbol_cache
     rows = carrier._concept_inventory_rows

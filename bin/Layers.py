@@ -7176,10 +7176,13 @@ class SmoothingRegLayer(Layer):
 class ImpenetrableLayer(Layer):
     """Mereological separation regularizer over a symbol codebook.
 
-    Classifies each ordered pair (i, j) of codebook rows into one of five
-    mereological relations using ``Basis.part`` (clipped-cosine scalar
-    parthood, scalar=True) and penalises overlap between rows whose
-    EMA usage frequencies disagree.
+    Measures each ordered pair (i, j) with ``Basis.part``: the shared
+    two-lane size divided by the size of row i (scalar=True). Penalises
+    overlap between rows whose EMA usage frequencies disagree.
+
+    Five diagnostic bins are reported below; they are not a partition.
+    A pair with one partial direction and one high or low direction is
+    outside all five bins.
 
     Penalty: ``overlap_strength(i, j) * |trust(i) - trust(j)|``
     where ``overlap_strength = min(P[i,j], P[j,i]) * (1 - max(P[i,j], P[j,i])^k)``

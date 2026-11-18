@@ -195,38 +195,22 @@ def stage_input(model):
     if not any(row for row in texts) and not any(
             value is not None for value in (getattr(isp, '_scalar_values', None) or ())):
         return  # An absent text/scalar field has no bracket to examine.
-    offsets=getattr(isp,'_ar_word_part_offsets',None)
-    spans=fi.get('part_spans')
-    if torch.is_tensor(offsets) and offsets.shape[:2] == (B,W):
-        starts=offsets[:,:,0].detach().cpu().tolist()
-    else:
-        # A whole-slab stem's part axis is not its word axis. Recover the
-        # native word occurrence positions from the staged surface itself;
-        # never index byte-part spans with a word ordinal.
-        raw=getattr(model,'_staged_concepts_in',None)
-        raw_rows=(raw.detach().cpu().reshape(B,-1).long().tolist()
-                  if torch.is_tensor(raw) else [[] for _ in range(B)])
-        starts=[]
-        for b in range(B):
-            surface=bytes(raw_rows[b]);end=0;row=[]
-            for text in (texts[b] if b<len(texts) else ()):
-                value=str(text).encode('latin1','replace')
-                found=surface.find(value,end) if value else end
-                lo=end if found<0 else found
-                row.append(lo);end=lo+len(value)
-            starts.append((row+[0]*W)[:W])
+    intervals=fi.get('word_intervals') or ()
     owner=model._concept_owner()
     definitions=owner.definitions
     extents=[];known=[];identities=[];forms=[];vocabulary={}
     for b in range(B):
-        row=[];seen=[];ids=[];names=[];end=0
+        row=[];seen=[];ids=[];names=[]
         for w in range(W):
             text=str(texts[b][w]) if b<len(texts) and w<len(texts[b]) else ''
             raw=text.encode('latin1','replace')
             leading=len(raw)-len(raw.lstrip());surface=raw.strip()
-            lo=max(int(starts[b][w]),end)+leading
-            hi=lo+len(surface)
-            end=hi
+            if raw:
+                start, stop = intervals[b][w]
+                lo=int(start)+leading
+                hi=int(stop)-(len(raw)-len(raw.rstrip()))
+            else:
+                lo=hi=0
             form=surface.decode('latin1')
             row.append((lo,hi) if surface else (0,0))
             seen.append(bool(surface) and owner.interpret.word_for_form(form) is not None)

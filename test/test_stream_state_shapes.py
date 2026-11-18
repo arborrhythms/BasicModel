@@ -21,7 +21,8 @@ def _attention_model(keys):
             _ar_embedded_N=keys, _word_active_mask=torch.ones(batch, words, dtype=torch.bool),
             _ar_word_part_offsets=spans),
         perceptualSpace=SimpleNamespace(_forward_input={
-            'word_texts': [[chr(ord('a') + w) for w in range(words)] for _ in range(batch)]}),
+            'word_texts': [[chr(ord('a') + w) for w in range(words)] for _ in range(batch)],
+            'word_intervals': spans.tolist()}),
         conceptualSpace=SimpleNamespace(), attention_budget=8,
         percept_expectation=PerceptExpectation(width,streams=batch,capacity=words), percept_expectation_gain=0.,
         training=False, symbolSpace=SimpleNamespace(expectation=None),

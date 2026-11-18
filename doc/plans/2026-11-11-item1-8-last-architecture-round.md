@@ -27181,6 +27181,93 @@ them: supplying `_ar_word_part_offsets` on the whole-slab path would
 incorrectly tell other readers that it is word-major. That section
 explicitly awaits Alec's word. No loop change is built while it waits.
 
+
+### 61.3 The stem interval port (§68.73 B; Codex, 2026-11-18)
+
+The producer now keeps `word_intervals` beside `word_texts` in
+`PartSpace._forward_input`. `_embed_radix` retains the original `_wspans`
+list; `_embed_radix_word_major` retains its `word_spans`; the ladder stem
+retains the selected unit intervals. `ModelAttention.stage_input` reads
+those intervals through the same reader on both stems, trimming a unit's
+leading/trailing whitespace as before. The surface search is deleted;
+there is no second split. No word texts still means no word brackets.
+`_ar_word_part_offsets` is neither filled nor changed by this port.
+
+Certificates in `test_stem_word_intervals.py`: the absence of a surface
+search and the whole-slab producer identity/read on repeated words and on
+a row cut at eight slots. All **three fail before**, then pass. The three
+parameters of `test_29_each_reading_publishes_only_its_words` now assert
+the starting spans explicitly; all **three pass before and after**.
+The whole-slab test checks that the retained list is the producer's actual
+list, not a second parse, and that the cut word keeps bytes **6 to 11**.
+
+Two synthetic staging fixtures are ported to supply the new stem output:
+`test_sentence_owned_attention.prepared_model` and
+`test_stream_state_shapes._attention_model`. Their assertions are kept.
+No test is retired. `ImpenetrableLayer`'s docstring now describes shared
+size and the five diagnostic bins' unclassified mixed pairs. Its behavior
+is unchanged (§68.73 C).
+
+Targeted results: **66 passed in 14.44 seconds**, including both stopping
+gates, across `test_stem_word_intervals.py`, `test_word_admission.py`,
+`test_sentence_owned_attention.py`, `test_stream_state_shapes.py`,
+`test_impenetrable.py`, and the two gate nodes in `test_mm_xor.py` and
+`test_item25_completion.py`. A further passive staging census ran
+`test_one_attention.py`, `test_stem_word_intervals.py`,
+`test_word_admission.py`, `test_sentence_owned_attention.py`,
+`test_stream_state_shapes.py`, `test_dynamic_part_padding.py`,
+`test_meronomy_ladder.py` and `test_occurrence_coordinates.py`:
+**134 passed, 8 skipped, 43.98 seconds**. An initial census attempt lacked
+permission to write the ordinary compiler cache; the rerun had that
+permission. The observer's wrapper initially hid the function from its
+source-inspection certificate; it now preserves `__wrapped__`, and the
+certificate inspects the original function. These were observer/run setup
+corrections, not model changes. No sweep or slow tier was run.
+
+### 61.4 Readers and the two byte frames (§68.73 B.5)
+
+Every source reader of `_ar_word_part_offsets` was checked:
+
+| File and function | Read retained |
+|---|---|
+| `Models._stage_fixed_residual_part_capacity` | Pads the same word-major part axis; retains offsets |
+| `Models._stage_reading_grammar_references` | Its presence selects word-major matching; compares the first part offset with a grammar word's byte start |
+| `Models._stage_serial_concept_rows` | Gives starts to `WholeSpace.stage_word_primitives`; encodes word occurrence `.where` |
+| `Models._run_batch_once` | Marks the word-major part dimension dynamic |
+| `Models._run_aligned_word_chunk_loop` | Stages/chunks the part-offset tensor with ids and masks |
+| `Models._tensor_peer_while_ready` | Requires the tensor for the canonical word-major body |
+| `Models._run_tensor_peer_word_pipeline` | Passes the local offsets into the perceptual word body |
+| `InputSpace.word_part_offsets_at`, read by `Models._run_word_iteration` | Returns a word's offsets to `present_word` and the native perceptual read |
+| `bench_train_word_bucket._profile_peer_legs` | Supplies the first word's offsets to the profiled body |
+| `ModelAttention.stage_input` | Replaced by `word_intervals`; no longer reads the part-offset tensor |
+
+`InputSpace.Start` and `Reset` clear that tensor, and
+`_finalize_serial_word_stem` publishes it. Those writers are unchanged.
+The targeted census observes **48 calls**. Exactly three have no offsets,
+all on a whole-slab text stem and **none running a walk**:
+`test_29_each_reading_publishes_only_its_words[MM_text.xml]` and the two
+new `test_whole_slab_keeps_repeated_and_cut_word_intervals` parameters.
+This is the census of tests run, not of the default tier. The incidental
+ordinal-slot key issue of §68.70 is unchanged.
+
+The word-major offsets are in the concatenated **host-token byte frame**.
+`InputSpace._lex_batch` constructs `_analyse_surfaces` after removing every
+NUL byte, and `_lex_and_embed` passes those strings to the stem. Thus a
+raw staged `[0, 1]` can have a host surface `[1]`: offset zero in the
+stem, position one in `_staged_concepts_in`. This explains Claude's
+record without changing either frame. No mismatch occurred in the 48
+calls above. The cross-frame readers are `ModelAttention.native_word_poles`
+(its brackets/native part spans against the raw whole-property field),
+`FamiliarTier.open_sentence` (same), and
+`Models._stage_reading_word_concepts` with
+`_stage_reading_grammar_references` (raw-surface word intervals matched to
+native extents/offsets). Kept sentence `word_extents` also retain the
+attention intervals for raw reconstruction readers. The port does not
+repair these pre-existing frame differences.
+
+The loop implementation follows this checkpoint; §61.1's saved comparison
+remains the pre-loop baseline.
+
 ## 62. Part A's remainder: the forecast of a look and its surprise (Claude, 2026-11-16; a design, with one question for Alec)
 
 §61 is kept for Codex's return of §60.3. This section starts from the

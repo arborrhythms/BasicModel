@@ -11070,6 +11070,7 @@ class PartSpace(Space):
         part_capacity = 3
         sentence_truncated_rows = []
         word_texts_rows = []
+        word_intervals = []
 
         import Meronomy
         for row in host_tokens:
@@ -11078,6 +11079,7 @@ class PartSpace(Space):
                  else bytes(text))
                 for text in row if text is not None)
             word_spans = Meronomy.percept_spans(raw)
+            word_intervals.append(word_spans)
             tiles = Meronomy.word_tiling(raw)
             word_texts_rows.append(
                 [raw[s:e].decode("latin1") for s, e in word_spans])
@@ -11218,6 +11220,7 @@ class PartSpace(Space):
             "percept_store": ps,
             "word_groups": flat_groups,
             "word_texts": word_texts_rows,
+            "word_intervals": word_intervals,
             "tile_spans": flat_tile_spans,
             "part_spans": flat_part_spans,
             "percept_where": flat_offsets,
@@ -11463,7 +11466,9 @@ class PartSpace(Space):
         self._forward_input = {
             "tokens": host_tokens, "indices": flat_pids, "seed_event": flat_seed,
             "percept_store": ps, "word_groups": flat_groups,
-            "word_texts": word_texts_rows, "tile_spans": flat_tile_spans,
+            "word_texts": word_texts_rows,
+            "word_intervals": [spans for _, spans in units],
+            "tile_spans": flat_tile_spans,
             "part_spans": flat_part_spans, "percept_where": flat_offsets,
             "word_part_indices": pid_grid, "word_part_mask": part_mask,
             "word_part_capacity": int(part_capacity),
@@ -11575,6 +11580,7 @@ class PartSpace(Space):
         # Per-row word surfaces (meronomy word-isolation): word index -> string,
         # parked for the autobind META key; None per row off the flag.
         word_texts_2d: list = []
+        word_intervals: list = []
         # Per-slot word-tile spans (5c type-tiling scaffold for the reverse).
         span_2d: list = []
         # Exact per-percept instance spans for the overlapping `.where`
@@ -11600,6 +11606,9 @@ class PartSpace(Space):
                     [_raw[s:e].decode("latin1") for (s, e) in _wspans])
             else:
                 word_texts_2d.append(None)
+            # Keep the original word intervals, separately from the emitted
+            # parts: a slab slot need not be a whole word.
+            word_intervals.append(_wspans if _wspans is not None else [])
             # Pass 1 -- frequency observation for EVERY chunk in the row,
             # independent of the nIdeas emission budget below. ``observe_chunk``
             # (promotion counting) must see every word: a word truncated
@@ -11764,6 +11773,7 @@ class PartSpace(Space):
             'tokens': batch_tokens, 'indices': pid_grid,
             'percept_store': ps, 'word_groups': word_group_grid,
             'word_texts': word_texts_2d,
+            'word_intervals': word_intervals,
             # 5c: the analysis tiling record the reverse associates against.
             'tile_spans': span_2d,
             # Exact candidate brackets for the per-.where PS/WS tiling loop.
