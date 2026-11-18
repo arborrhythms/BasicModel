@@ -27465,6 +27465,10 @@ env -u RUN_TRAINED -u RUN_SLOW make test; the source snapshot.
 
 ### 65.5 One record of a read (Alec, 2026-11-17; step A of item 1.6)
 
+*Since 2026-11-18 the wiring work named here as item 1.6 is the first
+part of item 1.5, and the number 1.6 names another item (§71). This
+step is still built here.*
+
 Alec decided on 2026-11-17 ("All good", of the four questions of
 `doc/plans/2026-11-17-item1-6-zero-data-movement.md`, section 8) that
 the one form of a sentence's tree is the trace of its read, and that
@@ -32700,3 +32704,42 @@ the vector forms, unchanged.
 **For §70.18.** Of what is done before the promotion's push, the
 changes to the standing documents that follow §70.17's return are made.
 The doc-pass lists of the earlier sections still wait.
+
+## 71. The items after 1.7, renumbered (Alec, 2026-11-18)
+
+Alec, 2026-11-18, of the list of what is left:
+
+> Regarding the numbering of what is left.
+>
+> Please move all 1.6 work into 1.5
+>
+> Then 1.6 becomes the number modality, the math corpus (it needs more
+> development), and the work you called out as "unnumbered: felt world
+> for the math corpus" which combines both.
+
+**What it changes.** Nothing in item 1.8. The order is as it was: item
+1.7, then 1.6, 1.5, 1, 0.5 and 0.
+
+| Number | Until 2026-11-18 | Since |
+|---|---|---|
+| 1.6 | computation by wiring, not by moving data | the number modality, the math corpus, and the felt world for the math corpus, which combines them |
+| 1.5 | lookups as one matmul, folds as scatters, the percept pass once for a sentence | the wiring work, then those |
+| the felt world for the math corpus | not numbered | part of item 1.6 |
+
+**How to read what was written before.** In §65.5, §68.37, §68.44,
+§68.46 and §68.61 of this specification, in the document
+`doc/plans/2026-11-17-item1-6-zero-data-movement.md`, and in Alec's
+words of 2026-11-17, "item 1.6" is the wiring work. That document keeps
+its file name, since these sections cite it by its path. Step A of that
+work is still built with part C of this item (§65.4 and §65.5). The
+rest of it is the first part of item 1.5.
+
+**Written with it.** `todo.md` (items 1.6 and 1.5); the head of the
+wiring document; `doc/plans/2026-11-14-item1-5.md`; and §19.21 and
+§19.26 of the item 1.7 specification.
+
+**Not yet said, and not assumed.** What item 1.6 takes of the number
+modality, of which the felt value beside the words, the XOR proofs and
+the image file are built in this item. What the development of the math
+corpus is. The order of item 1.5's two parts (*Claude's default:* the
+wiring first, as when it was an item of its own).

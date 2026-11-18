@@ -1,9 +1,18 @@
-# Item 1.6: computation by wiring, not by moving data (Claude; investigated, measured and re-scoped on 2026-11-17)
+# Computation by wiring, not by moving data: part 1 of item 1.5, and item 1.6 until 2026-11-18 (Claude; investigated, measured and re-scoped on 2026-11-17)
 
 Alec asked for this as a new item between 1.7 and 1.5: "can you
 investigate the possibility of pushing the architecture in this
 zero-data movement direction? It's 1.6 so that subsequent optimization
 becomes easier, with fewer cpu or python data reads/writes."
+
+**Renumbered** (Alec, 2026-11-18: "Please move all 1.6 work into
+1.5"). This work is the first part of item 1.5 since then, and the
+number 1.6 names another item: the number modality, the math corpus
+and the felt world for the math corpus. Where this document says
+"item 1.6" or "this item" it means this work. Where it hands
+something to "item 1.5" it means that item's second part: the lookups,
+the folds and the percept pass. The file keeps its name, because the
+specifications cite it by its path.
 
 This document says what a sentence moves today, what each movement
 would become, the steps, and what Alec decides. Its first form was an

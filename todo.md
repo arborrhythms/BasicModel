@@ -1395,30 +1395,64 @@ generation is expected at this stage and is recorded, not tuned away.
    never to have the blank at all", with both trained and the blank
    removed only if the two vectors come to overlap. Open: what removing
    is, beside concepts kept forever.
-- **A felt world for the math corpus** (Alec, 2026-11-18; not yet
-   numbered, and its place in this countdown is not given: *Claude's
-   default* is after item 1.7). "for the math learning corpus, we
-   should make a model test that matches words to objects, where
-   objects are feeling-intensities within a 3-D space. So a sentence
-   like "one was on top of two", even though it doesnt make a lot of
-   sense, will still describe a world that is phenomenally accessible
-   to the model, an in which the feeling of one is actually above the
-   feeling of two. That also forma a basis for the identity tests that
-   we are talking about now. Maybe girls are even and boys are odd, so
-   we can map a gendered language onto numerals." His words in full,
-   what exists and what it needs:
-   [specification](doc/plans/2026-11-14-sigma-pi-layers.md) §19.26.
-   Not yet specified: the feeling modality with three place axes, the
-   scenes generated with the corpus's sentences, and the tests (a
-   numeral's word tied to its felt intensity, a word of place tied to
-   the relation of two places, two words with one perceptual basis
-   tied to one object).
-- **1.6. Computation by wiring, not by moving data** (Alec, 2026-11-17:
-   "can you investigate the possibility of pushing the architecture in
-   this zero-data movement direction? It's 1.6 so that subsequent
-   optimization becomes easier, with fewer cpu or python data
-   reads/writes"). After item 1.7 and before item 1.5. Investigated,
-   measured and re-scoped on 2026-11-17; nothing built:
+- **1.6. The number modality, the math corpus, and the felt world that
+   combines them** (Alec, 2026-11-18: "Then 1.6 becomes the number
+   modality, the math corpus (it needs more development), and the work
+   you called out as "unnumbered: felt world for the math corpus" which
+   combines both."). After item 1.7 and before item 1.5. The work that
+   had this number until then, computation by wiring, is the first part
+   of item 1.5. Not yet specified as an item: what it takes of each
+   part is Alec's to say. What the record holds:
+   1. *The number modality.* Built in item 1.8: a number is a level
+      percept at its place; one felt value may accompany a sentence, at
+      one fixed place (`bin/ScalarPercepts.py`); the XOR proofs and
+      `data/MM_image.xml` read numbers at places on one axis and on two
+      with field operators only (`NumericPercepts`). Listed as
+      remaining in
+      [FutureWork](doc/FutureWork.md#numeric-input-as-a-modality-xor-as-a-system-1-model-and-one-model-class-alec-2026-11-11-to-specify):
+      a second axis of place for attention; learning on images, first
+      as a measurement; grey levels; one model class; and the
+      whole-slab body of the other numeric configurations.
+   2. *The math corpus.* "it needs more development"; which
+      development, he has not yet said. As built by item 0.5
+      ([spec](doc/plans/2026-11-09-item0-5-test-development.md) §7 and
+      §17): nine frozen grades under `data/math/` with a manifest
+      (`bin/math_chain_corpus.py`), its numerals opaque words and
+      nothing numeric reaching the learner (Alec, 2026-10-07); its bar
+      is undeclared. Its learning measurement at the trained
+      checkpoint, with the four protocol corrections, stays in item 0,
+      and the comparison of compiled and eager runs on its rows in
+      item 1.
+   3. *The felt world for the math corpus,* which combines both (Alec,
+      2026-11-18): "for the math learning corpus, we should make a
+      model test that matches words to objects, where objects are
+      feeling-intensities within a 3-D space. So a sentence like "one
+      was on top of two", even though it doesnt make a lot of sense,
+      will still describe a world that is phenomenally accessible to
+      the model, an in which the feeling of one is actually above the
+      feeling of two. That also forma a basis for the identity tests
+      that we are talking about now. Maybe girls are even and boys are
+      odd, so we can map a gendered language onto numerals." His words
+      in full, what exists and what it needs:
+      [specification](doc/plans/2026-11-14-sigma-pi-layers.md) §19.26.
+      Not yet specified: the feeling modality with three place axes,
+      the scenes generated with the corpus's sentences, and the tests
+      (a numeral's word tied to its felt intensity, a word of place
+      tied to the relation of two places, two words with one
+      perceptual basis tied to one object).
+- **1.5. Computation by wiring; then lookups as one matmul, whole/part
+   folds as scatters, the percept pass per sentence** (Alec,
+   2026-10-30; and 2026-11-18: "Please move all 1.6 work into 1.5").
+   After item 1.6 and before item 1, so the compiler work compiles what
+   this builds under `fullgraph`, and before item 0. It has two parts.
+   *Claude's default:* the wiring first, as it stood before the lookups
+   when it was an item of its own.
+   **Part 1, computation by wiring, not by moving data** (item 1.6
+   until 2026-11-18; Alec, 2026-11-17: "can you investigate the
+   possibility of pushing the architecture in this zero-data movement
+   direction? It's 1.6 so that subsequent optimization becomes easier,
+   with fewer cpu or python data reads/writes"). Investigated, measured
+   and re-scoped on 2026-11-17; nothing built:
    [the document](doc/plans/2026-11-17-item1-6-zero-data-movement.md).
    Decided that day (its section 9): the trace is the one form of a
    sentence's tree, built with part C of item 1.8 (1.8 §65.5); MTM and
@@ -1433,19 +1467,17 @@ generation is expected at this stage and is recorded, not tuned away.
    steps, decided** (Alec, 2026-11-17: "Can we update and finish open
    questions in 1.6 as a prelude to GPU optimization?", then "the four
    points are good to go with your recommendations"): step B, MTM as
-   rows, stays after item 1.7 and is designed (an entry is a row, and
-   whatever else it carries is a pair); step C, the block commit, is
-   withdrawn as wrong on the facts; step D, a meaning is made once, and
-   step E, what is cut from the graph is cut where it is written, are
-   added; the hook on every saved tensor is measured in item 1 first;
-   the reverse's zero buffers and the derived forms go to item 1.5 with
-   their numbers. Its section 7 is what GPU optimization receives,
-   with Alec's point of the same day that a sentence's percepts are
-   looked up once, at its start (item 1.5's percept pass).
-- **1.5. Lookups as one matmul, whole/part folds as scatters, the percept
-   pass per sentence** (Alec, 2026-10-30). Before item 1, so the
-   compiler work compiles what this builds under `fullgraph`, and before
-   item 0. From the as-built cost reading of 2026-10-30: the
+   rows, is designed (an entry is a row, and whatever else it carries
+   is a pair); step C, the block commit, is withdrawn as wrong on the
+   facts; step D, a meaning is made once, and step E, what is cut from
+   the graph is cut where it is written, are added; the hook on every
+   saved tensor is measured in item 1 first; the reverse's zero buffers
+   and the derived forms are part 2's, with their numbers. Its section
+   7 is what GPU optimization receives, with Alec's point of the same
+   day that a sentence's percepts are looked up once, at its start
+   (part 2's percept pass).
+   **Part 2, lookups, folds and the percept pass** (item 1.5 as it
+   was). From the as-built cost reading of 2026-10-30: the
    derived concept forms become a tensor kept current incrementally
    (device CSR definitions, one segmented scatter per order, a validity
    mask); content-based lookups over absolute truth concepts in LTM and
@@ -1463,8 +1495,8 @@ generation is expected at this stage and is recorded, not tuned away.
    for the whole sentence at the start (IOW, do all codebook lookups by
    building an array of percept indices for the .what and an array of
    .where with the same indices)"; measured then at 1,924 lookups of
-   codebook rows for a sentence, 63 of them of a whole table: item
-   1.6's document, section 7),
+   codebook rows for a sentence, 63 of them of a whole table: the
+   wiring document, section 7),
    with ragged parts in place of the 64-wide padding, a known word's
    percept read from its identity row's `amax` instead of recomposed from
    its atoms, and the forecast scored for all words at once; an explore

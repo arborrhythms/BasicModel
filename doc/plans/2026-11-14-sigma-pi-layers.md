@@ -4533,7 +4533,8 @@ and the Pi on the gaps is its or, $1 - (1 - x)(1 - y)$.
 same as percepts or symbols, since it serves as a testing ground for
 percepts or symbols. So an easily promoted and easily forgotten store,
 as opposed to the percepts that they promote into." It bears on rule 20
-and is taken up in item 1.6
+and is taken up in the wiring part of item 1.5, which was item 1.6
+until 2026-11-18
 (`doc/plans/2026-11-17-item1-6-zero-data-movement.md`, step B); item
 1.7 builds rule 20 on MTM as it is.
 
@@ -5121,8 +5122,15 @@ feeling is its object. The grammar still computes nothing on a
 magnitude (Alec, 2026-10-07; and 2026-11-13: "percept activations have
 a kind there but no magnitude").
 
-**Open.** Its place in the countdown (*default:* after item 1.7, whose
-rule 31 and certificates 25 and 26 it gives a world to). Whether
+**Its place** (Alec, 2026-11-18): "Then 1.6 becomes the number
+modality, the math corpus (it needs more development), and the work
+you called out as "unnumbered: felt world for the math corpus" which
+combines both." So this is part of item 1.6, which follows item 1.7,
+whose rule 31 and certificates 25 and 26 it gives a world to. The
+work that had the number 1.6 until then is the first part of item
+1.5.
+
+**Open.** Whether
 "above" is one of the three axes by convention or is learned from the
 scenes. What carries even and odd as something perceived. Whether a
 scene is present with every sentence, as the felt value is today, or
