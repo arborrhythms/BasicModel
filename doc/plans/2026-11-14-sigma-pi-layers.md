@@ -4533,6 +4533,9 @@ budget of rule 28; the speed certificate.
 9. "There is a word there" as inclusion in a meta concept (§19.29):
    which row is tested, what a word with no meta concept is in a
    tree, and how `interpretBias` is lowered by experience.
+10. `interpret` takes the largest word that fits the look (§19.30):
+    what largest measures, overlapping large words, and what makes
+    several words one word.
 
 **For the documentation pass** that lands with item 1.7 (`doc/*.md` is
 not edited now: another pass over those files is uncommitted, in the
@@ -5375,3 +5378,41 @@ nominates for the tie; what a word with no meta concept is in a tree,
 if anything (the false branch of `InterpretLayer.reading` returns the
 word concept itself); and how `interpretBias` (1.8 §68.79, set to 1) is
 lowered "when doing so is valuable based on previous experience".
+
+### 19.30 `interpret` takes the largest word that fits the look (Alec, 2026-11-18; an idea)
+
+Alec, 2026-11-18: "an an idea for interpret: take the largest word that
+fits in the .where (even if it is composed of smaller words)."
+
+*In plain terms.* If the look covers "ice cream" and the model holds a
+word for "ice cream" as well as words for "ice" and "cream", `interpret`
+takes "ice cream". If it holds no such word, the look holds two words,
+and attention has to narrow before either is interpreted.
+
+*What it amends.* His second condition of the same day (§19.29, 1.8
+§68.79), "there are not multiple words there", then counts words at
+their largest size: a look that is one large word is one word, whatever
+smaller words it is made of.
+
+*What exists.* The idea is in the record from the other side, as the
+dynamic stop (`doc/FutureWork.md`, "The dynamic stop: glossing above
+words, descending at novelty"): a known unit of several words that
+reads purely at its wider bracket is read as one symbol by `interpret`.
+It is not built. `Attention.narrowing_mask` offers `interpret` only
+where the bracket covers one of the stem's word intervals, the lookup
+(`InterpretLayer.word_for_form`) takes one such interval's form, and
+1.8 §60.1 says "A span of several words taken as one unit is not
+built". A phrase that recurs can already become a concept defined by
+its parts (`conceptMintCount`).
+
+*Placed here by Claude, not by Alec:* with rule 32, since it needs a
+look that is not forced to the stem's word intervals, and a Pi that
+returns the percept for what the look holds. It is in no text of item
+1.8.
+
+*Unspecified:* what "largest" measures (the extent, or the number of
+parts); what is taken when two large words overlap and neither holds
+the other ("New York" and "York City" in "New York City"); whether the
+smaller words stay reachable by a further `focus` after the large one
+is declined or interpreted; and what makes a unit of several words a
+word (a meta concept of its own, §19.29).

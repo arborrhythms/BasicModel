@@ -649,6 +649,12 @@ should hold once the recurring units are admitted. It depends on the field's
 per bracket level that would show it are for the training harness's
 per-interval logger and are not logged yet.
 
+Alec, 2026-11-18, of `interpret`: "take the largest word that fits in the
+.where (even if it is composed of smaller words)." This is the same stop
+seen from `interpret`: a look that holds one large word is one word, whatever
+smaller words it is made of. It is placed with the looks of item 1.7, where a
+look is no longer forced to the stem's word intervals.
+
 ## Modality as the third index (noted 2026-09-28)
 
 Words narrow the domain of discourse along three indices (which thing, which

@@ -1494,6 +1494,11 @@ generation is expected at this stage and is recorded, not tuned away.
    ("caat", "cat") and returns the basic percept for all of them;
    the hit or miss on a word feeds the width of that row's cone. To
    be specified with the item.
+   **The largest word that fits (§19.30; Alec, 2026-11-18, an
+   idea):** `interpret` is to "take the largest word that fits in
+   the .where (even if it is composed of smaller words)". It is the
+   dynamic stop of `doc/FutureWork.md` seen from `interpret`; placed
+   with rule 32 by Claude, and in no text of item 1.8.
 - **1.6. The number modality, the math corpus, and the felt world that
    combines them** (Alec, 2026-11-18: "Then 1.6 becomes the number
    modality, the math corpus (it needs more development), and the work
