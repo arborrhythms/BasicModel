@@ -1479,8 +1479,15 @@ generation is expected at this stage and is recorded, not tuned away.
    (§3), what a second modality changes in word and concept processing
    (§4), the corpus and its grades (§5), a word of place (§6, not
    designed), certificates F1 to F12 (§7) and its questions for Alec
-   (§9). No text for Codex until they are answered. What the record
-   held before it:
+   (§9). **His first answers, the same day (§11):** "Add 2d intensity
+   images also"; intensities "Varied from the start"; for a word of
+   place, "A small image in which the numbers are vertically arranged
+   as described"; and the gendered words are dropped for "words like
+   even and odd, and other simple math concepts like basic operations".
+   Open after them (§11.6): whether the scene is a small image and
+   nothing else, a declared grid of levels, the scale and the amount of
+   variation, and the list of concepts. No text for Codex until they
+   are answered. What the record held before it:
    1. *The number modality.* Built in item 1.8: a number is a level
       percept at its place; one felt value may accompany a sentence, at
       one fixed place (`bin/ScalarPercepts.py`); the XOR proofs and

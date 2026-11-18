@@ -1,7 +1,9 @@
 # Item 1.6: the number modality, the math corpus, and the felt world that combines them
 
-*Claude, 2026-11-18. A design for Alec. No text for Codex: §9's questions
-are open, and the item is built after item 1.7 lands.*
+*Claude, 2026-11-18. A design for Alec. No text for Codex: questions are
+open (§11.6), and the item is built after item 1.7 lands. Alec answered
+the first four questions the same day: §11, which stands wherever it
+differs from §3 to §10.*
 
 Alec, 2026-11-18, placing the item: "Then 1.6 becomes the number modality,
 the math corpus (it needs more development), and the work you called out as
@@ -265,10 +267,9 @@ that something recurs. Two ways, neither chosen:
   level's part and whole is that level again; one that lies outside every
   level is a new one. It needs a rule for when a wide level divides.
 
-*Default, question 2 of §9:* the corpus's intensities are exact in every
-grade that teaches, and one later grade varies them and is a measurement,
-with the levels left as they are (so it measures the intervals and
-nothing else). The grid or the bounds are decided after that measurement.
+*Decided (Alec, 2026-11-18): "Varied from the start".* So what a level is
+has to be decided before a round is built: §11.2, with Claude's
+recommendation of a declared grid.
 
 ### 3.6 Zero
 
@@ -382,11 +383,10 @@ meta-concepts". Each grade uses only what the grades before it taught.
 | F2, naming | One word with one intensity | "three." with 3 at (2, 0, 3) | The tie |
 | F3, among others | Two or three intensities, and a sentence that names some of them | "this is three." with 3 and 7 present | The tie by consistency, with other things present |
 | F4, asked | A question of what is felt | "what is this ?" with 5 present; answer "five" | The object raising its word |
-| F5, arrangements | Two intensities at two places, and a sentence of their relation | "one is above two." | A word of place (§6) |
+| F5, arrangements | Alec, 2026-11-18: "A small image in which the numbers are vertically arranged as described." | "one is above two." with an image in which one is above two | A word of place (§6, §11.3) |
 | F6, asked of an arrangement | A question of a relation | "what is above two ?"; answer "one" | The relation, read from the scene |
-| F7, kinds | Alec's "Maybe girls are even and boys are odd" | "two is a girl. she is above one." | A kind over numerals; a pronoun (§9, question 4) |
+| F7, types and operations | Alec, 2026-11-18: "words like even and odd, and other simple math concepts like basic operations". The gendered words are dropped | "two is even." | A type over numerals (§11.4) |
 | F8, change | One individual whose intensity changes from sentence to sentence | Alec, 2026-11-15: "one summed with two the other day, and then he summed with three" | Identity across sentences, told by what is seen |
-| F9, varied | Grade F2 and F4 with intensities that vary about their number | "three." with 3.07 present | A measurement (§3.5) |
 
 Notes on single grades.
 
@@ -510,13 +510,17 @@ run once, overnight, at submission.
 
 *Defaults; question 1 of §9.*
 
-From `doc/FutureWork.md`, "Numeric input as a modality": learning on
-images, grey levels, one model class, and the whole-slab body of the
-other numeric configurations. Attention's second axis, unless §6 needs
+*Alec, 2026-11-18: "Add 2d intensity images also."* So images whose
+pixels are intensities are in the item (§11.1). Still out, from
+`doc/FutureWork.md`, "Numeric input as a modality": one model class, and
+the whole-slab body of the other numeric configurations. Attention's second axis, unless §6 needs
 it. Sum and product on felt values (Alec, 2026-11-11 and 2026-11-13).
 Two modalities other than text and feeling.
 
 ## 9. Questions for Alec
+
+*Questions 1 to 4 are answered: §11. Questions 5 to 10 stand as defaults,
+with §11.6's.*
 
 1. *What the item takes of the number modality.* *Default:* only what the
    felt world needs: felt values at places on three axes beside a
@@ -553,3 +557,156 @@ Two modalities other than text and feeling.
    measurement of F9.
 4. *Submission.* The item's one default sweep, then the slow tier
    overnight.
+
+## 11. Alec's answers (2026-11-18), and what they change
+
+Asked the first four questions of §9, each with Claude's default. His
+answers are given whole.
+
+### 11.1 What the item takes of the number modality
+
+> Add 2d intensity images also.
+
+**What it changes.** The item takes the felt world and images whose
+pixels are intensities, on two axes of place. Of the list of §8 that
+brings in two entries of `doc/FutureWork.md`: *grey levels* (an intensity
+image is a grey image) and *learning on images*. One model class and the
+whole-slab body were not named and stay out (*Claude's reading*).
+
+**What exists for it.** `data/MM_image.xml` reads 28 by 28 images of two
+levels through `NumericPercepts`, with no attention.
+`bin/image_corpus.py` freezes them under `data/images/`, packed one bit
+to a pixel, so its format cannot hold an intensity.
+
+### 11.2 Exact or varying intensities
+
+> Varied from the start
+
+**What it changes.** §3.5's default is withdrawn, and grade F9 with it:
+every grade's intensities vary about their number. Two things have to be
+decided before a round is built, since under item 1.7's rule 20 a percept
+becomes a row only when it recurs, and an exact value that varies never
+recurs.
+
+1. *What a level is.* The same question as where a grey image's levels
+   come from. *Claude's recommendation: a declared grid of levels,* a
+   key of the modality, as the 256 byte values are the declared alphabet
+   of text.
+   - A reading is bounded by the grid level at or below it, its part,
+     and the one at or above it, its whole. That is Alec's "categorized
+     against perceptual parts and wholes, whose codes are the values"
+     (2026-11-12), with the bounds given beforehand in place of each
+     exact value met.
+   - Readings between the same two levels are the same basic percept, so
+     it recurs and MTM can nominate it.
+   - A word's concept stays the interval over the levels it collected
+     (§2.1), which is what generalizes over the variation.
+   - The other way, bounds grown from what is met, needs a rule for when
+     a wide level divides, which would be a new mechanism.
+2. *The scale and the amount.* On today's felt scale (§2.1) nineteen and
+   twenty are .003 apart, so a uniform grid would need at least 332
+   levels. *Default:* the corpus's intensity for the numeral $n$ is
+   $n/20$, taken as it is with no logarithm, on a grid of 256 levels;
+   neighbouring numerals are then about 13 levels apart. A reading
+   varies by up to a quarter of the gap between neighbours, about 3
+   levels, so two numerals' readings never meet. *Whether `feeling`'s
+   logarithm is kept for numbers given beside a sentence, and whether
+   neighbouring numerals may overlap, are his.*
+
+### 11.3 A word of place
+
+Asked how a word such as "above" should get its meaning:
+
+> A small image in which the numbers are vertically arranged as
+> described.
+
+**What it says.** What is felt with "one is above two" is a small image
+in which the intensity of one stands above the intensity of two. The
+scene of §3.1 is therefore an image, on two axes.
+
+**What it leaves open** (*Claude's reading*). It gives what is perceived.
+It does not say what in the model reads the arrangement, and §6's finding
+stands: the same image goes with "one is above two" and "two is below
+one". Two things in the design bear on it, neither built for an image:
+
+- *An arrangement as an ordered run.* In text a basic percept's parts
+  are an ordered run: `BasicPercepts.carrying` keeps (a, b) apart from
+  (b, a). One intensity above another is an ordered run along the
+  image's vertical axis. If the image's parts are read that way, the
+  arrangement is itself a percept with an object of its own, and "one
+  above two" and "two above one" are two percepts.
+- *The sentence against the arrangement.* The two sentences that go
+  with one image differ in their word of place and in the order of their
+  numerals, and the position selection of `doc/Language.md` (§6) is what
+  reads that.
+
+*Default:* round one builds the image scenes and the numerals' ties;
+the reading of an arrangement is specified with Alec after it returns.
+
+**The third axis.** His first words were "feeling-intensities within a
+3-D space" and §3.2 gave the feeling three axes. An image has two. *Open,
+question 1 of §11.6: whether the scene of this item is a small image and
+nothing else.* *Default:* yes; §3.2's `feltShape` is then two axes,
+8 by 8, still 64 places, and §3.3's one reader is the image's.
+
+### 11.4 Even and odd
+
+> I was just trying to give objects for a gendered language. Let's skip
+> that idea for learning that, and just have the corpus learn words like
+> even and odd, and other simple math concepts like basic operations. If
+> it learns types well, it should be able to generalize.
+
+**What it changes.** The gendered words and the pronouns resolved by
+them are dropped. Grade F7 becomes the words "even" and "odd", other
+simple concepts of mathematics, and the basic operations. This is the
+development of the math corpus that item 1.6's title asks for.
+
+**A list to trim** (*Claude's default; each line is his to strike*).
+
+| Concept | Example | Felt or said |
+|---|---|---|
+| less, greater, equal | "one is less than two." | Felt: one level is part of the other (`Ops.partOf`) |
+| next, before | "two is after one." | Said, as the counting grade says it; felt as the next greater intensity |
+| even, odd | "two is even." | Said. An intensity is not felt as even or odd |
+| plus | "one plus two is three." | Said, and reached by the chain of successors, as now |
+| minus | "three minus one is two." | Said; the inverse of the successor |
+| times, divided by | "two times three is six." | Said; *default:* not in this item |
+
+**"If it learns types well, it should be able to generalize."**
+*Claude's reading:* the numerals are one type, "even" and "odd" are
+types within it, and what is taught of some members is asked of the
+others. So the held-out rows of F7 are numerals whose type was stated
+and of which an operation or a comparison was never shown, and numerals
+of which it was shown and whose type is asked.
+
+**No operator on values, still.** "less than" read from two felt levels
+is part-of, which exists. Nothing adds or multiplies a felt value (Alec,
+2026-11-11 and 2026-11-13).
+
+### 11.5 What stands and what goes in §3 to §10
+
+- §3.1, §3.3 to §3.8 stand, with the scene an image (§11.3).
+- §3.5's default goes; §11.2 replaces it.
+- §4 stands whole.
+- §5.2: F5 and F7 as amended in the table; F9 goes; F8 (one individual
+  whose intensity changes) is not built unless Alec asks for it, since
+  the pronoun it was written with is dropped (*Claude's reading*).
+- §6 stands as the record of what a word of place needs.
+- §7: F7 (two words, one object) is kept on two wordings of one numeral,
+  not on a pronoun. F9 is by §11.3.
+- §10: round one is the image scenes with varied intensities on the
+  declared grid, grades F0 to F4; round two, arrangements; round three,
+  grade F7.
+
+### 11.6 Open after these answers
+
+1. *Is the scene of this item a small image and nothing else,* with no
+   third axis (§11.3)? *Default:* yes, 8 by 8.
+2. *A declared grid of levels* (§11.2, point 1). *Recommended.*
+3. *The scale and the amount of variation* (§11.2, point 2).
+4. *The list of concepts for grade F7* (§11.4).
+5. *What a numeral looks like in the image:* one pixel of its intensity,
+   or a small patch. *Default:* one pixel, and the rest of the image at
+   zero, which is no presence.
+6. Questions 5 to 10 of §9.
+
