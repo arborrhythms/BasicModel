@@ -1555,7 +1555,18 @@ generation is expected at this stage and is recorded, not tuned away.
    day that a sentence's percepts are looked up once, at its start
    (part 2's percept pass).
    **Part 2, lookups, folds and the percept pass** (item 1.5 as it
-   was). From the as-built cost reading of 2026-10-30: the
+   was). *Amended on 2026-11-18 for the loop of looks (1.8 §74;
+   Alec: "Please see the sentence optimization of 1.5 and decide how
+   this attend logic should be split"):* a sentence is perceived once
+   into two arrays, the percept indices and their `.where`, and a look
+   is a mask on the second that returns indices into the first; item
+   1.8 builds the loop, item 1.7 what a look is, and this item what a
+   look costs. So below, the percept pass is over the sentence's
+   percepts and not its words; "the forecast scored for all words at
+   once" is withdrawn in that form, since a forecast is made at its
+   look; and a known word's percept comes from the Pi's row of item
+   1.7, not from its identity row.
+   From the as-built cost reading of 2026-10-30: the
    derived concept forms become a tensor kept current incrementally
    (device CSR definitions, one segmented scatter per order, a validity
    mask); content-based lookups over absolute truth concepts in LTM and

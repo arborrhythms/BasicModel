@@ -4340,6 +4340,10 @@ old classes are not edited.
     that neighbourhood finds them and returns the basic percept that
     corresponds to all of them. The hit or miss on a word feeds the
     width of that row's cone. What is to be specified is in §19.28.
+    The contract of a look, and what items 1.8 and 1.5 build of it,
+    is 1.8 §74: the look's read is the mask and then the Pi, with no
+    reference to word intervals, and a look with the same mask gives
+    the same result whatever was looked at before it.
 
 **Certificates.**
 

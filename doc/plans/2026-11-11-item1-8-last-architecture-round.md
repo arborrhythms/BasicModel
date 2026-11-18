@@ -32400,6 +32400,11 @@ C. Go on with the text of §60.3 from your prototype of §61.5: the loop,
    steps 4 to 8. The tests are those of §72: targeted only, no default
    sweep (item 1.8 has its one sweep at its last text, §65.4), and
    nothing under RUN_SLOW. Name the test files you ran.
+   One rule for the loop, so that items 1.7 and 1.5 build on it and
+   not around it (§74): a look's perception (rule 3) reads the
+   sentence's two arrays, native_indices and native_part_spans, at
+   the look's extent, as FamiliarTier.open_sentence does. Add no
+   structure for a look that is keyed by a word's ordinal.
 
 D. Not for this text, and recorded in §68.74 and §68.70: the two byte
    frames of §61.4, and the key of a bracket on the whole-slab stem. Do
@@ -33962,3 +33967,81 @@ spec"*).
   In §65.4 a step that cannot keep its results exactly equal still
   stops, as its rule 7 says.
 - Every later text for Codex is written so.
+
+## 74. How the attend logic is split over items 1.8, 1.7 and 1.5 (Claude, at Alec's request, 2026-11-18)
+
+Alec, 2026-11-18: "Please see the sentence optimization of 1.5 and
+decide how this attend logic should be split". The decision below is
+Claude's, and Alec may overrule it.
+
+**The two things to fit together.** For item 1.5's sentence
+optimization, Alec on 2026-11-17: "compute perceptual features for the
+whole sentence at the start (IOW, do all codebook lookups by building
+an array of percept indices for the .what and an array of .where with
+the same indices)". For a look, Alec on 2026-11-18: "A look should be a
+.where that returns percept indices." They are one design. The sentence
+is perceived once into two arrays, and a look is a mask on the second
+that returns indices into the first.
+
+**The contract of a look, the same in all three items.**
+
+1. A sentence's percepts are two arrays made at its start: the percept
+   indices, and their `.where`, with the same indices. They exist
+   today: `native_indices` and `native_part_spans` of the perceptual
+   space's forward input.
+2. A look is a `.where`. It returns the indices whose `.where` lies in
+   it. Nothing else names a look: not a word's ordinal, and not a slot
+   of the slab.
+3. What a look computes, its memberships, its percepts and its
+   concepts, is a function of the two arrays and the mask, and of
+   nothing that another look computed.
+4. The arrays do not change inside a sentence, since admission and
+   nomination are at its boundaries.
+
+**The split.**
+
+| Part | Item | What it builds | What it leaves for later |
+|---|---|---|---|
+| The loop | 1.8 (§60, being built) | `attend` again and again; every look perceived; `interpret` at a look; one chooser; the allowance; `unfocus`; the teacher | A look is still a bracket of whole word intervals, and its word is found by the exact lookup. Each look reads its percepts again from the arrays, with the row lookups that costs |
+| What a look is | 1.7 (its rule 32) | A look is any `.where`. Behind the mask the Pi finds the spellings and returns the basic percept. Hit and miss feed the width of its cone. The stem's word intervals are no longer the unit of a look | The cost: the rows are still looked up at each look |
+| What a look costs | 1.5, part 2 (the percept pass) | The rows are gathered once, beside the `.where` array, at the sentence's start. A look is one masked product on the device, with no lookup and no host read after the start | nothing |
+
+**Why this order.** What a look does comes first and what it costs
+last. Item 1.5 is certified by results equal to the path before it. If
+it came before item 1.7, that equality would be certified against a
+read that item 1.7 then replaces.
+
+**So that nothing is built twice.**
+
+1. *In item 1.8.* A look's perception (rule 3 of §60.1) reads the two
+   arrays at the look's extent, as the first look does
+   (`FamiliarTier.open_sentence`). No structure is added for a look
+   that is keyed by a word's ordinal. The text of §68.75 has the line.
+2. *In item 1.7.* The look's read is written as the mask and then the
+   Pi, with no reference to word intervals. One certificate for it: a
+   look with the same mask gives the same result whatever was looked at
+   before it.
+3. *In item 1.5.* Three lines of its list were written on 2026-10-30,
+   before the loop of looks, and change:
+   - "the percept pass runs once per sentence over all words" is over
+     the sentence's percepts, since a look is no longer made of words.
+   - "the forecast scored for all words at once" is withdrawn in that
+     form. By rule 7 of §60.1 a word's forecast is made at its look and
+     reads only the words found before it. What does not depend on the
+     order found, the target rows of every word, is gathered once.
+   - "a known word's percept read from its identity row's `amax`" is
+     superseded by rule 32 of item 1.7: a word's basic percept is what
+     the Pi's row returns.
+   Unchanged: ragged parts in place of the 64-wide padding; and an
+   explore path resumed from `SentenceFork`'s state, which rule 12 of
+   §60.1 begins (a departing path reuses the looks and the bricks
+   before its departure).
+4. *The word's lookup is not part of the percept pass.* In item 1.8 it
+   is the staged bank's exact lookup, and in item 1.7 it is the Pi's
+   row.
+
+**The number item 1.5 is held to** (the wiring document, section 7):
+1,924 lookups of codebook rows for a sentence, 63 of them of a whole
+table. After item 1.5: the lookups of the sentence's start, and none
+after it. *Not checked:* how many of the 1,924 are made at looks, since
+the measurement is older than the loop of looks.
