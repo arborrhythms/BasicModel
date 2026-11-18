@@ -1532,8 +1532,13 @@ generation is expected at this stage and is recorded, not tuned away.
    machine". The 26 categories, each with its example, its question and
    what it waits on, are §13.5; a row and its validity §13.6; what is
    measured §13.7. Open: §13.8. The generator and its frozen rows touch
-   no model source and can be given to Codex before item 1.7 lands. No
-   text for Codex yet. What the record held before it:
+   no model source and can be given to Codex before item 1.7 lands.
+   **The text for Codex is §14.8** (Alec, 2026-11-18: "Yes, write it"):
+   `bin/felt_world_corpus.py`, the recipes and frozen rows under
+   `data/felt/`, and `test/test_felt_corpus.py`, from the world of
+   §14.1, the predicates of §14.2 and the frames of §14.4; it returns
+   as §15. The model's part of the item has no text and waits for item
+   1.7. What the record held before it:
    1. *The number modality.* Built in item 1.8: a number is a level
       percept at its place; one felt value may accompany a sentence, at
       one fixed place (`bin/ScalarPercepts.py`); the XOR proofs and
