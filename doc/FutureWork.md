@@ -2323,7 +2323,7 @@ sentence is what tells which individual a word or pronoun denotes.
 ## Named variants of the model, trained on one corpus (Alec, 2026-11-18)
 
 Three models are to be trained on the same corpus and compared, "Basis,
-Animus, and Augustine", and a fourth is proposed.
+Animus, and Augustine", and a fourth, Basho, differs only in its speech.
 
 - **Basis** is the basic model as it is, with symbols and the higher-order
   logic they allow.
@@ -2337,15 +2337,20 @@ Animus, and Augustine", and a fourth is proposed.
   using its higher-order logic (and possibly continues learning)". It differs
   from Animus in having once had symbols: what it learned with them is still
   in its weights and its memory when the higher orders are turned off.
-- **A fourth, not yet named** ("haiku or the name of a famous haiku author"),
-  is "the basic model that only speaks using basic level grammar": it "writes
-  without using any relations, only ideas". "I think that is still permitting
-  higher-order and thus negation, but the grammar disallows relative truth."
-  Its restriction is on what it says, and the other two are restricted in
-  what they think with.
+- **Basho** is "the basic model that only speaks using basic level
+  grammar": it "writes without using any relations, only ideas". "I think
+  that is still permitting higher-order and thus negation, but the grammar
+  disallows relative truth." It is the basic model speaking
+  [Shamatha Speech](Philosophy.md#shamatha-speech-and-single-pointedness).
+  Its restriction is on what it says, and Animus and Augustine are
+  restricted in what they think with. **Buson** is the name kept for the
+  same model with more than one modality, "if we ever make one".
+
+The names are also personalities a user selects: "Personalities for the user
+to select will help demonstration of the architecture."
 
 To specify: the grammatical change that defines Animus, as a setting of the
 model and not a second code path; the switch that turns the higher orders off
-in a trained model, and whether Augustine goes on learning after it; the
-grammar of the fourth model; and the measurements on which the four are
+in a trained model, and whether Augustine goes on learning after it; how
+a user selects a personality; and the measurements on which the four are
 compared.
