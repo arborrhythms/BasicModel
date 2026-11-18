@@ -2271,8 +2271,8 @@ is zero. The gain's formula and the residual lanes are in
 [Expectation](ExpectationRetention.md).
 
 Expectation runs at two depths. Low-level located expectation of form, place
-and time runs over the whole field, and its residual reaches the candidate
-scorer as a salience input (`ModelCandidateAttention`, scaled by
+and time runs over the whole field, and its residual reaches the bracket
+chooser through `AttentionContext.context` (scaled by
 `perceptExpectationGain`), as unattended low-level prediction errors do (Kok et
 al. 2012; the mismatch negativity under an unrelated task). Cross-level
 expectation, of an identity or of the next idea, leaves no error signature
@@ -2377,8 +2377,7 @@ and MTM.
 Completed-epoch saves retain its moments even with no continuation cursor.
 Percept content recombines to the exact attended input,
 with its identity Jacobian; the arithmetic `expected + (observed - expected)` is
-also reported so floating-point cancellation is visible. Candidate attention may
-read the signed residual as a feature.
+also reported so floating-point cancellation is visible. The bracket chooser reads the signed residual through its context projection.
 
 The committed inverse starts at completed `SentenceUnderstanding.end_slots` and
 its forest, with live occurrence witnesses for the certified paired surface,

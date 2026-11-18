@@ -473,9 +473,8 @@ order 1 only after local refinement stalls
   above it a sub-concept), and *neither* cues witnessing. The policy owed is
   this second cue: when to stop dividing the reading and refine the concept
   instead, and what counts as persistence (a candidate counter, undecided:
-  the magnitude of definedness, $m = n/(n+k)$). Candidate attention's support
-  mask reads the same pair per candidate, so the policy is a question of
-  training that mask.
+  the magnitude of definedness, $m = n/(n+k)$). The bracket walk already reads the two lanes at each extent.
+  The decision to refine a concept across occurrences remains open.
 
 ### Shared-mode erosion measurement
 

@@ -18,7 +18,7 @@ for each loss; the choice of owners neither requires nor removes it.
 |---|---|---|
 | Understanding parameters: codes, grammar operators and their inverses, conceptual definitions, the compose chooser | Reached by reconstruction R and by the answer side A; A loses only its component that opposes R in each unit | Written only by R-owned costs; the owner-restricted backward excludes supplied-answer gradients |
 | Expectation maps: `expect`'s stack, the sentence and word predictor (`ActivationPredictor`) and the percept predictor | Their own local objectives; sources, targets and consumed forecasts are detached | Same |
-| Candidate attention | Its reading lesson (R) and departure credit (A); consumers detach its output | Its own owner, which also receives the sentence's R and A through the admission read |
+| Bracket and word choices | The reading lesson teaches the native logits. Sampled departures receive whole-path credit. | The context projection has the attention owner. The bracket and grammar scorers use the compose policy. |
 | `intuit`'s stack | Its own term against the detached field the kept thought leaves, and the output cost through the live stack; no reconstruction or expectation gradient | Same |
 
 `separateChooser` defaults to `false` (`data/model.xml`): each sentence takes
@@ -112,7 +112,7 @@ separate over the weights"). Either way each sentence makes one optimizer step.
 | reconstruction | perception codebooks, conceptual definitions, the compose and generate operators, the compose chooser, and every parameter no other owner claims | the input and order-zero reconstruction losses and compose lessons; the chooser rewards (owner `chooser`) use the same parameter set |
 | expectation | the conceptual components (`IndependentComponents`, including the bind resolver `reference_close`), the shared `ActivationPredictor` (`_inter_predictor`) and word predictor, `expect`'s stack (the conceptual space's own `ActivationPredictor` where `expectationMap` is `predictor`) and the percept predictor (`PerceptExpectation`: context and moments update at each arrival, and its parameters receive the accumulated arrival error once, in the sentence's update) | expectation terms whose targets and sources are detached, so a predictor never trains what it predicts; `expect` by omission (`expectation.concepts`); also `expectation.bind_score_function` |
 | output | output space, answer attention and record reader, `intuit`'s stack and the generate policy; named output concepts also own their sparse coefficients | supplied-answer costs; `intuit`'s stack also takes its term against the field the kept thought leaves (`intuition.field`); the generate policy also takes the generate lessons (owner `generate_lesson`) |
-| attention | the candidate attention | `attention.reading_lesson` and `attention.candidate_departure`, plus, in the separate backward, the sentence's R and A through the admission read (`AttentionCredit`, a cotangent to the candidate attention only) |
+| attention | the projection of the understood prefix into the bracket keys | The reading lesson differentiates the bracket logits. With separate ownership its `reading_policy` term reaches the shared chooser and its bracket anchors. |
 
 **Sides.** Compose and thought rewards are
 `output.compose_score_function` and `output.thought_score_function`, owner

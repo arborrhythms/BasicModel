@@ -168,24 +168,16 @@ with its episodic entry beside it (Section 10). A read places only its focus;
 the earlier placements stay as the occupied slots with their `.where`/`.when`
 stamps, and the read's mask is its candidate's support (below).
 
-**Candidate support (2026-10-09).** Attention is a mask, not a
-derivation: an item is admitted or not, and the derivation it feeds is
-committed hard. Structural relations are exact masks that need no learning
-(in this word, sentence or document by the address bands; recency on
-`.when`; distance on `.where`); only relevance is learned. `CandidateAttention`
-is the relevance scorer: one shared MLP (`Linear`, `Tanh` and a
-zero-initialized readout, the additive form of Bahdanau attention) gives one
-score per unread supported candidate, from a detached context that
-`ModelCandidateAttention.context` assembles: the located activation after
-spreading (activation times priming heat) and the heat itself, each item's
-first and last time, the expectation prime and the percept expectation
-residual, the part and whole keys, the occupied STM slots with their places,
-times, salience and read stamps, and the needs (the open reference's query,
-or the part a lesson names, and the gist). One hard choice supplies one word
-read and one grammar step, and no pathwise derivative is fabricated through
-it. The whole-path comparison credits the choice (attention is one of the
-walks a path can depart in), and a part lesson that names the part to read
-trains the scorer by cross-entropy.
+**Bracket choice and word support.** The bracket chooser scores legal
+looks. `AttentionContext.context` projects the current detached inputs
+into its keys. These inputs include the part and whole keys, priming
+heat, the expectation at each conceptual order, the percept residual,
+the occupied STM slots and their places and times, the open need and
+the gist. At a look with one word on one lane, the grammar can
+interpret that word or abstain. Interpretation supplies one word to
+the grammar. Whole-path comparison credits departures in these choices.
+During the reading lesson each taught focus and grammar decision
+contributes its cross entropy.
 
 The candidate's native paired evidence is its support mask, including
 negative evidence; zero means no evidence, and `hetTolerance` acts on these
@@ -412,8 +404,8 @@ fixated region) without changing the rest of the pipeline.
 
 **Hardcoded masks.** Both masks are **hardcoded** (Gaussian centring fixed
 at the current word; taxonymic admissibility read structurally from the
-codebook's category / order metadata). The learned part of attention is the
-candidate relevance scorer over supported candidates (Section 1).
+codebook's category / order metadata). The bracket chooser scores the legal acts using its slot keys and
+the detached sentence prefix (Section 1).
 
 ---
 

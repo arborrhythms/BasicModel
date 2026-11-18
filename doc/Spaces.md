@@ -1470,8 +1470,8 @@ copy with changed memberships or observations is retained (competing changed
 inventories are rejected), and later symbol and conceptual addresses move
 down by the removed copies' capacity, with the persisted location bands
 translated and identity and occurrence keys keeping their meaning. The
-candidate-attention reader is rebuilt for its new input geometry and starts
-fresh, while the retained inventory keeps its optimizer state.
+bracket-context projection starts at zero when loading the former attention
+scorer. The retained inventory keeps its optimizer state.
 
 See [Philosophy.md](Philosophy.md), [Logic.md](Logic.md),
 [Mereology.md](Mereology.md), and [Language.md](Language.md).

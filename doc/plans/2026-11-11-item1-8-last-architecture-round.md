@@ -27602,6 +27602,322 @@ I read all 15 affected production grammars through the actual loader, including 
 
 The added verbal-XOR mechanism test first failed with eligibility **[false, false]** for a pure and an ineligible place. It now gets **[true, false]**. Those assertions and both stopping gates gave **3 passed in 4.30 s**. The first verbal-proof setup subsequently exposed a second producer. A compose-only grammar derives its generate catalogue. That builder included mandatory lexical naming as a structural unary, then called its inverse with only a point. The native reader requires the terminal's word bank. Grammars with an explicit generate catalogue already omit mandatory operations from that menu. I applied the same declared property to the implicit catalogue, on my recommendation under §73. The expanded test saw `interpret` in the structural unary menu before the repair and passed in **3.35 s** after it. The Boolean binary operations remain available. Lexical naming keeps its existing terminal reader.
 
+### 61.15 Readers and test contracts
+
+| Reader | Earlier input | Input on this loop |
+| --- | --- |
+| Models._run_sentence_word_bricks | Completed attention walk and bricks for every word | Looks.run yields each interpreted native place. The cached first brick is shared across paths. |
+| SentenceField.arrive and remember | The whole candidate field followed by its separate traversal | The one interpreted occurrence, its native poles and span. The grammar journal transports those witnesses. |
+| WordExpectation and the concept word column | A forecast computed over the source sentence before the walk | WordArrivals predicts from the prefix before adding the discovered word. Each path advances its own prefix. |
+| OperationSelectionLayer.attend | Bracket keys independent of the composed prefix | Bracket keys plus AttentionContext.context. The zero-initialized projection receives detached inputs. |
+| WholePaths and SentenceCredit | A candidate-reader departure in addition to the grammar and bracket walks | The actual bracket act or grammar interpretation can depart. Their action index, stream, probability and replay prefix identify it. |
+| QueryWorkBudget and SentenceBoundary | Fresh capacity for each sentence, or a depleted presentation meter | One meter per stream for its present sentences. Query and thought draw from the remaining work. |
+| AttentionLesson, Assessment, curriculum and timing observers | A traversal of candidate placements and a word declared accepted by attention | Real focus and grammar decisions, native place, teaching loss, remaining allowance and look scope. |
+| load_weights and checkpoint_migrations | Candidate MLP and the acceptance action at address 2 | Named retirement of the scorer, fresh projection and unfocus anchor. Regeneration is available when learned identities cannot migrate. |
+
+**Test contracts retired by §60.1 rules 5, 8, 9 and 14.** Counts below are named functions before parametrization.
+
+| File | Former tests | Replacement |
+| --- | --- | --- |
+| test_attention_thinking_handoff.py | `test_isolated_accepted_word_can_be_read_before_the_walk_finishes`, `test_earlier_field_scope_waits_for_the_later_words_descent`, `test_another_occurrence_can_change_an_already_accepted_identity` | Stability tests waited for future attention rounds. Certificates 1–4 now examine the actual field and word handoff at the look that reaches the word. |
+| test_attention_traversal.py | `test_disabled_reads_source_order_once_and_enabled_uses_candidate_scores`, `test_no_evidence_is_ineligible_but_against_only_is_supported`, `test_uniform_candidate_departure_reaches_the_only_alternative_and_is_credited`, `test_budget_counts_reads_and_does_not_change_the_lanes` | The separate reader chose one supported candidate per iteration and charged for reading it. Certificates 3, 4, 8 and 10 now exercise grammar abstention, both pure lanes, one shared allowance and actual departure probabilities. |
+| test_candidate_attention.py | `test_layer_scores_one_value_per_candidate_and_keeps_reader_inputs_fixed`, `test_scorer_compiles_with_ordinary_parameter_gradients`, `test_retained_two_word_scorer_preserves_candidate_differences`, `test_shared_context_magnitude_cannot_saturate_the_retained_scorer`, `test_support_admits_negative_evidence_and_zero_has_no_pathwise_choice_gradient`, `test_invalid_scorer_width` | The second MLP had its own width, gradients and saturation tests. Certificate 5 and the native attention tests now exercise the shared chooser, the detached prefix projection, its learning and its checkpoint. |
+| test_item4_review.py | `test_expectation_free_placement_is_independent_of_forecasts_and_percept_moments` | The older contract required placement to ignore forecasts. Rule 9 includes expected activation and percept residual in the bracket key. The zero-gain content and detached-prime tests still run. |
+| test_native_attention_field.py | `test_native_candidate_departure_credits_only_scorer_parameters` | The departure used to reach the second scorer alone. Certificate 10 now exercises the native grammar and bracket choices and their replay. The native lesson test checks the actual parameter writer. |
+| test_sweep_attention_storage.py | `test_shared_reader_matches_dense_scores_and_every_parameter_gradient`, `test_native_reader_does_not_retain_repeated_context_for_each_candidate`, `test_reader_input_reuse_keeps_the_original_parameter_gradient` | The removed scorer could repeat one context for each candidate. Rule 9 projects the prefix once per decision. The context reader and checkpoint tests now exercise the projection. |
+
+There are **18** retired functions in these six files. Two further names changed. `test_69_focus_and_mint_keep_the_existing_candidate_effects` became `test_69_focus_splits_the_existing_bracket_at_one_act`. Its old acceptance assertion is now the grammar-only interpretation and charged-unfocus assertion of certificates 4 and 9. `test_pinned_masks_known_word_never_descends_and_wide_never_glosses` became `test_pinned_masks_known_word_never_descends_and_wide_never_interprets`, retaining its legality checks.
+
+**Ported test assertions.** Names below identify the tests; their file is in the first column.
+
+| File | Tests | Earlier assertion or setup and its replacement |
+| --- | --- | --- |
+| test_assessment.py | `test_ladder_checks_earlier_rungs_without_supplying_a_tree`, `test_probe_restores_memory_clocks_parameters_and_random_streams` | The recorded action label for a word now comes from grammar interpretation. Probe restoration and the ladder assertions stay. |
+| test_attention_thinking_steps.py | `test_public_steps_equal_every_base_field_and_replay_stream`, `test_empty_walk_preserves_the_base_optional_fields`, `test_exhausted_walk_skips_chooser_work_but_keeps_the_full_base_carrier`, `test_captured_stop_keeps_discrete_bits_and_policy_gradients` | The public and captured walkers are compared on the new action meanings and their RNG stream. A stopped walk makes zero additional chooser draws. |
+| test_final_generation.py | `test_retired_percept_gain_handoff_has_no_reader` | The source read for the retired gain handoff is now AttentionContext. |
+| test_item18_operators_a.py | `test_69_complete_inventory`, `test_69_focus_splits_the_existing_bracket_at_one_act` | Admission leaves the field menu. The two focus addresses retain their effects and address 2 is unfocus. |
+| test_item20_round2_memory.py | `test_migration_selects_the_changed_copy_and_merges_host_extras`, `test_migration_keeps_corpus_continuation_owners_and_selected_optimizer_slots` | Whole-space migration aligns the retained percept tables. Retirement of a saved candidate scorer belongs to the model loader. The replacing projection starts with fresh optimizer moments. |
+| test_item4_parity.py | `test_parity_configuration_removes_selection_prime_without_muting_the_predictor` | The test reads the detached prefix at the projection input in place of reading inputs assembled for the candidate scorer. |
+| test_item4_review.py | `test_native_s_gain_uses_raw_arrival_and_p_preserves_the_full_payload` | The test controls native word arrival while checking the raw word gain and the full percept payload inside the ordinary sentence session. |
+| test_mtm_reference_values.py | `test_second_sentence_composes_the_name_after_kept_close_moves_placement` | The test fixes source-order arrival before it checks the name after its placement moved. |
+| test_native_attention_field.py | `test_native_reads_one_supported_word_and_charges_only_kept_trial`, `test_new_run_resets_trial_scratch_even_if_the_body_raises`, `test_trial_leaf_mask_does_not_leak_to_the_next_trial_or_commit`, `test_reversed_candidate_reads_keep_native_field_order_without_teacher` | The tests exercise actual address and grammar choices, mask restoration and reversal of word discovery. Only the kept trial is charged. |
+| test_native_candidate_attention.py | `test_attention_priming_read_never_resizes_or_republishes_its_source`, `test_native_attention_checkpoint_and_missing_legacy_parameters` | Priming reads the existing heat view. The checkpoint restores the projection and its optimizer and warns about obsolete scorer weights. |
+| test_one_attention.py | `test_pinned_masks_known_word_never_descends_and_wide_never_interprets`, `test_optional_field_choices_cannot_exhaust_the_word_completion_deadline`, `test_normal_model_opens_narrows_and_scores_word_expectation`, `test_bracket_candidates_are_grammar_declared_field_operations_without_generate`, `test_shared_meter_cannot_replenish_between_input_and_thought`, `test_unknown_repeated_word_has_one_byte_descent`, `test_native_attention_keeps_every_complete_letter_run`, `test_field_operation_changes_the_next_mask_and_children_read_native_poles`, `test_divide_isolates_impure_first_word_and_reaches_pure_neighbors` | The pure word can be interpreted by grammar. A field act, split or descent spends work. Complete native spans, the uncharged grammar handoff, original examination-only model and predictor gradients on arrivals are asserted. |
+| test_one_backward.py | `test_bands_and_intuition_receive_exactly_their_own_terms_in_one_surrogate` | The parameter whose objective is attention is the live prefix projection. |
+| test_one_backward_standing.py | `test_native_packing_after_training_with_selected_backward` | The controlled arrival order uses the actual chooser when comparing gradient ownership and packed sentences. |
+| test_operators_final_b.py | `test_both_training_trials_share_bootstrap_snapshot` | The expected number of path-cost reads follows the three surviving reading-side departure choices. The two downstream fixtures in §61.21 now take their prescribed grammar interpretations before asserting snapshot and inverse results. |
+| test_packed_reconstruction_parity.py | `test_native_packing_preserves_each_sentence_and_owned_program` | The native test fixes the same source-order word arrival on single-sentence and packed presentations. |
+| test_reading_curriculum.py | `test_lesson_cross_entropy_teaches_named_support_without_a_choice_derivative`, `test_reading_lesson_resolves_named_occurrences_and_restores_after_exception`, `test_native_lesson_teaches_scorer_and_keeps_one_word_per_read`, `test_native_four_word_inverse_follows_composed_children_without_free_decoder`, `test_supplied_text_reader_preserves_shared_work_spent_during_sentence_scoring`, `test_curriculum_gate_counts_one_word_only_for_active_rows`, `test_order_lesson_gate_reports_list_inverse_separately`, `test_prompt_need_reaches_existing_input_without_an_answer_or_action_target` | The lesson tests the native logits and their cross entropy, named occurrences, the kept path, one word per arrival, shared work and reconstruction. |
+| test_relevance_bases.py | `test_native_attention_reads_canonical_whole_heat_by_stream` | The attention context reads the canonical whole-space heat from the same inventory in each stream. |
+| test_sentence_owned_attention.py | `test_sentence_preparation_does_not_walk_or_publish_admission`, `test_non_sentence_configuration_keeps_one_staged_charged_walk` | Opening alone admits zero words. After a legal focus, grammar marks the pure word read. An examination-only grammar spends the recorded work without interpreting a word. |
+| test_whole_path_repairs.py | `test_two_explore_paths_credit_their_own_compose_and_attention_state` | The original and alternative read the attention state belonging to that path. |
+| test_whole_paths.py | `test_kept_verbal_output_reaches_the_live_understanding_and_conditioner`, `test_unsupervised_report_uses_the_kept_thought_and_stays_silent` | Controlled downstream tests obtain their words from native grammar decisions instead of disabling the deleted candidate scorer. |
+
+`test_item55_mechanisms` also ports its shared fixture helpers for native batch interleaving and inverse comparisons. `test_attention_thinking_certificate` and `sentence_host_inventory` time the actual look loop. The measured steps and interpreted word places come from its calls and arrivals.
+
+### 61.16 The name census
+
+Across tracked text in `bin/`, `test/`, `data/` and the top-level `doc/*.md` the case-insensitive substring census changed from **1,183** matches in **186** files to **1,124** in **165**. By directory, the counts are **195 → 185**, **403 → 392**, **423 → 406** and **162 → 141**, respectively. The census includes longer identifiers, generated evaluation cases, and incidental spellings. The source that precedes the loop is `0ccd655615`.
+
+| Former processing spelling or phrase | Occurrences | Disposition |
+| --- | ---: | --- |
+| Field rule `mint.forward(F)` | 16 | Removed in all 15 production grammars and the historical test grammar. Its former slot can undo a focus. Grammar interpretation uses the symbol operation. |
+| Operator name `mint` in the grammar registry, phase set, extension and layer rules | 4 | Removed from the examination family. |
+| Test fixture/operator-menu name `mint` | 3 | Replaced by focus/unfocus or by the grammar interpretation assertion. |
+| Prose naming the word-processing operation | 20 | Architecture 7, Extend 1, FutureWork 7, Language 5. The bracket selects a look and grammar interprets the word. |
+| `MintLayer` | 4 | Class, registration, test import and action assertion removed. |
+| `minted` | 10 | Assessment action once, probe checks and failure text three times, ladder twice, fixture once, previous acceptance result three times. |
+| `minting` known units | 1 | Interpreting those units in the proposed wider look. |
+| `test_69_focus_and_mint_keep_the_existing_candidate_effects` | 1 | Renamed and ported as above. |
+
+The retained occurrences are listed below by exact token and multiplicity. The grammar mode and evaluation family that create a referent, and the code and prose that create concept, object or memory identities, retain their names. The word in `data/games/inventory.json` is a corpus word. `Mintz` is an author surname (3) and `SymInt` is a PyTorch type (5).
+
+| Retained spelling | Count | Retained spelling | Count |
+| --- | ---: | --- | ---: |
+| `Mint` | 8 | `selected_mint` | 1 |
+| `Minting` | 1 | `test_75_full_order_block_raises_before_minting` | 1 |
+| `Mintz` | 3 | `test_ambiguous_named_promotion_fails_before_minting` | 1 |
+| `SymInt` | 5 | `test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised` | 1 |
+| `_mint` | 6 | `test_both_corner_refines_and_cannot_mint_until_it_leaves_the_horizon` | 1 |
+| `_mint_chain` | 4 | `test_concept_id_capacity_failure_is_atomic_and_activates_before_mint` | 1 |
+| `_mint_field` | 22 | `test_count_mints_once_with_weighted_definition_form_and_released_transient` | 1 |
+| `_mint_order0` | 2 | `test_default_interpret_reuses_existing_kind_without_minting` | 1 |
+| `_mint_row` | 76 | `test_existing_candidate_is_used_across_two_epochs_without_remint` | 1 |
+| `_minted_cs` | 4 | `test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage` | 3 |
+| `allow_mint` | 2 | `test_forming_candidates_does_not_mint_or_write_memory_after_setup` | 1 |
+| `columns_minted` | 3 | `test_live_mint_rekeys_pending_and_completed_definitions` | 1 |
+| `conceptMintCount` | 13 | `test_masked_mint_extends_bits_and_has_declared_quadruple_fallback` | 1 |
+| `conceptMintThreshold` | 1 | `test_mint_frozen_idempotent` | 1 |
+| `concept_mint_count` | 24 | `test_mint_has_one_view_and_for_radius_with_zero_against` | 1 |
+| `independenceMintThreshold` | 5 | `test_mint_rekeys_existing_word_and_checkpoints_without_global_rng` | 1 |
+| `mint` | 391 | `test_mint_threshold_duplicate_witness_and_relevance_do_not_delete_columns` | 1 |
+| `mint_awaits_row_write` | 3 | `test_mint_uses_the_selected_member_order_instead_of_the_source_word_order` | 1 |
+| `mint_bind` | 260 | `test_mint_without_occurrence_store_keeps_the_landed_contract` | 1 |
+| `mint_count` | 7 | `test_native_individual_mint_and_bind_share_an_occurrence_keyed_value` | 1 |
+| `mint_frozen_concept` | 8 | `test_nested_unknown_terminal_keeps_its_word_without_minting` | 1 |
+| `mint_not_retained_in_written_clause` | 2 | `test_new_referent_closes_as_an_unminted_occurrence` | 1 |
+| `mint_order` | 4 | `test_observer_reports_discarded_mint_and_unadmitted_leaf_by_reason` | 1 |
+| `mint_pairs` | 1 | `test_one_empty_region_query_permits_conclude_and_only_source_mints` | 1 |
+| `mint_records` | 1 | `test_open_pass_reads_once_before_composition_and_never_mints` | 1 |
+| `mint_reference` | 4 | `test_property_passes_never_mint_symbolic_word_winners` | 1 |
+| `mint_threshold` | 15 | `test_reference_closing_reads_surface_meaning_and_never_mints_a_relation_address` | 1 |
+| `minted` | 116 | `test_repeated_word_is_not_reminted` | 1 |
+| `minted_once` | 1 | `test_same_close_alias_charges_the_bound_mention_and_not_the_mint` | 1 |
+| `minting` | 24 | `test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding` | 1 |
+| `mints` | 61 | `test_surface_phrase_keeps_the_unknown_head_word_without_minting` | 1 |
+| `observed_mint` | 2 | `test_unary_lowering_reads_existing_order_without_minting_a_composing_argument` | 1 |
+| `reminting` | 1 | `test_unminted_value_and_anonymous_name_have_distinct_pending_state` | 1 |
+| `require_selected_mint` | 2 | `unminted` | 7 |
+
+### 61.17 The native lesson, the look fields and the sixteen timed sentences
+
+On explore-1 the two four-epoch lesson phases gave **158/160** exactly equal fields, mean absolute difference **0.0038723619654774666**. All 158 equal pairs had two empty fields. Both nonempty comparisons differed. At presentation 8, comprehension stated one row (119) and generation stated 13. At presentation 23, comprehension stated one row (116) and generation stated 12. The last row occupancies were **35/2346, 73/1239, 27/610**. In §59.82 the lesson gave **21/160**, difference **0.20900825535936746** and occupancies **52/2346, 113/1239, 27/610**. The first field is the one the kept compose operators left at comprehension. The second is the field the generated operators left. The native chooser can now abstain at a word. The measurements below show how often words reached the held-out trees.
+
+| Question phase | Questions | Correct bindings | Nonempty answers | Exact answer text |
+| --- | --- | --- | --- | --- |
+| ideas | 32 | 0 | 0 | 0 |
+| relations | 48 | 0 | 0 | 0 |
+
+The opening reads all native word extents together. A selected look reads one extent per active row. Each bin below counts a pair of integers (number of whole properties with both lanes, number of basic percepts with both lanes). A key is counted once per extent. These measurements were passive.
+
+| Read | Look events | Extents | (0,0) | (1,0) | (2,0) | (3,0) | (1,1) | (2,1) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| training, opening | 160 | 704 | 390 | 152 | 96 | 0 | 34 | 32 |
+| training, selected | 10240 | 10240 | 3878 | 4160 | 1140 | 826 | 157 | 79 |
+| assessment, opening | 45 | 184 | 63 | 68 | 45 | 0 | 4 | 4 |
+| assessment, selected | 1440 | 1440 | 142 | 1141 | 0 | 150 | 4 | 3 |
+| ladder, opening | 3 | 3 | 0 | 3 | 0 | 0 | 0 | 0 |
+| ladder, selected | 96 | 96 | 0 | 96 | 0 | 0 | 0 | 0 |
+
+The sixteen-sentence comparison uses §51.9’s saved initial random stream. Each new walk made 32 calls to attend and saw 33 looks including the opening. The earlier instrument counted bracket steps. It did not record separate perceptions at those steps. Word counts include both paths actually executed.
+
+| Sentence | §51 walks | §51 steps | §51 words | §51 seconds | Walks | Looks | Attend calls | Words | Seconds |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| This is Felix. | 1 | 13 | 2 | 2.2248 | 2 | 66 | 64 | 1 | 2.4638 |
+| What is this? | 2 | 23 | 6 | 1.6774 | 2 | 66 | 64 | 0 | 1.7899 |
+| That is Ciao. | 1 | 13 | 2 | 1.6259 | 2 | 66 | 64 | 1 | 1.9837 |
+| What is that? | 1 | 11 | 3 | 1.3426 | 2 | 66 | 64 | 0 | 1.7003 |
+| Here is Felix. | 1 | 13 | 2 | 2.0568 | 2 | 66 | 64 | 1 | 1.9602 |
+| Who is here? | 2 | 22 | 6 | 2.3210 | 2 | 66 | 64 | 1 | 1.9201 |
+| There is Ciao. | 1 | 13 | 2 | 1.3535 | 2 | 66 | 64 | 1 | 1.9359 |
+| Who is there? | 1 | 11 | 3 | 1.8403 | 2 | 66 | 64 | 0 | 1.7045 |
+| That is Felix. | 1 | 13 | 2 | 1.5660 | 2 | 66 | 64 | 1 | 2.1505 |
+| What is that? | 1 | 11 | 3 | 1.4527 | 2 | 66 | 64 | 0 | 2.1909 |
+| This is Ciao. | 1 | 13 | 2 | 1.0392 | 2 | 66 | 64 | 0 | 2.0771 |
+| What is this? | 1 | 11 | 3 | 1.8081 | 2 | 66 | 64 | 0 | 2.0808 |
+| Here is Ciao. | 1 | 13 | 2 | 1.2149 | 2 | 66 | 64 | 1 | 2.1899 |
+| Who is here? | 1 | 11 | 3 | 2.1931 | 2 | 66 | 64 | 0 | 2.0321 |
+| There is Felix. | 1 | 13 | 2 | 1.2259 | 2 | 66 | 64 | 0 | 2.0661 |
+| Who is there? | 1 | 11 | 3 | 2.3036 | 2 | 66 | 64 | 1 | 2.3030 |
+
+Totals were **18 walks, 215 steps, 46 word arrivals, 27.245997 s** in §51 and **32 walks, 1,056 looks, 1,024 attend calls, 8 interpretations, 32.548962 s** here. The eight words occurred on alternative paths. The corresponding runner times were **29.089240 s** and **33.385730 s**. The paths taken differ, so the elapsed times cover different work.
+
+### 61.18 The assessments, including the disposition of each word
+
+Across the 45 lesson probes all 184 places were left and all 45 kept trees were empty. The letters attached to each surface below are read from its own trace. **D** means the grammar was offered that word and declined it. **B** means it was isolated with both lanes active and had no offer. **N** means it never became a look by itself. Punctuation is included. The native span and the active selected extent supply the comparison.
+
+| Probe | Places in order |
+| --- | --- |
+| 1 | This(D) is(N) Felix(N) .(N) |
+| 2 | What(D) is(N) this(N) ?(N) |
+| 3 | That(D) is(N) Ciao(N) .(N) |
+| 4 | What(D) is(N) that(N) ?(N) |
+| 5 | Here(D) is(N) Felix(N) .(N) |
+| 6 | Who(D) is(N) here(N) ?(N) |
+| 7 | There(D) is(N) Ciao(N) .(N) |
+| 8 | Who(D) is(N) there(N) ?(N) |
+| 9 | That(D) is(N) Felix(N) .(N) |
+| 10 | This(D) is(N) Ciao(N) .(N) |
+| 11 | Here(D) is(N) Ciao(N) .(N) |
+| 12 | There(D) is(N) Felix(N) .(N) |
+| 13 | Felix(D) is(N) a(N) cat(N) .(N) |
+| 14 | What(D) is(N) Felix(N) ?(N) |
+| 15 | Ciao(D) is(N) a(N) cat(N) .(N) |
+| 16 | Is(B) Ciao(D) a(N) cat(N) ?(N) |
+| 17 | A(B) cat(D) lives(N) .(N) |
+| 18 | Is(B) Felix(D) a(N) cat(N) ?(N) |
+| 19 | What(D) is(N) Ciao(N) ?(N) |
+| 20 | A(B) cat(D) moves(N) .(N) |
+| 21 | A(B) cat(D) sleeps(D) .(N) |
+| 22 | A(B) cat(D) eats(N) .(N) |
+| 23 | is(D) Ciao(D) Felix(N) .(N) |
+| 24 | Felix(D) is(N) Ciao(N) .(N) |
+| 25 | is(D) Felix(D) Felix(N) .(N) |
+| 26 | Felix(D) is(N) Felix(N) .(N) |
+| 27 | is(D) Here(D) Felix(N) .(N) |
+| 28 | Felix(D) is(N) Here(N) .(N) |
+| 29 | is(D) Is(B) Felix(D) .(N) |
+| 30 | Felix(D) is(N) Is(N) .(N) |
+| 31 | is(D) That(D) Felix(N) .(N) |
+| 32 | Felix(D) is(N) That(N) .(N) |
+| 33 | is(D) There(D) Felix(N) .(N) |
+| 34 | Felix(D) is(N) There(N) .(N) |
+| 35 | is(D) This(D) Felix(N) .(N) |
+| 36 | Felix(D) is(N) This(N) .(N) |
+| 37 | is(D) What(D) Felix(N) .(N) |
+| 38 | Felix(D) is(N) What(N) .(N) |
+| 39 | is(D) Who(D) Felix(N) .(N) |
+| 40 | Felix(D) is(N) Who(N) .(N) |
+| 41 | is(D) is(D) Felix(D) .(N) |
+| 42 | Felix(D) is(N) is(N) .(N) |
+| 43 | is(D) this(D) Felix(N) .(N) |
+| 44 | Felix(D) is(N) this(N) .(N) |
+| 45 | is(D) Felix(D) This(N) .(N) |
+
+The trace totals are 59 offered and declined, 7 isolated on both lanes, and 118 never isolated. The last group includes 72 pure word places, 45 punctuation places without a native word field, and one both-lane place. The both-lane word/object sources observed were as follows.
+
+| Word | For | Against |
+| --- | --- | --- |
+| A | word 135 (row 26) | word 135 (row 26) |
+| Is | word 136 (row 27) | word 136 (row 27) |
+
+The following table gives every source’s rung 1 through rung 9. F is failed, B is blocked by a prerequisite and a dash is unavailable. Each failed probe was read three times. All three repetitions left the listed word and returned an empty tree. A fixture with nine dashes had no applicable taught vocabulary. In §59.82 eight sources passed rung one, one failed and 23 were unavailable. Here zero pass, nine fail and 23 are unavailable.
+
+| Source | Rungs 1–9 | Failed one-word reading |
+| --- | --- | --- |
+| explore-1 after four epochs | F B B B – – B – – | Felix, offered 33/33/33 times, missing trusted definition |
+| test_item18_expect.py::test_81_expectation_restores_the_omitted_native_word | F – – – – – – – – | alpha, offered 33/33/33 times |
+| test_item18_expect.py::test_82_omission_is_the_only_teacher_and_consumers_detach[predictor] | F – – – – – – – – | alpha, offered 33/33/33 times, missing trusted definition |
+| test_item18_expect.py::test_82_omission_is_the_only_teacher_and_consumers_detach[sigmaPi] | F – – – – – – – – | alpha, offered 33/33/33 times, missing trusted definition |
+| test_item18_expect.py::test_82_omission_teacher_keeps_the_staged_input_bracket | – – – – – – – – – | No applicable reading |
+| test_item18_intuit.py::test_83_an_unseen_conclusion_still_needs_inference | – – – – – – – – – | No applicable reading |
+| test_item18_intuit.py::test_84_intuit_reads_once_at_observation_and_no_relation_row | F – – – – – – – – | alpha, offered 33/33/33 times, missing trusted definition |
+| test_item18_intuit.py::test_85_infer_keeps_the_old_three_rule_supports | – – – – – – – – – | No applicable reading |
+| test_item18_intuit.py::test_infer_ordinary_derivation_does_not_claim_a_knowing_deposit | – – – – – – – – – | No applicable reading |
+| test_item18_lexical_form.py::test_91_reading_and_free_generation_take_the_mapped_words_form[aligned] | F – – – – – – – – | hello, offered 33/33/33 times |
+| test_item18_lexical_form.py::test_91_reading_and_free_generation_take_the_mapped_words_form[mixing] | – – – – – – – – – | No applicable reading |
+| test_item18_lexical_form.py::test_91_spelling_presence_reads_form_and_keeps_its_gradient | F – – – – – – – – | wug, offered 33/33/33 times |
+| test_item18_marker.py::test_86_compose_and_generate_choose_each_kernel | – – – – – – – – – | No applicable reading |
+| test_item18_marker.py::test_86_marker_preserves_form_and_has_an_exact_selected_inverse | – – – – – – – – – | No applicable reading |
+| test_item18_marker.py::test_86_pinned_sentence_keeps_the_selected_kernel | – – – – – – – – – | No applicable reading |
+| test_item18_marker.py::test_86_retired_unary_case_has_no_grammar_and_compound_stays | – – – – – – – – – | No applicable reading |
+| test_item18_placement.py::test_91_classes_have_no_form_and_are_placed_by_the_same_context | – – – – – – – – – | No applicable reading |
+| test_item18_placement.py::test_91_context_includes_the_present_tokens_types_before_likeness | – – – – – – – – – | No applicable reading |
+| test_item18_placement.py::test_91_observed_formal_membership_is_also_a_field_definition | – – – – – – – – – | No applicable reading |
+| test_item18_placement.py::test_91_one_step_uses_only_context_and_negatives_of_the_rows_order | – – – – – – – – – | No applicable reading |
+| test_item18_recognition.py::test_scalar_percept_and_its_collection_restore_with_their_typed_references | – – – – – – – – – | No applicable reading |
+| test_item18_stack.py::test_79_stack_construction_leaves_the_global_draw_unchanged | – – – – – – – – – | No applicable reading |
+| test_item18_stack.py::test_79_stack_learns_the_four_disjoint_word_combinations | – – – – – – – – – | No applicable reading |
+| test_item18_stack.py::test_79_stages_are_the_shared_pi_and_sigma_layers | – – – – – – – – – | No applicable reading |
+| test_item18_stack.py::test_80_numeric_certificate_keeps_its_bar_with_the_stack_built | – – – – – – – – – | No applicable reading |
+| test_item18_word_trust.py::test_88_derived_code_reads_do_not_rebuild_definition_index | F – – – – – – – – | alpha, offered 33/33/33 times |
+| test_item18_word_trust.py::test_88_read_word_fixes_its_objects_radius_without_freezing_its_content | – – – – – – – – – | No applicable reading |
+| test_item18_word_trust.py::test_88_scalar_definition_reads_one_after_the_same_six_views | F – – – – – – – – | alpha, offered 33/33/33 times |
+| test_item18_word_trust.py::test_88_stated_definition_keeps_the_callers_trust[0.0] | – – – – – – – – – | No applicable reading |
+| test_item18_word_trust.py::test_88_stated_definition_keeps_the_callers_trust[0.75] | – – – – – – – – – | No applicable reading |
+| test_item18_word_trust.py::test_89_expectation_selects_among_orders_and_is_local_to_the_stream | – – – – – – – – – | No applicable reading |
+| test_item18_word_trust.py::test_89_written_prediction_is_local_across_constructed_streams | – – – – – – – – – | No applicable reading |
+
+### 61.19 Reading curriculum and its control
+
+Each stage ran its original 64 presentations of four streams, in curriculum order, with the same Adam setting 0.01. The enabled model’s two-word reading changed from zero exact grammar readbacks to four. Its four-word reading already had four exact readbacks on entry and kept all four. The stage also requires final lesson cross entropy at most 0.01 per row and a strict decrease of its sum since the first presentation. This last condition failed on reading_four.
+
+| Mode | Stage | Grammar readbacks | Free readbacks | Sum of first → last CE | Stage | Seconds |
+| --- | --- | --- | --- | --- | --- | --- |
+| disabled | reading_two | 4/4 → 4/4 | 4/4 → 4/4 | 4.01350403 → 0.0204261267 | pass | 195.606 |
+| disabled | reading_four | 4/4 → 4/4 | 4/4 → 4/4 | 0.0170679577 → 0.00151605823 | pass | 393.763 |
+| enabled | reading_two | 0/4 → 4/4 | 4/4 → 4/4 | 4.0127666 → 2.61063956e-05 | pass | 197.805 |
+| enabled | reading_four | 4/4 → 4/4 | 4/4 → 4/4 | 4.01728422e-05 → 0.000587228817 | fail | 635.048 |
+
+Final enabled per-row CE was **0.000000477, 0.000008523, 0.000008553, 0.000008553** on two words and **0.000146822, 0.000148089, 0.000145973, 0.000146345** on four. Both stages were interpretable against their passing controls. Each had zero attempted or kept departures. In the preparatory stages, identity permanence failed in both modes. Identifying words passed in the disabled control and failed in the enabled model. The curriculum’s whole-checkout start/end signature differed while other grammars and test ports were being completed. Both models used their generated point-only grammar with explicit generation throughout. The receipt is retained as run.
+
+### 61.20 Implementation by file and function
+
+The function inventory compares the loop against the accepted stem port. It includes methods whose callers or public result fields changed. The stem and its interval readers are recorded in §§61.3–61.4.
+
+| File | Methods added, changed or removed |
+| --- | --- |
+| bin/Assessment.py | changed `_attention_trace`, `read_sentence` |
+| bin/AssessmentProbe.py | changed `_checks` |
+| bin/Attention.py | added `focus_cuts`, `focus_history`, `interpretation_at`, `last_focus`, `narrowing_view`, `record_interpretation`<br>changed `BracketTable.open`, `BracketTable.remaining`, `BracketTable.split`, `_captured_narrowing`, `finish_narrowing`, `narrow_step`, `narrow_words`, `narrowing_mask`, `open_narrowing`<br>removed `BracketTable.accept`, `advance_narrowing`, `narrowing_stable` |
+| bin/AttentionContext.py | added `_fit`, `_heat`, `_needs`, `context`, `install` |
+| bin/AttentionLesson.py | added `ReadingLesson.positions`, `ReadingTargets.__init__`, `ReadingTargets.book`, `ReadingTargets.cost`, `ReadingTargets.focus`, `ReadingTargets.next`<br>removed `ReadingLesson.target` |
+| bin/AttentionTraversal.py | removed `FieldTraversal.__init__`, `FieldTraversal.active`, `FieldTraversal.admission`, `FieldTraversal.report`, `FieldTraversal.select` |
+| bin/CandidateAttention.py | removed `CandidateAttention.__init__`, `CandidateAttention._load_from_state_dict`, `CandidateAttention.forward`, `CandidateAttention.migrate_expectation_checkpoint`, `_ReaderAffine.backward`, `_ReaderAffine.forward`, `_ReaderLinear.forward` |
+| bin/Extension.py | Removed the retired attention operation from CONTENT. |
+| bin/GrammarConceptCheckpoint.py | changed `prepare` |
+| bin/GrammarPhases.py | EXAMINATION now declares focus and unfocus. |
+| bin/Language.py | added `OperationSelectionLayer.choose_interpret`<br>changed `LanguageSpace.__init__`, `OperationSelectionLayer.attend` |
+| bin/Layers.py | changed `GrammarLayer.__init__` |
+| bin/ModelAttention.py | changed `stage_input`<br>removed `SentenceNarrowing.for_restore`, `SentenceNarrowing.for_word` |
+| bin/ModelCandidateAttention.py | removed `_fit`, `_heat`, `_needs`, `context`, `install` |
+| bin/Models.py | changed `BaseModel.create_from_config`, `BaseModel.getOptimizer`, `BaseModel.load_weights`, `BaseModel.objective_parameter_groups`, `BasicModel._compose_score_function_loss`, `BasicModel._run_sentence_word_bricks`, `BasicModel._sentence_run` |
+| bin/ObjectiveOwnership.py | changed `backward_owned`, `term_owner` |
+| bin/QueryWork.py | added `QueryWorkBudget.size_for_presentation`<br>changed `QueryWorkBudget.from_brackets` |
+| bin/SentenceAttention.py | added `SentenceField.arrive`<br>changed `SentenceField.__init__`, `SentenceField.report`, `SentenceField.source_order`<br>removed `SentenceField.lesson_cost`, `SentenceField.place` |
+| bin/SentenceBoundary.py | changed `finish` |
+| bin/SentenceCredit.py | changed `departure` |
+| bin/SentenceLooks.py | added `Looks.__init__`, `Looks.lesson_cost`, `Looks.reading`, `Looks.run`, `WordForecast.__init__`, `WordForecast.arrive`, `WordForecast.begin_path`, `perceive` |
+| bin/WholePaths.py | changed `finish` |
+| bin/WordExpectation.py | added `WordArrivals.__init__`, `WordArrivals.observe`, `WordArrivals.step`<br>changed `word_distribution` |
+| bin/checkpoint_migrations.py | changed `_one_wholespace` |
+
+### 61.21 Certificates and finished-source return
+
+| §60.2 | Result |
+| --- | --- |
+| 1–3. Interleaving, look fields, selective word arrival | Passed on the three-word reading and the reading that passes over the first word. The earlier loop could leave an unread pure sibling with no focus. With the new in-place focus the first native brick precedes the last attend call. Each interpreted word has exactly one brick, word step and leaf per path, and an unproductive look still has a scoped field. |
+| 4. Grammar owns interpretation | Passed on “red cat sleeps” and on the pure/ineligible pair in verbal XOR. Forcing only the legal focuses and the offered grammar decisions gives all three bricks. A look alone admits no word. The ten grammar reservations and proof-setup regression are recorded in §61.14. |
+| 5. One chooser and loading | Passed for the retired scorer, fresh prefix projection, optimizer and six-row action anchors. Alec’s regeneration exception and its limits are in §§61.9–61.13. |
+| 6. Fixed actions, same sentence | All four original trees and roots and all 15 written LTM0 rows agreed. Maximum absolute difference in the four roots was zero. Regenerating from the saved construction stream matters for this comparison. |
+| 7. Causal word forecast | All ten forecast components at all 16 interpreted word places agreed with the former source. A different first arrival runs from the empty prefix. Forecasts are scattered back to their own native places. The four unused padding components that changed are recorded in §61.13. |
+| 8–9. Presentation allowance and unfocus | Four two-word sentences used two acts apiece from one eight-act meter. The fourth started with six spent. Undo restores the parent and costs one act, and is illegal after interpretation inside that parent. The menu has six addresses. |
+| 10. Replay | Passed for a departure in interpretation and a departure in the bracket walk. The prefix compares the actual looks and interpreted places, including the focus that reached a departing grammar decision. |
+| 11. Reading teacher | Passed for every length from one through six. Counts of charged focuses were 0, 2, 3, 4, 5 and 6. A one-word sentence can be interpreted on the opening look. The native loss reaches the taught chooser parameters and an ineligible word is reported. Free learning is reported in §61.19. |
+| 12. Stopping gates | The numerical XOR convergence test and raised-class denotation test both passed after the final grammar change. The last run with the forced reconstruction certificate gave **3 passed in 44.14 s**. |
+
+**Defaults built.** The selected slot supplies the look interval. The sentence keeps its open field and ordered further fields. There can be one opening plus `attentionBudget` charged looks, so the opening is additional to the default’s count of charged readings. The unary scorer decides interpretation against abstaining, and the native staged bank supplies the word. Paths reuse a word’s first forecast and brick, and advance their own causal prefixes. The detached prefix enters attention through a zero-initialized linear projection. One presentation meter supplies the declared per-sentence allowance. Unfocus reverses the last retained division or entry while none of its words has been interpreted. It occupies address 2 and starts with a zero anchor. Repeated unchanged looks are legal and are bounded by the allowance. Their cost and the frequency of abstention are visible in §§61.17–61.18.
+
+**Two forced downstream fixtures.** In `test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot`, the untrained reader could abstain throughout. The assertion that the bootstrap had actual word witnesses then found an empty context audit. The fixture now executes its word arrivals in source order through the native chooser before comparing snapshots. It passed in **159.29 s**. In `test_forced_not_and_or_descend_and_snapshot_certificate`, the prescribed field operations no longer accepted a word. The test previously recovered **0/4** multisets. Its forced reading now takes a legal grammar interpretation and leaves unfocus out of its prescribed forward sequence. Both reads recover **4/4** and the same four zero residuals. The native reconstruction-cost, content-cost, spelling, and snapshot assertions all pass. These ports run only inside the two tests.
+
+**Verbal proof.** With the declared grammar, the original 400 epochs and 1,600 presentations completed. The independent field inverse recovered **4/4**: hello world, hello there, loving world and loving there. Numeric predictions were **0.5000, 0.5000, 0.5000, 0.5000** against **0, 1, 1, 0**, rounded MSE **0.25**. Final printed output loss was **0.1750** and reconstruction loss **0.0000**. The grammar proof **failed** its availability assertion. At least one of the four kept readings had an unavailable grammar inverse. The existing test exits at that assertion before printing the per-row grammar outputs, so the precise number of unavailable rows and the exact multiset count are unmeasured on this training run. The four printed word pairs are from the field inverse. At the producer, `reconstruct_grammar_sentence` marks an active row missing when generation is truncated or its text is empty or contains NUL. The free untrained trace in §61.14 establishes abstention on those inputs before training. It does not distinguish the three conditions on the trained rows. The test took **951.51 s**. §59.82 reported **4/4** grammar and **4/4** field, the same final losses and numeric predictions, and **594.765215 s**. This is a learning result under §43.
+
+**Targeted testing.** The changed-test and loop group produced **72 passed, 4 skipped, 1 failed** before the bootstrap snapshot port above. The failed case then passed with the original assertion. The marked fixture assessment produced **31 passed, 2 skipped, 279 deselected in 357.32 s**. The eight applicable fixture readings were repeated with their passive native offer traces enabled, **8 passed in 236.48 s**. Each repeated source had the same rung status and failure reasons. The four-word curriculum’s summed-loss criterion and the verbal grammar availability check are the remaining measured learning failures, alongside the preparatory, ladder and lesson limitations in §§61.17–61.19. Both stopping gates and the loop mechanism certificates pass. §72 and §68.75 prescribe targeted tests here. The whole-item default sweep and the slow tier are outside this return.
+
+The targeted test files represented in the port group, gates, verbal proof, native word staging and fixture assessments were `test_assessment.py`, `test_attention_thinking_handoff.py`, `test_attention_thinking_steps.py`, `test_explicit_dimensions.py`, `test_final_generation.py`, `test_item18_expect.py`, `test_item18_intuit.py`, `test_item18_lexical_form.py`, `test_item18_marker.py`, `test_item18_operators_a.py`, `test_item18_placement.py`, `test_item18_recognition.py`, `test_item18_stack.py`, `test_item18_word_trust.py`, `test_item20_round2_memory.py`, `test_item25_completion.py`, `test_item4_parity.py`, `test_item4_review.py`, `test_loop_of_looks.py`, `test_mm_xor.py`, `test_mtm_reference_values.py`, `test_native_attention_field.py`, `test_native_candidate_attention.py`, `test_one_attention.py`, `test_one_backward.py`, `test_one_backward_standing.py`, `test_operators_final_b.py`, `test_packed_reconstruction_parity.py`, `test_reading_curriculum.py`, `test_relevance_bases.py`, `test_sentence_owned_attention.py`, `test_whole_path_repairs.py`, `test_whole_paths.py`, `test_word_admission.py`. The two curriculum stages used `attention_curriculum_gates.py`; the assessment observer records per-look detail when writing a fixture report.
+
+**Returned source.** `bounded_tests.source_snapshot` covers 1,219 files. Its SHA-256 is **90cfa8a8130270acf7b277ca403297addbc0b54df6444fdf8632eff29c1db666**. The ten declarations and three seats are checkpointed in local commit `5b442d41cafe3fe5913e3e51787e20f35a525023`. All receipts remain local.
+
 ## 62. Part A's remainder: the forecast of a look and its surprise (Claude, 2026-11-16; a design, with one question for Alec)
 
 §61 is kept for Codex's return of §60.3. This section starts from the

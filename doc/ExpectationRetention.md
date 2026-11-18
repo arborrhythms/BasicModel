@@ -84,14 +84,14 @@ predicted into existence. The shipped defaults are four zero gains,
 selection prime and the exploration fraction are separate from the gains, and
 a nonzero gain must first pass the zero-gain
 [parity configuration](../test/fixtures/item4-parity.json), which keeps
-prediction enabled, turns off the compose and candidate-attention selection
+prediction enabled, turns off the compose and bracket-chooser selection
 prime and restores uniform eligible alternatives ($\varphi = 1$). The
 expectation prime is not capped, in binding menus or elsewhere
 (`OperationSelectionLayer.prime_bias` is the uncapped, detached prior): the
 form cue and the expectation are legitimate non-uniform priors over
 referents.
 
-Candidate attention's percept salience is the signed residual against the
+The bracket chooser's percept salience is the signed residual against the
 last arrival's expectation (`attention_residual`, scaled by
 `perceptExpectationGain`); the perceptual moments are maintained but unread,
 and codebook lookup reads the original coordinates. Prediction-error salience

@@ -198,8 +198,8 @@ Training loop and I/O.
 | `wordExpectation` | bool | `true` | Order-zero reads of the shared two-lane native-symbol activation predictor. |
 | `wordExpectationLossWeight` | nonnegative float | `0.1` | Local activation MSE weight at accepted word brackets. |
 | `sentenceExpectation` | bool | `true` | Enables symbol/closing/document expectation and residuals. Explicit `false` bypasses this cycle while understanding and the single What memory remain available. |
-| `expectationPrime` | bool | `true` | Enables the selection prime in compose and candidate attention independently of attenuation. Off only in the declared parity configuration (`test/fixtures/item4-parity.json`); prediction, residuals and retention stay enabled. |
-| `perceptExpectationGain` | float in `[0,1]` | `0` | Scales the detached signed percept residual that candidate attention reads as salience. The forward content is the exact attended observation; this knob does not attenuate it. |
+| `expectationPrime` | bool | `true` | Enables the selection prime in compose and the bracket chooser independently of attenuation. Off only in the declared parity configuration (`test/fixtures/item4-parity.json`); prediction, residuals and retention stay enabled. |
+| `perceptExpectationGain` | float in `[0,1]` | `0` | Scales the detached signed percept residual the bracket chooser reads through its context projection. The forward content is the exact attended observation; this knob does not attenuate it. |
 | `symbolExpectationGain`, `rowExpectationGain`, `documentExpectationGain` | float in `[0,1]` | `0` each | Attenuation strength $g$ of expectation at the symbol, row and document levels: what was predicted is dimmed toward the floor $1 - g$, and 0 leaves content whole. The row and document gains compose at the closing. See [Expectation](ExpectationRetention.md). |
 | `perceptExpectationRate` | float in `(0,1]` | `0.05` | Moment EMA rate after the first external observation; padding, evaluation and speculative trials do not update it. It sets no optimizer rate: the percept expectation's parameters move in the sentence's one optimizer step. |
 | `expectationOmissionThreshold` | float in `[0,1]` | `0.5` | Minimum for-lane omission confidence for the conceived absence thought. |
@@ -588,8 +588,8 @@ configuration and is set only by a runtime override.
 | `continuityRatioTarget` | `Mereology.py` | `1.0` | Target ratio for the continuity measure. |
 | `continuitySharpness` | `Mereology.py` | `1.0` | Sharpness of the continuity squash. |
 | `TetralemmaPolicy` block (+ per-space `tetralemmaOverride`) | `util.py` (`tetralemma_policy`) | `allowExcludedMiddle=1`, `allowContradiction=0`, `neitherThreshold=0.1` | Shared catuskoti policy under `<architecture>`; a space sets `<tetralemmaOverride enabled="true">` + its own `<TetralemmaPolicy>` to override. Legacy top-level `<TetralemmaPolicy>` still read as fallback. |
-| `attentionFloor` | `ModelCandidateAttention.py` | `0.1` | Weight on the residual of every unread field item in the attention cost, $\mathit{floor} \cdot (1 - \mathit{admission}) \cdot \mathit{residual}$; finite and strictly between 0 and 1. |
-| `hetTolerance` | `ModelCandidateAttention.py` | `1.0` | Tolerance $\tau \in [0, 1]$ for heterogeneity on the two evidence lanes of the candidate support read into attention: $(c^+, c^-) \leftarrow (c^+, c^-) - (1 - \tau)\min(c^+, c^-)$. At $\tau = 1$ nothing changes; at $\tau = 0$ the shared overlap is removed, so *both* collapses to its net lane while *neither* survives, leaving three corners (for, against, unknown). No signed scalar appears at any setting. |
+| `attentionFloor` | `AttentionContext.install` | `0.1` | Validated at construction in the open interval (0, 1). The loop of looks does not charge an unread-item residual. |
+| `hetTolerance` | `AttentionContext.install`, `SentenceField.arrive` | `1.0` | The fraction of overlapping evidence retained on both lanes of an arrival. Zero removes the shared overlap, and one preserves both lanes. |
 | `device` | `Models.py` (run entry) | unset | Runtime device (`cpu`, `gpu`, `cuda`, `mps`), used only when `BASICMODEL_DEVICE` is unset. |
 | `trainEmbeddings` | `Models.py` (BaseModel init) | unset | Architecture-level boolean read ahead of `<training><trainEmbedding>`: `true` selects `BOTH`, `false` selects `NONE`. |
 

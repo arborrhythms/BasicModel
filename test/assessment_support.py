@@ -15,7 +15,8 @@ def record(model, vocabulary, *, scalar=None):
         return
     from AssessmentProbe import known_probe
     request, reports = current
-    reports.append(known_probe(model, vocabulary, scalar=scalar, source=request.node.nodeid))
+    reports.append(known_probe(model, vocabulary, scalar=scalar, source=request.node.nodeid,
+                               trace=bool(os.environ.get('ASSESSMENT_REPORT'))))
 
 
 @pytest.fixture(autouse=True)

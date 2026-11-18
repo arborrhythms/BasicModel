@@ -81,6 +81,7 @@ def forced_prefix_certificate():
     from MereologicalCodes import MereologicalCodes
     path = Path(__file__).resolve().parents[1] / 'test/fixtures/2026-10-06-operators-round2c/disjunction-initial-rng.pt'
     original_forward, original_attend = OperationSelectionLayer.forward, OperationSelectionLayer.attend
+    original_interpret = OperationSelectionLayer.choose_interpret
     commit, begin = BasicModel._commit_sentence, MereologicalCodes.begin_forward
     reads, snapshots = [], []
     def snapshot(derived):
@@ -95,9 +96,13 @@ def forced_prefix_certificate():
         from operation_fixtures import selected_action
         with selected_action(module, torch.where(depth>1,binary.index(1),stop)):
             return original_forward(module,x,**kw)
+    def interpret(module, word, allowed, **options):
+        # The certificate prescribes a completed reading of both words.
+        options['replay_action'] = allowed.long()
+        return original_interpret(module, word, allowed, **options)
     def narrowing(module,keys,legal,space,**kw):
         action=legal.flatten(1).long().argmax(-1)
-        for op in (0,2,1,4,3,5):
+        for op in (0,1,4,3,5):
             slots=legal[:,:,op]
             action=torch.where(slots.any(-1),slots.long().argmax(-1)*legal.shape[-1]+op,action)
         kw['replay_action']=action
@@ -130,6 +135,7 @@ def forced_prefix_certificate():
             form_snapshot=id(m._concept_owner().similarity_codebook.mereology._forms)))
         return commit(m,state,sid,active,*args)
     with torch.random.fork_rng(), patch.object(OperationSelectionLayer,'forward',disjunction), \
+         patch.object(OperationSelectionLayer,'choose_interpret',interpret), \
          patch.object(OperationSelectionLayer,'attend',narrowing), patch.object(BasicModel,'_commit_sentence',capture), \
          patch.object(MereologicalCodes,'begin_forward',snapshot):
         torch.set_rng_state(torch.load(path, weights_only=True))
@@ -169,8 +175,11 @@ def test_forced_not_and_or_descend_and_snapshot_certificate():
 
 def test_both_training_trials_share_bootstrap_snapshot(monkeypatch, tmp_path):
     from test_mm_xor import _fresh_model
+    from reading_fixtures import read_in_source_order
     model, _, data = _fresh_model('data/XOR_grammar.xml')
     try:
+        # The compared snapshot needs word witnesses in both trials.
+        read_in_source_order(model, monkeypatch)
         derived = model._concept_owner().similarity_codebook.mereology
         snapshots, costs, calls = [], [], []
         path_cost = model._sentence_path_cost
