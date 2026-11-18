@@ -4530,6 +4530,9 @@ budget of rule 28; the speed certificate.
    when it is not word intervals; which quantity is a cone's width and
    how a hit or a miss moves it; what a hit and a miss are; whether a
    letter's place counts.
+9. "There is a word there" as inclusion in a meta concept (§19.29):
+   which row is tested, what a word with no meta concept is in a
+   tree, and how `interpretBias` is lowered by experience.
 
 **For the documentation pass** that lands with item 1.7 (`doc/*.md` is
 not edited now: another pass over those files is uncommitted, in the
@@ -5343,3 +5346,32 @@ compares (1.8 §68.76), Alec, 2026-11-18:
 - Whether a letter's place counts in the match, since in "caat" the
   last letter stands one place later (rule 31: a generalization holds
   no place).
+
+### 19.29 "There is a word there": inclusion in a meta concept (Alec, 2026-11-18)
+
+Alec, 2026-11-18, deciding against a call of `interpret` at every word
+(1.8 §68.79): "interpret() should only interpret the word as an object
+if 1) there is a word there (as indicated by inclusion in a meta
+concept) 2) there are not multiple words there."
+
+*What exists.* The second condition is built (`Attention.narrowing_mask`:
+the bracket covers one word). The first is not what the source tests:
+a word "is there" when its form was admitted and has a word concept
+(`known`, `InterpretLayer.word_for_form`), whether or not a definition
+row (word DEF object, `InterpretLayer.define`) names an object for it.
+On a fresh model no admitted form has such a row, and a word gets one
+only through being read (`InterpretLayer.reading` holds its name in
+MTM; the row is written at a kept close).
+
+*Placed here by Claude, not by Alec:* item 1.8 keeps today's test, since
+requiring the row now would read no word on a fresh model. With rule 31
+a meta concept is learned from the consistent association of a word
+generalization and an object generalization, so a word can be in one
+before it is ever interpreted, and the condition can then be tested as
+he wrote it.
+
+*Unspecified:* whether the test is the definition row or the row MTM
+nominates for the tie; what a word with no meta concept is in a tree,
+if anything (the false branch of `InterpretLayer.reading` returns the
+word concept itself); and how `interpretBias` (1.8 §68.79, set to 1) is
+lowered "when doing so is valuable based on previous experience".

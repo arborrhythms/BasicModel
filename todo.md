@@ -1385,7 +1385,22 @@ generation is expected at this stage and is recorded, not tuned away.
    The question, with Claude's recommendation first: no decision to
    abstain (a look that is one known word is interpreted); or the
    decision kept and started even; or kept as built, with reading
-   always taught first. No text for Codex until it is answered.
+   always taught first.
+   **Decided (Alec, 2026-11-18; §68.79).** "I do not like the "always
+   interpret" option. We should be able to treat a word as a word,
+   not as what it represents." A global `interpretBias` "is the
+   probability of calling interpret()": "we can set that bias to one
+   to force it, but someday we should back it off and only interpret
+   words when doing so is valuable based on previous experience."
+   It is rule 5b: the call is made with that probability and the
+   grammar's chooser decides the remaining share (Claude's reading).
+   His first condition, "there is a word there (as indicated by
+   inclusion in a meta concept)", is not what the source tests and
+   cannot be required on a fresh model, where no word has a
+   definition yet; it is recorded for item 1.7 (sigma-pi §19.29).
+   **The one text for Codex is §68.80**: the bias, then straight on
+   to the forecast of a look (§62.6), returned as §61.22 onward and
+   §64.
    **Commits and the docs folder (Alec, 2026-11-18).** Claude may
    commit its work locally; pushing stays rare. The pending
    documentation pass of the worktree `basicmodel-docs` is on `main`

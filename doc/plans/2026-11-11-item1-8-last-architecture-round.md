@@ -26861,7 +26861,10 @@ Claude's.
    `.where` and `.when` (*default:* a field of their own with one reading
    for each look, of `attentionBudget` readings at most).
 5. *Attention has no act that accepts a word; at a look the grammar may
-   call `interpret`* (amended by §60.4, and by rule 5a of §68.74). The
+   call `interpret`* (amended by §60.4, by rule 5a of §68.74, and by
+   rule 5b of §68.79: the call is made with probability
+   `interpretBias`, which is set to 1, and the chooser decides only
+   the remaining share). The
    acts of `attend` are `focus` (divide, descend and, by rule 5a, the
    look at a word), `unfocus` (rule 11) and the three field acts.
    `mint` goes and nothing takes its place among them (`MintLayer`, its
@@ -28034,6 +28037,11 @@ written, and Claude's default 2 of §54.4 (a forecast takes no place) is
 withdrawn.
 
 ### 62.6 Codex text (follows §61, the return of §60.3)
+
+*Amended for Codex by §68.80 (2026-11-18): it is built on the source
+of §61.22 onward (the bias), straight after it and without a review
+between; commits are local; and the one run of its step 7 serves both
+texts.*
 
 ~~~
 Item 1.8, part A's remainder: the forecast of a look and its surprise.
@@ -33249,6 +33257,181 @@ the measurements of §61.17 to §61.21 again on it (targeted), and then
   words with 46, and say nothing yet.
 - Not checked by me: the ten grammar reservations of §61.14 one by one,
   and the name census of §61.16 beyond its totals.
+
+### 68.79 Decided: no "always interpret"; a global `interpretBias` (Alec, 2026-11-18)
+
+Alec, of the three choices of §68.78, verbatim: "I do not like the
+"always interpret" option. We should be able to treat a word as a word,
+not as what it represents. But the attend() will stimulate concepts, and
+we can set a global "interpretBias" that is the probability of calling
+interpret(). interpret() should only interpret the word as an object if
+1) there is a word there (as indicated by inclusion in a meta concept)
+2) there are not multiple words there.
+
+So we can set that bias to one to force it, but someday we should back
+it off and only interpret words when doing so is valuable based on
+previous experience."
+
+So my recommendation is not taken: the decision to call `interpret`
+stays. What changes is where it starts. One number for the whole model,
+`interpretBias`, is the probability that `interpret` is called at a look
+where it may be. It is set to 1 now, which forces the call, and is to be
+lowered later. It is rule 5b of §60.1.
+
+**In plain terms.** A look is perceived and conceptualized whether or
+not a word is interpreted (§60.1, rule 3): that is "the attend() will
+stimulate concepts". A word that is looked at and not interpreted stays
+a word: its concepts are active in the field, and it joins no tree and
+stands for nothing. A word that is interpreted joins the tree and is
+taken for what it represents.
+
+On "red cat sleeps", with the bias at 1: attention looks at "red", the
+call is made, "red" joins the tree and its bracket is done; attention
+goes on to "cat" and to "sleeps". All three are read, in fewer acts than
+the sentence has (measured in §68.78 with the call forced: 5 to 9 calls
+of attend). With the bias at 0 the source is as Codex returned it: the
+grammar's chooser decides alone, and a fresh one declines.
+
+**What exists in the source for each part of it.**
+
+- *"Treat a word as a word, not as what it represents."*
+  `InterpretLayer.reading` has both: with `mandatory` true a read site
+  takes the word's object (or, for a word with no object yet, a name
+  held in MTM); with `mandatory` false it takes the word concept itself.
+  `mandatory` is a constant of the class, true, and is not changed here
+  (§60.1, "Not changed in this text"). In the loop a word that is not
+  interpreted has no leaf at all.
+- *"2) there are not multiple words there."* It exists:
+  `Attention.narrowing_mask` offers the call only where the bracket
+  covers one word (`word`, `singular`).
+- *One lane.* Not in today's two conditions and not withdrawn: a word
+  read with both lanes is not offered (Alec, 2026-11-15). It stays.
+- *"1) there is a word there (as indicated by inclusion in a meta
+  concept)."* This is not what the source tests. Today "a word is there"
+  means the form was admitted and has a word concept (`known`, by
+  `InterpretLayer.word_for_form`). A meta concept, in the source, is a
+  definition row (word DEF object; `definitions`, written only by
+  `InterpretLayer.define`). The two differ for a word that has no
+  object yet (`InterpretLayer.no_object`), and on a fresh model that is
+  every word. Measured by me on explore-1 after its forms are admitted:
+  of the seven forms of three sentences, none has a definition row,
+  before or after one reading of each sentence in evaluation. A word gets its
+  definition through being read: `reading` holds its name in MTM, and
+  the row is written at a kept close. This is the bootstrap Alec named
+  on 2026-11-18 (sigma-pi §19.27).
+
+**Claude's readings, each marked.**
+
+1. *The bias and the chooser.* With probability `interpretBias` the
+   call is made without asking the chooser. In the remaining share the
+   grammar's chooser decides, as it does in the source Codex returned
+   (`choose_interpret`, taught by the path's cost and the reading
+   lesson). At 1 every offered word is interpreted; at 0 experience
+   alone decides. This is how I read "back it off and only interpret
+   words when doing so is valuable based on previous experience". The
+   literal alternative, a plain draw with nothing learned, would leave
+   the chooser's decision dead in the source. Not exercised while the
+   bias is 1.
+2. *Condition 1 in item 1.8.* The test stays as it is (`known`, one
+   word, one lane). Requiring a definition row now would read no word
+   on a fresh model, the result this decision is meant to end, and no
+   word would then ever get a definition. His condition, as he wrote
+   it, is recorded for item 1.7, where meta concepts are learned by
+   consistent association (rule 31) and a word can be in one before it
+   is ever interpreted (sigma-pi §19.29). Alec may overrule this.
+3. *A word not interpreted* is in no tree. Whether a word looked at and
+   not interpreted should instead join the tree as a word concept (the
+   false branch of `reading`) is not decided and not built.
+
+**Open, for when the bias is lowered** (none blocks the text):
+
+- the repeated look at a declined word, which is legal and bounded only
+  by the allowance (§68.78);
+- reading 3 above;
+- how the bias itself comes to depend on experience ("someday").
+
+The text for Codex is §68.80.
+
+### 68.80 Codex text: the third continuation (`interpretBias`, then the forecast of a look)
+
+Written on 2026-11-18. It is the one text to carry.
+
+~~~
+Item 1.8, the loop of looks: the third continuation. Read §68.78 and
+§68.79 of doc/plans/2026-11-11-item1-8-last-architecture-round.md. Your
+return §61.8 to §61.21 is reviewed and its mechanism is accepted. One
+default of mine in rule 5 was wrong for a fresh model, and Alec has
+decided what replaces it. §73 holds as before, and the standing rules:
+no bound, learning rate, seed, capacity or presentation count changes;
+no validation weakened or removed; a learning certificate recorded and
+not repaired; local commits only, never push main, never force-push.
+
+A. interpretBias (rule 5b of §60.1).
+1. One number for the model, architecture.interpretBias, in [0, 1],
+   read as architecture.operatorCost is, default 1, refused outside
+   that range. Add it to doc/Params.md.
+2. At a look where the grammar's option is offered (the test is
+   unchanged: a bracket of one known word, read with one lane, not yet
+   interpreted), interpret is called with probability interpretBias
+   without asking the chooser. In the remaining share the chooser
+   decides as it does now (choose_interpret). At 1 every offered word
+   is interpreted; at 0 the source behaves as you returned it.
+3. The draw is one uniform number for each stream at each offer. At 0
+   and at 1 no number is drawn. Say which random stream it uses and
+   why. A path that replays a prefix replays the recorded decision.
+4. A call made by the bias is not a choice: it has no alternative, is
+   no departure, takes no credit, and the reading lesson books no
+   grammar target for it (rule 13's grammar half holds only for the
+   share the chooser decides). What a use of interpret costs in a
+   path's cost is not changed.
+5. It holds in training and in evaluation alike.
+6. A word that is looked at and not interpreted is as it is now: the
+   look is perceived and conceptualized, and the word is in no tree.
+7. Not for this text: InterpretLayer.mandatory keeps its value; the
+   test for a word stays known, one word, one lane (a definition row
+   is not required: §68.79, reading 2); the repeated look at a
+   declined word stays legal.
+
+B. Certificates, each as a test.
+1. Fresh model, nothing forced, no teacher, bias 1: on "red cat
+   sleeps" every word gets a brick and a word step, no bracket is
+   offered twice, and attend is called fewer times than the allowance.
+   It fails on the source you returned (no word is read).
+2. Bias 0: the decisions equal the returned source's on the same
+   random state, and your test of three declined looks passes
+   unchanged.
+3. Between: with the uniform numbers supplied by the test, an offer
+   whose number is under the bias is interpreted whatever the chooser
+   scores, and the others take the chooser's decision. No seed is
+   pinned to pass.
+4. A call made by the bias is in no departure menu and books no
+   lesson cost; with the bias at 1 the lesson still reads every word
+   in order in the fewest acts on sentences of one to six words.
+5. Both stopping gates pass.
+   A test of the chooser's own decision sets the bias to 0 for its
+   model and says so. Port the tests that assumed a fresh model
+   declines; list each with its old and new assertion.
+
+C. Measure once, targeted, and report beside §61 and §59.82:
+1. the fixture assessment's rung one for each source (§61.18's last
+   table);
+2. the sixteen lesson sentences: walks, looks, calls of attend, words
+   interpreted, seconds (§61.17's table);
+3. the stages reading_two and reading_four, enabled mode only;
+4. the two fixtures of test_item18_expect.py::test_82: with their word
+   read, its definition is still not trusted, where §59.82 had rung
+   one passing. Find the producer and say what it is. If the repair
+   keeps to the specification, A of §68.75 holds.
+
+D. Then go on, without waiting for a review, with the text of §62.6
+   (the forecast of a look and its surprise) on this source. Its step
+   7 runs the lesson, the verbal proof and the assessment's tables
+   once, and that one run serves both texts: report them beside §61's
+   and §59.82's. No default sweep and nothing under RUN_SLOW (§72).
+
+Commit locally as Alec has authorized. Return A to C in §61, from
+§61.22, and §62.6 as §64. Name the test files you ran.
+~~~
 
 ## 69. The thought replay (§68.31; Codex, 2026-11-18)
 
