@@ -903,7 +903,7 @@ never edited, and an output that is the model's own.
   parallel); the per-word operational flow; whole paths.
 - [Language.md](Language.md): the signal router, `compose` / `generate`,
   GrammarLayer reductions.
-- [Mereology.md](Mereology.md): parthood as clipped-cosine projection;
+- [Mereology.md](Mereology.md): parthood as shared size;
   the relations the relative predicates draw on.
 - [Reasoning.md](Reasoning.md), [Logic.md](Logic.md): the truth surfaces
   and tetralemma trust.

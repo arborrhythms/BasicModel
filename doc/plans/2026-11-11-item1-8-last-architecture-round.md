@@ -32653,3 +32653,50 @@ day; the ones that change the standing documents):
    working tree.
 3. The push itself is on Alec's word, and the superproject's pointer is
    his.
+
+### 70.19 The standing documents after the scalar part function (Claude, 2026-11-18)
+
+Alec, 2026-11-18: "Re parthood, Mereology.md has the book's measure,
+while Logic.md and Architecture.md still say clipped cosine. Is that
+intentional?" And of Codex's two newest returns: "wait a sec for the
+codex review."
+
+**It was, until that morning.** §70.15, point 1, left `doc/Logic.md`,
+`doc/Architecture.md` and `doc/STM.md` as they were because they
+described `Ops._part_kernel` as built, a clipped cosine, and §70.17,
+step 6, kept them for Codex's return. Codex has returned it (§59.87 to
+§59.90; commits `8b250295e7` and `db95089f90`, local), so those
+documents described a function that is no longer in the source.
+
+**Changed on 2026-11-18,** before the review of that return:
+
+| Document | What changed |
+|---|---|
+| `doc/Logic.md`, "Sign and parthood" | the scalar form is parthood as shared size, with its formula for signed values; it is not symmetric, and negating both operands leaves it unchanged; the claim of Boole's contrapositive is gone |
+| `doc/Logic.md`, "Parthood as Projection" | now "Parthood as Shared Size": the same formula; subsumption is read from the two directions, in place of the comparison with a negation; `boundary` is no longer always zero. The table for the values 1, 0 and -1 and the conventions for an empty operand are unchanged |
+| `doc/Architecture.md` | the two sentences on the grammar's `part`: its scalar read is the size the operands share over the size of the first, and is not symmetric |
+| `doc/STM.md` | one link text |
+| `doc/FutureWork.md` | "Where magnitude is lost today", point 2: the scalar `part` no longer loses it; what does is the cosine of MTM's three likeness matchers, until item 1.7 |
+| `doc/Mereology.md` | "In the source": one function computes parthood, and the scalar `part` calls it on the two lanes of each operand; and the row of `copart`, now one less the parthood of the second in the first, as built |
+
+**What it rests on.** Not the review. Claude read the committed
+`Ops._part_kernel` and `Ops.copart` and evaluated them on the cases the
+documents state (scratch, 2026-11-18): the five relations give 0 and 0,
+.3 and 1, 1 and .3, 1 and 1, .2 and .2; the signed formula's value on a
+drawn pair; a thing in itself 1 and in its negation 0; both negated,
+unchanged; the three empty cases; the table of 1, 0 and -1, unchanged;
+the vector forms, unchanged.
+
+**Left for the review** (Alec: wait).
+
+- Codex's returns §69 and §59.87 to §59.90, as a whole.
+- `ImpenetrableLayer`'s docstring still names the clipped cosine, and
+  its five bins leave some pairs unclassified under a parthood that is
+  not symmetric (§59.88). It is source, and no production path builds
+  the layer.
+- `Ops.copart`'s direction is Claude's default (§70.17, step 2), built
+  as written; Alec has not been asked.
+
+**For §70.18.** Of what is done before the promotion's push, the
+changes to the standing documents that follow §70.17's return are made.
+The doc-pass lists of the earlier sections still wait.

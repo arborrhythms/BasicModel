@@ -127,15 +127,19 @@ $$
 \operatorname{part}(x, y) = x \cdot \frac{y}{\lVert y \rVert}
 $$
 
-The `scalar=True` form is the clipped cosine projection:
+The `scalar=True` form is parthood as shared size
+([Mereology](Mereology.md#parthood-as-shared-size)): what the two share,
+over the size of $x$. Two values of one sign share the smaller of their
+sizes, and two values of opposite signs share nothing:
 
 $$
-\operatorname{part}(x, y) = \frac{\max(0,\; x \cdot y)}{\lVert x \rVert \cdot \lVert y \rVert}
+\operatorname{part}(x, y) = \frac{\sum_i [x_i y_i > 0]\,\min(|x_i|, |y_i|)}{\sum_i |x_i|}
 $$
 
 (The `monotonic` flag is accepted for signature parity but unused by the
-part kernel.) The scalar form satisfies Boole's contrapositive trivially
-(dot product and norms sign-invariant under joint negation). The full suite
+part kernel.) The scalar form is not symmetric. Negating both operands
+leaves it unchanged, and a thing is no part of its negation,
+$\operatorname{part}(x, -x) = 0$. The full suite
 (`whole`, `equal`, `overlap`, `underlap`, `boundary`) composes through
 `part`.
 
@@ -162,19 +166,24 @@ Let $a, b \in [-1,1]$.
 | Union | elementwise max (RadMax under the radial and soft kinds, Section 7) | $a \cup b = \max(a, b)$ |
 | Intersection | elementwise min, a zero coordinate unspecified (RadMin under the radial and soft kinds, Section 7) | $a \cap b = \min(a, b)$ |
 
-### Parthood as Projection
+### Parthood as Shared Size
 
 Parthood is the **fundamental mereological operation**. The scalar
-(`scalar=True`) form, for $A, B \in \mathbb{R}^D$:
+(`scalar=True`) form, for $A, B \in \mathbb{R}^D$, is what the two share
+over the size of the first
+([Mereology](Mereology.md#parthood-as-shared-size)):
 
 $$
-\operatorname{part}(A, B) = \frac{\max(0,\; A \cdot B)}{\lVert A \rVert \cdot \lVert B \rVert}
+\operatorname{part}(A, B) = \frac{\sum_i [A_i B_i > 0]\,\min(|A_i|, |B_i|)}{\sum_i |A_i|}
 \quad \in [0, 1]
 $$
 
 (The default vector form is the elementwise projection
-$A \cdot (B / \lVert B \rVert)$; see Section 1.) Boole's contrapositive
-$\operatorname{part}(A, B) = \operatorname{part}(-B, -A)$ holds trivially.
+$A \cdot (B / \lVert B \rVert)$; see Section 1.) It is not symmetric:
+$\operatorname{part}(A, B)$ is how much of $A$ lies in $B$. Values of
+opposite signs share nothing, so $\operatorname{part}(A, -A) = 0$, and
+negating both operands changes nothing:
+$\operatorname{part}(-A, -B) = \operatorname{part}(A, B)$.
 
 The full suite composes through `part`:
 
@@ -184,15 +193,16 @@ The full suite composes through `part`:
 | `equal(A, B)` | $\operatorname{part}(A, B) \cdot \operatorname{part}(B, A)$ |
 | `overlap(A, B)` | $0 < \operatorname{equal}(A, B) < 1$ |
 | `underlap(A, B)` | $\operatorname{equal}(A, B) = 0$ |
-| `boundary(A, B)` | $|\operatorname{part}(A, B) - \operatorname{part}(B, A)|$ (zero under clipped cosine) |
+| `boundary(A, B)` | $|\operatorname{part}(A, B) - \operatorname{part}(B, A)|$ |
 
-Under clipped cosine, `part` is symmetric, so `equal` reduces to
-$\operatorname{part}^2$. Asymmetric classical subsumption is recovered
-**relationally** via figure/ground: compare $\operatorname{part}(A, B)$
-against $\operatorname{part}(A, \neg B)$. See
+Subsumption is read from the two directions:
+$\operatorname{part}(A, B) = 1$ with $\operatorname{part}(B, A) < 1$ is
+$A$ inside $B$, and `equal` is 1 only for identity. `boundary` is the
+difference of the two directions: 0.7 for a whole and a part that is
+three tenths of it, and 0 where the two directions agree. See
 [Mereology.md](Mereology.md).
 
-For ternary scalar values (monotonic projection):
+For ternary scalar values:
 
 | part(a,b) | **+1** | **0** | **-1** |
 |-----------|--------|-------|--------|

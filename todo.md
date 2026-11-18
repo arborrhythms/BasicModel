@@ -1310,6 +1310,14 @@ generation is expected at this stage and is recorded, not tuned away.
    and nothing else in 58 files); **the text for Codex is §70.17.**
    And "2 agree": MTM's three likeness matchers move to it with item
    1.7.
+   **Returned, not yet reviewed.** Codex returned the thought replay
+   as §69 and the scalar part function as §59.87 to §59.90, and
+   committed both locally (`8b250295e7`, `db95089f90`). Alec,
+   2026-11-18: "wait a sec for the codex review." The standing
+   documents that still called parthood a clipped cosine
+   (`doc/Logic.md`, `doc/Architecture.md`, `doc/STM.md`,
+   `doc/FutureWork.md`, and two places of `doc/Mereology.md`) are
+   changed to the function as built (§70.19).
    **Commits and the docs folder (Alec, 2026-11-18).** Claude may
    commit its work locally; pushing stays rare. The pending
    documentation pass of the worktree `basicmodel-docs` is on `main`

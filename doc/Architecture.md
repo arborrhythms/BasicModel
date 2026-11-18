@@ -1117,9 +1117,11 @@ unary (copy-side) or binary (reduce-side):
 - **Mereological operators**: canonical `part(S, S)` and converse `whole(S, S)`.
   An identity sentence composes as `part`, and `define` in thought writes
   `part` each way. Their structural faces are pure-geometric; their checked
-  thought faces run only at a completed boundary. Parthood is clipped cosine
-  on codebook activations, with no sidecar of explicit parent or equality
-  links. See [Mereology.md](Mereology.md).
+  thought faces run only at a completed boundary. The scalar read of
+  `part`, the support of its thought face and of a query, is the size the
+  two operands share over the size of the first; it is not symmetric.
+  There is no sidecar of explicit parent or equality links. See
+  [Mereology.md](Mereology.md#parthood-as-shared-size).
 - **`change`, `lift` and `lower`**: `change(NP, VP)`, the former two-operand
   `lift`, applies a verb phrase's action to its subject. `lift` and `lower`
   take one operand each: `lift` raises it one order, and `lower` takes an
@@ -1134,8 +1136,10 @@ unary (copy-side) or binary (reduce-side):
   native perception has no fold layers. The 11c XOR gate learns located
   field cases and unions their symbols at order 1.
 
-Parthood (`part`) is the **fundamental** mereological operation, realized
-as clipped cosine projection on symbolic activations. The full suite
+Parthood (`part`) is the **fundamental** mereological operation, on
+symbolic activations: as a vector, the projection of one operand on the
+other's direction; as a scalar, the size the two share over the size of
+the first. The full suite
 (`whole`, `overlap`, `underlap`, `boundary`) composes through
 `part` on `Basis`. `equal` is commented out of compose, generate and thought;
 the thought test of identity is `isEqual`.

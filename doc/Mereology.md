@@ -148,11 +148,12 @@ The readers that decide identity take an empty first operand as no
 evidence: an empty description is offered nothing, and
 `ConceptualMatch.match` returns 0 for it.
 
-**In the source.** `ConceptualMatch.match` returns parthood in both
-directions for the readers that decide identity. `Ops._part_kernel` with
-`scalar=True`, the scalar read of the grammar's `part`, does not compute
-this function yet: it returns a clipped cosine of the two vectors
-(`bin/Layers.py`).
+**In the source.** One function computes it: `ConceptualMatch.match`
+returns parthood in both directions. The readers that decide identity call
+it on the stored lanes. `Ops._part_kernel` with `scalar=True`, the scalar
+read of the grammar's `part`, calls it on the two lanes of each operand,
+its positive part and its negative part, and keeps the empty-operand
+contract above (`bin/Layers.py`).
 
 ---
 
@@ -173,7 +174,7 @@ tabulated below, which is what every other formula on this page consumes
 | `overlap(A, B)` | $0 < \mathrm{equal}(A, B) < 1$ | Strictly-partial mutual parthood (indicator). |
 | `underlap(A, B)` | $\mathrm{equal}(A, B) = 0$ | No mutual parthood (indicator). |
 | `boundary(A, B)` | $|\mathrm{part}(A, B) - \mathrm{part}(B, A)|$ | Asymmetry of containment. |
-| `copart(A, B)` | $1 - \mathrm{part}(A, B)$, clamped to $[0, 1]$ | The share of A that does not lie in B. |
+| `copart(A, B)` | $1 - \mathrm{part}(B, A)$, clamped to $[0, 1]$ | The share of B that A does not account for. |
 
 ---
 

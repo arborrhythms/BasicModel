@@ -1472,10 +1472,12 @@ below.
 **Where magnitude is lost today.** (1) The join is idempotent: a word's
 form is the coordinatewise max of its parts ([Spaces, fold ladder](Spaces.md#fold-ladder)),
 so repeated constituents vanish and count lives only in occurrence rows.
-(2) The grammar's scalar `part` is still a clipped cosine
-([Mereology](Mereology.md#parthood-as-shared-size)),
-symmetric and blind to magnitude; the exact dominance `Ops.partOf` and
-`IdentityRows.meet_ratios` (the sum of minima over mass) are the readers that
+(2) A likeness is blind to magnitude: MTM's matchers of a candidate
+(`MediumTermMemory.match_candidate`, `FamiliarTier.witnessed_match`,
+`FamiliarTier.observe_field`) compare by cosine, and move to parthood with
+item 1.7. The grammar's scalar `part`
+([Mereology](Mereology.md#parthood-as-shared-size)), the exact dominance
+`Ops.partOf` and `ConceptualMatch.match` (the sum of minima over size)
 respect it. (3) A concept's length is its certainty
 ([above](#concepts-as-regions-certainty-from-evidence-no-sphere-alec-2026-10-24)),
 so quantity cannot live there. For bytes none of this costs anything; a
