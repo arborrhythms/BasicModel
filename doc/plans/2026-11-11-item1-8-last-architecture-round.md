@@ -26405,6 +26405,274 @@ and are not linked. §70.5's pending bind exclusion remains on this
 uncommitted source. No shared matcher, loop of looks, first-walk teacher
 or other next-round implementation is claimed here.
 
+### 59.83 The one match: scope, checkpoint and implementation (§70.11)
+
+Continued on 2026-11-18 after the completed sweep of §59.82. Read
+§70.2, §70.8–§70.13; this is **the first text only**. Alec subsequently
+authorized frequent local commits, particularly after runs. The completed
+source and item-1.8 specification of §59.82 were checkpointed locally as
+**`08d1cab2bf765a96173bd05f75b9a30aba57172e`**,
+`Checkpoint item 1.8 tree-first comprehension and field reads`.
+Its source snapshot is exactly §59.82's
+`a6d71b77b3481131db0e313db3ac604172b3b3616c8e05e36460f92274e18815`
+(1,218 files). The source below is its diff. The separately edited
+sigma/pi plan, todo and item-1.5/item-1.6 plans are outside this checkpoint
+and this change. No receipt or ignored data is committed. No push is made.
+
+**One numerical function.** The default module name is built:
+`bin/ConceptualMatch.py`, public function
+`match(content, candidates, *, codebook=None, lane=None)`. Its nested
+`ratios` calculation is the provisional measure of §70.12, not a new
+metric: sum of coordinate-wise minima, divided independently by candidate
+mass and content mass, with zero for a zero denominator. The smaller
+operand width bounds the comparison, as before. It chooses no candidate,
+sets no order threshold and detaches no operand.
+
+The function owns the three coordinate cases. Without a codebook form
+layout it compares the full point. With that layout, reference matching
+zeros the coordinates before `percept_event_width`; forms with no meaning
+therefore compare nothing. Zeroing preserves the previous reduction width
+and coordinate addresses, including narrowed rows. `lane=0/1` is the field
+reader's two independent reads: a row with meaning uses its first meaning
+block as its signless code against the requested input lane; a row without
+meaning uses its form. The form read still uses positive/negative input
+components as before. `FieldProjection.stimulate` can consequently take both
+coverages from this function **without a value or gradient change**; its
+order filter, percept-collection membership and upward closure stay put.
+No lanes are netted. The measure remains provisional, as Alec requested;
+no contrary finding arose in these equality checks, which do not establish
+that the measure is the final desired one.
+
+| File and function | Change; other responsibilities retained |
+| --- | --- |
+| `ConceptualMatch.match` | Owns the numerical coverage and all three coordinate selections above. |
+| `Memory.STMChunks.bind_menu` | Calls `match`; deletes `meaning_start`, `percept_band` and the menu's hand-cut location/time mask. Candidate addresses, exclusions, order eligibility and dummy stay. |
+| `Memory.STMChunks.identity_sources` / `refresh` | Extracts refresh's existing off-stack identity/timeline lookup unchanged, including its preference for a SYMBOL or IDENTITY_REF reader. Both refresh and the word-object read use it. Refresh keeps its original read/activity writes; merely enumerating the menu makes none. |
+| `Memory.MediumTermMemory.merge` | Replaces its whole-point containment read with `match(left, right)`. Its collection contract and merge writes stay. |
+| `ReferenceClose.score` / `score_order` / `bind_site` | The percept flag replaces the old coordinate-reader callback; matching goes through `match`. Native candidate content stays distinct from its coordinate view used by exclusions, prime, continuity and other policy features. The form feature also gives the matcher its candidate content, rather than pre-cutting it for that match. |
+| `ReferenceClose.individuals` | Keeps the original observed point transiently as `match_value` for partition/reconciliation coverage. The existing `content` still supplies exclusion tests, support, folding and returned descriptions; no durable sidecar is added. |
+| `MemoryLink.menu` / `link` | Both containment tests call `match` on their native inputs. The menu retains carrier validation and the policy's coordinate-valued predicate; these are not the coverage operands. Its legal record passes native candidate content to the scorer. Existing link costs, collection restrictions and writes stay. |
+| `FieldProjection.stimulate` | Two calls, one for each lane, replace its four local sliced coverage calls. |
+| `ReferenceContext.bind_content` / `prepare_operands` | The menu receives the staged object's activated value and order for a raw word; the operator still receives the original word operand and its reference/order. A phrase keeps its current vector. |
+| `Language.LanguageSpace.choose_operation` | Passes the journal's word source and the existing staged word reader to `prepare_operands`; deletes construction/passing of the old occurrence-band mask. Reads this additional staging context only if the grammar has bind. No selected action or chooser score is overridden. |
+
+**Whole points preserved, by reader.** `MediumTermMemory.merge` keeps the
+whole vectors for state, event and percept collections. `MemoryLink.menu`
+and `link` keep the whole point for `kind='percept'`; ordinary reference,
+state and event reads still use the owner's conceptual layout. A percept
+read through `ReferenceClose.score_order` keeps its whole point, including
+the form-feature read; explicit `percept_collections` still obtain their
+primary membership from `PerceptCollections.read_collection`, not coverage
+of their bounds. `FieldProjection`'s no-meaning fallback compares its whole
+form/event block, just as before. A bank with no form layout also keeps the
+whole supplied point. No new codec comparison of event places or times is
+introduced.
+
+The other uses of `IdentityRows.coordinates` remain where §70.11 leaves
+them: carrier validation, exclusions/support, prime/continuity features,
+folded descriptions and the separate link-loss calculation. Neither they
+nor `content_operand`/`remember_content` are redirected in this text. The
+graded readers, cosine/key readers, recall, between-order matching and MTM
+miss policy listed in §70.3/§70.12 are not moved.
+
+### 59.84 The word's object at bind: producer, certificates and ports
+
+**Producer.** With the new shared comparison but without the object
+substitution, the existing public fusion test fails its original assertion:
+all **352/352** inspected form coordinates differ, maximum absolute
+difference **1.0**. The word's located carrier was the menu's content, while
+the object was the identity to be bound. The first implementation also
+revealed an independent staging-owner mistake: that test supplies a
+`ReferenceBank` without an interpreter, although the model has staged the
+object through its own interpreter. The menu now receives that existing
+word interpreter explicitly from `choose_operation`; it does not invent
+one or change the bank's matching layout. The test then passed.
+
+A raw word is the journal's negative `SOURCE`, not a surface-string test.
+`bind_content` reads the word-aligned staged object id, row, order and atoms.
+It applies **`InterpretLayer.activate` → `Interpret.activate_code`** with
+that word's existing STM presence and evidence pair, without copying any
+word occurrence band. If the same identity/timeline is held off the stack,
+it takes the value selected by the same `identity_sources` lookup used by
+`refresh`. This is one staged object, not a search over denotations and not
+a fresh comprehension choice. Missing object rows supply no content offer.
+The dummy and the original word operand remain. Menu construction changes
+neither STM nor MTM.
+
+A composed node, including a unary node with one leaf, is treated as a
+phrase: it has an operation source and keeps the vector already made by the
+read. This is the implementation distinction used for the census below;
+substituting the object of that node's head word would be the deferred
+phrase change, not this text.
+
+| §70.11 certificate | Test/evidence and result |
+| --- | --- |
+| (i) Native fusion and ablation | `test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write` passes in the required-file runs. Replacing only `bind_content`'s returned value/order with the original mention/order, by a local wrapper, fails at the original fusion assertion, 352/352 coordinates, max difference 1.0. No fixture, operator choice or source file is changed by that ablation. |
+| (ii) Same numbers and gradients | `test_reference_values_and_operand_gradients_equal_the_previous_read`: 8 cases; `test_field_values_and_operand_gradients_equal_the_previous_read`: 6 cases, including no meaning, no layout, narrowed candidates, both lanes and empty rows. All values and both operand gradients agree exactly, rtol=atol=0. Passive checks on every reached native caller are tabulated below. |
+| (iii) One match | `test_reference_match_readers_use_the_shared_function` covers all seven readers, including both matches within `individuals`: no direct `meet_ratios`, no `coordinates` call as a match operand, and neither removed menu argument. Source inspection also confirms that remaining coordinate views serve the separate features described above. Pass. |
+| (iv) Word occurrence invariance | `test_single_word_bind_is_independent_of_occurrence_coordinates[False/True]`: changing only where/time from (20,1) to (10,0) changes no offer, candidate value/address or STM state, with and without a meaning block. Incompatible object content is still refused. Both pass. |
+| (v) Exact object and held value | `test_menu_values_the_staged_object_and_keeps_the_word_operand[False/True]`, `test_object_lookup_uses_the_same_timeline_and_reader_as_refresh`, `test_off_stack_symbol_reader_has_refresh_precedence`, `test_object_menu_preserves_code_presence_and_pair_gradients`, and `test_unstaged_word_has_no_content_offer` all pass. The first two layout cases also check that a phrase stays unchanged. |
+| (vi) Form-only bank and port | `test_bind_bank_with_form_only_interpreter_offers_only_dummy` still passes with its original width/capacity and assertions; only the deleted argument is removed. The §59.71 test is ported as (iv). |
+| (vii) Native files and stopping gates | All five required files plus the XOR stopping-gate node: **95 passed**, no skipped/deselected cases, final run **59.82 s**. The named-concept stopping gate is inside `test_item25_completion.py`. Both gates pass. |
+
+The new test module has **22 passing cases**; with the existing unsigned
+coordinate file the final spot run gives **33 passed in 4.19 s**. Two test
+names are ports, none is retired:
+
+- `test_unsigned_coordinates.py::test_bind_compares_content_and_preserves_occurrence_coordinates`
+  becomes `test_single_word_bind_is_independent_of_occurrence_coordinates`.
+  Previously it directly supplied a band cut to `STMChunks.bind_menu`;
+  now it moves the word's coordinates while `prepare_operands` supplies
+  its staged object. Both layouts keep their widths **10/12** and capacity
+  **8**, and retain the candidate-reference, physical-address, returned-value,
+  incompatibility and no-mutation assertions. The paired incompatibility is
+  expressed through the native object's code and word's two evidence lanes.
+- `test_unsigned_coordinates.py::test_bind_bank_with_form_only_interpreter_offers_only_dummy`
+  keeps its name and assertions; its call loses the retired `percept_band`.
+
+The first required-file attempt had two additional failures, both produced
+by unconditional access to `model.inputSpace` in isolated chooser fixtures
+whose grammars **do not contain bind**:
+`test_compose_leaf_decisions_match_eager_and_compiled` and
+`test_operation_runs_on_the_selected_occurrence_eager_and_compiled`.
+Making the production staging read conditional on bind repairs both;
+the tests and their assertions are unchanged (**2 passed in 4.19 s**).
+Both stopping gates had already passed in that attempt. Three early new
+certificate failures were shape errors in the new observers' scalar-seat
+indexing, corrected in those observers; they were not production defects.
+
+For the numerical migration, a passive wrapper returns the real function's
+result unchanged, checks it against the previous formula on each recorded
+call, and checks gradients on independent copies for each encountered
+caller/layout/lane. It draws no random numbers, does not change the policy
+or model gradients, and does not alter compiled graphs. The required run
+contains two explicit isolated compiled chooser checks with no bind; the
+menu census is not missing a compiled bind path. The supplementary memory
+suite includes the full-graph forward's prohibition on accessing MTM.
+
+| Native reader | Exact value comparisons, final required run | Live input calls in that run | Supplementary comparisons | Gradient samples (required + supplementary) |
+| --- | ---: | ---: | ---: | ---: |
+| `STMChunks.bind_menu` | 860 | 818 | 0 | 2 + 0 |
+| `ReferenceClose.score_order` | 1003 | 0 | 85 | 2 + 1 |
+| `FieldProjection.stimulate` | 272 | 240 | 0 | 2 + 0 |
+| `MemoryLink.menu` | 1740 | 0 | 3 | 2 + 1 |
+| `MemoryLink.link` | 31 | 31 | 6 | 1 + 1 |
+| `MediumTermMemory.merge` | 0 | 0 | 1 | 0 + 1 |
+| `ReferenceClose.individuals` | 0 | 0 | 8 | 0 + 1 |
+
+Counts are function invocations, not numbers of candidate elements. The
+menu rows include the passive same-input alternative reads. Ordinary
+reference readers remain detached as before; percept link containment and
+field/menu inputs retain their live graphs. The copied-gradient probes do
+not imply that a detached production reader now trains its inputs.
+
+### 59.85 One-stream menu census and the deferred phrase evaluation
+
+From **one final run** of the required native files, counting active
+batch/mention sites and non-dummy candidates after native order eligibility:
+
+| Mention | Menu calls | Staged object found | Object held off stack | Candidates on the word/current read | Candidates on the object/as implemented |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Raw single word | 144 | 100 | 66 | 15 | 32 |
+| Phrase | 289 | not looked up | not looked up | 11 | 11 |
+
+Thus **34** word calls value an available object by the leaf law without a
+held identity; **44** have no staged object. Six direct `STMChunks.bind_menu`
+unit-test calls have no word/phrase journal and are recorded separately,
+not called words or phrases. Offers count candidate occurrences per menu,
+not distinct identities across the run. Word and object alternatives use
+the **same call's state and random stream**; the passive counter performs
+no selection and makes no STM read/activity write.
+
+The earlier required run, before the final cleanup that passes native
+candidate content to the scorer's form-feature match, also passed all 95
+cases (**54.16 s**). Its independent stream gave words **129/98/65/7/39**
+(calls/found/held/word offers/object offers), and phrases **208**, **11/11**
+offers. Both runs are recorded: their aggregate difference is not an
+estimated effect of that value-preserving cleanup. As §70.10 reports, free
+training draws change the number of menus. That section used eleven files
+and different counts; its **198** single-word calls and **123** held objects
+are not a like-for-like denominator for this five-file-plus-gate census.
+Within each run, phrases are unchanged and the alternatives share inputs.
+
+**What an object-valued phrase at the menu would take — report only.**
+The insertion point is after the current stack/identity refresh and before
+`ReferenceContext.prepare_operands` asks `bind_menu` to compare the phrase.
+The existing evaluator is `Comprehension.Evaluation`; `Extension.reading`
+drives `leaf`, `operation`, `completed` and `finish` over the **completed**
+program, once per scored path. The tensor walk does not yet have that host
+program: `ChunkJournal.capture` builds it after the walk, reading the
+recorded actions, references, physical operands, case selections, held
+refresh/publication witnesses and initial held field. A prefix evaluation
+would need an equivalent bounded prefix view of those records, the input
+field/positions, and the current phrase node. A word's object selection at
+that time could still differ from the later final comprehension selection.
+
+It cannot simply call the present completed evaluator without separating
+its effects. The evaluator writes its private leaf/id/order arrays, action
+frames, cases, timeline, equality observations, extension/composition maps
+and held-concept copy. `completed` feeds `ComprehensionClose`; `finish`
+prepares the tree's working idea store and calls `PartClosing.stage`, then
+retains arrival readings. These are real trial STM/closing preparations,
+although they do not commit LTM or MTM. An intermediate menu evaluation
+would need to return only its current concept vector and private held
+state, without closing or publishing a kept sentence. Calling `leaf`'s
+`referent` itself is a read: it does not open a token or read MTM.
+The current `capture` does read MTM token handles, so using it inside the
+compiled tensor forward would also violate the existing no-pool-access
+contract tested above. This is a boundary/design cost, not only a matmul.
+
+For a sentence with **A** recorded nodes and **P** phrase-menu sites, replay
+from the start to each site costs the sum of the **P prefix lengths**, plus
+the existing operator and extension costs at each replayed node. Its upper
+bound is **P × A** node evaluations instead of one **A**-node comprehension
+per scored path; when P grows with A this is quadratic. Each independent
+replay also clones the initial held field (**K × D** values), and the
+current frame implementation allocates/copies program-sized arrays
+(in particular `frames.index_copy`), so actual memory traffic exceeds that
+node-count bound. Repeated evaluator construction also repeats case and
+reference reads. Keeping incremental object-valued state beside the tree
+could avoid prefix replay, but would have to follow every transpose,
+unary offset, refresh/publication witness, alternative path and rollback.
+That is a new carried state, not built here. No invented timing is offered
+for an implementation that does not exist. This text leaves phrase values,
+closes, capacity and all chooser actions alone.
+
+### 59.86 Finished-source checks and limits
+
+The returned source snapshot (`bounded_tests.source_snapshot`, canonical
+sorted JSON) is
+**`81429fa09c88949cb5eb8bfd05d0bb4645379d6ddea33add3cddc93823e6df88`**,
+**1,220 files**. The final required-file run is **95 passed in 59.82 s**;
+the shared-match/coordinate certificates are **33 passed in 4.19 s**.
+The supplementary native reference/memory checks give **40 passed,
+4 skipped in 82.36 s**: `test_reference_close.py`,
+`test_medium_term_memory.py`, and the four selected link/merge/event/gradient
+certificates in `test_item20_round5_memory.py`. The four skips are the
+existing `mtm_reidentification` phase cases. No case is newly marked or
+retired. The final object-substitution ablation gives the required
+**1 failure in 2.89 s**, at the original fusion assertion; it is an
+intentional negative control, not an unresolved source failure. The focused
+closing policy/form-gradient check also passes (**1 passed in 2.42 s**).
+
+No stopping gate has failed. No bound, seed, learning rate, capacity or
+presentation count changed. No expectation-failure mark was added. No
+sweep or lesson is run: Alec explicitly requires spot certification for
+this text, so §59.82's completed sweep and learning measurements remain
+historical evidence for its source, not measurements of this new source.
+The deferred measure, phrase-object value, event-codec matching,
+between-order matching and MTM miss work stay as listed in §70.11–§70.13.
+There is no newly identified design stopper in this text.
+
+`bin/Attention.py`, `bin/ModelAttention.py`, `bin/SentenceAttention.py`,
+`bin/AttentionTraversal.py` and **all of `bin/Models.py`** are byte-identical
+to checkpoint `08d1cab2bf`; hence there is no new edit to either
+`_run_sentence_word_bricks` or `stage_cs_lang`. The four attention files
+also retain their previous protected bytes. `git diff --check` passes.
+Receipts remain local and are not linked. The validated source/specification
+will be checkpointed locally under Alec's latest commit authorization;
+no push is authorized or made.
+
 ## 60. Part B, second text: the loop of looks (Claude, 2026-11-16)
 
 §58 and §59 are kept for Codex's returns of §57.6 and §55.3. This text

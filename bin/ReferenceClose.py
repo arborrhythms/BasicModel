@@ -11,7 +11,7 @@ import hashlib
 import torch
 from Memory import NULL_CONCEPT
 from torch import nn
-from IdentityRows import meet_ratios
+from ConceptualMatch import match
 
 
 def constituents(clause):
@@ -416,6 +416,7 @@ class ReferenceClose(nn.Module):
             if observed is None:
                 continue
             context['content'] = self.coordinates(observed)
+            context['match_value'] = observed.detach().to(owner.similarity_codebook.W)
             context['location'] = location
             context['address'] = address
             context['native'] = native
@@ -450,7 +451,8 @@ class ReferenceClose(nn.Module):
                                        for anchor in anchors[1:])]
             partitions = {key: [] for key in identities}
             for member in members:
-                scores = [(meet_ratios(member['content'], anchor['content'])[1] +
+                scores = [(match(member['match_value'], anchor['match_value'],
+                                  codebook=owner.similarity_codebook)[1] +
                           int(predicate(member) == predicate(anchor)))
                           if member_space(identity,member) == member_space(identity,anchor)
                           else member['content'].new_tensor(-torch.inf) for anchor in anchors]
@@ -485,7 +487,7 @@ class ReferenceClose(nn.Module):
                     return bool(((value >= .3) & (initial[:value.numel()] < .3)).any())
                 newer_a, newer_b = [x for x in a if new_support(x)], [x for x in b if new_support(x)]
                 common = any(any(bool(coverage == 1) for coverage in
-                    meet_ratios(x['content'], y['content']))
+                    match(x['match_value'], y['match_value'], codebook=owner.similarity_codebook))
                     and predicate(x) == predicate(y) for x in newer_a for y in newer_b)
                 if common and not any(contradiction(member_space(left,x))(x['content'], y['content']) for x in a for y in b):
                     groups[left].extend(groups.pop(right))
@@ -544,7 +546,7 @@ class ReferenceClose(nn.Module):
             (site.get('source_node', node),), preview=True)
         return closing.occurrence_order(target, context=prepared)
 
-    def score(self, content, predicate, cue, role, individuals, *, stream=None, asserted=(), where=None, when=None, coordinate_read=None, member_order=None, percept_collections=()):
+    def score(self, content, predicate, cue, role, individuals, *, stream=None, asserted=(), where=None, when=None, percept=False, member_order=None, percept_collections=()):
         """Meet content and form, native expectation, then recency and roles."""
         if member_order is None and individuals:
             owner = self.components.owner
@@ -558,7 +560,7 @@ class ReferenceClose(nn.Module):
                     order = owner._concept_source_order(identity)
                 groups.setdefault(order, {})[identity] = candidate
             scored = [self.score_order(content,predicate,cue,role,group,stream=stream,
-                asserted=asserted,where=where,when=when,coordinate_read=coordinate_read,
+                asserted=asserted,where=where,when=when,percept=percept,
                 member_order=order,percept_collections=percept_collections)
                 for order,group in groups.items()]
             return (tuple(choice for choices,_,_ in scored for choice in choices),
@@ -571,15 +573,17 @@ class ReferenceClose(nn.Module):
                     kind='percept' if percept_collections or member_order == -1 else 'reference',
                     order=-1 if percept_collections else member_order, stream=stream, allow_promotion=False)}
         return self.score_order(content,predicate,cue,role,individuals,stream=stream,
-            asserted=asserted,where=where,when=when,coordinate_read=coordinate_read,
+            asserted=asserted,where=where,when=when,percept=percept,
             member_order=member_order,percept_collections=percept_collections)
 
     def score_order(self, content, predicate, cue, role, individuals, *, member_order,
-                    stream=None, asserted=(), where=None, when=None, coordinate_read=None, percept_collections=()):
+                    stream=None, asserted=(), where=None, when=None, percept=False, percept_collections=()):
         """Score an already eligible pool in its one declared geometry."""
         from IdentityRows import form_region
-        coordinate_read = self.coordinates if coordinate_read is None else coordinate_read
+        raw_content = content
+        coordinate_read = (lambda point: point.detach()) if percept else self.coordinates
         content = coordinate_read(content)
+        codebook = None if percept else self.components.owner.similarity_codebook
         region = form_region(self.components.owner,cue)
         contradicts = self.exclusion_query(order=member_order)
         constraints = (content, *(self.coordinates(value) for value in asserted))
@@ -598,10 +602,12 @@ class ReferenceClose(nn.Module):
                     value.reshape(1,1,-1), edges)[0,0,0] for edges in percept_collections]).amax()
                 candidate_coverage = request_coverage = membership
             else:
-                candidate_coverage,request_coverage = meet_ratios(content,value)
+                candidate_coverage,request_coverage = match(raw_content.detach().to(content),
+                    candidate['content'].detach().to(content), codebook=codebook)
             if not bool((candidate_coverage == 1) | (request_coverage == 1)):
                 continue
-            form = (content.sum()*0 if region is None else meet_ratios(region.to(value),value)[0])
+            form = (content.sum()*0 if region is None else match(region.to(value),
+                candidate['content'].detach().to(value), codebook=codebook)[0])
             recency = sum(other['position'] > candidate['position'] for other in individuals.values())
             order = member_order
             if order is None:
@@ -728,7 +734,7 @@ class ReferenceClose(nn.Module):
                 role=role,position=record['position'],occurrences=(),perception=True,
                 token=record.get('token'))
         choices, features, logits = self.score(content, predicate, cue,
-            site.get('role', role), individuals, stream=stream,coordinate_read=coordinate_read,
+            site.get('role', role), individuals, stream=stream,percept=bool(collections) or site.get('member_order') == -1,
             member_order=site.get('member_order'),percept_collections=collections)
         base = dict(binding_role=role, reverse_leaves=tuple(site.get('leaves', ())),
                     binding_candidates=choices, witnesses=(),

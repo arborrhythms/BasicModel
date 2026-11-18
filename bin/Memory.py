@@ -218,18 +218,24 @@ class STMChunks:
 
 
     @staticmethod
-    def refresh(state, indices, gate=None, *, witness=False):
-        """Read the current value of a bound off-stack identity/timeline."""
-        identities = STMChunks.gather(state[STMChunks.IDENTITY], indices.clamp_min(0))
-        timelines = STMChunks.gather(state[STMChunks.TIMELINE], indices.clamp_min(0))
+    def identity_sources(state, identities, timelines):
+        """Locate the existing off-stack reader of an identity and timeline."""
         match = ((identities[..., None] == state[STMChunks.IDENTITY][:, None])
                  & (timelines[..., None] == state[STMChunks.TIMELINE][:, None])
                  & (state[STMChunks.STACK][:, None] < 0) & (identities[..., None] >= 0))
         field = match & ((state[STMChunks.REFS][:,None,:,0,0] == STMChunks.SYMBOL)
                          | (state[STMChunks.REFS][:,None,:,0,0] == STMChunks.IDENTITY_REF))
         match = torch.where(field.any(-1)[...,None],field,match)
-        sources = match.long().argmax(-1)
-        available = match.any(-1) & (indices >= 0)
+        return match.long().argmax(-1), match.any(-1)
+
+
+    @staticmethod
+    def refresh(state, indices, gate=None, *, witness=False):
+        """Read the current value of a bound off-stack identity/timeline."""
+        identities = STMChunks.gather(state[STMChunks.IDENTITY], indices.clamp_min(0))
+        timelines = STMChunks.gather(state[STMChunks.TIMELINE], indices.clamp_min(0))
+        sources, available = STMChunks.identity_sources(state, identities, timelines)
+        available = available & (indices >= 0)
         if gate is not None:
             available &= gate
         values = torch.where(available[..., None], STMChunks.gather(state[STMChunks.BUFFER], sources),
@@ -243,24 +249,14 @@ class STMChunks:
 
 
     @staticmethod
-    def bind_menu(state, mention, *, orders=None, exclusions=None, meaning_start=0,
-                  percept_band=None):
+    def bind_menu(state, mention, *, orders=None, exclusions=None, codebook=None):
         """Fixed K+1 field variants: dummy first, then eligible off-stack chunks."""
         batch, positions, width = mention.shape
         own = mention[:, :, None]
         candidates = state[STMChunks.BUFFER][:, None].expand(batch, positions, -1, width)
         available = ((state[STMChunks.STACK] < 0) & (state[STMChunks.IDENTITY] >= 0))[:, None].expand(batch, positions, -1)
-        from IdentityRows import meet_ratios
-        columns = torch.arange(width, device=mention.device)
-        content = columns >= meaning_start
-        if percept_band is not None:
-            start, end, total = percept_band
-            if total != width:
-                raise ValueError('bind occurrence layout differs from its operands')
-            content = content & ~((columns >= start) & (columns < end))
-        # The occurrence bands locate a description; they are not evidence
-        # for containment. Keep them on the candidates returned below.
-        covered, covers = meet_ratios(own * content, candidates * content)
+        from ConceptualMatch import match
+        covered, covers = match(own, candidates, codebook=codebook)
         available = available & ((covered == 1) | (covers == 1))
         if orders is not None:
             # With an open order each candidate supplies its own typed read.
@@ -1610,9 +1606,9 @@ class MediumTermMemory(MemoryStore):
             if left is not None and right is not None and left != right:
                 raise ValueError(f'a merge cannot mix collection kinds or orders: {field} {left!r} != {right!r}')
         if previous.refinement.get('member_kind') in ('state', 'event', 'percept'):
-            from IdentityRows import meet_ratios
+            from ConceptualMatch import match
             left, right = self.value_of(source), self.value_of(target)
-            covered, covers = meet_ratios(left, right)
+            covered, covers = match(left, right)
             if not bool((covered == 1) | (covers == 1)):
                 raise ValueError('a merge requires containment between its collections')
         mentions = {**previous.refinement.get('mentions', {}), **antecedent.refinement.get('mentions', {})}

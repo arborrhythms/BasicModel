@@ -1,7 +1,7 @@
 """Content projection and definition closure over the known concept inventory."""
 import torch
 from FieldLogic import reduce
-from IdentityRows import meet_ratios
+from ConceptualMatch import match
 from Understanding import ConceptualField
 
 
@@ -91,25 +91,10 @@ def stimulate(owner, point, *, order=0, where=None, when=None):
         raise ValueError('stimulate expects batch by reading by code')
     rows = inventory(owner)
     codes = owner.similarity_codebook.lookup_rows(rows).to(point)
-    width = min(codes.shape[-1], point.shape[-1])
-    derived = getattr(owner.similarity_codebook, 'mereology', None)
-    form_width = width if derived is None else min(width, derived.percept_event_width)
-    form = codes[:, None, None, :form_width].clamp_min(0)
-    positive, _ = meet_ratios(point[None, ..., :form_width].clamp_min(0), form)
-    negative, _ = meet_ratios((-point[None, ..., :form_width]).clamp_min(0), form)
-    if form_width < width:
-        if (width - form_width) % 2:
-            raise ValueError('stimulate requires two equal meaning blocks')
-        lane_width = (width - form_width) // 2
-        # Native codes carry signless meaning in separate for/against blocks.
-        # Form identifies a percept; it cannot supply conceptual entailment.
-        meaning = codes[:, form_width:form_width + lane_width].clamp_min(0)
-        known = meaning.sum(-1)[:, None, None] > 0
-        lanes = point[..., form_width:width].split(lane_width, -1)
-        for_lane, _ = meet_ratios(lanes[0][None].clamp_min(0), meaning[:, None, None])
-        against_lane, _ = meet_ratios(lanes[1][None].clamp_min(0), meaning[:, None, None])
-        positive = torch.where(known, for_lane, positive)
-        negative = torch.where(known, against_lane, negative)
+    positive, _ = match(point[None], codes[:, None, None],
+                        codebook=owner.similarity_codebook, lane=0)
+    negative, _ = match(point[None], codes[:, None, None],
+                        codebook=owner.similarity_codebook, lane=1)
     direct = torch.stack((positive, negative), -1)
     # Percept collections share the native boundary reader before closure.
     if hasattr(owner, 'basic_percepts'):

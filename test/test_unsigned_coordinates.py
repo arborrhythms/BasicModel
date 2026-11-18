@@ -104,39 +104,35 @@ def test_absent_time_band_retains_zero_tick_read():
 
 
 @pytest.mark.parametrize('paired', [False, True])
-def test_bind_compares_content_and_preserves_occurrence_coordinates(paired):
+def test_single_word_bind_is_independent_of_occurrence_coordinates(paired):
     from Memory import STMChunks as C
     from RowTime import encoder
+    from test_conceptual_match import word_case, word_menu
+    state, physical, seat, word, candidate, inputs, interpreter = word_case(paired)
     location = WhereEncoding(nWhere=4, nWhen=4).set_capacity(100)
     clock = encoder()
-    content = torch.tensor([.2, .2])
-    whole = torch.tensor([.8, .8])
-    query = torch.cat((content, location.encode(20), clock.encode(1)))
-    candidate = torch.cat((whole, location.encode(10), clock.encode(0)))
-    if paired:
-        query = torch.cat((query, content))
-        candidate = torch.cat((candidate, whole))
-    width = len(query)
-    state = C.empty(1, 8, width, device=query.device, dtype=query.dtype)
-    state, seat = C.deposit(state, candidate[None], torch.tensor([True]),
-        identity=7, order=0)
     before = tuple(value.clone() for value in state)
-    points, ids, indices, valid = C.bind_menu(state, query[None, None],
-        orders=torch.tensor([[0]]), meaning_start=10 if paired else 0,
-        percept_band=(2, 10, width))
-    at = int(seat) + 1
-    assert valid[0, 0, at] and ids[0, 0, at] == 7
-    assert indices[0, 0, at] == seat
-    torch.testing.assert_close(points[0, 0, at], candidate, rtol=0, atol=0)
+    menus = []
+    for place, time in ((20, 1), (10, 0)):
+        mention = word.clone()
+        mention[2:6], mention[6:10] = location.encode(place), clock.encode(time)
+        menus.append(word_menu(state, mention, inputs, interpreter))
+        at = int(seat)+1
+        assert menus[-1]['binary_valid'][0, 0, at]
+        assert menus[-1]['binary_refs'][0, 0, at, 1] == 7
+        assert menus[-1]['binary_choices'][0, 0, at, 1] == seat
+        torch.testing.assert_close(menus[-1]['right'][0, 0, at], candidate, rtol=0, atol=0)
+    torch.testing.assert_close(menus[0]['binary_valid'], menus[1]['binary_valid'], rtol=0, atol=0)
     for actual, prior in zip(state, before):
         torch.testing.assert_close(actual, prior, rtol=0, atol=0)
-    # Incompatible content is still rejected, even at the same occurrence.
-    incompatible = query.clone()
-    incompatible[10 if paired else 0] = .9
-    _, _, _, valid = C.bind_menu(state, incompatible[None, None],
-        orders=torch.tensor([[0]]), meaning_start=10 if paired else 0,
-        percept_band=(2, 10, width))
-    assert not valid[0, 0, at]
+    # Incompatible object content is still refused at the same word place.
+    inputs._ar_word_object_atoms[0, 0, 10 if paired else 0] = .9
+    if paired:
+        altered = list(state)
+        altered[C.TRUTH] = state[C.TRUTH].clone()
+        altered[C.TRUTH][0, physical, 1] = .2
+        state = tuple(altered)
+    assert not word_menu(state, mention, inputs, interpreter)['binary_valid'][0, 0, at]
 
 
 def test_bind_bank_with_form_only_interpreter_offers_only_dummy():
@@ -156,7 +152,6 @@ def test_bind_bank_with_form_only_interpreter_offers_only_dummy():
     integers = torch.zeros(1, 2, dtype=torch.long)
     menu = prepare_operands(value.expand(1, 2, width), integers, integers, integers,
         orders=integers, rules=(rule,), unary_rules=(), bank=bank, live=None,
-        active=torch.tensor([[True, False]]), chunk_state=state,
-        percept_band=(2, 10, width))
+        active=torch.tensor([[True, False]]), chunk_state=state)
     assert menu['binary_valid'].sum() == 1
     assert menu['binary_valid'][..., torch.tensor(menu['binary_bind_dummy'])].all()

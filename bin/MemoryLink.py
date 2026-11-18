@@ -3,7 +3,7 @@ from dataclasses import dataclass, replace
 
 import torch
 
-from IdentityRows import meet_ratios
+from ConceptualMatch import match
 
 
 @dataclass(frozen=True)
@@ -131,12 +131,13 @@ def menu(owner, occurrence, candidates, *, value, where, when, stream, projected
             continue
         if projected is not None and (site.kind, key) in projected:
             record = dict(record, value=projected[site.kind, key])
-        candidate = coordinates(record['value'])
-        a, b = meet_ratios(query, candidate)
+        coordinates(record['value'])  # Preserve carrier validation before eligibility.
+        a, b = match(value.detach().to(query), record['value'].detach().to(query),
+                     codebook=None if site.kind == 'percept' else owner.similarity_codebook)
         if bool((a == 1) | (b == 1)):
-            legal[key] = dict(record, content=candidate)
+            legal[key] = dict(record, content=record['value'].detach().to(query))
     choices, features, logits = resolver.score_order(value, query, value, 0, legal,
-        stream=stream, where=where, when=when, coordinate_read=coordinates, member_order=order)
+        stream=stream, where=where, when=when, percept=site.kind == 'percept', member_order=order)
     return choices, features, logits
 
 
@@ -228,8 +229,10 @@ def link(owner, occurrence, candidates, *, value, where, when, stream):
         # witnessed description rather than the whole written clause. That
         # menu already checked containment; every other caller checks here too.
         if site.kind != 'reference':
-            coordinates = (lambda point: point) if site.kind == 'percept' else resolver.coordinates
-            a, b = meet_ratios(coordinates(value), coordinates(covered_before))
+            a, b = (match(value, covered_before) if site.kind == 'percept' else
+                    match(value.detach().to(owner.similarity_codebook.W),
+                          covered_before.detach().to(owner.similarity_codebook.W),
+                          codebook=owner.similarity_codebook))
             if not bool((a == 1) | (b == 1)):
                 raise ValueError('a link requires containment with its collection')
     if site.kind != 'reference':

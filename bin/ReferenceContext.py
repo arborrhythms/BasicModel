@@ -421,9 +421,54 @@ def resolve_operand(value, identity, position, *, mode, bank, live, active, orde
             torch.where(used, refs, identity), relative & used, available | ~active)
 
 
+class BindContent(NamedTuple):
+    value: torch.Tensor
+    order: torch.Tensor
+    single: torch.Tensor
+    object_id: torch.Tensor
+    found: torch.Tensor
+    held: torch.Tensor
+
+
+def bind_content(mention, order, *, word_source, inputs, interpreter, chunks, physical):
+    """Value a shifted word's staged object without changing its operand.
+
+    A composed node is a phrase, even if it has only one leaf. Its word-tree
+    value stays the menu's content. This read writes neither STM nor MTM.
+    """
+    from Memory import STMChunks
+    from PrependedSymbols import word_view
+    single = torch.zeros_like(order, dtype=torch.bool) if word_source is None else word_source < 0
+    object_id = torch.full_like(order, -1)
+    found = held = torch.zeros_like(single)
+    point, native_order = torch.zeros_like(mention), torch.full_like(order, -1)
+    ids, rows, orders = (word_view(inputs, name) for name in
+                         ('object_ids', 'object_rows', 'object_orders'))
+    atoms = getattr(inputs, '_ar_word_object_atoms', None)
+    if word_source is not None and interpreter is not None and all(
+            torch.is_tensor(value) for value in (ids, rows, orders, atoms)) and ids.shape[1]:
+        word = -word_source-1
+        at = word.clamp(0, ids.shape[1]-1)
+        object_id = ids.gather(1, at)
+        found = single & (word < ids.shape[1]) & (rows.gather(1, at) >= 0) & (object_id >= 0)
+        native_order = orders.gather(1, at)
+        code = atoms.gather(1, at[..., None].expand(*at.shape, atoms.shape[-1]))
+        physical = physical.clamp_min(0)
+        presence = STMChunks.gather(chunks[STMChunks.ACTIVATIONS], physical)
+        evidence = STMChunks.gather(chunks[STMChunks.TRUTH], physical)
+        point = interpreter.activate(code, presence, evidence=evidence)
+        timeline = STMChunks.gather(chunks[STMChunks.TIMELINE], physical)
+        source, held = STMChunks.identity_sources(chunks, object_id, timeline)
+        held = held & found
+        point = torch.where(held[..., None], STMChunks.gather(chunks[STMChunks.BUFFER], source), point)
+    return BindContent(torch.where(single[..., None], torch.where(found[..., None], point, 0.), mention),
+        torch.where(single, native_order, order), single, object_id, found, held)
+
+
 def prepare_operands(window, identities, flags, positions, *, orders, rules, unary_rules,
                      bank, live, active, chunk_state=None, source=None, meaning_blocks=False,
-                     signable=None, interpretable=None, percept_band=None):
+                     signable=None, interpretable=None, word_sources=None, word_inputs=None,
+                     word_interpreter=None):
     """Enumerate reference variants of each operation for one global softmax.
 
     A variant retains the grammar operation's index and learned scoring row.
@@ -668,12 +713,16 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
             mention_order = orders.gather(1,newest)
             own = identities.gather(1,newest)
             own_relative = flags.gather(1,newest).bitwise_and(1) != 0
-            derived = getattr(getattr(getattr(interpreter, 'owner', None),
-                                      'similarity_codebook', None), 'mereology', None)
-            meaning_start = derived.percept_event_width if derived is not None else 0
-            points, ids, chunks, available = STMChunks.bind_menu(chunk_state,mention,
-                orders=mention_order, exclusions=getattr(bank,'exclusions',None),
-                percept_band=percept_band, meaning_start=meaning_start)
+            codebook = getattr(getattr(interpreter, 'owner', None), 'similarity_codebook', None)
+            physical = (None if source is None else
+                        STMChunks.stack_indices(chunk_state).gather(1, source).gather(1, newest))
+            content = bind_content(mention, mention_order,
+                word_source=None if word_sources is None else word_sources.gather(1, newest),
+                inputs=word_inputs, interpreter=word_interpreter or interpreter,
+                chunks=chunk_state, physical=physical)
+            points, ids, chunks, available = STMChunks.bind_menu(chunk_state,content.value,
+                orders=content.order, exclusions=getattr(bank,'exclusions',None),
+                codebook=codebook)
             for column in range(points.shape[2]):
                 binary_ops.append(operation)
                 binary_bind.append(True)
@@ -683,7 +732,9 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
                 brefs.append(torch.stack((own,ids[:,:,column]),-1))
                 bresolved.append(torch.stack((torch.zeros_like(own,dtype=torch.bool),
                     torch.full_like(own,column > 0,dtype=torch.bool)),-1))
-                borders.append(torch.cat((mention_order,mention_order),-1)[:,None])
+                target_order = (mention_order if column == 0 else
+                                chunk_state[STMChunks.ORDERS][:,column-1:column])
+                borders.append(torch.cat((mention_order,target_order),-1)[:,None])
                 bchoices.append(torch.stack((torch.full_like(own,-1),chunks[:,:,column]),-1))
                 bfound.append(torch.stack((torch.zeros_like(own,dtype=torch.bool),available[:,:,column] & (column > 0)),-1))
                 # The description keeps its actual clause kind, including
@@ -693,10 +744,10 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
                 # A known mention order constrains its reference. Otherwise
                 # the chosen referent supplies the order; an unknown dummy
                 # cannot close. The kept close retains this trial's choice.
-                result_order = (mention_order if column == 0 else
-                                chunk_state[STMChunks.ORDERS][:,column-1:column])
+                result_order = target_order
                 bvalid.append(available[:,:,column] & active.any(-1)[:,None]
-                    & (result_order >= 0) & ((mention_order < 0) | (result_order == mention_order)))
+                    & (result_order >= 0) & ((content.order < 0) | (column == 0) |
+                                            (result_order == content.order)))
                 case_weights.append(window.new_zeros(B,N-1,case_count,2))
             continue
         left_options = propose(window[:, :-1], identities[:, :-1], flags[:, :-1], positions[:, :-1],

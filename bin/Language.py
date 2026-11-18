@@ -11626,9 +11626,6 @@ class LanguageSpace(nn.Module):
         # The source band is retained in STM. Grammar reads its age in this
         # presentation, so shifting the whole clock cannot choose a rule.
         model = self._symbol_space.conceptualSpace._model
-        when_start = model.symbolSpace.ltm_store.when_start
-        occurrence_band = (None if when_start is None else
-                           (max(0, when_start-4), when_start+4, state[0].shape[-1]))
         from RowTime import relative_idea
         chunks = (relative_idea(model, state[0]), *state[1:])
         state = STMChunks.stack_view(chunks)
@@ -11691,8 +11688,10 @@ class LanguageSpace(nn.Module):
             from ChunkJournal import SOURCE, LEAVES
             from ClauseScope import ClauseScope
             signable = interpretable = None
+            word_sources = None
             if reference_scope.shape[-1] > LEAVES:
-                leaf = reference_scope[:,:,SOURCE].gather(1, source) < 0
+                word_sources = reference_scope[:,:,SOURCE].gather(1, source)
+                leaf = word_sources < 0
                 forced = getattr(self._reference_bank, 'forces_interpretation',
                     getattr(self._reference_bank, 'close_references', False) and
                     getattr(getattr(self._reference_bank, 'interpreter', None), 'mandatory', True))
@@ -11701,12 +11700,14 @@ class LanguageSpace(nn.Module):
                 interpretable = leaf & (not forced)
                 scopes = torch.stack((scopes[..., 0] | torch.where(interpretable,
                     ClauseScope.UNINTERPRETED_LEAF, 0), scopes[..., 1]), -1)
+            binds = any(getattr(rule, 'method_name', None) == 'bind' for rule in self._compose_binary_rules)
             references = prepare_operands(window, scopes[..., 1], scopes[..., 0], positions,
                                           orders=orders.gather(1, source),
                                           rules=self._compose_binary_rules, unary_rules=self._compose_unary_rules,
                                           bank=reference_bank,
                                           chunk_state=chunks, source=source, signable=signable,
-                                          percept_band=occurrence_band,
+                                          word_sources=word_sources, word_inputs=model.inputSpace if binds else None,
+                                          word_interpreter=model._concept_owner().interpret if binds else None,
                                           interpretable=interpretable,
                                           meaning_blocks=any(getattr(getattr(op, 'gl', op), 'meaning_layout', None) is not None
                                               for op in self._tree_layer(2).ops),
