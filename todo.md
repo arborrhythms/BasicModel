@@ -1297,6 +1297,24 @@ generation is expected at this stage and is recorded, not tuned away.
    rerun: the sweep and the lesson. Part B's first text is returned
    whole; the next text is the repair of the thought replay (§68.31;
    its return is §69).
+   **Parthood (§70.14, §70.15).** At Alec's request the measure was
+   matched with parthood as *The Whole Part* defines it (pages 184
+   and 185), and `doc/Mereology.md` now defines parthood so, in place
+   of the clipped cosine: "parthood is not symmetric". Signed values:
+   his guess, "per dimension, there is no overlap between a negative
+   and positive value", is what the stored two lanes already compute
+   (checked, difference 0). Not every inner product is replaced (Alec:
+   "it seems like a good fit for MTM and perhaps other places").
+   *Open for Alec:* whether `Ops._part_kernel`'s scalar form becomes
+   this parthood (trial: six definitional tests change and nothing
+   else in 58 files; recommended), and whether MTM's three likeness
+   matchers move to it now or with item 1.7.
+   **Commits and the docs folder (Alec, 2026-11-18).** Claude may
+   commit its work locally; pushing stays rare. The pending
+   documentation pass of the worktree `basicmodel-docs` is on `main`
+   (`8cf88d459b`) and the worktree is removed (moved to
+   `/tmp/wikioracle-removed-2026-11-18/`). The doc-pass lists kept in
+   the specifications can now be applied on `main`.
 - **1.7. `SigmaLayer` and `PiLayer`, and symbols split from concepts**
    (Alec, 2026-11-16: "I think we should position D as item 1.7"; then
    "review and commit round C, and merge with the performance branch. Then

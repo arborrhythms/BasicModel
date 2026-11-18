@@ -32090,3 +32090,131 @@ two numbers of `meet_ratios`.
 above, and beside it what the clipped cosine is used for.
 `doc/Architecture.md`, the paragraph on a mention's association: the
 same reference.
+
+### 70.15 Parthood in the docs, signed values, and identity in MTM (Alec, 2026-11-18)
+
+Alec, 2026-11-18, of §70.14:
+
+> I think we need to replace doc/Mereology.md parthood: a clipped cosine
+> is symmetric (?), "which is the same both ways. It reads .548 and .548
+> where your table has .3 and 1." parthood is not symmetric. So please
+> update that doc reference, and lets use it to define identity where
+> you are using that measure in MTM, but lets also figure out how it can
+> be extended to signed values (my guess is that, per dimension, there
+> is no overlap between a negative and positive value)
+
+> Note that I am not proposing we replace all inner product with this
+> formula, because that might be quite slow over global concept
+> comparisons, but it seems like a good fit for MTM and perhaps other
+> places.
+
+**1. The doc.** `doc/Mereology.md` is changed. Its section "Parthood as
+Clipped Cosine Projection" is now "Parthood as Shared Size": the book's
+function, that it is not symmetric, the five relations by its two
+directions, signed values, the empty operand, and what the source
+computes today. With it: `part()` as the graded form of `Ops.partOf`;
+"Identity is decided by parthood, not distance"; the suite's table; the
+five-relation table, whose old conditions could not hold for a part
+that is three tenths of its whole; and the claim of Boole's
+contrapositive, which held only because the cosine is the same both
+ways. `doc/FutureWork.md` has one sentence and its link changed.
+*Left as they are, because they describe `Ops._part_kernel` as built:*
+`doc/Logic.md` ("Sign and parthood", "Parthood as Projection"),
+`doc/Architecture.md` (two sentences) and `doc/STM.md` (one link text).
+They change with point 5.
+
+**2. Signed values: his guess is right, and the stored form already
+computes it.** On each coordinate two values of the same sign share the
+smaller of their sizes, two of opposite signs share nothing, and a size
+is the sum of the absolute values. That is the unsigned parthood on a
+signed value's two lanes, for and against. Checked on 100,000 random
+signed pairs against `ConceptualMatch.match` on the two lanes: the
+difference is 0.0 in both directions. Also checked:
+
+- the value lies between 0 and 1;
+- a thing is wholly a part of itself, and no part of its negation;
+- negating both changes nothing;
+- it is 1 exactly when every coordinate of the first lies between zero
+  and the same coordinate of the second; a coordinate on the other side
+  takes away exactly its own share;
+- `Ops.partOf`'s test, each coordinate at or below the other's, is not
+  this on signed values: (-.9, .1) is at or below (.2, .5) on both
+  coordinates, and its parthood in it is .1;
+- the contrapositive does not hold for the exchange of lanes: it gives
+  the other direction.
+
+**3. Identity in MTM.** The readers of this measure in MTM are
+`MediumTermMemory.merge`, `MemoryLink.menu` and `link`, and
+`ReferenceClose.individuals`. Since `31b24db620` each calls
+`ConceptualMatch.match` on the stored lanes, so each computes the
+book's parthood, signed values included. The doc now defines the terms:
+one is a part of the other when one of the two numbers is 1, and two
+are the same when both are. Those readers admit on parthood one way,
+as before; nothing in the source changes by this point.
+
+**4. Not every inner product** (Alec). A likeness stays where every
+concept is compared at once. MTM's own remaining matchers are
+likenesses too: `MediumTermMemory.match_candidate` and
+`FamiliarTier.witnessed_match` (a cosine of .8 or more, after an exact
+test of proportions) and `FamiliarTier.observe_field` (a cosine of .8,
+and of .5). MTM holds 64 entries, so the cost of parthood there is
+nothing. What would change is the meaning: a cosine ignores size, and
+size is certainty in this space, so two centroids of one direction and
+different certainty are the same by cosine and, by parthood, the weaker
+is a part of the stronger. *Not tried.* Item 1.7's rule 16 (likeness of
+codes pairs nothing) rebuilds these readers.
+
+**5. The function the source calls parthood.** `Ops._part_kernel` with
+`scalar=True` is the clipped cosine. It has four callers: the support
+of the thought `part` (`ThoughtFaces.part`), the same in a query
+(`bin/Queries.py`), a score of consistency (`_part_score` in
+`bin/Layers.py`), and `ImpenetrableLayer`, which no production path
+builds. Each compares two vectors, not all concepts. With the cosine
+the support of "A is a part of B" is the support of "B is a part of A".
+*Trial* (a scratch copy of `31b24db620` with the book's signed parthood
+in that branch; the 58 test files that touch parthood, and both gates;
+not a receipt):
+
+| Source | Passed | Skipped | Failed |
+|---|---|---|---|
+| as committed (the 58 files) | 1,245 | 15 | 0 |
+| with the book's parthood (the 58 files and both gates) | 1,241 | 15 | 6 |
+
+Both gates pass. The six are the tests that state the cosine's own
+properties: five of `test_basicmodel.py::TestBasisMereology`
+(`test_part_is_clipped_cosine`,
+`test_part_satisfies_boole_contrapositive`,
+`test_boundary_zero_under_clipped_cosine`,
+`test_overlap_false_when_parallel`,
+`test_equal_three_region_partition`) and
+`test_impenetrable.py::TestOverlapPenalty::test_relation_counts_partition_non_diagonal`.
+One thing to settle with it: `Ops.copart`'s scalar is one less the
+parthood of the first in the second, and its docstring calls it the
+part of the second that the first does not account for.
+
+**Open, for Alec.**
+
+1. Whether `Ops._part_kernel`'s scalar form becomes the book's parthood
+   (*recommended:* yes; it is "perhaps other places", it compares two
+   vectors, and six definitional tests are ported).
+2. Whether MTM's three likeness matchers move to parthood now, after a
+   trial, or with item 1.7, which rebuilds them (*recommended:* with
+   item 1.7).
+
+No text for Codex is written for either until he answers.
+
+**Also on 2026-11-18** (Alec: "you can commit your work: its mostly
+pushing that I don't want to do too often", and "Please also add your
+~/github/doc work to the main branch and delete that folder when
+synced."). Claude committed on `main`, and pushed nothing:
+`b81e50365a` (the specifications and the todo) and `8cf88d459b` (the
+documentation pass of 30 files from the worktree `basicmodel-docs`;
+`doc/Params.md`, `doc/STM.md` and `doc/Spaces.md` overlapped with the
+checkpoint of rounds A and B and keep the pass's text with that
+checkpoint's newer fact). The worktree was then moved to
+`/tmp/wikioracle-removed-2026-11-18/basicmodel-docs` and its entry
+pruned. `~/github/doc` itself is a link to the superproject's `doc`
+folder and was left alone. So the lists "for the documentation pass" in
+§68.32, §68.37, §68.55, §68.65, §70.12 and §70.14, and in the item 1.7
+specification, no longer wait for another pass over those files: they
+can be applied on `main`.

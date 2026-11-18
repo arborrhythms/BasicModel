@@ -46,9 +46,9 @@ error. Geometric relations answer "looks like"; asserted parthood answers
    [STM](STM.md#10-ltm-as-the-chain-of-stm-end-states).
 2. **Exact dominance is the semantic ground truth among codes.** `Ops.partOf`
    is elementwise $\le$ reduced with `all`; `intuit`'s containment tests are
-   its callers. `part()`, the clipped cosine below, is its graded retrieval
-   score. It stays total and form-level over everything, symbol codes
-   included.
+   its callers. `part()`, defined below, is its graded form: it is 1
+   exactly where dominance holds. It stays total and form-level over
+   everything, symbol codes included.
 3. **Fusion is the elementwise max, the order-theoretic join.** `Ops.union`
    is an elementwise max and `Ops.intersection` an elementwise min in which a
    zero coordinate is unspecified. There is no learned perceptual whole-maker
@@ -61,12 +61,14 @@ error. Geometric relations answer "looks like"; asserted parthood answers
    `Mereology.Contiguous` on the derivational axis; $\sigma$ extents over
    witness dimensions are single lumps always.
 
-**Identity is decided by containment, not distance** (Alec, 2026-10-20).
-`bind` compares a request $q$ with a candidate $c$ by the two meet ratios
-$|q \wedge c| / |c|$ and $|q \wedge c| / |q|$ (`IdentityRows.meet_ratios`),
-the meet being the coordinatewise minimum, and admits a candidate only when
-one ratio is 1. An underspecified request (a pronoun, *the cat*) is contained
-in every candidate of its kind, so location, recency and expectation decide
+**Identity is decided by parthood, not distance** (Alec, 2026-10-20 and
+2026-11-18). A request $q$ and a candidate $c$ are compared by parthood in
+both directions, $\mathrm{part}(c, q)$ and $\mathrm{part}(q, c)$ as defined
+below (`ConceptualMatch.match`). One is a part of the other when one of the
+two is 1, and the two are the same when both are. `bind`, the merge of two
+identities in MTM and the link of a memory admit a candidate when one is a
+part of the other. An underspecified request (a pronoun, *the cat*) is a part
+of every candidate of its kind, so location, recency and expectation decide
 among them. A form's cue is likewise a learned region tested by containment.
 
 **Selection is the mereological algebra.** Tense, aspect and the preposition
@@ -76,10 +78,12 @@ with an inverse ([Logic](Logic.md#evidence-lanes)).
 
 ---
 
-## Parthood as Clipped Cosine Projection
+## Parthood as Shared Size
 
 Parthood is the single fundamental operation. Every other mereological
-relation is defined in terms of it.
+relation is defined in terms of it. It is the parthood of *The Whole Part*
+(pages 184 and 185; one of the books attached to the author's ORCID
+record): the size of what two things share, over the size of the first.
 
 > **Terminology.**
 > Below, $A, B$ are **percept** vectors (dimensionally-embedded codes in the
@@ -88,27 +92,67 @@ relation is defined in terms of it.
 > relation tying one part-percept to one whole-percept (by reference), and
 > "symbol" for a 0-D `SymbolSpace` reference to a concept.
 
-For two percept vectors $A, B \in \mathbb{R}^D$:
+For two vectors $A, B$ whose coordinates lie in $[0, 1]$:
 
 $$
-\mathrm{part}(A, B) = \frac{\max(0,\ A \cdot B)}{|A|\,|B|}
+\mathrm{part}(A, B) = \frac{|A \cap B|}{|A|}
+= \frac{\sum_i \min(A_i, B_i)}{\sum_i A_i}
 $$
 
-The clipped cosine projection lies in $[0, 1]$ and satisfies Boole's
-contrapositive:
+What two vectors share is the smaller value on each coordinate, and a size
+is the sum of the coordinates. The value lies in $[0, 1]$. It is 1 exactly
+when $A$ is at or below $B$ on every coordinate, which is the exact
+dominance of `Ops.partOf`, and 0 when the two share nothing.
+
+**Parthood is not symmetric.** $\mathrm{part}(A, B)$ is how much of $A$
+lies in $B$, and $\mathrm{part}(B, A)$ how much of $B$ lies in $A$. The two
+values together tell apart the five relations of two things:
+
+| Relation | $\mathrm{part}(A, B)$ | $\mathrm{part}(B, A)$ |
+|---|---|---|
+| apart | 0 | 0 |
+| $B$ inside $A$ | below 1 | 1 |
+| $A$ inside $B$ | 1 | below 1 |
+| the same | 1 | 1 |
+| overlapping | between 0 and 1 | between 0 and 1 |
+
+A likeness of two vectors, such as their cosine, is the same in both
+directions and cannot tell a part from its whole: for a region and a part
+that is three tenths of it, parthood gives 0.3 and 1, and the cosine gives
+0.548 both ways. A cosine remains the measure where every concept is
+compared at once; it is a likeness and not parthood (Alec, 2026-11-18).
+
+**Signed values.** A negative and a positive value share nothing (Alec,
+2026-11-18). On each coordinate two values of the same sign share the
+smaller of their sizes, two values of opposite signs share zero, and a size
+is the sum of the absolute values:
 
 $$
-\mathrm{part}(A, B) = \mathrm{part}(-B, -A)
+\mathrm{part}(A, B) =
+\frac{\sum_i [A_i B_i > 0]\,\min(|A_i|, |B_i|)}{\sum_i |A_i|}
 $$
 
-because $(-B) \cdot (-A) = A \cdot B$ and norms are sign-invariant.
+This is the unsigned formula applied to the stored form of a signed value,
+its two unsigned lanes: the positive part on the for lane and the negative
+part on the against lane. Where a concept is stored as two lanes it needs
+no rule of its own. It is 1 exactly when every coordinate of $A$ lies
+between zero and the same coordinate of $B$. A thing and its negation are
+apart, $\mathrm{part}(A, -A) = 0$, and exchanging the lanes of both
+changes nothing, $\mathrm{part}(-A, -B) = \mathrm{part}(A, B)$.
 
 **Empty-operand contract (asymmetric).** `part(A, B)` returns $1$ when $|A|$
 is near zero regardless of $|B|$ --- the empty set is part of everything
 --- but returns $0$ when $|A|$ is non-empty and $|B|$ is near zero ---
-nothing non-empty is part of the empty set. Empty-vs-empty
-($|A| \approx |B| \approx 0$) resolves to $1$ (the $|A|$ branch wins the
-tie). See `Ops._part_kernel` (`bin/Layers.py`).
+nothing non-empty is part of the empty set. Empty-vs-empty resolves to $1$.
+The readers that decide identity take an empty first operand as no
+evidence: an empty description is offered nothing, and
+`ConceptualMatch.match` returns 0 for it.
+
+**In the source.** `ConceptualMatch.match` returns parthood in both
+directions for the readers that decide identity. `Ops._part_kernel` with
+`scalar=True`, the scalar read of the grammar's `part`, does not compute
+this function yet: it returns a clipped cosine of the two vectors
+(`bin/Layers.py`).
 
 ---
 
@@ -117,19 +161,19 @@ tie). See `Ops._part_kernel` (`bin/Layers.py`).
 Every member of the suite is expressible through `part`. Each `Basis`/`Space`
 method takes a `scalar` flag (default `scalar=False`, the *vector* form used
 inside the grammar layers, e.g. $\mathrm{part}(x,y) = x \cdot (y / \|y\|)$
-elementwise); `scalar=True` collapses it to the clipped-cosine scalar in
-$[0, 1]$ tabulated below, which is what every other formula on this page
-consumes (`Basis.part(..., scalar=True)`).
+elementwise); `scalar=True` collapses it to the scalar in $[0, 1]$
+tabulated below, which is what every other formula on this page consumes
+(`Basis.part(..., scalar=True)`).
 
 | Method | Formula (`scalar=True`) | Interpretation |
 |--------|---------|----------------|
-| `part(A, B)` | $\max(0, A \cdot B) / (|A|\,|B|)$ | Fundamental. A is part of B. |
-| `whole(A, B)` | $\mathrm{part}(B, A)$ | A contains B. |
-| `equal(A, B)` | $\mathrm{part}(A, B) \cdot \mathrm{part}(B, A)$ | Mutual parthood, $[0, 1]$. |
+| `part(A, B)` | $|A \cap B| / |A|$ | Fundamental. How much of A lies in B. |
+| `whole(A, B)` | $\mathrm{part}(B, A)$ | How much of B lies in A. |
+| `equal(A, B)` | $\mathrm{part}(A, B) \cdot \mathrm{part}(B, A)$ | Mutual parthood, $[0, 1]$; 1 is identity. |
 | `overlap(A, B)` | $0 < \mathrm{equal}(A, B) < 1$ | Strictly-partial mutual parthood (indicator). |
 | `underlap(A, B)` | $\mathrm{equal}(A, B) = 0$ | No mutual parthood (indicator). |
-| `boundary(A, B)` | $|\mathrm{part}(A, B) - \mathrm{part}(B, A)|$ | Asymmetry of containment (zero under clipped cosine; for bases with asymmetric `part`). |
-| `copart(A, B)` | $1 - \mathrm{part}(A, B)$, clamped to $[0, 1]$ | The part of B *not* accounted for by A. |
+| `boundary(A, B)` | $|\mathrm{part}(A, B) - \mathrm{part}(B, A)|$ | Asymmetry of containment. |
+| `copart(A, B)` | $1 - \mathrm{part}(A, B)$, clamped to $[0, 1]$ | The share of A that does not lie in B. |
 
 ---
 
@@ -143,25 +187,24 @@ consumes (`Basis.part(..., scalar=True)`).
 | Overlap | $0 < \mathrm{equal} < 1$ |
 | Identity | $\mathrm{equal} = 1$ |
 
-Under clipped cosine, `part` is symmetric, so the three regions collapse to
-a single scalar classifier. For a future `Basis` with asymmetric `part`, the
-general five-relation table applies:
-
-**Five-relation table** (general case, $\tau \approx 1$, $\epsilon \approx 0$):
+The product does not say which of the two is the part. The two directions
+of `part`, with $P[a,b] = \mathrm{part}(a, b)$, give the five relations
+($\tau \approx 1$, $\epsilon \approx 0$):
 
 | Relation | Condition |
 |----------|-----------|
 | `disjoint(a,b)` | $P[a,b] < \epsilon$ and $P[b,a] < \epsilon$ |
-| `part(a,b)` | $P[a,b] > \tau$ and $P[b,a] < \epsilon$ |
-| `part(b,a)` | $P[a,b] < \epsilon$ and $P[b,a] > \tau$ |
+| `part(a,b)` | $P[a,b] > \tau$ and $P[b,a] \le \tau$ |
+| `part(b,a)` | $P[a,b] \le \tau$ and $P[b,a] > \tau$ |
 | `equal(a,b)` | $P[a,b] > \tau$ and $P[b,a] > \tau$ |
 | `overlap(a,b)` | Both partial |
 
-**Asymmetric subsumption.** Since `part` is symmetric under clipped cosine,
-classical asymmetric subsumption is not encoded in raw magnitude. It is
-recovered **relationally** via figure / ground: compare $\mathrm{part}(A, B)$
-against $\mathrm{part}(A, \neg B)$. This is what makes Boole's contrapositive
-hold exactly.
+**Subsumption is in the measure.** $\mathrm{part}(A, B) = 1$ with
+$\mathrm{part}(B, A) < 1$ is $A$ inside $B$; no comparison with a negation
+is needed. Exchanging the lanes of both operands leaves parthood unchanged.
+The contrapositive holds for full parthood under the complement $1 - x$ of
+unsigned values: $A \le B$ exactly when $1 - B \le 1 - A$. It does not
+hold for the exchange of lanes, which gives $\mathrm{part}(B, A)$.
 
 ---
 
@@ -326,8 +369,9 @@ second tower of permanent row identities.
 
 ## Why This Design
 
-- **Parthood as projection.** One formula, Boole-contrapositive exact,
-  continuous in $[0, 1]$, with no set-valued operand mixed into a distance.
+- **Parthood as shared size.** One formula, not symmetric, continuous in
+  $[0, 1]$ and exact dominance at 1, with no set-valued operand mixed into
+  a distance.
 
 - **Parthood is preserved by Pi / Sigma.** Under `monotonic=true`, Pi/Sigma
   are restricted to $W \geq 0$. User-supplied truth-set bivectors live on

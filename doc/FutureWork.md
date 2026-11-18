@@ -1472,8 +1472,8 @@ below.
 **Where magnitude is lost today.** (1) The join is idempotent: a word's
 form is the coordinatewise max of its parts ([Spaces, fold ladder](Spaces.md#fold-ladder)),
 so repeated constituents vanish and count lives only in occurrence rows.
-(2) Percept parthood is the clipped cosine
-([Mereology](Mereology.md#parthood-as-clipped-cosine-projection)),
+(2) The grammar's scalar `part` is still a clipped cosine
+([Mereology](Mereology.md#parthood-as-shared-size)),
 symmetric and blind to magnitude; the exact dominance `Ops.partOf` and
 `IdentityRows.meet_ratios` (the sum of minima over mass) are the readers that
 respect it. (3) A concept's length is its certainty
