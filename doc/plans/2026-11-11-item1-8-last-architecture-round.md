@@ -26771,6 +26771,55 @@ The skips are the existing default exclusions; no mark was added.
 The two stopping gates are in the focused run above and in §69's
 default sweep. No parthood-only lesson or additional full sweep is run.
 
+### 59.89 One missed caller port from §70.11, found by §69's sweep
+
+The first default sweep reaches
+`test_mtm_referents.py::test_content_association_ignores_form_and_location`
+and raises `TypeError` for `meaning_start`. `31b24db620` removed that
+parameter from `STMChunks.bind_menu` but left this test calling it;
+the test and reader at that commit reproduce the same mismatch. This
+predates both repairs in the present continuation and is a missed port
+of my earlier shared-match change, not a parthood or replay defect.
+
+The test now gives the reader a codebook declaring its existing
+four-coordinate percept/form prefix, through `codebook`. Its six-wide
+state, both operands and its containment assertion are unchanged.
+No production function changes and no removed parameter returns.
+`test_mtm_referents.py` and `test_conceptual_match.py` give **46 passed
+in 7.36 s**. This is one additional test port, separate from the nine
+cosine-contract ports above.
+
+The first sweep attempt is **not a completed validation**. I mistook
+its interim `test_failure` status for the runner having stopped; it
+continues dispatching after an assertion failure. Editing the stale
+test while that attempt was still running caused its source guard to
+end it with `runner_error`, exit **125**, at **4,139/7,299** completed
+cases, **811.547737875022 s**. Its one reported test failure is the
+stale call above, and both stopping gates passed before the invalidation.
+The finished-source default sweep is rerun in §69. No receipt from
+the invalidated attempt is claimed as a full sweep.
+
+### 59.90 Completed scalar-parthood return and source
+
+All §70.17 certificates pass, all eighty caller files have been run,
+and both stopping gates pass. §69.4 records the completed default sweep
+on the same finished source: **6,967 passed, 330 skipped, 2 XPASS,
+0 failed**, all **7,299** selected cases completed. Parthood has no
+separate lesson or extra sweep. The two native recognition curricula
+belong to §69's reference-key census and are still running at this
+point; no result from them is required or claimed for §70.17.
+
+The returned `bounded_tests.source_snapshot` has **1,221 files** and
+hash **`1b3193ece9e7954ce446f61b44152cd3d9843960b45af3264ebd5583053f21ff`**.
+The source checkpoint `8b250295e7` contains the two repairs, their
+certificates, the nine scalar-contract ports and the initial return.
+The later source difference is only §59.89's missed test-caller port;
+no production code changed during validation. The four attention files
+and `Models._run_sentence_word_bricks` are unchanged. No seed, bound,
+learning rate, capacity or presentation count changed. No receipt is
+committed or linked, and nothing has been pushed. The standing documents
+remain for Claude's pass, as §70.17 directs.
+
 ## 60. Part B, second text: the loop of looks (Claude, 2026-11-16)
 
 §58 and §59 are kept for Codex's returns of §57.6 and §55.3. This text
@@ -31587,7 +31636,78 @@ an operation's complete result request by references, bindings and
 numerical roles. Removing anonymous equality there could add duplicate
 menu requests. No reference-key policy is changed in this repair.
 
-The census and final validation numbers are recorded below when complete.
+### 69.3 Census method and completed lesson
+
+Local passive observers count the reached equality expressions without
+changing their result or short-circuit order. The serial observer
+enumerates the same held views, without calling the activity-bearing
+`ThoughtChunks.read`, and checks the resulting recorded alternatives.
+History counts are for newly submitted events, not the repeated replay
+of an existing prefix. Counts include trial paths and evaluation reads;
+they are execution counts, not unique propositions. The observers are
+local receipts, not production additions.
+
+An initial observer run was interrupted to include the input-writer
+comparison in `Models._commit_sentence` and the registry's request
+comparison. It was not a completed measurement or a learning retry.
+The final three runs use fresh, unselected native streams, whose initial
+random states are saved locally. No seed or teaching setting was chosen
+from a result.
+
+The lesson uses the unchanged `explore-1.xml` and
+`data/corpus-lessons.json`: four epochs of sixteen idea sentences and
+four of twenty-four relation sentences, **160 total**. It completes in
+**450.1071111249039 s** under the census. Its phase criterion is met for
+ideas and not met for relations; no learner is repaired. It submits
+**1,021 thought-history events** (138 begin, 402 thought, 105 descend,
+107 return, 124 cutoff, 145 finish), and makes **128 serial writes**.
+There is no closed inference union or inference/pervasion proof event
+on this stream. Of **537** resident-result reference comparisons,
+**535** have both tuples all None; of **62** retained query-occurrence
+comparisons, **44** do; of **160** unchanged-input comparisons,
+**130** do. The registry makes **3,763** result-request comparisons,
+none between two all-None tuples. The other audited tuple comparisons
+are not reached. The curricula and default sweep complete the table
+and validation below.
+
+### 69.4 Finished-source default sweep
+
+After the missed caller port of §59.89, the exact default command
+`env -u RUN_TRAINED -u RUN_SLOW make test` completes **7,299/7,299**
+selected cases, with nothing deselected and no `MODEL_COMPILE`
+override: **6,967 passed, 330 skipped, 2 XPASS, 0 XFAIL, 0 failed**,
+exit **0**. Elapsed time is **2,238.687564959051 s**. Peak aggregate
+process-tree memory is **16,421,733,752 bytes**. There is no
+compilation-cache retry. Counts are by unique selected case; the
+existing orthogonal-flags case emits several passing reports.
+
+Both stopping gates pass. Their call times are **0.32319179095793515 s**
+for `test_mm_xor.py::TestMMXorConvergence::test_convergence` and
+**0.11076158296782523 s** for
+`test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class`.
+Neither gate failed in this continuation. The stale caller port also
+passes in this sweep.
+
+The existing non-strict baseline marks that XPASS are
+`test_forgetting.py::test_unforced_grammar_turnover_reports_its_retained_occurrences`
+and `test_stm_recon_from_cleared_cache.py::test_topk_recovered_words_overlap_input`.
+No new skip or expected-failure mark is added. No test failure remains
+in the completed default sweep.
+
+The verbal reconstruction proof included in the sweep gives **4/4**
+exact text reconstructions and **4/4** field reconstructions. Its
+unchanged 400 epochs / 1,600 presentations end at printed output loss
+**0.1750** and reconstruction loss **0.0000**. The four printed numeric
+predictions remain **0.5000** for labels `(0,1,1,0)`, or MSE **0.25**
+from those rounded values. This reports the verbal proof; numerical XOR
+is certified separately by the stopping gate.
+
+The source guard passes. The snapshot is the **1,221-file**
+**`1b3193ece9e7954ce446f61b44152cd3d9843960b45af3264ebd5583053f21ff`**
+of §59.90. The native lesson and curricula use identical production
+code; §59.89 changes only a separate test's reader call. The remaining
+curriculum results and reference-key counts are recorded next when
+their fixed stages end.
 
 ## 70. One match of a content against conceptual space (Claude, 2026-11-18; a design for Alec; no text for Codex)
 

@@ -296,4 +296,5 @@ def test_content_association_ignores_form_and_location():
     candidate = torch.tensor([[1., 0., 1., 0., .2, .8]])
     mention = torch.tensor([[[0., 1., 0., 1., .2, 0.]]])
     state, at = STMChunks.deposit(state, candidate, torch.tensor([True]), identity=17)
-    assert bool(STMChunks.bind_menu(state, mention, meaning_start=4)[-1][0,0,int(at)+1])
+    codebook = SimpleNamespace(mereology=SimpleNamespace(percept_event_width=4))
+    assert bool(STMChunks.bind_menu(state, mention, codebook=codebook)[-1][0,0,int(at)+1])
