@@ -4,7 +4,7 @@ import pytest
 
 def test_attention_priming_read_never_resizes_or_republishes_its_source(tmp_path):
     from test_grounded_xor import grounded_model
-    from ModelCandidateAttention import _heat
+    from AttentionContext import _heat
     model,_=grounded_model(tmp_path)
     space=model.perceptualSpace;owner=space._priming_target();width=owner._priming_dim()
     surface=owner._expected_knowing;pointer=surface.data_ptr();surface.zero_()
@@ -56,23 +56,23 @@ def test_native_attention_checkpoint_and_missing_legacy_parameters(tmp_path):
     optimizer = model.getOptimizer()
     model._optimizer = optimizer
     with torch.no_grad():
-        model.candidate_attention.readout.bias.add_(.02)
+        model.attention_context.weight.add_(.02)
     optimizer.zero_grad()
-    model.candidate_attention.readout.bias.square().sum().backward()
+    model.attention_context.weight.square().sum().backward()
     optimizer.step()
     path = tmp_path / 'attention.ckpt'
     model.save_weights(path)
     restored, _ = grounded_model(tmp_path)
     assert restored.load_weights(path, require_match=True)
     resumed = restored.getOptimizer()
-    for name, value in restored.candidate_attention.state_dict().items():
-        torch.testing.assert_close(value, model.candidate_attention.state_dict()[name], rtol=0, atol=0)
+    for name, value in restored.attention_context.state_dict().items():
+        torch.testing.assert_close(value, model.attention_context.state_dict()[name], rtol=0, atol=0)
     for current, owner in ((model, optimizer), (restored, resumed)):
         owner.zero_grad()
-        current.candidate_attention.readout.bias.square().sum().backward()
+        current.attention_context.weight.square().sum().backward()
         owner.step()
-    torch.testing.assert_close(restored.candidate_attention.readout.bias,
-                               model.candidate_attention.readout.bias, rtol=0, atol=0)
+    torch.testing.assert_close(restored.attention_context.weight,
+                               model.attention_context.weight, rtol=0, atol=0)
     model.End();model.symbolSpace.soft_reset()
     restored.End();restored.symbolSpace.soft_reset()
     from Layers import GrammarLayer
@@ -82,15 +82,17 @@ def test_native_attention_checkpoint_and_missing_legacy_parameters(tmp_path):
     gc.collect()
     legacy = torch.load(path, map_location='cpu', weights_only=False)
     legacy['state_dict'] = {key: value for key, value in legacy['state_dict'].items()
-                            if not key.startswith('candidate_attention.')}
+                            if not key.startswith('attention_context.')}
+    legacy['state_dict']['candidate_attention.readout.bias'] = torch.tensor([0.125])
     legacy['optimizer_state'] = None
     torch.save(legacy, path)
     del legacy
     gc.collect()
     fresh, _ = grounded_model(tmp_path)
-    initialized = {key: value.clone() for key, value in fresh.candidate_attention.state_dict().items()}
-    assert fresh.load_weights(path, require_match=True)
-    for name, value in fresh.candidate_attention.state_dict().items():
+    initialized = {key: value.clone() for key, value in fresh.attention_context.state_dict().items()}
+    with pytest.warns(UserWarning, match=r'retired candidate chooser checkpoint key candidate_attention.readout.bias'):
+        assert fresh.load_weights(path, require_match=True)
+    for name, value in fresh.attention_context.state_dict().items():
         torch.testing.assert_close(value, initialized[name], rtol=0, atol=0)
     fresh.End();fresh.symbolSpace.soft_reset()
 

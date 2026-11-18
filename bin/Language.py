@@ -4620,9 +4620,13 @@ class FocusLayer(BracketOperation):
     bracket_action = (0, 1)
 
 
+class UnfocusLayer(BracketOperation):
+    bracket_action = 2
+
+
 
 GRAMMAR_LAYER_CLASSES = {
-    'focus': FocusLayer,
+    'focus': FocusLayer, 'unfocus': UnfocusLayer,
     'add': AddLayer, 'subtract': SubtractLayer, 'multiply': MultiplyLayer, 'divide': DivideLayer,
     'interpret':    InterpretLayer,
     'sign':         SignLayer,
@@ -6814,9 +6818,9 @@ class OperationSelectionLayer(nn.Module):
         return torch.cat(representatives, -1)
 
     def attend(self, keys, legal, space, *, prior=None, masked_action=None, replay_action=None,
-               return_details=False, slot_limit=None):
-        """Field locations in this same chooser; symbols enter forward after gloss."""
-        keys = keys.detach()
+               return_details=False, slot_limit=None, context=None):
+        """Score bracket locations with the prefix understood at this look."""
+        keys = keys.detach() if context is None else keys.detach() + context[:, None]
         B,K,D=keys.shape
         width = K if slot_limit is None else min(K, slot_limit)
         # The word field can occupy at most one slot per word, while the

@@ -22,10 +22,17 @@ class QueryWorkBudget:
         self._spent = 0
         self._counts = Counter()
 
+    def size_for_presentation(self, per_sentence, sentences):
+        """Set the one presentation limit when the packed sentence counts arrive."""
+        limit = per_sentence * sentences
+        if self._spent > limit:
+            raise QueryWorkExhausted("work already spent exceeds the presentation allowance")
+        self._limit = limit
+
     @classmethod
     def from_brackets(cls, table, *, row):
         """Transfer the input's spent allowance to the same symbolic meter."""
-        result = cls(int(table.intervals.shape[1]))
+        result = cls(int(table.spent[row] + table.remaining[row]))
         result.require('bracket', int(table.spent[row]))
         return result
 

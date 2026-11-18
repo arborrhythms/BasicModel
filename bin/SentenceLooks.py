@@ -91,7 +91,7 @@ class Looks:
         from ModelAttention import _word_carrier
         return _word_carrier(close_narrowing(self.walk.state),self.walk.width)
 
-    def run(self, arrive):
+    def run(self, arrive, *, context=None):
         from Attention import narrowing_view, narrow_step, interpretation_at, record_interpretation
         from ModelAttention import handoff
         state = self.walk.state
@@ -133,6 +133,16 @@ class Looks:
             first = False
             if len(state.actions)>=int(state.budget) or not bool(narrowing_view(state)[8].any()):
                 break
-            narrow_step(state)
+            narrow_step(state, context=None if context is None else context())
             slot,rows=state.look_slot,state.look_active & self.present
-        return self.reading()
+        result = self.reading()
+        # Different paths may finish after different numbers of looks. Keep
+        # their actions at stable addresses for replay and per-stream selection.
+        missing = state.budget - len(state.actions)
+        return result._replace(
+            actions=F.pad(result.actions, (0, missing), value=-1),
+            alternatives=F.pad(result.alternatives, (0, missing)),
+            probabilities=F.pad(result.probabilities, (0, missing)),
+            alternative_counts=F.pad(result.alternative_counts, (0, missing)),
+            round_words=F.pad(result.round_words, (0, missing), value=-1),
+            field_scopes=F.pad(result.field_scopes, (0, 0, 0, missing)))

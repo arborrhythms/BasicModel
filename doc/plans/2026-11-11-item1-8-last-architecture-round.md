@@ -27510,6 +27510,63 @@ allowance, unfocus, the teacher, the complete name inventory and the
 final measurements follow. No default sweep or slow tier was run.
 The local checkpoint contains source, fixtures and this return.
 
+### 61.11 Regenerating the comparison model (Codex, 2026-11-18)
+
+At Alec's suggestion I built the §61.1 model on the current grammar
+from its recorded construction random states, using the same configuration
+and native admission of the first stage's forms. I saved it through
+`save_weights`, loaded it into a fresh model through `load_weights`,
+restored the recorded reading random states, and ran the four original
+sentences with the specified choices. The regenerated checkpoint loaded.
+The four kept trees and word masks matched the original records exactly.
+The sentences added **4, 4, 4, 3** LTM0 rows, and each used four calls
+of `attend`.
+
+The maximum absolute differences in the kept meaning roots, in document
+order, were **0, 0.00038344, 0.00076693, 0.15901884**. The first
+sentence's first stored row already differed in its time and row ID.
+Forecasts at interpreted words also differed on that sentence. Regeneration
+therefore supplies a working test model. These measurements do not
+establish the numerical equivalence of certificates 6 and 7 or the
+older-checkpoint import of certificate 5. The original comparison records
+were retained. The full 610-seat example of §61.9 was a diagnostic
+constructed for migration testing, not an observed user checkpoint.
+
+### 61.12 Regeneration decision and the loop through unfocus
+
+Alec accepted regeneration with new baselines. The comparison preserves the original
+measurements in §61.11. Loading the regenerated model again and restoring the
+same reading random states reproduced **4/4** trees, meaning tensors, stored
+rows, forecast tensors and word masks exactly. Superseded grammar models can
+be regenerated from their recipes. This decision supersedes the proposed
+migration of the hypothetical full block in §61.9.
+
+Certificate 10 exposed an index past the end of a three-act reference walk
+when the alternative declined the second interpretation. Its cause was a
+variable-length action carrier used as if it spanned the allowance. Completed
+walks now pad their histories, without taking actions. A departure in the
+grammar replays the attention act that reached its word. The two paths in the
+test agree on all looks through that act and differ on the selected grammar
+decision. The two stopping tests passed in the same run (**7 passed, 7.11 s**).
+
+The candidate scorer, its feature assembler and its separate traversal have
+been removed. The bracket chooser reads the prefix through the zero-initialized
+linear map in `AttentionContext`. The checkpoint reader names and discards
+the former scorer weights. The optimizer round-trip, loop, path-credit and
+stopping tests gave **39 passed, 28.58 s**.
+
+A presentation now gives each stream one allowance sized from its number
+of present sentences. In certificate 8 four two-word sentences used one
+eight-act meter; each sentence took two acts with a two-slot table. The
+fourth began with six spent and finished with eight spent. Certificate 9
+found that address 2 was illegal after a split before unfocus was implemented.
+It now restores that split's original parent and removes its child. A pure
+word look records no undo frame. Interpreting an enclosed word bars undo.
+The new tests, the earlier loop cases and both stopping tests gave **9
+passed, 6.44 s**. The complete examination reader still has a fullgraph
+implementation. The sentence loop no longer uses look-ahead for a stable
+word, and padding an exhausted examination consumes no random draw.
+
 ## 62. Part A's remainder: the forecast of a look and its surprise (Claude, 2026-11-16; a design, with one question for Alec)
 
 §61 is kept for Codex's return of §60.3. This section starts from the

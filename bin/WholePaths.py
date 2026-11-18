@@ -211,9 +211,9 @@ def finish(model, state, sid, active, *, trust, base=None, draw=None):
     from WalkTrials import ThoughtTrialState
     from SentenceCredit import components
     from ThoughtClosing import close
-    reading = base is None or bool(((draw['walk'] >= 0) & (draw['walk'] < 4)).any())
+    reading = base is None or bool(((draw['walk'] >= 0) & (draw['walk'] < 3)).any())
     regeneration = base is None or reading or bool((draw['reconstruction_round'] >= 0).any())
-    rethink_rows = active if base is None else active & (draw['walk'] >= 0) & (draw['walk'] < 6)
+    rethink_rows = active if base is None else active & (draw['walk'] >= 0) & (draw['walk'] < 5)
     rethink = bool(rethink_rows.any())
     before = ThoughtTrialState(model)
     original_errors = getattr(model, '_sentence_close_errors', None)
@@ -223,7 +223,7 @@ def finish(model, state, sid, active, *, trust, base=None, draw=None):
         if reading:
             model._path_reconstruction_options = (None if base is None or not model._sentence_reconstruction else
                 walk_options(base.observation['generation'].trace, draw['reconstruction_round'],
-                             reuse=(draw['walk'] >= 5) | (draw['walk'] < 0)))
+                             reuse=(draw['walk'] >= 4) | (draw['walk'] < 0)))
             _, rebuilt, observation = model._sentence_path_cost(state, sid, active, incoming_trust=trust)
             registry = model._sentence_cost_registry
             expectation = model._sentence_expectation_comparison
@@ -238,7 +238,7 @@ def finish(model, state, sid, active, *, trust, base=None, draw=None):
                     if not name.startswith(('reconstruction_order_zero.', 'reconstruction.walk_residual.',
                                             'reconstruction_reverse.', 'reconstruction.free_', 'reconstruction.coverage'))}
                 model._path_reconstruction_options = walk_options(base.observation['generation'].trace,
-                                                                  draw['reconstruction_round'], reuse=(draw['walk'] >= 5) | (draw['walk'] < 0))
+                                                                  draw['reconstruction_round'], reuse=(draw['walk'] >= 4) | (draw['walk'] < 0))
                 model._sentence_walk_residuals = []
                 rebuilt = reconstruct(model, observation['record'], registry, active,
                                       previous=observation['reverse'])

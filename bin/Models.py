@@ -2462,8 +2462,8 @@ class BaseModel(Mereology, nn.Module):
         # entire preallocated reserve. Future masked checkpoints overwrite it
         # with their persisted active prefix.
         self._configure_aligned_active_codebooks()
-        from ModelCandidateAttention import install as install_candidate_attention
-        install_candidate_attention(self)
+        from AttentionContext import install as install_attention_context
+        install_attention_context(self)
 
         _autoload_env = os.environ.get("BASIC_AUTOLOAD")
         _autoload = bool(_t("autoload"))
@@ -2555,7 +2555,7 @@ class BaseModel(Mereology, nn.Module):
              *getattr(language, '_generate_unary_ops', ()))])
         output.difference_update(decoder - generate)
         output.update(generate)
-        attention = parameters([getattr(self, 'candidate_attention', None)])
+        attention = parameters([getattr(self, 'attention_context', None)])
         reconstruction = set(available) - expectation - output - attention
         from DefinitionFold import category as definition_category
         sigma_owner = definition_category(self)
@@ -2715,7 +2715,7 @@ class BaseModel(Mereology, nn.Module):
         # the ``self.spaces`` walk above misses their params -- collect them
         # explicitly (deduped). Absent / gate-off => the attr is None => no
         # extra params => byte-identical optimizer state.
-        for _att_name in ("answer_attention", "candidate_attention", "percept_expectation"):
+        for _att_name in ("answer_attention", "attention_context", "percept_expectation"):
             _att = getattr(self, _att_name, None)
             if _att is not None:
                 for p in _att.parameters():
@@ -4566,6 +4566,11 @@ class BaseModel(Mereology, nn.Module):
         if hasattr(self, 'omission'):
             for key, value in self.omission.state_dict().items():
                 state.setdefault('omission.' + key, value.clone())
+
+        for key in tuple(state):
+            if key.startswith('candidate_attention.'):
+                state.pop(key)
+                warnings.warn(f'Dropped retired candidate chooser checkpoint key {key}')
 
         retired_pair_weights = [key for key in state
             if key == 'decomposition_chooser.weight' or key.endswith('.decomposition_chooser.weight')]
@@ -21092,10 +21097,13 @@ class BasicModel(BaseModel):
                     self._compose_sampling_scale = trace._choice_alternative_counts * (
                         draw['walk_count'] * draw['walk_rounds'])[:,None]
                     if greedy_attention is not None:
-                        departure = torch.where(draw['attention_round']>=0, draw['attention_round'],
-                            torch.where(draw['interpret_round']>=0,(draw['interpret_round']-1).clamp_min(0), self.attention_budget+1))
-                        reading_walk = self._attention_open(exploit=greedy_attention,
-                            departure=departure,sentence=sid,spent_override=attention_spent)
+                        departure = draw['attention_round']
+                        # Look zero is the opening. At interpretation n the first
+                        # n attention actions, including the one reaching it, replay.
+                        replay_until = torch.where(departure >= 0, departure, torch.where(
+                            draw['interpret_round'] >= 0, draw['interpret_round'], self.attention_budget))
+                        reading_walk = self._attention_open(exploit=greedy_attention, departure=departure,
+                            replay_until=replay_until, sentence=sid, spent_override=attention_spent)
                 current_stm = current_lang = current_feedback = latches = None
                 field = symbol_field = compound_field = replay = None
                 def start_compose(index):
@@ -21212,7 +21220,8 @@ class BasicModel(BaseModel):
                     looks = Looks(self,reading_walk,sid,present,
                         prior=None if exploit is None else look_trials[0],
                         draw=None if exploit is None else draw,kept=kept)
-                    reading = looks.run(arrival)
+                    from AttentionContext import context
+                    reading = looks.run(arrival, context=lambda: context(self, current_stm, field))
                     if exploit is None:
                         greedy_attention = reading
                         self._attention_greedy = reading
@@ -21307,7 +21316,7 @@ class BasicModel(BaseModel):
                     draw = draw_path()
                     draws.append(draw)
                     self._sentence_departure = draw
-                    reading = bool(((draw['walk'] >= 0) & (draw['walk'] < 4)).any())
+                    reading = bool(((draw['walk'] >= 0) & (draw['walk'] < 3)).any())
                     if reading:
                         candidate = compose(cache, first)
                     else:
@@ -21334,7 +21343,7 @@ class BasicModel(BaseModel):
                         self._compose_forced_slots = candidate.compose_forced_slots
                         self._attention_words = candidate.attention_words
                         pair = costs[:, [0, path_index]]
-                        if bool(((draw['walk'] >= 0) & (draw['walk'] < 4)).any()):
+                        if bool(((draw['walk'] >= 0) & (draw['walk'] < 3)).any()):
                             self._compose_score_function_loss(candidate.state, pair)
                         plans = candidate.observation.get('reference_plans')
                         if plans and bool((draw['bind_round'] >= 0).any()):

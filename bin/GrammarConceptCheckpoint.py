@@ -313,23 +313,6 @@ def prepare(model, state, structural, vocab, training=None):
             key = 'percept_expectation.known'
             if key in state and len(state[key]) == old_size:
                 expand(key, 0, indices)
-            key = 'candidate_attention.hidden.0.weight'
-            if key in state and getattr(model, 'candidate_attention', None) is not None:
-                count = sum(model._candidate_geometry[0])
-                old_count = count - 2*(new_size-old_size)
-                prefix_count = sum(model._candidate_geometry[0][:2])
-                addresses = [*range(prefix_count),
-                             *(prefix_count+old if old >= 0 else -1 for old in indices),
-                             *(prefix_count+old_size+row if row < old_size else -1 for row in range(new_size))]
-                attention_indices, offset = [], 0
-                for width in (2, 1, 2, 2):
-                    attention_indices.extend(offset+width*old+lane if old >= 0 else -1
-                                             for old in addresses for lane in range(width))
-                    offset += width*old_count
-                attention_indices.extend(range(offset, state[key].shape[1]))
-                if len(attention_indices) != model.candidate_attention.hidden[0].weight.shape[1]:
-                    raise ValueError('grammar inventory differs from attention checkpoint geometry')
-                expand(key, 1, attention_indices)
         warnings.warn(f'checkpoint: placed concepts in fixed order blocks and added {len(additions)} grammar seats; preserved all saved concept identities')
     if declarations is None:
         return drift, transforms

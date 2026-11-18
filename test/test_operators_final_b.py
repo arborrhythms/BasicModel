@@ -184,7 +184,7 @@ def test_both_training_trials_share_bootstrap_snapshot(monkeypatch, tmp_path):
         for _ in range(3):
             snapshots.clear()
             model.runEpoch(optimizer=optimizer, batchSize=4, split='train', max_batches=1)
-            reading_departure = any(bool(((draw['walk'] >= 0) & (draw['walk'] < 4)).any())
+            reading_departure = any(bool(((draw['walk'] >= 0) & (draw['walk'] < 3)).any())
                 for audit in model._sentence_credit_audits for draw in audit['departures'])
             assert len(snapshots) == (2 if reading_departure else 1)
             calls.append(len(snapshots))

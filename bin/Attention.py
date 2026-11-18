@@ -21,6 +21,7 @@ class BracketTable(NamedTuple):
     level: torch.Tensor
     done: torch.Tensor
     spent: torch.Tensor
+    limit: torch.Tensor = None
 
     @classmethod
     def open(cls, lengths, *, budget):
@@ -32,11 +33,13 @@ class BracketTable(NamedTuple):
                                torch.where(index==0,lengths[:,None],0)), -1)
         valid=(index==0)&(lengths[:,None]>0)
         return cls(intervals,valid,torch.zeros_like(intervals[...,0]),
-                   torch.full_like(intervals[...,0],LEVEL_SENTENCE),torch.zeros_like(valid),torch.zeros_like(lengths))
+                   torch.full_like(intervals[...,0],LEVEL_SENTENCE),torch.zeros_like(valid),torch.zeros_like(lengths),
+                   torch.full_like(lengths, K))
 
     @property
     def remaining(self):
-        return (self.intervals.shape[1]-self.spent).clamp_min(0)
+        limit = self.intervals.shape[1] if self.limit is None else self.limit
+        return (limit-self.spent).clamp_min(0)
 
     def split(self, slot, cut, *, space=None, descend=False, active=None):
         B,K,_=self.intervals.shape
@@ -55,7 +58,7 @@ class BracketTable(NamedTuple):
         return BracketTable(intervals,self.valid|right,
                             torch.where(left|right,current_space[:,None],self.space),
                             torch.where(left|right,current_level.clamp_min(0)[:,None],self.level),
-                            self.done&~(left|right),self.spent+ok.long())
+                            self.done&~(left|right),self.spent+ok.long(),self.limit)
 
     def accept(self,slot,*,active=None):
         rows=torch.arange(self.valid.shape[0],device=slot.device)
@@ -179,18 +182,22 @@ class NarrowingState:
     declared: object
     rows: object
     slots: object
+    focus_frames: object
+    focus_fields: object
     can_advance: object = None
+    replay_until: object = None
     steps_taken: int = 0
     look_slot: object = None
     look_active: object = None
 
 
-def open_narrowing(chooser,keys,spans,known,*,budget,prior=None,exploit=None,departure=None,identities=None,poles=None,spent=None):
+def open_narrowing(chooser,keys,spans,known,*,budget,prior=None,exploit=None,departure=None,identities=None,poles=None,spent=None,replay_until=None,limit=None):
     """Stage the original walk, without choosing any action."""
     B,W,D=keys.shape;K=int(budget);A=6
     lengths=spans[...,1].amax(1) if W else spans.new_zeros(B)
     table=BracketTable.open(lengths,budget=K)
     if spent is not None and W:table=table._replace(spent=spent)
+    if limit is not None:table=table._replace(limit=limit)
     accepted=torch.zeros_like(known);descended=torch.zeros_like(known)
     values=torch.zeros_like(keys);actions=[];alternatives=[];probabilities=[];counts=[]
     reductions=torch.zeros(B,K,3,dtype=torch.bool,device=keys.device)
@@ -207,7 +214,57 @@ def open_narrowing(chooser,keys,spans,known,*,budget,prior=None,exploit=None,dep
     return NarrowingState(
         chooser, keys, spans, known, budget, prior, exploit, departure, identities, poles,
         lengths, table, accepted, descended, values, actions, alternatives, probabilities, counts, reductions,
-        field_values, field_poles, field_valid, handed_poles, pole_changes, round_words, field_scopes, field_operations, declared, rows, slots)
+        field_values, field_poles, field_valid, handed_poles, pole_changes, round_words, field_scopes, field_operations, declared, rows, slots,
+        spans.new_full((B,K,9), -1), keys.new_zeros(B,K,D+2),
+        replay_until=departure if replay_until is None else replay_until)
+
+
+def last_focus(state):
+    """Return the most recent reversible division or descent in each stream."""
+    frames = state.focus_frames
+    at = torch.where(frames[..., 0] >= 0, state.slots, -1).amax(-1)
+    frame = frames[state.rows, at.clamp_min(0)]
+    lo, hi = state.spans.unbind(-1)
+    inside = (lo >= frame[:, 2:3]) & (hi <= frame[:, 3:4]) & (hi > lo)
+    legal = (at >= 0) & ~(inside & state.accepted).any(-1)
+    return at, frame, legal
+
+
+def focus_history(state, original, table, slot, split, entered, undo):
+    """Undo the last focus locally so an independent sibling keeps its work."""
+    at, frame, _ = last_focus(state)
+    rows, slots = state.rows, state.slots
+    parent = (slots == frame[:, 0:1]) & undo[:, None]
+    child = (slots == frame[:, 1:2]) & undo[:, None]
+    interval = torch.where(parent[..., None], frame[:, None, 2:4], table.intervals)
+    table = table._replace(intervals=torch.where(child[..., None], 0, interval),
+        valid=table.valid & ~child, done=table.done & ~(child|parent),
+        level=torch.where(parent, frame[:, 4:5], torch.where(child, LEVEL_SENTENCE, table.level)),
+        space=torch.where(parent, frame[:, 5:6], torch.where(child, SPACE_INPUT, table.space)),
+        spent=table.spent + undo.long())
+    restored_field = state.focus_fields[rows, at.clamp_min(0)]
+    # The entered extent identifies the witness. Repeated identities share
+    # the native descent, exactly as on entry. A split records no descent.
+    prior_witness = ((state.spans == frame[:, None, 2:4]).all(-1)
+                     & frame[:, 8:9].bool() & (at >= 0)[:, None])
+    if state.identities is not None:
+        identity = state.identities.gather(1, prior_witness.long().argmax(-1, keepdim=True))
+        prior_witness = prior_witness.any(-1, keepdim=True) & (identity >= 0) & (state.identities == identity)
+    # A separate occurrence can already have joined grammar on the same
+    # identity. Its recorded interpretation keeps its own evidence.
+    state.descended = state.descended & ~(prior_witness & undo[:, None] & ~state.accepted)
+    saved = torch.cat((state.field_values[rows,slot], state.field_poles[rows,slot]),-1)
+    reductions = state.reductions[rows,slot].long()
+    bits = reductions[:,0] + 2*reductions[:,1] + 4*reductions[:,2]
+    entry = torch.stack((slot, torch.where(split,(~original.valid).long().argmax(-1),-1),
+        *original.intervals[rows,slot].unbind(-1), original.level[rows,slot], original.space[rows,slot],
+        state.field_valid[rows,slot].long(),bits,entered.long()),-1)
+    push = (state.slots == state.steps_taken) & (split|entered)[:, None]
+    pop = (state.slots == at[:, None]) & undo[:, None]
+    state.focus_frames = torch.where(push[..., None], entry[:,None],
+                                     torch.where(pop[..., None], -1, state.focus_frames))
+    state.focus_fields = torch.where(push[...,None], saved[:,None], state.focus_fields)
+    return table, parent, child, frame, restored_field
 
 
 def narrowing_view(state):
@@ -245,8 +302,9 @@ def narrowing_view(state):
     field=field & (table.remaining>minimum)[:,None,None]
     # Address 1 focuses a single word. An unknown word descends;
     # a pure word is looked at in place and grammar can interpret it.
-    attention_progress=torch.stack((progress[...,0],progress[...,1] | progress[...,2],
-                                    torch.zeros_like(progress[...,2])),-1)
+    _, frame, can_undo = last_focus(state)
+    unfocus = (state.slots == frame[:, :1]) & can_undo[:, None]
+    attention_progress=torch.stack((progress[...,0],progress[...,1] | progress[...,2], unfocus),-1)
     legal=torch.cat((attention_progress,field),-1)&live[...,None]&declared[None,None]
     pooled=(covered.to(keys)@keys)/count.clamp_min(1)[...,None]
     pooled=torch.where(field_valid[...,None],field_values,pooled)
@@ -279,7 +337,7 @@ def record_interpretation(state, slot, active):
     return state
 
 
-def narrow_step(state):
+def narrow_step(state, *, context=None):
     """Take one original batched step; no row loop or word composition."""
     chooser=state.chooser
     keys=state.keys
@@ -321,9 +379,10 @@ def narrow_step(state):
     word=count==1
     state.can_advance=legal.any()
     mask=None if exploit is None else torch.where(departure==step,exploit.actions[:,step],-1)
-    replay=None if exploit is None else torch.where(step<departure,exploit.actions[:,step],-1)
+    replay=None if exploit is None else torch.where(step<state.replay_until,exploit.actions[:,step],-1)
     action,credit,alternate,detail=chooser.attend(pooled,legal,table.space,prior=local_prior,
-        masked_action=mask,replay_action=replay,return_details=True,slot_limit=min(K,W))
+        masked_action=mask,replay_action=replay,return_details=True,slot_limit=min(K,W),
+        **({} if context is None else {'context': context}))
     slot=(action//A).clamp_max(K-1);op=action%A
     chosen=live[rows,slot]&(action<A*K)
     selected=covered[rows,slot]&chosen[:,None]
@@ -332,7 +391,6 @@ def narrow_step(state):
     witness=selected&unknown[:,None]
     if identities is not None:
         witness=(witness[:,:,None] & (identities[:,:,None]==identities[:,None,:]) & (identities[:,None,:]>=0)).any(1)
-    descended=descended|witness
     # Divide at the first pole disagreement, descend at a retained part.
     first=selected.long().argmax(-1)
     first_positive=evidence[rows,first,0]>0
@@ -345,7 +403,13 @@ def narrow_step(state):
     interior=(boundary>lo[rows,slot])&(boundary<hi[rows,slot])
     cut=torch.where((op==0)&disagree.any(-1)&interior,boundary,part_cut)
     split=(op<2)&~selected_word&chosen
-    table=table.split(slot,cut,descend=(True),active=split)
+    original = table
+    table=table.split(slot,cut,descend=True,active=split)
+    split = table.spent > original.spent
+    undo = (op == 2) & chosen
+    table, parent, child, frame, restored = focus_history(
+        state, original, table, slot, split, unknown, undo)
+    descended = (state.descended | witness)
     field_action=(op>=3)&chosen
     table=table._replace(spent=table.spent+((op==1)&selected_word&chosen).long()+field_action.long())
     where=(slots==slot[:,None])&field_action[:,None]
@@ -384,10 +448,11 @@ def narrow_step(state):
     state.accepted=accepted
     state.descended=descended
     state.values=values
-    state.reductions=reductions
-    state.field_values=field_values
-    state.field_poles=field_poles
-    state.field_valid=field_valid
+    restored_bits = (frame[:, 7:8] & frame.new_tensor([1, 2, 4])) != 0
+    state.reductions=torch.where(parent[...,None], restored_bits[:,None], reductions & ~child[...,None])
+    state.field_values=torch.where(parent[...,None], restored[:,None,:D], field_values)
+    state.field_poles=torch.where(parent[...,None], restored[:,None,D:], field_poles)
+    state.field_valid=torch.where(parent, frame[:,6:7].bool(), field_valid & ~child)
     state.pole_changes=pole_changes
     state.steps_taken += 1
     state.look_slot, state.look_active = slot, chosen
@@ -395,7 +460,7 @@ def narrow_step(state):
 
 
 _NARROW_CARRY = ('accepted','descended','values','reductions','field_values',
-                 'field_poles','field_valid','pole_changes')
+                 'field_poles','field_valid','pole_changes','focus_frames','focus_fields')
 _NARROW_HISTORY = ('actions','alternatives','probabilities','counts','round_words',
                    'field_scopes','field_operations')
 
@@ -451,34 +516,28 @@ def _captured_narrowing(state):
                      for value,template in zip(values,templates))
 
     carried=pack(state)
-    width=6+len(_NARROW_CARRY)
+    width=len(BracketTable._fields)+len(_NARROW_CARRY)
     from Language import OperationSelectionLayer
     chooser=(_CapturedAttentionChooser(state.chooser)
              if type(state.chooser) is OperationSelectionLayer else state.chooser)
     for turn in range(len(state.actions),int(state.budget)):
         def advance(*values):
             values=unpack(values)
-            current=replace(state,chooser=chooser,table=BracketTable(*values[:6]),steps_taken=turn,
-                **dict(zip(_NARROW_CARRY,values[6:width])),
+            current=replace(state,chooser=chooser,table=BracketTable(*values[:len(BracketTable._fields)]),steps_taken=turn,
+                **dict(zip(_NARROW_CARRY,values[len(BracketTable._fields):width])),
                 **{name: [] for name in _NARROW_HISTORY})
             narrow_step(current)
             return pack(current)
 
         def stopped(*values):
-            result=tuple(value.clone() for value in values)
-            if state.exploit is not None:
-                probability=width+_NARROW_HISTORY.index('probabilities')
-                draw=torch.rand_like(values[probability][:,None])[:,0]
-                # Retain the original dead-round draw in the captured graph.
-                result=(*result[:probability],result[probability]+draw*0.,*result[probability+1:])
-            return result
+            return tuple(value.clone() for value in values)
 
         active=carried[-1].to(torch.bool)
         state.steps_taken=state.steps_taken+active.long()
         carried=torch.cond(active,advance,stopped,carried)
         values=unpack(carried)
-        state.table=BracketTable(*values[:6])
-        for name,value in zip(_NARROW_CARRY,values[6:width]):
+        state.table=BracketTable(*values[:len(BracketTable._fields)])
+        for name,value in zip(_NARROW_CARRY,values[len(BracketTable._fields):width]):
             setattr(state,name,value)
         for name,value in zip(_NARROW_HISTORY,values[width:-1]):
             getattr(state,name).append(value)
@@ -487,7 +546,7 @@ def _captured_narrowing(state):
 
 
 def finish_narrowing(state):
-    """Finish decisions, retaining the original inert tail and random stream.
+    """Finish examination decisions and pad the report without drawing again.
 
     Valid brackets can have no legal act (for example a contradictory word
     after its field acts are spent). Such a round is just as inert as a
@@ -500,52 +559,10 @@ def finish_narrowing(state):
     while len(state.actions) < int(state.budget):
         if state.can_advance is not None and not bool(state.can_advance):
             missing=int(state.budget)-len(state.actions)
-            if state.exploit is not None:
-                # select_logits draws once even when the masked departure
-                # has no alternative. Preserve subsequent learners' draws.
-                for _ in range(missing):
-                    torch.rand_like(state.probabilities[-1][:,None])
             for name in ('actions','alternatives','probabilities','counts','round_words','field_scopes'):
                 values=getattr(state,name)
                 values.extend([values[-1]]*missing)
             break
-        narrow_step(state)
-    return state
-
-
-def narrowing_stable(state, words):
-    """Whether each row's requested words have no remaining evidence source.
-
-    Work backwards through operated scopes, then include every occurrence
-    that could supply their shared descent witness. A done singleton alone
-    is insufficient: an earlier field or a later equal identity can still
-    change its handoff. Brackets only split, so future acts cannot reach a
-    word outside these unfinished source brackets.
-    """
-    if words.shape != state.known.shape or words.dtype != torch.bool:
-        raise ValueError('requested words must match the narrowing carrier')
-    if len(state.actions) >= int(state.budget):
-        return words.new_ones(words.shape[0])
-    needed=words
-    for scope in reversed(state.field_scopes):
-        needed=needed | (scope & (scope & needed).any(-1,keepdim=True))
-    if state.identities is not None:
-        same=(state.identities[:,:,None] == state.identities[:,None,:])
-        same=same & (state.identities[:,None,:] >= 0)
-        needed=needed | (needed[:,:,None] & same).any(1)
-    lo,hi=state.table.intervals.unbind(-1)
-    covered=((state.spans[:,None,:,0] >= lo[:,:,None]) &
-             (state.spans[:,None,:,1] <= hi[:,:,None]) &
-             (state.spans[:,None,:,1] > state.spans[:,None,:,0]))
-    live=state.table.valid & ~state.table.done & (state.table.remaining > 0)[:,None]
-    mutable=(covered & live[...,None]).any(1)
-    stable=~(needed & mutable).any(-1)
-    return stable if state.can_advance is None else stable | ~state.can_advance
-
-
-def advance_narrowing(state, words):
-    """Advance only until the requested evidence is settled in every row."""
-    while not bool(narrowing_stable(state,words).all()):
         narrow_step(state)
     return state
 
@@ -594,10 +611,10 @@ def close_narrowing(state):
         history(round_words,spans.new_empty(B,0)),history(field_scopes,known.new_empty(B,0,W)))
 
 
-def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,departure=None,identities=None,poles=None,spent=None):
-    """The unchanged eager reading, composed from its public steps."""
+def narrow_words(chooser,keys,spans,known,*,budget,prior=None,exploit=None,departure=None,identities=None,poles=None,spent=None,limit=None):
+    """The complete examination reading, composed from its public steps."""
     state=open_narrowing(chooser,keys,spans,known,budget=budget,prior=prior,
-        exploit=exploit,departure=departure,identities=identities,poles=poles,spent=spent)
+        exploit=exploit,departure=departure,identities=identities,poles=poles,spent=spent,limit=limit)
     finish_narrowing(state)
     return close_narrowing(state)
 

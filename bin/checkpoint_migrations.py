@@ -410,19 +410,9 @@ def _one_wholespace(checkpoint, live, *, where_slices, percept_width, bundle):
                     raise ValueError(f'checkpoint split property row {row} conflicts with retained copy {selected}')
                 retained[row] = host[row].to(retained)
             mapped[key] = retained
-    rebuilt = []
-    for key, current in live.items():
-        if key.startswith('candidate_attention.') and key in mapped and mapped[key].shape != current.shape:
-            rebuilt.append(key)
-    if rebuilt:
-        # The input addresses changed meaning as well as width. Rebuild the
-        # complete reader and its optimizer slots at the constructed geometry.
-        rebuilt = [key for key in live if key.startswith('candidate_attention.')]
-        for key in rebuilt:
-            mapped[key] = live[key].detach().cpu().clone()
     out = dict(checkpoint) if bundle else mapped
     if not bundle:
-        return out, dict(whole_copy=selected, whole_copies=len(copies), rebuilt_parameters=tuple(rebuilt))
+        return out, dict(whole_copy=selected, whole_copies=len(copies))
     out['state_dict'] = mapped
     structural = copy.deepcopy(out.get('structural_extras'))
     if structural is not None:
@@ -469,8 +459,6 @@ def _one_wholespace(checkpoint, live, *, where_slices, percept_width, bundle):
                     match = re.match(r'wholeSpaces\.(\d+)\.(.*)', name)
                     if match and int(match[1]) == selected:
                         result['name'] = 'wholeSpace.' + match[2]
-                    elif name in rebuilt:
-                        result['name'] = 'retired_candidate_attention.' + name
                 return result
             if isinstance(value, list):
                 return [rename(item) for item in value]
@@ -480,7 +468,7 @@ def _one_wholespace(checkpoint, live, *, where_slices, percept_width, bundle):
     if where_slices is not None:
         out, count = _migrate_whole_addresses(out, where_slices, len(copies), percept_width)
     return out, dict(whole_copy=selected, whole_copies=len(copies),
-                    rebuilt_parameters=tuple(rebuilt), migrated_addresses=count,
+                    migrated_addresses=count,
                     merged_property_rows=split_rows)
 
 

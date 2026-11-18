@@ -170,6 +170,10 @@ def stage_input(model):
     B,W,D=slab.shape
     if len(model._attention_meters) != B:
         model._attention_meters=tuple(QueryWorkBudget(model.attention_budget) for _ in range(B))
+    packed = getattr(isp, '_packed_sentence_slot_mask', None)
+    if packed is not None:
+        for meter, count in zip(model._attention_meters, packed.sum(1).tolist(), strict=True):
+            meter.size_for_presentation(model.attention_budget, count)
     # Zero is the ordinary-composition control: no bracket walk or thought
     # read is performed. The stem still supplies every word to the VP path.
     if W == 0:return
@@ -236,7 +240,8 @@ def stage_input(model):
             known=known[:, :live_width],budget=model.attention_budget,
             prior=None if prior is None else prior[:, :live_width],
             identities=ids[:, :live_width],poles=poles[:, :live_width],
-            spent=spent if spent_override is None else spent_override,**trial)
+            spent=spent if spent_override is None else spent_override,
+            limit=spent.new_tensor([meter.spent + meter.remaining for meter in model._attention_meters]),**trial)
     def read(**trial):
         return _word_carrier(narrow_words(**arguments(**trial)),W)
     def opening(**trial):

@@ -26,6 +26,7 @@ class SentenceField:
         self.support_window = like.new_zeros(B, model.conceptualSpace.stm.capacity, W)
         self._closing = torch.zeros(B,dtype=torch.bool,device=active.device)
         self.reads = []
+        self.parts = self.wholes = None
 
     def arrive(self, index, payload, native, rows):
         """Retain only the interpreted occurrence's own evidence and address."""
@@ -36,7 +37,11 @@ class SentenceField:
         known = registry.intervals('symbols', identity)
         pair = self.model._attention_words.poles[:,index]
         if native:
-            _,_,codes,roles,evidence,mask = native
+            parts, wholes, codes, roles, evidence, mask = native
+            for name, carrier in (('parts', parts), ('wholes', wholes)):
+                value = torch.where(rows[:, None, None], carrier[:, -1], 0.)
+                prior = getattr(self, name)
+                setattr(self, name, value if prior is None else prior + value)
             address = codes + torch.where(roles == 0,registry.slices['parts'][0],
                 int(self.model.wholeSpace.subspace.what.where_offset))
             address = address[:,None].expand_as(evidence)
