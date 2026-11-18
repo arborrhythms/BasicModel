@@ -430,8 +430,9 @@ Occurrence members define as before. The kind is read from the referents;
 nothing marks the operator or the origin of a row.
 
 **One rule at every order.** The same holds at order zero: a positive row
-between two order-zero symbols is a relation, a member of neither symbol,
-and derives no order. What the level decides is the kind of relation. Alec:
+between two order-zero concepts is a relation, a member of neither concept,
+and derives no order. Order zero holds no symbol: symbols exist only from
+order 1, where MTM promotes them (Alec, 2026-11-18). What the level decides is the kind of relation. Alec:
 "it's a part/whole relation if it's below symbols, and a set/superset if
 it's above symbols." Below symbols is the mereology of the field; above
 them, the sets of §1.
