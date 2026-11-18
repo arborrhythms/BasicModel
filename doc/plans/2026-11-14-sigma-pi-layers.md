@@ -4954,7 +4954,9 @@ working tree; not run, except where a test is named).
   event" in MTM (Alec, 2026-11-12); whether the source builds such
   sequences was not read.
 
-**The example, for the documentation.**
+**The example, for the documentation.** *Placed on 2026-11-18 in
+`doc/Language.md`, under "What `interpret` creates", once the other
+documentation pass was on `main`.*
 
 > *How a word comes to mean: the well-house.* Helen Keller could feel
 > the letters w-a-t-e-r spelled into her hand, and she could feel

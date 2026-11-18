@@ -1359,7 +1359,8 @@ generation is expected at this stage and is recorded, not tuned away.
    associated. there isnt a statistic that will magically produce
    identity across independent tokens." It is rule 31. The example he
    asked to have in the doc (Helen Keller at the well-house, from
-   Walker Percy) is written out there for the doc pass. The two
+   Walker Percy) is written out there and is now in `doc/Language.md`.
+   The two
    testpoints he asked for are certificate 25, `TestCrossModalTie` (a
    word and an object of another modality tied by their consistent
    association), and certificate 26, `TestBellSalivate` (a sequence

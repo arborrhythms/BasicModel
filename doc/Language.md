@@ -488,6 +488,26 @@ representation to an object, for which there is no initial basis."
   lets just use one, and flag it" ([FutureWork](FutureWork.md)). An object
   reached through a read word is at trust one as well (Alec, 2026-11-14:
   "which we should set at 1 for now, along with the object-concept's trust"). A stated definition keeps its speaker's trust.
+- **How the mapping is learned (Alec, 2026-11-18).** "so we learn word
+  generalizations, and we learn object generalizations, and THEN we learn
+  word-object meta-concepts, because those are concsistently associated.
+  there isnt a statistic that will magically produce identity across
+  independent tokens." Helen Keller could feel the letters w-a-t-e-r spelled
+  into her hand, and she could feel water; for weeks the two were unrelated.
+  At the well-house the word was spelled into one hand while water ran over
+  the other, and the two became one thing (Keller 1903; Percy 1975). The word
+  had been learned from its own recurrences, and the object from its own, in
+  another modality; the meta-concept that joins them was learned third, from
+  their consistent association. Two words are joined in the same way,
+  through what both are joined to: "Alec" and "he" by a common perceptual
+  basis, and not by a likeness of their occurrences. A model with one
+  modality cannot know an object except through its word, so it starts by
+  making the object for the word out of what the word recurs with
+  (`PerceptCollections.observe`, for a felt value beside the text): "It is
+  not a great solution, but it may work with sufficient complexity".
+  References: Keller, H. (1903), *The Story of My Life*, Doubleday, Page;
+  Percy, W. (1975), "The Delta Factor", in *The Message in the Bottle*,
+  Farrar, Straus and Giroux.
 - **The dictionary.** "We can collect all meta-concepts under a symbol for
   fast access, which will basically act like a dictionary, and act as a cue to
   the architecture that an object should be interpreted."
