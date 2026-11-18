@@ -16,7 +16,8 @@ def _model(tmp_path, monkeypatch):
 
 def test_native_reads_one_supported_word_and_charges_only_kept_trial(tmp_path, monkeypatch):
     model = _model(tmp_path, monkeypatch)
-    model.candidate_attention = None  # the specified source-order control
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     registries = []
     path_cost = model._sentence_path_cost
     def observed(*args, **kwargs):
@@ -34,9 +35,9 @@ def test_native_reads_one_supported_word_and_charges_only_kept_trial(tmp_path, m
             assert (trial['when'][:, 0, 1] <= trial['when'][:, 1, 0]).all()
             assert trial['admission'].bool().all()
             assert len(trial['reads']) == 2
-            assert all(read['admitted'].sum(-1).eq(1).all() for read in trial['reads'])
+            assert all(read['rows'].all() for read in trial['reads'])
         assert report['iterations'].tolist() == [2, 2]
-        assert [m.counts['serial-word-loop'] for m in model._field_meters] == [2, 2]
+        assert all(m.counts['bracket'] > 0 for m in model._attention_meters)
         assert all('serial-word-loop' not in m.counts for m in model._attention_meters)
         assert model._last_field_cost is None  # the compose-forest reconstruction is retired
         assert model._sentence_field is None and model._sentence_read_order is None
@@ -56,11 +57,9 @@ def test_new_run_resets_trial_scratch_even_if_the_body_raises(tmp_path, monkeypa
     try:
         model._sentence_field = object()
         model._last_sentence_field = object()
-        model._field_meters = (object(),)
         try:
             with model._sentence_run():
                 assert model._sentence_field is None and model._last_sentence_field is None
-                assert model._field_meters == ()
                 model._sentence_field = object()
                 model._sentence_read_order = ([1, 0],)
                 raise RuntimeError('fixture abort')
@@ -92,7 +91,8 @@ def test_trial_leaf_mask_does_not_leak_to_the_next_trial_or_commit(tmp_path, mon
         model.inputSpace._ar_grammar_leaf_mask = torch.zeros_like(masks[-1])
         return result
     monkeypatch.setattr(model, '_sentence_path_cost', cost)
-    model.candidate_attention = None
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     try:
         inputs = model.inputSpace.prepInput(['alpha beta', 'beta alpha'])
         model.runBatch(train=True, optimizer=model.getOptimizer(lr=.003), batchSize=2,
@@ -104,70 +104,30 @@ def test_trial_leaf_mask_does_not_leak_to_the_next_trial_or_commit(tmp_path, mon
         model.End()
 
 
-def test_native_candidate_departure_credits_only_scorer_parameters(tmp_path, monkeypatch):
-    import SentenceCredit
-    model = _model(tmp_path, monkeypatch)
-    original_draw = SentenceCredit.departure
-    def candidate_draw(*args, **kwargs):
-        draw = original_draw(*args, **kwargs)
-        eligible = kwargs['candidates']
-        rows = eligible.any(-1)
-        draw.update(walk=torch.where(rows, 2, draw['walk']),
-            candidate_round=torch.where(rows, eligible.long().argmax(-1), -1),
-            narrowing=torch.zeros_like(rows), attention_round=torch.full_like(draw['walk'], -1),
-            compose_round=torch.full_like(draw['walk'], -1),
-            walk_count=torch.ones_like(draw['walk_count']), walk_rounds=eligible.sum(-1))
-        return draw
-    monkeypatch.setattr(SentenceCredit, 'departure', candidate_draw)
-    original_cost = model._sentence_path_cost
-    def fixed_comparison(*args, **kwargs):
-        result = original_cost(*args)
-        registry = model._sentence_cost_registry
-        original_total = registry.total
-        value = 1. if model._sentence_trial == 'explore' else 2.
-        def total(*args, **kwargs):
-            cost = original_total(*args, **kwargs)
-            return cost - cost.detach() + value if kwargs.get('objective') == 'reconstruction' else cost
-        registry.total = total
-        return result
-    monkeypatch.setattr(model, '_sentence_path_cost', fixed_comparison)
-    before = {key: value.clone() for key, value in model.candidate_attention.state_dict().items()}
-    try:
-        inputs = model.inputSpace.prepInput(['alpha beta', 'beta alpha'])
-        optimizer = model.getOptimizer(lr=.003)
-        model.runBatch(train=True, optimizer=optimizer, batchSize=2,
-                       batch_override=(inputs, torch.empty(2, 0)))
-        report = model._last_sentence_field
-        assert report['backup']['rows'].all() and report['wins'].all()
-        assert report['trials'][0]['reads'][0]['action'].tolist() == [0, 0]
-        assert report['trials'][1]['reads'][0]['action'].tolist() == [1, 1]
-        assert any(not torch.equal(value, before[key]) for key,value in model.candidate_attention.state_dict().items())
-        gradient = model.ownership_gradient_diagnostics(optimizer)
-        parameters = [row for row in gradient['parameters'] if row['parameter'].startswith('candidate_attention.')]
-        assert parameters and any(row['writers'] == ['A'] for row in parameters)
-        assert all(not row['writers'] or row['writers'] == ['A'] for row in parameters)
-    finally:
-        model.End()
-
-
-
-
 def test_reversed_candidate_reads_keep_native_field_order_without_teacher(tmp_path, monkeypatch):
     from test_reverse_traversal import _select_completed_binary_path
     model = _model(tmp_path, monkeypatch)
     _select_completed_binary_path(model)
-    monkeypatch.setattr(model.candidate_attention, 'forward',
-        lambda context, candidates: torch.arange(candidates.shape[1], device=candidates.device,
-            dtype=candidates.dtype)[None].expand(candidates.shape[:2]))
-    # Isolate this read-order certificate from an independent reorder trial.
-    import SentenceCredit
-    departure = SentenceCredit.departure
-    monkeypatch.setattr(SentenceCredit, 'departure',
-        lambda *args, **kwargs: departure(*args, **(kwargs | {'candidates': None})))
+    chooser = model._stm_reducer()
+    attend, interpret = chooser.attend, chooser.choose_interpret
+    def last_focus(keys, legal, space, **options):
+        focus = legal[...,:2].any(-1)
+        slot = torch.where(focus, torch.arange(focus.shape[1])[None], -1).amax(-1).clamp_min(0)
+        options['replay_action'] = slot*6 + legal[torch.arange(len(slot)),slot,:2].long().argmax(-1)
+        return attend(keys, legal, space, **options)
+    chooser.trial_choices = []
+    def read(word, allowed, **options):
+        single = allowed.any().item()
+        if single:
+            chooser.trial_choices.append(None)
+        options['replay_action'] = (allowed & (len(chooser.trial_choices) > 1)).long()
+        return interpret(word, allowed, **options)
+    monkeypatch.setattr(chooser,'attend',last_focus)
+    monkeypatch.setattr(chooser,'choose_interpret',read)
     try:
         inputs = model.inputSpace.prepInput(['alpha beta', 'beta alpha'])
         model.runBatch(train=True, optimizer=model.getOptimizer(lr=.003), batchSize=2,
                        batch_override=(inputs, torch.empty(2, 0)))
-        assert model._last_sentence_field['trials'][0]['reads'][0]['action'].tolist() == [1, 1]
+        assert int(model._last_sentence_field['trials'][0]['reads'][0]['index']) == 1
     finally:
         model.End()

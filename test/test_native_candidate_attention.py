@@ -84,7 +84,10 @@ def test_native_attention_checkpoint_and_missing_legacy_parameters(tmp_path):
     legacy['state_dict'] = {key: value for key, value in legacy['state_dict'].items()
                             if not key.startswith('attention_context.')}
     legacy['state_dict']['candidate_attention.readout.bias'] = torch.tensor([0.125])
-    legacy['optimizer_state'] = None
+    anchor_keys = [key for key in legacy['state_dict'] if key.endswith('.bracket_anchor')]
+    assert anchor_keys
+    for key in anchor_keys:
+        legacy['state_dict'][key].fill_(.375)
     torch.save(legacy, path)
     del legacy
     gc.collect()
@@ -94,6 +97,10 @@ def test_native_attention_checkpoint_and_missing_legacy_parameters(tmp_path):
         assert fresh.load_weights(path, require_match=True)
     for name, value in fresh.attention_context.state_dict().items():
         torch.testing.assert_close(value, initialized[name], rtol=0, atol=0)
+    for key in anchor_keys:
+        anchor = fresh.state_dict()[key]
+        assert not anchor[2].any()
+        assert anchor[[0,1,3,4,5]].eq(.375).all()
     fresh.End();fresh.symbolSpace.soft_reset()
 
 

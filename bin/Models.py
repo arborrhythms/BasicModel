@@ -2570,6 +2570,8 @@ class BaseModel(Mereology, nn.Module):
                 (('reconstruction', reconstruction), ('expectation', expectation), ('output', output),
                  ('attention', attention),
                  ('compose_lesson', compose), ('generate_lesson', generate), ('chooser', reconstruction),
+                 ('reading_policy', compose_policy | {id(getattr(operation, name, None))
+                     for name in ('bracket_anchor', 'space_prior')}),
                  ('compose_policy', compose_policy), ('generate_policy', generate))}
 
     def _adopt_fresh_parameters(self, optimizer):
@@ -4567,10 +4569,21 @@ class BaseModel(Mereology, nn.Module):
             for key, value in self.omission.state_dict().items():
                 state.setdefault('omission.' + key, value.clone())
 
-        for key in tuple(state):
-            if key.startswith('candidate_attention.'):
-                state.pop(key)
-                warnings.warn(f'Dropped retired candidate chooser checkpoint key {key}')
+        retired_attention = [key for key in state if key.startswith('candidate_attention.')]
+        attention_transforms = {}
+        for key in retired_attention:
+            state.pop(key)
+            attention_transforms[key] = None
+            warnings.warn(f'Dropped retired candidate chooser checkpoint key {key}')
+        if retired_attention:
+            # Attention address 2 used to accept a word. Undo starts fresh,
+            # including its Adam moments, while the other five anchors keep theirs.
+            for key in state:
+                if key.endswith('.bracket_anchor'):
+                    anchor = state[key].clone()
+                    anchor[2].zero_()
+                    state[key] = anchor
+                    attention_transforms[key] = (key, 0, (0, 1, -1, 3, 4, 5))
 
         retired_pair_weights = [key for key in state
             if key == 'decomposition_chooser.weight' or key.endswith('.decomposition_chooser.weight')]
@@ -4623,6 +4636,7 @@ class BaseModel(Mereology, nn.Module):
             self, state, saved.get('grammar_catalog', grammar_catalog))
         self._checkpoint_grammar_drift.update(concept_drift)
         grammar_transforms.update(concept_transforms)
+        grammar_transforms.update(attention_transforms)
         optimizer_state, optimizer_manifest = align_optimizer(
             optimizer_state, optimizer_manifest, grammar_transforms, state)
         if self._checkpoint_grammar_drift:
@@ -14124,7 +14138,6 @@ class BasicModel(BaseModel):
         self._sentence_inverse_candidates = None
         self._last_sentence_field = None
         self._last_field_cost = None
-        self._field_meters = ()
         self._sentence_read_order = None
         self._sentence_reader_updates = 0
         self._single_sentence_steps = 0
@@ -19923,7 +19936,7 @@ class BasicModel(BaseModel):
         walks = torch.ones_like(actions)
         draw = getattr(self, '_sentence_departure', None)
         reading = getattr(self, '_attention_words', None)
-        if draw is not None and reading is not None:
+        if draw is not None and reading is not None and bool((draw['attention_round'] >= 0).any()):
             attention_mask = (torch.arange(reading.actions.shape[1],device=costs.device)[None]
                               == draw['attention_round'][:,None])
             mask = torch.cat((attention_mask,mask),-1)
@@ -21188,6 +21201,7 @@ class BasicModel(BaseModel):
                         lanes=None if field is None else field.placements()['lanes'].clamp(0,1))
                     observe_compounds(payload[7].reshape(B))
                     latches = [latches[1], current_feedback]
+                word_forecast.begin_path()
                 def arrival(index, rows):
                     nonlocal sub, sym
                     from ModelAttention import forecast_percept, observe_percept
@@ -21195,10 +21209,10 @@ class BasicModel(BaseModel):
                     word = int(index)
                     old = cached.get(word)
                     fresh = rows if old is None else rows & ~old[3]
+                    lanes = (self._attention_words.poles[:,word] if reading_walk is not None else
+                             torch.stack((rows,torch.zeros_like(rows)),-1).to(words))
+                    word_forecast.arrive(index,rows,lanes)
                     if bool(fresh.any()):
-                        lanes = (self._attention_words.poles[:,word] if reading_walk is not None else
-                                 torch.stack((fresh,torch.zeros_like(fresh)),-1).to(words))
-                        word_forecast.arrive(index,fresh,lanes)
                         forecast = forecast_percept(self,fresh)
                         payload, sub = perceive(words[:,word:word+1],fresh[:,None],index,None,sub)
                         payload, sym = symbolize(payload,empty_feedback,index,None,sym)
@@ -21372,7 +21386,7 @@ class BasicModel(BaseModel):
                             candidate.registry.add('output.interpret_score_function',policy,
                                 category='output',objective=policy_objective(self,'compose','chooser'),side='A')
                         path_credit(self, complete_paths[0], candidate, present)
-                    taught = None
+                    taught = None if look_trials[0] is None else look_trials[0].lesson_cost()
                     single_costs, weights = path_objectives(complete_paths, parts, present, draws)
                     if taught is not None:
                         # The reading lesson is observed once on the exploit,
@@ -21380,6 +21394,11 @@ class BasicModel(BaseModel):
                         lesson = Error(row_mask=present)
                         lesson.add('attention.reading_lesson', taught,
                             category='other', objective='attention')
+                        if separate(self):
+                            # The map has its own optimizer. The shared attention
+                            # and grammar logits belong to the compose optimizer.
+                            lesson.add('grammar.compose.reading_lesson', taught,
+                                category='other', objective='reading_policy')
                         combine(single_costs, current_costs(self, lesson, sentence=True))
                     self._sentence_reader_weights = weights
                     self._sentence_reader_updates += int(any(p.construction is not None or
@@ -21424,7 +21443,12 @@ class BasicModel(BaseModel):
                 self._attention_spent = kept.table.spent.detach().clone()
             if field_trials[0] is not None:
                 iterations = choose_tensors([field.iterations for field in field_trials])
-                self._last_sentence_field = dict(trials=[field.report() for field in field_trials],
+                reports = [field.report() for field in field_trials]
+                for report, looks in zip(reports, look_trials, strict=True):
+                    cost = None if looks is None else looks.lesson_cost()
+                    report['lesson_cross_entropy'] = None if cost is None else cost.detach()
+                    report['skipped_both_lanes'] = [] if looks is None or looks.teacher is None else looks.teacher.skipped
+                self._last_sentence_field = dict(trials=reports,
                     wins=wins.detach(),selected=selected.detach(),iterations=iterations.detach())
             if look_trials[0] is not None:
                 self._sentence_look_fields = dict(getattr(self,'_sentence_look_fields',{}))

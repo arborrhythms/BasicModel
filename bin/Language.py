@@ -11390,7 +11390,7 @@ class LanguageSpace(nn.Module):
                     op = getattr(wrapped, 'gl', wrapped)
                     identity = (rule.space_role, _dispatch_method_name_for_rule(rule))
                     resolved[identity] = op
-                    if not getattr(op, 'preserves_pair', False):
+                    if not rule.mandatory and not getattr(op, 'preserves_pair', False):
                         selected_rule = rule._replace(kernel_index=getattr(op, 'kernel_index', None))
                         catalog[arity].append((rule.space_role, rid-len(TheGrammar.rules_upward), selected_rule, op))
         # Non-owning views: no copied weights, state-dict aliases, parameter

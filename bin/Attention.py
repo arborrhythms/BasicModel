@@ -60,13 +60,6 @@ class BracketTable(NamedTuple):
                             torch.where(left|right,current_level.clamp_min(0)[:,None],self.level),
                             self.done&~(left|right),self.spent+ok.long(),self.limit)
 
-    def accept(self,slot,*,active=None):
-        rows=torch.arange(self.valid.shape[0],device=slot.device)
-        ok=(self.remaining>0)&self.valid[rows,slot]&~self.done[rows,slot]
-        if active is not None:ok=ok&active
-        selected=(torch.arange(self.valid.shape[1],device=slot.device)[None]==slot[:,None])&ok[:,None]
-        return self._replace(done=self.done|selected,spent=self.spent+ok.long())
-
 
 class BracketRead(NamedTuple):
     poles: torch.Tensor  # [batch,concept,bracket,pole]
@@ -293,8 +286,9 @@ def narrowing_view(state):
     both=positive&negative;pure=positive^negative;neither=~(positive|negative)
     singular=support.any(-1).sum(-1)==1
     live=table.valid&~table.done&(count>0)&(table.remaining>0)[:,None]
+    room=(~table.valid).any(-1)[:,None]
     progress=narrowing_mask(pure,both,neither,singular=singular,word=word,
-                            can_split=count>1,has_parts=count>0)
+                            can_split=(count>1)&room,has_parts=(count>0)&(word|room))
     field=((both | (count>1))[:,:,None]&~reductions)
     # Only attention's own focus/descent steps spend its allowance.
     pending=(spans[...,1]>spans[...,0])&~accepted
@@ -337,7 +331,22 @@ def record_interpretation(state, slot, active):
     return state
 
 
-def narrow_step(state, *, context=None):
+def focus_cuts(selected, spans, evidence):
+    """Byte boundaries of divide and descend for a batch of selected extents."""
+    lo, hi = spans.unbind(-1)
+    end = hi.amax(-1, keepdim=True)
+    first = selected.long().argmax(-1, keepdim=True)
+    first_for = evidence[..., 0].gather(1, first) > 0
+    opposite = torch.where(first_for, evidence[..., 1] > 0, evidence[..., 0] > 0)
+    disagreement = torch.where(selected & opposite, lo, end).amin(-1)
+    descend = torch.where(selected, hi, end).amin(-1)
+    left = torch.where(selected, lo, end).amin(-1)
+    right = torch.where(selected, hi, 0).amax(-1)
+    interior = (disagreement > left) & (disagreement < right)
+    return torch.where(interior, disagreement, descend), descend
+
+
+def narrow_step(state, *, context=None, lesson_action=None):
     """Take one original batched step; no row loop or word composition."""
     chooser=state.chooser
     keys=state.keys
@@ -380,9 +389,16 @@ def narrow_step(state, *, context=None):
     state.can_advance=legal.any()
     mask=None if exploit is None else torch.where(departure==step,exploit.actions[:,step],-1)
     replay=None if exploit is None else torch.where(step<state.replay_until,exploit.actions[:,step],-1)
+    if lesson_action is not None:
+        replay = torch.where(lesson_action >= 0, lesson_action, -1 if replay is None else replay)
     action,credit,alternate,detail=chooser.attend(pooled,legal,table.space,prior=local_prior,
         masked_action=mask,replay_action=replay,return_details=True,slot_limit=min(K,W),
         **({} if context is None else {'context': context}))
+    if lesson_action is not None:
+        taught = lesson_action >= 0
+        state.lesson_log_probability = torch.where(taught,
+            detail['logits'].log_softmax(-1).gather(1, action[:, None])[:, 0], 0.)
+        alternate = alternate & ~taught
     slot=(action//A).clamp_max(K-1);op=action%A
     chosen=live[rows,slot]&(action<A*K)
     selected=covered[rows,slot]&chosen[:,None]
@@ -393,15 +409,8 @@ def narrow_step(state, *, context=None):
         witness=(witness[:,:,None] & (identities[:,:,None]==identities[:,None,:]) & (identities[:,None,:]>=0)).any(1)
     # Divide at the first pole disagreement, descend at a retained part.
     first=selected.long().argmax(-1)
-    first_positive=evidence[rows,first,0]>0
-    disagree=selected & torch.where(first_positive[:,None],evidence[...,1]>0,evidence[...,0]>0)
-    boundary=torch.where(disagree,spans[...,0],lengths[:,None]).amin(-1)
-    part_cut=torch.where(selected,spans[...,1],lengths[:,None]).amin(-1)
-    # A first word with both poles disagrees with itself. Its left edge
-    # is not a split: isolate that word at its right edge so the other
-    # words remain reachable without accepting the contradictory one.
-    interior=(boundary>lo[rows,slot])&(boundary<hi[rows,slot])
-    cut=torch.where((op==0)&disagree.any(-1)&interior,boundary,part_cut)
+    divide, descend_cut = focus_cuts(selected, spans, evidence)
+    cut=torch.where(op==0,divide,descend_cut)
     split=(op<2)&~selected_word&chosen
     original = table
     table=table.split(slot,cut,descend=True,active=split)

@@ -211,7 +211,7 @@ def test_single_root_lexical_scan_is_reused_across_walk_steps(monkeypatch, tmp_p
 def test_retired_percept_gain_handoff_has_no_reader():
     from pathlib import Path
     root=Path(__file__).resolve().parents[1]/'bin'
-    for name in ('Models.py','ModelAttention.py','ModelCandidateAttention.py'):
+    for name in ('Models.py','ModelAttention.py','AttentionContext.py'):
         text=(root/name).read_text()
         assert '_percept_word_gain' not in text
         assert '.region_gain(' not in text

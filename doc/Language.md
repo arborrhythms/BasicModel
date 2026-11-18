@@ -218,18 +218,14 @@ thought permission. Matching faces share one identity and role contract but
 receive their phase-specific context. The capitalized `<Queries>` section is
 rejected, not treated as a parallel catalogue.
 
-Attention's operators `focus`, `unfocus` and `mint` are declared in
-`<compose>` with field operands and no predefined word surfaces. `focus` has
-two candidates, both narrowing: one splits a bracket that holds evidence of
-both kinds, and the other goes into a bracket's parts. `unfocus` restores the
-bracket in force before the last `focus` and is legal only while a focus is
-in force. `mint` accepts one clean bracket as a word, whose symbol then enters
-the grammar. Their `<generate>` face is absent: the closing owns their bracket
-witness. `intersection`, `union` and `not` also act within a field;
-order-dependent operators require symbol operands between brackets. Parser
-validation enforces this distinction. The pinned word stop masks `mint` above
-words and the descending `focus` below known words. The same chooser scores
-priming, bracket actions and typed space reads.
+The compose grammar declares `focus` and `unfocus` with field operands.
+Focus divides a mixed bracket, enters a retained part or looks at one pure
+word. Unfocus restores a divided or entered bracket while all its words remain
+unread. Both operate during examination. At a look with one pure word,
+grammar can choose its unary `interpret` and place the word in the tree.
+The field operators `intersection`, `union` and `not` operate within a
+bracket. The chooser scores the bracket actions with the sentence prefix
+understood so far.
 
 The line between the two is superposition against transformation. An encoding is symbolic when it can be written in symbol values alone, positive and negative: a field, or any signed superposition of rows, whether or not a row exists for the result. It is conceptual when it cannot: an adjective applied to a noun moves the noun to a point that need not be a symbol. Both kinds are indexed by order. The operations closed on a symbolic encoding are the coordinatewise ones on the signed pairs (`and`, `or`, `not`, `non`), which are also the order-independent ones, so they act within a field; `change`, `lift`, `lower`, `verb`, `modifier` and `preposition` displace a point off the span of the rows and need an identified concept between brackets. An operator's signature therefore has two axes: the encoding it takes and the cardinality it needs, a pooled plural reading or one identified concept. The four connectives "collapse to two, with extent/intent each" (Alec, 2026-11-13): `intersection` and `union` act on a field, the symbolic encoding, and on two operands' vectors in conceptual space. `conjunction` and `disjunction`, a symbolic pair over activation patterns, are kept only by grammar files other than `complete.grammar`.
 
@@ -967,15 +963,9 @@ and has the rest commented out.
   unit range. A difference floors at zero on each lane, and a quotient by
   zero is silent. Arithmetic on numerals remains thought by chained
   successor ([Training](Training.md)).
-- **Attention's operations are not among these.** They find the words
-  the operators then compose: "attentions operations should be called
-  focus(), unfocus(). gloss() is better named mint()". To focus is to
-  narrow to a part of what is attended; `unfocus` restores the bracket in
-  force before the last `focus` (Alec, 2026-11-14: "We should learn what
-  it does, just like we learn what focus does. If that is difficult, just
-  undo the last focus."), and the chooser decides when to take it; `mint`
-  accepts one clean region as a word, whose symbol then enters the
-  grammar ([Grammar](#grammar)).
+- **Attention finds a word for grammar.** `focus` selects its bracket.
+  `unfocus` can undo the last narrowing while its words remain unread.
+  Grammar decides whether to `interpret` a pure word at that look.
 
 ## Exist and thought operations at the completed boundary
 

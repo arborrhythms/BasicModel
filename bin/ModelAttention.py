@@ -289,7 +289,7 @@ def handoff(model, reading):
     raw=getattr(model,'_staged_concepts_in',None)
     width=max(1,int(raw.shape[-1])) if torch.is_tensor(raw) else max(1,int(spans[...,1].max()))
     scope=selected.to(slab)/width
-    # A primitive field with no glossed symbol stays open. Padding and an
+    # A primitive field with no interpreted symbol stays open. Padding and an
     # empty candidate catalogue must not turn its scope into [0,0].
     model.conceptualSpace._passback_scope_where=torch.where(table.done.any(-1)[:,None],
         scope,torch.tensor([0.,1.],device=slab.device,dtype=slab.dtype))

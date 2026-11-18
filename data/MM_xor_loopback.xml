@@ -115,6 +115,7 @@
         <rule>S = not(S)</rule>
         <rule>S = conjunction(S, S)</rule>
         <rule>S = disjunction(S, S)</rule>
+        <rule>S = interpret.forward(S)</rule>
       </compose>
     </grammar>
     </language>

@@ -3,38 +3,27 @@ from types import SimpleNamespace
 import pytest
 import torch
 from AttentionLesson import reading_lesson
-from AttentionTraversal import FieldTraversal
 from DerivationReconstruction import reconstruct
 
 
 def test_lesson_cross_entropy_teaches_named_support_without_a_choice_derivative():
-    spans = torch.tensor([[[0., 1.], [1., 2.]]])
-    lanes = torch.ones(1, 2, 1, 2, requires_grad=True)
-    field = FieldTraversal(lanes, spans, spans, torch.ones(1, 2, dtype=torch.bool), torch.tensor([2]))
+    from AttentionLesson import ReadingTargets
     logits = torch.tensor([[0., 4.]], requires_grad=True)
-    taught = torch.tensor([[True, False]])
-    field.select(logits, taught=taught)
-    assert field.reads[0]['action'].tolist() == [0]
-    assert not field.reads[0]['admitted'].requires_grad
-    field.reads[0]['lesson_cross_entropy'].sum().backward()
-    assert logits.grad[0, 0] < 0 < logits.grad[0, 1] and lanes.grad is None
-    free = FieldTraversal(lanes, spans, spans, torch.ones(1, 2, dtype=torch.bool), torch.tensor([2]))
-    free.select(logits)
-    assert free.reads[0]['action'].tolist() == [1]
+    lesson = ReadingTargets.__new__(ReadingTargets)
+    lesson.loss, lesson.count = torch.zeros(1), torch.zeros(1,dtype=torch.long)
+    lesson.book(logits.log_softmax(-1)[:,0], torch.tensor([True]))
+    lesson.cost().sum().backward()
+    assert logits.grad[0, 0] < 0 < logits.grad[0, 1]
 
 
 def test_reading_lesson_resolves_named_occurrences_and_restores_after_exception():
-    model = SimpleNamespace(_attention_forms=([['red', 'blue', 'red']], None))
-    field = SimpleNamespace(model=model,remaining=torch.ones(1, 3,dtype=torch.bool),
-        valid=torch.ones(1, 3,dtype=torch.bool),positions=torch.arange(3),
-        active=torch.tensor([True]),iterations=torch.tensor([0]))
-    prior = object(); model._attention_reading_lesson = prior
-    try:
+    model = SimpleNamespace()
+    prior = object()
+    model._attention_reading_lesson = prior
+    with pytest.raises(RuntimeError, match='end lesson'):
         with reading_lesson(model, [[('red', 1), 'blue', ('red', 0)]]) as lesson:
-            assert lesson.target(field).tolist() == [[False, False, True]]
+            assert lesson.positions([['red','blue','red']], torch.tensor([[[0,3],[4,8],[9,12]]])) == [[2,1,0]]
             raise RuntimeError('end lesson')
-    except RuntimeError:
-        pass
     assert model._attention_reading_lesson is prior
 
 
@@ -73,7 +62,7 @@ def test_native_lesson_teaches_scorer_and_keeps_one_word_per_read(tmp_path,monke
     from test_native_attention_field import _model
     model = _model(tmp_path,monkeypatch)
     try:
-        before = model.candidate_attention.readout.weight.detach().clone()
+        before = model._stm_reducer().chooser.tool_embedding.detach().clone()
         inputs = model.inputSpace.prepInput(['red blue','blue red'])
         optimizer = model.getOptimizer(lr=.01)
         attention = next(o for o in optimizer.optimizers if getattr(o,'objective_owner',None)=='attention')
@@ -84,13 +73,15 @@ def test_native_lesson_teaches_scorer_and_keeps_one_word_per_read(tmp_path,monke
         field = model._last_sentence_field
         assert field['iterations'].tolist() == [2,2]
         assert field['trials'][0]['lesson_cross_entropy'].gt(0).all()
-        assert all(read['admitted'].sum(-1).eq(1).all() for read in field['trials'][0]['reads'])
+        assert [int(read['index']) for read in field['trials'][0]['reads']] == [0, 1]
+        assert all(read['rows'].all() for read in field['trials'][0]['reads'])
         owned = model._last_understanding.input_reconstruction
         assert torch.isfinite(owned.percepts).all()
         assert not owned.truncated.any()
-        assert not torch.equal(model.candidate_attention.readout.weight,before)
+        assert not torch.equal(model._stm_reducer().chooser.tool_embedding,before)
         owners = model.ownership_gradient_diagnostics(optimizer)['parameters']
-        assert all(row['writers']==['R'] for row in owners if row['owner']=='attention')
+        writers = [row['writers'] for row in owners if row['owner']=='attention']
+        assert writers == [['R']], writers
         assert model._attention_reading_lesson is None
     finally:model.End()
 
@@ -141,7 +132,8 @@ def test_native_four_word_inverse_follows_composed_children_without_free_decoder
     from test_reverse_traversal import _select_completed_binary_path
     from attention_field_gates import words_from_leaves
     model = _model(tmp_path,monkeypatch)
-    model.candidate_attention = None
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     _select_completed_binary_path(model)
     try:
         texts=['red blue green gold','gold green blue red']
@@ -180,7 +172,8 @@ def test_supplied_text_reader_preserves_shared_work_spent_during_sentence_scorin
     from test_native_attention_field import _model
     from attention_curriculum_gates import present
     model = _model(tmp_path,monkeypatch)
-    model.candidate_attention = None
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     stage = dict(fields=['red','blue'],prompts=['which word ?']*2,targets=['red','blue'])
     try:
         # Scoring the two sentence trials invokes the ordinary output reader
@@ -200,7 +193,8 @@ def test_curriculum_gate_counts_one_word_only_for_active_rows(tmp_path,monkeypat
     from test_reverse_traversal import _select_completed_binary_path
     from attention_curriculum_gates import present
     model = _model(tmp_path,monkeypatch)
-    model.candidate_attention = None
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     _select_completed_binary_path(model)
     try:
         result = present(model,dict(fields=['red','blue green']))
@@ -215,7 +209,8 @@ def test_order_lesson_gate_reports_list_inverse_separately(tmp_path,monkeypatch)
     from test_native_attention_field import _model
     import attention_curriculum_gates as curriculum
     model=_model(tmp_path,monkeypatch)
-    model.candidate_attention=None
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     # Corrupt only the reported list decoder, not the native reads or cost.
     monkeypatch.setattr(curriculum,'words_from_field',
         lambda surface,where,orders:[['<unrecovered>']*len(order) for order in orders])
@@ -230,7 +225,7 @@ def test_order_lesson_gate_reports_list_inverse_separately(tmp_path,monkeypatch)
 def test_prompt_need_reaches_existing_input_without_an_answer_or_action_target(tmp_path,monkeypatch):
     from test_native_attention_field import _model
     from AttentionLesson import prompt_need
-    from ModelCandidateAttention import _needs
+    from AttentionContext import _needs
     model = _model(tmp_path,monkeypatch)
     width = model.conceptualSpace.stm.concept_dim
     like = model.conceptualSpace.stm._buffer

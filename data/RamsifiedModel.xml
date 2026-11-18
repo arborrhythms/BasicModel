@@ -45,6 +45,7 @@
         <rule>S = union(S, S)</rule>
         <rule>S = lower(S, S)</rule>
         <rule>S = change(S, S)</rule>
+        <rule>S = interpret.forward(S)</rule>
       </compose>
     </grammar>
     </language>

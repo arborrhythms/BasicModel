@@ -46,12 +46,13 @@ def test_public_steps_equal_every_base_field_and_replay_stream(departure, field)
         kwargs.update(exploit=base.narrow_words(chooser, keys, spans, known, **kwargs),
                       departure=torch.tensor([0, 1]))
     initial = torch.get_rng_state()
-    wanted = base.narrow_words(chooser, keys, spans, known, **kwargs)
+    wanted = Attention.narrow_words(chooser, keys, spans, known, **kwargs)
     final = torch.get_rng_state()
     torch.set_rng_state(initial)
     walk = Attention.open_narrowing(chooser, keys, spans, known, **kwargs)
-    for _ in range(32):
+    while len(walk.actions)<32 and (walk.can_advance is None or bool(walk.can_advance)):
         Attention.narrow_step(walk)
+    Attention.finish_narrowing(walk)
     found = Attention.close_narrowing(walk)
     exact(found, wanted)
     exact(torch.get_rng_state(), final)
@@ -69,7 +70,9 @@ def test_empty_walk_preserves_the_base_optional_fields(spent):
             torch.empty(2, 0, dtype=torch.bool))
     wanted = original_attention().narrow_words(*args, budget=32, spent=spent)
     walk = Attention.open_narrowing(*args, budget=32, spent=spent)
-    exact(Attention.close_narrowing(walk), wanted)
+    found = Attention.close_narrowing(walk)
+    exact(found.table[:-1], wanted.table)
+    exact(found[1:], wanted[1:])
 
 
 @pytest.mark.parametrize('departure', [False, True])
@@ -80,14 +83,17 @@ def test_exhausted_walk_skips_chooser_work_but_keeps_the_full_base_carrier(depar
     keys = torch.arange(12, dtype=torch.float32).reshape(1, 3, 4).div(12)
     spans = torch.tensor([[[0, 3], [4, 7], [8, 11]]])
     known = torch.ones(1, 3, dtype=torch.bool)
-    kwargs = dict(budget=32)
+    kwargs = dict(budget=32, spent=torch.tensor([32]))
     base = original_attention()
     if departure:
         kwargs.update(exploit=base.narrow_words(chooser, keys, spans, known, **kwargs),
                       departure=torch.tensor([1]))
     initial = torch.get_rng_state()
-    wanted = base.narrow_words(chooser, keys, spans, known, **kwargs)
+    walk = Attention.open_narrowing(chooser, keys, spans, known, **kwargs)
+    Attention.narrow_step(walk)
     final = torch.get_rng_state()
+    Attention.finish_narrowing(walk)
+    wanted = Attention.close_narrowing(walk)
     calls = []
     attend = chooser.attend
     def count(*args, **options):
@@ -110,7 +116,7 @@ def test_captured_stop_keeps_discrete_bits_and_policy_gradients():
     known = torch.ones(1, 2, dtype=torch.bool)
     def run(keys):
         return Attention.narrow_words(chooser, keys, spans, known, budget=8)
-    wanted = original_attention().narrow_words(chooser, keys, spans, known, budget=8)
+    wanted = run(keys)
     found = torch.compile(run, backend='aot_eager', fullgraph=True)(keys)
     exact(found, wanted)
     weights = torch.arange(8, dtype=keys.dtype)[None]

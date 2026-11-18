@@ -81,55 +81,52 @@ def idea_read_measurements(owner, samples):
 
 
 @contextmanager
-def stepped_trace(model):
-    import Attention, ModelAttention
-    walks, current, by_state = [], [], {}
-    step, close, mask = Attention.narrow_step, ModelAttention.close_narrowing, Attention.narrowing_mask
-    chooser = model._stm_reducer()
-    attend = chooser.attend
-    had, old = 'attend' in vars(chooser), vars(chooser).get('attend')
-    def item(state):
-        if id(state) not in by_state:
-            record = dict(masks=[], choices=[], budget=state.budget, spans=state.spans.tolist())
-            by_state[id(state)] = record
-            walks.append(record)
-        return by_state[id(state)]
-    def observed_step(state):
-        if state.chooser is not chooser:
-            return step(state)
-        current.append(item(state))
-        try:
-            return step(state)
-        finally:
-            current.pop()
-    def observed_close(state):
-        result = close(state)
-        if state.chooser is chooser:
-            item(state).update(actions=result.actions.tolist(), accepted=result.accepted.tolist(),
-                descended=result.descended.tolist(), spent=result.table.spent.tolist(),
-                remaining=result.table.remaining.tolist())
-        return result
-    def observed_mask(pure, both, neither, **kwargs):
-        result = mask(pure, both, neither, **kwargs)
-        if current:
-            current[-1]['masks'].append(dict(pure=pure.tolist(), both=both.tolist(),
-                neither=neither.tolist(), **{k:v.tolist() for k,v in kwargs.items()}, progress=result.tolist()))
-        return result
-    def observed_attend(*args, **kwargs):
-        result = attend(*args, **kwargs)
-        if current:
-            current[-1]['choices'].append(dict(legal=args[1].tolist(), action=result[0].tolist(),
-                logits=result[3]['logits'].detach().tolist()))
-        return result
-    Attention.narrow_step, ModelAttention.close_narrowing = observed_step, observed_close
-    Attention.narrowing_mask, chooser.attend = observed_mask, observed_attend
-    try:
-        yield walks
-    finally:
-        Attention.narrow_step, ModelAttention.close_narrowing = step, close
-        Attention.narrowing_mask = mask
-        if had: chooser.attend = old
-        else: del chooser.attend
+def look_lane_counts(sink):
+    """Observe the whole properties and basic percepts actually read at each extent."""
+    from unittest.mock import patch
+    import FamiliarTier, PerceptField, SentenceLooks
+    from BasicPercepts import BasicPercepts
+
+    def measured(original, kind):
+        def measure(*args, **kwargs):
+            whole_read = PerceptField.read_percepts
+            basic_read = BasicPercepts.read
+            counts = {}
+
+            def count(field, family):
+                keys = [i for i, key in enumerate(field.keys) if key[0] == family]
+                # Native and basic reads identify their features by distinct keys.
+                if len({field.keys[i] for i in keys}) != len(keys):
+                    raise ValueError('look census found duplicate feature keys')
+                both = (field.values.detach()[keys] > 0).all(-1).sum(0).tolist()
+                for b, row in enumerate(field.where.tolist()):
+                    for place, (start, stop) in enumerate(row):
+                        if stop > start:
+                            extent = counts.setdefault((b, place, start, stop), {})
+                            extent[family] = both[b][place]
+
+            def whole(*a, **kw):
+                result = whole_read(*a, **kw)
+                count(result, 'ws')
+                return result
+
+            def basic(*a, **kw):
+                result = basic_read(*a, **kw)
+                count(result, 'bp')
+                return result
+
+            with patch.object(PerceptField, 'read_percepts', whole), patch.object(BasicPercepts, 'read', basic):
+                result = original(*args, **kwargs)
+            sink(dict(kind=kind, extents=[
+                dict(batch=b, place=p, where=[start, stop], whole_both=poles['ws'],
+                     basic_both=poles['bp'])
+                for (b, p, start, stop), poles in counts.items()]))
+            return result
+        return measure
+
+    with patch.object(FamiliarTier, 'open_sentence', measured(FamiliarTier.open_sentence, 'opening')), \
+         patch.object(SentenceLooks, 'perceive', measured(SentenceLooks.perceive, 'selected')):
+        yield
 
 
 @contextmanager
@@ -236,7 +233,6 @@ def main():
     state=torch.load(args.replay,weights_only=False)
     torch.set_rng_state(state['torch']);np.random.set_state(state['numpy']);random.setstate(state['python'])
     write(args.output/'initial.pt',scope='160-sentence postmerge lane observer')
-    Assessment._attention_trace=stepped_trace
     count=0; phase='training'
     idea_samples, choices = [], {}
     from Comprehension import Evaluation
@@ -371,7 +367,12 @@ def main():
     def deposit_sink(record):
         record.update(presentation=count+1 if phase=='training' else count,phase=phase)
         with (args.output/'deposits.jsonl').open('a') as f:f.write(json.dumps(record)+'\n')
-    with native_provenance(sink), word_deposits(deposit_sink):
+    def look_sink(record):
+        record.update(presentation=count+1 if phase=='training' else count, phase=phase)
+        with (args.output/'look-lanes.jsonl').open('a') as f:
+            f.write(json.dumps(record)+'\n')
+
+    with native_provenance(sink), word_deposits(deposit_sink), look_lane_counts(look_sink):
         measure('doc/benchmarks/2026-11-11-whole-paths/configurations/explore-1.xml',
                 'data/corpus-lessons.json',args.output/'native-lesson',eager=True,after_training=assess)
     print('completed',count,flush=True)

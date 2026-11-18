@@ -99,7 +99,7 @@ the two lanes, or `non`, which withholds both.
 | `lower` | drops a word of order one or more by one order | one generic member (below) |
 | `interpret` | a word to its object | its object's set in place of the word's |
 | `ask` | marks a position of uncertainty | its open operand gives nothing |
-| `change`, `preposition`, `surface`, `sign`, `bind`, `swap`, `part`, `whole`, `implies`, `focus`, `mint` | | its content operand's set, unchanged |
+| `change`, `preposition`, `surface`, `sign`, `bind`, `swap`, `part`, `whole`, `implies`, `focus`, `unfocus` | | its content operand's set, unchanged |
 
 ### Determiners
 

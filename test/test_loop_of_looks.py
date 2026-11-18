@@ -291,3 +291,57 @@ def test_8_fourth_packed_sentence_can_use_the_shared_allowance(monkeypatch):
         meter.require('bracket', int(state.table.spent[0]) - meter.spent)
         assert meter.remaining == 2 * (3 - sid)
     assert meter.spent == 8
+
+
+@pytest.mark.parametrize('length', range(1, 7))
+def test_11_lesson_teaches_shortest_walk_and_interpretation(length, monkeypatch):
+    from types import SimpleNamespace
+    import SentenceLooks
+    import ModelAttention
+    from Attention import open_narrowing
+    from AttentionLesson import reading_lesson
+    from Language import OperationSelectionLayer
+    word_rule = torch.nn.Identity()
+    word_rule.rule_name = 'interpret'
+    chooser = OperationSelectionLayer(d_model=4, unary_ops=[word_rule])
+    chooser.attention_operations = tuple(range(6))
+    spans = torch.arange(length)[:,None] * 2 + torch.tensor([[0,1]])
+    keys = torch.ones(1,length,4)
+    state = open_narrowing(chooser,keys,spans[None],torch.ones(1,length,dtype=torch.bool),budget=12)
+    forms = [[str(i) for i in range(length)]]
+    model = SimpleNamespace(training=True, _sentence_training=True, _attention_forms=(forms,),
+                            _sentence_open_fields={0:None})
+    walk = SimpleNamespace(state=state,width=length)
+    monkeypatch.setattr(ModelAttention,'handoff',lambda *args: None)
+    monkeypatch.setattr(SentenceLooks,'perceive',lambda *args: None)
+    arrivals=[]
+    with reading_lesson(model, forms):
+        looks=SentenceLooks.Looks(model,walk,0,torch.tensor([True]))
+        looks.run(lambda i, rows: arrivals.append(int(i)))
+    assert arrivals == list(range(length))
+    assert len(state.actions) == (0 if length==1 else length)
+    taught = looks.lesson_cost()
+    assert taught.shape == (1,) and taught.item() > 0
+    taught.sum().backward()
+    assert chooser.apply_anchor.grad is not None and chooser.apply_anchor.grad.abs().sum() > 0
+
+
+def test_4_verbal_xor_offers_its_declared_interpretation():
+    from test_mm_xor import _fresh_model
+    model, _, _ = _fresh_model('data/XOR_grammar.xml')
+    try:
+        chooser = model._stm_reducer()
+        pure = torch.tensor([True, False])
+        word = chooser.apply_anchor.new_zeros(2, chooser.d_model)
+        choice = chooser.choose_interpret(word, pure)
+        assert choice['eligible'].tolist() == [True, False]
+        assert torch.isfinite(choice['logits'][:, 0]).all()
+        assert torch.isfinite(choice['logits'][:, 1]).tolist() == [True, False]
+        # Lexical naming is performed with the word bank at a terminal.
+        # A grammar's implicit inverse menu obeys the same contract as an
+        # explicitly declared generate section.
+        names = model.languageSpace._generate_unary_names
+        assert 'interpret' not in names
+        assert {'conjunction', 'disjunction'} <= set(model.languageSpace._generate_binary_names)
+    finally:
+        model.End()

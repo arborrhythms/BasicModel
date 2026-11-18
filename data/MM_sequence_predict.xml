@@ -97,6 +97,7 @@
             <rule width="1..">O = NP</rule>
             <rule width="2..">AP = lower(DET, NP)</rule>
             <rule width="2..">NP = AP</rule>
+            <rule>S = interpret.forward(S)</rule>
           </symbols>
         </compose>
       </grammar>

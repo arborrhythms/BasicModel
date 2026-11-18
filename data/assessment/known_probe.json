@@ -3,8 +3,8 @@
   "repetitions": 3,
   "vocabulary": {"word": "Felix", "name": "Felix", "noun": "cat", "verb": "ran", "determiner": "the", "noun_modifier": "fast", "verb_modifier": "quickly", "pronoun": "he"},
   "rungs": [
-    {"rung": 1, "frame": "{word.form}", "kinds": ["word"], "tree": 0, "checks": ["minted", "same_object", "trusted_definition"]},
-    {"rung": 2, "frame": "{word.form}", "kinds": ["words"], "tree": 0, "checks": ["twenty_words", "minted", "same_object", "trusted_definition", "distinct_objects", "said_back"]},
+    {"rung": 1, "frame": "{word.form}", "kinds": ["word"], "tree": 0, "checks": ["interpreted", "same_object", "trusted_definition"]},
+    {"rung": 2, "frame": "{word.form}", "kinds": ["words"], "tree": 0, "checks": ["twenty_words", "interpreted", "same_object", "trusted_definition", "distinct_objects", "said_back"]},
     {"rung": 3, "frame": "{name.form}", "kinds": ["name"], "tree": 0, "checks": ["one_object"]},
     {"rung": 4, "frame": "{name.form} {verb.form}", "kinds": ["name", "verb"], "tree": ["verb", 0, 1], "checks": []},
     {"rung": 5, "frame": "{determiner.form} {noun.form} {verb.form}", "kinds": ["determiner", "noun", "verb"], "tree": ["verb", ["modifier", 1, 0], 2], "checks": []},

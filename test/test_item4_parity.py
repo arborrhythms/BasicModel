@@ -25,7 +25,7 @@ def test_shipped_defaults_and_declared_parity_configuration():
 def test_parity_configuration_removes_selection_prime_without_muting_the_predictor(tmp_path, monkeypatch):
     from test_compiled_word_chunk import _tiny_canonical_model, _stage_fullgraph_tensor_peer
     from ModelAttention import stage_symbol_bank
-    from ModelCandidateAttention import context
+    from AttentionContext import context
     from meaning_fixtures import symbol_prediction
     parity = json.loads((ROOT/'test/fixtures/item4-parity.json').read_text())['training']
     model = _tiny_canonical_model(tmp_path, monkeypatch, input_width=16, word_buckets='8',
@@ -41,16 +41,22 @@ def test_parity_configuration_removes_selection_prime_without_muting_the_predict
         predicted = replace(symbol_prediction(head._bank_keys, torch.ones(len(head._bank_keys), 2)),
                             symbol_ids=head._bank_ids)
         head._inter_last_meaning = [SimpleNamespace(prediction=predicted) for _ in range(2)]
-        addresses = torch.zeros(2,1,dtype=torch.long)
-        values = torch.ones(2,1,2)
-        valid = torch.ones(2,1,dtype=torch.bool)
-        before = context(model, values, addresses, valid)
-        count = sum(model._candidate_geometry[0])
-        assert not before[:,5*count:7*count].any()
-        model.expectation_prime_enabled = True
-        after = context(model, values, addresses, valid)
-        assert not after[:,5*count:7*count].any()
-        torch.testing.assert_close(before[:,:5*count], after[:,:5*count], rtol=0, atol=0)
-        torch.testing.assert_close(before[:,7*count:], after[:,7*count:], rtol=0, atol=0)
+        # Observe the actual inputs to the zero-initialized projection. A stale
+        # discourse prediction is not this sentence's active order prime.
+        inputs = []
+        hook = model.attention_context.register_forward_pre_hook(
+            lambda layer, args: inputs.append(args[0].detach().clone()))
+        try:
+            stm = model.conceptualSpace.CSLang.state
+            context(model, stm, None)
+            model.expectation_prime_enabled = True
+            context(model, stm, None)
+        finally:
+            hook.remove()
+        before, after = inputs
+        start = sum(model._attention_geometry[0])
+        stop = start + len(model._concept_owner()._order_caps())*model.conceptualSpace.stm.concept_dim
+        assert not before[:,start:stop].any() and not after[:,start:stop].any()
+        torch.testing.assert_close(before, after, rtol=0, atol=0)
     finally:
         model.End(); model.symbolSpace.soft_reset()

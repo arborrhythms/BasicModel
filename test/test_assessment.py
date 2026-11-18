@@ -24,7 +24,7 @@ def test_ladder_checks_earlier_rungs_without_supplying_a_tree(monkeypatch, count
     calls = []
     def read(model, text, **kwargs):
         calls.append((text, kwargs))
-        word = dict(form=text, position=0, known=True, attention='minted', trusted=True, objects=[text])
+        word = dict(form=text, position=0, known=True, attention='interpreted', trusted=True, objects=[text])
         return dict(text=text, words=[word], forest=[0], trees=[dict(position=0, word=text)],
                     missing=[], meaning=None, context_meanings=[], answer=text, evidence_kind=None)
     monkeypatch.setattr(probe, 'read_sentence', read)
@@ -170,6 +170,8 @@ def test_probe_restores_memory_clocks_parameters_and_random_streams(tmp_path, mo
             word['native_field'] = None
         assert unobserved == compared
         equal(snapshot(model), before)
+        from reading_fixtures import read_in_source_order
+        read_in_source_order(model, monkeypatch)
         contextual = read_sentence(model, 'alpha novel', context=('alpha beta',), trace=True)
         assert contextual['context_meanings']
         equal(snapshot(model), before)

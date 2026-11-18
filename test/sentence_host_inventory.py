@@ -252,13 +252,14 @@ class ProfileObserver:
             return result
         patch.setattr(Attention, 'narrow_words', reading)
         patch.setattr(ModelAttention, 'narrow_words', reading)
-        restore_read = ModelAttention.SentenceNarrowing.for_restore
-        def restoring(walk, index):
-            result = restore_read(walk, index)
-            self.walks.append(dict(owner='sentence', rounds=walk.state.steps_taken,
-                                  departure=walk.state.departure is not None))
+        from SentenceLooks import Looks
+        path_run = Looks.run
+        def measured_path(path, *args, **kwargs):
+            result = path_run(path, *args, **kwargs)
+            self.walks.append(dict(owner='sentence', rounds=path.walk.state.steps_taken,
+                                  looks=len(path.fields), departure=path.draw is not None))
             return result
-        patch.setattr(ModelAttention.SentenceNarrowing, 'for_restore', restoring)
+        patch.setattr(Looks, 'run', measured_path)
 
     def batch(self, model, *, seconds, label, optimizer=None):
         self.inventory.active = False

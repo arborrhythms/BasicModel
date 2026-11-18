@@ -72,37 +72,6 @@ def test_non_marks_do_not_change_default_activity_without_an_estimate():
 
 
 
-def test_expectation_free_placement_is_independent_of_forecasts_and_percept_moments(tmp_path,monkeypatch):
-    from types import SimpleNamespace
-    from ModelCandidateAttention import context
-    from ModelAttention import stage_symbol_bank
-    from test_compiled_word_chunk import _tiny_canonical_model,_stage_fullgraph_tensor_peer
-    model=_tiny_canonical_model(tmp_path,monkeypatch,input_width=16,word_buckets='8',stm_capacity=3,chooser_depth=1)
-    try:
-        _stage_fullgraph_tensor_peer(model,['cat','dog'])
-        head=model.symbolSpace.expectation
-        stage_symbol_bank(model,head)
-        values=torch.ones(2,1,2)
-        addresses=torch.full((2,1),model.where_registry.slices['parts'][0],dtype=torch.long)
-        valid=torch.ones(2,1,dtype=torch.bool)
-        n,width=model._candidate_geometry[1][0]
-        parts=torch.ones(2,n,width)
-        before=context(model,values,addresses,valid,parts=parts,expectation_free=True)
-        predicted=symbol_prediction(head._bank_keys,torch.ones(len(head._bank_keys),2))
-        predicted=replace(predicted,symbol_ids=head._bank_ids)
-        head._inter_last_meaning=[SimpleNamespace(prediction=predicted) for _ in range(2)]
-        model._stm_predicted_idea=torch.full((2,3,model.conceptualSpace.stm.concept_dim),17.)
-        model.percept_expectation.moments.mean.fill_(1.)
-        model.percept_expectation.moments.count.fill_(100)
-        model._percept_prior=None
-        after=context(model,values,addresses,valid,parts=parts,expectation_free=True)
-        torch.testing.assert_close(before,after,rtol=0,atol=0)
-        assert after.shape[-1]==model.candidate_attention.context_width
-        torch.testing.assert_close(after,context(model,values,addresses,valid,parts=parts),rtol=0,atol=0)
-    finally:
-        model.End();model.symbolSpace.soft_reset()
-
-
 @pytest.mark.parametrize('percept_gain',[0.,.75])
 def test_native_s_gain_uses_raw_arrival_and_p_preserves_the_full_payload(tmp_path,monkeypatch,eager_reading,percept_gain):
     from test_compiled_word_chunk import _tiny_canonical_model,_stage_fullgraph_tensor_peer
@@ -110,6 +79,8 @@ def test_native_s_gain_uses_raw_arrival_and_p_preserves_the_full_payload(tmp_pat
     import ModelAttention
     model=_tiny_canonical_model(tmp_path,monkeypatch,input_width=16,word_buckets='8',stm_capacity=3,chooser_depth=1,
         training_overrides={'perceptExpectationGain':percept_gain,'symbolExpectationGain':.5})
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     model.eval();model._tensor_peer_while_eager=True
     model._chart_compose_per_word=lambda:None
     stage=ModelAttention.stage_percept_expectation
@@ -152,8 +123,9 @@ def test_native_s_gain_uses_raw_arrival_and_p_preserves_the_full_payload(tmp_pat
     monkeypatch.setattr(SymbolField,'read',record_read)
     try:
         with torch.no_grad():
-            raw=_stage_fullgraph_tensor_peer(model,['cat','dog'])
-            with model._sentence_run():result=model._forward_with_compiled_sentence_state(raw)
+            with model._sentence_run():
+                raw=_stage_fullgraph_tensor_peer(model,['cat','dog'])
+                result=model._forward_with_compiled_sentence_state(raw)
             model._publish_compiled_sentence_state(result);model._end_step()
         assert records
     finally:

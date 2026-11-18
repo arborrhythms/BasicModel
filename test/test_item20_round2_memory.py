@@ -32,7 +32,7 @@ def migration_fixture(chosen=2):
     observed = '_owned_bases.what.primitive_properties.observed'
     live = {'wholeSpace.' + member: torch.zeros(3, 256),
             'wholeSpace.' + observed: torch.zeros(3, 256, dtype=torch.bool),
-            'candidate_attention.hidden.0.weight': torch.ones(2, 5)}
+            'attention_context.weight': torch.ones(2, 5)}
     state = {f'wholeSpaces.{i}.{suffix}': value.clone()
              for i in range(3) for suffix, value in
              ((member, live['wholeSpace.' + member]), (observed, live['wholeSpace.' + observed]))}
@@ -55,11 +55,12 @@ def test_migration_selects_the_changed_copy_and_merges_host_extras(chosen):
     result = migrate_wholespace_checkpoint(saved, live)
     assert result.diagnostics.whole_copy == chosen
     assert result.diagnostics.whole_copies == 3
-    assert result.diagnostics.rebuilt_parameters == ('candidate_attention.hidden.0.weight',)
+    assert not result.diagnostics.rebuilt_parameters
     state = result.checkpoint['state_dict']
     assert not any(key.startswith('wholeSpaces.') for key in state)
     torch.testing.assert_close(state['wholeSpace.' + member], saved['state_dict'][f'wholeSpaces.{chosen}.{member}'])
-    torch.testing.assert_close(state['candidate_attention.hidden.0.weight'], live['candidate_attention.hidden.0.weight'])
+    # Geometry migration leaves retirement to the full checkpoint loader.
+    torch.testing.assert_close(state['candidate_attention.hidden.0.weight'], saved['state_dict']['candidate_attention.hidden.0.weight'])
     entry = result.checkpoint['structural_extras']['whole_properties'][0]
     assert entry['attributes']['_standalone_run_bytes'] == ({7, 11} if chosen == 2 else {7})
     assert entry['attributes']['_property_rows_used'] == {2}
@@ -174,7 +175,7 @@ def test_migration_keeps_corpus_continuation_owners_and_selected_optimizer_slots
     old_parameters = dict(old_names)
     torch.testing.assert_close(optimizer.state[parameters['wholeSpace.' + member]]['momentum_buffer'],
         old.state[old_parameters['wholeSpaces.2.' + member]]['momentum_buffer'])
-    assert not optimizer.state[parameters['candidate_attention.hidden.0.weight']]
+    assert not optimizer.state[parameters['attention_context.weight']]
 
 
 def test_rejecting_commit_captures_value_pool_and_source_then_reraises(tmp_path, monkeypatch):

@@ -52,31 +52,101 @@ class ReadingLesson:
     """
     parts: tuple
 
-    def target(self, field):
-        forms = field.model._attention_forms[0]
-        target = torch.zeros_like(field.remaining)
-        if len(self.parts) != len(target):
+    def positions(self, forms, spans):
+        """Resolve the lesson's named occurrences in the staged presentation."""
+        if len(self.parts) != len(forms):
             raise ValueError('reading lesson must match the current batch')
-        for b in range(len(target)):
-            if not bool(field.active[b]):
+        result = []
+        for words, parts, extents in zip(forms, self.parts, spans.tolist(), strict=True):
+            words = [word.encode('utf8') if isinstance(word, str) else word for word in words]
+            live = {i for i, (lo, hi) in enumerate(extents) if hi > lo}
+            ordered = []
+            for part in parts:
+                word, ordinal = part if isinstance(part, tuple) else (part, None)
+                matches = [i for i, candidate in enumerate(words) if candidate == word]
+                if ordinal is not None:
+                    matches = matches[ordinal:ordinal+1]
+                if not matches:
+                    raise ValueError(f'lesson part {part!r} is absent from the presentation')
+                here = [i for i in matches if i in live]
+                if not here:
+                    continue  # Named in another sentence of this packed stream.
+                if len(here) != 1 or here[0] in ordered:
+                    raise ValueError(f'lesson part {part!r} must identify one unread native support')
+                ordered.append(here[0])
+            if set(ordered) != live:
+                raise ValueError('reading lesson must name every word of its sentence')
+            result.append(ordered)
+        return result
+
+
+class ReadingTargets:
+    """Supervision at the two decisions actually made during a look."""
+    def __init__(self, lesson, forms, state):
+        self.order = lesson.positions(forms, state.spans)
+        self.skipped = [[] for _ in self.order]
+        self.loss = state.keys.new_zeros(len(forms))
+        self.count = state.spans.new_zeros(len(forms))
+
+    def next(self, state):
+        pairs = state.poles
+        both = (torch.zeros_like(state.known) if pairs is None else (pairs > 0).all(-1))
+        pending = ~state.accepted & ~both
+        target = []
+        for b, order in enumerate(self.order):
+            self.skipped[b] = [i for i in order if bool(both[b,i])]
+            target.append(next((i for i in order if bool(pending[b,i])), -1))
+        return state.spans.new_tensor(target)
+
+    def focus(self, state, view, targets):
+        """Shortest legal sequence to the named occurrence. Only the lesson plans."""
+        from functools import lru_cache
+        from Attention import focus_cuts
+        table, covered, _, evidence = view[:4]
+        legal = view[8]
+        actions = []
+        for b, target in enumerate(targets.tolist()):
+            candidates = (covered[b,:,target] & legal[b,:,:2].any(-1)).nonzero() if target >= 0 else ()
+            if not len(candidates):
+                actions.append(-1)
                 continue
-            turn = int(field.iterations[b])
-            if turn >= len(self.parts[b]):
-                raise ValueError('reading lesson ended before the field was read')
-            part = self.parts[b][turn]
-            word, occurrence = part if isinstance(part, tuple) else (part, None)
-            columns = [i for i, position in enumerate(field.positions.tolist())
-                       if (forms[b][position].encode('utf8') if isinstance(forms[b][position], str)
-                           else forms[b][position]) == word and bool(field.valid[b, i])]
-            if occurrence is not None:
-                columns = columns[occurrence:occurrence+1]
-            columns = [i for i in columns if bool(field.remaining[b, i])]
-            if len(columns) != 1:
-                available = [forms[b][position] for i, position in enumerate(field.positions.tolist())
-                             if bool(field.remaining[b, i])]
-                raise ValueError(f'lesson part {part!r} must identify one unread native support; available={available!r}')
-            target[b, columns[0]] = True
-        return target
+            slot = int(candidates[0,0])
+            ordinals = tuple(covered[b,slot].nonzero().flatten().tolist())
+            @lru_cache(None)
+            def shortest(words, room, allowed):
+                if len(words) == 1:
+                    return (1, 1) if allowed[1] else (float('inf'), -1)
+                if room == 0:
+                    return float('inf'), -1
+                indices = state.spans.new_tensor(words)
+                spans = state.spans[b,indices][None]
+                lanes = evidence[b,indices][None]
+                cuts = focus_cuts(torch.ones_like(spans[...,0],dtype=torch.bool), spans, lanes)
+                best = (float('inf'), -1)
+                for op, cut in enumerate(cuts):
+                    if not allowed[op]:
+                        continue
+                    on_left = spans[0,:,1] <= cut
+                    left = bool(on_left[words.index(target)])
+                    child = tuple(i for i, keep in zip(words, on_left.tolist()) if keep == left)
+                    if left and len(child) == 1 and bool((evidence[b,target]>0).sum()==1):
+                        rest = 0   # grammar sees the left child on this very look
+                    else:
+                        both = bool((evidence[b,list(child)]>0).any(0).all())
+                        rest, _ = shortest(child, room-1, (both and 0 in state.chooser.attention_operations,
+                                                           1 in state.chooser.attention_operations))
+                    best = min(best, (1+rest, op))
+                return best
+            distance, op = shortest(ordinals, int((~table.valid[b]).sum()), tuple(legal[b,slot,:2].tolist()))
+            actions.append(slot*legal.shape[-1]+op if distance < float('inf') else -1)
+        return state.spans.new_tensor(actions)
+
+    def book(self, log_probability, active):
+        self.loss = self.loss - torch.where(active, log_probability, 0.)
+        self.count = self.count + active.long()
+
+    def cost(self):
+        return self.loss / self.count.clamp_min(1)
 
 
 @contextmanager

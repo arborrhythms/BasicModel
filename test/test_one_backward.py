@@ -81,7 +81,6 @@ def test_compose_credit_reaches_live_semantics_and_its_three_writers_are_attribu
 
 
 def test_bands_and_intuition_receive_exactly_their_own_terms_in_one_surrogate(tmp_path):
-    from CandidateAttention import CandidateAttention
     from Expectation import ActivationPredictor, recombine_percept
     from Intuition import Idea, Term, seed, selected
     from ConceptSpread import Prediction, loss as predictor_loss
@@ -100,8 +99,8 @@ def test_bands_and_intuition_receive_exactly_their_own_terms_in_one_surrogate(tm
     frozen = Prediction(predicted,torch.arange(2),torch.tensor([True]),target)
     concept_model = SimpleNamespace(_concept_prediction=frozen,
         _concept_owner=lambda:SimpleNamespace(concept_predictor=predictor))
-    attention = CandidateAttention(2,2,hidden_width=4)
-    attended = attention(semantic,keys).sigmoid()
+    attention = torch.nn.Linear(2,2,bias=False)
+    attended = (keys.detach() * attention(semantic.detach())[:,None]).sum(-1).sigmoid()
     consumed = recombine_percept(semantic, predicted[:,0], attended[:,0,None]).content
     root = Idea(observed=torch.full((owner.outputShape[-1],), .4))
     term = seed(owner,Term(('sym',909),root,root,(.8,.2),idea(registry,refs[1]),

@@ -100,7 +100,8 @@ def _stream_code_banks(tmp_path,monkeypatch):
     from Meaning import ConceptualMeaning
     torch.manual_seed(20261010)
     model=make_model(tmp_path,monkeypatch)
-    model.candidate_attention=None
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     try:
         with torch.no_grad():
             owner=model._concept_owner();book=owner.similarity_codebook
@@ -372,7 +373,8 @@ def _native_step_comparison(tmp_path, monkeypatch):
                 word_buckets='8', batch_size=batch, stm_capacity=8, concept_rows=64,
                 training_overrides={ 'reconstructionPlacement':'eager'})
             model._tensor_peer_while_eager = True
-            model.candidate_attention = None
+            from reading_fixtures import read_in_source_order
+            read_in_source_order(model, patch)
             model.inputSpace.data.has_supervised_outputs = False
             language = model.languageSpace
             operation = language.language_layer.operation_layer

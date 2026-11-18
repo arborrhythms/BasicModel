@@ -62,7 +62,8 @@ def test_native_packing_after_training_with_selected_backward(tmp_path,monkeypat
     first=build_model(tmp_path,separate_chooser=separate,reconstruction_jitter=jitter)
     models=[first]
     try:
-        first.candidate_attention=None  # retained source-order control
+        from reading_fixtures import read_in_source_order
+        read_in_source_order(first, monkeypatch)
         first._install_unit_span_fn()
         first.answer_synthesis = False  # Warming and training use the same numeric modality.
         warm_vocabulary(first,rows)
@@ -102,7 +103,7 @@ def test_native_packing_after_training_with_selected_backward(tmp_path,monkeypat
             model=build_model(tmp_path,separate_chooser=separate,reconstruction_jitter=jitter)
             model.answer_synthesis = False  # Same numeric modality as the trained source.
             models.append(model)
-            model.candidate_attention=None
+            read_in_source_order(model, monkeypatch)
             assert model.load_weights(checkpoint,require_match=True)
             model._install_unit_span_fn()
             model.begin_presentation()

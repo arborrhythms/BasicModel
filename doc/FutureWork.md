@@ -466,7 +466,7 @@ order 1 only after local refinement stalls
   attention, or to learn more", at two timescales. Within a reading, *both*
   over a bracket cues division until the parts are pure; that is the walk's
   law today (`narrowing_mask`: both permits a `focus` that divides the
-  bracket, pure permits `mint`, neither permits a `focus` that enters the
+  bracket, pure permits grammar to `interpret`, neither permits a `focus` that enters the
   word's parts). Across occurrences, a *both* that **persists at
   the narrowest extent** cues refinement of the concept into parts where the
   predicate is uniform (at order 0 a distinguishing mint or a property split,
@@ -640,11 +640,11 @@ bands.
 Attention is one mechanism, a bracket over the input, narrowed until each
 bracket's encoding is pure, with the stop pinned at words. The dynamic stop
 removes the pin: a known multi-word unit that reads purely at its wider
-bracket is taken as one symbol by `mint`, and `focus` narrows below a word
+bracket is read as one symbol by `interpret`, and `focus` narrows below a word
 only where the reading is *neither* (unknown content) or *both*
 (heterogeneous). This is speed reading that slows at novelty. It is decided against the
 optimization pass's per-word throughput baseline: it pays for itself only if
-minting known units saves more than the open read costs, which on FineWeb
+interpreting known units saves more than the open read costs, which on FineWeb
 should hold once the recurring units are admitted. It depends on the field's
 *both* being reliable; the categorical-discrimination index and the both-rate
 per bracket level that would show it are for the training harness's
@@ -711,7 +711,7 @@ Smaller items from the same discussion, none of them scheduled:
 
 "The operator rename can also be future work." Most of the renames have since
 been made (`synthesize`/`analyze`, `ask`, `query`, `isTrue`/`exist` as pairs,
-the one `attentionBudget`, and `focus`, `mint`, `change`, `modifier`, `swap`,
+the one `attentionBudget`, and `focus`, `interpret`, `change`, `modifier`, `swap`,
 with `name` for `interpret`'s generate face), and the code reads a rule's
 declared properties, never its name ([Language](Language.md#grammar)). What remains:
 
@@ -1156,13 +1156,13 @@ that cleanup. Restore it from there.
 - **`test/test_where_tiling.py`** holds its tests.
 
 **How it fits the one attention.** Attention narrows one bracket over time:
-the open read, then `focus`, `unfocus` or `mint`. Multi-resolution tiling
+the open read, then `focus` or `unfocus` with a grammar decision at the look. Multi-resolution tiling
 holds the same hierarchy at once. Revived inside it, the lattice would become
 the open read's multi-scale field:
 
 - each bracket's children are already tiled, so `focus` chooses among
   existing tiles instead of computing cuts;
-- `mint` settles a region at its coarsest pure whole;
+- `interpret` reads a region at its coarsest pure whole;
 - the word whole, a maximal run of letters, is the second
   kind refined by the first.
 
@@ -1931,7 +1931,7 @@ sentences without grammatical operations.
   (`FamiliarTier.open_sentence`). It feeds the spread and opens or updates
   the familiar tier's candidates; it mints nothing. The dynamic stop
   [above](#the-dynamic-stop-glossing-above-words-descending-at-novelty)
-  would take a known unit whole at its wider bracket by `mint`.
+  would take a known unit whole at its wider bracket by `interpret`.
 - *A phrase becomes one concept.* A phrase that recurs without
   contradiction is minted as a concept defined by its parts
   (`conceptMintCount`), and the open pass can then match it whole.
@@ -2236,7 +2236,7 @@ adjustment reaches what was concluded from it.
 
 The chooser learns which attention act to take, and where; what each act
 does is fixed code: `focus` divides a bracket or enters its parts
-(`Attention.narrowing_mask` says which is legal), `mint` takes a pure bracket
+(`Attention.narrowing_mask` says which is legal), grammar can `interpret` a pure word bracket
 as one symbol, and `unfocus` restores the bracket in force before the last
 `focus`. Alec, of `unfocus`: "We should learn what it does, just like we
 learn what focus does. If that is difficult, just undo the last focus."

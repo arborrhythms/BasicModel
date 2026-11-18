@@ -183,7 +183,8 @@ def test_native_packing_preserves_each_sentence_and_owned_program(tmp_path, init
     for packed in (True, False):
         random.setstate(rng[0]); np.random.set_state(rng[1]); torch.set_rng_state(rng[2])
         model = build_model(tmp_path)
-        model.candidate_attention = None  # declared source-order control
+        from reading_fixtures import read_in_source_order
+        read_in_source_order(model, monkeypatch)
         try:
             model._install_unit_span_fn()
             warm_vocabulary(model, rows)

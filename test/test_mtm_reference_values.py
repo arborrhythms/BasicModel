@@ -162,7 +162,8 @@ def test_second_sentence_composes_the_name_after_kept_close_moves_placement(monk
     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
     model, _, data = _fresh_model(str(Path(Models.__file__).resolve().parents[1] / 'data/XOR_grammar.xml'))
     _select_completed_binary_path(model)
-    model.candidate_attention = None
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model, monkeypatch)
     observed = []
     native_choose = LanguageSpace.choose_operation
 

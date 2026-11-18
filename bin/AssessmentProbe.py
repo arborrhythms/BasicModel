@@ -30,8 +30,8 @@ def _checks(record, rung):
     if not all(word['known'] for word in record['words']):
         failures.append('unknown word')
     checks, words = rung['checks'], record['words']
-    if 'minted' in checks and not all(word['attention'] == 'minted' for word in words):
-        failures.append('word not minted')
+    if 'interpreted' in checks and not all(word['attention'] == 'interpreted' for word in words):
+        failures.append('word not interpreted')
     if 'trusted_definition' in checks and not all(word['trusted'] for word in words):
         failures.append('definition not trusted')
     if ('one_object' in checks or 'same_object' in checks) and not all(len(word['objects']) == 1 for word in words):

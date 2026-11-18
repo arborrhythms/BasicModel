@@ -46,6 +46,7 @@
       <rule>not_argout1 = not.forward(not_argin1)</rule>
       <rule>conjunction_argout1 = conjunction.forward(conjunction_argin1, conjunction_argin2)</rule>
       <rule>disjunction_argout1 = disjunction.forward(disjunction_argin1, disjunction_argin2)</rule>
+      <rule>interpret_argout1 = interpret.forward(interpret_argin1)</rule>
     </compose>
 
     <generate>

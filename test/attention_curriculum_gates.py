@@ -60,13 +60,12 @@ def present(model, stage, *, train=False, optimizer=None):
         result=observation(model)
         raw=model._last_sentence_field
         record=model._last_sentence_understanding
-        trials=raw['trials'];wins=raw['wins']
+        trials=raw['trials']
         owned = model._last_understanding.input_reconstruction
         orders, counts = [], []
         for b in range(B):
-            selected = trials[-1 if bool(wins[b]) else 0]
-            order = [int(selected['positions'][read['action'][b]]) for read in selected['reads']
-                     if bool(read['admitted'][b].any())]
+            selected = trials[int(raw['selected'][b])]
+            order = [int(read['index']) for read in selected['reads'] if bool(read['rows'][b])]
             orders.append(order); counts.append(len(order))
         readbacks = [' '.join(row) for row in words_from_field(owned.event, record.open_field.where, orders)]
         bad = owned.truncated
@@ -80,7 +79,8 @@ def present(model, stage, *, train=False, optimizer=None):
                     for n,active in zip(read['supported_words'],read['active'],strict=True))
         complete=counts==[len(text.split()) for text in fields]
         result['read_gate_passed']=single_reads and complete and all(
-            order==list(range(len(text.split()))) for order,text in zip(orders,fields,strict=True))
+            order==[i for i, form in enumerate(forms) if form]
+            for order,forms in zip(orders,model._attention_forms[0],strict=True))
         result['reconstruction_passed']=result['exact_readbacks']==B
         result['passed']=(result['read_gate_passed'] if stage.get('lesson') else
                           result['reconstruction_passed'] and complete and single_reads)
@@ -116,7 +116,9 @@ def run(mode, folder, epochs, control=None, *, through_stage=4):
             training_overrides={'reconstructionPlacement':'eager'})
         model._tensor_peer_while_eager=True
         model.inputSpace.data.has_supervised_outputs=False
-        if mode=='disabled':model.candidate_attention=None
+        if mode=='disabled':
+            from reading_fixtures import read_in_source_order
+            read_in_source_order(model,patch)
         optimizer=model.getOptimizer(lr=.01)
         def control_passed(name):
             return control is None or next((row.get('passed',False) for row in control if row['name']==name),False)

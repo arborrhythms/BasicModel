@@ -243,47 +243,65 @@ def _native_word_fields(model):
 def _attention_trace(model):
     """Observe native masks and choices, without choosing or replaying an act."""
     import Attention
-    import ModelAttention
+    from SentenceLooks import Looks
     walks, current = [], []
-    narrow, mask = ModelAttention.narrow_words, Attention.narrowing_mask
+    run, step, mask = Looks.run, Attention.narrow_step, Attention.narrowing_mask
     chooser = model._stm_reducer()
     attend = chooser.attend
     override = vars(chooser).get('attend')
     had_override = 'attend' in vars(chooser)
+    deciding = []
 
     def observed_mask(pure, both, neither, **kwargs):
         result = mask(pure, both, neither, **kwargs)
-        if current:
-            current[-1]['masks'].append(dict(pure=pure.tolist(), both=both.tolist(),
+        if deciding:
+            deciding[-1]['masks'].append(dict(pure=pure.tolist(), both=both.tolist(),
                 neither=neither.tolist(), **{k:v.tolist() for k,v in kwargs.items()},
                 progress=result.tolist()))
         return result
 
     def observed_attend(keys, legal, space, **kwargs):
         result = attend(keys, legal, space, **kwargs)
-        if current:
-            current[-1]['choices'].append(dict(legal=legal.tolist(), action=result[0].tolist(),
+        if deciding:
+            deciding[-1]['choices'].append(dict(legal=legal.tolist(), action=result[0].tolist(),
                 logits=result[3]['logits'].detach().tolist()))
         return result
 
-    def observed_narrow(*args, **kwargs):
-        item = dict(masks=[], choices=[], budget=kwargs['budget'], spans=args[2].tolist())
+    def observed_step(state, **kwargs):
+        if not current or state.chooser is not chooser:
+            return step(state, **kwargs)
+        deciding.append(current[-1])
+        try:
+            return step(state, **kwargs)
+        finally:
+            deciding.pop()
+
+    def observed_run(path, arrive, **kwargs):
+        if path.model is not model:
+            return run(path, arrive, **kwargs)
+        state = path.walk.state
+        item = dict(masks=[], choices=[], budget=state.budget, spans=state.spans.tolist())
         current.append(item)
         try:
-            result = narrow(*args, **kwargs)
+            result = run(path, arrive, **kwargs)
             item.update(actions=result.actions.tolist(), accepted=result.accepted.tolist(),
                         descended=result.descended.tolist(), spent=result.table.spent.tolist(),
-                        remaining=result.table.remaining.tolist())
+                        remaining=result.table.remaining.tolist(), looks=[
+                            dict(where=field['where'].tolist(), active=field['active'].tolist(),
+                                 word=decision['index'].tolist(), offered=decision['logits'][:,1].isfinite().tolist(),
+                                 interpreted=decision['interpreted'].tolist())
+                            for field,decision in zip(path.fields,path.decisions,strict=True)])
             walks.append(item)
             return result
         finally:
             current.pop()
-    ModelAttention.narrow_words, Attention.narrowing_mask = observed_narrow, observed_mask
+
+    Looks.run, Attention.narrow_step, Attention.narrowing_mask = observed_run, observed_step, observed_mask
     chooser.attend = observed_attend
     try:
         yield walks
     finally:
-        ModelAttention.narrow_words, Attention.narrowing_mask = narrow, mask
+        Looks.run, Attention.narrow_step, Attention.narrowing_mask = run, step, mask
         if had_override:
             chooser.attend = override
         else:
@@ -356,7 +374,7 @@ def read_sentence(model, text, *, scalar=None, context=(), answer=False, trace=F
                 fits = () if word is None else speech.similarities(word).detach().tolist()
                 arguments = sorted(zip(speech.arguments, fits), key=lambda item: (-item[1], item[0]))
                 evidence = [store.parts.evidence(owner.definitions.row(word, obj)) for obj in objects]
-                attention = (None if reading is None else 'minted' if bool(reading.accepted[0, position])
+                attention = (None if reading is None else 'interpreted' if bool(reading.accepted[0, position])
                              else 'entered' if bool(reading.descended[0, position]) else 'left')
                 words.append(dict(position=position, form=form, known=before.get(form) is not None,
                     word=word, word_row=None if word is None else owner._csw_row_of(word),

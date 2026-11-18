@@ -98,6 +98,7 @@
             <rule>AP = lower(ADJ, NP)</rule>
             <rule>AP = lower(ADJ, AP)</rule>
             <rule>AP = lower(DET, NP)</rule>
+            <rule>S = interpret.forward(S)</rule>
           </symbols>
         </compose>
       </grammar>

@@ -87,9 +87,27 @@ class WordArrivals:
         probability = mass / mass.sum(-1, keepdim=True).clamp_min(epsilon)
         loss = (actual - expected).square().sum((1, 2)) / (2*valid.sum(-1)).clamp_min(1)
         rank = 1. / (1. + (probability > probability.gather(1, target[:, None])).sum(-1))
+        self.observe(words, arrived, lanes)
+        gains = field.gain.gather(1, target[:, None])[:, 0]
+        known = (targets >= 0) & (targets < C) & valid.gather(1, target[:, None])[:, 0]
+        gains = torch.where(active, torch.where(known, gains, 1.), 0.)
+        return ExpectedWords(probability[:, None],
+            torch.einsum('bc,bcd->bd', probability, bank)[:, None],
+            (words * gains[:, None])[:, None], gains[:, None],
+            field.excess[:, None], field.omission[:, None],
+            torch.where(observed, loss, 0.)[:, None],
+            ((probability.argmax(-1) == target) & observed)[:, None],
+            torch.where(observed, rank, 0.)[:, None], expected[:, None])
+
+
+    def observe(self, words, seen, lanes=None):
+        """Advance this path's prefix, including shared, already forecast words."""
+        words = words.detach()
         # An observed prefix need not be a labelled candidate in this read's
         # bank (e.g. a held-out completion). It still supplies factual STM.
-        seen = arrived
+        bank, valid = self.bank, self.valid
+        B = len(words)
+        source, total, count, recent = self.source, self.total, self.count, self.recent
         total = total + words * seen[:, None]
         count = count + seen[:, None]
         recent = torch.where(seen[:, None], words, recent)
@@ -101,16 +119,6 @@ class WordArrivals:
         source = torch.where(seen[:, None, None], torch.maximum(source, source_actual), source)
 
         self.source, self.total, self.count, self.recent = source, total, count, recent
-        gains = field.gain.gather(1, target[:, None])[:, 0]
-        known = (targets >= 0) & (targets < C) & valid.gather(1, target[:, None])[:, 0]
-        gains = torch.where(active, torch.where(known, gains, 1.), 0.)
-        return ExpectedWords(probability[:, None],
-            torch.einsum('bc,bcd->bd', probability, bank)[:, None],
-            (words * gains[:, None])[:, None], gains[:, None],
-            field.excess[:, None], field.omission[:, None],
-            torch.where(observed, loss, 0.)[:, None],
-            ((probability.argmax(-1) == target) & observed)[:, None],
-            torch.where(observed, rank, 0.)[:, None], expected[:, None])
 
 
 def word_distribution(owner, words, bank, valid, targets, *, gain=1., observed_prefix=None, active=None, lanes=None,

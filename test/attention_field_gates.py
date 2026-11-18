@@ -55,28 +55,29 @@ def observation(model):
     record=model._last_sentence_understanding
     bank=record.primed
     report['cost']=serial(model._last_field_cost)
-    report['meter']=[dict(m.counts) for m in model._field_meters]
     report['bracket_meter']=[dict(m.counts) for m in model._attention_meters]
     report['identity_audit']=serial(model._sentence_reconstructions[-1][2]/math.log(256))
     staged=getattr(model,'_attention_forms',None)
     forms=None if staged is None else staged[0]
     for source, trial in zip(model._last_sentence_field['trials'],report['trials']):
         for read, item in zip(source['reads'],trial['reads']):
-            live=read['admitted'].any(-1)
-            candidates=[]; sizes=[]
-            for b in range(len(live)):
-                if not bool(live[b]):candidates.append(None);sizes.append(0);continue
-                action=int(read['action'][b]);position=int(source['positions'][action])
-                form=forms[b][position] if forms is not None else str(position)
-                candidates.append(form.decode('utf8') if isinstance(form,bytes) else str(form))
-                sizes.append(int(source['support'][b,action].ne(0).any(-1).sum()))
-            item['candidate']=candidates
-            item['support_size']=sizes
-            item['supported_words']=read['admitted'].sum(-1).tolist()
+            live = read['rows']
+            position = int(read['index'])
+            column = int((source['positions'] == position).nonzero().item())
+            item['candidate'] = [forms[b][position] if active and forms else None
+                                 for b, active in enumerate(live.tolist())]
+            item['support_size'] = [int(source['support'][b,column].ne(0).any(-1).sum()) if active else 0
+                                    for b, active in enumerate(live.tolist())]
+            item['supported_words'] = live.long().tolist()
+            item['active'] = live.tolist()
             if 'decoded' in read:
                 item['decoded_word']=words_from_leaves(read['decoded'][:,None],live.long(),bank)
             item.pop('decoded',None)
         trial.pop('support',None)
+    audit = model._last_sentence_credit
+    draw = audit['departure']
+    report['backup'] = (None if draw is None else
+                        dict(rows=(draw['narrowing'] | (draw['interpret_round'] >= 0)).tolist()))
     return report
 
 
@@ -117,7 +118,9 @@ def run(mode,destination,epochs,control=None):
             training_overrides={'reconstructionPlacement':'eager'})
         model._tensor_peer_while_eager=True
         model.inputSpace.data.has_supervised_outputs=False
-        if mode=='disabled':model.candidate_attention=None
+        if mode=='disabled':
+            from reading_fixtures import read_in_source_order
+            read_in_source_order(model,patch)
         optimizer=model.getOptimizer(lr=.01)
         try:
             pending = list(STAGES)

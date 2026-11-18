@@ -47,8 +47,12 @@ def test_sentence_preparation_does_not_walk_or_publish_admission(monkeypatch):
     assert model._attention_meters[0].spent == 0
     walk = model._attention_open(sentence=0)
     assert walk.state.steps_taken == 0
-    reading = walk.for_restore(torch.tensor(0))
-    assert reading.accepted.all()
+    from Attention import narrow_step, interpretation_at, record_interpretation
+    narrow_step(walk.state)
+    word, allowed = interpretation_at(walk.state, walk.state.look_slot)
+    assert allowed.all() and not walk.state.accepted.any()
+    record_interpretation(walk.state, walk.state.look_slot, allowed)
+    assert walk.state.accepted[0,word].all()
     assert walk.state.steps_taken > 0
 
 
@@ -63,7 +67,7 @@ def test_non_sentence_configuration_keeps_one_staged_charged_walk(monkeypatch):
     monkeypatch.setattr(ModelAttention, 'narrow_words', counted)
     ModelAttention.stage_input(model)
     assert len(calls) == 1
-    assert model._attention_words.accepted.all()
+    assert not model._attention_words.accepted.any()  # examination alone never interprets
     assert model._attention_meters[0].spent == int(model._attention_words.table.spent[0])
 
 

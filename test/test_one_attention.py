@@ -56,7 +56,7 @@ def test_pooling_keeps_both_poles_and_unknown_neither_exactly_zero():
     assert not reading.pure.any()
 
 
-def test_pinned_masks_known_word_never_descends_and_wide_never_glosses():
+def test_pinned_masks_known_word_never_descends_and_wide_never_interprets():
     from Attention import narrowing_mask
     pure=torch.tensor([[True,False,False,True]])
     both=torch.tensor([[False,True,False,False]])
@@ -181,6 +181,19 @@ def test_empty_word_bracket_is_a_masked_noop():
     assert not result.table.valid.any() and not result.table.spent.any()
 
 
+def read_offered_words(chooser, keys, spans, known, **kwargs):
+    from Attention import open_narrowing, narrow_step, interpretation_at, record_interpretation, close_narrowing, narrowing_view
+    state = open_narrowing(chooser, keys, spans, known, **kwargs)
+    slot = torch.zeros(len(keys),dtype=torch.long)
+    while True:
+        _, offered = interpretation_at(state, slot)
+        record_interpretation(state, slot, offered)
+        if len(state.actions) == state.budget or not narrowing_view(state)[8].any():
+            return close_narrowing(state)
+        narrow_step(state)
+        slot = state.look_slot
+
+
 def test_optional_field_choices_cannot_exhaust_the_word_completion_deadline():
     from types import SimpleNamespace
     from Attention import narrow_words
@@ -188,17 +201,24 @@ def test_optional_field_choices_cannot_exhaust_the_word_completion_deadline():
         priority=torch.arange(legal.shape[-1],device=keys.device).expand_as(legal)
         logits=priority.to(keys).masked_fill(~legal,-torch.inf).flatten(1)
         return logits.argmax(-1),keys.new_ones(len(keys)),legal.flatten(1).sum(-1)>1, dict(probability=keys.new_ones(len(keys)), alternative_count=(legal.flatten(1).sum(-1)-1).clamp_min(0))
-    chooser=SimpleNamespace(attention_operations=tuple(range(6)),attend=field_first)
+    chooser=SimpleNamespace(attention_operations=(0,1,3,4,5),attend=field_first)
     starts=torch.arange(8)*2
     spans=torch.stack((starts,starts+1),-1)[None]
-    result=narrow_words(chooser,torch.eye(8)[None],spans,torch.zeros(1,8,dtype=torch.bool),budget=32)
+    result=read_offered_words(chooser,torch.eye(8)[None],spans,torch.zeros(1,8,dtype=torch.bool),budget=32)
     assert result.accepted.all()
     assert result.table.spent.item()<=32
 
 
-def test_normal_model_opens_narrows_and_scores_word_expectation():
-    from test_mm_xor import _fresh_model
-    model,_,_ = _field_model()
+@pytest.mark.parametrize('composing', [False, True], ids=['field', 'grammar'])
+def test_normal_model_opens_narrows_and_scores_word_expectation(composing, tmp_path, monkeypatch, eager_reading):
+    from test_compiled_word_chunk import _tiny_canonical_model
+    from reading_fixtures import read_in_source_order
+    if composing:
+        model = _tiny_canonical_model(tmp_path,monkeypatch,batch_size=4)
+        model._tensor_peer_while_eager=True
+        read_in_source_order(model,monkeypatch)
+    else:
+        model, _, _ = _field_model()
     model.train()
     value=model.inputSpace.prepInput(['hello world','hello there','loving world','loving there'])
     model.forward(value)
@@ -208,10 +228,17 @@ def test_normal_model_opens_narrows_and_scores_word_expectation():
     assert model._open_read is not None and not model._open_read.requires_grad
     expected=model._word_expectation
     assert expected.probabilities.shape[:2] == model._attention_words.accepted.shape
-    torch.testing.assert_close(expected.probabilities.sum(-1),torch.ones_like(expected.loss))
+    active = model._word_expectation_mask
     torch.testing.assert_close(model._word_expectation.surprise, expected.surprise)
-    expected.loss.sum().backward()
-    assert any(p.grad is not None and p.grad.abs().sum()>0 for p in model.symbolSpace.expectation.word_predictor.parameters())
+    if composing:
+        assert active.any()
+        torch.testing.assert_close(expected.probabilities.sum(-1),active.to(expected.loss))
+        expected.loss.sum().backward()
+        assert any(p.grad is not None and p.grad.abs().sum()>0 for p in model.symbolSpace.expectation.word_predictor.parameters())
+    else:
+        assert not active.any()
+        torch.testing.assert_close(expected.probabilities.sum(-1),torch.ones_like(expected.loss))
+        assert not expected.loss.any()
 
 
 @pytest.mark.parametrize('operation,arity',[('and',1),('or',1),('not',1)])
@@ -224,7 +251,7 @@ def test_boolean_field_cannot_be_declared_between_symbols(operation,arity):
 def test_bracket_candidates_are_grammar_declared_field_operations_without_generate():
     from Language import Grammar
     g=Grammar();rules=[]
-    for name in ('focus','mint'):
+    for name in ('focus','unfocus'):
         g._fill_rule_list(rules,{'rule':{'_':f'X = {name}.forward(X)','operands':'field'}})
         with pytest.raises(ValueError,match='generate'):
             g._fill_rule_list([],{'rule':f'X = {name}.reverse(X)'},face='generate')
@@ -235,7 +262,7 @@ def test_shared_meter_cannot_replenish_between_input_and_thought():
     from QueryWork import QueryWorkBudget
     from Attention import BracketTable
     table=BracketTable.open(torch.tensor([7]),budget=4)
-    table=table.accept(torch.tensor([0]))
+    table=table.split(torch.tensor([0]),torch.tensor([2]))
     work=QueryWorkBudget.from_brackets(table,row=0)
     assert work.spent == 1 and work.remaining == 3
     assert work.consume('thought',3)
@@ -246,20 +273,23 @@ def test_unknown_repeated_word_has_one_byte_descent():
     from Attention import narrow_words
     from Language import OperationSelectionLayer
     keys=torch.eye(4)[None,:2]
-    out=narrow_words(OperationSelectionLayer(d_model=4),keys,
+    out=read_offered_words(OperationSelectionLayer(d_model=4),keys,
         torch.tensor([[[0,3],[4,7]]]),torch.tensor([[False,False]]),
         identities=torch.tensor([[9,9]]),budget=8)
-    assert out.table.spent.tolist()==[4]
-    assert out.accepted.all()
+    assert out.table.spent.tolist()==[3]
+    assert out.accepted.all() and out.descended.all()
 
 
-def test_native_attention_keeps_every_complete_letter_run(tmp_path,monkeypatch):
+def test_native_attention_keeps_every_complete_letter_run(tmp_path,monkeypatch,eager_reading):
     from test_compiled_word_chunk import _tiny_canonical_model
     model=_tiny_canonical_model(tmp_path,monkeypatch,word_buckets='8')
     model._tensor_peer_while_eager=True
     model._chart_compose_per_word=lambda:None
+    from reading_fixtures import read_in_source_order
+    read_in_source_order(model,monkeypatch)
     raw=model.inputSpace.prepInput(['wheels belong to bicycles','bicycles are equal to wheels'])
-    model._lex_embed_stem(raw)
+    with torch.no_grad():
+        model.understand(raw)
     reading=model._attention_words
     assert reading.accepted.sum(-1).tolist() == [4,5], {
         'forms':model._attention_forms[0], 'table':reading.table.intervals,
@@ -393,7 +423,7 @@ def test_field_operation_changes_the_next_mask_and_children_read_native_poles():
         index = torch.tensor([4]) if len(masks)==1 else legal.flatten(1).long().argmax(-1)
         return index, keys.new_ones(1), legal.flatten(1).sum(-1)>1, dict(probability=keys.new_ones(1), alternative_count=(legal.flatten(1).sum(-1)-1).clamp_min(0))
     chooser=SimpleNamespace(attention_operations=tuple(range(6)),attend=choose)
-    result=narrow_words(chooser,torch.eye(2)[None],torch.tensor([[[0,1],[2,3]]]),
+    result=read_offered_words(chooser,torch.eye(2)[None],torch.tensor([[[0,1],[2,3]]]),
         torch.ones(1,2,dtype=torch.bool),poles=torch.tensor([[[1.,0.],[0.,1.]]]),budget=6)
     assert masks[0][0,0,0]  # native both permits divide
     assert not masks[1][0,0,0]  # or leaves a pure parent
@@ -411,7 +441,10 @@ def test_narrowing_selection_has_no_percept_stage_scorer():
 def test_divide_isolates_impure_first_word_and_reaches_pure_neighbors():
     from Attention import narrow_words
     from Language import OperationSelectionLayer
-    result = narrow_words(OperationSelectionLayer(d_model=3), torch.eye(3)[None],
+    from test_attention_thinking_handoff import first_legal
+    chooser = first_legal()
+    chooser.attention_operations = (0, 1)
+    result = read_offered_words(chooser, torch.eye(3)[None],
         torch.tensor([[[0, 2], [3, 5], [6, 8]]]), torch.ones(1, 3, dtype=torch.bool),
         poles=torch.tensor([[[1., 1.], [1., 0.], [1., 0.]]]), budget=16)
     assert result.accepted.tolist() == [[False, True, True]]

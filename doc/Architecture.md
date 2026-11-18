@@ -874,19 +874,15 @@ has no order on which change, lift, lower, verb or modifier could act. The parse
 these declarations. The former mode-exclusion rule is therefore a consequence
 of representation, with no `serial` or `parallel` mode switch.
 
-The narrowing candidates are `focus`, `unfocus` and `mint`, declared in the
-compose grammar and scored by the compose chooser. A bracket yields a symbol only
-when it is pure (exactly one pole of its pooled pair is nonzero) and singular
-(exactly one identity has support in it), so its projection to a code is
-unambiguous; `mint` performs that projection (`Attention.narrowing_mask`). An
-impure (*both*) or plural bracket offers only field and bracket operations. A
-pure singular word can mint. `focus` has two candidates:
-a heterogeneous bracket can be focused at a pole disagreement, and an unknown word
-can be focused on its retained byte parts before `interpret` admits one object.
-`unfocus` restores the bracket in force before the last `focus`, and is legal
-only while a focus is in force.
-The stop is pinned at words. A wider bracket cannot mint and a known word
-cannot be focused below that stop. Repeated unknown surfaces share one witness.
+The compose grammar declares `focus` and `unfocus` on brackets.
+A focus can split a bracket at a pole disagreement, descend into its retained
+parts or look again at one pure word. Each act spends one unit of the
+presentation's allowance. After a look the grammar can choose `interpret`
+when a single word supports exactly one lane. On interpretation its word brick
+runs and its occurrence enters composition. An abstention leaves the word
+available for another look. A known word cannot be focused below its word
+level. Repeated unknown surfaces share a descent witness.
+`unfocus` restores the last split or entered bracket while its words remain unread.
 The fixed WholeSpace `word` whole and the reader use the same maximal ASCII
 letter run; punctuation, whitespace and digits separate words. Digit runs
 remain native percepts for numeric proofs such as XOR_exact.
@@ -2209,12 +2205,12 @@ loss is what its mask leaves out of the target; the region inside the mask
 pays the percept/concept chain's cost. Over a wide scope the field is
 heterogeneous and the pair accumulates *both*; the walk's answer to both is
 to `focus` (`narrowing_mask`: both permits `focus` at the disagreement, pure
-permits `mint`, neither permits `focus` on the byte parts) until each bracket is homogeneous, where the
+permits grammar to `interpret`, neither permits `focus` on the byte parts) until each bracket is homogeneous, where the
 concept is unipolar and pervades the object — union and pervasion coincide
 on a pure extent (Alec, 2026-10-07). *Both* therefore never enters a leaf
 from an identified word; it re-arises only by composition. This is the
 narrowing walk of [One attention](#one-attention)
-(the open bracket, `focus`, `unfocus` and `mint` to each word, the scope handed to
+(the open bracket, `focus` and `unfocus`, with optional `interpret` at a word, the scope handed to
 conceptual space). Under identity by construction a word left out of the
 mask is a word missing from the reconstruction, which the path comparison
 charges and credits to the walk's choices. The walk's poles
@@ -2944,7 +2940,7 @@ Before the keep, thought reads the scored reference plan through a temporary com
 
 A grammar file declares three kinds of operator, and what a file declares
 decides what runs. Examination operators are attention's acts on the bracket,
-`focus`, `unfocus` and `mint` ([One attention](#one-attention)); the
+`focus`, `unfocus` and the grammar decision to `interpret` ([One attention](#one-attention)); the
 attention loop runs in every file that declares one. Field operators are
 `intersection`, `union` and `not`, with one definition of their logic:
 `SparseLayer.fold_presence`'s weighted least and greatest on the two lanes,

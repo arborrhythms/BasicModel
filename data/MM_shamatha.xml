@@ -50,6 +50,7 @@
         <rule>S = C</rule>
         <rule>C = intersection(C, C)</rule>
         <rule>C = P</rule>
+        <rule>S = interpret.forward(S)</rule>
       </compose>
     </grammar>
     </language>

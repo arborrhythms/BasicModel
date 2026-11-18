@@ -27567,6 +27567,41 @@ passed, 6.44 s**. The complete examination reader still has a fullgraph
 implementation. The sentence loop no longer uses look-ahead for a stable
 word, and padding an exhausted examination consumes no random draw.
 
+### 61.13 The reading teacher and the regenerated comparison
+
+Alec approved rebuilding old training baselines from their recipes. On the completed attention menu I rebuilt the four-sentence comparison of §61.1 from its original construction and reading streams. The regenerated model loaded into a fresh instance. The second read reproduced every recorded field exactly, including choices, trees, meaning slots and roots, memory rows and forecasts. The comparison against the *original* source also recovered exact equality for all four trees, all four meaning roots, all 15 stored rows (4, 4, 4, 3) and all ten forecast components at all 16 interpreted places. The differences on the intermediate build in §61.11 are superseded by this measurement. Before, each sentence took nine calls of `attend`. Now each takes four. The original predictor also computed a distribution, prediction, omission and activation at padding. On this loop those four arrays have zeros at places where no word arrived. The word masks agree exactly.
+
+For certificate 11 the native teacher previously delivered zero words on every length from one to six. All six tests failed. `AttentionLesson.ReadingTargets` now resolves the named occurrences against the native word places, skips and reports those held on both lanes, and chooses the shortest legal focus to the next named occurrence. The calculation shares the walk's actual cuts. A split can put its left child under the current look immediately. `Looks.run` teaches the bracket choice and the grammar choice at their own logits. The lesson books the mean cross entropy per taught decision on the first path. Evaluation reads freely. The six lengths all passed with **0, 2, 3, 4, 5, 6** calls of `attend`, positive lesson cost and a gradient at the scorer. In the native two-word training test both streams read places **0 then 1**, the chooser parameter moved, and the attention projection had exactly the reconstruction writer. Empty masks previously attached a spurious answer gradient. The score-function reader now includes the attention probabilities only when a departure actually took one.
+
+`WordForecast.begin_path` starts each path at the same pre-arrival predictor state. A later path reuses each previously made forecast and advances its own prefix on that arrival. Forecasting a newly discovered word therefore reads the words its path has already interpreted. The assessment observes the native bracket mask, actual chooser calls, selected extents and grammar decisions. Its probes restore the hooks after reading. The field and curriculum observers now report the actual interpreted place, stream mask, charged bracket work and the taught cross entropy. For the percept census the observer reads the native whole-property result and the basic-percept result inside each real opening or selected look and counts distinct keys positive on both lanes. On the fixed-action four-sentence check all **16 opening word extents** and **16 subsequent selected extents** had zero of each. The 160-sentence measurement is separate.
+
+The checkpoint reader warns with each retired candidate-scorer key. Since action address 2 changed meaning, a saved acceptance anchor and its optimizer moments are cleared there. The five other anchors are retained. A checkpoint whose learned grammar identities cannot be aligned reports the removed declarations and asks for regeneration. The strengthened test starts the six saved anchor rows at 0.375 and checks the one cleared row and the five preserved rows.
+
+The teacher, checkpoint migration, replay and stopping tests in `test_native_candidate_attention.py` (checkpoint case), `test_reading_curriculum.py`, `test_loop_of_looks.py`, `test_whole_path_repairs.py` and the two stopping-gate files gave **36 passed in 20.64 s**. The stepped observer, handoff, assessment and shared-meter tests in `test_attention_thinking_steps.py`, `test_attention_thinking_handoff.py`, `test_assessment.py` and `test_one_attention.py` (meter case) gave **19 passed in 31.41 s**. The field-only and composing versions of the word-forecast test gave **2 passed in 5.67 s**. The field-only model retains its original dimensions and normalized distribution. Its mask and loss are zero. The composing fixture tests normalization at arrivals and nonzero predictor gradients. Each model still uses the test's four input strings.
+
+### 61.14 The declaration of interpretation on the verbal configurations
+
+Before the port the native verbal XOR walk had **124 pure-word opportunities, zero offers, zero interpretations and zero bricks** on its four inputs. The isolated pure-word logits were **0 and minus infinity**. `OperationSelectionLayer.choose_interpret` found no declared unary on this model. Its old grammar had admitted words with the attention act. A temporary grammar with one added compose rule gave the chooser a legal option and raised its fixed grammar reservation by two order-one seats and one order-two seat. Alec decided to declare the operation and reserve those seats on grammars that compose words.
+
+I read all 15 affected production grammars through the actual loader, including its interpretation of the older inline XML rules. Ten needed the new declaration. The counts below are the fixed grammar seats at orders one and two. These are in addition to the configured concept pool.
+
+| Grammar | Before | After |
+| --- | ---: | ---: |
+| MM_sequence_predict.xml | 17, 7 | 19, 8 |
+| MM_shamatha.xml | 23, 10 | 25, 11 |
+| MM_xor_loopback.xml | 16, 7 | 18, 8 |
+| POS_smoke.xml | 31, 12 | 33, 13 |
+| RamsifiedModel.xml | 33, 13 | 35, 14 |
+| XOR_grammar.xml | 16, 7 | 18, 8 |
+| ladder.grammar | 61, 22 | 63, 23 |
+| shamatha.grammar | 33, 12 | 35, 13 |
+| tied_reconstruction_output_benchmark.grammar | 56, 20 | 58, 21 |
+| xor.grammar | 16, 7 | 18, 8 |
+
+`complete.grammar` and `default.grammar` already declared the operation. The loader places `examination.grammar`, `MM_text_fixture.xml` and `MM_ltm_consolidation_fixture.xml` on the examination-only path. Their operator sets and reservations are unchanged. All ten ports use the ordinary declaration and existing allocator. On verbal XOR the constructed blocks are now **11, 23, 10**. The same four inputs produced **124 pure opportunities and 124 offers**. The fresh free chooser abstained every time. The isolated logits were **0 and −1**. Making a word available and learning to choose it are separate measurements.
+
+The added verbal-XOR mechanism test first failed with eligibility **[false, false]** for a pure and an ineligible place. It now gets **[true, false]**. Those assertions and both stopping gates gave **3 passed in 4.30 s**. The first verbal-proof setup subsequently exposed a second producer. A compose-only grammar derives its generate catalogue. That builder included mandatory lexical naming as a structural unary, then called its inverse with only a point. The native reader requires the terminal's word bank. Grammars with an explicit generate catalogue already omit mandatory operations from that menu. I applied the same declared property to the implicit catalogue, on my recommendation under §73. The expanded test saw `interpret` in the structural unary menu before the repair and passed in **3.35 s** after it. The Boolean binary operations remain available. Lexical naming keeps its existing terminal reader.
+
 ## 62. Part A's remainder: the forecast of a look and its surprise (Claude, 2026-11-16; a design, with one question for Alec)
 
 §61 is kept for Codex's return of §60.3. This section starts from the

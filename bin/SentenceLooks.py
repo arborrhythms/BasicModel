@@ -54,14 +54,23 @@ class WordForecast:
         self.targets = torch.full_like(self.identities, -1)
         self.expected = None
 
+    def begin_path(self):
+        from copy import copy
+        # WordArrivals replaces its tensors on every observation. A shallow
+        # copy thus shares the immutable opening, never the next path's suffix.
+        self.path = copy(self.reader)
+
     def arrive(self, index, rows, lanes):
         if self.reader is None:
             return
         from WordExpectation import ExpectedWords
         fresh = rows & ~self.arrived[:,index] & self.live[:,index]
+        shared = rows & ~fresh & self.live[:,index]
+        if bool(shared.any()):
+            self.path.observe(self.codes[:,index], shared, lanes)
         if not bool(fresh.any()):
             return
-        current = self.reader.step(self.codes[:,index],self.identities[:,index],active=fresh,lanes=lanes)
+        current = self.path.step(self.codes[:,index],self.identities[:,index],active=fresh,lanes=lanes)
         mask = (torch.arange(self.live.shape[1],device=rows.device)==index)[None] & fresh[:,None]
         values=[]
         for item in fields(ExpectedWords):
@@ -85,6 +94,14 @@ class Looks:
         self.model, self.walk, self.sid, self.present = model, walk, sid, present
         self.prior, self.draw, self.kept = prior, draw, kept
         self.decisions, self.fields = [], []
+        self.teacher = None
+        lesson = getattr(model, '_attention_reading_lesson', None)
+        if lesson is not None and model.training and model._sentence_training:
+            from AttentionLesson import ReadingTargets
+            self.teacher = ReadingTargets(lesson, model._attention_forms[0], walk.state)
+
+    def lesson_cost(self):
+        return None if self.teacher is None else self.teacher.cost()
 
     def reading(self):
         from Attention import close_narrowing
@@ -119,7 +136,15 @@ class Looks:
                     replay = ((self.draw['attention_round']<0) | (len(state.actions)<=self.draw['attention_round'])) & ((at<0)|(turn<at))
                     options['masked_action']=torch.where(at==turn,old['action'],-1)
                 options['replay_action']=torch.where(replay,old['action'],-1)
+            if self.teacher is not None:
+                target = self.teacher.next(state)
+                options['replay_action'] = ((target == index) & allowed).long()
+                options.pop('masked_action', None)
             choice = state.chooser.choose_interpret(state.keys[state.rows,index],allowed,**options)
+            if self.teacher is not None:
+                logp = choice['logits'].log_softmax(-1).gather(1,choice['action'][:,None])[:,0]
+                self.teacher.book(logp, choice['eligible'] & rows)
+                choice['eligible'] = torch.zeros_like(allowed)
             choice.update(index=index,slot=slot.clone())
             self.decisions.append(choice)
             record_interpretation(state,slot,choice['interpreted'])
@@ -131,9 +156,14 @@ class Looks:
                 active = choice['interpreted'] & (index==word)
                 arrive(torch.tensor(word,device=index.device),active)
             first = False
-            if len(state.actions)>=int(state.budget) or not bool(narrowing_view(state)[8].any()):
+            view = narrowing_view(state)
+            if len(state.actions)>=int(state.budget) or not bool(view[8].any()):
                 break
-            narrow_step(state, context=None if context is None else context())
+            lesson_action = (None if self.teacher is None else
+                             self.teacher.focus(state, view, self.teacher.next(state)))
+            narrow_step(state, context=None if context is None else context(), lesson_action=lesson_action)
+            if lesson_action is not None:
+                self.teacher.book(state.lesson_log_probability, lesson_action >= 0)
             slot,rows=state.look_slot,state.look_active & self.present
         result = self.reading()
         # Different paths may finish after different numbers of looks. Keep

@@ -121,6 +121,7 @@
             <rule>S = not.forward(S)</rule>
             <rule>S = conjunction.forward(S, S)</rule>
             <rule>S = disjunction.forward(S, S)</rule>
+            <rule>S = interpret.forward(S)</rule>
           </symbols>
         </compose>
       </grammar>

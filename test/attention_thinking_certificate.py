@@ -67,7 +67,7 @@ class Observer:
         self.word_driven = []
         self.in_attention = 0
         self.reference_seconds = 0.
-        base = original_attention()
+        base = original_attention() if certify else None
         opened = []
         if hasattr(Attention, 'open_narrowing'):
             opening = Attention.open_narrowing
@@ -77,7 +77,8 @@ class Observer:
                     state.chooser, state.keys, state.spans, state.known,
                     {key: value for key, value in kwargs.items()
                      if key not in ('chooser', 'keys', 'spans', 'known')})
-                opened.append(state)
+                if certify:
+                    opened.append(state)
                 return state
             patch.setattr(Attention, 'open_narrowing', observe_open)
             if hasattr(ModelAttention, 'open_narrowing'):
@@ -106,37 +107,29 @@ class Observer:
             return recorded(chooser, keys, spans, known, kwargs, value, initial, final, steps)
         patch.setattr(Attention, 'narrow_words', observed)
         patch.setattr(ModelAttention, 'narrow_words', observed)
-        if hasattr(ModelAttention, 'SentenceNarrowing'):
-            start = ModelAttention.SentenceNarrowing.for_restore
-            def word_start(walk, index):
-                import inspect
-                caller = inspect.currentframe().f_back
-                assert caller.f_code.co_name == 'start_compose'
-                assert caller.f_back.f_code.co_name == 'compose'
-                assert caller.f_back.f_locals['index'] is index
-                del caller
-                initial = torch.get_rng_state()
-                value = start(walk, index)
-                final = torch.get_rng_state()
-                raw = Attention.close_narrowing(walk.state)
-                recorded(*walk.state._certificate_arguments, raw, initial, final, walk.state.steps_taken)
-                assert opened.pop() is walk.state
-                self.word_driven.append(dict(loop_entry=int(index), first_word=None,
-                    before_first_word_steps=walk.state.steps_taken, words=[]))
-                return value
-            patch.setattr(ModelAttention.SentenceNarrowing, 'for_restore', word_start)
-            next_word = ModelAttention.SentenceNarrowing.for_word
-            def word_read(walk, index):
-                before = walk.state.steps_taken
-                result = next_word(walk, index)
-                if self.word_driven[-1]['first_word'] is None:
-                    self.word_driven[-1]['first_word'] = int(index)
-                self.word_driven[-1]['words'].append(dict(index=int(index),
-                    additional_steps=walk.state.steps_taken-before))
-                return result
-            patch.setattr(ModelAttention.SentenceNarrowing, 'for_word', word_read)
+        self.attend_count = 0
+        from SentenceLooks import Looks
+        native_run = Looks.run
+        def measured_path(path, arrive, **kwargs):
+            if certify:
+                raise ValueError('the historical acceptance oracle cannot certify the loop of looks')
+            state = path.walk.state
+            words = []
+            before = self.attend_count
+            def arrived(index, rows):
+                words.append(dict(index=int(index), rows=rows.tolist(), after_attend=self.attend_count-before))
+                return arrive(index, rows)
+            result = native_run(path, arrived, **kwargs)
+            steps = self.attend_count-before
+            self.walk_steps.append(steps)
+            self.calls.append(dict(actions=result.actions.tolist(), spent=result.table.spent.tolist(),
+                                   departure=None if path.draw is None else frozen(path.draw)))
+            self.word_driven.append(dict(looks=len(path.fields), attend_calls=steps, words=words))
+            return result
+        patch.setattr(Looks, 'run', measured_path)
         attend = Language.OperationSelectionLayer.attend
         def attending(chooser, *args, **kwargs):
+            self.attend_count += 1
             self.in_attention += 1
             try:
                 return attend(chooser, *args, **kwargs)

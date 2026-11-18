@@ -111,7 +111,9 @@ def prepare(model, state, structural, vocab, training=None):
         old_arguments = allocator.get('formal_arguments', {})
         old_operations = allocator.get('operator_concepts', {})
         if not set(old_arguments) <= set(arguments) or not set(old_operations) <= set(operations):
-            raise ValueError('removed argument concepts require an explicit identity migration')
+            removed = sorted((set(old_arguments) - set(arguments)) | (set(old_operations) - set(operations)))
+            raise ValueError(f'checkpoint retains removed grammar declarations {removed}; '
+                             'regenerate this model from its training configuration')
         additions = [('formal_arguments', name, 1, 'formal-argument') for name in arguments
                      if name not in old_arguments]
         additions += [('operator_concepts', name, 2, 'operator') for name in operations
