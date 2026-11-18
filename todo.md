@@ -1346,7 +1346,11 @@ generation is expected at this stage and is recorded, not tuned away.
    waits, and what is done first, is §70.18: the doc-pass lists of
    the specification are applied to the standing documents, the
    commits ahead of `origin/main` are read once more, and the push
-   is on Alec's word.
+   is on Alec's word. Added by Alec the same day (§70.20): the doc
+   changes made in another session go with it, the new section of
+   `doc/BasicModel.md` among them, and `BasicModel.pdf` is rebuilt
+   (`make doc`), last. This machine has neither pandoc nor xelatex,
+   so the PDF is not rebuilt yet: *where it is built is open.*
 - **1.7. `SigmaLayer` and `PiLayer`, and symbols split from concepts**
    (Alec, 2026-11-16: "I think we should position D as item 1.7"; then
    "review and commit round C, and merge with the performance branch. Then

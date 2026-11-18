@@ -31683,10 +31683,25 @@ is §68.71.*
 | that call: the stem's intervals against the starts the search finds | equal on 8 of 8 words, and the lengths |
 | the calls with offsets in test 29's other two parameters: the offsets' first column against what the search would find | equal on 24 of 24 words |
 
-So the port changes no value. It removes a second computation of what
-the stem knows. *Not finished when this was written:* the same record
-over the 46 test files that name `MM_text.xml` or the field
-configuration.
+So the port changes no value on the calls reached. It removes a second
+computation of what the stem knows.
+
+*The same record over the 46 test files that name `MM_text.xml` or the
+field configuration* (finished after the first writing: 537 passed, 36
+skipped, and 1 failed for want of the project's `Makefile` in the
+scratch copy). Of 149 calls of `stage_input` with word texts, 3 have
+no offsets: the one above, and two in
+`test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng`.
+On them the stem's intervals equal the searched starts on 16 of 16
+words.
+
+*One more thing in that record, for Codex to explain* (§68.71, step
+5). On the 146 calls that have offsets, in 71 tests, the offset is not
+where the word's bytes lie on the staged surface for 65 of 747 words.
+Each example kept is the single byte 1 after a zero byte, with offset
+0 and position 1. `stage_input` makes no search on those calls, so
+nothing changes by this text; it shows only that the stem's offsets
+and the staged surface are not always one frame.
 
 **Why the brackets stay on that path.**
 
@@ -31847,6 +31862,12 @@ with the text of §60.3.
    the code of the part at that slot (§68.69, "Beside the question").
    If a walk runs on such a call, name it in the return as a question
    for Alec, and do not repair it.
+   Report also, with no edit: on the word-major stem the first offset
+   of a word is not where its bytes lie on the staged surface for 65
+   of 747 words in Claude's record over 46 test files (§68.69). Each
+   example kept is the single byte 1 after a zero byte, with offset 0
+   and position 1. Say what frame the stem's offsets are in, and name
+   any reader that compares them with positions on the staged surface.
 
 The rules of §60.3 hold: no bound, learning rate, seed, capacity or
 presentation count changes, and a learning certificate is recorded and
@@ -33097,6 +33118,57 @@ the vector forms, unchanged.
 **For §70.18.** Of what is done before the promotion's push, the
 changes to the standing documents that follow §70.17's return are made.
 The doc-pass lists of the earlier sections still wait.
+
+### 70.20 More for the promotion: the other session's docs, the index and the PDF (Alec, 2026-11-18)
+
+Alec, 2026-11-18:
+
+> There are a couple of small doc changes and a new doc, BasicModel.md,
+> that I would like you to push with 1.8. please also link BasicModel.md
+> from the index, and rebuild the PDF.
+
+**What they are.** Commits of 2026-11-18 on `main`, made outside this
+session (each carries Claude's trailer), and not reviewed here:
+
+| Commit | What |
+|---|---|
+| `e8a6eee41e` | `doc/BasicModel.md`: a new section, "Relation to the article and the book" |
+| `2ddf1fd756` | `doc/Architecture.md`, `doc/Philosophy.md`, `doc/Training.md`: the two systems are divided at symbols, not at grammar |
+| `00d929dcdb`, `0ed3b0783c` | `doc/Architecture.md`, `doc/Orders.md`: order zero holds no symbol |
+
+They are on `main`, so they go with the push of §70.18 as they stand,
+with whatever that session commits after them.
+
+**The index.** `doc/BasicModel.md` is not a new document: it has been a
+standing document since 2026-03-13, and what is new is its section.
+Both indexes link it already: the table of `README.md` ("BasicModel",
+"Cognitive science foundations") and the superproject's `README.md`.
+It is also the fifth chapter of the PDF (`PDF_CHAPTERS` in the
+`Makefile`). *Done:* its row in `README.md` now names the new section
+and links it.
+
+**The PDF.** `BasicModel.pdf` is a tracked file, last built on
+2026-07-17, and `make doc` builds it: pandoc with xelatex and the
+template `/bits/projects/custom_template.tex`. This machine has the
+template and neither pandoc nor xelatex, so it is *not rebuilt*.
+*Claude's reading:* it is built last, after the doc-pass lists of
+§70.18 are applied, so that it is built once and holds every change.
+It has not been built since July, so the first build may show
+documents that need a repair for it.
+
+**Before the push, as the list now stands.**
+
+1. The doc-pass lists of the specifications are applied to the standing
+   documents (§70.18).
+2. `make doc`, where pandoc and xelatex are, and the PDF is committed.
+3. The commits ahead of `origin/main` are read once more, the ones
+   above among them.
+4. The push is on Alec's word, and the superproject's pointer is his.
+
+**Open, for Alec.** Where the PDF is built: on a machine that has the
+two programs, or on this one after they are installed. An install is
+his to approve, and a TeX installer asks for the administrator's
+password.
 
 ## 71. The items after 1.7, renumbered (Alec, 2026-11-18)
 

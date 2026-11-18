@@ -14,7 +14,7 @@ the XML knobs, and Testing for how changes are tested.
 | [Installation](doc/Installation.md) | Setup, Makefile targets, `train.py` options, environment variables |
 | [Architecture](doc/Architecture.md) | Pipeline design, layer types, invertible LDU factorisation, whole paths |
 | [Runtime architecture](doc/Componentization.md) | Live ownership map, non-modular mechanisms, and componentization sequence |
-| [BasicModel](doc/BasicModel.md) | Cognitive science foundations |
+| [BasicModel](doc/BasicModel.md) | Cognitive science foundations, and [the model's relation to the article and the book](doc/BasicModel.md#relation-to-the-article-and-the-book) |
 | [Spaces](doc/Spaces.md) | Runtime spaces: Input, Part/Perceptual, Modal, Conceptual, Whole/Symbolic, Output, and SymbolSpace |
 | [STM](doc/STM.md) | Short-term memory: the working set of ideas, serial and parallel sequencing, attention, end-states and their chain into long-term memory |
 | [Language](doc/Language.md) | The grammar: its layers and operators, and how a sentence is composed and generated |
