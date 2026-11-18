@@ -31577,6 +31577,97 @@ there on 2026-11-17; its return is §69. It concerns
 against today's source again. Its line "Commit and push nothing until
 Alec says so" is older than Alec's authorization of local commits.
 
+### 68.69 On §61.2: the stem that has no word offsets (Claude, 2026-11-18; for Alec)
+
+Alec, 2026-11-18, of Codex's question in §61.2: "Yes, look". §61.1 is
+step 1 of the text of §60.3 and asks nothing.
+
+**The question.** Rule 15 of §60.1 takes out of
+`ModelAttention.stage_input` the search of the staged surface for each
+word's bytes, and has the word brackets come from the stem's offsets.
+It says to stop where a path has none. Codex stopped at one: the
+whole-slab stem, `PartSpace._embed_radix`, which a file with field
+operators only runs (§3.1). Its question: may that stem keep the word
+intervals it already computes and hand them to the staging reader,
+which it recommends; or should that path stop staging word brackets?
+
+**Recommended: the first. The stem hands over its intervals.** Alec's
+word is awaited, and no text for Codex is written before it.
+
+**Read in the source** (HEAD, whose source is that of `db95089f90`).
+
+- *The producer.* For each row `_embed_radix` computes
+  `_wspans = Meronomy.percept_spans(_raw)`, makes `word_texts` as the
+  slices of the row at those intervals, and gives each emitted part its
+  word (`word_groups`). It keeps the texts and the groups and drops the
+  intervals. `PartSpace._meronomy_words` is always set, so they are
+  computed on every call.
+- *The reader.* Where the stem is word-major, `stage_input` takes a
+  word's start from `_ar_word_part_offsets[:, :, 0]`. Otherwise it
+  searches the staged surface for the word's text, from the end of the
+  word before. Either way the bracket's end is its start and the length
+  of the text.
+- *The search finds what the stem had.* A text is the slice at its
+  interval, and what lies between two intervals is white space or
+  padding, so the first match after the word before is the interval's
+  own start.
+
+**Run** (a passive record in a scratch copy of HEAD; not a receipt).
+
+| What | Result |
+|---|---|
+| `test_word_admission.py` and `test_one_attention.py` | 77 passed, 1 skipped. One call of `stage_input` has no offsets: `test_29_each_reading_publishes_only_its_words[MM_text.xml]`, as Codex reports |
+| that call: the stem's intervals against the starts the search finds | equal on 8 of 8 words, and the lengths |
+| the calls with offsets in test 29's other two parameters: the offsets' first column against what the search would find | equal on 24 of 24 words |
+
+So the port changes no value. It removes a second computation of what
+the stem knows. *Not finished when this was written:* the same record
+over the 46 test files that name `MM_text.xml` or the field
+configuration.
+
+**Why the brackets stay on that path.**
+
+1. §3.1 gives a file with field operators only "the glance and the fold
+   along definitions, on the parallel body". The glance is
+   `FamiliarTier.open_sentence`, "Every present word bracket,
+   independent of the grammar's attention", and it raises where the
+   brackets are missing.
+2. Rules 2 and 3 of §60.1: the first look is the whole sentence, every
+   word bracket read in parallel, and every look is perceived. A path
+   with no walk has that look and no other.
+3. Two more readers take the brackets from there, both in
+   `bin/Models.py`: the test of an accepted word against its extent,
+   and the `word_extents` of a kept sentence.
+
+To stop staging them would change what that path perceives. Rule 15
+asks only where the spans come from.
+
+**For the port, when it is built** (its form is Codex's).
+
+1. The intervals travel under a name of their own.
+   `_ar_word_part_offsets` stays absent on the whole-slab stem, because
+   other readers take its presence for a word-major stem
+   (`word_major = torch.is_tensor(offsets) and offsets.ndim == 3 and
+   texts is not None` in `bin/Models.py`).
+2. They are the intervals the stem computed, and not a second call of
+   `percept_spans` on the staged surface.
+3. `stage_input` has one reader of a word's start for both stems, and
+   no search of the surface.
+4. An input with no word texts stages no bracket, as now.
+5. Certificate: on the three parameters of test 29 the staged spans
+   equal the starting source's.
+
+**Beside the question** (observed; not followed further). On this path
+a slot of the slab is an emitted part and not a word. "hello world"
+fills eight slots: five letters, the space, and two letters of the
+second word, which is cut at the eighth. A word's bracket is staged at
+the slot of its ordinal. Its extent is right. Its key is the code of
+whatever part sits at that slot, for the second word the letter "e", so
+the open read and the gist made from the keys are not the words'. In
+the two files run, no call on this path has a walk (the field
+configuration that examines has offsets), so no chooser read those
+keys. The port does not change this. *Nothing is proposed here.*
+
 ## 69. The thought replay (§68.31; Codex, 2026-11-18)
 
 ### 69.1 Producer, repair and regression

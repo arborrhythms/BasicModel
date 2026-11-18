@@ -1318,6 +1318,14 @@ generation is expected at this stage and is recorded, not tuned away.
    (`doc/Logic.md`, `doc/Architecture.md`, `doc/STM.md`,
    `doc/FutureWork.md`, and two places of `doc/Mereology.md`) are
    changed to the function as built (§70.19).
+   **The loop of looks, begun.** Codex has started the text of
+   §60.3 with its preparation (§61) and stopped, as rule 15 says to,
+   at a stem with no word offsets: the whole-slab stem of a file
+   with field operators only. Claude's answer is §68.69
+   (*recommended:* that stem hands over the word intervals it
+   already computes, which equal what the search finds; the
+   brackets stay, since they are that path's first look). *Alec's
+   word is awaited.*
    **Commits and the docs folder (Alec, 2026-11-18).** Claude may
    commit its work locally; pushing stays rare. The pending
    documentation pass of the worktree `basicmodel-docs` is on `main`
