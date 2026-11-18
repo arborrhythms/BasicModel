@@ -32338,3 +32338,35 @@ Commit locally as Alec has authorized; never push main, and never
 force-push. Receipts stay local and are not linked. Return by
 continuing §59 from its next free number.
 ~~~
+
+### 70.18 For the promotion of item 1.8: the docs go with it (Alec, 2026-11-18)
+
+Alec, 2026-11-18: "OK, please make sure the doc on main is pushed with
+the 1.8 promotion."
+
+*Claude's reading:* nothing is pushed now. When item 1.8 is promoted,
+which is the push of `main` that comes before item 1.7 (Alec,
+2026-11-16: "and push before moving on to 1.7"), the documentation on
+`main` goes with it.
+
+**What waits on `main`** (29 commits ahead of `origin/main` on this
+day; the ones that change the standing documents):
+
+- `8cf88d459b`, the documentation pass of 30 files;
+- `9ac9ceeb3e`, parthood in `doc/Mereology.md`;
+- `cdd2c90ffa`, how a word's mapping is learned, in `doc/Language.md`;
+- `ac8fbb0114`, the checkpoint of rounds A and B, which touches three.
+
+**Before that push.**
+
+1. The lists "for the documentation pass" are applied to the standing
+   documents: §68.32, §68.37, §68.55, §68.65, §70.12 and §70.14 of
+   this specification, and the changes of `doc/Logic.md`,
+   `doc/Architecture.md`, `doc/STM.md` and `doc/FutureWork.md` that
+   follow Codex's return on §70.17. The item 1.7 specification's list
+   waits for item 1.7.
+2. `git log origin/main..main` is read once more for what changes the
+   documents, so that none is left behind on another branch or in the
+   working tree.
+3. The push itself is on Alec's word, and the superproject's pointer is
+   his.

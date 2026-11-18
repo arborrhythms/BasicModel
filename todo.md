@@ -1319,6 +1319,13 @@ generation is expected at this stage and is recorded, not tuned away.
    the alias `~/github/doc`, a link to the superproject's `doc`
    folder, which he removed himself. Of the pass on `main`: "Keep it"
    (§70.16).
+   **At the promotion of item 1.8** (Alec, 2026-11-18: "please make
+   sure the doc on main is pushed with the 1.8 promotion."): the docs
+   on `main` are pushed with it, and nothing is pushed before. What
+   waits, and what is done first, is §70.18: the doc-pass lists of
+   the specification are applied to the standing documents, the
+   commits ahead of `origin/main` are read once more, and the push
+   is on Alec's word.
 - **1.7. `SigmaLayer` and `PiLayer`, and symbols split from concepts**
    (Alec, 2026-11-16: "I think we should position D as item 1.7"; then
    "review and commit round C, and merge with the performance branch. Then
