@@ -20,6 +20,7 @@
     <explorePaths>1</explorePaths>
     <!-- One logit unit and one path-cost unit per kept operator application. -->
     <operatorCost>1</operatorCost>
+    <interpretBias>1</interpretBias>
     <omissionTarget>0.9</omissionTarget>
     <omissionLimit>0.5</omissionLimit>
     <omissionHorizon>1024</omissionHorizon>

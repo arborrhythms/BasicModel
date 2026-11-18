@@ -48,6 +48,7 @@ def test_1_2_3_words_join_before_the_walk_finishes(leave_first, monkeypatch):
     admit_training_forms(model,[text])
     model.eval()
     chooser = model._stm_reducer()
+    chooser.interpret_bias = 0.  # Exercise the learned choice, including abstention.
     attend, interpret = chooser.attend, chooser.choose_interpret
     events, scopes = [], []
     declined = False
@@ -174,6 +175,7 @@ def test_10_interpret_departure_keeps_the_focus_that_reached_its_word(tmp_path, 
     model.inputSpace.data.has_supervised_outputs = True
     monkeypatch.setattr(model.inputSpace.data, 'what', WhatAnswer.silence)
     chooser = model._stm_reducer()
+    chooser.interpret_bias = 0.  # The departure is in the learned interpretation.
     attend, interpret, depart, run = chooser.attend, chooser.choose_interpret, SentenceCredit.departure, Looks.run
     paths, arrivals = [], []
 
@@ -293,8 +295,9 @@ def test_8_fourth_packed_sentence_can_use_the_shared_allowance(monkeypatch):
     assert meter.spent == 8
 
 
+@pytest.mark.parametrize('bias', [0., 1.])
 @pytest.mark.parametrize('length', range(1, 7))
-def test_11_lesson_teaches_shortest_walk_and_interpretation(length, monkeypatch):
+def test_11_lesson_teaches_shortest_walk_and_interpretation(length, bias, monkeypatch):
     from types import SimpleNamespace
     import SentenceLooks
     import ModelAttention
@@ -304,6 +307,7 @@ def test_11_lesson_teaches_shortest_walk_and_interpretation(length, monkeypatch)
     word_rule = torch.nn.Identity()
     word_rule.rule_name = 'interpret'
     chooser = OperationSelectionLayer(d_model=4, unary_ops=[word_rule])
+    chooser.interpret_bias = bias
     chooser.attention_operations = tuple(range(6))
     spans = torch.arange(length)[:,None] * 2 + torch.tensor([[0,1]])
     keys = torch.ones(1,length,4)
@@ -321,7 +325,15 @@ def test_11_lesson_teaches_shortest_walk_and_interpretation(length, monkeypatch)
     assert arrivals == list(range(length))
     assert len(state.actions) == (0 if length==1 else length)
     taught = looks.lesson_cost()
-    assert taught.shape == (1,) and taught.item() > 0
+    assert taught.shape == (1,)
+    if bias == 1.:
+        assert not any(d['eligible'].any() for d in looks.decisions)
+        assert int(looks.teacher.count) == len(state.actions)
+        assert all(not d['probability'].requires_grad for d in looks.decisions)
+        if length == 1:
+            assert taught.item() == 0
+        return
+    assert taught.item() > 0
     taught.sum().backward()
     assert chooser.apply_anchor.grad is not None and chooser.apply_anchor.grad.abs().sum() > 0
 

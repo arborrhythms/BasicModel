@@ -136,11 +136,14 @@ class Looks:
                     replay = ((self.draw['attention_round']<0) | (len(state.actions)<=self.draw['attention_round'])) & ((at<0)|(turn<at))
                     options['masked_action']=torch.where(at==turn,old['action'],-1)
                 options['replay_action']=torch.where(replay,old['action'],-1)
+                # A departure in the grammar was already assigned to the learned share.
+                replay_branch = replay | (options.get('masked_action', -1) != -1)
+                options['replay_bias'] = torch.where(replay_branch, old['biased'].long(), -1)
             if self.teacher is not None:
                 target = self.teacher.next(state)
                 options['replay_action'] = ((target == index) & allowed).long()
                 options.pop('masked_action', None)
-            choice = state.chooser.choose_interpret(state.keys[state.rows,index],allowed,**options)
+            choice = state.chooser.interpret_at_look(state.keys[state.rows,index],allowed,**options)
             if self.teacher is not None:
                 logp = choice['logits'].log_softmax(-1).gather(1,choice['action'][:,None])[:,0]
                 self.teacher.book(logp, choice['eligible'] & rows)

@@ -27921,6 +27921,16 @@ The targeted test files represented in the port group, gates, verbal proof, nati
 
 **Returned source.** `bounded_tests.source_snapshot` covers 1,219 files. Its SHA-256 is **90cfa8a8130270acf7b277ca403297addbc0b54df6444fdf8632eff29c1db666**. The ten declarations and three seats are checkpointed in local commit `5b442d41cafe3fe5913e3e51787e20f35a525023`. All receipts remain local.
 
+### 61.22 The interpretation bias of §68.80
+
+Before the change the unforced three-word certificate got zero bricks and word steps. The bracket walk offered the words, and the unary chooser preferred abstention. At the new default of one, the native walk interprets each of the three words once, with one brick and one word step per word, and finishes within the existing allowance. The rule applies to training and evaluation. It requires the existing grammar declaration and native offer.
+
+`OperationSelectionLayer.interpret_at_look` reads the model’s configured `architecture.interpretBias`. At intermediate values it draws once per offered stream from the existing PyTorch generator on the word tensor’s device. Presentation snapshots already capture that generator. Replay keeps the drawn branch as well as the action, and an interpretation departure stays on the learned branch. A direct call has probability one, zero alternatives and no score-function or grammar-lesson gradient. The independent attention lesson still charges its own focuses. Zero and one consume no bias draws. The parameter is range-checked at construction and declared in the XML schema and parameter reference.
+
+The fresh-reader, zero-bias equivalence and supplied-uniform tests failed before and passed after. Tests at both endpoints check the random stream. The partial-bias test observes which rows actually called the scorer, tests the equality threshold and replays the saved branches. The shortest-path lesson checks lengths one through six at both settings. At bias one its sole one-word opening books no target. At bias zero it still trains the unary anchors. In `test_loop_of_looks.py`, the selective first-word abstention and interpretation-departure tests explicitly select the learned share. In `test_native_attention_field.py` the reversed reading explicitly does the same for its prescribed first refusal. Their original selection, prefix, gradient and admission assertions remain. The three-look test of a declined bracket is unchanged.
+
+The bias, loop, reading lesson, native attention field, assessment, and two stopping-gate files gave **50 passed in 27.42 seconds**. The invalid negative, above-one and NaN construction cases plus the final reversed reading and bias cases gave **7 passed in 6.71 seconds**. There was no change to capacity, work allowance or presentation count.
+
 ## 62. Part A's remainder: the forecast of a look and its surprise (Claude, 2026-11-16; a design, with one question for Alec)
 
 §61 is kept for Codex's return of §60.3. This section starts from the

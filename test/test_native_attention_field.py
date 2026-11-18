@@ -109,6 +109,7 @@ def test_reversed_candidate_reads_keep_native_field_order_without_teacher(tmp_pa
     model = _model(tmp_path, monkeypatch)
     _select_completed_binary_path(model)
     chooser = model._stm_reducer()
+    chooser.interpret_bias = 0.  # This reading deliberately declines the first offer.
     attend, interpret = chooser.attend, chooser.choose_interpret
     def last_focus(keys, legal, space, **options):
         focus = legal[...,:2].any(-1)

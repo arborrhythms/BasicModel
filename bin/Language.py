@@ -6577,6 +6577,10 @@ class OperationSelectionLayer(nn.Module):
         self.pair_rewrites = tuple(bool(getattr(getattr(op, 'gl', op), 'preserves_pair', False))
                                    for op in self.ops)
         declared = tuple(getattr(op, 'gl', op) for op in self.unary_ops)
+        matches = [i for i, op in enumerate(declared) if getattr(op, 'rule_name', None) == 'interpret']
+        if len(matches) > 1:
+            raise ValueError('interpret has more than one unary declaration')
+        self.interpret_index = next(iter(matches), None)
         self.register_buffer('_reference_leaf', torch.tensor([
             getattr(op, 'rule_name', None) in ('interpret', 'sign') for op in declared
         ], dtype=torch.bool), persistent=False)
@@ -6588,6 +6592,7 @@ class OperationSelectionLayer(nn.Module):
         self.structural_ops = tuple(operator_is_structural(op) for op in self.ops)
         self.unary_structural_ops = tuple(operator_is_structural(op) for op in self.unary_ops)
         from Expectation import unit, positive
+        self.interpret_bias = unit(TheXMLConfig.get('architecture.interpretBias', default=1.), 'interpretBias')
         self.exploration_fraction = unit(TheXMLConfig.training('explorationUniformFraction', .5), 'explorationUniformFraction')
         if self.exploration_fraction == 0.:
             raise ValueError('explorationUniformFraction must be positive')
@@ -6848,15 +6853,11 @@ class OperationSelectionLayer(nn.Module):
 
     def choose_interpret(self, word, allowed, *, masked_action=None, replay_action=None):
         """Grammar's existing unary scorer chooses interpretation or abstention."""
-        indices = [i for i, op in enumerate(self.unary_ops)
-                   if getattr(getattr(op, 'gl', op), 'rule_name', None) == 'interpret']
-        if len(indices) > 1:
-            raise ValueError('interpret has more than one unary declaration')
-        if not indices:
+        if self.interpret_index is None:
             allowed = torch.zeros_like(allowed)
             logits = word.new_zeros(len(word), 2)
         else:
-            index = torch.tensor(indices, device=word.device)
+            index = torch.tensor([self.interpret_index], device=word.device)
             key = word.detach()[:, None]
             copy, apply = self.chooser.score_unary(key, key[:, :, None],
                 self.stop_anchor, self.apply_anchor[index],
@@ -6870,6 +6871,37 @@ class OperationSelectionLayer(nn.Module):
         return dict(action=action, interpreted=allowed & action.eq(1), eligible=allowed,
                     probability=probabilities.gather(1, action[:, None])[:, 0],
                     alternatives=allowed.long(), proposal=proposal, logits=logits)
+
+    def interpret_at_look(self, word, allowed, *, replay_bias=None, **options):
+        """Take a declared call by bias, or consult the learned grammar."""
+        if self.interpret_bias == 0.:
+            decision = self.choose_interpret(word, allowed, **options)
+            decision['biased'] = torch.zeros_like(allowed)
+            return decision
+
+        offered = allowed if self.interpret_index is not None else torch.zeros_like(allowed)
+        if self.interpret_bias == 1.:
+            biased = offered
+        else:
+            if replay_bias is None:
+                replay_bias = torch.full_like(offered, -1, dtype=torch.long)
+            fresh = (offered & (replay_bias < 0)).nonzero().flatten()
+            biased = offered & (replay_bias == 1)
+            if len(fresh):
+                biased[fresh] = torch.rand(len(fresh), device=word.device) < self.interpret_bias
+
+        action = biased.long()
+        logits = word.new_full((len(word), 2), -torch.inf).scatter_(1, action[:, None], 0.)
+        result = dict(action=action, interpreted=biased, eligible=torch.zeros_like(offered),
+                      probability=word.new_ones(len(word)), alternatives=torch.zeros_like(action),
+                      proposal=word.new_zeros(len(word)), logits=logits)
+        free = (offered & ~biased).nonzero().flatten()
+        if len(free):
+            choice = self.choose_interpret(word[free], offered[free],
+                **{key: value[free] for key, value in options.items() if value is not None})
+            result = {key: value.index_copy(0, free, choice[key]) for key, value in result.items()}
+        result['biased'] = biased
+        return result
 
     def thought_logits(self, active, requests):
         """Thought locations use the compose scorer and its one categorical law.

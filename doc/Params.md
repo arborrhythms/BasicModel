@@ -589,6 +589,7 @@ configuration and is set only by a runtime override.
 | `continuitySharpness` | `Mereology.py` | `1.0` | Sharpness of the continuity squash. |
 | `TetralemmaPolicy` block (+ per-space `tetralemmaOverride`) | `util.py` (`tetralemma_policy`) | `allowExcludedMiddle=1`, `allowContradiction=0`, `neitherThreshold=0.1` | Shared catuskoti policy under `<architecture>`; a space sets `<tetralemmaOverride enabled="true">` + its own `<TetralemmaPolicy>` to override. Legacy top-level `<TetralemmaPolicy>` still read as fallback. |
 | `attentionFloor` | `AttentionContext.install` | `0.1` | Validated at construction in the open interval (0, 1). The loop of looks does not charge an unread-item residual. |
+| `interpretBias` | `OperationSelectionLayer.interpret_at_look` | `1` | Probability of interpreting an offered word directly. The learned grammar decides the remaining offers. Accepts 0 through 1 in training and evaluation. |
 | `hetTolerance` | `AttentionContext.install`, `SentenceField.arrive` | `1.0` | The fraction of overlapping evidence retained on both lanes of an arrival. Zero removes the shared overlap, and one preserves both lanes. |
 | `device` | `Models.py` (run entry) | unset | Runtime device (`cpu`, `gpu`, `cuda`, `mps`), used only when `BASICMODEL_DEVICE` is unset. |
 | `trainEmbeddings` | `Models.py` (BaseModel init) | unset | Architecture-level boolean read ahead of `<training><trainEmbedding>`: `true` selects `BOTH`, `false` selects `NONE`. |
