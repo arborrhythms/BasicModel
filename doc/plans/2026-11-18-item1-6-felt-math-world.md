@@ -2,8 +2,9 @@
 
 *Claude, 2026-11-18. A design for Alec. No text for Codex: questions are
 open (§11.6), and the item is built after item 1.7 lands. Alec answered
-the first four questions the same day: §11, which stands wherever it
-differs from §3 to §10.*
+the first four questions the same day (§11) and the questions those
+opened (§12). §12 stands wherever it differs from §11, and §11 wherever
+it differs from §3 to §10.*
 
 Alec, 2026-11-18, placing the item: "Then 1.6 becomes the number modality,
 the math corpus (it needs more development), and the work you called out as
@@ -709,4 +710,196 @@ is part-of, which exists. Nothing adds or multiplies a felt value (Alec,
    or a small patch. *Default:* one pixel, and the rest of the image at
    zero, which is no presence.
 6. Questions 5 to 10 of §9.
+
+## 12. Alec's second answers (2026-11-18): three axes, a level as a float, and a corpus that teaches language
+
+Asked whether the scene is a small image and nothing else, and given
+§11.6's list. His answers are given whole.
+
+### 12.1 Three axes are kept
+
+> Keep 3D, I guess, since it is isomorphic to English language. So we
+> might as well render images as 3-D data with only one z plane (at
+> z=0), but make the .where able to address the entire space.
+
+**What it changes.** §11.3's default, an image and nothing else, is
+withdrawn. §3.2 stands: the felt modality has three axes of place, and
+its range of `.where` has an address for every place of the declared
+shape. An image is the plane at z = 0 of that space; the other planes are
+empty until something is put there.
+
+*Default:* `feltShape` 8 by 8 by 8, 512 addresses, of which an image
+uses 64. Only the count of addresses grows; no vector is widened (§3.2).
+
+*Claude's reading of "isomorphic to English language":* English speaks of
+places on three axes (above and below, left and right, in front and
+behind), so what its words describe should have the three.
+
+### 12.2 A level is a float from 0 to 1
+
+> a level is a 0-1 float always, input preprocessing will map the data
+> there.
+
+**What it changes.** No grid of levels is declared; §11.2's
+recommendation is not taken. A level is a number from 0 to 1, and
+whatever maps the data into that range is preprocessing, outside the
+model. `NumericPercepts.feeling` is one such map, for numbers from zero
+to infinity. The corpus's own map is a choice of the generator
+(*default:* the numeral $n$ at $n/20$, so zero is nothing felt and twenty
+is 1; a reading varies by up to a quarter of the gap between
+neighbours).
+
+### 12.3 The difference is enough; the bracketing adapts
+
+Of the scale and the amount of variation:
+
+> that is enough of a difference for perceptual bracketing, which is
+> adaptive anyway.
+
+*Claude's reading:* "perceptual bracketing" is a felt value bounded by a
+part below it and a whole above it (Alec, 2026-11-12: "categorized
+against perceptual parts and wholes, whose codes are the values"), and
+those bounds move with what is met.
+
+**What the source has of it** (read 2026-11-18; he is describing what
+should exist, so this says where it does and where it does not).
+
+- *It adapts at the concept.* A word's concept over felt values is the
+  interval from the least part to the greatest whole of what it has
+  collected (`PerceptCollections.collect`,
+  `BasicPercepts.collection_code`), and it widens with each new member. A
+  reading inside the interval belongs with no row of its own
+  (`BasicPercepts.read_points`, `read_collection`).
+- *It does not adapt at the percept.* `BasicPercepts.perceive_value`
+  matches a reading only to a value exactly equal to it, and otherwise
+  gives it a new seat in `value_codes`, where it is its own part and its
+  own whole: a point, not a bracket.
+- *What that costs when readings vary.* Every reading is a new percept.
+  The table fills (`basicPerceptCapacity` seats), and under item 1.7's
+  rule 20 no percept recurs, so none becomes a row.
+- *Where the design has it.* `doc/FutureWork.md`, "Images (future)":
+  "exact-key matching gives way to a log-scale tolerance for graded
+  percepts", and "The codebook snap keeps its residual, so quantization
+  gives categorical perception without erasing continuity". Not built.
+
+**The gap, for Alec** (question 1 of §12.7). For the bracketing to adapt
+at the percept, a reading that falls within an existing value percept's
+bounds has to be that percept again, and the percept's bounds have to be
+able to differ from one another. Nothing says yet when a reading joins a
+percept and when it starts one. It is not designed here.
+
+### 12.4 What the corpus is for
+
+> We can build an extensive vocabulary here from a mathematics education
+> book. The perception of number is not necessary beyond establishing
+> conceptual foundations. Perhaps the biggest value is in teaching
+> english language from a synthetic corpus: we can talk about the size
+> of 1 (a continguous shape constituted by 1's), how it walked toward 2
+> or ran toward 3. then we can ask which was faster, the walk or the
+> run? So this basic langauge learning and synthetic corpus will allow
+> us proof of concept over basically all language learning. It may also
+> serve as a basis or prep step for language learning over a large text
+> corpus, but we should only bother with that step after we have that
+> proof of concept. So it is the job of the AI to construct simple
+> sentence and small image pairs that are valid and teach these things.
+
+And of what a numeral looks like: "lets start with 1 pixel, but the
+mereology should generalize fairly well."
+
+**What it changes.**
+
+1. *The purpose.* The corpus is a proof of concept of learning language
+   from sentences paired with small images. Feeling a number is needed
+   only to found the concepts. Its use as preparation for a large text
+   corpus comes after the proof and is not part of this item.
+2. *What is in the world.* A thing is a contiguous shape made of one
+   level: "the size of 1 (a continguous shape constituted by 1's)". It
+   has a size. It moves: "walked toward 2", "ran toward 3". Two events
+   can be compared: "which was faster, the walk or the run?"
+3. *The vocabulary of mathematics* is wide and is taken from how
+   mathematics is taught, in words. Most of it is said, not felt
+   (§11.4).
+4. *Every pair is valid.* *Claude's reading of "the job of the AI":*
+   Claude specifies the world, the vocabulary and the lessons; the
+   generator, which Codex builds, holds the state of the world and writes
+   the sentence and the image from it, so that no pair can disagree
+   (§5.1). If he means that the pairs are written out one by one, that is
+   question 3 of §12.7.
+
+**What this reaches that the math corpus could not.** `doc/Training.md`
+lists as not reached by the generated math suite: "space, motion,
+prepositions, and most verb classes", and "aspect: activities,
+progressive, perfect, durations". A world of shapes that move reaches
+both.
+
+### 12.5 The world and what can be said of it: a first sketch
+
+*Claude's draft, for Alec to correct. It is a list of what the lessons
+would need; nothing here is a mechanism.*
+
+**The world.** A space of 8 by 8 by 8 places, and steps of time. At each
+step some things are in it. A thing is a set of touching places at one
+level; in the first grades it is one place. A sentence is read with the
+image of one step. A change is shown as successive images, some with no
+sentence, as a felt value alone is presented today (§2.1).
+
+**What a numeral names** (*default, question 4 of §12.7*). A scene holds
+at most one thing of each level, and the numeral is that thing's name:
+"1" is the shape made of ones. So "it walked toward 2" speaks of two
+individuals, and nothing has to count things. Counting ("two shapes")
+would give the numerals a second sense and is left out of the first
+grades.
+
+| What is perceived | Words | What it rests on | State |
+|---|---|---|---|
+| A thing's level | the numerals | the tie of a word to a felt object (item 1.7, certificate 25) | item 1.7 |
+| The order of two levels | less, greater, equal | part-of on levels (`Ops.partOf`) | exists |
+| A thing's extent | size, big, small, bigger | neighbouring places of one level knit into one percept; `doc/FutureWork.md`: "a connected object is told from a scattered sum" | not designed |
+| Where two things stand | above, below, left of, right of, in front of, behind, near, far | the reading of an arrangement (§6, §11.3) | not designed for a scene |
+| A thing's place changing | moved, walked, ran, stopped; toward, away from | what holds a succession across sentences (item 1.7's open point 7); a verb phrase's phases, before, change and after (`doc/Language.md`, "Position") | open in item 1.7 |
+| How much it changes in a step | fast, slow, faster | two events compared | not designed |
+| Nothing felt | even, odd, plus, minus, and the rest of the taught vocabulary | said in sentences (§11.4) | exists, as the math corpus |
+
+**The grades, redrawn** (replacing §5.2's F5 to F8).
+
+| Grade | Teaches | Example |
+|---|---|---|
+| F0 to F4 | as §5.2: feelings, words, naming, naming among others, asked | "what is this ?" |
+| F5, order | less, greater, equal | "one is less than two." |
+| F6, arrangements | words of place | "one is above two." |
+| F7, shapes | size | "one is bigger than two." with a shape of four ones and a shape of two twos |
+| F8, motion | verbs of motion | "one walked toward two." after the images of it |
+| F9, events compared | comparison of two events | "which was faster, the walk or the run ?" |
+| F10, said mathematics | types and operations | "two is even." |
+
+Note that "bigger" (F7, of extent) and "greater" (F5, of level) are kept
+as two words on purpose: a small shape of a high level and a large shape
+of a low level tell them apart.
+
+### 12.6 What has to be designed before each round
+
+| Round | Builds | Waits on |
+|---|---|---|
+| One | Places on three axes with images at z = 0; scenes beside sentences; floats that vary; one pixel; grades F0 to F5 | question 1 of §12.7 (when a reading is the same percept again) |
+| Two | Arrangements, F6 | what reads an arrangement (§6, §11.3) |
+| Three | Shapes, F7 | what knits touching places into one thing |
+| Four | Motion and events compared, F8 and F9 | item 1.7's open point 7; the comparison of two events |
+| Any | Said mathematics, F10 | the vocabulary (question 2 of §12.7) |
+
+Each of the four waits is a design conversation with Alec, taken in this
+order (*default*). Round one can be specified as soon as question 1 is
+answered and item 1.7 has returned.
+
+### 12.7 Open after these answers
+
+1. *When a reading is the same percept again* (§12.3).
+2. *Which book or which years of teaching* the vocabulary of mathematics
+   is taken from. *Default:* Claude drafts the list from what the first
+   years of school teach (counting, comparing, order, shapes and their
+   places, adding and taking away), in its own sentences, with no book's
+   text copied.
+3. *Whether the generator writes the pairs* from Claude's lessons
+   (§12.4, point 4). *Default:* yes.
+4. *A numeral names the one thing of its level* in a scene (§12.5).
+5. Questions 5 to 10 of §9, of which 6 (the grid) is now 8 by 8 by 8.
 

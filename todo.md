@@ -1484,10 +1484,17 @@ generation is expected at this stage and is recorded, not tuned away.
    place, "A small image in which the numbers are vertically arranged
    as described"; and the gendered words are dropped for "words like
    even and odd, and other simple math concepts like basic operations".
-   Open after them (§11.6): whether the scene is a small image and
-   nothing else, a declared grid of levels, the scale and the amount of
-   variation, and the list of concepts. No text for Codex until they
-   are answered. What the record held before it:
+   **His second answers (§12):** three axes are kept, an image being
+   the plane at z = 0; "a level is a 0-1 float always"; the bracketing
+   of a felt value "is adaptive anyway"; and the corpus is a proof of
+   concept of learning language from "simple sentence and small image
+   pairs", in which a thing is "a continguous shape constituted by 1's"
+   that has a size and moves ("which was faster, the walk or the
+   run?"). A first sketch of that world, its words and its grades is
+   §12.5, and what each round waits on is §12.6. Open (§12.7): when a
+   varying reading is the same percept again, where the vocabulary of
+   mathematics is taken from, and what a numeral names. No text for
+   Codex until they are answered. What the record held before it:
    1. *The number modality.* Built in item 1.8: a number is a level
       percept at its place; one felt value may accompany a sentence, at
       one fixed place (`bin/ScalarPercepts.py`); the XOR proofs and
