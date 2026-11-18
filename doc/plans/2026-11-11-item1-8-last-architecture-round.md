@@ -27115,6 +27115,68 @@ word is in 35 files of `bin/`, 105 of `test/`, 27 of `data/` and 23 of
 (`_mint_row`, `concept_mint_count`, `mint_threshold`, `_mint_field`,
 `mint_frozen_concept`), so they stay.
 
+## 61. Loop of looks: preparation (Codex, 2026-11-18)
+
+### 61.1 Starting comparison, before any loop edit
+
+While §69's two fixed curricula finish, read-only preparation records
+the four sentences of the first document in `data/corpus-lessons.json`
+on the unchanged `explore-1.xml` source. This is an evaluation/no-gradient
+comparison, with native first-stage form admission, an unselected
+construction stream saved locally, the first legal progress action in
+slot order, and the existing candidate field's source-order selection.
+It changes no teaching count or chooser parameter.
+
+The four sentences each take **9** actual calls of `attend`. Each kept
+tree on this stream is `modifier(modifier(modifier(0,2),4),5)`, with
+the indices naming the native source places. Their new LTM0 row counts
+are **4, 4, 4, 3**. The exact actions, trees, meanings, new rows and
+word forecasts are saved locally for certificates 6 and 7; all four
+have stem-provided offsets. The local observer was corrected to read
+the tree before the journal closes and to serialize named tuples;
+these were observer errors, not model failures or changes of stream.
+No loop implementation or production edit has begun.
+
+### 61.2 A path without the offsets (§60.1, rule 15)
+
+The existing
+`test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_text.xml]`
+uses `reading_fixtures.field_text_config(examine=False)`: the parallel
+field-only read, with `intersection`, `union` and `not`. A passive
+observer of `ModelAttention.stage_input` finds actual word surfaces,
+an active shape **(4,8)**, and **no `_ar_word_part_offsets`**. The
+reader therefore uses the surface-byte search that rule 15 removes.
+This path has no attention walk. The other two parameters, MM_grammar
+and XOR_grammar, have offsets of shapes **(4,8,13)** and **(4,6,13)**
+and have a walk. All three existing assertions pass (**3 passed in
+4.91 s**); none is changed.
+
+The producer is `PartSpace._embed_radix`, the whole-slab branch in
+`bin/Spaces.py`. It already calculates `_wspans` with
+`Meronomy.percept_spans(_raw)` and uses those exact intervals to make
+`word_texts_2d` and assign each emitted part to its word group. It
+does not retain the word-axis intervals. `InputSpace.finalize_stem`
+therefore has no word-axis offsets to hand to attention; its retained
+part spans are on the different, emitted-part axis. The serial radix
+and ladder branches do retain their word offsets.
+
+**For Alec and Claude.** Rule 15 explicitly says to stop and name a
+path that has no offsets. I recommend retaining this whole-slab stem's
+already-computed word intervals and passing them to the common
+attention staging reader, so the surface search can be deleted for
+every path. This adds no parsing rule and changes no fixture capacity;
+the producer already knows the intervals. May this producer port be
+built, or should the parallel field-only path cease staging word
+brackets? The latter also needs an explicit disposition for its current
+staged word/gist read. No replacement or bypass is built pending this
+answer. §69's independent fixed curricula continue unchanged.
+
+Claude's subsequent §68.69 independently confirms this producer and
+recommends retaining its intervals. It requires a distinct name for
+them: supplying `_ar_word_part_offsets` on the whole-slab path would
+incorrectly tell other readers that it is word-major. That section
+explicitly awaits Alec's word. No loop change is built while it waits.
+
 ## 62. Part A's remainder: the forecast of a look and its surprise (Claude, 2026-11-16; a design, with one question for Alec)
 
 §61 is kept for Codex's return of §60.3. This section starts from the
@@ -31924,9 +31986,125 @@ is certified separately by the stopping gate.
 The source guard passes. The snapshot is the **1,221-file**
 **`1b3193ece9e7954ce446f61b44152cd3d9843960b45af3264ebd5583053f21ff`**
 of §59.90. The native lesson and curricula use identical production
-code; §59.89 changes only a separate test's reader call. The remaining
-curriculum results and reference-key counts are recorded next when
-their fixed stages end.
+code; §59.89 changes only a separate test's reader call. The completed
+curriculum results and reference-key counts follow.
+
+### 69.5 Both fixed curricula complete: learning results, not repairs
+
+Both native tests run under `RUN_SLOW=1`, with their existing fixtures
+and non-strict `baseline, item 1.8 §43` marks. Each reaches the unchanged
+**200-round** curriculum bound: **0 qualifying rounds**, **0/600**
+evaluation readings equal to the annotated question tree. Each runs
+**600 curriculum teaching presentations** and **600 evaluation reads**.
+Neither reaches the subsequent eighteen question presentations or its
+recognition assertion. Their prior scalar acquisition is unchanged.
+These are learning results, not recognition passes.
+
+| Native test in `test_item18_recognition.py` | Result | Pytest elapsed | Full passive-census elapsed |
+| --- | --- | ---: | ---: |
+| `test_90_present_percept_is_said_by_its_class_without_naming_an_object` | 1 XFAIL, exit 0, curriculum bound | 5,432.83 s | 5,435.67384795798 s |
+| `test_90_named_percept_does_not_mix_native_spellings` | 1 XFAIL, exit 0, curriculum bound | 5,949.67 s | 5,953.567273750086 s |
+
+The producer of the failed criterion is the kept grammatical reading.
+The target remains
+`surface(0,surface(1,verb(bind.open(lower(2)),3)))`. In the first
+fixture, all three final readings are
+`modifier(0,modifier(change(1,2),3))`. In the second, they are
+`verb(0,add(1,verb(2,3)))`, then twice
+`verb(0,verb(1,verb(2,3)))`. These are the recorded source-place trees,
+not interpretations supplied to the model. They do not contain the
+taught perceptual opening. No learning parameter, target, seed, bound,
+capacity, presentation count or menu is changed to obtain a result.
+
+Neither run raises a replay-validation error. The passive observers'
+checks of the executor's alternatives and the staged event both hold.
+The second fixture's normal final assessment reads complete too; they
+are included in its execution counts below, alongside fixture setup,
+curriculum trials and evaluation reads. No new expected-failure mark
+is added.
+
+### 69.6 Completed anonymous-reference census
+
+Each cell is **comparisons with both tuples all None / reached
+comparisons**. The two curriculum columns name the tests, in §69.5's
+order. These are executions at the guarded expression, not counts of
+distinct meanings. `0/0` means the expression was not reached on that
+stream; it is not a claim that the branch cannot be reached.
+
+| Reader | Lesson | First curriculum | Second curriculum |
+| --- | ---: | ---: | ---: |
+| `ThoughtChunks._write_serial`, resident alternatives | 0/0 | 2/3 | 0/0 |
+| `ThoughtStream.candidates`, resident result | 535/537 | 118/141 | 32/49 |
+| `ThoughtStream.completion_result.same` | 0/0 | 0/0 | 0/0 |
+| `ThoughtStream.integrate` | 0/0 | 0/0 | 0/0 |
+| `ThoughtStream.write`, unchanged witnessed chain | 0/0 | 0/0 | 0/0 |
+| `ThoughtStream.commit`, unchanged query occurrence | 44/62 | 1,077/1,191 | 423/1,198 |
+| `ThoughtInference.derive`, constituent identity | 0/0 | 0/0 | 0/0 |
+| `Models._commit_sentence`, unchanged input | 130/160 | 1,140/1,203 | 597/1,203 |
+| `GrammaticalThoughtRegistry.controller_candidates`, request comparison | 0/3,763 | 0/708 | 0/231 |
+
+The last row is the additional request comparison described in §69.2;
+it does not identify a conclusion or resident chunk. The surviving
+pervasion accumulator has **zero native all-None keys** in all three
+runs. Native pervasion requires its two references; its policy is
+unchanged.
+
+| History/writer count | Lesson | First curriculum | Second curriculum |
+| --- | ---: | ---: | ---: |
+| New history events | 1,021 | 13,137 | 12,923 |
+| begin | 138 | 1,700 | 1,711 |
+| thought | 402 | 8,616 | 8,430 |
+| descend | 105 | 0 | 0 |
+| return | 107 | 0 | 0 |
+| cutoff | 124 | 1,042 | 995 |
+| finish | 145 | 1,779 | 1,787 |
+| Serial writes | 128 | 56 | 32 |
+| Closed infer writes | 0 | 3 | 0 |
+| Explicit `derivation` proof events | 0 | 0 | 0 |
+| `intuition_derivation` proof events | 0 | 3 | 0 |
+
+All **three** closed inferences in the first curriculum are anonymous.
+Two match a resident anonymous chunk with the same role mask, and both
+unions change the conclusion's evidence pair. Both match the focus;
+**zero** matches update another slot. In both matches the numerical
+role tensors differ. That records the writer's existing criterion:
+references and role mask, excluding intuition-only deposits, without a
+numerical-role equality test. The census does not establish whether
+those differing coordinates express distinct content or stamps.
+
+All three inference events reach history, and both combined
+alternatives are present in their staged events. If all-None keys
+matched nothing, these two local unions would not occur. The other
+local consequences are those in §69.2: resident-result operands and
+unchanged-content reuse would also change. No claim is made that a
+whole retrained run would otherwise keep the same path. This census
+reports the policy; it does not repair or replace it.
+
+### 69.7 Completed return and next stop
+
+§68.31 is complete. Its two regression parameters fail before the
+repair and pass after it; the two whole thought files and both stopping
+gates pass; both native curricula are recorded; the lesson's and both
+curricula's anonymous-reference reads are counted; the default sweep
+has **zero failures**. The separate scalar-parthood return is complete
+in §59.87–§59.90 on the same source. The remaining failures are the two
+bounded learning results in §69.5, produced by their kept readings,
+not by replay validation.
+
+The final source manifest remains **1,221 files**, hash
+**`1b3193ece9e7954ce446f61b44152cd3d9843960b45af3264ebd5583053f21ff`**.
+The local source commits are `8b250295e7` and `db95089f90`; subsequent
+commits by Claude change documentation, not the measured source.
+`bin/Attention.py`, `bin/ModelAttention.py`, `bin/SentenceAttention.py`,
+`bin/AttentionTraversal.py` and `Models._run_sentence_word_bricks` have
+no edit in either repair. Receipts stay local and are not linked or
+committed. Nothing is pushed.
+
+Preparation for §60 records its required initial comparisons in §61.1
+and reaches its explicit missing-offset stop in §61.2. Claude's
+§68.69 recommends the same producer port and awaits Alec. The question
+has also been sent through the user-input tool. No loop implementation
+is started pending that answer.
 
 ## 70. One match of a content against conceptual space (Claude, 2026-11-18; a design for Alec; no text for Codex)
 
