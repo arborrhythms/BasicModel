@@ -24,6 +24,197 @@ Based on the Basic Model of Cognition at
 [cognitivesciencesociety.org/framework-cognitive-science](https://cognitivesciencesociety.org/framework-cognitive-science/);
 see also [The Whole Part](https://thewholepart.com).
 
+## Relation to the article and the book
+
+The article, *A Common Framework for Cognitive Science*, and the book, *The
+Whole Part*, describe the model that this network implements. The article is
+the third part of the book in short form: its last figure is the book's
+Figure 3i, the basic model of cognition. This section sets the three side by
+side: what they share, where the model differs from the book, and what only
+one of them has. The book is cited by chapter, and by page where the page is
+known.
+
+### What the three share
+
+**The frame.** The article has three spaces (objective, sensory and
+conceptual) and six relations: sensation, action, conceptualization,
+visualization, symbolization and interpretation. The book counts six spaces,
+adding the physical, the subjective and the symbolic (Part 3; chapter 6,
+Epistemic Universes). The model has four: real, perceptual, conceptual and
+symbolic. Its real space stands where the article's objective space does, as
+what sensation comes from and action goes to, and its perceptual space is the
+sensory one. It defines symbolic space as the book does: the percepts that
+reference concepts, a part of perceptual space. Its three major operations
+are the book's part, whole and reference: intersection, which divides from
+the top down; union, which collects from the bottom up; and equality, by
+which a symbol maps between percepts and concepts. Interpretation and
+symbolization are one operator of the grammar and its reverse, `interpret`
+and `name`.
+
+**Two relations, not one.** The book keeps parthood and reference apart as
+two analyses (chapters 3 to 5). The article does the same: conceptualization
+and visualization are subsymbolic and relate parts to wholes, where
+symbolization and interpretation are symbolic and relate a reference to what
+it refers to. A symbol is neither a part nor a whole of what it stands for,
+and need not resemble it. In the model the form of a word and its meaning lie
+in two spaces that meet only at a symbol, and a word is tied to its object by
+a definition and not by a shared region. The book's forced choice, between
+conceptualizing a symbol as a thing in itself and interpreting it (chapter
+8), is the model's choice at each word: leave it as itself, take it as a
+sign, or interpret it.
+
+**Every relation has its dual.** The book states each relation with its
+partner: sensation with action, conceptualization with visualization,
+symbolization with interpretation (chapter 7). In the model perception is
+[bidirectional](#symmetric-perception-the-single-layer-linear-case), the
+grammar's operators compose and, in reverse, generate, and imagination is
+perception run backwards. The way down keeps the book's order, interpretation
+and then visualization: from symbols to concepts by the grammar's inverse,
+then from concepts to percepts by perception's.
+
+**Parthood.** The book has five relations between two things (disjoint,
+part, whole, identical and overlapping) and measures parthood by degree, as
+the share of the first thing that lies in the second, which is not symmetric
+(chapter 3; the Formal Summary, pages 184 and 185). The model uses that
+measure and reads the five relations from its two directions. In both a
+whole is made by union and a part by intersection, and both begin in the
+middle, at the basic level, and work down to parts and up to wholes.
+
+**Orders.** In the book a zeroth-order concept is a whole of sensation and a
+higher-order concept is a whole of symbols. The order of a concept is the
+number of symbolizations needed to build it, and joining wholes without a
+symbol raises the level and not the order (chapters 6 and 8). In the model
+an order-0 concept collects basic percepts and a higher order collects
+symbols, only symbolization raises the order, and a higher-order concept
+need not be a contiguous region, as in the book
+([below](#order-extension-and-intension-2026-07-02)).
+
+**A symbol is a point.** A reference in the book is a discrete atom that
+cannot be divided, and a whole of references has one dimension more than what
+the references refer to (chapters 4, 5 and 8). In the model a symbol is a
+zero-dimensional point with no internal extent, symbols can be combined and
+cannot be cut, and forming symbols raises the dimensionality of conceptual
+space ([below](#symbolic-space)).
+
+**Naming.** The book's metaconcept is a higher-order concept that holds the
+symbol of a word and the symbol of its object. The two are equated by being
+members of one whole and not by an association, and the example is Helen
+Keller learning the word for water (chapter 8; page 112). `interpret` builds
+the same structure, meta-concept(symbol(word-concept),
+symbol(object-concept)), and equality is the third of the model's major
+operations.
+
+**Sentences.** In the book a sentence about an event is a formula for
+building a concrete concept, and each word narrows what is visualized. A noun
+lacks time and a verb lacks space, so only a noun phrase and a verb phrase
+together have the full dimensions of an event. There are two kinds of
+sentence, about events and about identity or definition, and possibility is
+a fifth dimension, of other timelines (chapters 8 and 9). In the model words
+are a formula for narrowing attention; a noun phrase with its verb phrase
+lands one order down, at an occurrence; a sentence that states an event is
+kept as an idea, and one that relates two things, as a definition does, is
+kept as a relation; and a modal ranges over alternative timelines.
+
+**The two systems, and animals.** The article divides the mind into what is
+conceptual and what is not, and aligns the division with dual-process theory.
+The book assigns sensation and the zeroth-order concepts to System 1, which
+works in parallel, and symbols and the higher-order concepts to System 2,
+which is serial (chapter 13). The model draws the same line: at symbols, or
+equivalently at higher-order logic, which is what symbols allow (Alec,
+2026-11-18). An animal in the book is the model without interpretation and
+symbolization, and it takes a word as a sign and not as a symbol (chapter
+14). In the model the animal is the mind that lacks `interpret`.
+
+**Negation and truth.** In the book sensation has no negation; a negative
+entity, such as a hole, has relations and no sensory content; not-x is the
+affirming negation and non-x the non-affirming one; and a predicate holds by
+degree of a thing that has parts, so that a soccer ball is neither simply
+white nor simply not white (chapter 12; Appendices A and B). In the model a
+percept is a presence whose opposite is its complement and never a negative
+value; negation begins with concepts; a concept has two lanes of evidence,
+for and against, which `not` exchanges and `non` withholds; and the ball that
+is black and white is *both*, one of four corners (true, false, both and
+neither). In both, truth is read as existence, by degree.
+
+**Attention by exclusion.** A symbol in the book activates its concept from
+the top down by inhibiting everything else, which is why symbolic thought is
+serial (chapters 13, 15 and 16). The model's top-down activation is serial
+as well, and what it attends to is what remains when the rest is excluded.
+
+**Identity.** The book takes every event to be unique and identity to be
+nominal, given by a name (chapter 10), and it reads the objective world and
+the self each in two ways, as an intersection or as a union (chapters 18 and
+22). In the model no two things are the same at order zero, an identity is
+its occurrences, a path through place and time, and an identity is read by
+intersection or by union.
+
+**Feeling, attachment and self.** In the book feelings are sensation;
+attachment to a symbol in place of what it stands for biases what is thought;
+and the self is a higher-order concept (chapters 17, 21 and 22). In the model
+attraction and aversion warp perceptual space and bias concepts, feeling is
+direct and comes before concepts, attachment is to an identity, and no
+identity of the model itself is built in.
+
+**Examples and sources.** The model's documents use the book's examples (the
+soccer ball, ice known only by its definition, Helen Keller at the
+well-house) and many of its sources: Kant, Augustine, Locke, Boole, Simons,
+Lewis, Gärdenfors, Kahneman, Evans and Stanovich, and Percy. The article
+holds that first-order logic, syntactic hierarchies and mathematical sets
+can each be built from conceptualization and symbolization. The model has
+one of each: its logic, its grammars and its orders.
+
+### Where they differ
+
+**Grounding.** In the book a dictionary defines every word by other words,
+and the regress ends only in what is known by experience (chapter 4). A model
+that reads only text cannot know an object except through its word, so the
+object is first made for the word and known through what is said of it. The
+model is to end the regress as the book does, by experience: continuous
+values, given as scalars or perhaps as images (Alec, 2026-11-18).
+
+**Filling in.** In the book top-down visualization fills in what sensation
+does not give, as at the blind spot of each eye (chapter 15). In the model
+expectation adds nothing to what is perceived
+([below](#perceptual-space)); filling in belongs to the way back from
+concepts to basic percepts, which is imagination. A test point is to verify
+it (Alec, 2026-11-17): where the percepts of an area are withheld, `PiLayer`
+should generalize over the neighbouring elements and fill the area in on
+reconstruction.
+
+**Idea and field.** The book's glossary calls an idea a concept taken
+together with all of its parts and wholes. The model divides that in two
+(Alec, 2026-11-18): an idea is a point in space, which is the intension, and
+the field is the extension of that concept, which is its parts and wholes
+([below](#order-extension-and-intension-2026-07-02)). The book's idea is thus
+the model's idea together with its field.
+
+**Underlap.** In the book two things underlap when some larger whole
+contains both. The model's `underlap` marks two things that have no mutual
+parthood.
+
+**Apoha.** A note in the book credits the theory of apoha, on which a
+concept appears by the exclusion of what it is not, to Vasubandhu (chapter
+15). The doctrine is Dignāga's and Dharmakīrti's, and the model's documents
+credit them; Vasubandhu did the work that prepared it. This is a correction
+to the book (Alec, 2026-11-18).
+
+### What only one of them has
+
+**The book alone** treats the physical and the objective universe and their
+dimensions (chapter 6), beauty (chapter 18) and kindness (chapter 19).
+
+**The model alone** has what a network that learns needs and a theory can
+leave unsaid: the two lanes of evidence, trust in what is stated, the memory
+stores, expectation, and training.
+
+**A speculation on feeling** (Alec, 2026-11-18) is in neither the article
+nor the book. A feeling may be a felt continuous sense that corresponds to a
+continuous variable in nature. A sign, in Peirce's sense, and a symbolic
+system differ from it in that the correspondence does not hold for them. It
+continues the hypothesis of 2026-11-16, that what a model is given as
+continuous values, and not as symbols, may be seen as its feelings. Both are
+hypotheses.
+
 ## Relation to LLMs, Formal Concept Analysis, and DisCoCat
 
 BasicModel is a language-capable architecture, but it is not organized like a
