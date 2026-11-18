@@ -32264,6 +32264,10 @@ is recorded in §70.15, and whether it stays is his to say.
 
 *Recommended:* keep it.
 
+*Decided by Alec, 2026-11-18:* "Keep it". The pass stays on `main`. He
+removed the alias `~/github/doc` himself; the folder it pointed to is
+intact.
+
 ### 70.17 Codex text: the scalar part function becomes parthood
 
 Written on 2026-11-18 after §70.16 (Alec: "1 yes"). The direction of

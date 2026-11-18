@@ -1317,8 +1317,8 @@ generation is expected at this stage and is recorded, not tuned away.
    `/tmp/wikioracle-removed-2026-11-18/`). The doc-pass lists kept in
    the specifications can now be applied on `main`. Alec had meant
    the alias `~/github/doc`, a link to the superproject's `doc`
-   folder, which he removes himself; whether the pass stays on `main`
-   is his to say (§70.16; *recommended:* keep).
+   folder, which he removed himself. Of the pass on `main`: "Keep it"
+   (§70.16).
 - **1.7. `SigmaLayer` and `PiLayer`, and symbols split from concepts**
    (Alec, 2026-11-16: "I think we should position D as item 1.7"; then
    "review and commit round C, and merge with the performance branch. Then
