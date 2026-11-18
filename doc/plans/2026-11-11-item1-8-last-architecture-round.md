@@ -33058,6 +33058,198 @@ exposed a missing legal action for looking at the final word."
 §61.6. One line is added to its part D, so that the loop is not built
 toward looks that are not words in this item.
 
+### 68.78 Review of §61.8 to §61.21: the loop of looks is built; a fresh model reads no word (Claude, 2026-11-18; one question for Alec)
+
+**What I checked.** The source at `8444e5dfa1` (local, not pushed). I
+read `bin/SentenceLooks.py`, the changes to `bin/Attention.py` since the
+port (`0ccd655615`), `OperationSelectionLayer.choose_interpret` and
+`select_logits` in `bin/Language.py`, `SentenceCredit.departure`, the
+loop in `Models._run_sentence_word_bricks`, and
+`test/test_loop_of_looks.py`. Rerun by me, targeted only (§72):
+
+- `test_loop_of_looks.py`, `test_whole_paths.py`,
+  `test_whole_path_repairs.py`, `test_expectation_gain.py` and both
+  stopping gates: **54 passed**.
+- Eleven files of ported tests (`test_one_attention.py`,
+  `test_native_attention_field.py`, `test_native_candidate_attention.py`,
+  `test_reading_curriculum.py`, `test_sentence_owned_attention.py`,
+  `test_attention_thinking_steps.py`,
+  `test_attention_thinking_handoff.py`, `test_assessment.py`,
+  `test_item18_operators_a.py`, `test_word_admission.py`,
+  `test_stem_word_intervals.py`): **141 passed, 1 skipped**.
+- The fixture assessment of four files (`test_item18_expect.py`,
+  `test_item18_intuit.py`, `test_item18_lexical_form.py`,
+  `test_item18_word_trust.py`): **18 passed**; their reports are below.
+
+Ten of these cases need the checkout and not a scratch copy (a
+configuration under `doc/benchmarks`, and `git show`); they were run
+there, unchanged. Not rerun: the comparisons of certificates 6 and 7
+against the starting source (their records are in Codex's receipts),
+the lesson, the verbal proof, the curriculum stages and the sixteen
+timed sentences. No sweep, and nothing under `RUN_SLOW`.
+
+**Accepted as mechanism:** rules 1 to 16 of §60.1 and rule 5a.
+
+- *Rule 3.* `SentenceLooks.perceive` reads `native_indices` and
+  `native_part_spans` at the look's interval through
+  `cs_read_memberships`, writes `_passback_scope_where`, and gives the
+  concepts of every order (`cs_forward_content`). Nothing keyed by a
+  word's ordinal was added for a look, as §68.75 C asked for §74.
+- *Rules 5 and 5a.* `BracketTable.accept` and the act are gone.
+  `interpretation_at` offers the grammar's option where the old test
+  allowed the acceptance, `record_interpretation` marks the bracket done
+  and spends no act, and address 1 is the look at a word.
+- *Rules 6 and 7.* A word's brick runs when the word is interpreted;
+  `WordForecast.arrive` makes each forecast before its word's brick,
+  from the words its own path has interpreted.
+- *Rules 8 and 9.* `CandidateAttention`, `FieldTraversal` and
+  `ModelCandidateAttention` are removed; `AttentionContext` gives
+  `attend` the prefix through one linear map started at zero.
+- *Rules 10 and 11.* One meter for a stream's presentation
+  (`BracketTable.limit`, `QueryWorkBudget.size_for_presentation`);
+  `unfocus` at address 2 (`last_focus`, `focus_history`).
+- *Rule 13.* `AttentionLesson.ReadingTargets`.
+- *Rules 14 to 16.* The discarded draws, `advance_narrowing` and
+  `narrowing_stable` are gone; the name census is §61.16.
+
+*Taken on Codex's own recommendation under §73, and in keeping with the
+specification:* address 1 for the look at a word; a repeated look left
+legal and bounded by the allowance (§61.8, and see the finding);
+`SentenceBoundary.finish` with no interpreted word; the derived generate
+catalogue omits mandatory operations (§61.14); three fixtures and two
+forced downstream fixtures supply their reading through the native
+decisions (§61.8, §61.21).
+
+*Recorded by Codex as Alec's decisions, and not said to me:* a
+checkpoint whose learned grammar identities cannot be aligned is
+regenerated from its recipe (§61.12, §61.13); `interpret` is declared in
+the ten grammars that compose words, with two seats of order one and
+one of order two each (§61.14). They are recorded here as Codex reports
+them.
+
+**The finding: with nothing forced and no teacher, no word is read.**
+
+*In plain terms.* At a look that is one known word, the grammar now
+chooses between two things: call `interpret` on the word, or *abstain*
+(not call it, so the word does not join the tree). A fresh model always
+abstains. The word's bracket is then as it was and the look at it is
+legal again, so attention goes on looking at words that are declined
+until the sentence's acts are spent. In Codex's traces (§61.18) it is
+mostly one word: "Felix", offered 33 times in each of three readings.
+On "red cat sleeps" I counted 32 calls of attend, 30 to 32 offers and
+no word interpreted.
+
+*The producer.* In `choose_interpret` the score of abstaining is the
+word's key against `stop_anchor`, and the score of `interpret` is the
+key against `apply_anchor`, less `operator_cost` (1). On a fresh model
+both anchors are near zero, so the scores are near 0 and near -1
+(measured on explore-1: -0.025 and -1.024), and `select_logits` takes
+the higher one. Nothing moves the anchors but a teacher or a departure
+that happens to pay.
+
+*Why it was not so before.* In the starting source the acceptance of a
+pure known word was never chosen: on its bracket it was the only legal
+act (`narrowing_mask`: a division needs more than one word, a descent
+an unknown word), so each such word was accepted when attention reached
+it. Rule 5, as I wrote its default ("`interpret` against abstaining"),
+made it a choice, and the cost of an operator at each use (Alec's, and
+right for an operator that is chosen) starts that choice one below
+abstaining. The default is mine.
+
+*Measured by me* (explore-1, untrained, evaluation, attention free; two
+runs, since a fresh model's weights are drawn anew each time; the last
+two columns are the simulation below):
+
+| Sentence | Word brackets | Calls of attend, as built | Words interpreted, as built | Calls of attend, option taken | Words interpreted, option taken |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| red cat sleeps | 3 | 32 and 32 | 0 and 0 | 9 and 5 | 3 and 3 |
+| This is Felix. | 4 | 32 and 32 | 0 and 0 | 13 and 10 | 4 and 4 |
+| Felix is a cat. | 5 | 32 and 32 | 0 and 0 | 17 and 9 | 5 and 5 |
+
+As built, each sentence has 30 to 32 offers and every one is declined.
+
+*What it explains in the return.* Codex records each of these as a
+learning result and repairs none, which is right under §43:
+
+- the assessment: all 184 places left and 45 empty trees (§61.18); rung
+  one passes for 0 sources, where §59.82 had 8;
+- the sixteen sentences: 1,024 calls of attend against 215 steps, and 8
+  words against 46 (§61.17);
+- the lesson: 158 of 160 fields equal because both are empty (§61.17);
+- the verbal proof: the grammar's inverse is unavailable, where §59.82
+  had 4 of 4 (§61.21);
+- the curriculum: "identifying words" fails with attention enabled
+  (§61.19).
+
+Where the teacher runs, words are read: `reading_two` goes from 0 of 4
+exact readbacks to 4 of 4. The failure of `reading_four` is its
+criterion: the stage begins at a summed cost of .00004, since the
+two-word stage has taught it already, and "strictly lower at the end"
+cannot hold; both ends are far under the bar of .01 a row.
+
+One more consequence: by rule 10 one meter serves a stream's reading,
+its queries and its thought, so a sentence that spends every act on one
+word leaves less for what follows it.
+
+**Simulated (mine; a scratch copy and a test plugin, no source
+changed).** `choose_interpret` was made to take the interpretation
+wherever it is offered, unless a replay or a departure already fixed
+the decision.
+
+- Free reading: the table above. Every word bracket is interpreted and
+  placed, in 5 to 17 calls of attend.
+- The fixture assessment, four files, eight readings that apply. As
+  built: the word is left in all 8, and rung one passes for 0. With the
+  option taken: the word is interpreted in all 8, and rung one passes
+  for 5. The other 3 fail because the word's definition is not trusted:
+  `test_84` failed so before the loop (§59.82); the two cases of
+  `test_82` passed before the loop, and I did not trace why their
+  definition is missing now.
+
+**For Alec: is there a decision to abstain?** His words on it:
+
+- 2026-11-16: "the grammar has the option to call interpret() at that
+  point, which will attempt to find the word. if all of that works, it
+  can add the word to the tree."
+- 2026-11-16: "I think mint doesn't add anything; just call attend()
+  again." and "attend() looks, interpret() processes a word (if it
+  can)".
+- 2026-11-18: "it will attend() repeatedly and then call interpret()
+  when it has isolated a word".
+
+1. *No decision (recommended).* At a look that is one known word read
+   with one lane, `interpret` is called. If it finds the word, the word
+   joins the tree. Which words are read is decided by where attention
+   looks, and by nothing else. This is what the starting source did, it
+   is what `InterpretLayer.mandatory` still says, and it is how I now
+   read the three sentences above: "if it can" is whether the word is
+   found, not a second choice. §60.4 withdrew the same decision when my
+   first default put it among attention's acts; my second default put
+   it back in the grammar's chooser. What goes with it: the choice in
+   `choose_interpret`, the departure at an interpretation
+   (`interpret_round`), the grammar's half of the teacher's target
+   (rule 13), and the repeated look at a word, since an interpreted
+   word's bracket is done.
+2. *Keep the decision, started even.* No operator cost at this one
+   choice, and a look at a bracket that is unchanged since the grammar
+   declined it is not legal. A fresh model then reads a word or leaves
+   it by small differences in its anchors.
+3. *Keep it as built.* Reading is taught, so every training begins with
+   the reading lesson, and the measurements above stand until it has
+   run.
+
+No text for Codex until this is answered. Then one text: the repair,
+the measurements of §61.17 to §61.21 again on it (targeted), and then
+§62.6.
+
+**Smaller points, none of them blocking.**
+
+- The two `test_82` fixtures above (the definition that is not trusted).
+- The seconds of the sixteen sentences (32.5 against 27.2) compare 8
+  words with 46, and say nothing yet.
+- Not checked by me: the ten grammar reservations of §61.14 one by one,
+  and the name census of §61.16 beyond its totals.
+
 ## 69. The thought replay (§68.31; Codex, 2026-11-18)
 
 ### 69.1 Producer, repair and regression

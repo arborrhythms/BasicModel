@@ -1373,6 +1373,19 @@ generation is expected at this stage and is recorded, not tuned away.
    width of that pi hypercone". Item 1.8's loop stays on word brackets
    with the exact lookup. **The reply to Codex's stop of §61.6 is the
    text of §68.75.**
+   **The loop of looks is returned and reviewed (§61.8 to §61.21;
+   §68.78).** The mechanism is accepted: rules 1 to 16 and rule 5a,
+   with 213 targeted cases rerun by Claude. One finding waits for
+   Alec: with nothing forced and no teacher, a fresh model reads no
+   word. The grammar's choice at a word starts one operator cost below
+   abstaining (`choose_interpret`), where the starting source had no
+   choice at all, so the assessment's rung one went from 8 passes to
+   0 and the verbal proof lost its grammar inverse. Simulated with the
+   interpretation taken wherever it is offered: every word is read.
+   The question, with Claude's recommendation first: no decision to
+   abstain (a look that is one known word is interpreted); or the
+   decision kept and started even; or kept as built, with reading
+   always taught first. No text for Codex until it is answered.
    **Commits and the docs folder (Alec, 2026-11-18).** Claude may
    commit its work locally; pushing stays rare. The pending
    documentation pass of the worktree `basicmodel-docs` is on `main`
