@@ -50,8 +50,8 @@ from the `GO_*` data block in that script; edit the data, not the SVG.
    raised by definitions.
 4. *Serial thinking*: the codes that enter already projected and the one
    off-codebook idea that operators make of them, held in STM's chunks.
-5. *Priming*: the predicted next concept state, frozen per sentence and read
-   by attention, the chooser and retrieval.
+5. *Priming*: the expected field that `expect` gives once per sentence,
+   frozen for the sentence and read by attention, the chooser and retrieval.
 6. *Expectation*: a gain field with its residual in two lanes; at the percept
    level the forward path carries the expected value plus the residual. It
    selects and never calls an operator.
@@ -98,21 +98,24 @@ priming. Thought operands, reads and writes detach.
 
 | Operator | Effect |
 |---|---|
-| `part`, `equal`, `implies`, `exist` | Conceptual content and an independent evidence pair over codes. |
-| `isPart`, `isEqual`, `isTrue` | Symbolic evidence and witnessing rows read by reference from LTM or the taxonomy. |
-| `infer` | Derives a held rule's consequent from a held premise (identity, membership, equality or instantiation), the pair the minimum along the path and the maximum across alternatives, or opens the antecedent as a subgoal at `(0, 0)`; operands and results are STM chunks addressed by their `.when` stamp (2026-10-29). `inferBackward` is its converse spelling (permutation `(I2, I1)`), the face that opens the antecedent as a subgoal. |
+| `part`, `whole`, `implies`, `exist` | Conceptual content and an independent evidence pair over codes. |
+| `isPart`, `isWhole`, `isEqual`, `isTrue` | Symbolic evidence and witnessing rows read by reference from LTM or the taxonomy; `isWhole(a, b)` is `isPart(b, a)`. |
+| `define` | Writes an identity as two relations, `part` each way. |
+| `infer` | Derives a held rule's consequent from a held premise (identity, membership, equality or instantiation), the pair the minimum along the path and the maximum across alternatives, or opens the antecedent as a subgoal at `(0, 0)`; operands and results are STM chunks addressed by their `.when` stamp (2026-10-29). It also takes the firing of a stored implication over the knowing as one firing of a rule. `inferBackward` is its converse spelling (permutation `(I2, I1)`), the face that opens the antecedent as a subgoal. |
 | `bind` | Fills a selected reference site with its pair, evidence kind `reference`; the only binder, once per site, in compose at a mention and in thought at an open site. |
-| `intuit` | At thought time, fires recalled rules over the order-zero knowing with output-owned Pi and Sigma weights, holds the result and its rule plans in the episode's focus chunk, offers each fired rule to `infer` and deposits knowing (`write_knowing`); its pair stays provisional until `infer` selects a firing. |
-| `query` | The best matching cued row, retained as a serial result with its pair and occurrence. |
+| `intuit` | States what `intuit`'s learned map gave when the sentence was observed, with evidence kind `intuition`; the map ran once, before thought, and what it gave joined the sentence's knowing. |
+| `query` | The best matching row, recalled by the pattern's extension and retained as a serial result with its pair and occurrence. |
 | `ask` | Attempt to fill an open reference; a nested attempt shares the same history and meter. |
 | `not` | Exchanges a pair's poles, retaining its meaning; the closing records a large omission in its expectation image as `not X` (`ThoughtClosing.absence`). |
-| `gain` | Sets expectation gain for the next sentence; the predictor remains global. |
+| `non` | Withholds both of a pair's lanes. |
 
 The retired `what`, `lookup`, `chunk`, `quantize`, `arma`, `expect` and `true`
-names raise with their replacements. The thought writer publishes `inference`
-rows, `unverified` rows for a `(0, 0)` pair and `question` rows for open slots,
-with occurrence addresses and witness references; unresolved questions belong
-to closing. There is no generic writable-store capability on an executor.
+names raise with their replacements. The strength of expectation is a setting
+of the model, not a thought operation. The thought writer publishes a kept
+conclusion as an LTM0 row named by its time, at the trust its premises give;
+a question's open slots are held in MTM while they are pending, and
+unresolved questions belong to closing. There is no generic writable-store
+capability on an executor.
 
 Open referent columns are addressed by the source row and role and participate
 in the same bounded bind menu as filled columns. `bind` enumerates individuals
@@ -122,18 +125,18 @@ choice is its own learned score over each candidate's content, form, roles,
 recency and MTM continuity, against a zero-logit option that leaves the
 reference open. Copula substitution fills that variable at its existing
 occurrence. A mint records its bind/mint/open choice and chooser probability as
-provenance. Episode-local gain, priming and predictor effects are restored when
+provenance. Episode-local priming and expectation effects are restored when
 the episode ends. Its lasting effects are the filled or still-open reference,
-new LTM rows with provenance, and the credit trail.
+new LTM rows, and the credit trail.
 
 `ThoughtResult` remains the immutable internal effect record and checkpoint
 representation. Its serialization kinds describe payload shape; the descriptor's
 subsystem write target determines ownership. The answer adapter reads those
 owned records without another query. Serial effects live on `ThoughtRecord`
 and in the episode's STM chunks (`ThoughtChunks.stage`): retrieved frames and
-bound references are held as chunks, `intuit` deposits into order-zero knowing
-(`write_knowing`), and `gain` sets expectation's gain (`apply_thought_effect`).
-Each frame or reference committed to STM is metered (`effect_node`).
+bound references are held as chunks, and what `intuit`'s map gives joins the
+sentence's knowing where `write_knowing` deposits. Each frame or reference
+committed to STM is metered (`effect_node`).
 
 ## What can enter the chooser
 
@@ -145,35 +148,39 @@ or compaction cannot alter the held content. Its occurrence address remains
 provenance. Frame evidence survives thought-result checkpoints and holds its
 referenced LTM occurrences alive while the owning history is retained.
 
-Priming reaches thought through `intuit`, whose rules are taken from the
-predicted field, and through `bind`'s score; the cued read itself does not use
-it, and priming magnitudes never become chooser features. Open references gate
-conclusion. One `attentionBudget` covers every nested attempt; the grammar
-scorer receives the expectation image as context. A departure is judged by its
-whole path's reconstruction and supplied-answer cost; the walk's metered work
-bounds it but is not a cost. The activation predictor's inputs (the observed
-symbolic field, STM and age) are always detached, and it learns only from its
-own error against the detached next state.
+Priming reaches thought through the order in which stored rules are fired,
+taken from the expected field (`ConceptSpread.rule_order`), and through
+`bind`'s score; the recall itself does not use it, and priming magnitudes never
+become chooser features. Open references gate conclusion. One `attentionBudget`
+covers every nested attempt; the grammar scorer receives the expectation image
+as context. A departure is judged by its whole path's reconstruction and
+supplied-answer cost; the walk's metered work bounds it but is not a cost.
+`expect`'s input, the observed field, is always detached, and it learns only
+by omission, against the detached field with the hidden units present
+([Reasoning](Reasoning.md#expectation-a-stacked-sigma-pi)).
 
 ## Cued LTM reads
 
-LTM0 keeps one idea vector per row (`slots[capacity, width]`) beside its two
-evidence lanes, and LTM1 keeps relations of two tagged references. A cued read
-(`EntryRead.cued_rows`) scores one bounded window of at most `ltmWindow`
-candidates: the explicitly referenced and already retrieved occurrences first,
-then the LTM0 rows that LTM1 relations tie to the cue's concepts, then the
-remaining rows newest first and the relations by their stamps. Episode anchors
-never enter the window. Estimates, covers and questions without evidence are
-unavailable, and a row must occupy every role the cue occupies. One batched
-product per role ranks the window by masked role similarity, with the `.when`
-band excluded and address order breaking ties; scope and bindings filter
-candidates, and only the returned records are charged. The read uses no
-lexical membership index, and nothing is unfolded at read time.
+LTM0 keeps one idea vector per row (`slots[capacity, width]`) beside its one
+signed `trust`, its entry (the strongest members of its field of
+understanding, `episodic_concepts` and `episodic_values`), its optional
+`referent` and its `activity`; LTM1 keeps relations of two tagged references.
+Memory is read by content, never by time. A recall reads the latest
+`ltmWindow` rows: each operand of the question's extended tree gives one
+result over the window, matched order by order and never reduced across
+orders (`EpisodicMemory.matches`, `relevance`), and the question's operators
+combine the results as their `compose_extend` combines sets
+(`ExtendedRecall.matches`). The rows are ranked by that result, newest first
+among equals (`EpisodicMemory.query`), and only the rows read are charged.
+Beside them, `EntryRead.cued_rows` reads the explicitly referenced and already
+retrieved occurrences and the LTM0 rows that LTM1 relations tie to the cue's
+concepts; an address permits a read and supplies no resemblance of its own.
+The answer is read from a recalled row by walking its idea
+([Extend](Extend.md#what-the-field-of-understanding-is-for)). The read uses no
+lexical membership index.
 
 `query` retains at most the best row. `isTrue` retains the ended pair and trust
-separately; `exist` is the conceptual presence face and reads no row. A recall
-by time alone (`EntryRead.recall_time`) reads the nearest sentence stamps in a
-bounded clock window, every read metered. Row-to-concept identity remains the
+separately; `exist` is the conceptual presence face and reads no row. Row-to-concept identity remains the
 allocator's index, independent of semantic vectors. Store compaction preserves
 occurrence IDs, and reset clears the rows. [Reader](../bin/EntryRead.py),
 [store](../bin/Memory.py).
@@ -184,11 +191,10 @@ Generativity is measured through the shared bounded forward-kernel inverse.
 Words are terminals; learned A/B columns and higher-order properties are
 structural candidates on either side. Recomposition and the generate policy
 decide orientation. Sentence trials also use a bounded, detached snapshot of
-live composed values; stored reads cannot use that snapshot. Order and
-filled-reference context can license a determiner while the ordinary grammar
-ranks marker words. Those declared identity modes are to be retired
-(2026-10-10): `bind` is the only binder, and determiners are its cue inputs,
-not declared modes.
+live composed values; stored reads cannot use that snapshot. The ordinary
+grammar ranks marker words. No determiner has a rule of its own: `bind` is the
+only binder, and a determiner is a modifier whose word is a cue, the operator
+it takes chosen at run time.
 
 Numerical inversion alone cannot distinguish a projection's output from its
 head. Reconstruction therefore audits missing/excess support after decoding,

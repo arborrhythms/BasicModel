@@ -32,16 +32,16 @@ error. Geometric relations answer "looks like"; asserted parthood answers
 
 1. **Asserted parthood is a relation in memory.** A parthood, subsumption or
    kind statement ("cats are animals") is one relation, $Part(x, y)$ (Alec,
-   2026-10-20/21): an `LTM1` row of two references with the truth pair, owned
-   by `ConceptAllocator.parts`. It has no typed row, and no `REL_PARTOF` row
-   exists; the row is read by the types of its arguments (`LTM1.readings`):
+   2026-10-20/21): an `LTM1` row of two references with the truth pair and
+   an activity, owned by `ConceptAllocator.parts`. It has no typed row, and
+   no `REL_PARTOF` row exists; the row is read by the types of its arguments (`LTM1.readings`):
    two situations give a conditional, a situation and a speech individual an
    attribution, an object and a word a definition, two kinds a subsumption,
    and equality is membership in a singleton. `LTM1` and the taxonomy over
    symbols are therefore one structure, its edges kept as rows (explicit) and
    as folds (implicit) that the rows train: each row is mirrored as a sigma
    edge on the one `ConceptualAttentionLayer` (written by `cover_members`,
-   taught by `DefinitionFold.loss` from the row's lanes) and a centroid row.
+   taught by `DefinitionFold.loss` from the row's lanes).
    The meronomy at order 0 is the perceptual case. The row layout is in
    [STM](STM.md#10-ltm-as-the-chain-of-stm-end-states).
 2. **Exact dominance is the semantic ground truth among codes.** `Ops.partOf`
@@ -584,8 +584,14 @@ the weighted centroid of the percepts of its written definitions whenever any
 definition weight is positive, including when the word owns an admitted basic
 percept; only when every weight is zero is the form that basic percept's own
 code, and a word with neither keeps the zero form (`MereologicalCodes.derive`;
-Alec, 2026-11-10). The conceptual field reads live basic evidence, including
-its complementary pole, so property memberships retain their gradient, and
+Alec, 2026-11-10). Parts and wholes unite at the basic percept, and above it
+only symbols are collected, as parts. So a concept above order zero carries
+no perceptual form: neither a centroid of the percepts it collects nor a
+copy of its word's code. Alec, 2026-11-12: "symbols should not take the
+centroid of the percepts that they collect; they are epistemic points." A
+reader that needs such a concept's form takes its word's, through the
+definition that maps the word to it. The conceptual field reads live basic
+evidence, including its complementary pole, so property memberships retain their gradient, and
 the compose-time weighted presence rule applies. Reverse divides a concept's
 demand over its written basic-percept alternatives by weight
 ([Spaces](Spaces.md#common-order-zero-reverse)).

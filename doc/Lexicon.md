@@ -50,13 +50,20 @@ The operator that performs this resolution is `interpret`
 ([Language](Language.md#interpret-word-concept-to-object-concept-2026-09-25)),
 the per-word step, forced in reading mode under every binding, from the
 word-concept PartSpace looked up to its associated object-concept. An
-existing association wins at its existing order, including a kind. If
-several objects are associated with the word, grammar can resolve the
-ambiguity. If none exists, the word is admitted pending, and a kept defining
-clause or the recurrence of its mentions later gives it its object. A new
+existing association wins at its existing order, including a kind. A word
+can have objects at several orders: when a named concept is raised to a
+class, the old concept keeps its word and the class gets the same word
+([Orders §12](Orders.md)). If several objects are associated with the word,
+interpretation reads the one whose expected knowing is greatest, and where
+none is expected the one of highest order; `lower` can take that reading
+down one order. If none exists, the word is admitted pending, and a kept
+defining clause or the recurrence of its mentions later gives it its object. A new
 word costs two identities, one inventory row and one DEF row. The word retains its parts and wholes; the object's row carries the
 learned content. Neither is a part of the other merely because they are
 linked. A missing particular is not a reason to add one beside a known kind.
+The generate face of `interpret`, `name`, goes the other way, from an object
+to its word (`InterpretLayer.reverse`, `lexical_form`); a felt value asked
+"what is this?" is answered this way, from the concept that collects it.
 
 `InterpretLayer` reserves capacity before the transaction and is the only
 writer of definitions (`Interpret.define`). A definition names its word and its
@@ -64,15 +71,20 @@ object as symbols, never by their codes, so what training does to either code
 never redirects it. Reading identical canonical parts is a lookup,
 even when their property evidence has changed. Where the field discovers
 objects by recurrence, interpretation uses the case the field admits.
-The definition's `.when` stays fixed and its recency timestamp refreshes.
+The definition row holds no time; access to it, including a second writing
+of the same pair, raises its activity, by which forgetting chooses the rows
+it drops. A read word's definition is at trust one, and so is the object
+reached through it (Alec, 2026-11-14: "which we should set at 1 for now, along with the object-concept's trust"); a stated
+definition keeps its speaker's trust, and a conversation's is zero.
 If forgetting deletes the DEF row, both lookup directions lose that pair;
 reading the word again interprets it afresh. No spelling heuristic or
 surface-to-operator anchor decides reference order.
 
 A compose rule names its operands positionally (`argin1`, `argin2`,
-`argout1`) and declares only structure: its head operand (`head="argin2"`),
-the operand that carries reference (`reference="argin2"`) and, for a
-determiner, its referent (`referent="mint"`, `"bind"` or `"kind"`). No
+`argout1`) and declares only structure: its head operand (`head="argin2"`)
+and the operand that carries reference (`reference="argin2"`). A determiner
+has no rule of its own: it is a modifier, and whether a mention mints or
+binds is the run-time choice of `mint` or `bind`, with the word as cue. No
 operand is named as a kind of word (pronoun, particular, kind), and there is
 no name-to-order table or maximum order: the requested order is what the
 composition denotes (`ReferenceContext.binding_spec`, `denoted_order`;
@@ -111,9 +123,11 @@ activation over the candidate words;
 its end-state values and references, not the operations or lexical leaves.
 The temporary reading record keeps the original reconstruction provenance
 and the selected operand values until the sentence ends, then is discarded.
-Reading a row into words uses the shared generation policy. Retrieval terms
-come from unfolding the row, limited by the symbolic activation already used
-for semantic priming; no sentence word list or activation snapshot is stored.
+Reading a row into words uses the shared generation policy. Recall finds a
+row by its entry, the strongest concepts of every order in the field of
+understanding its sentence left, with their values (`episodic_concepts`,
+`episodic_values`), matched against a question order by order
+(`EpisodicMemory.matches`); no sentence word list is stored.
 
 ## Quick reference
 

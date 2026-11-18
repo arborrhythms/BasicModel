@@ -24,9 +24,11 @@ test or accumulate the resulting propositions.
 > **Terminology.**
 > One noun per-space: **percept** = a PartSpace/WholeSpace thing (dimensionally
 > embedded, EXTENSIONAL; *part* = atom / bottom-up $\sigma$, *whole* = property/region
-> / top-down $\pi$ are its two subtypes); **concept** = a ConceptualSpace relation
-> tying one part-percept $\leftrightarrow$ one whole-percept (the Concept codebook,
-> diachronic); **symbol** = a SymbolSpace thing (0-D, INTENSIONAL, references a
+> / top-down $\pi$ are its two subtypes); **basic percept** = the tie of one
+> part-percept $\leftrightarrow$ one whole-percept; **concept** = a ConceptualSpace
+> thing: an order-zero concept collects basic percepts, and a concept of a higher
+> order collects symbols of the order below (the Concept codebook, diachronic);
+> **symbol** = a SymbolSpace thing (0-D, INTENSIONAL, references a
 > concept; the symbol codebook). WholeSpace itself holds whole-percepts.
 
 ---
@@ -84,11 +86,14 @@ states that a signed value would confuse.
   to its net lane while *neither* survives, leaving three corners. No signed
   scalar appears at any setting.
 
-Stored evidence only accumulates. A later close merges into a stored pair by
-the per-lane maximum, so contrary evidence fills the other lane and never
-lowers the first; trust and gates scale what is read from the pair, and a
-stored pole otherwise changes only when its row is forgotten or an epoch is
-restored.
+A stored idea keeps one signed trust, written once: a sentence read again is
+a new row, and an idea with evidence on both lanes is written as two rows, one
+on each lane. A stored relation keeps the pair, and its evidence only
+accumulates: a later close merges into the pair by the per-lane maximum, so
+contrary evidence fills the other lane and never lowers the first, and what is
+read from the pair is scaled by the least radius of its two ends. No operator
+scales or gates it. A stored value otherwise changes only when its row is
+forgotten.
 
 Operators over the lanes fall into two algebras (2026-10-19). A selection,
 which tense, aspect and the preposition are, is an idempotent meet with no
@@ -109,7 +114,8 @@ withheld ([Language](Language.md#words-narrow-the-domain-of-discourse-2026-09-28
 > duty and free to carry polarity (`a = −1` on A's row = present,
 > certain denial; never negative mass in ground space). `non()`'s
 > withdrawal reading is the prasajya move — lowering `|a|` toward 0
-> without crossing — gated, never spontaneous. RadMin/RadMax below
+> without crossing — applied only where `non` is chosen, never
+> spontaneous. RadMin/RadMax below
 > remain signed-scalar kernels at their own space-role; the odds embedding
 > is retired from the meronymic path (legacy `PiLayer` keeps it for
 > non-meronymic consumers).
@@ -242,10 +248,11 @@ a transparent forwarding container over the held `SymbolSubSpace`
 coordinator, so `symbolSpace.truth_layer` reaches it). The canonical store
 of asserted truths is the unified `LTM0` (`symbolSpace.ltm_store`), and the
 `TruthLayer` is a read model over it: `attach_ltm` binds the store and
-`sync_from_ltm` rematerializes its provisioned and user rows, each nonzero
-evidence pole contributing a flat vector scaled by that pole, the two poles
-kept independent. A source's scalar trust is kept beside the vectors and
-never supplies a pole's magnitude. Its methods:
+`sync_from_ltm` takes the latest `truthMaxEntries` rows whose trust is not
+zero, each contributing its flat idea vector scaled by its signed trust. A
+row of zero trust, such as a sentence only said in a conversation, is
+remembered and is not a truth. Each row's trust and its occurrence are kept
+beside the vectors. Its methods:
 
 - **`record(activation, degree)`** --- store `activation * degree`.
 - **`query(activation)`** --- find the closest stored truth; returns
@@ -319,7 +326,9 @@ Together they define a partial order over symbolic activations.
 A stated parthood, subsumption or kind relation ("cats are animals") is one
 relation, $\mathrm{Part}(x, y)$: two references with the truth pair, read by
 the types of its arguments, with no relation code stored in a row; equality
-is membership in a singleton (Alec, 2026-10-20/21). `part` and `isPart` read
+is membership in a singleton (Alec, 2026-10-20/21). An identity sentence
+composes as `part`, and `define` in thought writes two relations, `part` each
+way. No relation carries an operator. `part` and `isPart` read
 the conceptual taxonomy these relations build, never vector containment
 ([TaxonomyQueries](TaxonomyQueries.md), [Mereology](Mereology.md)).
 
@@ -327,10 +336,13 @@ the conceptual taxonomy these relations build, never vector containment
 
 Truth entries arrive as `(text, trust)` pairs. `store_truths()` reads each
 text through the ordinary sentence forward, so its row lands at the sentence
-boundary as any read sentence's does; the landed row then receives its
-effective degree of truth, its user origin and its source text, and the
-`TruthLayer` view is rematerialized. A resubmitted set replaces the previous
-user rows. The stored truth is
+boundary as any read sentence's does. The entry's trust, at face value,
+asserts the outer clause the text closes, and only that clause. The
+`TruthLayer` view is then rematerialized, and the consistency report,
+clarifications and assessment are read again. A row has no origin and no
+source text: a resubmitted set writes its ideas as new rows beside the old
+and merges its relations into the pairs already stored, and an old row
+leaves only by forgetting. The stored truth is
 
 $$
 t_i = \text{activation}_i \times \text{DoT}_i
@@ -492,6 +504,9 @@ Two roles in the model:
    $\mathrm{totalLoss} \cdot (1 + w_{lum}(1 - \mathrm{lum}) + w_{univ}(1 - u))$
    (see [Reasoning.md](Reasoning.md) "TruthLoss").
 
+The interval log reports the luminosity of the whole truth view
+(`IntervalLog.truth_luminosity`).
+
 ### Fusion
 
 Fusion is the **mereological least upper bound** of the stored truth set:
@@ -520,9 +535,8 @@ in `bin/Language.py`.
 
 ### Supporting measures
 
-- **Consistency** (`isConsistent()`): folds truths into a union via successive
-  `Ops.disjunction`. In bitonic mode, conflicting +/- assertions
-  cancel.
+- **Consistency** (`isConsistent()`): folds the stored truths by their mean,
+  so conflicting +/- assertions cancel.
 - **Grounding** (`ground()`): finds the minimal subset entailing a query.
 - **TruthLoss**: additive penalty for contradictions, measured by overlap with the
   TruthSet’s opposite evidence. The lattice union preserves both evidence
@@ -539,8 +553,9 @@ or negative form as an existence check within the region of order-0
 conceptual space that is specified by that; the question is true if a
 trusted object exists in that space." Each remembered statement has one
 signed trust $t$ from $-1$ to $1$. It lights the lane for where $t$ is
-above zero and the lane against where it is below, to $\lvert t \rvert$,
-and lights nothing at zero. The brightest statement is taken and none is
+above zero and the lane against where it is below, to $\lvert t \rvert$
+times its relevance to the region (how far its entry lies within it), and
+lights nothing at zero. The brightest statement is taken and none is
 added to another.
 
 A lit region is read in two ways, which are kept apart:
@@ -556,7 +571,9 @@ A lit region is read in two ways, which are kept apart:
   region of the claim's subject lies wholly within the region that is its
   property's extension, by one relation between the two kinds
   ([Extend](Extend.md#regions-alec-2026-11-13)). Its measure is that
-  relation's trust, and the least along a path of such relations.
+  relation's trust, and the least along a path of such relations, read from
+  the relations of long-term memory and never gathered from members
+  (`ExtendedRecall.pervasion`, through `Taxonomy.capture_taxonomy`).
 
 The positive and the negative form are each read both ways. A form is
 contradicted to the degree that the other form exists in its region, a
@@ -567,7 +584,8 @@ are never netted. Where the trust comes from is in
 A contradiction changes nothing by itself: "logical contradiction is merely an
 signal that something needs to be fixed, there is no automatic fixing routine
 for inconsistency (but there is a measure of that inconsistency for users of
-WikiOracle)."
+WikiOracle)." `TruthLayer.consistency`, `suggest_clarifications` and `assess`
+report it, naming each row by its time and its generated words.
 
 ---
 

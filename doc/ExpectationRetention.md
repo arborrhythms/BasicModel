@@ -24,14 +24,32 @@ both paths, concept expectation selects active concepts on the parallel pass
 only, and on the serial path expectation selects no concept.
 
 The conceptual spread that primes attention, the chooser and retrieval is
-the conceptual space's own `ActivationPredictor` (`concept_predictor`,
-`ConceptSpread`): it predicts the next order-zero knowing from the observed
-one, its frozen prediction is read detached, and it learns only from the
-detached post-thought order-zero view (decided 2026-10-30). Placement does
-not read the spread, since codes must not read a value computed from codes.
-Expectation proposes nothing: top-down proposal belongs to `intuit`, a
-separate layer whose weights are trained only by its use in output, with no
-gradient from reconstruction or expectation.
+`expect`, a learned map of the conceptual space from the whole observed
+order-zero field, both lanes, to the whole expected field over the same rows.
+It is a stacked sigma-pi map (`SigmaPiStack`) with one moderate hidden layer
+(`expectHidden`, 64 by default). A stacked sigma-pi map is a row of pairs
+(`SigmaPiLayer`), each a `PiLayer` under a `SigmaLayer`: a pi unit is
+`tanh(atanh(x) W + b/2)`, the product of its inputs' odds raised to signed
+weights, and a sigma unit is a weighted sum of the pi units. `expect` has one
+pair (`expectLayers`). It keeps the two evidence lanes apart, clips what it
+gives to the field's range of 0 to 1, and starts by adding nothing, since its
+last sigma's weights start at zero.
+`expect` runs once, at the open pass (`ConceptSpread.open_prediction`), and
+attention, the chooser, retrieval and `ConceptSpread.rule_order` read what it
+gives (`_expected_knowing`) detached. Its teacher is omission: where
+`Omission.stage` hid part of the sentence, its cost, `expectation.concepts`,
+compares what it expects from the lossy field with the field with the hidden
+units present, which is detached; a sentence with nothing hidden gives it no
+cost. The conceptual space's earlier `ActivationPredictor` is built only
+where `expectationMap` is `predictor` (Alec, 2026-11-14: "Let's keep the old
+form on hand in case we want to revert"). Placement does not read the spread,
+since codes must not read a value computed from codes: `expect` reads
+activations, its output is not written to the seen ledger, and no cost of it
+moves a place. Expectation proposes nothing: top-down proposal belongs to
+`intuit`, a stacked sigma-pi map of its own from concepts to concepts, read
+once when the sentence is observed and taught by the field the kept thought
+leaves and by the output cost, with no gradient from reconstruction or
+expectation ([Reasoning](Reasoning.md#the-two-networks-of-system-1-alec-2026-11-12)).
 
 The content gain is $m\,(1 - g\kappa + g\kappa s)$ for gain strength $g$ and
 confidence $\kappa$, where $s$ is the saturated sum of
@@ -123,64 +141,39 @@ prior and content remain available to awareness even when the content gain is
 zero. An omission can support an explicit checked `not` inference; it is
 never an external observation.
 
-## One pair, one observation
+## The observation and its surprise
 
-`LTM0` is the single durable owner. A warm external boundary writes
-an `estimate` row before its `observation` (or interrogative `question`) row and
-links their stable occurrences in both directions. Only the observation enters
-the chronological predictor context. Provisioned truths and internal thoughts
-are not additional external observations. Estimate rows are never facts or their
-own corroboration, and ordinary LTM evidence readers exclude them.
+`LTM0` is the single durable owner, and it keeps observations, never
+expectations: a forecast is live state, compared at the close and then
+dropped, and no estimate row is written. What the close writes is the kept
+sentence's own row. The sentence predictor's context is a short list of what
+its stream observed; only an external observation enters it, once, after the
+comparison, and once its row is written the context holds it by reference to
+that row's time and reads it from the store when the predictor runs
+(`bind_observation_occurrence`). Provisioned truths and internal thoughts are
+not additional external observations.
 
-An estimate predicts content, not time. Its row is written with the zero
-`.when` band, the model's mark for no time, also when it is re-witnessed, and
-it consumes no tick of the clock; the arrival's idea is the one entry stamped
-at its tick, so the time LTM keeps is the arrival's. Recall by time and
-content reads skip estimates. The predictor receives time only as an input:
-the stamps in its context are expressed as ages from the present, and four
-`RowTime` coordinates after its $4D$ context carry the recent age, never an
-absolute stamp.
+An estimate predicts content, not time. The predictor receives time only as
+an input: the stamps in its context are expressed as ages from the present,
+and four `RowTime` coordinates after its $4D$ context carry the recent age,
+never an absolute stamp.
 
-The estimate retains native identity, order and two activation logits for
-every symbol. Full keys are retained for the observation's support and the
-representative envelope; absent keys are explicit, never reconstructed from
-later mutable weights. Before an observation is linked, a future prior may
-retain every key. Checked bindings and scope come from preceding source
-occurrences. They never copy the incoming target. Provenance records those
-occurrences, the external stream/document and the intended observation. The
-observation retains its own raw carrier and metadata. When the durable row
-fuses several observed symbols, its `_observed_symbol_activations` metadata
-retains the original two-lane target, aligned by the prior's native IDs.
-Recomputing that target by quantizing the fused description would change the
-measured residual, so checkpoint replay uses the retained target, including
-negative evidence.
-
-`expectation_pair(gain=..., object_mask=...)` reconstructs the prior and derives
-content, gain, expected activation, excess and omission. At a close the
-image's object mask spares the roles of the field's actual open slots (an
-open relation spares its relation slot), for every entry; it reads no
-grammatical mode. There is no third durable delta or conceived row.
-Restoration reads the exact stored observation, so it also works at zero
-content gain. A new pair requires capacity for both rows and fails before
-publishing either when forgetting is required. Reads resolve stable
-occurrences through the store index, including after compaction; they do not
-scan unrelated rows.
+The estimate holds native identity, order and two activation logits for every
+symbol of the bank; the representative envelope holds one native key. At a
+close the image's object mask spares the roles of the field's actual open
+slots (an open relation spares its relation slot), for every entry; it reads
+no grammatical mode.
 
 Surprise is the detached mean squared activation residual over the soft union
 of observed and expected support: each symbol's weight is $\max(o, \hat{e})$ across
 its two lanes, and the weighted error $E$ is bounded as $E/(1+E)$. Confident
-omissions count; empty bank padding does not dilute the score. Both writers
-apply the same withheld marks and formula, independent of content norm and
-gain. Local prediction training uses bounded activation MSE. Unknown surprise
-is `-1`. An estimate whose checkpoint lacks its symbol-bank prior is rejected
-at load.
-
-The semantic sidecar of `LTM0`
-([STM](STM.md#10-ltm-as-the-chain-of-stm-end-states)) fingerprints the links
-with scope and source text, checks both directions on restore, and
-participates in origin-compaction reachability. A tensor-only restore leaves
-rows with missing required sidecar metadata unavailable. There is no second
-memory owner.
+omissions count; empty bank padding does not dilute the score. It applies the
+withheld marks, independent of content norm and gain. Local prediction
+training uses bounded activation MSE. Surprise is what memory keeps of an
+expectation: the row the close writes takes it as its starting activity, so a
+well-expected sentence starts low and is forgotten first unless it is read
+([STM](STM.md#10-ltm-as-the-chain-of-stm-end-states)). Unknown surprise is
+`-1`, and such a row starts at `activityDefault`.
 
 ## Local prediction credit
 
@@ -198,7 +191,8 @@ intentional. They do not apply the content gain twice. Each local loss keeps
 its declared weight; neither enters the R+A judge.
 
 Source encodings, observed targets, thought effects and durable history are
-detached. Only the shared predictor receives local E gradients; in the one
+detached. Only the expectation maps (the shared predictor, `expect` and the
+percept predictor) receive local E gradients; in the one
 backward every consumer reads expectation's output detached at the point of
 use, so its parameters receive exactly their own local terms. Both the
 whole-path keep rule and chooser credit use `R + A`; E is independent. This
@@ -282,7 +276,7 @@ dark-room problem.
 the retired slot and ARMA predictors loads as follows: its `cast.*` tensors
 are discarded at the discourse loader, with no input projection to replace
 them; its slot and ARMA head tensors migrate to a fresh shared activation
-predictor; and its retained observations and their semantic sidecar survive.
+predictor; and its retained observation rows survive.
 The attention context receives zero-initialized columns for the bank prime
 and the percept residual. Percept moments update only during training on
 external inputs and are checkpointed; an older checkpoint starts them cold.
@@ -291,7 +285,7 @@ expectation-free proposal view has a zero prime and a zero percept residual,
 with only the open request and gist as needs.
 
 The regression contracts are causal predictions, detached ownership,
-identity preservation at zero gain, full-bank pair restoration, exactly-once
+identity preservation at zero gain, no forecast written to memory, exactly-once
 external observations, document/row isolation, local E training, R+A selection,
 and the actual probability correction for the exploration mixture. The
 behavioural certificates are: a sentence repeated until its symbols are

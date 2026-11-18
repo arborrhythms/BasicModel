@@ -104,7 +104,7 @@ a sentence is the idea under construction — and each word is a
   These are indices of the symbolic projection and of the LTM row; a concept
   stays one code; the reading in "Two spaces, one index" below derives its perceptual and context components.
 - **Regions are derived, never stored.** Membership is invariance under the
-  operator and subsumption is absorption, so `part`, `whole` and `equal` are
+  operator and subsumption is absorption, so `part`, `whole` and `isEqual` are
   tests on the same algebra.
 - **Two attentions, one chooser.** *Perceptual attention* is the bracket
   ([One attention](#one-attention)). Its objects are the percepts of the input and, since symbols are
@@ -174,7 +174,7 @@ $\sum_k \alpha_k \cdot \mathrm{key}_k$. Six stores (the `SPACE_*` ids):
 |---|---|
 | `INPUT` | the staged input window (per-span percept content) |
 | `STM` | the live short-term-memory rows |
-| `LTM` | the shared clause store (rows, references and paired evidence) |
+| `LTM` | the shared clause store (rows, references and trust) |
 | `PART` | the PartSpace codebook (part-percepts) |
 | `WHOLE` | the WholeSpace property codebook (whole-percepts only) |
 | `SYMBOL` | the downstream SymbolSpace reference namespace (1:1 with concepts) |
@@ -316,8 +316,7 @@ by reference, without duplicating their codes. Word/object associations are
 definitions, `LTM1` rows of a word and its object. Completed sentences store
 their actual end state; they keep no word chain or derivation. A
 1:1 tie between SYM refs is the SINGLETON principle (Alec 2026-07-02): the
-unit-set $\{x\}$ -- a whole containing exactly one symbolic part
-(`singleton_concept`, min-support exempt) -- is the constructive primitive
+unit-set $\{x\}$ -- a whole containing exactly one symbolic part -- is the constructive primitive
 behind if$\to$then ($\{x\} \Rightarrow x$) and the recursion vine, and it is
 stored structure that `resolve_identities` never collapses (only ties
 between concrete raw codes resolve away). The one untyped square
@@ -406,42 +405,45 @@ which properties/level).
   scope handed to mereology.
 
 **Concept spread is an expectation (Alec, 2026-10-28).** When a sentence
-opens, the conceptual space's own `ActivationPredictor`
-(`ConceptSpread.open_prediction`) reads the order-zero concepts' keys and the
-observed knowing, and freezes its prediction of the next concept state for
-every path of the sentence. The relevance read (`relevance_weights`) is
+opens, `expect`, the conceptual space's own learned map
+(`ConceptSpread.open_prediction`), reads the observed order-zero field on
+both lanes and gives the whole expected field over the same rows, frozen for
+every path of the sentence ("expect, intuit and marker" below). The relevance read (`relevance_weights`) is
 $1 + \max(\text{expected knowing}) + \text{desire}$ for each stream and row,
 clamped at zero ($1 + \text{desire}$ on the serial concept path). Attention,
-the compose chooser, retrieval, `intuit`'s rule order and the sparse
-projection onto the tower rows read it detached. The predictor trains only on
-its own error against the detached next observed state
-(`expectation.concepts`). The spread biases where attention goes and carries
+the compose chooser, retrieval, rule order (`ConceptSpread.rule_order`) and the sparse
+projection onto the tower rows read it detached. `expect` is taught by
+omission: where units of the sentence were hidden, its cost
+(`expectation.concepts`) is the difference between what it expects from the
+lossy field and the detached field with the hidden units present, and a
+sentence with nothing hidden gives it no cost. The spread biases where attention goes and carries
 no truth: nearness in meaning asserts nothing, and truth moves only along
-rules, through `intuit` and `infer`. Location keeps its other readers:
-`bind`'s content term, the class centroids, MTM's candidate matching and the
+rules, through `infer`. Location keeps its other readers:
+`bind`'s content term, MTM's candidate matching and the
 reconstruction bank's selection.
 
 **One conceptual space (Alec, 2026-10-22).** Every concept of every order is
 placed in one similarity space, concrete and abstract intermingled; a raised
-class takes its members' evidence-weighted centroid. Forms and meanings never
+class is placed by its context like any other concept. Forms and meanings never
 share a metric: placement never reads the percept cube
 ([SymbolFirewall](SymbolFirewall.md)).
 
 **The guard against a feedback loop (Alec, 2026-10-20).** Codes never read a
-value computed from codes. Placement reads only the seen ledger
-`_priming_seen`, written by the decay (`primingDecay`, default 0.9) and the
-seen bumps; desire and the prediction never write it, and
-`placement_context`, the collapse audit and consolidation read its nonnegative
+value computed from codes. The context of placement is activation read before
+any weighting by likeness of places, so no place is moved by a value
+computed from places. The seen ledger `_priming_seen` is written by the decay
+(`primingDecay`, default 0.9) and the seen bumps; desire and the prediction
+never write it, and the collapse audit reads its nonnegative
 excess over neutral. The loop that remains is indirect and bounded: the
 prediction biases attention and the chooser, which bias what is observed and
 composed, from which the codes are placed. In `bind` priming enters only the
 expectation term (the prime), never the content term (the meet over content),
-and recurrence, not priming, mints.
+and recurrence or a row's activity, not priming, mints.
 
-**Placement.** Meaning is placed by context, while forms take
-centroids. At each kept close, and only
-there, `MereologicalCodes.observe_close` places the rows the sentence
-registered on the seen ledger. Each codebook seat holds a unit for-lane
+**Placement.** Meaning is placed by context, while forms of order zero take
+centroids and a row above order zero carries no perceptual form. At each kept close, and only
+there, `MereologicalCodes.observe_close` places the rows active in the
+sentence's field. Each codebook seat holds a unit for-lane
 direction `placement[r]`, a witness count and a 32-byte content key; the for
 lane of the cached meaning is that direction scaled by the row's trust radius,
 so an unplaced row reads zero. A first placement starts from `identity_code`
@@ -451,16 +453,18 @@ of
 
 $$J(q)=\sum_{i\in C} a_i\,\frac{\mathrm{meet}(q,c_i)}{\mathrm{mass}(c_i)}-\lambda\sum_{n\in N}\frac{\mathrm{meet}(q,n)}{\mathrm{mass}(n)}$$
 
-then moves it, on the for lane only: $C$ are the placed rows with seen excess
-$a_i>0$, $N$ up to `placementNegatives` (5) placed rows with zero excess, drawn
+then moves it, on the for lane only: $C$ are the placed rows of its own order
+active in the sentence's field at every order, a token's types among them
+(`FieldProjection.close`), at activation $a_i>0$, $N$ up to
+`placementNegatives` (5) placed rows of its own order with zero activation, drawn
 by a generator seeded from the sentence's content key, meet is the
 coordinatewise minimum summed, mass is the coordinate sum, and $\lambda$ is
 `placementNegativeWeight` (1.0). The subgradient of a meet is 1 where
 $q_j<c_j$, and the update is
 $q\leftarrow\mathrm{normalize}(\max(0,\,q+\eta\,\partial J/\partial q))$ with
 $\eta$ = `placementRate` (0.1). All rows of one close step from one snapshot,
-so seat order cannot matter; a raised class is not stepped but takes its
-members' centroid (`derive_class_placements`). This is skip-gram's objective
+so seat order cannot matter; a raised class is stepped by its context like
+any other concept. This is skip-gram's objective
 (Levy and Goldberg 2014; Qiu et al. 2018) read from the model's own registered
 co-occurrence, in conceptual space's metric.
 
@@ -500,7 +504,8 @@ attention's gain $m$ is exactly zero outside the region, where a deep
 expectation is absent rather than attenuated, so the unattended field passes
 nothing and reports no omission. Neither changes the native identity or adds predicted
 content to the observation. Expected activations separately prime selection,
-while excess and omission train the predictor and supply retention surprise.
+while excess and omission train the predictor and supply the surprise that
+sets a new row's activity.
 The existing desire channel remains distinct: desire writes only to
 selection, never into content, so expectation never learns to predict and
 cancel it. An open object keeps its prime and is spared attenuation; a
@@ -525,8 +530,13 @@ tower's own downward projection, as biased competition prescribes.
 ### D. Attention indexing (`.where` / `.when` / codebooks)
 
 The **global location registry** assigns disjoint address ranges to input
-positions, part rows, whole rows and symbol poles. A word's percept and symbol
-occurrences use its input byte start in the input range. Repeated words thus
+positions, part rows, whole rows and symbol poles. Each input modality has a
+range of its own (text, a numeric input, the scalar beside the words), so the
+range of an address gives its modality, as the block a row lies in gives its
+order. A place on two axes is one row-major address in its modality's range,
+decoded by the declared shape (`WhereEncoding.decode_index`): in a 28 by 28
+image, row 2 and column 3 is address 59. A word's percept and symbol
+occurrences use its input byte start in the text range. Repeated words thus
 have different occurrence locations even when they refer to the same stored
 row. A stored percept's location is its row address; a symbol produced by
 thought uses its symbol-row address, with one address per pole. There are no
@@ -539,12 +549,11 @@ address can be decoded when needed.
 
 Codebook identity remains the row index within its owning codebook. The
 registry adds a distinct location range for each owner; it does not replace
-that identity. An LTM sentence is addressed by a 64-bit hash of its source
-document key, sentence index and content key. `.when` carries the model-time
-unit bracket `[t, t+1]`; `.where` retains the input/percept location. Time
-recall reads the stored band, and learned readers use its age or a difference.
-Re-reading the same address keeps its first stamp and episodic entry, while
-updating the existing evidence according to the row's write contract. A full
+that identity. An `LTM0` row is named by its time ("Occurrence addresses"
+below). `.when` carries the model-time
+unit bracket `[t, t+1]`; `.where` retains the input/percept location. No
+recall selects rows by their stored band; learned readers use its age or a difference.
+A sentence read again is a new row at a later time. A full
 store raises.
 
 The spatial band records a start, not an extent. A part's byte length gives
@@ -579,8 +588,8 @@ cognition.
   the ramsified *orders* (abstraction is a separate, graded
   anterior-temporal / prefrontal axis).
   The individuated episodes of this account have
-  their own place in the store: a sentence's row keeps a few order-zero
-  concepts of its open attention pass, and a recall by time reinstates them as
+  their own place in the store: a row keeps a few of the strongest concepts
+  of its field of understanding, and a recall by content reinstates them as
   the stream's knowing
   ([Episodic and semantic memory in the two systems](#episodic-and-semantic-memory-in-the-two-systems-2026-11-11)).
 
@@ -754,8 +763,8 @@ clock; after placement, `promote_candidates` applies one recurrence rule:
 Both readings retain candidate refinement and wait. A defining equality
 or IS clause can promote its pending subject at that kept close. Neither
 route supplies a grammatical order. Explicit raises and promoted
-candidates share `cover_members`: sigma edges merge by maximum, placement
-uses the members' centroid, and form uses their evidence-weighted fold.
+candidates share `cover_members`: sigma edges merge by maximum; the class is
+placed by its context like any concept and carries no perceptual form.
 Transient occurrence members wait for a durable symbol.
 
 See [Spaces.md Section "Sigma / Pi ownership"](Spaces.md#sigma-pi-ownership)
@@ -860,21 +869,23 @@ validity, space, level, completion and spent work; `K = attentionBudget`.
 Within a bracket, the field offers the order-independent operations `and`,
 `or` and `not` on paired observed presences. Across brackets, grammar operates
 on identified symbols. This follows from the operand types: a pooled field
-has no order on which lift, lower, verb or adverb could act. The parser checks
+has no order on which change, lift, lower, verb or modifier could act. The parser checks
 these declarations. The former mode-exclusion rule is therefore a consequence
 of representation, with no `serial` or `parallel` mode switch.
 
-The narrowing candidates are `divide`, `descend` and `gloss`, declared in the
+The narrowing candidates are `focus`, `unfocus` and `mint`, declared in the
 compose grammar and scored by the compose chooser. A bracket yields a symbol only
 when it is pure (exactly one pole of its pooled pair is nonzero) and singular
 (exactly one identity has support in it), so its projection to a code is
-unambiguous; `gloss` performs that projection (`Attention.narrowing_mask`). An
+unambiguous; `mint` performs that projection (`Attention.narrowing_mask`). An
 impure (*both*) or plural bracket offers only field and bracket operations. A
-pure singular word can gloss;
-a heterogeneous bracket can divide at a pole disagreement; an unknown word
-can descend to its retained byte parts before `interpret` admits one object.
-The stop is pinned at words. A wider bracket cannot gloss and a known word
-cannot descend below that stop. Repeated unknown surfaces share one witness.
+pure singular word can mint. `focus` has two candidates:
+a heterogeneous bracket can be focused at a pole disagreement, and an unknown word
+can be focused on its retained byte parts before `interpret` admits one object.
+`unfocus` restores the bracket in force before the last `focus`, and is legal
+only while a focus is in force.
+The stop is pinned at words. A wider bracket cannot mint and a known word
+cannot be focused below that stop. Repeated unknown surfaces share one witness.
 The fixed WholeSpace `word` whole and the reader use the same maximal ASCII
 letter run; punctuation, whitespace and digits separate words. Digit runs
 remain native percepts for numeric proofs such as XOR_exact.
@@ -933,74 +944,67 @@ teaches its departure through `output.walk_credit`, owner output, side A.
 Reconstruction uses the common order-zero reverse directly for System 1, and
 after a generate walk and the occurrence writer for System 2 (Alec, 2026-11-10).
 
-**Presentation and epoch boundaries (Alec, 2026-10-28).**
-`BaseModel.begin_presentation` retains the live-sentence guard and starts the
-per-document cover rewrite. Occurrence memory and MTM persist across documents
-within an epoch. `model_boundary(epoch_boundary=True)` owns experience deletion,
-recurrence clearing and MTM restoration. The lesson and math drivers invoke this boundary once
+**Presentation and epoch boundaries.**
+`BasicModel.begin_presentation` only guards against a boundary inside a live
+sentence; it rewinds nothing. Memory and MTM persist across documents and
+epochs. `model_boundary` runs a forgetting pass ("Activity, forgetting and
+promotion" below) at a document boundary and at an epoch's start, where the
+symbol expectation's transient context is also reset. The lesson and math drivers invoke the epoch boundary once
 before an epoch's first document. The corpus cursor clears at a completed epoch
 and never clears when resuming an incomplete checkpoint. Sentence reading takes
 each identified word's DEF object or its named pending MTM identity; kept mention
 recurrence or a defining clause promotes and defines it. The thought grammar's
 `interpret.forward` operation and chooser alternatives remain available.
 
-**Streams, documents and covers (2026-10-24).** Streams and documents are
-bookkeeping, not wholes. A stream is the batch row that wrote a row: LTM0
-records that ownership, and per-stream structures (STM per row, MTM's
-per-stream clocks) read it. A document is marked by a cover: at a document's
-first sentence in a stream, `DocumentCover.begin_sentence` writes an `LTM0`
-row of kind `cover` before any sentence row, with evidence $(1, 0)$ and one
-slot holding the document's concept. A book has one cover concept for the
-life of the model, so a later presentation reuses the concept and writes its
-cover row again at the same address. A row belongs to the document of the
-latest cover before it in its stream; no membership column exists. Recurrence
-counts distinct documents by their covers, so repeated presentations of one
-book are one document. A query naming the cover concept reads that segment
-under the record meter. Forgetting keeps a cover while any row of its segment
-survives. Proposition readers (cued rows, premise evidence, timeline reads,
-consolidation) skip rows of kind `cover`, `episode`, `estimate` and
-`question`.
+**Streams and one history.** Streams and documents are
+bookkeeping, not wholes. A stream is the batch row a sentence is read in, and
+per-stream structures (STM per row, MTM's per-stream clocks) read it. Memory
+keeps one history: the rows of a batch of several streams enter it in the
+order of their streams, and no row records its stream, document, origin or
+kind. No read is scoped to a document, and a sentence read again is a new row.
 
-**The epoch re-presents one history (Alec, 2026-11-02).** An epoch gives the
-weights another opportunity to learn from the same history. Before the next
-training epoch, LTM0's rows, LTM1's relations and evidence, and MTM return to
-their starting state. Given knowledge remains. The learned weights, optimizer
-state and minted concepts survive, including the concepts' names, orders and
-connections to other concepts. The history's occurrences, definitions and
-other grounding relations are withdrawn. Reading the history again recognizes
-the retained concepts and grounds them in the new epoch's memory. The reset
-runs between training epochs. A partially consumed epoch resumes its memory
-and cursor. After the last epoch the model and its checkpoint retain the
-experience that grounds its concepts. Santoro et al. found interference from
-retaining external memory across episodes in their classification experiment.
-McClelland, McNaughton and O'Reilly describe how repeated reinstatement of an
-experience trains slower cortical weights. [Santoro et al. (2016), §4.2.1](https://proceedings.mlr.press/v48/santoro16.pdf#page=6) · [McClelland, McNaughton and O'Reilly (1995)](https://web.stanford.edu/~jlmcc/papers/McCMcNaughtonOReilly95.pdf)
-
-**Epoch start and supplied relations (2026-11-03).** The starting history includes intentional setup present before the first native evaluation or training presentation. Validation may write its own history until training begins. A supplied assertion retains its relation and the dependencies that make its endpoints meaningful. Restored LTM0 occurrences obtain new recurrence assignments against the current seats. A live role, physical seat or relation-index key reserves its symbol even when a former relation has lost that handle. A historical checkpoint with missing epoch baselines fails at load. A checkpoint of a fresh model can explicitly record that its first presentation has yet to begin. [Epoch certificates](../test/test_epoch_start.py)
-
-### Evidence belongs to its source (Alec, 2026-11-04)
-
-Evidence belongs to the source that produced it, and lasts as long as that source is held.
-
-- **Within an epoch** the history is held. Forgetting removes whole memories whose retention (trust, surprise, use and age) is low. It never zeroes a belief, so a belief outlives the loss of its episode. [Forgetting](../bin/Forgetting.py)
-- **Testimony** carries its teller's authority on the outer relation only. Content embedded in a supply enters unverified, with both evidence lanes at zero, and belief in it comes from inference over the claim. [Assertion provenance](../test/test_assertion_provenance.py)
-- **At an epoch boundary** the history is released, so everything it produced goes, in LTM0 and LTM1 alike.
-  - A row the history wrote is withdrawn.
-  - A row kept only because given knowledge refers to it keeps what it is: its endpoints or slots, tags, and place and time bands. Both its evidence lanes are zero, and its access count and surprise return to their values at the epoch's start.
-  - A relation carries a supply's authority only if the supply wrote it.
-  - Given knowledge keeps the evidence its supply gave it, and after the boundary it is the only source of belief in what it mentions.
-  - The epoch's start, intentional setup included, is not part of the history it re-presents. The learned weights, the optimizer's state and the minted concepts are not memory of the history, and they stay.
-- **After the last epoch** nothing resets, so a trained model follows only the first two rules.
-
-The epoch boundary is not a psychological event but the re-presentation of one history to the weights. Its psychological counterpart is amnesia with semantic memory intact (McClelland, McNaughton and O'Reilly 1995): what one was told survives, and what one concluded from the lost episode does not. The alternative, belief persistence at the boundary, is in [Future work](FutureWork.md#belief-across-the-epoch-boundary-perseverance-and-testimony-alec-2026-11-04-revisit-if-necessary), to revisit if necessary. The boundary also puts both clocks back, so a re-presented history receives the same stamps, and an episodic entry or anchor stays or goes with its row; the lost episode is lost with its entry.
-
-**Supply withdrawal and epoch restoration (2026-11-04).** A supply's checkpointed provenance identifies its outer occurrence or relation, its explicit pair, and the structural rows its closing wrote. Only the outer row receives that source's authority; companions, identity-bearing nodes and reference requests enter the retained copy at zero unless independently asserted. Releasing a source removes its contribution from both memories' retained copies, including a relation-only supply. The epoch boundary resolves dependencies across LTM0 and LTM1 before restoring either memory. A supplied raw `('sym', h)` reference retains the named relation at zero evidence; seats and relation-index keys retain only the existing reservation. Sharing a source document does not make a historical row an assertion. Access and surprise roll back only at the epoch boundary; ordinary withdrawal and stateless load preserve their live values. [Source lifetime certificates](../test/test_epoch_start.py)
+**One history across epochs.** An epoch gives the weights another opportunity
+to learn from the same text; it rewinds no memory. LTM0's rows, LTM1's
+relations and MTM are kept across the epoch boundary, the model clock
+continues, and a sentence read again in the next epoch is written as a new
+row at a later time. The learned weights, optimizer state and minted concepts
+survive as before. What bounds the history is forgetting, which drops the
+least active rows, not the epoch. A partially consumed epoch resumes its
+memory and cursor.
 
 **Identity order at creation (2026-10-28).** MTM promotion
-records the individual's witnessed order in `alloc.reference_orders` while its
-occurrence is present. Later forgetting and epoch resets can remove occurrence
-rows without removing that order. A missing witness fails at creation with the
-occurrence record; the epoch-boundary guard remains in force.
+seats the individual in the block of its witnessed order while its
+occurrence is present. Order is read from the block a row lies in
+(`order_slice`), never stored beside the vector, so forgetting can remove
+occurrence rows without removing that order; a full block is a capacity error
+naming its order. A missing witness fails at creation with the
+occurrence record.
+
+### Trust of a row (Alec, 2026-11-13)
+
+Every `LTM0` row has one `trust`, a signed number from -1 to 1: above zero the
+statement is held true to that degree, below zero it is held false, and at
+zero it lights nothing. The idea is not scaled by it. Its source fixes it when
+the row is written:
+
+- An entry of the truth store (`Models.store_truths`, and `provision_ltm` for a configuration's own) is written at the trust it is given, at face value. Testimony carries its teller's trust on the outer statement only; content embedded in it enters at zero, and belief in it comes from inference over the claim. [Assertion provenance](../test/test_assertion_provenance.py)
+- A sentence read in training is written at the model's `trust` times the certainty of its words.
+- A sentence of a conversation is written at zero, so what was only said lights nothing.
+- A kept thought is written at what its premises give, the least on each lane. A conclusion with evidence on both lanes is written as two rows, so that no row nets one lane against the other.
+
+A relation a sentence writes takes the same number on the lane of its sign, in
+`LTM1`'s two lanes. No writer changes a stored row's `trust`, and nothing
+withdraws a row: a supplied truth is kept and dropped by its activity like any
+row, a list sent again is written again, and a checkpoint restore withdraws
+nothing. A valid source, an authority or a speaker's trusted definition, adds
+trust by what it writes. The rows held as truths are those whose trust is not
+zero: `TruthLayer.sync_from_ltm` holds the latest `truthMaxEntries` of them,
+each as its content times its trust. A contradiction is a signal, not a
+repair. Alec, 2026-11-13: "logical contradiction is merely an signal that something needs to be fixed, there is no automatic fixing routine for inconsistency (but there is a measure of that inconsistency for users of WikiOracle)."
+`TruthLayer.consistency` measures it, and `suggest_clarifications` and
+`assess` report it, naming a row by its time and its generated words.
+Forgetting removes whole rows by their activity and never changes a trust
+([Forgetting](../bin/Forgetting.py)).
 
 ### Pipeline as a unit, two-space-role reset
 
@@ -1078,8 +1082,9 @@ end-to-end alongside the model weights.
 
 **Checkpoint layouts.** A checkpoint loads only into the layout and
 capacities it was saved with, or through a declared migration that reports
-what it changed or dropped (for example LTM0 schemas 14 and 15, which load
-with empty episodic entries and name the dropped percept columns). Each store
+what it changed or dropped (for example LTM0 schema 16, whose rows keep their
+idea, time, signed trust and the strongest of their entry while every other
+column is dropped with a warning naming it). Each store
 records a layout or schema version; a missing or unsupported version, a
 retired or absent column, or a different constructed capacity raises with an
 error naming the difference. Nothing is classified by guessing, no column is
@@ -1106,17 +1111,20 @@ unary (copy-side) or binary (reduce-side):
 
 - **Unary symbolic operators**: `not(S)`, `non(S)`; the live inventory is
   [Language](Language.md)'s compose, thought and generate sections.
-- **Binary symbolic operators**: `intersection(S, S)`, `union(S, S)`,
-  `conjunction`, `disjunction`.
-- **Mereological operators**: canonical `part(S, S)`, converse `whole(S, S)`,
-  and `equal(S, S)`. Their structural faces are pure-geometric; their checked
+- **Binary symbolic operators**: `intersection(S, S)` and `union(S, S)`;
+  `conjunction` and `disjunction` are commented out of `data/complete.grammar`,
+  the four connectives becoming these two.
+- **Mereological operators**: canonical `part(S, S)` and converse `whole(S, S)`.
+  An identity sentence composes as `part`, and `define` in thought writes
+  `part` each way. Their structural faces are pure-geometric; their checked
   thought faces run only at a completed boundary. Parthood is clipped cosine
   on codebook activations, with no sidecar of explicit parent or equality
   links. See [Mereology.md](Mereology.md).
-- **`lift` and `lower`**: binary `GrammarLayer` subclasses. Each owns an
-  internal `SigmaLayer` (`LiftLayer`) or `PiLayer` (`LowerLayer`) for the
-  pairwise math, with `arity=2`, `space_role='CS'`. Result order comes from
-  each operation's `order_delta` and a determiner's fixed output; orders are
+- **`change`, `lift` and `lower`**: `change(NP, VP)`, the former two-operand
+  `lift`, applies a verb phrase's action to its subject. `lift` and `lower`
+  take one operand each: `lift` raises it one order, and `lower` takes an
+  operand of order one or more down one order. Result order comes from
+  each operation's `order_delta`; orders are
   learned ([Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21)).
   See [Language.md](Language.md).
 - **Butterfly mode on `GrammarLayer`**: all GrammarLayer
@@ -1128,10 +1136,9 @@ unary (copy-side) or binary (reduce-side):
 
 Parthood (`part`) is the **fundamental** mereological operation, realized
 as clipped cosine projection on symbolic activations. The full suite
-(`whole`, `equal`, `overlap`, `underlap`, `boundary`) composes through
-`part` on `Basis`. `equal(S, S)` is propositional identity on S; it delegates
-to `Basis.equal` when selected as a thought operator. The historical
-`isEqual`/`query` layers remain compatibility-only.
+(`whole`, `overlap`, `underlap`, `boundary`) composes through
+`part` on `Basis`. `equal` is commented out of compose, generate and thought;
+the thought test of identity is `isEqual`.
 
 ### Short-Term Memory on ConceptualSpace
 
@@ -1307,7 +1314,7 @@ inside the bracket and fails on another, its percept pair pools to
 is not an error: it is the field reporting that the bracket pools
 heterogeneous occurrences, the *both* corner of the tetralemma the
 architecture was built to handle. The two remedies are the two prompts
-already decided: **narrow the bracket** (attend, divide), or **raise
+already decided: **narrow the bracket** (attend, `focus`), or **raise
 order** when the heterogeneity is the thing to name (sigma over symbols).
 Convexity is what keeps the two remedies distinct: a contiguous support
 refines within order 0; a support discontiguous *within* the bracket
@@ -1338,44 +1345,41 @@ the tick. A new thought idea and a produced sentence each take another tick.
 A configuration without sentence composition advances once per input batch.
 Words retain their order as subdivisions of the sentence's `[t, t+1]` bracket.
 Order-zero reconstruction carries the input sentence's tick, while output
-carries its own. Document identities and sentence ordinals remain provenance
-addresses, separate from time.
+carries its own. A row keeps no document identity or sentence ordinal.
 
 Learned chooser, attention and composition readers receive ages or differences,
 never the phase of the absolute stamp, so no choice, composition or answer depends on when it is made: a reader of the absolute stamp lets the clock's phase pick the derivation, and a trained model's answers then move with the clock. Attention uses the reversed age bracket
 and its existing history scale; an observation at age zero remains observed.
-Presentation memory saves both `when_time` and `LTM0.model_clock` beside its
-initial rows, restores them at each epoch, and checkpoints that baseline. A
-repeated presentation order therefore receives the same sentence stamps.
+A checkpoint saves both `when_time` and `LTM0.model_clock`. No boundary puts
+the clocks back, so a presentation repeated in a later epoch receives later
+stamps.
 
-Each input sentence can retain up to `episodicConcepts` order-zero concepts
-from its open attention pass (default four), each with one signed value, its
-evidence for less its evidence against, in reading order
-(`EpisodicMemory.select`; columns `episodic_concepts` and `episodic_values`).
-The largest magnitudes are kept when there are more, and a zero signed reading
-leaves no entry. No place or pole pair is stored, and entries are detached from
-training. The input close explicitly supplies the entry to its own LTM0 row; a thought
-written during that close receives none. A relation-only closing with a nonempty
-entry reserves one LTM0 anchor before writing anything (Alec, 2026-11-11).
-Its kind is `episode`; its
-only content is the sentence's `.when` band. Its distinct address cannot become
-a later sentence's semantic root. Zero capacity or an empty entry allocates no
-anchor. Re-witnessing preserves the first anchor, stamp and entry; the fixed row
-columns follow compaction, forgetting, checkpoints and epoch restoration.
+Each `LTM0` row keeps an entry: up to `episodicConcepts` (default four) of
+the strongest readings of its field of understanding, of any order, in one
+flat list with no order axis (`EpisodicMemory.select`; columns
+`episodic_concepts` and `episodic_values`). Each reading is one concept on one
+lane, its strength signed by the lane, above zero for the lane for and below
+zero for the lane against, so no entry nets the two lanes. A zero reading
+leaves no entry. No place is stored, and entries are detached from training.
+The kept close hands a sentence's entry, taken from the kept path's field of
+understanding, to the row it writes; a kept thought's row takes the strongest
+of its own extension (`EpisodicMemory.for_meaning`). A close that writes only
+an `LTM1` relation keeps no entry. The columns follow compaction, forgetting
+and checkpoints with their rows.
 
-Time-only recall of an entry in the querying stream (`EpisodicMemory.reinstate`)
-publishes the stored concepts as that stream's knowing: the two poles are
+A recall by content in the thought loop (`ThoughtLTMCapability.query`) ranks
+the rows of the window by their entries ("Recall and answers" below) and
+publishes the recalled rows' concepts as the querying stream's knowing
+(`EpisodicMemory.reinstate`): the two poles are
 rebuilt from the sign, the readings are laid out by their concepts' surface
 lengths one position apart, and each carries the original sentence's tick. The
 stream's present percept readings are cleared and other streams are untouched;
 `reverse` alone reconstructs this field, without compose or generate. A
 concept that has expired since is skipped and counted, and a concept with no
-surface keeps an empty extent and is counted. Anchors participate in this time read and review, and are excluded from
-content retrieval, STM/MTM identity loading, prediction history and consolidation.
+surface keeps an empty extent and is counted.
 Rows without entries leave attention unchanged. `End` releases the present
 percept field and its coordinates; `_episode_review_field` retains a review until
-the next open attention pass. Document-cover continuity and both thought-writing
-branches use document ordinals, independently of presentation time.
+the next open attention pass.
 
 The conceptual mixer's temporal input is the elapsed-time ladder minus its
 zero-age band. This is a read of a time difference; the absolute stored stamp is
@@ -1392,9 +1396,9 @@ needed, is worked out at recall from the row's occurrence and what the concept
 says. A reference supplies an event, never a time, and a phase is judged by
 content without consulting occurrence time (`TimelineRead.case_coverage`).
 `.where` is the subjective location of the experience, where in the field it
-occurred, so two documents may share a location. Order is each stream's
-history: rows of different streams have no meaningful order, and a re-witnessed
-row keeps the stamp of its first occurrence.
+occurred, so two documents may share a location. There is one history: the
+rows of several streams enter it in the order of their streams, and a sentence
+read again is a new row with a later stamp.
 
 **Bands are positions.** Signed location and time coordinates are positions,
 not membership evidence, and cannot enter the $[0,1]$ membership chart.
@@ -1512,22 +1516,17 @@ output realization.
 
 ### Full-description existence evidence
 
-Boundary `Exist` evaluation checks accepted LTM facts against all occupied
-NP1/VP/NP2 roles, bindings, scope and constituent references. It retains
-positive and negative support plus occurrence provenance independently;
-missing evidence is unknown. Observations, questions, estimates and unverified
-legacy records cannot certify their own referents. `ConceptualMeaning` is an
+Boundary `Exist` evaluation reads the question's region, its field of
+understanding ("Recall and answers" below): the brightest row of the window,
+its relevance times the absolute value of its `trust`, on the lane of the
+trust's sign. Rows are never summed, a row at trust zero lights nothing, and
+missing evidence is unknown. `ConceptualMeaning` is an
 owned value; `LTM0` remains the durable evidence owner.
 [Lookup](../bin/reasoning.py#L156),
 [value](../bin/Meaning.py#L67),
-[store](../bin/Layers.py#L8674).
-
-The checkpoint sidecar retains semantic context and source text,
-bound to stable source-address keys and tensor fingerprints. Required metadata
-missing on restore makes the corresponding evidence unavailable. See
-[Existence evidence](ExistenceEvidence.md) for the migration and gradient
+[store](../bin/Memory.py).
+See [Existence evidence](ExistenceEvidence.md) for the gradient
 boundaries.
-[Restore checks](../bin/Layers.py#L8823).
 
 ### Conceptual-taxonomy thought evidence
 
@@ -1715,13 +1714,14 @@ the membership definition supplies the read.
 
    **1a. Sequences live in LTM, not the concept store** (Alec). A sequence
    is an episode, a conjunction of particular things in order, and it is the
-   chain of rows the closing writes, `LTM0` occurrences joined by `LTM1` rows
-   of two tagged references; the predictor learns its regularities. A chain
+   rows the closings write, `LTM0` ideas in the order of their times, joined
+   by `LTM1` rows of two tagged references where a sentence asserts a
+   relation; the predictor learns its regularities. Such a chain
    approximates episodic memory with three limits: it serializes what was
    simultaneous, a long chain strains generativity, and it keeps only what
-   was said. What was active but unsaid is kept beside it: each sentence
-   keeps the `episodicConcepts` strongest order-zero concepts of its open
-   attention pass beside its `LTM0` row
+   was said. What was active but unsaid is kept beside it: each row
+   keeps the `episodicConcepts` strongest readings of its field of
+   understanding beside its idea
    ([Episodic and semantic memory in the two systems](#episodic-and-semantic-memory-in-the-two-systems-2026-11-11)).
 
    **1b. One-hot and distributed — keep both, as now (confirmed, Alec
@@ -1991,16 +1991,15 @@ lanes. Predictions are made before their targets and never feed their own
 future context. The same head is read at symbol arrival, row closing and next
 row prediction. The original identity and activation gain stay separate.
 The conceptual spread that primes attention, the chooser and retrieval is not
-this head's: it is the conceptual space's own `ActivationPredictor` ("C. Parse
+this head's: it is `expect`, the conceptual space's own learned map ("C. Parse
 time" above).
 
 Document addresses from the corpus cursor reset only the affected row's
 transient prediction context. Soft boundaries retain it; hard resets and
 checkpoint restoration start it cold. Provisioning and internal thought run
-with external observations suspended. Stable source occurrence links, full
-bank estimates and original observations live in the existing LTM owner.
-[Expectation retention](ExpectationRetention.md) specifies the pair and its
-checkpoint sidecar.
+with external observations suspended. The context names retained `LTM0` rows
+by their times; no estimate is written as a row.
+[Expectation retention](ExpectationRetention.md) specifies the pair.
 
 The configuration exposes `perceptExpectationGain`, `symbolExpectationGain`,
 `rowExpectationGain` and `documentExpectationGain` in `[0,1]`,
@@ -2047,17 +2046,16 @@ Recalled rules remain premises beside the focus. `infer` reads a premise and
 a rule by address, derives the consequent or opens the antecedent as a
 subgoal, and records its supports and ordered witnesses. Path support uses
 minimum, alternatives use maximum, and negation exchanges lanes. The answer
-reader requires inference, recall, or pervasion provenance; provisional
-intuition cannot supply an answer. A kept derived idea goes to LTM0 with its
-pair and witnesses and follows ordinary forgetting. The supplied referent's
+reader (`ThoughtAnswer.accepted`) requires inference, recall, pervasion,
+perception or intuition provenance. A kept derived idea goes to LTM0 at the
+trust its premises give, the least on each lane, and is forgotten by its
+activity like any row. The supplied referent's
 trial cost adds content coverage error to the text cost.
 
 The durable LTM owner retains the transitive closure of records addressed by
 surviving rows and ordinary-thought roots. A bounded derived view preserves
 ordered role edges, repeated references, scope and each occurrence's own
-evidence; it does not add a parallel semantic store. Withdrawing a request
-origin removes its fact authority without turning retained content into a
-truth. See [nested retention](NestedRetention.md).
+evidence; it does not add a parallel semantic store. See [nested retention](NestedRetention.md).
 
 ## Two spaces, one index: the symbol in perceptual space, the concept in conceptual space (decided, Alec, 2026-10-04)
 
@@ -2114,8 +2112,8 @@ provenance. The snapshot precedes every trial walk, and composed meanings are
 still stored as `o`.
 
 At higher orders, meaning also composes from below by the bilattice.
-Conjunction/intersection meet the for poles and join the against poles;
-disjunction/union join for and meet against. Sum averages both, and negation
+Intersection meets the for poles and joins the against poles;
+union joins for and meets against, and negation
 exchanges them. `(0,0)` is unknown and `(1,1)` is conflicting evidence.
 Thus `not a` has a's extent against and none for, and `a ∧ not b` has b's
 extent against and none for. The two blocks are never normalized together in
@@ -2123,11 +2121,20 @@ composition.
 
 **Operations on meaning, centroids on form** (Alec, 2026-10-23). Every
 grammar and logical operation acts on the meaning block, in conceptual space
-(`GrammarLayer.compose_blocks`). The logical operations and `sum` keep the
-exact rules above. `lift`, the verb's action on its subject, and `adverb`, the
-modifier, are learned actions (`MeaningAction`). Every other grammatical
+(`GrammarLayer.compose_blocks`). The logical operations keep the
+exact rules above. `MeaningAction` is the learned map $Q\,\mathrm{diag}(e^{w})\,Q^{\top}$
+on each lane, split between operators (Alec, 2026-11-14: "MeaningAction has to be an operator so that verbs can actually choose it"):
+`change(NP, VP)`, the verb phrase's action on its subject, and `modifier`
+apply the gain $w$ read from the phrase or the modifier word, `modifier` in
+one shared basis; `verb(VP, NP)` gives the verb phrase its basis $Q$, the
+Householder reflections read from the noun phrase's meaning, and the phrase
+keeps its gain. A phrase made by `preposition` modifies a verb phrase by the
+same `verb` operation. `add`, `subtract`, `multiply` and `divide` compute in
+the atanh/tanh chart, on concept points only, never on codes (Alec,
+2026-11-13: "arithmetic do not operate on the codes: that would break codebook lookup").
+Every other grammatical
 operation, apart from `interpret`, `bind` (which returns the identity's value)
-and the structural ones such as `transpose`, has a kernel that starts as the
+and the structural ones such as `swap`, has a kernel that starts as the
 identity and acts alike on the two evidence lanes without mixing them
 (`MeaningKernels.LaneKernel`). The form block of a composition has no
 parameters: it is the centroid of its operands' forms, each weighted by the
@@ -2138,8 +2145,8 @@ The inverse (`reverse_blocks`) undoes the meaning kernel given the known
 operand and splits the form centroid exactly given that operand and the leaf
 counts. A configuration with no meaning block (a numeric one, or one whose
 conceptual width equals its form width) keeps its kernels on the whole vector.
-A concept promoted from recurring occurrences takes their evidence-weighted
-form centroid (`MemoryConsolidation._fold`).
+A concept above order zero, promoted or raised, carries no perceptual form;
+a reader that needs a form takes its word's, through the mapping.
 
 **Readers and the two blocks.** Identity reads stay on form,
 similarity reads on meaning, and the class reader and pair-search residual
@@ -2196,13 +2203,13 @@ time. It does not decide which words matter; every word is visited. Its
 loss is what its mask leaves out of the target; the region inside the mask
 pays the percept/concept chain's cost. Over a wide scope the field is
 heterogeneous and the pair accumulates *both*; the walk's answer to both is
-to divide (`narrowing_mask`: both permits divide, pure permits gloss,
-neither permits descend) until each bracket is homogeneous, where the
+to `focus` (`narrowing_mask`: both permits `focus` at the disagreement, pure
+permits `mint`, neither permits `focus` on the byte parts) until each bracket is homogeneous, where the
 concept is unipolar and pervades the object — union and pervasion coincide
 on a pure extent (Alec, 2026-10-07). *Both* therefore never enters a leaf
 from an identified word; it re-arises only by composition. This is the
 narrowing walk of [One attention](#one-attention)
-(the open bracket, divide/descend/gloss to each word, the scope handed to
+(the open bracket, `focus`, `unfocus` and `mint` to each word, the scope handed to
 conceptual space). Under identity by construction a word left out of the
 mask is a word missing from the reconstruction, which the path comparison
 charges and credits to the walk's choices. The walk's poles
@@ -2214,8 +2221,9 @@ supplies its prior.
 quantities in separate lanes, and each lane is the magnitude of its own
 positively-valued symbol — the concept's one code, signless, in perceptual
 space. A leaf is `[form × presence | code × c⁺ | code × c⁻]`; the attention
-walk's poles are that pair; operators act lane by lane; the stored row keeps
-the pair as `(c⁺, c⁻)`. Nothing on the path forms the pair's difference or
+walk's poles are that pair; operators act lane by lane; a stored relation
+keeps the pair, and an idea with evidence on both lanes is stored as two
+rows, one for each lane. Nothing on the path forms the pair's difference or
 sign: a single signed activation cannot tell *both* `(1,1)` from *neither*
 `(0,0)`. The order alternation is then intact without a second symbol after
 a zeroth-order concept's location: percepts (perceptual) → the concept, an
@@ -2229,8 +2237,8 @@ departure, drawn first uniformly among the eligible walks, then uniformly
 among the selected walk's eligible rounds, is the question; both are completed
 and costed at
 the owner step on `R + A`: reconstruction and, where supplied, the answer.
-Reconstruction alone cannot judge a choice: operators with exact inverses,
-such as conjunction and disjunction over the same two words, recover the same
+Reconstruction alone cannot judge a choice: two operators with exact inverses
+over the same two words recover the same
 words and tie, so what a choice asserts shows only in the answer and in what
 follows.
 The strict keep commits the lower-total trial, with ties keeping greedy;
@@ -2291,28 +2299,32 @@ and the reconstruction audit").
 
 ### Occurrence addresses
 
-The store has no occurrence counter or random owner namespace. Its short keys
-use all 64 hash bits, including the sign bit of the int64 storage column;
-`-1` remains the absent-reference sentinel. Typed references use the shared
-`address-v1` format tag. A store resolves a key only if it retains that address.
-Full document/content digests and the position detect a short-key collision
-before any row can be merged. The derived `_index_occurrences` maps address
-keys to current physical rows and is rebuilt after load and compaction.
+An `LTM0` row is named by its time: `LTM0.row_name` decodes the row's `.when`
+band to its tick, and a reference to the row is `('ltm', 'time-v1', tick)`. A
+row's time is the model's present, or one more than the last row's time where
+the present is not later, so times rise strictly, the rows lie in time order
+and `LTM0.index_of_row` finds a row by binary search, before and after a
+forgetting pass has dropped others. A relation's end that is a sentence row
+holds that row's time. No address key, hash, counter or index is stored. An
+`LTM1` row is named by its handle; `-1` remains the absent-reference sentinel.
 
 ### Determiners and relation declarations
 
-`lower` projects a description; its marker contributes no content. A rule's
-`determiner_mode` chooses mint, bind, or kind. Mint creates an unasserted
+`lift` raises its one operand one order, and `lower` takes an operand of
+order one or more down one order; the order of `lower(lift(x))` is the order
+of `x`. Determiners and number words are modifiers, chosen at run time like
+any operator (Alec, 2026-11-13: "that decision of which operator is bound is. run-time one"):
+minting and binding are `mint` and `bind`, with the word as cue. Mint creates an unasserted
 addressed member only when the selected reading closes; it does not mint a
-dictionary concept. Bind chooses an earlier occurrence by address. Kind and
-`generic` retain the high-order description. A sentence `lift` inherits its
+dictionary concept. Bind chooses an earlier occurrence by address. A sentence's `change` inherits its
 subject's order. Reverse lower uses the
 existing bounded candidate lookup or a supplied marker witness.
 
 A relation closes as a row and publishes its name in STM; its two operands
-remain references. Equality states both directed PART rows, while lexical
+remain references. An identity sentence composes as `part`, and `define` in
+thought writes both directed `part` rows, while lexical
 interpretation remains a separate DEF edge. Predicate identity is a grammar
-rule property, including the thought equality predicate. Runtime behavior
+rule property, including the thought identity test `isEqual`. Runtime behavior
 reads declared properties, independent of a rule's spelling.
 
 ### Readers, the inverse and generation
@@ -2369,7 +2381,7 @@ read the signed residual as a feature.
 
 The committed inverse starts at completed `SentenceUnderstanding.end_slots` and
 its forest, with live occurrence witnesses for the certified paired surface,
-counted sum and surface-unary maps. Transpose reverses the two retained slots.
+counted sum and surface-unary maps. `swap` reverses the two retained slots.
 Only certified coordinates that numerically recover their source are detached
 from the field reconstruction gradient; their errors remain audits. Unsupported
 or approximate coordinates retain their losses. Free walks keep their independent
@@ -2394,7 +2406,11 @@ Trailing columns with zero extent in every stream are omitted before crossing
 events with features and attention brackets. Interior gaps remain, preserving
 canonical tile adjacency.
 
-`intuit` runs only in thought. It holds one order-zero Sigma-over-Pi result and
+`intuit` is a learned map from concepts to concepts, evaluated once when the
+sentence is observed ("expect, intuit and marker" below). The firing of a
+stored implication leaves it and is reached through `infer` (Alec,
+2026-11-14: "the existing logic can be introduced as implication"). A firing
+holds one order-zero Sigma-over-Pi result and
 reference plans for fired rules in an addressed STM slot. Negation exchanges the
 literal lanes before the meet; unit weights reproduce the max-min DNF. The
 preallocated sparse Pi and Sigma banks have `intuitionCapacity` addresses each
@@ -2404,18 +2420,15 @@ is detached. These weights belong to output; reconstruction and expectation do
 not train them. The chooser reads each infer candidate's firing metadata. `infer`
 computes an accepted pair from evidence independently of the learned proposal
 weights. Pervasion narrows by Part edges and partOf, takes each lane's minimum over
-parts, and joins implicit and explicit evidence at the close. One call of
-`intuit` is one layer of order-zero concept-to-concept prediction, intuition
-by recall: the knowing cues remembered antecedents by content and unions
-their consequents, and `Intuition.write_knowing` deposits the consequents'
-poles into knowing at their existing brackets, by maximum. The calculus is in
+parts, and joins implicit and explicit evidence at the close. The calculus is in
 [Reasoning](Reasoning.md#intuition-understanding-and-thought-alec-2026-10-30).
 
 The generation residual's chart and exactness threshold are in
-[GradientFlow](GradientFlow.md), "The generation residual". Cued LTM retrieval
-scores one bounded window of `ltmWindow` candidates (default 1024): explicit
-references first, then the newest occupied LTM0 rows, then the newest relation
-rows ([Params](Params.md)).
+[GradientFlow](GradientFlow.md), "The generation residual". Recall reads one
+bounded window: content recall ranks the newest `ltmWindow` `LTM0` rows
+(default 1024) by their entries, and a cued read takes explicit references
+and the relations naming the cue's concepts, then the recalled rows, up to
+`ltmWindow` candidates ([Params](Params.md)).
 
 ### Class membership and the counted raise (2026-10-31)
 
@@ -2424,19 +2437,22 @@ distinguish one occurrence from another. An affirmed LTM1 row between symbols wi
 supplies a structural member only when it is exactly one order below its
 whole. This rule includes order zero. A self-reference stays in LTM1 and contributes
 no recursive constituent. Within a class, a recorded symbol contributes to
-the extension, the definition fold and the placement cover when it is one
+the extension and the definition fold when it is one
 order below the whole. An equal-order row between abstract concepts retains
 both evidence lanes for retrieval and reasoning. Occurrence and relation
 members and sides without a recorded order retain their existing readings.
 
-Either endpoint of a qualifying equality can be the shared side. A class is
+Either endpoint of a qualifying pair that `define` wrote, `part` each way,
+can be the shared side. A class is
 created when `raiseCount` pairwise distinct witnesses of the same order
 have retained positive evidence above `raiseEvidence`. Token witnesses
 require different tokens and different published values. Event witnesses
 require different locations or times. Until then each witness occupies a
 seat in the constructed snapshot slab. A kept definition can mint its
 subject while the shared side awaits its count. The resulting class is one
-order above its members, and a word for that side denotes the class. The
+order above its members. When a named concept is raised to a class, the old
+concept keeps its word and the class gets the same word; interpretation reads
+the class, and `lower` reads the old concept. The
 individual members remain available in LTM1. The epoch observation records
 the two kept operands in sentence order, including an unresolved operand
 when a side acquired no symbol.
@@ -2472,19 +2488,19 @@ is the sentence; at the kept close `ClauseRows.write_clause` writes an `LTM1`
 row only for a relation the sentence asserts or a composition that an
 unresolved reference leaves open. The stores' layout is in [STM](STM.md).
 
-Each occurrence holds its slot, model-time band, two truth lanes, access count and surprise. The occurrence index owns stable addresses, stream membership, document and content keys, and checkpoint integrity data. Recurrence summaries address those same occurrences. A retained occurrence takes its order from its referent. An idea with no referent is concrete. The working clause keeps the order produced by its grammar. Open roles identify questions, estimate links identify estimates, and cover references identify a cover. The input document owns supplied-fact authority. Signed evidence comes from the two independent lanes. A sentence's row also keeps its episodic entry (`episodic_concepts`, `episodic_values`). A row's identity is its address key, a digest of its document, its sentence index and its content key, so asserting the same content again re-witnesses the same row instead of appending a copy.
+An `LTM0` row is a kept sentence's or a kept thought's idea, in six columns: `slots`, the idea, whose `.when` band holds the row's `time`; `trust`, one signed number ("Trust of a row" above); `referent`, one optional reference to what the idea is of, a concept or another row by its time, written from the reference the close selected and by promotion; the entry, `episodic_concepts` and `episodic_values` (see "When" above); and `activity` ("Activity, forgetting and promotion" below). A row has no origin, kind, stream, document, source text or stored order. Its order is the order of the concept its referent names, and an idea with no referent is concrete. Two ideas can have one extension, as a kind of one member and that member leave equal entries; the referent tells them apart. The working clause keeps the order produced by its grammar. What is pending, an open question's slots, a forward reference, a name awaiting its referent, is held in MTM while it is pending, never in a row. A row is named by its time ("Occurrence addresses" above), so asserting the same content again writes a new row.
 
-**LTM1 relation rows.** An `LTM1` row is one relation, $Part(x, y)$: two tagged references (`refs`, `ref_kinds`; each an occurrence, a symbol or another relation), the two truth lanes and their effective copies, the access count, surprise, a percept band holding the row's `.where` and `.when`, and the seats of its lexical operator and grammar operation (`operator_reference`, `operation_seat`). No kind is stored. Its readings follow from the types of its two arguments (`LTM1.readings`): two situations give a conditional, a situation and a speech individual an attribution, an object and a word a definition, two kinds a subsumption, a singleton on the right an equality, and two spatial arguments parthood; retrieval context chooses among the readings the arguments permit. A relation over a relation is permitted, and every endpoint is written before the row that uses it (`relation_order`). Part rows between symbols are the class-membership evidence of the taxonomy (`Priming.part_edges`).
+**LTM1 relation rows.** An `LTM1` row is one relation, $Part(x, y)$, in five columns: two tagged references (`refs`, `ref_kinds`; each a row by its time, a symbol or another relation), the two trust lanes (`truth_plus`, `truth_minus`) and `activity`. Writing a pair again merges its lanes by per-lane maximum and counts as an access. No kind is stored, and no relation carries an operator. Its readings follow from the types of its two arguments (`LTM1.readings`): two situations give a conditional, a situation and a speech individual an attribution, an object and a word a definition, two kinds a subsumption, a singleton on the right an equality, and two spatial arguments parthood; retrieval context chooses among the readings the arguments permit. A relation over a relation is permitted, and every endpoint is written before the row that uses it (`relation_order`, a cache rebuilt from the rows). Part rows between symbols are the class-membership evidence of the taxonomy (`Priming.part_edges`).
 
 ### Recognition across presentations (2026-11-02)
 
-The mixing word reader retains the admitted word, the physical row of its conceptual operand and the pending token's address in their respective fixed fields. Only located mentions of the introducing word count toward its recurrence. A new document retains presentation experience. At an epoch boundary, the model clears experience and the witnesses of recurrence while retaining the prototype of an already learned consolidation symbol. The same-order angular read can then reuse that symbol. Recurrence retains its evidence while any member lacks an order witness, and frequency never supplies the missing order; consolidation checks all members before allocating a concept (2026-11-10). A sparse change direction matching an existing source under the existing novelty threshold uses that source.
+The mixing word reader retains the admitted word, the physical row of its conceptual operand and the pending token's address in their respective fixed fields. Only located mentions of the introducing word count toward its recurrence. Documents and epochs keep the experience; nothing is cleared at their boundaries. A sparse change direction matching an existing source under the existing novelty threshold uses that source.
 
 An MTM occurrence keeps its first available word reading when `MediumTermMemory.bind` changes its token or `open` reopens it. The original lexical site can therefore witness its word's recurrence at a later close, even after a different reference uses the occurrence.
 
-`FamiliarTier.promote_identity` names a token by its introducing word and any explicit defining word. If those words already denote exactly one identity at the promoted order, active or remembered from an earlier epoch, the token joins that identity and nothing is minted; if they denote two or more, promotion raises before it changes the token or takes a seat. A new epoch's first reading of a retained name returns its unique remembered denotation through `InterpretLayer.referent` and writes no definition; the kept close grounds it again.
+`FamiliarTier.promote_identity` names a token by its introducing word and any explicit defining word. If those words already denote exactly one identity at the promoted order, active or remembered after its definition was forgotten, the token joins that identity and nothing is minted; if they denote two or more, promotion raises before it changes the token or takes a seat. A reading of a name whose definition was forgotten returns its unique remembered denotation through `InterpretLayer.referent` and writes no definition; the kept close grounds it again.
 
-**Consolidation.** At each kept close `MemoryConsolidation.recurrence_groups` assigns every retained idea to a fixed reading seat. The idea's content with its time band zeroed joins the seat whose representative is closest by cosine and strictly within `recurrenceAngle` (15 degrees, cosine 0.966), else takes a free seat: an idea drifts a little over time, so recurrence is read by angle, never by an exact hash. A representative is the evidence-weighted mean of its retained ideas (weight $t^+ + t^-$), rebuilt at each close, so re-closing an idea never counts its evidence twice. A reading witnessed in three distinct documents (repeated presentations of one cover are one document) is promoted to a concept once all its members have an order. The promoted row's form is the evidence-weighted centroid of its occurrences' forms, with location, time and meaning zero, and its meaning is placed at the promoting close. A promoted seat keeps its symbol after its ideas are forgotten; an empty unpromoted seat is released.
+**Activity, forgetting and promotion.** Every row of either store has one `activity` from 0 to 1. A write sets it from the sentence's surprise, or to `activityDefault` (0.5) where that is unknown. An access adds `activityStep` (0.1): a row a recall returns, a relation read as evidence, a pair written again; a read on a path that is not kept does not count. A forgetting pass (`Forgetting.forget`), at a document boundary, at an epoch's start and on a serving write that finds a store over its high water, multiplies every value below one by `activityDecay` (0.9); where a store holds more than `forgetHighWater` (0.9) of its capacity, it drops the least active rows down to `forgetLowWater` (0.7), never a row that a kept row or relation refers to. A value of one is never lowered and its row never dropped. An `LTM0` row whose activity reaches `activityPromotion` (0.9) is promoted once (`MemoryConsolidation.consolidate`): its idea, with its time band zeroed, becomes a new concept, written as the row's referent, and its activity is set to one. The concept's order is its referent's where the row had one, and one above the greatest order among its entry's concepts where it had none. Its meaning is placed at the promoting close. A row read often enough therefore becomes a concept, and a row never read again fades.
 
 ### Reference dependencies and closing deadlines (2026-11-03)
 
@@ -2508,7 +2524,7 @@ A whole's total membership `t` supplies presence `p = min(1, t)`. A form centroi
 
 ### Fixed inverse pair choice (Alec, 2026-11-04)
 
-`DecompositionChooser` selects the fixed joint residual argmin over form and both meaning lanes. Its device-following constant is `[1, 0, 0, 0, 0]`, outside every optimizer group. Selection is top-down: a pair is chosen by its joint residual, with meaning in the score, independently of the order in which the derivation composed its operands, because meaning matters most with a large lexicon. No operand-identity teacher trains the choice: conjunction and disjunction are commutative, so every target ties its transpose exactly and such a teacher's cross-entropy never reaches zero. Selection is not biased toward exact lexical reconstruction to pass a small fixture; a learned top-down pair policy, if one is ever wanted, is credited only by output.
+`DecompositionChooser` selects the fixed joint residual argmin over form and both meaning lanes. Its device-following constant is `[1, 0, 0, 0, 0]`, outside every optimizer group. Selection is top-down: a pair is chosen by its joint residual, with meaning in the score, independently of the order in which the derivation composed its operands, because meaning matters most with a large lexicon. No operand-identity teacher trains the choice: a commutative operator such as `intersection` or `union` ties every target with its swap exactly and such a teacher's cross-entropy never reaches zero. Selection is not biased toward exact lexical reconstruction to pass a small fixture; a learned top-down pair policy, if one is ever wanted, is credited only by output.
 
 Two exactness tests coexist. The pair search (`LanguageSpace._bounded_binary_reconstruction`) calls a decomposition pair exact when its joint residual is at most $(8\epsilon)^2$ for the parent's dtype (about $9.1 \times 10^{-13}$ in float32); any exact pair outranks every approximate one, and among exact pairs the joint residual still decides. The generate walk calls a proposal exact when its form and both meaning lanes are each at most `EXACT_RESIDUAL_TOLERANCE` ($10^{-8}$, an RMS code error of $10^{-4}$).
 
@@ -2530,7 +2546,7 @@ The witnessed-incompatibility test is subsumed for a mention's own content once 
 
 The aligned serial reader's eager word admission (`BasicModel._stage_serial_concept_rows`) admits a word only when `WordSurfaces.is_lexical_form` accepts its surface, as every other reader does; whitespace and punctuation remain percept spans with no lexical identity.
 
-**A description's closing address (2026-11-05).** A sentence that closes as an unresolved relation retains that relation and its evidence. If its reference mention has no occurrence of its own, closing reserves and writes a separate, untimed occurrence with zero evidence for the mention's complete idea. The mention address is distinct from the sentence result, including across the final time-stamp replacement. A multi-leaf description never substitutes its first word's occurrence or inherits a lexical reading through its fallback kind; a non-word kind remains a reference to the description's own occurrence. Existing occurrence results are reused. This uses the ordinary occurrence writer and provenance rules.
+**A description's closing address (2026-11-05).** A sentence that closes as an unresolved relation retains that relation and its evidence. If its reference mention has no occurrence of its own, closing reserves and writes a separate row at trust zero, with a time of its own, for the mention's complete idea. The mention's row is distinct from the sentence result. A multi-leaf description never substitutes its first word's occurrence or inherits a lexical reading through its fallback kind; a non-word kind remains a reference to the description's own occurrence. Existing occurrence results are reused. This uses the ordinary occurrence writer.
 
 ### Named forward references and closing exclusions (2026-11-05)
 
@@ -2540,53 +2556,54 @@ Every reference between sentences points back. A row is written when its sentenc
 
 ### Journal origins at the closing boundary (2026-11-06)
 
-`ChunkJournal.capture` reads an operation transaction only for a fold or rewrite (action kind 1 or 2) with a valid journal column. SHIFT and transpose actions carry no operation transaction: they contribute no identities through that selection and emit zero event and timeline rows. The same validity rule governs identity enumeration, introducing-action search and column-to-action mapping. A local identity that is neither an existing MTM token, a durable concept nor a shifted lexical introduction must name a real introducing operation in its journal; absence raises at capture. The former fallback to action zero is retired, while an actual introducing operation at index zero remains legal. The captured origin lets `ClauseJournal` retain the addressed introduction and `ReferenceClose.sites` place it before its uses in both scoring and admission. `ReferenceClose.preview` still raises for a bind whose introduction is unwritten, and the named-forward-reference rule above is unchanged.
+`ChunkJournal.capture` reads an operation transaction only for a fold or rewrite (action kind 1 or 2) with a valid journal column. SHIFT and `swap` actions carry no operation transaction: they contribute no identities through that selection and emit zero event and timeline rows. The same validity rule governs identity enumeration, introducing-action search and column-to-action mapping. A local identity that is neither an existing MTM token, a durable concept nor a shifted lexical introduction must name a real introducing operation in its journal; absence raises at capture. The former fallback to action zero is retired, while an actual introducing operation at index zero remains legal. The captured origin lets `ClauseJournal` retain the addressed introduction and `ReferenceClose.sites` place it before its uses in both scoring and admission. `ReferenceClose.preview` still raises for a bind whose introduction is unwritten, and the named-forward-reference rule above is unchanged.
 
 ### Concept and relation trust (2026-11-06)
 
-Relations learned over words that are not yet stable come to encode false statements, and such a relation must not become a word's definition. Trust therefore keeps two kinds of value apart: each concept's trust, its radius $x_1, x_2, \ldots$, and each relation's own stored value $x_3$, what its closes wrote. A relation's authority is $\min(x_1, x_2, \ldots) \times x_3$, the least trusted of its operands and its operator scaling its stored pair: a relation requires its ideas to be defined, and an operator applied to words requires both the words and the operator to be learned. Authority follows learning with no second reading. With `trustViews` 3, Part(wug, bird) with wug seen once ($x_1 = 1 - e^{-1/3} \approx 0.28$) reads $0.28\,x_3$, and every row that depends on it reads no more; after three agreeing views of wug it reads $0.63\,x_3$; if wug's stability later falls, the row and every row above it fall with it, in order. A truth configured at 0.9 over words that are seated but not yet read is stored at $(0.9, 0)$, reads zero, and rises as its words are read. The composition is a minimum, not a product, so that a relation is not weakened for having more operands.
+Relations learned over words that are not yet stable come to encode false statements, and such a relation must not become a word's definition. Trust therefore keeps two kinds of value apart: each concept's trust, its radius $x_1, x_2, \ldots$, and each relation's own stored value $x_3$, what its closes wrote. A relation's authority is $\min(x_1, x_2, \ldots) \times x_3$, the least trusted of its endpoints scaling its stored pair: a relation requires its ideas to be defined. No operator contributes a factor ("No gate on an operator" below). Authority follows learning with no second reading. With `trustViews` 3, a Part row with an endpoint concept seen once ($x_1 = 1 - e^{-1/3} \approx 0.28$) reads $0.28\,x_3$, and every row that depends on it reads no more; after three agreeing views of that concept it reads $0.63\,x_3$; if its stability later falls, the row and every row above it fall with it, in order. An object reached through a read word is at trust one (Alec, 2026-11-14: "which we should set at 1 for now, along with the object-concept's trust"): its radius does not rise by views, and a word's mapping to it is at one. The composition is a minimum, not a product, so that a relation is not weakened for having more operands.
 
 A concept's trust is its **for-lane** length (Alec, 2026-11-06), $\ell=(\mathrm{agreement}/\mathrm{views})(1-e^{-\mathrm{views}/\mathrm{trustViews}})$, or zero with no view. The length measures how well the concept is learned, both how often it has been seen and how stable it is, since each occurrence arrives with slightly different parts and wholes: the first factor is the mean agreement of its views, and the second rises with their number. Fixed-capacity, checkpointed `views` counts kept content observations and `agreement` sums request coverage against the unscaled content. A view of empty stored content has agreement one; the first nonempty view becomes its stability reference, and subsequent views use coverage. This rule grants no identity association by empty containment. Observing a view allocates no LTM0 or LTM1 row; structural relations and forgetting do not change the counters. The content column retains its unscaled magnitude and its for direction follows training, so trust does not feed back into its evidence. The form band is untouched. Placement writes direction times radius to the for lane; the against lane retains its written evidence, zero for an ordinary placement. `lengths[:,1]` stays as captured or zero. After every optimizer step the trust projection (`ConceptTrust.project`) rescales only the for lane, to its stored radius, and leaves against coordinates alone, so training moves a concept's direction and never its length. Thus a placed stored concept with no against evidence reads support `(radius, 0)`, and negation exchanges the two poles. An unplaced row has zero for coordinates while operand trust reads its stored radius. Frozen concepts and the null-concept retain their built trust lengths. Operand trust comes from a seated, tracked concept row; otherwise an operand contributes one. Meaning charts track their concept rows, and explicit class views on whole conceptual charts can also allocate tracked radii. A chart without a meaning band carries no concept trust: observation and projection are inert, its operands contribute one, and `Queries.extent` continues to read the whole-value norm. A seated tracked concept with no views contributes zero; a seatless word contributes one even to its own named row.
 
-At the grammatical close, a relation's stored poles (`truth_plus`, `truth_minus`) receive the evidence scaled by source trust, with independent per-lane maximum across closes. Source trust remains truth-set row trust times architecture trust. Within `clause_assertions` (truth-set or user authority), the authority supplies the pair from its signed trust and an explicit input evidence pair is ignored. Outside an authority context, an explicit pair is scaled by the source trust; without an explicit pair the signed trust supplies its polarity. Later closes can still raise either stored lane. Two fixed-capacity, checkpointed columns, `effective_plus` and `effective_minus`, hold the stored pair times the minimum of the endpoints' and operator's trust. A seated concept on a tracked chart contributes its stored positive-lane radius; a seatless identity, an operand on an untracked chart, a non-concept occurrence or an open region contributes one; a relation endpoint contributes the larger of its effective poles. A lexical operator follows that same operand rule through the checkpointed `operator_reference` column (`-1` when there is no lexical operator or it is already an endpoint); fixed relations contribute one.
+At the grammatical close, a relation's stored poles (`truth_plus`, `truth_minus`) receive the evidence scaled by source trust, with independent per-lane maximum across closes. Source trust is the trust the row's source gives ("Trust of a row" above). Within `clause_assertions` (truth-set or user authority), the authority supplies the pair from its signed trust and an explicit input evidence pair is ignored. Outside an authority context, an explicit pair is scaled by the source trust; without an explicit pair the signed trust supplies its polarity. Later closes can still raise either stored lane. Two fixed-capacity cache columns, `effective_plus` and `effective_minus`, rebuilt from the rows and never checkpointed, hold the stored pair times the minimum of the endpoints' trusts. A seated concept on a tracked chart contributes its stored positive-lane radius; a seatless identity, an operand on an untracked chart, a non-concept occurrence or an open region contributes one; a relation endpoint contributes the larger of its effective poles.
 
-`relation_order` is a preallocated, checkpointed order of live row handles, with every relation endpoint before the row that uses it. Writes preserve that order; retention packs the surviving order without renumbering handles, and epoch snapshots rebuild it. Cycles and dangling row endpoints raise. At the close boundary, and before an authority read if a radius has since changed, LTM1 recomputes the effective columns in this order. `ConceptTrust.revision` and stored-pair changes invalidate this derived evidence. `LTM1.evidence` is the common authority read. A row's effective poles cannot exceed a row endpoint's larger effective pole; a radius falling can lower all rows above it while their stored evidence stays unchanged.
+`relation_order` is a preallocated cache of live row handles, with every relation endpoint before the row that uses it, rebuilt from the rows after a load. Writes preserve that order, and retention packs the surviving order without renumbering handles. Cycles and dangling row endpoints raise. At the close boundary, and before an authority read if a radius has since changed, LTM1 recomputes the effective columns in this order. `ConceptTrust.revision` and stored-pair changes invalidate this derived evidence. `LTM1.evidence` is the common authority read, and it counts as an access of the row. A row's effective poles cannot exceed a row endpoint's larger effective pole; a radius falling can lower all rows above it while their stored evidence stays unchanged.
 
-Recorded membership also constructs concept order, seats, class initializers and placement. Those construction readers use stored observations: a new concept needs its seat and direction before it can supply a radius. `ConceptAllocator.records`, `PartClosing.observe_members`, `FamiliarTier.class_members`, the supervised `DefinitionFold` teacher and mereological placement's `Priming.part_edges(authority=False)` serve that construction. Query priming uses the default effective authority. Forgetting, epoch restoration and the supply ledger retain stored evidence; restoring or removing history is distinct from merging another close.
+Recorded membership also constructs concept order, seats, class initializers and placement. Those construction readers use stored observations: a new concept needs its seat and direction before it can supply a radius. `ConceptAllocator.records`, `PartClosing.observe_members`, `FamiliarTier.class_members`, the supervised `DefinitionFold` teacher and mereological placement's `Priming.part_edges(authority=False)` serve that construction. Query priming uses the default effective authority. Forgetting never changes stored evidence: removing a row is distinct from merging another close.
 
 `Interpret.define` remains the sole naming writer and writes every valid named pair. `DefinitionIndex` admits that pair as a denotation only while its effective positive pole is at least `definitionTrust`, both on add and on rebuild; effective-evidence changes invalidate the index. The threshold gates the binding, never the word's identity: a named word resolves by its form below the threshold. A sign with no denotation but exactly one remembered object of its order adds one view of its kept content to that object and stays pending with the null kind, without minting or adding a membership row; when the index admits the named pair, retained signs join that object, while signs that expired leave no identity or membership row. The first sign with no remembered object still mints, and an already denoted name absorbs its sign as before. A generic structural chain never becomes a name. The shared `WordSurfaces.is_lexical_form` predicate excludes empty, whitespace-only and Unicode-category-P-only text from lexical identity at admission and tiling under either `whitespaceUnits` setting. `Corpus.admit_training_forms` still admits those bytes as percept spans through `identity.admit`, then skips lexical lookup; the grammar-word and eager readers use the same predicate. The knob controls null units in the tiling.
 
-### Operation trust (2026-11-07)
+### Operation measurements (2026-11-07)
 
-`PartsOfSpeech.operation` owns the rule: input definiteness is separability times view evidence, and operation trust is the minimum input definiteness. Class fit is candidate coverage of direction times radius; radius still records ConceptTrust agreement. Empty measurable classes have zero definiteness. Charts unable to take conceptual views have neutral operation trust one and undefined clause readiness. Kept application uses remain checkpointed telemetry. Identity mechanics (`interpret`, `sign`, `bind`) and the fixed relations (`part`, `whole`, `equal`, `generic`, `implies`, `assertPart`) retain authority one. These exceptions do not remove their declared argument concepts.
+`PartsOfSpeech.operation` measures each operation: an argument's
+definiteness is its separability times its view evidence, reported for each
+input argument, and kept application uses remain checkpointed telemetry. Class
+fit is candidate coverage of direction times radius; radius still records
+ConceptTrust agreement. Empty measurable classes have zero definiteness, and
+charts unable to take conceptual views report none. These measurements scale
+no row and gate nothing. No relation records the operation that composed it:
+`LTM1` has no operation or operator column, and the naming writer
+`Interpret.define` writes its pair like any other writer, its authority the
+stored pair times the least of word and object trust.
 
-`PartClosing._write` records the composition's formal operation in the preallocated `LTM1.operation_seat` column, the concept seat of that operation ("References, shared strata and operator authority" below), with -1 for no recorded composition operation, including a named row. The first composition to write a pair owns this tag: subsequent writes merge the poles by per-lane maximum and retain that origin, even when the later composition uses another operation. The naming writer `Interpret.define` calls `LTM1.clear_operation` to set the tag to -1 and invalidate effective evidence; named authority is the stored pair times the minimum of word and object trust and any closed interpret-gate cap, and later composition writes leave the tag cleared. `LTM1.configure_operations(None)` preserves the bank's catalogue and occupation owner; an attachment without an occupation owner inherits the bank's owner through `attach_clause_index`. An empty incoming catalogue is likewise inert; only a different nonempty catalogue is a conflict. LTM1 layout 5 and argument-concept schema 4 carry the catalogue, gate states, native argument identities and scalar use counts through checkpoints without resizing. Native concept vectors, view counters and members use their ordinary checkpoint owners. Count-table checkpoints cannot reconstruct learned geometry and are rejected with their producer named for replay. `LTM1.refresh_effective` takes the minimum of endpoint trust, lexical-operator trust and operation trust before scaling the stored pair; the stored pair remains source evidence. Changed argument views, radii or uses invalidate the effective cache. Native named and membership rows have no learned-operation factor and are made current before dependent authority and gate reads; a cyclic dependency on learned relation authority fails explicitly.
-
-`ConceptualSpace.trust_measurements()` reports the fraction of admitted words with a measured for radius at least `definitionTrust`, the fraction of named words with a denotation, and each operation's uses, input definiteness and trust. Empty denominators return zero. A word without a seated tracked radius does not count as measured ready; the neutral operand contribution of one is not a radius measurement. `corpus_lessons.measure` records these values per presentation and beside its lexical forms. The two authority gates below read the stable-word fraction and lift definiteness; fine ordering of concepts and parts of speech remains a curriculum responsibility.
+`ConceptualSpace.trust_measurements()` reports the fraction of admitted words with a measured for radius at least `definitionTrust`, the fraction of named words with a denotation, and each operation's uses and input definiteness. Empty denominators return zero. A word without a seated tracked radius does not count as measured ready; the neutral operand contribution of one is not a radius measurement. `corpus_lessons.measure` records these values per presentation and beside its lexical forms, and `corpus_lessons.readiness_report` reports them; fine ordering of concepts and parts of speech remains a curriculum responsibility.
 
 Bind eligibility checks the order of its result in `ReferenceContext.prepare_operands`: a dummy must retain a known mention order, and an actual field binding must select a chunk with a known order. A known referent can supply that order even when the mention has none. An unknown-order result remains an error at the clause boundary.
 
-### Authority gates (2026-11-08)
+### No gate on an operator (Alec, 2026-11-13)
 
-`ConceptualSpace.gates` declares two gates in model data. Word admission is always open. While closed, `interpret` caps the named pairs recorded in `named_identities`; it opens when `ConceptTrust.measurements` reports a stable-word fraction at least its `fraction`, counting admitted words whose measured for radius reaches `definitionTrust`. The `clause` gate caps rows with a recorded composition operation outside its `except` list; it opens when the mean of `PartsOfSpeech.operation('lift')['definiteness']` reaches its `threshold`. Fixed relations retain operation trust one but retain their operation seat and are covered unless named in `except`. A row with no recorded operation (-1) is outside the clause gate; naming clears a row's operation seat, and the interpret gate finds it through its naming record.
-
-Every applicable closed gate contributes `closedTrust` to the same minimum as the endpoints, lexical operator and operation trust. Open gates contribute one. No gate changes a stored evidence pole or prevents a write, and no closed gate removes an operation from the chooser's menu: if it did, the operation's arguments would never be occupied, and the measurement that opens the gate could never be made. A closed gate caps authority instead: rows written through the operation are kept as structure without authority, the operation keeps being used and learned by reconstruction while it waits, and its rows gain authority at the next effective read after the gate opens. `LTM1.refresh_effective` first publishes primitive evidence with the current caps, then reads the gate measurements and operation factors. When a gate opens, it invalidates the effective cache and republishes primitive authority before the next measurement, so subsequent binding reads see the newly admitted denotations. The existing cyclic-authority guard remains. A bank without live rows keeps its declared start; an unavailable concept or occupation owner has no measurement and cannot open the corresponding gate. Unobserved lift argument concepts have zero radius, so empty classes report zero readiness and leave the clause gate closed. Empty or whitespace-only `except` elements exempt no operations.
-
-`TrustGates` holds each bank's open booleans. Once measured open, a gate stays open even if its measurement later falls. LTM1 layout 5 saves these booleans beside the operation catalogue in `_extra_state`; missing gate state or an older layout is rejected, never backfilled. Epoch row restoration retains the live gate booleans. Explicit checkpoint loading restores the saved state. Column storage, codebooks and capacities do not resize.
-
-`data/model.xml` starts both gates open. The dedicated `data/MM_corpus_lessons.xml`, selected by default by `corpus_lessons`, starts both closed; an explicit `--config` remains supported. `ConceptualSpace.gate_measurements()` reports each state and current measurement; `corpus_lessons.readiness_report` records them as `gates` beside `trust_measurements` in presentation, epoch and lexical reports. These reports advance no curriculum. The chooser keeps its menu and additive scoring rule. Under the learned-argument representation, its existing argument-score carrier now reads candidate coverage of the radius-bearing class by the word direction, without normalization. No gate directly changes eligibility.
+No operator is gated inside the model. Alec, 2026-11-13: "Operators are "a priori" concepts that we are using for the control of the architecture itself. Lets not do that; the gating of those operators might be able to be done *in the tests*, which would act like piagetian stages signalling that the test suite can move on to the next stage." The whole grammar of a file is open from the first sentence, and no row's trust depends on which operator composed it: a relation's effective pair is its stored pair times the least of its endpoints' trusts, with no factor for an operator or for a gate. The gate belongs to the lessons, whose stages are one to a family of operators ([Training](Training.md)); the reports above advance no curriculum. The chooser keeps its menu and additive scoring rule; its argument-score carrier reads candidate coverage of the radius-bearing class by the word direction, without normalization.
 
 ### Hierarchical conceptual context (Alec, 2026-11-08)
 
-Hierarchical influence belongs to the concept architecture. `ConceptHierarchy.refresh` and `MereologicalCodes.derive_class_placements` derive class directions from evidence-weighted member centroids in the shared conceptual space, at every order. `ConceptHierarchy.condition` then passes higher-order context down native membership edges, highest order first, using the existing placement objective, rate and negative-sample controls. Same-order updates share a snapshot; fellow members are excluded from negative samples. It runs at the kept sentence boundary, after member observations. A class can condition another class, which can condition its own members. Centroids are refreshed once per kept boundary, before the downward pass; the pass does not rederive them, and the next boundary's refresh sees the moved members. Neither forms nor trust radii are moved by this directional conditioning.
+Hierarchical influence belongs to the concept architecture, and it never crosses an order's geometry (Alec, 2026-11-15: "the doms location in dom space does not influence the subs location in sub space"). A membership between two orders says which concepts of each order belong together; the grouping is then done in each order's own space. At the kept sentence boundary, after `PartsOfSpeech.observe_kept` records the reading's members: a word draws the classes it filled together, each toward the centroid of that word's classes among classes; and a class draws its words together, each word present toward the centroid of that class's words among words. A centroid so defined is unrelated to the position of the concept that defines it ("The centroid defined by a dom or sub is unrelated to its own position"). A class is placed by its context like any concept and takes no centroid of its members; a word is never moved toward its class's position.
 
-Conditioning context is learned from the input's composition: kept grammar applications supply the members (`PartsOfSpeech.observe_kept`), and the composed grammar supplies the top-down context. While grammar is unreliable its influence on syntactic categories stays limited, because the context weights are effective evidence, which operation trust and the authority gates cap. Sentences the model generates add no members and need no separate context-learning pass.
+This is the alternation of an EM between words and their classes (Alec: "the word (sub) occurs and pulls its POS (doms) toward one group. The active POS dom will also pull its word subs together"). Kept grammar applications supply the members, so while grammar is unreliable the groupings are weak; sentences the model generates add no members.
 
-A word concept's position relative to a class centroid is its degree of membership in that part of speech: degree is position, and because only participating members are conditioned, position follows the word's own kept participations. The word concept lives apart from its object (the word moves toward the count-noun centroid; its object stays where its own memberships place it), and the word-to-object binding is identity through the definition index. Contraction of word concepts within a class is the part of speech being learned, and the collapse of many formal arguments (lift's subject, the verb's subject, the adjective's noun) onto a few parts of speech is intended. A member's weight in its class centroid is its current fit, so a word kept once in a class and never again weighs little there.
+A word's degree of membership in a part of speech is how near it lies to that class's words: a word's fit to a class compares the word with the class's centroid of its words, both among words, and never with the class's own position, which lies in another order's space. The word concept lives apart from its object, and the word-to-object binding is identity through the definition index. Words drawn together within a class are the part of speech being learned; classes drawn together by the words they share are the collapse of many formal arguments (`change`'s subject, the verb's subject, the adjective's noun) onto a few parts of speech. A part of speech must make a grammatical difference: where the formal arguments cannot part two kinds of word, the remedy is a new operator (Alec, 2026-11-15).
 
-`ConceptHierarchy.observe_member` is the general participation writer: the class is one native order above its member, its persistent `('sym', identity)` constituent is deduplicated, and each kept participation contributes a view of the member's unscaled meaning direction through `ConceptTrust.observe`. Native relational memberships and these constituent memberships share `Priming.part_edges`; geometry reads stored weights, while context authority reads effective evidence (constituent edges use the endpoints' minimum). This extends the earlier seen-ledger-only placement guard: observed lexical context still uses the seen ledger, and hierarchical context uses explicit native memberships. Desire and propagated activation still do not supply a learning target.
+`ConceptHierarchy.observe_member` is the general participation writer: the class is one native order above its member, its persistent `('sym', identity)` constituent is deduplicated, and each kept participation contributes a view of the member's unscaled meaning direction through `ConceptTrust.observe`. Native relational memberships and these constituent memberships share `Priming.part_edges`; geometry reads stored weights, while context authority reads effective evidence (constituent edges use the endpoints' minimum). Observed context is the sentence's field at every order, and hierarchical context uses explicit native memberships. Desire and propagated activation still do not supply a learning target.
 
-Parts of speech have no separate centroid, attraction, trust-learning or feedback implementation. Their only special treatment is a priori construction and grammar use. `prebuild_formal_arguments` declares one mutable, seated concept for every formal input and output. Native word concepts are order 0, their argument classes order 1, and classes over argument concepts order 2. Empty declarations start with zero direction, radius and views. Kept grammar applications supply word members to the ordinary hierarchy; shared members bring the argument centroids together without dividing the word's membership between roles or assigning one exclusive category. The chooser reads geometric argument scores. Category names beyond the declared arguments are not built in.
+Parts of speech have no separate centroid, attraction, trust-learning or feedback implementation. Their only special treatment is a priori construction and grammar use. `prebuild_formal_arguments` declares one mutable, seated concept for every formal input and output. Native word concepts are order 0, their argument classes order 1, and classes over argument concepts order 2. Empty declarations start with zero direction, radius and views. Kept grammar applications supply word members to the ordinary hierarchy; shared members bring the argument classes together without dividing the word's membership between roles or assigning one exclusive category. The chooser reads geometric argument scores. Category names beyond the declared arguments are not built in.
 
 Model construction adds the loaded grammar's fixed argument-seat reservation to the configured ordinary inventory before constructing tensors and optimizer ownership. Hand-built fixtures supply enough physical capacity themselves. All seats and trust columns remain fixed thereafter. An untracked whole conceptual chart retains neutral ordinary operand trust; explicit class views can allocate radii using that chart's conceptual value. A paired chart with no meaning band records membership but supplies no conceptual view or direction: its form coordinates cannot teach class geometry. Downward conditioning requires a meaning band. These chart rules are shared by ordinary and formal classes. Copied owners rebind their grammar catalogue only when the copied native argument identities agree; unrelated owners fail loudly.
 
@@ -2594,9 +2611,9 @@ Model construction adds the loaded grammar's fixed argument-seat reservation to 
 
 The class read is candidate coverage `IdentityRows.meet_ratios(word_direction, class_direction * radius)[0]` in conceptual coordinates. A zero class reads zero; smaller nonzero radii are less restrictive. Magnitude is commitment, not a gain: coverage $\sum_i \min(w_i, v_i) / \sum_i v_i$ of the class vector $v = \ell c$ by the word's unit direction $w$ is lenient for a short, young class (any word sharing its support covers it) and strict for a long, mature one (the word must carry the class's mass coordinate by coordinate). A dominant class therefore cannot capture every word and a new lesson's operation can recruit members, while members conditioned toward a mature class cover it increasingly, so it still recognizes its own. Scores are not normalized across arguments. ConceptTrust agreement remains request coverage: radius measures tightness, not separability.
 
-`PartsOfSpeech.operation` computes each argument's separability as the fit-weighted fraction of its members that fit it strictly better than every populated argument outside `CLASS_CONTIGUITY_COSINE` (15 degrees). Contiguous classes do not compete. Definiteness is separability times `1 - exp(-views/trustViews)`; it does not follow the radius's tightness, since a noun class is never tight. An empty measurable class has zero definiteness. Operation trust is the minimum input definiteness, with the existing fixed exemptions. The clause gate reads the mean of lift's two values. A chart unable to take conceptual views contributes neutral operation trust one and has undefined clause readiness (`None`). Gate and curriculum reports include separability, views and definiteness per argument.
+`PartsOfSpeech.operation` computes each argument's separability as the fit-weighted fraction of its members that fit it strictly better than every populated argument outside `CLASS_CONTIGUITY_COSINE` (15 degrees). Contiguous classes do not compete. Definiteness is separability times `1 - exp(-views/trustViews)`; it does not follow the radius's tightness, since a noun class is never tight. An empty measurable class has zero definiteness. A chart unable to take conceptual views has undefined definiteness (`None`). Curriculum reports include separability, views and definiteness per argument.
 
-At the kept sentence boundary, observed members are collected across active streams, centroids refresh once, and only those members and their ancestors receive downward context. An absent member does not move. A constituent's centroid weight is its coverage fit under the class direction before that refresh; initially unplaced classes weight their first members equally. Relation-backed members retain their evidence weights and are enumerated once. Word conditioning never implicitly conditions its denoted object or changes its definition binding. Native membership proofs retain their path and name any formal-argument classes they traverse; those classes remain available to thought.
+At the kept sentence boundary, observed members are collected across active streams, and only those members and their ancestors receive downward context. An absent member does not move. Relation-backed members retain their evidence weights and are enumerated once. Word conditioning never implicitly conditions its denoted object or changes its definition binding. Native membership proofs retain their path and name any formal-argument classes they traverse; those classes remain available to thought.
 
 ## One memory file and thought time (2026-11-08)
 
@@ -2619,7 +2636,7 @@ the model clock back. `ThoughtRecord.address` keeps its checkpoint field name
 and points to the thought `.when`. The stores' layout is in [STM](STM.md),
 "Memory module and thought stamps".
 
-Reading journals stay aligned to action positions. A SHIFT or transpose has
+Reading journals stay aligned to action positions. A SHIFT or `swap` has
 journal column -1 and empty sentinels (zero values, false relation/selection
 flags and -1 references), and no table lookup is made for it. Only fold/rewrite
 operations gather their original journal rows. Existing readers skip other
@@ -2631,7 +2648,7 @@ such description, including one leaf, raises that it has no own occurrence.
 
 The selected forward action records its object value, presence and verb group
 beside the numerical journal frame. Derivation reconstruction and forward-discard
-accounting pass that witness to the inverse; a missing non-adverb action record
+accounting pass that witness to the inverse; a missing non-modifier action record
 raises. Free generation checks each candidate in its own proposed object's
 basis and verb group. A proposed verb phrase supplies its object through the
 bounded native decomposition over supplied concepts; a lexical verb has no
@@ -2662,7 +2679,7 @@ metric are in
 
 Verb and modal observations still pair events, report residuals and mark them.
 Only training updates the verb-group assigner, using the verb-phrase meaning
-recorded at the forward lift, rather than the verb word's code. The MTM event
+recorded at the forward `change`, rather than the verb word's code. The MTM event
 stores that operand alongside the symbol.
 On a later read, the stored value v is presented as `v + (A(b) - A(b).detach())`.
 The parentheses preserve v bit for bit. Operands are detached and only the current
@@ -2710,13 +2727,13 @@ Output is a sequence of order-0 points, one decode per item; the word order come
 
 The architecture is a dual-process model, and the distinction is structural, not a label on speeds. It is the design's account of what separates animal from human cognition.
 
-**System 1** is everything the loop needs to close without thinking: perception (parts, wholes, basic percepts), the order-0 concepts and their order-0 symbols (which are like percepts in that they still have a spatial interpretation), the order-0 decoder, `intuit()` within a step (the one-pass order-zero calculus, `ThoughtFaces.intuit` to `Intuition.execute`, writing into knowing by `write_knowing`), expectation across steps (`ConceptSpread.open_prediction` with `ActivationPredictor`, the prediction of the next input's order 0), and memory's linking of occurrences into collections: MTM's behavioral chains at order 0 and its identities at order 1, promoted by recurrence. Animals have that much: a mind with System 1 alone perceives, knows order-0 concepts, expects, tracks things and courses of events as extended nouns and extended events, and learns all of it without grammar. The loop with no thinking step is that mind.
+**System 1** is everything the loop needs to close without thinking: perception (parts, wholes, basic percepts), the order-0 concepts and their order-0 symbols (which are like percepts in that they still have a spatial interpretation), the order-0 decoder, `intuit` (a learned map from concepts to concepts, evaluated once when the sentence is observed, whose result joins knowing where `Intuition.write_knowing` deposits), `expect` (a learned map from the observed order-zero field to the whole expected field, run once at the open pass by `ConceptSpread.open_prediction`), and memory's linking of occurrences into collections: MTM's behavioral chains at order 0 and its identities at order 1, promoted by recurrence. Animals have that much: a mind with System 1 alone perceives, knows order-0 concepts, expects, tracks things and courses of events as extended nouns and extended events, and learns all of it without grammar. The loop with no thinking step is that mind.
 
 **System 2** is grammar: the three grammars compose, think and generate with their choosers (`OperationSelectionLayer`, `GeneratePolicy`, the selected-thought chooser), symbols and the higher orders, definitions and LTM recall, the derivation and its inverse, and STM's sparse face, its ideas and relations as symbols. "Compose is thought in the sense that it is symbolic understanding ... compose, think, and generate grammars all operate as system 2, on top of system 1" (Alec, 2026-11-03). Human cognition is the same loop with thinking steps between input and output.
 
 **The two inverses (Alec, 2026-11-10).** "For system 1 and animal cognition, the inverse happens from order-zero concepts. When symbolic processing is turned on (system 2, human cognition), we run the grammar inverse to determine the order-zero concept layer and then run the system 1 inverse." In code names: `BasicModel.reverse` is the System 1 inverse and reads no grammar (`reconstruction_reverse`); with symbols on, `SentenceField.sentence_generated` runs the generate walk on the sentence's own end slots, `OutputOccurrences.generated` places the emitted terminals, and the same `reverse` follows (`reconstruction_order_zero`).
 
-**Where they meet.** System 2 reads knowing and writes back into it: thought's deposits go into knowing, as an order-0 concept's evidence at the input's brackets or as an STM idea with its `.when` (no column is appended to the field), and the deposit carries gradient. System 1 learns from System 2 mainly through System 2's activation of the conceptual space, which trains the expectation: expectation's target is the detached order-0 slice of the carrier after thought, so System 1 learns to predict what System 2 made of the last input, and `intuit()` and expectation stay two operations, one within a step and one across steps. Judgement follows the stages, and no judge reads the next sentence. Reconstruction judges the current input on every sentence: the order-zero reconstruction runs the generate walk on the composed understanding before the System 1 inverse, so System 2's compose and generate are trained by restoring the input even when no answer is supplied. Output's cost, including silence where nothing is asked, judges the thought, which is therefore trained only where output is supervised. Predicting the next input trains expectation, which belongs to System 1, and credits no System 2 departure.
+**Where they meet.** System 2 reads knowing and writes back into it: thought's deposits go into knowing, as an order-0 concept's evidence at the input's brackets or as an STM idea with its `.when` (no column is appended to the field), and the deposit carries gradient. System 1 learns from System 2 mainly through System 2's activation of the conceptual space, which teaches `intuit`: its target is the detached field the kept path leaves after its thought, so System 1 learns to give at observation what System 2 made of the input. `expect` is taught by omission instead, and the two stay two maps with different teachers. Judgement follows the stages, and no judge reads the next sentence. Reconstruction judges the current input on every sentence: the order-zero reconstruction runs the generate walk on the composed understanding before the System 1 inverse, so System 2's compose and generate are trained by restoring the input even when no answer is supplied. Output's cost, including silence where nothing is asked, judges the thought, which is therefore trained only where output is supervised. Restoring hidden input trains `expect`, which belongs to System 1, and credits no System 2 departure.
 
 **Gradient.** Under the loop the shared row is perception, the field's parameters (definition exponents, `PrimitiveProperties.members`, the percept codebook) and the decoder; System 2 is trained by output and, for the untransformed understanding, by the order-zero reconstruction through compose and the grammar inverse. Output's gradient is projected against reconstruction's on every shared unit and never alters reconstruction's, so to first order a step taken for the answer cannot increase reconstruction's loss. Each cost term carries an owner (which parameters receive it under `separateChooser` true) and a side (R or A under the default), which is how the two systems share a tree without one overwriting the other's learning ([GradientFlow](GradientFlow.md#default-projected-gradients)).
 
@@ -2724,11 +2741,11 @@ The architecture is a dual-process model, and the distinction is structural, not
 
 **Origin.** MTM is Kahneman, Treisman and Gibbs's object file: a file opened for an occurrence and kept while later occurrences prove to be the same thing, by continuity of place and time and by likeness, at every level it operates on, the perceptual level included: tracking a thing through occlusion and motion is the object file, and the same linking by continuity is what MTM does on basic-level percepts. A file holds references (Heim's file cards, Kamp's discourse referents) and a state of affairs (below). The grounding is in [Philosophy](Philosophy.md), the section on object files and file cards.
 
-**One link, every level, one use.** MTM links occurrences into collections by one `link` function with no branch on order: basic-level percept occurrences (a percept with parts and wholes), order-0 states into chains, order-1 mentions into identities. A collection is a connected path: a time window and likeness enforced, place and continuity scored. Joining states makes an extended event, joining mentions an extended noun; identities at different orders are never joined. Its contents are not strictly conceptual, since basic percepts are perceptual, but its use is one thing at every level: a development stage for conceptual space. A collection that recurs (`concept_mint_count` times within `horizon`) promotes one order up by the one promotion rule: a recurring basic-level collection to a `BasicPercepts` row, which replaces admission as the writer of basic percepts; a recurring chain to a chained event concept; an identity to a noun concept, with the path written as membership and successor rows into LTM0 and LTM1. "It serves to develop candidates for next-order concepts always ... it has no use except as a development stage for conceptual space." A thing that persists through a chain of events is a noun candidate, which is how event identity helps create nouns.
+**One link, every level, one use.** MTM links occurrences into collections by one `link` function with no branch on order: basic-level percept occurrences (a percept with parts and wholes), order-0 states into chains, order-1 mentions into identities. A collection is a connected path: a time window and likeness enforced, place and continuity scored. Joining states makes an extended event, joining mentions an extended noun; identities at different orders are never joined. Its contents are not strictly conceptual, since basic percepts are perceptual, but its use is one thing at every level: a development stage for conceptual space. A collection that recurs (`concept_mint_count` times within `horizon`) promotes one order up by the one promotion rule: a recurring basic-level collection to a `BasicPercepts` row, which replaces admission as the writer of basic percepts; a recurring chain to a chained event concept; an identity to a noun concept, with the path written as membership rows into LTM1. "It serves to develop candidates for next-order concepts always ... it has no use except as a development stage for conceptual space." A thing that persists through a chain of events is a noun candidate, which is how event identity helps create nouns.
 
 **MTM and the stages.** The input reconstruction reads no MTM state: acceptance check 2 empties STM and MTM before the open, and promoted rows persist in their tables, so MTM's effect on perception is at promotion time, never at inference. Thinking and output read MTM: reading is interpretation, interpretation is grammar; words resolve to pending tokens, and prepended symbols present a token's value computed from its references to the next sentence (with the re-read, so that a later answer credits the verb that produced the value). MTM is thus involved in thought and action only: not that the percept level never has files, but that the reconstruction of the input does not depend on them. The hand-off is one way: thought passes order-zero concepts down to the decoder, and the percept side never addresses MTM (Alec, 2026-11-03).
 
-**The state of affairs.** MTM holds, per identity, its static concepts at order 0 and the verbs that change them, with more than one state per identity: an actual timeline and alternative timelines. A verb is the difference between two states of one identity over time; a modal is the difference between two states that cannot both be actual, at equal time. Both states are readings of input, so training over MTM compares a verb with the world as read, not with the model's own choices: the verb action is trained to map an identity's earlier order-0 state to its later one, the modifier action to map the actual state to the alternative, and the group assigner's residuals on the recorded verb-phrase meaning assign a verb to its basis. The verb and modal teachers are therefore MTM: their training is memory's function. Every verb group starts as the identity basis, and no fit moves a basis toward an observed change: participation shapes the bases (the readers of the forward `lift`, the re-read and `memory.verb_state`), while the assigner runs on the host, moves no weight, runs only in training and only chooses among the bases (`VerbGroups.observe`). The re-read has limits: it credits only the latest event on each seat, takes the gradient at the current parameters for a value made with older ones, and teaches a verb nothing through a referent that is never read again; truth and existence answers about modality stay symbolic (`TimelineRead`).
+**The state of affairs.** MTM holds, per identity, its static concepts at order 0 and the verbs that change them, with more than one state per identity: an actual timeline and alternative timelines. A verb is the difference between two states of one identity over time; a modal is the difference between two states that cannot both be actual, at equal time. Both states are readings of input, so training over MTM compares a verb with the world as read, not with the model's own choices: the verb action is trained to map an identity's earlier order-0 state to its later one, the modifier action to map the actual state to the alternative, and the group assigner's residuals on the recorded verb-phrase meaning assign a verb to its basis. The verb and modal teachers are therefore MTM: their training is memory's function. Every verb group starts as the identity basis, and no fit moves a basis toward an observed change: participation shapes the bases (the readers of the forward `change`, the re-read and `memory.verb_state`), while the assigner runs on the host, moves no weight, runs only in training and only chooses among the bases (`VerbGroups.observe`). The re-read has limits: it credits only the latest event on each seat, takes the gradient at the current parameters for a value made with older ones, and teaches a verb nothing through a referent that is never read again; truth and existence answers about modality stay symbolic (`TimelineRead`).
 
 **Modal timelines.** A modal clause continues its subject's most recent alternative timeline and opens one only when the identity has none (`MediumTermMemory.alternative`), so "Joe could have run. He would have been tired." is one branch. This default is adopted for simplicity, not as a claim about discourse; if two counterfactuals of one identity must be kept apart, the chooser can gain an action that opens a new timeline. An alternative starts from the actual event prefix, a later actual event does not advance it, and a branch is never a bind candidate or an identity. An actual (order-zero) request reads the actual timeline only, and an abstract request (order 1 or above) reads every timeline (`TimelineRead`).
 
@@ -2738,53 +2755,53 @@ The architecture is a dual-process model, and the distinction is structural, not
 
 The mechanism is described under "When" in [One where, one when, many whats](#one-where-one-when-many-whats-the-field-attention-and-the-two-modes); this subsection places it in the two systems.
 
-**Two sides of every store.** Every entry has two parts (Alec, 2026-10-23): the part located by its `.where` and `.when` is episodic in Tulving's sense, and the concept part is semantic; the concept index with `LTM1`'s edges is the semantic store proper, and promotion by recurrence is consolidation. Every memory structure (LTM, MTM, STM) therefore holds both, and the LTM entry holds the order-zero concepts of its moment rather than its percepts (Alec, 2026-11-11; below).
+**Two sides of every store.** Every entry has two parts (Alec, 2026-10-23): the part located by its `.where` and `.when` is episodic in Tulving's sense, and the concept part is semantic; the concept index with `LTM1`'s edges is the semantic store proper, and promotion, by recurrence in MTM and by activity in `LTM0`, is consolidation. Every memory structure (LTM, MTM, STM) therefore holds both, and the LTM entry holds concepts of its moment rather than its percepts (Alec, 2026-11-11): the strongest readings of its field of understanding, of any order (below).
 
 | store | concept side | episodic side |
 |---|---|---|
 | STM | the ideas and relations of `STMChunks` | the attended `PerceptField` (`ConceptualSpace._percept_field`) |
 | MTM | identity collections and their timelines | collections of basic percepts (`member_kind` `'percept'`, order $-1$) |
-| LTM | `LTM0` ideas, `LTM1` relations and the minted concepts | the entry beside a sentence's `LTM0` row, or on its `episode` anchor: up to `episodicConcepts` order-zero concepts of the open pass, each with one signed value (`episodic_concepts`, `episodic_values`), at the row's `.when` |
+| LTM | `LTM0` ideas, `LTM1` relations and the minted concepts | the entry beside each `LTM0` row: up to `episodicConcepts` readings of the row's field of understanding, each one concept with its strength signed by its lane (`episodic_concepts`, `episodic_values`), at the row's `.when` |
 
-**Why concepts, not percepts.** An episode keeps concepts, and its percepts are reached through them. The evidence favours this: the hippocampal store is an index over high-level, object-level codes (Teyler and DiScenna 1986; Teyler and Rudy 2007; Murray and Bussey 1999); animals keep a few items bound to place and time (Clayton and Dickinson 1998; Luck and Vogel 1997; Cowan 2001); remembering reinstates sensory detail through the concept, and surface form fades before meaning (Wheeler, Petersen and Buckner 2000; Sachs 1967). An entry is the reading of its moment, not perceptual memory: a percept that had no concept when it was seen leaves no memory, a recall reverses the concepts' definitions as they stand at the recall, and the exact witness is not kept. One signed value (evidence for less evidence against) approximates the pair because a contradiction is not a valid mental object (Dharmakirti): a concept read as both, or as neither, leaves no reference, and the both corner belongs to working memory only. Fields and semantic truth rows keep both poles. Storing concepts also lets System 1 reconstruct a recalled moment with `reverse` alone, without compose or generate.
+**Why concepts, not percepts.** An episode keeps concepts, and its percepts are reached through them. The evidence favours this: the hippocampal store is an index over high-level, object-level codes (Teyler and DiScenna 1986; Teyler and Rudy 2007; Murray and Bussey 1999); animals keep a few items bound to place and time (Clayton and Dickinson 1998; Luck and Vogel 1997; Cowan 2001); remembering reinstates sensory detail through the concept, and surface form fades before meaning (Wheeler, Petersen and Buckner 2000; Sachs 1967). An entry is the reading of its moment, not perceptual memory: a percept that had no concept when it was seen leaves no memory, a recall reverses the concepts' definitions as they stand at the recall, and the exact witness is not kept. Each reading keeps one lane, its strength signed by the lane, so no entry nets the lane for against the lane against, and a concept read as neither leaves no reference. Fields and semantic truth rows keep both poles. Storing concepts also lets System 1 reconstruct a recalled moment with `reverse` alone, without compose or generate.
 
 **Which system writes and which reads.**
 
-- *System 1 takes the entry.* `EpisodicMemory.stage` selects it from the field of the open attention pass (`FamiliarTier.open_sentence`), which reads every present word's bracket at once and reads no grammar. That field is the input's knowing ("The three stages", above), so an entry is a few concepts of knowing, kept.
-- *System 2's boundary keeps it.* `BasicModel._commit_sentence` hands the entry to `ClauseRows.write_clause` with the row its kept close writes; a thought written during that close gets none. A close that writes only an `LTM1` relation, with a nonempty entry, takes one `LTM0` row of kind `episode` to hold it (Alec, 2026-11-11). Reading a relation therefore leaves both kinds of memory: the relation, which is semantic, and the moment it was read, which no content read sees.
-- *System 2 returns to it, and what returns is System 1's state.* A recall by time alone in the thought loop (`ThoughtLTMCapability.query` with only `when`) calls `EpisodicMemory.reinstate`: the kept concepts are published as the querying stream's knowing with their stored stamp, and that stream's present percept readings are cleared until the next open attention pass. Alec, 2026-11-10: "review of episodic memory should be represented as the attended field, otherwise we could not reason about as a previously lived experience."
-- *Semantic memory is read by content and by reference* (the thought grammar's recall, `infer` over `LTM1`, the taxonomy, the minted concepts). A recall by time reaches it too, since ideas and relations carry model-time stamps (Alec, 2026-11-10); only an entry comes back as a field.
+- *System 1 supplies it and System 2 narrows it.* `EpisodicMemory.stage` selects the entry from the kept path's field of understanding: the set the kept compose tree's `compose_extend` calls leave over the sentence's activations, which the open attention pass (`FamiliarTier.open_sentence`) and the input's knowing supply ("Extend and the field of understanding" below). So an entry is a few concepts of knowing, as the sentence's operators left them, kept.
+- *System 2's boundary keeps it.* `BasicModel._commit_sentence` hands the entry to `ClauseRows.write_clause` with the row its kept close writes; a kept thought's row takes the strongest of its own extension (`EpisodicMemory.for_meaning`). A close that writes only an `LTM1` relation keeps no entry.
+- *System 2 returns to it, and what returns is System 1's state.* A recall by content in the thought loop (`ThoughtLTMCapability.query`) ranks the window's rows by their entries and calls `EpisodicMemory.reinstate`: the recalled rows' concepts are published as the querying stream's knowing with their stored stamps, and that stream's present percept readings are cleared until the next open attention pass. Alec, 2026-11-10: "review of episodic memory should be represented as the attended field, otherwise we could not reason about as a previously lived experience."
+- *Memory is read by content and by reference* (the thought grammar's recall, `infer` over `LTM1`, the taxonomy, the minted concepts). No read selects rows by time: `.when` stays as model time and as content inside an idea, and only an entry comes back as a field.
 - *No learning rides on an entry.* It is stored detached, and a review books no loss of its own.
 
 **Limits.**
 
-1. An entry is taken only where the open attention pass runs and is written only at a sentence's close, so a configuration that composes no sentences keeps none, and review needs the thought loop: the loop with no thinking step has no episodic memory.
-2. An episode is reached by its time only; a cue by content, a `.where` bracket on the recall and a duration between two episodes are open ([FutureWork §7](FutureWork.md#7-episodic-memory-a-few-active-indices-beside-each-row)).
-3. Consolidation does not read the kept concepts: promotion by recurrence works over MTM's collections and the rows.
+1. An entry is written only with an `LTM0` row, and review needs the thought loop: the loop with no thinking step has no episodic memory.
+2. An episode is reached by its content; a `.where` bracket on the recall and a duration between two episodes are open ([FutureWork §7](FutureWork.md#7-episodic-memory-a-few-active-indices-beside-each-row)).
+3. Promotion reads an entry only for the order of a row with no referent, one above the greatest order among its concepts; MTM's promotion by recurrence works over its own collections.
 
-### References, shared strata and operator authority (2026-11-09)
+### References and shared strata (2026-11-09)
 
 `ConceptualSpace.link` is the kept-close boundary for reference sites, event members, basic-level percept occurrences and eligible order-0 states. MTM stores an idea address and the concept within it, never a second working value. A word reads its denotation; a description without a word reads its own idea. A collection has one kind and one member order, admits containment in either direction, and remains a candidate only within `mtmHorizon` kept closes. Pool entries and retained STM members share the menu. Its twelve policy features retain the eight reference features and add tail-place overlap, close gap, first difference and STM presence; the four continuity weights start at zero. Merge orders the members by close clock. Re-entry records the current close and joins an already open individual.
 
-A sentence state links only when it is a kept close's order-0 idea with no open slot: a question, a modal or alternative-timeline clause and an unlowered idea are never states, and rows of kind estimate, question, cover or episode never link (`MemoryLink.state_eligible`); member kinds keep states out of reference binding. A member's order is the order of the concept its occurrence reads (`MemoryLink.member_order`): an explicit order comes first; a word reads its referent's order, and a pending name with no retained member yet reads its word's current referent; a basic percept is order $-1$.
+A sentence state links only when it is a kept close's order-0 idea with no open slot: a question, a modal or alternative-timeline clause and an idea above order zero are never states (`MemoryLink.state_eligible`); member kinds keep states out of reference binding. A member's order is the order of the concept its occurrence reads (`MemoryLink.member_order`): an explicit order comes first; a word reads its referent's order, and a pending name with no retained member yet reads its word's current referent; a basic percept is order $-1$.
 
 The compose-time bind menu and kept-close reference menu apply the same collection-order constraint before selection. A prepended transient carries its collection's recorded member order; refreshing a resident chunk updates that order and its native-row reference with the working value. The written alias retains the selected reference, including a pending name without a permanent concept ID, while its value remains its own idea. A selected LTM address does not enter the occurrence's content key. Within one close, an alias retains its introduction's own mention address even when a later semantic projection rewrites the temporary result as a relation. The close transaction keeps both addresses without adding a permanent memory field. The common link boundary resolves a pending word's old path before a kept word or unnamed use re-enters its newly learned concept one order above. Promotion still presents the promoted concept at its own higher order.
 
 Reference is resolved in two stages, as in human reading: an immediate bond to a salient candidate as the word arrives (Tanenhaus et al. 1995; Garrod and Sanford 1994), and resolution at the clause end, which can undo the bond (Kintsch 1988). The compose-time `bind` choice is the bond; the kept close's reference menu, including the arrival plan that fills a pending forward reference from the phrases arriving in the same sentence, is the resolution, so no separate binding pass exists, and a cataphoric reference stays open until a licensed phrase arrives (Kazanina et al. 2007). Surface identity never decides the option set: a same-form earlier occurrence is one candidate among the others, and the scored menu decides. An elided role, a reference site with no word, takes as its content what the role's retained witnesses describe (`ReferenceClose.expected_content`): once participants have filled that role of the predicate at least the verbs' recurrence count, the site reads the maximum of their latest descriptions, so `link` has a candidate for it; where no witness established the role, the site supplies no identifying content.
 
-Recurrence promotes one order above the members through the common membership writer. Membership and successor rows carry the member's bands and are epoch witnesses: the boundary withdraws those rows while retaining the concept and its order. Idea members use `OCCURRENCE`; events already represented by native relations retain `RELATION`, with no duplicate idea row. Both are read back by the same visited-set path traversal. A recurring basic collection writes a durable `BasicPercepts` row. Consecutive state links give their stable participants ordinary mention witnesses, so nouns use the same threshold. A name for a member does not automatically name the higher-order collection formed from its repeated uses.
+Recurrence promotes one order above the members through the common membership writer (`MemoryPaths.membership`), which writes one `LTM1` row from each member to the new concept. Idea members use `OCCURRENCE`; events already represented by native relations retain `RELATION`, with no duplicate idea row. A recurring basic collection writes a durable `BasicPercepts` row. Consecutive state links give their stable participants ordinary mention witnesses, so nouns use the same threshold. A name for a member does not automatically name the higher-order collection formed from its repeated uses.
 
-`STM0` subclasses `LTM0`, and `STM1` subclasses `LTM1`; their storage and reads are shared and their retention differs. A pinned sentence stores word and operator-concept occurrences in STM0 and ordered pairs in STM1: `pair(pair(operator,left),right)` or `pair(operator,argument)`. The recent buffer remains `stmCapacity` (eight by default). At the kept close the derivation tree collapses: the pinned applications expire, and LTM0 and LTM1 hold only the compacted idea and semantic relations. An operator is present in LTM only as its concept seat (`operation_seat`, `operator_reference`), never as an occurrence, an application row or a membership row tying an application to its operator; rows are added to the stores only with strong justification. `Reading` and `Composition` expose views, and thought chunks retain views of the same stores. Reconstruction, conditioning and memory therefore read the shared structure.
+`STM0` subclasses `LTM0`, and `STM1` subclasses `LTM1`; their storage and reads are shared and their retention differs. A pinned sentence stores word and operator-concept occurrences in STM0 and ordered pairs in STM1: `pair(pair(operator,left),right)` or `pair(operator,argument)`. The recent buffer remains `stmCapacity` (eight by default). At the kept close the derivation tree collapses: the pinned applications expire, and LTM0 and LTM1 hold only the compacted idea and semantic relations. No relation in LTM carries an operator, and an operator is never an occurrence, an application row or a membership row in LTM; rows are added to the stores only with strong justification. `Reading` and `Composition` expose views, and thought chunks retain views of the same stores. Reconstruction, conditioning and memory therefore read the shared structure.
 
 A generative realization from a retained idea requires no input derivation. A syntactic inverse need not be exact, nor recover the original wording, tree or witnesses: decoding is generative matching. From one retained LTM0 idea, the active concepts and each verb's available inverse, the walk proposes constituents and judges their recomposition against the idea, so a sentence can be unfolded after its input STM and derivation are gone. Replaying a known application reads its recorded action context, and a free candidate is checked in its own proposed object basis and verb group. An exact conditional inverse, when its witnesses happen to be present, is one proposal and never a requirement; unknown operands make a search problem rather than a decoding failure, while a broken calculation, such as a missing record on replay or a non-finite value, still raises.
 
-An epoch boundary expires the recent, pinned and thought stores when it withdraws the historical occurrences and relations. Trial rollback within an epoch restores the already admitted shared context without importing it as a new durable checkpoint; durable imports still validate external references.
+A hard reset expires the recent, pinned and thought stores; no boundary withdraws a retained occurrence or relation. Trial rollback within an epoch restores the already admitted shared context without importing it as a new durable checkpoint; durable imports still validate external references.
 
-The pinned banks use the execution bound, `3*n + 2*stmCapacity` operator occurrences for a sentence of at most `n` words, since unary operations and transpositions exceed the $n-1$ binary applications. These capacities are constructed once, separately for the three coexisting trial views; no bank resizes ([STM](STM.md)).
+The pinned banks use the execution bound, `3*n + 2*stmCapacity` operator occurrences for a sentence of at most `n` words, since unary operations and swaps exceed the $n-1$ binary applications. These capacities are constructed once, separately for the three coexisting trial views; no bank resizes ([STM](STM.md)).
 
 Repeated unary work at the same operand pays an increasing cost (Alec, 2026-11-09): the first application pays zero, then subsequent applications pay 1, 4, 9, … logit units. The count follows the operand through shifts and swaps and resets when binary composition creates a new span; it adds no cap on unary count. The existing immediate-inverse mask and fixed execution budget remain. This is provisional learning guidance.
 
-Each configured primitive has one concept seat, declared at construction with its identity and native execution interfaces. It has no surface spelling. Direction, confidence and formal-argument participations are learned. A relation's effective truth is its witnessed truth scaled by the minimum of the endpoint trusts, the operator-seat trust (`positive_length`) and the named/operation gate cap. An operator word already present as an endpoint has no duplicate reference; a nonendpoint operator retains `operator_reference`.
+Each configured primitive has one concept seat, declared at construction with its identity and native execution interfaces. It has no surface spelling. Direction, confidence and formal-argument participations are learned. A relation's effective truth is its stored truth scaled by the least of its endpoints' trusts; no operator or gate contributes to it.
 
 ### Basic percepts and the two spaces (2026-11-09)
 
@@ -2854,9 +2871,9 @@ grammar reading gates all four word multisets; the field count is an audit.
 Byte identity and coverage are value-only audits.
 
 Thought adds no field columns. STM thought ideas carry their model-clock `.when`
-and an empty `.where`; knowing deposits retain a path to the selected intuition
-weights. Expectation learns the detached post-thought order-zero field, including
-on the serial path. Numeric heads keep the forward head with `answerSynthesis=false`.
+and an empty `.where`; knowing deposits retain a path to `intuit`'s weights.
+`intuit` learns the detached field the kept path leaves after its thought, and
+`expect` learns from omission. Numeric heads keep the forward head with `answerSynthesis=false`.
 
 ### Whole paths and concept episodes (2026-11-11)
 
@@ -2911,13 +2928,144 @@ Before the keep, thought reads the scored reference plan through a temporary com
 
 **Omission.** Training hides content and never corrupts it: a dropped word, or a dropped percept slot of a retained word, has zero content at a kept place and time, so the omission is signalled out of band, because a good model reproduces corruption when it sees corruption. All paths of a sentence share the omitted input. Only detached loss-side targets retain the original: System 2 reconstruction restores it, while System 1 reconstruction scores observed places. The two rates, for words and for percept slots, adapt to the kept path's reconstruction accuracy toward `omissionTarget`, and omission never runs in evaluation ([Training](Training.md)).
 
-**Concept episodes.** A sentence's episodic entry keeps up to `episodicConcepts` order-zero concepts of the open pass, each with one signed value, instead of percepts (Alec, 2026-11-11). The entry and its recall are described under "When" in [One where, one when, many whats](#one-where-one-when-many-whats-the-field-attention-and-the-two-modes), and its place in the two systems in [Episodic and semantic memory in the two systems](#episodic-and-semantic-memory-in-the-two-systems-2026-11-11).
+**Concept episodes.** A row's episodic entry keeps concepts instead of percepts (Alec, 2026-11-11): up to `episodicConcepts` of the strongest readings of its field of understanding, of any order, each signed by its lane. The entry and its recall are described under "When" in [One where, one when, many whats](#one-where-one-when-many-whats-the-field-attention-and-the-two-modes), and its place in the two systems in [Episodic and semantic memory in the two systems](#episodic-and-semantic-memory-in-the-two-systems-2026-11-11).
 
 **Thought content.** `stmCapacity` fixes the number of simultaneous focus chunks, not the number of constituents inside one thought: a native thought store may rebuild its transient buffers to the exact size a meaning needs, under a construction-time ceiling of four rows per possible input meaning, and a larger meaning raises ([STM](STM.md), "Thought content growth within the sentence bound").
 
 
-## Item 1.8 amendment (2026-11-12)
+## Operators, extension, recall and the learned maps (2026-11-14)
 
-The grammar declares examination (`divide`, `descend`, `gloss`), field (`intersection`, `union`, `not`) and vector operations. Tier-local `pi` and `sigma` remain substrate declarations; the default keeps the parallel body. Field arithmetic is shared by definitions, attention and intuition. Recurrent lane sets mint conjunctive order-zero definitions. Known concept codes are stimulated by candidate coverage, then closed upward; a generated point uses its inverse walk's stimulated leaves. The numeric field adapter reads fixed axes without a learned input layer and writes through a fixed linear field reader. Examination without vector operations has its own field-only R+A close and episodic anchor.
+### The operators
 
-One optional scalar joins text as a placeless reading. Counted word boxes use native MTM promotion and the definition writer. The native reference menu admits the current scalar event and its perceived individuals. See the item 1.8 return for the distinction between these mechanism certificates and the end-to-end question measurement.
+A grammar file declares three kinds of operator, and what a file declares
+decides what runs. Examination operators are attention's acts on the bracket,
+`focus`, `unfocus` and `mint` ([One attention](#one-attention)); the
+attention loop runs in every file that declares one. Field operators are
+`intersection`, `union` and `not`, with one definition of their logic:
+`SparseLayer.fold_presence`'s weighted least and greatest on the two lanes,
+`intersection` taking the least on the lane for and the greatest on the lane
+against, `union` the reverse, `not` swapping the lanes and `non` withholding
+both. Vector operators are all the others. Tier-local `pi` and `sigma` remain
+substrate declarations; the default keeps the parallel body.
+
+The operators `data/complete.grammar` keeps, and the rule of each, are in
+[Language](Language.md#the-operators-alec-2026-11-13). Among them, the four
+connectives become two, `intersection` and `union`; `change`, `verb` and `modifier`
+share `MeaningAction` ("Operations on meaning, centroids on form" above);
+`lift` and `lower` take one operand; `marker` (below) takes the place of
+`compound_unary`; and in thought `define` writes two relations, `part` each
+way, and `isWhole(a, b)` is `isPart(b, a)`.
+
+Intersections of several concepts are written by promotion on recurrence
+(`FamiliarTier.observe_intersection`, conjunctive edges).
+`FieldProjection.stimulate(point)` reads a point's field over the known
+concepts: coverage by `meet_ratios`, then the fold through definitions; the
+key of a field is its evidence-weighted centroid (`FieldProjection.key`). A
+file with examination and field operators but no vector operators has its own
+field-only R + A close (`Examination.run`): the kept field writes one `LTM0`
+row, its key, with the field's strongest readings as the row's entry.
+
+### Extend and the field of understanding
+
+The idea of a sentence is the intension of its concept, the composed vector
+(`slots[row]`), and its field is the extension, the known concepts the idea
+implies (`ConceptualField`). Alec, 2026-11-12: "For kinds, a token implies a type. For mereology, a whole implies a part."
+
+Every operator has `compose_extend` and `generate_extend` beside `compose`
+and `generate`, and a grammar file whose operator lacks either fails at load.
+`compose_extend` takes its operands' sets of active concepts, concept
+references with their trust on the two lanes, and gives one set: for "small
+cat", the narrowing of the activations of the concepts of small and of cat.
+It is called once for each operator of the kept compose tree, in compose's
+order, starting from the sentence's existing activations of every order
+(`_sentence_open_fields`); no vector is matched against the codes to make a
+set. The field of understanding is the set the last call leaves;
+`OutputOccurrences.generated` publishes it, and a row's entry keeps its
+strongest readings. `generate_extend` is the inverse, for an idea with no
+sentence in STM, recalled or concluded: the idea's generate walk gives the
+tree, and each operand gets its part of its parent's set. What each
+operator's extend does is in [Extend](Extend.md).
+
+### Recall and answers
+
+Memory is addressed by content: no read selects rows by time. A question is
+extended like any sentence, and its field of understanding is the side it is
+matched on. Each operand's set gives one result over the window of the newest
+`ltmWindow` rows, each row's entry matched order by order and never reduced
+across orders (`EpisodicMemory.matches`, `relevance`), and the question's
+operators combine the results as their `compose_extend` combines sets. An
+answer is read from a recalled row by walking its idea with `generate` and
+taking the part of its field at the operand where the question's open
+operand stands: with "I ate rice" stored, the question with its object open
+is answered by the part at the object ([Extend](Extend.md)).
+
+A question with no open operand is read on its region in two ways (Alec,
+2026-11-13). *Existence* is the brightest row of the window in the region,
+its relevance times the absolute value of its `trust`, on the lane of the
+trust's sign. Rows are never summed, and a row only like the claim, at a
+relevance below one, is reasoning from analogy, which does not make the
+claim deductively true. *Pervasion* is coverage from a higher order: a
+trusted relation in `LTM1` between the subject's kind and the property's
+class, at the least trust along the path (`ExtendedRecall.pervasion`,
+through `Taxonomy.capture_taxonomy`), never gathered from the kind's known
+members. The positive form is read on the lane for and the negative form on
+the lane against, so a claim can be true, false, both or neither
+([Logic](Logic.md#existence-and-pervasion-alec-2026-11-13)).
+
+### expect, intuit and marker
+
+`expect` and `intuit` are learned maps from one space to another, not
+explicit rules, and so is each kernel of `marker`. Each is a stacked
+sigma-pi (`SigmaPiStack`), a row of pairs (`SigmaPiLayer`): in each pair a
+`PiLayer` takes the product of its inputs in the log domain, and a
+`SigmaLayer` takes a weighted sum of those products. The two lanes enter as
+separate inputs and are never netted, and a new stack adds nothing
+([Reasoning](Reasoning.md#expectation-a-stacked-sigma-pi)).
+
+- `expect` has one moderate hidden layer, from the whole observed order-zero
+  field to the whole expected field over the same rows. It runs once at the
+  open pass, is read detached and is taught by omission ("C. Parse time"
+  above). `ActivationPredictor` is built in its place where `expectationMap`
+  is `predictor`.
+- `intuit` runs from concepts to concepts over every order, with small
+  hidden layers. It is evaluated once when the sentence is observed, before
+  any thought, and what it gives joins the sentence's knowing where
+  `Intuition.write_knowing` deposits, so thought, the answer and the output
+  read it. It is taught by the field the kept path leaves after its thought
+  and by the output cost. In thought, `intuit` states what the map gave, with
+  the evidence kind `intuition`, which can answer; the firing of a stored
+  implication is reached through `infer`
+  ([Reasoning](Reasoning.md#intuition-taught-by-thought)). On a file with
+  field operators only, the map is System 1's learned step and the output
+  cost its only teacher.
+- `marker` is a one-operand family of learned kernels, each from the
+  operand's form (percept coordinates) to its meaning (concept coordinates).
+  The form passes unchanged, the chosen kernel shifts the meaning in the
+  chart and the reverse removes the same shift. Each kernel is one candidate,
+  chosen by the chooser from the sentence's context, and none is named.
+  `compound`, the two-operand selection among a head's cases, is unchanged.
+
+A word can have objects at several orders: when a named concept is raised to
+a class, the old concept keeps its word and the class gets the same word.
+Interpretation reads the expected object, else the one of highest order
+(Alec, 2026-11-13: "How one object is chosen when a word has several: expectation"),
+and `lower` takes it down. An object reached through a read word is at trust
+one. "What is this?", asked of a felt value with no object named, is answered
+by `interpret` run backwards: the present reading's class, then that class's
+word.
+
+### Numbers and places
+
+A numeric input is percepts on a file with field operators. A reading is a
+level percept at its place, one basic percept for each place and level met,
+and one order-zero concept per place collects them
+(`BasicPercepts.read_collection`). `NumericPercepts` is the one reader for
+any number of dimensions, and its reverse returns each number from its
+level. Output on such a file is one linear layer over the field
+(`OutputSpace.read_field`); the XOR proofs read 0 and 1 on two dimensions,
+with XOR = x1 + x2 - 2(x1 and x2), and `data/MM_image.xml` reads 28 by 28
+images with field operators only. The scalar beside the words is read the
+same way, a word's concept over it being an order-zero concept that collects
+basic percepts, and the native reference menu admits the current scalar
+event and its perceived individuals. The modalities and their percepts are
+in [Spaces](Spaces.md#percept-modalities).

@@ -46,7 +46,11 @@ treat that as the same thing as `nOutput`.
 > The spatial long period is derived from the total input/percept/symbol
 > registry capacity; the temporal long period covers the LTM allocation.
 > Short periods preserve one-location resolution. Integer spatial addresses
-> are decoded from the band, not saved beside it. Everything observed in one
+> are decoded from the band, not saved beside it. Each input modality (text,
+> the numeric input of a numeric file, and the scalar beside the words) has a
+> range of its own in the registry, so the range of an address gives its
+> modality; a place on two axes, such as a pixel, is one row-major address in
+> its modality's range, decoded by the declared shape. Everything observed in one
 > field shares its time; the exact clock side-band stays. Span endpoints are
 > separate extent metadata. The old `wherePeriod`,
 > `whenPeriod` and `whenRungRatio` XML knobs are retired.
@@ -61,7 +65,7 @@ sub-elements `<training>` and `<data>` (see below).
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `data/dataType` | string | `"numeric"` | The data space-role, set under `<data>`: `embedding` (language modelling and chat with sequence processing; PartSpace owns the byte and word lexicon) or `numeric` (a dense slab, e.g. MNIST pixels). |
-| `conceptBinding` | string | `"mixing"`; BasicModel `aligned` | PS/WS concept-formation mode. `aligned` preserves location and fuses every non-raw cumulative fold from both towers, without allocating `ConceptualCombine`; exact ordered paths and the actual concept order ride on the concept. `mixing` keeps the learned `ConceptualCombine` matrix as the parallel-path alternative. |
+| `conceptBinding` | string | `"mixing"`; BasicModel `aligned` | PS/WS concept-formation mode. `aligned` preserves location and fuses every non-raw cumulative fold from both towers, without allocating `ConceptualCombine`; exact ordered paths ride on the concept, and its order is read from the block its row lies in. `mixing` keeps the learned `ConceptualCombine` matrix as the parallel-path alternative. |
 | `processSymbols` | bool | `false` | Apply extra symbolic processing after Sigma. |
 | `monotonic` | bool | `false` | Constrain invertible Sigma / Pi to $W \ge 0$ so the lift / lower chain is order-preserving on the parthood cone. |
 | `ergodic` | bool | `false` | Ergodic exploration: eligible layers use `W_eff = bias * W + var * noise`; `bias`/`var` are gradient-energy buffers, not Adam parameters. See [Ergodic.md](Ergodic.md). |
@@ -83,7 +87,7 @@ sub-elements `<training>` and `<data>` (see below).
 | `transformChooserHidden` | int | `0` | Hidden width of each grammar MLP when `transformChooser=mlp`; `0` derives `max(8, grammar feature width)`. Positive values override it. Canonical BasicModel currently derives 1024. Inert for `anchordot`. |
 | `transformChooserDepth` | int | `1` | Number of hidden Linear/GELU blocks in each grammar MLP, followed by one scalar Linear head; must be positive. Not the number of grammatical reductions or thought iterations. |
 | `whatThinkingHidden`, `whatThinkingDepth` | int | `16`, `1` | Unread in effect: both are parsed and validated, but the selected-thought chooser they sized is no longer built (thought is scored by `OperationSelectionLayer.thought_logits`). |
-| `intuitionCapacity` | positive int | `4096` | Slots in each preallocated sparse Pi and Sigma bank owned by output. Pi addresses are rule/literal references and Sigma addresses are rules. Unit initial exponents give the exact max-min DNF. Exhaustion raises; storage never grows. |
+| `intuitionCapacity` | positive int | `4096` | Slots in each preallocated sparse Pi and Sigma bank of the conceptual space's `IntuitionLayer`, which applies stored implications when thought calls `infer`. Pi addresses are rule/literal references and Sigma addresses are rules. Unit initial exponents give the exact max-min DNF. Exhaustion raises; storage never grows. `intuit` itself is a stack of its own (`intuitHidden`). |
 | `separateChooser` | bool | `false` | False retains live compose features and projects the answer gradient against reconstruction per optimizer unit before one shared step. True is the optional per-owner backward: each cost trains its declared owner, independently of its R/A side. Thought and generate features remain detached. |
 | `reconstructionJitter` | real in `[0,1]` | `0` | Draw one strength `s ~ U[1-j,1]` per sentence and apply it to reconstruction alone, shared by all of the sentence's paths. Zero draws no random number. Output, expectation, attention and chooser credit retain scale 1.0. |
 | `explorePaths` | nonnegative int | `1` | Number of distinct one-departure complete paths beside the greedy path in training. Departures draw over attention, compose, candidate, bind, reconstruction, thought and output; each stream keeps its strictly cheapest path on R + A, ties to the greedy path, and a departure reuses the prefix before it. Evaluation runs the greedy path alone. See [Architecture](Architecture.md#whole-paths-and-concept-episodes-2026-11-11). |
@@ -92,9 +96,9 @@ sub-elements `<training>` and `<data>` (see below).
 | `omissionHorizon` | positive int | `1024` | Sentence horizon for the visible/omitted accuracy averages at both omission sizes. Both rates and all four averages travel in checkpoints. |
 | `generateBudget` | positive int | `32` | Architecture capacity of each free output and sentence-decoder generation walk. Fixed at model construction; its output, action, residual and feature arrays are allocated to this trip count before the walk. Exhaustion reports pending work and retains its per-lane frontier residual. Recorded input derivations keep their full structural trace capacity independently. |
 | `wordSurfaceCapacity` | positive int | `64` | Maximum raw bytes in one word, fixed at construction independently of sentence input length and word count. Targets have this width; candidate byte tables reserve one additional EOS position. Bytes remain `uint8`. A longer surface raises before staging; no clipping or resizing. Native walk banks carry terminal presence and primitive support without copying the raw byte slab. |
-| `ltmWindow` | positive int | `1024` | Maximum LTM0 row window for the per-order episodic product. Relevance intersects the question’s nonempty orders. Only the best `max_records` and explicitly referenced rows are materialized; the subsequent role match does not scan the window or relation table. Fixed role-match scratch is allocated at construction. |
+| `ltmWindow` | positive int | `1024` | Number of the latest LTM0 rows a recall reads. Each operand's set of the question is matched against the entries of the rows in the window, order by order and never reduced across orders (`EpisodicMemory.matches`), and the question's operators combine the results as they combine sets. Only the best `max_records` rows are materialized; explicitly addressed rows are read within the same limit. |
 | `reconstructFromIdea` | bool | `false` | Legacy evaluation selection of recovered word ideas instead of the single-slot seed. Tied mode always returns its owned completed reconstruction, independently of this flag, and never enters the free generate chart ([Models.py](../bin/Models.py)). |
-| `adverbEigEdit` | bool | `false` | Legacy/direct `LiftLayer` helper flag for the adverb sparse eigenvalue edit. The live `adverb` grammar operator force-builds the same zero-init projection and calls `LiftLayer.apply_adverb`, so ordinary grammar use does not depend on this flag. When enabled for plain `LiftLayer`, an adverb modifies a composed VP by `a2 = atanh(vp) + p_vp * delta_adv`, masked by the VP's own eigen-signature. Default off keeps plain `LiftLayer` byte-identical. |
+| `modifierEigEdit` | bool | `false` | Direct `LiftLayer` helper flag for the modifier's sparse eigenvalue edit. The live `modifier` grammar operator force-builds the same zero-init projection, so ordinary grammar use does not depend on this flag. When enabled for plain `LiftLayer`, a modifier modifies a composed VP by `a2 = atanh(vp) + p_vp * delta_mod`, masked by the VP's own eigen-signature. Default off keeps plain `LiftLayer` byte-identical. |
 | `mereologyRaise` | bool | `false` | Enable native meronomy binding and the conceptual refine/raise decision. Beyond order-1 symbolization, a raise requires a both reading with discontiguous retained support after stalled learning; counts never trigger it. |
 | `mereologyRefinePatience` | positive int | `3` | Completed optimizer updates without a strict improvement in the worst local `min(c⁺, c⁻)` reading before discontiguous support may raise an order. Pure/unknown evidence and improvement reset patience; repeated reads do not advance it. |
 | `embeddingPath` | string | (empty) | gensim `KeyedVectors` path. Empty disables embedding load. |
@@ -116,7 +120,7 @@ sub-elements `<training>` and `<data>` (see below).
 | `mereologicalTreeSize` | int | -- | Unread; the schema accepts it and one configuration still declares it. |
 | `writeSyntax` | bool | `false` | Dump POS-labelled syntax tree at end of every `MentalModel.forward()`. |
 | `syntaxOutPath` | string | `output/syntax.xml` | Output path for `writeSyntax`. |
-| `trust` | unitInterval | `1.0` | Model-level multiplier for incoming provenance: the source trust of a configured truth is its row trust times this value. Runtime `store_truths` and static `<truthSet>` inputs supply the outer assertion through the shared clause closing. Positive and negative evidence remain separate; embedded registration grants no assertion authority, and sentence content never sets its own trust. |
+| `trust` | unitInterval | `1.0` | The model's trust in what it reads in training: a sentence read in training is written at this value times its words' certainty. A truth supplied through runtime `store_truths` or a static `<truthSet>` keeps its own signed trust, at face value, on its outer clause only; a conversation's sentence is written at zero. Sentence content never sets its own trust. |
 
 Luminosity and universality are **multiplicative** --- they scale the total loss by
 
@@ -187,7 +191,7 @@ Training loop and I/O.
 | `autoload` | bool | `true` | Load weights from `weightsPath` at construction. Stale incompatible checkpoints fail fast. |
 | `autosave` | bool | `false` | Save weights after training completes. |
 | `checkpointEveryBatches` | int | `0` | Save mid-training checkpoint every N optimizer steps. `0` disables periodic checkpoints. |
-| `intervalLogEveryBatches` | int | `0` | Log captured losses, retention and inventory every N training batches; run the fixed probe panels in a separate evaluation copy. `0` disables. Each JSON record includes collection time and probe failures. |
+| `intervalLogEveryBatches` | int | `0` | Every N training batches, log the reconstruction and expectation costs, LTM occupancy with the last forgetting pass, the truth view's luminosity (`truth_luminosity`) and the order-zero inventory, and run the fixed probe panels in a separate evaluation copy. Each completed forgetting pass is logged too. `0` disables. Each JSON record includes collection time and probe failures. |
 | `intervalLogFile` | string | `output/intervals.jsonl` | Append-only interval JSON records. The reconstruction sample includes its native reconstructed event and byte cost. |
 | `profile` | bool | `false` | cProfile the training loop. |
 | `certainty` | bool | `false` | Per-neuron certainty tracking in ergodic layers. Allows individual neurons to transition exploration $\to$ exploitation at different rates. |
@@ -207,7 +211,7 @@ Training loop and I/O.
 | `independenceWeight` | nonnegative float | `0.1` | Weight of the LTM-population sparse-coding objective, owned by expectation. Applies to grammars declaring individual references. |
 | `independencePriorScale` | positive float | `0.05` | Laplace activation prior and automatic-relevance pressure on unit direction columns; also scales column incoherence. |
 | `independenceMintThreshold` | positive float | `0.2` | Unexplained event-coordinate residual norm required for column admission after four distinct witnesses. Admission remains a kept-closing effect. |
-| `actionRateRatio` | float in `(0,1]` | `1` | Ratio $\kappa$ of the action learning rates inside reconstruction's descent: the lift action uses $\kappa$ times the configured rate and the adverb action $\kappa^2$ times it; codes keep the configured rate. See [GradientFlow](GradientFlow.md). |
+| `actionRateRatio` | float in `(0,1]` | `1` | Ratio $\kappa$ of the action learning rates inside reconstruction's descent: the verb's action (`change`) uses $\kappa$ times the configured rate and the modifier's action $\kappa^2$ times it; codes keep the configured rate. See [GradientFlow](GradientFlow.md). |
 
 Which objective trains which parameters is in [GradientFlow](GradientFlow.md).
 
@@ -242,42 +246,48 @@ The forgetting pass runs after backward at
 closed document boundaries in training, or after stateful inference. It never
 runs inside an open sentence or stateless request. `SymbolSpace.ltmCapacity`
 remains the hard limit; a document that fills the store before its boundary
-still fails atomic admission. The following settings are validated at model
-construction. The low-water fraction must be below high water; all weights
-are finite and nonnegative. A pass deletes unprotected rows lowest value first
-until occupancy falls to `forgetLowWater`. A row's value is
-$V = w_t T + w_u U + w_l L - w_a A$, each term in $[0, 1]$ so the weights below
-are comparable, with $T$, $U$, $L$ and $A$ the trust, surprise, luminosity and
-age terms their rows describe; ties go to the older row and then the stable
-address, so the same state always deletes the same rows. Protected origins,
-live thought and expectation roots, rows that an `LTM1` row references and
-everything they reach are kept, and under pressure a row loses its source text
-before it goes. See [STM](STM.md#10-ltm-as-the-chain-of-stm-end-states),
+still fails atomic admission, and a serving write under pressure runs the same
+pass first. The following settings are validated at model construction. The
+low-water fraction must be below high water, and the four activity settings
+lie in $[0, 1]$.
+
+Forgetting reads one number, a row's **activity** in $[0, 1]$, in both tables
+of LTM: an `LTM0` row (an idea) and an `LTM1` row (a relation pair). A write
+sets it from the sentence's surprise, or to `activityDefault` where the
+surprise is unknown; each access raises it by `activityStep`, up to one; each
+pass multiplies it by `activityDecay`. A pass that finds a table at
+`forgetHighWater` of its capacity drops its least active rows until occupancy
+falls to `forgetLowWater`; among equals the older row goes first (an `LTM0`
+row is named by its time), so the same state always drops the same rows. A row
+at activity one is never lowered or dropped, and neither is a row that an
+`LTM1` row references, a row that another row names as its referent, or a live
+thought or expectation root.
+An `LTM0` row whose activity reaches `activityPromotion` is promoted to a
+concept: the minted concept becomes the row's referent and the row's activity
+becomes one. See [STM](STM.md#10-ltm-as-the-chain-of-stm-end-states),
 "Forgetting".
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `forgetting` | bool | `true` | Enable LTM retention and boundary concept reclamation. Capacity warnings remain visible. |
-| `forgetHighWater` | float | `0.9` | Occupancy fraction that triggers a document-boundary pass. |
-| `forgetLowWater` | float | `0.7` | Target occupancy fraction; protected roots and gradual detail loss can prevent reaching it. |
+| `forgetting` | bool | `true` | Enable the activity pass over `LTM0` and `LTM1` and boundary concept reclamation. Capacity warnings remain visible. |
+| `activityDefault` | unitInterval | `0.5` | Activity of a row written with no known surprise; a row written with a known surprise takes the surprise. |
+| `activityStep` | unitInterval | `0.1` | Rise of a row's activity at each access, capped at one. |
+| `activityDecay` | unitInterval | `0.9` | Factor applied to each row's activity at each pass; activity one is not lowered. |
+| `activityPromotion` | unitInterval | `0.9` | Activity at which an `LTM0` row is promoted to a concept. |
+| `forgetHighWater` | float | `0.9` | Occupancy fraction of a table at which a pass drops rows. |
+| `forgetLowWater` | float | `0.7` | Occupancy fraction a pass drops to; rows that cannot be dropped can prevent reaching it, with a warning. |
 | `forgetMinInterval` | int | `256` | Minimum completed sentence presentations between unpressured passes. High-water pressure in either LTM table overrides it at a closed boundary. |
-| `forgetAtEpoch` | bool | `false` | Also consider retention at a completed training epoch, subject to the interval. |
-| `forgetTrustWeight` | float | `1.0` | Weight of the row's trust, the larger of its two evidence lanes, $\max(t^+, t^-)$. |
-| `forgetUtilityWeight` | float | `1.0` | Weight of the row's stored surprise in $[0, 1]$; a row whose surprise is unknown counts as 1. |
-| `forgetLuminosityWeight` | float | `1.0` | Weight of the luminosity term. For an occurrence row it is 0 when a live row of the same order and scope, within `forgetSimilarity`, carries the contrary pole with more trust, and 1 otherwise (with `forgetCoverage`, the row's leave-one-out coverage instead); for a part or taxonomy row it is $\log(1 + \text{accesses})$. |
-| `forgetAgeWeight` | float | `1.0` | Weight of the bounded age penalty $1 - e^{-a/h}$, for occurrence rows and for part and taxonomy rows alike. |
-| `forgetHalfLife` | float | `4096` | Positive scale $h$ of the age penalty. The age $a$ is the model time since the row's `.when` stamp; a row without a stamp of its own takes the youngest age of a stamped row or part that refers to it. The name is not a literal half-life. |
-| `forgetSimilarity` | float | `0.9` | Cosine threshold in `[0,1]` for opposing idea rows in the same order/scope. |
-| `forgetCoverage` | bool | `false` | Use the more expensive leave-one-out catuṣkoṭi coverage contribution. |
-| `forgetProtectOrigins` | string | `provisioned user` | Space-separated origins that cannot be changed; accepts `conversation`, `provisioned`, `user`. Empty protects no origin. Live references remain protected. |
+| `forgetAtEpoch` | bool | `false` | Also run a pass at a completed training epoch, subject to the interval; below high water it only decays. |
 
 ## BasicModel / MentalModel Quick Reference
 
 `data/BasicModel.xml` and `data/MentalModel.xml` train the full
-P$\to$C$\to$S pipeline. Both load `complete.grammar`, in which `lift` is a
-binary rule (`lift_argout1 = lift.forward(lift_argin1, lift_argin2)`):
-transitive SVO is assembled compositionally, not by a ternary lift. Grammar
-mode is derived from the loaded grammar.
+P$\to$C$\to$S pipeline. Both load `complete.grammar`, in which `change` is a
+binary rule (`change(NP, VP)` applies the verb phrase's action to its
+subject) and `verb(VP, NP)` gives the verb phrase its basis from its object:
+transitive SVO is assembled compositionally, not by a ternary rule. `lift` and
+`lower` take one operand each. Grammar mode is derived from the loaded
+grammar.
 
 ---
 
@@ -377,7 +387,7 @@ unions symbols at higher orders. Grammatical lift/lower own their chart maps.
 |-----------|------|---------|-------------|
 | `nOutput` | int | sentinel | Active concept vectors. For XOR: 3. |
 | `nDim` | int | `9` | Per-vector muxed EVENT width; content $\mathrm{nWhat} = \mathrm{nDim} - \mathrm{nWhere} - \mathrm{nWhen}$ (default 9 = 1 + 4 + 4). |
-| `nVectors` | int | sentinel | Physical conceptual-codebook capacity. ConceptualSpace owns the concept inventory and taxonomy; word–object DEF relations live in the common LTM store. Aligned property-basis stages share one table; order is metadata, not a row partition. This value is independent of `WholeSpace.nVectors`, PartSpace's physical capacity, live `nOutput`, SymbolSpace references, and STM capacity. |
+| `nVectors` | int | sentinel | Physical conceptual-codebook capacity. ConceptualSpace owns the concept inventory and taxonomy; word–object DEF relations live in the common LTM store. Aligned property-basis stages share one table. Rows lie in their order's block (`order_slice`), so a concept's order is read from where its row lies and is stored nowhere beside the vector; a full block raises a capacity error naming its order. This value is independent of `WholeSpace.nVectors`, PartSpace's physical capacity, live `nOutput`, SymbolSpace references, and STM capacity. |
 | `invertible` | bool | `false` | Space construction flag. Aligned native binding retains both perceptual views for reconstruction; ConceptualSpace owns no unary chart fold. |
 | `hasAttention` | bool | `false` | Inert: the boolean constructs no attention pass and is kept as an alias. Use `<attention>`. |
 | `nonlinear` | bool | `true` | Tanh-bound output to $[-1, 1]$. |
@@ -385,57 +395,69 @@ unions symbols at higher orders. Grammatical lift/lower own their chart maps.
 | `butterfly` | bool | -- | Unread; configurations still declare it. |
 | `stmCapacity` | int | `8` | STM ring depth (within Miller's $7 \pm 2$ band). Per-batch buffer `[B, stmCapacity, nDim]` + depth pointers `[B]`. Thought content starts at four rows per focus chunk and may grow to its exact size, bounded by four times the declared sentence leaves plus operator seats; this changes no focus depth. |
 | `mtmCapacity` | positive int | `64` | Shared capacity of `ConceptualSpace.mtm` for identities and familiar candidates. Identities retain working values, mention readings and event histories; candidates retain bounded sparse support, a centroid and two-lane readings. Oldest access is evicted at capacity without changing LTM rows. Candidate content reads through the live member codes. |
-| `mtmHorizon` | positive int | `16` | Maximum intervening kept closes in a stream since the last reference. Identities and candidates share this access clock and horizon. The end of a document leaves MTM unchanged (`end_document` ends only the document's cover), and the epoch boundary returns it to its state at the epoch's start (`PresentationMemory.epoch`). Recurrence for `conceptMintCount` counts retained observations within the horizon, independently of access count. Pending definition operands hold their seats. Among the others, eviction takes an entry untouched this close first, then the least recent access, then the earliest entry time. If all seats are held, admission raises "MTM capacity ... exhausted by pending definition operands". |
+| `mtmHorizon` | positive int | `16` | Maximum intervening kept closes in a stream since the last reference. Identities and candidates share this access clock and horizon. MTM is not cleared at the end of a document or at an epoch boundary. Recurrence for `conceptMintCount` counts retained observations within the horizon, independently of access count. Pending definition operands hold their seats. Among the others, eviction takes an entry untouched this close first, then the least recent access, then the earliest entry time. If all seats are held, admission raises "MTM capacity ... exhausted by pending definition operands". |
 | `mtmPrepend` | positive int | `64` | Leading symbol entries reserved at construction for MTM identities and candidates together. |
 | `verbGroups` | positive int | `24` | Maximum learned intransitive bases on paired meaning configurations. A third distinct failed-fit occurrence joins the best fitting group or opens one; capacity is reported. |
 | `verbBasisReflections` | positive even int | `4` | Householder reflections per object/group basis. Identical initial pairs give the identity. |
 | `verbGroupFit` | nonnegative float | `0.1` | Maximum mean squared chart residual for admitting a verb to an existing basis. |
 | `latticeMargin` | decimal | `0` | Unread; declared in `data/model.xml`. |
 | `meaningWidth` | nonnegative int | computed | Width of the meaning band of a concept's code; unset, it is the code width less the percept event width. `data/model.xml` ships 128. At 0 a paired chart supplies only form: membership records remain possible, but there are no class directions or conceptual views, and hierarchical conditioning needs a meaning band. |
-| `placementRate` | nonnegative float | `0.1` | Step size of the one meet-ratio subgradient step that places a concept's meaning at each kept close. |
+| `placementRate` | nonnegative float | `0.1` | Step size of the one meet-ratio subgradient step that places a concept's meaning at each kept close. The context of placement is the field at every order, a present token's types among it, read before any weighting by likeness of places; a place moves relative to rows of its own order only, and a class is placed by its context like any concept. A row above the basic percept carries no perceptual form. |
 | `placementNegatives` | nonnegative int | `5` | Placed rows with zero seen excess drawn as negatives by a generator seeded from the sentence's key; fewer eligible rows give fewer negatives, never repeats. |
 | `placementNegativeWeight` | nonnegative float | `1.0` | Weight of the negative term, the brake on collapse. |
-| `recurrenceAngle` | float | `15.0` | Degrees: an idea, its time coordinates removed, joins a reading seat whose representative lies strictly within this angle. Must lie in $(0, 180]$. |
-| `recurrenceCapacity` | positive int | `max(1, nVectors)` | Fixed number of reading seats; exhaustion raises. |
 | `raiseEvidence` | unitInterval | `0.0` | A retained row qualifies as a witness when its positive evidence exceeds this value. |
 | `raiseCount` | int $\ge 2$ | `3` | Number of pairwise distinct witnesses of the same order required to create the shared side's class. |
 | `readerBlockNormalization` | bool | `true` | Scale the form block and the meaning block of a value read from the sentence's primed symbol bank, each by that block's largest norm over the frozen bank, so the read stays affine. |
 | `conceptReadoutL1` | nonnegative float | `0.0` | L1 penalty on the incoming connections of the concepts-from-percepts Sigma; 0 disables. |
+| `expectationMap` | string | `sigmaPi` | Form of `expect`, the map from the observed order-zero field to the expected one. `sigmaPi` builds a stack of its own; `predictor` builds an `ActivationPredictor` in its place. |
+| `expectHidden` | int | `64` | Width of the one hidden layer of `expect`'s stack. The stack reads both lanes of the whole observed field over the order-zero rows and gives the whole expected field over the same rows; it is sized once, at construction, by the capacity of the order-zero block. |
+| `intuitHidden` | int | `64` | Hidden width of `intuit`'s stack, from the concepts of every order to the same concepts. `0` builds no stack. |
+| `expectLayers` | int | `1` | Pi and Sigma pairs of `expect`'s stack. |
+| `intuitLayers` | int | `2` | Pi and Sigma pairs of `intuit`'s stack. |
+| `markerKernels` | int | `8` | Learned kernels of the one-operand `marker` operator. Each kernel is one candidate of the operator, chosen by the chooser from the sentence's context; none is named. |
+| `markerHidden` | int | `64` | Hidden width of each `marker` kernel's stack, from the operand's form block to its meaning block. |
+| `markerLayers` | int | `2` | Pi and Sigma pairs of each `marker` kernel's stack. |
+
+`expectationMap`, `expectHidden`, `expectLayers`, `intuitHidden`, `intuitLayers`,
+`markerKernels`, `markerHidden` and `markerLayers` are declared in
+`data/model.xsd`, each with the default above, so a configuration that omits
+them is unchanged. The three maps are one class, a stacked sigma-pi
+(`SigmaPiStack`), a row of pairs (`SigmaPiLayer`), each a `PiLayer` (a
+product of its inputs in the log domain, with signed weights) under a
+`SigmaLayer` (a weighted sum). The layer counts count pairs. In a stack of
+more than one pair each sigma but the last gives `tanh` of its sum, and the
+last is clipped to 0 to 1. The two evidence lanes enter as two inputs and
+leave as two outputs, and no stage nets one against the other. The last
+sigma's weights start at zero, so a new stack gives exactly zero; and its
+first weights come from a private
+generator, so building one changes no other random draw. `expect` runs once,
+at the open pass, and is taught by omission: where units of the sentence were
+hidden, the field with them present is its detached teacher, and a sentence
+with nothing hidden gives it no cost (`expectation.concepts`). `intuit` runs
+once when the sentence is observed, before any thought, and is taught by the
+field the kept path's thought leaves (`intuition.field`) and by the output
+cost. A `marker` kernel passes the form block unchanged and shifts the meaning
+in the chart; a new kernel is the identity.
 
 `ConceptualSpace` owns definitions, evidence and STM/event state. On aligned
 BasicModel, native PS and WS views bind by location and the actual concept
-order is explicit metadata; symbolic generalization remains a separate phase.
+order is read from the block its row lies in; symbolic generalization remains
+a separate phase.
 
-#### Trust and gates
+#### Trust
 
 | Parameter | Reader | Default | Meaning |
 |---|---|---|---|
-| `trustViews` | `ConceptTrust`, `PartsOfSpeech.operation` | `3` | Finite positive view scale in $\ell = s(1 - e^{-n/\mathrm{trustViews}})$: $n$ counts kept views and $s$ is the accumulated request coverage divided by that count. Views allocate no memory rows. Empty stored content agrees with a view by one, and its first nonempty view becomes the reference. The radius applies only to the for lane. An operand's trust comes from a seated, tracked concept row; an untracked operand contributes one, and the whole norm of an untracked chart remains its extent. The same rule gives a formal argument its class-view radius, and an operation's trust is the minimum input separability times $1 - e^{-\mathit{views}/\mathrm{trustViews}}$. Identity mechanics and fixed relations contribute one. |
+| `trustViews` | `ConceptTrust`, `PartsOfSpeech.operation` | `3` | Finite positive view scale in $\ell = s(1 - e^{-n/\mathrm{trustViews}})$: $n$ counts kept views and $s$ is the accumulated request coverage divided by that count. Views allocate no memory rows. Empty stored content agrees with a view by one, and its first nonempty view becomes the reference. The radius applies only to the for lane. An operand's trust comes from a seated, tracked concept row; an untracked operand contributes one, and the whole norm of an untracked chart remains its extent. A relation's effective pair is its stored pair times the least confidence of its endpoints; an operator contributes no factor. An object reached through a read word is at radius one, and the rise by views does not apply to it. The same rule gives a formal argument its class-view radius, and each formal argument of an operation has a definiteness, its separability times $1 - e^{-\mathit{views}/\mathrm{trustViews}}$, which the lessons read as a measurement; it opens nothing and scales no row's trust. |
 | `definitionTrust` | `DefinitionIndex.add` | `0.5` | Finite threshold in $[0,1]$ for a named row's effective positive pole to admit its word-to-object binding; equality is admitted. The threshold gates the binding, never the word's identity: below it a named word resolves by its form. Naming writes the source evidence even below the threshold, so learning can change admission without another write. |
-| `gates.closedTrust` | `TrustGates.cap`, `LTM1.refresh_effective` | `0.1` | Finite value in $[0,1]$, contributed to the authority minimum by every covering closed gate; stored evidence is unchanged. |
-| `gates.threshold` | `TrustGates.advance` | `0.75` | Finite value in $[0,1]$: the minimum definiteness of all observed kept ancestors before an operator opens. No observed ancestor leaves a nonexempt operator closed. |
 
-`<gates>` is a child of `<ConceptualSpace>` beside `<trustViews>` and
-`<definitionTrust>`, with child elements rather than attributes so that
-configuration serialization preserves its shape:
-
-```xml
-<gates>
-  <closedTrust>0.1</closedTrust>
-  <threshold>0.75</threshold>
-</gates>
-```
-
-Every declared operator has its own monotone gate. Fixed operators and
-declared clause roots start open; any other operator opens only after the
-arguments of its observed kept ancestors reach `threshold`. The defaults and
-the lesson configuration use the same values. The retired `interpret` and
-`clause` groups fail at construction, and so does their checkpoint state.
-Runtime validation rejects nonfinite or out-of-range values. Gate settings are
-construction data; openings, dependencies and opening times are checkpointed
-model state. No operation-count scale is added. The
-learned-argument inventory reserves one more native concept seat per declared
-formal argument at construction, beside the configured inventory capacity.
+No setting gates an operator. Every operator a grammar file declares is open
+from the first sentence, and no row's trust is scaled by an operator's
+concept; the lessons are the stages at which a test suite moves on
+([Testing](Testing.md#rules-for-tests-and-measurements)). Runtime validation
+rejects nonfinite or out-of-range values. The learned-argument inventory
+reserves one more native concept seat per declared formal argument at
+construction, beside the configured inventory capacity.
 
 ### `<WholeSpace>`
 
@@ -474,7 +496,7 @@ their parameters independently of either perceptual tower.
 
 ### `<OutputSpace>`
 
-Maps symbols to final predictions, or reads named conceptual positive poles.
+Maps symbols to final predictions, or reads the field.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -485,10 +507,13 @@ Maps symbols to final predictions, or reads named conceptual positive poles.
 | `codebook` | mode | `none` | `none`, `quantize`, or `project`. |
 | `nonlinear` | bool | `false` | OutputSpace is linear by default; rescales via `Data.denormalize`. |
 
-With `nVectors == 1` (or no codebook) the head is an unquantised linear map
-`nInputDim -> nOutputDim` plus a learned scalar intercept; named concept
-outputs read native evidence instead. `LinearLayer` has `(bias, temp)` support
-for ergodic mode.
+Where the grammar reads the field, the head is one linear layer over it
+(`OutputSpace.read_field`): a fixed pair of weights for each conceptual row,
+one for each evidence lane, and a bias. `OutputSpace.conceptIds` is rejected:
+the output reads every concept row and both lanes. Otherwise, with
+`nVectors == 1` (or no codebook) the head is an unquantised linear map
+`nInputDim -> nOutputDim` plus a learned scalar intercept. `LinearLayer` has
+`(bias, temp)` support for ergodic mode.
 
 ---
 
@@ -500,12 +525,11 @@ Grammar infrastructure (SyntacticLayers, TruthLayer). Lives outside
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `syntacticHiddenDim` | int | `64` | SyntacticLayer MLP hidden size. |
-| `truthMaxEntries` | int | `1024` | TruthLayer SS-codebook capacity. |
+| `truthMaxEntries` | int | `1024` | Capacity of the truth view: `TruthLayer.sync_from_ltm` takes the latest `truthMaxEntries` LTM0 rows whose trust is not zero, each represented at its trust. A row is a truth by its nonzero trust alone. |
 | `ltmCapacity` | int | `1024` | Capacity of the shared LTM occurrence store and bounded inter-sentence history. The `.when` ladder uses `RowTime.HORIZON`, independently of this reservation. An explicit value takes precedence over `truthMaxEntries` for LTM; `truthMaxEntries` sizes the truth activation view. The store raises when full. MM_math_chain reserves 131,072 rows for its seventeen graded presentations; exhaustion still raises. See [STM.md Section 10](STM.md#10-ltm-as-the-chain-of-stm-end-states). |
-| `episodicConcepts` | nonnegative int | `4` | Maximum signed lane readings kept at each declared conceptual order from the sentence’s open field, beside its LTM0 idea. The strongest readings are stored in reading and concept-ID order as detached row-by-order-by-slot `episodic_concepts` and `episodic_values`; contradictory lanes occupy separate slots. `0` stores none. Content recall intersects lane-wise products at the question’s occupied orders, ranks positive relevance with newer rows first among equals, and reinstates each selected concept at its own order. Missing surfaces and stale IDs are counted. Relation-only sentences can use an `episode` anchor within `ltmCapacity`. Old entries without an order axis load at order zero with a warning; retired percept, pole and place columns are dropped with a warning. |
+| `episodicConcepts` | nonnegative int | `4` | Size of an LTM0 row's entry beside its idea: the strongest readings of the sentence's field of understanding, over all orders, in one flat list with no order axis (`episodic_concepts`, `episodic_values`). A value's sign is its lane, and contradictory lanes occupy separate slots. `0` stores none. Recall matches a question against the entries order by order, never reducing across orders, ranks positive relevance with newer rows first among equals, and reinstates each selected concept at its own order. Missing surfaces and stale IDs are counted. |
 | `relationCapacity` | positive int | `8192` | Fixed `SymbolSpace` shared-ID `LTM1` reservation, wired through both `ConceptAllocator` and `LTM0`. It must cover the highest handle, not only occupied membership records. Construction and strict checkpoint restore check this shape; exhaustion raises before allocation. |
 | `equalityWitnessCapacity` | positive int | `8192` | Fixed `SymbolSpace` first-equality-witness row reservation in `ConceptAllocator.singleton_values`; independent of relation storage. Snapshots use the actual conceptual width. No live resizing. |
-| `ltmStreamCapacity` | positive int | `max(1, batchSize)` | One LTM membership column per concurrent batch stream; a larger runtime batch must set it at construction. Not in the schema. |
 | `chartCollapse`, `iterationsPerWord` | -- | -- | Unread; declared in `data/model.xml`. |
 | `downwardGeneration` | bool | `false` | Emit a codebook head via `SymbolSpace.reconstruct()` and stash on `self._predicted_head`. |
 | `language.interpretation` | float | `0.5` | Soft-interpolation weight between forward and generation directions. |
@@ -535,7 +559,7 @@ configuration and is set only by a runtime override.
 | `sigmaPi` | `Models.py` (BaseModel init) + `Spaces.py` (PS/WS fold builders) | `butterfly` | Fold span enum `last` \| `butterfly` \| `full`. The per-space `<butterfly>` boolean is no longer read. |
 | `syntacticOrder` | `Models.py` (BaseModel init) | `0` | Parse-tree depth cap for the serial reduce sweep; `0` = unbounded. Inert in parallel mode. |
 | `sentenceProtocol` | `Models.py` (BaseModel init) | follows the word-bracket mode | Accepted for compatibility: the open bracket is unconditional, and this flag schedules no perception or second forward pass. |
-| `truthSet` (`<truth>` rows: text, `trust` attrs) | `Models.py` (`provision_ltm`) | (none) | Configured English truths run through the sentence driver; grammar determines their kind and external provenance supplies trust; row trust $\times$ `architecture.trust`. Admitted by the shared grammatical clause closing with external provenance. |
+| `truthSet` (`<truth>` rows: text, `trust` attrs) | `Models.py` (`provision_ltm`) | (none) | Configured truths run through the sentence driver and the shared grammatical clause closing. Each `trust` attribute, in $[-1, 1]$, is written at face value on the truth's outer clause, independently of `architecture.trust`. |
 | `answerSynthesis` | `Models.py` (`reverseOutput`, `generate`, `reverse`) | `false`; `data/BasicModel.xml` ships `true` | `true` resolves an owned conceptual answer, runs the generate grammar, writes terminal occurrences at output brackets, and calls the common order-zero reverse. The resulting continuous percepts are scored only against supplied answers; decoded bytes are the surface report. `false` retains the numeric forward head. |
 | `synthesisBindings` | `Models.py` (`_select_perceptual_bindings`) | `0`; BasicModel `4` | Number of most-salient perceptual context slots a derivation may NAME as bindings for answer synthesis; they ride in the derivation trace. `0` keeps perceptual context out of the answer. |
 | `whatCurriculum` | `Models.py` (`_curriculum_questions`) | `none`; BasicModel `full` | `none` \| `present` \| `temporal` \| `full`: a Bresenham fraction (`whatCurriculumRatio`) of training batches asks past/future (`temporal`) or also inference (`full`) questions instead of the default family. `none` is byte-identical. |
@@ -548,14 +572,13 @@ configuration and is set only by a runtime override.
 | `queryReasoning` | `Models.py` (BaseModel init) | `false` | DEPRECATED alias: `true` $\Rightarrow$ `reasoningIterations = 10`. Read only when `<reasoningIterations>` is absent. |
 | `ltmConsolidation` | `Models.py` (BaseModel init) | `false` | Read when selecting the serial word-major path. |
 | `whereRungRatio` | `Models.py` (BaseModel init) | `32` | Ratio that assigns spatial periods to the rungs of the `.where` ladder. Not in the schema. |
-| `stateless` | `Models.py`, `Language.py` | `true` | Request-scoped user TruthSet rows: on state-dict load the consolidated LTM is revived without `ORIGIN_USER` rows. `false` = stateful deployment. |
-| `primingDecay` | `Models.py` (BaseModel init) | `0.9` | Decay of the observed seen ledger per prime event; placement reads this ledger. Concept spread comes from ActivationPredictor. |
+| `stateless` | `Models.py`, `Language.py` | `true` | Serving lifecycle. `true` runs no forgetting pass after a conversation's request; `false` (a stateful deployment) runs the activity pass after each. Restoring a checkpoint keeps every retained row and its trust: a row has no origin by which it could be withdrawn. |
+| `primingDecay` | `Models.py` (BaseModel init) | `0.9` | Decay of the observed seen ledger per prime event; placement reads this ledger. Concept spread comes from `expect` (`expectationMap`). |
 | `primingBridgeCapacity` | `ConceptualSpace` | `0` | Fixed reservation in sparse 32-destination blocks for projection to the percept and property towers together. Zero preserves the complete bipartite reservation. A positive value caps that reservation; a rebuild that exceeds it raises before writing the cache or target surfaces. No resize or dropped connection. The corpus candidate reserves 8,388,608 blocks per stage. |
 | `serialWordCapacity` | `Models.py` (BaseModel init) | `256`, declared in `data/model.xml` | Sentence word bound for every model and the word count used to size its pinned STM banks. Inherited from the defaults file when omitted locally; construction raises if neither file declares it. Independent of PS/WS/CS field width and recent STM depth. Longer sentences raise instead of clipping or resizing. The realised output slab allows `2W` words, and the tensor loop executes only through its final live column. |
 | `serialResidualPartCapacity` | `Models.py` / `InputSpace` | `16` | Fixed compiler-visible integer radix/subword-ID extent for one cold spelling. It is not a dense percept-vector axis; the masked PS fold reduces those IDs into PS's configured live field. BasicModel uses 64. |
 | `serialWordBuckets` | `Models.py` / `InputSpace` | one bucket equal to `serialWordCapacity` | Comma-separated staging capacities. The largest value must equal `serialWordCapacity`; an overlong sentence fails rather than clipping. BasicModel uses only `256`, because its compiled `torch.while_loop` has a runtime trip count and therefore needs neither padding execution nor separate 16/32/64/128 graphs. Multiple buckets remain a compatibility/performance option for the static scheduler. |
 | `radialStmReduce` | `Models.py` (`_create_per_stage`) | `false` | STM idea folds use the radial (signed-safe) radmin/radmax kernels. |
-| `symbolicPriming` | `Language.py` (`attach_knowledge` $\to$ `configure_priming`) | `false` | Taxonomy forward heat production (symbolic-heat retrieval). |
 | `symbolTower` | `Models.py` (BaseModel init) | `false` | 3-stream CS bind (PS + WS + SS): SymbolSpace becomes the symbol tower with its own codebook stream. |
 | `serialObjectMeta` | `Models.py` (BaseModel init) | `false` | Serial word-loop mereology path: InputSpace presents every residual constituent of word $w$, PartSpace sigma-synthesizes it inside iteration $w$, all configured PS/WS folds bind by location in CS, and exactly one actual-order word concept commits to STM. Legacy non-word-major inputs retain the hard same-word-span fallback. |
 | `conceptIndexRead` | `Models.py` (BaseModel init) | `false` | Serial per-word idea reads through the index to the concept's `similarity_codebook` row instead of the computed percept-binding event. |
@@ -637,9 +660,6 @@ presentation.
 | `codebookEmaDeadThreshold` (PS/CS/WS) | same | unset ($\to$ VQ default: `1` if `codebookRetire` else `0`) | Dead-code retire: EMA `cluster_size` below this replaces the slot with a fresh row. |
 | `codebookGrowthEpsilon` (PS/CS/WS) | same | `0.0` | Stashed as `vq.growth_epsilon`; `runBatch` consults it for codebook growth. |
 | `activeVectors` (ConceptualSpace) | `Models.py`, `Layers.py` | `nVectors` | Initially selectable prefix of the physically preallocated shared conceptual codebook. Prefix growth updates a fixed-shape mask in place, so reserve activation cannot replace the optimizer-owned Parameter. WholeSpace properties use their own small inventory and lifecycle. |
-| `retrievalAlpha`, `retrievalBeta` (ConceptualSpace / WholeSpace) | `Language.py` (heat retrieval) | `1.0`, `0.5` | Weights of content similarity and of log heat in heat-biased candidate scoring; read per space role (ConceptualSpace, or WholeSpace for the symbolic role). |
-| `retrievalGamma`, `retrievalDelta` (ConceptualSpace / WholeSpace) | same | `0.0` each | First-order and second-order carrier weights; forced to 0 in `primer` mode. |
-| `retrievalTopKContent`, `retrievalTopKHeat`, `retrievalOuterTopK` (ConceptualSpace / WholeSpace) | same | `64`, `64`, `32` | Sizes of the content and heat candidate unions, and the active rows for the outer-heat builders. |
 
 ### `<SymbolSpace>` level
 
@@ -675,7 +695,10 @@ Abridged from `data/MM_xor.xml`:
   <architecture>
     <omissionTarget>1</omissionTarget>
     <bindingDepth>3</bindingDepth>
-    <data><dataType>embedding</dataType></data>
+    <data>
+      <dataType>numeric</dataType>
+      <dataset>xor</dataset>
+    </data>
     <conceptLayers>1</conceptLayers>
 
     <training>
@@ -686,13 +709,16 @@ Abridged from `data/MM_xor.xml`:
       <embeddingScale>0.05</embeddingScale>
       <autoload>false</autoload>
     </training>
+    <conceptBinding>aligned</conceptBinding>
+    <conceptualPi>true</conceptualPi>
+    <attentionPromotion>true</attentionPromotion>
   </architecture>
 
   <InputSpace>
-    <nVectors>8</nVectors>
-    <nDim>14</nDim>
-    <nOutput>8</nOutput>
-    <nOutputDim>14</nOutputDim>
+    <nVectors>2</nVectors>
+    <nDim>9</nDim>
+    <nOutput>2</nOutput>
+    <nOutputDim>9</nOutputDim>
   </InputSpace>
 
   <PartSpace>
@@ -733,13 +759,15 @@ Abridged from `data/MM_xor.xml`:
     <ltmCapacity>1024</ltmCapacity>
     <language>
       <start>S</start>
-      <grammar>xor.grammar</grammar>
+      <grammar>field.grammar</grammar>
     </language>
   </SymbolSpace>
 </model>
 ```
 
-Everything not listed inherits from `data/model.xml`.
+Everything not listed inherits from `data/model.xml`. The two numeric
+dimensions are read through `NumericPercepts`, and `field.grammar` declares
+only the field operators `intersection`, `union` and `not`.
 
 ---
 
@@ -834,6 +862,8 @@ rejects these by name:
 - `<SymbolSpace>`: `parserBackend`, `routerKind`, `chartTau`, `chartTopK`,
   `chartNoiseEps` and `wMax` (the signal router is the one parser, and STM
   depth is `stmCapacity`).
+- `<OutputSpace>`: `conceptIds` (the output reads every concept row and both
+  lanes).
 
 The schema does not declare `reconstruct`, `truthCriterion`, `readout`,
 `categoryCodebook`, `detachedReverse`, `ideaDecode`, `overlapWhereTiling`,
@@ -842,13 +872,43 @@ The schema does not declare `reconstruct`, `truthCriterion`, `readout`,
 `modalTeacherWeight`, `architecture.learning`, `exploreTemperature`,
 `stmReduceTau`,
 `wherePeriod`, `whenPeriod`, `whenRungRatio` or `language.useGrammar`, so a
-configuration that declares one fails schema validation. The schema still
+configuration that declares one fails schema validation. Nor does it declare
+the weighted forgetting settings `forgetTrustWeight`, `forgetUtilityWeight`,
+`forgetLuminosityWeight`, `forgetAgeWeight`, `forgetHalfLife`,
+`forgetSimilarity`, `forgetCoverage` and `forgetProtectOrigins` (activity
+orders a pass, and a row has no origin); `ConceptualSpace.recurrenceAngle` and
+`recurrenceCapacity` (a sentence read again is a new row);
+`ConceptualSpace.gates` with its `closedTrust` and `threshold` (no operator is
+gated); `adverbEigEdit` (renamed `modifierEigEdit`); or `symbolicPriming` and the
+heat-retrieval knobs `retrievalTopKContent`, `retrievalTopKHeat`,
+`retrievalOuterTopK`, `retrievalAlpha`, `retrievalBeta`, `retrievalGamma`,
+`retrievalDelta` and `retrievalUseOuterProduct`. The schema still
 accepts, and the code ignores, `sparseReplace` (with a `DeprecationWarning`),
 `semanticArrangement`, `useSubspaceActivation`, `thinkingLossWeight` and
 `whatThinkingPolicyWeight`.
 
-## Item 1.8 parameter amendment (2026-11-12)
+## Numeric and scalar input
 
-`OutputSpace.conceptIds` is retired and rejected. The numeric reader has a fixed pair of weights per constructed concept seat and a bias. `dataType=numeric` plus a field grammar selects fixed numeric axes; `nInput` declares their count. The existing `raiseCount` and `attentionPromotion` govern recurrent intersections, and `trustViews` governs scalar definition evidence. No scalar scale, box-learning rate, or per-value inventory parameter is introduced. Scalar input is an optional `scalar` beside `text` in `prepInput` records; omitted and zero have distinct input representations but neither asserts a perceptual negation.
+`dataType=numeric` with a grammar of field operators reads its input through
+`NumericPercepts`, the one reader for any number of dimensions; the input's
+shape gives the number. Each dimension is a place in the numeric input's own
+`.where` range. A reading whose felt value is above zero is a level percept at
+its place, one basic percept for each place and level met, and one order-zero
+concept per place collects the levels met there; zero is no presence. Reverse
+returns each dimension's number from the level its concept holds. The output
+reads the field (`OutputSpace.read_field`). The existing `raiseCount` and
+`attentionPromotion` govern recurrent intersections, and `trustViews` governs
+scalar definition evidence. No scalar scale, box-learning rate or per-value
+inventory parameter exists. Scalar input is an optional `scalar` beside `text`
+in `prepInput` records; omitted and zero have distinct input representations,
+but neither asserts a perceptual negation.
 
-`XOR_exact.xml` retains 64 epochs and sets its existing output `lrScale` to 10 for the fixed logarithmic input scale. `MM_xor.xml`, `MM_xor_fixture.xml` and `XOR_exact.xml` have two numeric dimensions. Their former symbolic shapes survive in `MM_text.xml`, `MM_text_fixture.xml` and `XOR_symbols.xml` for verbal and mechanism fixtures. Grammar declarations decide examination and vector walks independently of inventory sizes. The default's tier-local `pi` and `sigma` remain substrate declarations and keep its parallel body.
+`MM_xor.xml`, `MM_xor_fixture.xml` and `XOR_exact.xml` have two numeric
+dimensions; `XOR_exact.xml` runs 64 epochs and sets its output `lrScale` to 10
+for the fixed logarithmic input scale. `MM_text.xml`, `MM_text_fixture.xml` and
+`XOR_symbols.xml` keep symbolic shapes for verbal and mechanism fixtures.
+`data/MM_image.xml` is numeric, with field operators only, a 28 by 28 input on
+two place axes and `conceptualPi` false, and reads two-level images from
+`image_corpus.load`. Grammar declarations decide examination and vector walks
+independently of inventory sizes. The default's tier-local `pi` and `sigma`
+remain substrate declarations and keep its parallel body.

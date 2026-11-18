@@ -75,9 +75,10 @@ it, and where it deliberately does not, is recorded beside each.
    token in its window; the sentence model conditions on what it keeps.
    With LTM rows as a lossy statistic, equivalence holds up to
    the information retained — a truncated context of a different shape
-   from the window. A row keeps a sentence's composed idea, or a chain of
-   references for a sentence that does not compress, and never its parse;
-   when a store nears capacity, forgetting deletes the rows of least value.
+   from the window. A row keeps a sentence's composed idea with an entry of
+   its strongest concepts, or, for a relation, two references, and never its
+   parse; when a store passes its high-water mark, forgetting drops the
+   least active rows.
 4. **Evaluation by perplexity is not available.** The token conditionals
    are marginals of the sentence conditional and are intractable from `g`
    unless `g` factorizes. A sentence model can be equivalent as a

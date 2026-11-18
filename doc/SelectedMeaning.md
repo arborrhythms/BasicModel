@@ -35,7 +35,7 @@ reconstruction instead uses only the recorded occurrence's operand witness.
 The existing `preposition` projection can discard a semantically neutral marker.
 Neither operator reads spelling, selects a thought operation, or accesses LTM.
 Meaning recovery projects only wrappers present in the actual selected tree;
-it never guesses a head from arbitrary numerical `lift`/`verb` outputs.
+it never guesses a head from arbitrary numerical `change`/`verb` outputs.
 
 No additional LM is introduced; one could enter only as an explicit selectable
 grammar operator with ordinary configuration and training. The shared-table
@@ -70,10 +70,11 @@ whitelist, current-input vocabulary restriction or fallback meaning decoder.
 The ordinary perceptual/numeric output remains available.
 
 `ConceptualMeaning.constituents` owns complete nested role triples and local
-references. `LTM0.bind_constituents` validates references, depth,
-cycles and capacity before writing children in postorder. Children become
-questions or unverified occurrences, never facts by containment. Eager,
-pending and packed observation share this owner. Durable records detach;
+references. An LTM0 row holds one idea; its constituents are not written as
+rows of their own, so a constituent never becomes a fact by containment.
+Grammar still pending in a meaning's bindings is held in MTM while it is
+pending (`MediumTermMemory.hold_pending`), which keeps its own detached copy
+of the meaning and its constituents. Durable records detach;
 composed requests may remain live in the episode; checked thought effects detach.
 
 `BasicModel.run_selected_thought` is the only thought controller. Its menu
@@ -101,9 +102,10 @@ The bounds are a representation limit, not a claim of arbitrary scope support.
 Each context read charges the shared meter for at most four STM/history/knowing
 records, four recent discourse ideas and four frames already brought into
 serial context by `query`. Small budgets reduce these limits to reserve work
-for execution. A recent LTM write alone supplies no chooser content. Indexed
-retrieval admits shared facts and this row's stream; other streams'
-observations and estimate/question rows cannot become retrieved frames. See
+for execution. A recent LTM write alone supplies no chooser content.
+Retrieval reads only the rows a reference names and the rows recall returns
+by content (`EntryRead.cued_rows`); LTM keeps one history, and a row has no
+stream and no kind by which a read could withhold it. See
 [AccessibleMind](AccessibleMind.md#cued-ltm-reads) for cue ranking.
 Attention reads the active meaning and detached memory values; its final
 chooser features detach. It has no answer target or additional learned head.

@@ -36,15 +36,16 @@ checkpoint schema.
 | `ask` | complete row | a filling, or a nested question on the same meter |
 | `isTrue` / `exist` | ended proposition / conceptual content | the row's pair and trust / conceptual presence and its pair |
 | `isPart` / `part` | references / full-width codes | symbolic parthood witnesses / containment content and a pair |
-| `isEqual` / `equal` | references / full-width codes | LTM1 equality evidence (membership in a singleton) / code identity content and a pair |
-| `infer` / `implies` | two addressed chunks, a premise and a recalled rule / full-width codes | the instantiated consequent with the path-minimum pair and its ordered witnesses, or a subgoal question chunk at `(0, 0)` / region containment and a pair |
+| `isEqual` | references | LTM1 equality evidence (membership in a singleton) |
+| `define` | two references | an identity written as two relations, `part` each way |
+| `infer` / `implies` | two addressed chunks, a premise and a recalled rule / full-width codes | the instantiated consequent with the path-minimum pair and its ordered witnesses, or a subgoal question chunk at `(0, 0)`; a stored implication's firing over the knowing is one such rule / region containment and a pair |
 | `bind` | a selected reference site (meaning) | the site filled, with its pair, evidence `reference` |
-| `intuit` | meaning (the question's content) | one order-zero Sigma-over-Pi field in the episode's addressed STM chunk, with the fired rules' reference plans as `infer` candidates and knowing deposits; evidence kind `intuition`, provisional until `infer` selects a firing |
-| `not` | pair, meaning, or conceptual content | exchanged poles with content retained |
-| `gain` | conceptual magnitude | content and pair; sets the next sentence's expectation gain |
+| `intuit` | meaning (the question's content) | what `intuit`'s learned map gave when the sentence was observed, before thought; evidence kind `intuition` |
+| `not` / `non` | pair, meaning, or conceptual content | exchanged poles with content retained / both lanes withheld |
 
 Every operation leaves a pair or content, never a scalar. `whole` remains the
-converse spelling of conceptual `part`, with permutation `(I2, I1)`.
+converse spelling of conceptual `part`, with permutation `(I2, I1)`, and
+`isWhole` the converse spelling of `isPart`.
 `isPart` is the symbolic face at every order. Results become serial slots with
 their pair, witnesses and producing operation; subsequent requests bind those
 slots without an implicit LTM search.
@@ -52,8 +53,10 @@ slots without an implicit LTM search.
 Retired operator names raise with their replacements (2026-10-07): thought
 `what` with `ask`; LTM `what` and `lookup` with `query`; grammar `chunk` with
 `synthesize` (inverse `analyze`); `true` with `isTrue`. `quantize`, `arma` and
-`expect` are removed from thought: `<sentenceExpectation>` and `gain` govern
-the global predictor.
+`expect` are removed from thought: `<sentenceExpectation>` governs the
+sentence expectation, `expect` is a learned map, and the strength of
+expectation is a setting of the model, not a thought operation (Alec, 2026-11-13: "drop gain, we can set that
+as expectationGain on the model").
 
 ## Common grammar-face signature
 
@@ -215,10 +218,10 @@ can. Re-reading an equality backwards so that a free region would be answered by
 its own fixed side is refused as no progress (`ThoughtBinding.integrate`); an
 explicitly reflexive witness remains valid.
 
-Only the kept walk publishes conclusions: occurrence-addressed LTM rows of
-kind `inference` (`unverified` for a `(0, 0)` pair, `question` for open
-slots), with both poles and provenance references. The document and
-turn, ordinal within that turn, and content determine their addresses. The
+Only the kept walk publishes conclusions: LTM0 rows, each named by its time,
+at the trust their premises give, the least on each lane. A conclusion with
+evidence on both lanes is written as two rows, and a question's open slots
+are held in MTM while they are pending. A row has no kind and no origin. The
 closing retains unresolved questions; thought operations have no generic LTM
 append capability. `descend` and `return` remain chronological trace records,
 not a separate planner stack.
@@ -230,7 +233,7 @@ a departure at a thought decision is credited by the proposal-corrected score
 function $p(a)\,\Delta C$ on its complete path's change in reconstruction plus
 supplied-answer cost (R + A), and exact ties contribute no policy term. Work
 bounds an episode but is not a cost in the comparison. Expectation trains only
-its own predictor. The presented answer is the binding; there is no separate
+its own map. The presented answer is the binding; there is no separate
 comparison reader.
 
 Before a field with no open slot is offered its episode, the close may conceive

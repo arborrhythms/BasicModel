@@ -45,32 +45,41 @@ constituent word ideas."
 in the extension of the noun phrase, and then extend() it until we have a
 new set, which is the field of understanding."
 
-1. **A method of every operator.** `extend` stands beside `compose` and
-   `generate` on the operator. The grammar file gains no section and no
-   rule for it, and nothing is parsed a second time.
+1. **Two methods of every operator.** `compose_extend` and
+   `generate_extend` stand beside `compose` and `generate` on the
+   operator. A grammar file whose operator lacks either fails at load. The
+   file gains no section and no rule for them, and nothing is parsed a
+   second time.
 2. **It starts from what is active.** "extend should operate on the
    existing conceptual activations, or a top-k select thereof." The
    starting set is the extension of the noun phrase: the concepts its
-   words activated, with their trust. The extension of a known concept is
-   stored, so nothing is found by matching a vector against the code of
-   every concept.
+   words activated, with their trust. A leaf's set is the sentence's
+   existing activations at every order (`_sentence_open_fields`). The extension of a known concept is
+   stored, its members in the definition store, so nothing is found by
+   matching a vector against the code of every concept.
 3. **It follows the tree compose left.** "if we have the STM tree, we can
    just iterate over its existing compose(), calling extend() on each
-   operator to process the set of conceptual activations." One call for
-   each operator of the tree, in the order compose applied them.
-4. **A set in, a set out.** An operator of two operands takes the sets of
-   both.
+   operator to process the set of conceptual activations." One call of
+   `compose_extend` for each operator of the kept tree, in the order
+   compose applied them.
+4. **A set in, a set out.** A set is concept references, each with its
+   trust on the two lanes (`Extension.ConceptSet`). An operator of two
+   operands takes the sets of both and tells them apart by their places in
+   the sentence.
 5. **The last call leaves the field of understanding.**
 6. **An operation on the field, not a lowering.** "it really is an
    operation on the field of active concepts and not necessarily lowering
-   the order of a concept." Only a determiner goes from a kind to its
-   members.
+   the order of a concept." Only `lower` goes from a kind to its members.
 
 An idea that is met without its sentence, one recalled from long-term
 memory or one a thought concluded, has no tree in short-term memory. "We
 already have a mechanism for mapping words to a sentence concept
 bidirectionally. So if we walk the idea to the sentence (a WFF), the wff
-can select the extension precisely." Its generate walk gives the tree.
+can select the extension precisely." Its generate walk gives the tree, and
+`compose_extend` gives each node's set from the leaves, a known concept's
+set being its stored extension. `generate_extend` is the inverse: it gives
+each operand its part of its parent's set, which is how an operand's part
+of a recalled idea's field is read.
 
 ## What each operator's extend does
 
@@ -80,14 +89,17 @@ the two lanes, or `non`, which withholds both.
 
 | operator | when composing | extend |
 |---|---|---|
-| `intersection` | a field operator | the intersection of its operands' sets |
-| `union` | a field operator | their union |
+| `intersection` | the least, on a field or of two operands | the intersection of its operands' sets |
+| `union` | the greatest, on a field or of two operands | their union |
 | `not` | swaps the two lanes | swaps the two lanes of the set |
 | `non` | withholds both lanes | withholds both lanes of the set |
 | `compound` | a modifier selects among its noun's cases | narrowing: the noun's set intersected with the modifier's |
-| `adverb` | a modifier applied to a verb | narrowing |
-| `verb` | a verb subtyped by its object | narrowing |
-| `disjunction` | a probabilistic sum of activations | joining |
+| `modifier` | a gain applied to its head | narrowing |
+| `verb` | gives a verb phrase its basis from its object | narrowing |
+| `lower` | drops a word of order one or more by one order | one generic member (below) |
+| `interpret` | a word to its object | its object's set in place of the word's |
+| `ask` | marks a position of uncertainty | its open operand gives nothing |
+| `change`, `preposition`, `surface`, `sign`, `bind`, `swap`, `part`, `whole`, `implies`, `focus`, `mint` | | its content operand's set, unchanged |
 
 ### Determiners
 
@@ -95,12 +107,20 @@ the two lanes, or `non`, which withholds both.
 multiple vectors." A determiner takes a kind to its extension and selects
 there.
 
-| word | operator | selects |
-|---|---|---|
-| "the" | `definite` | "a known identity from MTM" |
-| "a" | `lower` | "a single subconcept": "'A cat' should select a generic 'cat', presumably; perhaps it can be a centroid?" One generic member, the centroid of the kind's subconcepts |
-| "some" | (no operator in the grammar file) | "some subconcepts" |
-| "every" | `universal` | "the entire extension" |
+| word | selects |
+|---|---|
+| "the" | "a known identity from MTM" |
+| "a" | "a single subconcept": "'A cat' should select a generic 'cat', presumably; perhaps it can be a centroid?" One generic member, the centroid of the kind's subconcepts |
+| "some" | "some subconcepts" |
+| "every" | "the entire extension" |
+
+No determiner has an operator of its own. A determiner is a modifier, and
+which operator its word takes is chosen at run time
+([Language](Language.md#determiners-number-words-and-the-modifier-alec-2026-11-13)).
+`lower` drops a word of order one or more by one order, and its extend
+gives one generic member: every subconcept of the kind at an equal share
+of one, so that the set's key (`FieldProjection.key`) is their centroid.
+Over the rows of memory it leaves one row.
 
 ## What the field of understanding is for
 
@@ -111,18 +131,27 @@ there.
   statement is held true or false; the idea is not scaled by it. "A
   semantic vector
   comes from the associated episodic concepts, which may or may not be
-  enough to reconstitute the sentence verbatim."
+  enough to reconstitute the sentence verbatim." Two ideas can have one
+  extension: a kind of one member and that member leave equal entries. A
+  row's optional referent, what its idea is of, tells them apart.
 - **Recall.** Extend is the mechanism of recall. A question is extended
-  over its own tree like any sentence. One term's result over the rows of
-  memory is one product; each operator of the question's tree then
-  combines its operands' results as its extend says: narrowing
-  intersects, joining unions, `not` and `non` act on the lanes, and a
-  determiner selects one row, some or all. The operand a question leaves
-  open selects nothing. A recalled row's idea is walked back to its
-  sentence and extended, and the part of its field at the question's open
-  operand is the answer. A row keeps only the strongest members of its
-  field, so the products find the candidates and the walk gives their
-  whole fields.
+  over its own tree like any sentence, and its field of understanding is
+  the side it is matched on. One term's result over the rows of memory is
+  one product, matched order by order and never reduced across orders
+  (`EpisodicMemory.matches`, `relevance`); each operator of the question's
+  tree then combines its operands' results as its extend says
+  (`ExtendedRecall.matches`): narrowing intersects, joining unions, `not`
+  and `non` act on the lanes, and `lower` selects one row. The operand a
+  question leaves open selects nothing. A recalled row's idea is walked
+  back to its sentence and extended, and the part of its field at the
+  operand that stands, under the same operators from the root, where the
+  question's open operand stands is the answer (`ExtendedRecall.answer`);
+  where the two trees do not agree that far, no answer is read from that
+  row. A row keeps only the strongest members of its field, so the
+  products find the candidates and the walk gives their whole fields. A
+  question with no open operand is read on its region instead, by
+  existence and by pervasion
+  ([Logic](Logic.md#existence-and-pervasion-alec-2026-11-13)).
 - **Reference.** What "the" selected is in the field. Resolving a
   reference is part of extend, not a search made beside it.
 - **Saying.** A member that has a word is said by that word. A member
@@ -157,32 +186,17 @@ will look like a region in conceptual space (the furry things region)."
 - The two lanes are combined by `FieldLogic.reduce` (`bin/FieldLogic.py`),
   which defines `intersection`, `union`, `not` and `non` once.
 - The operators are the `GrammarLayer` classes of `bin/Language.py`;
-  `compose` and `generate` are their methods today.
+  `compose_extend` and `generate_extend` are their methods beside
+  `compose` and `generate` (`bin/Layers.py`), carried out by
+  `bin/Extension.py`. `Extension.reading` extends the kept STM tree once,
+  in its compose order.
+- Recall by extension is `bin/ExtendedRecall.py`.
 - The centroid of a field is `FieldProjection.key`
   (`bin/FieldProjection.py`).
-- `CompoundLayer` already narrows inside its compose, through
+- `CompoundLayer` narrows inside its compose as well, through
   `CaseSelection.select_cases`.
 
 ## Open
 
-No operator has an `extend` yet. These points are not settled:
-
-- `conjunction` meets two pieces of evidence in one use, which is an
-  intersection, and joins two kinds in another ("cats and dogs"), which is
-  a union.
-- `preposition`: what it does to its object's set.
-- `part`, `whole`, `equal` and `implies`: what a sentence that states a
-  relation leaves as its field.
-- `gloss`, `divide` and `descend` act on the places attention examines and
-  are not sentence operators.
-- The marker and carrier operators (`surface`, `sign`, `interpret`, `bind`,
-  `lift`, `transpose`, `ask`, `generic`): proposed, to pass the content's
-  set through, with `interpret` giving the object's set in place of the
-  word's.
-- How an operator of two operands tells its operands' activations apart:
-  proposed, by their places in the sentence.
 - Whether what "a" selects is entered in MTM, so that a later "the" finds
   it: proposed, yes.
-- Which subconcepts "some" takes: proposed, the strongest of the narrowed
-  set.
-- The size of the top-k selection.

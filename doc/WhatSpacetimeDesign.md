@@ -203,7 +203,8 @@ decoder is shared by construction, so every reconstruction step trains the
 decoder that output uses; what stays separate is the per-call state.
 
 The answer path's own weights are the generate chooser, the question
-conditioner (§2) and, for a tensor output, `OutputSpace`'s `percept_adapter`;
+conditioner (§2) and, for a tensor output, `OutputSpace`'s `percept_adapter`,
+or its linear readout of the field (§4.2) where the output is numeric;
 a checkpoint's retired `synthesis_layer` keys are dropped with a warning. On
 the parameters output shares with reconstruction, its gradient is projected
 against reconstruction's (§5).
@@ -342,8 +343,9 @@ live state afterwards.
 `OutputSpace` is consequently a final modality adapter. It may turn constructed
 answer percepts into text, a truth value, a scalar, or an action, but it does
 not decide the answer by projecting directly from the input symbol. A numeric
-output (XOR) is the one exception in form: it reads the path's composed state
-through a single affine head, a modality with no grammar.
+output (XOR) is the one exception in form: it reads the field at the path's
+end through one linear layer, a weight for each concept row and evidence
+lane and a bias (`OutputSpace.read_field`), a modality with no grammar.
 
 ### 4.3 Invertibility contract
 
@@ -590,11 +592,10 @@ row's own k-th most recent completed field from a bounded per-row history
 sentence is admitted and cleared by that row's hard end-of-document reset
 (`dispatch_per_row_reset`). A row whose history is shorter than k is cold and
 stays unresolved. `What(future, +k)` stays unresolved until a conceptual
-predictor exists: the activation predictor forecasts an activation over the
-symbol bank, which primes the next reading, not a completed field that could
-be realized as an answer. An unresolved row leaves the other rows of the
-batch resolved. Training scores only supplied answers; automatic temporal
-targets are evaluation metrics.
+predictor exists: expectation forecasts an activation, which primes the next
+reading, not a completed field that could be realized as an answer. An
+unresolved row leaves the other rows of the batch resolved. Training scores
+only supplied answers; automatic temporal targets are evaluation metrics.
 
 This design keeps the existing batching, optimizer, grammar chooser, STM, and
 LTM owners and builds both branches in one model, with no second

@@ -6,7 +6,7 @@ relation. A declarative carries its source's evidence; a question carries none
 and stands at `(0,0)`, which is ignorance, not an evidence slot, so an
 episode's goal is to bind the free variables and find or derive evidence.
 Truth comes two ways. Direct truth is a content match: `query` returns the best
-row in the region with its own pair and trust, and the match binds the free
+row in the region with its own trust, and the match binds the free
 variable. Derived truth applies a premise to a rule (an implication, an
 equality or a parthood), and the conclusion's pair is the minimum along the
 path in each lane. The two lanes are never netted, so a region reached both
@@ -36,8 +36,8 @@ maximum of the descriptions of the participants that filled the role before
 `bind` may fill it from the situation or leave it open.
 
 While the episode's root has an open slot, the thought menu offers only `ask`,
-`query`, `intuit`, `infer`, `not`, `isTrue`, `bind` and `exist`, and an `equal`
-whose two operands a query has already supplied (`ThoughtStream.candidates`).
+`query`, `intuit`, `infer`, `not`, `isTrue`, `bind` and `exist`
+(`ThoughtStream.candidates`).
 Every path to an answer is therefore a sequence of sound steps, and the chooser
 decides which premises and rules to use. `conclude` requires every free
 variable bound, unless work is spent, `thoughtSearchExhaustion` completed
@@ -50,14 +50,16 @@ copula can bind directly to that row's addressed column and fill it.
 | --- | --- |
 | `isTrue(P)`: ended row's pair, trust and witnesses | `exist(P)`: conceptual presence and its pair |
 | `isPart(a,b)`: LTM and taxonomy parthood | `part(a,b)`: containment content and pair |
-| `isEqual(a,b)`: LTM1 equality relations (membership in a singleton) and references | `equal(a,b)`: identity of codes and pair |
+| `isWhole(a,b)`: `isPart(b,a)` | `whole(a,b)`: `part(b,a)` |
+| `isEqual(a,b)`: LTM1 equality relations (membership in a singleton) and references | none: an identity is `part` each way, which `define(a,b)` writes as two relations |
 | `infer(premise, rule)`: the rule chunk's consequent from the premise chunk by identity, membership, equality or instantiation, with the path-minimum pair, or its antecedent opened as a subgoal (2026-10-29) | `implies(P,Q)`: containment of regions and pair |
 
-`bind` (a selected reference site, evidence `reference`) and `inferBackward`
-(`infer`'s converse spelling, the subgoal face) complete the catalogue with
-`intuit`, the order-zero proposal described under
-[Intuition, understanding and thought](#intuition-understanding-and-thought-alec-2026-10-30):
-`intuit` proposes and `infer` selects.
+`bind` (a selected reference site, evidence `reference`), `inferBackward`
+(`infer`'s converse spelling, the subgoal face) and `non` (both lanes
+withheld) complete the catalogue with `intuit`, which states what the
+learned map described under
+[Intuition, understanding and thought](#intuition-understanding-and-thought-alec-2026-10-30)
+gave when the sentence was observed, with the evidence kind `intuition`.
 
 `infer(premise, rule)` reads two held chunks: a premise and a recalled rule (an
 implication, a part or kind row, or an equality). Forward, the premise matches
@@ -74,7 +76,10 @@ consequent and the antecedent is written as a question chunk with an open
 referent, pair $(0, 0)$ and evidence kind `subgoal`; `query` or `ask` fills it,
 and a forward `infer` over the filled chunk concludes with its pair. A question
 claims nothing. `ThoughtInference.replay_pair` recomputes the pair from the
-recorded supports.
+recorded supports. A stored implication is applied the same way: its firing
+over the knowing ([below](#intuition-understanding-and-thought-alec-2026-10-30))
+is one firing of a rule, which `infer` takes (`ThoughtInference.derive`) with
+the evidence kind `inference`.
 
 No operation duplicates what calling an existing one gives. `not` applied to
 the premise before `infer` gives the contrapositive (the rule is read from
@@ -102,7 +107,7 @@ as present.
 operator of its own. A part or property question (`part`, or the taxonomy's
 `isPart`) can be answered implicitly in order-zero space or explicitly by the
 chain, and both may run within the budget. The implicit route is pervasion
-(`Intuition.pervasion`, which `intuit` tries before its rules): the knowing is
+(`Intuition.pervasion`, tried before stored rules are fired): the knowing is
 narrowed to the subject's parts, read from its Part edges and recorded
 constituents and kept only where the subject's content contains the part's,
 each weighted by its edge's evidence and joined with the wholes that contain the
@@ -129,20 +134,38 @@ premises (in LTM or conceptual space)"
 ([Logic](Logic.md#existence-and-pervasion-alec-2026-11-13),
 [Philosophy](Philosophy.md#the-three-sources-of-trust-in-the-model-alec-2026-11-13)).
 
-`query(pattern)` returns the best matching row. `ask(row)` attempts to fill
-an open reference, using queries and nested questions. `not` exchanges poles
-of a pair or meaning; the compose operator `non` withholds both (Alec,
-2026-11-12: "non- removes both positive and negative evidence, while not swaps
-the two types of evidence."). Gain changes the next sentence's global
-expectation. No thought operation returns a scalar. Neither trust nor lack of
-support is silently substituted for an evidence pole.
+A question with no open operand is read on its region, its field of
+understanding over the rows of memory (`ExtendedRecall.matches`), in two
+ways kept apart. Existence is the brightest row in the region: its relevance
+times the size of its trust, on the lane of the trust's sign, never summed
+with another row. Pervasion is a trusted relation in LTM1 between the
+subject's kind and the property's class, the least along the path
+(`ExtendedRecall.pervasion`, through `Taxonomy.capture_taxonomy`), never
+gathered from the kind's known members. A deduction takes the claim's
+pervasion, or the claim's own statement, a trusted row of its content at a
+relevance of one, with the other form's existence against it; existence at a
+lower relevance is carried with the answer as its analogy.
+
+`query(pattern)` returns the best matching row, recalled by the pattern's
+extension ([Extend](Extend.md#what-the-field-of-understanding-is-for)).
+`ask(row)` attempts to fill an open reference, using queries and nested
+questions. `not` exchanges poles of a pair or meaning; `non`, in compose and in
+thought, withholds both (Alec, 2026-11-12: "non- removes both positive and
+negative evidence, while not swaps the two types of evidence."). The strength
+of expectation is a setting of the model, not a thought operation (Alec,
+2026-11-13: "drop gain, we can set that as expectationGain on the model"). No
+thought operation returns a scalar. Neither trust nor lack of support is
+silently substituted for an evidence pole.
 
 Every result becomes a serial slot with its content, pair, witnesses and
 producing operation. Chains bind those slots: the `a < b`, `b < c` fixture
 performs two queries and concludes `a < c` with both source references.
 Modus ponens requires an antecedent witness as well as the implication.
-Conclusions are LTM `inference` rows, addressed by document/turn, ordinal and
-content. No second semantic store or planner stack is introduced.
+A kept conclusion is an LTM0 row named by its time, at the trust its premises
+give, the least on each lane; a conclusion with evidence on both lanes is
+written as two rows, the one held true first. A row has no kind and no origin,
+and no trust is changed after it is written. No second semantic store or
+planner stack is introduced.
 
 Before a field with no open slot is offered its episode, the close may conceive
 one absence: when the closing expectation image's omission of a predicted
@@ -166,13 +189,14 @@ evidence.
 
 ## Retention and reasoning
 
-Forgetting does not reason. It values each row by its own worth (the larger
-evidence pole as trust, the recorded surprise, dissonance or coverage, and
-age), and no pass checks whether a row is deducible from others (Alec,
-2026-11-01: "Forgetting had been checking if rows were easily deductible; let's
-delete that requirement."). No pass changes stored evidence. Live thought
-results and pending expectation sources protect their addressed evidence
-throughout a pass. The pass itself is described in [STM](STM.md).
+Forgetting does not reason. It drops the rows of least activity, a number
+each row of either store carries: set at its write from the sentence's
+surprise, raised each time the row is read, decayed by each pass, and never
+lowered or dropped at one. No pass checks whether a row is deducible from
+others (Alec, 2026-11-01: "Forgetting had been checking if rows were easily
+deductible; let's delete that requirement."). No pass changes a stored trust.
+Live thought results and pending expectation sources protect the rows they
+address throughout a pass. The pass itself is described in [STM](STM.md).
 
 ## Intuition, understanding and thought (Alec, 2026-10-30)
 
@@ -180,9 +204,9 @@ In the dual-process terms of 2026-11-09, expectation and `intuit` are System 1,
 and `infer`'s selection in the serial workspace, with `query`'s recall, is
 System 2
 ([Architecture](Architecture.md#dual-process-theory-as-a-design-consideration)).
-A `query` by time alone reinstates the order-zero concepts kept for that moment
-as the attended field, so thought can reason over a past sentence as an
-experience lived before
+A `query` that recalls rows reinstates the concepts kept in their entries as
+the attended field (`EpisodicMemory.reinstate`), so thought can reason over a
+past sentence as an experience lived before
 ([Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11)).
 
 Alec: "Intuition is beyond understanding, it is conditioned by desired
@@ -190,29 +214,35 @@ output, and thoughts are a distillation of intuition."
 
 - *Understanding* is the conceptual definitions, trained by
   reconstruction: they explain the input.
-- *Expectation* is bottom-up. `ActivationPredictor` predicts the next
-  concept state from the current field and STM, and that prediction is
-  also the spread of activation that primes attention, the chooser and
-  retrieval. It learns only from its own error against the detached next
-  state.
-- *Intuition* is top-down. `intuit()` is a Sigma over Pi with negation at
-  the literals and its own learned weights. It reads the knowing but is
-  trained only by its use in output, so it is biased toward doing
-  something with what is understood (problem solving). The relations and
-  ideas that fired are pulled into an STM slot as candidates.
-- *Thought* is `infer`'s selection from those candidates in the serial
-  workspace (the eight STM chunks), its trust pair computed from evidence,
-  never learned; an intuition is provisional until `infer` selects it.
+- *Expectation* is bottom-up. `expect` is a learned map, a stacked
+  sigma-pi from the observed field of order zero to the expected field
+  over the same concepts, run once per sentence at the open pass
+  ([below](#expectation-a-stacked-sigma-pi)). The expected field is the
+  spread of activation that primes attention, the chooser and retrieval.
+  It is taught by omission, against the detached field.
+- *Intuition* is top-down. `intuit` is a learned map of its own, a stacked
+  sigma-pi from concepts to concepts, read once when a sentence is
+  observed, before any thought; what it gives joins the sentence's
+  knowing. It is taught by the field thought leaves and by the output
+  cost, so it is biased toward doing something with what is understood
+  (problem solving) ([below](#intuition-taught-by-thought)). An intuition
+  may answer, under its own evidence kind `intuition`.
+- *Thought* is the work of the serial workspace (the eight STM chunks):
+  `query` recalls, and `infer` applies a held or stored rule, its trust
+  pair computed from evidence, never learned.
 
 In one line: understanding explains the input, intuition is understanding
 put to use, and thought is intuition that has been checked.
 
-*The calculus.* At thought time `intuit` reads the knowing $K$: the question's
-order-zero content, the working values MTM prepends for the stream and, within
-a third of the remaining work, the order-zero concepts active in the last
-observed knowing field. Its rules are the LTM1 rows that reference the concepts
-the predicted field holds active, taken in descending order of predicted
-activation, with nonzero evidence and within the work meter
+*Stored rules, fired.* A stored implication is applied to the knowing by
+firing it, and `infer` takes each firing as a candidate (Alec, 2026-11-14:
+"the existing logic can be introduced as implication"). The knowing $K$ is
+the question's order-zero content, the working values MTM prepends for the
+stream and, within a third of the remaining work, the order-zero concepts
+active in the last observed knowing field. The rules are the LTM1 rows that
+reference the concepts the expected field holds active, taken in descending
+order of expected activation (`ConceptSpread.rule_order`), with nonzero
+evidence and within the work meter
 (`ThoughtLTMCapability.intuition_rules`). For a rule with lanes $(t^+, t^-)$,
 antecedent literals $\ell_i$ (a negated literal exchanges its lanes before the
 meet) and consequent $c$, the coverage is
@@ -229,46 +259,46 @@ receives the knowing deposit $\sum \min(\text{field}, \text{code}) / \sum \text{
 per lane, and `write_knowing` re-evaluates the selected proof live and joins it
 into the field by maximum at the existing brackets. When `infer` selects a
 firing, the pair is recomputed at unit exponents, $\min(\kappa_1, (t^+, t^-))$,
-so learned weights shape what is proposed and never what is accepted. An
-`intuit` cut off by the budget returns no content and leaves the goal and STM
+so learned weights shape what is proposed and never what is accepted. A
+firing cut off by the budget returns no content and leaves the goal and STM
 unchanged.
 
-`intuit` maps order zero to order zero. Its knowing is the order-zero field, a
-rule's two sides enter as their order-zero content, and the consequent's
+The firing maps order zero to order zero. Its knowing is the order-zero field,
+a rule's two sides enter as their order-zero content, and the consequent's
 content is joined back into that field. Higher orders enter only through their
 order-zero constituents: a higher-order concept as the join of its
-constituents' content, an individual as its working value. So `intuit` cannot
-tell two individuals apart except by their order-zero differences; individuation
-is the serial grammar's work.
+constituents' content, an individual as its working value. So the firing
+cannot tell two individuals apart except by their order-zero differences;
+individuation is the serial grammar's work.
 
 *Proposal and pick.* The breadth of the parallel pass and the narrowness of the
 serial pick are two learners. Which fired candidate matters most for the focus
-is not computed inside `intuit`: the grammar's operation scorer, the one compose
+is not computed by the firing: the grammar's operation scorer, the one compose
 uses (`OperationSelectionLayer.thought_logits`), scores each `infer` candidate
 from the focus and the candidate together, the candidate's firing pair among its
 inputs, to one logit. The Sigma and Pi charts belong to combination, which must
 stay monotone and bounded in the cube; a choice needs an unbounded logit, which
 the softmax turns into the probability that the score function credits.
 
-*What learns.* Memory is evidence, not a parameter. A row's lanes are what its
-closes wrote: no answer loss, gradient or chooser credit changes a row or its
-lanes, and a contrary statement observed later adds its own witness through an
+*What learns.* Memory is evidence, not a parameter. A row's trust is what its
+close wrote: no answer loss, gradient or chooser credit changes a row or its
+trust, and a contrary statement observed later adds its own row through an
 ordinary close. An STM chunk has no parameters either; it holds references and
 a detached working value, so what learns is what the references point at.
-`intuit` improves as the things around it improve, each by its own owner:
-memory (which rules exist and how true they are, written at kept closes),
-meaning (the conceptual definitions and the taxonomy's memberships, which decide
-how well an antecedent matches the knowing), place (which rules the predicted
-field brings into reach), choice (the chooser, which learns when to call
-`intuit`, which candidate `infer` takes, which premises to keep and when to
-conclude: the path, never the truth of a step), and `intuit`'s own
+The firing of stored rules improves as the things around it improve, each by
+its own owner: memory (which rules exist and how true they are, written at kept
+closes), meaning (the conceptual definitions and the taxonomy's memberships,
+which decide how well an antecedent matches the knowing), place (which rules the
+expected field brings into reach), choice (the chooser, which learns when to
+call `intuit`, which candidate `infer` takes, which premises to keep and when to
+conclude: the path, never the truth of a step), and the firing's own
 output-owned weights. A wrong rule is not corrected in memory; it stops
 mattering as the concepts it is stated over learn, as the chooser learns not to
 take it, and as forgetting removes it when it goes unused.
 
 *Where it fits.*
 
-- *Bottom-up expectation as priming.* `ActivationPredictor`'s spread is
+- *Bottom-up expectation as priming.* `expect`'s expected field is
   spreading activation (Collins & Loftus 1975) read as prediction, as in
   predictive processing (Clark 2013; Friston 2010): priming as anticipation
   of the next state.
@@ -280,7 +310,7 @@ take it, and as forgetting removes it when it goes unused.
   "beyond understanding" part.
 - *Two kinds of fast thinking.* Glöckner & Witteman (2010) distinguish four
   kinds of intuition, among them an associative and a constructive,
-  goal-driven one; that is the split between the predictor and `intuit`.
+  goal-driven one; that is the split between `expect` and `intuit`.
 - *Thought distilled from intuition.* Poincaré and Hadamard describe
   discovery as unconscious combination offering candidates, a sense of fit
   picking one, and conscious work verifying it; global workspace theory
@@ -292,9 +322,10 @@ take it, and as forgetting removes it when it goes unused.
 
 - *Rationalization.* Intuition shaped by desired output is also how
   motivated reasoning works: in Haidt's social intuitionist model
-  intuition decides and reasoning follows as justification. Here `intuit`
-  proposes but an accepted answer's trust comes only from `infer`, recall
-  or pervasion, computed from evidence. The design is
+  intuition decides and reasoning follows as justification. Here an
+  intuition may answer, but under its own evidence kind, and what is
+  trusted as proved comes only from `infer`, recall or pervasion, computed
+  from evidence. The design is
   normative rather than descriptive: thought distills intuition and then
   checks it, the step people tend to skip. Keep that.
 - *Not every thought comes from intuition.* Reasoning also proceeds step
@@ -303,10 +334,10 @@ take it, and as forgetting removes it when it goes unused.
   distill intuition" is one route, not all of them.
 - *Intuition is only as good as its feedback.* Intuition is reliable
   where feedback is accurate and prompt, a kind environment, and
-  misleading where it is not (Hogarth 2001). Because only output trains
-  `intuit`, its quality tracks the supplied answers': the supplied-answer
-  lessons are its kind environment, and wrong or noisy answers would
-  train confident bad hunches.
+  misleading where it is not (Hogarth 2001). Because what thought leaves
+  and the output cost train `intuit`, its quality tracks theirs: the
+  supplied-answer lessons are its kind environment, and wrong or noisy
+  answers would train confident bad hunches.
 
 ## The two networks of System 1 (Alec, 2026-11-12)
 
@@ -348,18 +379,20 @@ which Alec set out as follows.
   concept. A type acts on its tokens through the field, up and then down
   to the related tokens, and not by a pull across orders: "this is system2
   influencing system1".
-- *What the context may not include.* Expectation weights the members it
-  hands down by the likeness of their places (below). The context of
-  placement is the activation the graph gives before that weighting, so
-  that no place is moved by a value computed from places
+- *What the context may not include.* The context of placement is the
+  activation the graph gives before any weighting by the likeness of
+  places, so that no place is moved by a value computed from places
   ([Architecture](Architecture.md), the guard against a feedback loop).
 
-This differs from the placement that [Architecture](Architecture.md)
-describes under "Placement" in three ways: the context is the field and
-not the words observed alone; a place is moved relative to concepts of its
-own order only; and a class is placed by context, not at the centroid of
-its members. A symbol above the basic percept also carries no perceptual
-form of its own.
+So placement works by the field. Its context is the field at every order,
+what is present and what the folds give from it, a token's types among them
+(`FieldProjection.close`), and not the words observed alone. `place_rows`
+moves a row relative to rows of its own order only. A class is placed by its
+context like any concept, not at the centroid of its members. A row above the
+basic percept carries no perceptual form of its own: a reader that needs a
+form takes the word's, through the mapping. Alec, 2026-11-12: "symbols should
+not take the centroid of the percepts that they collect; they are epistemic
+points."
 
 ### The split of sigma and pi (Alec, 2026-11-13)
 
@@ -395,6 +428,58 @@ SIGMA(basic percepts)."
   store (without loss) the conceptual information of a single concept over a
   possibly heterogenous input".
 
+### The two layers, and order zero made by them (Alec, 2026-11-14 and 15)
+
+"We are basically just updating the algorithms used for the existing
+SigmaLayer and PiLayer. We are also creating a fast SigmaPi layer that
+combines both and that skips the invertibility requirement ( which is the
+alternate to the MLP layer, and that works as fast)." And: "I think the
+order0 basic percept building and zero-order concept building should use pi
+and sigma, respectively. They are subsymbolic, so the fit is good there."
+
+- **`PiLayer` is a product in the log domain**: `tanh(atanh(x) W + b/2)`,
+  the product of its inputs' odds raised to the weights. Its one entry and
+  one exit are the logarithm and the exponential of the product.
+- **`SigmaLayer` is a weighted sum with one exit**: `tanh(x W)`. It has no
+  chart on what it is given, so a Pi under a Sigma is not one linear map;
+  with a chart at both ends of both, the pair was.
+- **Each has an exact inverse** where its matrix is built as `L D U`, by the
+  triangular solves. "Inverses are necessary where we form percepts and
+  concepts".
+- **`SigmaPiLayer` joins the two without an inverse**, on two plain weight
+  matrices, as the model's alternative to an ordinary hidden layer; the
+  stacks of `expect`, `intuit` and `marker` are rows of it.
+- **A basic percept is built by Pi.** "we have basic percepts, formed as a
+  PI, which is a (sparse) hypercone on hypercube parts and wholes (thus an
+  approximation of the discrete collection that we were creating with the
+  mereology)." It is a pair, for and against, each a product over the
+  unsigned memberships of its parts and wholes. Its matrix is monotone, so
+  that order is kept over the fold, and a conjunction is a row of it.
+- **A zero-order concept is built by Sigma.** "Then those percepts are
+  collected via a (sparse) hyperplane , via the SIGMA, which become
+  zero-order concepts (or basic concepts)." Its matrix is signed, and the
+  sign of a weight chooses the pole it reads: a positive weight carries a
+  percept's lane for into the concept's lane for and its lane against into
+  the concept's lane against, and a negative weight crosses them. The
+  concept keeps both lanes; its signed value, for less against, is a read of
+  them.
+- **Both and neither.** A ball of black and white patches is, for the
+  concept white, both: "We must, for those concepts, say "yes and no" (at
+  different places). but concepts don't work like that; there is no
+  pervasion. so we get a conceptual 0 value, which means either neither is
+  true or both are true." The two lanes tell the two apart.
+- **The two matrices are sparse.** A row holds entries only for the sources
+  it has been given. Entries grow where percepts are collected for a concept
+  (`PerceptCollections.observe`), each written at one. A source newer than
+  its row is an entry of the matrix's other triangle, so no row is moved.
+- **The way back.** From a concept alone the percept returns as its signed
+  value, with no overlap of its lanes: "its grey. Until we remember that the
+  soccer ball is composed of little hexagons (either conceptually or
+  perceptually). then we can render the "both" condition". Both is rendered
+  where the parts are had again.
+- **Only order zero is made this way.** "At the symbolic levels they are
+  not": the symbolic orders keep their definitions and their rules.
+
 ### Implicit and explicit: what each system holds (Alec, 2026-11-13)
 
 "I guess we still need both, as implicit and explicit: system 1 and system 2,
@@ -410,12 +495,12 @@ taught."
   of the second there is no interconnectivity per say: there are two spaces
   and a mapping". System 2 holds the first, as edges; System 1 holds the
   second, as maps.
-- **`expect` and `intuit` are maps.** They run between the perceptual and the
-  conceptual space and follow no edge. For expectation "we only need a large
-  sigma layer", over what the perceptual mereology supplies. A sigma over
-  single elements cannot give an expectation that depends on a combination
-  (below), so its inputs are conjunctions: the basic percept is one, the least
-  of its part and its whole.
+- **`expect` and `intuit` are maps.** They follow no edge. Each is a
+  stacked sigma-pi of its own (below): `expect` from the observed field of
+  order zero to the expected field over the same concepts, and `intuit` from
+  concepts to concepts. A sigma over single elements cannot give an
+  expectation that depends on a combination (below), so a stack starts with
+  a pi, whose units are conjunctions of their inputs.
 - **One traversal, forwards and back.** "Once basic percepts run as a pi over
   parts and wholes (nicely covering that area in mereological space),
   concepts over those basic percepts will form concepts =
@@ -425,13 +510,16 @@ taught."
   the same operation." The maps are not the forward path's: "For expect, both
   sigma and pi matrices are matrices of their own." What is already there is
   the kind of operation: "the neural pathways are there, in the sense that we
-  already have those operations between those spaces."
-- **What teaches the maps.** Expectation by omission and intuition by what
-  thinking left, as below. And the explicit side teaches the implicit one:
+  already have those operations between those spaces." In a stack the way up
+  is the pi stage to the hidden layer and the way down the sigma stage.
+- **What teaches the maps.** Expectation by omission, and intuition by what
+  thinking left and by the output cost, as below. And the explicit side
+  teaches the implicit one:
   "explicit membership can be used to teach implicit maps, since we have input
   (token) and output (type) provided as the teaching example for order."
 - **The explicit side.** Edges are the promotion of relations of long-term
-  memory. Thought reads them, as the next section describes.
+  memory. Thought reads them: `query` recalls them and `infer` applies them
+  ([above](#intuition-understanding-and-thought-alec-2026-10-30)).
 - **Symbols have no space.** "symbols are not related as siblings, as they do
   not live in a space of their own; they exist as participants in the vertical
   structure. concepts live in a conceptual space with a distance metric, in
@@ -453,7 +541,7 @@ letters, and a run of parts is promoted only inside one word. A conjunction of
 two words first exists on the conceptual side, in what the grammar composes,
 in a candidate of MTM and in a row of memory. That is left to System 2.
 
-### The explicit structure, read up and down
+### Expectation, a stacked sigma-pi
 
 "My feeling is that order-0 expectation is a nonlinear operation over the
 conceptual field, which is not possible using the hypersphere. But a sparse
@@ -462,53 +550,74 @@ computationally, and my general feeling is that type relations are in fact
 strict (felix is a cat) but neighbor relations are not (Felix is like Ciao).
 So perhaps expectation is nonlinear in virtue of vertical propagation."
 
-This is how the explicit structure is traversed. It is System 2's, and the
-maps of System 1 are taught from it.
+The maps of System 1 are one class, a stacked sigma-pi (`SigmaPiStack`),
+built for `expect`, for `intuit` and for each kernel of `marker`.
 
-- *Containers.* What holds a concept can be gone up to: a concept whose
-  definition has it as a member, a candidate of MTM whose support has it,
-  and a row of long-term memory whose entry refers to it.
-- *Up, by one graded match.* The degree to which what is active entails a
-  container is the share of the container that is present, lane with lane,
-  raised to the container's `pi`, a power that starts at one. A degree of
-  one is entailment and a degree below one is expectation: "we can make it
-  fuzzy and achieve both: entailment is not a binary".
-- *Down, to what is missing.* A container hands its degree to its members
-  that are not present; a member takes the greatest of what it is handed,
-  raised to its `sigma`.
-- *Likeness ranks.* Among the members handed down, each is weighted by the
-  likeness of its place to the places of the present members. "Felix is
-  like Ciao" is read among cats; no product is taken over all the concepts
-  of order zero.
-- *One pass.* Up once and down once.
+- *A pair.* A stack is a row of pairs (`SigmaPiLayer`), each a `PiLayer`
+  under a `SigmaLayer`. A pi unit is a product in the log domain,
+  `tanh(atanh(x) W + b/2)`: the product of its inputs' odds, each raised to
+  a signed weight. A sigma unit is a weighted sum of the pi units. A pair has
+  no inverse and costs what an ordinary layer of the same weights costs.
+- *Several pairs.* The keys `expectLayers`, `intuitLayers` and
+  `markerLayers` count pairs. In a stack of more than one pair each sigma
+  but the last gives `tanh` of its sum; the last is clipped to the field's
+  range of 0 to 1.
+- *Lanes.* An input with two evidence lanes enters as two inputs, and an
+  output with two lanes leaves as two. No stage nets one lane against the
+  other.
+- *Nothing at the start.* The last sigma's weights start at zero, so a new
+  stack gives zero and adds nothing. Its first weights come from a
+  generator of its own, so building a stack changes no other random number
+  of the model.
+
+`expect` is a stack with one moderate hidden layer (Alec, 2026-11-14:
+"stack a sigmaPi with only a moderate hidden layer (full input, full output,
+so it resembles only few percepts)"). Its input is the whole observed field
+over the concepts of order zero, both lanes, and its output the whole
+expected field over the same concepts. It runs once per sentence, at the
+open pass (`ConceptSpread.open_prediction`). The form it replaced,
+`ActivationPredictor`, is kept, and is built only where `expectationMap` is
+`predictor` (Alec, 2026-11-14: "Let's keep the old form on hand in case we
+want to revert").
 
 What reads an expectation, attention's relevance, the compose chooser,
-retrieval and the order of `intuit`'s rules, reads it detached, and the guard
-of [Architecture](Architecture.md) stands: codes never read a value computed
-from codes. What teaches it is omission ([Training](Training.md), "Adaptive
-omission"): the cost is the difference between the expectation from the lossy
-input and the field of the actual input, which is a teacher and never a
-differentiable target.
+retrieval and the order of stored rules (`ConceptSpread.rule_order`), reads
+it detached, and the guard of [Architecture](Architecture.md) stands: codes
+never read a value computed from codes. What teaches it is omission
+([Training](Training.md), "Adaptive omission"): where units of the sentence
+were hidden, the cost (`expectation.concepts`) is the difference between what
+the stack expects from the lossy field and the field with the hidden units
+present, which is a teacher and never a differentiable target. A sentence
+with nothing hidden gives `expect` no cost.
 
 Likeness alone cannot give an expectation that depends on a combination.
 Take four sentences in which the word to expect depends on the pair before
 it: A and B give X, C and D give X, A and D give Y, C and B give Y. With
 likeness pooled by a sum, X must beat Y in the first two and lose in the
 last two, and adding each pair of conditions makes one quantity both
-greater and less than zero. Going up to each sentence as a container and
-down to its missing member gives the right word in all four.
+greater and less than zero. A stack whose pi stage forms each pair and whose
+sigma stage gives the word expects the right word in all four, with each word
+on coordinates of its own; one linear map does not.
 
 ### Intuition, taught by thought
 
-`intuit` is a map between the spaces and not an explicit rule. Its teacher is
-what thinking left: the order-zero field of the kept path after its thought,
-compared with what `intuit` gives from the observed field. The gradient of
-the output cost stays beside it. What recurs in relation rows and in the
-steps of thought and of [extend](Extend.md) is what it learns from. It is
-evaluated once when a sentence is
-observed, before any thought, so that what it has learned is known
-directly: "insights that trigger knowing as a result of observation
-directly".
+`intuit` is a map and not an explicit rule: a stack of its own from concepts
+to concepts, over the concepts of every order, so that a token present can
+teach its type. Its hidden layers are small, and it has two pairs by default (Alec,
+2026-11-14: "small-ish hidden layers so that weights do not blow up").
+Its teacher is what thinking left: the field of the kept path after its
+thought, at every order, compared with what `intuit` gave from the observed
+field. The gradient of the output cost stays beside it. What recurs in
+relation rows and in the steps of thought and of [extend](Extend.md) is what
+it learns from. It is evaluated once when a sentence is observed, before any
+thought, and what it gives joins the sentence's knowing, so that thought, the
+answer and the output read it and what it has learned is known directly:
+"insights that trigger knowing as a result of observation directly". In
+thought, `intuit` states what the map gave. The firing of stored rules is
+not `intuit`'s: it is how `infer` applies a stored implication
+([above](#intuition-understanding-and-thought-alec-2026-10-30)). On a file with
+field operators only, the stack is System 1's learned step and the output
+cost is its only teacher.
 
 ### The tools of thought (Alec, 2026-11-13)
 
@@ -607,9 +716,10 @@ compiles.
 - *Strict types.* In people the membership of a category is graded.
   Here membership is strict and what is graded is the match
   ([Philosophy](Philosophy.md), "Strict inheritance").
-- *Least and greatest.* The literature's spread adds activations, with
-  inhibition beside them. Ours takes the share present on two lanes and
-  the greatest on the way down, which is where its nonlinearity lies.
+- *Products, on two lanes.* The literature's spread adds activations, with
+  inhibition beside them. Ours multiplies on the way up, in a pi stage, and
+  joins on the way down, in a sigma stage, on two lanes kept apart; the
+  products are where its nonlinearity lies.
 - *Prediction is graded.* The pre-activation of a specific word's sound
   was not reproduced in nine laboratories, while the effect of a word's
   predictability at the word itself was (Nieuwland et al. 2018).
@@ -619,10 +729,6 @@ compiles.
   (Keren & Schul 2009; Melnikoff & Bargh 2018).
 - *Symbols.* That the first network is taught while language is processed
   is this design's; in the literature its learning needs no symbols.
-
-Neither the pass nor this placement is built yet; until they are, the
-predictor described above and the placement of
-[Architecture](Architecture.md) are what run.
 
 **References.** Anderson (1982), *Acquisition of cognitive skill*,
 Psychological Review 89(4). Anthony, Tian & Barber (2017), *Thinking fast

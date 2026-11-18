@@ -26,7 +26,12 @@ store, one idea per entry; `LTM1` is its relation stratum, one pair of
 references per row; and `LTM2` names relations over relations, an `LTM1` row
 that references another row. `STM0` and `STM1` are their short-lived
 counterparts, and MTM (`MediumTermMemory`) holds the identities in play
-between working memory and the durable stores.
+between working memory and the durable stores. All of them live in
+[Memory.py](../bin/Memory.py), and each has one role: STM is the working set
+of the sentence being read, position-addressed and live to the gradient; MTM
+holds identities, and what a written row left pending, for as long as they
+are in play; LTM is the one durable history of ideas and relations, read by
+content, with each idea named by its time.
 
 Two cadences write the STM, selected by `<serial>` (legacy configs derive
 it from `symbolicOrder > 0`; see
@@ -95,8 +100,8 @@ antecedent, and it never inherits the left operand's identity
 At the kept close the sentence's top chunk stays off the stack as a recent
 entry, with a reference to the entry just written and that entry's stamp
 (`keep_close`); its other stacked chunks are freed. Recall loads a returned
-entry into a chunk with its references, vector, truth pair and stored
-`.when`, and returns its identities to MTM (`EntryRead.recall_chunks`). A
+entry into a chunk with its references, vector, trust (as its two lanes) and
+stored `.when`, and returns its identities to MTM (`EntryRead.recall_chunks`). A
 concept entering STM is stamped now; a recalled entry keeps its stored stamp.
 Each path of a sentence owns its chunks until the paths are compared, and the
 kept path's chunks are what the close writes.
@@ -126,11 +131,20 @@ containment, not distance
 than `mtmHorizon` kept closes (16 by default) have passed in its stream since
 its last reference, and at `mtmCapacity` (64 by default) the token with the
 oldest access is evicted; neither changes an LTM row. The end of a document
-leaves MTM as it is, and the epoch boundary returns it to its state at the
-epoch's start. A token also records whether its name is resolved: a name read
+and the epoch boundary leave MTM as it is. A token also records whether its
+name is resolved: a name read
 with no antecedent opens a pending token, and a kind, a merge with a resolved
 token or promotion resolves it, while a verb phrase that updates the token's
 value does not.
+
+**What is pending.** MTM also holds what a written row left unresolved, for
+as long as it is pending: an open question's slots, a forward reference, a
+name awaiting its referent, an operand not yet known
+(`MediumTermMemory.hold_pending`). The row itself stores none of it. For
+example, "he said she said x" with x unknown is written as one idea, and MTM
+holds x as pending against that row until x resolves; readers of the row see
+the pending reading through MTM (`pending_meaning`), and a row dropped by
+forgetting releases what MTM held for it.
 
 **Buffer.** The data is a single per-batch tensor
 `[B, cap, concept_dim]` plus a `[B]` long depth-pointer vector recording
@@ -525,11 +539,14 @@ $K$, capped by a positive `syntacticOrder`. The default budget completes the
 reduction. A manually undersized cap can still leave an incomplete forest,
 which is tagged incomplete and cannot publish a program or a memory entry.
 
-At the close each entry keeps two independent evidence poles, `truth_plus`
-and `truth_minus`, so both and neither stay distinct; they record
-identification evidence. A source's trust
-is not stored: it scales the pair when the entry is written, and sentence
-content never selects its own trust. Luminosity reads idea entries only. See
+At the close an `LTM0` entry keeps one signed trust from $-1$ to $1$: above
+zero its idea is held true to that degree, below zero held false, and at zero
+it lights nothing. Evidence on both lanes is written as two rows, one on each
+lane, so both and neither stay distinct; an `LTM1` relation keeps its two
+lanes, `truth_plus` and `truth_minus`. A source's trust is not stored apart:
+it sets the row's trust when the entry is written (Section 10, "Trust"), and
+sentence content never selects its own trust. Luminosity reads idea entries
+only. See
 [Reasoning](Reasoning.md) for the relation readers and the declared `true`
 thought operator.
 
@@ -546,70 +563,73 @@ production observations must provide their owned end state.
 
 STM and LTM differ in form and in life: STM is position-addressed, live to the
 gradient and displaced by what arrives next; LTM is content-addressed,
-detached and forgotten by value. In use they are one chain: a recalled entry
+detached and forgotten by activity. In use they are one chain: a recalled entry
 lives in STM while it is active, working memory being the activated part of
 long-term memory, and the kept close is the one writer from STM to LTM. A
 composed idea enters LTM when its sentence ends; what was merely held is not
-stored. Whether an entry stays is decided by its value, its surprise
-included, so encoding is broad, retention selective, and there is no separate
-admission gate (Craik and Lockhart 1972; Cowan 2001).
+stored. Whether an entry stays is decided by its activity, which its surprise
+sets when it is written and use raises, so encoding is broad, retention
+selective, and there is no separate admission gate (Craik and Lockhart 1972;
+Cowan 2001).
 
-**Layout.** An `LTM0` entry is one idea: one paired vector `[form | meaning]`
-in `slots[capacity, nDim]`, with its `truth_plus` and `truth_minus` lanes,
-access count and `surprise`. The form block is the entry's percept part,
-whose last four coordinates hold the model-time stamp; there is no separate
-`when` column, no role table, no stored order (an entry's order is read from
-its referents' recorded orders) and no stored derivation. Each field has its
-reason: the stamp says when the occurrence was written, the lanes are the
-entry's truth, the access count records exposure (definedness and forgetting
-read it), and `surprise`, the residual at the moment of writing, is read by
-retention and cannot be recomputed later. Stable addresses, stream membership
-and the document and content keys are kept in the occurrence index beside the
-entries (`LTM0.addressing`), not in them. Semantic
-bindings keep only what is not structure: a question's open slots, bound
-references, scope, source text and expectation provenance. An entry's kind
-(fact, observation, question, estimate, inference, cover, episode or
-unverified) is read from those bindings, its document and its lanes
-(`LTM0.kind_of`), not stored. An `LTM1` row is two tagged references,
+**Layout.** LTM is two tables, `LTM0` and `LTM1`; everything else a store
+holds is a cache, rebuilt from the columns and never saved, or named
+auxiliary state such as the count, the clock and the forgetting counters
+(each store's `columns`, `caches` and `auxiliary` in
+[Memory.py](../bin/Memory.py)). An `LTM0` entry is one idea, and its
+columns are one paired vector `[form | meaning]` in `slots[capacity, nDim]`,
+whose form block's last four coordinates hold its time (`time`, read through
+`entry_time`); its `trust`; its `referent`; its episodic entry
+(`episodic_concepts`, `episodic_values`); and its `activity`. Each column has
+its reason: the time says when the row was written and names it; the trust is
+how far the idea is held true; the referent is what the idea is of, one
+optional reference to a concept or to another row by its time, written from
+the reference the close selected and by a promotion, and empty for most
+sentences; the episodic entry is what the idea extends to (below); and the
+activity decides whether the row stays (below). An idea is an intension and
+its entry its extension, and two ideas can have one extension: a kind of one
+member and that member leave equal entries, and the referent tells them
+apart. A row's order is the order of what its referent names, and zero
+where it names nothing (`order_of_row`). There is no separate `when` column, no role table, no stored
+order, no stored derivation, no stream, no origin and no kind: which rows are
+truths is read from their trust, a row of nonzero trust being one. An `LTM1`
+row is two tagged references,
 `refs[capacity, 2]` with `ref_kinds[capacity, 2]`: `OCCURRENCE` (an `LTM0`
-address), `SYMBOL` (a concept or word) or `RELATION` (another `LTM1` row); a
-zero tag marks an empty seat. The tags, never the integers' magnitudes,
-decide traversal. A row has its own lanes, access count and surprise, and a
-percept of only the `.where` and `.when` bands. It stores no type and no
-composed value: if-then and temporal chaining, whole-part, definition and
+row by its time), `SYMBOL` (a concept or word) or `RELATION` (another `LTM1`
+row); a zero tag marks an empty seat. The tags, never the integers'
+magnitudes, decide traversal. A row has its two lanes, `truth_plus` and
+`truth_minus`, and its `activity`, and no time of its own: its time is that
+of the rows it references. It stores no type, no operator and no composed
+value: if-then and temporal chaining, whole-part, definition and
 type-token are told apart by what the references are, their tags and their
-situations (`.when`, `.where`, symbol; `LTM1.readings`). The operator
-reference and operation seat beside a row serve its authority, not its type.
+situations (`.when`, `.where`, symbol; `LTM1.readings`).
 A row that references a row is read as `LTM2` (`LTM1.stratum`). `LTM1` has no
 polarity column, so trust-derived evidence on a negative statement is written
 with its two poles exchanged.
 
 **Compression at the close** (`ClauseRows.write_clause`). The kept reading is
-walked from its leaves. A composition whose operands are all resolved (a
-concept, a bound identity with a value, or an already compressed child)
-compresses to one `LTM0` idea, its value. A composition with an unresolved
-operand (a pending name, an unknown word standing for itself, an open slot)
-is written as an `LTM1` row over its operands' entries, and the operation's
-own value is stored nowhere. So a sentence whose words are all known concepts
-becomes one idea, its verb phrase applied to its subject, and writes no
-relation; a sentence that cannot compress is a chain whose top row is the
-sentence, a verb and its object composing into a verb, so "he said she said
-x" with x unknown is `(OCC he, REL (SYM said, REL (OCC she, REL (SYM said, OCC x))))`.
-There is no separate sentence row. Parse-only operations (surface markers,
-determiners that only select, order operations) never become rows: a chain
-row's operands are the semantic operands. A directly asserted part, whole,
-implication or equality pair stays an `LTM1` relation even when both sides
-are known. A compressed idea keeps, in its bindings, the identity it was
-composed over, as a chain keeps its occurrence reference. A chain whose
-unknowns later resolve is not rewritten: thought writes the value to MTM and,
-when kept, an inference idea. Reading an entry into words generates from its
-vector and the current grammar; a sentence's structure is reconstructed from
-its vector, inexactly.
+walked from its leaves. A sentence that is not a relation is one `LTM0` idea,
+its value, whatever its operands: a sentence whose words are all known
+concepts becomes one idea, its verb phrase applied to its subject, and so does
+a sentence with an unresolved operand (a pending name, an unknown word
+standing for itself, an open slot) or a verb over a completed relation. What
+is unresolved is held in MTM while it is pending (Section 1, "What is
+pending"), never stored as a chain. A relation, `part`, `whole` or `implies`
+between two operands, is an `LTM1` pair over its operands' entries, even when
+both sides are known, and a relation whose operand is a relation is a chain
+of pairs whose top row is the sentence. There is no separate sentence row.
+Parse-only operations (surface markers, determiners that only select, order
+operations) never become rows, and no row carries an operator. An idea's
+referent names the identity it was composed over, where the close selected
+one. A row whose unknowns later resolve is not rewritten: thought writes the
+value to MTM and, when kept, an inference idea. Reading an entry into words
+generates from its vector and the current grammar; a sentence's structure is
+reconstructed from its vector, inexactly.
 
 References name whole entries, never a part of one, and only entries written
 earlier (or planned earlier in the same close), so the reference graph is
 acyclic: a self or later reference fails, and protection from forgetting is
-transitive. An occurrence handle is an address, not an identity: identity,
+transitive. An occurrence handle is a row's time, not an identity: identity,
 and a mention's reading as a name/value pair, live in MTM. Several references
 may tie to one identity and share its value without unfolding into one
 another, so a relation may refer to itself through a shared identity while
@@ -617,93 +637,101 @@ the references between stored entries stay acyclic; readers stop at a
 repeated occurrence, and neither a cycle nor a binding grants evidence.
 Admission
 preflights clause dependencies and native concept capacity: an insufficient
-store raises before publishing a child prefix, re-witnessing an existing
-address remains possible, and nested readings and expectation pairs reserve
-their complete transaction. Embedded clauses register without assertion.
-External TruthSet admission can assert the outer entry through provenance,
-while a conversation observation, question or estimate cannot certify its own
-referents.
+store raises before publishing a child prefix, and nested readings reserve
+their complete transaction. Embedded clauses are written at zero trust.
+
+**Trust.** An `LTM0` row's trust is set when it is written and never changed
+after; a relation's lanes can only rise, when it is asserted again.
+A truth-store entry (`Models.store_truths`, or `provision_ltm` for a
+configuration's own truths) is written at the trust it is given. A sentence
+read in training is written at the model's trust (`<trust>`, set by
+WikiOracle in the configuration it trains with) times the certainty of the
+sentence's words. A sentence of a conversation is written at zero, so it
+lights nothing and cannot certify its own referents. A kept thought is
+written at what its premises give, the least on each lane. A relation takes
+the same number on the lane of its sign.
 
 **Time.** A stamp is the clock of the occurrence it records. A concept
 carries no clock, so a particular event is a concept with few occurrences,
-and a question about *when* reads its occurrences' stamps. The stamp sits at
-the sentence level only. The entry that is the
-sentence, the idea it compresses to or its chain's top row, carries the
-sentence's tick of model time, as do the idea that holds an event's compacted
-state beside its chain and an episode anchor; inner chain rows, mentions and
-definition rows written by `Interpret.define` carry a zero time band, and
-their time is their sentence's, reached by reference. An identity's event history is ordered by
-its sentences' stamps, and forgetting's age reads the sentence's stamp for
-what the sentence references. A recall by time returns sentence entries
-(`EntryRead.recall_time`, which skips covers and estimates), and their chains
-and mentions follow from them.
+and a question about *when* reads its occurrences' stamps. A row is named by
+its time: a row's time is the model's present, or one more than the last
+row's time where the present is not later, so times rise strictly, the
+store's order is time order, and a row is found by its time (`row_name`,
+`index_of_row`). Every `LTM0` row carries its own time, mentions and the idea
+that holds an event's compacted state included; an `LTM1` row, a definition
+written by `Interpret.define` included, has none, and its time is that of the
+rows it references. An identity's event history is ordered by its rows'
+times. There is no recall by time: memory is read by content, and `.when`
+stays as model time and as content inside an idea.
 
-**Re-witnessing.** An `LTM0` write is addressed by its document, position and
-content key (`Occurrence._address_for_write`). A second reading of the same
-source within one presentation finds that entry instead of appending: it
-replaces the content, joins each evidence pole with the stored one by maximum
-(the same evidence is not added twice), keeps the original stamp and
-increments the access count, which is definedness growing with exposure.
-Across training epochs this does not arise, because the epoch reset discards
-the epoch's experience. A reasserted relation likewise joins its two poles by
-maximum rather than appending a duplicate claim.
+**Reading again.** A sentence read again is a new row: no write is matched to
+an earlier one by its source, its document or its content, and no stored
+trust changes. A reasserted relation joins its two poles with the stored ones
+by maximum rather than appending a duplicate claim, and raises the relation's
+activity.
 
-**Retrieval.** There is no word index over memory. Retrieval by a word is
+**Retrieval.** There is no word index over memory and no index from a
+concept to its rows. Retrieval by a word is
 either a match by content or a lookup of the `LTM1` rows that reference the
-word's symbol (`LTM1.rows_referencing(SYMBOL, word)`). A content read scores
-one bounded window of `ltmWindow` candidates, the explicit references and the
-rows referencing the cue's symbols first and then the newest entries; it
-ranks by match, breaks ties by address, and skips estimates, covers, episode
-anchors and questions without evidence (`EntryRead.cued_rows`).
+word's symbol (`LTM1.rows_referencing(SYMBOL, word)`). A content read takes
+the question's field of understanding, the set of active concepts its
+operators leave when applied to its words' sets (for "red ball", what the
+sets of red and of ball share): each operand's set gives one
+result over the newest `ltmWindow` rows, matched against their episodic
+entries order by order and never reduced across orders, and the question's
+operators combine the results as they combine sets (`EpisodicMemory.matches`,
+`relevance`). Rows are ranked by that result, newer first among ties; a row a
+read returns has its activity raised. Explicitly addressed rows are read
+directly (`EntryRead.cued_rows`).
 
-**Streams and documents.** A stream is the batch row that wrote an entry, and
-each `LTM0` entry records which streams witnessed it. A document is the cover
-entry that starts it in a stream: an entry belongs to the document of the
-latest cover before it in its stream (`DocumentCover.segments`), and a
-document presented again reuses its cover's concept. A
-stream's history is the entries it witnessed, in the store's own order,
-oldest first (`stream_rows`); the legacy `get_stm_chain` adapter is a read
-view of it that leaves out estimates and episode anchors, not a separate
-writer. Entries written by another stream never become its predecessors, and
-an internal thought or provisioned fact cannot become an external predecessor
-through recency alone. Re-witnessing updates an entry in place and keeps its
-position: an entry does not move to the front because it was read again.
-Sentence expectation consumes its bounded stream and document view, including
-owned references. [Prediction context](../bin/Layers.py),
+**One history.** `LTM0` and `LTM1` are one history for the whole model: no
+row records which stream wrote it, and the rows a batch of several streams
+writes at one close enter the history in the order of their streams. A read
+enters the stream that asked. No read is scoped to a document, and a
+document has no row of its own. The working stores keep their batch axes:
+STM, MTM, the expectation context and the policies hold one row per stream.
+The legacy `get_stm_chain` adapter is a read view of the store's rows in time
+order, not a separate writer. An internal thought or provisioned fact cannot
+become an external predecessor through recency alone: sentence expectation
+consumes its own stream's bounded view, rows it observed held by reference.
+[Prediction context](../bin/Layers.py),
 [meaning roles](../bin/Meaning.py).
 
-**Episodic entry.** Beside a sentence's entry sits its episodic entry: up to
-`episodicConcepts` order-zero concepts of the sentence's open attention pass,
-in reading order, each with one signed value (for minus against); when more
-are present the largest magnitudes are kept, and zero readings are absent
-(`episodic_concepts`, `episodic_values`). No place or pole pair is stored;
-the entry's stamp supplies time. A close that writes only an `LTM1` relation
-takes one `LTM0` entry of kind `episode` to hold the episodic entry (Alec,
-2026-11-11: "An LTM0 anchor row"); the anchor has no content, and only recall
-by time and review read it. Recall lays out the readings by their concepts'
+**Episodic entry.** Every `LTM0` row has an episodic entry, empty where its
+idea has no extension: up to
+`episodicConcepts` concept references, each with one signed value (for minus
+against), in one flat list with no order axis (`episodic_concepts`,
+`episodic_values`). For an input sentence they are the strongest readings of
+its field of understanding, whatever their orders; for a kept thought, the
+strongest of its idea's extension, taken from its kept tree or, where it has
+none, from its generate walk (`EpisodicMemory.select`, `for_meaning`). When more are present the
+largest magnitudes are kept, and zero readings are absent. No place or pole
+pair is stored; the row's time supplies time. A close that writes only an
+`LTM1` relation writes no entry, and is counted. A recall reinstates a
+returned row's entry as the requesting stream's field
+(`EpisodicMemory.reinstate`): it lays out the readings by their concepts'
 owned surface lengths with one separator between; a missing surface gives an
-empty extent and a stale concept id is skipped, each counted. Time-only recall
-publishes the conceptual field directly and empties that stream's present
-percept readings until the next open pass; other streams are unchanged.
+empty extent and a stale concept id is skipped, each counted. The field is
+published directly and empties that stream's present percept readings until
+the next open pass; other streams are unchanged.
 `reverse` reads the episode without compose or generate. The review rebuilds
 each reading's pole pair as $(\max(v, 0), \max(-v, 0))$ from its signed value
-$v$, at the entry's stamp; the signed value belongs to these stored references
-only, and the field and every entry's `truth_plus`/`truth_minus` stay a pair.
-Only an input sentence writes an episodic entry, on its own row or its anchor,
-never a thought's row; a stream with no nonzero reading writes nothing and
-takes no anchor; a re-witness keeps the first entry, even an empty one; and
-forgetting and the epoch reset carry the columns with their rows. The entry is
+$v$, at the row's time; the signed value belongs to these stored references
+only, and the field stays a pair. Forgetting carries the columns with their
+rows. The entry is
 the reading of its moment, not perceptual memory: a percept that had no concept
 when it was seen leaves nothing, where a word stood is not kept, and `reverse`
 returns the percepts that the concepts' definitions give at the recall. See
 [Architecture](Architecture.md#episodic-and-semantic-memory-in-the-two-systems-2026-11-11).
 
 **Definitions.** `interpret` writes a new word's definition as one `LTM1` row
-of two `SYMBOL` references, `(object, word)`, with no operation seat
+of two `SYMBOL` references, `(object, word)`
 (`Interpret.define`): a new word costs one inventory row, which becomes the
-object's, and this one row. The definition carries a zero time band, is
-eligible for forgetting, and takes neither provenance nor trust from the
-sentence containing the word. Its two references name identities, never
+object's, and this one row. The definition has no time, like every relation,
+and is dropped by forgetting like any row. A word read as its object is
+mapped at trust one, and so is the object it reaches (Alec, 2026-11-14: "At
+one for now"); a definition that a sentence states takes that sentence's
+trust, which is zero in a conversation. Its two references name identities, never
 content, so what a concept's code becomes in training cannot redirect a
 definition, and they imply no order between word and object. A word with
 several objects, or an object with several words, has one row per pair, and
@@ -712,66 +740,65 @@ rows (`Definitions.DefinitionIndex`) finds the word for a form or unit, a
 word's objects and an object's words without scanning; appends update it, and
 load and compaction rebuild it.
 
-**Checkpoints.** Tensor columns ride `state_dict`; bindings, scope, source
-text and expectation provenance ride the versioned semantic sidecar
-(`LTM0.semantic_extras`, saved under `truth_semantics`). Restore validates the
-addresses, the semantic fingerprints and the reference graph, and missing
-required metadata makes evidence unavailable rather than silently rebinding
-it. A sidecar carrying a derivation, a retired column, a capacity, stream or
-percept layout other than the construction's, or an older layout schema
-raises, so memories in an older layout are regenerated; schemas 14 and 15
-load with empty episodic entries. [Checkpoint migration](../bin/Memory.py).
+**Checkpoints.** Each store saves its declared columns and auxiliary state
+through `state_dict`; caches are rebuilt and never saved, and nothing rides a
+semantic sidecar. Loading validates before importing: an `LTM0` referent must
+name a retained row or a concept, an `LTM1` reference must name a live row
+with no cycle and no duplicate pair, a trust or an activity must lie in its
+range, and a column whose shape differs from the construction raises. An
+older layout is converted only where it maps exactly: its evidence pair
+becomes the signed trust, its activity starts at `activityDefault`, its
+episodic entry is flattened to the strongest readings, a retained row's
+selected reference becomes its referent and what its bindings held pending
+moves to MTM, and every retired field it drops is named in a warning. A row
+holding both trust lanes, or rows without unique times, are rejected before
+any store is loaded. [Checkpoint migration](../bin/MemoryCheckpoint.py).
+
+**Activity.** Every row of either store has one activity, a number from 0 to
+1 that says how much the row is in use (`MemoryActivity`). A write sets it
+from the sentence's surprise, or to `activityDefault` (0.5) where the
+surprise is unknown. An access adds `activityStep` (0.1): a row that recall
+returns, a relation read as evidence, a pair written again; a read on a path
+counts only if that path is kept. A pass of forgetting multiplies every
+activity below one by `activityDecay` (0.9). For example, a row written at
+0.5 and returned twice by recall stands at 0.7, and after three passes with
+no read it stands at about 0.51. An activity of one is never lowered and its
+row never dropped. An `LTM0` row not yet promoted whose activity reaches
+`activityPromotion` (0.9) is promoted: its idea becomes a concept
+(`MemoryConsolidation.consolidate`), the new concept is written as the row's
+referent, and the row's activity is set to one. The concept's order is its
+referent's where the row had one, and one above the greatest order among its
+entry's concepts where it had none.
 
 **Forgetting.** The forgetting pass (`Forgetting.forget`) runs after backward
 at a document boundary, in training or after a stateful inference request,
-and at the epoch boundary; it never runs inside an open sentence. It starts
+at the epoch boundary, and before a serving write that finds the store over
+its high water mark; it never runs inside an open sentence. It starts
 when occupancy reaches `forgetHighWater` (90%) or an earlier pass fell short,
-deletes down to `forgetLowWater` (70%). High-water pressure in either LTM
-table overrides `forgetMinInterval` at a closed boundary; unpressured passes
-still wait its 256 completed sentences. There is no free-standing age decay. An
-entry's retention value is
+decays every activity as above, and drops the rows of least activity, ties
+to the older row, down to `forgetLowWater` (70%), so the same state always
+deletes the same rows. High-water pressure in either LTM table overrides
+`forgetMinInterval` at a closed boundary; unpressured passes still wait its
+256 completed sentences. Use, not isolation, decides: an isolated row may stay because it
+is used, and a sentence its context already predicted was written with
+little surprise and goes first unless it is read. Forgetting never merges
+near-duplicate entries.
 
-$$V = w_t T + w_u U + w_l L - w_a A,$$
-
-each term in $[0, 1]$ so the weights are comparable (`retention_values`). $T$
-is the larger stored evidence pole, $\max(t^+, t^-)$; there is no separate
-trust column. $U$ is the expectation surprise recorded when the entry was
-observed, an unrecorded surprise counting as 1, so a well-expected sentence,
-deducible from its context, is worth less; no deducibility search runs. $L$ is 0 when a live
-entry of the same order and scope, with cosine above `forgetSimilarity`,
-carries the contrary single pole with more trust, and 1 otherwise; an entry's
-intrinsic both is heterogeneous content, not a disagreement. With
-`forgetCoverage` on, $L$ is instead the entry's leave-one-out contribution to
-positive catuskoti coverage. $A = 1 - e^{-a/h}$, where $a$ is the model-time
-ticks since the entry's stamp (`history_age`; an unstamped entry takes the
-youngest stamp of the sentences that reference it) and $h$ is
-`forgetHalfLife`; a read does not refresh it. Entries go lowest value first,
-ties to the older entry and then the stable address, so the same state always
-deletes the same entries. Value, not isolation, decides: an isolated entry may
-be worth keeping, and a well-integrated one may be what its context already
-predicts. Forgetting never merges near-duplicate entries; an entry loses only
-its own detail, its wording, before it goes.
-
-Protected origins (`forgetProtectOrigins`), live thought and expectation
-roots, the entries that `LTM1` rows reference, and everything those reach
-are kept. Wording goes before structure: under pressure an unprotected entry
-first loses its source text, and each entry advances at most one stage per
-pass. A referenced entry is never deleted: selecting it advances its owners'
-detail and ends the pass. Deleted entries are compacted out of the
+Kept whatever their activity: the rows that `LTM1` rows reference and
+everything those reach, the rows another row names as its referent, and the
+live roots, the rows held by the last understanding, the thought history and
+the expectation context (`Forgetting.model_boundary`). A referenced entry is
+never deleted. Deleted entries are compacted out of the
 fixed-capacity store rather than left as dead slots behind a live mask
-(`LTM0.compact_rows`): every reference already holds an entry's stable
-`address_keys` value, so compaction gathers the survivors in store order and
-rebuilds the address index, and no reader needs a live mask. Compaction also
-unlinks removed expectation endpoints and retracts taxonomy edges supported
-only by deleted testimony; predictor tensors are unchanged. The relation
+(`LTM0.compact_rows`): every reference already holds an entry's time, so
+compaction gathers the survivors in time order, no reader needs a live mask,
+and MTM releases what it held pending for a removed row. The relation
 stratum has its own pass (`forget_parts`) at the same boundary with the same
-thresholds: a row is valued by its larger pole, its surprise, the log of its
-access count (weighted by `forgetLuminosityWeight`) and the same age penalty,
-and rows that other relations reference are kept.
+water marks, and rows that other relations reference are kept.
 
-The pass reports its cut-off, deletions by origin, the wording count and
-whether the target was reached, and its counters round-trip with tensor
-state. Protected roots or gradual detail loss can keep it from reaching the
+The pass reports its cut-off, the counts before and after, the protected
+count and whether the target was reached, and its counters round-trip with
+tensor state. Protected roots can keep it from reaching the
 target, and a long document can fill the store before its boundary; both stay
 visible rather than bypassing protections.
 
@@ -779,17 +806,15 @@ Concept reclamation is separate: at maximum preallocation, after all streams
 close, erase unreferenced exact redundancies, smallest meaning first,
 while retaining a representative. Unused mints with no definition, reference,
 posting or sparse placement can also be reclaimed, without requiring them
-to match each other. Smallness cannot erase a referenced or defined concept,
-and a document's cover concept is never reclaimed.
+to match each other. Smallness cannot erase a referenced or defined concept.
 Distinct individuals are not merged by
 matching descriptions. Unreferenced zero-relevance identity/change columns can
 also be pruned. A freed physical seat receives a fresh monotonic identity and
 cleared moments; no retired handle can denote its replacement.
 
-Storage does not establish existence. `Exist` compares the full occupied
-description, bindings, scope and references against assertive fact records;
-conversation observations, questions, estimates and unverified rows are
-ineligible, and model activation alone cannot establish a degree. See
+Storage does not establish existence. Existence is read from rows of nonzero
+trust, so a conversation's rows, written at zero, support nothing, and model
+activation alone cannot establish a degree. See
 [Existence evidence](ExistenceEvidence.md).
 
 ---
@@ -802,9 +827,10 @@ entries and the open situation: live constituents, recent clause frames and
 frames brought into STM by `what`. A frame carries one point, an idea's
 vector or the head of a sentence stored as a relation chain
 (`SituationFrame.from_row`); the stored row keeps both tagged endpoints for a
-relational read. The close it predicts is its target, and
-the estimate and observation it leaves in `LTM0` are described in
-[Expectation across the architecture](ExpectationRetention.md#one-pair-one-observation).
+relational read. The close it predicts is its target; the forecast is never
+written to `LTM0`, and its surprise at the close sets the starting activity
+of the row the close writes
+([Expectation across the architecture](ExpectationRetention.md#the-observation-and-its-surprise)).
 The predictor carries an imputed identity; composition does not search LTM
 for one. Clearing the situation removes that cross-sentence carrier. Word
 provenance remains the current sentence's own reconstruction record when its
@@ -882,7 +908,7 @@ never edited, and an output that is the model's own.
 - [Reasoning.md](Reasoning.md), [Logic.md](Logic.md): the truth surfaces
   and tetralemma trust.
 - [ExpectationRetention.md](ExpectationRetention.md): the sentence
-  predictor and the estimate/observation pair.
+  predictor, `expect`, and the surprise that starts a row's activity.
 - [Params.md](Params.md): `<stmCapacity>`, `<mtmPrepend>`,
   `<routerWireSerial>`, `<ltmCapacity>`, `<episodicConcepts>` and the
   forgetting settings.
@@ -955,16 +981,14 @@ their own documents; the memory side is this.
 - Permission to run a checked query on a row derives from the requested
   `Understanding`'s owned sentence programs, not from mutable STM staging
   ([Query phases](QueryPhases.md)).
-- Origin clearing retains records reached through surviving occurrences or
-  the ordinary thought history. A retained row keeps its stable ID, content
-  and source text, but a withdrawn accepted fact becomes unverified with zero
-  trust, and questions and estimates retain their own provenance
+- No row is withdrawn. Forgetting keeps the rows the ordinary thought
+  history reaches, and a retained row keeps its time, content and trust
   ([nested retention](NestedRetention.md)).
 
 ## Trust and addressing in the chunks
 
 The chunk field `chunk_truth [B, C, 2]` holds the for and against lanes of
-each chunk's content: a recalled entry's pair, the registered sentence's own
+each chunk's content: a recalled entry's trust on the lane of its sign, the registered sentence's own
 ideas at `(1, 0)`, a derivation's pair, a question chunk at `(0, 0)`. Thought
 operands and results name a chunk by its `.when` stamp through
 `STMChunks.locate(..., band=WHEN)` (exact match, $-1$ when absent; a duplicate
@@ -989,21 +1013,20 @@ The live `ShortTermMemory` owner lives in [Memory.py](../bin/Memory.py),
 beside the `STMChunks` namespace, `MediumTermMemory`, `LTM0` and `LTM1`;
 `MemoryStore` shares only tensor snapshot copying, and Layers.py owns the
 other layers and `Ops`. The kept close retains STM, commits MTM and writes
-LTM. The short-lived stores reuse the durable layouts: `STM0` is an `LTM0`
-whose values stay live and expire instead of persisting, and `STM1` is an
-`LTM1` whose rows expire. An `STM0` store belongs to one stream. Its owner
-indexes the stores by stream (sentence banks and recent stores) or by stream
-and chunk (thought stores), so each store's stream table is one column wide,
-and a write that names a stream above 0 raises.
+LTM. The short-lived stores reuse the durable layouts: `STM0` shares
+`LTM0`'s idea rows (`IdeaRows`) but keeps its values live, names its rows
+locally and expires instead of persisting, and `STM1` is an `LTM1` whose rows
+expire. An `STM0` store belongs to one stream. Its owner indexes the stores by
+stream (sentence banks and recent stores) or by stream and chunk (thought
+stores).
 
 A new thought idea takes a tick of the one model clock that sentences use
 (Alec, 2026-11-10: "One clock"), on the same ladder; reads and updates keep
-its stamp, and trial rollback puts the clock back. Since thought chunks are
-found by their stamp, the epoch reset matters: a stamp is unique within an
-epoch, but the reset puts the clock back, so stamps repeat. Clearing STM at
-that reset therefore expires each thought store together with its view
-records, so a reused stamp never reads an expired view, and an old external
-view still raises. See
+its stamp, and trial rollback puts the clock back. Nothing else puts it back:
+each tick also passes the last row's time in `LTM0`, so a stamp is unique
+across epochs as well as within one. Clearing STM at the epoch reset still
+expires each thought store together with its view records, and an old
+external view raises. See
 [Architecture](Architecture.md), "When" under "One where, one when, many
 whats".
 
@@ -1025,12 +1048,3 @@ buffers preserves the store owner; replacing a thought invalidates its old
 view, and trial rollback restores the saved owner generation and content
 size. Standalone stores without a sentence owner retain their original
 construction bound.
-
-
-## Item 1.8 amendment (2026-11-12)
-
-LTM0 entries hold signed concept readings at each order declared by the allocator at construction. Each slot carries one lane; contradictory readings do not cancel. Recall gathers the question’s own content at the stored references and computes one window product, lane with lane, independently at each order. FieldLogic intersects the nonempty question orders; relevance ranks positive matches with newer rows first among ties. Only selected or explicitly addressed records enter the subsequent role match. No concept-to-row index or all-relation candidate scan remains. A checkpoint with the old entry shape loads at order zero with a warning.
-
-An LTM0 entry’s write time is `time`, read through `entry_time` and `RowTime.read_time`; `when_start` still locates the percept band. Percept and chunk `.when` are unchanged. Relation ages and conditional ordering read endpoint entry times through `sentence_reference`; relation rows hold no time. The recall time-result is deferred. Each store declares caches and retained auxiliary fields in `Memory.py`. Rebuilt indexes, dependency order and effective evidence are not saved. Promoted recurrence prototypes remain retained state because their original occurrences can be forgotten.
-
-Forgetting maintains indexed contrary similarities, coordinate coverage contributions and semantic dependencies at writes. Deletion releases those contributions and compaction preserves stable keys. The boundary pass reads cached values and sorts, without a row-by-row product. A bounded field candidate's recurrence statistics survive presentation reset until promotion; its old occurrence history does not. This is needed for repeated numeric presentations to promote their intersection.

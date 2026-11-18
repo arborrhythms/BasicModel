@@ -104,7 +104,7 @@ lessons follow 4c and 4d. The stages below keep their corpora and gates.
 | 4e | **Constituents** | the 4b–4d sentences with their brackets: `[the black cat] [runs] .`, `[the dog] [chases [the cat]] .` | the constituents — a cross-entropy on the compose chooser toward the bracketed reading, as stage 3 does for order; the NP operators (mint/bind) applied at each bracketed NP | free reading reproduces the brackets on held-out sentences of the same kinds; every singular NP writes an occurrence | constituency, taught by lesson, never wired; the NP event that mints an anonymous individual |
 | 5 | **Tying sentences together: object permanence by reference** | `the cat sleeps. it is black.` `a dog runs. the dog is brown.` — a pronoun or a definite re-mention referring to an earlier occurrence, with and without an intervening sentence | the referent (which earlier occurrence); the supplied answer to a question about the first sentence asked after the second (`what is black ?` → `the cat`) | the reference resolves to the right occurrence 100 %; the repeated noun reuses its row, `a dog` mints a new one; the question across sentences answered | identity is its occurrences tied by references in slots; the row persists when not being read — object permanence proper; "identity is an expectation" |
 | 6 | **Graded composition** | the standing fixtures' vocabulary arranged so each item needs one more round than the last — clauses and embedding after the simple kinds — read in order and shuffled | reconstruction; the surprise at every level | the ordered set beats the shuffled on derivation optimality (the share of items that end on the optimal derivation) | expectation at every level; one departure per sentence |
-| 7 | **Context as content** | several documents in parallel sharing vocabulary; a document split by another; a fact stated in one needed in another; a word whose referent differs between documents | the answer, which only the right context gives | batch differentiation; return after interruption (stage 5's permanence at the document level); shared truth; priming as a prior; expectation from the right history | the document as content (its cover's concept is an ordinary referent that a query can name to read that document's rows); retrieval as a candidate entertained into a slot |
+| 7 | **Context as content** | several documents in parallel sharing vocabulary; a document split by another; a fact stated in one needed in another; a word whose referent differs between documents | the answer, which only the right context gives | batch differentiation; return after interruption (stage 5's permanence at the document level); shared truth; priming as a prior; expectation from the right history | the document as content, recalled by what it says, since no read is scoped to a document; retrieval as a candidate entertained into a slot |
 | 8 | **Thinking** | one-step problems first (`x is three. what is x plus one ?`), then chains, worked steps scored as intermediate answers | the answer and the worked steps | the math-chain measurement under four conditions (one-step problems first; worked steps scored as intermediate answers; an episode that can bind a found candidate; the budget counted in steps, with each query's record charge bounded separately); decomposition demonstrated at the closing | the thought loop and its credit |
 | 9 | **The age-appropriate corpus** | Wordbank → `interpret` → AO-CHILDES by age band ([FutureWork, gradual training](FutureWork.md)) | text; supplied answers where the corpus has them | the stall diagnostic flat per level | everything above, at scale |
 | 10 | **The full train** | [the staged training corpus](#the-staged-training-corpus) | — | the standing gates unchanged or better | — |
@@ -141,11 +141,10 @@ candidate in each position equally often ("the cat saw the dog. it barked."
 beside "... it purred."), so that only content the follow-up predicts decides.
 A rule is retired only when its lesson passes without it; a rule whose lesson
 fails without it stays, with the failure reported, and a retired rule is
-removed, not kept beside its learned replacement. The rule that this design
-may yet replace is the determiner rules' declared referent mode (`referent`
-mint, bind or kind in the grammar): mint against bind would become `bind`'s
-learned choice, while the kind rule stays as an order difference, since it
-does not lower.
+removed, not kept beside its learned replacement. The determiner rules and
+their declared referent mode are not in the grammar: determiners and number
+words are modifiers, and minting and binding are the operators `mint` and
+`bind`, chosen at run time like any operator, with the word as a cue.
 
 The [first text corpus](../data/identity_from_data/README.md) implements this
 lesson inventory. Its grader keeps missing and colliding candidates in the
@@ -370,7 +369,7 @@ differentiation*: documents read in parallel share vocabulary (`x is three` in
 one, `x is seven` in another) and each question is answerable only from its own
 document, so streams are told apart by what the model knows, not by row.
 *Return after interruption*: a document split by another asks in its second
-half about its first, so the document is recalled from LTM through its cover,
+half about its first, so the document is recalled from LTM by what it says,
 object permanence at the document level. *Shared truth*: a fact stated in one
 document is needed in another, so the model learns which rows are situated (a
 variable's value, a referent) and which hold everywhere (`two plus one is
@@ -407,9 +406,9 @@ successor is a verb, numerals stay opaque words.
 
 ## Concept hierarchy learning and curriculum order (Alec, 2026-11-08)
 
-The architecture learns class direction from member meaning and conditions members from higher-order context through `ConceptHierarchy`. Kept grammar applications supply members to prebuilt formal-argument concepts, using this general mechanism. Each argument starts at zero radius and learns confidence by the ordinary views-and-agreement rule. Part-of-speech learning has no special centroid, count distribution or feedback rule. Directional conditioning changes no perceptual form and no trust radius.
+The architecture groups words and their classes through `ConceptHierarchy`, each in its own order's space: a word draws its classes together, a class its words. Kept grammar applications supply members to prebuilt formal-argument concepts, using this general mechanism. Each argument starts at zero radius and learns confidence by the ordinary views-and-agreement rule. Part-of-speech learning has no special centroid, count distribution or feedback rule. No position crosses an order, and no grouping changes a perceptual form or a trust radius.
 
-What the curriculum orders is the operations the model learns (Alec, 2026-11-07); the parts of speech follow from the operations, as the occupant classes of their formal arguments. An operation's arguments presuppose what earlier operations produce: an object before a predicate over objects, a clause before a question about it, a predicate before its modifiers. Once word concepts are stable, object concepts are learned through `interpret`; every word then occupies `interpret`'s one input, so all words share one class, and the clause and verb operations' arguments divide them into noun and verb classes. Questions come early, because testing comprehension teaches syntactic category: the answer to "who ran?" is a subject noun. Intransitive comes before transitive, and simple before complex as far as possible. Nouns and verbs are therefore learned first by the curriculum, not by a grammatical-class prerequisite in the learning algorithm. The architecture enforces only the coarse order, words before operations and NP + VP before other operations, through the configured authority gates, which remain data-driven: empty lift arguments report zero readiness. The finer order is the corpus presentation's, which models child development and the Piagetian stages. A kept application can record members while its resulting relation has low authority, and incidental learning from an example met before its lesson is never suppressed. The mechanism is described in [Architecture](Architecture.md#hierarchical-conceptual-context-alec-2026-11-08); demonstrating transfer and stable category distinctions belongs to the lesson evidence.
+What the curriculum orders is the operations the model learns (Alec, 2026-11-07); the parts of speech follow from the operations, as the occupant classes of their formal arguments. An operation's arguments presuppose what earlier operations produce: an object before a predicate over objects, a clause before a question about it, a predicate before its modifiers. Once word concepts are stable, object concepts are learned through `interpret`; every word then occupies `interpret`'s one input, so all words share one class, and the clause and verb operations' arguments divide them into noun and verb classes. Questions come early, because testing comprehension teaches syntactic category: the answer to "who ran?" is a subject noun. Intransitive comes before transitive, and simple before complex as far as possible. Nouns and verbs are therefore learned first by the curriculum, not by a grammatical-class prerequisite in the learning algorithm. The architecture enforces no order: every operator a grammar file declares is open from the first sentence, and no operator is gated inside the model (Alec, 2026-11-13: "Operators are "a priori" concepts that we are using for the control of the architecture itself. Lets not do that; the gating of those operators might be able to be done *in the tests*, which would act like piagetian stages signalling that the test suite can move on to the next stage."). The order is the corpus presentation's, which models child development and the Piagetian stages: each lesson is such a stage, and a later lesson waits for the artifact of the one before it. A kept application records members whatever its operator's definiteness, and incidental learning from an example met before its lesson is never suppressed. The mechanism is described in [Architecture](Architecture.md#hierarchical-conceptual-context-alec-2026-11-08); demonstrating transfer and stable category distinctions belongs to the lesson evidence.
 
 The ten lessons of `data/lessons/parts-of-speech.json`:
 
@@ -417,18 +416,18 @@ The ten lessons of `data/lessons/parts-of-speech.json`:
 |---|---|---|---|
 | 0 words | none | none: forms are kept and gain trust by views | a set fraction of admitted forms have a trust radius at least `definitionTrust` |
 | 1 interpret | `interpret`, with `sign` beside it | one class: every word occupies the same argument | a set fraction of defined words have a denotation |
-| 2 clause | `lift` (intransitive: "Bill ran.") | nouns (subject occupants) and verbs (VP occupants) | the two occupant classes are definite |
+| 2 clause | `change` (intransitive: "Bill ran.") | nouns (subject occupants) and verbs (VP occupants) | the two occupant classes are definite |
 | 3 ask | `ask` with the question words ("who ran?") | interrogatives; the answers test lesson 2's classes | the answers to the held-out questions |
 | 4 verb | `verb` (transitive: "Bill chased Felix.") | object nouns; whether subject and object collapse into one class is read, never declared | the object class is definite, and the answers |
-| 5 modifiers | `intersection`, `product` | adjectives | the modifier class is definite |
-| 6 determiners | `lower`, `definite` | determiners | the determiner class is definite |
-| 7 adverb | `adverb` | adverbs | the adverb class is definite |
+| 5 modifiers | `intersection`, `modifier` | adjectives | the modifier class is definite |
+| 6 determiners | `lower`, `modifier` | determiners | the determiner class is definite |
+| 7 adverb | `modifier` | adverbs | the adverb class is definite |
 | 8 prepositions | `preposition`, `surface`, `compound` | prepositions and the remaining function words | the class is definite |
-| 9 relations | `equal`, `part`, `whole`, `implies`, `generic`, `query`, `infer`, `isTrue` | none: a clause has no word occupant | the relation groups |
+| 9 relations | `part`, `whole`, `implies`, `query`, `infer`, `isTrue` | none: a clause has no word occupant | the relation groups |
 
-The verb lessons use names and bare plurals as subjects and objects, so that no untaught operation is needed; an article met before its lesson is a form that occupies no argument yet. A class is definite when its members fit it strictly better than the other populated arguments and it has enough views: definiteness is separability times view evidence, and operation trust is the minimum definiteness of an operation's inputs ([Architecture](Architecture.md), "Argument fit, separability and boundary conditioning").
+The verb lessons use names and bare plurals as subjects and objects, so that no untaught operation is needed; an article met before its lesson is a form that occupies no argument yet. A class is definite when its members fit it strictly better than the other populated arguments and it has enough views: definiteness is separability times view evidence, and an operation's definiteness, the minimum definiteness of its inputs, is reported and gates nothing ([Architecture](Architecture.md), "Argument fit, separability and boundary conditioning").
 
-**Readiness is a measurement.** Each lesson ends on a measurement, never on an age or a sentence count, and its threshold is data beside the corpus: the `criterion` of each stage in `data/lessons/parts-of-speech.json`, declared by Alec (null until he sets it). `ConceptualSpace.trust_measurements()` and `gate_measurements()` supply the values to the lesson runner (`bin/corpus_lessons.py`). Each lesson's budget is declared before it runs, and no lesson extends its budget to pass. A lesson produces an artifact that the next lesson restores as its fixture.
+**Readiness is a measurement.** Each lesson ends on a measurement, never on an age or a sentence count, and its threshold is data beside the corpus: the `criterion` of each stage in `data/lessons/parts-of-speech.json`, declared by Alec (null until he sets it). `ConceptualSpace.trust_measurements()` supplies the values to the lesson runner (`bin/corpus_lessons.py`). Each lesson's budget is declared before it runs, and no lesson extends its budget to pass. A lesson produces an artifact that the next lesson restores as its fixture.
 
 **Gates are behaviors (Alec, 2026-10-18).** "In writing a UG [a universal grammar], we do not demand which operators must be chosen, only which behaviors must be exhibited." No lesson gate names an operator. A lesson's gates are the behaviors its sentences exhibit: the held-out constituents, the answers to its questions, one individual per singular noun phrase with no duplicate or colliding occurrence, and the measurements its manifest declares. The kept operators, order stamps, unexpected occurrences and meaning norms are reported beside the gates, never required; whether a bare description licenses a later reference is measured by a later sentence, not demanded of a reading.
 
@@ -579,8 +578,9 @@ The version-2 `data/corpus-lessons.json` has two curriculum phases. Four distinc
 idea documents name both measured objects with demonstratives and supplied-answer
 questions. Four relation documents state their kind and a kind-level sentence,
 then ask for the kind and yes/no membership. Each phase runs four epochs, each
-document once per epoch. The epoch boundary clears experience and MTM once before
-the first document; document covers are rewritten without clearing familiarity.
+document once per epoch. Each epoch begins with the epoch boundary's
+forgetting pass (`Forgetting.model_boundary`); experience and MTM carry over
+from one epoch to the next, and a document has no row of its own.
 The corpus checkpoint still preserves an incomplete epoch on resume.
 
 `corpus_lessons.py` uses the math corpus's `ChainDocument`/`ReferentTarget` path;
@@ -841,9 +841,10 @@ than trying to replay a discarded journal.
 The primed bank contains the sentence's own symbols plus the most activated
 other symbols, per batch row. Surface-bearing symbols are reconstruction
 candidates; all valid symbols supply detached answer context. The priming of
-the next read is the activation predictor's forecast of the next state
-(`ConceptSpread.open_prediction`), read detached; nothing diffuses along
-concept store edges. The bank and all record fields are described in
+the next read is `expect`'s expected field, computed once at the open pass
+(`ConceptSpread.open_prediction`) and read detached
+([Expectation](ExpectationRetention.md)); nothing diffuses along concept
+store edges. The bank and all record fields are described in
 [GradientFlow](GradientFlow.md).
 
 The compose chooser is credited by the whole-path comparison: a score-function
@@ -889,9 +890,11 @@ contextual rotation and no VQ EMA refresh writes the dictionary, and admission
 does not replace a reserved code with a normalized feature/part composition.
 Distributional pressure enters as placement rather than as a gradient on these
 codes: at each kept close every row of the close takes one detached meet-ratio
-step toward the placed codes that the registered seen surface activates and
+step toward the placed codes of its own order that the sentence's field
+activates, at every order and before any weighting by likeness of places, and
 away from a few sampled negatives, as index state saved with the checkpoint
-(`MereologicalCodes.place_rows`).
+(`MereologicalCodes.place_rows`). A class is placed by its context like any
+concept, and a row above the basic percept carries no perceptual form.
 
 ### `<trainEmbedding>`: Embedding Update Mode
 
@@ -976,7 +979,7 @@ perceptual reconstruction. A sentence with no admitted surface candidate has
 no reconstruction term and is counted. Keep and credit read $R + A$ over whole
 paths: each stream keeps its strictly cheapest complete path, ties keeping the
 greedy one, and expectation is excluded from the comparison and trains only
-the predictors. The answer cost has one exposure per sentence, given to the
+its own maps. The answer cost has one exposure per sentence, given to the
 kept path and shared with the paths whose departure is in compose and their
 greedy path.
 
@@ -1096,9 +1099,11 @@ the System 1 decoder, scored at observed places;
 through compose, the generate walk and the same decoder, scored against the
 input before omission; `reconstruction.free_percept`, the decoded percepts
 against the percept forecast's residual; the walk residuals and departure
-credits of reconstruction and output; the expectation predictor's own terms
-(`expectation.*`, source and target detached); and the explicit grammar
-lessons (`grammarLessonWeight`). `reconstruction.free_bytes`, the decoded
+credits of reconstruction and output; the expectation maps' own terms
+(`expectation.*`, source and target detached), among them `expect`'s
+`expectation.concepts`, taught by omission; `intuit`'s term against the field
+the kept thought leaves (`intuition.field`, target detached); and the explicit
+grammar lessons (`grammarLessonWeight`). `reconstruction.free_bytes`, the decoded
 bytes' identity against the input, and `reconstruction.coverage`, the missing
 positions, are audits with `trained=False`.
 
@@ -1109,7 +1114,7 @@ is avoided where possible (Alec): the projection protects reconstruction from
 the answer side without a scale balance, and both ownership settings compare
 paths by $R + A$.
 
-`definition_sparsity` (soft-L0), `gate_l1` (operator gates), and
+`definition_sparsity` (soft-L0), `gate_l1` (the `modifier` eigenvalue edit's L1), and
 `truth.falsity/balance` have no targets and retain their configured penalty
 strengths without normalization. `concept_readout_l1` records the distinct
 observed concepts' incoming L1 with `l1Lambda`; its sole training owner is
@@ -1309,26 +1314,29 @@ of their own. Their contracts are in their own documents; what matters here is
 what stays live and what is detached.
 
 - **Existence evidence.** The three forward observation writers retain
-  canonical role presence, including the depth-two VP, and mark records as
-  observations. Explicit TruthSet admission can accept a fact; an origin tag
-  or a high activation alone cannot. Internal questions, predictions and
-  unverified relations remain ineligible for `Exist` fact support. The lookup
-  preserves both signed degrees and provenance and adds no gradient objective
-  or trainable parameter ([Existence evidence](ExistenceEvidence.md);
+  canonical role presence, including the depth-two VP. Existence is read from
+  rows of nonzero trust: a conversation's rows, written at zero, and a high
+  activation alone support nothing. The lookup preserves both signed degrees
+  and adds no gradient objective or trainable parameter ([Existence evidence](ExistenceEvidence.md);
   [observation adapter](../bin/Models.py), [admission](../bin/Layers.py),
   [lookup](../bin/reasoning.py)).
 - **Given truths.** A given truth (`<truthSet>`, `store_truths`) is a plain
   sentence with a trust value; nothing out of band says what kind of sentence
   it is. The grammar decides whether it is an idea or a relation, as for any
-  input, and provenance supplies only trust, origin and the source text.
+  input, and the truth store supplies only its trust: a row keeps no origin
+  and no source text.
   Provisioning therefore waits for training: an untrained chooser cannot be
   expected to read a given truth in the right form. Who sets the trust
   (Alec, 2026-11-13): "this should be something that wiki oracle sets when
   training, and users set in the truth store. Conversations go in at zero,
   so truth statements have their trust evaluated." A value from the truth
-  store is written as given. Afterwards "facts can be forgotten, but
-  changing trust values has to be done by proof (establishing contradiction
-  within the existing truth store)"
+  store is written as given. A sentence read in training is written at the
+  model's trust (`<trust>`, 1.0 in `data/model.xml`) times its words'
+  certainty, and a conversation's sentence at zero. Afterwards "facts can be
+  forgotten, but changing trust values has to be done by proof (establishing
+  contradiction within the existing truth store)"; proof governs a change of
+  trust only where two claims contradict each other, and a valid source, an
+  authority or a speaker's trusted definition, may add trust
   ([Philosophy](Philosophy.md#the-three-sources-of-trust-in-the-model-alec-2026-11-13)).
 - **Checked queries.** Checked query contracts, shared VP binding and checked
   taxonomy queries add no objective or optimizer parameter. A successful
@@ -1360,9 +1368,8 @@ what stays live and what is detached.
   under the same sentence mask, and output realization cannot start a query.
   Permission restores on error and does not change optimizer ownership or
   gradient balancing ([Query phases](QueryPhases.md)).
-- **Restored occurrences.** A stateless tensor restore withdraws request
-  authority immediately; physical pruning waits for the owners of the restored
-  rows and discards only orphans. Checkpoint content is detached; a live
+- **Restored occurrences.** A restore withdraws nothing: restored rows keep
+  their trust and activity. Checkpoint content is detached; a live
   episode retains its gradient route ([Nested retention](NestedRetention.md)).
 
 Superseded training mechanisms and their measurements are recorded in

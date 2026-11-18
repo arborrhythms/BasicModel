@@ -34,8 +34,8 @@ concepts bind part/whole support, symbols provide addressable references, and
 grammar/reasoning layers compose or test those references.
 
 In Formal Concept Analysis terms, a concept has both an **extension** (the
-percepts that support it) and an **intension** (the attributes, relations, or
-symbolic edges that define it). BasicModel implements a fuzzy neural version of
+percepts and members that fall under it) and an **intension** (the attributes
+that define it). BasicModel implements a fuzzy neural version of
 that split rather than a strict binary concept lattice. In DisCoCat terms, the
 grammar path composes word/object vectors into sentence-level meaning through
 typed reductions. BasicModel extends that DisCoCat-style composition with
@@ -116,23 +116,26 @@ mixing a part and a whole at the corpus callosum — it is defined
 **extensionally**, by its perceptual support (the percepts that fall under it),
 and it is **subsymbolic**: a conceptual-space citizen with no relational
 definition yet. It is grounded directly. A **higher-order concept** is defined
-in terms of other symbols (its sparse constituent edges) and so acquires an
-**intensional** definition (its *sense* — the relations that fix it), while
-still retaining extensional grounding, inherited transitively through its
-constituents down to order-0's support and refinable by direct experience.
-Ascending the orders is therefore a **graded extensional $\to$ intensional
-shift, never a hard switch**, and the grounding becomes increasingly *mediated*
-(reached through the definitional graph rather than directly from percepts) —
+in terms of other symbols (its sparse constituent edges), and its grounding is
+inherited transitively through its constituents down to order-0's support and
+refinable by direct experience. Ascending the orders, the grounding becomes
+increasingly *mediated* (reached through the definitional graph rather than
+directly from percepts), and a row above the basic percept carries no
+perceptual form of its own —
 which is why superordinate concepts feel more theoretical and less perceptual
 (Rosch et al. 1976; the basic $\to$ superordinate trajectory). This is the
 reconciliation of the prototype-vs-definition tension: a concept is *both* its
-region and its definition, because intension and extension are carried by two
-different structures over the same object. Concretely — **intension is the
-sparse edge-graph; extension is the atom's position** (Frege's sense /
-reference; Carnap's intension / extension, realized as graph-over-geometry).
+point and its definition, carried by two different structures over the same
+object. Concretely, the point is the **intension** and what it implies is the
+**extension** (Frege's sense / reference; Carnap's intension / extension). For
+a sentence (Alec, 2026-11-12), the composed vector, the idea, "is the intension
+of the sentence-concept", and the field of known concepts it implies "is the
+extension of the sentence-concept"; "For kinds, a token implies a type. For
+mereology, a whole implies a part." A kind's extension is its stored members,
+reached through the sparse edge-graph ([Extend](Extend.md)).
 
-Because every concept, at any order, has an extensional footprint (a grounded
-atom), specific and general objects share **one conceptual space**: a single
+Because every concept, at any order, is a point placed by the contexts it
+occurs in, specific and general objects share **one conceptual space**: a single
 dictionary holds each concept as a *point*, and the relational graph is
 structure laid *over* that space, not a second space. The single-space claim is
 not a new assumption — it follows from grounding (symbols are a subtype of
@@ -151,13 +154,13 @@ basal/extensional reading.** The cognitive grounding for the
 dense-perceptual / sparse-symbolic split is in
 [doc/Architecture.md](Architecture.md) "Cognitive grounding."
 
-The seam between extension and intension is operational in the forward,
-which has one terminal cutover
+The seam between perceptual and relational definition is operational in the
+forward, which has one terminal cutover
 ([Architecture](Architecture.md#a-symbolic-weights-the-two-phase-forward)).
 At it each order-0 concept reads its membership from the attended percepts
-through its feature definition over basic percepts, which is its extension,
-and each higher order is then composed from the preceding order's symbols
-over the sparse edge-graph, which is intension. An order-0 concept is thus
+through its feature definition over basic percepts, and each higher order is
+then composed from the preceding order's symbols over the sparse edge-graph.
+An order-0 concept is thus
 defined by its perceptual features, and a concept of order $\ge 1$ by its
 edges to other symbols. Three relational primitives carry the graph (Alec,
 2026-07-02): the ordered pair $[\text{whole}, \text{part}]$ (whole

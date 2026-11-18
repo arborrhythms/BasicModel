@@ -25,9 +25,10 @@ those slots. Two queries can therefore retrieve `a < b` and `b < c`, then
 conclude `a < c` with both references. Implication additionally requires its
 antecedent evidence. A nested answer returns the filled row.
 
-The kept walk writes conclusions as `inference` rows, with occurrence addresses
-from document/turn, per-turn ordinal and content. Witness references remain
-provenance. A conclusion that leaves its source unchanged (the same content,
+The kept walk writes a conclusion as an LTM0 row named by its time, at the
+trust its premises give; the row has no kind and no origin, and its witness
+references stay in this history, not on the row. A conclusion that leaves its
+source unchanged (the same content,
 references, scope, polarity, evidence, open slots and sentence kind) writes
 nothing new: it reuses the source's entry and original stamp, whichever
 operation inspected it, and an unresolved working read does not copy its
@@ -41,7 +42,7 @@ each whole path: a departure at a thought decision is credited by the
 proposal-corrected score function on its complete path's change in
 reconstruction plus supplied-answer cost (R + A). The walk's metered work
 bounds it but does not enter that comparison. Expectation trains only its own
-predictor. Exact ties contribute nothing. There is one configured work name,
+map. Exact ties contribute nothing. There is one configured work name,
 `attentionBudget`; older budget names fail at load.
 
 Checked results detach reader tensors. Policy probabilities retain only the
@@ -67,9 +68,9 @@ alive. No separate frame cache owns them.
 
 The existing owner derives LTM roots from every retained ordinary record's role
 references, bindings, scope and recorded sources. It reads that data on demand,
-without a second reference index. Those roots protect required content during
-request-origin replacement even after the content's evidential authority is
-withdrawn. See [nested retention](NestedRetention.md).
+without a second reference index (`retained_ltm_occurrences`). Those roots
+protect the rows they name from the forgetting pass, whatever the rows'
+activity. See [nested retention](NestedRetention.md).
 
 The controller that writes these records is described in
 [SelectedMeaning](SelectedMeaning.md).

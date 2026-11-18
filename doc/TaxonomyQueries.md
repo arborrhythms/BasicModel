@@ -6,31 +6,38 @@ vector residual, without a taxonomy read ([AccessibleMind](AccessibleMind.md)). 
 `("sym", concept_id)` handle is an address; it is never interpreted as a
 dictionary row or a numeric feature. The derived invocation view contains no
 authoritative memory and creates no allocator, concept, fact or learned
-parameter. Raw percept/whole codes, vector containment and LTM world-relation
-rows cannot establish this relation.
+parameter. Raw percept/whole codes, vector containment and LTM0 idea rows
+cannot establish this relation; its edges are LTM1's relations.
 [Reference validation](../bin/Taxonomy.py),
 [bounded capture](../bin/Taxonomy.py).
 
 ## Evidence and domains
 
 A recorded `part` reference points from the constituent to its owner; a
-`whole` reference points from the owner to its containing concept. Both direct
-definitions and reified relations are visible. For a reified relation concept
-R with part A and whole B, the evidence is the two native links A → R → B;
-the endpoint sets need not have been modified. Each proof keeps its record
+`whole` reference points from the owner to its containing concept. Each link
+is one LTM1 relation and carries that relation's trust on the two lanes
+(`TaxonomyEdge`). Each proof keeps its record
 owner, role and endpoints. Retired/unavailable references cannot supply a
 link. The snapshot does not change when its source is subsequently edited.
 [Capture](../bin/Taxonomy.py),
 [proof search](../bin/Taxonomy.py).
 
-Structural inclusion has support 1 when a path exists; repeated links do not
-increase it. Sparse learned weights are not interpreted as world-fact
-confidence. A missing path emits symbolic inclusion value zero; the evidence
+A path's support on each lane is the least of its relations' trust along it,
+and the greatest over paths; a concept includes itself at support 1, and
+repeated links do not increase it. Sparse learned weights are not interpreted
+as world-fact confidence. A missing path emits symbolic inclusion value zero; the evidence
 support still remains unknown, with traversal incompleteness retained. A supported path refutes the
 negated inclusion question; a missing path does not prove that negation.
 LTM existence degrees and conflicting world facts remain the separate
 [Exist evidence domain](ExistenceEvidence.md).
 [PartOf evaluation](../bin/reasoning.py).
+
+The pervasion of a question with no open operand is read here
+(`ExtendedRecall.pervasion`): the view is captured around the subject and the
+property's raised class, and `part_of` from the subject to that class gives
+each lane's support. It is a relation between the two kinds, read from the
+order above, and never a count of the kind's known members
+([Logic](Logic.md#existence-and-pervasion-alec-2026-11-13)).
 
 The public legacy `QuerySpec` aliases `PartOf`, `part`, `queryPart` and
 `isPart` select conceptual-taxonomy evidence. `whole` / `isWhole` reverse
@@ -60,8 +67,8 @@ policy-selected decomposition. The [review probes](../test/test_thought_review.p
 separately exercise a chooser-selected descent and its policy credit.
 
 Taxonomy queries are read-only. Successful proofs cannot append world-fact
-lemmas or change conceptual definitions. Unsupported/world-row evidence cannot
-certify taxonomy inclusion. The frame kernel, neural-tool facade, addressees,
+lemmas or change conceptual definitions. Unsupported evidence and LTM0 idea
+rows cannot certify taxonomy inclusion. The frame kernel, neural-tool facade, addressees,
 legacy geometric readers and bridge-policy loss have been deleted.
 See [checked registry](../bin/Queries.py), [evidence readers](../bin/reasoning.py)
 and [the controller](SelectedMeaning.md).

@@ -22,9 +22,11 @@ through preparation, execution, and nested calls.
 Also charged: `description` (entering a description resolution),
 `context_record`, `unfold` (an inverse or forward check while unfolding an
 idea), `effect_node` (each committed thought effect), `index`,
-`concept`, `edge` and `part` (`intuit`'s rule index, order-zero expansion,
-literals and pervasion parts), `space-read` and `serial-word-loop` (the reading
-field), and `bracket` (the input's bracket work).
+`concept`, `edge` and `part` (the rule index, order-zero expansion, literals
+and pervasion parts of firing stored rules), `generate` (each action of a
+generate walk run under the meter, such as the walk that reads a recalled
+idea's extension), `space-read` and `serial-word-loop` (the reading field),
+and `bracket` (the input's bracket work).
 
 These units are explicit bounded work, not time or FLOPs. Local node, record,
 depth, and expansion limits can only tighten the allowance. Taxonomy capture

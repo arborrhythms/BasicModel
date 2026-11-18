@@ -76,7 +76,7 @@ a present event to that identity, is decided in direction and is not part of
 the mechanism.
 
 **One relation records membership (2026-10-23).** An
-LTM1 row is two tagged references and the two truth lanes,
+LTM1 row is two tagged references, the two truth lanes and an activity,
 $\mathrm{Part}(x, y)$, and its reading comes from its referents' types: two
 situations a conditional, a situation and a speech individual an
 attribution, an object and a word a definition, two kinds a subsumption, a
@@ -147,8 +147,8 @@ participation (word classes), co-occurrence in a row (relations).
 
 A part of speech is a kind-of-word: a class formed by the same fold, with
 participation as the evidence. Each formal argument is a
-concept one order above the word concepts; its direction is the centroid of
-the meaning directions of the words kept in it, each weighted by its fit, and
+concept one order above the word concepts; like any class it is placed by
+its context (§10, "Placement"), and
 a word's fit is its coverage of the argument's vector (direction times
 radius); see
 [Formal arguments and shared hierarchical context](#formal-arguments-and-shared-hierarchical-context-alec-2026-11-08).
@@ -158,9 +158,10 @@ position's class; positions that share their words draw their arguments
 together, which is how many formal arguments come to few parts of speech.
 Participation is soft: a word's fit is a term the chooser adds to an
 operation's score, never a mask on the position, and only a kept use teaches
-the argument ([Language](Language.md#learned-argument-concepts)). The
-hierarchy's downward conditioning moves each participating word concept
-toward its classes, so a word's position is its degree of membership.
+the argument ([Language](Language.md#learned-argument-concepts)). Words that
+share a class are drawn together among words, and classes that share words
+among classes; a word's degree of membership is its nearness to the class's
+words, never to the class's own position.
 A kind of thing is formed by the same fold with explanation over meaning
 coordinates as the evidence. Same machinery, one conceptual space.
 
@@ -187,9 +188,9 @@ B column is constrained by the frames its word fills.
 ## 7. Grammatical operations are order operations
 
 Determiners select a member, and the phrase's order is the order of what
-is picked (§10); bare plurals and `every` stay at order 2 (`every` lowers to
-the extension and chooses no member); a determiner on a mass description
-picks a shaped portion, so *the water* is an individual collected by
+is picked (§10); bare plurals and `every` stay at order 2 (`every`, a
+modifier, keeps its noun's order and chooses no member); a determiner on a
+mass description picks a shaped portion, so *the water* is an individual collected by
 continuity like any other; count/mass, singular/plural and proper/common are
 the grammar reading the order and the collecting relation. The determiner is
 the name of the quotient. A definite with nothing accessible to bind to
@@ -199,8 +200,9 @@ writes its occurrence and stays **unbound** until a referent appears
 The bare word *water* is not an order-0 mass term. Alec, 2026-11-01: "Water
 is a count noun with an elided form/shape in some contexts, so it's not a
 good example of a mass noun. Water would be order-1 at lowest, since it is
-an abstraction of an event." A determiner lowers only a kind, order 2 or
-more, and leaves an order-1 term at order 1.
+an abstraction of an event." A determiner is a modifier and keeps its
+noun's order; the order drops only where `lower` is applied, and `lower` is
+admitted only on a word of order one or more (§10).
 
 *Worked example (Alec, 2026-10-16): "The water froze. It became ice," ice
 never perceived.* `the water` selects a portion and
@@ -242,38 +244,39 @@ What stands:
   the centroid of its letters and wholes in the percept cube; a kind tied to
   its members, an individual to its occurrences, a sentence to its
   constituents, by Part edges. One tree, all orders, one relation; two
-  carriers, geometric up to order 0 (forms) and recorded above it. The
-  **centroid** of an order above 0 is a derived cache over its Part edges
-  (the intersection model of identity), kept only while it passes the test
-  that its meet with each member stays high; where that fails the type is
-  discontinuous and the set is the only representation (the union model).
-  The two identity models of [Philosophy](Philosophy.md) are these two
-  representations.
+  carriers, geometric up to order 0 (forms) and recorded above it. A
+  symbol above order 0 has no form and no centroid: it is a point that its
+  Part edges collect (Alec, 2026-11-12: "symbols should not take the
+  centroid of the percepts that they collect; they are epistemic
+  points."), and its set of members is its representation.
 - **Felix and *cat* are related in three ways, none of them nearness.**
   Felix and the *kind* cat: **membership**, a Part edge. Felix and a
-  *typical* cat: **typicality**, the meet of Felix's vector with the kind's
-  centroid cache, the fold over members like him. Felix and the *word*
+  *typical* cat: **typicality**, the likeness of Felix's place to the places
+  of the kind's other members, all of his order. Felix and the *word*
   "cat": the word is an **axis** of Felix's representation (he was described
   as one), not a neighbour; the name "Felix" is another axis, the proper
-  noun whose definition is the individual. A kind therefore has two
-  representations, its member set and its centroid among its members, the
-  second kept while the type is continuous.
+  noun whose definition is the individual. A kind therefore has its member
+  set, and a place in conceptual space set by its context like any
+  concept's (§10).
 - **Cross-order comparison is membership, not distance.** An individual
   against a kind is a membership read; an idea against a kind a membership
   read of its participants; `bind` compares candidates at the request's own
-  order. Distance between orders is not a meaningful quantity.
+  order. Distance between orders is not a meaningful quantity, and no space
+  has geometric influence on another (Alec, 2026-11-15: "the doms location
+  in dom space does not influence the subs location in sub space"): a
+  relation between orders says which concepts belong together, activation
+  and evidence cross it, and a position never does.
 
-**Centroids (Alec, 2026-10-24).** An order-0 concept's form is the center of
-the space of its parts and its wholes, each averaged over its count; a
-higher-order concept has no parts and wholes, so its content is the pure
-centroid of its members' content, weighted by their positive and negative
-evidence, never a max or a min. A class row's cover (`cover_members`)
-weights each member by its net positive evidence $\max(0, p - m)$ and drops
-non-positive members; consolidation's fold weights by $p + m$. The centroid
-is a rule for forms, stored on the concept's symbol: the fold
-(`MemoryConsolidation._fold`) averages its members' forms and never the
-bands or the meaning, and a class's place in conceptual space is derived
-separately (Placement, §10).
+**Centroids (Alec, 2026-10-24 and 2026-11-12).** An order-0 concept's form
+is the center of the space of its parts and its wholes, each averaged over
+its count. A
+higher-order concept has no parts and wholes, and it carries no perceptual
+form: a symbol above order 0 does not take the centroid of what it
+collects (above). A reader that needs its form takes the form of its
+word, through the definition that maps the word to it. A class row's cover
+(`cover_members`) weights each member by its net positive evidence
+$\max(0, p - m)$ and drops non-positive members, and a class's place in
+conceptual space is set by its context like any concept's (Placement, §10).
 
 ## 10. Orders are learned: definitions raise, three compositions lower (Alec, 2026-10-21)
 
@@ -310,7 +313,9 @@ class of lines parallel to a given line. The learning sequence:
 distinct, as events at different places or times or as different identities
 in MTM; and the word is given the raised concept as its object. Each
 definition is an LTM1 row, and the raise fires when `raiseCount` (default 3)
-pairwise distinct members have joined the shared side (§11).
+pairwise distinct members have joined the shared side (§11). An identity
+sentence composes as `part`; in thought, `define` writes it as two
+relations, `part` each way, and the raise counts the pairs `define` wrote.
 
 **NP + VP lowers, returning to S0.** A noun phrase names a class, the
 invariant across its members, and a verb is the step between two of them
@@ -325,7 +330,7 @@ dropping the order: they might just be selecting one of a plurality, and
 leaving the order untouched." A determiner picks one of a plurality, and the
 phrase's order is the order of what it picks, read by lookup: a member of a
 kind is an individual, and a shaped portion of a mass is an individual, so
-"the water" is an individual at order 1 (§7). `lift` and `lower` keep their
+"the water" is an individual at order 1 (§7). `change` and `lower` keep their
 numerical folds, and a constituent's order is read from the concept it
 denotes, whose order the equivalence classes set.
 
@@ -343,7 +348,7 @@ abstractions and the alternative timelines. The modal is the second
 difference. Alec, 2026-10-22: "MPs are differences of VPs just as VPs are
 differences of NPs (not really differences, but diagonals within
 quadratics). Running and walking are both possibilities for Joe's movement."
-It is a diagonal per modal in one shared basis (the `adverb` action),
+It is a diagonal per modal in one shared basis (the `modifier` action),
 learned from equal-time events on an identity's alternative timelines
 (`ModalLearning`), as the verb is learned over an identity's occurrences.
 
@@ -378,22 +383,22 @@ priming across orders (good), and the more I think about it, the more I am
 in favor of a single conceptual space (so concrete and abstract concepts all
 intermingled)." Strata remain the structure of LTM: LTM0 occurrences, LTM1
 relations, the derived LTM2. In conceptual space one `similarity_codebook`
-holds every order's rows: a kind is placed among the words, individuals and
-events it occurs with, and an abstract concept sits beside the concrete ones
-it is used with. Crowding is answered by the placement objective's
+holds every order's rows. The context that places a row holds every order,
+but a step moves a row only relative to rows of its own order (Placement,
+below). Crowding is answered by the placement objective's
 negatives. What §9 keeps: all symbols in the one mereological tree, the Part
 edges as the record of membership, and membership read by edge, not by
 distance.
 
-**Placement.** A row with members, a class made by a raise or by promotion, is derived: its place is the normalized centroid of its members' places, each weighted by the net positive evidence of its membership, $\max(0, p - m)$, with definition rows excluded, recomputed with lower orders first (`MereologicalCodes.derive_class_placements`). While any member is unplaced, the class stays unplaced, and a class whose members lie farther than 15 degrees from its centroid (`CLASS_CONTIGUITY_COSINE`) is marked noncontiguous. Every other row, an order-0 concept or an individual whose occurrences supply its contexts, is placed by the context objective at its kept close (`MereologicalCodes.place_rows`, reading the seen ledger), which skips derived rows.
+**Placement.** Every row is placed by its context, at its kept close (`MereologicalCodes.place_rows`): an order-0 concept, an individual whose occurrences supply its contexts, and a class made by a raise or by promotion alike. The context is the field at every order, what is present and what the folds give from it, so a present token brings its types (`FieldProjection.close`); it is taken before any weighting by the likeness of places, so no place is moved by a value computed from places. A step moves a row only relative to rows of its own order. A class is therefore placed among the contexts its members bring it into.
 
-**Every symbol's order.** A concept's order is its recorded order, else one above its highest symbolic part, else 0 when a percept row or its own identity record witnesses it, else $-1$, unknown (`ConceptAllocator.order_of`). Unknown is never read as 0: joins and lowering keep it, and a reader that needs a number converts explicitly at its site. A recorded order is checked against the concept's parts when it is settled, and a disagreement raises.
+**Every symbol's order.** A concept's order is read from the block its row lies in (`order_slice`, §12); nothing beside the vector holds it, and the block's order agrees with the order its parts give. A concept with no row has the order its parts give: one above its highest symbolic part, else 0 when a percept row or its own identity record witnesses it, else $-1$, unknown (`ConceptAllocator.order_of`). Unknown is never read as 0: joins and lowering keep it, and a reader that needs a number converts explicitly at its site.
 
-**What each composition denotes** (`ReferenceContext.denoted_order`). Order is read, never added: no layer or grammar rule carries an order offset. A leaf has its concept's order. `lift`, NP + VP, lands one below its subject, floor 0, and keeps the subject's order when the verb phrase carries a modal alternative. `verb` has the verb's order. A determiner (`lower`, `definite`, `universal` and their unary faces) selects: it lowers only a kind, order 2 or more, and otherwise keeps its noun's order. `equal` has its left operand's order; `part`, `whole` and kind relations the whole's; `bind` the identity's; `sign` 0. A headed operation has its head's order; the symmetric joins (`sum`, `product`, `intersection`, `union`, `conjunction`, `disjunction`) take the maximum, unknown if any operand is unknown; a unary operation keeps its operand's. No list of mass, count or event nouns exists: the determiner's occupations condition the words it is used with into their own part of speech.
+**What each composition denotes** (`ReferenceContext.denoted_order`). Order is read, never added: no layer or grammar rule carries an order offset. A leaf has its concept's order. `change`, NP + VP, lands one below its subject, floor 0, and keeps the subject's order when the verb phrase carries a modal alternative. `verb` has its verb phrase's order. `lift` raises its one operand one order; `lower` is admitted only on an operand of order one or more and drops it one order, so `lower(lift(x))` has the order of `x`. A determiner or a number word is a modifier and keeps its noun's order. `part`, `whole` and kind relations have the whole's order; `bind` the identity's; `sign` 0. A headed operation has its head's order; the symmetric joins (`intersection`, `union`) take the maximum, unknown if any operand is unknown; any other unary operation keeps its operand's. No list of mass, count or event nouns exists: the determiner's occupations condition the words it is used with into their own part of speech.
 
 **Typed operands.** At composition an operand's stamped order decides how it is read (`ReferenceContext.prepare_operands`): at order 0 or at order 2 and above it is resolved to its existing typed concept, value and reference (`resolve_order`); at order 1 it stays the raw mention, and individuals are reached only through an explicit `bind`. A literal keeps its own point.
 
-**The determiner is inline.** A determiner's `lower` contributes no content of its own: without a meaning block it returns its description unchanged, and on a meaning block the description's meaning passes through the lane kernel with the marker as context, the identity at initialization. It changes the order only as `denoted_order` reads it. Its member is a token whose identity is its place in STM while the sentence is open. An individual gets a concept row only by recurrence (`conceptMintCount`) or a kept definition. The chooser's menu never reads concept capacity: masking options by pool state would confound the chooser's credit, so an exhausted inventory raises instead.
+**The determiner is inline.** A determiner has no operator of its own: its word is a modifier, whose gain in one shared basis is the identity at initialization, and whether a mention mints or binds is the run-time choice of `mint` or `bind`, with the word as cue. `lower` changes the order only as `denoted_order` reads it, and the member it gives is a token whose identity is its place in STM while the sentence is open. An individual gets a concept row only by recurrence (`conceptMintCount`) or a kept definition. The chooser's menu never reads concept capacity: masking options by pool state would confound the chooser's credit, so an exhausted inventory raises instead.
 
 **Learning parts of speech** follows the learning sequence above: proper
 nouns first, then mass nouns, then count nouns where the language has them.
@@ -412,7 +417,7 @@ reading, not storage.
 them.** Alec: "We shouldn't mark 'is' as special, this is just a part of the
 equals() operator that will eventually store known concepts across a
 relation rather than as a single idea." A positive LTM1 row whose two
-referents are both concepts with recorded orders is a member of the whole
+referents are both concepts of known order is a member of the whole
 only when the member is exactly one order below it, a class and its member
 as §10 defines them (`ConceptAllocator.class_member`). Any other such row is
 a relation across two known concepts. It is stored with its pair and read by
@@ -493,16 +498,17 @@ kept definition mints the identity its mention named and defines the word to
 it; later definitions with distinct relata write rows; at `raiseCount`
 distinct relata the identity acquires its class one order up with the relata
 as its members, and the word is defined to that class
-(`PartClosing._admit_member`, `ConceptIndex.index_part_row`). The class's
-content is the evidence-weighted centroid of its members, which prefers none
-of them, and as the members diversify it carries no differentiating share:
+(`PartClosing._admit_member`, `ConceptIndex.index_part_row`). The class
+carries no form of its own and is placed by the contexts of all its
+members, so it prefers none of them, and as the members diversify it
+carries no differentiating share:
 the word's mention then constrains nothing, and location, recency and
 expectation decide the bind. "Deictic" names that reading, a word whose
 identity has emptied; it is read off, never written.
 
 **The identity that empties is the identity across time, not a centroid.**
-The centroid stays the content of a symbol or percept. What empties is the
-identity an MTM token carries across time, in conceptual space, with its
+The centroid stays the form of a percept or an order-zero concept. What
+empties is the identity an MTM token carries across time, in conceptual space, with its
 current value after the latest verb: "he" and "Alec" are united by one such
 identity, and after "he becomes tired" its value has the parts and wholes of
 tired(Alec). A nominal identity corresponds to a worldline, in Alec's words
@@ -575,22 +581,21 @@ Formal input and output arguments are explicitly constructed concepts one
 order above the word concepts they generalize. In native code numbering
 those orders are 0 for words and 1 for arguments, independently of the
 leaf's referent order, and a class over argument concepts is order 2. They
-reuse the ordinary member-centroid hierarchy: fit is coverage, and
-definiteness is separability times view evidence. Higher-order conceptual
-context also conditions members' meaning directions through that hierarchy,
-including nested classes, following only participating members and their
-ancestors. This rule is architectural; parts of speech are special only in
-their a priori declaration and grammar use. Form coordinates and
-view-derived radii are unchanged by downward directional conditioning. See
+reuse the ordinary concept hierarchy: fit is coverage, and
+definiteness is separability times view evidence. A word draws its classes
+together among classes, and a class draws its words together among words;
+neither is moved toward, or compared with, the other's position (Alec,
+2026-11-15). This rule is architectural; parts of speech are special only in
+their a priori declaration and grammar use. See
 [Architecture](Architecture.md#hierarchical-conceptual-context-alec-2026-11-08).
 
 #### Thought over grammatical classes (Alec, 2026-11-08)
 
 `Priming.part_edges` carries argument-class memberships beside the relational ones, so `ThoughtTaxonomyCapability.evidence` may prove `part(word, formal argument)` and may traverse a grammatical class as a whole on its way to another; a relation a text asserts between a thing and a word class is written like any other, so what is said can join the two ladders, and a class of things in the world can then be treated as an instance of a part of speech. This is allowed deliberately. Alec's expectation is that such reasoning produces a samsaric logic for dealing with entities in the world, which are real and not grammatical; the broken rationality that results is to be observed carefully and recorded, as evidence that may help human understanding, not guarded against. No edge is excluded from the taxonomy on this account. The thought history records a membership proof whose path passes through a formal-argument class, so that these inferences can be found; the word-to-object binding itself is identity through the definition index and is not part of the traversal.
 
-## Item 1.8 amendment (2026-11-12)
+## A felt value at order zero
 
-A present scalar reading is a basic percept held in MTM, with a `bp` reference. Each word heard beside it collects such percepts in its own order-zero concept, with a `sym` reference. Their reference kinds distinguish percept and concept without provenance. The concept generalizes the witnessed perceptual parts and wholes; no separate interval bounds are retained. A bound object's reference travels through the ordinary generate walk and identifies its uniquely naming word. Native “what is this?” recognition is deferred to `compose_extend` in the next item-1.8 round, as the amended specification §3.10 states. Zero creates no positive value percept or scalar collection. The numeric-row convention of §3.9 is unchanged.
+A present scalar reading is a basic percept held in MTM, with a `bp` reference. Each word heard beside it collects such percepts in its own order-zero concept, with a `sym` reference. Their reference kinds distinguish percept and concept without provenance. The concept generalizes the witnessed perceptual parts and wholes; no separate interval bounds are retained. A bound object's reference travels through the ordinary generate walk and identifies its uniquely naming word. Asked "what is this?" of a felt value with no object named, the model runs `interpret` backwards, as its generate face `name`: the concept that collects the present reading is read from the field, with no words, and that concept's word is given (`InterpretLayer.reverse`, `lexical_form`). Zero creates no positive value percept or scalar collection. A numeric input row is read the same way, a level percept at each place ([Spaces](Spaces.md#percept-level-sets)).
 
 ## 12. A word at several orders; order read from the codebook (Alec, 2026-11-13)
 
@@ -600,20 +605,20 @@ multiple orders. So when it is found to be a count noun, we leave the old
 polysemy." A raise therefore leaves the concept it raised from, and that
 concept keeps its word. The new concept, one order up, has the same word,
 and `interpret` chooses between the two as it does for any word with
-several objects. `lower` is admitted only on the higher one, which is why
-a determiner calls for it ([Language](Language.md), "Determiners, number
+several objects: the one expected, else the one of higher order. `lower`,
+admitted only on an operand of order one or more, takes the higher one
+down one order, which is why a determiner calls for it ([Language](Language.md), "Determiners, number
 words and the modifier").
 
 **Order is implicit.** "Can we let order be implicit? We can retrieve it
 based on where it sits in the codebook, since concepts are currently
 ramsified and preallocated." Each order has its own block of rows in the
-concept inventory, and a concept is given its row at the order at which
-it is admitted. A concept never changes order, since a raise makes a new
+concept inventory (`order_slice`), and a concept is given its row at the
+order at which it is admitted. A concept never changes order, since a raise makes a new
 concept. Its symbols' `.where` is its row, in the symbols' range of the
 model's one address space, so its order is read from that place and stored
-nowhere else. That holds only while no order's rows spill into rows the
-orders share: a full block is a capacity error (*default*; today a full
-block spills into a shared tail, where the row's key records its order).
+nowhere else. No order's rows spill into rows the orders share: a full
+block is a capacity error naming its order.
 
 **So is modality.** "modality as implicit since both it and order can be
 inferred from the .where?", and "the .where that is baked into all

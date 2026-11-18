@@ -24,7 +24,7 @@ the XML knobs, and Testing for how changes are tested.
 | [Logic](doc/Logic.md) | Subsymbolic and symbolic logic operations |
 | [Extend](doc/Extend.md) | An operator's fourth use, and the field of understanding |
 | [Reasoning](doc/Reasoning.md) | Direct and derived truth, the thought episode and its operators, and intuition, understanding and thought |
-| [Expectation](doc/ExpectationRetention.md) | The activation predictor and expectation at every level |
+| [Expectation](doc/ExpectationRetention.md) | Expectation at every level, and the maps that compute it |
 | [What and spacetime design](doc/WhatSpacetimeDesign.md) | The question-answering design: the `what` question, queryable spacetime, one understanding with input reconstruction and output construction, the interaction record, and thinking |
 | [Selected meaning](doc/SelectedMeaning.md) | Selected linguistic meaning and the one thought controller |
 | [Accessible mind](doc/AccessibleMind.md) | Thought operators as effects on the subsystems of the accessible mind |
@@ -78,6 +78,7 @@ and [Language](doc/Language.md#one-operation-per-round).
 | [bin/Layers.py](bin/Layers.py) | Layer library: SigmaLayer, PiLayer, ErgodicLayer, LinearLayer, TruthLayer |
 | [bin/Spaces.py](bin/Spaces.py) | Space classes: InputSpace, PartSpace, ModalSpace, ConceptualSpace, WholeSpace, OutputSpace |
 | [bin/Language.py](bin/Language.py) | Grammar layers and SymbolSpace: parsing and composition |
+| [bin/Memory.py](bin/Memory.py) | The stores: STM, MTM, and LTM's two tables (`LTM0` ideas, `LTM1` relation pairs) |
 | [bin/embed.py](bin/embed.py) | Word vector training: CBOW/SBOW with negative sampling, `WordVectors` (gensim-compatible `.kv`) |
 | [bin/serve.py](bin/serve.py) | HTTP server: OpenAI-compatible `/chat/completions` endpoint for WikiOracle integration |
 | [data/](data/) | XML model configurations |

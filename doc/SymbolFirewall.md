@@ -59,9 +59,10 @@ that bifurcation needs to be complete; we don't want leakage."
   crossing. The architecture is Levelt on representation and Dell on
   dynamics, which is where the field settled.
 - **Consequences.** `bind`'s content term, the priming spread
-  (`ActivationPredictor`'s predicted next state), placement by the
-  registered surface, and the two identity models (intersection, union)
-  are all **in conceptual space**. The perceptual fold enters identity
+  (the expected field `expect` gives), placement by the field, and the
+  two identity models (intersection, union) are all **in conceptual
+  space**. A row above the basic percept carries no perceptual form of its
+  own; a reader that needs one takes its word's, through the symbol index. The perceptual fold enters identity
   only as form identification (the word symbol).
 
 ## Hierarchical context preserves the firewall (Alec, 2026-11-08)
@@ -125,6 +126,12 @@ structure, plus a small set of identified gaps.
 Rows #4 and #5 are partial: the instance below advances them, and the
 remaining gaps are listed under *Future work*.
 
+The learned maps of System 1, the stacked sigma-pi of `expect`, of `intuit`
+and of each `marker` kernel ([Reasoning](Reasoning.md#expectation-a-stacked-sigma-pi)),
+have hidden units that name no symbol. They hold no state: their activations
+are computed for one sentence and discarded (#6), and what they read and
+write is a field over named concepts, or one operand's own form and meaning.
+
 ## A delivered instance: verb application as a masked, sparse semantic edit (invariants #4, #5)
 
 This is not new doctrine: it is the firewall principle applied at one seam.
@@ -132,20 +139,21 @@ This is not new doctrine: it is the firewall principle applied at one seam.
 see [DevelopmentHistory](DevelopmentHistory.md#a-metasymbol-participation-categories--a-typed-symbol-owns-a-latent).)
 
 A verb does not transform a noun phrase as an undifferentiated vector. On a
-configuration with a meaning block, `lift` applies the verb phrase to its
+configuration with a meaning block, `change` applies the verb phrase to its
 subject through `MeaningKernels.MeaningAction`: the positive-definite map
 $Q\,\mathrm{diag}(e^{w})\,Q^{\top}$, applied with the same $w$ and $Q$ to
 each evidence lane in the cube chart. The edit is masked: it is restricted
 to each lane's defined coordinates, so an absent coordinate stays absent and
-the lanes never mix; for a transitive verb phrase the basis $Q$ is built from
-Householder reflections read from the object's meaning and confined to the
-object's support, the identity elsewhere, and for an intransitive one it is
-the basis its verb group shares (`VerbGroups`). The only per-verb quantity is
-the **sparse** log-spectrum $w$, a zero-initialized linear readout of the
-verb phrase, soft-thresholded (threshold .1, straight-through) and bounded to
-$\pm 4$: an untrained verb is the identity, and a coordinate enters its
-support only when its push recurs. `adverb` is the same action in one shared
-basis. The inverse solves the same restricted system, so the edit is exactly
+the lanes never mix; for a transitive verb phrase `verb` gives the basis $Q$,
+built from Householder reflections read from the object's meaning and
+confined to the object's support, the identity elsewhere, and for an
+intransitive one it is the basis its verb group shares (`VerbGroups`). The
+only per-verb quantity is the **sparse** log-spectrum $w$, a
+zero-initialized linear readout of the verb phrase, soft-thresholded
+(threshold .1, straight-through) and bounded to $\pm 4$: an untrained verb
+is the identity, and a coordinate enters its support only when its push
+recurs. `modifier` is the same gain in one shared basis. The inverse solves
+the same restricted system, so the edit is exactly
 invertible given the verb. The full account, with the numerical verb spectrum
 that configurations without a meaning block keep, is in
 [Language](Language.md#grammarlayer-forward--reverse-inventory).

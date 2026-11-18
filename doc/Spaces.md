@@ -57,9 +57,9 @@
 > cycles over the whole field. The learnable property row is the
 > low-frequency atom; the basis enforces the coarseness.
 
-> Grammar dispatch lives on `SymbolSubSpace.languageLayer`. `LiftLayer`
-> and `LowerLayer` own their grammatical operations; perceptual towers do
-> not supply their parameters.
+> Grammar dispatch lives on `SymbolSubSpace.languageLayer`. The grammar's
+> layers (`change`, `lift`, `lower` and the rest) own their grammatical
+> operations; perceptual towers do not supply their parameters.
 
 ## Overview
 
@@ -272,23 +272,25 @@ inside a tower. There is no perceptual layer stack kept beside this route.
   router.dispatch_at_C(STM)           # grammar ops after STM population
   ```
 
-### Lift / Lower
+### Change, Lift and Lower
 
-`LiftLayer` and `LowerLayer` are first-class binary `GrammarLayer`
-subclasses, not rule-id annotators over a shared substrate:
+`change`, `lift` and `lower` are first-class `GrammarLayer` operators at
+the CS (`space_role='CS'`), not rule-id annotators over a shared substrate:
 
-- `LiftLayer(GrammarLayer)`: `arity=2`, `rule_name="lift"`, `space_role='CS'`,
-  invertible. Owns an internal `self._sigma: SigmaLayer` for the pairwise
-  additive (sigma-style) math; `forward(left, right)` delegates to
-  `_sigma.compose`, and the reverse goes through the same layer. It is
-  predication: `"the boy runs"`.
-- `LowerLayer(GrammarLayer)`: `arity=2`, `rule_name="lower"`, `space_role='CS'`,
-  a determiner: it selects a member of the description, and its marker
-  contributes no content, as in `"the boy"`. Reference proposal selects an
-  earlier address for `bind` or leaves a fresh description for the kept
-  close to mint. It is lossy and not invertible.
+- `change`: `arity=2`, `clause="S"`, invertible. It is predication:
+  `"the boy runs"`. It applies the verb phrase's gain to its subject in
+  the basis the phrase carries, through `MeaningAction`, the map
+  $Q\,\mathrm{diag}(e^{w})\,Q^{\top}$ in the chart on each evidence lane.
+  Outside a meaning layout it owns an internal `self._sigma: SigmaLayer`
+  for the pairwise additive (sigma-style) math, and the reverse goes
+  through the same layer. `verb(VP, NP)` gives the verb phrase that basis,
+  read from the NP's meaning ([Language](Language.md)).
+- `lift`: `arity=1`. It raises its operand one order.
+- `lower`: `arity=1`. It is admitted only on an operand of order one or
+  more, and gives a member of it, one order down. A determiner is a
+  modifier and has no operator of its own.
 
-Lift's chart is bounded in the backward: its internal
+The chart of `change` is bounded in the backward: its internal
 `SigmaLayer` carries `_bounded_backward`, so `atanh(x)` keeps its exact
 forward value and clamp while the gradient slope is capped at the tangent at
 `|x| = 0.9` (`Layers.bounded_atanh`, a custom autograd Function saving only
@@ -299,7 +301,7 @@ packed row into NaN parameters. Space-level and readout layers keep the
 exact chart: the cap under-converged the crisp XOR fits
 (`test_explicit_dimensions.py`), and the compounding needs the nesting.
 
-The signal router (`SymbolSubSpace.languageLayer`) dispatches both as binary
+The signal router (`SymbolSubSpace.languageLayer`) dispatches them as
 reduce ops at the CS, weighted by `Grammar.rule_probability` (the
 per-position copy/reduce score head). See [Language.md](Language.md#grammar)
 for the GrammarLayer specifics.
@@ -321,9 +323,8 @@ makes the cascade identity at construction. `_butterfly_pair_forward`
 [`bin/Layers.py`](../bin/Layers.py)) implement the closed-form `2x2`
 LDU pair op ONCE at the base class -- sign-flip on the off-diagonals +
 reciprocals on the diagonals, no `torch.linalg.solve`. Every
-`GrammarLayer` subclass (`SigmaLayer`, `PiLayer`, `LiftLayer` /
-`LowerLayer`, `IntersectionLayer` / `UnionLayer`,
-`ConjunctionLayer` / `DisjunctionLayer`, ...) reuses this SAME pair op
+`GrammarLayer` subclass (`SigmaLayer`, `PiLayer`, `IntersectionLayer` /
+`UnionLayer`, `ConjunctionLayer` / `DisjunctionLayer`, ...) reuses this SAME pair op
 via `self._butterfly_forward` / `self._butterfly_reverse` in butterfly
 mode; there is no per-subclass `_butterfly_pair_op` override or
 distinct pairwise math (atanh/einsum/tanh, min/max, etc.) --- the
@@ -448,8 +449,28 @@ plain case, present or absent. A number is treated the same way.
 
 **The number modality.** A row of numbers of any shape is read this way:
 a level percept at each place. The XOR proofs are two places on one axis,
-and a 28 by 28 image is 784 places on two axes, "the only different being
-the percept dims" ([FutureWork](FutureWork.md#numeric-input-as-a-modality-xor-as-a-system-1-model-and-one-model-class-alec-2026-11-11-to-specify)).
+and a 28 by 28 image (`data/MM_image.xml`) is 784 places on two axes, "the
+only different being the percept dims" (Alec, 2026-11-13). One reader,
+`NumericPercepts`, serves any number of places.
+
+- **The feeling.** A number $n$ from zero to infinity is felt as
+  $f(n) = g/(1+g)$ with $g = \ln(1+n)$: zero at 0, one only at infinity,
+  and logarithmic between, so one is felt as .409 and ten as .706. The map
+  is fixed and has no state.
+- **A level at a place.** A reading felt above zero is a level percept at
+  its place: one basic percept for each pair of place and level met. The
+  same level at two places is two percepts, so XOR's two inputs stay
+  distinct. Zero is no presence. No coordinate of the percept cube is
+  set aside for one place, so the cube's width does not grow with the
+  number of places.
+- **One order-zero concept per place** collects the level percepts met
+  at its place. Its for lane is the reading's membership in that
+  collection (`BasicPercepts.read_collection`), not the felt value.
+- **Back from the field.** `NumericPercepts.reverse` returns each place's
+  number from the level its concept holds.
+- **The scalar beside the words** is the case with no place, and is
+  perceived, collected and read by the same functions.
+
 That intensity is a code and never an amplitude was decided for images on
 2026-10-25 ([FutureWork](FutureWork.md#intensity-as-codes-not-amplitude-alec-2026-10-25-decided)).
 
@@ -464,9 +485,13 @@ still allows perceptual space to have basic-level perceptual objects on a
 modal basis."
 
 - **Each modality has its own perceptual space.** A modality declares how
-  many place axes it has. A place has one address in the modality's range,
-  encoded by the same four-coordinate ladder as text. An image uses its
-  row-major address; its declared shape recovers the row and column.
+  many place axes it has. A place is one address in the modality's range
+  of `.where`, whatever its number of axes: a place on two axes is its
+  row-major index, which the declared shape decodes to row and column.
+  For example, row 3, column 5 of a 28 by 28 image is address
+  3 * 28 + 5 = 89 within the image's range. The band stays the four
+  coordinates of the one two-rung ladder, which recovers the exact
+  address (`WhereEncoding.decode_index`), and no vector is widened.
 
   | Modality | Place axes | Place shape |
   |---|---|---|
@@ -490,8 +515,9 @@ modal basis."
   will include a .where in a range that can uniquely identify the modality
   and order of a percept." The model's places are one address space,
   divided into fixed, disjoint ranges (`WhereRegistry`), and every muxed
-  vector carries its address in its band. The input ranges are text,
-  numeric and scalar; the other ranges are the
+  vector carries its address in its band. The ranges are one input range
+  for each modality (text, a numeric input, the scalar beside the words,
+  each sized by its configuration; the scalar's has one address), the
   part rows, the whole rows, the symbols and the live conceptual slots. A
   symbol's address is its concept's row, two addresses to a row, one for
   each lane; rows lie in their order's block, so the range gives the order
@@ -610,10 +636,11 @@ per-position tensors or per-concept coordinates. Exact
 co-location stays in perception (fused parts, pervading runs). See
 [Architecture](Architecture.md#one-where-one-when-many-whats-the-field-attention-and-the-two-modes).
 
-`WhereRegistry` assigns each model fixed, nonoverlapping ranges for input
-positions, PartSpace rows, all WholeSpace rows and symbol poles. Each symbol
-pole has one address. Input percept and symbol occurrences carry the word's
-input byte start; repeated occurrences use their different input locations,
+`WhereRegistry` assigns each model fixed, nonoverlapping ranges for each
+input modality's places, PartSpace rows, all WholeSpace rows, symbol poles
+and the live conceptual slots. Each symbol pole has one address. Text's
+input percept and symbol occurrences carry the word's input byte start;
+repeated occurrences use their different input locations,
 without extra symbol slots. Mixing serial readers declare word slots, so their
 fixed input-address extent is the existing word-slot capacity times the existing
 per-word residual-part capacity (at least the raw InputSpace extent). This
@@ -659,12 +686,16 @@ symbols per code, as detailed below; the against symbol reads its code
 negated, but the stored code is not signed. The orthographic Lexicon (below)
 keeps a sign, as form content.
 
-An order-zero concept's meaning direction is placed, not optimized: at each
-kept close a placed row takes one meet-ratio subgradient step toward the
-registered priming context, with negatives drawn deterministically from the
+A concept's meaning direction is placed, not optimized: at each
+kept close a placed row takes one meet-ratio subgradient step toward its
+context, with negatives drawn deterministically from the
 row's content key as a brake against collapse, and is renormalized in the
-positive cube (`MereologicalCodes.place_rows`). A raised class is placed at its
-members' evidence-weighted centroid (`derive_class_placements`).
+positive cube (`MereologicalCodes.place_rows`). A raised class is placed by
+its context like any concept. The context is the field at every order: what
+is present and what the folds give from it, so a present token brings its
+types (`FieldProjection.close`). It is taken before any weighting by the
+likeness of places, so no place is moved by a value computed from places, and
+a step moves a row only relative to rows of its own order.
 
 A symbol is also not a synonym for a concept or a whole. A concept is a
 `ConceptualSpace` relation over percepts; a symbol is a reference to a concept.
@@ -729,12 +760,13 @@ fixed by the complement and by meet or join with itself; false absorbs the meet
 and true the join, and nothing pools: $\min(1 - x, y) \ne \min(x, 1 - y)$ in
 general, so a composite still says which constituent was negated. On a
 concept's two evidence lanes the same order gives Belnap's four values:
-`conjunction` over explicit pairs meets them as $(\min c^+, \max c^-)$, and
-`not` exchanges the lanes. The `conjunction` kernel over codes
+the field's `intersection` and `union` are the weighted least and greatest
+on each lane (`SparseLayer.fold_presence`), and
+`not` exchanges the lanes. The kernel over codes
 (`Ops._conjunction_kernel`) is not one of these connectives: it binds code
 directions by a normalized product, a binding in the vector-symbolic sense
 whose sign would be a phase, so it cannot carry negation; the lattice pair is
-offered to grammars separately as `min` and `max`.
+offered to grammars as `intersection` and `union`.
 
 One percept vector of `percept_width` coordinates serves every tower and the
 concept codebook (Alec, 2026-10-26). At text-model construction it splits
@@ -913,9 +945,11 @@ rank changes. Rank describes the size of a part or the fineness of a whole
 cut. There is no perceptual fold sequence to invert.
 
 Conceptual order counts symbolizations: observations are order 0,
-particulars are order 1, kinds are order 2. The persistent allocator records
-the order by concept id. One word form can address concepts at several
-orders; selected grammar roles resolve that reference, as specified in
+particulars are order 1, kinds are order 2. A concept's order is read from
+the block of the concept inventory its row lies in (`order_slice`), never
+stored beside the vector ([Orders §12](Orders.md)). One word form can address
+concepts at several orders; `interpret` reads the expected one, else the one
+of highest order, as specified in
 [Lexicon](Lexicon.md#word-forms-and-concept-orders). A proper name selects
 a particular, not an order-0 event. Order-0 field slots are rebound each
 turn and do not define concept identity.
@@ -926,10 +960,11 @@ Every codebook entry is identified by its **row index** and must carry
 **distinct `.what` (`WhatEncoding`) content**:
 
 - **`.where` --- a location, never a codebook row key.** A model-owned
-  `WhereRegistry` assigns input positions, then fixed PartSpace and
-  WholeSpace slices, then symbols. The symbol range reserves the configured
-  number of word-occurrence slots for each row, using exact integer
-  coordinates so repeated occurrences remain distinct on CPU, CUDA and MPS.
+  `WhereRegistry` assigns each input modality's places, then fixed PartSpace
+  and WholeSpace slices, then symbols and the live conceptual slots. The
+  symbol range holds two addresses for each concept row, one for each lane,
+  using exact integer coordinates so addresses remain distinct on CPU, CUDA
+  and MPS.
   Constructing another model cannot move these ranges. Content lookup and
   native relation references do not use where coordinates as identities.
 - **`.what` --- distinct prototype content.** Identical `.what` collapses to the
@@ -1078,9 +1113,12 @@ Result: `[nActive, nWhat + nWhere + nWhen]` tensor.
 **Text mode reverse.** Inverts the span encoding: each vector $\to$ nearest
 codebook entry, then spans $\to$ characters via the stored offset table.
 
-**Numeric mode.** Tensor data passes through unchanged; `LiftingLayer` projects
-native input dim (e.g. 784 for MNIST) to `nDim`. Non-embedding inputs are
-scaled to `[-1, 1]` via the global data min/max.
+**Numeric mode.** On a numeric file whose grammar declares field operators
+only (`data/MM_xor.xml`, `data/MM_image.xml`), `NumericPercepts` reads each
+number as a level percept at its place ([Level Sets](#percept-level-sets)),
+and no layer is learned at the input. Otherwise tensor data passes through unchanged;
+`LiftingLayer` projects native input dim (e.g. 784 for MNIST) to `nDim`.
+Non-embedding inputs are scaled to `[-1, 1]` via the global data min/max.
 
 **Key parameters.**
 
@@ -1197,9 +1235,9 @@ are fitted without moving feature coordinates across locations and stacked as
 `[B, 6, 8, D]`. CS emits the equal local mean while retaining that six-source
 carrier and the ordered fold paths. The concept written to STM carries actual
 subsymbolic order 3 plus support from orders 1, 2, and 3 on both towers. Its
-row comes from one fixed, unpartitioned `nVectors` namespace; row address does
-not imply order. The same location rule applies when aligned binding is chosen
-in parallel. `ConceptualCombine` is the separate conditional mixing-matrix
+row lies in its order's block of the fixed `nVectors` inventory
+(`order_slice`), so the row's address gives its order. The same location
+rule applies when aligned binding is chosen in parallel. `ConceptualCombine` is the separate conditional mixing-matrix
 path and is not part of serial BasicModel.
 
 **Geometry.** A concept's code is `[form | meaning]` (`MereologicalCodes`):
@@ -1207,6 +1245,9 @@ the form is the weighted centroid of the percepts of its written definitions,
 or its own basic percept's code when every weight is zero (see
 [Mereology](Mereology.md)), and the meaning holds two nonnegative lanes, the
 for lane being the concept's placement direction scaled by its trust radius.
+That form belongs to a concept of order zero. A concept above order zero
+carries no perceptual form; a reader that needs one takes the form of the
+concept's word, through the definition that maps the word to it.
 Every coordinate lies in $[0, 1]$, and no sign is stored. Polarity and
 certainty are evidence: the two lanes of an occurrence's activation, and a
 symbol's pole (the symbolic phase below reads the against pole as the negated
@@ -1272,9 +1313,10 @@ leg. Serial idea vectors and the sentence close have their own contracts
 ([STM.md](STM.md)); neither is a substitute for this paired field.
 
 **Shared conceptual hierarchy** (Alec, 2026-11-08). `ConceptualSpace` owns one
-native hierarchy for word meanings, classes and classes of classes. Member
-centroids provide bottom-up direction; `ConceptHierarchy.condition` supplies
-higher-order context to member meanings at kept closes. Formal grammar
+native hierarchy for word meanings, classes and classes of classes. A class
+is placed by its context like any concept; at kept closes a word draws its
+classes together among classes and a class its words together among words,
+and no position crosses an order. Formal grammar
 arguments are ordinary concepts prebuilt one order above words and use this
 same learning path. Groups over arguments lie one further order up.
 `PartsOfSpeech` owns the declaration mapping and grammar reads, not another
@@ -1423,9 +1465,17 @@ See [Logic.md Section Parthood as Projection](Logic.md) and
 
 ## OutputSpace
 
-**Role.** Maps symbolic (or syntactic) vectors to task targets. Three
+**Role.** Maps symbolic (or syntactic) vectors to task targets. Four
 branches, selected at construction ([`bin/Spaces.py`](../bin/Spaces.py)):
 
+- **Field readout** (`self.field_readout`), on every grammar file except
+  one that declares the `pi` and `sigma` folds and no examination or
+  vector operator: the output reads the field at the path's end through
+  one linear layer, a weight for each concept row of the inventory and
+  each evidence lane, and a bias, all zero at construction (`read_field`).
+  A retired row's weights are zeroed (`retire_field_row`). The XOR proofs
+  read 0 and 1 this way, as $x_1 + x_2 - 2\,(x_1 \wedge x_2)$ with signed
+  weights. With this branch `forward` is not used.
 - **Nonlinear / activation mode** (`<nonlinear>` on `<OutputSpace>`,
   `self.nonlinear_output`): an `InvertibleLinearLayer` acts on the scalar
   SYMBOL ACTIVATION vector (`[B, nSymbols] -> [B, nOutput]`), wrapped with
@@ -1521,6 +1571,8 @@ reverse stage raises to the caller.
 
 Output's `generate` is separate from this reverse. Its occurrence writer selects
 terminal rows, preserves both activation poles and supplies output coordinates.
-The same decoder then realizes the answer; numeric heads use their forward
-head. Thought updates knowing at existing field brackets, without extra
-thought-occurrence columns.
+The same decoder then realizes the answer; a numeric output reads the field
+through `OutputSpace.read_field` where the file has a field readout, and
+otherwise uses its forward head. A numeric input's reverse returns each
+place's number from its level (`NumericPercepts.reverse`). Thought updates
+knowing at existing field brackets, without extra thought-occurrence columns.

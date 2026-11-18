@@ -73,8 +73,9 @@ advances nothing and refuses to overwrite. A generator with no seed, such as
 `MathProblemGenerator(seed=None)`, draws from the recorded Python stream, never
 from operating-system entropy. A component constructed, or a code minted, while
 the model reads leaves the global stream untouched: it draws inside a forked
-stream, or from a generator its owner seeds once from a constant and checkpoints
-(a document cover's code), so adding a component does not shift a fixture's
+stream, or from a private generator seeded from a constant or from the content
+it codes (`MeaningCodes.identity_bits`, and the first weights of a
+`SigmaPiStack`), so adding a component does not shift a fixture's
 later draws. When `bind` rejects an identity whose working value is not finite,
 `ReferenceClose._bind_with_capture` saves the rejected value, the identity's
 members and the medium-term pool's state as `mtm-value-rejection-<id>.pt` in
@@ -91,11 +92,13 @@ fixture that needs room for an added row preallocates the larger capacity at
 construction, keeps its behavioural assertions, and writes any fractional
 threshold against the new capacity. A fixture's capacities are sized for one
 presentation and written beside their derivation: its concept seats are the
-admitted words, plus one cover per distinct document across the splits it
-presents, plus the concepts its closes can mint, plus the fixed partition's
-slack; its LTM rows are one presentation's rows plus the provisioned seed.
-Nothing is derived from an epoch count, since each training epoch starts from
-empty memories. The thought content store is the one principled exception: it
+admitted words, plus the concepts its closes can mint, plus the fixed
+partition's slack; its LTM rows are one presentation's rows plus the
+provisioned seed. Nothing is derived from an epoch count: LTM keeps one
+history across documents and epochs, and the activity pass at a boundary drops
+its least active rows to `forgetLowWater` once a table reaches
+`forgetHighWater` ([Params](Params.md#ltm-forgetting-architecture)). The
+thought content store is the one principled exception: it
 may grow to its exact size within a declared bound (Alec, 2026-11-11; see
 [Architecture](Architecture.md#whole-paths-and-concept-episodes-2026-11-11)).
 
@@ -103,7 +106,7 @@ may grow to its exact size within a declared bound (Alec, 2026-11-11; see
 formula, never obtained by calling the code under test and never pinned to a
 decimal that a run happened to produce. Fixtures supply learned state through
 the production writers (`definition_fixtures.agreeing_views` and
-`learned_operation`, and `gate_data` for the trust gates), never by writing
+`learned_operation`), never by writing
 counters. A test that needs an order or a part of speech that the model has not
 yet learned forces it through one helper,
 `test/order_fixtures.py::force_order(cs, word, order)`, which records the order
@@ -155,10 +158,30 @@ not the sweep. An incomplete sweep stops the work, and so does a failure of
 either of two cases: `test_mm_xor.py::TestMMXorConvergence::test_convergence`
 and
 `test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class`.
+The first fits the numeric XOR field from an unseeded start below its .20 bar
+within 200 epochs; the second requires that, once `raiseCount` members share a
+named concept, its word reads the class raised from it while the old concept
+keeps the same word (a word at several orders).
 The grammar XOR reconstruction gate and the forced pending-premise pair
 (`test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders`)
 run inside every sweep. `TestXorExactCliReconstruction` is an unseeded learning
 certificate: it is recorded when red, never a stop.
+
+**The lessons gate the operators (Alec, 2026-11-13).** "Operators are "a
+priori" concepts that we are using for the control of the architecture itself.
+Lets not do that; the gating of those operators might be able to be done *in
+the tests*, which would act like piagetian stages signalling that the test
+suite can move on to the next stage." The model holds no gate on an operator:
+every operator a grammar file declares is open from the first sentence, and no
+row's trust is scaled by an operator's concept. The lessons are the stages:
+ten phases in lesson order (`bin/lesson_stages.py`, `words` to `relations`),
+each with a declared criterion, such as the definiteness of its operators'
+occupants (`PartsOfSpeech.operation`) or the fraction of answers correct. A
+lesson's artifact is registered only when every declared criterion passes
+(`eval_lessons.require_criteria`), and a certificate that needs an earlier
+stage skips until that artifact exists, so a passing stage is the signal that
+the suite can move on to the next. A criterion with no declared threshold
+never passes. Passing a stage changes nothing inside the model.
 
 **Measurements.** Learning measurements (lesson arms, repeated fits, the
 learning metrics) are taken once, after the implementation is finished, from
@@ -177,9 +200,12 @@ and basis size wherever the change under test can depend on them. A
 throughput.
 
 **Documentation.** Documentation is part of the suite. `test/test_doc_links.py`
-requires every relative Markdown link under `doc/`, in `README.md` and in
-`todo.md` to resolve to an existing file; external links and in-page anchors are
-not checked. A retirement is certified by a test that asserts the absence of the
+requires every relative Markdown link in the documents under `doc/`, in
+`README.md` and in `todo.md` that git does not ignore, uncommitted ones
+included, to resolve to an existing file; a path that `git check-ignore`
+reports, such as a local receipt, keeps its historical bytes and is not
+checked. External links and anchors are not checked. A retirement is certified
+by a test that asserts the absence of the
 retired functions, attributes and configuration names, and such a certificate
 may also read `data/model.xml`, `data/model.xsd` and the parameter tables of
 [Params](Params.md): `test/test_priming_diffusion.py` asserts that the retired
@@ -712,30 +738,28 @@ these tests, run on its own source.
   arbitrary new shapes are not warmup exceptions. `test_generation_budget.py`
   checks the construction-time free-generation limit and preserves complete
   recorded-derivation replay independently of it.
-- **Trust and gates.** `test_trust_round1.py` certifies concept radii, ordered
+- **Trust.** `test_trust_round1.py` certifies concept radii, ordered
   effective relation evidence, the definition-index threshold and lexical
   admission; its `close_named_sign` closes a kept sign through
   `define_pending(null_referent=True)`, with no explicit promotion.
-  `test_trust_round2.py` certifies one and three kept uses, argument agreement
-  and shared membership, the fixed and identity exemptions, checkpoint and
-  epoch persistence, first-writer operation provenance, naming that clears an
-  operation cap, and bind result-order eligibility. `test_trust_gates.py`
-  closes gates through construction data (`gate_data`) and attaches the paired
-  owner to the ordinary clause writer (`gate_fixture`), without unused thought
-  rows or resizing; it covers named-row caps, opening and later falling
-  readiness, operation and fixed-relation caps and exceptions, lift
-  definiteness, persistence and missing-state rejection, and readiness reports
-  without lesson execution.
+  `test_trust_round2.py` certifies kept uses, argument agreement and shared
+  membership, the curriculum measurements against hand counts (readiness needs
+  a measured radius, not the operand fallback) and bind result-order
+  eligibility. `test_item18_trust.py` certifies a row's signed trust: a
+  supplied truth keeps its trust whatever the model's trust, a resubmission
+  appends without changing a trust, `infer` writes the least of its premises,
+  a kept thought on both lanes writes two rows, the truth view reads the rows
+  of nonzero trust, a conversation's rows are written at zero, and a served
+  truth runs the activity pass first under pressure.
 - **Learned state in fixtures.** `definition_fixtures.learned_operation` sits
   beside `agreeing_views` and requires an explicit kept-use count and fixture
   occupants. It calls `PartsOfSpeech.observe_use`, the application writer that
   `observe_kept` uses, and never writes counts directly.
   `argument_fixtures.argument_inventory` and `view_counts` supply native seated
   words and explicit concept views. A fixture that must fix one decision
-  restricts the operation menu on its own instance
-  (`OperationSelectionLayer.set_stage_menu`, as
-  `test_reading_round.symbol_interpretation` does), never through a production
-  setting.
+  supplies it on its own instance, by scoring that instance's chooser (as
+  `test_item18_trust.py` does), or loads a grammar file that declares only the
+  operators it reads, never through a production setting.
 - **Argument concepts.** `test_argument_concepts.py` covers zero-view
   declarations, atomic capacity refusal, native orders and checkpoint
   addresses, member centroids, shared roles, nested-class feedback, preserved

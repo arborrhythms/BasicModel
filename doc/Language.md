@@ -47,10 +47,13 @@ form and meaning separately, as the
 | `min` | Coordinate minimum | Search a pair through minimum | Same search |
 | `max` | Coordinate maximum | Search a pair through maximum | Same search |
 
-`complete.grammar`, XOR_grammar and MM_grammar (through `default.grammar`)
-select `conjunction` and `disjunction`. No shipped grammar file selects `min`
-or `max`; both are catalogue entries with tests. `sum` keeps the mean as the
-additive control. XOR_grammar offers only the nonlinear binary connectives,
+XOR_grammar and MM_grammar (through `default.grammar`) select `conjunction`
+and `disjunction`. `complete.grammar` has them commented out, with `sum` and
+`product`: its least and greatest are `intersection` and `union`, and its
+arithmetic is `add`, `subtract`, `multiply` and `divide`
+([The operators](#the-operators-alec-2026-11-13)). No shipped grammar file
+selects `min` or `max`; both are catalogue entries with tests. `sum` keeps the
+mean as the additive control. XOR_grammar offers only the nonlinear binary connectives,
 so any derivation the chooser keeps can read XOR: its four sentences measure
 the composition mechanism, not which operator a construction means, since
 under reconstruction the chooser is indifferent among equally invertible
@@ -63,8 +66,8 @@ grammatical learning, measured by the grammar lessons and over a corpus.
 
 The language layer is the architecture's DisCoCat-facing surface. Like
 Categorical Compositional Distributional semantics, it treats grammar as a typed
-composition discipline over vector meanings: reductions such as lift, lower,
-union, intersection, `part`, and `equal` decide how meanings combine. Unlike a
+composition discipline over vector meanings: reductions such as change, lift,
+lower, union, intersection and `part` decide how meanings combine. Unlike a
 typical transformer LLM, these reductions are explicit operators rather than
 latent behaviors distributed across heads. Their operands are tied back to the
 Formal Concept Analysis side of the model through concept order, role
@@ -145,18 +148,22 @@ and pi are grammatical functions that transform conceptual space. So a unary
 through unchanged (`_by_name` miss → `return subspace`); `sigma` and `pi`
 are not in `GRAMMAR_LAYER_CLASSES` and no host layer is shared across
 roles. The grammar's own folds are the `GrammarLayer` operators it declares
-and owns: `lift` (numerically a `SigmaLayer` inside `LiftLayer`), `lower`,
+and owns: `change` (numerically a `SigmaLayer`), `lift`, `lower`,
 `union`, `intersection` and the rest of the registry. They act within
-conceptual space and never raise order: a constituent's order is read from
-the concept it denotes, and definitions raise it (below).
+conceptual space. A constituent's order is read from the concept it denotes,
+whose row lies in its order's block (`order_slice`), so nothing beside the
+vector holds the order; definitions raise it, and three operators move it
+(below).
 
 **Orders are learned (Alec, 2026-10-21).** No ordered grammar is written;
 orders live in the concepts
 ([Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21)).
 Definitions raise: several "is" rows that share a side, with distinct other
 sides, make an equivalence class one order up. One composition lowers one
-order, stopping at 0: `lift` as NP + VP. The determiner selects, and the
-modal withholds the lowering. Parts of speech come only from positions and
+order, stopping at 0: `change` as NP + VP. The determiner selects, and the
+modal withholds the lowering. `lower`, with one operand, drops one order and
+is admitted only on an operand of order one or more; `lift`, with one
+operand, raises one. Parts of speech come only from positions and
 occupations, never from definitions: whether a constituent is a noun phrase,
 a reference site, a marker or a predicate is read only from the kept parse
 (the declared operations' argument positions, the orders they stamp and the
@@ -167,8 +174,8 @@ participation ([Learned argument concepts](#learned-argument-concepts)).
 
 > **SS-analysis vs CS-execution.** `SymbolSubSpace.compose` is the
 > SS-side *analysis* stage (it selects the per-space hard rule dict
-> `current_rules`); the CS-side *execution* (applying lift / lower /
-> union / intersection / not to the concept tensors)
+> `current_rules`); the CS-side *execution* (applying change / lift /
+> lower / union / intersection / not to the concept tensors)
 > runs in `ConceptualSpace.forward` and the per-space `SyntacticLayer`
 > cursors. This split is a clean code boundary **only on the
 > default-only path**: on the full-router path
@@ -211,15 +218,20 @@ thought permission. Matching faces share one identity and role contract but
 receive their phase-specific context. The capitalized `<Queries>` section is
 rejected, not treated as a parallel catalogue.
 
-The field candidates `divide`, `descend` and `gloss` are declared in
-`<compose>` with field operands and no predefined word surfaces. Their
-`<generate>` face is absent: the closing owns their bracket witness. `and`,
-`or` and `not` also act within a field; order-dependent operators require
-symbol operands between brackets. Parser validation enforces this distinction.
-The pinned word stop masks gloss above words and descent below known words.
-The same chooser scores priming, bracket actions and typed space reads.
+Attention's operators `focus`, `unfocus` and `mint` are declared in
+`<compose>` with field operands and no predefined word surfaces. `focus` has
+two candidates, both narrowing: one splits a bracket that holds evidence of
+both kinds, and the other goes into a bracket's parts. `unfocus` restores the
+bracket in force before the last `focus` and is legal only while a focus is
+in force. `mint` accepts one clean bracket as a word, whose symbol then enters
+the grammar. Their `<generate>` face is absent: the closing owns their bracket
+witness. `intersection`, `union` and `not` also act within a field;
+order-dependent operators require symbol operands between brackets. Parser
+validation enforces this distinction. The pinned word stop masks `mint` above
+words and the descending `focus` below known words. The same chooser scores
+priming, bracket actions and typed space reads.
 
-The line between the two is superposition against transformation. An encoding is symbolic when it can be written in symbol values alone, positive and negative: a field, or any signed superposition of rows, whether or not a row exists for the result. It is conceptual when it cannot: an adjective applied to a noun moves the noun to a point that need not be a symbol. Both kinds are indexed by order. The operations closed on a symbolic encoding are the coordinatewise ones on the signed pairs (`and`, `or`, `not`, `non`), which are also the order-independent ones, so they act within a field; `lift`, `lower`, `verb` and `preposition` displace a point off the span of the rows and need an identified concept between brackets. An operator's signature therefore has two axes: the encoding it takes and the cardinality it needs, a pooled plural reading or one identified concept. `conjunction` and `disjunction` are the symbolic pair, over activation patterns; `intersection` and `union` are the conceptual pair, over vectors in conceptual space.
+The line between the two is superposition against transformation. An encoding is symbolic when it can be written in symbol values alone, positive and negative: a field, or any signed superposition of rows, whether or not a row exists for the result. It is conceptual when it cannot: an adjective applied to a noun moves the noun to a point that need not be a symbol. Both kinds are indexed by order. The operations closed on a symbolic encoding are the coordinatewise ones on the signed pairs (`and`, `or`, `not`, `non`), which are also the order-independent ones, so they act within a field; `change`, `lift`, `lower`, `verb`, `modifier` and `preposition` displace a point off the span of the rows and need an identified concept between brackets. An operator's signature therefore has two axes: the encoding it takes and the cardinality it needs, a pooled plural reading or one identified concept. The four connectives "collapse to two, with extent/intent each" (Alec, 2026-11-13): `intersection` and `union` act on a field, the symbolic encoding, and on two operands' vectors in conceptual space. `conjunction` and `disjunction`, a symbolic pair over activation patterns, are kept only by grammar files other than `complete.grammar`.
 
 All executable operators declare their reads, writes, operand kinds, order
 change and head roles: one capability declaration over the accessible
@@ -235,7 +247,7 @@ adds, `not` swaps the two evidence lanes, and `non` removes both and has no
 faithful inverse. Retired names raise at load with their replacement: `chunk`
 (`synthesize`, inverse `analyze`), `what` (`ask` or `query`), `lookup`
 (`query`), `true` (`isTrue`), `quantize`, `arma` and `symbolize`; `exist`
-keeps only its thought face. `generic` has its own identity. Compound
+keeps only its thought face. Compound
 operators select eligible primed cases before applying their ordinary
 algebra. No operator leaves a scalar: what it leaves is conceptual content, and
 whether an idea is true is read from the evidence pair of that content.
@@ -271,8 +283,8 @@ example, from `data/complete.grammar`:
 
 ```text
 part_argout1 = part.forward(part_argin1, part_argin2)
-lift_argout1 = lift.forward(lift_argin1, lift_argin2)
-conjunction_argout1 = conjunction.forward(conjunction_argin1, conjunction_argin2)
+change_argout1 = change.forward(change_argin1, change_argin2)
+lift_argout1 = lift.forward(lift_argin1)
 ```
 
 The shipped `.grammar` files declare their symbolic rules in this role-only
@@ -298,7 +310,7 @@ declares any of them. None is planned: orders are learned, not declared
 
 Every operation's `forward` is what `<compose>` fires and its `reverse` is what `<generate>` fires. An operation with no faithful inverse raises (`raise_no_inverse`) rather than fabricate a split, which would corrupt the reconstruction.
 
-**Form and meaning.** On a configuration whose conceptual width exceeds its form width (a meaning block), every grammatical and logical operation composes the two blocks separately (`GrammarLayer.compose_blocks`). The form block is the centroid of the operands' forms, each weighted by the number of leaves it covers; it has no parameters. The meaning block receives the operation: the declared exact rule for `not`, `non`, `conjunction`, `disjunction`, `intersection`, `union` and `sum` (`MeaningCodes.compose`); the diagonal action of `lift` and `adverb` (below); the case selection of `compound`; and one lane-preserving kernel (`MeaningKernels.LaneKernel`) for every other face, while `interpret`, `bind`, `transpose` and the field operations pass the head's meaning through. A kernel starts at the identity and keeps its derivative there, so a fresh model reproduces the head passthrough exactly; since centroids have no parameters, two faces with the same head compute the same value at initialization, and operator choice is learned by the chooser and its credit, not from forward differences. No kernel mixes the two evidence lanes. Leaf counts travel with the stack and the operation journal. `reverse_blocks` solves the centroid equation exactly given one operand and the counts, and inverts the meaning operation where it can; a binary inverse without a known operand needs a context witness or the candidate search, never a balanced pseudo-split. Configurations without a meaning block keep the numerical kernels the table names.
+**Form and meaning.** On a configuration whose conceptual width exceeds its form width (a meaning block), every grammatical and logical operation composes the two blocks separately (`GrammarLayer.compose_blocks`). The form block is the centroid of the operands' forms, each weighted by the number of leaves it covers; it has no parameters. The meaning block receives the operation: the declared exact rule for `not`, `non`, `conjunction`, `disjunction`, `intersection`, `union` and `sum` (`MeaningCodes.compose`); the chart arithmetic of `add`, `subtract`, `multiply` and `divide`; the gain of `change` and `modifier` and the basis that `verb` gives (below); the case selection of `compound`; the learned kernels of `marker`; and one lane-preserving kernel (`MeaningKernels.LaneKernel`) for every other face, `preposition`, `lift` and `lower` among them, while `interpret`, `bind`, `swap` and the field operations pass the head's meaning through. A kernel starts at the identity and keeps its derivative there, so a fresh model reproduces the head passthrough exactly; since centroids have no parameters, two faces with the same head compute the same value at initialization, and operator choice is learned by the chooser and its credit, not from forward differences. No kernel mixes the two evidence lanes. Leaf counts travel with the stack and the operation journal. `reverse_blocks` solves the centroid equation exactly given one operand and the counts, and inverts the meaning operation where it can; a binary inverse without a known operand needs a context witness or the candidate search, never a balanced pseudo-split. Configurations without a meaning block keep the numerical kernels the table names.
 
 | op | arity | forward | reverse |
 |---|---|---|---|
@@ -312,32 +324,35 @@ Every operation's `forward` is what `<compose>` fires and its `reverse` is what 
 | `sum` | 2 | arithmetic mean | `2*parent - witness` given one operand; free decoding searches the bank |
 | `product` | 2 | numerically the Hadamard product | given one operand on a meaning block; numerically none (zeros annihilate) |
 | `synthesize` | 2 | numerically adds two constituents, in the cube chart for native identity values | `analyze`: the other operand exactly, given one; with a basis the best row and its exact remainder; otherwise `(parent, 0)` |
-| `lift` | 2 | NP + VP: the verb phrase's diagonal action on the subject; numerically the sigma fold `tanh(W(atanh a + atanh b) + b)` | the action's inverse given the verb phrase |
-| `verb` | 2 | the verb (`argin1`, its head) sub-typed by its object (`argin2`); numerically the object's sparse log-spectrum applied to the verb (`apply_verb`) | numerically `unapply_verb` given the object; on a meaning block the object is searched |
-| `adverb` | 2 | the modifier's diagonal action on the verb phrase, in one shared basis; numerically `apply_adverb` | exact given the adverb |
+| `change` | 2 | NP + VP: the verb phrase's gain applied to its subject, in the basis the phrase carries (below); numerically the sigma fold `tanh(W(atanh a + atanh b) + b)` | the action's inverse given the verb phrase |
+| `verb` | 2 | VP + NP: gives the verb phrase (`argin1`, its head) its basis from the noun phrase (`argin2`), keeping the phrase's gain; numerically the object's sparse log-spectrum applied to the verb (`apply_verb`) | numerically `unapply_verb` given the object; on a meaning block the object is searched |
+| `modifier` | 2 | the modifier's gain on its head, a verb phrase or a noun, in one shared basis | exact given the modifier |
 | `compound` | 2 | case selection: the modifier's learned test selects among the head's native cases (`CaseSelection`) | case search over the primed case bank |
-| `lower`, `definite`, `universal` | 2 | the determiner: its marker contributes no content; numerically the description passes through | given the marker |
-| `preposition` | 2 | a marker-headed phrase; numerically the phrase passes through | given the marker |
+| `lift`, `lower` | 1 | `lift` raises its operand one order; `lower` drops one, admitted only on an operand of order one or more | from the operand alone; emits no leaf |
+| `marker` | 1 | the chosen kernel of a family of learned kernels: the form passes unchanged and the kernel shifts the meaning in the chart (below) | exact given the kernel |
+| `preposition` | 2 | a marker-headed phrase whose kernel takes its object as head; numerically the phrase passes through | given the marker |
 | `surface` | 2 | a marker attached to a complete content constituent (below) | given the content; numerically given either operand |
-| `transpose` | 2 to 2 | exchanges the two newest constituents | itself |
-| `lower_unary`, `definite_unary`, `preposition_unary`, `surface_unary`, `compound_unary` | 1 | the marker-headed operation without its marker (below) | from the operand alone; emits no leaf |
+| `swap` | 2 to 2 | exchanges the two newest constituents | itself |
 | `bind` | 2 | reads the chosen off-stack field entry, or keeps the mention's own content | no generate face |
-| `interpret`, `sign` | 1 | word-concept to object-concept, or the sign's pointed-at token ([below](#interpret-word-concept-to-object-concept-2026-09-25)) | lexicalization |
+| `interpret` | 1 | word-concept to object-concept ([below](#interpret-word-concept-to-object-concept-2026-09-25)) | `name`: lexicalization |
+| `sign` | 1 | the sign's pointed-at token | no generate face |
 | `part`, `whole` | 2 | numerically the relation's whole (`part` returns its second operand, `whole` its first); the closing writes the relation | none: raises |
 | `equal` | 2 | numerically mutual parthood `part(A, B) * part(B, A)` | lossy `(parent, parent)` numerically; otherwise candidate search |
-| `generic`, `ask` | 1 | carriers that record the operation; the value passes through (on a meaning block, through the lane kernel) | the same, inverted |
+| `ask` | 1 | a carrier that records the operation; the value passes through (on a meaning block, through the lane kernel) | the same, inverted |
 
-`VerbLayer` and `AdverbLayer` subclass `LiftLayer`, `WholeLayer` subclasses `PartLayer`, and the unary faces subclass `MarkerUnaryLayer`. `EqualLayer` lives in `bin/Layers.py`, `InterpretLayer` and `SignLayer` in `bin/Interpret.py`, and all others in `bin/Language.py`. The legacy assertive relations `isEqual` and `isPart` remain only for explicit historical grammars.
+`add`, `subtract`, `multiply` and `divide` act in the chart: each operand coordinate $a$ is mapped by $\operatorname{atanh}$, combined, and mapped back by $\tanh$, so a sum is $\tanh(\operatorname{atanh} a + \operatorname{atanh} b)$ and every result stays in the unit range. A difference floors at zero on each lane, and a quotient by zero is silent. They act on concept points only, never on codes ([The operators](#the-operators-alec-2026-11-13)). `conjunction`, `disjunction`, `sum`, `product` and `equal` are declared by grammar files other than `complete.grammar`.
+
+`WholeLayer` subclasses `PartLayer`. `EqualLayer` lives in `bin/Layers.py`, `InterpretLayer` and `SignLayer` in `bin/Interpret.py`, and all others in `bin/Language.py`. `isEqual`, `isPart` and `isWhole` have no compose face in `complete.grammar`; they are tools of thought ([Reasoning](Reasoning.md#the-tools-of-thought-alec-2026-11-13)).
 
 **Two negations.** `not` exchanges a pair's poles, $(c^+, c^-) \to (c^-, c^+)$: an isometry of the resultant that keeps the dissonance and is its own inverse, the affirming negation; the clause it heads has its polarity flipped. `non` removes both kinds of evidence (Alec, 2026-11-12: "non- removes both positive and negative evidence, while not swaps the two types of evidence."). Nothing is affirmed in their place: the clause it heads carries the evidence pair $(0, 0)$, and the operand survives only as a witness (`ClauseJournal`), so reconstruction and expectation can read what was removed. It has no inverse; it is the non-affirming negation of attention.
 
-**The verb's action.** `lift` and `adverb` act on meaning through `MeaningKernels.MeaningAction`: the positive-definite map $Q\,\mathrm{diag}(e^{w})\,Q^{\top}$, applied with the same $w$ and $Q$ to each evidence lane in the cube chart and restricted to each lane's defined coordinates, so an absent coordinate stays absent and the lanes never mix. $w$ is a linear readout of the verb phrase's meaning, zero-initialized and soft-thresholded (threshold .1, straight-through gradient, bounded to $\pm 4$), so a fresh verb is the identity and a coordinate enters its support only when its push recurs; at $w = 0$ the action is an exact passthrough that keeps its derivative. For a transitive verb phrase, $Q$ is built from `verbBasisReflections` Householder reflections read from the object's meaning and confined to the object's support, the identity elsewhere. For an intransitive one, $Q$ is its verb group's basis (`VerbGroups`): a verb whose fit residual exceeds `verbGroupFit` on a third distinct occurrence joins the best-fitting group or opens one, up to `verbGroups`, so the shared bases are a joint diagonalization learned by gradient. The modifier uses one shared basis. The inverse solves the same restricted system. A numeral object is a count, not a basis: "plus 2" is the successor applied twice, by thought.
+**The verb's action.** `MeaningKernels.MeaningAction` is the positive-definite map $Q\,\mathrm{diag}(e^{w})\,Q^{\top}$, applied with the same $w$ and $Q$ to each evidence lane in the cube chart and restricted to each lane's defined coordinates, so an absent coordinate stays absent and the lanes never mix. Its two halves are two operators (Alec, 2026-11-14: "MeaningAction has to be an operator so that verbs can actually choose it ... split it into two binary operations"). `change(NP, VP)` applies the verb phrase's gain $w$ to its subject, in the basis $Q$ the phrase carries. $w$ is a linear readout of the verb phrase's meaning, zero-initialized and soft-thresholded (threshold .1, straight-through gradient, bounded to $\pm 4$), so a fresh verb is the identity and a coordinate enters its support only when its push recurs; at $w = 0$ the action is an exact passthrough that keeps its derivative. `verb(VP, NP)` gives the verb phrase its basis: $Q$ is built from `verbBasisReflections` Householder reflections read from the noun phrase's meaning and confined to its support, the identity elsewhere, and the phrase keeps its own gain; the result carries that basis to `change` by reference to its source. A phrase made by `preposition` modifies a verb phrase by the same `verb` operation, the phrase's meaning supplying the basis, so "on the mat" and "under the mat" give different bases; the preposition keeps its own lane kernel, with its object as head, which is where its word enters the phrase. A verb phrase given no basis carries its verb group's (`VerbGroups`): a verb whose fit residual exceeds `verbGroupFit` on a third distinct occurrence joins the best-fitting group or opens one, up to `verbGroups`, so the shared bases are a joint diagonalization learned by gradient. `modifier` applies a gain in one shared basis. The chooser may bind any word to `change`, `verb` or `modifier`. The inverse solves the same restricted system. A numeral object is a count, not a basis: "plus 2" is the successor applied twice, by thought.
 
 **Centered forms.** When an order-0 result is composed with whole witnesses, the active wholes of its span (`FormCentroids`), its form is the parts' leaf-weighted centroid $\bar p$ moved toward the wholes' average $\bar w$: $(1 - \rho/2)\,\bar p + \rho\,\bar w/2$, with $\rho$ the wholes' presence capped at 1, so $\tfrac12(\bar p + \bar w)$ at full presence. The retained inverse receives the same witness and removes the whole center before splitting the parts. The free inverse has no witness: it reads whole support from the candidates' own forms, compares the plain and the centered equation, and keeps the centered hypothesis only when its recovered form is finite and inside $[0, 1]$; no value is clipped. A candidate with no known spelling supplies no whole witness, and the inverse stays approximate.
 
 **Synthesis.** `synthesize` adds two constituents and `analyze`, its reverse spelling, returns the other operand exactly when one is given. A phrase beyond the word, an idiom, is a synthesized concept admitted by recurrence. WholeSpace's analysis of the field, its cut by wholes, is a separate process and not the reverse of a synthesis.
 
-**Surface form and markers.** `surface` is the operator of surface form. One lexeme with its inflected and reordered forms is one word with its transformations, and a language's freedoms of word order are transformations of one structure, not separate syntaxes. `surface` attaches a marker to a complete content constituent: the meaning is the content's, with its polarity, scope and structure, while both operands stay in the numerical carrier for the next choice; the chooser, never a word table, decides whether a word is a marker. `transpose` rewrites the two newest constituents in place, a 2-to-2 step that is exact and its own inverse, so a question read in its surface order can compose to the same meaning as its declarative. Splitting a word and inserting a silent element are not grammar operations: sub-word wholes nest inside the word whole ([Lexicon](Lexicon.md#word-forms-and-concept-orders)), and the word stays the unit of attention. A marker belongs to its operator. Each marker-headed operation (`lower`, `definite`, `preposition`, `surface`, `compound`) has a unary face that shares its binary implementation and is the operation without its leaf, so the zero plural, the omitted relativizer and the unstated subject are operators without their leaves. The absent marker is the operation's left identity where it has one (zero for `lower` and `preposition`), a learned marker for `surface`, whose map has no fixed identity, and for `compound_unary` the head's unfiltered field as its implicit object; on a meaning block the unary face is its binary kernel without context. Irregular forms are stored whole and block the rule. There is no morphology analyzer and no tense, aspect or morphology operation: tense and aspect are case selection over a verb phrase's phases ([below](#words-narrow-the-domain-of-discourse-2026-09-28)). No language is named or special-cased in code, configuration, fixtures or tests (Alec, 2026-10-19): which selection a marker calls, and with what object, is learned by exposure.
+**Surface form and markers.** `surface` is the operator of surface form. One lexeme with its inflected and reordered forms is one word with its transformations, and a language's freedoms of word order are transformations of one structure, not separate syntaxes. `surface` attaches a marker to a complete content constituent: the meaning is the content's, with its polarity, scope and structure, while both operands stay in the numerical carrier for the next choice; the chooser, never a word table, decides whether a word is a marker. `swap` rewrites the two newest constituents in place, a 2-to-2 step that is exact and its own inverse, so a question read in its surface order can compose to the same meaning as its declarative. Splitting a word and inserting a silent element are not grammar operations: sub-word wholes nest inside the word whole ([Lexicon](Lexicon.md#word-forms-and-concept-orders)), and the word stays the unit of attention. A marker belongs to its operator, and no operator has a one-operand face of its own: `lift` and `lower` take one operand, and what a marker does without a written word is the work of `marker`, a one-operand operator whose kernels are learned ([The operators](#the-operators-alec-2026-11-13)). Irregular forms are stored whole and block the rule. There is no morphology analyzer and no operation named for tense, aspect or morphology: tense and aspect are a selection among a verb phrase's phases by `compound` ([below](#words-narrow-the-domain-of-discourse-2026-09-28)), or a kernel of `marker` that the sentence's context chooses. No language is named or special-cased in code, configuration, fixtures or tests (Alec, 2026-10-19): which selection a marker calls, and with what object, is learned by exposure.
 
 #### Concept events are opaque to the grammar ops (2026-09-13)
 
@@ -346,8 +361,8 @@ Concepts do not: a word that has been resolved to its object concept is a
 code from a codebook lookup that has generalised over the where and when
 modalities as well, so the conceptual event is a full-width thing that
 cannot be cleanly divided (Alec, 2026-09-13). The CS grammar ops
-(`LiftLayer`, `VerbLayer`, `AdverbLayer`, `LowerLayer`,
-`PrepositionLayer`) are therefore sized to the muxed concept width and
+(those of `change`, `verb`, `modifier`, `lower` and
+`preposition`) are therefore sized to the muxed concept width and
 compose and reverse the whole event; the split of a muxed event into
 content, `.where` and `.when`, the tense shift of `.when` on lift and
 lower, and the preposition's `.where` rotation that lived inside those
@@ -371,8 +386,9 @@ as, which PartSpace has already looked up as the recurring unit the fold
 ladder admitted — `interpret` is never the byte-to-word step.
 `interpret_argout1` is the **object-concept** already associated with the word,
 at whatever order that object has. For example, *cat* returns a known cat
-kind if that is its association. Grammar selects among ambiguous existing
-associations. A new object replaces the word in its inventory row, with
+kind if that is its association. Among several existing associations
+`interpret` reads the one expected, and where none is expected the one of
+highest order (below). A new object replaces the word in its inventory row, with
 that row's order; no singleton fold raises it merely to bind a word.
 A default call never adds a particular beside a known kind.
 Reference orders follow
@@ -450,17 +466,28 @@ representation to an object, for which there is no initial basis."
   is a concept that combines the symbol for the word-concept and the symbol
   for the object-concept; meta-concepts are introduced on page 112 of *The
   Whole Part*, one of the books attached to the author's ORCID record
-  ([0000-0002-6570-7571](https://orcid.org/0000-0002-6570-7571)).
+  ([0000-0002-6570-7571](https://orcid.org/0000-0002-6570-7571)). In the
+  code the meta-concept is the DEF row `Interpret.define` writes, the
+  dictionary below is `DefinitionIndex`, and the sibling search is
+  `InterpretLayer.denotations`.
 - **A symbol of one concept.** "The symbol of a single concept is admissible,
   and perhaps necessary for a zero-D thing."
 - **Only `interpret` makes a symbol.** "lets let interpret() make all
-  symbols."
+  symbols." That needs the definition store split into concept rows and
+  symbol rows ([FutureWork](FutureWork.md)).
 - **Its two names.** "let's use name() and interpret()." `interpret` takes
-  a word to its object and `name` takes an object to its word. Saying what
-  a present thing is, with no word given, is `name`.
+  a word to its object and `name`, its generate face, takes an object to
+  its word. Saying what a present thing is, with no word given, is `name`:
+  recognition is `interpret` run backwards. Asked "what is this?" of a felt
+  value with no object named, the model reads the present reading's class
+  from the field, with no words, and says that class's word
+  (`InterpretLayer.reverse`, `lexical_form`), accepted under the evidence
+  kind `perception`.
 - **The trust of the mapping** is one for now: "the trust of a words mapping
   is really something the architecture should be setting based on success.
-  lets just use one, and flag it" ([FutureWork](FutureWork.md)).
+  lets just use one, and flag it" ([FutureWork](FutureWork.md)). An object
+  reached through a read word is at trust one as well (Alec, 2026-11-14:
+  "which we should set at 1 for now, along with the object-concept's trust"). A stated definition keeps its speaker's trust.
 - **The dictionary.** "We can collect all meta-concepts under a symbol for
   fast access, which will basically act like a dictionary, and act as a cue to
   the architecture that an object should be interpreted."
@@ -469,8 +496,10 @@ representation to an object, for which there is no initial basis."
   meta-symbol (this will also handle polysemy)". It finds the object by its
   fellow member: "calling interpret(word-symbol) will do a sibling search
   under the meta-concept for the word; it already knows that it cant replace
-  itself with itself." Where a word has several objects, expectation chooses
-  among them.
+  itself with itself." Where a word has several objects, `interpret` reads
+  the one expected (Alec, 2026-11-13: "How one object is chosen when a word
+  has several: expectation"), and where none is expected the one of
+  highest order.
 - **Accuracy first.** "we need to make interpret() more accurate, even though
   it is not efficient, and then we can create a cache or bootstrap if
   necessary" ([FutureWork](FutureWork.md)).
@@ -539,8 +568,8 @@ The live role-only grammars replace part-of-speech categories with
 *operator roles*. Instead of a fixed
 `NP` / `VP` / `S` taxonomy, each operator contributes its own argument
 and result roles, named `<op>_argin1`, `<op>_argin2` (inputs) and `<op>_argout1`
-(output). The rule `equal` therefore exposes `equal_argin1`,
-`equal_argin2`, `equal_argout1`, and the grammatical "category" of a span is
+(output). The rule `part` therefore exposes `part_argin1`,
+`part_argin2`, `part_argout1`, and the grammatical "category" of a span is
 just the set of operator roles it can fill. Dimensionality is recovered
 from participation (`bin/participation.py`) rather than declared up
 front: symbols that fill the same roles cluster into the same category.
@@ -548,8 +577,9 @@ front: symbols that fill the same roles cluster into the same category.
 The grammar declares its perceptual start and its symbolic start separately.
 The property tower has no grammar dictionary. The symbolic sentence finishes
 as one `S` slot or three `S REL S` slots. A relation's middle slot holds the
-native identity of `part`, `implies` or `operator`, supplied by the declared
-thought registry. Numerical operators live in LanguageSpace and their
+native identity of `part` or `implies`, supplied by the declared thought
+registry; no relation carries an operator, and a sentence whose verb takes a
+completed relation closes as an idea row. Numerical operators live in LanguageSpace and their
 conceptual identities live in ConceptualSpace.
 
 ### Chooser architecture capacity
@@ -589,13 +619,13 @@ does not build the `SelectedThoughtChooser` class, which remains for
 
 ### Learned argument concepts
 
-`LanguageSpace.parts_of_speech` maps every declared formal input and output to a prebuilt native concept, including distinct semantic faces and both outputs of transpose. Word concepts have native order 0, these argument concepts order 1, and classes over arguments order 2. Declaration gives each argument a seat and a zero vector, radius and view count; it supplies no learned evidence.
+`LanguageSpace.parts_of_speech` maps every declared formal input and output to a prebuilt native concept, including distinct semantic faces and both outputs of `swap`. Word concepts have native order 0, these argument concepts order 1, and classes over arguments order 2. Declaration gives each argument a seat and a zero vector, radius and view count; it supplies no learned evidence.
 
-Each carried lexical occurrence in a kept application supplies a member view through `ConceptHierarchy.observe_member`. Members teach the same centroid and view-and-agreement confidence as other explicit classes. Shared words can belong to several arguments and bring their directions together. The general concept hierarchy also conditions members from their higher-order context, so word meaning and class meaning influence one another. Parts of speech have special construction and grammar use only; their learning and hierarchical feedback are ordinary concept mechanisms. Operator names are not inserted into lexical context. Annotation operands and unkept trials supply no member views.
+Each carried lexical occurrence in a kept application supplies a member view through `ConceptHierarchy.observe_member`. Members teach the same centroid and view-and-agreement confidence as other explicit classes. Shared words can belong to several arguments, and draw those arguments together among arguments; an argument draws its words together among words. Neither a word's position nor an argument's moves the other's. Parts of speech have special construction and grammar use only; their learning and hierarchical feedback are ordinary concept mechanisms. Operator names are not inserted into lexical context. Annotation operands and unkept trials supply no member views.
 
-The chooser's existing argument carrier reads candidate coverage of the radius-bearing class vector by a word's unit meaning direction. Scores add once per carried occurrence, without normalization or exclusive labels. Zero classes score zero. Output arguments receive member views; compose reads input occupation and generate reads both input and output occupation. Operation authority is the minimum input definiteness, an argument's separability times its view evidence; separability is the fit-weighted fraction of its members that fit it strictly better than every populated argument outside the 15-degree contiguity angle (`CLASS_CONTIGUITY_COSINE`), so contiguous classes do not compete. The fixed and identity-mechanics exemptions remain one. Empty measurable arguments supply zero readiness. A form-only chart supplies neutral operation authority and undefined clause readiness. Kept-use counts remain telemetry. Centroids refresh once at the kept boundary; only observed members and their ancestors receive contextual conditioning.
+The chooser's argument carrier reads the coverage of an argument's centroid of its words by a word's unit meaning direction, both among words, with the argument's expected activation at the word's place added. Scores add once per carried occurrence, without normalization or exclusive labels. Zero classes score zero. Output arguments receive member views; compose reads input occupation and generate reads both input and output occupation. An operation's definiteness (`PartsOfSpeech.operation`) is the minimum over its inputs of an argument's separability times its view evidence; separability is the fit-weighted fraction of its members that fit it strictly better than every populated argument outside the 15-degree contiguity angle (`CLASS_CONTIGUITY_COSINE`), so contiguous classes do not compete. It is reported (`corpus_lessons.readiness_report`) and gates nothing: no operator is gated inside the model, and the whole grammar of a file is open from the first sentence. Alec, 2026-11-13: "Operators are "a priori" concepts that we are using for the control of the architecture itself. Lets not do that; the gating of those operators might be able to be done *in the tests*, which would act like piagetian stages signalling that the test suite can move on to the next stage." The stages are the lessons' ([Training](Training.md)). Kept-use counts remain telemetry. Centroids refresh once at the kept boundary; only observed members and their ancestors receive contextual conditioning.
 
-Word flow (`PartsOfSpeech.flow_mask`): symmetric `intersection`, `union`, `conjunction`, `disjunction`, `product` and `sum` retain every operand's words; `not` and `non` retain their operand's words. Headed operations retain the declared head operand's words, including lower/definite and their unary faces and verb. Adverb declares argin1 as head. Clause-forming operations retain none, including unary ask and generic. Thus both black and cat in `lower(a, intersection(black, cat))` occupy lower's second argument and travel with the description. Transpose swaps both carriers; repeated occurrences remain repeated contributions. Generate reads parent argout and child argin occupation as policy features, as described below. The symmetric rule follows the coordination of likes: a symmetric result keeps its inputs' type, as a coordinated result has its conjuncts' type, and unlike conjuncts that satisfy the same selector ("a Republican and proud of it") fill the same formal argument, which is what argument-level classes provide. A selection such as tense applies once to a coordinated verb phrase, so conjuncts stay one part of speech; where a language uses different conjunction words by type, the difference is in the marker word, learned by exposure, not in the operator's result type.
+Word flow (`PartsOfSpeech.flow_mask`): symmetric `intersection`, `union`, `conjunction`, `disjunction`, `product` and `sum` retain every operand's words; `not` and `non` retain their operand's words. Headed operations retain the declared head operand's words, including `lower` and `verb`. `modifier` declares argin1 as head. Clause-forming operations retain none, including unary ask. Thus both black and cat in `lower(intersection(black, cat))` occupy lower's argument and travel with the description. `swap` exchanges both carriers; repeated occurrences remain repeated contributions. Generate reads parent argout and child argin occupation as policy features, as described below. The symmetric rule follows the coordination of likes: a symmetric result keeps its inputs' type, as a coordinated result has its conjuncts' type, and unlike conjuncts that satisfy the same selector ("a Republican and proud of it") fill the same formal argument, which is what argument-level classes provide. A selection such as tense applies once to a coordinated verb phrase, so conjuncts stay one part of speech; where a language uses different conjunction words by type, the difference is in the marker word, learned by exposure, not in the operator's result type.
 
 Argument vectors, memberships, orders and confidence use ordinary native concept checkpoint storage. Argument schema 4 saves the grammar-to-concept mapping and scalar uses; old occupation-count checkpoints require producer replay. Geometric cosines remain reported for inspection. There is no side bank of categories. The corpus controls the teaching sequence, and no lesson gate names an operator ([Training](Training.md)): a lesson's adjective-noun annotation names a `modification` bracket, never an operator, its fold target sums the admissible `intersection` and `product` actions (`GrammarLessons.MODIFICATION_OPERATORS`), and which of the two the student keeps is reported, never required. A bracket lesson teaches operation choice and never supplies member views, and no lesson adds a noun-aware mask or head rule: lessons change the examples, not the grammar.
 
@@ -694,8 +724,8 @@ this section gives the language mechanics.
 **The parse.** "A fake gun" is `lower(fake(gun(thing)))`. `thing` is the
 domain of discourse. `gun()` and `fake()` are the same kind of operation,
 each a projection that narrows it, and they commute, so
-`gun(fake(thing))` means the same. The determiner's `lower` individuates
-from what is left. The operator that narrows nothing is the symbol
+`gun(fake(thing))` means the same. `lower` individuates from what is
+left. The operator that narrows nothing is the symbol
 `everything`, the top pole.
 
 **Parts of speech are roles.** A codebook row is an operator. Read against
@@ -708,11 +738,11 @@ by whichever use the sentence's credit keeps.
 | word class | what it does | index |
 |---|---|---|
 | noun, adjective | narrows which thing | |
-| determiner | takes a kind to its extension and selects there: "the" a known identity from MTM, "a" one generic member, "some" some subconcepts, "every" the entire extension ([Extend](Extend.md#determiners)); *2026-11-13: a modifier, with the order dropped by `lower`, below* | thing |
+| determiner | takes a kind to its extension and selects there: "the" a known identity from MTM, "a" one generic member, "some" some subconcepts, "every" the entire extension ([Extend](Extend.md#determiners)); it is a modifier with no operator of its own, and `lower` drops the order ([below](#determiners-number-words-and-the-modifier-alec-2026-11-13)) | thing |
 | verb, adverb | narrows which stretch of time, and what changes | |
 | tense, aspect | individuates the time: a selection over the verb phrase's phases (below) | time |
 | conditional | narrows which alternatives are in play | |
-| modal | individuates: "might" some, "must" all; the second difference, a diagonal per modal in one shared basis (the `adverb` rule), learned on an identity's alternative timelines; a modal clause withholds the lowering; default all possible worlds | alternative |
+| modal | individuates: "might" some, "must" all; the second difference, a diagonal per modal in one shared basis (the `modifier` rule), learned on an identity's alternative timelines; a modal clause withholds the lowering; default all possible worlds | alternative |
 | deictic: pronoun, indexical (a reading, not a built class; [Orders §11](Orders.md#11-pointers-identity-and-relations-across-known-concepts-alec-2026-10-31), "No forcing; the class is the raise's outcome") | points: a word minted at its first definition and raised at `raiseCount` distinct relata, whose identity across time, what persists across the things it was, empties as they diversify, so it could be a symbol for anything; its mention then constrains nothing, and location, recency and expectation decide the bind | thing |
 
 **Choosing an individual.** An operation that requests an individual has
@@ -770,11 +800,11 @@ the whole domain. In both cases the domain is kept as the Ground against
 which the narrowed Figure has its meaning; it is not discarded as perceptual
 attention discards what it excludes.
 
-**Modification (Alec, 2026-10-18).** Intersection cannot serve every adjective: a relative adjective reads its scale from its noun, so what is small for a big noun is larger than what is small for a small noun, and a function relative to its argument, such as `product`, fits it better. The grammar offers both `intersection` and `product`, and the chooser picks; a lesson's adjective-noun bracket names the constituent, never the operator ([Learned argument concepts](#learned-argument-concepts)). A noun is an adjective pre-applied to the universe, the all-ones vector that is the product's identity. Every operator has an identity element, and an operator applied without its written operand is applied to that identity, so a unary face carries its operation's identity where it has one (NP = everything, VP = occurs, MP = all possible worlds).
+**Modification (Alec, 2026-10-18).** Intersection cannot serve every adjective: a relative adjective reads its scale from its noun, so what is small for a big noun is larger than what is small for a small noun, and a function relative to its argument fits it better. The grammar offers both `intersection` and `modifier`, whose gain scales the noun's own values, and the chooser picks at run time; a lesson's adjective-noun bracket names the constituent, never the operator ([Learned argument concepts](#learned-argument-concepts)). A noun is an adjective pre-applied to the universe, the all-ones vector that is a product's identity. Every operator has an identity element, and an operator applied without its written operand is applied to that identity (NP = everything, VP = occurs, MP = all possible worlds).
 
-**Position.** Tense, aspect and the preposition are one operation: unfold the head into its cases, select among them by the object, fold what is left. The head decides what is selected: a noun phrase's cases are things laid out in space, a verb phrase's are its phases along the change (the state before, the change, the state after). The object decides the test: a place compares location ("sat on the mat"), a time or an event compares order ("the meeting after lunch"). The modal is not this selection but the second difference: a diagonal per modal in one shared basis, the `adverb` rule, learned between equal-time events on an identity's actual and alternative timelines (`ModalLearning`); a modal clause withholds the lowering and holds on some timeline for "might", on every one for "must". A preposition makes an adjective or an adverb by this selection, as a compound selects among its head's cases, and tense and aspect are a verb phrase's prepositions whose object is now or a reference event R and whose preposition is not written. Past keeps the phase in which now falls after the change, future the phase before it; the progressive asserts only part of the change, so "was crossing" does not entail "crossed". A selection is idempotent, not a gain: "on the mat, on the mat" says no more than "on the mat". So an adverb of degree is a gain, while an adverb made from a preposition is a further restriction of the event. Two selections (past, then perfect; a path with two landmarks) are the operation called again, and a selection written as nothing is the call without a leaf. Not calling it keeps every case, which the answer reads as unknown, never as now. The claim is universality: any way a language writes a selection of time or place reaches these operations by exposure under one configuration, and a language that needed another operation would be a finding against them, never a case added.
+**Position.** Tense, aspect and the preposition are one operation: unfold the head into its cases, select among them by the object, fold what is left. The head decides what is selected: a noun phrase's cases are things laid out in space, a verb phrase's are its phases along the change (the state before, the change, the state after). The object decides the test: a place compares location ("sat on the mat"), a time or an event compares order ("the meeting after lunch"). The modal is not this selection but the second difference: a diagonal per modal in one shared basis, the `modifier` rule, learned between equal-time events on an identity's actual and alternative timelines (`ModalLearning`); a modal clause withholds the lowering and holds on some timeline for "might", on every one for "must". A preposition makes an adjective or an adverb by this selection, as a compound selects among its head's cases, and tense and aspect are a verb phrase's prepositions whose object is now or a reference event R and whose preposition is not written. Past keeps the phase in which now falls after the change, future the phase before it; the progressive asserts only part of the change, so "was crossing" does not entail "crossed". A selection is idempotent, not a gain: "on the mat, on the mat" says no more than "on the mat". So an adverb of degree is a gain, while an adverb made from a preposition is a further restriction of the event. Two selections (past, then perfect; a path with two landmarks) are the operation called again, and what a sentence marks without a written word is left to `marker`'s learned kernels, which read no cases. Not calling a selection keeps every case, which the answer reads as unknown, never as now. The claim is universality: any way a language writes a selection of time or place reaches these operations by exposure under one configuration, and a language that needed another operation would be a finding against them, never a case added.
 
-The selection is `compound` and its absent-marker face `compound_unary`, which share one kernel (`CaseSelection`). The head supplies its cases (a noun phrase's native cases; a verb phrase's before, change and after from an accessible actual event's snapshots), and the object supplies content, including a referred-to event for the reference time R: the reference time is content, never a `.when` column. `CaseSelection.CaseView` keeps the head's cases, their two-lane memberships and an accumulated content test; a selection intersects the test, so repeating the same selection is idempotent, and the fold refolds each evidence lane without subtracting one from the other. `CaseFlow` carries the view beside the conceptual stack; the case bank is staged once per reading, before parsing, and no clock or lexical class enters it. The absent-marker face uses the staged reference, or the head's unfiltered field, as its implicit object. A phase question is certified only when each lane covers the whole requested content: no selection, an empty selection or a proper fragment answers unknown, and an expired event history reports `phase_history_expired`. A phase selection keeps the verb phrase's order; only a modal `adverb` withholds the lowering. The preposition itself is a marker-headed phrase (`preposition`, with its unary face) whose content is its object.
+The selection is `compound` (`CaseSelection`). The head supplies its cases (a noun phrase's native cases; a verb phrase's before, change and after from an accessible actual event's snapshots), and the object supplies content, including a referred-to event for the reference time R: the reference time is content, never a `.when` column. `CaseSelection.CaseView` keeps the head's cases, their two-lane memberships and an accumulated content test; a selection intersects the test, so repeating the same selection is idempotent, and the fold refolds each evidence lane without subtracting one from the other. `CaseFlow` carries the view beside the conceptual stack; the case bank is staged once per reading, before parsing, and no clock or lexical class enters it. A phase question is certified only when each lane covers the whole requested content: no selection, an empty selection or a proper fragment answers unknown, and an expired event history reports `phase_history_expired`. A phase selection keeps the verb phrase's order; only a modal `modifier` withholds the lowering. The preposition itself is a marker-headed phrase (`preposition`) whose content is its object.
 
 **"Every" and generics.** "Every cat sleeps" is a relation between the
 concepts at their own order, the subsumption `sleeps(cat) = cat`, and it
@@ -787,8 +817,9 @@ against beside the evidence for, the corner *both*, which prompts refinement,
 so one exception does not make the relation false. The generic subject
 decides, not the copula: "cats are animals" and "cats breathe" write
 relations, while "the cat is an animal" and "this cat breathes" are ideas,
-each a property of one situation. The grammar's `universal` determiner is
-the `lower` implementation whose referent is the kind; it chooses no member.
+each a property of one situation. "Every" has no operator of its own, as no
+determiner has ([below](#determiners-number-words-and-the-modifier-alec-2026-11-13)),
+and in a generic it chooses no member.
 
 **Relative truth (Alec, 2026-11-13).** "If a sentence like "cats have fur"
 does not write a relation, then we have not correctly parsed the sentence as a
@@ -796,14 +827,16 @@ relative truth, or a relation between two ideas (have expresses parthood, is
 expresses identity (unless predication), both are relations that are written
 to STM1 by a correct grammatical parse, are stored in LTM1, and teach the
 conceptual taxonomy)." The relation is one of the grammar's family
-`relative_truth` (`part`, its converse `whole`, `equal`, `implies`). It is
+`relative_truth` (`part`, its converse `whole`, and `implies`). An identity
+composes as `part`, and `define` in thought writes it as two relations,
+`part` each way ([Reasoning](Reasoning.md#the-tools-of-thought-alec-2026-11-13)). It is
 what pervades a claim about any member of the first kind
 ([Logic](Logic.md#existence-and-pervasion-alec-2026-11-13)). Which word an
 operator is learned from is written in no code.
 
-**Verbs.** A verb adds dimensions to the description and removes freedom from the thing described. The noun is silent on when, and on what the thing does; the verb constrains those dimensions. A verb phrase is an element of a group acting on its identity's frame: a map from the state before to the state after, with an identity element (the verb that changes nothing; an undefined verb is that element, read as unknown), an inverse (the change undone) and composition. It acts as a diagonal in a basis, $Q\,\mathrm{diag}(e^{w})\,Q^{\top}$ in the cube chart with $w$ sparse ([the verb's action](#grammarlayer-forward--reverse-inventory)), so it is the identity wherever the verb is silent. The basis is shared by a verb group, the verbs that change the same thing (motion, change of state, transfer), or for a transitive verb is supplied by its object. The object is not a second operand of the sentence but a modifier of the verb phrase that sub-types the verb, as a compound's modifier sub-types its head: "chased the mouse" is a kind of chasing as "gun oil" is a kind of oil. The verb is the head, and the object is kept by reference, so subject and object are not confused. The action is taught by the identity's observed state after: its prediction from the state before is compared with that state in the chart, on the coordinates both define (`VerbLearning`), which for a diagonal teaches the log-ratio of after over before; where the before-state is zero nothing is learned. Selections and changes are two algebras: a selection is an idempotent meet with no inverse, while the verb proper is invertible and not idempotent (ran twice is more than ran once). States are relations, not group elements, and a verb with several participants is the verb-phrase rule applied again, each application its own diagonal on its own participant.
+**Verbs.** A verb adds dimensions to the description and removes freedom from the thing described. The noun is silent on when, and on what the thing does; the verb constrains those dimensions. A verb phrase is an element of a group acting on its identity's frame: a map from the state before to the state after, with an identity element (the verb that changes nothing; an undefined verb is that element, read as unknown), an inverse (the change undone) and composition. It acts as a diagonal in a basis, $Q\,\mathrm{diag}(e^{w})\,Q^{\top}$ in the cube chart with $w$ sparse ([the verb's action](#grammarlayer-forward--reverse-inventory)), so it is the identity wherever the verb is silent. The basis is shared by a verb group, the verbs that change the same thing (motion, change of state, transfer), or for a transitive verb is supplied by its object. The object is not a second operand of the sentence but a modifier of the verb phrase that sub-types the verb, as a compound's modifier sub-types its head: "chased the mouse" is a kind of chasing as "gun oil" is a kind of oil. The verb is the head, and the object is kept by reference, so subject and object are not confused. The object enters by `verb`, which gives the phrase its basis, and the subject by `change`, which applies the phrase's gain to it. The action is taught by the identity's observed state after: its prediction from the state before is compared with that state in the chart, on the coordinates both define (`VerbLearning`), which for a diagonal teaches the log-ratio of after over before; where the before-state is zero nothing is learned. Selections and changes are two algebras: a selection is an idempotent meet with no inverse, while the verb proper is invertible and not idempotent (ran twice is more than ran once). States are relations, not group elements, and a verb with several participants is the verb-phrase rule applied again, each application its own diagonal on its own participant.
 
-**Modification, compounds and adverbs in the kernels.** Adjective-noun modification composes by `intersection` or `product`, whichever the chooser keeps, and `lower` is the determiner. On a meaning block `intersection` is the meet of the evidence lanes, idempotent and commutative (Alec, 2026-09-29: "a red red bird is no more red than a red bird"); `product` there is a lane kernel of one operand with the other as context, the identity at initialization, which can learn a modifier relative to its noun. `compound` selects among its head's cases, so "gun oil" and "oil gun" differ by their heads. The adverb is not to the verb what the adjective is to the noun: an adjective and its noun meet symmetrically, repeating the adjective adds nothing, and the noun phrase's reverse is a search among known words, the price of idempotence; an adverb acts on the verb phrase as a gain, does more when repeated ("a very, very fast runner"), and is inverted exactly given the adverb. Without a meaning block the kernels are numerical: `intersection` the coordinate min, `product` the Hadamard product, `lift` the sigma fold. The verb's soft threshold (.1) and bound ($\pm 4$ in the meaning action, $\pm 8$ in the numerical spectrum) are hard-coded.
+**Modification, compounds and modifiers in the kernels.** Adjective-noun modification composes by `intersection` or `modifier`, whichever the chooser keeps, and `lower` drops the order of a higher-order word. On a meaning block `intersection` is the meet of the evidence lanes, idempotent and commutative (Alec, 2026-09-29: "a red red bird is no more red than a red bird"): an adjective and its noun meet symmetrically, repeating the adjective adds nothing, and the noun phrase's reverse is a search among known words, the price of idempotence. `modifier` is a gain in one shared basis, read from the modifier word and applied to its head, a verb phrase or a noun (Alec, 2026-11-13: "which makes it play the role of both adv and adj"): it reads its scale from where the head is, does more when repeated ("a very, very fast runner"), and is inverted exactly given the modifier. The element-wise product `left * right` is kept inside `modifier`'s compose as commented-out code, the alternative to the gain. `compound` selects among its head's cases, so "gun oil" and "oil gun" differ by their heads. Without a meaning block the kernels are numerical: `intersection` the coordinate min, `change` the sigma fold. The verb's soft threshold (.1) and bound ($\pm 4$ in the meaning action, $\pm 8$ in the numerical spectrum) are hard-coded.
 
 An earlier proposal, nouns from PartSpace and adjectives from WholeSpace, is
 recorded in
@@ -812,15 +845,17 @@ recorded in
 ## Determiners, number words and the modifier (Alec, 2026-11-13)
 
 A determiner and a number word are modifiers. Neither has an operator of
-its own.
+its own: no rule is named for "the", "a", "some" or "every", and which
+operator such a word takes is chosen at run time, the word being a cue.
 
 - **A word at several orders.** "I think we can have "cat" exist at
   multiple orders. So when it is found to be a count noun, we leave the
   old "cat" reference and create a new "cat": so it is an instance of
   polysemy. Seeing a determiner causes a choice at interpretation time to
   chose the higher-order one (maybe that can be the default, also)." The
-  choice is `interpret`'s, made by expectation as for any word with
-  several objects ([Orders §12](Orders.md)).
+  choice is `interpret`'s, as for any word with several objects: the
+  object expected, and where none is expected the one of highest order
+  ([Orders §12](Orders.md)).
 - **`lower` drops the order.** "lets keep lower as something that is used
   for higher-order words. After we do that, the determiner is basically a
   special case adjective, as is number. So we don't need a special case
@@ -852,33 +887,55 @@ its own.
 "Here are the operators I think we need for a UG, where each operator can
 compose/generate and operate on both the extent and intent". The intent
 is the idea's vector, and the extent is the field it leaves
-([Extend](Extend.md)).
+([Extend](Extend.md)). `data/complete.grammar` declares these operators
+and has the rest commented out.
 
 | Operators | |
 |---|---|
 | `not`, `non` | negation; `non` withholds |
-| `interpret`, `name` | a word to its object; an object to its word |
-| `sign` | keeps the word as a word: "I think sign() only goes one way" |
+| `interpret`, `name` | a word to its object; an object to its word, `interpret`'s generate face |
+| `sign` | keeps the word as a word, in compose only: "I think sign() only goes one way" |
 | `bind` | ties a mention to its referent |
-| `part/implies` | one relation; `whole` is `part` with its operands exchanged |
+| `part`, `whole`, `implies` | the relations; `whole` is `part` with its operands exchanged |
 | `ask` | "a placeholder: perhaps it can mark a position of uncertainty within the sentence" |
-| a least and a greatest | "conjunction, disjunction, intersection, union (I think these collapse to two, with extent/intent each)" |
-| add, subtract, multiply, divide | arithmetic, in conceptual space only |
-| `lift`, `lower` | one operand each: raise an order, drop an order |
-| `change` | composes the sentence: "lets call the operation that lift was doing as change(), since it is a temporal modifier" |
-| `modifier` | the adverb and the adjective |
+| `intersection`, `union` | a least and a greatest: "conjunction, disjunction, intersection, union (I think these collapse to two, with extent/intent each)" |
+| `add`, `subtract`, `multiply`, `divide` | arithmetic, in conceptual space only |
+| `change` | composes the sentence: "lets call the operation that lift was doing as change(), since it is a temporal modifier"; it applies a verb phrase's gain to its subject |
+| `verb` | gives a verb phrase its basis, from a noun phrase or from a phrase a preposition made ([the verb's action](#grammarlayer-forward--reverse-inventory)) |
+| `lift`, `lower` | one operand each: raise an order; drop an order, on an operand of order one or more |
+| `modifier` | the adverb and the adjective: a gain in one shared basis |
+| `compound` | selects among its head's cases: a noun's, or a verb phrase's phases |
+| `marker` | one operand: a family of learned kernels |
 | `preposition` | "is a compound modifier" |
 | `surface`, `swap` | attach a surface marker; exchange two constituents |
 
 - **No one-operand faces.** "I don't see a reason for the unary operator
   "faces": lift and lower are now unary".
+- **`marker`.** Alec, 2026-11-14: "lets just make this a family of learned
+  kernels: hopefully the architecture will be able to decide which family
+  to apply: e.g. tense, aspect, plurality, based on sentence context."
+  Each kernel is a stacked sigma-pi
+  ([Reasoning](Reasoning.md#expectation-a-stacked-sigma-pi)) from the
+  operand's form, its percept coordinates, to its meaning, its concept
+  coordinates. The form passes unchanged; the chosen kernel gives, for each
+  coordinate of the meaning on each lane, a raise and a lowering, and their
+  difference shifts the meaning in the chart, so the reverse removes the
+  same shift and is exact given the kernel. A new kernel is the identity.
+  Each kernel is one candidate of the operator, chosen by the chooser from
+  the sentence's context in compose and in generate, and taught by the
+  costs of the path that applied it. No kernel has a name, a form or a
+  language tied to it. `marker` reads no case bank; `compound` keeps the
+  cases staged for it, a verb phrase's phases among them.
 - **Withdrawn.** `equal`: "equal can go, isEqual should stay"; an
-  identity is `part` both ways, which `define` writes in thought
-  ([Reasoning](Reasoning.md)). `generic`: "I think its the low-order
-  "cat" word, so it doesn't need to exist." `noun`: "can be subsumed by
-  interpret". A rule named for the verb goes on the principle above; what
-  it does today, attach an object to its verb, is the work of `modifier`
-  (*Claude's reading*).
+  identity composes as `part`, and `define` in thought writes it `part`
+  both ways ([Reasoning](Reasoning.md#the-tools-of-thought-alec-2026-11-13)).
+  `generic`: "I think its the low-order "cat" word, so it doesn't need to
+  exist." `noun`: "can be subsumed by interpret". `conjunction` and
+  `disjunction`, since the four connectives collapse to two; `sum` and
+  `product`, which the four of arithmetic replace; `definite`,
+  `universal` and `some`, since a determiner is a modifier
+  ([above](#determiners-number-words-and-the-modifier-alec-2026-11-13));
+  and the one-operand faces of `preposition` and `surface`.
 - **Arithmetic is not on codes.** "arithmetic do not operate on the
   codes: that would break codebook lookup. So even with number, we
   categorize it perceptually: that puts us in a codebook, and percept
@@ -887,13 +944,18 @@ is the idea's vector, and the extent is the field it leaves
   tanh-bounded space or something (0..inf)": computed in the chart, where
   a value runs from zero to infinity, and mapped back, so a sum
   $\tanh(\operatorname{atanh} a + \operatorname{atanh} b)$ stays in the
-  unit range. Arithmetic on numerals remains thought by chained
+  unit range. A difference floors at zero on each lane, and a quotient by
+  zero is silent. Arithmetic on numerals remains thought by chained
   successor ([Training](Training.md)).
 - **Attention's operations are not among these.** They find the words
   the operators then compose: "attentions operations should be called
   focus(), unfocus(). gloss() is better named mint()". To focus is to
-  narrow to a part of what is attended; `mint` accepts one clean region
-  as a word, whose symbol then enters the grammar.
+  narrow to a part of what is attended; `unfocus` restores the bracket in
+  force before the last `focus` (Alec, 2026-11-14: "We should learn what
+  it does, just like we learn what focus does. If that is difficult, just
+  undo the last focus."), and the chooser decides when to take it; `mint`
+  accepts one clean region as a word, whose symbol then enters the
+  grammar ([Grammar](#grammar)).
 
 ## Exist and thought operations at the completed boundary
 
@@ -911,9 +973,8 @@ boundary. `exist` reads the existence of the whole description's referent with
 its degree: a missing match is unknown, never false, and a question or an
 estimate cannot certify its own existence.
 `part` reads native conceptual-taxonomy references, never the input parse tree
-or concept-vector overlap; `equal` receives full-width
-concepts; every other thought operation receives only its declared capability
-views. See [the common contract](QueryContracts.md).
+or concept-vector overlap; every other thought operation receives only its
+declared capability views. See [the common contract](QueryContracts.md).
 
 ## Common grammar-face signatures and shared VP identities
 

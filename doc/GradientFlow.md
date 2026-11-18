@@ -17,9 +17,9 @@ for each loss; the choice of owners neither requires nor removes it.
 | Parameters | `separateChooser=false` (default) | `separateChooser=true` |
 |---|---|---|
 | Understanding parameters: codes, grammar operators and their inverses, conceptual definitions, the compose chooser | Reached by reconstruction R and by the answer side A; A loses only its component that opposes R in each unit | Written only by R-owned costs; the owner-restricted backward excludes supplied-answer gradients |
-| Expectation predictors, including `ActivationPredictor` | Their own local objectives; sources, targets and consumed forecasts are detached | Same |
+| Expectation maps: `expect`'s stack, the sentence and word predictor (`ActivationPredictor`) and the percept predictor | Their own local objectives; sources, targets and consumed forecasts are detached | Same |
 | Candidate attention | Its reading lesson (R) and departure credit (A); consumers detach its output | Its own owner, which also receives the sentence's R and A through the admission read |
-| Intuit's learned weights | Output only; no reconstruction or expectation gradient | Same |
+| `intuit`'s stack | Its own term against the detached field the kept thought leaves, and the output cost through the live stack; no reconstruction or expectation gradient | Same |
 
 `separateChooser` defaults to `false` (`data/model.xml`): each sentence takes
 the gradients $g_R$ of R and $g_A$ of A over every optimizer parameter,
@@ -110,8 +110,8 @@ separate over the weights"). Either way each sentence makes one optimizer step.
 | Owner | Parameters | Trained by |
 |---|---|---|
 | reconstruction | perception codebooks, conceptual definitions, the compose and generate operators, the compose chooser, and every parameter no other owner claims | the input and order-zero reconstruction losses and compose lessons; the chooser rewards (owner `chooser`) use the same parameter set |
-| expectation | the conceptual components (`IndependentComponents`, including the bind resolver `reference_close`), the shared `ActivationPredictor` (`_inter_predictor`) and word predictor, the concept predictor and the percept predictor (`PerceptExpectation`: context and moments update at each arrival, and its parameters receive the accumulated arrival error once, in the sentence's update) | expectation terms whose targets and sources are detached, so a predictor never trains what it predicts; also `expectation.bind_score_function` |
-| output | output space, answer attention and record reader, `intuit`'s weights and the generate policy; named output concepts also own their sparse coefficients | supplied-answer costs; the generate policy also takes the generate lessons (owner `generate_lesson`) |
+| expectation | the conceptual components (`IndependentComponents`, including the bind resolver `reference_close`), the shared `ActivationPredictor` (`_inter_predictor`) and word predictor, `expect`'s stack (the conceptual space's own `ActivationPredictor` where `expectationMap` is `predictor`) and the percept predictor (`PerceptExpectation`: context and moments update at each arrival, and its parameters receive the accumulated arrival error once, in the sentence's update) | expectation terms whose targets and sources are detached, so a predictor never trains what it predicts; `expect` by omission (`expectation.concepts`); also `expectation.bind_score_function` |
+| output | output space, answer attention and record reader, `intuit`'s stack and the generate policy; named output concepts also own their sparse coefficients | supplied-answer costs; `intuit`'s stack also takes its term against the field the kept thought leaves (`intuition.field`); the generate policy also takes the generate lessons (owner `generate_lesson`) |
 | attention | the candidate attention | `attention.reading_lesson` and `attention.candidate_departure`, plus, in the separate backward, the sentence's R and A through the admission read (`AttentionCredit`, a cotangent to the candidate attention only) |
 
 **Sides.** Compose and thought rewards are
@@ -145,11 +145,16 @@ top-down gradient reaches expectation and expectation's loss reaches nothing
 else. Where an expectation gain is configured, the gain multiplies the signal
 detached (`Expectation.gain_field`), so a predictor cannot learn to mispredict
 in order to brighten a signal or to over-predict in order to silence it. At
-the conceptual layer the expectation is `ActivationPredictor`, whose predicted
-next state is also the spread that primes attention, the chooser and
-retrieval, trained only by its own error against the detached next state;
-`intuit` is the top-down component, a Sigma over Pi with its own weights
-trained only by output. The conceptual split and the correction-output form
+the conceptual layer the expectation is `expect`, a stacked sigma-pi map from
+the observed order-zero field to the expected one
+([Expectation](ExpectationRetention.md)), whose output is also the spread
+that primes attention, the chooser and retrieval, read detached; it is
+trained only by omission, against the detached field with the hidden units
+present (`expectation.concepts`). `intuit` is the top-down component, a
+stacked sigma-pi map of its own from concepts to concepts, evaluated once
+when the sentence is observed and trained by the field the kept thought
+leaves, detached, and by the output cost through the live stack. The
+conceptual split and the correction-output form
 are [future work](FutureWork.md#the-residual-split-a-stopped-subtraction-or-the-correction-alec-2026-10-29).
 
 **How output reaches the understanding (decided 2026-10-29; projected since
@@ -192,7 +197,7 @@ Hard derivations train only what they select: a path's costs reach the operators
 
 New question-conditioner widths join the optimizer before the same sentence's first backward. Live thought results and output conditioning retain the selected path's graph; only choice evidence and durable storage use their existing detach boundaries. Batch-end reporting uses the recorded output without another walk or loss. On data without supervised outputs, paths compare on R and only the kept reconstruction runs a thought.
 
-Omission's original contents are detached loss-side targets only, captured before identity admission. `reconstruction_order_zero` restores the original input; `reconstruction_reverse` scores visible positions. `reconstruction.free_percept` excludes omitted brackets from both its numerator and its normalization. Loss-only codes for unseen target bytes neither admit percepts nor consume the forward random stream. Expectation excludes omitted observations that would otherwise leak content into state. Rates and accuracy averages are checkpointed statistics, with no gradient. Episodic concept entries are also detached: only their references and signed values are stored, while fields and semantic truth rows retain both poles. Time-only recall rebuilds the poles from the signs, lays out references in reading order and publishes their field directly, and direct `reverse` can read it without a reconstruction charge.
+Omission's original contents are detached loss-side targets only, captured before identity admission. `reconstruction_order_zero` restores the original input; `reconstruction_reverse` scores visible positions. `reconstruction.free_percept` excludes omitted brackets from both its numerator and its normalization. Loss-only codes for unseen target bytes neither admit percepts nor consume the forward random stream. Expectation's word and percept reads exclude omitted observations that would otherwise leak content into state; `expect` alone reads them, as its detached teacher, the field with the hidden units present. Rates and accuracy averages are checkpointed statistics, with no gradient. Episodic concept entries are also detached: only their references and signed values are stored, while fields and semantic truth rows retain both poles. A recall rebuilds the poles from the signs, lays out references in their stored order and publishes their field directly, and direct `reverse` can read it without a reconstruction charge.
 
 ## Default projected gradients
 
@@ -263,7 +268,8 @@ persistently conflicted code into two, and different learning speeds.
 count. The cosine and removed norm use the unit's optimizer metric; zero-vector
 cosines and removed fractions are reported as zero. `realized_steps` reports
 root-sum-squared actual displacements divided by root-sum-squared pre-step
-parameter norms for codes, lift and adverb, with null for a zero denominator.
+parameter norms for codes and the `change` and `modifier` actions, with null
+for a zero denominator.
 The existing read-only `measure()` dissonance and understanding norms are retained.
 
 The decoder and answer generate credits use their own complete paired costs,
@@ -307,7 +313,7 @@ pullback from its recorded forward input; earlier sentence graphs stay cut.
   with no straight-through estimator. Compose, attention, candidate, bind,
   thought and both generate walks are all credited this way.
 - **Why reconstruction alone cannot judge a choice.** Operators with exact
-  inverses, such as conjunction and disjunction over the same two words,
+  inverses, such as `intersection` and `union` over the same two words,
   recover the same words, so their reconstruction costs tie. What the choice
   asserts shows only in the answer and in what follows, which is why paths
   are compared on R + A rather than on reconstruction alone.
@@ -366,8 +372,9 @@ The snapshot contains each row's own sentence symbols plus up to
 is taken after the sentence's seen write and shared by every path.
 `Space.prime_seen` decays the per-stream `[B,V]` seen ledger and bumps the
 seen rows; the relevance weight it returns is one plus the signed desire
-channel and, where the parallel path supplies it, the detached predicted
-concept activation of `ActivationPredictor`, so the prediction is the spread.
+channel and, where the parallel path supplies it, the detached expected
+concept activation that `expect` gives (`_expected_knowing`), so the
+expectation is the spread.
 No diffusion over definition edges or occurrence rows remains, and no stream
 primes another. Symbols with surfaces are byte candidates; all valid rows
 enter answer context with their priming weights. Signed inhibition below
@@ -427,7 +434,7 @@ vectorized decoding never allocates a batch-by-position-by-inventory slab.
 
 **Episodic entries and time bands (2026-11-11).** An episodic entry is
 selected under `torch.no_grad` and stored detached (`EpisodicMemory.select`,
-`write`), and a field reinstated by a recall by time books no loss term of its
+`write`), and a field reinstated by a recall books no loss term of its
 own: the percept side of long-term memory is System 1's content and trains
 nothing. Every learned reader takes a `.when` as an age or a difference
 (`RowTime.age_interval`, `age_band`, `relative_idea`, `relative_to`,
@@ -450,10 +457,10 @@ compose-tree teacher trains the generate policy. Shared numerical inverse operat
 `separateChooser=true` still restricts parameter writes by owner.
 
 Thought deposits carry a differentiable order-zero reading, so this same
-native reverse can credit selected intuition weights. Expectation reads a
-detached order-zero target after the kept thought episode, on serial and
-parallel paths. Numeric heads retain their forward readout with
-`answerSynthesis=false`.
+native reverse can credit `intuit`'s stack. `intuit`'s stack takes a
+detached target of every order after the kept thought episode, on serial and
+parallel paths; `expect` is taught by omission instead. Numeric heads retain
+their forward readout with `answerSynthesis=false`.
 
 Compose, generate and reverse share each kernel; a free inverse searches
 through that same compose kernel. These operations impose no code norm
@@ -469,8 +476,9 @@ active proximal penalty), and leaves unobserved rows unchanged. It does not
 divide a step by gradient magnitude. Readers and expectation predictors keep
 Adam. The L1 proximal threshold for a reconstruction-owned coefficient is
 `lr * strength`; answer-owned adaptive coefficients keep their Adam metric.
-Within reconstruction's descent the lift action learns at `actionRateRatio`
-times the configured rate and the adverb action at its square (default 1).
+Within reconstruction's descent the `change` action learns at
+`actionRateRatio` times the configured rate and the `modifier` action at its
+square (default 1).
 Reconstruction steps by momentum descent because of indifference: once it is
 satisfied it is indifferent among many derivations and code placements, and
 its gradient to the chooser and the codes becomes tiny and noisy. Adam divides
@@ -525,7 +533,8 @@ the sentence and "batch" the batch-end registration. The full route is
 | `reconstruction.part` | Test lesson's common-reverse percept readback | `reconstructionScale` | reconstruction/R |
 | `output.compose_score_function`, `output.thought_score_function` | Detached completed-trial cost advantage times the selected log probability | whole term | chooser/A for compose and reconstruction-category thought |
 | `output.walk_credit` | Generate departure's score-function credit | whole term | chooser/A |
-| `expectation.concepts` | Prediction against detached post-thought order-zero knowing | 1 | expectation/R; predictor only |
+| `expectation.concepts` | `expect`'s field from the lossy field against the detached field with the hidden units present, on order-zero rows; no cost where nothing was hidden | 1 | expectation/R; `expect`'s stack only |
+| `intuition.field` | `intuit`'s field at observation against the detached field the kept thought leaves, every order | 1 | Once, on the kept path; `intuit`'s stack only, target detached |
 | `leaf_distill` | Historical root decoder's predicted exact leaves vs retained leaves; origin | `leafDistillWeight` | Batch; decoder and live input root where enabled |
 | `expectation.activation` | Predicted two-lane bank activation vs the next row's actual activation; bounded MSE | `sentenceExpectationLossWeight` | Trial or batch, once; shared predictor only, sources and targets detached |
 | `expectation.word` | Pre-arrival word activation vs the admitted word's two lanes; bounded MSE | `wordExpectationLossWeight` | Trial or batch; shared predictor at the word read, sources and targets detached |
@@ -562,7 +571,7 @@ errors. They have no fabricated target or normalization denominator:
 | Term | Definition and strength | Owner and gradient |
 |---|---|---|
 | `definition_sparsity` | Rank-ordered soft-L0; `definitionSparsityScale` | Batch; definition coefficients |
-| `gate_l1` | Absolute lift/lower raw gates; `gateL1Lambda` | Batch; operator gates |
+| `gate_l1` | Absolute L1 of the `modifier` eigenvalue edit, where that edit is built; `gateL1Lambda` | Batch; that edit's projection |
 | `concept_readout_l1` | Active sparse readout L1; configured `l1Lambda`, averaged over distinct observed concepts | Trial/batch report only; one proximal application per applicable optimizer step, never another autograd penalty |
 | `truth.falsity`, `truth.balance` | Stored-truth incompatibility and forbidden-corner penalties; the caller's `truth_loss_weight` (default 0) and balance strength | Batch; live operands if present |
 
@@ -607,7 +616,7 @@ while the continuous face carries each native event loss.
 | Term | Owner | Side | Live derivative |
 | --- | --- | --- | --- |
 | `memory.link_coverage` | reconstruction | R | What the chosen link's coverage reads; choice discrete |
-| `memory.verb_state` | reconstruction | R | Lift action readout on recorded operands; later reference target detached |
+| `memory.verb_state` | reconstruction | R | `change` action readout on recorded operands; later reference target detached |
 | `memory.modal_state` | reconstruction | R | Modifier action on equal-time actual/alternative references; targets detached |
 
 A link's comparison between paths uses a detached coverage value; the kept
@@ -703,16 +712,19 @@ Certificates: [the selected fields](../test/test_generation_selection_backward.p
 
 **Literal whole membership gradients.** The independent `weighted_mean` read still returns the convex mean of the property codes at their active weights. `_WholeMean` interpolates one property at a time to retain exact cube rails. Its derivative uses the complete span. For a mean $m$, total positive mass $T$ and incoming gradient $g$, membership $w_i$ receives $g\mathbin{\cdot}(c_i-m)/T$ and code $c_i$ receives $(w_i/T)g$. A zero cumulative prefix inside an occupied span has no role in those derivatives. An entirely empty span keeps its existing zero value and first-membership tangent. This literal read retains its normalized derivative; presence consumers use the bounded carrier described above. [Producer and compiled derivative certificate](../test/test_form_centroid_numerics.py)
 
-**Hierarchical conceptual conditioning.** `ConceptHierarchy.condition`
-executes under `torch.no_grad` at the kept sentence boundary. It applies the
-conceptual placement step to native membership context, from higher orders
-downward, with a shared snapshot per order, then refreshes member centroids.
+**Hierarchical grouping within an order.** At the kept sentence boundary,
+under `torch.no_grad`, a word's classes are drawn toward their centroid
+among classes and a class's present words toward their centroid among words,
+by the conceptual placement step; no position is moved toward, or scored
+against, a position of another order. A class is placed by its context like
+any concept, never as the centroid of its members.
 This directional update preserves forms and stored confidence radii, and the
 optimizer's projection separately keeps concept lengths at their stored radii.
 No hierarchy update sends a gradient or a placement target into perceptual
-form coordinates. The placement of order-zero meanings at kept closes
-(`MereologicalCodes.place_rows`) is likewise a detached index computation
-with no optimizer owner.
+form coordinates. The placement of meanings at kept closes
+(`MereologicalCodes.place_rows`), each row against rows of its own order in
+the context of the sentence's field at every order, is likewise a detached
+index computation with no optimizer owner.
 [Architecture](Architecture.md#hierarchical-conceptual-context-alec-2026-11-08)
 specifies the chart and membership rules.
 
@@ -720,7 +732,7 @@ specifies the chart and membership rules.
 (`DerivationReconstruction`) is a report and a tool, not a trained loss. It
 inverts each recorded operation from that operation's own journal: the
 selected forward action's object value, object-presence flag and verb group
-are kept beside its numerical frame, and a missing non-adverb action record
+are kept beside its numerical frame, and a missing non-modifier action record
 raises instead of selecting an identity basis. When a consumer refreshed its
 operand from a bound STM identity, the inverse translates the recorded
 publication by the discrepancy between the recovered operand and the operand
@@ -783,7 +795,6 @@ check equal-parameter costs before updates.
 Superseded mechanisms and their measurements are recorded in
 [DevelopmentHistory](DevelopmentHistory.md).
 
+## The field's arithmetic and numeric input
 
-## Item 1.8 amendment (2026-11-12)
-
-`FieldLogic.power` supplies the weighted least/greatest arithmetic for sparse definitions and intuition, retaining exact Boolean rails and live exponent derivatives. A numeric input has no learned transform: f(n) occupies a fixed axis. The linear output owns concept/lane weights; retired seats clear weights, gradients and optimizer moments. Its input reconstruction reads the field captured by the understanding. Examination-only paths train reconstruction over their field and supervised numeric output where supplied, with a single attention departure per explored path. Scalar boxes and counted definition evidence have no gradient-trained boundary. Their evidence is a separate modality, and the text residual ledger excludes the placeless reading.
+`FieldLogic.power` supplies the weighted least/greatest arithmetic of sparse definitions (`SparseLayer.fold_presence`, which is also the field's `intersection` and `union`) and of the stored rules that `infer` applies, retaining exact Boolean rails and live exponent derivatives. A numeric input has no learned transform: its felt value f(n) is a level percept at its place, and one order-zero concept per place collects the levels met there. The linear output owns concept/lane weights; retired seats clear weights, gradients and optimizer moments. Its input reconstruction reads the field captured by the understanding. Examination-only paths train reconstruction over their field and supervised numeric output where supplied, with a single attention departure per explored path. On a file with field operators only, `intuit`'s stack is the learned step from concepts to concepts, and the output cost is its only teacher. A felt value beside the words is read through the same basic percepts, with no gradient-trained boundary; it is a modality of its own, with its own `.where` range, and the text residual ledger excludes its reading.
